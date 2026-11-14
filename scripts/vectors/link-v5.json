@@ -1,0 +1,364 @@
+{
+  "schema": "canopi-palette-link/5",
+  "source": "knowledge/architecture/plant-palette-architecture.md sections 8.1 (link v5 and its extension rule), 8.2 (versions) and 8.3 (a link without a place); written by PP-B commit 0a, reviewed by the coordinator before any stream starts",
+  "thresholds": {
+    "link_version": 5,
+    "max_link_ids": 2000,
+    "max_plot_m2": 1000000,
+    "today_period": "1991-2020",
+    "period_ids": ["1991-2020", "2041-2070", "2071-2099"]
+  },
+  "plants": {
+    "apple": { "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "lists": ["temperate"], "token": "obLD1O" },
+    "hazel": { "id": "0f1e2d3c-4b5a-4968-8776-655443322110", "lists": ["temperate"], "token": "Dx4tPE" },
+    "comfrey": { "id": "7c6b5a49-3827-4165-9483-726150403020", "lists": ["temperate"], "token": "fGtaST" },
+    "banana": { "id": "33333333-4444-4555-8666-777777777777", "lists": ["tropical"], "token": "MzMzM0" },
+    "gone": { "id": "deadbeef-0000-4000-8000-000000000000", "lists": [], "token": "3q2-7w" }
+  },
+  "places": {
+    "lyon_full": { "k": "FR", "o": "45.75,4.85", "l": "sun", "w": "average", "q": "sheltered", "r": "drains", "h": "town", "s": "own.65.loam" },
+    "shade_only": { "l": "shade" },
+    "pots": { "s": "pots" },
+    "acid_word": { "s": "own.acid.-" },
+    "unsure": {}
+  },
+  "cases": [
+    { "name": "version 5 is current", "covers": "8.2", "input": { "v": "5" }, "expect": { "status": "current" } },
+    { "name": "version 4 is older", "covers": "8.2, 8.1 rule 4", "input": { "v": "4" }, "expect": { "status": "older" } },
+    { "name": "version 1 is older", "covers": "8.2", "input": { "v": "1" }, "expect": { "status": "older" } },
+    { "name": "version 6 is newer", "covers": "8.2", "input": { "v": "6" }, "expect": { "status": "newer" } },
+    { "name": "version 5.0 is unreadable", "covers": "8.2", "input": { "v": "5.0" }, "expect": { "status": "unreadable" } },
+    { "name": "version 05 is unreadable", "covers": "8.2", "input": { "v": "05" }, "expect": { "status": "unreadable" } },
+    { "name": "version 0 is unreadable", "covers": "8.2", "input": { "v": "0" }, "expect": { "status": "unreadable" } },
+    { "name": "version x is unreadable", "covers": "8.2", "input": { "v": "x" }, "expect": { "status": "unreadable" } },
+    { "name": "an empty version is unreadable", "covers": "8.2", "input": { "v": "" }, "expect": { "status": "unreadable" } },
+    { "name": "no version is absent", "covers": "8.2", "input": { "v": null }, "expect": { "status": "absent" } },
+
+    {
+      "name": "a full link with a place decodes every key",
+      "covers": "8.1",
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1ODx4tPEMzMzM0&x=fGtaST&g=trMzMzM0&z=120&y=2041-2070&k=FR&o=45.75,4.85&l=sun&w=average&q=sheltered&r=drains&h=town&s=own.65.loam&e=1", "lists": ["temperate", "tropical"] },
+      "expect": {
+        "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false },
+        "state": {
+          "climate": "temperate", "country": "FR", "room": "small", "plot_m2": 120, "period": "2041-2070",
+          "spot": { "light": "sun", "water": "average", "wind": "sheltered", "ground": "drains", "height": "town" },
+          "soil": { "from": "own", "ph": 6.5, "word": null, "texture": "loam" },
+          "members": ["apple", "hazel", "banana"], "removed": ["comfrey"], "guests": [{ "plant": "banana", "list": "tropical" }]
+        },
+        "brings_place": true
+      }
+    },
+    {
+      "name": "a public link decodes with no place",
+      "covers": "8.1, 8.3",
+      "input": { "link": "v=5&c=temperate&m=large&a=obLD1O&e=1", "lists": ["temperate"] },
+      "expect": {
+        "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false },
+        "state": { "climate": "temperate", "country": null, "room": "large", "plot_m2": null, "period": "1991-2020", "spot": null, "soil": null, "members": ["apple"], "removed": [], "guests": [] },
+        "brings_place": false
+      }
+    },
+    {
+      "name": "an unknown key after e is ignored",
+      "covers": "8.1 rule 1",
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1O&e=1&zz=3", "lists": ["temperate"] },
+      "expect": { "same_as": "v=5&c=temperate&m=small&a=obLD1O&e=1" }
+    },
+    {
+      "name": "an unknown key before e is ignored",
+      "covers": "8.1 rule 1",
+      "input": { "link": "v=5&c=temperate&zz=3&m=small&a=obLD1O&e=1", "lists": ["temperate"] },
+      "expect": { "same_as": "v=5&c=temperate&m=small&a=obLD1O&e=1" }
+    },
+    {
+      "name": "the reserved letters n, p and t are ignored",
+      "covers": "8.1 rule 5",
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1O&n=obLD1O&p=Dx4tPE&t=3&e=1", "lists": ["temperate"] },
+      "expect": { "same_as": "v=5&c=temperate&m=small&a=obLD1O&e=1" }
+    },
+    {
+      "name": "an unknown room reads as unsure",
+      "covers": "8.1 rule 2",
+      "input": { "link": "v=5&c=temperate&m=huge&a=&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "room": "unsure" } }
+    },
+    {
+      "name": "the pots room is read",
+      "covers": "8.1, 3.1",
+      "input": { "link": "v=5&c=temperate&m=pots&a=&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "room": "pots" } }
+    },
+    {
+      "name": "an unknown climate is dropped",
+      "covers": "8.1 rule 2",
+      "input": { "link": "v=5&c=lunar&m=small&a=&e=1", "lists": [] },
+      "expect": { "state": { "climate": null } }
+    },
+    {
+      "name": "soil segments after the third are ignored",
+      "covers": "8.1 rule 2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&s=own.65.loam.ec2&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "soil": { "from": "own", "ph": 6.5, "word": null, "texture": "loam" } }, "brings_place": true }
+    },
+    {
+      "name": "a soil word in place of a pH is read",
+      "covers": "8.1",
+      "input": { "link": "v=5&c=temperate&m=small&a=&s=own.acid.-&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "soil": { "from": "own", "ph": null, "word": "acid", "texture": null } } }
+    },
+    {
+      "name": "an unknown pH and texture read as -",
+      "covers": "8.1 rule 2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&s=own.x.mud&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "soil": { "from": "own", "ph": null, "word": null, "texture": null } } }
+    },
+    {
+      "name": "a pH above 14 reads as -",
+      "covers": "8.1 rule 2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&s=own.150.loam&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "soil": { "from": "own", "ph": null, "word": null, "texture": "loam" } } }
+    },
+    {
+      "name": "pots soil is read",
+      "covers": "8.1",
+      "input": { "link": "v=5&c=temperate&m=pots&a=&s=pots&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "soil": { "from": "pots" } }, "brings_place": true }
+    },
+    {
+      "name": "an unknown soil value reads as the soil map",
+      "covers": "8.1 rule 2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&s=clay&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "soil": null }, "brings_place": false }
+    },
+    {
+      "name": "a spot value is read up to its first dot",
+      "covers": "8.1 spot grammar, rule 5",
+      "input": { "link": "v=5&c=temperate&m=small&a=&h=higher.650&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "spot": { "light": "unsure", "water": "unsure", "wind": "unsure", "ground": "unsure", "height": "higher" } }, "brings_place": true }
+    },
+    {
+      "name": "an unknown spot word reads as unsure",
+      "covers": "8.1 spot grammar, rule 5",
+      "input": { "link": "v=5&c=temperate&m=small&a=&w=irrigated&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "spot": null }, "brings_place": false }
+    },
+    {
+      "name": "the period 2041-2070 is read",
+      "covers": "8.1 y",
+      "input": { "link": "v=5&c=temperate&m=small&a=&y=2041-2070&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "period": "2041-2070" } }
+    },
+    {
+      "name": "the period 2071-2099 is read",
+      "covers": "8.1 y",
+      "input": { "link": "v=5&c=temperate&m=small&a=&y=2071-2099&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "period": "2071-2099" } }
+    },
+    {
+      "name": "an unknown period reads as today with the period notice",
+      "covers": "8.1 y",
+      "input": { "link": "v=5&c=temperate&m=small&a=&y=2011-2040&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": true }, "state": { "period": "1991-2020" } }
+    },
+    {
+      "name": "a centre year reads as today with the period notice",
+      "covers": "8.1 y",
+      "input": { "link": "v=5&c=temperate&m=small&a=&y=2055&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": true }, "state": { "period": "1991-2020" } }
+    },
+    {
+      "name": "an index reads as today with the period notice",
+      "covers": "8.1 y",
+      "input": { "link": "v=5&c=temperate&m=small&a=&y=1&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": true }, "state": { "period": "1991-2020" } }
+    },
+    {
+      "name": "an empty period reads as today with the period notice",
+      "covers": "8.1 y",
+      "input": { "link": "v=5&c=temperate&m=small&a=&y=&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": true }, "state": { "period": "1991-2020" } }
+    },
+    {
+      "name": "no period reads as today with no notice",
+      "covers": "8.1 y",
+      "input": { "link": "v=5&c=temperate&m=small&a=&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "period": "1991-2020" } }
+    },
+    {
+      "name": "a plot size in whole square metres is read",
+      "covers": "8.1 z",
+      "input": { "link": "v=5&c=temperate&m=small&a=&z=1000000&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "plot_m2": 1000000 } }
+    },
+    {
+      "name": "a plot size of 0 reads as none",
+      "covers": "8.1 z, rule 2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&z=0&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "plot_m2": null } }
+    },
+    {
+      "name": "a plot size above the maximum reads as none",
+      "covers": "8.1 z, rule 2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&z=1000001&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "plot_m2": null } }
+    },
+    {
+      "name": "a decimal plot size reads as none",
+      "covers": "8.1 z, rule 2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&z=12.5&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "plot_m2": null } }
+    },
+    {
+      "name": "a required key this decoder does not know gives the newer notice with the plants restored",
+      "covers": "8.1 rule 3, 8.2",
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1O&u=i&i=dry&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": true, "unreadable": false, "period": false }, "state": { "members": ["apple"] } }
+    },
+    {
+      "name": "a required key this decoder knows gives no notice",
+      "covers": "8.1 rule 3",
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1O&u=l,s&l=sun&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "members": ["apple"] } }
+    },
+    {
+      "name": "an older link restores nothing",
+      "covers": "8.2",
+      "input": { "link": "v=4&c=temperate&k=FR&l=sun&s=unsure&w=unsure&m=small&a=obLD1O&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": true, "newer": false, "unreadable": false, "period": false }, "state": { "members": [], "spot": null, "soil": null, "country": null } }
+    },
+    {
+      "name": "a newer link restores nothing",
+      "covers": "8.2",
+      "input": { "link": "v=6&c=temperate&m=small&a=obLD1O&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": true, "unreadable": false, "period": false }, "state": { "climate": null, "members": [] } }
+    },
+    {
+      "name": "a version that is not a whole number restores nothing",
+      "covers": "8.2",
+      "input": { "link": "v=5.1&c=temperate&m=small&a=obLD1O&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": true, "period": false }, "state": { "climate": null, "members": [] } }
+    },
+    {
+      "name": "no version with plants is unreadable",
+      "covers": "8.2",
+      "input": { "link": "c=temperate&m=small&a=obLD1O&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": true, "period": false }, "state": { "climate": null, "members": [] } }
+    },
+    {
+      "name": "no version and no plants is no palette link",
+      "covers": "8.2",
+      "input": { "link": "c=temperate&m=small", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "climate": null, "members": [] } }
+    },
+    {
+      "name": "an ended member list with no readable token is unreadable",
+      "covers": "8.2",
+      "input": { "link": "v=5&c=temperate&m=small&a=!!!!!!&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": true, "period": false }, "state": { "climate": null, "members": [] } }
+    },
+    {
+      "name": "an empty member list is an empty palette, not unreadable",
+      "covers": "8.2",
+      "input": { "link": "v=5&c=temperate&m=small&a=&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "climate": "temperate", "members": [] } }
+    },
+    {
+      "name": "a token no list knows is counted, not unreadable",
+      "covers": "8.2",
+      "input": { "link": "v=5&c=temperate&m=small&a=3q2-7w&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 1, "cut": false, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "climate": "temperate", "members": [] } }
+    },
+    {
+      "name": "good tokens followed by garbage are read up to the cut",
+      "covers": "8.2",
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1O!!&e=1", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": true, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "members": ["apple"] } }
+    },
+    {
+      "name": "a link without its end is read up to the cut",
+      "covers": "8.2",
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1ODx4", "lists": ["temperate"] },
+      "expect": { "notice": { "unknown_count": 0, "cut": true, "outdated": false, "newer": false, "unreadable": false, "period": false }, "state": { "members": ["apple"] } }
+    },
+    {
+      "name": "every answer unsure brings no place",
+      "covers": "8.3",
+      "input": { "link": "v=5&c=temperate&m=small&a=&l=unsure&w=unsure&q=unsure&r=unsure&h=unsure&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "spot": null, "soil": null }, "brings_place": false }
+    },
+    {
+      "name": "a room and a plot size alone bring no place",
+      "covers": "8.3",
+      "input": { "link": "v=5&c=temperate&m=field&a=&z=5000&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "room": "field", "plot_m2": 5000 }, "brings_place": false }
+    },
+    {
+      "name": "a country alone brings no place",
+      "covers": "8.3",
+      "input": { "link": "v=5&c=temperate&m=small&a=&k=FR&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "country": "FR" }, "brings_place": false }
+    },
+    {
+      "name": "a country with a light answer brings a place",
+      "covers": "8.3",
+      "input": { "link": "v=5&c=temperate&m=small&a=&k=FR&l=sun&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "country": "FR" }, "brings_place": true }
+    },
+    {
+      "name": "a cell alone brings a place",
+      "covers": "8.3",
+      "input": { "link": "v=5&c=temperate&m=small&a=&o=45.75,4.85&e=1", "lists": ["temperate"] },
+      "expect": { "brings_place": true }
+    },
+    {
+      "name": "a map soil value brings no place",
+      "covers": "8.3",
+      "input": { "link": "v=5&c=temperate&m=small&a=&s=map&e=1", "lists": ["temperate"] },
+      "expect": { "state": { "soil": null }, "brings_place": false }
+    },
+
+    {
+      "name": "the public form holds no place keys",
+      "covers": "8.1, 8.3",
+      "input": { "state": { "climate": "temperate", "country": "FR", "room": "small", "plot_m2": 120, "period": "1991-2020", "place": "lyon_full", "members": ["apple", "hazel"], "removed": ["comfrey"], "guests": [] }, "place": false, "origin": "45.75,4.85", "lists": ["temperate"] },
+      "expect": { "link": "v=5&c=temperate&m=small&a=obLD1ODx4tPE&x=fGtaST&z=120&e=1" }
+    },
+    {
+      "name": "with the place the private part follows y and precedes e",
+      "covers": "8.1",
+      "input": { "state": { "climate": "temperate", "country": "FR", "room": "small", "plot_m2": 120, "period": "2041-2070", "place": "lyon_full", "members": ["apple", "hazel", "banana"], "removed": ["comfrey"], "guests": [{ "plant": "banana", "list": "tropical" }] }, "place": true, "origin": "45.75,4.85", "lists": ["temperate", "tropical"] },
+      "expect": { "link": "v=5&c=temperate&m=small&a=obLD1ODx4tPEMzMzM0&x=fGtaST&g=trMzMzM0&z=120&y=2041-2070&k=FR&o=45.75,4.85&l=sun&w=average&q=sheltered&r=drains&h=town&s=own.65.loam&e=1" }
+    },
+    {
+      "name": "unanswered spot questions and the soil map are not written",
+      "covers": "8.1",
+      "input": { "state": { "climate": "temperate", "country": null, "room": "unsure", "plot_m2": null, "period": "1991-2020", "place": "shade_only", "members": [], "removed": [], "guests": [] }, "place": true, "origin": null, "lists": ["temperate"] },
+      "expect": { "link": "v=5&c=temperate&m=unsure&a=&l=shade&e=1" }
+    },
+    {
+      "name": "pots soil is written as pots",
+      "covers": "8.1",
+      "input": { "state": { "climate": "temperate", "country": null, "room": "pots", "plot_m2": 6, "period": "1991-2020", "place": "pots", "members": [], "removed": [], "guests": [] }, "place": true, "origin": null, "lists": ["temperate"] },
+      "expect": { "link": "v=5&c=temperate&m=pots&a=&z=6&s=pots&e=1" }
+    },
+    {
+      "name": "a soil word is written in place of a pH",
+      "covers": "8.1",
+      "input": { "state": { "climate": "temperate", "country": null, "room": "small", "plot_m2": null, "period": "1991-2020", "place": "acid_word", "members": [], "removed": [], "guests": [] }, "place": true, "origin": null, "lists": ["temperate"] },
+      "expect": { "link": "v=5&c=temperate&m=small&a=&s=own.acid.-&e=1" }
+    },
+    {
+      "name": "today is not written",
+      "covers": "8.1 y",
+      "input": { "state": { "climate": "temperate", "country": null, "room": "small", "plot_m2": null, "period": "1991-2020", "place": "unsure", "members": ["apple"], "removed": [], "guests": [] }, "place": true, "origin": null, "lists": ["temperate"] },
+      "expect": { "link": "v=5&c=temperate&m=small&a=obLD1O&e=1" }
+    },
+    {
+      "name": "a removed plant no list knows is dropped",
+      "covers": "8.1 x",
+      "input": { "state": { "climate": "temperate", "country": null, "room": "small", "plot_m2": null, "period": "1991-2020", "place": "unsure", "members": ["apple"], "removed": ["gone"], "guests": [] }, "place": false, "origin": null, "lists": ["temperate"] },
+      "expect": { "link": "v=5&c=temperate&m=small&a=obLD1O&e=1" }
+    }
+  ]
+}

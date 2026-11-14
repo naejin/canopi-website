@@ -6,9 +6,9 @@
 // - undo: Undo puts it back (in the Snapshot); a function says what Undo writes from the value
 //   before and the value now. endsUndo: a change to it ends the Undo offer (SNAP_KEYS).
 // - saved: part of the Consortium the save keeps and Change site sets aside. The save is the link's
-//   fragment (persist.ts saveRecord), so a saved field is in the link, under its own name in the core
-//   ShareState (lib/consortium/state.ts encodeLink and decodeLink write and read the #v=4 pairs), and
-//   watched as 'reader'. link: how it goes in (`put`, default: as it is; persist.ts shareState) and
+//   public fragment plus its private place (persist.ts saveRecord), so a saved field is in the link,
+//   under its own name in the core ShareState (lib/consortium/state.ts encodeLink and decodeLink write
+//   and read the link v5 pairs), and watched as 'reader'. link: how it goes in (`put`, default: as it is; persist.ts shareState) and
 //   comes back (`take`, default: the link's value, or the current one when the link has none;
 //   restore.ts applyDecoded).
 // - watched, for a field not saved: 'reader' (a write to it is the reader acting, and the save, the
@@ -21,13 +21,14 @@
 // state with one more field and sees it round-trip through the schema.
 import { batch, signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
-import type { ClimateZone, PhaseOrd, PlantId, ShareState, Site } from '../../../lib/consortium/index.ts';
-import { MAX_CROPS } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, PeriodId, PhaseOrd, PlantId, Room, ShareState, Site, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
+import { emptyPlace, periodIds, MAX_CROPS } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource, View } from '../store.ts';
 
-// What the link's put and take may read: the reader's "include my location" tick (share) and where
-// a decoded link or save came from (apply).
-export interface LinkOptions { location?: boolean; countryFrom?: Extract<CountrySource, 'link' | 'chosen'> }
+// What the link's put and take may read: the reader's "Include my place" tick (share: place), where a
+// decoded link or save came from (apply: countryFrom) and whether it brings a place (apply:
+// bringsPlace, core state.ts bringsPlace: its cell, or a spot or soil answer; plant-palette-architecture 8.3).
+export interface LinkOptions { place?: boolean; countryFrom?: Extract<CountrySource, 'link' | 'chosen'>; bringsPlace?: boolean }
 export interface Field<T> {
   initial: () => T;
   undo?: true | ((before: T, now: T) => T);
@@ -96,30 +97,53 @@ export function defineState<F extends Fields>(fields: F) {
 
 // ---- the consortium's fields ----
 
-// Every site question starts at "unsure" (design check A7): it filters nothing.
+// The Site the old site questions read (site.ts fits()), every answer "unsure" (design check A7). Not
+// stored since PP-B commit 0: store.ts derives `site` from room, spot and soil (place.ts siteFor).
 export const DEFAULT_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 
 // (Each field is checked against Field with `satisfies`, so the declaration costs no code.)
 const PLANT_LIST = { initial: (): PlantId[] => [], plants: true } as const satisfies Field<PlantId[]>;
+const TODAY: PeriodId = periodIds[0];
 
 // The consortium: every field here is saved, or a plant list (a test checks it).
 export const CONSORTIUM_FIELDS = {
   // The chosen climate; a link without one leaves it as it is.
   climate: { initial: (): ClimateZone | null => null, endsUndo: true, saved: true } satisfies Field<ClimateZone | null>,
-  // A guessed country is never written (owner row 2026-10-28); a country from the location only with
-  // the reader's "include my location" tick (P5 owner answer 5). A link's country is labelled by
-  // where it came from.
+  // In a link only with "Include my place" (`k`, plant-palette-architecture 8.1), and only from a
+  // chosen, location or link source, never a guess (owner row 2026-10-28). A link's country applies
+  // only when the link brings a place (`k` alone keeps the reader's), labelled by where it came from.
   country: {
     initial: (): Country => ({ code: null, source: null }), saved: true,
     link: {
-      put: (v: Country, o: LinkOptions) => ((v.source === 'guess' ? false : v.source === 'location' ? o.location : true) ? v.code : null),
-      take: (s: ShareState, now: Country, o: LinkOptions): Country => (s.country ? { code: s.country, source: o.countryFrom ?? 'chosen' } : now),
+      put: (v: Country, o: LinkOptions) => (o.place && v.source !== null && v.source !== 'guess' ? v.code : null),
+      take: (s: ShareState, now: Country, o: LinkOptions): Country => (s.country && o.bringsPlace ? { code: s.country, source: o.countryFrom ?? 'chosen' } : now),
     },
   } satisfies Field<Country>,
-  site: { initial: (): Site => ({ ...DEFAULT_SITE }), saved: true } satisfies Field<Site>,
+  // The place (plant-palette-architecture 3.6): room (`m`) and plot size (`z`) are the palette's,
+  // always in the link and the save, and a link's win; the spot and the soil go in a link only with
+  // "Include my place" and the save keeps them as its private `place`. A link that brings a place
+  // gives its whole place; one that brings none is judged against the open palette's.
+  room: { initial: (): Room => 'unsure', saved: true } satisfies Field<Room>,
+  plot: { initial: (): number | null => null, saved: true, link: { take: (s: ShareState) => s.plot } } satisfies Field<number | null>,
+  spot: {
+    initial: (): Spot => ({ ...emptyPlace.spot }), saved: true,
+    link: {
+      put: (v: Spot, o: LinkOptions) => (o.place ? v : null),
+      take: (s: ShareState, now: Spot, o: LinkOptions): Spot => s.spot ?? (o.bringsPlace ? { ...emptyPlace.spot } : now),
+    },
+  } satisfies Field<Spot>,
+  soil: {
+    initial: (): SoilAnswer => ({ from: 'map' }), saved: true,
+    link: {
+      put: (v: SoilAnswer, o: LinkOptions) => (o.place ? v : null),
+      take: (s: ShareState, now: SoilAnswer, o: LinkOptions): SoilAnswer => s.soil ?? (o.bringsPlace ? { from: 'map' } : now),
+    },
+  } satisfies Field<SoilAnswer>,
+  // The period the page is shown for (`y`; saved and shared, not in Undo); a link's wins (absent: today).
+  period: { initial: (): PeriodId => TODAY, saved: true, link: { take: (s: ShareState) => s.period } } satisfies Field<PeriodId>,
   // The consortium, in the order added.
   members: PLANT_LIST,
-  // Pinned: a new suggestion keeps them.
+  /** @deprecated PP-B commit 0: Kept is not in link v5 (a restore empties it); b3 removes it with its readers. */
   kept: PLANT_LIST,
   // Taken out by the reader: a new suggestion leaves them out.
   removed: PLANT_LIST,
@@ -131,9 +155,9 @@ export const CONSORTIUM_FIELDS = {
       take: (s: ShareState) => Object.fromEntries(s.guests.map((g) => [g.id, g.from])),
     },
   } satisfies Field<Partial<Record<PlantId, ClimateZone>>>,
-  // The crop examples the reader ticked (Start), as plant ids; a link keeps three.
+  /** @deprecated PP-B commit 0: Main crops are not in link v5; b3 removes them with their readers. */
   crops: { ...PLANT_LIST, link: { put: (v: PlantId[]) => v.slice(0, MAX_CROPS) } } satisfies Field<PlantId[]>,
-  // The stage the side view, stepper and print show; a link without one leaves it as it is.
+  /** @deprecated PP-B commit 0: the stage is not in link v5 (a restore keeps the page's); b3 removes it. */
   stage: { initial: (): PhaseOrd => 0, saved: true } satisfies Field<PhaseOrd>,
 };
 

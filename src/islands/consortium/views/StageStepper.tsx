@@ -13,7 +13,7 @@
 import { signal } from '@preact/signals';
 import { stage } from '../store.ts';
 import { T } from '../strings.ts';
-import { stepStage } from './tracks.ts';
+import { stepStage } from './kit/phase.ts';
 import { phasePlain, phaseTerm } from './kit/names.ts';
 import { ChevronIcon } from './kit/icons.tsx';
 

@@ -6,10 +6,24 @@
 // - stage words: plain time first, the app's term beside it ("Years 1–3 · Placenta 3", owner row
 //   "Phases" 2026-10-27); a span reads "Years 3–15 → 60 years on · Secondary 1 – Climax".
 import type { ClimateZone, Site, SiteKey, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
-import { phases } from '../../../../lib/consortium/index.ts';
+import { phases, spanOf } from '../../../../lib/consortium/index.ts';
 import { T, nameOf, pageLang } from '../../strings.ts';
 import { formatNumber } from '../../format.ts';
-import { spanOf } from './span.ts';
+
+// Names sort in the page's language ("Äpfel" before "Birne" in German, after "Zitron" in Swedish):
+// one collator per language, made once (moved from views/tracks.ts, PP-B commit 0).
+export type Order = (a: Taxon, b: Taxon) => number;
+const collators = new Map<string, Intl.Collator>();
+export function collatorFor(lang: string): Intl.Collator {
+  let c = collators.get(lang);
+  if (!c) { c = new Intl.Collator(lang); collators.set(lang, c); }
+  return c;
+}
+// Plants by name with one collator per page language, shared by every view.
+export const nameOrder = (nameOf: (t: Taxon) => string, lang: string): Order => {
+  const c = collatorFor(lang);
+  return (a, b) => c.compare(nameOf(a), nameOf(b));
+};
 
 // A plant's name in the page language, else English, else its scientific name. Defined in strings.ts,
 // because the store reads it and the state layer imports no view (layer rule L2); re-exported here so

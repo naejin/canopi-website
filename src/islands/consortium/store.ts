@@ -5,11 +5,12 @@
 // inside the computed bodies, the core calls they own (matrix: S1 lib/consortium/matrix.ts; flags:
 // S1 conflicts and site).
 import { batch, computed, effect, signal } from '@preact/signals';
-import type { CellSpan, ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PlantId, RangeRule, Scenario, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon } from '../../lib/consortium/index.ts';
-import { asGuest, buildMatrix, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, needsMarkProviders, zoneOf } from '../../lib/consortium/index.ts';
+import type { CellSpan, ClimateZone, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, Matrix, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import { asGuest, buildMatrix, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, loadVerdictRule, needsMarkProviders, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
+import type { TextureId as ReaderTexture } from '../../lib/climate/soil.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
 import { state } from './state/schema.ts';
@@ -33,11 +34,12 @@ export interface Load { status: LoadStatus; error: LoadFailure | null }
 // ---- state ----
 // The consortium's fields are declared once in state/schema.ts (what each is, whether Undo, the save
 // and the link hold it, who watches it); their signals are re-exported here under their names.
-// climate, country, site; the plant lists members (in the order added), kept (pinned: a new suggestion
-// keeps them), removed (taken out: a new suggestion leaves them out), guests (from another climate's
-// list, A9) and crops (the crop examples the reader ticked on Start); the stage the side view, stepper
-// and print show; the view; setAside (see below).
-export const { climate, country, site, crops, members, kept, removed, guests, view, stage, setAside } = state.signals;
+// climate, country; the place (PP-B commit 0, plant-palette-architecture 3.6): room, plot (m²), spot,
+// soil and the period shown; the plant lists members (in the order added), kept (pinned: a new
+// suggestion keeps them; deprecated), removed (taken out: a new suggestion leaves them out), guests
+// (from another climate's list, A9) and crops (the crop examples the reader ticked on Start;
+// deprecated); the stage the side view, stepper and print show (deprecated); the view; setAside.
+export const { climate, country, room, plot, spot, soil, period, crops, members, kept, removed, guests, view, stage, setAside } = state.signals;
 export const sheet = signal<Sheet | null>(null);
 // While Start shows (view 'start'), the signals above are the Start draft: the picked card, its
 // crops and site answers (and, on the consortium's own card, its plants, which Suggest and a paste
@@ -51,9 +53,32 @@ export const load = signal<Load>({ status: 'idle', error: null });
 export const location = signal<SiteLocation | null>(null);
 // The future check's scenario (S5d may expose a control); SSP2-4.5 by default (owner row).
 export const scenario = signal<Scenario>(DEFAULT_SCENARIO);
-// The climate reader's lookup (src/lib/climate) must stay assignable to the core's view of it.
+// The climate reader's lookup (src/lib/climate) must stay assignable to the core's view of it, and
+// the core's texture classes equal the reader's (types.ts textureIds; plant-palette-architecture 3.1).
 const readerFitsCore = (l: ReaderLookup): CoreLookup => l;
 void readerFitsCore;
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+const texturesAgree: Same<CoreTexture, ReaderTexture> = true;
+void texturesAgree;
+
+// The old site answers (site.ts fits()'s Site), derived from the place (place.ts siteFor), never
+// stored: its readers (Add, the matrix, the flags, rules/site-fit.ts) read `site.value`; Start's
+// three questions write it, each answer into the place (light → spot.light, water → spot.water, a
+// soil word → an own answer, "not sure" → the soil map, room → room). Removed in PP-C with its readers.
+const siteNow = computed<Site>(() => siteFor({ room: room.value, plotM2: plot.value, spot: spot.value, soil: soil.value }, location.value?.lookup ?? null));
+function writeSite(next: Site): void {
+  batch(() => {
+    room.value = next.room;
+    spot.value = { ...spot.peek(), light: next.light, water: next.water };
+    const now = soil.peek(), word = now.from === 'own' && now.ph === null && now.texture === null ? now.word : null;
+    if (next.soil !== (word ?? 'unsure')) soil.value = next.soil === 'unsure' ? { from: 'map' } : { from: 'own', ph: null, word: next.soil, texture: null };
+  });
+}
+export const site = {
+  get value(): Site { return siteNow.value; },
+  set value(next: Site) { writeSite(next); },
+  peek: (): Site => siteNow.peek(),
+};
 
 // ---- data (set once the database is open; S1's load fills them) ----
 export const source = signal<PlantSource | null>(null);
@@ -128,7 +153,14 @@ export function wantSuggest(): void {
     suggestFailed.value = true;
   });
 }
-const withRule = <T>(p: Promise<T>): Promise<T> => (siteClimate.peek() && !rangeRule.peek() && rangeLoad ? Promise.all([p, rangeLoad]).then(([x]) => x) : p);
+// A pool read waits for the rules that judge it: the range rule while it loads for a site climate,
+// and the verdict rule's chunk while it loads (PP-B commit 0; both settle, never reject).
+const withRule = <T>(p: Promise<T>): Promise<T> => {
+  const waits: Promise<unknown>[] = [];
+  if (siteClimate.peek() && !rangeRule.peek() && rangeLoad) waits.push(rangeLoad);
+  if (!verdictRule.peek() && verdictLoad) waits.push(verdictLoad);
+  return waits.length ? Promise.all([p, ...waits]).then(([x]) => x as T) : p;
+};
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
 // (Its load starts in start(), at the end of this file, once the location has a climate.)
@@ -148,6 +180,57 @@ export const fitPool = computed<Taxon[] | null>(() => {
   const p = pool.value, rule = rangeRule.value;
   return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
 });
+
+// ---- the verdict seams (PP-B commit 0; plant-palette-architecture 4) ----
+// The verdict rule (core verdict.ts) arrives with its own chunk (role `verdict`, core verdict-load.ts
+// loadVerdictRule), off the first run, asked for once the site location has a climate (start(), with
+// the range rule; b2 decides the final trigger). Its bodies are b2's: until then every plant is "not
+// checked". verdictFailed: its chunk did not load (b2 says it).
+export const verdictRule = signal<VerdictRule | null>(null);
+/** @public seam for b2 (the verdict chunk refused, PP-B20), which drops the tag. */
+export const verdictFailed = signal(false);
+let verdictLoad: Promise<void> | null = null;
+// Its load always settles, so a pool read waiting for it (withRule) never fails with it.
+function wantVerdict(): void {
+  if (verdictLoad) return;
+  verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; }, (err: unknown) => {
+    console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
+    verdictFailed.value = true;
+  });
+}
+// What every verdict reads: the palette's place, the location's lookup, the period shown, the
+// scenario, and the members' canopy (shade relief, 3.2).
+export const verdictContext = computed<VerdictContext>(() => ({
+  place: { room: room.value, plotM2: plot.value, spot: spot.value, soil: soil.value },
+  lookup: location.value?.lookup ?? null,
+  period: period.value,
+  scenario: scenario.value,
+  canopy: canopyOf(memberTaxa.value),
+}));
+/** @public seam for b2 (the palette page reads it), which drops the tag. */
+export const memberVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
+  const rule = verdictRule.value;
+  return rule ? rule.verdicts(memberTaxa.value, verdictContext.value) : null;
+});
+// The pool's verdicts, guests' lists included once read (b1b's count, Find, the holes' fillers).
+export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
+  const rule = verdictRule.value, p = pool.value;
+  return rule && p ? rule.verdicts([...p, ...guestTaxa.value], verdictContext.value) : null;
+});
+// The pool plants, guests included, that fit or need a second look for the page's period (levels kept
+// apart so the line can split them later); null until the verdicts are here. b2 writes its rule
+// (a borrowed list keeps every plant whose climate range includes the site); b1b reads it.
+/** @public seam for b1b, which drops the tag. */
+export const countFits = computed<{ fits: number; look: number; of: number } | null>(() => {
+  const v = poolVerdicts.value;
+  if (!v) return null;
+  let fits = 0, look = 0;
+  for (const x of v.values()) { if (x.level === 'fits') fits++; else if (x.level === 'look') look++; }
+  return { fits, look, of: v.size };
+});
+// Whether the browser is offline (b2 wires navigator.onLine and its events; App.tsx shows the line).
+/** @public seam for b2, which drops the tag. */
+export const offline = signal(false);
 
 // The guests as plants: each with its home climate's placement and a guest origin (A9; ADR-6
 // asGuest), once that climate's pool is read.
@@ -478,6 +561,8 @@ export function start(): void {
       rangeBroken.value = true;
       chunkToast('range.unavailable');
     });
+    // The verdict rule's chunk, on the same trigger (PP-B commit 0; b2 may move it).
+    wantVerdict();
   });
   // The mark providers' chunk, loaded once a mark can show (markProviders, marksBroken).
   effect(() => {

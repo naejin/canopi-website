@@ -1,4 +1,4 @@
-// The layer rules L1-L9 of .dependency-cruiser.cjs, run on a fixture tree with one breach per rule and
+// The layer rules L1-L10 of .dependency-cruiser.cjs, run on a fixture tree with one breach per rule and
 // one allowed neighbour per rule, plus the edge shapes probe P-E4a found (design check E6 §7.2, A24, R7):
 // `import('./x.ts') as T` must stay an edge, a file holding both `typeof import('x')` and `import('x')`
 // must keep the runtime edge, and a type-only back edge must not close a cycle.
@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +35,6 @@ const FILES = {
   'src/islands/consortium/data/y.ts': "import { a } from '../../../lib/consortium/a.ts';\nexport const y = a;\n",
   // L4, allowed: index.ts
   'src/islands/consortium/views/v.tsx': "import { a } from '../../../lib/consortium/a.ts';\nimport { i } from '../../../lib/consortium/index.ts';\nexport const v = [a, i];\n",
-  'src/lib/consortium/index.ts': 'export const i = 1;\n',
   // L5, allowed: kit → kit, kit → strings
   'src/islands/consortium/views/kit/k.ts': "import { v } from '../v.tsx';\nimport { k2 } from './k2.ts';\nimport { str } from '../../strings.ts';\nexport const k = [v, k2, str];\n",
   'src/islands/consortium/views/kit/k2.ts': 'export const k2 = 1;\n',
@@ -49,12 +48,17 @@ const FILES = {
   'src/islands/consortium/test-hook.ts': 'export const hook = 1;\n',
   'src/islands/consortium/views/lazy.tsx': "import { hook } from '../test-hook.ts';\nexport const l = hook;\n",
   'src/islands/consortium/main.ts': "import { hook } from './test-hook.ts';\nexport const m = hook;\n",
+  // L10 (warn), allowed: verdict.ts, and index.ts for re-exports
+  'src/lib/consortium/site.ts': 'export const fits = 1;\n',
+  'src/lib/consortium/holes.ts': "import { fits } from './site.ts';\nexport const h = fits;\n",
+  'src/lib/consortium/verdict.ts': "import { fits } from './site.ts';\nexport const vd = fits;\n",
+  'src/lib/consortium/index.ts': "export { fits } from './site.ts';\nexport const i = 1;\n",
   // L9
   'src/pages/z.ts': "import { tool } from '../../scripts/tool.mjs';\nexport const z = tool;\n",
   'scripts/tool.mjs': 'export const tool = 1;\n',
 };
 
-test('dependency-cruiser rules L1-L9 catch one breach each, allow their neighbours, and see the P-E4a edge shapes', () => {
+test('dependency-cruiser rules L1-L10 catch one breach each, allow their neighbours, and see the P-E4a edge shapes', () => {
   const dir = mkdtempSync(join(tmpdir(), 'arch-rules-'));
   try {
     for (const [path, text] of Object.entries(FILES)) {
@@ -81,8 +85,18 @@ test('dependency-cruiser rules L1-L9 catch one breach each, allow their neighbou
       'L9-no-build-scripts-in-src|src/pages/z.ts|scripts/tool.mjs',
     ]);
     assert.ok(scanned < 100, `scanned ${scanned}: the symlinked node_modules is not walked`);
-    assert.deepEqual(keys, [], 'no warn rule left (E6 chunk 5): every breach is an error');
+    assert.deepEqual(keys, ['L10-one-verdict|src/lib/consortium/holes.ts|src/lib/consortium/site.ts'], 'the one warn rule, L10 (PP-B commit 0): holes.ts breaches it, verdict.ts and index.ts are allowed');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// The line beside L10 (warn, plant-palette-architecture: only place.ts reads lookup.periods, through
+// climateFor, so every rule reads the same climate): a diagnostic, never a failure, until PP-C c2.
+test('only place.ts reads lookup.periods in the core (warn)', (t) => {
+  const dir = join(ROOT, 'src/lib/consortium');
+  const readers = readdirSync(dir).filter((f) => /\.ts$/.test(f) && /\.periods\b/.test(readFileSync(join(dir, f), 'utf8')));
+  assert.ok(readers.includes('place.ts'), 'place.ts climateFor reads lookup.periods');
+  const others = readers.filter((f) => f !== 'place.ts');
+  if (others.length) t.diagnostic(`warn: lookup.periods is read outside place.ts in ${others.join(', ')} (climateFor is the one reader; error in PP-C c2)`);
 });

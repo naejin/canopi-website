@@ -47,6 +47,33 @@
   --soil-worm: #B5705C;
   --soil-worm-band: #9A5A48;
 
+  /* Plant palette meaning colours (plant-palette-architecture 3.5; coordinator row "Plant palette
+     colour tokens" in knowledge/decisions/consortium-user-decisions.md, contrast figures there).
+     Colour carries meaning, never alone: every role, level and light band also has an icon or a word.
+     Roles (text 4.5:1 on --bg and --surface): helpers from the app (--color-medicinal); food and soil
+     take Fable's value (the app's --color-edible #5A7D3A and --color-nitrogen #3A7D7D give 3.92 and
+     3.94 on --bg); mulch, ground and shelter are Fable's. */
+  --role-food: #4F7132;
+  --role-soil: #2F7070;
+  --role-helpers: #7B5090;
+  --role-mulch: #6B4F3A;
+  --role-ground: #6E6A1A;
+  --role-shelter: #4E6272;
+  /* Light levels: the app's stratum colours (STRATUM_DISPLAY_COLORS), plant data, not themed. Fills
+     only, always with --light-outline and a text label beside them; never text, never a thin mark. */
+  --light-emergent: #E69F00;
+  --light-high: #009E73;
+  --light-medium: #0072B2;
+  --light-low: #CC79A7;
+  --light-none: #5E5A52;
+  --light-outline: var(--text);
+  /* Verdict levels: a second look is the warning colour, outside its range the danger colour; fits
+     and not checked are told by icon and words in the text colours. */
+  --level-look: var(--warning);
+  --level-outside: var(--danger);
+  --level-fits: var(--text);
+  --level-unknown: var(--text-secondary);
+
   --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Literata', 'Literata Fallback', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
   --radius: 7px;
@@ -96,6 +123,12 @@
   --soil-hypha: #EADCC0;
   --soil-worm: #D08A74;
   --soil-worm-band: #E3A08A;
+  --role-food: #8BAA5E;
+  --role-soil: #6BA3A3;
+  --role-helpers: #B88BC4;
+  --role-mulch: #B79E84;
+  --role-ground: #B8B060;
+  --role-shelter: #98ACBC;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -141,5 +174,11 @@
     --soil-hypha: #EADCC0;
     --soil-worm: #D08A74;
     --soil-worm-band: #E3A08A;
+    --role-food: #8BAA5E;
+    --role-soil: #6BA3A3;
+    --role-helpers: #B88BC4;
+    --role-mulch: #B79E84;
+    --role-ground: #B8B060;
+    --role-shelter: #98ACBC;
   }
 }

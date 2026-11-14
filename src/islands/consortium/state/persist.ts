@@ -2,16 +2,23 @@
 // out of memory.ts; owner row "Memory", 2026-10-27: the shared site climate plus the last consortium
 // on this device; sharing is a link that restores the exact state, with no list of saved designs).
 //
-// - The share link: #v=4 in the address's fragment (core state.ts encodeLink / decodeLink), so it
-//   never reaches a server log. The page keeps the address bar on it while a consortium is shown, so
-//   a reload restores it, and rewrites it after a link with plants no longer in the list (§5).
-// - The last consortium: localStorage STORE, { fragment, at, src }, written on each change (src: whether
-//   its country came from a shared link, so it keeps that label); a visit with no link opens it. A
-//   guide preset (?plant=&climate=, A5) wins over it. An older save (v1's { q, at, src }, or another
-//   link version) gives the "older version" notice once and is removed.
-// - The page's own address: replaceState writes history.state { ct: fragment, src }, so a reload of
-//   the page's own link opens as the save (its country label kept), not as a link someone shared
-//   (v1 bca954c). A link pasted into the open tab (hashchange) is opened (arrival.ts).
+// - The share link: link v5 in the address's fragment (core state.ts encodeLink / decodeLink), so it
+//   never reaches a server log. The address bar holds its public form only (no k o l w q r h s,
+//   plant-palette-architecture 8.3): the page keeps it on the palette shown, so a reload restores it,
+//   and rewrites it after a link with plants no longer in the list (§5).
+// - The last consortium: localStorage STORE, { fragment, place, at, src, country? }, written on each
+//   change: fragment the public v5 form (room `m` and plot `z` live there), place the private place
+//   answers `l w q r h s` (no k, no o), src whether its country came from a shared link, so it keeps
+//   that label; a visit with no link opens it. A guide preset (?plant=&climate=, A5) wins over it. An
+//   older save (v1's { q, at, src }, or a v1–v4 fragment: core linkVersionStatus 'older') gives the
+//   "older version" notice once and is removed; a newer or unreadable one is left untouched.
+// - PLACE_STORE (canopi-place): the reader's last place answers `m z l w q r h s`, written on every
+//   place change the reader makes, read only to seed a palette that starts with no place of its own
+//   (arrival.ts startMemory).
+// - The page's own address: replaceState writes history.state { ct: fragment, src, pl: place }, so a
+//   reload of the page's own link opens as the save (its country label and this tab's place kept),
+//   not as a link someone shared (v1 bca954c). A link pasted into the open tab (hashchange) is opened
+//   (arrival.ts).
 // - The reader's country choice: localStorage COUNTRY_STORE ('FR', or '-' for "No country"), apart
 //   from the consortium. A guess from the browser is shown as a guess, used for the warnings, and
 //   never written, neither here nor in a link (owner row "Climate first, details").
@@ -29,7 +36,7 @@
 // store watcher (watchStore) keeps.
 import { computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, LinkOrigin, PlantId, ShareState } from '../../../lib/consortium/index.ts';
-import { encodeLink, LINK_VERSION } from '../../../lib/consortium/index.ts';
+import { encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
@@ -39,6 +46,7 @@ export const STORE = 'canopi-consortium';
 export const COUNTRY_STORE = 'canopi-country';
 export const SITE_CLIMATE = 'canopi-climate';
 export const LOCATION_STORE = 'canopi-location';
+export const PLACE_STORE = 'canopi-place';
 export const NO_COUNTRY = '-';
 
 // ---- storage, guarded ----
@@ -85,44 +93,48 @@ const countryFrom = (c: Country = store.country.peek()): CountryFrom =>
 // ---- the save record ----
 
 // src: where the saved consortium's country came from ('link': a shared link; 'chosen'; 'location':
-// the site location (P5 owner answer 5), kept as `country` beside the fragment, never in it; null: none).
-export interface SavedRecord { fragment: string; at: string; src: CountryFrom; country?: string }
-export const saveRecord = (fragment: string, at: string, src: CountryFrom, country: string | null = null): string =>
-  JSON.stringify(src === 'location' && country ? { fragment, at, src, country } : { fragment, at, src });
+// the site location (P5 owner answer 5); null: none). country: a location's or a link's country, kept
+// beside the fragment, never in it (the fragment is public: `k` goes only in a link with "Include my
+// place"). place: the private place answers (core encodePlace without k and o; '' for none).
+export interface SavedRecord { fragment: string; place: string; at: string; src: CountryFrom; country?: string }
+const BESIDE: readonly CountryFrom[] = ['location', 'link'];
+export const saveRecord = (fragment: string, at: string, src: CountryFrom, country: string | null = null, place = ''): string =>
+  JSON.stringify(BESIDE.includes(src) && country ? { fragment, place, at, src, country } : { fragment, place, at, src });
 const versionOf = (fragment: string): string | null => new URLSearchParams(fragment).get('v');
 const parsed = (text: string | null): Record<string, unknown> | null => {
   if (!text) return null;
   const v = attempt(() => JSON.parse(text) as unknown);
   return v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
 };
-// A record read back, or null when it is not one (an older format, another link version, damaged JSON).
+// A record read back, or null when it is not one: an older format, a fragment that is not of the
+// current link version (older, newer, unreadable, or no `v` at all: core linkVersionStatus), damaged
+// JSON. A record without `place` reads with every place answer unsure ('').
 export function readRecord(text: string | null): SavedRecord | null {
   const v = parsed(text);
   if (!v) return null;
-  const { fragment, at, src, country } = v;
+  const { fragment, place, at, src, country } = v;
   if (typeof fragment !== 'string' || !fragment.length || fragment.length >= 20_000 || typeof at !== 'string') return null;
-  const ver = versionOf(fragment);
-  if (ver !== null && ver !== String(LINK_VERSION)) return null;
+  if (linkVersionStatus(versionOf(fragment)) !== 'current') return null;
   const from = fromOf(src);
-  return from === 'location' && typeof country === 'string' && /^[A-Z]{2}$/.test(country) ? { fragment, at, src: from, country } : { fragment, at, src: from };
+  const pl = typeof place === 'string' && place.length < 2_000 ? place : '';
+  return BESIDE.includes(from) && typeof country === 'string' && /^[A-Z]{2}$/.test(country) ? { fragment, place: pl, at, src: from, country } : { fragment, place: pl, at, src: from };
 }
-// A save from an older version of the tool: v1's { q, at, src }, or a record of another link version.
+// A save from an older version of the tool, said once and removed: v1's { q, at, src }, or a record
+// whose fragment is v1–v4 (owner 2026-11-14). A newer or unreadable one is not older: left untouched.
 export function oldRecord(text: string | null): boolean {
   const v = parsed(text);
   if (!v) return false;
   if (typeof v.q === 'string') return true;
   if (typeof v.fragment !== 'string') return false;
-  const ver = versionOf(v.fragment);
-  return ver !== null && ver !== String(LINK_VERSION);
+  return linkVersionStatus(versionOf(v.fragment)) === 'older';
 }
 
 // ---- the share state ----
 
-// The state a link or the save holds, each field as state/schema.ts puts it. A guessed country is
-// never written (owner row 2026-10-28); a country from the location only with the reader's "include
-// my location" tick (P5 owner answer 5; S5b passes { location: true }).
-export function shareState(s: ShareInput, { location = false }: { location?: boolean } = {}): ShareState {
-  return schema.share(s, { location }) as unknown as ShareState;
+// The state a link or the save holds, each field as state/schema.ts puts it. place: the reader's
+// "Include my place" tick: the country (never a guess), the spot and the soil go in only with it.
+export function shareState(s: ShareInput, { place = false }: { place?: boolean } = {}): ShareState {
+  return schema.share(s, { place }) as unknown as ShareState;
 }
 
 // The address of a link: the page without its query (a guide preset is used once) and the fragment.
@@ -185,19 +197,37 @@ export function own(shown = false): Consortium | null {
   return store.setAside.peek();
 }
 
-// The current state as a fragment, against the climate's and the guest lists' ids.
-// of: a consortium set aside (Start's draft shows), in place of the store's. origin: the site's cell
-// centre, given only for Share's "include my location" tick: the link then carries `o=` and a country
-// from the location (owner answer 5); the address bar and the save never pass it.
-export function currentFragment(of: Consortium | null = null, { origin = null }: { origin?: LinkOrigin | null } = {}): string | null {
-  const now = of ?? own(true);
-  if (!now) return null;
+// The ids a palette's links are matched against: its climate's and each guest list's.
+function knownOf(now: Consortium): Partial<Record<ClimateZone, PlantId[]>> {
   const known: Partial<Record<ClimateZone, PlantId[]>> = {};
   for (const z of new Set<ClimateZone>([now.climate, ...Object.values(now.guests).filter((x): x is ClimateZone => !!x)])) {
     const p = store.pools.peek()[z];
     if (p) known[z] = p.map((t) => t.id);
   }
-  return encodeLink(shareState(now, { location: origin !== null }), known, { origin });
+  return known;
+}
+// The current state as a fragment, against the climate's and the guest lists' ids.
+// of: a consortium set aside (Start's draft shows), in place of the store's. origin: the site's cell
+// centre, given only with Share's tick: the link then carries `o=`. place: the "Include my place" tick
+// (by default, whether an origin is given: Share's tick until b1a words it), which adds the country,
+// the spot and the soil; the address bar and the save's fragment never pass it.
+export function currentFragment(of: Consortium | null = null, { origin = null, place = origin !== null }: { origin?: LinkOrigin | null; place?: boolean } = {}): string | null {
+  const now = of ?? own(true);
+  if (!now) return null;
+  return encodeLink(shareState(now, { place }), knownOf(now), { origin, place });
+}
+// A palette's private place answers, as the save's `place` and history.state.pl keep them: the spot
+// and the soil, without the country and the cell (core encodePlace).
+export function currentPlace(of: Consortium | null = null): string {
+  const now = of ?? own(true);
+  if (!now) return '';
+  return encodePlace({ ...shareState(now, { place: true }), country: null });
+}
+// The canopi-place seed: room, plot size, spot and soil (`m z l w q r h s`), without the country.
+export function placeSeed(): string {
+  const s = schema.peek(['room', 'plot', 'spot', 'soil']);
+  const pairs = [`m=${s.room}`, ...(s.plot !== null ? [`z=${s.plot}`] : []), encodePlace({ country: null, spot: s.spot, soil: s.soil })].filter(Boolean);
+  return pairs.join('&');
 }
 
 // The save as this page last wrote it, or read it when it opened (openedWith).
@@ -209,7 +239,7 @@ export const openedWith = (raw: string | null): void => { lastSave = raw; };
 let beneath: string | null | undefined;
 const sameSave = (a: string | null, b: string | null): boolean => {
   const x = readRecord(a), y = readRecord(b);
-  return x && y ? x.fragment === y.fragment && x.src === y.src : a === b;
+  return x && y ? x.fragment === y.fragment && x.place === y.place && x.src === y.src : a === b;
 };
 // next: this page's consortium as a record; null: the save removed (Start over, an older save);
 // 'back': the page has no consortium of its own any more, so the save goes back to `beneath`.
@@ -237,8 +267,9 @@ export function writeAddress(force = false): void {
   const mine = own();
   const fragment = mine ? currentFragment(mine) : force ? currentFragment() : null;
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
-  // history.state marks the address as the page's own, so a reload opens it as the save (review 1).
-  const state = fragment ? { ct: fragment, src: countryFrom(mine?.country) } : null;
+  // history.state marks the address as the page's own, so a reload opens it as the save (review 1),
+  // with this tab's place (pl: the save is shared by every tab; plant-palette-architecture 8.3).
+  const state = fragment ? { ct: fragment, src: countryFrom(mine?.country), pl: currentPlace(mine) } : null;
   if (next !== location.href || JSON.stringify(attempt(() => history.state)) !== JSON.stringify(state)) attempt(() => history.replaceState(state, '', next));
 }
 
@@ -250,7 +281,7 @@ function persist(): void {
   if (inFlight.peek() && !own()) return;
   writeAddress();
   const mine = own();
-  writeSave(mine ? saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(mine.country), mine.country.code) : 'back');
+  writeSave(mine ? saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(mine.country), mine.country.code, currentPlace(mine)) : 'back');
 }
 
 // The shown consortium's link, recomputed on every change of what the link holds (Share's field).
@@ -286,6 +317,15 @@ export function watchStore(): void {
   effect(() => {
     void [schema.track(schema.lists.save), store.pools.value];
     untracked(persist);
+  });
+  // canopi-place follows the place the reader gives (a restore applying a link's or a save's place is
+  // not the reader: it seeds nothing).
+  let firstPlace = true;
+  effect(() => {
+    void schema.track(['room', 'plot', 'spot', 'soil']);
+    if (firstPlace) { firstPlace = false; return; }
+    if (quiet) return;
+    untracked(() => memory.write(PLACE_STORE, placeSeed()));
   });
 }
 

@@ -22,7 +22,7 @@ import type { PhaseOrd } from '../../../lib/consortium/index.ts';
 import { strata } from '../../../lib/consortium/index.ts';
 import { memberTaxa, pool, stage } from '../store.ts';
 import { T } from '../strings.ts';
-import { PHASE_ORDS } from './tracks.ts';
+import { PHASE_ORDS } from './kit/phase.ts';
 import { MAX_SILHOUETTES, SCALE_LINES, lineTop, sidePlants, type SidePlant } from './side.ts';
 import { DASH, MIN_COL, PLOT_H, plantStrokes, reachOf } from './draw.ts';
 import { Explain, Marks, byName, openDetails } from './StageBar.tsx';

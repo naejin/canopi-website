@@ -2,7 +2,7 @@
 // implements it with SQL over the gzipped SQLite export (src/islands/consortium/data/sqlite-source.ts,
 // stream S1); the app can implement it over its own catalogue later. Plain records only: the core
 // computes the matrix, site fit and reason counts from pool(), so every source gets them free.
-import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, Locale, Placement, PlantId, SourceInfo, Stratum, Taxon } from './types.ts';
+import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, LayerValue, Locale, Placement, PlantId, SourceInfo, Stratum, Taxon } from './types.ts';
 
 export interface PlantSource {
   info(): SourceInfo;
@@ -23,6 +23,9 @@ export interface PlantSource {
   labels(l: Locale): Promise<Labels>;
   // Plants per stratum and phase in c, straight from SQL: a test oracle for the core's matrix.
   cellCounts(c: ClimateZone): Promise<{ stratum: Stratum; phase: number; n: number }[]>;
+  // Plant palette seam (PP-B commit 0; body in PP-G with the `year` chunk): the month layer values
+  // (bloom and ripening months) of the plants `ids` that apply in c, one query for a whole palette.
+  layerValues(ids: readonly PlantId[], c: ClimateZone): Promise<Map<PlantId, LayerValue[]>>;
 }
 
 // Why the data could not be opened, one per screen of design check §5.

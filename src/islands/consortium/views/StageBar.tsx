@@ -10,12 +10,12 @@
 import { computed } from '@preact/signals';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { guestOf } from '../../../lib/consortium/index.ts';
+import { guestOf, spanOf } from '../../../lib/consortium/index.ts';
 import { crops, flags, kept, openSheet, type SheetFor } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { PlantMarks } from './PlantMarks.tsx';
-import { PHASE_ORDS, collatorFor, spanOf, warningCounts, type Order } from './tracks.ts';
-import { layerName, listName, nameOf, spanWords, stageRun } from './kit/names.ts';
+import { PHASE_ORDS, warningCounts } from './kit/phase.ts';
+import { collatorFor, layerName, listName, nameOf, spanWords, stageRun, type Order } from './kit/names.ts';
 import { PinIcon, SproutIcon, WarnIcon } from './kit/icons.tsx';
 
 // ---- words ----

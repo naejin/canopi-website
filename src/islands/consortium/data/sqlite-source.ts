@@ -347,5 +347,9 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       return db.selectObjects(`SELECT x.stratum, f.ord phase, count(*) n FROM placements x JOIN phases f ON f.ord BETWEEN x.phase_start AND x.phase_end
         WHERE x.climate_zone = ?1 GROUP BY 1, 2 ORDER BY 1, 2`, [c]).map((r) => ({ stratum: r.stratum as Stratum, phase: Number(r.phase), n: Number(r.n) }));
     },
+    // PP-B commit 0 stub: no month values yet (PP-G writes the query with the `year` chunk).
+    async layerValues() {
+      return new Map();
+    },
   };
 }

@@ -30,10 +30,14 @@ import '../../styles/consortium/p5/s5b.css';
 import '../../styles/consortium/p5/s5c.css';
 import '../../styles/consortium/p5/s5d.css';
 import '../../styles/consortium/p5/s5e.css';
-// F1a (commit 0): the Palette and Balance stylesheets, page-level (no CSS on a lazy chunk), each owned
-// by its stream (scripts/plan/f1a-owners.json).
+// F1a (commit 0): the Palette stylesheet (deleted with the matrix in PP-B b3).
 import '../../styles/consortium/palette.css';
-import '../../styles/consortium/balance.css';
+// PP-B (commit 0): the page-level stylesheets of the Plant palette, each owned by its stream
+// (scripts/plan/pp-b-owners.json): the palette page (b2), Place (b1a), Your plants (b3). Page-level, so
+// no stylesheet loads with a lazy chunk (A14).
+import '../../styles/consortium/palette-page.css';
+import '../../styles/consortium/place.css';
+import '../../styles/consortium/plants.css';
 
 interface Props { lang: Locale; }
 const { lang } = Astro.props;

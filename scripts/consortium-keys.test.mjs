@@ -93,3 +93,50 @@ test('the room hint and the Beta line say what the tool does, in all 11 locales'
   assert.doesNotMatch(words.en['consortium.site.roomHint'], /never how many/);
   assert.match(words.en['consortium.betaNote'], /nearest list/);
 });
+
+// ---- measures (PP-B commit 0; plant-palette-architecture 3 "Names and numbers") ----
+// New consortium keys take a measure preformatted by format.ts ({len}, {area}, {depth}, {temp},
+// {tempDiff}) and never write a unit after a placeholder: the unit then follows the language's own
+// rules (Intl style 'unit') and one switch point could change units. The keys below wrote one before
+// the policy; each moves when its stream rewrites it (and leaves this list), never a new one joins.
+const UNIT_AFTER_PLACEHOLDER = /\{\w+\}\s?(m²|m2|cm|mm|km|ha|m|°C|°F|м|см|米|メートル|미터)(?![\p{L}\p{N}²])/u;
+const UNIT_KEYS_BEFORE_POLICY = new Set([
+  'meters', 'room.tall', 'room.tallShort', 'side.height', 'side.metres', 'details.heightV', 'location.why', 'location.meansNear',
+  'range.side.cold', 'range.side.mild', 'range.side.cool', 'range.side.summer', 'range.side.hot', 'range.pool.count', 'range.empty.body',
+]);
+test('no new consortium key writes a unit after a placeholder, in any locale (format.ts measures)', () => {
+  for (const [lang, w] of Object.entries(words)) {
+    for (const [k, v] of Object.entries(w)) {
+      if (!k.startsWith('consortium.') || typeof v !== 'string' || UNIT_KEYS_BEFORE_POLICY.has(k.slice(11))) continue;
+      assert.doesNotMatch(v, UNIT_AFTER_PLACEHOLDER, `${lang} ${k}: "${v}" writes a unit after a placeholder; pass {len}, {area}, {depth}, {temp} or {tempDiff} from format.ts`);
+    }
+  }
+  for (const k of UNIT_KEYS_BEFORE_POLICY) assert.ok(`consortium.${k}` in words.en, `${k} is gone: take it off UNIT_KEYS_BEFORE_POLICY`);
+});
+
+test('format.ts measures: the unit in the language\'s own form; a difference is signed; an area is " m²"', async () => {
+  const f = await import('../src/islands/consortium/format.ts');
+  const sp = (s) => s.replace(/[  ]/g, ' ');
+  assert.equal(f.formatLength(2.5, 'en'), '2.5 m');
+  assert.equal(sp(f.formatLength(2.5, 'fr')), '2,5 m');
+  assert.equal(f.formatDepthCm(30.4, 'en'), '30 cm');
+  assert.equal(sp(f.formatTemp(-3.5, 'fr')), '-3,5 °C');
+  assert.match(f.formatTemp(-3.5, 'en'), /^-3\.5 ?°C$/);
+  assert.match(f.formatTempDiff(2, 'en'), /^\+2 ?°C$/, 'a difference is signed');
+  assert.match(f.formatTempDiff(0, 'en'), /^0 ?°C$/, 'no sign on zero');
+  assert.equal(f.formatArea(1200, 'en'), '1,200 m²');
+  assert.equal(sp(f.formatArea(1200, 'fr')), '1 200 m²');
+});
+
+test('parsePlotSize: whole square metres 1 to MAX_PLOT_M2 in the language\'s separators, else null', async () => {
+  const { parsePlotSize } = await import('../src/islands/consortium/format.ts');
+  const { MAX_PLOT_M2 } = await import('../src/lib/consortium/index.ts');
+  const cases = [
+    ['120', 'en', 120], ['1,200', 'en', 1200], ['1 200', 'fr', 1200], ['1 200', 'fr', 1200], ['1.200', 'de', 1200],
+    ['120 m²', 'en', 120], ['12.5', 'en', 13], ['12,5', 'fr', 13], [String(MAX_PLOT_M2), 'en', MAX_PLOT_M2],
+    ['', 'en', null], ['0', 'en', null], ['-5', 'en', null], [String(MAX_PLOT_M2 + 1), 'en', null], ['abc', 'en', null], ['12a', 'en', null],
+  ];
+  for (const [text, lang, want] of cases) assert.equal(parsePlotSize(text, lang), want, `${JSON.stringify(text)} in ${lang}`);
+  const src = readFileSync(join(root, 'islands/consortium/format.ts'), 'utf8');
+  assert.match(src, new RegExp(`const MAX_PLOT_M2 = ${MAX_PLOT_M2.toLocaleString('en').replace(/,/g, '_')};`), 'format.ts pins the core MAX_PLOT_M2');
+});

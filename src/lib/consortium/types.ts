@@ -64,13 +64,16 @@ export type Month = (typeof months)[number];
 export const lights = ['sun', 'part', 'shade', 'unsure'] as const;
 export const soils = ['acid', 'neutral', 'chalky', 'unsure'] as const;
 export const waters = ['dry', 'average', 'wet', 'unsure'] as const;
-// Every room value (F1a commit 0, A8): 'pots' ("Balcony or pots") is a value of the type before it is
-// a question: `rooms`, the answers Start offers and a link's `m=` accepts, leaves it out until stream 1
-// (pal1) offers it and gives it its own limits (site.ts ROOM_LIMIT_M, suggest.ts SIZE_LIMIT), so no
-// control or link reaches it yet.
+// Every room value (F1a commit 0, A8; a height word only, owner revision 4: area is Place.plotM2).
+// `roomValues` is every room a palette holds and a link's `m=` carries: 'pots' ("Balcony or pots";
+// site.ts ROOM_LIMIT_M and suggest.ts SIZE_LIMIT give it the small garden's limits) is read and kept
+// since PP-B commit 0. `rooms` is what today's Start offers, without 'pots' so the live form is
+// unchanged (Start.tsx reads it); b1a offers 'pots' on Place and sets rooms = roomValues.
 export const roomValues = ['pots', 'small', 'large', 'field', 'unsure'] as const;
 export type Room = (typeof roomValues)[number];
 export const rooms = ['small', 'large', 'field', 'unsure'] as const satisfies readonly Room[];
+// The derived input of site.ts fits() (no longer stored since PP-B commit 0: place.ts siteFor builds it
+// from the palette's Place; plant-palette-architecture 3.1), removed in PP-C with its last readers.
 export interface Site {
   light: (typeof lights)[number];
   soil: (typeof soils)[number];
@@ -340,24 +343,38 @@ export interface Alternative { id: PlantId; sameStratum: boolean; alsoFills: Cel
 // Jobs table: for each job, the phases where no member does it ("gaps name their stages", BT-4).
 export interface JobGap { job: JobId; members: PlantId[]; missing: PhaseOrd[] }
 
-// Share state (#v=4, state.ts): what a link restores, and what the page must say about it (§5).
-// unknownCount: plants of the link no longer in the list ("2 plants from this link…");
-// cut: the link lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not
-// a notice of a link being read: it is checked on the URL at share time (state.ts isLongLink).
+// Share state (link v5, state.ts; plant-palette-architecture 8.1): what a link or the save restores,
+// and what the page must say about it. room (`m`) and plot (`z`) are always public; period (`y`) is
+// public; country (`k`), spot (`l w q r h s`) and soil (`s`) travel only with "Include my place".
+// spot and soil are null when the link brings none of their answers (every answer 'unsure' and the
+// soil map count as none: plant-palette-architecture 8.3 "A link without a place").
 export interface ShareState {
   climate: ClimateZone | null;
   country: string | null;
-  site: Site;
+  room: Room;
+  plot: number | null; // whole m², 1 to MAX_PLOT_M2 (state.ts)
+  period: PeriodId;
+  spot: Spot | null;
+  soil: SoilAnswer | null;
   members: PlantId[];
-  kept: PlantId[];
   removed: PlantId[];
   guests: { id: PlantId; from: ClimateZone }[];
-  crops: PlantId[]; // Main crops (at most 3), each also kept
-  stage: PhaseOrd | null;
+  /** @deprecated PP-B commit 0: Kept is not written to link v5 and never read from it; b3 removes it with its readers. */
+  kept?: PlantId[];
+  /** @deprecated PP-B commit 0: Main crops are not written to link v5; b3 removes them with their readers. */
+  crops?: PlantId[];
+  /** @deprecated PP-B commit 0: the stage is not written to link v5; b3 removes it with its readers. */
+  stage?: PhaseOrd | null;
 }
-// outdated: a link of another version (v1 share links are not read: owner row 2026-11-11); its plants
-// are not restored.
-export interface LinkNotice { unknownCount: number; cut: boolean; outdated: boolean }
+// unknownCount: plants of the link no longer in the list ("2 plants from this link…"); cut: the link
+// lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not a notice of a
+// link being read: it is checked on the URL at share time (state.ts isLongLink).
+// outdated: a link of an older version (v1–v4, the v1 query form; owner 2026-11-14), nothing restored;
+// newer: from a newer version (v > 5, nothing restored), or a v5 link whose `u=` lists a key this
+// decoder does not know (plants restored); unreadable: `v` not a whole number, or `e=1` with a
+// non-empty `a` holding no readable token (nothing restored); period: `y` names no period this page
+// knows (today shown instead). plant-palette-architecture 8.2.
+export interface LinkNotice { unknownCount: number; cut: boolean; outdated: boolean; newer: boolean; unreadable: boolean; period: boolean }
 export interface DecodedLink { state: ShareState; notice: LinkNotice }
 
 // ---- P5 seams (commit 0; .local/consortium/v2/p5-owners.md): the reader's site location ----
@@ -375,6 +392,8 @@ export interface SitePeriod {
   tmeanColdC: number; // coldest- and warmest-month means: how near a Köppen bound (0, 18, 22, 10 °C)
   tmeanWarmC: number; //   the site is, so "borderline" (design check §C, S5b site-climate.ts)
   aridityIndex: number | null; // null on ice: "not checked"
+  precipMm: number; // annual precipitation (src/lib/climate/lookup.ts PeriodClimate.precipMm)
+  dryMonths: number; // months drier than twice their mean temperature, 0–12 (lookup.ts dryMonths)
 }
 export interface SiteLookup {
   lat: number;
@@ -458,15 +477,6 @@ export type FactAt = <K extends FactKey>(key: K, taxon: Taxon, site: SiteLookup 
 
 // ---- F1a seams (commit 0; plan F1a, design check .local/consortium/v2/f1a/design-check.md A3, A6, A15, A22) ----
 
-// The view the main area shows (A6): Start, then Palette (the plants by role, the health strip and the
-// gap list; readers see it as "By role", owner row "Plant palette name"; the internal id stays
-// 'palette') or Structure (the strata × stages matrix). Stream 1 (pal1) moves the island's own view
-// signal to it and removes store.ts's older View ('start' | 'matrix' | 'side' | 'jobs' | 'list'); a link
-// writes Structure only (a free key under v4, not `w`, which v4 writes for the water answer; no version
-// bump).
-export const views = ['start', 'palette', 'structure'] as const;
-export type View = (typeof views)[number];
-
 // One confidence vocabulary (A15, ADR-7, stream 3): every hedge a surface shows is one of these terms.
 // edge "near the edge" (of the observed range), disputed "sources disagree", estimate "placed by
 // estimate" (a borrowed list), worked-out (replaces est.word), not-reviewed (driven by
@@ -484,37 +494,111 @@ export interface Confidence { term: ConfidenceTerm; agree?: number; of?: number 
 export interface CellSpan { stratum: Stratum | null; from: PhaseOrd; to: PhaseOrd }
 
 // What Add opens preset to (A22; store.ts openAdd, stream 1): a job, a cell span (the sheet's target
-// today, store.ts SheetFor.cell), the filters stream 2 defines, and a hint: the line of the Balance
-// check or gap that opened it, a consortium.* key without its prefix with its variables (core holds no
+// today, store.ts SheetFor.cell), the filters stream 2 defines, and a hint: the line of the hole or
+// the thing to weigh that opened it, a consortium.* key without its prefix with its variables (core holds no
 // strings), shown under Add's filters (add1).
 export interface AddPreset {
   job?: JobId;
   cell?: CellSpan;
+  // The hole (holes.ts Hole.id) a "Fill this hole" opened Add for (PP-B; replaces `cell` in PP-C).
+  hole?: string;
   filters?: Readonly<Record<string, string | boolean>>;
   hint?: { key: string; vars?: Record<string, string | number> };
 }
 
-// The Balance checks (A3, A20, stream 4; balance.ts holds the registry): separate checks, no score.
-// family spread, climate margin spread, water-needs mix, flowering calendar, food, evergreen and
-// deciduous, and the checks waiting for data (roots, insect-habitat months, active season).
-export const balanceCheckIds = ['family', 'margin', 'water', 'flowering', 'food', 'evergreen', 'roots', 'insects', 'season'] as const;
-export type BalanceCheckId = (typeof balanceCheckIds)[number];
-// ok and gap are verdicts; waiting: the data is not in the export yet; not-enough-data: too few of the
-// members are recorded to judge ("n of m recorded", never a pass); not-checked: the check did not run
-// (no location for a site check, a rule that failed).
-export const balanceStates = ['ok', 'gap', 'waiting', 'not-enough-data', 'not-checked'] as const;
-export type BalanceState = (typeof balanceStates)[number];
-// What a check's line names behind its verdict, whichever check it is: the members it is about (the six
-// legumes of a family-spread gap, the plants with no record), the families (the one too many share),
-// the months (a flowering gap's empty months) and any count the line's key reads ({share}, {of}).
-// Each list in a stable order; empty or absent: nothing to name. Core holds no strings: the panel turns
-// it into words.
-export interface BalanceDetail {
-  plants?: readonly PlantId[];
-  families?: readonly string[];
-  months?: readonly Month[];
-  vars?: Readonly<Record<string, string | number>>;
+// ---- Plant palette seams (PP-B commit 0; plant-palette-architecture 3.1–3.3) ----
+
+// The periods a page can be shown for: the span strings of the climate slots, today first (source.ts
+// TODAY_PERIOD, future.ts futurePeriods repeat them; a period id is never renamed or reused, 8.1).
+export const periodIds = ['1991-2020', '2041-2070', '2071-2099'] as const;
+export type PeriodId = (typeof periodIds)[number];
+
+// The place answers (3.1). Every answer starts 'unsure' (DEC:89); PP-B asks light and water as today.
+export const spotLights = ['sun', 'part', 'shade', 'varies', 'unsure'] as const;
+export const spotWaters = ['dry', 'average', 'wet', 'unsure'] as const;
+export const spotWinds = ['sheltered', 'windy', 'sea', 'unsure'] as const;
+export const spotGrounds = ['drains', 'wet', 'unsure'] as const; // after heavy rain
+export const spotHeights = ['town', 'higher', 'lower', 'hollow', 'unsure'] as const;
+export interface Spot {
+  light: (typeof spotLights)[number];
+  water: (typeof spotWaters)[number];
+  wind: (typeof spotWinds)[number];
+  ground: (typeof spotGrounds)[number];
+  height: (typeof spotHeights)[number];
 }
-// One check: n of the m members recorded for it; detail: what its line names; preset: what its
-// "Find…" opens Add with (null: none); confidence: its hedge (an estimate on a borrowed list).
-export interface BalanceCheck { id: BalanceCheckId; state: BalanceState; n: number; m: number; detail: BalanceDetail; preset: AddPreset | null; confidence?: Confidence }
+export type SpotKey = keyof Spot;
+// The 12 USDA classes of the climate reader (src/lib/climate/soil.ts TextureId; equality checked at
+// compile time beside readerFitsCore in src/islands/consortium/store.ts).
+export const textureIds = ['sand', 'loamy_sand', 'sandy_loam', 'loam', 'silt_loam', 'silt', 'sandy_clay_loam', 'clay_loam', 'silty_clay_loam', 'sandy_clay', 'silty_clay', 'clay'] as const;
+export type TextureId = (typeof textureIds)[number];
+export const soilWords = ['acid', 'neutral', 'chalky'] as const;
+export type SoilWord = (typeof soilWords)[number];
+export type SoilAnswer =
+  | { from: 'map' } // the soil map's estimate, the default
+  | { from: 'own'; ph: number | null; word: SoilWord | null; texture: TextureId | null }
+  | { from: 'pots' };
+export interface Place { room: Room; plotM2: number | null; spot: Spot; soil: SoilAnswer }
+export interface ResolvedSoil {
+  ph: number | null;
+  word: SoilWord | null;
+  texture: TextureId | null;
+  basis: 'map' | 'test' | 'pots' | 'none';
+  depth: string | null;
+  filled: boolean;
+  fillKm: number | null;
+}
+
+// The verdict engine's shapes (3.2; bodies in verdict.ts, b2).
+export type Level = 'fits' | 'look' | 'outside' | 'unknown'; // fits / needs a second look / outside its range / not checked
+export type Factor = 'cold' | 'mild' | 'cool' | 'summer' | 'hot' | 'dry' | 'soil-ph' | 'drainage' | 'light' | 'water' | 'wind';
+export interface FactorVerdict {
+  factor: Factor;
+  level: Level;
+  basis: 'range' | 'soil-map' | 'soil-test' | 'spot';
+  place: number | null;
+  low: number | null;
+  high: number | null;
+  confidence?: Confidence;
+}
+export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'warm-enough-later' | 'cold-air';
+export interface PlantVerdict {
+  id: PlantId;
+  judged: PeriodId; // min(page period, the plant's own years)
+  ownYears: boolean;
+  level: Level; // worst factor; soil and spot never beyond 'look' (owner: hints)
+  limiting: FactorVerdict | null;
+  factors: FactorVerdict[];
+  notes: VerdictNote[];
+  agree?: number; // scenarios (future.ts FutureCheck)
+  of?: number;
+}
+export interface VerdictContext {
+  place: Place;
+  lookup: SiteLookup | null;
+  period: PeriodId;
+  scenario: string;
+  soil?: ResolvedSoil;
+  canopy?: readonly number[]; // site.ts Canopy, from canopyOf(members) (the store builds it)
+}
+// One line of words: an i18n key, its variables and the count P() reads (verdict-line.ts, b2).
+export interface Line { key: string; vars: Record<string, string | number>; count?: number }
+
+// Holes (3.3; bodies in holes.ts, b2).
+export type HoleKind = 'job' | 'light' | 'flowering' | 'cool' | 'soil';
+export type HoleRank = 1 | 2 | 3 | 4 | 5 | 6;
+export interface Hole {
+  id: string; // `${kind}:${job ?? stratum ?? ''}:${fromYear}-${toYear}` + `:m${mask}` when months are set
+  kind: HoleKind;
+  rank: HoleRank; // read from holes.ts HOLE_ORDER, never a literal
+  job?: JobId;
+  stratum?: Stratum;
+  months?: readonly Month[];
+  fromYear: number;
+  toYear: number;
+  state: 'open' | 'pending' | 'not-judged' | 'to-check';
+  preset: AddPreset;
+}
+export interface Fillers { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unknown: Taxon[] }
+// A line of "Things to weigh" (weigh.ts, b3) and of the planting plan (plan.ts, PP-D).
+export interface WeighLine { kind: 'family' | 'water' | 'soil'; line: Line; members: PlantId[] }
+export interface PlanLine { id: PlantId; line: Line }

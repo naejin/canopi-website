@@ -26,8 +26,15 @@ export * from './fold.ts';
 export { siteIdOf, zoneOfSiteId, type SiteId } from './zones.ts';
 // E6 R1: the nearest-list table, a leaf.
 export * from './nearest.ts';
-// F1a commit 0: the Balance checks' registry (A3), filled by stream 4; the strip and the panel read it.
-export * from './balance.ts';
+// PP-B commit 0 seams (plant-palette-architecture 2): the place projections, the years of the phases,
+// the verdict words and loader (never verdict.ts itself: its own chunk, through loadVerdictRule),
+// holes and the things to weigh (used by lazy chunks only).
+export * from './place.ts';
+export * from './years.ts';
+export * from './verdict-line.ts';
+export * from './verdict-load.ts';
+export * from './holes.ts';
+export * from './weigh.ts';
 
 // E6 R4 (design check A11): the suggestion and the Swap list (suggest.ts), their own chunk (role
 // `suggest`, scripts/built-modules.mjs ROLE_ENTRIES), off the first run, so this barrel does not

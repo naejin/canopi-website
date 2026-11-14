@@ -10,12 +10,11 @@
 //   per site answer and whether the counts overlap ("some for both reasons");
 // - null: a free cell, with `fitting` plants that fit (an unknown fits).
 // Gap and misfit cells cannot be filled here and never count against the reader in the fill meter.
-import type { ClimateZone, Matrix, MatrixCell, Phase, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon, CellRef } from './types.ts';
+import type { ClimateZone, Matrix, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon, CellRef } from './types.ts';
 import { phases, strata } from './types.ts';
 import { canopyOf, fits, misfitsBeside } from './site.ts';
 import { phaseSpan } from './jobs.ts';
-
-export const phaseOrd = (p: Phase): PhaseOrd => phases.indexOf(p) as PhaseOrd;
+import { phaseOrd } from './years.ts'; // moved to years.ts (PP-B commit 0), exported from there
 
 // The cells a plant fills: its stratum in each phase of its span, in phase order.
 export function cellsOf(taxon: Taxon): CellRef[] {

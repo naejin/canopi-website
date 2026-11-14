@@ -9,8 +9,11 @@
 // E6 (commit 0): consortium-e6 (owners K1, K3, B4 by chunk) and consortium-e6-r4 (R4) hold E6's user
 // paths, each "E6-n (<owner> …)", written failing with scripts/expect-fail.mjs failing() (the
 // expected-fail marker, owner in the title); a marker turns red once its test passes.
-// F1a (commit 0): consortium-f1a-{palette,filters,confidence,balance,perf,a11y} hold one user scenario
-// per test, each "F1a-<letter><n> (<owner> …)" for a stream the owners file gives that file.
+// PP-B (commit 0, superseding F1a's six spec files): consortium-pp-b1 (b1a and b1b) and consortium-pp-b2
+// (b2) hold the F1a markers moved unchanged, each "F1a-<letter><n> → PP-B (<owner> …)"; b3's file and
+// each stream's PP-B-n scenarios come with the streams (a stream empties a spec file of its cases but
+// never deletes it; main deletes emptied files at the chunk-3 exit). Parked markers:
+// scripts/plan/parked-markers.json.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -24,13 +27,12 @@ const testsOf = (text) => [...text.matchAll(/^(test|failing)\('((?:\\'|[^'])+)',
 const SPEC_FILES = [
   'consortium-commit0.browser.test.mjs',
   'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
-  'consortium-f1a-a11y.browser.test.mjs', 'consortium-f1a-balance.browser.test.mjs', 'consortium-f1a-confidence.browser.test.mjs',
-  'consortium-f1a-filters.browser.test.mjs', 'consortium-f1a-palette.browser.test.mjs', 'consortium-f1a-perf.browser.test.mjs',
   'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5d.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
+  'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs',
   'consortium-s1.browser.test.mjs', 'consortium-s2.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
   'consortium-seams-layout.browser.test.mjs', 'consortium-seams-p2.browser.test.mjs', 'consortium-seams-p5.browser.test.mjs',
 ];
-test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6 and six for F1a, nothing else', () => {
+test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6 and one per PP-B stream file, nothing else', () => {
   assert.deepEqual(files, SPEC_FILES);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /node scripts\/browser\/run\.mjs --list local$/);
@@ -42,7 +44,9 @@ test('one browser test file for commit 0, one per P2 stream, one per P5 stream, 
 test('every browser test runs: no todo, no skip, in any file but a P5 stream\'s (H8)', () => {
   for (const file of files.filter((f) => !f.startsWith('consortium-p5-'))) {
     const text = read(file);
-    assert.ok(testsOf(text).length >= (/-(s1|seams-p5|e6-r4|f1a-[a-z0-9]+)\./.test(file) ? 2 : 5), file);
+    // A stream file under rewrite (s2 and s3 lose their matrix cases to b3) needs 2; a PP-B stream
+    // file starts with the markers commit 0 moved into it (pp-b1 holds one) and grows with its stream.
+    assert.ok(testsOf(text).length >= (/-pp-b\d\./.test(file) ? 1 : /-(s1|s2|s3|seams-p5|e6-r4)\./.test(file) ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
@@ -64,19 +68,27 @@ test('the browser tests build their own hook build; only the browser-test flag t
   for (const word of ['__ctTest', '__ctViews', 'failSheets', '__ctTimeouts']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
 });
 
+// Loosened by PP-B commit 0: b3 empties s2 and s3 of their matrix cases (a stream never deletes a whole
+// spec file; main deletes emptied files at the chunk-3 exit), so a stream file may be left with none.
 test('each stream file names its stream in every test', () => {
   for (const n of [1, 2, 3, 4]) {
     const tests = testsOf(read(`consortium-s${n}.browser.test.mjs`));
-    assert.ok(tests.length, `S${n} has tests`);
+    if (n === 1 || n === 4) assert.ok(tests.length, `S${n} has tests`);
     for (const { title, opts } of tests) {
       assert.match(title, new RegExp(`^(BT-\\d|Exit walk-through) \\(S${n}\\b`), `S${n}: "${title}" names its stream`);
     }
   }
 });
 
-test('every BT-1…BT-9 of design check §7 has a test', () => {
+// Loosened by PP-B commit 0: BT-2…BT-6 live in s2 and s3, whose matrix cases b3 removes with the
+// matrix (PP-B b3 replaces them with Your plants' scenarios); the others stay required.
+const BT_UNDER_REWRITE = new Set([2, 3, 4, 5, 6]);
+test('every BT-1…BT-9 of design check §7 has a test (BT-2…BT-6 may go with the matrix in PP-B b3)', () => {
   const titles = files.flatMap((f) => testsOf(read(f)).map((t) => t.title));
-  for (let i = 1; i <= 9; i++) assert.ok(titles.some((t) => t.startsWith(`BT-${i} `) || t.includes(`BT-${i} load`) || t.includes(`/ BT-${i} `)), `BT-${i}`);
+  for (let i = 1; i <= 9; i++) {
+    if (BT_UNDER_REWRITE.has(i)) continue;
+    assert.ok(titles.some((t) => t.startsWith(`BT-${i} `) || t.includes(`BT-${i} load`) || t.includes(`/ BT-${i} `)), `BT-${i}`);
+  }
 });
 
 // P5: every P5 spec names its owner stream, the one its file is for; a todo may only name that
@@ -278,22 +290,23 @@ test('E6 specs: each "E6-n (<owner> …)" names an owner its file holds; each ma
   }
 });
 
-// F1a (commit 0, plan F1a "Tests"): each F1a spec names its owner stream, one the owners file
-// (scripts/plan/f1a-owners.json) gives that file in some chunk; a marked spec's marker names the owner
-// of its title. One user scenario per test; the markers are counted (zero before a push to master).
-const F1A_FILES = files.filter((f) => f.startsWith('consortium-f1a-'));
-test('F1a specs: each "F1a-Xn (<owner> …)" names an owner the owners file gives its file; each marker names the owner of its title', async () => {
+// PP-B (commit 0, plan "Plant palette redesign"; scripts/plan/pp-b-owners.json): each test of a PP-B
+// spec names its owner stream, one the owners file gives that file in some chunk ("F1a-Xn → PP-B (<owner>
+// …)" for a moved marker, "PP-B<n> (<owner> …)" for a stream's scenario); a marked spec's marker names
+// the owner of its title. The markers are counted (zero before a push to master).
+const PPB_FILES = files.filter((f) => f.startsWith('consortium-pp-b'));
+test('PP-B specs: each names an owner the owners file gives its file; each marker names the owner of its title', async () => {
   const { markers } = await import('./expect-fail.mjs');
-  const owners = JSON.parse(readFileSync(new URL('./plan/f1a-owners.json', import.meta.url), 'utf8'));
+  const owners = JSON.parse(readFileSync(new URL('./plan/pp-b-owners.json', import.meta.url), 'utf8'));
   const { matches } = await import('./plan/owners.mjs');
-  assert.equal(F1A_FILES.length, 6);
-  const marked = markers().filter((m) => m.file.startsWith('browser/consortium-f1a-'));
-  for (const file of F1A_FILES) {
+  assert.ok(PPB_FILES.length >= 2);
+  const marked = markers().filter((m) => m.file.startsWith('browser/consortium-pp-b'));
+  for (const file of PPB_FILES) {
     const holders = owners.chunks.flatMap((c) => Object.entries(c.streams).filter(([, st]) => st.files.some((p) => matches(p, `scripts/browser/${file}`))).map(([name]) => name)).filter((n) => n !== 'main');
     assert.ok(holders.length, `the owners file gives ${file} to a stream`);
     for (const { title, marked: isMarked } of testsOf(read(file))) {
-      const owner = title.match(/^F1a-[A-Z]\d+ \((\w+)\b/)?.[1];
-      assert.ok(owner && holders.includes(owner), `${file}: "${title}" names one of ${holders.join(', ')}: F1a-Xn (<owner> …)`);
+      const owner = title.match(/^(?:F1a-[A-Z]\d+ → PP-B|PP-B\d+) \((\w+)\b/)?.[1];
+      assert.ok(owner && holders.includes(owner), `${file}: "${title}" names one of ${holders.join(', ')}: F1a-Xn → PP-B (<owner> …) or PP-Bn (<owner> …)`);
       if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
     }
   }

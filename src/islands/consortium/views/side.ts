@@ -8,8 +8,8 @@
 // dashed outline (it is still young), and a plant with no recorded height is drawn dashed at its
 // layer's usual height.
 import type { PhaseOrd, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { strata } from '../../../lib/consortium/index.ts';
-import { spanOf, type Order } from './tracks.ts';
+import { spanOf, strata } from '../../../lib/consortium/index.ts';
+import type { Order } from './kit/names.ts';
 
 // One scale at every size: 0.05 m at the ground, 60 m at the top, logarithmic, so a 0.3 m herb and a
 // 40 m linden both read. The lines are drawn at 1 m, 5 m and 20 m.

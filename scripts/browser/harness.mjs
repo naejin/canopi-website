@@ -83,13 +83,15 @@ export async function fixtureCountries() {
 // - 'user-version': a valid database with user_version 1 (schema; the page reads schema 3);
 // - 'digest': the right bytes under a wrong sha256 (damaged);
 // - 'empty': an empty 200 body (damaged);
-// - 'stall': no response ever comes (a stalled connection: fetch, after the stall timer).
+// - 'stall': no response ever comes (a stalled connection: fetch, after the stall timer);
+// - 'hold' (PP-B commit 0): the right bytes, answered only once the test calls page.releaseHeld()
+//   (a slow database: "Still loading", b2's PP-B15).
 export function servedDatabase(kind, fx) {
   let gz = fx.gz, raw = gunzipSync(fx.gz), wrongSha = false;
   if (kind === 'corrupt') gz = Buffer.concat([gz.subarray(0, 64), Buffer.alloc(256, 0x5a), gz.subarray(320)]);
   else if (kind === 'user-version') { raw = Buffer.from(raw); raw.writeUInt32BE(1, 60); gz = gzipSync(raw); }
   else if (kind === 'digest') wrongSha = true;
-  else if (kind === 'empty' || kind === 'stall') gz = kind === 'empty' ? Buffer.alloc(0) : gz;
+  else if (kind === 'empty' || kind === 'stall' || kind === 'hold') gz = kind === 'empty' ? Buffer.alloc(0) : gz;
   else if (kind) throw new Error(`no database variant "${kind}"`);
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
@@ -156,7 +158,8 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   // - javaScript: false for the JS-off content (P6);
   // - data: 'real' (the installed export) or 'fixture' (the page's #ct-data rewritten to name the
   //   fixture database, served from memory); database: 404 | 'corrupt' | 'user-version' | 'digest' |
-  //   'empty' for the failure screens (with the fixture);
+  //   'empty' for the failure screens (with the fixture); 'stall' never answers; 'hold' (PP-B commit 0)
+  //   answers the fixture once `await page.releaseHeld()` runs (page.held lists its path, as block's);
   // - photos: true gives the fixture's 6 photo plants a self-served PNG (BT-5);
   // - wasm: false removes WebAssembly before any script runs (Lockdown Mode, P5);
   // - loader: 404 | 'offline' fails the island's loader chunk (a deploy; offline, navigator.onLine false);
@@ -269,10 +272,12 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     page.blocked = [];
     page.held = [];
     const heldRequests = [];
+    const heldDatabase = []; // database: 'hold', answered with the fixture bytes on release
     let holding = true;
     page.releaseHeld = async () => {
       holding = false;
       for (const r of heldRequests.splice(0)) if (!r.isInterceptResolutionHandled()) await r.continue().catch(() => {});
+      for (const r of heldDatabase.splice(0)) if (!r.isInterceptResolutionHandled()) await r.respond({ status: 200, contentType: 'application/gzip', body: served.bytes }).catch(() => {});
     };
     page.nominatim = [];
     const p5 = !!(geolocation || nominatim || mapTiles || !webgl || climateTiles);
@@ -313,6 +318,11 @@ export async function startHarness({ log = () => {}, dir } = {}) {
         if (fx && url.pathname === `/data/consortium/${fx.file}`) {
           if (!served) return request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
           if (database === 'stall') return; // never answered: the page's stall timer must end it
+          if (database === 'hold' && holding) {
+            page.held.push(url.pathname);
+            heldDatabase.push(request);
+            return;
+          }
           return request.respond({ status: 200, contentType: 'application/gzip', body: served.bytes });
         }
         if (photos && url.pathname.startsWith(FIXTURE_PHOTO_PREFIX)) return request.respond({ status: 200, contentType: 'image/png', body: PNG_1PX });

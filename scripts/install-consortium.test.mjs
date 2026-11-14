@@ -370,3 +370,17 @@ test('the command line: a real export is refused when verify cannot say yes, and
   assert.match(run.stderr, /Consortium export refused: canopi_db_sha256 is all zeros/);
   assert.ok(!existsSync(w.out));
 });
+
+// PP-B commit 0 (palette-vectors convention): canopi-data's range-verdict vectors, a stamped copy of
+// its tests/vectors/range_verdicts.json (canopi-data 4e9ba16, sha256 below) until install-consortium.mjs
+// reads them from the installed release. The copy must be for the release the site installs: a new
+// export pin without new vectors fails here, never silently (b2 runs the cases).
+test('the stamped range-verdict vectors are for the installed consortium release', () => {
+  const bytes = readFileSync(new URL('vectors/range-verdicts.json', import.meta.url));
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), 'fbbd5cb7acd35672d1c861f3eaae4d6747da4617f9e5b0af1cf214d144038f9a', 'the copy is canopi-data\'s file, unedited');
+  const vectors = JSON.parse(bytes.toString('utf8'));
+  const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
+  assert.equal(vectors.schema, 'canopi-range-verdicts/1');
+  assert.equal(vectors.source.release_id, index.release_id, `the vectors are for ${vectors.source.release_id}, the site installs ${index.release_id}: copy the release's range_verdicts.json`);
+  assert.ok(vectors.vectors.length > 0);
+});

@@ -1,20 +1,18 @@
 {
-  "_comment": "Static shard lists (E1 design check A11; coordinator choice 13: no assigner), balanced by hand from the per-file times scripts/browser/run.mjs prints. Every spec file is in each list exactly once (scripts/browser-tests.test.mjs). ratchet: seconds per shard; above it the runner warns, above 1.5x it asks for a rebalance; nothing fails on time. Rebalanced by E6 stream B4 (2026-11-13) from the chunk-3 merge run's local file times (seams-layout 159 s, s5c 90, s5b 85, seams-p2 82, commit0 72, s4 71, s2 71, s3 55, e6 32, s1 9, s5d 9, seams-p5 8, s5f 7, e6-r4 5): ci 192/180/186/197 s, local 248/254/253 s, before ci 165/144/208/238 and local 173/243/339. F1a commit 0 (2026-11-13) added its six specs, written failing, from their local file times (balance 50 s, confidence 26, palette 25, filters 23, a11y 6, perf 6): ci about 218/230/217/226 s, local about 298/286/307 s; the F1a exit rebalances them.",
+  "_comment": "Static shard lists (E1 design check A11; coordinator choice 13: no assigner), balanced by hand from the per-file times scripts/browser/run.mjs prints. Every spec file is in each list exactly once (scripts/browser-tests.test.mjs). ratchet: seconds per shard; above it the runner warns, above 1.5x it asks for a rebalance; nothing fails on time. Rebalanced by E6 stream B4 (2026-11-13) from the chunk-3 merge run's local file times (seams-layout 159 s, s5c 90, s5b 85, seams-p2 82, commit0 72, s4 71, s2 71, s3 55, e6 32, s1 9, s5d 9, seams-p5 8, s5f 7, e6-r4 5): ci 192/180/186/197 s, local 248/254/253 s, before ci 165/144/208/238 and local 173/243/339. F1a commit 0 (2026-11-13) added its six specs, written failing, from their local file times (balance 50 s, confidence 26, palette 25, filters 23, a11y 6, perf 6): ci about 218/230/217/226 s, local about 298/286/307 s; the F1a exit rebalances them. PP-B commit 0 (2026-11-14) deleted the six F1a specs (their markers moved, parked or deleted: scripts/plan/parked-markers.json) and added consortium-pp-b1 and -pp-b2 (the moved markers, about 15 s together) to the lightest shards; the PP-B exit rebalances.",
   "local": [
     [
       "consortium-seams-layout.browser.test.mjs",
       "consortium-s4.browser.test.mjs",
       "consortium-s1.browser.test.mjs",
       "consortium-p5-s5d.browser.test.mjs",
-      "consortium-f1a-balance.browser.test.mjs"
+      "consortium-pp-b2.browser.test.mjs"
     ],
     [
       "consortium-p5-s5c.browser.test.mjs",
       "consortium-p5-s5b.browser.test.mjs",
       "consortium-s2.browser.test.mjs",
-      "consortium-seams-p5.browser.test.mjs",
-      "consortium-f1a-confidence.browser.test.mjs",
-      "consortium-f1a-perf.browser.test.mjs"
+      "consortium-seams-p5.browser.test.mjs"
     ],
     [
       "consortium-seams-p2.browser.test.mjs",
@@ -23,9 +21,7 @@
       "consortium-e6.browser.test.mjs",
       "consortium-p5-s5f.browser.test.mjs",
       "consortium-e6-r4.browser.test.mjs",
-      "consortium-f1a-palette.browser.test.mjs",
-      "consortium-f1a-filters.browser.test.mjs",
-      "consortium-f1a-a11y.browser.test.mjs"
+      "consortium-pp-b1.browser.test.mjs"
     ]
   ],
   "ci": [
@@ -34,28 +30,24 @@
       "consortium-s1.browser.test.mjs",
       "consortium-p5-s5d.browser.test.mjs",
       "consortium-seams-p5.browser.test.mjs",
-      "consortium-p5-s5f.browser.test.mjs",
-      "consortium-f1a-confidence.browser.test.mjs"
+      "consortium-p5-s5f.browser.test.mjs"
     ],
     [
       "consortium-p5-s5c.browser.test.mjs",
       "consortium-p5-s5b.browser.test.mjs",
       "consortium-e6-r4.browser.test.mjs",
-      "consortium-f1a-balance.browser.test.mjs"
+      "consortium-pp-b1.browser.test.mjs",
+      "consortium-pp-b2.browser.test.mjs"
     ],
     [
       "consortium-seams-p2.browser.test.mjs",
       "consortium-commit0.browser.test.mjs",
-      "consortium-e6.browser.test.mjs",
-      "consortium-f1a-palette.browser.test.mjs",
-      "consortium-f1a-perf.browser.test.mjs"
+      "consortium-e6.browser.test.mjs"
     ],
     [
       "consortium-s4.browser.test.mjs",
       "consortium-s2.browser.test.mjs",
-      "consortium-s3.browser.test.mjs",
-      "consortium-f1a-filters.browser.test.mjs",
-      "consortium-f1a-a11y.browser.test.mjs"
+      "consortium-s3.browser.test.mjs"
     ]
   ],
   "ratchet": {

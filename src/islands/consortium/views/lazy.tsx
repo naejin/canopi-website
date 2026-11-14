@@ -152,14 +152,6 @@ export function retryable<M, C>(load: () => Promise<M>, pick: (m: M) => C): () =
     .then(pick);
 }
 
-// F1a commit 0 (A2): the Balance panel, its own lazy role `balance` (scripts/built-modules.mjs
-// ROLE_ENTRIES), loaded on first use, a failed chunk fetched again as ?retry=n (retryable) and shown
-// failed with Reload in place. Not registered with later(): the `later` chunk takes nothing new. Stream 1
-// (pal1, chunk 1) places balancePanel.View in Palette; stream 4 (bal2) fills views/balance/BalanceSlot.tsx.
-// Pure, so the build drops it (and the role stays empty) until a view uses it.
-/** @public until pal1 places it in Palette (knip: a commit-0 seam; pal1 drops this tag) */
-export const balancePanel = /* @__PURE__ */ lazyPart(retryable(() => import('./balance/BalanceSlot.tsx'), (m) => m.BalanceSlot));
-
 // What prefetchLater() loads: each registered part's chunk.
 const loaders: (() => Promise<unknown>)[] = [];
 const whenIdle = (run: () => void) => { if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 1500 }); else setTimeout(run, 0); };

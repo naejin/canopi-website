@@ -7,25 +7,14 @@
 //   (colspan), so a blocked row reads as one sentence instead of five copies of it;
 // - runReasons / reasonParts: why a run of misfit cells is empty, counted once per plant;
 // - listGroups: each plant once, under the cell where it starts (owner row "v2 mockup choices");
-// - warningCounts: the warnings a chip counts (low conflicts are not shown on chips, types.ts Flag);
-// - nameOrder: plants by name with one Intl.Collator per page language, shared by every view.
-import type { Flag, MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { fits, fold, misfitsBeside, plantsIn, startCell, strata } from '../../../lib/consortium/index.ts';
-import { spanOf, spans } from './kit/span.ts';
-
-// Names sort in the page's language ("Äpfel" before "Birne" in German, after "Zitron" in Swedish):
-// one collator per language, made once.
-export type Order = (a: Taxon, b: Taxon) => number;
-const collators = new Map<string, Intl.Collator>();
-export function collatorFor(lang: string): Intl.Collator {
-  let c = collators.get(lang);
-  if (!c) { c = new Intl.Collator(lang); collators.set(lang, c); }
-  return c;
-}
-export const nameOrder = (nameOf: (t: Taxon) => string, lang: string): Order => {
-  const c = collatorFor(lang);
-  return (a, b) => c.compare(nameOf(a), nameOf(b));
-};
+// PP-B commit 0 moved the shared helpers out, re-exported here for the matrix views and their test
+// until b3 deletes this file: warningCounts, PHASE_ORDS and stepStage to views/kit/phase.ts; nameOrder,
+// collatorFor and Order to views/kit/names.ts; spanOf and spans to core years.ts.
+import type { MatrixCell, PhaseOrd, PlantId, Site, SiteKey, Stratum, Taxon } from '../../../lib/consortium/index.ts';
+import { fits, fold, misfitsBeside, plantsIn, spanOf, spans, startCell, strata } from '../../../lib/consortium/index.ts';
+import type { Order } from './kit/names.ts';
+export { collatorFor, nameOrder, type Order } from './kit/names.ts';
+export { PHASE_ORDS, stepStage, warningCounts } from './kit/phase.ts';
 
 // Götsch's share of ground cover per layer, an aim given as text, never a bar or a height
 // (coordinator row "v2 mockup choices": "aim ≈ 20 % cover; layers overlap").
@@ -37,9 +26,7 @@ export const MAX_TRACKS = 5;
 // Chips a collapsed cell still shows.
 export const COLLAPSED_CHIPS = 3;
 
-export const PHASE_ORDS: readonly PhaseOrd[] = [0, 1, 2, 3, 4, 5, 6];
-
-// A plant's span (views/kit/span.ts, the one spanOf), re-exported for the views and tests reading it here.
+// A plant's span (core years.ts, the one spanOf), re-exported for the views and tests reading it here.
 export { spanOf, spans };
 
 // The members of one stratum on tracks: sorted by start, longer first, then by name; each plant goes
@@ -135,22 +122,12 @@ export function listGroups(members: readonly Taxon[], byName: Order): ListGroup[
   return out;
 }
 
-// The warnings a plant's chip and row count: every flag but a low conflict.
-export function warningCounts(flags: readonly Flag[]): Map<PlantId, number> {
-  const out = new Map<PlantId, number>();
-  for (const f of flags) if (!(f.kind === 'conflict' && f.severity === 'low')) out.set(f.id, (out.get(f.id) ?? 0) + 1);
-  return out;
-}
-
 // The members a cell of the plant list's "Where plants start" grid counts, keyed like core cellKey.
 export function startCounts(groups: readonly ListGroup[]): Map<number, number> {
   const out = new Map<number, number>();
   for (const g of groups) if (g.stratum && g.phase !== null) out.set(strata.indexOf(g.stratum) * 7 + g.phase, g.plants.length);
   return out;
 }
-
-// One stage earlier or later, kept within the seven.
-export const stepStage = (stage: number, delta: number): PhaseOrd => Math.min(6, Math.max(0, stage + delta)) as PhaseOrd;
 
 // The fill meter's bar, in percent of the cells that can be filled.
 export const fillPercent = (filled: number, total: number): number => (total > 0 ? Math.round((filled / total) * 100) : 0);

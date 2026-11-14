@@ -1,14 +1,19 @@
-// The consortium's styles (src/styles/consortium/*.css; review C10). Two site rules, checked here so
-// no stream breaks them:
+// The consortium's styles (src/styles/consortium/*.css; review C10). Site rules, checked here so no
+// stream breaks them:
 // - breakpoints are max-width 639px and min-width 960px only (no tablet tier, no 1199/1200px tier,
 //   no em/rem widths, no range syntax);
-// - green is for plant content only, never chrome (CLAUDE.md "No green in UI chrome"). A declaration
-//   whose value holds a green (a hex colour of green hue, a stratum green token, or the site's
-//   --leaf* tokens, or a custom property aliasing one) is allowed only in a strata token definition
-//   (--s-*) or in a rule whose selector names a stratum (`[data-stratum…]`, `.stratum…`): the drawing, the matrix row marks, the legend.
+// - colour carries meaning (owner 2026-11-13; plant-palette-architecture 3.5): the meaning colours
+//   live in src/styles/tokens.css (--role-*, --light-*, --level-*), so consortium CSS, TSX and TS
+//   hold no raw hex colour (print.css excepted; base.css's stratum and bar token definitions until
+//   their stream moves them to tokens.css);
+// - a green (a hex colour of green hue, a stratum green token, the site's --leaf* tokens, or a
+//   custom property aliasing one) is plant content: allowed only in a strata or role token
+//   definition (--s-*, --role-*) or in a rule whose selector names a stratum or a job
+//   (`[data-stratum…]`, `.stratum…`, `[data-job…]`).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const dir = new URL('../src/styles/consortium/', import.meta.url);
 const sheets = readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => ({ name: f, css: readFileSync(new URL(f, dir), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '') }));
@@ -61,13 +66,13 @@ test('consortium styles use the site breakpoints only: max-width 639px and min-w
   }
 });
 
-test('stratum greens never colour chrome: only strata tokens and rules naming a stratum hold a green', () => {
+test('greens never colour chrome: only strata and role tokens and rules naming a stratum or a job hold a green', () => {
   for (const { name, css } of sheets) {
     for (const [selector, body] of rules(css)) {
       for (const [prop, value] of declarations(body)) {
         if (!holdsGreen(value, defs)) continue;
-        if (prop.startsWith('--s-')) continue;
-        assert.match(selector, /stratum/, `${name}: "${selector}" sets ${prop} to a green; green is for plant content (a selector naming a stratum)`);
+        if (prop.startsWith('--s-') || prop.startsWith('--role-')) continue;
+        assert.match(selector, /stratum|\[data-job/, `${name}: "${selector}" sets ${prop} to a green; green is for plant content (a selector naming a stratum or a job)`);
       }
     }
   }
@@ -90,4 +95,40 @@ test('the breakpoint reader catches other units and the range syntax', () => {
   assert.equal(badWidthConditions(' (width <= 639px)').length, 1);
   assert.equal(badWidthConditions(' (640px <= width < 960px)').length, 1);
   assert.equal(badWidthConditions(' (max-width: 1199px)').length, 1);
+});
+
+// A raw hex colour: #rgb, #rgba, #rrggbb or #rrggbbaa, not part of a longer word (an id like #a1 in a
+// selector would be caught: none is used).
+const HEX = /#[0-9a-f]{3,8}\b/gi;
+// base.css's stratum (--s-*) and bar (--bar) definitions, the one exception until they move to tokens.css.
+const BASE_TOKEN = /^--(s-[\w-]+|bar)$/;
+const islandFiles = (url) => readdirSync(url, { recursive: true, withFileTypes: true })
+  .filter((e) => e.isFile() && /\.(tsx?|mjs|js)$/.test(e.name)).map((e) => join(e.parentPath ?? e.path, e.name));
+
+test('no raw hex colour in consortium CSS (print.css excepted) or island code: the meaning tokens live in tokens.css', () => {
+  for (const { name, css } of sheets) {
+    if (name === 'print.css') continue;
+    for (const [selector, body] of rules(css)) {
+      for (const [prop, value] of declarations(body)) {
+        const hex = value.match(HEX);
+        if (!hex) continue;
+        if (name === 'base.css' && BASE_TOKEN.test(prop)) continue;
+        assert.fail(`${name}: "${selector}" ${prop} holds ${hex.join(', ')}: use a token from src/styles/tokens.css`);
+      }
+    }
+  }
+  for (const file of islandFiles(new URL('../src/islands/consortium/', import.meta.url))) {
+    const code = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    const hex = [...code.matchAll(/['"`(:,\s]#[0-9a-f]{3,8}\b/gi)].map(([m]) => m.slice(1));
+    assert.deepEqual(hex, [], `${file}: raw hex colour ${hex.join(', ')}; use a token from src/styles/tokens.css`);
+  }
+});
+
+test('the meaning tokens are defined in tokens.css for light and both dark blocks', () => {
+  const tokens = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
+  const blocks = tokens.split(/:root\[data-theme="dark"\]|@media \(prefers-color-scheme: dark\)/);
+  assert.equal(blocks.length, 3, 'light, dark and the dark media block');
+  for (const t of ['food', 'soil', 'helpers', 'mulch', 'ground', 'shelter']) for (const b of blocks) assert.match(b, new RegExp(`--role-${t}:\\s*#[0-9A-F]{6};`), `--role-${t} in each block`);
+  for (const t of ['emergent', 'high', 'medium', 'low', 'none', 'outline']) assert.match(blocks[0], new RegExp(`--light-${t}:`));
+  for (const t of ['look', 'outside', 'fits', 'unknown']) assert.match(blocks[0], new RegExp(`--level-${t}:\\s*var\\(--`));
 });

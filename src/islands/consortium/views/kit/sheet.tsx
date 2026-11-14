@@ -9,9 +9,8 @@
 import type { ComponentChildren, ComponentType } from 'preact';
 import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import type { Taxon } from '../../../../lib/consortium/index.ts';
-import { phases } from '../../../../lib/consortium/index.ts';
+import { phases, spanOf } from '../../../../lib/consortium/index.ts';
 import { T } from '../../strings.ts';
-import { spanOf } from './span.ts';
 import { CLOSE } from './icons.tsx';
 import { countryName, spanWords } from './names.ts';
 // The modules every sheet chunk shares, imported through here so they ship in the first run (review

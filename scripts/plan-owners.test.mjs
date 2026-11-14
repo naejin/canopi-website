@@ -102,3 +102,31 @@ test('a stream diff outside its rows is named', () => {
   assert.deepEqual(outside(owners, 1, 'V', ['package.json']), ['package.json'], 'no stream edits package.json');
   assert.throws(() => outside(owners, 1, 'R4', []), /no stream R4 in chunk 1/);
 });
+
+// PP-B commit 0 (plant-palette-slices section 1): the F1a markers are parked, moved or deleted, each
+// once; a parked or deleted one is no longer in the tree, a moved one is in its stream's file under
+// its new owner, and every entry points at its source line (PP-C commit 0 asserts the parked ones are
+// restored or deleted).
+test('parked markers: 24 parked, 7 moved, 8 deleted; none parked or deleted is left in the tree', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const { markers } = await import('./expect-fail.mjs');
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const list = JSON.parse(readFileSync(new URL('./plan/parked-markers.json', import.meta.url), 'utf8'));
+  assert.deepEqual([list.parked.length, list.moved.length, list.deleted.length], [24, 7, 8]);
+  const all = [...list.parked, ...list.moved, ...list.deleted];
+  assert.equal(new Set(all.map((m) => `${m.file}:${m.line}`)).size, 39, 'each F1a marker once');
+  const live = markers();
+  const source = new Map();
+  const at = (file) => {
+    if (!source.has(file)) source.set(file, execFileSync('git', ['show', `${list.source_commit}:${file}`], { cwd: root, encoding: 'utf8' }).split('\n'));
+    return source.get(file);
+  };
+  for (const m of all) assert.ok(at(m.file)[m.line - 1].includes(`failing('${m.title.replace(/'/g, "\\'").slice(0, 40)}`), `${m.id} is at ${m.file}:${m.line} in ${list.source_commit}`);
+  for (const m of [...list.parked, ...list.deleted]) assert.ok(!live.some((x) => x.title.startsWith(`${m.id} `)), `${m.id} is not in the tree`);
+  for (const m of list.parked) assert.match(`${m.push} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2))$/, m.id);
+  for (const m of list.moved) {
+    const now = live.find((x) => x.title.startsWith(`${m.id} → PP-B (${m.owner} `));
+    assert.ok(now && `scripts/${now.file}` === m.to && now.owner === m.owner, `${m.id} moved to ${m.to} under ${m.owner}`);
+  }
+});

@@ -11,3 +11,48 @@ function numberFormat(lang: string, max = 1): Intl.NumberFormat {
   return f;
 }
 export const formatNumber = (n: number, lang: string, max = 1): string => numberFormat(lang, max).format(n);
+
+// ---- measures (PP-B commit 0; plant-palette-architecture 3 "Names and numbers") ----
+// Every measure the palette writes goes through one of these, in the page language, with its unit
+// (Intl style 'unit'); new keys take the result as {len}, {area}, {depth}, {temp} or {tempDiff} and
+// never write a unit after a placeholder (consortium-keys.test.mjs). Behaviour is metric; these are
+// the single switch point should imperial units ever be offered.
+const unitFormats = new Map<string, Intl.NumberFormat>();
+function unitFormat(lang: string, unit: string, max: number, signed = false): Intl.NumberFormat {
+  const key = `${lang} ${unit} ${max} ${signed}`;
+  let f = unitFormats.get(key);
+  if (!f) {
+    f = new Intl.NumberFormat(lang, { style: 'unit', unit, unitDisplay: 'short', maximumFractionDigits: max, ...(signed ? { signDisplay: 'exceptZero' as const } : {}) });
+    unitFormats.set(key, f);
+  }
+  return f;
+}
+/** @public A length in metres ("2.5 m"); b3's size line is its first reader. */
+export const formatLength = (m: number, lang: string, max = 1): string => unitFormat(lang, 'meter', max).format(m);
+/** @public A soil depth in centimetres ("30 cm"); PP-F's soil lines are its first reader. */
+export const formatDepthCm = (cm: number, lang: string): string => unitFormat(lang, 'centimeter', 0).format(cm);
+/** @public A temperature in degrees Celsius ("−3.5 °C"). */
+export const formatTemp = (c: number, lang: string, max = 1): string => unitFormat(lang, 'celsius', max).format(c);
+/** @public A temperature difference, signed ("+2 °C"): a difference converts without the +32 offset. */
+export const formatTempDiff = (dc: number, lang: string, max = 1): string => unitFormat(lang, 'celsius', max, true).format(dc);
+/** @public An area in square metres: Intl has no square-metre unit, so the number and " m²". */
+export const formatArea = (m2: number, lang: string, max = 0): string => `${formatNumber(m2, lang, max)} m²`;
+
+// The plot size a grower types (Place, b1a): a whole number of square metres from 1 to MAX_PLOT_M2,
+// read with the page language's separators ("1 200", "1.200", "1,200" and "1200" all 1200 where
+// that language groups so; a decimal part is rounded), null for anything else (empty, 0, negative,
+// too large, not a number).
+const MAX_PLOT_M2 = 1_000_000; // core state.ts MAX_PLOT_M2 (format.ts imports nothing; the test pins them equal)
+/** @public b1a's plot size field is its first reader. */
+export function parsePlotSize(text: string, lang: string): number | null {
+  const parts = new Intl.NumberFormat(lang).formatToParts(12345.6);
+  const group = parts.find((p) => p.type === 'group')?.value ?? ',';
+  const decimal = parts.find((p) => p.type === 'decimal')?.value ?? '.';
+  let t = text.trim().replace(/\s*(m²|m2|sq ?m)$/i, '').replace(/\s/g, ''); // \s holds no-break and narrow spaces
+  if (!t || !/^[\d.,'’]+$/.test(t)) return null;
+  if (!/\s/.test(group)) t = t.split(group).join(''); // a space group went with the spaces above
+  t = t.replace(/['’]/g, '').replace(decimal, '.');
+  if (!/^\d+(\.\d+)?$/.test(t)) return null;
+  const n = Math.round(Number(t));
+  return n >= 1 && n <= MAX_PLOT_M2 ? n : null;
+}

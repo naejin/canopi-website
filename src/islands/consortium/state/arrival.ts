@@ -4,13 +4,14 @@
 // startMemory, which wires all of it once. The pure parts (arrival, hashAction, countryAtStart,
 // guessCountry; ported from v1 logic.js and memory.js) run in Node (scripts/consortium-memory.test.mjs).
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
-import { linkOrigin, readPreset, zoneOf } from '../../../lib/consortium/index.ts';
+import { bringsPlace, decodeLink, linkOrigin, readPreset, zoneOf } from '../../../lib/consortium/index.ts';
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import {
-  attempt, currentFragment, fromOf, memory, oldRecord, openedWith, own, readRecord, storageWorks, watchStore, writeSave,
-  COUNTRY_STORE, NO_COUNTRY, SITE_CLIMATE, STORE, type CountryFrom, type SavedRecord,
+  attempt, currentFragment, fromOf, memory, oldRecord, openedWith, own, quietly, readRecord, storageWorks, watchStore, writeSave,
+  COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE, STORE, type CountryFrom, type SavedRecord,
 } from './persist.ts';
+import { state as schema } from './schema.ts';
 import { applyPreset, notices, ownLocation, restore, waitForSource, NO_NOTICES } from './restore.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
@@ -25,15 +26,16 @@ export type Arrival =
   | { kind: 'link'; fragment: string }
   | { kind: 'preset'; climate: ClimateZone; plant: string | null }
   | { kind: 'outdated' }
-  | { kind: 'saved'; fragment: string; at: string; src: CountryFrom }
+  | { kind: 'saved'; fragment: string; at: string; src: CountryFrom; place: string }
   | { kind: 'start'; climate: ClimateZone | null };
 
-// history.state as replaceState left it: the page's own fragment and its country source.
-interface OwnAddress { ct: string; src: CountryFrom }
+// history.state as replaceState left it: the page's own fragment, its country source and this tab's
+// place (pl: the private place answers, kept per tab since the save is shared by every tab; '' none).
+interface OwnAddress { ct: string; src: CountryFrom; pl: string }
 const ownOf = (v: unknown): OwnAddress | null => {
   if (!v || typeof v !== 'object') return null;
-  const { ct, src } = v as Record<string, unknown>;
-  return typeof ct === 'string' && ct ? { ct, src: fromOf(src) } : null;
+  const { ct, src, pl } = v as Record<string, unknown>;
+  return typeof ct === 'string' && ct ? { ct, src: fromOf(src), pl: typeof pl === 'string' && pl.length < 2_000 ? pl : '' } : null;
 };
 
 // What the page opens with, in order: the page's own address after a reload (history.state.ct is
@@ -44,24 +46,24 @@ const ownOf = (v: unknown): OwnAddress | null => {
 export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null, state: unknown = null): Arrival {
   const hash = loc.hash.replace(/^#/, '');
   const own = ownOf(state);
-  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src };
+  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl };
   if (hash && isLinkFragment(hash)) return { kind: 'link', fragment: hash };
   const preset = readPreset(loc.search);
   if (preset.climate) return { kind: 'preset', climate: preset.climate, plant: preset.plant };
   if (isLinkFragment(loc.search)) return { kind: 'outdated' };
-  if (saved) return { kind: 'saved', fragment: saved.fragment, at: saved.at, src: saved.src };
+  if (saved) return { kind: 'saved', fragment: saved.fragment, at: saved.at, src: saved.src, place: saved.place };
   return { kind: 'start', climate: zoneOf(siteClimate) };
 }
 
 // A hashchange (a pasted link, or Back/Forward): the page's own address (history.state.ct, as
 // arrival reads it) reopens as the save with its country source; another link opens as a link; the
 // address of the consortium shown, or a fragment that is no link, is ignored.
-export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom } | { kind: 'link'; fragment: string };
+export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom; place: string } | { kind: 'link'; fragment: string };
 export function hashAction(hash: string, state: unknown, current: string | null): HashAction {
   const f = hash.replace(/^#/, '');
   if (!f || !isLinkFragment(f) || f === current) return { kind: 'ignore' };
   const own = ownOf(state);
-  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src };
+  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl };
   return { kind: 'link', fragment: f };
 }
 
@@ -104,6 +106,22 @@ export function guessCountry(codes: readonly string[], { zone, languages = [], z
   return null;
 }
 
+// ---- the place seed ----
+
+// The canopi-place seed (`m z l w q r h s`, persist.ts placeSeed) as the place fields' values, or null
+// when there is none: read through the link decoder (a v5 fragment of the place keys alone), so a seed
+// follows the link's words and fallbacks.
+export function placeOfSeed(seed: string | null): Pick<ReturnType<typeof schema.peek<'room' | 'plot' | 'spot' | 'soil'>>, 'room' | 'plot' | 'spot' | 'soil'> | null {
+  if (!seed || seed.length > 2_000) return null;
+  const d = decodeLink(`v=5&${seed}&e=1`, {});
+  return { room: d.state.room, plot: d.state.plot, spot: d.state.spot ?? schema.valuesOf(['spot']).spot, soil: d.state.soil ?? { from: 'map' } };
+}
+// Writes the seed into the place fields (not the reader acting: no save, no seed written back).
+function seedPlace(seed: string | null): void {
+  const place = placeOfSeed(seed);
+  if (place) quietly(() => schema.write(place));
+}
+
 // ---- the wiring ----
 
 let started = false;
@@ -122,9 +140,11 @@ export function startMemory(): void {
     notices.value = { ...notices.peek(), oldSave: true };
     writeSave(null);
   }
-  const linkK = how.kind === 'link' ? new URLSearchParams(how.fragment).get('k') : null;
-  // A location country is kept beside the saved fragment, not in it (owner answer 5).
-  const savedK = how.kind === 'saved' ? new URLSearchParams(how.fragment).get('k') ?? (how.src === 'location' && saved?.fragment === how.fragment ? saved.country ?? null : null) : null;
+  // A link's country only when the link brings a place (`k` alone keeps the reader's: 8.3).
+  const linkK = how.kind === 'link' && bringsPlace(how.fragment, decodeLink(how.fragment, {})) ? new URLSearchParams(how.fragment).get('k') : null;
+  // A location's or a link's country is kept beside the saved fragment, never in it (owner answer 5;
+  // the fragment is public in link v5).
+  const savedK = how.kind === 'saved' && (how.src === 'location' || how.src === 'link') && saved?.fragment === how.fragment ? saved.country ?? null : null;
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
   // The time zone needs the known countries: the page names them (#ct-data `countries`, the
@@ -136,8 +156,12 @@ export function startMemory(): void {
   // with the database); a link's `o=` stands in for it on that page (ownLocation).
   if (!(how.kind === 'link' && linkOrigin(how.fragment))) void waitForSource().then(ownLocation);
 
+  // A palette that starts with no place of its own takes the reader's last place answers as its seed
+  // (canopi-place, plant-palette-architecture 8.3); a link's room, plot and place still win over it.
+  if (how.kind !== 'saved') seedPlace(memory.read(PLACE_STORE));
+
   if (how.kind === 'link') void restore(how.fragment, { from: 'link' });
-  else if (how.kind === 'saved') void restore(how.fragment, { from: 'saved', src: how.src });
+  else if (how.kind === 'saved') void restore(how.fragment, { from: 'saved', src: how.src, place: how.place });
   else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
   else if (how.kind === 'preset') void applyPreset(how.climate, how.plant);
   else if (how.climate) store.climate.value = how.climate;
@@ -148,7 +172,7 @@ export function startMemory(): void {
     const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
     if (act.kind === 'ignore') return;
     const keep = own() !== null;
-    if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep }); return; }
+    if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep, place: act.place }); return; }
     notices.value = { ...NO_NOTICES };
     void restore(act.fragment, { from: 'link', keep });
   });

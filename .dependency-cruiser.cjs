@@ -17,6 +17,7 @@
 //   and a real `import('x')` (main.ts, location/load.ts, maplibre.ts), dependency-cruiser merges them
 //   into one `type-import` edge and drops the dynamic flag. Counting it keeps the real dynamic edge.
 // - Dynamic edges are kept for cycles (A24): C4 and C5 close through import().
+// - L10 (PP-B commit 0) is `warn`: its known breaches are the arch baseline's keys until PP-C c2.
 // - `.astro` files are not parsed (dependency-cruiser has no Astro parser): L9 covers .ts/.tsx/.js/.mjs.
 //   src/scripts/ (client scripts of the pages) is not the repo-root scripts/ that L9 guards.
 
@@ -100,6 +101,16 @@ module.exports = {
       comment: 'L9: src/** imports nothing from the repo-root scripts/ (ADR-1).',
       from: { path: '^src/' },
       to: { path: '^scripts/' },
+    },
+    {
+      name: 'L10-one-verdict',
+      severity: 'warn', // PP-B commit 0; error at the end of PP-C (c2), when the baseline is empty
+      comment: 'L10: inside the core only the rule files, verdict*.ts, place.ts, suggest.ts, site-climate.ts, matrix.ts (until b3 deletes it) and index.ts (named re-exports) import range.ts, future.ts or site.ts (plant-palette-architecture, consortium-v2-architecture row 3).',
+      from: {
+        path: '^src/lib/consortium/',
+        pathNot: '^src/lib/consortium/(range|future|site|verdict[^/]*|place|suggest|site-climate|matrix|index)\\.ts$',
+      },
+      to: { path: '^src/lib/consortium/(range|future|site)\\.ts$' },
     },
   ],
   options: {

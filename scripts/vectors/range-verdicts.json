@@ -1,0 +1,5673 @@
+{
+ "schema": "canopi-range-verdicts/1",
+ "thresholds": {
+  "margin_c": 2,
+  "chill_ceiling_c": 18,
+  "heat_demand_c": 18
+ },
+ "precision": {
+  "range_decimals": 2,
+  "site_decimals": 1,
+  "applies_to": "real rows"
+ },
+ "source": {
+  "release_id": "r-60ea417b5a15c3aa",
+  "export_file": "consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz",
+  "export_raw_sha256": "977fc4ceccc79ac35e14dc8eb8f536b64dbd17359d43bc6aa0a3d20390a630c8",
+  "sites_from": "scripts/ranges_scenarios.py SITES + HELD_OUT_SITES",
+  "pairs_from": "scripts/ranges_scenarios.py EXPECT, HELD_OUT, WARMTH, HELD_OUT_SUMMER, SHOW",
+  "generator": "uv run python scripts/range_vectors.py",
+  "absent_plants": [
+   "Phoenix dactylifera"
+  ]
+ },
+ "branches": [
+  "unknown.no_climate",
+  "unknown.no_rule_rows",
+  "judged.year_or_warm_only",
+  "tie.zero",
+  "tie.margin",
+  "tie.margin_plus",
+  "round.half_up",
+  "cold.inside",
+  "cold.edge",
+  "cold.beyond",
+  "cold.low_null",
+  "mild.inside",
+  "mild.edge",
+  "mild.beyond",
+  "mild.ceiling_tie",
+  "mild.below_ceiling",
+  "mild.high_null",
+  "annual.is_annual",
+  "annual.grown_as_annual",
+  "annual.is_annual_null",
+  "cool.inside",
+  "cool.edge",
+  "cool.beyond",
+  "cool.half_degree_mean",
+  "cool.annual_skips",
+  "summer.inside",
+  "summer.edge",
+  "summer.beyond",
+  "summer.threshold_tie",
+  "summer.below_threshold",
+  "summer.perennial_ignores",
+  "summer.low_null",
+  "hot.perennial_inside",
+  "hot.perennial_edge",
+  "hot.perennial_beyond",
+  "hot.annual_edge",
+  "hot.annual_cool_season",
+  "hot.cool_season_plus_other",
+  "hot.high_null",
+  "weak.cold",
+  "weak.cool",
+  "agg.mixed",
+  "agg.edge_only",
+  "agg.all_inside",
+  "slot.future"
+ ],
+ "plants": {
+  "Abelmoschus esculentus": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 26.3,
+     "high": 41.5,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 23.0,
+     "high": 33.9,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 13.3,
+     "high": 28.6,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -2.2,
+     "high": 23.6,
+     "weak": false
+    }
+   }
+  },
+  "Acer campestre": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 17.8,
+     "high": 34.3,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.0,
+     "high": 25.4,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 8.0,
+     "high": 16.0,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -10.5,
+     "high": 5.1,
+     "weak": true
+    }
+   }
+  },
+  "Allium cepa": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 18.8,
+     "high": 41.3,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.2,
+     "high": 32.7,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 5.2,
+     "high": 26.0,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -11.7,
+     "high": 18.1,
+     "weak": false
+    }
+   }
+  },
+  "Allium porrum": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 17.9,
+     "high": 37.4,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 14.9,
+     "high": 28.8,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 8.6,
+     "high": 19.6,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -6.6,
+     "high": 10.6,
+     "weak": false
+    }
+   }
+  },
+  "Allium sativum": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.1,
+     "high": 37.9,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.9,
+     "high": 28.7,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.6,
+     "high": 24.3,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -13.3,
+     "high": 15.5,
+     "weak": false
+    }
+   }
+  },
+  "Ananas comosus": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.0,
+     "high": 36.9,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.4,
+     "high": 29.4,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 18.6,
+     "high": 27.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 10.2,
+     "high": 24.0,
+     "weak": false
+    }
+   }
+  },
+  "Annona muricata": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.9,
+     "high": 37.4,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 20.7,
+     "high": 29.3,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 19.4,
+     "high": 27.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 11.4,
+     "high": 24.4,
+     "weak": false
+    }
+   }
+  },
+  "Artocarpus altilis": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 25.4,
+     "high": 37.8,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 22.5,
+     "high": 29.8,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 21.5,
+     "high": 27.8,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 14.1,
+     "high": 25.0,
+     "weak": false
+    }
+   }
+  },
+  "Artocarpus heterophyllus": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 25.1,
+     "high": 41.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 22.1,
+     "high": 33.8,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 18.7,
+     "high": 27.9,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 9.0,
+     "high": 24.2,
+     "weak": false
+    }
+   }
+  },
+  "Ballota pseudodictamnus": {
+   "synthetic": false,
+   "is_annual": null,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 18.8,
+     "high": 35.5,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.9,
+     "high": 28.0,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 10.2,
+     "high": 19.1,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -1.1,
+     "high": 10.6,
+     "weak": false
+    }
+   }
+  },
+  "Beta vulgaris subsp. vulgaris": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 17.9,
+     "high": 41.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.3,
+     "high": 31.7,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 6.8,
+     "high": 22.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -7.8,
+     "high": 10.4,
+     "weak": false
+    }
+   }
+  },
+  "Brassica oleracea": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 17.3,
+     "high": 41.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.1,
+     "high": 31.6,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.0,
+     "high": 25.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -14.6,
+     "high": 16.4,
+     "weak": false
+    }
+   }
+  },
+  "Carica papaya": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.9,
+     "high": 41.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.4,
+     "high": 33.0,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 17.9,
+     "high": 27.9,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 7.1,
+     "high": 24.2,
+     "weak": false
+    }
+   }
+  },
+  "Citrus limon": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 21.7,
+     "high": 40.6,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 20.5,
+     "high": 31.4,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 15.8,
+     "high": 27.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 3.0,
+     "high": 23.1,
+     "weak": false
+    }
+   }
+  },
+  "Citrus reticulata": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 22.6,
+     "high": 40.6,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 26.1,
+     "high": 29.8,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 16.0,
+     "high": 27.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -0.4,
+     "high": 23.8,
+     "weak": false
+    }
+   }
+  },
+  "Cocos nucifera": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.1,
+     "high": 40.5,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 24.0,
+     "high": 32.0,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 21.7,
+     "high": 27.9,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 11.6,
+     "high": 24.9,
+     "weak": false
+    }
+   }
+  },
+  "Coffea arabica": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 22.1,
+     "high": 37.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 17.9,
+     "high": 29.0,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 16.5,
+     "high": 27.1,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 8.0,
+     "high": 23.6,
+     "weak": false
+    }
+   }
+  },
+  "Coffea canephora": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.3,
+     "high": 41.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.6,
+     "high": 29.9,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 20.0,
+     "high": 27.6,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 13.3,
+     "high": 23.7,
+     "weak": false
+    }
+   }
+  },
+  "Colocasia esculenta": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 22.3,
+     "high": 40.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 19.9,
+     "high": 30.9,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 14.4,
+     "high": 27.4,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 0.2,
+     "high": 23.9,
+     "weak": false
+    }
+   }
+  },
+  "Cucurbita moschata": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 22.4,
+     "high": 40.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 18.0,
+     "high": 30.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 8.5,
+     "high": 27.3,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -10.5,
+     "high": 23.5,
+     "weak": false
+    }
+   }
+  },
+  "Cucurbita pepo": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.4,
+     "high": 39.5,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 16.1,
+     "high": 29.9,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 5.1,
+     "high": 25.8,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -11.3,
+     "high": 19.5,
+     "weak": false
+    }
+   }
+  },
+  "Curcuma longa": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 23.1,
+     "high": 41.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.2,
+     "high": 33.6,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 15.2,
+     "high": 27.7,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 2.9,
+     "high": 24.1,
+     "weak": false
+    }
+   }
+  },
+  "Daucus carota": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 17.7,
+     "high": 39.3,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.1,
+     "high": 28.8,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 3.3,
+     "high": 20.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -15.2,
+     "high": 11.2,
+     "weak": false
+    }
+   }
+  },
+  "Diospyros kaki": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 21.2,
+     "high": 35.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.7,
+     "high": 27.9,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 10.7,
+     "high": 20.9,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -7.9,
+     "high": 13.3,
+     "weak": false
+    }
+   }
+  },
+  "Eriobotrya japonica": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.7,
+     "high": 37.4,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 17.9,
+     "high": 29.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 11.5,
+     "high": 24.4,
+     "weak": true
+    },
+    "tmin_cold": {
+     "low": -3.3,
+     "high": 19.0,
+     "weak": true
+    }
+   }
+  },
+  "Ficus carica": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.0,
+     "high": 42.6,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.9,
+     "high": 33.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 9.4,
+     "high": 25.7,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -3.4,
+     "high": 16.8,
+     "weak": false
+    }
+   }
+  },
+  "Fragaria ×ananassa": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 16.4,
+     "high": 34.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 14.1,
+     "high": 26.8,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 3.0,
+     "high": 17.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -13.2,
+     "high": 7.6,
+     "weak": false
+    }
+   }
+  },
+  "Ipomoea batatas": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 22.6,
+     "high": 40.6,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 19.5,
+     "high": 31.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 14.1,
+     "high": 27.6,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 0.7,
+     "high": 23.8,
+     "weak": false
+    }
+   }
+  },
+  "Lactuca sativa": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 18.6,
+     "high": 39.9,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 16.3,
+     "high": 29.2,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.5,
+     "high": 24.4,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -13.5,
+     "high": 17.8,
+     "weak": false
+    }
+   }
+  },
+  "Malus domestica": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 16.9,
+     "high": 36.3,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 14.4,
+     "high": 26.3,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.6,
+     "high": 17.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -15.9,
+     "high": 8.4,
+     "weak": true
+    }
+   }
+  },
+  "Mangifera indica": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.8,
+     "high": 41.2,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.0,
+     "high": 33.7,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 18.4,
+     "high": 28.1,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 7.2,
+     "high": 24.1,
+     "weak": false
+    }
+   }
+  },
+  "Manihot esculenta": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.8,
+     "high": 40.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.1,
+     "high": 31.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 18.2,
+     "high": 27.9,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 9.0,
+     "high": 24.2,
+     "weak": false
+    }
+   }
+  },
+  "Moringa oleifera": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 26.7,
+     "high": 41.7,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 23.7,
+     "high": 34.4,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 20.8,
+     "high": 28.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 7.2,
+     "high": 24.1,
+     "weak": false
+    }
+   }
+  },
+  "Musa acuminata": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 22.8,
+     "high": 40.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 20.5,
+     "high": 30.4,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 18.2,
+     "high": 27.6,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 7.8,
+     "high": 24.1,
+     "weak": false
+    }
+   }
+  },
+  "Olea europaea": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 21.5,
+     "high": 45.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 18.4,
+     "high": 33.9,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 11.4,
+     "high": 24.7,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -1.1,
+     "high": 15.8,
+     "weak": false
+    }
+   }
+  },
+  "Persea americana": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.5,
+     "high": 38.8,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 16.7,
+     "high": 29.3,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 13.6,
+     "high": 27.2,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 4.6,
+     "high": 23.8,
+     "weak": false
+    }
+   }
+  },
+  "Phaseolus vulgaris": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.5,
+     "high": 40.4,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 14.4,
+     "high": 30.8,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.4,
+     "high": 26.4,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -13.8,
+     "high": 21.3,
+     "weak": false
+    }
+   }
+  },
+  "Plinia cauliflora": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 22.6,
+     "high": 34.9,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 21.4,
+     "high": 28.3,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 17.5,
+     "high": 26.1,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 8.9,
+     "high": 22.0,
+     "weak": false
+    }
+   }
+  },
+  "Prunus armeniaca": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.3,
+     "high": 38.2,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 16.9,
+     "high": 28.4,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.0,
+     "high": 19.0,
+     "weak": true
+    },
+    "tmin_cold": {
+     "low": -14.4,
+     "high": 8.8,
+     "weak": true
+    }
+   }
+  },
+  "Prunus dulcis": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.9,
+     "high": 37.6,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 16.7,
+     "high": 28.3,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 10.0,
+     "high": 19.8,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -8.2,
+     "high": 11.7,
+     "weak": true
+    }
+   }
+  },
+  "Psidium guajava": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.0,
+     "high": 41.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 20.2,
+     "high": 33.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 17.2,
+     "high": 27.8,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 6.1,
+     "high": 23.9,
+     "weak": false
+    }
+   }
+  },
+  "Punica granatum": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 21.7,
+     "high": 41.3,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 18.1,
+     "high": 33.3,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 10.6,
+     "high": 27.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -2.2,
+     "high": 22.9,
+     "weak": false
+    }
+   }
+  },
+  "Ribes nigrum": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 15.3,
+     "high": 29.9,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 13.1,
+     "high": 22.6,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": -4.9,
+     "high": 11.7,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -30.4,
+     "high": 2.3,
+     "weak": false
+    }
+   }
+  },
+  "Rosmarinus officinalis": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 18.0,
+     "high": 36.6,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.5,
+     "high": 28.6,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 9.6,
+     "high": 24.7,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -3.1,
+     "high": 19.4,
+     "weak": false
+    }
+   }
+  },
+  "Solanum lycopersicum": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 18.6,
+     "high": 40.6,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 15.2,
+     "high": 31.4,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.8,
+     "high": 26.9,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -13.2,
+     "high": 22.0,
+     "weak": false
+    }
+   }
+  },
+  "Solanum tuberosum": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 15.2,
+     "high": 37.3,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 9.6,
+     "high": 28.6,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 4.9,
+     "high": 22.4,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -11.6,
+     "high": 14.8,
+     "weak": false
+    }
+   }
+  },
+  "Theobroma cacao": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 24.8,
+     "high": 38.8,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 20.7,
+     "high": 29.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 21.3,
+     "high": 27.5,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 14.4,
+     "high": 24.1,
+     "weak": false
+    }
+   }
+  },
+  "Vitis vinifera": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.0,
+     "high": 39.9,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 17.6,
+     "high": 29.2,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 7.1,
+     "high": 22.8,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -10.2,
+     "high": 14.4,
+     "weak": false
+    }
+   }
+  },
+  "Zea mays": {
+   "synthetic": false,
+   "is_annual": true,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 19.3,
+     "high": 41.1,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 16.8,
+     "high": 31.9,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 6.0,
+     "high": 27.6,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -11.5,
+     "high": 22.3,
+     "weak": false
+    }
+   }
+  },
+  "Zingiber officinale": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 23.8,
+     "high": 40.8,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 23.7,
+     "high": 31.1,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 17.1,
+     "high": 27.6,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": 2.8,
+     "high": 24.0,
+     "weak": false
+    }
+   }
+  },
+  "Ziziphus jujuba": {
+   "synthetic": false,
+   "is_annual": false,
+   "grown_as_annual": false,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 23.5,
+     "high": 41.5,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 19.7,
+     "high": 32.2,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 10.9,
+     "high": 27.4,
+     "weak": false
+    },
+    "tmin_cold": {
+     "low": -13.3,
+     "high": 19.8,
+     "weak": true
+    }
+   }
+  },
+  "SYN:unknown.no_climate": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": null,
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:unknown.no_rule_rows": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {}
+  },
+  "SYN:judged.year_or_warm_only": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_year": {
+     "low": 17,
+     "high": 28.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:tie.zero": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 0.0,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:tie.margin": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 9.8,
+     "high": 15.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:tie.margin_plus": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 2.01,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:round.half_up": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 0.005,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cold.inside": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cold.edge": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 1.0,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cold.beyond": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 5,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cold.low_null": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": null,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:mild.inside": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:mild.edge": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -15,
+     "high": -1.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:mild.beyond": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -15,
+     "high": -5,
+     "weak": false
+    }
+   }
+  },
+  "SYN:mild.ceiling_tie": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 18,
+     "weak": false
+    }
+   }
+  },
+  "SYN:mild.below_ceiling": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 17.99,
+     "weak": false
+    }
+   }
+  },
+  "SYN:mild.high_null": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": null,
+     "weak": false
+    }
+   }
+  },
+  "SYN:annual.is_annual": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 5,
+     "high": 10.0,
+     "weak": false
+    },
+    "tmax_warm": {
+     "low": 10.0,
+     "high": 35.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:annual.grown_as_annual": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": true,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 5,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:annual.is_annual_null": {
+   "synthetic": true,
+   "is_annual": null,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 5,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cool.inside": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_year": {
+     "low": 10.0,
+     "high": 25.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cool.edge": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_year": {
+     "low": 13.0,
+     "high": 25.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cool.beyond": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_year": {
+     "low": 17,
+     "high": 25.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cool.half_degree_mean": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_year": {
+     "low": 14.06,
+     "high": 25.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:cool.annual_skips": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_year": {
+     "low": 17,
+     "high": 25.0,
+     "weak": false
+    },
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 35.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:summer.inside": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_warm": {
+     "low": 18.5,
+     "high": 30.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:summer.edge": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_warm": {
+     "low": 21.0,
+     "high": 35.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:summer.beyond": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_warm": {
+     "low": 25,
+     "high": 35.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:summer.threshold_tie": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_warm": {
+     "low": 18,
+     "high": 30.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:summer.below_threshold": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_warm": {
+     "low": 17.99,
+     "high": 30.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:summer.perennial_ignores": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 10.0,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 18,
+     "high": 30.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:summer.low_null": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_warm": {
+     "low": null,
+     "high": 30.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:hot.perennial_inside": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 32.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:hot.perennial_edge": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 29.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:hot.perennial_beyond": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 25,
+     "weak": false
+    }
+   }
+  },
+  "SYN:hot.annual_edge": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 29.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:hot.annual_cool_season": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 25,
+     "weak": false
+    }
+   }
+  },
+  "SYN:hot.cool_season_plus_other": {
+   "synthetic": true,
+   "is_annual": true,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 25,
+     "weak": false
+    },
+    "tmean_warm": {
+     "low": 25,
+     "high": 35.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:hot.high_null": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmax_warm": {
+     "low": 20.0,
+     "high": null,
+     "weak": false
+    }
+   }
+  },
+  "SYN:weak.cold": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 5,
+     "high": 10.0,
+     "weak": true
+    }
+   }
+  },
+  "SYN:weak.cool": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmean_year": {
+     "low": 17,
+     "high": 25.0,
+     "weak": true
+    }
+   }
+  },
+  "SYN:agg.mixed": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 1.0,
+     "high": 10.0,
+     "weak": false
+    },
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 25,
+     "weak": false
+    }
+   }
+  },
+  "SYN:agg.edge_only": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": 1.0,
+     "high": 10.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:agg.all_inside": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 10.0,
+     "weak": false
+    },
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 32.0,
+     "weak": false
+    },
+    "tmean_year": {
+     "low": 10.0,
+     "high": 25.0,
+     "weak": false
+    }
+   }
+  },
+  "SYN:slot.future": {
+   "synthetic": true,
+   "is_annual": false,
+   "grown_as_annual": null,
+   "range_source": "gbif_occurrences",
+   "climate": {
+    "tmin_cold": {
+     "low": -5.0,
+     "high": 10.0,
+     "weak": false
+    },
+    "tmax_warm": {
+     "low": 20.0,
+     "high": 32.0,
+     "weak": false
+    }
+   }
+  }
+ },
+ "sites": {
+  "Nairobi": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": -1.29,
+   "lon": 36.82,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 12.3,
+   "tmax_warm_c": 26.5,
+   "tmean_cold_c": 17.6,
+   "tmean_warm_c": 21.1
+  },
+  "Manaus": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": -3.12,
+   "lon": -60.02,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 24.0,
+   "tmax_warm_c": 31.2,
+   "tmean_cold_c": 26.7,
+   "tmean_warm_c": 28.3
+  },
+  "Seville": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 37.39,
+   "lon": -5.98,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 5.8,
+   "tmax_warm_c": 34.8,
+   "tmean_cold_c": 11.0,
+   "tmean_warm_c": 27.8
+  },
+  "Seville 2071-2099 SSP2-4.5": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 37.39,
+   "lon": -5.98,
+   "period": "2071-2099",
+   "scenario": "ssp245",
+   "tmin_cold_c": 7.3,
+   "tmax_warm_c": 37.2,
+   "tmean_cold_c": 12.5,
+   "tmean_warm_c": 30.2
+  },
+  "Riyadh": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 24.71,
+   "lon": 46.68,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 6.8,
+   "tmax_warm_c": 42.3,
+   "tmean_cold_c": 14.4,
+   "tmean_warm_c": 36.6
+  },
+  "Lyon": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 45.76,
+   "lon": 4.84,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 0.1,
+   "tmax_warm_c": 26.6,
+   "tmean_cold_c": 4.3,
+   "tmean_warm_c": 22.4
+  },
+  "Oslo": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 59.91,
+   "lon": 10.75,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -7.6,
+   "tmax_warm_c": 21.1,
+   "tmean_cold_c": -3.3,
+   "tmean_warm_c": 17.4
+  },
+  "Rovaniemi (boreal)": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 66.5,
+   "lon": 25.73,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -13.3,
+   "tmax_warm_c": 19.1,
+   "tmean_cold_c": -10.9,
+   "tmean_warm_c": 15.8
+  },
+  "Minneapolis": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 44.98,
+   "lon": -93.27,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -12.6,
+   "tmax_warm_c": 27.9,
+   "tmean_cold_c": -9.1,
+   "tmean_warm_c": 23.0
+  },
+  "Singapore": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 1.35,
+   "lon": 103.82,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 24.7,
+   "tmax_warm_c": 29.2,
+   "tmean_cold_c": 26.4,
+   "tmean_warm_c": 27.9
+  },
+  "Harbin": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 45.8,
+   "lon": 126.53,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -24.1,
+   "tmax_warm_c": 27.3,
+   "tmean_cold_c": -17.8,
+   "tmean_warm_c": 23.8
+  },
+  "Oulu": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 65.01,
+   "lon": 25.47,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -11.2,
+   "tmax_warm_c": 19.5,
+   "tmean_cold_c": -8.5,
+   "tmean_warm_c": 16.6
+  },
+  "Arkhangelsk": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 64.54,
+   "lon": 40.54,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -13.5,
+   "tmax_warm_c": 20.2,
+   "tmean_cold_c": -11.2,
+   "tmean_warm_c": 16.6
+  },
+  "Delhi 2071-2099 SSP2-4.5": {
+   "synthetic": false,
+   "held_out": false,
+   "lat": 28.61,
+   "lon": 77.21,
+   "period": "2071-2099",
+   "scenario": "ssp245",
+   "tmin_cold_c": 10.2,
+   "tmax_warm_c": 41.5,
+   "tmean_cold_c": 16.6,
+   "tmean_warm_c": 35.8
+  },
+  "Kampala": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 0.35,
+   "lon": 32.58,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 17.4,
+   "tmax_warm_c": 25.6,
+   "tmean_cold_c": 20.9,
+   "tmean_warm_c": 22.4
+  },
+  "Addis Ababa": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 9.03,
+   "lon": 38.74,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 6.3,
+   "tmax_warm_c": 22.2,
+   "tmean_cold_c": 14.0,
+   "tmean_warm_c": 16.9
+  },
+  "Quito": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": -0.18,
+   "lon": -78.47,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 9.7,
+   "tmax_warm_c": 18.8,
+   "tmean_cold_c": 13.6,
+   "tmean_warm_c": 14.1
+  },
+  "Bogota": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 4.71,
+   "lon": -74.07,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 9.6,
+   "tmax_warm_c": 19.7,
+   "tmean_cold_c": 13.5,
+   "tmean_warm_c": 14.3
+  },
+  "Cape Town": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": -33.92,
+   "lon": 18.42,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 10.5,
+   "tmax_warm_c": 22.1,
+   "tmean_cold_c": 12.9,
+   "tmean_warm_c": 20.4
+  },
+  "Perth": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": -31.95,
+   "lon": 115.86,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 9.8,
+   "tmax_warm_c": 30.3,
+   "tmean_cold_c": 13.8,
+   "tmean_warm_c": 24.7
+  },
+  "Tashkent": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 41.3,
+   "lon": 69.24,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -5.1,
+   "tmax_warm_c": 34.1,
+   "tmean_cold_c": 1.4,
+   "tmean_warm_c": 28.3
+  },
+  "Tokyo": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 35.68,
+   "lon": 139.69,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 0.2,
+   "tmax_warm_c": 29.3,
+   "tmean_cold_c": 5.0,
+   "tmean_warm_c": 27.2
+  },
+  "Brisbane": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": -27.47,
+   "lon": 153.03,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 10.8,
+   "tmax_warm_c": 28.2,
+   "tmean_cold_c": 15.1,
+   "tmean_warm_c": 25.3
+  },
+  "Lima": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": -12.05,
+   "lon": -77.04,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 14.9,
+   "tmax_warm_c": 24.9,
+   "tmean_cold_c": 17.9,
+   "tmean_warm_c": 23.4
+  },
+  "Delhi": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 28.61,
+   "lon": 77.21,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 7.7,
+   "tmax_warm_c": 39.3,
+   "tmean_cold_c": 14.1,
+   "tmean_warm_c": 33.6
+  },
+  "Hanoi": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 21.03,
+   "lon": 105.85,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 13.4,
+   "tmax_warm_c": 32.5,
+   "tmean_cold_c": 16.9,
+   "tmean_warm_c": 29.6
+  },
+  "Shetland": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 60.15,
+   "lon": -1.15,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 4.5,
+   "tmax_warm_c": 13.1,
+   "tmean_cold_c": 5.1,
+   "tmean_warm_c": 12.7
+  },
+  "Reykjavik": {
+   "synthetic": false,
+   "held_out": true,
+   "lat": 64.15,
+   "lon": -21.94,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -4.4,
+   "tmax_warm_c": 14.3,
+   "tmean_cold_c": 0.6,
+   "tmean_warm_c": 12.0
+  },
+  "SYN:temperate": {
+   "synthetic": true,
+   "held_out": false,
+   "lat": null,
+   "lon": null,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 0.0,
+   "tmax_warm_c": 30.0,
+   "tmean_cold_c": 4.0,
+   "tmean_warm_c": 20.0
+  },
+  "SYN:float trap": {
+   "synthetic": true,
+   "held_out": false,
+   "lat": null,
+   "lon": null,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 7.8,
+   "tmax_warm_c": 30.0,
+   "tmean_cold_c": 10.0,
+   "tmean_warm_c": 20.0
+  },
+  "SYN:tropical": {
+   "synthetic": true,
+   "held_out": false,
+   "lat": null,
+   "lon": null,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 22,
+   "tmax_warm_c": 32.0,
+   "tmean_cold_c": 24.0,
+   "tmean_warm_c": 28.0
+  },
+  "SYN:cool summer": {
+   "synthetic": true,
+   "held_out": false,
+   "lat": null,
+   "lon": null,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": -10.0,
+   "tmax_warm_c": 20.0,
+   "tmean_cold_c": -6.0,
+   "tmean_warm_c": 15
+  },
+  "SYN:warm summer": {
+   "synthetic": true,
+   "held_out": false,
+   "lat": null,
+   "lon": null,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 0.0,
+   "tmax_warm_c": 30.0,
+   "tmean_cold_c": 4.0,
+   "tmean_warm_c": 20
+  },
+  "SYN:half mean": {
+   "synthetic": true,
+   "held_out": false,
+   "lat": null,
+   "lon": null,
+   "period": "1991-2020",
+   "scenario": "historical",
+   "tmin_cold_c": 0.0,
+   "tmax_warm_c": 30.0,
+   "tmean_cold_c": 4.0,
+   "tmean_warm_c": 20.1
+  },
+  "SYN:future": {
+   "synthetic": true,
+   "held_out": false,
+   "lat": null,
+   "lon": null,
+   "period": "2071-2099",
+   "scenario": "ssp245",
+   "tmin_cold_c": 0.0,
+   "tmax_warm_c": 30.0,
+   "tmean_cold_c": 4.0,
+   "tmean_warm_c": 20.0
+  }
+ },
+ "vectors": [
+  {
+   "site": "Nairobi",
+   "plant": "Theobroma cacao",
+   "covers": [
+    "cold.beyond",
+    "cool.edge",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.mixed"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": null,
+    "cool": "edge",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Cocos nucifera",
+   "covers": [
+    "cold.inside",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Malus domestica",
+   "covers": [
+    "cold.inside",
+    "mild.beyond",
+    "cool.inside",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Persea americana",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Manaus",
+   "plant": "Theobroma cacao",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Manaus",
+   "plant": "Manihot esculenta",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Seville",
+   "plant": "Olea europaea",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Seville",
+   "plant": "Rosmarinus officinalis",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Seville",
+   "plant": "Prunus dulcis",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Seville",
+   "plant": "Ficus carica",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Seville",
+   "plant": "Punica granatum",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Seville 2071-2099 SSP2-4.5",
+   "plant": "Olea europaea",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside",
+    "slot.future"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Riyadh",
+   "plant": "Ziziphus jujuba",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "edge"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Riyadh",
+   "plant": "Punica granatum",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "edge"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Riyadh",
+   "plant": "Moringa oleifera",
+   "covers": [
+    "cold.edge",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "edge",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "edge"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Riyadh",
+   "plant": "Ficus carica",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lyon",
+   "plant": "Malus domestica",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lyon",
+   "plant": "Ficus carica",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Oslo",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.beyond",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Oslo",
+   "plant": "Ficus carica",
+   "covers": [
+    "cold.beyond",
+    "mild.inside",
+    "cool.beyond",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Ficus carica",
+   "covers": [
+    "cold.beyond",
+    "mild.inside",
+    "cool.beyond",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Minneapolis",
+   "plant": "Malus domestica",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Minneapolis",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.beyond",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Singapore",
+   "plant": "Theobroma cacao",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Singapore",
+   "plant": "Cocos nucifera",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Singapore",
+   "plant": "Artocarpus heterophyllus",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Singapore",
+   "plant": "Manihot esculenta",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Harbin",
+   "plant": "Allium cepa",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Harbin",
+   "plant": "Daucus carota",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Delhi 2071-2099 SSP2-4.5",
+   "plant": "Allium sativum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "hot.annual_cool_season",
+    "slot.future"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "cool_season"
+   },
+   "cool_season": true
+  },
+  {
+   "site": "Delhi 2071-2099 SSP2-4.5",
+   "plant": "Solanum tuberosum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "hot.annual_cool_season",
+    "slot.future"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "cool_season"
+   },
+   "cool_season": true
+  },
+  {
+   "site": "Kampala",
+   "plant": "Musa acuminata",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Kampala",
+   "plant": "Coffea canephora",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Kampala",
+   "plant": "Ribes nigrum",
+   "covers": [
+    "cold.inside",
+    "mild.beyond",
+    "cool.inside",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Addis Ababa",
+   "plant": "Coffea arabica",
+   "covers": [
+    "cold.edge",
+    "cool.edge",
+    "hot.perennial_inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "edge",
+    "mild": null,
+    "cool": "edge",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Addis Ababa",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.edge",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.mixed"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "edge",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Addis Ababa",
+   "plant": "Cocos nucifera",
+   "covers": [
+    "cold.beyond",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Solanum tuberosum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Carica papaya",
+   "covers": [
+    "cold.inside",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Artocarpus altilis",
+   "covers": [
+    "cold.beyond",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Fragaria ×ananassa",
+   "covers": [
+    "tie.margin",
+    "cold.inside",
+    "mild.edge",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "inside",
+    "mild": "edge",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Annona muricata",
+   "covers": [
+    "cold.edge",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.mixed"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "edge",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Ananas comosus",
+   "covers": [
+    "cold.edge",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.mixed"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "edge",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Cape Town",
+   "plant": "Vitis vinifera",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Cape Town",
+   "plant": "Citrus limon",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Cape Town",
+   "plant": "Artocarpus heterophyllus",
+   "covers": [
+    "cold.inside",
+    "cool.beyond",
+    "cool.half_degree_mean",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Perth",
+   "plant": "Olea europaea",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Perth",
+   "plant": "Vitis vinifera",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Perth",
+   "plant": "Ribes nigrum",
+   "covers": [
+    "cold.inside",
+    "mild.beyond",
+    "cool.inside",
+    "hot.perennial_edge",
+    "agg.mixed"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": "inside",
+    "summer": null,
+    "hot": "edge"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Tashkent",
+   "plant": "Prunus armeniaca",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "weak.cool",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Tashkent",
+   "plant": "Vitis vinifera",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Tashkent",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.beyond",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Tokyo",
+   "plant": "Diospyros kaki",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Tokyo",
+   "plant": "Eriobotrya japonica",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "weak.cool",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Tokyo",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.beyond",
+    "cool.beyond",
+    "summer.perennial_ignores",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Brisbane",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Brisbane",
+   "plant": "Carica papaya",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Brisbane",
+   "plant": "Ribes nigrum",
+   "covers": [
+    "cold.inside",
+    "mild.beyond",
+    "cool.inside",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lima",
+   "plant": "Persea americana",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lima",
+   "plant": "Vitis vinifera",
+   "covers": [
+    "cold.inside",
+    "mild.edge",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "inside",
+    "mild": "edge",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lima",
+   "plant": "Malus domestica",
+   "covers": [
+    "cold.inside",
+    "mild.beyond",
+    "cool.inside",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Delhi",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Delhi",
+   "plant": "Psidium guajava",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Delhi",
+   "plant": "Malus domestica",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "beyond"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Hanoi",
+   "plant": "Musa acuminata",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Hanoi",
+   "plant": "Citrus reticulata",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Hanoi",
+   "plant": "Malus domestica",
+   "covers": [
+    "cold.inside",
+    "mild.beyond",
+    "cool.inside",
+    "hot.perennial_inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Oulu",
+   "plant": "Colocasia esculenta",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Oulu",
+   "plant": "Zingiber officinale",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Oulu",
+   "plant": "Curcuma longa",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Oulu",
+   "plant": "Ipomoea batatas",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Colocasia esculenta",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Zingiber officinale",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Curcuma longa",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Ipomoea batatas",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Arkhangelsk",
+   "plant": "Colocasia esculenta",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Arkhangelsk",
+   "plant": "Zingiber officinale",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Arkhangelsk",
+   "plant": "Curcuma longa",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Arkhangelsk",
+   "plant": "Ipomoea batatas",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lyon",
+   "plant": "Solanum lycopersicum",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lyon",
+   "plant": "Zea mays",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lyon",
+   "plant": "Phaseolus vulgaris",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Lyon",
+   "plant": "Cucurbita pepo",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Minneapolis",
+   "plant": "Solanum lycopersicum",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Minneapolis",
+   "plant": "Zea mays",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Minneapolis",
+   "plant": "Phaseolus vulgaris",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Minneapolis",
+   "plant": "Cucurbita pepo",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Solanum lycopersicum",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Zea mays",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Phaseolus vulgaris",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Cucurbita pepo",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Solanum tuberosum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Brassica oleracea",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Allium cepa",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Lactuca sativa",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Zea mays",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Allium cepa",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Daucus carota",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Brassica oleracea",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Allium sativum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Allium porrum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Quito",
+   "plant": "Beta vulgaris subsp. vulgaris",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Lactuca sativa",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Zea mays",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Allium cepa",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Daucus carota",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Brassica oleracea",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Allium sativum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Allium porrum",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Bogota",
+   "plant": "Beta vulgaris subsp. vulgaris",
+   "covers": [
+    "annual.grown_as_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Shetland",
+   "plant": "Lactuca sativa",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Reykjavik",
+   "plant": "Lactuca sativa",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Artocarpus heterophyllus",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Plinia cauliflora",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Coffea arabica",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Mangifera indica",
+   "covers": [
+    "cold.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Riyadh",
+   "plant": "Olea europaea",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "summer.perennial_ignores",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Abelmoschus esculentus",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "edge",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Manaus",
+   "plant": "Abelmoschus esculentus",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "inside",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Riyadh",
+   "plant": "Abelmoschus esculentus",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.inside",
+    "hot.annual_edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "inside",
+    "hot": "edge"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Minneapolis",
+   "plant": "Abelmoschus esculentus",
+   "covers": [
+    "tie.zero",
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "inside",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Rovaniemi (boreal)",
+   "plant": "Acer campestre",
+   "covers": [
+    "cold.beyond",
+    "mild.inside",
+    "cool.beyond",
+    "hot.perennial_inside",
+    "weak.cold"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": "beyond",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Ballota pseudodictamnus",
+   "covers": [
+    "cold.inside",
+    "mild.edge",
+    "annual.is_annual_null",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "inside",
+    "mild": "edge",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "Nairobi",
+   "plant": "Cucurbita moschata",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips",
+    "summer.inside",
+    "summer.threshold_tie",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "inside",
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:unknown.no_climate",
+   "covers": [
+    "unknown.no_climate"
+   ],
+   "verdict": "unknown",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:unknown.no_rule_rows",
+   "covers": [
+    "unknown.no_rule_rows"
+   ],
+   "verdict": "unknown",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:judged.year_or_warm_only",
+   "covers": [
+    "judged.year_or_warm_only",
+    "cool.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:tie.zero",
+   "covers": [
+    "tie.zero",
+    "cold.inside",
+    "mild.inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:float trap",
+   "plant": "SYN:tie.margin",
+   "covers": [
+    "tie.margin",
+    "cold.edge",
+    "mild.inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "edge",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:tie.margin_plus",
+   "covers": [
+    "tie.margin_plus",
+    "cold.beyond",
+    "mild.inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:round.half_up",
+   "covers": [
+    "round.half_up",
+    "cold.edge",
+    "mild.inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "edge",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cold.inside",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cold.edge",
+   "covers": [
+    "cold.edge",
+    "mild.inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "edge",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cold.beyond",
+   "covers": [
+    "cold.beyond",
+    "mild.inside"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cold.low_null",
+   "covers": [
+    "cold.low_null",
+    "mild.inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:mild.inside",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:mild.edge",
+   "covers": [
+    "cold.inside",
+    "mild.edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "inside",
+    "mild": "edge",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:mild.beyond",
+   "covers": [
+    "cold.inside",
+    "mild.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:tropical",
+   "plant": "SYN:mild.ceiling_tie",
+   "covers": [
+    "cold.inside",
+    "mild.ceiling_tie"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:tropical",
+   "plant": "SYN:mild.below_ceiling",
+   "covers": [
+    "cold.inside",
+    "mild.beyond",
+    "mild.below_ceiling"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "inside",
+    "mild": "beyond",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:mild.high_null",
+   "covers": [
+    "cold.inside",
+    "mild.high_null"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:annual.is_annual",
+   "covers": [
+    "annual.is_annual"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:annual.grown_as_annual",
+   "covers": [
+    "annual.grown_as_annual"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:annual.is_annual_null",
+   "covers": [
+    "cold.beyond",
+    "mild.inside",
+    "annual.is_annual_null"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cool.inside",
+   "covers": [
+    "judged.year_or_warm_only",
+    "cool.inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": "inside",
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cool.edge",
+   "covers": [
+    "judged.year_or_warm_only",
+    "cool.edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": "edge",
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cool.beyond",
+   "covers": [
+    "judged.year_or_warm_only",
+    "cool.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:half mean",
+   "plant": "SYN:cool.half_degree_mean",
+   "covers": [
+    "judged.year_or_warm_only",
+    "tie.margin_plus",
+    "cool.beyond",
+    "cool.half_degree_mean"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:cool.annual_skips",
+   "covers": [
+    "annual.is_annual",
+    "cool.annual_skips"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:warm summer",
+   "plant": "SYN:summer.inside",
+   "covers": [
+    "judged.year_or_warm_only",
+    "annual.is_annual",
+    "summer.inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "inside",
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:warm summer",
+   "plant": "SYN:summer.edge",
+   "covers": [
+    "judged.year_or_warm_only",
+    "annual.is_annual",
+    "summer.edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "edge",
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:warm summer",
+   "plant": "SYN:summer.beyond",
+   "covers": [
+    "judged.year_or_warm_only",
+    "annual.is_annual",
+    "summer.beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:cool summer",
+   "plant": "SYN:summer.threshold_tie",
+   "covers": [
+    "judged.year_or_warm_only",
+    "annual.is_annual",
+    "summer.beyond",
+    "summer.threshold_tie"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:cool summer",
+   "plant": "SYN:summer.below_threshold",
+   "covers": [
+    "judged.year_or_warm_only",
+    "annual.is_annual",
+    "summer.below_threshold"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:cool summer",
+   "plant": "SYN:summer.perennial_ignores",
+   "covers": [
+    "cold.beyond",
+    "mild.inside",
+    "summer.perennial_ignores"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:summer.low_null",
+   "covers": [
+    "judged.year_or_warm_only",
+    "annual.is_annual",
+    "summer.low_null"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:hot.perennial_inside",
+   "covers": [
+    "hot.perennial_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:hot.perennial_edge",
+   "covers": [
+    "hot.perennial_edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "edge"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:hot.perennial_beyond",
+   "covers": [
+    "hot.perennial_beyond"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "beyond"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:hot.annual_edge",
+   "covers": [
+    "annual.is_annual",
+    "hot.annual_edge",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "edge"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:hot.annual_cool_season",
+   "covers": [
+    "annual.is_annual",
+    "hot.annual_cool_season"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": "cool_season"
+   },
+   "cool_season": true
+  },
+  {
+   "site": "SYN:warm summer",
+   "plant": "SYN:hot.cool_season_plus_other",
+   "covers": [
+    "annual.is_annual",
+    "summer.beyond",
+    "hot.annual_cool_season",
+    "hot.cool_season_plus_other"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": "beyond",
+    "hot": "cool_season"
+   },
+   "cool_season": true
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:hot.high_null",
+   "covers": [
+    "hot.high_null"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:weak.cold",
+   "covers": [
+    "cold.beyond",
+    "mild.inside",
+    "weak.cold"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "beyond",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:weak.cool",
+   "covers": [
+    "judged.year_or_warm_only",
+    "cool.beyond",
+    "weak.cool"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": null,
+    "mild": null,
+    "cool": "beyond",
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:agg.mixed",
+   "covers": [
+    "cold.edge",
+    "mild.inside",
+    "hot.perennial_beyond",
+    "agg.mixed"
+   ],
+   "verdict": "outside",
+   "sides": {
+    "cold": "edge",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": "beyond"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:agg.edge_only",
+   "covers": [
+    "cold.edge",
+    "mild.inside",
+    "agg.edge_only"
+   ],
+   "verdict": "edge",
+   "sides": {
+    "cold": "edge",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": null
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:temperate",
+   "plant": "SYN:agg.all_inside",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "cool.inside",
+    "hot.perennial_inside",
+    "agg.all_inside"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": "inside",
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  },
+  {
+   "site": "SYN:future",
+   "plant": "SYN:slot.future",
+   "covers": [
+    "cold.inside",
+    "mild.inside",
+    "hot.perennial_inside",
+    "agg.all_inside",
+    "slot.future"
+   ],
+   "verdict": "inside",
+   "sides": {
+    "cold": "inside",
+    "mild": "inside",
+    "cool": null,
+    "summer": null,
+    "hot": "inside"
+   },
+   "cool_season": false
+  }
+ ]
+}
