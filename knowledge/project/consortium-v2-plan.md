@@ -1,10 +1,10 @@
 ---
 type: Project
 title: Consortium v2 plan
-description: Phases, the final remaining order after the 2026-11-12 plan review, exits, coordinator choices and owner actions for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate.
+description: "Phases, the remaining order after the 2026-11-12 plan review (revised 2026-11-14: F1a paused for redesign, F2 with F4, F1b split, new curated order), exits, coordinator choices and owner actions for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-13T19:54:37Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T00:36:42Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
@@ -17,7 +17,7 @@ sources:
 Architecture: [Consortium v2 architecture](/decisions/consortium-v2-architecture.md). Owner decisions (final, dated): [user decisions](/decisions/consortium-user-decisions.md). Adapter: [agentic delivery](/runbooks/agentic-delivery.md) (branch prefix `consortium/` instead of `guides/`). v1 plan for history: [Consortium tool plan](/project/consortium-tool-plan.md).
 
 ## Session brief (read first)
-- **State (2026-11-13):** P1–P4 done (canopi-data master ab6bfad, 154f3f6; canopi-climate v0.1.0, v0.2.0); P2 live (b75656c); **P5 live at d67492d**; E1 and E2 live (aa72741); C1 released (canopi-climate v0.2.1); the E3/E4/E5a/E6 batch live (**push B at d9e00ca**, deployed through the `deploy` gate); **now: F1a** on integration branch `f1a/int` (commit 0 built: shared seams, empty roles `structure` and `balance`, 37 expected-fail markers) (design check `.local/consortium/v2/f1a/design-check.md`, owners file `scripts/plan/f1a-owners.json`); canopi-data starts with its data-only release D2a. Plan-review inputs (gitignored): `.local/consortium/v2/plan-review/` in the main checkout.
+- **State (2026-11-13):** P1–P4 done (canopi-data master ab6bfad, 154f3f6; canopi-climate v0.1.0, v0.2.0); P2 live (b75656c); **P5 live at d67492d**; E1 and E2 live (aa72741); C1 released (canopi-climate v0.2.1); the E3/E4/E5a/E6 batch live (**push B at d9e00ca**, deployed through the `deploy` gate); **now: F1a** on integration branch `f1a/int` (commit 0 built: shared seams, empty roles `structure` and `balance`, 39 expected-fail markers); **F1a's screens are paused (2026-11-14) for a grower-first redesign by Fable 5.2 and the owner's approval; no F1a build starts before it** (see F1a) (design check `.local/consortium/v2/f1a/design-check.md`, owners file `scripts/plan/f1a-owners.json`); canopi-data starts with its data-only release D2a. Plan-review inputs (gitignored): `.local/consortium/v2/plan-review/` in the main checkout.
 - **Mode:** the owner delivers unsupervised: no checkpoints; push to master (deploys) only when fully satisfied; an unclear point gets the most cautious choice and a revertible coordinator row in the decision log.
 - **Repos:** website (this), `../canopi-data` (Python; free to change and push), `../canopi-climate` (Rust; push freely), `../canopi` (read only; pinned at 0c425fb07; work in progress there).
 - **Never reopen:** SQLite-WASM (not DuckDB), matrix replaces Layers + Over time, no v1 link compatibility, no reference-consortia benchmark, observed ranges never phrased as limits, no pairwise companion folklore, warn rather than remove dangerous info, never default to temperate.
@@ -75,11 +75,12 @@ E0 plan adoption (this rewrite) ─┬─► E1 browser test speed ──► E6 
                                  │                     └─► E4 architecture checks ┘                                         └─► F1b Plan view, CSV, methods, trust
                                  ├─► E2 small correctness fixes (parallel with E1)
                                  └─► C1 canopi-climate foundation (v0.2.1) ──► E5a tile vectors in website CI
-F3 Suggestion v2: after F1a + F2, when its data lands (D2a, D8)
-F6 fire risk: after F1a, when flammability data lands (D8); annual dry months, no monthly layer
-F5 dry season + growing months + water: design check (P7b QA evidence) ──► C2 crate refactor ──► C3 v0.3 monthly layer ──► F5 build (also needs D8 bands, F4)
-Ride-alongs (no step of their own): D2a reinstall (before the F1a Add-filters stream builds); D9a Arid, then D9b Boreal reinstall (before the split, cost measured);
-  E5b-range when D6 lands; correction /2 in F1b when D5 lands; E7 format-5 reader when D4 lands; D9 Continental and Subtropical reinstall after E7.
+Revised 2026-11-14 (strategist roadmap B, coordinator row "Fable advice string and data choices"): F1a ──► F2 with F4 (one link v5 bump; F2 first if split) ──► F1b-1 Plan view + CSV
+  ──► C2/C3 with F5's site half ──► F3 Suggestion v2 with goals ──► F1b-2 methods page ──► F5 rest, E7
+F6 fire risk: folded into D8 as a warning line (and one Balance line) riding with the D8 reinstall; no step of its own
+F5 dry season + growing months + water: design check (P7b QA evidence) ──► C2 crate refactor ──► C3 v0.3 monthly layer ──► F5 build (also needs D8 bands, F4); its site half (dry months in a row, two rainy seasons) comes forward with C2/C3
+Ride-alongs (no step of their own): D2a reinstall (before the F1a Add-filters stream builds); borrowed lists in the order Arid, then Subtropical with Tropical × Africa and × Asia, then Boreal, then Continental (owner answer 1, 2026-11-14), cost measured on each;
+  E5b-range when D6 lands; correction /2 in F1b when D5 lands; E7 format-5 reader when D4 lands.
 ```
 
 Only one serial chain blocks the first user value: **E1 → E6 → F1a**. E3 and E4 run beside E6 and must be live before the first feature push (owner "quality foundation before feature work", met at deploy). Waiting on canopi-data never blocks a website build that today's export can serve, with one exception kept from an owner row (F1a's Add-filters stream waits for D2a, see F1a).
@@ -96,12 +97,12 @@ Only one serial chain blocks the first user value: **E1 → E6 → F1a**. E3 and
 | 3 | E3 | master deploys only when green; tiered hooks | E1; owner: Cloudflare production branch | ~6 files |
 | 3 | E4 | layering, dead-code, duplicate, a11y checks | E1 | ~10 files |
 | 3 | E5a | website reads the crate's tile vectors | C1 | ~4 files |
-| 4 | F1a | By role and Structure, Add filters (P5.1, P5.2), confidence vocabulary, Balance panel | E6; E3+E4 live before push; D2a for the Add-filters stream | large, ~45 files, 6 streams in 5 chunks |
-| 5 | F4 | P7a site adjustments | E6, F1a | ~10 files |
-| 5 | F2 | climate replacements with a crossing decade, cautious switch | E6, F1a | ~12 files |
-| 6 | F1b | Plan view, CSV, methods page, trust and feedback | F1a, F2 (methods page) | ~25 files |
-| 7 | F3 | Suggestion v2 | F1a, F2; D2a, D8 (ShadeTreeAdvice pairs) | ~8 files |
-| 7 | F6 | fire risk warning | F1a; D8 (flammability) | ~6 files |
+| 4 | F1a | By role and Structure, Add filters (P5.1, P5.2), confidence vocabulary, Balance panel; **paused 2026-11-14 for a grower-first redesign (Fable 5.2) and the owner's approval**; then three pushes F1a-1/2/3 | E6; E3+E4 live before push; D2a for the Add-filters stream | large, ~45 files; streams revised after the redesign |
+| 5 | F2 + F4 | climate replacements with a crossing decade and the cautious switch; P7a site adjustments; one link v5 bump for both (F2 first if they split) | E6, F1a | ~20 files |
+| 6 | F1b-1 | Plan view and CSV | F1a, F2 | ~12 files |
+| 7 | F3 | Suggestion v2 with goals (fodder, fuelwood, timber as inputs) | F1a, F2; D2a, D8 (ShadeTreeAdvice pairs, function ids) | ~8 files |
+| 8 | F1b-2 | methods page, trust and feedback | F1b-1, F2, F3 (vocabulary settled) | ~13 files |
+| — | F6 | fire risk: a warning line and one Balance line with the D8 reinstall (no step) | F1a; D8 (flammability) | ~4 files |
 | 8 | C2 | crate refactor so a monthly layer fits | C1; F5 design check confirms v0.3 | ~10 crate files |
 | 8 | C3 | canopi-climate v0.3, monthly layer | C2 | 1 stage, 1 release |
 | 9 | F5 | P7b dry season, growing months, water across the year | C3, F4; D3 (P7b dry-months QA), D8 (EcoCrop bands) | ~14 files |
@@ -180,6 +181,8 @@ Loop per step: steps with more than one stream (E6, F1a, F1b, F2, F4, F5, F3) ru
 - **Exit:** CI runs the vectors on every push; changing one expected value fails the website test.
 
 #### F1a — UX step: Plant palette (By role and Structure), Add filters, confidence, Balance
+- **Paused for redesign (owner, 2026-11-14):** F1a's screens wait for a grower-first redesign by Fable 5.2 (mock-ups at `.local/consortium/v2/f1a/mockups-v3/` in the main checkout once written) and the owner's approval; **no F1a build starts before that.** The v2 boards and advice that fed it are inputs only, not adopted: `.local/consortium/v2/f1a/mockups-v2/` (`completeness.md`, `design-notes.md`, 29 boards in `project/`, renders in `shots/`; published canvas https://claude.ai/artifact/4s5XxYoYVLZwccx9TRQpMP), the strategist's `.local/consortium/v2/f1a/fable-strategy.md` (glossary A1, fixes A2 1–15, roadmap B, questions C) and the first critique `.local/consortium/v2/f1a/fable-advice.md` (all gitignored, main checkout). The streams, chunks and owners file below stand until the redesign is approved; they are then revised against it (owner agreement row "F1a delivery shape": three pushes F1a-1, F1a-2, F1a-3, fewer larger streams each writing its own scenario tests, commit 0 only shared seams, mock-ups before UI builds, Opus 5.5 medium agents implement, Fable 5.2 advises only).
+- **Settled for F1a whatever the screens (owner row "Fable advice answers", coordinator row "Fable advice string and data choices", 2026-11-14):** plain time spans and light needs lead; syntropic terms (Placenta/Secondary/Climax, Emergent/High/Mid/Low) only in Details, popovers and the download note, with one bridge sentence to the app; one Brazilian sweep of `pt.json`; the strategist's glossary (A1) pinned per locale by a glossary test and the string fixes A2 1–15 (fix 7 with the confidence model); en "calculated" replaces "worked out" (internal term id `worked-out` kept); period labels stay the exact span "2041–2070"; months shown as recorded, a southern site's northern record flagged, never shifted; borrowed climates require a location before suggesting; fodder, fuelwood and timber as row tags plus one Add filter once D8 ships the function ids; a native reader each for zh, ja, ko, ru reviews about 60 strings (glossary plus every safety and liability string; the build writes one review file per language, the owner finds the readers); the Web Edition stays download-then-open (the app is not touched). "Holds by 2041–2070" and "Find one that holds" (Swap pre-filtered: same role and stages, inside its climate range today and in 2041–2070) move from F2 into F1a.
 - **Decision it changes:** what the grower looks at first, and whether the plant set works for the site before layout (decision rows "UX step direction", "UX and UI redesign delegated", "Filters in Add (P5.1)", "P5 ships without S5e").
 - **Source:** design check `.local/consortium/v2/f1a/design-check.md` (gitignored, main checkout; amendments A1–A26, drops D1–D18, failure rows §5, space budget §6). Owner answers: decision rows "F1a design-check answers" and "Plant palette name" (2026-11-13). Coordinator row "F1a design-check choices" (2026-11-13). Integration branch `f1a/int` from master d9e00ca.
 - **Already built (D7):** Start and the climate cards show before the database is ready; Jobs has the gap list with "Find…"; the matrix is a real table; sheets are modal with focus return.
@@ -207,33 +210,39 @@ Loop per step: steps with more than one stream (E6, F1a, F1b, F2, F4, F5, F3) ru
 - **Dropped (D1–D18):** Side, Jobs and All plants as views; the FillMeter bar; renaming "near the edge"; the ≤ 6 s owner question (a coordinator row); an owner question on dropping Nitrogen fixer (D8: the "Filters in Add (P5.1)" cut rule settles it, A14); greying stages for Balcony (row "Room size guides the suggestion, not the matrix"); the country line in the location result (row "Climate first, coordinator choices"); aseasonal and north-of-60° wording (F5, methods page, F4 help); `.canopi` `map_view` and the PrintSheet at-a-glance (filed to F1b); Balance Q22/Q23 (settled by the plan and choice 7); "Find…" and the review flag as owner questions (A22, A17); a list-level-only borrowed mark (row "P5 owner answers" (1)). Climate margin and family spread stay (owner-agreed list).
 - **Depends on:** E6; E3 and E4 live (push B, d9e00ca); D2a for stream 2 and for Balance's evergreen part; canopi-data's hemisphere stamp for the flowering check. Builds on today's export otherwise (not on D4 or D7).
 
-#### F4 — P7a site adjustments (right after F1a, beside F2)
+#### F4 — P7a site adjustments (with F2, one link v5 bump)
+- **With F2 (2026-11-14, strategist B2):** F2 and F4 ship together and share one link bump (v5), not two; if they must split, F2 goes first and F4's "all year (irrigated)" answer (what unblocks Riyadh-type sites) follows next.
 - **Decision it changes:** an honest verdict for a frost pocket, a hot paved yard or a watered garden (decision row "Site adjustments and dry season").
 - **Scope:** winter nights −3…+3 °C, summer days −3…+3 °C, and the watering answer linked to the Water question, with two values on the same control: "in the dry season" (owner row) and "all year (irrigated)" for desert sites like Riyadh, where dryness then becomes a note; applied once in the adjusted-site function that `factAt`, the range check and the future check read (also on projected climates); saved through the state schema; carried in link v5, whose decoder still opens v4 links (and v4's view key, F1a A6, which is not `w`: v4 uses `w` for water, pal1 picks a free key, `y` in the palette spec for now; the v5 change also edits `ConsortiumPage.astro`'s page-head link check); named in Details and marks; plant thresholds stay uneditable. The winter-nights help names snow cover as a reason low plants survive colder nights (Oulu).
 - **Exit:** each adjustment changes a verdict in a persona scenario; links round-trip; v4 links open; months (F5) will read the same adjusted site.
 
-#### F2 — climate replacements with a crossing decade (beside F4)
+#### F2 — climate replacements with a crossing decade (with F4)
+- **Moved into F1a (2026-11-14):** "Holds by 2041–2070" and "Find one that holds" (Swap pre-filtered with data the tool already has). F2 keeps the crossing decade, the computed rule behind `factAt` and the cautious switch.
 - **Decision it changes:** which plant to plant next, and when, for a plant that will fall outside its range in its phase's future period (decision row "Climate replacements and timeline granularity").
 - **Scope:** enabling commit: the computed site- and time-dependent rule behind `factAt`, starting with "annual vs perennial here, per period", validated on scenario and held-out sites with expectations written first; it replaces `grown_as_annual` once it agrees. Replacements: triggered by the one range rule ("outside past the margin" for the phase's period, with the scenario agreement count); candidates share jobs, layer and stages, fit the site and pass today's climate; ranked like Suggest, never automatic, honest when none exists; shown in Swap, the future panel and a mark. Crossing decade interpolated between slot centres (2005.5, 2055.5, 2085) as a range across the 4 scenarios, tied to the plant's growth timeline; no 2011–2040 slot. **Cautious switch:** "judge on the worst of the 4 scenarios", read by verdicts, the future filter and the replacement trigger through the same period path; SSP2-4.5 stays the default (decision row "v2 specification additions"); growing months stay SSP2-4.5 as stated on screen.
 - **Carried in from E6 R4 (coordinator, 2026-11-13):** only Details read `factAt`; F1a routes `site.ts` and `range.ts` `isAnnual` through it with no behaviour change (A23), so the enabling commit only adds the computed rule behind `factAt`.
 - **E5b-range rides along** when canopi-data D6 lands (installer copies `range_verdicts.json`; `range.ts` and its thresholds asserted against it; tie cases, every annual/perennial branch, weak rows, cool-season mapped 1:1). It is not a prerequisite.
 - **Exit:** scenario and held-out results match expectations written first; no replacement fails today's climate; walk-through covers a site in each of the seven climates. Sending the new per-period annual branch to D6's file is a hand-off note to the canopi-data agent, not part of the exit.
 
-#### F1b — Plan view, CSV, methods page, trust and feedback (after F2)
-- **Scope:** minimal Plan view (counts for the room, spacing, planting order by stage, one care line per role, months where recorded, estimates marked), printable and saved as PDF with no network after load; CSV export of the palette; "Download for Canopi" stays the `.canopi` v9 file with what carries over stated; methods page in all 11 locales (how verdicts are made, scenarios, the cautious switch, estimate, sources disagree, replacements, limits including snow cover and day length north of 60°), linked from every confidence word; one curated example consortium per curated climate as a share link on the methods page, for teaching (not a benchmark, no score target), extended as borrowed lists land; correction form `/2` with `site_climate` and `placement_estimate` once canopi-data D5 lands (else `/1`); abuse protection by a Workers rate-limit binding, a honeypot field and the existing 16 KB cap; a "Was this useful? / Something wrong?" link into the correction email (a `feedback` kind, rate-capped); privacy page updated.
+#### F1b — Plan view, CSV, methods page, trust and feedback (split 2026-11-14)
+- **Split (strategist B3):** **F1b-1** Plan view and CSV right after F2 (they turn a list into something to plant and carry into the app); **F1b-2** the methods page in 11 locales, trust and feedback once the vocabulary (glossary, F2, F3) is settled, so it is translated once. **Cut:** the curated example consortium per climate (the Start suggestion plays that part; coordinator choice 27 withdrawn).
+- **Scope:** minimal Plan view (counts for the room, spacing, planting order by stage, one care line per role, months where recorded, estimates marked), printable and saved as PDF with no network after load; CSV export of the palette; "Download for Canopi" stays the `.canopi` v9 file with what carries over stated; methods page in all 11 locales (how verdicts are made, scenarios, the cautious switch, estimate, sources disagree, replacements, limits including snow cover and day length north of 60°), linked from every confidence word; correction form `/2` with `site_climate` and `placement_estimate` once canopi-data D5 lands (else `/1`); abuse protection by a Workers rate-limit binding, a honeypot field and the existing 16 KB cap; a "Was this useful? / Something wrong?" link into the correction email (a `feedback` kind, rate-capped); privacy page updated.
 - **Exit:** walk-throughs pass; a `/2` report from the built site imports in canopi-data's fixture test (when D5 has landed); the Plan view prints offline; a11y audit clean.
 
 #### F3 — Suggestion v2 (when its data lands)
 - **Decision it changes:** what the starting palette contains (decision rows "Add to a filled cell; suggestion v2 planned", "Feature pipeline").
+- **Goals (2026-11-14, owner answer 2, strategist B6):** "goals" moves here from Later: fodder, fuelwood and timber (canopi-data D8 function ids) are Suggestion inputs beside the six roles, shown as row tags and one Add filter, never role cards.
 - **Scope:** jobs counted per stage; roles balanced per stage; positive pairings; future fit by phase through F2's rule (and the cautious switch); a "Picked to…" reason; Balance gaps filled; risk spread (genus, shared diseases, share at risk by 2050); negative interactions (allelopathy, alternate hosts); growing-month notes only; native never a score term; measured on fixed scenario sites.
-- **Depends on:** F1a, F2; D2a (nitrogen table), D8 (ShadeTreeAdvice pairs). Starts when they land; nothing else waits for it.
+- **Depends on:** F1a, F2; D2a (nitrogen table), D8 (ShadeTreeAdvice pairs, fodder/fuelwood/timber function ids). Starts when they land; nothing else waits for it.
 
-#### F6 — fire risk (lighter loop)
+#### F6 — fire risk (folded into D8's reinstall, 2026-11-14)
+- **No step of its own (strategist B9):** one warning line and one Balance line ride with the D8 reinstall, built in the lighter loop.
 - **Decision it changes:** what a grower in a fire-prone climate places near buildings. Warn, never remove.
 - **Scope:** plant flammability is a core fact from canopi-data D8 (licence settled; coverage checked there); a site is fire-prone from its Köppen class and the **annual dry months already in the v0.2 tiles** (no monthly layer); a warning mark and a Balance check; refined with monthly data after F5 if useful.
 - **Depends on:** F1a; D8 flammability. **Exit:** fire-prone scenario sites warn on the expected plants; no plant hidden.
 
 #### C2 — crate refactor so v0.3 fits (after F5's design check confirms v0.3)
+- **With F5's site half (2026-11-14, strategist B5):** "dry months in a row" and "two rainy seasons" as site lines beside the yearly aridity index come forward with C2/C3; the per-plant half of F5 still waits for D3 and D8.
 - **Scope:** one `Raster { grid: GridSpec, bands, data }` with thin `Tile`/`LayerTile` wrappers; one generic `nearest`; one `write_raster_checked`; a per-layer schema (`bands`, `slots`) in code and manifest; `layers[].version` and an optional Köppen `legend`; the f32 margin computed in f64; pipeline tests on a cropped grid. The wasm lookup surface is unchanged (no cross-tile export until the app's team asks).
 - **Exit:** vectors unchanged byte for byte or each change explained; manifest compatibility test covers the website reader's needs.
 
@@ -252,8 +261,8 @@ Loop per step: steps with more than one stream (E6, F1a, F1b, F2, F4, F5, F3) ru
 - **Exit:** a real format-5 install verifies and builds; slow-phone first view no worse than format 4 on the same release (and back under the ≤ 6 s target if the Arid and Boreal lists pushed it over); the restored-link first view ≤ 6 s on the slow phone, moved here from F1a (A24, coordinator row "F1a design-check choices").
 
 #### Borrowed-climate lists (ride-alongs)
-- **D9a Arid, then D9b Boreal, before the export split** (decision row "Plan review answers" 2: "whatever the cost"). Each is a reinstall with scenario coverage checks and the borrowed labels moved to "curated" for that climate. The slow-phone first-visit cost is measured on each reinstall and reported to the owner; it does not block the reinstall.
-- **Continental and Subtropical** after E7.
+- **Order (owner answer 1, row "Fable advice answers", 2026-11-14):** Arid, then Subtropical plus Tropical × Africa and × Asia, then Boreal, then Continental. This partly reverses the 2026-11-12 answer ("Arid then Boreal before the split"): Subtropical (south China, southern Japan, south Brazil, north India, East African highlands) and tropical Africa and Asia now come before Boreal. Arid stays first and before the export split ("whatever the cost"); whether the later cells wait for the split (E7) is measured on each reinstall against the first-visit budget and reported to the owner.
+- Each is a reinstall with scenario coverage checks and the borrowed labels moved to "curated" for that climate; new regions in `nearest.ts` where a new cell needs them. The slow-phone first-visit cost is measured on each reinstall and reported to the owner; it does not block the reinstall. The Nairobi persona's zone is verified: if it lands in Subtropical or Temperate it is served by European lists until its cell lands.
 
 ### Website needs from canopi-data (mirrored in canopi-data's "Website needs, by when")
 
@@ -261,7 +270,7 @@ Loop per step: steps with more than one stream (E6, F1a, F1b, F2, F4, F5, F3) ru
 |---|---|---|
 | F1a stream 2 (before it builds) | data-only release: reviewed safety corrections, nitrogen-fixer genus table with the trait and "Feeds the soil" in agreement, die-back herbaceous perennials counted deciduous, vernacular crop synonyms (also languages outside the 11 locales, from a sourced table, searchable only), WCVP distribution refill | D2a |
 | F1a design check | bloom-month coverage report per climate and hemisphere, tropics apart (the F1a design check's own measurement stands until it lands, A21) | D2a (report) |
-| F1a Balance flowering check | a hemisphere stamp on country-scoped month (layer) rows (pfaf GB, agroforestreeadvice CH/CZ/DE; `scope_region` is empty today); the check shows "waiting for data" until it lands (F1a design check A21, 2026-11-13) | D8a (confirmed by canopi-data, plan commit b2a1cc2) |
+| F1a Balance flowering check | a hemisphere stamp on country-scoped month (layer) rows (pfaf GB, agroforestreeadvice CH/CZ/DE; `scope_region` is empty today); the check shows "waiting for data" until it lands (F1a design check A21, 2026-11-13); months are never shifted (a southern site's northern record is flagged) | D8a (confirmed by canopi-data, plan commit b2a1cc2; reconfirmed 2026-11-14) |
 | E2 | Yakutsk and Riyadh plant rows confirmed (not "fixed" in data) | D2b |
 | F1a (optional), Details | placement-audit flag in the export | D2b |
 | F1b | correction report `/2` | D5 |
@@ -269,11 +278,13 @@ Loop per step: steps with more than one stream (E6, F1a, F1b, F2, F4, F5, F3) ru
 | credits | GBIF `datasetKey` list for the derived-dataset DOI | D3 |
 | F5 design check | P7b dry-months QA against EcoCrop, Niinemets & Valladares, EIVE and the validation cities | D3 (report) |
 | Balance flowering check | flowering coverage extended (PhenoVision beyond the pilot, southern hemisphere and tropics) | D8a, ahead of D7 |
-| borrowed lists | Arid, then Boreal, before the split | D9a, D9b |
+| borrowed lists | Arid, then Subtropical plus Tropical × Africa and × Asia, then Boreal, then Continental (owner answer 1, 2026-11-14; replaces "Arid, then Boreal, before the split") | D9a, then new cells, D9b |
+| F1a, F3 | fodder, fuelwood and timber as function ids in the D8 vocabulary, with curation per cell (owner answer 2, 2026-11-14); shown as row tags and one Add filter, never role cards; the `.canopi` writer drops ids the app does not know | D8 |
+| F1a gap list | question: do tree prunings count as mulch (for example after year 15)? The data records none, so the tool reports a mulch gap a grower may not have; reported as an honest gap until canopi-data answers (2026-11-14) | D8 (question) |
 | E7 | format 5 split and scoped facts; the Köppen table (`plant_koppen`, ~71 KB, read only by Details) in a part loaded with Details or in the per-language part (choice 37) (batch design check A4, 2026-11-13) | D4 |
 | F3 | ShadeTreeAdvice pairs | D8 |
 | F5 | EcoCrop growing bands; `salt_tolerance` where sourced | D8 |
-| F6 | flammability per plant | D8 |
+| F6 (with the D8 reinstall) | flammability per plant | D8 |
 | Balance roots, insect months | root depth and form; insect-habitat months if sourced | D8 |
 
 Not waited on: D7's disputes marker (F1a uses today's `weak` rows), D4 for F1a and F2. From canopi-climate to canopi-data: `sample` region codes in C1 (v0.2.1) unblock D3's removal of the Python regions reader.
@@ -318,13 +329,13 @@ Within the owner's rows; each with its reason. The challenge's former owner ques
 24. **Slow-phone target (revised 2026-11-13, F1a design check A24):** F1a's exit is the wasm preload, a restored-link first view no worse than the E6 hand-off within noise, and a first-visit Start ≤ 6 s target (`ct:start`, warns); the restored-link ≤ 6 s moves to E7, since about 1.08 MB stays on its critical path at Slow 4G until the export split (the Köppen table leaves the first download only with D4 read by E7, batch design check A4). Earlier text: "≤ 6 s by F1a's exit".
 25. **Cautious-scenario switch in F2.** Someone planting a climax tree may want the worst case; the default stays SSP2-4.5.
 26. **"All year (irrigated)" as a value of the one watering control;** relative dry-month wording where all months are dry. Keeps the owner's single control while serving desert sites.
-27. **Example consortium per curated climate on the methods page.** For teachers; not the dropped benchmark (no score target).
+27. ~~**Example consortium per curated climate on the methods page.**~~ Withdrawn 2026-11-14 (strategist B3): the Start suggestion plays that part.
 28. **Flowering check honest state:** "not enough data: n of m" when coverage is low; coverage measured before F1a's design. A sparse calendar would look authoritative.
 29. **Owner queues have a default:** unreviewed safety candidates ship as "Sources disagree" with the more cautious value beside; French texts ship marked for review (owner answer 4: queues never block).
 30. **Yakutsk and Riyadh as website scenario tests in E2;** F2 exits on its own tests, the per-period branch goes to D6 as a follow-up note. A website step never waits for another agent's ship.
 31. **E5b split:** range vectors ride with F2 when D6 lands; correction `/2` lives in F1b. Unrelated canopi-data steps no longer hold replacements.
 32. **F1 split into F1a and F1b; methods page after F2** so it describes replacements once. The Balance panel no longer waits for Plan view, CSV and feedback.
-33. **F4 right after F1a, beside F2; F6 off the monthly layer.** Their real dependencies are E6 and data, not F3 or F5.
+33. **F4 with F2 (one link v5 bump, F2 first if split); F6 off the monthly layer, folded into D8's reinstall (2026-11-14).** Their real dependencies are E6 and data, not F3 or F5.
 34. **Salinity:** a data ask; information and a warn line, never a filter until sourced. Salt tolerance decides many arid sites; no source is chosen yet.
 35. **Snow cover and day length:** named limits on the methods page and in F4's help; no new data now.
 36. **Offline:** the Plan view prints and saves as PDF with no network after load.
@@ -339,7 +350,7 @@ Within the owner's rows; each with its reason. The challenge's former owner ques
 
 ### Owner rulings this order applies
 - Recorded rows (link, not copied): "Plan review answers", "Feature pipeline", "Growing months (seasons review)", "Site- and time-dependent plant facts", "LLM data improvement authorised", "Climate replacements and timeline granularity", "Range rule refinements after the rebuild", "Rainfall and dry months stay in the export; slow-phone first visit", "Room size guides the suggestion, not the matrix", "First-run budget at the P5 push" in [user decisions](/decisions/consortium-user-decisions.md).
-- **Kept against the challenge:** F1a's Add-filters stream waits for D2a (row "Filters in Add (P5.1)", "before P5.1 builds"). The earlier coordinator text "Curated lists for the borrowed climates" (2026-11-12) ("split the export before adding plants") is replaced by owner answer 2 (Arid then Boreal before the split).
+- **Kept against the challenge:** F1a's Add-filters stream waits for D2a (row "Filters in Add (P5.1)", "before P5.1 builds"). The earlier coordinator text "Curated lists for the borrowed climates" (2026-11-12) ("split the export before adding plants") was replaced by owner answer 2 (Arid then Boreal before the split), itself partly reversed by the 2026-11-14 order (Arid, then Subtropical plus Tropical × Africa and × Asia, then Boreal, then Continental).
 
 ### Agreements recorded only in this plan (2026-11-12)
 These owner agreements have no row of their own in the decision log; they stay here until the coordinator records them.
@@ -354,7 +365,8 @@ These owner agreements have no row of their own in the decision log; they stay h
 - **Filed at the P5 push** (owner bar: only data loss, wrong verdicts, privacy/security/licence, crashes or blank screens block a push): each item is placed above (E1, E2, E6, F1a, F1b, D2b, D5).
 
 ### Later (each with its slot)
-- Goals and a harvest calendar: after F5.
+- Harvest calendar: after F5 (goals moved into F3, 2026-11-14).
+- Named palettes saved on the device (a site has several zones; only the last palette is kept today): a later item, after F1b-1.
 - How to start each plant (seed, cutting, grafted; ease only where a source states it): a Details line once D8 exports propagation.
 - Crop-pollination overlap check: after D8.
 - Growers' reports feeding canopi-data: needs a collection path the static site lacks.
@@ -368,7 +380,7 @@ These owner agreements have no row of their own in the decision log; they stay h
 P1 and P3 started in parallel; P2 after P1; P4 after P3; P5 after P2, P3 and P4. The remaining order is "Order at a glance" above.
 
 ## Risks to watch
-- Arid and Boreal before the split raise the slow-phone first visit; measured on each reinstall, reported, recovered in E7.
+- Each new curated cell (Arid first, then Subtropical and tropical Africa/Asia, Boreal, Continental) raises the slow-phone first visit; measured on each reinstall, reported, recovered in E7.
 - Bloom-month coverage may stay thin outside Europe; the Balance check says so rather than drawing a sparse calendar.
 - Precipitation disagrees between products by up to 36 % at a point: aridity and dry months shown with their uncertainty.
 - GBIF credit without a DOI until the owner registers the derived dataset.
