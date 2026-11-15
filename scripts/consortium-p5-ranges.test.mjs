@@ -516,8 +516,8 @@ test('range marks: a bound from TreeGOER says so in Details; the data-sources le
     const d = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
     assert.match(d['dataSources.tool.lede'], /TreeGOER/, `${l}: the lede credits TreeGOER`);
     assert.ok(d['consortium.range.source.treegoer'], l);
-    assert.match(d['consortium.range.pool.count'], /\{mean\}/, `${l}: the pool line names the year's mean`);
-    assert.match(d['consortium.range.empty.body'], /\{mean\}/, l);
+    // PP-B b1b: the count line counts the verdicts; the nothing-fits state still names the year's mean.
+    assert.match(d['consortium.range.empty.body'], /\{mean\}/, `${l}: the nothing-fits state names the year's mean`);
   }
   assert.match(readFileSync(new URL('../src/islands/consortium/views/pool/pool.tsx', import.meta.url), 'utf8'), /mean: num\(yearMeanC\(today\)\)/);
 });

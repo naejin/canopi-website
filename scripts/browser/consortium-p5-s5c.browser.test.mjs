@@ -61,13 +61,14 @@ test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "not
   assert.ok(await has(page, '.ct-add .ct-rows li [data-mark="outside"]', 10_000), 'each one marked outside its range');
 });
 
-test('P5-14i (S5c pool panel chunk offline, pre-push review 1): where nothing fits and only the panel\'s chunk fails, Start says it could not load, with Reload', async () => {
+test('P5-14i (S5c → PP-B b1b, the count line\'s chunk refused, pre-push review 1): with a site climate and only the count line\'s chunk failing, Place says it could not load, with Reload', async () => {
   const page = await tool({ block: { pool: 404 } });
-  await atNowhere(page);
-  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Boreal'; });
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeRule.value, { timeout: 10_000 }).then(() => true, () => false), 'the range rule loaded');
   assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('.ct-notice[role="alert"]')].some((e) => /Reload/.test(e.textContent)), { timeout: 10_000 }).then(() => true, () => false), 'the failed line with Reload');
   assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), 'the pool chunk was requested and refused by the block');
+  assert.equal(await page.$('[data-pool-count]'), null, 'no count line');
 });
 
 test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual is tagged "annual", no season claimed (decision row "Growing months") @real-data', async () => {
@@ -112,8 +113,10 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
   await choose(page, 'Mediterranean');
   await suggestDirect(page);
-  assert.ok(await has(page, '[data-mark]', 10_000), 'the marks are loaded (Seville has plants near the edge)');
-  assert.equal(await page.$('[data-mark="outside"]'), null, 'no suggested plant is outside its range');
+  // PP-B b1b: the palette page draws no plant marks until Your plants (b3); the members' verdicts say it.
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberVerdicts.value?.size > 0, { timeout: 10_000 }).then(() => true, () => false), 'the members are checked');
+  const levels = await page.evaluate(() => [...window.__ctTest.store.memberVerdicts.value.values()].map((v) => v.level));
+  assert.ok(levels.length > 0 && !levels.includes('outside'), `no suggested plant is outside its range (${levels.join(', ')})`);
   await page.evaluate(() => window.__ctTest.store.openSheet('add'));
   assert.ok(await has(page, ADD_OPEN, 10_000) && await has(page, '.ct-add .ct-rows li', 10_000), 'the Add list');
   await page.click('.ct-add-showall').catch(() => {});
@@ -121,20 +124,19 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   await addTypedOutside(page, outside);
 });
 
-test('P5-14c (S5c matrix counts): a cell\'s "N fit" leaves out plants outside their range at the site, and counts them all again without a location', async () => {
+// PP-B b1b (drift check amendment 5): the matrix counts went with the matrix (0a'); the count line on
+// Place (views/pool/pool.tsx, store.countFits) counts the plants that fit or need a second look.
+test('P5-14c (S5c → PP-B b1b count line): at Seville the line counts the 198 of 200 Mediterranean plants that fit today, in the list\'s own words; without a location there is no line @real-data', async () => {
   const page = await tool();
   await choose(page, 'Mediterranean');
-  const sum = () => page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).reduce((a, c) => a + c.inList, 0));
-  const before = await sum();
+  assert.ok(await has(page, '[data-place-suggest]', 15_000), 'Place, Mediterranean');
+  assert.equal(await page.$('[data-pool-count]'), null, 'no line without a location');
   await atSite(page, 'seville');
-  // The range rule loads with its chunk (core loadRangeRule) once the site has a climate; the pool waits for it.
-  await page.waitForFunction(() => window.__ctTest.store.matrix.value !== null, { timeout: 10_000 });
-  const within = await sum();
-  assert.ok(within < before, `fewer plants counted at Seville (${within} cell entries) than without a location (${before})`);
-  const counted = await page.evaluate(() => { const { store } = window.__ctTest; return store.fitPool.value.length; });
-  assert.equal(counted, 198, 'the matrix counts the 198 of 200 Mediterranean plants kept at Seville (design check §C: 101; 117 on the schema 2 export, before the heat limit at Q99)');
+  assert.ok(await page.waitForFunction(() => document.querySelector('[data-pool-count]')?.dataset.poolCount === 'count', { timeout: 15_000 }).then(() => true, () => false), 'the count line');
+  assert.match(await text(page, '[data-pool-count]') ?? '', /^198 of the 200 plants on the Mediterranean list fit your place today\.$/, 'the design check\'s §C figure on this export: 198 of 200 (fits 167, a second look 31)');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.countFits.value), { fits: 167, look: 31, of: 200 });
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
-  assert.equal(await sum(), before, 'without a location the counts are P2\'s');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('[data-pool-count]'), { timeout: 5000 }).then(() => true, () => false), 'the line goes with the location');
 });
 
 test('P5-14e (S5c range chunk offline): if the range chunk cannot load, the tool falls back to the unfiltered pool with a notice, and Suggest, a link and Swap all work @real-data', async () => {

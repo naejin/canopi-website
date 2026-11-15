@@ -117,7 +117,7 @@ test('withinRange: leaves out only the plants outside, never a kept one; the sam
 
 // ---- "can Suggest now" (E6 R2, rules/suggest-block.ts): the rule views/PoolSlot.tsx and the store read ----
 
-test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits once the rule is in; the pool counts', async () => {
+test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits once the rule is in; the old pool counts gone (PP-B b1b)', async () => {
   const rules = await import('../src/islands/consortium/rules/suggest-block.ts');
   const rule = await core.loadRangeRule();
   assert.equal(rule.withinRange, core.withinRange, 'loadRangeRule gives the core rule');
@@ -143,8 +143,8 @@ test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that ord
   assert.equal(rules.nothingFits(pool, at(0, 25), rule), false);
   assert.equal(rules.nothingFits([], at(-30, 25), rule), false, 'an empty list is not "nothing fits"');
   assert.equal(rules.nothingFits(pool, null, rule), false, 'no site climate: nothing is checked');
-  assert.deepEqual(rules.poolCounts(['inside', 'edge', 'outside', 'unknown', 'edge']), { fit: 4, edge: 2 });
-  assert.deepEqual(rules.poolCounts([]), { fit: 0, edge: 0 });
+  // PP-B b1b: Place's count line reads the verdicts (store.countFits); the range-verdict counts went.
+  assert.equal('poolCounts' in rules, false);
 });
 
 // ---- nearest placements ----
@@ -288,9 +288,10 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   };
   const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
   const mine = blockOf('en');
-  // What the code reads: range-marks.ts and pool.tsx keys.
+  // What the code reads: range-marks.ts and pool.tsx keys (PP-B b1b: range.pool.count is the borrowed
+  // count line; the panel's edge and left sentences went with the panel).
   const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
-    'range.side.cold', 'range.side.mild', 'range.side.cool', 'range.side.summer', 'range.side.hot', 'range.disputed', 'range.source.treegoer', 'range.pool.count', 'range.pool.edge', 'range.pool.left', 'range.pool.caveat', 'range.pool.aridityNotChecked',
+    'range.side.cold', 'range.side.mild', 'range.side.cool', 'range.side.summer', 'range.side.hot', 'range.disputed', 'range.source.treegoer', 'range.pool.count', 'range.pool.caveat', 'range.pool.aridityNotChecked',
     'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'range.annualShort', 'range.coolSeason', 'range.coolSeasonShort', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite', 'marks.unavailable'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
@@ -309,13 +310,14 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   for (const l of locales) {
     const strings = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
     for (const k of mine) assert.doesNotMatch(strings[k], /\b2\s?°C/, `${l} ${k}: the margin comes from {margin} (RANGE_MARGIN_C)`);
-    assert.match(strings['consortium.range.pool.count'], /\{margin\}/, `${l}: the count names the margin`);
+    assert.match(strings['consortium.range.pool.count'], /\{total\}/, `${l}: the count line names how many plants the nearest lists hold`);
   }
   assert.match(en['consortium.range.side.cold'], /mostly recorded down to \{bound\}/, 'Q05: "mostly recorded down to"');
   assert.match(en['consortium.range.side.mild'], /mostly recorded up to \{bound\}/, 'Q95: "mostly recorded up to"');
   assert.match(en['consortium.range.side.hot'], /mostly recorded up to \{bound\}/);
   assert.match(en['consortium.range.pool.caveat'], /cultivation included/);
   assert.match(en['consortium.range.pool.caveat'], /not been reviewed/);
+  assert.match(en['consortium.range.pool.count'], /^one: # of the \{total\} plants on the nearest lists fits your place today\. \| other: # of the \{total\} plants on the nearest lists fit your place today\.$/, 'the count line\'s words (PP-B b1b)');
 });
 
 // [Köppen, zone, coldest-month min, warmest-month max, aridity index, coldest- and warmest-month means]
