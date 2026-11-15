@@ -253,6 +253,14 @@ test('suggest: the gain counts the open holes a plant fills (holes.ts fills), no
   assert.equal(gain(twin, [early], UNSURE_SITE).holes, 0);
   assert.ok(gain(twin, [early], UNSURE_SITE, outside).holes > 0, 'an outside member leaves its holes open');
   assert.equal(gain(twin, [early], UNSURE_SITE, outside).holes, 3 * filled(twin, [early], outside));
+  // Fix round 1 (b1br-2): a candidate scores holes exactly as holes() counts it once added; outside
+  // its range for the period it fills none, so the hole stays open and is no reason to pick it.
+  const x = make({ stratum: 'high', start: 3, end: 6, functions: ['nitrogen_fixer'] });
+  const xOutside = new Map([[x.id, { id: x.id, level: 'outside' }]]);
+  assert.ok(gain(x, [early], UNSURE_SITE).holes > 0, 'tree X fills holes when it holds');
+  assert.equal(gain(x, [early], UNSURE_SITE, xOutside).holes, 0, 'tree X outside its range: no hole gain');
+  const after = (v) => open([early, x], v).length;
+  assert.equal(open([early], xOutside).length - after(xOutside), 0, 'holes() agrees: adding an outside X closes no hole');
   // suggest() takes the verdicts too, and every member it picks fills an open hole or brings a job.
   const s = suggest(temperate, { ...ctx(), interactions: temperateInteractions, verdicts: new Map() });
   const taxa = s.members.map((id) => temperate.find((t) => t.id === id));

@@ -20,12 +20,13 @@
 // not invasive in the chosen country (checked), or, with none, invasive in no GRIIS country, is picked.
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a seeded
 // guest is a member like any other and counts for coverage, with its home placement.
-import type { Alternative, CellRef, Fit, Hole, Interaction, JobId, PhaseOrd, PlantId, PlantVerdict, Site, Stratum, Taxon } from './types.ts';
+import type { Alternative, CellRef, Fit, Hole, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
 import { strata } from './types.ts';
 import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { cellKey, cellsOf } from './matrix.ts';
 import { fills, holes } from './holes.ts';
+import type { HoleContext } from './holes.ts';
 import type { FlagContext } from './conflicts.ts';
 import { warns, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
 
@@ -40,15 +41,14 @@ export interface SuggestOptions extends FlagContext {
   seed?: PlantId[]; // the plants already in the palette: always members, flagged or not; the seed wins over removed
   removed?: PlantId[]; // never picked automatically
   guests?: Taxon[]; // plants from other climates' lists, with `from` set; members only when seeded
-  verdicts?: Verdicts; // the plants' verdicts for the page period (store.poolVerdicts); none: nobody is outside
+  verdicts?: HoleContext['verdicts']; // the plants' verdicts for the page period (store.poolVerdicts); none: nobody is outside
 }
-type Verdicts = ReadonlyMap<PlantId, Pick<PlantVerdict, 'level'>> | null;
 export interface Suggestion { members: PlantId[]; limit: number }
 export interface Gain { total: number; jobs: number; holes: number; strata: number; food: number; backup: number; edibility: number; weedy: number; unknowns: number }
 
 interface Info { taxon: Taxon; jobs: JobId[]; stratum: Stratum | null; span: number[]; cells: number[]; edibility: number; weedy: boolean; fit: Fit }
 // The open holes of the members (taxa), worked out when a gain first asks and again after each add.
-interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; cells: Set<number>; food: Set<number>; canopy: number[]; taxa: Taxon[]; verdicts: Verdicts; open: Hole[] | null }
+interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; cells: Set<number>; food: Set<number>; canopy: number[]; taxa: Taxon[]; verdicts: HoleContext['verdicts']; open: Hole[] | null }
 
 const BACKED_UP: readonly JobId[] = ['feeds_soil', 'ground', 'mulch'];
 
@@ -75,7 +75,7 @@ function infoOf(taxon: Taxon, site: Site): Info {
   return info;
 }
 
-const emptyCoverage = (verdicts: Verdicts): Coverage => ({ jobs: new Map(), strata: new Set(), cells: new Set(), food: new Set(), canopy: [...canopyOf([])], taxa: [], verdicts, open: null });
+const emptyCoverage = (verdicts: HoleContext['verdicts']): Coverage => ({ jobs: new Map(), strata: new Set(), cells: new Set(), food: new Set(), canopy: [...canopyOf([])], taxa: [], verdicts, open: null });
 function add(cov: Coverage, i: Info) {
   for (const j of i.jobs) cov.jobs.set(j, (cov.jobs.get(j) ?? 0) + 1);
   if (i.jobs.includes('feeds_you')) for (const p of i.span) cov.food.add(p);
@@ -85,14 +85,16 @@ function add(cov: Coverage, i: Info) {
   cov.taxa.push(i.taxon);
   cov.open = null;
 }
-const coverageOf = (infos: Info[], verdicts: Verdicts = null) => { const cov = emptyCoverage(verdicts); for (const i of infos) add(cov, i); return cov; };
+const coverageOf = (infos: Info[], verdicts: HoleContext['verdicts'] = null) => { const cov = emptyCoverage(verdicts); for (const i of infos) add(cov, i); return cov; };
 const openHoles = (cov: Coverage): Hole[] =>
-  (cov.open ??= holes({ members: cov.taxa, verdicts: cov.verdicts as ReadonlyMap<PlantId, PlantVerdict> | null, pending: false }).filter((h) => h.state === 'open'));
+  (cov.open ??= holes({ members: cov.taxa, verdicts: cov.verdicts, pending: false }).filter((h) => h.state === 'open'));
 
 function tenths(i: Info, cov: Coverage) {
   const jobs = 100 * i.jobs.filter((j) => !cov.jobs.has(j)).length;
+  // Holes scored exactly as holes() counts the plant once added: outside its range for the period, it
+  // fills none (holes.ts counts), so the hole stays open and is no reason to pick it (b1br-2).
   let filled = 0;
-  for (const h of openHoles(cov)) if (fills(h, i.taxon)) filled++;
+  if (cov.verdicts?.get(i.taxon.id)?.level !== 'outside') for (const h of openHoles(cov)) if (fills(h, i.taxon)) filled++;
   const holeGain = 30 * filled;
   const strataGain = i.stratum && !cov.strata.has(i.stratum) ? 60 : 0;
   const food = i.jobs.includes('feeds_you') ? 40 * i.span.filter((p) => !cov.food.has(p)).length : 0;
@@ -105,7 +107,7 @@ function tenths(i: Info, cov: Coverage) {
 const isNew = (t: ReturnType<typeof tenths>) => t.jobs + t.holes + t.food + t.backup > 0;
 
 // What the plant would add to these members on this site, term by term (verdicts: as suggest's).
-export function gain(taxon: Taxon, members: Taxon[], site: Site, verdicts: Verdicts = null): Gain {
+export function gain(taxon: Taxon, members: Taxon[], site: Site, verdicts: HoleContext['verdicts'] = null): Gain {
   const t = tenths(infoOf(taxon, site), coverageOf(members.map((m) => infoOf(m, site)), verdicts));
   return { total: t.total / 10, jobs: t.jobs / 10, holes: t.holes / 10, strata: t.strata / 10, food: t.food / 10, backup: t.backup / 10, edibility: t.edibility / 10, weedy: t.weedy / 10, unknowns: t.unknowns / 10 };
 }
@@ -175,7 +177,7 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   return { members: chosen.map((i) => i.taxon.id), limit };
 }
 
-export interface AlternativeOptions extends FlagContext { removed?: PlantId[]; verdicts?: Verdicts }
+export interface AlternativeOptions extends FlagContext { removed?: PlantId[]; verdicts?: HoleContext['verdicts'] }
 
 const keyToRef = (k: number): CellRef => [strata[Math.floor(k / 7)], (k % 7) as PhaseOrd];
 
