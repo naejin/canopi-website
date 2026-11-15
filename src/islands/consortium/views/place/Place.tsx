@@ -339,7 +339,7 @@ function Head() {
       </p>
       <LocationSlot compact />
       <CountryLine />
-      {z && why && why !== 'nothingFits' && <PoolSlot zone={z} />}
+      {z && why && why !== 'nothingFits' && <PoolSlot zone={z} head />}
     </div>
   );
 }

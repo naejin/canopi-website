@@ -10,8 +10,10 @@
 // estimate.noSite). Without any list, the panel's "Not covered yet" notice. The panel
 // (views/pool/pool.tsx, a P5 feature chunk; decision row "Island JavaScript budget for P5") loads
 // for a climate that borrows its plants once the site has a climate, or when it has no list:
-// which lists are borrowed, how many plants the site's observed climate keeps, and the "nothing
-// fits" state. Without a location, a curated climate shows nothing here, as in P2. (store.ts
+// which lists are borrowed, the count line (PP-B b1b: "{n} of the {m} plants on the nearest lists fit
+// your place today", from the verdicts) and the "nothing fits" state. Without a location, a curated
+// climate shows nothing here, as in P2 (every verdict would be "not checked"). Place's form and the
+// "Your place" sheet mount it always; Place's head only for a needs-site, needs-rule or no-list reason. (store.ts
 // siteClimate; the range rule loads with its own chunk, store.ts rangeRule. The rule of "can Suggest
 // now" and the list a climate has: rules/suggest-block.ts.)
 import { effect, untracked } from '@preact/signals';
@@ -28,8 +30,12 @@ import { retryableImport } from '../../../lib/consortium/index.ts';
 import { page } from './kit/page.ts';
 import { zoneName } from './kit/names.ts';
 
-// Nothing while its chunk loads; a failed chunk shows the failed line with Reload (pre-push review 1).
-const panel = lazyPart(retryableImport(() => import('./pool/pool.tsx'), (m) => m.PoolPanel), { loading: () => null });
+// While its chunk loads, with a site climate, the count line's place already says "Checking…" (the
+// panel's first line, so it never appears late; PP-B b1b); a failed chunk shows the failed line with
+// Reload (pre-push review 1).
+const Checking = () => (siteClimate.value
+  ? <p class="status-line ct-pool-count" role="status" data-pool-count="checking">{T('place.count.checking')}</p> : null);
+const panel = lazyPart(retryableImport(() => import('./pool/pool.tsx'), (m) => m.PoolPanel), { loading: Checking });
 
 // The climates with plants of their own: the store's one owner, which suggestMembers reads too.
 const curated = (): ClimateZone[] => curatedClimates.value;
@@ -84,9 +90,16 @@ effect(() => {
 // real export, which curates a nearest list for every climate).
 // The range rule's chunk did not load (store.ts rangeFailed): say so here, in place of the panel,
 // which needs that chunk; the panel's own chunk failing shows its failed line (lazy.tsx LoadFailed).
-export function PoolSlot({ zone }: { zone: ClimateZone }) {
+// head: the palette page's head (Place.tsx Head), which keeps the needs lines only (amendment 3): the
+// needs-location and range-unavailable lines, and "Not covered yet" for a climate with no list; never
+// the count line, which Place's form and the "Your place" sheet show. A guard, not a path any state
+// reaches today: Head mounts this only for a needs-site, needs-rule (range rule failed) or no-list
+// reason, each answered above before the panel (so no browser case can tell it apart; review b1bf-2).
+export function PoolSlot({ zone, head = false }: { zone: ClimateZone; head?: boolean }) {
   if (rangeFailed.value && hasPlants(zone, curated())) return <RangeUnavailable zone={zone} />;
-  return needsSite(zone) ? <NeedsSite zone={zone} /> : !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
+  if (needsSite(zone)) return <NeedsSite zone={zone} />;
+  if (head) return hasPlants(zone, curated()) ? null : <panel.View zone={zone} />;
+  return !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
 }
 function RangeUnavailable({ zone }: { zone: ClimateZone }) {
   return (

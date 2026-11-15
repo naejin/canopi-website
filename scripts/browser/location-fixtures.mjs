@@ -18,6 +18,7 @@ export const SITES = {
   seville: [37.3891, -5.9845], // Csa: Mediterranean, a curated climate, not borderline; SPA
   manaus: [-3.119, -60.0217], // Af: Tropical; BZN; pH 4.3 (filled from 2 cells): likely acid
   nairobi: [-1.2864, 36.8172], // stored Aw, but its coldest-month mean is 17.6 °C: Cwb by its means, Subtropical, borderline with Tropical
+  kiambu: [-1.1714, 36.8356], // Cfb (a cell other than Nairobi's): proposes Temperate, the reader's honest answer; the "Not this climate? Choose another" case, overridden to Subtropical (borrows the nearest lists): 305 of 515 (concept P1; PP-B b1b, coordinator 2026-11-15)
 };
 
 // Nominatim search answers (format jsonv2), keyed by the lower-cased query. Unknown queries: [].
@@ -32,6 +33,7 @@ export const NOMINATIM = {
   yakutsk: [place('Yakutsk', 'Yakutsk, Sakha Republic, Russia', SITES.yakutsk)],
   longyearbyen: [place('Longyearbyen', 'Longyearbyen, Svalbard, Norge', SITES.polar, 'town')],
   manaus: [place('Manaus', 'Manaus, Amazonas, Brasil', SITES.manaus)],
+  kiambu: [place('Kiambu', 'Kiambu, Kiambu County, Central Kenya, Kenya', SITES.kiambu, 'town')],
 };
 
 // The climate reader's answer at a point, on the tiles a build installed (dist-test by default).
@@ -56,6 +58,7 @@ export const EXPECTED = {
   seville: { koppen: 'Csa', l3: 'SPA', iso: 'ES' },
   manaus: { koppen: 'Af', l3: 'BZN', iso: 'BR', ph: 4.3 },
   nairobi: { koppen: 'Aw', l3: 'KEN', iso: 'KE' },
+  kiambu: { koppen: 'Cfb', l3: 'KEN', iso: 'KE' },
 };
 
 // Place's climate cards sit one link away (PP-B b1a, owner drop 10): "No location? Choose a climate",

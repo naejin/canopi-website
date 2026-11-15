@@ -230,9 +230,12 @@ let verdictLoad: Promise<void> | null = null;
 // location every plant is "not checked"), and by main.ts beside the database download on a return
 // visit or a link (perf: the chunk is there when the page mounts): an action, not a start() effect.
 // A failed load is not kept: the next call tries again (retryVerdict; core verdict-load.ts fetches the
-// chunk again under ?retry=n).
+// chunk again under ?retry=n). verdictFailed says the current load failed: a new load clears it as it
+// starts (b1bg-1: a return visit's fetchAhead refused offline, then start()'s effect asks again once a
+// site climate arrives; meanwhile the count line checks and the waiting Suggest waits).
 export function wantVerdict(): void {
   if (verdictLoad) return;
+  verdictFailed.value = false;
   verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; }, (err: unknown) => {
     console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
     verdictLoad = null;
@@ -243,7 +246,6 @@ export function wantVerdict(): void {
 // in place, never a page reload (architecture 9).
 export function retryVerdict(): void {
   if (verdictLoad || verdictRule.peek()) return;
-  verdictFailed.value = false;
   wantVerdict();
 }
 // What every verdict reads: the palette's place, the location's lookup, the period shown, the
@@ -272,16 +274,19 @@ export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value, p = pool.value;
   return rule && p ? rule.verdicts([...p, ...guestTaxa.value], verdictContext.value) : null;
 });
-// The pool plants, guests included, that fit or need a second look for the page's period (levels kept
-// apart so the line can split them later); null until the verdicts are here. b2 writes its rule
-// (a borrowed list keeps every plant whose climate range includes the site); b1b reads it.
-/** @public seam for b1b, which drops the tag. */
-export const countFits = computed<{ fits: number; look: number; of: number } | null>(() => {
-  const v = poolVerdicts.value;
-  if (!v) return null;
-  let fits = 0, look = 0;
-  for (const x of v.values()) { if (x.level === 'fits') fits++; else if (x.level === 'look') look++; }
-  return { fits, look, of: v.size };
+// The chosen climate's list (its own, or the nearest lists it borrows), guests left out: the plants
+// that fit or need a second look for the page's period (levels kept apart so the line can split them
+// later), and those not checked (no climate figures for the period, or no range recorded: 'unknown',
+// never counted as fitting), of how many; null until the verdicts are here. Place's count line reads it
+// (views/pool/pool.tsx, b1b: "{n} of the {m} plants on the nearest lists fit your place today"; never
+// "0 of m", rules/suggest-block.ts countKind). A borrowed list keeps every plant whose climate range
+// includes the site (owner, 2026-11-14). Kiambu: 305 of 515.
+export const countFits = computed<{ fits: number; look: number; unknown: number; of: number } | null>(() => {
+  const v = poolVerdicts.value, p = pool.value;
+  if (!v || !p) return null;
+  let fits = 0, look = 0, unknown = 0;
+  for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits') fits++; else if (x === 'look') look++; else if (x !== 'outside') unknown++; }
+  return { fits, look, unknown, of: p.length };
 });
 // Whether the browser is offline (navigator.onLine and its events, wired in start(); App shows the line).
 export const offline = signal(false);
@@ -446,10 +451,13 @@ export function watchPools(): () => void {
   });
 }
 
+// Whether a suggestion needs the verdicts first: a site climate with range checks on (suggestMembers;
+// state/suggest-wait.ts waits for them and ends the wait when their chunk is refused).
+export const waitsForVerdicts = (): boolean => siteClimate.value && !rangeFailed.value;
 // "Suggest plants": a suggestion built around every plant already in the palette (the members are
 // its seed; inventory C6), leaving out removed plants (core suggest.ts). Needs the climate's pool and
-// every guest climate's (a guest must count); false, changing nothing, while any is not read
-// (guestsPending).
+// every guest climate's (a guest must count), and with a site climate the verdicts; false, changing
+// nothing, while any is not read (guestsPending, verdictRule).
 export function suggestMembers(): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
@@ -467,7 +475,14 @@ export function suggestMembers(): boolean {
   // (state/suggest-wait.ts).
   const algo = suggestRule.value;
   if (!algo) return false;
-  const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value });
+  // With a site climate, the verdicts too (F1a-P7, PP-B b1b): the gain counts the open holes a plant
+  // fills, and a member outside its range for the period fills none. Suggest waits for the verdict
+  // chunk, and a refused one ends the wait with a toast (state/suggest-wait.ts). Without a site climate
+  // every verdict is "not checked": nothing to wait for; nor with range checks off (rangeFailed: the
+  // verdict chunk imports the range rule's, so it cannot come either, and the page is P2's, P5-14e).
+  const verdicts = poolVerdicts.value;
+  if (waitsForVerdicts() && !verdicts) return false;
+  const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value, verdicts });
   // A suggestion placed is a plant change: the page owns the save from here (state/save.ts), and it
   // offers its own Undo, as Add, Remove and Swap do, taken just before it is placed (fix round 4, s-1,
   // s-2: every caller gets it, and no effect can drop it). A wait ends on any plant change, so this is
@@ -771,7 +786,9 @@ export function start(): void {
   // Offline (architecture 9): the page says so; what is loaded still works.
   if (typeof navigator !== 'undefined' && typeof addEventListener === 'function') {
     offline.value = navigator.onLine === false;
-    addEventListener('online', () => { offline.value = false; });
+    // Back online, a verdict chunk refused meanwhile is asked for again in place, here, so no view
+    // needs a listener of its own for it (b1bc-8a).
+    addEventListener('online', () => { offline.value = false; if (verdictFailed.peek()) retryVerdict(); });
     addEventListener('offline', () => { offline.value = true; });
   }
   // The mark providers' chunk, loaded once a mark can show (markProviders, marksBroken).

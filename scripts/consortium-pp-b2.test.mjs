@@ -4,12 +4,11 @@
 // stamped copy scripts/vectors/range-verdicts.json, run here, never copied: its release-id test is in
 // install-consortium.test.mjs); holes and fillers (holes.ts) on scripts/vectors/holes.json; the words
 // of verdicts, holes and years (verdict-line.ts); Kiambu through the store's countFits on the real
-// export. Written failing first (scripts/expect-fail.mjs failing(), owner b2 in each title).
+// export (b1b: 305 of 515, guests left out). Written failing first.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { failing } from './expect-fail.mjs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
@@ -124,15 +123,43 @@ async function kiambuStore() {
   store.verdictRule.value = await core.loadVerdictRule();
   return store;
 }
-// Open point for the coordinator: the boards' figure (concept P1, growers.md) came from the mock-up rule
-// (tmin_cold both sides, tmax_warm hot side); the live rule gives 305 on r-f3c6dd8b3c4391be (307 on
-// r-60ea417b5a15c3aa). Parked until the plan's figure is
-// confirmed or changed; never weakened.
-failing('PP-B (b2 countFits, real data): Kiambu, 324 of the 515 plants on the nearest lists fit or need a second look today', { owner: 'b2', reason: /^\d+ \(the live range rule/ }, async () => {
+// The figure (coordinator, chunk 2 drift check 2026-11-15): the live range rule (P5 decision row of
+// 2026-11-12, cool and chill sides) gives 305 of 515 at Kiambu on r-fcf4307ffd1549b3 (fits 196, look
+// 109); the boards' 324 came from the mock-up rule. A new export moves it: re-run and re-pin the figure.
+test('PP-B (b1b countFits, real data): Kiambu, 305 of the 515 plants on the nearest lists fit (196) or need a second look (109) today', async () => {
+  assert.equal(index.release_id, 'r-fcf4307ffd1549b3', 'the export the figure was read on');
   const store = await kiambuStore();
   const n = store.countFits.value;
-  assert.equal(n.of, 515);
-  assert.equal(n.fits + n.look, 324, `${n.fits + n.look} (the live range rule since the P5 decision row of 2026-11-12, cool and chill sides, gives 305 on r-f3c6dd8b3c4391be; the boards' 324 used the earlier rule)`);
+  assert.deepEqual(n, { fits: 196, look: 109, unknown: 0, of: 515 });
+});
+// Guests (plants from another climate's list) are not on the chosen climate's list: the line's {m}
+// ("the plants on the nearest lists") leaves them out, and so does {n} (drift check section 3).
+// (Subtropical borrows every curated list, so the guest case runs on the Temperate list at Kiambu.)
+test('PP-B (b1b countFits, real data): guests in the palette are left out of the count', async () => {
+  const store = await kiambuStore();
+  const { state } = await import('../src/islands/consortium/state/schema.ts');
+  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
+  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+  const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
+  const real = createSqliteSource(opened.db, { images: {} });
+  const temperate = await real.pool('Temperate'), tropical = await real.pool('Tropical');
+  const own = new Set(temperate.map((t) => t.id));
+  const guest = tropical.find((x) => !own.has(x.id) && ['inside', 'edge'].includes(core.rangeFit(x, KIAMBU)));
+  assert.ok(guest, 'a Tropical plant, not on the Temperate list, that fits Kiambu');
+  try {
+    state.signals.climate.value = 'Temperate';
+    store.pools.value = { Temperate: temperate, Tropical: tropical };
+    const alone = store.countFits.value;
+    assert.equal(alone.of, temperate.length);
+    state.signals.members.value = [guest.id];
+    state.signals.guests.value = { [guest.id]: 'Tropical' };
+    assert.equal(store.guestTaxa.value.length, 1, 'the guest is read');
+    assert.deepEqual(store.countFits.value, alone, 'the guest changes neither {n} nor {m}');
+  } finally {
+    state.signals.members.value = [];
+    state.signals.guests.value = {};
+    state.signals.climate.value = 'Subtropical';
+  }
 });
 test('PP-B (b2 countFits, real data): Kiambu, countFits counts what the pool panel\'s range rule keeps (inside or near the edge)', async () => {
   const store = await kiambuStore();

@@ -15,12 +15,16 @@
 //   [data-back-mine] on the newer and unreadable lines over a saved palette, "Use it"
 //   [data-use-link-place] and "Use my own place" [data-use-own-place]; Start over [data-start-over];
 // - Share's "Include my place" tick input[data-share-location].
+// The count line b1b folds into Place (views/pool/pool.tsx, lazy, shown in the Place form and the
+// "Your place" sheet): [data-pool-count] is the always-present status line under the climate cards,
+// its value 'checking' | 'count' | 'failed' | 'offline' (never a "0 of m": nothing fits shows
+// [data-pool-empty]); [data-pool-borrowed] the borrowed-lists sentence with "Ask for this climate".
 // Run capped: npm run test:browser (scripts/browser/run.mjs).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { aria, en, h, has, realDb, suggestReady, useHarness } from './helpers.mjs';
-import { atSite, choose, tool } from './p5-helpers.mjs';
-import { openCards } from './location-fixtures.mjs';
+import { atSite, choose, search, tool } from './p5-helpers.mjs';
+import { openCards, pickCard } from './location-fixtures.mjs';
 import { placeTo } from './seams-helpers.mjs';
 import { liveLog, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
@@ -596,4 +600,227 @@ test('PP-B19 (b1a Place at 320 px): in en, de, ru and ja nothing scrolls sideway
     assert.ok(over.scroll <= 0, `${lang}: the page scrolls sideways by ${over.scroll} px`);
     assert.deepEqual(over.bad, [], `${lang}: controls pass the right edge`);
   }
+});
+
+// ---- b1b: the pool count in Place (plant-palette-slices section 2, row b1b; drift check 2026-11-15) ----
+const COUNT = '[data-pool-count]';
+// A plural string of en.json for n (the 'other' form past one), as strings.ts P() writes it in en.
+const plural = (k, n, vars = {}) => {
+  const forms = Object.fromEntries(W(k).split(' | ').map((f) => { const i = f.indexOf(':'); return [f.slice(0, i).trim(), f.slice(i + 1).trim()]; }));
+  return Object.entries(vars).reduce((t, [a, b]) => t.split(`{${a}}`).join(String(b)), (n === 1 ? forms.one : forms.other).replace(/#/g, String(n)));
+};
+const countIs = (page, want, timeout = 15_000) => until(page, (sel, w) => document.querySelector(sel)?.textContent.replace(/\s+/g, ' ').trim() === w, timeout, COUNT, want);
+const countState = (page) => page.$eval(COUNT, (e) => e.dataset.poolCount).catch(() => null);
+
+// Kiambu's cell reads Cfb (highland), so the location proposes Temperate: the reader's honest answer
+// (coordinator 2026-11-15). Kiambu stays the "Not this climate? Choose another" case: the concept's
+// grower (P1) overrides it to Subtropical, the climate that borrows the nearest lists: 305 of 515.
+test('PP-B1 (b1b Kiambu, concept P1): search Kiambu, which proposes Temperate (Cfb); "Not this climate? Choose another" overrides it to Subtropical: Place says 305 of the 515 plants on the nearest lists fit today, with the borrowed lists and "Ask for this climate" @real-data', async () => {
+  const page = await tool({ nominatim: 'fixture' });
+  await search(page, 'Kiambu');
+  assert.ok(await has(page, '[data-location-confirm]', 15_000), 'Kiambu read, its climate proposed');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.proposedClimate.value), 'Temperate', 'Kiambu (Cfb) proposes Temperate, the honest answer');
+  // "Not this climate? Choose another": the reader overrides the proposal.
+  await pickCard(page, 'subtropical');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.climate.value), 'Subtropical', 'Subtropical, a climate that borrows the nearest lists');
+  const want = plural('range.pool.count', 305, { total: 515 });
+  assert.ok(await countIs(page, want), `the count line says "${want}" (it says "${await words(page, COUNT)}")`);
+  assert.ok(await has(page, '[data-pool-borrowed] a', 2000), 'the borrowed lists, with "Ask for this climate"');
+  assert.equal(await page.$('[data-pool-empty]'), null);
+  // In the "Your place" sheet over the palette: the same line; Head keeps only the needs lines.
+  await page.click('[data-place-show]');
+  assert.ok(await until(page, () => window.__ctTest.store.step.value === 'palette'), 'the palette');
+  assert.equal(await page.$(`.ct-result-head ${COUNT}`), null, 'no count line in the head');
+  await page.evaluate(() => window.__ctTest.store.openSheet('place'));
+  assert.ok(await until(page, (sel, w) => document.querySelector(`dialog[open] ${sel}`)?.textContent.replace(/\s+/g, ' ').trim() === w, 15_000, COUNT, want), 'the sheet says it too');
+});
+
+test('PP-B1 (b1b count line in the sheet): changing the climate updates the count, in the curated list\'s own words; a spot answer leaves it (fits and second looks both count) @real-data', async () => {
+  const page = await tool();
+  await atSite(page, 'seville');
+  await choose(page, 'Mediterranean');
+  const med = plural('place.count.own', 198, { total: 200, list: W('list.mediterranean') });
+  assert.ok(await countIs(page, med), `"${med}" (it says "${await words(page, COUNT)}")`);
+  await page.click('[data-place-show]');
+  await page.evaluate(() => window.__ctTest.store.openSheet('place'));
+  assert.ok(await has(page, 'dialog[open] [data-place-climates], dialog[open] #ct-climates:not([hidden])', 8000), 'the sheet');
+  await pickCard(page, 'temperate');
+  const tem = plural('place.count.own', 135, { total: 200, list: W('list.temperate') });
+  assert.ok(await countIs(page, tem), `the sheet's count follows the climate: "${tem}" (it says "${await words(page, `dialog[open] ${COUNT}`)}")`);
+  await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(await words(page, `dialog[open] ${COUNT}`), tem, 'a shade answer moves plants between fits and a second look, both counted');
+});
+
+test('PP-B1 (b1b count line states): checking while the verdict chunk loads (the line already there), then the count; no line without a location on a curated climate', async () => {
+  const page = await tool({ block: { verdict: 'hold' } });
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await has(page, '[data-place-suggest]', 15_000), 'Place, Mediterranean, no location');
+  assert.equal(await page.$(COUNT), null, 'no count line without a location (every verdict would be "unknown")');
+  await atSite(page, 'seville');
+  assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'checking', 15_000, COUNT), `"Checking…" while the verdict chunk is held (${await countState(page)})`);
+  assert.equal(await words(page, COUNT), W('place.count.checking'));
+  await page.releaseHeld();
+  assert.ok(await countIs(page, plural('place.count.own', 198, { total: 200, list: W('list.mediterranean') })), 'then the count');
+});
+
+test('PP-B1 (b1b count line, verdict chunk refused): "Could not check" with Retry, never "0 of m"; offline it needs a connection', async () => {
+  const page = await tool({ block: { verdict: 404 } });
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'failed', 15_000, COUNT), `the failed line (${await countState(page)})`);
+  assert.match(await words(page, COUNT), new RegExp(`^${W('place.count.failed').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  assert.doesNotMatch(await words(page, COUNT), /^0 /, 'never "0 of m"');
+  assert.ok(await has(page, `${COUNT} ${aria('button', W('load.retry'))}`, 2000), 'Retry (load.retry)');
+  await page.setOfflineMode(true);
+  assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'offline', 4000, COUNT), 'offline: needs a connection');
+  assert.equal(await words(page, COUNT), W('load.needsConnection'));
+  await page.setOfflineMode(false);
+});
+
+test('F1a-P7 → PP-B (b1b Suggest waits for the verdict chunk, owner Q2): with a location, Suggest places nothing until the verdict chunk comes, then suggests', async () => {
+  const page = await tool({ block: { verdict: 'hold' } });
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await has(page, '[data-place-suggest]', 15_000), 'Place with "Start from a small suggested palette"');
+  await suggestReady(page);
+  await page.click('[data-place-suggest]');
+  await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 1000 }).catch(() => {});
+  const early = await members(page);
+  assert.equal(early, 0, `Suggest placed ${early} plants before the verdict chunk came`);
+  await page.releaseHeld();
+  assert.ok(await until(page, () => window.__ctTest.store.members.value.length > 0), 'then it suggests');
+});
+
+test('PP-B1 (b1b Suggest and a refused verdict chunk): a waiting Suggest ends with one toast, places nothing and is no longer busy; without a location Suggest never waits for it', async () => {
+  const page = await tool({ block: { verdict: 404 } });
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await has(page, '[data-place-suggest]', 15_000));
+  await suggestReady(page);
+  const toasts = await page.evaluate(() => { const { store } = window.__ctTest; window.__toasts = []; store.toast.subscribe((t) => { if (t) window.__toasts.push(t.text); }); return true; });
+  assert.ok(toasts);
+  await page.click('[data-place-suggest]');
+  assert.ok(await until(page, () => window.__toasts.length > 0, 10_000), 'a toast says so');
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(await page.evaluate(() => window.__toasts.length), 1, 'one toast');
+  assert.equal(await members(page), 0, 'nothing placed');
+  assert.equal(await page.$('[data-place-suggest][aria-busy="true"]'), null, 'no longer busy');
+  // Without a location (Forget): no verdict needed, so Suggest runs at once.
+  const fresh = await tool({ block: { verdict: 'hold' } });
+  await fresh.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await has(fresh, '[data-place-suggest]', 15_000));
+  await suggestReady(fresh);
+  await fresh.click('[data-place-suggest]');
+  assert.ok(await until(fresh, () => window.__ctTest.store.members.value.length > 0, 5000), 'without a location, Suggest does not wait for the verdict chunk');
+});
+
+test('PP-B1 (b1b count line, a later period from a link): the line names the period, never "today" for 2041–2070', async () => {
+  const page = await tool();
+  await atSite(page, 'seville');
+  await choose(page, 'Mediterranean');
+  assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'count', 15_000, COUNT), 'the count');
+  await page.evaluate(() => { window.__ctTest.store.period.value = '2041-2070'; });
+  assert.ok(await until(page, (sel) => /2041–2070/.test(document.querySelector(sel)?.textContent ?? ''), 8000, COUNT), `the period named (it says "${await words(page, COUNT)}")`);
+  assert.doesNotMatch(await words(page, COUNT), /today/, 'not "today"');
+});
+
+// Fix round 1 (b1br-5 / b1bc-6): Swap ranks its alternatives on the same open holes as Suggest, so both
+// alternatives() calls (in range and outside) get the page period's verdicts (store.poolVerdicts).
+test('PP-B1 (b1b Swap counts holes as Suggest does): both of Swap\'s alternatives() calls get the pool verdicts @real-data', async () => {
+  const page = await tool();
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Temperate'; });
+  assert.ok(await has(page, '[data-place-suggest]', 15_000));
+  await suggestReady(page);
+  await page.click('[data-place-suggest]');
+  assert.ok(await until(page, () => window.__ctTest.store.members.value.length > 0 && !!window.__ctTest.store.poolVerdicts.value), 'a suggestion, with the verdicts in');
+  await page.evaluate(() => {
+    const { store } = window.__ctTest, algo = store.suggestRule.value;
+    window.__alts = [];
+    store.suggestRule.value = { ...algo, alternatives: (...a) => { window.__alts.push(a[3]); return algo.alternatives(...a); } };
+    store.openSheet('swap', store.members.value[0]);
+  });
+  assert.ok(await has(page, 'dialog.ct-swap[open] .ct-rows li', 10_000), 'Swap lists alternatives');
+  const calls = await page.evaluate(() => window.__alts.slice(-2).map((o) => ({ same: o.verdicts === window.__ctTest.store.poolVerdicts.value, has: !!o.verdicts })));
+  assert.equal(calls.length, 2, 'Swap asked for both groups (Seville under Temperate has plants outside)');
+  assert.deepEqual(calls, [{ same: true, has: true }, { same: true, has: true }], 'each call passes store.poolVerdicts');
+});
+
+// Fix round 1 (b1br-1 / b1bc-11): "0 of m" never renders. A later period with no climate figures for
+// the place leaves every plant "not checked": the line says so instead of counting none. (The lookup
+// keeps only an SSP5-8.5 slot: a plant is judged on the years it stands in, today or 2041–2070 for a
+// shorter-lived one, so the page's SSP2-4.5 must have no slot for any period.)
+test('PP-B1 (b1b count line, nothing checked for a later period): never "0 of m"; it says the plants could not be checked @real-data', async () => {
+  const page = await tool();
+  const lookup = await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await countIs(page, plural('place.count.own', 198, { total: 200, list: W('list.mediterranean') })), 'today\'s count first');
+  await page.evaluate((lk) => {
+    const { store } = window.__ctTest;
+    store.location.value = { ...store.location.value, lookup: { ...lk, climate: { ...lk.climate, periods: lk.climate.periods.filter((p) => p.period === '2071-2099' && p.scenario === 'ssp585') } } };
+    store.period.value = '2071-2099';
+  }, lookup);
+  assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'unchecked', 15_000, COUNT), `the not-checked state (${await countState(page)}: "${await words(page, COUNT)}")`);
+  const text = await words(page, COUNT);
+  assert.doesNotMatch(text ?? '', /^0 /, 'never "0 of m"');
+  assert.equal(text, plural('place.count.uncheckedOwn', 200, { total: 200, list: W('list.mediterranean') }), 'the list named, no period blamed (a missing range is a cause too)');
+});
+
+// Fix round 1 (b1bc-10, inform, don't block): one sentence under the count says the plants left out
+// can still be found and added, with a warning.
+test('PP-B1 (b1b count line, the plants left out): a sentence under the count says they can still be found and added, with a warning @real-data', async () => {
+  const page = await tool();
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'count', 15_000, COUNT), 'the count');
+  assert.equal(await words(page, '[data-pool-left]'), W('place.count.left'));
+});
+
+// Fix round 1 (b1br-3 / b1br-4): a verdict chunk that never answers ends the waiting Suggest with the
+// stalled chunk's Reload (Retry could not work: the import is still pending), and that toast goes
+// if the chunk comes after all.
+test('PP-B1 (b1b Suggest and a stalled verdict chunk): after the wait, a toast with Reload, not Retry; it goes when the chunk comes', async () => {
+  const page = await tool({ block: { verdict: 'hold' }, timeouts: { suggest: 1500 } });
+  await atSite(page, 'seville');
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
+  assert.ok(await has(page, '[data-place-suggest]', 15_000));
+  await suggestReady(page);
+  await page.click('[data-place-suggest]');
+  assert.ok(await until(page, () => !!window.__ctTest.store.toast.value, 8000), 'a toast once the wait is up');
+  const toast = await page.evaluate(() => { const t = window.__ctTest.store.toast.value; return { text: t.text, label: t.action?.label ?? null }; });
+  assert.deepEqual(toast, { text: W('details.loadFailed'), label: W('details.reload') }, 'the stalled chunk\'s Reload');
+  assert.equal(await members(page), 0, 'nothing placed');
+  await page.releaseHeld();
+  assert.ok(await until(page, () => !!window.__ctTest.store.verdictRule.value, 10_000), 'the chunk comes');
+  assert.ok(await until(page, () => !window.__ctTest.store.toast.value, 5000), 'its toast goes');
+  assert.equal(await members(page), 0, 'and the ended wait runs no suggestion');
+});
+
+// Fix round 2 (b1bf-8, b1bc-8a): back online, a verdict chunk refused meanwhile is asked for again by
+// the store's one 'online' listener (store.ts start()), with no view of its own mounted: no climate is
+// chosen, so Place has no count line, and the palette page is not open.
+test('PP-B1 (b1b back online): with the verdict chunk refused, an "online" event starts a new load of it', async () => {
+  const page = await tool({ block: { verdict: 404 } });
+  const asked = [];
+  page.on('request', (r) => { if (/\/_astro\/verdict\./.test(r.url())) asked.push(r.url()); });
+  await atSite(page, 'seville');
+  assert.ok(await until(page, () => window.__ctTest.store.verdictFailed.value, 15_000), 'the verdict chunk refused');
+  assert.equal(await page.$('[data-pool-count], .ct-palette-page'), null, 'no count line or palette page mounted');
+  const before = asked.length;
+  await page.evaluate(() => dispatchEvent(new Event('online')));
+  const deadline = Date.now() + 5000;
+  while (asked.length === before && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50));
+  assert.ok(asked.length > before, `a new load of the verdict chunk after "online" (${asked.length - before} requests)`);
+});
+
+// Fix round 3 (b1bg-1): "failed" always means the current load failed. After a refused load (a return
+// visit's fetchAhead offline, say), the next one (start()'s effect once a site climate arrives) clears
+// it as it starts, so the count line (which reads the flag) says "Checking…" meanwhile, not "Could not check".
+test('PP-B1 (b1b a new verdict load after a refused one): verdictFailed clears as the load starts', async () => {
+  const page = await tool({ block: { verdict: 404 } });
+  await atSite(page, 'seville');
+  assert.ok(await until(page, () => window.__ctTest.store.verdictFailed.value, 15_000), 'the first load refused');
+  const during = await page.evaluate(() => { const { store } = window.__ctTest; store.wantVerdict(); return store.verdictFailed.value; });
+  assert.equal(during, false, 'a load in flight is not "failed"');
 });
