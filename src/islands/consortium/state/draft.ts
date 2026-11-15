@@ -1,11 +1,11 @@
-// Start's draft and the reader's moves around it (stream S4; E6 S2 split it out of memory.ts): the
-// climate card and the country the reader picks, backToPlace (the palette set aside when the reader
-// goes back to Place, a draft seeded from it), Start over (with one Undo), Show my palette and Add a
-// plant; the answers to the arrival notices (PP-B b1a): "Use it" / "Use my own place" for a link's place
-// and "Open my saved palette instead". (The palette's place changes in place in the "Your place" sheet,
-// views/place/Place.tsx PlaceSheet, which sets nothing aside: b1a review r1 conformance-4.)
-// The consortium and the draft are two states (persist.ts); plants the reader adds or removes on Place
-// make the draft the palette, saved at once (owner 2026-11-15).
+// Place and the reader's moves around it (stream S4; E6 S2 split it out of memory.ts): the climate
+// card and the country the reader picks, backToPlace (the palette's step 1), Start over (with one
+// Undo), Show my palette and Add a plant; the answers to the arrival notices (PP-B b1a): "Use it" /
+// "Use my own place" for a link's place and "Open my saved palette instead". (The palette's place also
+// changes in place in the "Your place" sheet, views/place/Place.tsx PlaceSheet: b1a review r1
+// conformance-4.)
+// Place and the palette page show one palette: Place's answers and plants change it as they are given,
+// saved at once while the page owns the save (state/save.ts held; owner 2026-11-15).
 import { batch, signal } from '@preact/signals';
 import type { ClimateZone, PlantId } from '../../../lib/consortium/index.ts';
 import { siteIdOf } from '../../../lib/consortium/index.ts';
@@ -13,7 +13,8 @@ import * as store from '../store.ts';
 import { focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { T } from '../strings.ts';
-import { adoptPending, attempt, holdSave, linkPlace, memory, own, placeSaid, placeSeed, quietly, release, saveHeld, setPlaceBase, writeSave, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
+import { adoptPending, attempt, holdSave, linkPlace, memory, placeSaid, placeSeed, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
+import { held, putSave } from './save.ts';
 import { adoptLinkLocation, notices, ownLocation, restore, savedInstead, NO_NOTICES } from './restore.ts';
 import { letGo } from './lookups.ts';
 
@@ -67,15 +68,11 @@ export function chooseCountry(code: string | null): void {
 // Back to Place, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
 const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
-// Back to Place from the palette (its "Your place" step, the phone's Back): the consortium set aside,
-// Start's draft seeded from it.
+// Back to Place from the palette (its "Your place" step, the phone's Back): the same palette, on Place.
 export function backToPlace(): void {
   placeSaid.value = '';
   batch(() => {
     dropLinkLocation();
-    const aside = own();
-    setPlaceBase(aside?.members ?? []);
-    store.setAside.value = aside;
     store.view.value = 'start';
   });
 }
@@ -87,33 +84,31 @@ export function backToPlace(): void {
 export const cardsLatched = signal(false);
 
 // Start over: the consortium goes, from the store, the save and the address; the climate, the
-// palette's place and the country stay. One Undo puts it back (with its save).
-// On a link's or a guide's page whose save is still held (the reader's own save R untouched), R stays,
-// and the Undo puts the page back as it was, R still held (S3).
+// palette's place and the country stay. The page holds again: a save it owned is removed (unless
+// another tab wrote since), one it held (a link's or a guide's page over the reader's save) stays. One
+// Undo puts it back, with its save (store.ts offerUndo).
 export function startOver(): void {
-  const before = schema.snapshot(), wasHeld = saveHeld();
+  const before = store.snapshot();
   placeSaid.value = '';
   cardsLatched.value = false;
-  setPlaceBase([]);
-  if (!wasHeld) writeSave(null);
+  if (!held.peek()) putSave(null);
   batch(() => {
-    store.setAside.value = null;
+    holdSave(true);
     schema.write(schema.valuesOf(schema.lists.plants));
     store.closeSheet();
     store.view.value = 'start';
     dropLinkLocation();
     notices.value = { ...NO_NOTICES };
   });
-  if (before.members.length || before.removed.length || Object.keys(before.guests).length) {
-    store.offerUndo(T('place.overDone'), before, null, [], wasHeld ? (put) => { holdSave(true); quietly(put); } : undefined);
-  }
+  if (before.members.length || before.removed.length || Object.keys(before.guests).length) store.offerUndo(T('place.overDone'), before);
 }
 
 // ---- the arrival notices' answers (plant-palette-architecture 8.3) ----
 
-// "Use it": the link's place becomes the palette's (the save's place), its cell the reader's own
-// location on this device and its country the reader's choice, so they hold across reloads; the
-// place answers then seed the next palette.
+// "Use it": the link's place becomes the palette's, its cell the reader's own location on this device
+// and its country the reader's choice, so they hold across reloads; the place answers then seed the
+// next palette. The save is left as it is: the place reaches it with the first plant change (owner
+// 2026-11-15, decision 2).
 // The location step comes first; nothing is written until it is back and the notice still waits.
 export async function useLinkPlace(): Promise<void> {
   const pending = linkPlace.peek();
@@ -128,7 +123,6 @@ export async function useLinkPlace(): Promise<void> {
     if (c.code && c.source === 'link') chooseCountry(c.code);
     const seeded = memory.write(PLACE_STORE, placeSeed());
     linkPlace.value = null;
-    release();
     answered(T(kept && seeded ? 'place.usedLink' : 'place.usedLinkUnkept'));
   } finally { answering.value = false; }
 }
@@ -145,17 +139,16 @@ export function useOwnPlace(): void {
     dropLinkLocation();
     linkPlace.value = null;
   });
-  release();
   ownLocation();
   answered(T('place.usedMine'));
 }
 
-// "Open my saved palette instead" (a guide preset opened over a saved palette) and "Back to mine" (a
-// newer or unreadable link over one): the save restored as on a visit with no link.
+// "Open my saved palette instead" (any held page over a different readable save: owner 2026-11-15,
+// decision 3) and "Back to mine" (a newer or unreadable link over one): the save restored as on a visit
+// with no link, which owns it.
 export async function openSavedInstead(): Promise<void> {
   const saved = savedInstead.peek();
   if (!saved) return;
-  savedInstead.value = null;
   notices.value = { ...notices.peek(), guidePlant: null, guideMissing: null, newer: false, unreadable: false };
   if (await restore(saved.fragment, { from: 'saved', src: saved.src, place: saved.place })) answered(T('place.openedSaved'));
 }

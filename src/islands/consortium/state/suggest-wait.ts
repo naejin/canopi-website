@@ -57,9 +57,9 @@ function capped(): void {
 }
 // The palette before "Start from a small suggested palette" was pressed: the suggestion it places,
 // now or once its wait ends, comes with one Undo back to it (PP-B3). A dropped wait forgets it.
-let undoTo: ReturnType<typeof schema.snapshot> | null = null;
+let undoTo: ReturnType<typeof store.snapshot> | null = null;
 export function suggestPalette(): void {
-  undoTo = schema.snapshot();
+  undoTo = store.snapshot();
   requestSuggest();
 }
 function placed(): void {

@@ -59,6 +59,11 @@ test('b1a siteFor: today\'s three answers and the room reach fits(); varies and 
 });
 
 const persist = await import('../src/islands/consortium/state/persist.ts');
+// The device save's own state (fix round 3 save model, state/save.ts): held, and the save as this page
+// last wrote or read it.
+const saveM = await import('../src/islands/consortium/state/save.ts').catch(() => null);
+const opened = (raw) => { if (saveM) saveM.lastSave.value = raw; else persist.openedWith(raw); };
+const isHeld = () => (saveM ? saveM.held.peek() : persist.saveHeld?.());
 const restoreM = await import('../src/islands/consortium/state/restore.ts');
 const arrivalM = await import('../src/islands/consortium/state/arrival.ts');
 const draft = await import('../src/islands/consortium/state/draft.ts');
@@ -103,13 +108,11 @@ const SUN = { ...emptyPlace.spot, light: 'sun' };
 // A Temperate palette of n plants on screen with the reader's own place (full sun), saved.
 async function mine(n = 5) {
   kept.clear();
-  // As a fresh page: the save it last wrote is the empty storage's.
-  persist.openedWith(null);
-  // Nothing of an earlier test's arrival stays: its link-place notice, its held save, its saved-instead.
+  // As a page that owns its palette (a save restored), over an empty storage.
+  opened(null);
+  // Nothing of an earlier test's arrival stays: its link-place notice, its held save.
   persist.linkPlace.value = null;
   persist.holdSave(false);
-  persist.setPlaceBase?.([]);
-  restoreM.savedInstead.value = null;
   store.setSource(realSource);
   store.load.value = { status: 'ready', error: null };
   const pool = await store.loadPool('Temperate');
@@ -396,7 +399,7 @@ test('b1a bugs-5: Forget on Place (back from the palette) also clears the set-as
 // each plant added from Place stays there as a chip, with the spot questions and "Show my palette".
 test('b1a conformance-2: plants added on Place keep the grower on Place, every one listed', async () => {
   const pool = await mine(0);
-  persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; });
+  persist.quietly(() => { store.view.value = 'start'; });
   store.addMembers([pool[1].id]);
   store.addMembers([pool[2].id]);
   assert.equal(store.view.peek(), 'start', 'adding a plant on Place opened the palette');
@@ -668,4 +671,382 @@ test('b1a r3-3: startMemory\'s wiring passes the reader\'s own country to a link
     assert.deepEqual(settled.filter((x) => x === 'saved'), [], 'the saved location was looked up over the link\'s cell');
     assert.equal(restoreM.locationAtStart.peek(), false, 'a location kept on this device that is not looked up holds the cards');
   } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
+});
+
+// ---- fix round 3: the save model (save-model design check 2026-11-15, owner decisions 2026-11-15) ----
+// One flag, held: this page's palette is not the save. Every page starts held; a restore of the save, or
+// a plant change that can be undone (Add, Remove, Swap, a suggestion placed), lets it go; Start over
+// holds again. Not held, the save is the current palette; held, the save is left as it is. Each Undo
+// puts back the held flag it saw and, held again, the save as it was then (unless another tab wrote).
+// A palette's plant ids as the save reads them back.
+const savedIds = async (zone = 'Temperate') => decodeLink(saved().fragment, { ...(await known(zone)), ...(await known('Temperate')) }).state.members;
+// The fragment the save holds, as the page encodes the palette now.
+const savedIsPalette = () => saved()?.fragment === persist.currentFragment();
+// A page just opened over the reader's save R, with nothing of its own yet (held).
+async function freshOver() {
+  const pool = await mine(5);
+  await wait(0);
+  const R = kept.get(STORE);
+  persist.holdSave(true);
+  persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; store.guests.value = {}; });
+  await wait(0);
+  kept.set(STORE, R);
+  opened(R);
+  store.hideToast();
+  return [pool, R];
+}
+const OTHER = saveRecord('v=5&c=tropical&m=unsure&a=&e=1', '2026-11-11T00:00:00.000Z', null);
+const undo = async () => { const t = store.toast.peek(); assert.ok(t?.undo, 'an Undo is offered'); t.undo(); await wait(0); };
+
+// Section 1, the walk.
+test('save model walk 1: a reload of [A,B], B removed on the palette, B added again on Place: [A] then [A,B] saved; the add\'s Undo saves [A]', async () => {
+  const pool = await mine(5);
+  const [A, B] = [pool[0].id, pool[1].id];
+  const link = encodeLink({ climate: 'Temperate', country: null, room: 'small', plot: null, period: '1991-2020', spot: null, soil: null, members: [A, B], removed: [], guests: [] }, await known('Temperate'));
+  persist.holdSave(true);
+  assert.equal(await restoreM.restore(link, { from: 'saved' }), true);
+  await wait(0);
+  assert.equal(isHeld(), false, 'a restore of the save owns it');
+  store.removeMember(B);
+  await wait(0);
+  assert.deepEqual(await savedIds(), [A]);
+  draft.backToPlace();
+  store.addMembers([B]);
+  await wait(0);
+  assert.deepEqual(await savedIds(), [A, B], 'B added again on Place is not saved');
+  await undo();
+  assert.deepEqual(await savedIds(), [A], 'the add\'s Undo');
+});
+test('save model walk 2: C added on the palette, removed on Place: C is gone from the save', async () => {
+  const pool = await mine(3);
+  await wait(0);
+  const C = pool[9].id;
+  store.addMembers([C]);
+  await wait(0);
+  assert.ok((await savedIds()).includes(C));
+  draft.backToPlace();
+  store.removeMember(C);
+  await wait(0);
+  assert.ok(!(await savedIds()).includes(C), 'C removed on Place is still saved');
+});
+test('save model walk 3: Start over removes the save and holds; plants added again are saved; that add\'s Undo removes the save and holds', async () => {
+  await mine(2);
+  await wait(0);
+  const ids = store.members.peek().slice();
+  draft.startOver();
+  await wait(0);
+  assert.equal(kept.get(STORE), undefined, 'Start over removes the save');
+  assert.equal(isHeld(), true, 'and holds');
+  store.addMembers(ids);
+  await wait(0);
+  assert.ok(saved(), 'the plants added again are not saved');
+  assert.deepEqual(await savedIds(), ids);
+  await undo();
+  assert.equal(kept.get(STORE), undefined, 'the add\'s Undo leaves a save');
+  assert.equal(isHeld(), true);
+});
+test('save model walk 4 (r3-1): a guide preset over R, Start over, Undo: R is untouched throughout and still offered', async () => {
+  const [pool, R] = await freshOver();
+  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'the preset touched R');
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(R).fragment, 'R is offered');
+  draft.startOver();
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'Start over after a preset deleted R');
+  await undo();
+  assert.deepEqual(store.members.peek(), [pool[3].id], 'Undo brings the guide\'s plant back');
+  assert.equal(kept.get(STORE), R, 'after Undo R is not as it was');
+  assert.equal(isHeld(), true, 'still held');
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(R).fragment, 'R is still offered');
+});
+test('save model walk 5: a link over R, Start over, Undo: R is untouched throughout', async () => {
+  const [, R] = await freshOver();
+  assert.equal(await restoreM.restore(await linkWith('Temperate', 4), { from: 'link' }), true);
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'the link touched R');
+  draft.startOver();
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'Start over on a link page lost R');
+  await undo();
+  assert.equal(store.members.peek().length, 4, 'Undo brings the link\'s palette back');
+  assert.equal(kept.get(STORE), R, 'after Undo R is not in storage');
+});
+test('save model walk 6 (r3-2): Undo of Start over on Place saves the palette again, and the next change on Place is saved', async () => {
+  const pool = await mine(5);
+  await wait(0);
+  draft.backToPlace();
+  draft.startOver();
+  await wait(0);
+  await undo();
+  assert.equal(store.view.peek(), 'start', 'Undo stays on Place');
+  assert.equal(isHeld(), false, 'the page owns its save again');
+  assert.ok(savedIsPalette(), 'the palette is saved again');
+  // Every plant removed on Place (Place's plants then match a stale baseline of none): saved so.
+  for (const id of store.members.peek()) store.removeMember(id);
+  await wait(0);
+  assert.ok(saved(), 'the emptied palette is not saved');
+  assert.deepEqual(await savedIds(), [], 'the plants removed on Place after the Undo are still saved');
+  assert.ok(savedIsPalette());
+  void pool;
+});
+test('save model walk 7 (owner 2026-11-15, 1): another card on Place is saved at once, "Show my palette" offers no Undo, the old card gives it back; on a held page R stays', async () => {
+  await mine(5);
+  await wait(0);
+  const members = store.members.peek().slice();
+  draft.backToPlace();
+  draft.chooseClimate('Mediterranean');
+  await wait(0);
+  assert.match(saved()?.fragment ?? '', /(^|&)c=mediterranean(&|$)/, 'the card is not saved at once');
+  draft.showPalette();
+  assert.equal(store.toast.peek(), null, '"Show my palette" offers an Undo');
+  assert.deepEqual(store.members.peek(), members, 'every plant kept');
+  draft.backToPlace();
+  draft.chooseClimate('Temperate');
+  await wait(0);
+  assert.match(saved()?.fragment ?? '', /(^|&)c=temperate(&|$)/, 'the old card gives it back');
+  // Held: a card applies to the page and leaves R.
+  const [, R] = await freshOver();
+  assert.equal(await restoreM.restore(await linkWith('Temperate', 3), { from: 'link' }), true);
+  draft.backToPlace();
+  draft.chooseClimate('Mediterranean');
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'a card on a held page touched R');
+});
+test('save model walk 8: an add on Place, then "Show my palette": the add\'s Undo is still offered and works', async () => {
+  const pool = await mine(3);
+  await wait(0);
+  draft.backToPlace();
+  store.addMembers([pool[8].id]);
+  draft.showPalette();
+  await undo();
+  assert.ok(!store.members.peek().includes(pool[8].id));
+  assert.ok(!(await savedIds()).includes(pool[8].id), 'the Undo is saved');
+});
+test('save model walk 9: a link pasted on Place holds: the reader\'s save P stays and is offered; the first plant change replaces P, its Undo writes P back exactly and holds', async () => {
+  const pool = await mine(5);
+  await wait(0);
+  const P = kept.get(STORE);
+  draft.backToPlace();
+  assert.equal(await restoreM.restore(await linkWith('Temperate', 3), { from: 'link' }), true);
+  await wait(0);
+  assert.equal(kept.get(STORE), P, 'the link touched P');
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(P).fragment, 'P is not offered');
+  store.addMembers([pool[20].id]);
+  await wait(0);
+  assert.notEqual(kept.get(STORE), P, 'the plant change is not saved');
+  assert.equal(restoreM.savedInstead.peek(), null, 'P still offered after it was replaced');
+  await undo();
+  assert.equal(kept.get(STORE), P, 'Undo did not write P back byte for byte');
+  assert.equal(isHeld(), true, 'held again');
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(P).fragment, 'P offered again');
+});
+test('save model walk 10: a reload on Place: an owned page\'s address has no hold, a held page\'s has hold: 1', async () => {
+  const restoreAddress = fakeAddress();
+  try {
+    await mine(5);
+    await wait(0);
+    draft.backToPlace();
+    await wait(0);
+    assert.ok(history.state?.ct, 'the address keeps the palette on Place');
+    assert.equal(history.state?.hold, undefined, 'an owned page\'s address is held');
+    await freshOver();
+    assert.equal(await restoreM.restore(await linkWith('Temperate', 3), { from: 'link' }), true);
+    draft.backToPlace();
+    await wait(0);
+    assert.equal(history.state?.hold, 1, 'a held page\'s address lost its hold');
+  } finally { restoreAddress(); }
+});
+
+// Section 4, the additions.
+test('save model: place answers, "Use it" and "Use my own place" on a held page write nothing (owner 2026-11-15, 2)', async () => {
+  const answers = { 'place answers': () => { store.room.value = 'large'; store.plot.value = 40; store.spot.value = { ...store.spot.peek(), water: 'dry' }; draft.chooseCountry('KE'); }, '"Use it"': () => draft.useLinkPlace(), '"Use my own place"': () => draft.useOwnPlace() };
+  for (const [name, act] of Object.entries(answers)) {
+    const before = await arriveWithPlace();
+    try {
+      const R = kept.get(STORE);
+      await act();
+      await wait(0);
+      assert.equal(kept.get(STORE), R, `${name} on a held page replaced R`);
+    } finally { restoreM.provideLocationStep(before); store.location.value = null; }
+  }
+});
+test('save model link place (b): "Use it" keeps the save R; the link\'s place l=shade reaches the save with the first plant change', async () => {
+  const before = await arriveWithPlace();
+  try {
+    const R = kept.get(STORE);
+    await draft.useLinkPlace();
+    await wait(0);
+    assert.equal(restoreM.linkPlace.peek(), null);
+    assert.equal(kept.get(STORE), R, '"Use it" replaced the save');
+    const loc = locationM.readLocation(kept.get(LOCATION_STORE) ?? null);
+    assert.ok(loc && Math.abs(loc.lat - 37.35) < 0.051 && Math.abs(loc.lon - -5.95) < 0.051, `the link's cell in canopi-location (${kept.get(LOCATION_STORE)})`);
+    assert.notEqual(loc.source, 'link', 'kept as the reader\'s own');
+    assert.equal(kept.get(COUNTRY_STORE), 'ES', 'the link\'s country kept');
+    assert.match(kept.get(PLACE_STORE) ?? '', /l=shade/, 'and it seeds the next palette');
+    store.removeMember(store.members.peek()[0]);
+    await wait(0);
+    assert.equal(saved()?.place, 'l=shade', 'the plant change saves the link\'s place');
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; }
+});
+test('save model: "Show my palette" on a guide preset leaves R and its offer', async () => {
+  const [pool, R] = await freshOver();
+  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
+  draft.showPalette();
+  await wait(0);
+  assert.equal(kept.get(STORE), R, '"Show my palette" replaced R');
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(R).fragment, 'the offer went');
+});
+test('save model (owner 2026-11-15, 3): "Open my saved palette instead" is offered on every held page whose save differs, through Place answers, and goes once the save is replaced', async () => {
+  const [pool, R] = await freshOver();
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(R).fragment, 'a fresh page over R offers it');
+  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
+  store.room.value = 'large';
+  draft.chooseCountry('KE');
+  await wait(0);
+  assert.ok(restoreM.savedInstead.peek(), 'gone after Place answers');
+  store.addMembers([pool[4].id]);
+  await wait(0);
+  assert.equal(restoreM.savedInstead.peek(), null, 'offered after the save was replaced');
+  await undo();
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(R).fragment, 'not offered again after Undo');
+  // A newer link over the save: "Back to mine" through a country and a card; it opens R.
+  const [, R2] = await freshOver();
+  assert.equal(await restoreM.restore('v=6&c=temperate&a=abcdef&e=1', { from: 'link' }), false);
+  draft.chooseCountry('KE');
+  draft.chooseClimate('Mediterranean');
+  await wait(0);
+  assert.ok(restoreM.savedInstead.peek(), '"Back to mine" gone after Place answers');
+  assert.equal(kept.get(STORE), R2, 'the save is untouched');
+  await draft.openSavedInstead();
+  await wait(0);
+  assert.equal(isHeld(), false, 'the save opened owns it');
+  assert.equal(restoreM.savedInstead.peek(), null);
+  // A held page showing the save's own palette offers nothing.
+  const [, R3] = await freshOver();
+  assert.equal(await restoreM.restore(readRecord(R3).fragment, { from: 'link' }), true);
+  await wait(0);
+  assert.equal(restoreM.savedInstead.peek(), null, 'offered the palette already shown');
+});
+test('save model M1, M2, M3, R2-2: another tab\'s save is never lost by an Undo or Start over', async () => {
+  // M1: a fresh Start, a card, another tab saves, a paste, Undo: the other tab's save is back.
+  let [pool] = await freshOver();
+  kept.delete(STORE);
+  opened(null);
+  draft.chooseClimate('Temperate');
+  kept.set(STORE, OTHER);
+  store.addMembers([pool[0].id]);
+  await wait(0);
+  await undo();
+  assert.equal(kept.get(STORE), OTHER, 'M1');
+  // M2: a guide preset, another tab saves, a paste, Undo: the newer save, not the one read at open.
+  [pool] = await freshOver();
+  await restoreM.applyPreset('Temperate', null);
+  kept.set(STORE, OTHER);
+  store.addMembers([pool[0].id]);
+  await wait(0);
+  await undo();
+  assert.equal(kept.get(STORE), OTHER, 'M2');
+  // M3: another tab saves, Start over leaves it.
+  await mine(5);
+  await wait(0);
+  kept.set(STORE, OTHER);
+  draft.startOver();
+  await wait(0);
+  assert.equal(kept.get(STORE), OTHER, 'M3');
+  // R2-2: Start over, plants added, another tab saves, Undo back to the empty Start leaves it.
+  pool = await mine(5);
+  await wait(0);
+  draft.startOver();
+  store.addMembers([pool[1].id, pool[2].id]);
+  await wait(0);
+  kept.set(STORE, OTHER);
+  await undo();
+  assert.equal(kept.get(STORE), OTHER, 'R2-2');
+});
+// A source whose Mediterranean list arrives only when `open` is called (a card clicked before its list
+// is read, as the usual first click is).
+function slowMediterranean() {
+  let open;
+  const gate = new Promise((r) => { open = r; });
+  const slow = Object.create(realSource);
+  slow.pool = async (c) => { if (c === 'Mediterranean') await gate; return realSource.pool(c); };
+  const { Mediterranean: _, ...rest } = store.pools.peek();
+  store.pools.value = rest;
+  store.setSource(slow);
+  return open;
+}
+test('save model r3-3: a card clicked before its list is read, a plant removed, the list arrives: the Undo stays, a link pasted after the click opens, and the save has one g=', async () => {
+  const pool = await mine(5);
+  const med = await realSource.pool('Mediterranean');
+  const inMed = new Set(med.map((t) => t.id));
+  const both = pool.filter((t) => inMed.has(t.id)).slice(0, 2).map((t) => t.id);
+  const only = pool.find((t) => !inMed.has(t.id)).id;
+  persist.quietly(() => { store.members.value = [...both, only]; });
+  await wait(0);
+  let open = slowMediterranean();
+  draft.chooseClimate('Mediterranean');
+  const reading = store.loadPool('Mediterranean');
+  store.removeMember(both[1]);
+  open();
+  await reading;
+  await wait(0);
+  assert.ok(store.toast.peek()?.undo, 'the list arriving ended the Remove\'s Undo');
+  const g = new URLSearchParams(saved().fragment).getAll('g');
+  assert.equal(g.length, 1, 'the save carries g= for one list');
+  const read = decodeLink(saved().fragment, { Mediterranean: med.map((t) => t.id), Temperate: pool.map((t) => t.id) });
+  assert.deepEqual(read.state.guests.map((x) => x.id), [only], 'the save names only the missing plant as a guest');
+  // A link pasted right after a card click opens once the list arrives.
+  persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
+  open = slowMediterranean();
+  draft.chooseClimate('Mediterranean');
+  const later = store.loadPool('Mediterranean');
+  const opening = restoreM.restore(await linkWith('Temperate', 2), { from: 'link' });
+  open();
+  await later;
+  assert.equal(await opening, true, 'the link pasted after the click did not open');
+  store.setSource(realSource);
+  persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
+});
+
+// The two invariants over random runs of the reader's moves: not held, the save is the palette as the
+// page encodes it now; held, the save is what it was when the page became held (or what another tab
+// wrote since).
+test('save model invariants over random sequences: not held => the save is currentFragment(); held => the save unchanged unless another tab wrote', async () => {
+  let seed = 20261115;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
+  const pick = (list) => list[Math.floor(rnd() * list.length)];
+  await store.loadPool('Mediterranean');
+  for (let run = 0; run < 6; run++) {
+    const [pool, R] = run % 2 ? await freshOver() : [await mine(4), null];
+    await wait(0);
+    if (R) await restoreM.applyPreset('Temperate', pool[run].canonical_name);
+    let heldText = kept.get(STORE) ?? null, wasHeld = isHeld();
+    const log = [];
+    const moves = {
+      add: () => store.addMembers([pick(pool.slice(0, 40)).id]),
+      remove: () => { const m = store.members.peek(); if (m.length) store.removeMember(pick(m)); },
+      swap: () => { const m = store.members.peek(); const n = pick(pool.slice(40, 80)).id; if (m.length && !m.includes(n)) store.swapMember(pick(m), n); },
+      place: () => draft.backToPlace(),
+      show: () => { if (store.climate.peek()) draft.showPalette(); },
+      card: () => draft.chooseClimate(pick(['Temperate', 'Mediterranean'])),
+      room: () => { store.room.value = pick(['small', 'large', 'pots']); },
+      over: () => draft.startOver(),
+      undo: () => store.toast.peek()?.undo?.(),
+      link: async () => { await restoreM.restore(await linkWith('Temperate', 2 + Math.floor(rnd() * 3)), { from: 'link' }); },
+      other: () => { if (isHeld()) { kept.set(STORE, OTHER); heldText = OTHER; } },
+    };
+    for (let step = 0; step < 40; step++) {
+      const name = pick(Object.keys(moves));
+      log.push(name);
+      await moves[name]();
+      await wait(0);
+      const now = isHeld();
+      if (now && !wasHeld) heldText = kept.get(STORE) ?? null;
+      wasHeld = now;
+      if (now) assert.equal(kept.get(STORE) ?? null, heldText, `held, the save changed (run ${run}: ${log.join(' ')})`);
+      else assert.ok(savedIsPalette(), `not held, the save is not the palette (run ${run}: ${log.join(' ')})`);
+    }
+  }
+  persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
 });

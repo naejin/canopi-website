@@ -2,9 +2,9 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:58:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:36Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:58:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:12Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -64,8 +64,8 @@ sources:
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
-    digest: sha256:1d678d60b53d7406
-    last_modified: 2026-11-14T13:27:54Z
+    digest: sha256:16ef54594e8517ad
+    last_modified: 2026-11-15T08:13:28Z
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:534a06a167bf1509
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:c0c5086cbc6f4b8d
+    last_modified: 2026-11-15T08:13:28Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:f5348fe9494bceaa
-    last_modified: 2026-11-15T06:52:44Z
+    digest: sha256:e12ec1c3681419ee
+    last_modified: 2026-11-15T08:13:28Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css

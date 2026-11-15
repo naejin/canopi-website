@@ -20,7 +20,7 @@ const m = {
 };
 const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 // Island state, all of it (the text checks below).
-const stateSrc = ['persist', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
+const stateSrc = ['persist', 'save', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
 const { decodeLink, encodeLink, zoneOf } = await import('../src/lib/consortium/index.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
@@ -229,6 +229,8 @@ async function shown() {
   store.climate.value = 'Temperate';
   store.members.value = pool.slice(0, 6).map((t) => t.id);
   store.view.value = 'matrix';
+  // A palette restored from the save: the page owns it (state/save.ts held).
+  m.holdSave(false);
   m.notices.value = { ...m.notices.peek(), pasted: null, failed: false, cut: false, outdated: false };
   writes = 0;
   return pool;
@@ -411,15 +413,15 @@ const sorted = (list) => [...list].sort();
 
 test('schema: each field declares its part once (snapshot, Undo, saved, link, watched, plant list)', () => {
   const L = schema.lists;
-  assert.deepEqual(sorted(L.snapshot), sorted(['members', 'removed', 'guests', 'view', 'setAside']), 'Undo puts these back');
+  assert.deepEqual(sorted(L.snapshot), sorted(['members', 'removed', 'guests', 'view']), 'Undo puts these back');
   assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'removed', 'guests']), 'a change to these ends the Undo offer');
   // PP-B commit 0a: the place (room, plot, spot, soil) and the period replace the site answers; site is
   // derived from them (store.ts), not saved. Commit 0a' removed kept and crops; stage is unsaved (print).
   const saved = ['climate', 'country', 'room', 'plot', 'spot', 'soil', 'period', 'members', 'removed', 'guests'];
-  assert.deepEqual(sorted(L.saved), sorted(saved), 'the Consortium the save keeps and Change site sets aside');
+  assert.deepEqual(sorted(L.saved), sorted(saved), 'the Consortium the save keeps');
   assert.deepEqual(sorted(Object.keys(CONSORTIUM_FIELDS)), sorted(saved), 'CONSORTIUM_FIELDS (the Consortium type) holds the saved fields');
-  assert.deepEqual(sorted(L.reader), sorted([...saved, 'view']), 'a write to these is the reader acting');
-  assert.deepEqual(sorted(L.save), sorted([...saved, 'view', 'setAside']), 'the save and the address follow these');
+  assert.deepEqual(sorted(L.reader), sorted([...saved, 'view']), 'a write to these is the reader acting, and the save and the address follow them');
+  assert.equal(L.save, undefined, 'one watched list (the save model, fix round 3)');
   assert.deepEqual(sorted(L.plants), sorted(['members', 'removed', 'guests']));
   for (const k of Object.keys(STATE_FIELDS)) assert.equal(store[k], schema.signals[k], `store.${k} is the schema's signal`);
 });
@@ -444,15 +446,15 @@ test('schema: a field added to the schema round-trips through the schema (Undo, 
   const mulch = { initial: () => 'none', undo: true, endsUndo: true, saved: true };
   const s = defineState({ ...STATE_FIELDS, mulch });
   assert.notEqual(s.signals.members, store.members, 'its own signals');
-  for (const l of ['snapshot', 'endsUndo', 'saved', 'reader', 'save']) assert.ok(s.lists[l].includes('mulch'), l);
+  for (const l of ['snapshot', 'endsUndo', 'saved', 'reader']) assert.ok(s.lists[l].includes('mulch'), l);
   // Undo: in the snapshot, put back, and a change ends the offer.
   const before = s.snapshot(), then = s.peek(s.lists.endsUndo);
   s.signals.mulch.value = 'straw';
   assert.notEqual(s.peek(s.lists.endsUndo).mulch, then.mulch, 'a change SNAP_KEYS sees');
   s.restore(before);
   assert.equal(s.signals.mulch.peek(), 'none');
-  // Watched: the reader's watcher and the save's watcher re-run on it.
-  for (const l of ['reader', 'save']) {
+  // Watched: the reader's watcher (the save and the address follow it) re-runs on it.
+  for (const l of ['reader']) {
     let runs = 0;
     const stop = effect(() => { s.track(s.lists[l]); runs++; });
     s.signals.mulch.value = s.signals.mulch.peek() === 'bark' ? 'leaves' : 'bark';
@@ -486,7 +488,6 @@ async function blankShown() {
   store.removed.value = [];
   store.guests.value = {};
   store.stage.value = 0;
-  store.setAside.value = null;
   return pool;
 }
 const SITE = { light: 'part', soil: 'acid', water: 'wet', room: 'large' };
@@ -540,7 +541,7 @@ for (const [k, c] of Object.entries(CASES)) {
     const pool = await blankShown();
     await c.change(pool);
     assert.equal(m.shownFragment.value, m.currentFragment(), 'Share shows the same link');
-    const link = m.currentFragment(null, { place: !!c.place });
+    const link = m.currentFragment({ place: !!c.place });
     const want = await valueOf('link' in c ? c.link : c.want, pool);
     await blankShown();
     await c.before?.(pool);
@@ -552,8 +553,7 @@ for (const [k, c] of Object.entries(CASES)) {
 test('Undo puts back each snapshot field; the view only to or from Start', async () => {
   const pool = await blankShown();
   const ids = pool.slice(0, 3).map((t) => t.id);
-  const aside = { climate: 'Temperate', members: ids, removed: [], guests: {}, site: { ...UNSURE }, country: { code: null, source: null } };
-  const values = { members: ids, removed: [ids[2]], guests: { [ids[1]]: 'Tropical' }, setAside: aside };
+  const values = { members: ids, removed: [ids[2]], guests: { [ids[1]]: 'Tropical' } };
   for (const [k, v] of Object.entries(values)) {
     const before = schema.snapshot();
     store[k].value = v;

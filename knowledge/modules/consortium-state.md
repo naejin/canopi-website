@@ -3,50 +3,50 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:57:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:50Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:46Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:5914d3cf541f463a
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:189ba70475cc78d4
+    last_modified: 2026-11-15T08:13:28Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:787f1eba6835e632
-    last_modified: 2026-11-15T06:56:20Z
+    digest: sha256:260cd9538115adce
+    last_modified: 2026-11-15T08:13:28Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:37e1b11071730a71
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:49faf1ab88086e2b
+    last_modified: 2026-11-15T08:13:28Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:5bd373497791c3cf
-    last_modified: 2026-11-15T06:56:20Z
+    digest: sha256:2564fb4674592d11
+    last_modified: 2026-11-15T08:13:28Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:f5348fe9494bceaa
-    last_modified: 2026-11-15T06:52:44Z
+    digest: sha256:e12ec1c3681419ee
+    last_modified: 2026-11-15T08:13:28Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:2ba3662647b07cca
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:a118cf6308298370
+    last_modified: 2026-11-15T08:13:28Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:253affcde0d9fc94
-    last_modified: 2026-11-15T06:53:40Z
+    digest: sha256:5004ae4c2eb21db7
+    last_modified: 2026-11-15T08:13:54Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:914a0961338ae564
-    last_modified: 2026-11-14T20:07:28Z
+    digest: sha256:3e7542c14cdc2987
+    last_modified: 2026-11-15T08:13:28Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -55,13 +55,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:534a06a167bf1509
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:c0c5086cbc6f4b8d
+    last_modified: 2026-11-15T08:13:28Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
     digest: sha256:0c07788ec3b722bc
-    last_modified: 2026-11-15T06:56:20Z
+    last_modified: 2026-11-15T07:15:54Z
   - id: consortium-start-test-mjs
     resource: ../../scripts/consortium-start.test.mjs
     title: scripts/consortium-start.test.mjs
@@ -72,6 +72,11 @@ sources:
     title: src/lib/consortium/index.ts
     digest: sha256:877b71a79e071642
     last_modified: 2026-11-14T21:28:50Z
+  - id: save-ts
+    resource: ../../src/islands/consortium/state/save.ts
+    title: src/islands/consortium/state/save.ts
+    digest: sha256:df9021a1e31fef7c
+    last_modified: 2026-11-15T07:53:09Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs
@@ -87,9 +92,10 @@ E6 stream S2 split `memory.ts` (about 780 lines) into the modules below. E6 chun
 
 | Module | Holds |
 |---|---|
-| [state/persist.ts](../../src/islands/consortium/state/persist.ts) | Storage keys (`canopi-consortium`, `canopi-country`, `canopi-climate`, `canopi-location`), guarded storage (`memory`, `attempt`, `storageWorks`), the saved record (`saveRecord`, `readRecord`, `oldRecord`), `CountryFrom` (derived from the store's `CountrySource` without `'guess'`; `fromOf`), `shareState` (`schema.share`), `shareUrl`, the restore in flight (`inFlight`, `restoring`, `pendingClimate`, `pendingLinkClimate`), `climateChosen` (the reader's climate, else a link's still opening; null otherwise, never a proposal) and `climateShown` (the card Start shows, chosen or proposed, built on `climateChosen`), `own()`, `currentFragment`, `writeSave`, `writeAddress`, `shownFragment`, `watchStore` and the reader's action count (`actionCount`, `quietly`), and the arrival answers' signals: `linkPlace`, `savedInstead` (cleared when this page replaces or removes the save, never by a Place answer that writes none) and `placeSaid` (Place's status line after a notice's answer, cleared by the reader's next action and by the next `restore`). Below restore.ts and the location step so neither imports the other |
+| [state/persist.ts](../../src/islands/consortium/state/persist.ts) | Storage keys (`canopi-consortium`, `canopi-country`, `canopi-climate`, `canopi-location`), guarded storage (`memory`, `attempt`, re-exported from `save.ts`; `storageWorks`), the saved record (`saveRecord`, `readRecord`, `oldRecord`), `CountryFrom` (derived from the store's `CountrySource` without `'guess'`; `fromOf`), `shareState` (`schema.share`), `shareUrl`, the restore in flight (`inFlight`, `restoring`, `pendingClimate`, `pendingLinkClimate`), `climateChosen` (the reader's climate, else a link's still opening; null otherwise, never a proposal) and `climateShown` (the card Start shows, chosen or proposed, built on `climateChosen`), `palette()` (the page's palette, a guest the chosen climate's read list holds left out), `shows()` (whether the address keeps a palette: a climate, and the save owned, the palette page or any plant on Place), `currentFragment`, `holdSave`, `writeSave` (internal: the palette written while not held), `writeAddress`, `shownFragment`, `watchStore` and the reader's action count (`actionCount`, `quietly`), and the arrival answers' signals: `linkPlace`, `savedInstead` (computed: `held` and the readable `lastSave`, unless the page shows that palette; owner 2026-11-15, decision 3) and `placeSaid` (Place's status line after a notice's answer, cleared by the reader's next action and by the next `restore`). Below restore.ts and the location step so neither imports the other |
 | [state/restore.ts](../../src/islands/consortium/state/restore.ts) | `notices`, `restore(fragment, {from, src, keep})` (reads everything first, applies in one batch only if still the newest restore and the reader has not acted), `applyPreset` (guide `?plant=&climate=`), `ownLocation` (the saved site looked up again), `waitForSource`, and `provideLocationStep(load)`: main.ts hands it `views/location/load.ts`'s loader before the first render (E6 S3), so state never imports a view (ADR-1 L2); a missing step logs an error |
 | [state/arrival.ts](../../src/islands/consortium/state/arrival.ts) | How the page opens: pure `arrival()`, `hashAction()`, `countryAtStart()`, `guessCountry()` and `arrivalPlan(how, { saved, pref, guess, seed, cell })` (`guess` and `cell` are functions: `countryAtStart` calls the browser's guess, which reads each country's time zones from the page (`countries.zones`, built at build time by `ConsortiumPage.astro` through the core's `countryZones`; asking the browser for all of them took about 0.4 s, 1.6 s on a slow phone, and Firefox has none), only when no link, choice or save names a country, at most once per arrival; b2 review perf-1) (the arrival's decisions: the country shown, the reader's own country worked out without a link's, the link's cell, and the ask of a reload while a link's place waits; Node-tested in `scripts/consortium-pp-b1.test.mjs`, b1a review round 2), `openWith({ how, plan, saved, seed, keptLocation })`, the wiring itself (the country, `locationAtStart`, the saved location's lookup unless a link's cell stands for it, the place seed, the restore or preset or shared climate; Node-tested through a spy location step, b1a review round 3, 3), and `startMemory()`, which reads the page once (`canopi-location` once: the ask's own cell and the lookup), calls `openWith`, then registers the address and save watchers |
+| [state/save.ts](../../src/islands/consortium/state/save.ts) | The save model's leaf (fix round 3, 2026-11-15), imported by store.ts and persist.ts so neither imports the other for it: `STORE`, `memory`, `attempt`, `guarded`; `held` (this page's palette is not the save: true on every page, false after a restore of the save or an undoable plant change, true again after Start over), `lastSave` (the save as this page last wrote or read it), `markSave` (an Undo snapshot's `{ text, held }`), `putSave` (the save put back or removed, only while the storage holds what this page last wrote: multi-tab), `undoSave` (flag and state back in one batch, then the save if held again) |
 | [state/draft.ts](../../src/islands/consortium/state/draft.ts) | Start's draft: `chooseClimate`, `chooseCountry`, `pickingCountry`, `backToPlace` (the palette's step 1 and Back to Place), `startOver`, `startEmpty` (each drops a link's location through `dropLinkLocation` → `letGo`), `cardsLatched` (the climate cards opened by the page, latched until Start over), `cropExamples`. `chooseClimate` keeps every plant (b1a conformance-4: no climate change empties the palette) and makes a member the new climate's list lacks a guest of the climate it was in, so it is still drawn, checked and saved (b1a2-1); `canGoBack`/`backToConsortium` and the `start.back` key went with the "Your place" sheet |
 | [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) | The waiting Suggest, one owner: `pendingSuggest`, `waited`, `requestSuggest` (asks the store for the suggestion's chunk, `store.wantSuggest()`, then waits for the plant lists, the location lookups and that chunk, capped at 10 s, `suggestWaitMs()` (exported since the E6 hand-off: Swap's own wait for the chunk lasts as long), shortened in the test build by `window.__ctTimeouts.suggest`), `dropSuggest` (exported since the E6 hand-off: the one way a wait ends; `views/PoolSlot.tsx` calls it, untracked, when Start can no longer suggest for the chosen climate or another is chosen; no other island module writes `pendingSuggest`, checked by `scripts/consortium-memory.test.mjs`), `watchSuggest` (reruns a waiting Suggest when `store.suggestRule` arrives; since E6 R4 ends every waiting Suggest with the `details.loadFailed` toast and Reload when `store.suggestFailed`, L8). See the wait cap rule below |
 | [state/lookups.ts](../../src/islands/consortium/state/lookups.ts) | The location lookups in flight, in the first run (the location module is lazy): `lookups`, `looking`, `lookingThrough`, `unread`, the result `line`, `nextLookup`/`liveLookup`, `unlessReplaced`, `letGo(drop)`. Moved out of `views/location/load.ts` (its re-exports for the seam tests removed in chunk 5) |
@@ -130,9 +136,9 @@ All L7 cycles are gone after chunk 2 (coordinator row "E6 chunk-2 merge choices"
 |---|---|
 | `undo` | Undo puts it back (in the snapshot); a function computes what Undo writes from the value before and now (`view`: only to or from Start) |
 | `endsUndo` | a change to it ends the Undo offer (`climate`) |
-| `saved` | part of the `Consortium` the save keeps and going back to Place sets aside (plants added or removed on Place are saved at once, owner 2026-11-15; the save rule, fix round 2 A: `persist.own()` on Place is the draft once its plants differ from `placeBase`, the plants Place opened with, set only in the action functions: `backToPlace` the set-aside palette's, `startOver` none, `applyPreset` and `restore` the plants applied, each before its write; no page-lifetime memory kept by an effect. Start over on a held page (a link or preset over the reader's save) writes no save, and its Undo puts the held page back held, so the reader's save is never lost without an Undo. Guests after a climate change are judged against the chosen climate's list once read: `chooseClimate` reads it when not yet read and keeps as guests only the plants it lacks); the save is the link's fragment, so a saved field is in the `#v=4` link under its own name in the core `ShareState`, and watched as `reader` |
+| `saved` | part of the `Consortium` the save keeps (the save model, fix round 3, 2026-11-15: while the page owns the save, `state/save.ts` `held` false, every change is written, Place's answers and plants included, owner decision 1; held, a link's or a guide's page or a page after Start over, nothing is written until a plant change, owner decision 2; see [plant-palette-architecture](/architecture/plant-palette-architecture.md) 8.3); the save is the link's fragment, so a saved field is in the `#v=5` link under its own name in the core `ShareState`, and watched as `reader` |
 | `link` | `put(v, o)` (into the link; default as it is) and `take(s, now, o)` (back from a decoded link or save; default the link's value, else the current one). `o` = `{ location, countryFrom }` |
-| `watched` | for an unsaved field: `reader` (a write is the reader acting: save, address and Share's link follow) or `save` (save and address follow) |
+| `watched` | for an unsaved field: `reader` (a write is the reader acting: save, address and Share's link follow); the `save` option went with `setAside` (fix round 3) |
 | `plants` | one of the plant lists: saved, in Undo, ends Undo; Start over empties it, a change ends a waiting Suggest |
 
 The derived lists: `snapshot`, `endsUndo`, `saved`, `plants`, `reader`, `save`. Operations: `signals`, `peek(list)`, `track(list)` (read in an effect or computed), `valuesOf(list)`, `write(values)`, `snapshot()`/`restore(s)` (Undo, one batch), `share(values, o)` (the link's state), `apply(s, o)` (a decoded link or save into the saved fields).
@@ -140,9 +146,9 @@ The derived lists: `snapshot`, `endsUndo`, `saved`, `plants`, `reader`, `save`. 
 # The fields
 
 - `CONSORTIUM_FIELDS`: `climate` (saved, endsUndo), `country` (saved; `put` never writes a guessed country and a location country only with the "include my location" tick, owner row 2026-10-28 and P5 owner answer 5; `take` labels a link's country by where it came from), `site` (saved, `DEFAULT_SITE` all `unsure`), the plant lists `members`, `kept`, `removed`, `guests` (link form `[{id, from}]`), `crops` (link keeps `MAX_CROPS`, three), and `stage` (saved).
-- `STATE_FIELDS` adds `view` (watched `reader`, undo only to or from Start) and `setAside` (undo, watched `save`).
+- `STATE_FIELDS` adds `view` (watched `reader`, undo only to or from Start) and `stage`; `setAside` went in fix round 3 (Place and the palette page show one palette).
 - Types: `Consortium` (the consortium fields with a non-null climate), `ShareInput` (stage may be null).
-- `state = defineState(STATE_FIELDS)`; [store.ts](../../src/islands/consortium/store.ts) re-exports each signal by name, and `SNAP_KEYS` is `state.lists.endsUndo`; in [state/persist.ts](../../src/islands/consortium/state/persist.ts) `shareState` is `schema.share`, `own()` peeks `lists.saved`, and `shownFragment` and `watchStore` `track` the `reader` and `save` lists; [state/restore.ts](../../src/islands/consortium/state/restore.ts) applies a decoded link or save with `schema.apply`; [state/draft.ts](../../src/islands/consortium/state/draft.ts) `chooseClimate`/`startOver` write `valuesOf(lists.plants, …)`; [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) tracks `plants` to drop a waiting Suggest.
+- `state = defineState(STATE_FIELDS)`; [store.ts](../../src/islands/consortium/store.ts) re-exports each signal by name, and `SNAP_KEYS` is `state.lists.endsUndo`; in [state/persist.ts](../../src/islands/consortium/state/persist.ts) `shareState` is `schema.share`, `palette()` peeks `lists.saved`, and `shownFragment` and `watchStore` `track` the `reader` list (one watcher effect: the action count, then `persist`); [state/restore.ts](../../src/islands/consortium/state/restore.ts) applies a decoded link or save with `schema.apply`; [state/draft.ts](../../src/islands/consortium/state/draft.ts) `chooseClimate`/`startOver` write `valuesOf(lists.plants, …)`; [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) tracks `plants` to drop a waiting Suggest.
 
 # Adding a field
 
@@ -169,8 +175,8 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 - **A link that brings a place** (`bringsPlace`) and differs from the reader's own (`samePlace`): `restore.ts` applies it to the page, sets `linkPlace` (persist.ts, `{ own }`: the reader's spot, soil and country just before) and `holdSave(true)`; persist() keeps writing the address but the save keeps the reader's own place until "Use it" (`draft.ts useLinkPlace`: the link's country becomes chosen, its cell the device location, `canopi-place` reseeded) or "Use my own place" (`useOwnPlace`), each ending with `release()`. A reader edit of spot or soil ends the notice too.
 - **Reload while it waits**: `writeAddress` puts `ask: 1` in `history.state` and a link's country as `k` in `pl`; `arrival()` returns `ask: true` and `startMemory()` restores with `ask` set to the reader's own place (the held save's `place`, else the seed, and the country chosen at start), so the notice comes back and the save stays held.
 - **Back or another link while it waits**: the reader's own spot, soil and country are put back before the next palette applies.
-- **One Undo for Place's moves**: through store.ts `offerUndo`, the same offer as Remove, Swap and Add (Start over: "Your palette was cleared; your place stays."; a set-aside palette replaced; the suggested palette in `suggest-wait.ts`). Since the chunk-1 merge draft.ts keeps no Undo of its own; the end of the offer is store.ts's effect, registered by `start()`.
-- **Guide preset over a save**: `savedInstead` keeps the save one press away ("Open my saved palette instead", `draft.ts openSavedInstead`); `notices.guidePlant` replaces `guideKept`.
+- **One Undo for Place's moves**: through store.ts `offerUndo`, the same offer as Remove, Swap and Add (Start over: "Your palette was cleared; your place stays."; the suggested palette in `suggest-wait.ts`; "Show my palette" offers none since fix round 3). Each snapshot is `store.snapshot()`, the schema's plus the save mark, and the Undo goes through `save.ts` `undoSave`. Since the chunk-1 merge draft.ts keeps no Undo of its own; the end of the offer is store.ts's effect, registered by `start()`.
+- **Guide preset over a save**: the preset holds the save (`applyPreset` `holdSave(true)`), so `savedInstead` keeps it one press away ("Open my saved palette instead", `draft.ts openSavedInstead`); `notices.guidePlant` replaces `guideKept`.
 - **Forget** (`state/location.ts forget`) clears `canopi-location`, `canopi-place` and the palette's spot and soil.
 
 ## Store seams added by PP-B b2 (chunk 1)

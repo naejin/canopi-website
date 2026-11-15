@@ -10,7 +10,7 @@ import { bringsPlace, decodeLink, emptyPlace, linkClimates, linkOrigin, linkVers
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, setPlaceBase, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace } from './persist.ts';
+import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace } from './persist.ts';
 import { lookingThrough } from './lookups.ts';
 
 // The notices a link (or the save) left for the reader (Place shows them).
@@ -24,7 +24,7 @@ export interface Notices extends LinkNotice { oldSave: boolean; guideMissing: st
 export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false, oldSave: false, guideMissing: null, guidePlant: null, pasted: null, failed: false };
 export const notices = signal<Notices>({ ...NO_NOTICES });
 // A link that brings a place (persist.ts keeps the signal, below this module, so the save follows it),
-// and the save to go back to (persist.ts too, so the reader's first action ends it).
+// and the save to go back to (persist.ts derives it from the held save).
 export { linkPlace, savedInstead };
 
 // ---- the site location a page brings (P5 S5b) ----
@@ -218,17 +218,15 @@ export async function restore(fragment: string, { from, src = null, keep = false
     const mayAsk = (from === 'link' || !!ask) && brings;
     const mine: OwnPlace = ask ?? waiting?.own ?? { spot: store.spot.peek(), soil: store.soil.peek(), country: country ?? store.country.peek(), location: mayAsk ? ownCell() : null };
     const asks = mayAsk && !samePlace(mine, d, origin);
-    // Arriving by a link writes no save until the reader acts, nor does a reload or Back/Forward of it;
-    // opening the save lets it go.
-    holdSave(from === 'link' || !!ask || hold);
-    // Place, should it show, opens with the plants applied (set before the write the save follows).
-    setPlaceBase(d.state.members);
     // One batch; the watcher then saves it and writes the address (plants no longer in the list are
     // left out of the address, §5).
     // A link's place still waiting when another palette opens (Back to the reader's own, another link):
     // the reader's own place and country come back first, so nothing of the earlier link stays.
     quietly(() => batch(() => {
       if (waiting && !ask) { store.spot.value = waiting.own.spot; store.soil.value = waiting.own.soil; store.country.value = waiting.own.country; }
+      // Arriving by a link holds the save until a plant change, as does a reload or Back/Forward of
+      // it; opening the save owns it (state/save.ts). In the batch, so the save sees the palette applied.
+      holdSave(from === 'link' || !!ask || hold);
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings);
       // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
       // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays
@@ -236,7 +234,6 @@ export async function restore(fragment: string, { from, src = null, keep = false
       if (store.proposedFromSave.peek()) { store.proposedClimate.value = null; store.proposedFromSave.value = false; }
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, newer: d.notice.newer, period: d.notice.period, unreadable: false, pasted: null, failed: false };
       linkPlace.value = asks ? { own: mine } : null;
-      if (from === 'saved') savedInstead.value = null;
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
       // stale line shows and Share cannot attach its cell (review round 1, 2). The reader's own stays.
@@ -262,12 +259,12 @@ function samePlace(mine: OwnPlace, d: DecodedLink, origin: LinkOrigin | null): b
 }
 
 // A guide preset: the climate for this consortium only (never the shared site climate), and the
-// guide's plant: a member (plant-palette-architecture 8.3: a preset gives members == [id] and no save
-// until the reader acts; a new suggestion is built around it). The plant applies only if the reader
+// guide's plant: a member (plant-palette-architecture 8.3: a preset gives members == [id] and holds the
+// save until a plant change; a new suggestion is built around it). The plant applies only if the reader
 // has not acted while it was read (another card: pre-push review 2).
 export async function applyPreset(climate: ClimateZone, plant: string | null): Promise<void> {
   // The guide's climate is the guide's choice, not the reader acting (it ends no "Open my saved palette instead").
-  quietly(() => { store.climate.value = climate; });
+  quietly(() => batch(() => { holdSave(true); store.climate.value = climate; }));
   if (!plant) return;
   const began = actionCount();
   await waitForSource();
@@ -276,12 +273,8 @@ export async function applyPreset(climate: ClimateZone, plant: string | null): P
   const t = pool.find((x) => x.canonical_name === plant);
   if (!t) { notices.value = { ...notices.peek(), guideMissing: plant }; return; }
   // The guide's plant is the guide's choice, not the reader acting.
-  // Place opens with the guide's plant: no save until the reader changes the plants (S1). Set before
-  // the write, which the save follows at once.
-  const plants = [...new Set([...store.members.peek(), t.id])];
-  setPlaceBase(plants);
   quietly(() => batch(() => {
-    store.members.value = plants;
+    store.members.value = [...new Set([...store.members.peek(), t.id])];
     notices.value = { ...notices.peek(), guidePlant: t.id };
   }));
 }

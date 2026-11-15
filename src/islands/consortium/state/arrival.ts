@@ -9,11 +9,12 @@ import { bringsPlace, countryZones, decodeLink, linkOrigin, readPreset, zoneOf }
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import {
-  attempt, currentFragment, fromOf, memory, oldRecord, openedWith, own, quietly, readRecord, storageWorks, watchStore, writeSave,
+  attempt, currentFragment, fromOf, memory, oldRecord, quietly, readRecord, shows, storageWorks, watchStore,
   COUNTRY_STORE, LOCATION_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE, STORE, type CountryFrom, type OwnPlace, type SavedRecord,
 } from './persist.ts';
 import { state as schema } from './schema.ts';
-import { applyPreset, locationAtStart, notices, ownCell, ownLocation, restore, savedInstead, waitForSource, NO_NOTICES } from './restore.ts';
+import { applyPreset, locationAtStart, notices, ownCell, ownLocation, restore, waitForSource, NO_NOTICES } from './restore.ts';
+import { lastSave, putSave } from './save.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
 // A fragment is a share link when it holds the link's version or its member list (v1 links carried
@@ -179,11 +180,9 @@ export function openWith({ how, plan, saved, seed, keptLocation }: Opening): voi
   if (how.kind !== 'saved') seedPlace(seed);
 
   if (how.kind === 'link') {
-    // A newer or unreadable link over a readable save: "Back to mine" (Arrivals board).
-    void restore(how.fragment, { from: 'link', country: plan.own }).then((opened) => {
-      const n = notices.peek();
-      if (!opened && saved && (n.newer || n.unreadable)) savedInstead.value = saved;
-    });
+    // A newer or unreadable link over a readable save: "Back to mine" (Arrivals board; persist.ts
+    // savedInstead, derived from the held save).
+    void restore(how.fragment, { from: 'link', country: plan.own });
   }
   else if (how.kind === 'saved') {
     // A reload while a link's place still waited on the reader: asked again (plan.ask).
@@ -192,7 +191,6 @@ export function openWith({ how, plan, saved, seed, keptLocation }: Opening): voi
   else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
   else if (how.kind === 'preset') {
     // A guide preset over a saved palette: the save stays untouched, one press away (8.3).
-    savedInstead.value = saved;
     void applyPreset(how.climate, how.plant);
   }
   else if (how.climate) store.climate.value = how.climate;
@@ -215,12 +213,12 @@ export function startMemory(): void {
   storageWorks.value = memory.works();
   const raw = memory.read(STORE);
   const saved = readRecord(raw);
-  openedWith(raw);
+  lastSave.value = raw;
   const how = openingArrival();
   // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
   if (how.kind === 'start' && oldRecord(raw)) {
     notices.value = { ...notices.peek(), oldSave: true };
-    writeSave(null);
+    putSave(null);
   }
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
@@ -242,7 +240,7 @@ export function startMemory(): void {
   window.addEventListener('hashchange', () => {
     const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
     if (act.kind === 'ignore') return;
-    const keep = own() !== null;
+    const keep = shows();
     if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep, place: act.place, hold: act.hold }); return; }
     notices.value = { ...NO_NOTICES };
     void restore(act.fragment, { from: 'link', keep });

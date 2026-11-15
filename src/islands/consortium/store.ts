@@ -13,6 +13,7 @@ import type { TextureId as ReaderTexture } from '../../lib/climate/soil.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
 import { state } from './state/schema.ts';
+import { held, markSave, undoSave } from './state/save.ts';
 import { focusAfterToast, noteToastOpener } from './focus.ts';
 
 // Where the country came from: the reader chose it, a link carried it, the page guessed it from
@@ -44,8 +45,8 @@ export interface Load { status: LoadStatus; error: LoadFailure | null }
 // climate, country; the place (PP-B commit 0, plant-palette-architecture 3.6): room, plot (m²), spot,
 // soil and the period shown; the plant lists members (in the order added; a new suggestion is built
 // around them), removed (taken out: a new suggestion leaves them out) and guests (from another
-// climate's list, A9); the view; setAside; the stage print draws (unsaved, until PP-B18).
-export const { climate, country, room, plot, spot, soil, period, members, removed, guests, view, stage, setAside } = state.signals;
+// climate's list, A9); the view; the stage print draws (unsaved, until PP-B18).
+export const { climate, country, room, plot, spot, soil, period, members, removed, guests, view, stage } = state.signals;
 export const step = computed<Step>(() => (view.value === 'start' ? 'place' : 'palette'));
 // The time step Through the years shows (PhaseOrd; unsaved, not in Undo): the phone's stepper and
 // print's side drawing read it (PP-B18; replaces the deprecated `stage`). Opens on years 1-3.
@@ -58,11 +59,9 @@ export const opening = signal(false);
 // The holes put off with "Not now" (this page only, never saved).
 export const notNow = signal<ReadonlySet<string>>(new Set());
 export const sheet = signal<Sheet | null>(null);
-// While Start shows (view 'start'), the signals above are the Start draft: the picked card, its
-// site answers (and, on the consortium's own card, its plants, which Suggest and a paste
-// build on). The consortium shown before going back to Place is then in setAside, with its own site
-// answers and country; null: none. The commit actions (state/draft.ts), or plants added or removed on
-// Place (owner 2026-11-15), turn the draft into the consortium; the save mirrors the consortium.
+// The signals above are the palette on Place and on the palette page alike: Place's answers and plants
+// change it as they are given (owner 2026-11-15), and the save follows it while the page owns it
+// (state/save.ts held).
 export const load = signal<Load>({ status: 'idle', error: null });
 // P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
 // link's `o=`); S5c (range check, nearest lists), S5d (future check) and S5e (native here, soil
@@ -469,7 +468,8 @@ export function suggestMembers(): boolean {
   const algo = suggestRule.value;
   if (!algo) return false;
   const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value });
-  members.value = s.members;
+  // A suggestion placed is a plant change: the page owns the save from here (state/save.ts).
+  batch(() => { members.value = s.members; held.value = false; });
   return true;
 }
 
@@ -539,9 +539,11 @@ export function leaveEntry(kind: Entry): boolean {
 // no palette of the page's own, except after an Undo back to Place, which wrote the address it wants).
 // `away`: the entry landed on is another start's: nothing is rewritten, so the hashchange that follows
 // opens the entry landed on as its own address (main.ts).
+// An entry with a palette (`ct`) and no start is one the code before start ids wrote (every `ct` the
+// page writes now has one, watchSteps starting before the first write): another start too (r3-4).
 export function historyMoved(state: unknown): { place: boolean; force: boolean; away: boolean } {
   const asked = leaving, was = shown, now = ppOf(state), landed = stOf(state);
-  const away = landed !== null && landed !== st;
+  const away = landed !== null ? landed !== st : typeof (state as { ct?: unknown } | null)?.ct === 'string';
   leaving = null;
   shown = now;
   if (landed) st = landed;
@@ -563,7 +565,7 @@ export function pushWaiting(): void {
 export function forgetEntries(): void { shown = []; leaving = null; paletteWaits = false; st = newStart(); }
 // A hashchange onto an entry the page wrote itself (its own address, landed on by a move off a link):
 // its entries and its start are the entry's own.
-export function adoptEntry(state: unknown): void { shown = ppOf(state); st = stOf(state) ?? st; leaving = null; paletteWaits = false; }
+export function adoptEntry(state: unknown): void { shown = ppOf(state); st = stOf(state) ?? newStart(); leaving = null; paletteWaits = false; }
 // A return visit or a link opens on the palette page by itself: that first step is not the reader's
 // and pushes nothing (main.ts sets it; the step's effect in start() reads it once).
 let arrivalStep = false;
@@ -668,10 +670,11 @@ export function taxonOf(id: PlantId): Taxon | null {
 }
 const nameById = (id: PlantId) => { const t = taxonOf(id); return t ? nameOf(t) : id; };
 
-// The view and the consortium set aside too: Undo of a list pasted on Start goes back to Start's
-// draft, with the consortium it replaced, so the save mirrors that one again (F2, R2-1).
-// (The Snapshot holds the fields state/schema.ts marks `undo`, and the plant lists.)
-type Snapshot = ReturnType<typeof state.snapshot>;
+// Undo's snapshot: the fields state/schema.ts marks `undo` (the view: Undo of a list pasted on Place
+// goes back to Place), the plant lists, and the save as it was with the held flag (state/save.ts
+// markSave), so an Undo back to a held page puts the reader's save back exactly (F2, R2-1).
+export const snapshot = () => ({ ...state.snapshot(), save: markSave() });
+type Snapshot = ReturnType<typeof snapshot>;
 const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.includes(x));
 
 // Undo puts back the snapshot taken before the action, so it is offered only while nothing else has
@@ -681,20 +684,18 @@ const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.inc
 const SNAP_KEYS = state.lists.endsUndo;
 let undoAfter: ReturnType<typeof state.peek<(typeof SNAP_KEYS)[number]>> | null = null;
 // (Place's moves, in state/draft.ts and state/suggest-wait.ts, offer their Undo through it too.)
-// wrap: how the Undo applies the restore (Start over on a page whose save is held restores quietly,
-// the save held again: state/draft.ts startOver).
-export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = [], wrap?: (put: () => void) => void): void {
+export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
   undoAfter = state.peek(SNAP_KEYS);
-  const put = () => state.restore(before);
-  showToast(text, () => { undoAfter = null; if (wrap) wrap(put); else put(); }, action, focus);
+  showToast(text, () => { undoAfter = null; undoSave(before.save, () => state.restore(before)); }, action, focus);
 }
 // (The effect that ends the offer starts in start(), at the end of this file.)
 
 // Remove (details, the plant list): its cells are free again (the gap stays), it is left out of a new
 // suggestion, and Undo brings back the consortium as it was.
 export function removeMember(id: PlantId): void {
-  const before = state.snapshot(), name = nameById(id);
+  const before = snapshot(), name = nameById(id);
   batch(() => {
+    held.value = false;
     members.value = without(before.members, [id]);
     removed.value = [...without(before.removed, [id]), id];
     if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
@@ -704,8 +705,9 @@ export function removeMember(id: PlantId): void {
 // Swap: the new plant takes the old one's place in the order; the old one is left out of a new
 // suggestion.
 export function swapMember(oldId: PlantId, newId: PlantId): void {
-  const before = state.snapshot(), a = nameById(oldId), b = nameById(newId);
+  const before = snapshot(), a = nameById(oldId), b = nameById(newId);
   batch(() => {
+    held.value = false;
     members.value = before.members.map((x) => (x === oldId ? newId : x)).filter((x, i, all) => all.indexOf(x) === i);
     removed.value = [...without(before.removed, [newId, oldId]), oldId];
     if (before.guests[oldId]) { const g = { ...before.guests }; delete g[oldId]; guests.value = g; }
@@ -716,15 +718,16 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
 // the climate whose list it comes from ("Add anyway", A9). warned: plants added that carry a misfit or
 // a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the toast says "n added
 // with a warning" with Show (the first one's details).
-// On Place, an add (search or paste) leaves the view alone and is saved at once (state/persist.ts own;
-// owner 2026-11-15).
+// On Place, an add (search or paste) leaves the view alone and is saved at once (owner 2026-11-15).
+// Each of the three is a plant change: the page owns the save from here (state/save.ts).
 // text: the toast's own words (the Next step names the plant it added), else paste.added's count;
 // the warned count follows either.
 export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string } = {}): void {
-  const before = state.snapshot();
+  const before = snapshot();
   const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !before.members.includes(id));
   if (!fresh.length) return;
   batch(() => {
+    held.value = false;
     members.value = [...before.members, ...fresh];
     removed.value = without(before.removed, fresh);
     // The guests change only when a guest joins (a new object would rebuild every guest's record).

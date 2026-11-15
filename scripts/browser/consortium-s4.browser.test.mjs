@@ -120,8 +120,9 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await done(page);
 
     // A link that brings a place (a country and a spot answer) round-trips with "Include my place"
-    // ticked; a reload of it keeps the country "from the shared link". Nothing of the link's place is
-    // saved before the reader answers "Use it" (PP-B b1a), which makes the country the reader's.
+    // ticked; a reload of it keeps the country "from the shared link". "Use it" makes the country the
+    // reader's; the save takes it with the first plant change (owner 2026-11-15, decision 2: only a
+    // plant change replaces the reader's save on a link's page).
     const staged = await stageLink();
     const shared = await h.open(`/palette/?run=${Date.now()}#${staged}`, { ...v, data: 'fixture' });
     assert.equal(await loadState(shared), 'ready');
@@ -134,6 +135,11 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await shared.locator(aria('button', en['consortium.place.useIt'])).click();
     await shared.waitForFunction(() => !document.querySelector('[data-place-notice="linkPlace"]'), { timeout: 4000 });
     assert.match(await countryText(shared), /chosen by you/, '"Use it" makes the link\'s country the reader\'s');
+    // A plant removed (its details, Remove): the page's palette is saved, with the country taken.
+    await shared.evaluate(() => [...document.querySelectorAll('#ct-root .ct-palette-pictures button')].find((b) => b.closest('[data-plant-id]')).click());
+    assert.ok(await has(shared, 'dialog[open].ct-sheet', 8000), 'a plant\'s details');
+    await shared.locator(aria('button', en['consortium.details.remove'])).click();
+    assert.ok(await has(shared, aria('button', 'Undo'), 4000), 'the Remove is made');
     await shared.goto(new URL('/palette/', shared.url()).href);
     assert.ok(await has(shared, aria('button', 'Share'), 8000));
     assert.match(await countryText(shared), /chosen by you/, 'the save keeps the country the reader took');

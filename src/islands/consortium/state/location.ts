@@ -207,20 +207,17 @@ export function confirmProposed(z: ClimateZone): void {
 // "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
 // location goes alone: the reader's own saved location is not the link's to remove.
 // "Forget this location" also clears the last place answers (canopi-place) and the open palette's
-// place, its spot and soil (plant-palette-architecture 8.3; privacy.tool.device), the palette set aside
-// when the reader went back to Place included (its save and the tab's place follow it); the room and
-// plot size are the palette's and stay. The kept location no longer holds Place's climate cards.
+// place, its spot and soil (plant-palette-architecture 8.3; privacy.tool.device; its save, while the
+// page owns it, and the tab's place follow it); the room and plot size are the palette's and stay. The kept location no longer holds Place's climate cards.
 export function forget(): void {
   nextLookup();
   unread.value = false;
   const own = store.location.peek()?.source !== 'link';
-  const aside = store.setAside.peek();
   batch(() => {
     store.location.value = null; store.proposedClimate.value = null; line.value = null;
     if (own) locationCountry(null, true);
     store.spot.value = { ...emptyPlace.spot };
     store.soil.value = { from: 'map' };
-    if (aside) store.setAside.value = { ...aside, spot: { ...emptyPlace.spot }, soil: { from: 'map' } };
   });
   if (own) { keepLocation(null); locationAtStart.value = false; }
   memory.remove(PLACE_STORE);

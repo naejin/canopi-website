@@ -33,6 +33,9 @@
 // Every storage call may throw (private mode, blocked cookies): each one is caught, and the tool
 // works without it; Share then says the link keeps the consortium (§5 "Storage unavailable").
 //
+// When the save is written: state/save.ts `held` (this page's palette is not the save); not held,
+// every change of the palette is written; held, the save is left as it is.
+//
 // Also here, below restore.ts and the location step so that neither imports the other: the restore
 // in flight (what Start shows while a link opens) and the count of the reader's actions, which the
 // store watcher (watchStore) keeps.
@@ -43,41 +46,17 @@ import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
 import type { Consortium, ShareInput } from './schema.ts';
+import { attempt, held, lastSave, memory, STORE } from './save.ts';
 
-export const STORE = 'canopi-consortium';
+export { attempt, guarded, memory, STORE, type StorageLike } from './save.ts';
 export const COUNTRY_STORE = 'canopi-country';
 export const SITE_CLIMATE = 'canopi-climate';
 export const LOCATION_STORE = 'canopi-location';
 export const PLACE_STORE = 'canopi-place';
 export const NO_COUNTRY = '-';
 
-// ---- storage, guarded ----
+// ---- storage ----
 
-export interface StorageLike { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void }
-export const attempt = <T>(f: () => T): T | null => { try { return f(); } catch { return null; } };
-
-// A storage whose every call is caught. get() may itself throw (a blocked localStorage getter).
-export function guarded(get: () => StorageLike | null | undefined) {
-  return {
-    read: (k: string): string | null => attempt(() => get()?.getItem(k) ?? null),
-    write: (k: string, v: string): boolean => attempt(() => { const s = get(); if (!s) return false; s.setItem(k, v); return true; }) ?? false,
-    remove: (k: string): boolean => attempt(() => { const s = get(); if (!s) return false; s.removeItem(k); return true; }) ?? false,
-    // Whether this browser keeps anything: a probe key written, read back and removed.
-    works(): boolean {
-      return attempt(() => {
-        const s = get();
-        if (!s) return false;
-        const key = `${STORE}-probe`;
-        s.setItem(key, '1');
-        const ok = s.getItem(key) === '1';
-        s.removeItem(key);
-        return ok;
-      }) ?? false;
-    },
-  };
-}
-
-export const memory = guarded(() => (typeof localStorage === 'undefined' ? null : localStorage));
 // Whether this browser keeps the consortium (false: Share says the link does).
 export const storageWorks = signal(true);
 
@@ -181,33 +160,32 @@ export function adoptPending(): void {
   if (shown) store.climate.value = shown;
 }
 
-// ---- the consortium and the save ----
-// Two states: the consortium, and Place's draft (the picked card and its answers) while Place shows.
-// Going back to Place sets the consortium aside (store.setAside) and opens a draft seeded from it.
-// Place's answers never change the consortium or the save; plants the reader adds or removes there do:
-// the draft is then the consortium, saved at once, the one set aside kept for Undo (owner
-// 2026-11-15). Suggest, Start empty, Show my palette, Start over and Undo end the draft. The save
-// always encodes the consortium, written on every change of it; Undo restores the consortium (and the
-// view), so it rewrites the save too. Every write of the save goes through writeSave, which holds the
-// one multi-tab rule.
+// ---- the palette and the save ----
+// The save always encodes the palette as the page shows it (Place's answers and plants included: owner
+// 2026-11-15), written on every change while the page owns it (state/save.ts held); Undo restores
+// the palette and the flag, so it rewrites the save too.
 
-// Place's baseline: the plants Place opened with, set by the action that opens it (draft.ts backToPlace:
-// the palette set aside; startOver: none; restore.ts applyPreset: the guide's plant; a restore: what it
-// applied). On Place the draft is the palette, saved, once its plants differ from it (owner
-// 2026-11-15); an Undo back to them is Place as it opened again.
-let placeBase: readonly PlantId[] = [];
-export const setPlaceBase = (plants: readonly PlantId[]): void => { placeBase = plants; };
-// The consortium this page shows or set aside on Place (null: none of its own). shown: the store's
-// consortium fields whatever the view (Place's draft too), as a link of them reads.
-export function own(shown = false): Consortium | null {
-  const aside = store.setAside.peek();
-  if (shown || store.view.peek() !== 'start' || !samePlants(store.members.peek(), placeBase)) {
-    const climate = store.climate.peek();
-    return climate && (schema.peek(schema.lists.saved) as Consortium);
-  }
-  return aside;
+// The page's palette (null: no climate yet). A guest the chosen climate's list holds, once read, is
+// left out: it is one of the list's own (a card clicked before its list was read marks each member
+// of the list it left a guest; r3-3).
+export function palette(): Consortium | null {
+  const climate = store.climate.peek();
+  if (!climate) return null;
+  const now = schema.peek(schema.lists.saved) as Consortium;
+  const list = store.pools.peek()[climate];
+  const own = list && Object.keys(now.guests).filter((id) => list.some((t) => t.id === id));
+  if (!own?.length) return now;
+  const guests = { ...now.guests };
+  for (const id of own) delete guests[id];
+  return { ...now, guests };
 }
-const samePlants = (a: readonly PlantId[], b: readonly PlantId[]): boolean => a.length === b.length && a.every((id, i) => id === b[i]);
+// Whether the page shows a palette of its own the address keeps: a climate, and the save owned, the
+// palette page shown or any plant on Place.
+export function shows(): boolean {
+  if (!store.climate.peek()) return false;
+  const p = schema.peek(schema.lists.plants);
+  return !held.peek() || store.view.peek() !== 'start' || p.members.length > 0 || p.removed.length > 0 || Object.keys(p.guests).length > 0;
+}
 
 // The ids a palette's links are matched against: its climate's and each guest list's.
 function knownOf(now: Consortium): Partial<Record<ClimateZone, PlantId[]>> {
@@ -218,20 +196,19 @@ function knownOf(now: Consortium): Partial<Record<ClimateZone, PlantId[]>> {
   }
   return known;
 }
-// The current state as a fragment, against the climate's and the guest lists' ids.
-// of: a consortium set aside (Start's draft shows), in place of the store's. origin: the site's cell
+// The palette as a fragment, against the climate's and the guest lists' ids. origin: the site's cell
 // centre, given only with Share's tick: the link then carries `o=`. place: the "Include my place" tick
 // (by default, whether an origin is given: Share's tick until b1a words it), which adds the country,
 // the spot and the soil; the address bar and the save's fragment never pass it.
-export function currentFragment(of: Consortium | null = null, { origin = null, place = origin !== null }: { origin?: LinkOrigin | null; place?: boolean } = {}): string | null {
-  const now = of ?? own(true);
+export function currentFragment({ origin = null, place = origin !== null }: { origin?: LinkOrigin | null; place?: boolean } = {}): string | null {
+  const now = palette();
   if (!now) return null;
   return encodeLink(shareState(now, { place }), knownOf(now), { origin, place });
 }
 // A palette's private place answers, as the save's `place` and history.state.pl keep them: the spot
 // and the soil, without the country and the cell (core encodePlace).
 export function currentPlace(of: Consortium | null = null): string {
-  const now = of ?? own(true);
+  const now = of ?? palette();
   if (!now) return '';
   return encodePlace({ ...shareState(now, { place: true }), country: null });
 }
@@ -240,8 +217,8 @@ export function currentPlace(of: Consortium | null = null): string {
 // country is kept on the device, COUNTRY_STORE, and in the save record's `country`).
 // While a link's place waits on the reader, its cell (`o`) too, so "Use it" after a reload still has it
 // (per tab, never in the save).
-function addressPlace(of: Consortium | null): string {
-  const now = of ?? own(true);
+function addressPlace(): string {
+  const now = palette();
   if (!now) return '';
   const at = store.location.peek();
   const o = linkPlace.peek() && at?.source === 'link' ? { lat: at.lat, lon: at.lon } : null;
@@ -264,68 +241,24 @@ export function placeSeed(answers: { spot: Spot; soil: SoilAnswer } | null = nul
 // keeps them until the reader chooses.
 export interface OwnPlace { spot: Spot; soil: SoilAnswer; country: Country; location: LinkOrigin | null }
 export const linkPlace = signal<{ own: OwnPlace } | null>(null);
-// The reader's readable save when the page opened on something else (a guide preset, a newer or
-// unreadable link): "Open my saved palette instead" / "Back to mine" (draft.ts openSavedInstead)
-// restores it. null once used, once this page replaces or removes the save (writeSave: the reader's
-// work saved over it; offered again if the save is written back as it was), or when there is none; a
-// Place answer that writes no save (a room, a country, a card while the page has no palette of its own)
-// keeps it (review round 2, 2). Kept here, beside writeSave.
-export const savedInstead = signal<SavedRecord | null>(null);
 // What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
 // notice's button leaves the page with its line, so the focus moves on and this says what happened:
 // A25). '' for nothing. Kept here, below restore.ts, so the reader's next action (watchStore) and the
 // next arrival (restore.ts restore) clear it (review round 2, 4).
 export const placeSaid = signal('');
-// Arriving by a link writes no save until the reader acts (8.3): restore.ts holds it when a link
-// applies (and for a reload or Back/Forward of that page: history.state hold); the reader's next
-// action (watchStore) or a restore of the save lets it go.
-let held = false;
-export const holdSave = (on: boolean): void => { held = on; };
-export const saveHeld = (): boolean => held;
+// Arriving by a link or a guide preset, the page holds the save (restore.ts, and for a reload or
+// Back/Forward of that page: history.state hold); a restore of the save, or a plant change, lets it go.
+export const holdSave = (on: boolean): void => { held.value = on; };
 
-// The save as this page last wrote it, or read it when it opened (openedWith).
-let lastSave: string | null = null;
-export const openedWith = (raw: string | null): void => { lastSave = raw; };
-// What the save held just before this page's first write over it, or the newer save another tab
-// wrote there since (undefined: nothing to put back). Undo back to a Start with no consortium of the
-// page's own puts it back (R2-3, R4-1).
-let beneath: string | null | undefined;
+// The palette written as the save, unless it is the save already (the same fragment, place and
+// country source: its time alone never rewrites it).
 const sameSave = (a: string | null, b: string | null): boolean => {
   const x = readRecord(a), y = readRecord(b);
   return x && y ? x.fragment === y.fragment && x.place === y.place && x.src === y.src : a === b;
 };
-// next: this page's consortium as a record; null: the save removed (Start over, an older save);
-// 'back': the page has no consortium of its own any more, so the save goes back to `beneath`.
-// The rule: a remove or a put-back happens only while the save is still what this page last wrote
-// or read, so another tab's save, or an earlier visit's, is never lost (R2-2, R4-1, R4-2); the
-// page's own consortium is written whenever it changes (the reader acted here).
-export function writeSave(next: string | null | 'back'): void {
-  const now = memory.read(STORE);
-  if (next === 'back' || next === null) {
-    const to = next === 'back' ? beneath : null, was = offered;
-    beneath = undefined;
-    offered = null;
-    if (to === undefined || now !== lastSave) return;
-    if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) {
-      replaced(to);
-      // The reader's save offered back, written back as it was (Undo to a Place with no palette of the
-      // page's own): offered again (review round 3, 2).
-      if (was && sameSave(to, was.text)) savedInstead.value = was.record;
-    }
-    return;
-  }
-  if (sameSave(next, lastSave)) return;
-  // A new run of writes over what the storage held: an offer kept from an earlier run is stale.
-  if (beneath === undefined || now !== lastSave) { beneath = now; offered = null; }
-  if (memory.write(STORE, next)) replaced(next);
-}
-// The save this page wrote: the save offered back (savedInstead) is no longer there to open; it is
-// kept (offered) until the save goes back to it (once) or a new run of writes begins.
-let offered: { record: SavedRecord; text: string | null } | null = null;
-function replaced(to: string | null): void {
-  const was = savedInstead.peek();
-  if (was) { offered = { record: was, text: lastSave }; savedInstead.value = null; }
-  lastSave = to;
+function writeSave(next: string): void {
+  if (sameSave(next, lastSave.peek())) return;
+  if (memory.write(STORE, next)) lastSave.value = next;
 }
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
@@ -336,13 +269,12 @@ let written = '';
 export const lastWritten = (): string => written;
 export function writeAddress(force = false): void {
   if (typeof location === 'undefined') return;
-  const mine = own();
-  const fragment = mine ? currentFragment(mine) : force ? currentFragment() : null;
+  const fragment = shows() || force ? currentFragment() : null;
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
   // history.state marks the address as the page's own, so a reload opens it as the save (review 1),
   // with this tab's place (pl: the save is shared by every tab; plant-palette-architecture 8.3).
   // ask: a link's place waits on the reader; hold: the save is held for a link they have not acted on.
-  const ownState = fragment ? { ct: fragment, src: countryFrom(mine?.country), pl: addressPlace(mine), ...(linkPlace.peek() ? { ask: 1 } : held ? { hold: 1 } : {}) } : null;
+  const ownState = fragment ? { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : held.peek() ? { hold: 1 } : {}) } : null;
   // `pp`: the page's history entries up to this one (store.ts), kept through every rewrite and reload;
   // `st`: the entry's start (store.ts startId), so a move off a link opened in the tab is known.
   const pp = attempt(() => (history.state as { pp?: unknown } | null)?.pp), st = store.startId();
@@ -351,25 +283,19 @@ export function writeAddress(force = false): void {
   if (next !== location.href || JSON.stringify(attempt(() => history.state)) !== JSON.stringify(state)) attempt(() => history.replaceState(state, '', next));
 }
 
-// The save and the address bar follow the consortium; with none of the page's own, the save goes back.
-// While a link's place waits on the reader's choice, the save keeps the reader's own place and country.
+// The address bar follows the palette, and the save too while the page owns it. While a link's place
+// waits on the reader's choice, the save keeps the reader's own place and country.
 function persist(): void {
   if (store.view.peek() !== 'start' && !store.pool.peek()) return;
-  // A link or the save still opening, with no consortium of the page's own yet: the address keeps the
+  // A link or the save still opening, with no palette of the page's own yet: the address keeps the
   // link (a reload in that second opens it again; the restore writes the address when it applies).
-  if (inFlight.peek() && !own()) return;
+  if (inFlight.peek() && !shows()) return;
   writeAddress();
-  if (held) return;
-  const mine = own();
-  if (!mine) { writeSave('back'); return; }
+  const now = held.peek() ? null : palette();
+  if (!now) return;
   const pending = linkPlace.peek()?.own;
-  const kept = pending ? { ...mine, spot: pending.spot, soil: pending.soil, country: pending.country } : mine;
-  writeSave(saveRecord(currentFragment(mine) ?? '', new Date().toISOString(), countryFrom(kept.country), kept.country.code, currentPlace(kept)));
-}
-// A reader's choice made outside the store's fields (a notice's button): the save is no longer held.
-export function release(): void {
-  held = false;
-  persist();
+  const kept = pending ? { ...now, spot: pending.spot, soil: pending.soil, country: pending.country } : now;
+  writeSave(saveRecord(currentFragment() ?? '', new Date().toISOString(), countryFrom(kept.country), kept.country.code, currentPlace(kept)));
 }
 
 // The shown consortium's link, recomputed on every change of what the link holds (Share's field).
@@ -377,11 +303,17 @@ export const shownFragment = computed(() => {
   void [schema.track(schema.lists.reader), store.pools.value];
   return currentFragment();
 });
+// "Open my saved palette instead" / "Back to mine" (draft.ts openSavedInstead): the reader's readable
+// save, offered on every held page whose palette is not it (owner 2026-11-15, decision 3). Derived, so
+// a plant change that replaces the save hides it and its Undo brings it back.
+export const savedInstead = computed((): SavedRecord | null => {
+  const r = held.value ? readRecord(lastSave.value) : null;
+  return r && r.fragment !== shownFragment.value ? r : null;
+});
 
 let watching = false;
-// The save and the address bar follow every change of the consortium (persist: nothing on a fresh
-// Start, where the last consortium stays until another replaces it), and any write to the consortium that
-// is not a restore applying counts as the reader acting. Set up once (startMemory; the unit tests).
+// The save and the address bar follow every change of the palette, and any write to it that is not a
+// restore applying counts as the reader acting. Set up once (startMemory; the unit tests).
 // (It reads the signals themselves, not shownFragment: the view is not in the link, so a computed
 // fragment would not change when the result first shows.)
 export function watchStore(): void {
@@ -390,33 +322,26 @@ export function watchStore(): void {
   let first = true;
   effect(() => {
     void schema.track(schema.lists.reader);
-    if (first) { first = false; return; }
-    if (quiet) return;
-    actions++;
-    held = false;
-    // What an earlier notice's answer did is said no more (a later answer sets it again after this).
-    placeSaid.value = '';
-    // The reader acted during a first-visit restore (any Start write: a country, a site answer, a
-    // crop, Suggest): the restore will not apply, and the link's climate Start showed stays, now
-    // chosen, so what Start shows never vanishes without the reader choosing.
-    untracked(() => {
-      const shown = inFlight.peek()?.climate;
-      inFlight.value = null;
-      if (shown && !store.climate.peek()) store.climate.value = shown;
-    });
-  });
-  // A change the reader made (not quiet) lets a held save go, here as well as in the watcher above,
-  // since the two effects run in no set order for one write.
-  let firstSave = true;
-  effect(() => {
-    void schema.track(schema.lists.save);
-    if (!firstSave && !quiet) held = false;
-    firstSave = false;
+    if (!first && !quiet) {
+      actions++;
+      // What an earlier notice's answer did is said no more (a later answer sets it again after this).
+      placeSaid.value = '';
+      // The reader acted during a first-visit restore (any Start write: a country, a site answer, a
+      // crop, Suggest): the restore will not apply, and the link's climate Start showed stays, now
+      // chosen, so what Start shows never vanishes without the reader choosing.
+      untracked(() => {
+        const shown = inFlight.peek()?.climate;
+        inFlight.value = null;
+        if (shown && !store.climate.peek()) store.climate.value = shown;
+      });
+    }
+    first = false;
     untracked(persist);
   });
   effect(() => {
     void store.pools.value;
     void linkPlace.value;
+    void held.value;
     untracked(persist);
   });
   // canopi-place follows the place the reader gives (a restore applying a link's or a save's place is

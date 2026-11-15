@@ -21,7 +21,7 @@ export function Share({ onClose }: { onClose: () => void }) {
   const origin = cellCentre(site.value?.lookup ?? null);
   const c = country.value;
   const hasPlace = origin !== null || Object.values(spot.value).some((v) => v !== 'unsure') || soil.value.from !== 'map' || (c.code !== null && c.source !== 'guess');
-  const fragment = withPlace && hasPlace ? currentFragment(null, { origin, place: true }) ?? shown : shown;
+  const fragment = withPlace && hasPlace ? currentFragment({ origin, place: true }) ?? shown : shown;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
   const field = useRef<HTMLInputElement>(null);

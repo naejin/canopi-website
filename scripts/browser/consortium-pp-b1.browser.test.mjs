@@ -258,12 +258,15 @@ const pasteLink = async (page, link, n) => {
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k && !window.__ctTest.store.restoring?.value, 15_000, n), 'the pasted link opens');
   await new Promise((r) => setTimeout(r, 300));
 };
-test('PP-B2 (b1a fix round 2, r2-6 Back off a pasted link through a sheet): paste L, open a plant, Back, Back: the palette before L reopens, its entry not rewritten', async () => {
+// A Temperate palette on a fresh page, its address P and its plant count n, before a link is pasted.
+const paletteBeforeLink = async () => {
   const page = await tool();
   await temperatePalette(page);
   await new Promise((r) => setTimeout(r, 300));
-  const P = await page.evaluate(() => location.hash);
-  const n = await members(page);
+  return { page, P: await page.evaluate(() => location.hash), n: await members(page) };
+};
+test('PP-B2 (b1a fix round 2, r2-6 Back off a pasted link through a sheet): paste L, open a plant, Back, Back: the palette before L reopens, its entry not rewritten', async () => {
+  const { page, P, n } = await paletteBeforeLink();
   const L = `#${await v5(4)}`;
   assert.notEqual(n, 4, 'the palette is not the link\'s');
   await pasteLink(page, L, 4);
@@ -335,6 +338,45 @@ test('PP-B2 (b1a fix round 1, b1a2-3 map gone with its sheet): the sheet\'s map,
   assert.ok(await until(page, () => window.__ctTest.store.view.value === 'start', 6000), 'Start over');
   await new Promise((r) => setTimeout(r, 500));
   assert.equal(await page.$('[data-location-map]'), null, 'the map opened by itself on Place');
+});
+
+// b1a2-6 (fix round 1; moved in fix round 3, since "Show my palette" offers no Undo any more): an Undo
+// that goes back to Place pressed in the sheet's foot, here the suggestion's from Place: the sheet goes
+// with the palette, and the focus lands on the page.
+test('PP-B2 (b1a fix round 3, b1a2-6 Undo in the sheet): the suggestion\'s Undo pressed in the "Your place" sheet leaves no sheet open, one set of climate cards, and the focus on the page', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await suggestFromPlace(page);
+  assert.ok(await has(page, aria('button', W('place.sheet.open')), 8000), 'the palette');
+  await openPlaceSheet(page);
+  assert.ok(await has(page, 'dialog[open] .ct-toast-undo', 4000), 'the Undo in the sheet');
+  // The sheet closes in the same update as the view goes back to Place (not later, by Back's popstate).
+  const same = await page.evaluate(() => {
+    document.querySelector('dialog[open] .ct-toast-undo').click();
+    const s = window.__ctTest.store;
+    return { view: s.view.value, sheet: s.sheet.value };
+  });
+  assert.deepEqual(same, { view: 'start', sheet: null }, 'Undo went back to Place with the sheet still open');
+  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 4000), 'a sheet is still open');
+  assert.equal(await page.$$eval('#ct-climates', (l) => l.length), 1, 'one set of climate cards');
+  assert.ok(await until(page, () => document.activeElement && document.activeElement !== document.body, 4000), 'the focus fell to the body');
+});
+
+// r3-4 (fix round 3): entries the code before start ids wrote have no `st`. P's entry, a link pasted on
+// it, both without st, a reload on the link (the new code), Back: the entry before opens its own palette,
+// never rewritten with the link.
+test('PP-B2 (b1a fix round 3, r3-4 entries without st from before the deploy): a reload on a pasted link, then Back: the palette before reopens, its entry not rewritten', async () => {
+  const { page, P, n } = await paletteBeforeLink();
+  const strip = () => page.evaluate(() => { const { st: _, ...rest } = history.state ?? {}; history.replaceState(rest, '', location.href); });
+  await strip();
+  await pasteLink(page, `#${await v5(4)}`, 4);
+  await strip();
+  await page.reload();
+  assert.ok(await until(page, () => window.__ctTest?.store.members.value.length === 4, 30_000), 'the reload opens the link');
+  await new Promise((r) => setTimeout(r, 300));
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, (p) => location.hash === p, 8000, P), 'the entry before the link was rewritten with the link');
+  assert.ok(await until(page, (k) => window.__ctTest?.store.members.value.length === k, 30_000, n), 'the palette before the link reopens');
 });
 
 // c-4 (board ChangePlace): the sheet's foot has "Start over" and "Done"; Done closes it.

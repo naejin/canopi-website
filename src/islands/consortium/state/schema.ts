@@ -5,15 +5,14 @@
 //
 // - undo: Undo puts it back (in the Snapshot); a function says what Undo writes from the value
 //   before and the value now. endsUndo: a change to it ends the Undo offer (SNAP_KEYS).
-// - saved: part of the Consortium the save keeps and going back to Place sets aside. The save is the
+// - saved: part of the Consortium the save keeps. The save is the
 //   link's public fragment plus its private place (persist.ts saveRecord), so a saved field is in the link,
 //   under its own name in the core ShareState (lib/consortium/state.ts encodeLink and decodeLink write
 //   and read the link v5 pairs), and watched as 'reader'. link: how it goes in (`put`, default: as it is; persist.ts shareState) and
 //   comes back (`take`, default: the link's value, or the current one when the link has none;
 //   restore.ts applyDecoded).
 // - watched, for a field not saved: 'reader' (a write to it is the reader acting, and the save, the
-//   address and Share's link follow it: persist.ts watchStore and shownFragment) or 'save' (the save
-//   and the address follow it).
+//   address and Share's link follow it: persist.ts watchStore and shownFragment).
 // - plants: one of the plant lists. It is saved, Undo puts it back and a change ends the Undo offer;
 //   Start over empties it, and a change ends a waiting Suggest.
 //
@@ -35,7 +34,7 @@ export interface Field<T> {
   endsUndo?: boolean;
   saved?: boolean;
   link?: { put?: (v: T, o: LinkOptions) => unknown; take?: (s: ShareState, now: T, o: LinkOptions) => T };
-  watched?: 'reader' | 'save';
+  watched?: 'reader';
   plants?: boolean;
 }
 
@@ -57,7 +56,6 @@ export function defineState<F extends Fields>(fields: F) {
     saved: where((f) => f.saved || f.plants),
     plants: where((f) => f.plants),
     reader: where((f) => f.saved || f.plants || f.watched === 'reader'),
-    save: where((f) => f.saved || f.plants || f.watched),
   };
   const peek = <L extends K>(list: readonly L[]): Pick<V, L> => each(list, (k) => signals[k].peek());
   return {
@@ -155,7 +153,7 @@ export const CONSORTIUM_FIELDS = {
   } satisfies Field<Partial<Record<PlantId, ClimateZone>>>,
 };
 
-// The consortium as the save keeps it and Change site sets it aside, with a climate.
+// The consortium as the save keeps it, with a climate.
 export type Consortium = Omit<ValuesOf<typeof CONSORTIUM_FIELDS>, 'climate'> & { climate: ClimateZone };
 // What persist.ts shareState takes.
 export type ShareInput = ValuesOf<typeof CONSORTIUM_FIELDS>;
@@ -170,10 +168,6 @@ export const STATE_FIELDS = {
     initial: (): View => 'start', watched: 'reader',
     undo: (before: View, now: View) => (before === 'start' || now === 'start' ? before : now),
   } satisfies Field<View>,
-  // While Place shows, the consortium shown before going back to it, with its own site answers and
-  // country (null: none). Undo of "Show my palette" brings it back with Start's draft; the save follows
-  // it.
-  setAside: { initial: (): Consortium | null => null, undo: true, watched: 'save' } satisfies Field<Consortium | null>,
   // The stage print draws the side drawing at (unsaved, not in Undo; nothing on the page sets it since
   // the stepper went in PP-B commit 0a'): b2 points print at the year step of Through the years (PP-B18)
   // and removes it.
