@@ -11,44 +11,14 @@ import { taxon } from './consortium-p5-fixtures.mjs';
 
 const { weighLines } = await import('../src/lib/consortium/weigh.ts');
 
-// ---- the parked Balance markers, rewritten on weigh.ts (F1a-B1, B2, B4 at 648baf2) ----
 let n = 0;
 const plant = (over = {}) => taxon({ id: `00000000-ba1a-4000-8000-${String(++n).padStart(12, '0')}`, canonical_name: `Plantus ${n}`, genus: `Plantus${n}`, ...over });
-// A diverse set: eight families, water needs recorded for each.
-const WATER = ['Low', 'Medium', 'High'];
-const diverse = () => ['Fagaceae', 'Rosaceae', 'Fabaceae', 'Lamiaceae', 'Asteraceae', 'Betulaceae', 'Juglandaceae', 'Ericaceae']
-  .map((family, i) => plant({ family, traits: { drought_tolerance: WATER[i % 3], moisture_use: WATER[(i + 1) % 3] } }));
-// Legume-heavy (the Tropical palette of the design check's scenario): six of eight in Fabaceae.
-const legumes = () => [...Array.from({ length: 6 }, () => plant({ family: 'Fabaceae', genus: `Inga${++n}` })), plant({ family: 'Musaceae' }), plant({ family: 'Rubiaceae' })];
-const lines = (members, opts) => { const out = weighLines(members, opts); assert.ok(Array.isArray(out), 'lines, not "checking"'); return out; };
 const said = (l) => l.line.key.split('.').pop();
+// The context weighLines takes (the (site, period) of climateFor, architecture 3.1): today, no site.
+const TODAY = { lookup: null, scenario: 'historical', period: '1991-2020' };
 
-test('b3-B1 (b3 family spread on weigh.ts, F1a-B1 restored, A20): six of eight members in one family is a line to weigh naming the family and its six; eight families give no family line', () => {
-  const members = legumes();
-  const heavy = lines(members).find((l) => l.kind === 'family');
-  assert.ok(heavy, 'family spread: six of eight in Fabaceae gives no line to weigh (none today)');
-  assert.equal(heavy.line.vars.family, 'Fabaceae', 'the line names the family too many share');
-  assert.deepEqual([heavy.line.vars.n, heavy.line.vars.m], [6, 8]);
-  assert.deepEqual(heavy.members, members.slice(0, 6).map((t) => t.id), 'and the six members in it');
-  assert.equal(lines(diverse()).filter((l) => l.kind === 'family').length, 0, 'eight families: no family line, and no pass claimed');
-});
-
-test('b3-B2 (b3 water needs on weigh.ts, F1a-B2 restored, A20): two of ten water needs recorded says "not enough to judge", 2 of 10, never a pass', () => {
-  const members = [...Array.from({ length: 2 }, () => plant({ traits: { drought_tolerance: 'Low' } })), ...Array.from({ length: 8 }, () => plant({ traits: {} }))];
-  const water = lines(members).find((l) => l.kind === 'water');
-  assert.equal(water && said(water), 'waterFew', `water needs: 2 of 10 recorded is not "not enough to judge" (${water ? said(water) : 'no line'} today)`);
-  assert.deepEqual([water.line.vars.n, water.line.vars.m], [2, 10]);
-});
-
-test('b3-B4 (b3 borrowed list on weigh.ts, F1a-B4 restored, A20, A15): on a borrowed list every weigh line carries the estimate term', () => {
-  const borrowed = legumes().map((t) => ({ ...t, origin: { list: 'Mediterranean', kind: 'borrowed' } }));
-  const out = lines(borrowed);
-  assert.ok(out.length, 'a weigh line on a borrowed list, carries no estimate term on a borrowed list (no line today)');
-  for (const l of out) assert.equal(l.line.vars.term, 'estimate', `${l.kind} carries no estimate term on a borrowed list`);
-  assert.ok(lines(legumes()).every((l) => l.line.vars.term === undefined), 'an own list carries none');
-});
-
-// ---- weigh.json (the shared envelope; the adapter from the vectors' export fields lives here) ----
+// ---- weigh.json (the shared envelope; the adapter from the vectors' export fields lives here). The
+// parked F1a-B1, B2 and B4 (648baf2) are its cases "six of eight", "two of ten" and "borrowed". ----
 const W = JSON.parse((await import('node:fs')).readFileSync(new URL('vectors/weigh.json', import.meta.url), 'utf8'));
 const wPlant = (key, list) => taxon({
   id: key, canonical_name: key, genus: key, family: W.plants[key].family ?? null,
@@ -68,35 +38,49 @@ test('weigh.json: a known schema id, and every plant a case names is in the file
   for (const c of W.cases) for (const k of c.input.members) assert.ok(W.plants[k], `${c.name}: plant ${k}`);
 });
 
-test('weigh.json: each case gives its lines (family, water) in order, [] at 0 members, "checking" while a list loads', () => {
+test('weigh.json: each case gives its lines (family, water) in order, [] at 0 members, "checking" while a list loads, the plants not checked counted in m', () => {
   for (const c of W.cases) {
-    const out = weighLines(c.input.members.map((k) => wPlant(k, c.input.list)), { pending: c.input.pending ?? false });
+    const out = weighLines(c.input.members.map((k) => wPlant(k, c.input.list)), TODAY, { pending: c.input.pending ?? false, unchecked: c.input.unchecked ?? 0 });
     if (c.expect === 'checking') { assert.equal(out, 'checking', c.name); continue; }
     assert.ok(Array.isArray(out), `${c.name}: lines`);
     assert.deepEqual(out.map((l, i) => asVector(l, c.expect.lines[i] ?? {})), c.expect.lines, c.name);
   }
 });
 
-test('weigh.ts thresholds are the vectors\' (one "not enough to judge" share, the family minimum and share)', async () => {
+test('weigh.ts reads a plant\'s water need through factAt with the site and period it is given (ADR-6), never the raw traits, and keeps no exports the views do not read', async () => {
+  const src = (await import('node:fs')).readFileSync(new URL('../src/lib/consortium/weigh.ts', import.meta.url), 'utf8');
+  assert.match(src, /factAt\('water_need', t, ctx\.lookup, ctx\.period\)/, 'factAt(\'water_need\', t, ctx.lookup, ctx.period)');
+  assert.doesNotMatch(src, /traits\.(drought_tolerance|moisture_use)|drought_tolerance:|moisture_use:/, 'no raw water traits');
   const w = await import('../src/lib/consortium/weigh.ts');
-  assert.deepEqual({ water_judge_share: w.WATER_JUDGE_SHARE, family_min: w.FAMILY_MIN, family_share: w.FAMILY_SHARE }, W.thresholds);
+  assert.deepEqual(Object.keys(w).sort(), ['sizeLine', 'weighLines', 'yourPlants'], 'weigh.ts exports');
 });
 
 // ---- Your plants (new form of the deleted F1a-P10: each plant once, warnings first) ----
 const { yourPlants, sizeLine } = await import('../src/lib/consortium/weigh.ts');
 
-test('Your plants lists each plant once, warnings first (a Slight or Moderate toxic, an invasive, a misfit, a high or medium conflict), in palette order within each group; a low conflict alone does not lead', () => {
+test('Your plants lists each plant once, warnings first (a Slight or Moderate toxic, an invasive, a misfit, a high or medium conflict), then the plants it cannot show (a list unread, on no list of this climate), then the rest, in palette order within each group; a low conflict alone does not lead', () => {
   const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
   const [a, b, c, d, e, f, g, h] = ids.map((id) => plant({ id }));
   const flags = [
     { id: 'c', kind: 'toxicity' }, { id: 'e', kind: 'invasive' }, { id: 'b', kind: 'conflict', other: 'h', severity: 'low' },
     { id: 'g', kind: 'conflict', other: 'a', severity: 'medium' }, { id: 'f', kind: 'misfit' }, { id: 'c', kind: 'invasive' },
   ];
-  const rows = yourPlants([a, b, c, d, a, e, f, g, h], flags);
-  assert.deepEqual(rows.map((r) => r.plant.id), ['c', 'e', 'f', 'g', 'a', 'b', 'd', 'h'], 'warned first, each plant once');
-  assert.deepEqual(rows.map((r) => r.warned), [true, true, true, true, false, false, false, false]);
+  const rows = yourPlants([a, b, c, d, a, e, f, g, h], flags, { failed: ['x'], unlisted: ['y', 'x'] });
+  assert.deepEqual(rows.map((r) => r.plant?.id ?? r.id), ['c', 'e', 'f', 'g', 'x', 'y', 'a', 'b', 'd', 'h'], 'warned first, then the ones not shown, each plant once');
+  assert.deepEqual(rows.map((r) => r.warned ?? r.missing), [true, true, true, true, 'failed', 'unlisted', false, false, false, false]);
   assert.deepEqual(yourPlants([], flags), [], 'nothing at 0 plants');
+  assert.deepEqual(yourPlants([], [], { failed: ['x'], unlisted: [] }).map((r) => [r.id, r.missing]), [['x', 'failed']], 'a palette of one unread plant still has its row');
   assert.deepEqual(yourPlants([a], []).map((r) => r.plant.id), ['a'], 'one plant, one row');
+});
+
+test('size line words: the height is the wild maximum (types.ts Traits.height_m), so each size line with a height says "in the wild", in every locale', async () => {
+  const fs = await import('node:fs');
+  // The words Details uses for the same fact (consortium.details.heightV).
+  const WILD = { en: /in the wild/, fr: /dans la nature/, es: /en estado silvestre/, pt: /na natureza/, it: /in natura/, zh: /野生/, de: /wild/i, ja: /野生/, ko: /야생/, nl: /in het wild/, ru: /в природе/i };
+  for (const [lang, wild] of Object.entries(WILD)) {
+    const t = JSON.parse(fs.readFileSync(new URL(`../src/i18n/translations/${lang}.json`, import.meta.url), 'utf8'));
+    for (const k of ['size', 'sizeTall']) assert.match(t[`consortium.plants.${k}`], wild, `${lang} ${k}: "${t[`consortium.plants.${k}`]}"`);
+  }
 });
 
 test('size line: full-grown width and height through formatLength; height without width says the width is not recorded (135 of 600 placements), and the reverse; neither is "No size recorded"', () => {

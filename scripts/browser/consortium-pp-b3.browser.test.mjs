@@ -1,7 +1,7 @@
 // PP-B stream b3 (Your plants and Things to weigh on the palette page; plant-palette-slices section 2,
 // row b3): its browser scenarios. PP-B9 and PP-B23 are the slices' rows; PP-B60 (B6) and PP-B61 (P4)
-// take numbers clear of the streams running beside b3, and PP-B23b holds the 0 and 1 plant rows of the
-// chunk 2 drift check. B6 is the F1a Balance marker parked by PP-B commit 0
+// take numbers clear of the streams running beside b3, PP-B23b holds the 0 and 1 plant rows of the
+// chunk 2 drift check, and PP-B62 the plants Your plants cannot show (fix round 1, b3r-1 and b3r-6). B6 is the F1a Balance marker parked by PP-B commit 0
 // (scripts/plan/parked-markers.json), restored from 648baf2's consortium-f1a-balance.browser.test.mjs
 // as the one scenario of "things to weigh"; P4's height note is the part of F1a-P4 that moved to b3
 // (the pots answer stays b1a's). Each asserts the words and state a grower relies on: the palette
@@ -18,6 +18,10 @@ useHarness();
 
 const W = (k) => en[`consortium.plants.${k}`];
 const fill = (s, vars) => s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
+// A plural string's form for n ("one: … | other: …", # the count), as strings.ts P() reads it.
+const plural = (s, n, vars = {}) => fill(Object.fromEntries(s.split('|').map((f) => f.trim().match(/^(\w+):\s*(.*)$/).slice(1)))[n === 1 ? 'one' : 'other'].replace(/#/g, String(n)), vars);
+// A key's words as a pattern, each placeholder a number.
+const keyPattern = (k) => new RegExp(`^${k.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\\?\{\w+\\?\}/g, '[\\d,.]+')}$`);
 const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
 const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
 const PLANTS = '.ct-plants';
@@ -41,7 +45,8 @@ test('PP-B60 (b3 legume-heavy Tropical palette, F1a-B6 restored, A20): when six 
     const { store } = window.__ctTest;
     const legumes = store.pool.value.filter((t) => t.family === 'Fabaceae').slice(0, 6);
     const others = store.pool.value.filter((t) => t.family !== 'Fabaceae').slice(0, 2);
-    return { ids: [...legumes, ...others].map((t) => t.id), names: legumes.map((t) => t.names.en || t.canonical_name) };
+    const recorded = [...legumes, ...others].filter((t) => t.traits.drought_tolerance || t.traits.moisture_use).length;
+    return { ids: [...legumes, ...others].map((t) => t.id), names: legumes.map((t) => t.names.en || t.canonical_name), recorded };
   });
   await paletteOf(page, picked.ids);
   const weigh = await section(page, W('weigh.title'));
@@ -49,7 +54,10 @@ test('PP-B60 (b3 legume-heavy Tropical palette, F1a-B6 restored, A20): when six 
   assert.ok(weigh.includes(fill(W('weigh.family'), { n: 6, m: 8, family: 'Fabaceae' })), `the family line ("${weigh}")`);
   for (const name of picked.names) assert.ok(weigh.includes(name), `names ${name}`);
   assert.ok(weigh.includes(W('weigh.familyHint')), 'with its hint');
-  assert.ok(/Water needs/.test(weigh), 'a water line');
+  // The water line from its key: too few recorded (under half) is "not enough to judge", n of 8.
+  if (picked.recorded < 4) assert.ok(weigh.includes(fill(W('weigh.waterFew'), { n: picked.recorded, m: 8 })), `the water line, ${picked.recorded} of 8 recorded ("${weigh}")`);
+  const water = await page.$eval(`${WEIGH} [data-weigh="water"] strong`, (e) => e.textContent).catch(() => null);
+  assert.ok(water === null || [W('weigh.waterFew'), W('weigh.waterMix')].some((k) => keyPattern(k).test(water)), `a water line in its key's words ("${water}")`);
   assert.deepEqual((await members(page)).length, 8, 'nothing is removed');
   await done(page);
 });
@@ -107,6 +115,16 @@ test('PP-B9 (b3 warnings first): a Slight-toxic, a Moderate-toxic and an invasiv
   const lines = await page.$$eval('dialog[open] .ct-warnlist li', (els) => els.map((e) => e.textContent));
   assert.equal(lines.filter((l) => l.includes(en['consortium.tox.Slight'])).length, 1, `"Mildly toxic" once in Details (${lines.join(' | ')})`);
   await page.evaluate(() => window.__ctTest.store.closeSheet());
+  // On paper the level too (b3r-3): Slight reads "Mildly toxic", Moderate "Toxic", the words of Your plants.
+  await page.evaluate(() => dispatchEvent(new Event('beforeprint'))); // the print sheet is in the page only while printing
+  await page.waitForSelector('.ct-print tbody tr', { timeout: 20_000 });
+  const printRow = (id) => page.evaluate((x) => {
+    const name = document.querySelector(`.ct-plants [data-plant-id="${x}"] .ct-plant-name i`)?.textContent;
+    return [...document.querySelectorAll('.ct-print tbody tr')].find((tr) => tr.querySelector('i')?.textContent === name)?.textContent.replace(/\s+/g, ' ') ?? '';
+  }, id);
+  const [pSlight, pModerate] = [await printRow(pick.slight), await printRow(pick.moderate)];
+  assert.ok(pSlight.includes(en['consortium.tox.Slight']), `print: "Mildly toxic" for the Slight plant (${pSlight})`);
+  assert.ok(pModerate.includes(fill(en['consortium.details.tox'], { level: en['consortium.tox.Moderate'] })), `print: the Moderate level (${pModerate})`);
   // Nothing takes them out but the grower: another plant joins, they stay; Remove takes one out.
   const more = await realDb((db) => String(db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name DESC LIMIT 1").get().id));
   await page.evaluate((x) => window.__ctTest.store.addMembers([x]), more);
@@ -134,13 +152,27 @@ test('PP-B23 (b3 200 plants): Your plants folds to "+ N more", opening it moves 
   assert.ok(list.length < n && more, `folded: ${list.length} rows, then "${more}"`);
   assert.ok(more.includes(String(n - list.length)), `"+ N more" counts the rest (${more})`);
   const shown = list.length;
+  // Remove a plant first, then open the fold: the toast still hands the focus back to the next row's
+  // Remove, not to the row the fold opened on (b3c-13: unfold is a plain focus, never the toast's opener).
+  const [early, afterEarly] = [list[2].id, list[3].id];
+  await page.$eval(`${PLANTS} [data-plant-id="${early}"] .button-secondary`, (b) => { b.focus(); b.click(); });
+  await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, early);
+  await frames(page);
   await page.click(`${PLANTS} .ct-plants-more`);
   await page.waitForFunction((k) => document.querySelectorAll('.ct-plants li[data-plant-id]').length > k, { timeout: 4000 }, shown);
   await frames(page);
+  assert.equal(await page.evaluate((k) => document.activeElement === document.querySelectorAll('.ct-plants li[data-plant-id]')[k], shown), true, 'the focus on the first row it shows');
+  assert.equal(await page.$(`${PLANTS} .ct-plants-more`), null, 'the fold stays open');
+  await page.$eval('.ct-toast button', (b) => b.focus());
+  await page.evaluate(() => window.__ctTest.store.hideToast());
+  await frames(page);
+  assert.equal(await page.evaluate(() => document.activeElement?.closest('[data-plant-id]')?.dataset.plantId ?? null), afterEarly, 'the toast hands the focus back to the next row after the removed plant');
+  await page.evaluate((x) => window.__ctTest.store.addMembers([x]), early);
+  await page.waitForFunction((k) => document.querySelectorAll('.ct-plants li[data-plant-id]').length === k, { timeout: 4000 }, n);
+  await page.evaluate(() => window.__ctTest.store.hideToast());
   list = await rows(page);
   assert.equal(list.length, n, 'every plant once');
   assert.equal(new Set(list.map((r) => r.id)).size, n, 'each plant once');
-  assert.equal(await page.evaluate((k) => document.activeElement === document.querySelectorAll('.ct-plants li[data-plant-id]')[k], shown), true, 'the focus on the first row it shows');
   // Remove the 13th plant: out of the palette, the focus on the next row's Remove, Undo brings it back.
   const [target, next] = [list[shown].id, list[shown + 1].id];
   await page.$eval(`${PLANTS} [data-plant-id="${target}"] .button-secondary`, (b) => { b.focus(); b.click(); });
@@ -168,5 +200,43 @@ test('PP-B23b (b3 Your plants at 1 and 0 plants): one row with no "+ N more"; it
   assert.equal(await page.$(PLANTS), null, 'Your plants: nothing at 0 plants');
   assert.equal(await page.$(WEIGH), null, 'Things to weigh: nothing at 0 plants');
   assert.equal(await page.evaluate(() => document.activeElement === document.body || !document.activeElement), false, 'the focus never falls to <body>');
+  await done(page);
+});
+
+// Fix round 1 (b3r-1, b3c-6, b3r-6): a guest list that could not be read, and a plant on none of the
+// climate's lists: Things to weigh counts them in the palette (never "7 of 7" for a ten-plant palette)
+// and says they are not checked; Your plants gives each a plain row saying why, with Remove.
+test('PP-B62 (b3 plants not shown): with a guest list unread and a plant on no list of this climate, Your plants gives each a row saying why with Remove, and Things to weigh counts them as not checked in the whole palette', async () => {
+  const pick = await realDb((db) => {
+    const ids = (sql, k) => db.prepare(sql).all(k).map((r) => String(r.id));
+    const medOnly = "SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant NOT IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY p.canonical_name LIMIT ?";
+    const [guest, stray] = ids(medOnly, 2);
+    return { own: ids("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT ?", 8), guest, stray };
+  });
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await page.evaluate((p) => {
+    const { store } = window.__ctTest, src = store.source.value, read = src.pool.bind(src);
+    src.pool = (c) => (c === 'Mediterranean' ? Promise.reject(new Error('test: list unreadable')) : read(c));
+    store.addMembers([...p.own, p.guest, p.stray], { [p.guest]: 'Mediterranean' });
+    store.loadPool('Mediterranean');
+  }, pick);
+  await showPalette(page);
+  assert.ok(await has(page, `${PLANTS} [data-plant-id="${pick.guest}"]`, 10_000), 'the unread guest has no row');
+  const list = await rows(page);
+  const row = (id) => list.find((r) => r.id === id)?.text ?? '';
+  assert.ok(row(pick.guest).includes(W('notRead')), `the guest's row says its list could not be read (${row(pick.guest)})`);
+  assert.ok(row(pick.stray).includes(W('notListed')), `the stray plant's row says it is on none of this climate's lists (${row(pick.stray)})`);
+  await page.waitForFunction((w) => document.querySelector('.ct-weigh')?.textContent.includes(w), { timeout: 8000 }, plural(W('weigh.unchecked'), 2)).catch(() => {});
+  const weigh = await section(page, W('weigh.title'));
+  assert.ok(weigh && weigh.includes(plural(W('weigh.unchecked'), 2)), `Things to weigh: 2 plants not checked ("${weigh}")`);
+  assert.ok(!weigh.includes(W('weigh.checking')), 'never "checking" for a list that failed');
+  assert.ok(!/\b\d+ of (?:your )?8\b/.test(weigh), `no line over the 8 shown plants as if they were the palette ("${weigh}")`);
+  await page.$eval(`${PLANTS} [data-plant-id="${pick.stray}"] .button-secondary`, (b) => { b.focus(); b.click(); });
+  await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, pick.stray);
+  await page.evaluate(() => window.__ctTest.store.hideToast());
+  await page.$eval(`${PLANTS} [data-plant-id="${pick.guest}"] .button-secondary`, (b) => b.click());
+  await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, pick.guest);
+  assert.equal((await members(page)).length, 8, 'only the grower removes them, through Remove');
   await done(page);
 });
