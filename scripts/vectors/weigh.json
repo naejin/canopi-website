@@ -1,0 +1,115 @@
+{
+  "schema": "canopi-palette-weigh/1",
+  "source": "knowledge/project/plant-palette-slices.md row b3 and the chunk 2 drift check (2026-11-15) section 3; ux-inventory P39 (one family, water needs) and board MainMore (Balance: things to weigh, not holes); owner rows 'warn, never hide' and 'inform, don't block'. A plant's water need is its drought_tolerance when recorded (High: dry, Medium: medium, Low or None: wet), else its moisture_use (Low: dry, Medium: medium, High: wet), else not recorded. Written by PP-B stream b3.",
+  "thresholds": {
+    "water_judge_share": 0.5,
+    "family_min": 3,
+    "family_share": 0.25
+  },
+  "plants": {
+    "inga-1": { "family": "Fabaceae" },
+    "inga-2": { "family": "Fabaceae" },
+    "inga-3": { "family": "Fabaceae" },
+    "inga-4": { "family": "Fabaceae" },
+    "inga-5": { "family": "Fabaceae" },
+    "inga-6": { "family": "Fabaceae" },
+    "banana": { "family": "Musaceae" },
+    "coffee": { "family": "Rubiaceae" },
+    "oak": { "family": "Fagaceae", "drought_tolerance": "High" },
+    "apple": { "family": "Rosaceae", "drought_tolerance": "Medium" },
+    "clover": { "family": "Fabaceae", "drought_tolerance": "Low" },
+    "mint": { "family": "Lamiaceae", "moisture_use": "High" },
+    "yarrow": { "family": "Asteraceae", "moisture_use": "Low" },
+    "birch": { "family": "Betulaceae", "drought_tolerance": "None", "moisture_use": "Low" },
+    "walnut": { "family": "Juglandaceae", "moisture_use": "Medium" },
+    "heather": { "family": "Ericaceae", "drought_tolerance": "High", "moisture_use": "High" },
+    "olive": { "family": "Oleaceae", "drought_tolerance": "High" },
+    "almond": { "family": "Rosaceae", "drought_tolerance": "High" },
+    "fig": { "family": "Moraceae", "moisture_use": "Low" },
+    "rosemary": { "family": "Lamiaceae", "drought_tolerance": "High" },
+    "myrtle": { "family": "Myrtaceae", "moisture_use": "Low" },
+    "chickpea": { "family": "Fabaceae", "drought_tolerance": "High" },
+    "licorice": { "family": "Fabaceae", "moisture_use": "Low" },
+    "broom": { "family": "Fabaceae", "drought_tolerance": "High" },
+    "crimson-clover": { "family": "Fabaceae", "moisture_use": "Low" },
+    "pomegranate": { "family": "Lythraceae" },
+    "pine": { "family": "Pinaceae" },
+    "cornflower": { "family": "Asteraceae" },
+    "laurustinus": { "family": "Viburnaceae" },
+    "unrecorded-1": { "family": "Poaceae" },
+    "unrecorded-2": { "family": "Solanaceae" },
+    "unrecorded-3": { "family": "Apiaceae" },
+    "unrecorded-4": { "family": "Brassicaceae" },
+    "unrecorded-5": { "family": "Cucurbitaceae" },
+    "unrecorded-6": { "family": "Amaranthaceae" },
+    "unrecorded-7": { "family": "Alliaceae" },
+    "unrecorded-8": { "family": "Malvaceae" }
+  },
+  "cases": [
+    {
+      "name": "no plants: nothing to weigh",
+      "input": { "members": [] },
+      "expect": { "lines": [] }
+    },
+    {
+      "name": "while a list loads: checking, never a judgement of part of the palette",
+      "input": { "members": ["inga-1", "inga-2", "inga-3", "banana"], "pending": true },
+      "expect": "checking"
+    },
+    {
+      "name": "six of eight in one family is a line to weigh naming the six; no water need recorded is not enough to judge",
+      "covers": "F1a-B1, F1a-B2",
+      "input": { "members": ["inga-1", "inga-2", "inga-3", "inga-4", "inga-5", "inga-6", "banana", "coffee"] },
+      "expect": { "lines": [
+        { "kind": "family", "says": "family", "family": "Fabaceae", "n": 6, "m": 8, "members": ["inga-1", "inga-2", "inga-3", "inga-4", "inga-5", "inga-6"], "estimate": false },
+        { "kind": "water", "says": "water-few", "n": 0, "m": 8, "members": [], "estimate": false }
+      ] }
+    },
+    {
+      "name": "eight families, every water need recorded, thirsty beside dry-loving: no family line (no pass claimed), the water mix names both sides",
+      "input": { "members": ["oak", "apple", "clover", "mint", "yarrow", "birch", "walnut", "heather"] },
+      "expect": { "lines": [
+        { "kind": "water", "says": "water-mix", "n": 8, "m": 8, "wet": 3, "dry": 3, "members": ["clover", "mint", "birch", "oak", "yarrow", "heather"], "estimate": false }
+      ] }
+    },
+    {
+      "name": "two of ten water needs recorded is not enough to judge, 2 of 10",
+      "covers": "F1a-B2",
+      "input": { "members": ["oak", "clover", "unrecorded-1", "unrecorded-2", "unrecorded-3", "unrecorded-4", "unrecorded-5", "unrecorded-6", "unrecorded-7", "unrecorded-8"] },
+      "expect": { "lines": [
+        { "kind": "water", "says": "water-few", "n": 2, "m": 10, "members": [], "estimate": false }
+      ] }
+    },
+    {
+      "name": "half recorded is judged (the one threshold)",
+      "input": { "members": ["oak", "olive", "almond", "rosemary", "fig", "unrecorded-1", "unrecorded-2", "unrecorded-3", "unrecorded-4", "unrecorded-5"] },
+      "expect": { "lines": [
+        { "kind": "water", "says": "water-even", "n": 5, "m": 10, "members": [], "estimate": false }
+      ] }
+    },
+    {
+      "name": "Seville's thirteen (board MainMore): four of thirteen legumes is a line; nine recorded all take a dry summer, four not recorded",
+      "input": { "members": ["olive", "almond", "fig", "pomegranate", "chickpea", "licorice", "broom", "crimson-clover", "rosemary", "myrtle", "pine", "cornflower", "laurustinus"] },
+      "expect": { "lines": [
+        { "kind": "family", "says": "family", "family": "Fabaceae", "n": 4, "m": 13, "members": ["chickpea", "licorice", "broom", "crimson-clover"], "estimate": false },
+        { "kind": "water", "says": "water-even", "n": 9, "m": 13, "members": [], "estimate": false }
+      ] }
+    },
+    {
+      "name": "two of three in one family is under the family minimum: no line",
+      "input": { "members": ["inga-1", "inga-2", "banana"] },
+      "expect": { "lines": [
+        { "kind": "water", "says": "water-few", "n": 0, "m": 3, "members": [], "estimate": false }
+      ] }
+    },
+    {
+      "name": "on a borrowed list every line carries the estimate term",
+      "covers": "F1a-B4",
+      "input": { "members": ["inga-1", "inga-2", "inga-3", "inga-4", "inga-5", "inga-6", "banana", "coffee"], "list": "borrowed" },
+      "expect": { "lines": [
+        { "kind": "family", "says": "family", "family": "Fabaceae", "n": 6, "m": 8, "members": ["inga-1", "inga-2", "inga-3", "inga-4", "inga-5", "inga-6"], "estimate": true },
+        { "kind": "water", "says": "water-few", "n": 0, "m": 8, "members": [], "estimate": true }
+      ] }
+    }
+  ]
+}

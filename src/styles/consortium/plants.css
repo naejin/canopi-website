@@ -1,2 +1,34 @@
 /* Your plants (stream b3): page-level, imported by src/components/consortium/ConsortiumPage.astro (PP-B commit 0).
    Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5). */
+
+/* Your plants and Things to weigh: sections of the palette page, one column. */
+.ct .ct-plants, .ct .ct-weigh { display: grid; gap: 12px; min-width: 0; }
+.ct .ct-plants h3, .ct .ct-weigh h3 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 400; line-height: 1.25; }
+.ct .ct-plant-rows, .ct .ct-weigh-lines { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-plant-rows > li {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+  padding: 10px 0; border-top: 1px solid var(--border); min-width: 0;
+}
+.ct .ct-plant-name { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-plant-name .ct-link-button { font-weight: 600; text-align: start; }
+.ct .ct-plant-rows .ct-line { flex: 1 0 100%; font-size: 14.5px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.ct .ct-plant-rows .button { order: 1; margin-inline-start: auto; }
+.ct .ct-plants-more { justify-self: start; }
+
+/* Warnings in words with the icon, never colour alone; toxicity by level (inventory F5): Slight the
+   warning token, Moderate and Severe the danger token. Other warnings keep the warning token. */
+.ct .ct-plant-rows .ct-flag-line { display: inline-flex; align-items: flex-start; gap: 6px; font-weight: 600; color: var(--warning); }
+.ct .ct-plant-rows .ct-flag-line[data-level="danger"] { color: var(--danger); }
+.ct .ct-plant-rows .ct-flag-line .ct-glyph { margin-top: 2px; }
+.ct :where(.ct-sheet) .ct-warnlist li[data-level="warning"]::before { background: var(--warning); }
+.ct :where(.ct-sheet) .ct-warnlist li[data-level="danger"]::before { background: var(--danger); }
+.ct :where(.ct-sheet) .ct-warnlist li[data-level="danger"] { color: var(--danger); }
+
+/* Things to weigh: each line in words, its plants and its hint under it. */
+.ct .ct-weigh > p { margin: 0; }
+.ct .ct-weigh-lines > li { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid var(--border); }
+.ct .ct-weigh-lines p { margin: 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+.ct .ct-weigh-est {
+  justify-self: start; padding: 0 6px; border: 1px dashed var(--border-strong); border-radius: 4px;
+  font-size: 12.5px; color: var(--text-muted);
+}

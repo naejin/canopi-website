@@ -747,9 +747,9 @@ test('PP-B38 (b2 laptop; review r1 conformance-7, bugs-11): at 1280 px the Next 
 });
 
 // Since r-f3c6dd8b3c4391be (D2d) the first second-look fillers at Lyon are Slight-toxicity plants (dandelion,
-// garlic, asparagus): NextStep's warned set counts Slight, but no flag says it in words until b3 makes
-// conflicts.ts raise Slight with its level ('Mildly toxic', chunk 2 duty).
-failing('PP-B39 (b3 the Slight flag; b2 a second look, review r1 conformance-2): a filler with a warning sits under "Needs a second look" with its warning in words, and adds in one tap', { owner: 'b3', reason: /its warning in words with the icon/ }, async () => {
+// garlic, asparagus): conflicts.ts raises Slight with its level since b3 ('Mildly toxic'), so the flag says
+// it in words (marker removed by b3, chunk 2).
+test('PP-B39 (b3 the Slight flag; b2 a second look, review r1 conformance-2): a filler with a warning sits under "Needs a second look" with its warning in words, and adds in one tap', async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');

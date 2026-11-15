@@ -7,7 +7,9 @@
 // list loads, and not named while a guest list could not be read (its plants may fill one: PP-B21), a
 // guest list that failed named as missing with its plants not checked, the verdict chunk refused said
 // once with Retry in place, or, offline, "Needs a connection" and a retry once back online (PP-B20;
-// never a page reload, architecture 9). An empty palette shows no picture of nothing.
+// never a page reload, architecture 9). An empty palette shows no picture of nothing. Then Your plants
+// and Things to weigh (stream b3; weigh "checking" while a list loads, the plants of a list that failed
+// left out of it, as the notice above says).
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import type { PlantId } from '../../../../lib/consortium/index.ts';
@@ -21,7 +23,9 @@ import { holeWords } from '../kit/fit.tsx';
 import { listName } from '../kit/names.ts';
 import { JobsPicture } from './JobsPicture.tsx';
 import { NextStep, openFillers } from './NextStep.tsx';
+import { Weigh } from './Weigh.tsx';
 import { Years } from './Years.tsx';
+import { YourPlants } from './YourPlants.tsx';
 
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
 // step on the phone never re-renders the page (review r1 bugs-10).
@@ -64,7 +68,8 @@ export function Palette() {
   const members = store.memberTaxa.value;
   const verdicts = store.memberVerdicts.value;
   const missing = store.missingMembers.value;
-  const pending = store.guestsPending.value.length > 0 || missing.loading.length > 0 || store.failedMembers.value.length > 0;
+  const loading = store.guestsPending.value.length > 0 || missing.loading.length > 0;
+  const pending = loading || store.failedMembers.value.length > 0;
   const holes = useMemo(() => holesOf({ members, verdicts, pending }), [members, verdicts, pending]);
   useEffect(() => { store.wantVerdict(); }, []);
   // Stable while the holes and verdicts are: the pictures (memoised) redraw only when they change.
@@ -107,6 +112,8 @@ export function Palette() {
           </div>
         )}
       </div>
+      <YourPlants members={members} />
+      <Weigh members={members} pending={loading} />
       <Said />
       {shown && <FirstView />}
     </div>
