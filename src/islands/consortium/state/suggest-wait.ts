@@ -58,11 +58,11 @@ function capped(): void {
   // itself, and the range rule, end their own waits: the load screen, rangeFailed.)
   if (store.pool.peek() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); return; }
   // The verdict chunk asked for and never answered (a stalled request), the list read: the wait ends
-  // with Reload, as for the suggestion's chunk (no loader times out its import, so Try again could not
-  // ask again); taken down if the chunk then comes. Refused, the effect below already ended it.
+  // with Reload, as for the suggestion's chunk (no loader times out its import, so Retry could not ask
+  // again); taken down if the chunk then comes. A stall that outlasts it leaves "Checking…" until the
+  // browser fails the request (no timer of our own).
   if (store.pool.peek() && store.suggestRule.peek() && verdictsMissing()) {
-    dropSuggest();
-    if (store.verdictFailed.peek()) verdictToast(); else { reloadToast(); lateVerdictToast = store.toast.peek()?.id ?? null; }
+    dropSuggest(); reloadToast(); lateVerdictToast = store.toast.peek()?.id ?? null;
     return;
   }
   // The suggestion's chunk requested and never answered (a stalled request): with the list read,

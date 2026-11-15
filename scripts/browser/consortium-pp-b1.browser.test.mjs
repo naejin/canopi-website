@@ -664,14 +664,14 @@ test('PP-B1 (b1b count line states): checking while the verdict chunk loads (the
   assert.ok(await countIs(page, plural('place.count.own', 198, { total: 200, list: W('list.mediterranean') })), 'then the count');
 });
 
-test('PP-B1 (b1b count line, verdict chunk refused): "Could not check" with Try again, never "0 of m"; offline it needs a connection', async () => {
+test('PP-B1 (b1b count line, verdict chunk refused): "Could not check" with Retry, never "0 of m"; offline it needs a connection', async () => {
   const page = await tool({ block: { verdict: 404 } });
   await atSite(page, 'seville');
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
   assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'failed', 15_000, COUNT), `the failed line (${await countState(page)})`);
   assert.match(await words(page, COUNT), new RegExp(`^${W('place.count.failed').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
   assert.doesNotMatch(await words(page, COUNT), /^0 /, 'never "0 of m"');
-  assert.ok(await has(page, `${COUNT} ${aria('button', W('load.retry'))}`, 2000), 'Try again');
+  assert.ok(await has(page, `${COUNT} ${aria('button', W('load.retry'))}`, 2000), 'Retry (load.retry)');
   await page.setOfflineMode(true);
   assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'offline', 4000, COUNT), 'offline: needs a connection');
   assert.equal(await words(page, COUNT), W('load.needsConnection'));
@@ -764,7 +764,7 @@ test('PP-B1 (b1b count line, nothing checked for a later period): never "0 of m"
   assert.ok(await until(page, (sel) => document.querySelector(sel)?.dataset.poolCount === 'unchecked', 15_000, COUNT), `the not-checked state (${await countState(page)}: "${await words(page, COUNT)}")`);
   const text = await words(page, COUNT);
   assert.doesNotMatch(text ?? '', /^0 /, 'never "0 of m"');
-  assert.equal(text, plural('place.count.unchecked', 200, { total: 200, period: '2071–2099' }));
+  assert.equal(text, plural('place.count.uncheckedOwn', 200, { total: 200, list: W('list.mediterranean') }), 'the list named, no period blamed (a missing range is a cause too)');
 });
 
 // Fix round 1 (b1bc-10, inform, don't block): one sentence under the count says the plants left out
@@ -778,9 +778,9 @@ test('PP-B1 (b1b count line, the plants left out): a sentence under the count sa
 });
 
 // Fix round 1 (b1br-3 / b1br-4): a verdict chunk that never answers ends the waiting Suggest with the
-// stalled chunk's Reload (Try again could not work: the import is still pending), and that toast goes
+// stalled chunk's Reload (Retry could not work: the import is still pending), and that toast goes
 // if the chunk comes after all.
-test('PP-B1 (b1b Suggest and a stalled verdict chunk): after the wait, a toast with Reload, not Try again; it goes when the chunk comes', async () => {
+test('PP-B1 (b1b Suggest and a stalled verdict chunk): after the wait, a toast with Reload, not Retry; it goes when the chunk comes', async () => {
   const page = await tool({ block: { verdict: 'hold' }, timeouts: { suggest: 1500 } });
   await atSite(page, 'seville');
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
@@ -797,15 +797,19 @@ test('PP-B1 (b1b Suggest and a stalled verdict chunk): after the wait, a toast w
   assert.equal(await members(page), 0, 'and the ended wait runs no suggestion');
 });
 
-// Fix round 1 (b1bc-12, amendment 3): the palette's head keeps the needs lines only; with a borrowed
-// climate and the range rule still loading, it shows no count or "Checking…" line.
-test('PP-B1 (b1b palette head while the range rule loads): no count line in the head of a borrowed climate @real-data', async () => {
-  const page = await tool({ block: { range: 'hold' } });
-  await atSite(page, 'lyon');
-  const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' ORDER BY 1 LIMIT 4").all().map((r) => String(r.id)));
-  await page.evaluate((all) => { const { store } = window.__ctTest; store.climate.value = 'Subtropical'; store.addMembers(all); store.view.value = 'matrix'; }, ids);
-  assert.ok(await has(page, '.ct-result-head', 15_000), 'the palette page head');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.rangeRule.value), null, 'the range rule still loading');
-  // Given time to draw (the pool chunk would show "Checking…" at once): it never comes.
-  assert.equal(await until(page, () => !!document.querySelector('.ct-result-head [data-pool-count]'), 1500), false, 'no count or Checking line in the head');
+// Fix round 2 (b1bf-8, b1bc-8a): back online, a verdict chunk refused meanwhile is asked for again by
+// the store's one 'online' listener (store.ts start()), with no view of its own mounted: no climate is
+// chosen, so Place has no count line, and the palette page is not open.
+test('PP-B1 (b1b back online): with the verdict chunk refused, an "online" event starts a new load of it', async () => {
+  const page = await tool({ block: { verdict: 404 } });
+  const asked = [];
+  page.on('request', (r) => { if (/\/_astro\/verdict\./.test(r.url())) asked.push(r.url()); });
+  await atSite(page, 'seville');
+  assert.ok(await until(page, () => window.__ctTest.store.verdictFailed.value, 15_000), 'the verdict chunk refused');
+  assert.equal(await page.$('[data-pool-count], .ct-palette-page'), null, 'no count line or palette page mounted');
+  const before = asked.length;
+  await page.evaluate(() => dispatchEvent(new Event('online')));
+  const deadline = Date.now() + 5000;
+  while (asked.length === before && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50));
+  assert.ok(asked.length > before, `a new load of the verdict chunk after "online" (${asked.length - before} requests)`);
 });

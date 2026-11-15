@@ -31,6 +31,10 @@ export const hasList = (z: ClimateZone, s: SuggestScene): boolean => hasPlants(z
 // The lasting refusals of store.suggestMembers, or null when a Suggest can act. Its passing ones (the
 // pool or, with a site climate, the range rule still being read; a kept guest's list still being
 // read) are waited for, not refused.
+export type SuggestBlock = 'noList' | 'needsSite' | 'needsRule' | 'nothingFits';
+export const suggestBlock = (z: ClimateZone, s: SuggestScene): SuggestBlock | null =>
+  !hasPlants(z, s.curated) ? 'noList' : needsSite(z, s) ? 'needsSite' : needsRule(z, s) ? 'needsRule' : s.nothingFits ? 'nothingFits' : null;
+
 // Place's count line for the chosen list's verdicts (store.countFits; PP-B b1b fix round 1, b1br-1):
 // never "0 of m". Some fit or need a second look: the count; none, every plant judged outside: none
 // fit; none known to fit with some not checked (no climate figures for the period, or no range
@@ -38,7 +42,3 @@ export const hasList = (z: ClimateZone, s: SuggestScene): boolean => hasPlants(z
 export type CountKind = 'count' | 'none' | 'unchecked';
 export const countKind = (n: { fits: number; look: number; unknown: number }): CountKind =>
   n.fits + n.look > 0 ? 'count' : n.unknown > 0 ? 'unchecked' : 'none';
-
-export type SuggestBlock = 'noList' | 'needsSite' | 'needsRule' | 'nothingFits';
-export const suggestBlock = (z: ClimateZone, s: SuggestScene): SuggestBlock | null =>
-  !hasPlants(z, s.curated) ? 'noList' : needsSite(z, s) ? 'needsSite' : needsRule(z, s) ? 'needsRule' : s.nothingFits ? 'nothingFits' : null;

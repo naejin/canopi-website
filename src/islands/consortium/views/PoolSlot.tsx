@@ -92,7 +92,9 @@ effect(() => {
 // which needs that chunk; the panel's own chunk failing shows its failed line (lazy.tsx LoadFailed).
 // head: the palette page's head (Place.tsx Head), which keeps the needs lines only (amendment 3): the
 // needs-location and range-unavailable lines, and "Not covered yet" for a climate with no list; never
-// the count line, which Place's form and the "Your place" sheet show.
+// the count line, which Place's form and the "Your place" sheet show. A guard, not a path any state
+// reaches today: Head mounts this only for a needs-site, needs-rule (range rule failed) or no-list
+// reason, each answered above before the panel (so no browser case can tell it apart; review b1bf-2).
 export function PoolSlot({ zone, head = false }: { zone: ClimateZone; head?: boolean }) {
   if (rangeFailed.value && hasPlants(zone, curated())) return <RangeUnavailable zone={zone} />;
   if (needsSite(zone)) return <NeedsSite zone={zone} />;
