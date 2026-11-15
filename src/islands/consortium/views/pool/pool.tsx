@@ -13,8 +13,9 @@
 //   is named, never "today". Never "0 of m" (countKind): none fit says so, and none known to fit with
 //   some not checked says they could not be checked. While the verdict chunk loads, "Checking…";
 //   refused, "Could not check…" with Try again (store.retryVerdict, in place); offline, "Needs a
-//   connection", asked again once back online (store.ts start()). Under it, one sentence: the plants
-//   left out can still be found and added, with a warning (inform, don't block). The caveat that observed
+//   connection", asked again once back online (store.ts start()). Under it, one sentence, claiming
+//   nothing about what Suggest leaves out: any plant can be searched for and added, one outside its
+//   range with a warning (inform, don't block). The caveat that observed
 //   ranges include cultivation and are estimates, not reviewed (export meta ranges_review
 //   'estimate_not_reviewed'); aridity on ice: "not checked".
 // - No list at all (none with the real export): P2's "Not covered yet" notice, moved here off the first run.
@@ -40,8 +41,8 @@ function countText(zone: ClimateZone, own: boolean, n: { fits: number; look: num
   const later = p !== periodIds[0];
   const vars = { total: num(n.of), list: listName(zone), period: p.replace('-', '–') };
   const kind = countKind(n);
-  if (kind === 'unchecked') return P('place.count.unchecked', n.unknown, vars);
-  if (kind === 'none') return T(later ? 'place.count.noneLater' : 'place.count.none', vars);
+  if (kind === 'unchecked') return P(own ? 'place.count.uncheckedOwn' : 'place.count.unchecked', n.unknown, vars);
+  if (kind === 'none') return T(own ? (later ? 'place.count.noneOwnLater' : 'place.count.noneOwn') : later ? 'place.count.noneLater' : 'place.count.none', vars);
   return P(own ? (later ? 'place.count.ownLater' : 'place.count.own') : later ? 'place.count.borrowedLater' : 'range.pool.count', n.fits + n.look, vars);
 }
 

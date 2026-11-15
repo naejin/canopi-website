@@ -466,9 +466,22 @@ test('PP-B b1b count line words (b1bc-4, -5, -8b, -10): the list phrase as {list
   assert.ok(!locale('fr')['consortium.place.count.own'].includes('de la liste {list}'));
 });
 
-test('PP-B b1b back online (b1bc-8a): store.ts start() asks for a refused verdict chunk again on "online"; pool.tsx keeps no listener of its own', () => {
-  const store = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
-  const pool = readFileSync(new URL('../src/islands/consortium/views/pool/pool.tsx', import.meta.url), 'utf8');
-  assert.match(store, /addEventListener\('online', \(\) => \{ offline\.value = false;[^}]*retryVerdict\(\)/, 'beside the existing online listener');
-  assert.doesNotMatch(pool, /addEventListener\('online'/);
+// (b1bc-8a's back-online retry is a behavioural browser case now: consortium-pp-b1.browser.test.mjs, b1bf-8.)
+
+test('PP-B b1b count line words, fix round 2 (b1bf-1, -4, -5): the search sentence makes no exclusion claim; none and unchecked name the list; unchecked blames no period', () => {
+  const en = locale('en');
+  assert.doesNotMatch(en['consortium.place.count.left'], /left out|others/i, 'no claim about what Suggest leaves out');
+  assert.match(en['consortium.place.count.left'], /search/i);
+  assert.match(en['consortium.place.count.left'], /warning/i);
+  for (const l of LOCALES) {
+    const d = locale(l);
+    for (const k of ['noneOwn', 'noneOwnLater', 'uncheckedOwn']) assert.match(d[`consortium.place.count.${k}`] ?? '', /\{list\}/, `${l} ${k}: the list phrase`);
+    for (const k of ['unchecked', 'uncheckedOwn']) assert.doesNotMatch(d[`consortium.place.count.${k}`] ?? '', /\{period\}/, `${l} ${k}`);
+  }
+  assert.doesNotMatch(en['consortium.place.count.unchecked'], /period/, 'en unchecked: no "this period" (no range recorded is a cause too)');
+  const ru = locale('ru')['consortium.place.count.unchecked'];
+  const forms = Object.fromEntries(ru.split(' | ').map((f) => f.split(/: (.*)/s).slice(0, 2)));
+  assert.match(forms.one, /# растение/); assert.match(forms.few, /# растения/); assert.match(forms.many, /# растений/);
+  assert.match(ru, /Ни об одном из \{total\} растений/);
+  assert.match(locale('nl')['consortium.place.count.unchecked'], /dat die/);
 });
