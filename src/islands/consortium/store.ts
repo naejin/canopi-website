@@ -29,7 +29,8 @@ export type View = 'start' | 'matrix';
 // step values: 'start' is the place, 'matrix' the palette page (b2, additive seam).
 export type Step = 'place' | 'palette';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
-// 'place': the "Your place" sheet (views/place/Place.tsx PlaceSheet), which changes the palette's place in place.
+// 'place': the "Your place" sheet (views/place/Place.tsx PlaceSheet), which changes the palette's place
+// in place.
 export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'place' | 'share' | 'download';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
 // sheet only, never one opened since (Escape closes the <dialog> at once and fires `close` a task later).
@@ -59,9 +60,9 @@ export const notNow = signal<ReadonlySet<string>>(new Set());
 export const sheet = signal<Sheet | null>(null);
 // While Start shows (view 'start'), the signals above are the Start draft: the picked card, its
 // site answers (and, on the consortium's own card, its plants, which Suggest and a paste
-// build on). The consortium shown before Change site is then in setAside, with its own site
-// answers and country; null: none. Only the
-// commit actions turn the draft into the consortium (state/draft.ts); the save mirrors the consortium.
+// build on). The consortium shown before going back to Place is then in setAside, with its own site
+// answers and country; null: none. The commit actions (state/draft.ts), or plants added or removed on
+// Place (owner 2026-11-15), turn the draft into the consortium; the save mirrors the consortium.
 export const load = signal<Load>({ status: 'idle', error: null });
 // P5 (commit 0 seam): where the site is. S5b writes it (device location, place search, map pick, a
 // link's `o=`); S5c (range check, nearest lists), S5d (future check) and S5e (native here, soil
@@ -206,6 +207,17 @@ export const fitPool = computed<Taxon[] | null>(() => {
   return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
 });
 
+// What the palette suggests and swaps from (Next step, Swap): the pool, or nothing while it is a
+// borrowed list not fitted to a place (no location, or no range rule: rules/suggest-block.ts, as
+// suggestMembers refuses; fix round 1, b1a2-2). Place, the "Your place" sheet and the palette's head
+// say why (views/PoolSlot.tsx).
+export const offerPool = computed<Taxon[] | null>(() => {
+  const p = pool.value, z = climate.value;
+  if (!p || !z) return p;
+  const scene = { curated: curatedClimates.value, siteClimate: siteClimate.value, rangeFailed: rangeFailed.value, nothingFits: false };
+  return needsSite(z, scene) || needsRule(z, scene) ? [] : p;
+});
+
 // ---- the verdict seams (PP-B commit 0; plant-palette-architecture 4) ----
 // The verdict rule (core verdict.ts) arrives with its own chunk (role `verdict`, core verdict-load.ts
 // loadVerdictRule), off the first run, asked for once the site location has a climate (start(), with
@@ -279,8 +291,11 @@ export const offline = signal(false);
 // asGuest), once that climate's pool is read.
 export const guestTaxa = computed<Taxon[]>(() => {
   const out: Taxon[] = [];
+  // A guest the chosen climate's own list also holds is drawn from that list (memberTaxa), so it is not
+  // counted twice (a plant kept when the climate changed: state/draft.ts chooseClimate).
+  const own = new Set((pool.value ?? []).map((t) => t.id));
   for (const [id, from] of Object.entries(guests.value)) {
-    const t = from ? pools.value[from]?.find((x) => x.id === id) : undefined;
+    const t = from && !own.has(id) ? pools.value[from]?.find((x) => x.id === id) : undefined;
     if (t && from) out.push(asGuest(t, from));
   }
   return out;
@@ -547,6 +562,9 @@ export function watchSteps(): () => void {
       else untracked(() => pushEntry('palette'));
     } else if (was === 'palette' && now === 'place') {
       paletteWaits = false;
+      // A sheet open over the palette (an Undo pressed in its foot) closes in the same update: its
+      // entry goes with the palette's (fix round 1, b1a2-6).
+      if (sheet.peek()) sheet.value = null;
       if (!leaving) untracked(() => leaveEntry('palette')); // false once a move back already left it
     }
     was = now;
@@ -585,13 +603,8 @@ export function showToast(text: string, undo: (() => void) | null = null, action
   toast.value = line;
   armToast(line.id);
 }
-// A notice (an action and no Undo: a part that could not load, with Reload) has no timer: it stays until
-// its action or Dismiss, in the page's flow (views/Toast.tsx; b1a UI hand-off).
 function armToast(id: number): void {
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = null;
-  const line = toast.peek();
-  if (line?.id === id && line.action && !line.undo) return;
   // The browser-test build lets a test shorten it (window.__ctTimeouts.toast), as data/load.ts's stall.
   const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { toast?: number } }).__ctTimeouts?.toast) || TOAST_MS : TOAST_MS;
   toastTimer = setTimeout(() => { if (toast.peek()?.id === id) { focusAfterToast(); toast.value = null; } }, ms);
@@ -676,10 +689,11 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
   offerUndo(T('swapped', { a, b }), before, null, [oldId]);
 }
 // Add: plants chosen by hand join (a new suggestion is built around them). from: guests, each with
-// the climate whose list it comes from ("Add anyway", A9). warned: plants added without being asked
-// about a misfit or a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the
-// toast says "n added with a warning" with Show (the first one's details).
-// On Place, an add (search or paste) builds on the draft and leaves the view alone.
+// the climate whose list it comes from ("Add anyway", A9). warned: plants added that carry a misfit or
+// a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the toast says "n added
+// with a warning" with Show (the first one's details).
+// On Place, an add (search or paste) leaves the view alone and is saved at once (state/persist.ts own;
+// owner 2026-11-15).
 // text: the toast's own words (the Next step names the plant it added), else paste.added's count;
 // the warned count follows either.
 export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string } = {}): void {

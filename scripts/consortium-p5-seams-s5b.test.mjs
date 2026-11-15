@@ -253,7 +253,7 @@ test('review round 3 (2, 3): Start over, Change site and Start empty drop a link
   const raf = globalThis.requestAnimationFrame;
   globalThis.requestAnimationFrame ??= () => 0; // Start empty opens the search sheet (its focus waits a frame)
   t.after(() => { globalThis.requestAnimationFrame = raf; store.closeSheet(); });
-  for (const act of ['startOver', 'changeSite', 'startEmpty']) {
+  for (const act of ['startOver', 'backToPlace', 'startEmpty']) {
     store.location.value = { lat: 45.75, lon: 4.85, source: 'link', lookup: null };
     void load.lookingThrough(() => new Promise(() => {}), async () => {}); // a link's lookup on a network that never answers
     const id = load.nextLookup?.();
@@ -269,7 +269,7 @@ test('review round 3 (2, 3): Start over, Change site and Start empty drop a link
   // The reader's own location stays (only its note goes).
   store.location.value = { lat: 45.75, lon: 4.85, source: 'geo', lookup: null };
   load.unread.value = true;
-  m.changeSite();
+  m.backToPlace();
   assert.equal(store.location.peek()?.source, 'geo');
   assert.equal(load.unread.peek(), false);
   store.location.value = null;

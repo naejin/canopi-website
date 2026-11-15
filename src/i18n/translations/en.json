@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "Your place",
   "consortium.place.sheet.lede": "Change it at any time: the palette follows. Changing your place never removes a plant.",
   "consortium.place.sheet.kept": "one: Your # plant is kept and checked again. | other: Your # plants are kept and checked again.",
+  "consortium.place.sheet.done": "Done",
   "consortium.site.title": "Your spot",
   "consortium.site.intro": "Optional: what a map cannot know. Every answer starts at “Not sure”, which checks nothing.",
   "consortium.site.q.light": "Light",

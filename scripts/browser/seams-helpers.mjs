@@ -93,7 +93,7 @@ export const toPlace = async (page) => {
   assert.ok(await has(page, '[data-place-show]', 4000), 'Place shows');
 };
 
-export const changeSiteTo = async (page, card) => {
+export const placeTo = async (page, card) => {
   await toPlace(page);
   await openCards(page);
   await page.locator(aria('radio', card)).click();

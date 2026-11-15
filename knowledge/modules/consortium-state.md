@@ -130,7 +130,7 @@ All L7 cycles are gone after chunk 2 (coordinator row "E6 chunk-2 merge choices"
 |---|---|
 | `undo` | Undo puts it back (in the snapshot); a function computes what Undo writes from the value before and now (`view`: only to or from Start) |
 | `endsUndo` | a change to it ends the Undo offer (`climate`) |
-| `saved` | part of the `Consortium` the save keeps and Change site (back to Place) sets aside; the save is the link's fragment, so a saved field is in the `#v=4` link under its own name in the core `ShareState`, and watched as `reader` |
+| `saved` | part of the `Consortium` the save keeps and going back to Place sets aside (plants added or removed on Place are saved at once, owner 2026-11-15); the save is the link's fragment, so a saved field is in the `#v=4` link under its own name in the core `ShareState`, and watched as `reader` |
 | `link` | `put(v, o)` (into the link; default as it is) and `take(s, now, o)` (back from a decoded link or save; default the link's value, else the current one). `o` = `{ location, countryFrom }` |
 | `watched` | for an unsaved field: `reader` (a write is the reader acting: save, address and Share's link follow) or `save` (save and address follow) |
 | `plants` | one of the plant lists: saved, in Undo, ends Undo; Start over empties it, a change ends a waiting Suggest |

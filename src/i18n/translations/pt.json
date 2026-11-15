@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "Seu lugar",
   "consortium.place.sheet.lede": "Mude quando quiser: a paleta acompanha. Mudar seu lugar nunca remove uma planta.",
   "consortium.place.sheet.kept": "one: Sua # planta é mantida e verificada de novo. | other: Suas # plantas são mantidas e verificadas de novo.",
+  "consortium.place.sheet.done": "Pronto",
   "consortium.site.title": "O seu canto",
   "consortium.site.intro": "Opcional: o que um mapa não tem como saber. Cada resposta começa em “Não sei”, que não confere nada.",
   "consortium.site.q.light": "Luz",

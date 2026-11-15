@@ -6,19 +6,20 @@
 // Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target): 'details'
 // and 'swap' take a plant id; 'add' takes what it was opened for (a cell or run of one layer, a job,
 // "Show them anyway"); 'search' (Start's "Start empty and search"), 'paste' ("Paste a list") and
-// 'place' (the "Your place" sheet, "Change your place" in the palette's head) take none. Nothing writes store.sheet directly, so what one sheet was opened for never leaks into the
-// next. Whatever had the focus when a sheet opened (a chip) gets it back when the sheet closes
-// (Escape, Close, the backdrop, a part that could not load); a chip that is gone by then is found
-// again by `data-plant-id`, else the toast's Undo takes the focus.
+// 'place' (the "Your place" sheet, "Change your place" in the palette's head) take none. Nothing writes
+// store.sheet directly, so what one sheet was opened for never leaks into the next. Whatever had the
+// focus when a sheet opened (a chip) gets it back when the sheet closes (Escape, Close, the backdrop, a
+// part that could not load); a chip that is gone by then is found again by `data-plant-id`, else the
+// toast's Undo takes the focus, else the shown view's heading.
 //
 // Each sheet but "Your place" is a part loaded on first use (views/lazy.tsx later(), onFail
 // 'closeSheet'): the plant dialog (views/details/Details.tsx), Swap, Add (also Search) and Paste. "Your
-// place" is Place's own parts (views/place/Place.tsx PlaceSheet), in the first run with Place. Each is prefetched once the
-// data is ready; one opened before its chunk is here opens at once in its frame with a loading line
-// (the dialog with the plant's name), and one whose chunk does not come closes with the toast and
-// Reload. A part draws its sheet inside the frame it is given (`Frame`: the frame bound to this
-// opening's close and the sheet's toast region), so no sheet imports the store's closer or the toast.
-// Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is inert,
+// place" is Place's own parts (views/place/Place.tsx PlaceSheet), in the first run with Place. Each is
+// prefetched once the data is ready; one opened before its chunk is here opens at once in its frame
+// with a loading line (the dialog with the plant's name), and one whose chunk does not come closes with
+// the toast and Reload. A part draws its sheet inside the frame it is given (`Frame`: the frame bound
+// to this opening's close and the sheet's toast region), so no sheet imports the store's closer or the
+// toast. Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is inert,
 // Escape closes).
 import { effect } from '@preact/signals';
 import { useMemo } from 'preact/hooks';
@@ -30,6 +31,7 @@ import { LiveLine, SheetDialog, SheetFrame, SheetWaiting, type Frame, type Frame
 import { nameOf } from './kit/names.ts';
 import { Toast } from './Toast.tsx';
 import { later } from './lazy.tsx';
+import { focusView } from '../focus.ts';
 import { PlaceSheet } from './place/Place.tsx';
 import { retryableImport } from '../../../lib/consortium/index.ts';
 
@@ -49,7 +51,8 @@ if (typeof document !== 'undefined') {
       requestAnimationFrame(() => {
         const again = plant ? document.querySelector<HTMLElement>(`[data-plant-id="${CSS.escape(plant)}"]`) : null;
         const target = back?.isConnected ? back : again ?? document.querySelector<HTMLElement>('.ct-toast-undo');
-        target?.focus();
+        // The opener gone with its view (an Undo back to Place): the shown view's heading (b1a2-6).
+        if (target) target.focus(); else focusView();
       });
     }
     wasOpen = !!s;

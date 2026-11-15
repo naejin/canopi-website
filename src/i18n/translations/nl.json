@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "Je plek",
   "consortium.place.sheet.lede": "Wijzig hem wanneer je wilt: het palet volgt. Een andere plek haalt nooit een plant weg.",
   "consortium.place.sheet.kept": "one: Je # plant blijft en wordt opnieuw gecontroleerd. | other: Je # planten blijven en worden opnieuw gecontroleerd.",
+  "consortium.place.sheet.done": "Klaar",
   "consortium.site.title": "Je plek",
   "consortium.site.intro": "Optioneel: wat een kaart niet kan weten. Elk antwoord begint bij ‘Weet ik niet’, dat niets toetst.",
   "consortium.site.q.light": "Licht",

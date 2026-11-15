@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "Votre lieu",
   "consortium.place.sheet.lede": "Modifiez-le à tout moment : la palette suit. Changer de lieu ne retire jamais une plante.",
   "consortium.place.sheet.kept": "one: Votre # plante est gardée et vérifiée à nouveau. | other: Vos # plantes sont gardées et vérifiées à nouveau.",
+  "consortium.place.sheet.done": "Terminé",
   "consortium.site.title": "Votre coin",
   "consortium.site.intro": "Facultatif : ce qu’une carte ne peut pas savoir. Chaque réponse commence à « Je ne sais pas », qui ne vérifie rien.",
   "consortium.site.q.light": "Lumière",

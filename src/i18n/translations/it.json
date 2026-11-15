@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "Il tuo luogo",
   "consortium.place.sheet.lede": "Cambialo quando vuoi: la palette si adegua. Cambiare luogo non toglie mai una pianta.",
   "consortium.place.sheet.kept": "one: La tua # pianta resta ed è verificata di nuovo. | other: Le tue # piante restano e sono verificate di nuovo.",
+  "consortium.place.sheet.done": "Fatto",
   "consortium.site.title": "Il tuo angolo",
   "consortium.site.intro": "Facoltativo: ciò che una mappa non può sapere. Ogni risposta parte da «Non so», che non verifica nulla.",
   "consortium.site.q.light": "Luce",

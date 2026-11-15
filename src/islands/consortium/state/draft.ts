@@ -1,13 +1,13 @@
 // Start's draft and the reader's moves around it (stream S4; E6 S2 split it out of memory.ts): the
-// climate card and the country the reader picks, Change site (the palette set aside when the reader
+// climate card and the country the reader picks, backToPlace (the palette set aside when the reader
 // goes back to Place, a draft seeded from it), Start over (with one Undo), Show my palette and Add a
 // plant; the answers to the arrival notices (PP-B b1a): "Use it" / "Use my own place" for a link's place
 // and "Open my saved palette instead". (The palette's place changes in place in the "Your place" sheet,
 // views/place/Place.tsx PlaceSheet, which sets nothing aside: b1a review r1 conformance-4.)
-// The consortium and the draft are two states (persist.ts): the draft never changes the consortium or
-// the save.
+// The consortium and the draft are two states (persist.ts); plants the reader adds or removes on Place
+// make the draft the palette, saved at once (owner 2026-11-15).
 import { batch, signal } from '@preact/signals';
-import type { ClimateZone } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, PlantId } from '../../../lib/consortium/index.ts';
 import { siteIdOf } from '../../../lib/consortium/index.ts';
 import * as store from '../store.ts';
 import { focusView } from '../focus.ts';
@@ -28,11 +28,32 @@ export const answering = signal(false);
 
 // The reader picks a climate (Place, or the "Your place" sheet): the shared site climate is written
 // (climate-ux; v1 setClimate). The plants stay: changing the place never removes a plant (board
-// ChangePlace; b1a review r1 conformance-4); the palette checks them against the new climate.
+// ChangePlace; b1a review r1 conformance-4), and each is still drawn, checked and saved (fix round
+// 1, b1a2-1): one the new climate's list lacks becomes a guest of the climate it was in.
 export function chooseClimate(z: ClimateZone): void {
-  store.climate.value = z;
+  const was = store.climate.peek();
+  batch(() => {
+    store.climate.value = z;
+    store.guests.value = homesAfter(was, z);
+  });
   memory.write(SITE_CLIMATE, siteIdOf(z));
   attempt(() => { document.documentElement.dataset.climate = siteIdOf(z); });
+}
+
+// Each member's home list once the climate goes from `was` to `z`: a guest of z is one of z's own
+// again; one of was's own that z's list lacks (each of them while z's list is not read: a plant in
+// both is drawn from z's own list either way, store.ts memberTaxa) becomes a guest of was.
+function homesAfter(was: ClimateZone | null, z: ClimateZone): Partial<Record<PlantId, ClimateZone>> {
+  const now = store.guests.peek(), list = store.pools.peek()[z];
+  const inZ = list ? new Set(list.map((t) => t.id)) : null;
+  const next: Partial<Record<PlantId, ClimateZone>> = {};
+  for (const id of store.members.peek()) {
+    const from = now[id];
+    if (from) { if (from !== z) next[id] = from; }
+    else if (was && was !== z && !inZ?.has(id)) next[id] = was;
+  }
+  const same = Object.keys(next).length === Object.keys(now).length && Object.entries(next).every(([id, from]) => now[id] === from);
+  return same ? now : next;
 }
 
 // The reader chooses a country (null: "No country"); kept on this device, apart from the consortium.
@@ -42,12 +63,12 @@ export function chooseCountry(code: string | null): void {
   pickingCountry.value = false;
 }
 
-// Change site, Start over, Start empty: the "not read" note goes, and a link's location goes with
+// Back to Place, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
 const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
-// Change site (the reader back on Place from the palette: its "Your place" step, the phone's Back):
-// the consortium set aside, Start's draft seeded from it.
-export function changeSite(): void {
+// Back to Place from the palette (its "Your place" step, the phone's Back): the consortium set aside,
+// Start's draft seeded from it.
+export function backToPlace(): void {
   placeSaid.value = '';
   batch(() => {
     dropLinkLocation();
@@ -149,8 +170,8 @@ export function startEmpty(): void {
 }
 
 // "Show my palette": the palette with the grower's own plants (none is a valid start); the focus goes
-// to it (W4). A palette set aside on Change site that this draft replaces (another card, a plant added
-// or removed on Place) gets one Undo, which goes back to Place with it still set aside.
+// to it (W4). A palette set aside on the way back to Place that this draft replaces (another card, a
+// plant added or removed on Place) gets one Undo, which goes back to Place with it still set aside.
 export function showPalette(): void {
   const before = schema.snapshot();
   const aside = store.setAside.peek();

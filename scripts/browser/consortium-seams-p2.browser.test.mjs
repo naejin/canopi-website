@@ -12,7 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, behaviour, en, findAx, has } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, changeSiteTo, toPlace, showPalette, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage, openAdd, savedPlace } from './seams-helpers.mjs';
+import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, placeTo, toPlace, showPalette, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage, openAdd, savedPlace } from './seams-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 
 useHarness();
@@ -140,7 +140,7 @@ test('R2-1: a list pasted on Place under another climate, then shown, is that cl
     // Counted in the link (a plant of another climate's list is not drawn in that climate's chart).
     const count = (link) => param(link, 'a').split('.').filter(Boolean).length;
     const members = count(before);
-    await changeSiteTo(page, 'Tropical');
+    await placeTo(page, 'Tropical');
     await page.locator(aria('button', 'Paste a list')).click();
     await page.locator('#ct-paste-text').fill(inga);
     const add = await findAx(page, { role: 'button', name: /^Add 1 plant$/ });
@@ -205,7 +205,7 @@ test('T2 (R3-3): Undo of a paste shown under another card leaves the save exactl
   await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
-    await changeSiteTo(page, 'Tropical');
+    await placeTo(page, 'Tropical');
     await page.locator(aria('button', 'Paste a list')).click();
     await page.locator('#ct-paste-text').fill(name);
     await page.locator(aria('button', 'Add 1 plant')).click();
@@ -249,7 +249,7 @@ test('T4 (R3-1): a palette shown under another card is the consortium, every pla
   await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
-    await changeSiteTo(page, 'Tropical');
+    await placeTo(page, 'Tropical');
     await page.locator('[data-place-show]').click();
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
     const shown = await savedFragment(page);
@@ -308,7 +308,7 @@ test('D1 (R4-3): site answers changed in the draft are not saved until a commit;
   await behaviour(t, async (v) => {
     const page = await suggested(v);
     const before = await linkOf(page);
-    await changeSiteTo(page, 'Tropical');
+    await placeTo(page, 'Tropical');
     await page.locator('input[name="ct-site-water"]:not(:checked)').click();
     assert.equal(await savedFragment(page), before, 'the draft\'s answer is not saved');
     await page.locator(aria('radio', 'Temperate')).click();

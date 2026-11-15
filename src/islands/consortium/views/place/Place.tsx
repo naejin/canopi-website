@@ -33,7 +33,7 @@ import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room, Site } from '../../../../lib/consortium/index.ts';
 import { countryStatus, lights, roomValues, ROOM_LIMIT_M, soils, waters, zoneOf } from '../../../../lib/consortium/index.ts';
-import { climate, country, location as siteLocation, proposedClimate, knownCountries, memberTaxa, members, openSheet, plot, pool, removeMember, room, site, view } from '../../store.ts';
+import { climate, closeSheet, country, location as siteLocation, proposedClimate, knownCountries, memberTaxa, members, openSheet, plot, pool, removeMember, room, site, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { formatArea, formatLength, parsePlotSize } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
@@ -325,7 +325,10 @@ function PlaceNotices() {
 // Head and the guide line name store.climate, not climateShown: a palette (and a guide preset's line)
 // shows only under a chosen climate, where the two are the same.
 function Head() {
-  const n = members.value.length;
+  const n = members.value.length, z = climate.value;
+  // A borrowed list not fitted to a place, or none at all: the palette suggests and swaps nothing
+  // from it (store.offerPool), and says why here (b1a2-2).
+  const why = z ? suggestBlock(z) : null;
   return (
     <div class="ct-result-head">
       <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneName(climate.value)}</span></h2>
@@ -336,6 +339,7 @@ function Head() {
       </p>
       <LocationSlot compact />
       <CountryLine />
+      {z && why && why !== 'nothingFits' && <PoolSlot zone={z} />}
     </div>
   );
 }
@@ -374,13 +378,22 @@ function PlaceForm() {
   );
 }
 
-// ---- the "Your place" sheet (board ChangePlace, room and location parts; b1a review r1 conformance-4) ----
-// The palette's own place, changed in place: no draft, nothing set aside, so the palette follows each
-// answer at once and no plant is removed. In its sheet frame (views/Sheets.tsx; Back closes it). The
-// country line stays in the head behind it (one picker on the page).
+// ---- the "Your place" sheet (board ChangePlace, room and location parts; b1a review r1 conformance-4)
+// ---- The palette's own place, changed in place: no draft, nothing set aside, so the palette follows
+// each answer at once and no plant is removed. In its sheet frame (views/Sheets.tsx; Back closes it).
+// The country line stays in the head behind it (one picker on the page). A climate with no list of its
+// own here (Not covered yet, Needs your location) says why under the cards, with what Place offers
+// (PoolSlot; fix round 1, b1a2-2). Its foot: "Start over" and "Done" (board ChangePlace; Done closes,
+// as Close does).
 export function PlaceSheet({ Frame }: { Frame: Frame }) {
+  const z = climate.value;
   return (
-    <Frame titleId="ct-place-sheet-h">
+    <Frame titleId="ct-place-sheet-h" foot={
+      <div class="ct-add-bar" data-place-sheet-foot>
+        <button type="button" class="link-button ct-link" onClick={startOver}>{T('start.over')}</button>
+        <button type="button" class="button button-primary" onClick={closeSheet}>{T('place.sheet.done')}</button>
+      </div>
+    }>
       <div class="ct-start ct-place">
         <div>
           <h2 id="ct-place-sheet-h" tabIndex={-1} data-autofocus>{T('place.sheet.title')}</h2>
@@ -388,6 +401,7 @@ export function PlaceSheet({ Frame }: { Frame: Frame }) {
         </div>
         <LocationSlot />
         <Climates />
+        {z && <PoolSlot zone={z} />}
         <RoomStep />
         <SpotQuestions />
       </div>

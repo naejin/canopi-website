@@ -12,9 +12,9 @@ import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App, PalettePage } from './App.tsx';
 import { effect } from '@preact/signals';
 import { arrivalOpensPalette, forgetEntries, historyMoved, load, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
-import { arrival, startMemory } from './state/arrival.ts';
-import { changeSite } from './state/draft.ts';
-import { currentFragment, lastWritten, memory, readRecord, STORE, writeAddress } from './state/persist.ts';
+import { openingArrival, startMemory } from './state/arrival.ts';
+import { backToPlace } from './state/draft.ts';
+import { currentFragment, lastWritten, writeAddress } from './state/persist.ts';
 import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
@@ -77,9 +77,9 @@ if (root && data) {
   watchPools();
   watchSteps();
   // A return visit (a save or a link to restore) opens on the palette page's placeholder, never the
-  // Place form (P2): the placeholder stays until the
-  // palette shows, the load fails, or the restore has had its time once the plants are read.
-  const how = arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), null, (() => { try { return history.state; } catch { return null; } })());
+  // Place form (P2): the placeholder stays until the palette shows, the load fails, or the restore
+  // has had its time once the plants are read.
+  const how = openingArrival();
   opening.value = how.kind === 'saved' || how.kind === 'link';
   // That opening's step to the palette page is the page's, not the reader's: no history entry.
   arrivalOpensPalette(opening.peek());
@@ -108,7 +108,7 @@ if (root && data) {
     // writes a state with every fragment it writes); its hashchange opens it.
     if (e.state == null && location.hash.length > 1) return;
     const moved = historyMoved(e.state);
-    if (moved.place) changeSite();
+    if (moved.place) backToPlace();
     writeAddress(moved.force);
     pushWaiting();
   });

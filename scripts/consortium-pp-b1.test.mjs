@@ -44,7 +44,7 @@ test('F1a-P13 → PP-B (b1a invasive tie, owner Q1): with no country chosen, the
 // storage double; Node has no location or history, so the address is left alone. ----
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { emptyPlace, siteFor, encodeLink, encodePlace, linkOrigin } from '../src/lib/consortium/index.ts';
+import { emptyPlace, siteFor, encodeLink, encodePlace, linkOrigin, decodeLink } from '../src/lib/consortium/index.ts';
 
 test('b1a siteFor: today\'s three answers and the room reach fits(); varies and the soil map check nothing', () => {
   assert.equal(Object.isFrozen(emptyPlace), true);
@@ -394,7 +394,7 @@ test('b1a bugs-5: Forget on Place (back from the palette) also clears the set-as
   await mine(5);
   await wait(0);
   assert.equal(saved()?.place, 'l=sun');
-  draft.changeSite();
+  draft.backToPlace();
   locationM.forget();
   await wait(0);
   assert.equal(saved()?.place, '', 'the set-aside palette kept its place in the save');
@@ -409,7 +409,7 @@ test('b1a bugs-5: Forget on Place (back from the palette) also clears the set-as
 test('b1a bugs-7: "Show my palette" under another card keeps every plant and offers one Undo back to Place, the set-aside palette saved', async () => {
   await mine(5);
   const before = store.members.peek();
-  draft.changeSite();
+  draft.backToPlace();
   draft.chooseClimate('Mediterranean');
   assert.deepEqual(store.members.peek(), before, 'another card keeps the plants');
   draft.showPalette();
@@ -435,16 +435,91 @@ test('b1a conformance-2: plants added on Place keep the grower on Place, every o
 
 // conformance-4 (b1a review r1; board ChangePlace): changing the place never removes a plant, and the
 // dropped "Back to your palette" control is gone.
-test('b1a conformance-4: another climate keeps every plant, on the palette and on Place; no "Back to your palette"', async () => {
+test('b1a conformance-4: another climate keeps every plant, on the palette and on Place', async () => {
   await mine(5);
   const before = store.members.peek();
   draft.chooseClimate('Mediterranean');
   assert.deepEqual(store.members.peek(), before, 'a climate chosen on the palette removed plants');
-  draft.changeSite();
+  draft.backToPlace();
   draft.chooseClimate('Tropical');
   assert.deepEqual(store.members.peek(), before, 'a climate chosen on Place removed plants');
-  assert.equal(draft.backToConsortium, undefined, 'backToConsortium is still exported');
-  assert.equal(draft.canGoBack, undefined, 'canGoBack is still exported');
+});
+
+// b1a2-1 (fix round 1): changing the place never removes a plant; each kept plant is still drawn,
+// checked and saved. A plant the new climate's list lacks is a guest of the climate it came from.
+test('b1a2-1: Temperate to Mediterranean keeps a Temperate-only plant drawn and in the save; back to Temperate it is no guest', async () => {
+  const pool = await mine(5);
+  const med = await store.loadPool('Mediterranean');
+  const inMed = new Set(med.map((t) => t.id));
+  const only = pool.find((t) => !inMed.has(t.id));
+  const both = pool.find((t) => inMed.has(t.id));
+  assert.ok(only && both, 'a Temperate-only plant and one in both lists');
+  persist.quietly(() => { store.members.value = [only.id, both.id]; });
+  draft.chooseClimate('Mediterranean');
+  await wait(0);
+  assert.equal(store.guests.peek()[only.id], 'Temperate', 'the Temperate-only plant is a guest of Temperate');
+  assert.equal(store.guests.peek()[both.id], undefined, 'a plant in the new list is no guest');
+  assert.deepEqual(store.memberTaxa.peek().map((t) => t.id).sort(), [only.id, both.id].sort(), 'both drawn');
+  const k = { Temperate: pool.map((t) => t.id), Mediterranean: med.map((t) => t.id) };
+  const read = decodeLink(saved().fragment, k);
+  assert.deepEqual([...read.state.members].sort(), [only.id, both.id].sort(), 'both read back from the save');
+  draft.chooseClimate('Temperate');
+  await wait(0);
+  assert.equal(store.guests.peek()[only.id], undefined, 'back in its own climate, no guest');
+});
+
+// b1a2-4 (fix round 1): a location already on the page stands for the kept one.
+test('b1a2-4: ownLocation with a location already set clears locationAtStart', async () => {
+  await mine(5);
+  restoreM.locationAtStart.value = true;
+  store.location.value = { lat: 48.85, lon: 2.35, source: 'search', label: 'Paris', lookup: null };
+  restoreM.ownLocation('{"lat":40,"lon":3}');
+  assert.equal(restoreM.locationAtStart.peek(), false, 'locationAtStart still true with a location set');
+  store.location.value = null;
+});
+
+// b1a2-2 (fix round 1): a borrowed list not fitted to a place offers nothing to suggest or swap from.
+test('b1a2-2: with a borrowed climate and no location, the pool the palette offers from is empty', async () => {
+  await mine(5);
+  await store.loadPool('Subtropical');
+  persist.quietly(() => { store.climate.value = 'Subtropical'; });
+  store.location.value = null;
+  assert.ok(store.pool.peek()?.length, 'the borrowed list is read');
+  assert.deepEqual(store.offerPool.peek(), [], 'the borrowed list is offered without a place');
+  persist.quietly(() => { store.climate.value = 'Temperate'; });
+  assert.ok(store.offerPool.peek()?.length, 'a curated list is offered');
+});
+
+// Owner 2026-11-15: plants added on Place are saved on the device at once; a different saved palette
+// is set aside with Undo, as "Show my palette" does.
+test('b1a2 owner 2026-11-15: a plant added on Place is saved at once over a different save, and Undo puts that save back; back from a palette too', async () => {
+  const pool = await mine(5);
+  await wait(0);
+  const text = kept.get(STORE);
+  persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; store.members.value = []; store.removed.value = []; });
+  await wait(0);
+  kept.set(STORE, text);
+  persist.openedWith(text);
+  const k = { Temperate: pool.map((t) => t.id) };
+  store.addMembers([pool[7].id]);
+  await wait(0);
+  assert.equal(store.view.peek(), 'start', 'still on Place');
+  assert.notEqual(kept.get(STORE), text, 'the plant added on Place is not saved');
+  assert.deepEqual(decodeLink(saved().fragment, k).state.members, [pool[7].id]);
+  store.toast.peek().undo();
+  await wait(0);
+  assert.equal(kept.get(STORE), text, 'Undo did not put the earlier save back');
+  // Back on Place from the palette: an add saves the palette with it; Undo puts the palette back.
+  await mine(5);
+  await wait(0);
+  const five = kept.get(STORE);
+  draft.backToPlace();
+  store.addMembers([pool[8].id]);
+  await wait(0);
+  assert.equal(decodeLink(saved().fragment, k).state.members.length, 6, 'the palette with the plant added on Place');
+  store.toast.peek().undo();
+  await wait(0);
+  assert.equal(saved().fragment, readRecord(five).fragment, 'Undo put the palette back');
 });
 
 // r2-2 (review round 2): the offer goes when the save is replaced, not on any answer: a room or country
@@ -473,15 +548,11 @@ test('b1a bugs-8 / r2-2: "Open my saved palette instead" and "Back to mine" stay
   await wait(0);
   assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a Place answer that wrote no save (country)');
   assert.equal(kept.get(STORE), text, 'the save is untouched');
-  // A plant added on Place (as "Add a plant by name" does) stays on Place and writes no save.
+  // A plant added on Place (as "Add a plant by name" does) is saved at once (owner 2026-11-15): it
+  // replaces the reader's save, and the offer goes.
   store.addMembers([pool[4].id]);
   await wait(0);
-  assert.equal(kept.get(STORE), text, 'a plant added on Place wrote a save');
-  assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a plant added on Place');
-  // "Show my palette": the palette's save replaces the reader's, and the offer goes.
-  draft.showPalette();
-  await wait(0);
-  assert.notEqual(kept.get(STORE), text, 'the palette is saved');
+  assert.notEqual(kept.get(STORE), text, 'the plant added on Place is not saved');
   assert.equal(restoreM.savedInstead.peek(), null, '"Open my saved palette instead" still offered after the save was replaced');
   // r3-2 (review round 3): Undo takes the page back to Place with no palette of its own, so the
   // reader's save is written back: the offer comes back with it.

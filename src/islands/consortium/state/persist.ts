@@ -182,21 +182,30 @@ export function adoptPending(): void {
 }
 
 // ---- the consortium and the save ----
-// Two states: the consortium, and Start's draft (the picked card and its answers) while Start shows.
-// Change site sets the consortium aside (store.setAside) and opens a draft seeded from it; the draft
-// never changes the consortium or the save. Only Suggest, Start empty and Show my palette end it. The save always encodes the consortium, written on
-// every change of it; Undo restores the consortium (and the view), so it rewrites the save too.
-// Every write of the save goes through writeSave, which holds the one multi-tab rule.
+// Two states: the consortium, and Place's draft (the picked card and its answers) while Place shows.
+// Going back to Place sets the consortium aside (store.setAside) and opens a draft seeded from it.
+// Place's answers never change the consortium or the save; plants the reader adds or removes there do:
+// the draft is then the consortium, saved at once, the one set aside kept for Undo (owner
+// 2026-11-15). Suggest, Start empty, Show my palette, Start over and Undo end the draft. The save
+// always encodes the consortium, written on every change of it; Undo restores the consortium (and the
+// view), so it rewrites the save too. Every write of the save goes through writeSave, which holds the
+// one multi-tab rule.
 
-// The consortium this page shows or set aside on Start (null: none of its own). shown: the store's
-// consortium fields whatever the view (Start's draft too), as a link of them reads.
+// The plants as the page last wrote them itself (quietly: a restore, a guide's preset), so Place tells
+// the reader's adds and removes from the page's own writes; an Undo back to them is the page's again.
+let pagePlants: readonly PlantId[] = [];
+// The consortium this page shows or set aside on Place (null: none of its own). shown: the store's
+// consortium fields whatever the view (Place's draft too), as a link of them reads.
 export function own(shown = false): Consortium | null {
-  if (shown || store.view.peek() !== 'start') {
+  const aside = store.setAside.peek();
+  const plants = store.members.peek();
+  if (shown || store.view.peek() !== 'start' || (!samePlants(plants, aside?.members ?? []) && !samePlants(plants, pagePlants))) {
     const climate = store.climate.peek();
     return climate && (schema.peek(schema.lists.saved) as Consortium);
   }
-  return store.setAside.peek();
+  return aside;
 }
+const samePlants = (a: readonly PlantId[], b: readonly PlantId[]): boolean => a.length === b.length && a.every((id, i) => id === b[i]);
 
 // The ids a palette's links are matched against: its climate's and each guest list's.
 function knownOf(now: Consortium): Partial<Record<ClimateZone, PlantId[]>> {
@@ -256,9 +265,9 @@ export const linkPlace = signal<{ own: OwnPlace } | null>(null);
 // The reader's readable save when the page opened on something else (a guide preset, a newer or
 // unreadable link): "Open my saved palette instead" / "Back to mine" (draft.ts openSavedInstead)
 // restores it. null once used, once this page replaces or removes the save (writeSave: the reader's
-// work saved over it; offered again if the save is written back as it was), or when there is none; a Place answer that writes no save (a room, a country, a
-// card while the page has no palette of its own) keeps it (review round 2, 2). Kept here, beside
-// writeSave.
+// work saved over it; offered again if the save is written back as it was), or when there is none; a
+// Place answer that writes no save (a room, a country, a card while the page has no palette of its own)
+// keeps it (review round 2, 2). Kept here, beside writeSave.
 export const savedInstead = signal<SavedRecord | null>(null);
 // What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
 // notice's button leaves the page with its line, so the focus moves on and this says what happened:
@@ -290,23 +299,25 @@ const sameSave = (a: string | null, b: string | null): boolean => {
 export function writeSave(next: string | null | 'back'): void {
   const now = memory.read(STORE);
   if (next === 'back' || next === null) {
-    const to = next === 'back' ? beneath : null;
+    const to = next === 'back' ? beneath : null, was = offered;
     beneath = undefined;
+    offered = null;
     if (to === undefined || now !== lastSave) return;
     if (to === null ? memory.remove(STORE) : memory.write(STORE, to)) {
       replaced(to);
       // The reader's save offered back, written back as it was (Undo to a Place with no palette of the
       // page's own): offered again (review round 3, 2).
-      if (offered && sameSave(to, offered.text)) savedInstead.value = offered.record;
+      if (was && sameSave(to, was.text)) savedInstead.value = was.record;
     }
     return;
   }
   if (sameSave(next, lastSave)) return;
-  if (beneath === undefined || now !== lastSave) beneath = now;
+  // A new run of writes over what the storage held: an offer kept from an earlier run is stale.
+  if (beneath === undefined || now !== lastSave) { beneath = now; offered = null; }
   if (memory.write(STORE, next)) replaced(next);
 }
 // The save this page wrote: the save offered back (savedInstead) is no longer there to open; it is
-// kept (offered) in case the save goes back to it.
+// kept (offered) until the save goes back to it (once) or a new run of writes begins.
 let offered: { record: SavedRecord; text: string | null } | null = null;
 function replaced(to: string | null): void {
   const was = savedInstead.peek();
@@ -392,6 +403,11 @@ export function watchStore(): void {
   });
   // A change the reader made (not quiet) lets a held save go, here as well as in the watcher above,
   // since the two effects run in no set order for one write.
+  // The plants the page writes quietly (own(): Place's plants are saved once the reader's differ).
+  effect(() => {
+    const plants = store.members.value;
+    if (quiet) pagePlants = plants;
+  });
   let firstSave = true;
   effect(() => {
     void schema.track(schema.lists.save);

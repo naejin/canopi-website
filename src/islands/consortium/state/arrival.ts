@@ -1,8 +1,8 @@
-// How the page opens (stream S4; E6 S2 split it out of memory.ts): what it opens with (a reload of
-// its own address, a share link, a guide preset, an outdated v1 link, the last consortium, else
-// Start), the reader's country at start and the browser's guess, a link pasted into the open tab, and
-// startMemory, which reads the page once and wires all of it (openWith). The pure parts (arrival, hashAction, countryAtStart,
-// guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
+// How the page opens (stream S4; E6 S2 split it out of memory.ts): what it opens with (a reload of its
+// own address, a share link, a guide preset, an outdated v1 link, the last consortium, else Start), the
+// reader's country at start and the browser's guess, a link pasted into the open tab, and startMemory,
+// which reads the page once and wires all of it (openWith). The pure parts (arrival, hashAction,
+// countryAtStart, guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
 // (scripts/consortium-memory.test.mjs, scripts/consortium-pp-b1.test.mjs).
 import type { ClimateZone, LinkOrigin } from '../../../lib/consortium/index.ts';
 import { bringsPlace, countryZones, decodeLink, linkOrigin, readPreset, zoneOf } from '../../../lib/consortium/index.ts';
@@ -198,6 +198,13 @@ export function openWith({ how, plan, saved, seed, keptLocation }: Opening): voi
   else if (how.climate) store.climate.value = how.climate;
 }
 
+// What this page opened with, read once: main.ts reads it before the first render (the palette page's
+// placeholder, the prefetch), startMemory acts on it.
+let opened: Arrival | null = null;
+export function openingArrival(): Arrival {
+  return opened ??= arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), memory.read(SITE_CLIMATE), attempt(() => history.state));
+}
+
 let started = false;
 // Called once by main.ts, before the first render (so the country guess, the stored climate and a
 // link's pending climate are drawn in the first frame: N2 layout shift), right after the database's
@@ -209,7 +216,7 @@ export function startMemory(): void {
   const raw = memory.read(STORE);
   const saved = readRecord(raw);
   openedWith(raw);
-  const how = arrival({ hash: location.hash, search: location.search }, saved, memory.read(SITE_CLIMATE), attempt(() => history.state));
+  const how = openingArrival();
   // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
   if (how.kind === 'start' && oldRecord(raw)) {
     notices.value = { ...notices.peek(), oldSave: true };

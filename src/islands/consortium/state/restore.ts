@@ -89,7 +89,9 @@ export const locationAtStart = signal(false);
 // text: canopi-location as startMemory read it (so a plain open reads it once), else read here.
 let ownLookup: Promise<void> | null = null;
 export function ownLocation(text?: string | null): void {
-  if (ownLookup || store.location.peek()) return;
+  if (ownLookup) return;
+  // A location already on the page stands for the kept one: Place no longer waits for it (b1a2-4).
+  if (store.location.peek()) { locationAtStart.value = false; return; }
   const saved = text === undefined ? memory.read(LOCATION_STORE) : text;
   if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; locationAtStart.value = false; });
 }

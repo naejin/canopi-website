@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "Dein Ort",
   "consortium.place.sheet.lede": "Du kannst ihn jederzeit ändern: Die Palette folgt. Ein anderer Ort entfernt nie eine Pflanze.",
   "consortium.place.sheet.kept": "one: Deine # Pflanze bleibt und wird neu geprüft. | other: Deine # Pflanzen bleiben und werden neu geprüft.",
+  "consortium.place.sheet.done": "Fertig",
   "consortium.site.title": "Dein Platz",
   "consortium.site.intro": "Optional: was eine Karte nicht wissen kann. Jede Antwort beginnt bei „Weiß nicht“, das nichts prüft.",
   "consortium.site.q.light": "Licht",

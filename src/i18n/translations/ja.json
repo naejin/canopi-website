@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "あなたの場所",
   "consortium.place.sheet.lede": "いつでも変更でき、パレットもそれに合わせて変わります。場所を変えても植物が外されることはありません。",
   "consortium.place.sheet.kept": "other: # 種類の植物はそのまま残り、もう一度照合されます。",
+  "consortium.place.sheet.done": "完了",
   "consortium.site.title": "植える場所",
   "consortium.site.intro": "任意：地図ではわからないこと。どの回答も「わからない」から始まり、その場合は何も確認しません。",
   "consortium.site.q.light": "日当たり",

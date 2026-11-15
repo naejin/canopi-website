@@ -56,12 +56,14 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   }, [algo]);
   // Within the list's plants inside their range, then, apart, those outside it (none without a
   // location: nothing is outside then).
+  // None from a borrowed list not fitted to a place (store.offerPool; the palette's head says why).
+  const offer = store.offerPool.value;
   const [alts, outsideAlts] = useMemo(() => {
-    if (!pool || !algo) return [[], []];
-    const out = pool.filter(outside);
+    if (!offer || !algo) return [[], []];
+    const out = offer.filter(outside);
     const away = new Set(out.map((x) => x.id));
-    return [algo.alternatives(id, members, pool.filter((x) => !away.has(x.id)), { ...ctx, removed }), out.length ? algo.alternatives(id, members, out, { ...ctx, removed }) : []];
-  }, [algo, id, pool, members, ctx, removed, verdicts, rule, loc]);
+    return [algo.alternatives(id, members, offer.filter((x) => !away.has(x.id)), { ...ctx, removed }), out.length ? algo.alternatives(id, members, out, { ...ctx, removed }) : []];
+  }, [algo, id, offer, members, ctx, removed, verdicts, rule, loc]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;

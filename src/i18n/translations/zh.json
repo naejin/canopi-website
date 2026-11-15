@@ -640,6 +640,7 @@
   "consortium.place.sheet.title": "你的地方",
   "consortium.place.sheet.lede": "随时可以更改，植物搭配会随之更新。更改地方不会移除任何植物。",
   "consortium.place.sheet.kept": "other: 你的 # 种植物都会保留，并重新核对。",
+  "consortium.place.sheet.done": "完成",
   "consortium.site.title": "你的种植点",
   "consortium.site.intro": "可选：地图无法知道的信息。每个回答都从“不确定”开始，这不会核对任何内容。",
   "consortium.site.q.light": "光照",
