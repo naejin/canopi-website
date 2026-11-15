@@ -62,7 +62,9 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
     if (!offer || !algo) return [[], []];
     const out = offer.filter(outside);
     const away = new Set(out.map((x) => x.id));
-    return [algo.alternatives(id, members, offer.filter((x) => !away.has(x.id)), { ...ctx, removed }), out.length ? algo.alternatives(id, members, out, { ...ctx, removed }) : []];
+    // The page period's verdicts, as Suggest reads them: both rank on the same open holes (b1br-5).
+    const opts = { ...ctx, removed, verdicts };
+    return [algo.alternatives(id, members, offer.filter((x) => !away.has(x.id)), opts), out.length ? algo.alternatives(id, members, out, opts) : []];
   }, [algo, id, offer, members, ctx, removed, verdicts, rule, loc]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
