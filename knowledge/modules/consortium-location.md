@@ -4,7 +4,7 @@ title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:36Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:12Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:39Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -65,7 +65,7 @@ sources:
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
     digest: sha256:16ef54594e8517ad
-    last_modified: 2026-11-15T08:13:28Z
+    last_modified: 2026-11-15T08:15:08Z
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
@@ -74,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:d82e33123aaf3462
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:13b19cb7bc022774
+    last_modified: 2026-11-15T08:35:06Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -85,7 +85,7 @@ sources:
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:c0c5086cbc6f4b8d
-    last_modified: 2026-11-15T08:13:28Z
+    last_modified: 2026-11-15T08:15:08Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:e12ec1c3681419ee
-    last_modified: 2026-11-15T08:13:28Z
+    digest: sha256:fb1d3e6351899c0e
+    last_modified: 2026-11-15T08:35:06Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css

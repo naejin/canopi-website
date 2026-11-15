@@ -34,8 +34,8 @@ export type Arrival =
 // history.state as replaceState left it: the page's own fragment, its country source and this tab's
 // place (pl: the private place answers, kept per tab since the save is shared by every tab; '' none;
 // with a link's country `k`, and its cell `o` while its place waits); ask: a link's place still waits
-// on "Use it" / "Use my own place", so a reload asks again and the save stays held; hold: a link the
-// reader has not acted on, so a reload or Back/Forward keeps the save held (persist.ts writeAddress).
+// on "Use it" / "Use my own place", so a reload asks again; hold: the page held the save, so a reload
+// or Back/Forward holds it again. Each is read only as itself (persist.ts writeAddress; fix round 4, s-3).
 interface OwnAddress { ct: string; src: CountryFrom; pl: string; ask: boolean; hold: boolean }
 const ownOf = (v: unknown): OwnAddress | null => {
   if (!v || typeof v !== 'object') return null;
@@ -62,14 +62,14 @@ export function arrival(loc: { hash: string; search: string }, saved: SavedRecor
 
 // A hashchange (a pasted link, or Back/Forward): the page's own address (history.state.ct, as
 // arrival reads it) reopens as the save with its country source; another link opens as a link; the
-// address of the consortium shown, or a fragment that is no link, is ignored. hold: the entry is a
-// link's the reader had not acted on (or whose place still waited), so its save stays held (8.3).
+// address of the consortium shown, or a fragment that is no link, is ignored. hold: the entry's page
+// held the save, so it stays held (8.3).
 export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom; place: string; hold?: true } | { kind: 'link'; fragment: string };
 export function hashAction(hash: string, state: unknown, current: string | null): HashAction {
   const f = hash.replace(/^#/, '');
   if (!f || !isLinkFragment(f) || f === current) return { kind: 'ignore' };
   const own = ownOf(state);
-  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl, ...(own.hold || own.ask ? { hold: true as const } : {}) };
+  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl, ...(own.hold ? { hold: true as const } : {}) };
   return { kind: 'link', fragment: f };
 }
 

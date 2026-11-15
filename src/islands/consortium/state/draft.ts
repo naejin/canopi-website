@@ -14,7 +14,7 @@ import { focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { T } from '../strings.ts';
 import { adoptPending, attempt, holdSave, linkPlace, memory, placeSaid, placeSeed, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
-import { held, putSave } from './save.ts';
+import { held, lastSave, putSave, STORE } from './save.ts';
 import { adoptLinkLocation, notices, ownLocation, restore, savedInstead, NO_NOTICES } from './restore.ts';
 import { letGo } from './lookups.ts';
 
@@ -145,8 +145,10 @@ export function useOwnPlace(): void {
 
 // "Open my saved palette instead" (any held page over a different readable save: owner 2026-11-15,
 // decision 3) and "Back to mine" (a newer or unreadable link over one): the save restored as on a visit
-// with no link, which owns it.
+// with no link, which owns it. What storage holds when pressed, another tab's save included, becomes
+// the save this page writes over (fix round 4, s-5), so it never writes a palette of its own over it.
 export async function openSavedInstead(): Promise<void> {
+  lastSave.value = memory.read(STORE);
   const saved = savedInstead.peek();
   if (!saved) return;
   notices.value = { ...notices.peek(), guidePlant: null, guideMissing: null, newer: false, unreadable: false };
@@ -158,13 +160,13 @@ function answered(line: string): void {
   focusView();
 }
 
-// "Start empty and search" (the pool panel's "nothing fits" line): an empty palette and S3's search
-// sheet.
+// "Search all plants" (the pool panel's "nothing fits" line): S3's search sheet over the palette. It
+// never removes a plant (fix round 4, s-4): with plants, the search opens over them; with none, this is
+// the empty palette's start.
 export function startEmpty(): void {
   adoptPending();
   batch(() => {
     dropLinkLocation();
-    store.members.value = [];
     store.view.value = 'matrix';
     store.openSheet('search');
   });

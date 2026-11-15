@@ -61,9 +61,9 @@ test('b1a siteFor: today\'s three answers and the room reach fits(); varies and 
 const persist = await import('../src/islands/consortium/state/persist.ts');
 // The device save's own state (fix round 3 save model, state/save.ts): held, and the save as this page
 // last wrote or read it.
-const saveM = await import('../src/islands/consortium/state/save.ts').catch(() => null);
-const opened = (raw) => { if (saveM) saveM.lastSave.value = raw; else persist.openedWith(raw); };
-const isHeld = () => (saveM ? saveM.held.peek() : persist.saveHeld?.());
+const saveM = await import('../src/islands/consortium/state/save.ts');
+const opened = (raw) => { saveM.lastSave.value = raw; };
+const isHeld = () => saveM.held.peek();
 const restoreM = await import('../src/islands/consortium/state/restore.ts');
 const arrivalM = await import('../src/islands/consortium/state/arrival.ts');
 const draft = await import('../src/islands/consortium/state/draft.ts');
@@ -463,6 +463,18 @@ test('b1a2-2: with a borrowed climate and no location, the pool the palette offe
   assert.ok(store.offerPool.peek()?.length, 'a curated list is offered');
 });
 
+// A reload while a link's place waits: the page forgets its location (the address and history.state
+// stay) and opens its own address again, asked against the reader's own place. arrival()'s answer.
+// fresh: run once the address is read (the new page's own state).
+async function reloadAsking(fresh = () => {}) {
+  store.location.value = null;
+  const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state);
+  assert.equal(how.ask, true);
+  fresh();
+  const ask = { spot: { ...SUN }, soil: { from: 'map' }, country: { code: 'FR', source: 'chosen' }, location: null };
+  assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask, hold: how.hold }), true);
+  return how;
+}
 test('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Use it" still adopts it', async () => {
   const restoreAddress = fakeAddress();
   let before = null;
@@ -470,12 +482,7 @@ test('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Us
     before = await arriveWithPlace();
     assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
     assert.equal(history.state?.ask, 1, 'the address says the notice waits');
-    // The reload: the page forgets its location; the address and history.state stay.
-    store.location.value = null;
-    const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state);
-    assert.equal(how.ask, true);
-    const ask = { spot: { ...SUN }, soil: { from: 'map' }, country: { code: 'FR', source: 'chosen' }, location: null };
-    assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask, hold: how.hold }), true);
+    await reloadAsking();
     assert.ok(restoreM.linkPlace.peek(), 'asked again after the reload');
     assert.equal(store.location.peek()?.source, 'link', 'the link\'s cell was lost on reload');
     await draft.useLinkPlace();
@@ -1009,44 +1016,207 @@ test('save model r3-3: a card clicked before its list is read, a plant removed, 
   persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
 });
 
-// The two invariants over random runs of the reader's moves: not held, the save is the palette as the
-// page encodes it now; held, the save is what it was when the page became held (or what another tab
-// wrote since).
-test('save model invariants over random sequences: not held => the save is currentFragment(); held => the save unchanged unless another tab wrote', async () => {
+
+// ---- fix round 4: the actions outside the save model, and flags read as each other ----
+const waitM = await import('../src/islands/consortium/state/suggest-wait.ts');
+const lookupsM = await import('../src/islands/consortium/state/lookups.ts');
+// The waiting Suggest's effects, as startMemory sets them up on the page.
+waitM.watchSuggest();
+// The suggestion's chunk read, so a Suggest acts once its lists are read.
+async function suggestReady() {
+  store.wantSuggest();
+  for (let i = 0; i < 400 && !store.suggestRule.peek(); i++) await wait(5);
+  assert.ok(store.suggestRule.peek(), 'the suggestion\'s chunk did not load');
+}
+// A press of "Suggest plants" that waits for a location lookup, then runs when it settles (s-1).
+async function waitedSuggest() {
+  lookupsM.lookups.value = 1;
+  waitM.requestSuggest();
+  assert.equal(waitM.pendingSuggest.peek(), true, 'the press waits for the lookup');
+  lookupsM.lookups.value = 0;
+  await wait(0);
+  await wait(0);
+}
+
+test('fix round 4 s-1: a waited suggestion over a held R offers its Undo; the Undo writes R back byte for byte and holds', async () => {
+  const [pool, R] = await freshOver();
+  await suggestReady();
+  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
+  await wait(0);
+  await waitedSuggest();
+  assert.ok(store.members.peek().length > 1, 'the waited suggestion was not placed');
+  assert.notEqual(kept.get(STORE), R, 'the suggestion is not saved');
+  await undo();
+  assert.deepEqual(store.members.peek(), [pool[3].id], 'Undo brings the guide\'s plant back');
+  assert.equal(kept.get(STORE), R, 'Undo did not write R back byte for byte');
+  assert.equal(isHeld(), true, 'held again');
+});
+test('fix round 4 s-2: NextStep\'s Suggest on an empty held palette (a guide preset whose plant is missing) offers its Undo, which writes R back and holds', async () => {
+  const [, R] = await freshOver();
+  await suggestReady();
+  await restoreM.applyPreset('Temperate', 'Nonexistent plantus');
+  draft.showPalette();
+  await wait(0);
+  assert.deepEqual(store.members.peek(), []);
+  // NextStep's button: the one press every Suggest goes through.
+  assert.match(readFileSync(new URL('../src/islands/consortium/views/palette/NextStep.tsx', import.meta.url), 'utf8'), /onClick=\{\(\) => requestSuggest\(\)\}/);
+  waitM.requestSuggest();
+  await wait(0);
+  assert.ok(store.members.peek().length, 'no suggestion placed');
+  assert.notEqual(kept.get(STORE), R, 'the suggestion is not saved');
+  await undo();
+  assert.deepEqual(store.members.peek(), []);
+  assert.equal(kept.get(STORE), R, 'Undo did not write R back byte for byte');
+  assert.equal(isHeld(), true, 'held again');
+});
+test('fix round 4 s-3: a plant added while a link\'s place question is open: a reload asks again, and the page still owns its save', async () => {
+  const restoreAddress = fakeAddress();
+  let before = null;
+  try {
+    before = await arriveWithPlace();
+    const med = await realSource.pool('Mediterranean');
+    store.addMembers([med[10].id]);
+    await wait(0);
+    assert.equal(isHeld(), false, 'the plant change owns the save');
+    assert.equal(history.state?.ask, 1, 'the address no longer says the place question waits');
+    assert.equal(history.state?.hold, undefined, 'an owned page\'s address says hold');
+    assert.equal(arrivalM.hashAction(location.hash, { ...history.state, ct: 'x' }, null).kind, 'link');
+    assert.equal(arrivalM.hashAction(location.hash, history.state, null).hold, undefined, 'ask read as hold on Back/Forward');
+    const how = await reloadAsking(() => persist.holdSave(true)); // a reload starts held
+    assert.equal(how.hold, undefined, 'ask read as hold on arrival');
+    await wait(0);
+    assert.ok(restoreM.linkPlace.peek(), 'the place question is asked again');
+    assert.equal(isHeld(), false, 'the reload held a page that owns its save');
+  } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; }
+});
+test('fix round 4 s-4: "Search all plants" on a page with 6 plants opens the search and keeps every plant saved', async () => {
+  await mine(6);
+  await wait(0);
+  const ids = store.members.peek().slice();
+  draft.startEmpty();
+  await wait(0);
+  try {
+    assert.equal(store.sheet.peek()?.kind, 'search', 'the search is not open');
+    assert.deepEqual(store.members.peek(), ids, '"Search all plants" removed the reader\'s plants');
+    assert.deepEqual(await savedIds(), ids, 'the save lost the reader\'s plants');
+  } finally { store.closeSheet(); }
+  // With no plant, it starts the empty palette with the search.
+  persist.quietly(() => { store.members.value = []; store.view.value = 'start'; });
+  draft.startEmpty();
+  try {
+    assert.equal(store.view.peek(), 'matrix');
+    assert.equal(store.sheet.peek()?.kind, 'search');
+  } finally { store.closeSheet(); }
+});
+test('fix round 4 s-5: "Open my saved palette instead" offers and opens what storage holds (another tab\'s T), and the next edit never writes this page\'s stale palette over it', async () => {
+  const [pool] = await freshOver();
+  assert.equal(await restoreM.restore(await linkWith('Temperate', 3), { from: 'link' }), true);
+  await wait(0);
+  store.addMembers([pool[20].id]);
+  await wait(0);
+  const LX = kept.get(STORE);
+  assert.equal(isHeld(), false);
+  const T = saveRecord(await linkWith('Temperate', 7), '2026-11-15T00:00:00.000Z', null);
+  kept.set(STORE, T); // another tab saves T
+  await undo();
+  assert.equal(isHeld(), true);
+  assert.equal(kept.get(STORE), T, 'the Undo wrote over the other tab\'s T');
+  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(T).fragment, 'the offer names this page\'s stale palette, not what storage holds');
+  await draft.openSavedInstead();
+  await wait(0);
+  assert.equal(store.members.peek().length, 7, 'the offer did not open T');
+  store.removeMember(store.members.peek()[0]);
+  await wait(0);
+  assert.notEqual(kept.get(STORE), LX, 'the next edit wrote the stale palette over T');
+  assert.equal((await savedIds()).length, 6);
+});
+
+// The invariants over random runs of the reader's moves:
+// - every plant change that lets the save go offers its own Undo;
+// - not held, the save is the palette as the page encodes it now (or what another tab wrote since the
+//   page's last write);
+// - held, the save is what it was when the page became held (or what another tab wrote since);
+// - an Undo puts back the held flag the undone action saw and, back to held, the save that action saw
+//   (unless another tab wrote since this page's last write);
+// - becoming held otherwise never writes the save, but Start over from an owned page removes it;
+// - "Search all plants" never removes a plant.
+test('save model invariants over random sequences: the save, the flag and every Undo', async () => {
   let seed = 20261115;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
   const pick = (list) => list[Math.floor(rnd() * list.length)];
   await store.loadPool('Mediterranean');
-  for (let run = 0; run < 6; run++) {
-    const [pool, R] = run % 2 ? await freshOver() : [await mine(4), null];
-    await wait(0);
-    if (R) await restoreM.applyPreset('Temperate', pool[run].canonical_name);
-    let heldText = kept.get(STORE) ?? null, wasHeld = isHeld();
-    const log = [];
-    const moves = {
-      add: () => store.addMembers([pick(pool.slice(0, 40)).id]),
-      remove: () => { const m = store.members.peek(); if (m.length) store.removeMember(pick(m)); },
-      swap: () => { const m = store.members.peek(); const n = pick(pool.slice(40, 80)).id; if (m.length && !m.includes(n)) store.swapMember(pick(m), n); },
-      place: () => draft.backToPlace(),
-      show: () => { if (store.climate.peek()) draft.showPalette(); },
-      card: () => draft.chooseClimate(pick(['Temperate', 'Mediterranean'])),
-      room: () => { store.room.value = pick(['small', 'large', 'pots']); },
-      over: () => draft.startOver(),
-      undo: () => store.toast.peek()?.undo?.(),
-      link: async () => { await restoreM.restore(await linkWith('Temperate', 2 + Math.floor(rnd() * 3)), { from: 'link' }); },
-      other: () => { if (isHeld()) { kept.set(STORE, OTHER); heldText = OTHER; } },
-    };
-    for (let step = 0; step < 40; step++) {
-      const name = pick(Object.keys(moves));
-      log.push(name);
-      await moves[name]();
+  await suggestReady();
+  const step0 = instantStep();
+  const raf = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = () => 0;
+  try {
+    for (let run = 0; run < 8; run++) {
+      const [pool, R] = run % 2 ? await freshOver() : [await mine(4), null];
       await wait(0);
-      const now = isHeld();
-      if (now && !wasHeld) heldText = kept.get(STORE) ?? null;
-      wasHeld = now;
-      if (now) assert.equal(kept.get(STORE) ?? null, heldText, `held, the save changed (run ${run}: ${log.join(' ')})`);
-      else assert.ok(savedIsPalette(), `not held, the save is not the palette (run ${run}: ${log.join(' ')})`);
+      if (R) await restoreM.applyPreset('Temperate', pool[run].canonical_name);
+      let heldText = kept.get(STORE) ?? null, wasHeld = isHeld(), otherPending = false;
+      // The save mark each offered Undo saw, by toast id.
+      const marks = new Map();
+      const log = [];
+      const suggestNow = () => { if (store.climate.peek() && store.pool.peek()) { waitM.requestSuggest(); waitM.dropSuggest(); } };
+      const moves = {
+        add: () => store.addMembers([pick(pool.slice(0, 40)).id]),
+        paste: () => store.addMembers([pick(pool.slice(0, 60)).id, pick(pool.slice(0, 60)).id, pick(pool.slice(60, 90)).id]),
+        remove: () => { const m = store.members.peek(); if (m.length) store.removeMember(pick(m)); },
+        swap: () => { const m = store.members.peek(); const n = pick(pool.slice(40, 80)).id; if (m.length && !m.includes(n)) store.swapMember(pick(m), n); },
+        suggest: suggestNow,
+        suggestWait: async () => { if (store.climate.peek() && store.pool.peek()) { await waitedSuggest(); waitM.dropSuggest(); } },
+        nextSuggest: () => { if (!store.members.peek().length) suggestNow(); },
+        search: () => { draft.startEmpty(); store.closeSheet(); },
+        place: () => draft.backToPlace(),
+        show: () => { if (store.climate.peek()) draft.showPalette(); },
+        // A card, and its list read (the save follows the palette once its list is read).
+        card: async () => { const c = pick(['Temperate', 'Mediterranean']); draft.chooseClimate(c); await store.loadPool(c); },
+        room: () => { store.room.value = pick(['small', 'large', 'pots']); },
+        over: () => draft.startOver(),
+        undo: () => store.toast.peek()?.undo?.(),
+        link: async () => { await restoreM.restore(await linkWith('Temperate', 2 + Math.floor(rnd() * 3)), { from: 'link' }); },
+        placeLink: async () => { await restoreM.restore(await linkWith('Temperate', 3, { country: 'ES', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true }), { from: 'link' }); },
+        useIt: async () => { await draft.useLinkPlace(); },
+        useOwn: () => draft.useOwnPlace(),
+        open: async () => { await draft.openSavedInstead(); },
+        other: () => { kept.set(STORE, OTHER); if (isHeld()) heldText = OTHER; else otherPending = true; },
+      };
+      // Undo weighted up, so most Undos follow the action they undo.
+      const names = [...Object.keys(moves), ...Array(8).fill('undo')];
+      for (let step = 0; step < 50; step++) {
+        const name = pick(names);
+        log.push(name);
+        const at = () => `(run ${run}: ${log.join(' ')})`;
+        const pre = { text: kept.get(STORE) ?? null, held: isHeld() };
+        const members = store.members.peek().slice();
+        const toast = store.toast.peek();
+        const undid = name === 'undo' && toast?.undo ? marks.get(toast.id) : null;
+        await moves[name]();
+        await wait(0);
+        const now = isHeld(), text = kept.get(STORE) ?? null, shown = store.toast.peek();
+        if (shown?.undo && shown.id !== toast?.id) marks.set(shown.id, pre);
+        if (name === 'search' && members.length) assert.deepEqual(store.members.peek(), members, `"Search all plants" removed plants ${at()}`);
+        if (wasHeld && !now && !['undo', 'open'].includes(name)) assert.ok(shown?.undo && shown.id !== toast?.id, `${name} let the save go with no Undo of its own ${at()}`);
+        if (undid) {
+          assert.equal(now, undid.held, `Undo did not put back the held flag ${at()}`);
+          if (undid.held) assert.equal(text, pre.text === OTHER ? OTHER : undid.text, `Undo back to held did not write back the save the action saw ${at()}`);
+        }
+        if (now) {
+          if (!wasHeld && !undid) assert.equal(text, name === 'over' && pre.text !== OTHER ? null : pre.text, `${name} made the page held and changed the save ${at()}`);
+          if (wasHeld) assert.equal(text, heldText, `held, the save changed ${at()}`);
+          heldText = text;
+          otherPending = false;
+        } else if (savedIsPalette()) otherPending = false;
+        else assert.ok(otherPending && text === OTHER, `not held, the save is not the palette ${at()}`);
+        wasHeld = now;
+      }
     }
+  } finally {
+    restoreM.provideLocationStep(step0);
+    globalThis.requestAnimationFrame = raf;
+    store.location.value = null;
+    persist.linkPlace.value = null;
+    persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
   }
-  persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
 });

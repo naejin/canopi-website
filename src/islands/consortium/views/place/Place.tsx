@@ -41,7 +41,7 @@ import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
 import { climateChosen, climateShown, linkPlace, restoring } from '../../state/persist.ts';
 import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
 import { addOwnPlant, answering, cardsLatched, chooseClimate, chooseCountry, openSavedInstead, pickingCountry, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
-import { pendingSuggest, suggestPalette } from '../../state/suggest-wait.ts';
+import { pendingSuggest, requestSuggest } from '../../state/suggest-wait.ts';
 import { page } from '../kit/page.ts';
 import type { Frame } from '../kit/sheet.tsx';
 import { markStart } from '../kit/start-mark.ts';
@@ -368,7 +368,7 @@ function PlaceForm() {
           {!suggestBlock(z) && (
             <p class="ct-place-suggest">
               {T('place.none')}{' '}
-              <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={suggestPalette}>{T('start.suggest')}</button>
+              <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={() => requestSuggest()}>{T('start.suggest')}</button>
             </p>
           )}
           <p class="ct-muted ct-small-text">{T('page.hypothesis')}</p>

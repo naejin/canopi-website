@@ -468,8 +468,13 @@ export function suggestMembers(): boolean {
   const algo = suggestRule.value;
   if (!algo) return false;
   const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value });
-  // A suggestion placed is a plant change: the page owns the save from here (state/save.ts).
+  // A suggestion placed is a plant change: the page owns the save from here (state/save.ts), and it
+  // offers its own Undo, as Add, Remove and Swap do, taken just before it is placed (fix round 4, s-1,
+  // s-2: every caller gets it, and no effect can drop it). A wait ends on any plant change, so this is
+  // the palette the press saw, with only the place answers given during the wait kept.
+  const before = snapshot();
   batch(() => { members.value = s.members; held.value = false; });
+  offerUndo(P('place.suggested', s.members.length), before);
   return true;
 }
 
@@ -683,7 +688,7 @@ const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.inc
 // the climate.
 const SNAP_KEYS = state.lists.endsUndo;
 let undoAfter: ReturnType<typeof state.peek<(typeof SNAP_KEYS)[number]>> | null = null;
-// (Place's moves, in state/draft.ts and state/suggest-wait.ts, offer their Undo through it too.)
+// (Place's moves, in state/draft.ts, and suggestMembers offer their Undo through it too.)
 export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
   undoAfter = state.peek(SNAP_KEYS);
   showToast(text, () => { undoAfter = null; undoSave(before.save, () => state.restore(before)); }, action, focus);

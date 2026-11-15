@@ -157,9 +157,9 @@ export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; kee
 // keep: a consortium is shown (a link pasted into the open tab, Back/Forward): a link that cannot
 // open changes nothing, says so where the reader is, and the address goes back to the consortium shown.
 // ask: a reload of a page whose link place still waited (history.state ask): the notice again, against
-// this own place, and the save held; the link's cell, kept in the tab's place (pl `o`), comes back.
-// hold: a reload or Back/Forward of a link the reader has not acted on (history.state hold): the save
-// stays held (8.3). country: the reader's own country, worked out before a link's was shown (startMemory),
+// this own place; the link's cell, kept in the tab's place (pl `o`), comes back. It holds nothing.
+// hold: a reload or Back/Forward of a page that held the save (history.state hold): the save stays
+// held (8.3). Each flag is read only as itself (fix round 4, s-3). country: the reader's own country, worked out before a link's was shown (startMemory),
 // which the notice gives back and the held save keeps.
 export async function restore(fragment: string, { from, src = null, keep = false, place = null, ask = undefined, hold = false, country = undefined }: RestoreOptions): Promise<boolean> {
   // A new arrival: what an earlier notice's answer did is said no more (review round 2, 4).
@@ -226,7 +226,7 @@ export async function restore(fragment: string, { from, src = null, keep = false
       if (waiting && !ask) { store.spot.value = waiting.own.spot; store.soil.value = waiting.own.soil; store.country.value = waiting.own.country; }
       // Arriving by a link holds the save until a plant change, as does a reload or Back/Forward of
       // it; opening the save owns it (state/save.ts). In the batch, so the save sees the palette applied.
-      holdSave(from === 'link' || !!ask || hold);
+      holdSave(from === 'link' || hold);
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings);
       // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
       // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays

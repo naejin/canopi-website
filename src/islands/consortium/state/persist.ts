@@ -18,9 +18,11 @@
 // - The page's own address: replaceState writes history.state { ct: fragment, src, pl: place }, so a
 //   reload of the page's own link opens as the save (its country label and this tab's place kept),
 //   not as a link someone shared (v1 bca954c). A link pasted into the open tab (hashchange) is opened
-//   (arrival.ts). While a link's place waits on the reader (ask: 1, with the link's cell `o` in pl) or
-//   the save is held for a link the reader has not acted on (hold: 1), a reload or Back/Forward keeps
-//   it so (plant-palette-architecture 8.3: arriving by a link writes nothing until the reader acts).
+//   (arrival.ts). Two flags, each written from its own source and read only as itself (fix round 4,
+//   s-3): ask: 1 while a link's place waits on the reader (linkPlace, with the link's cell `o` in pl),
+//   so a reload asks again; hold: 1 while the page holds the save (state/save.ts held), so a reload or
+//   Back/Forward holds it again (plant-palette-architecture 8.3: arriving by a link writes nothing
+//   until the reader acts). A plant added while the place question is open writes ask without hold.
 // - The reader's country choice: localStorage COUNTRY_STORE ('FR', or '-' for "No country"), apart
 //   from the consortium. A guess from the browser is shown as a guess, used for the warnings, and
 //   never written, neither here nor in a link (owner row "Climate first, details").
@@ -273,8 +275,9 @@ export function writeAddress(force = false): void {
   const next = fragment ? shareUrl(location.href, fragment) : `${location.origin}${location.pathname}${location.search}`;
   // history.state marks the address as the page's own, so a reload opens it as the save (review 1),
   // with this tab's place (pl: the save is shared by every tab; plant-palette-architecture 8.3).
-  // ask: a link's place waits on the reader; hold: the save is held for a link they have not acted on.
-  const ownState = fragment ? { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : held.peek() ? { hold: 1 } : {}) } : null;
+  // ask: a link's place waits on the reader (linkPlace); hold: the page holds the save (held). Each
+  // from its own source, so a page that owns its save while the place question is open reloads owned.
+  const ownState = fragment ? { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : {}), ...(held.peek() ? { hold: 1 } : {}) } : null;
   // `pp`: the page's history entries up to this one (store.ts), kept through every rewrite and reload;
   // `st`: the entry's start (store.ts startId), so a move off a link opened in the tab is known.
   const pp = attempt(() => (history.state as { pp?: unknown } | null)?.pp), st = store.startId();
@@ -305,9 +308,13 @@ export const shownFragment = computed(() => {
 });
 // "Open my saved palette instead" / "Back to mine" (draft.ts openSavedInstead): the reader's readable
 // save, offered on every held page whose palette is not it (owner 2026-11-15, decision 3). Derived, so
-// a plant change that replaces the save hides it and its Undo brings it back.
+// a plant change that replaces the save hides it and its Undo brings it back. Read from storage, not
+// from what this page last wrote, so it names another tab's save too (fix round 4, s-5): read again on
+// each write of this page (lastSave), and on the `storage` event (another tab's write; watchStore).
+const storageTick = signal(0);
 export const savedInstead = computed((): SavedRecord | null => {
-  const r = held.value ? readRecord(lastSave.value) : null;
+  void [lastSave.value, storageTick.value];
+  const r = held.value ? readRecord(memory.read(STORE)) : null;
   return r && r.fragment !== shownFragment.value ? r : null;
 });
 
@@ -319,6 +326,7 @@ let watching = false;
 export function watchStore(): void {
   if (watching) return;
   watching = true;
+  attempt(() => globalThis.addEventListener?.('storage', (e: StorageEvent) => { if (e.key === STORE || e.key === null) storageTick.value++; }));
   let first = true;
   effect(() => {
     void schema.track(schema.lists.reader);
