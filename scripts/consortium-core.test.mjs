@@ -217,10 +217,10 @@ test('suggest: the size follows the room, 9 with Room unsure (A7), and it stops 
   const taxa = s.members.map((id) => temperate.find((t) => t.id === id));
   assert.ok(taxa.every(Boolean));
   assert.deepEqual(conflicts(taxa, temperateInteractions).filter(isSerious), [], 'no two members with a high conflict');
-  // Every member brought a new cell or job when it joined.
+  // Every member filled an open hole or brought a job when it joined (PP-B b1b: holes, not cells).
   for (let i = 1; i < taxa.length; i++) {
     const g = gain(taxa[i], taxa.slice(0, i), UNSURE_SITE);
-    assert.ok(g.cells + g.jobs + g.food + g.backup > 0, taxa[i].canonical_name);
+    assert.ok(g.holes + g.jobs + g.food + g.backup > 0, taxa[i].canonical_name);
   }
   // Duplicates stop it: three copies of one plant give one member, or two when the job wants a
   // second doer (ground cover).
@@ -229,6 +229,37 @@ test('suggest: the size follows the room, 9 with Room unsure (A7), and it stops 
   const cover = [0, 1, 2].map(() => make({ stratum: 'low', start: 0, end: 6, functions: ['ground_cover'] }));
   assert.equal(suggest(cover, ctx()).members.length, 2);
   assert.deepEqual(suggest(temperate, { ...ctx(), interactions: temperateInteractions }), s, 'deterministic');
+});
+
+// PP-B b1b (plant-palette-architecture 3.3): the gain counts the open holes a plant fills, through
+// the one predicate core holes.ts fills(), in place of the cell terms; a member outside its range for
+// the page period fills nothing (inventory M2), so the holes it leaves count.
+test('suggest: the gain counts the open holes a plant fills (holes.ts fills), not the cells', () => {
+  const { holes, fills } = core;
+  const early = make({ stratum: 'low', start: 0, end: 2, functions: ['nitrogen_fixer'] });
+  const late = make({ stratum: 'low', start: 3, end: 6, functions: ['nitrogen_fixer'] });
+  const tall = make({ stratum: 'high', start: 3, end: 6, functions: ['nitrogen_fixer'] });
+  const open = (members, verdicts = null) => holes({ members, verdicts, pending: false }).filter((h) => h.state === 'open');
+  const filled = (t, members, verdicts) => open(members, verdicts).filter((h) => fills(h, t)).length;
+  const g = gain(late, [early], UNSURE_SITE);
+  assert.equal('cells' in g, false, 'no cell term');
+  assert.ok(filled(late, [early]) > 0, 'the later low plant fills a hole the early one leaves');
+  assert.equal(g.holes, 3 * filled(late, [early]), '3 per open hole filled');
+  assert.equal(gain(tall, [early], UNSURE_SITE).holes, 3 * filled(tall, [early]));
+  // A member outside its range for the period fills nothing: its holes stay open for the gain.
+  // A plant in the early one's own years fills nothing beside it, and fills its holes once it is outside.
+  const twin = make({ stratum: 'low', start: 1, end: 2, functions: ['nitrogen_fixer'] });
+  const outside = new Map([[early.id, { id: early.id, level: 'outside' }]]);
+  assert.equal(gain(twin, [early], UNSURE_SITE).holes, 0);
+  assert.ok(gain(twin, [early], UNSURE_SITE, outside).holes > 0, 'an outside member leaves its holes open');
+  assert.equal(gain(twin, [early], UNSURE_SITE, outside).holes, 3 * filled(twin, [early], outside));
+  // suggest() takes the verdicts too, and every member it picks fills an open hole or brings a job.
+  const s = suggest(temperate, { ...ctx(), interactions: temperateInteractions, verdicts: new Map() });
+  const taxa = s.members.map((id) => temperate.find((t) => t.id === id));
+  for (let i = 1; i < taxa.length; i++) {
+    const gi = gain(taxa[i], taxa.slice(0, i), UNSURE_SITE);
+    assert.ok(gi.holes + gi.jobs + gi.food + gi.backup > 0, taxa[i].canonical_name);
+  }
 });
 
 test('suggest: the seed (the plants already there) are members first; removed plants are never picked; a small room picks no misfit', () => {

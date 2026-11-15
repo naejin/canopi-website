@@ -3,12 +3,16 @@
 // already in the palette (the seed; inventory C6, PP-B commit 0a'): at each step it adds the plant
 // with the highest gain, and it stops at the room's size or when no plant brings anything new.
 //
-//   gain = 10·new jobs + 3·new cells (stratum × phase; one plant fills a cell) + 6·new stratum
-//          + 4·phases with nothing to eat yet (crops) + 4·second doer of feeds-soil, ground or mulch
-//          + 1·edibility − 3·weed potential − 0.5·unknown site answers
+//   gain = 10·new jobs + 3·open holes filled (core holes.ts holes() of the plants chosen so far, each
+//          tested with fills(), the one predicate the palette's fillers share; PP-B b1b, in place of
+//          the cell terms) + 6·new stratum + 4·phases with nothing to eat yet (crops)
+//          + 4·second doer of feeds-soil, ground or mulch + 1·edibility − 3·weed potential
+//          − 0.5·unknown site answers
 //
-// Gains are counted in tenths, as integers, so equal gains tie exactly. "Something new" is a new job,
-// a new cell, a phase with food, or a needed second doer; edibility and unknowns only rank.
+// A member outside its range for the page period (the verdicts passed in) fills nothing, so the
+// holes it leaves stay open (inventory M2). Gains are counted in tenths, as integers, so equal gains
+// tie exactly. "Something new" is a new job, an open hole filled, a phase with food, or a needed
+// second doer; edibility and unknowns only rank.
 // A plant that misfits the site (beside the layers chosen so far), grows taller than the room (an
 // advisory note elsewhere, owner request 2026-11-12: the suggestion prefers plants that fit the room
 // naturally) or has a high conflict with a member is never picked; invasiveness is a warning only and never scores
@@ -16,11 +20,12 @@
 // not invasive in the chosen country (checked), or, with none, invasive in no GRIIS country, is picked.
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a seeded
 // guest is a member like any other and counts for coverage, with its home placement.
-import type { Alternative, CellRef, Fit, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
+import type { Alternative, CellRef, Fit, Hole, Interaction, JobId, PhaseOrd, PlantId, PlantVerdict, Site, Stratum, Taxon } from './types.ts';
 import { strata } from './types.ts';
 import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { cellKey, cellsOf } from './matrix.ts';
+import { fills, holes } from './holes.ts';
 import type { FlagContext } from './conflicts.ts';
 import { warns, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
 
@@ -35,12 +40,15 @@ export interface SuggestOptions extends FlagContext {
   seed?: PlantId[]; // the plants already in the palette: always members, flagged or not; the seed wins over removed
   removed?: PlantId[]; // never picked automatically
   guests?: Taxon[]; // plants from other climates' lists, with `from` set; members only when seeded
+  verdicts?: Verdicts; // the plants' verdicts for the page period (store.poolVerdicts); none: nobody is outside
 }
+type Verdicts = ReadonlyMap<PlantId, Pick<PlantVerdict, 'level'>> | null;
 export interface Suggestion { members: PlantId[]; limit: number }
-export interface Gain { total: number; jobs: number; cells: number; strata: number; food: number; backup: number; edibility: number; weedy: number; unknowns: number }
+export interface Gain { total: number; jobs: number; holes: number; strata: number; food: number; backup: number; edibility: number; weedy: number; unknowns: number }
 
 interface Info { taxon: Taxon; jobs: JobId[]; stratum: Stratum | null; span: number[]; cells: number[]; edibility: number; weedy: boolean; fit: Fit }
-interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; cells: Set<number>; food: Set<number>; canopy: number[] }
+// The open holes of the members (taxa), worked out when a gain first asks and again after each add.
+interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; cells: Set<number>; food: Set<number>; canopy: number[]; taxa: Taxon[]; verdicts: Verdicts; open: Hole[] | null }
 
 const BACKED_UP: readonly JobId[] = ['feeds_soil', 'ground', 'mulch'];
 
@@ -67,33 +75,39 @@ function infoOf(taxon: Taxon, site: Site): Info {
   return info;
 }
 
-const emptyCoverage = (): Coverage => ({ jobs: new Map(), strata: new Set(), cells: new Set(), food: new Set(), canopy: [...canopyOf([])] });
+const emptyCoverage = (verdicts: Verdicts): Coverage => ({ jobs: new Map(), strata: new Set(), cells: new Set(), food: new Set(), canopy: [...canopyOf([])], taxa: [], verdicts, open: null });
 function add(cov: Coverage, i: Info) {
   for (const j of i.jobs) cov.jobs.set(j, (cov.jobs.get(j) ?? 0) + 1);
   if (i.jobs.includes('feeds_you')) for (const p of i.span) cov.food.add(p);
   if (i.stratum) cov.strata.add(i.stratum);
   for (const c of i.cells) cov.cells.add(c);
   raise(cov.canopy, i.taxon);
+  cov.taxa.push(i.taxon);
+  cov.open = null;
 }
-const coverageOf = (infos: Info[]) => { const cov = emptyCoverage(); for (const i of infos) add(cov, i); return cov; };
+const coverageOf = (infos: Info[], verdicts: Verdicts = null) => { const cov = emptyCoverage(verdicts); for (const i of infos) add(cov, i); return cov; };
+const openHoles = (cov: Coverage): Hole[] =>
+  (cov.open ??= holes({ members: cov.taxa, verdicts: cov.verdicts as ReadonlyMap<PlantId, PlantVerdict> | null, pending: false }).filter((h) => h.state === 'open'));
 
 function tenths(i: Info, cov: Coverage) {
   const jobs = 100 * i.jobs.filter((j) => !cov.jobs.has(j)).length;
-  const cells = 30 * i.cells.filter((c) => !cov.cells.has(c)).length;
+  let filled = 0;
+  for (const h of openHoles(cov)) if (fills(h, i.taxon)) filled++;
+  const holeGain = 30 * filled;
   const strataGain = i.stratum && !cov.strata.has(i.stratum) ? 60 : 0;
   const food = i.jobs.includes('feeds_you') ? 40 * i.span.filter((p) => !cov.food.has(p)).length : 0;
   const backup = 40 * i.jobs.filter((j) => BACKED_UP.includes(j) && cov.jobs.get(j) === 1).length;
   const edibility = 10 * i.edibility;
   const weedy = i.weedy ? -30 : 0;
   const unknowns = i.fit.unknowns.length ? -5 * i.fit.unknowns.length : 0; // never -0
-  return { jobs, cells, strata: strataGain, food, backup, edibility, weedy, unknowns, total: jobs + cells + strataGain + food + backup + edibility + weedy + unknowns };
+  return { jobs, holes: holeGain, strata: strataGain, food, backup, edibility, weedy, unknowns, total: jobs + holeGain + strataGain + food + backup + edibility + weedy + unknowns };
 }
-const isNew = (t: ReturnType<typeof tenths>) => t.jobs + t.cells + t.food + t.backup > 0;
+const isNew = (t: ReturnType<typeof tenths>) => t.jobs + t.holes + t.food + t.backup > 0;
 
-// What the plant would add to these members on this site, term by term.
-export function gain(taxon: Taxon, members: Taxon[], site: Site): Gain {
-  const t = tenths(infoOf(taxon, site), coverageOf(members.map((m) => infoOf(m, site))));
-  return { total: t.total / 10, jobs: t.jobs / 10, cells: t.cells / 10, strata: t.strata / 10, food: t.food / 10, backup: t.backup / 10, edibility: t.edibility / 10, weedy: t.weedy / 10, unknowns: t.unknowns / 10 };
+// What the plant would add to these members on this site, term by term (verdicts: as suggest's).
+export function gain(taxon: Taxon, members: Taxon[], site: Site, verdicts: Verdicts = null): Gain {
+  const t = tenths(infoOf(taxon, site), coverageOf(members.map((m) => infoOf(m, site)), verdicts));
+  return { total: t.total / 10, jobs: t.jobs / 10, holes: t.holes / 10, strata: t.strata / 10, food: t.food / 10, backup: t.backup / 10, edibility: t.edibility / 10, weedy: t.weedy / 10, unknowns: t.unknowns / 10 };
 }
 
 // Ties go to the better-known plant (named in more languages), then by canonical name in code-unit
@@ -136,7 +150,7 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   const chosen: Info[] = [];
   const memberIds = new Set<PlantId>();
   for (const i of all) if (seedIds.has(i.taxon.id) && !memberIds.has(i.taxon.id)) { chosen.push(i); memberIds.add(i.taxon.id); }
-  const cov = coverageOf(chosen);
+  const cov = coverageOf(chosen, options.verdicts ?? null);
 
   // A plant whose only misfit is the light may still join under a canopy, checked at each pick.
   const lightOnly = (i: Info) => i.fit.misfits.length === 1 && i.fit.misfits[0] === 'light' && shadedBy(i.taxon, site, FULL_CANOPY);
@@ -161,7 +175,7 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   return { members: chosen.map((i) => i.taxon.id), limit };
 }
 
-export interface AlternativeOptions extends FlagContext { removed?: PlantId[] }
+export interface AlternativeOptions extends FlagContext { removed?: PlantId[]; verdicts?: Verdicts }
 
 const keyToRef = (k: number): CellRef => [strata[Math.floor(k / 7)], (k % 7) as PhaseOrd];
 
@@ -177,7 +191,7 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
   const removedIds = new Set(options.removed ?? []);
   const others = members.filter((t) => t.id !== memberId);
   const otherInfos = others.map((t) => infoOf(t, site));
-  const cov = coverageOf(otherInfos);
+  const cov = coverageOf(otherInfos, options.verdicts ?? null);
   const mInfo = infoOf(member, site);
   const memberJobs = new Set(mInfo.jobs);
   const memberCells = new Set(mInfo.cells);
