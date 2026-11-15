@@ -90,9 +90,14 @@ effect(() => {
 // real export, which curates a nearest list for every climate).
 // The range rule's chunk did not load (store.ts rangeFailed): say so here, in place of the panel,
 // which needs that chunk; the panel's own chunk failing shows its failed line (lazy.tsx LoadFailed).
-export function PoolSlot({ zone }: { zone: ClimateZone }) {
+// head: the palette page's head (Place.tsx Head), which keeps the needs lines only (amendment 3): the
+// needs-location and range-unavailable lines, and "Not covered yet" for a climate with no list; never
+// the count line, which Place's form and the "Your place" sheet show.
+export function PoolSlot({ zone, head = false }: { zone: ClimateZone; head?: boolean }) {
   if (rangeFailed.value && hasPlants(zone, curated())) return <RangeUnavailable zone={zone} />;
-  return needsSite(zone) ? <NeedsSite zone={zone} /> : !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
+  if (needsSite(zone)) return <NeedsSite zone={zone} />;
+  if (head) return hasPlants(zone, curated()) ? null : <panel.View zone={zone} />;
+  return !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
 }
 function RangeUnavailable({ zone }: { zone: ClimateZone }) {
   return (

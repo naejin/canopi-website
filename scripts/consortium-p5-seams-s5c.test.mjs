@@ -433,3 +433,42 @@ test('PlantSource.interactions: a borrowed climate keeps one row per (subject, o
   const all = core.conflicts(pool, rows).map((c) => `${c.a.id} ${c.b.id} ${c.type} ${c.agent ?? ''}`);
   assert.equal(new Set(all).size, all.length, 'conflicts(): each pair and kind once');
 });
+
+// ---- PP-B b1b fix round 1: the count line's words and states ----
+
+const locale = (l) => JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
+const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+
+test('PP-B b1b count line states (b1br-1): never "0 of m": none fit is "none", none known to fit with some not checked is "unchecked"', async () => {
+  const { countKind } = await import('../src/islands/consortium/rules/suggest-block.ts');
+  assert.equal(countKind({ fits: 3, look: 0, unknown: 0, of: 9 }), 'count');
+  assert.equal(countKind({ fits: 0, look: 1, unknown: 8, of: 9 }), 'count');
+  assert.equal(countKind({ fits: 0, look: 0, unknown: 0, of: 9 }), 'none', 'all outside: none fit');
+  assert.equal(countKind({ fits: 0, look: 0, unknown: 9, of: 9 }), 'unchecked', 'no slot for the period: not checked');
+  assert.equal(countKind({ fits: 0, look: 0, unknown: 2, of: 9 }), 'unchecked');
+});
+
+test('PP-B b1b count line words (b1bc-4, -5, -8b, -10): the list phrase as {list}; fr, es, pt name the period as a period; load.retry reused; the left-out sentence', () => {
+  for (const l of LOCALES) {
+    const d = locale(l);
+    for (const k of ['own', 'ownLater']) {
+      assert.match(d[`consortium.place.count.${k}`], /\{list\}/, `${l} ${k}: the list phrase (consortium.list.*)`);
+      assert.doesNotMatch(d[`consortium.place.count.${k}`], /\{climate\}/, `${l} ${k}: no bare climate name after a word for "list"`);
+    }
+    for (const k of ['none', 'noneLater', 'unchecked', 'left']) assert.ok(d[`consortium.place.count.${k}`], `${l}: place.count.${k}`);
+    for (const k of ['borrowedLater', 'ownLater', 'noneLater']) assert.match(d[`consortium.place.count.${k}`], /\{period\}/, `${l} ${k}`);
+    assert.equal(d['consortium.place.count.retry'], undefined, `${l}: Try again is load.retry`);
+  }
+  const later = { fr: 'sur la période {period}', es: 'en el periodo {period}', pt: 'no período {period}' };
+  for (const [l, phrase] of Object.entries(later)) {
+    for (const k of ['borrowedLater', 'ownLater', 'noneLater']) assert.ok(locale(l)[`consortium.place.count.${k}`].includes(phrase), `${l} ${k}: "${phrase}"`);
+  }
+  assert.ok(!locale('fr')['consortium.place.count.own'].includes('de la liste {list}'));
+});
+
+test('PP-B b1b back online (b1bc-8a): store.ts start() asks for a refused verdict chunk again on "online"; pool.tsx keeps no listener of its own', () => {
+  const store = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
+  const pool = readFileSync(new URL('../src/islands/consortium/views/pool/pool.tsx', import.meta.url), 'utf8');
+  assert.match(store, /addEventListener\('online', \(\) => \{ offline\.value = false;[^}]*retryVerdict\(\)/, 'beside the existing online listener');
+  assert.doesNotMatch(pool, /addEventListener\('online'/);
+});

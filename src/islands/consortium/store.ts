@@ -274,15 +274,17 @@ export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
 });
 // The chosen climate's list (its own, or the nearest lists it borrows), guests left out: the plants
 // that fit or need a second look for the page's period (levels kept apart so the line can split them
-// later), of how many; null until the verdicts are here. Place's count line reads it (views/pool/pool.tsx,
-// b1b: "{n} of the {m} plants on the nearest lists fit your place today"). A borrowed list keeps every
-// plant whose climate range includes the site (owner, 2026-11-14). Kiambu: 305 of 515.
-export const countFits = computed<{ fits: number; look: number; of: number } | null>(() => {
+// later), and those not checked (no climate figures for the period, or no range recorded: 'unknown',
+// never counted as fitting), of how many; null until the verdicts are here. Place's count line reads it
+// (views/pool/pool.tsx, b1b: "{n} of the {m} plants on the nearest lists fit your place today"; never
+// "0 of m", rules/suggest-block.ts countKind). A borrowed list keeps every plant whose climate range
+// includes the site (owner, 2026-11-14). Kiambu: 305 of 515.
+export const countFits = computed<{ fits: number; look: number; unknown: number; of: number } | null>(() => {
   const v = poolVerdicts.value, p = pool.value;
   if (!v || !p) return null;
-  let fits = 0, look = 0;
-  for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits') fits++; else if (x === 'look') look++; }
-  return { fits, look, of: p.length };
+  let fits = 0, look = 0, unknown = 0;
+  for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits') fits++; else if (x === 'look') look++; else if (x !== 'outside') unknown++; }
+  return { fits, look, unknown, of: p.length };
 });
 // Whether the browser is offline (navigator.onLine and its events, wired in start(); App shows the line).
 export const offline = signal(false);
@@ -782,7 +784,9 @@ export function start(): void {
   // Offline (architecture 9): the page says so; what is loaded still works.
   if (typeof navigator !== 'undefined' && typeof addEventListener === 'function') {
     offline.value = navigator.onLine === false;
-    addEventListener('online', () => { offline.value = false; });
+    // Back online, a verdict chunk refused meanwhile is asked for again in place (one listener for the
+    // count line and the palette's notice; b1bc-8a).
+    addEventListener('online', () => { offline.value = false; if (verdictFailed.peek()) retryVerdict(); });
     addEventListener('offline', () => { offline.value = true; });
   }
   // The mark providers' chunk, loaded once a mark can show (markProviders, marksBroken).

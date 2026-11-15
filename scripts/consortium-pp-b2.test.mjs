@@ -130,7 +130,7 @@ test('PP-B (b1b countFits, real data): Kiambu, 305 of the 515 plants on the near
   assert.equal(index.release_id, 'r-fcf4307ffd1549b3', 'the export the figure was read on');
   const store = await kiambuStore();
   const n = store.countFits.value;
-  assert.deepEqual(n, { fits: 196, look: 109, of: 515 });
+  assert.deepEqual(n, { fits: 196, look: 109, unknown: 0, of: 515 });
 });
 // Guests (plants from another climate's list) are not on the chosen climate's list: the line's {m}
 // ("the plants on the nearest lists") leaves them out, and so does {n} (drift check section 3).

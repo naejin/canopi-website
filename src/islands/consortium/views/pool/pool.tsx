@@ -9,10 +9,12 @@
 // - With a site climate, the count line [data-pool-count], an always-present status line: how many
 //   plants of the chosen climate's list (guests left out) fit or need a second look for the page's
 //   period, from the verdicts (store.countFits): "{n} of the {m} plants on the nearest lists fit your
-//   place today", or "on the {climate} list" for a curated climate; a later period from a link is
-//   named, never "today". While the verdict chunk loads, "Checking…"; refused, "Could not check…" with
-//   Try again (store.retryVerdict, in place); offline, "Needs a connection", asked again once back
-//   online. Never "0 of m": nothing fits shows the state below instead. The caveat that observed
+//   place today", or "on {list}" (consortium.list.*) for a curated climate; a later period from a link
+//   is named, never "today". Never "0 of m" (countKind): none fit says so, and none known to fit with
+//   some not checked says they could not be checked. While the verdict chunk loads, "Checking…";
+//   refused, "Could not check…" with Try again (store.retryVerdict, in place); offline, "Needs a
+//   connection", asked again once back online (store.ts start()). Under it, one sentence: the plants
+//   left out can still be found and added, with a warning (inform, don't block). The caveat that observed
 //   ranges include cultivation and are estimates, not reviewed (export meta ranges_review
 //   'estimate_not_reviewed'); aridity on ice: "not checked".
 // - No list at all (none with the real export): P2's "Not covered yet" notice, moved here off the first run.
@@ -26,38 +28,36 @@ import * as store from '../../store.ts';
 import { startEmpty } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
 import { page } from '../kit/page.ts';
-import { num, zoneName } from '../kit/names.ts';
-import { nothingFits } from '../../rules/suggest-block.ts';
+import { listName, num, zoneName } from '../kit/names.ts';
+import { countKind, nothingFits } from '../../rules/suggest-block.ts';
 
-// The count line's words: borrowed (the nearest lists) or the climate's own list, today or a later period.
-function countText(zone: ClimateZone, own: boolean, n: number, of: number): string {
+// The count line's words (rules/suggest-block.ts countKind: never "0 of m"): borrowed (the nearest
+// lists) or the climate's own list (its consortium.list.* phrase), today or a later period, named as
+// future.ts periodName names it (not imported: it would bring the future chunk into the pool's first
+// use, 2.2 KB over the role's 1.4 KB cap, check-built-site). None fit keeps the period apart too.
+function countText(zone: ClimateZone, own: boolean, n: { fits: number; look: number; unknown: number; of: number }): string {
   const p = store.period.value;
-  // Today is the first period id (types.ts; the first run's state.ts reads it the same way). Not
-  // source.ts TODAY_PERIOD: importing it here split source.ts into a chunk Details shares (E6-5d, rule A).
   const later = p !== periodIds[0];
-  const vars = { total: num(of), climate: zoneName(zone), period: p.replace('-', '–') };
-  return P(own ? (later ? 'place.count.ownLater' : 'place.count.own') : later ? 'place.count.borrowedLater' : 'range.pool.count', n, vars);
+  const vars = { total: num(n.of), list: listName(zone), period: p.replace('-', '–') };
+  const kind = countKind(n);
+  if (kind === 'unchecked') return P('place.count.unchecked', n.unknown, vars);
+  if (kind === 'none') return T(later ? 'place.count.noneLater' : 'place.count.none', vars);
+  return P(own ? (later ? 'place.count.ownLater' : 'place.count.own') : later ? 'place.count.borrowedLater' : 'range.pool.count', n.fits + n.look, vars);
 }
 
-// The count line (always on the page while the panel is: Checking, the count, failed or offline).
+// The count line (always on the page while the panel is: Checking, the count, none, not checked,
+// failed or offline). Offline, a refused chunk is asked for again once back online (store.ts start()).
 function CountLine({ zone, own }: { zone: ClimateZone; own: boolean }) {
   const off = store.offline.value;
   const failed = store.verdictFailed.value;
   const n = store.countFits.value;
-  // Offline with the chunk refused: asked again once the browser is back online (architecture 9).
-  useEffect(() => {
-    if (!failed || !off) return;
-    const again = () => store.retryVerdict();
-    addEventListener('online', again, { once: true });
-    return () => removeEventListener('online', again);
-  }, [failed, off]);
-  const state = n ? 'count' : failed ? (off ? 'offline' : 'failed') : 'checking';
+  const state = n ? countKind(n) : failed ? (off ? 'offline' : 'failed') : 'checking';
   return (
     <p class="status-line ct-pool-count" role="status" data-pool-count={state}>
-      {n ? countText(zone, own, n.fits + n.look, n.of)
+      {n ? countText(zone, own, n)
         : !failed ? T('place.count.checking')
         : off ? T('load.needsConnection')
-        : <>{T('place.count.failed')} <button type="button" class="button button-secondary ct-small" onClick={() => store.retryVerdict()}>{T('place.count.retry')}</button></>}
+        : <>{T('place.count.failed')} <button type="button" class="button button-secondary ct-small" onClick={() => store.retryVerdict()}>{T('load.retry')}</button></>}
     </p>
   );
 }
@@ -95,6 +95,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
       ) : (
         <>
           <CountLine zone={zone} own={own} />
+          <p class="ct-muted ct-small-text" data-pool-left>{T('place.count.left')}</p>
           {today?.aridityIndex === null && <p class="ct-muted ct-small-text">{T('range.pool.aridityNotChecked')}</p>}
           <p class="ct-muted ct-small-text">{T('range.pool.caveat')}</p>
         </>

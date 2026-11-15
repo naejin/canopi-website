@@ -113,7 +113,8 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
   await choose(page, 'Mediterranean');
   await suggestDirect(page);
-  // PP-B b1b: the palette page draws no plant marks until Your plants (b3); the members' verdicts say it.
+  // PP-B b1b: the palette page draws no plant marks until Your plants (b3); the members' verdicts say
+  // it (the suggestion reads them too: a candidate outside its range fills no hole).
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberVerdicts.value?.size > 0, { timeout: 10_000 }).then(() => true, () => false), 'the members are checked');
   const levels = await page.evaluate(() => [...window.__ctTest.store.memberVerdicts.value.values()].map((v) => v.level));
   assert.ok(levels.length > 0 && !levels.includes('outside'), `no suggested plant is outside its range (${levels.join(', ')})`);
@@ -134,7 +135,7 @@ test('P5-14c (S5c → PP-B b1b count line): at Seville the line counts the 198 o
   await atSite(page, 'seville');
   assert.ok(await page.waitForFunction(() => document.querySelector('[data-pool-count]')?.dataset.poolCount === 'count', { timeout: 15_000 }).then(() => true, () => false), 'the count line');
   assert.match(await text(page, '[data-pool-count]') ?? '', /^198 of the 200 plants on the Mediterranean list fit your place today\.$/, 'the design check\'s §C figure on this export: 198 of 200 (fits 167, a second look 31)');
-  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.countFits.value), { fits: 167, look: 31, of: 200 });
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.countFits.value), { fits: 167, look: 31, unknown: 0, of: 200 });
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
   assert.ok(await page.waitForFunction(() => !document.querySelector('[data-pool-count]'), { timeout: 5000 }).then(() => true, () => false), 'the line goes with the location');
 });
@@ -146,14 +147,14 @@ test('P5-14e (S5c range chunk offline): if the range chunk cannot load, the tool
   await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
   await choose(page, 'Mediterranean');
   await atSite(page, 'seville');
-  assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'a notice on Start: range checks unavailable');
+  assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'a notice on Place: range checks unavailable');
   assert.match(await text(page, '[data-range-unavailable]') ?? '', /Reload/);
   assert.match(await text(page, '.ct-toast') ?? '', /range/i, 'and a toast with Reload');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.pool.value?.length === 200, { timeout: 10_000 }).then(() => true, () => false), 'the unfiltered pool (P2)');
   // (Start's crops went with the Main crops picker in PP-B commit 0a'.)
   assert.ok(await has(page, '[data-place-suggest]', 10_000), 'Start from a small suggested palette');
   await page.click('[data-place-suggest]');
-  assert.ok(await has(page, '[data-plant-id]', 10_000), 'Suggest gives a matrix');
+  assert.ok(await has(page, '[data-plant-id]', 10_000), 'Suggest gives a palette');
   const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
   await page.evaluate((m) => window.__ctTest.openSheet('swap', m), id);
   assert.ok(await has(page, '.ct-swap .ct-rows li', 10_000), 'Swap lists alternatives');
@@ -193,10 +194,10 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the 
   assert.ok(await page.waitForFunction(() => !document.querySelector('[data-range-unavailable]') && !window.__ctTest.store.rangeFailed.value, { timeout: 5_000 }).then(() => true, () => false), 'location cleared: plain P2, no notice');
 });
 
-test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Start with the nothing-fits state', async () => {
+test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Place with the nothing-fits state', async () => {
   const page = await tool();
-  // Temperate (curated): no panel, so the rule's chunk is not fetched before the location; no
-  // Temperate plant holds the synthetic site (atNowhere).
+  // Temperate (curated): no count line without a location, so the rule's chunk is not fetched before
+  // it; no Temperate plant holds the synthetic site (atNowhere).
   await choose(page, 'Temperate');
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
@@ -209,7 +210,7 @@ test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Sugg
   assert.ok(await has(page, '[data-pool-empty]', 20_000), 'the nothing-fits state once the rule is in');
   await new Promise((r) => setTimeout(r, 500));
   const state = await page.evaluate(() => { const { store } = window.__ctTest; return { view: store.view.value, members: store.members.value.length }; });
-  assert.deepEqual(state, { view: 'start', members: 0 }, 'still on Start, no empty matrix');
+  assert.deepEqual(state, { view: 'start', members: 0 }, 'still on Place, no empty palette');
   assert.equal(await page.$('[data-place-suggest][aria-busy="true"]'), null, 'the pending Suggest is cleared');
 });
 
