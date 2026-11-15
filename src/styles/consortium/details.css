@@ -1,6 +1,6 @@
 /* Consortium v2, stream S3: the details dialog, swap, add, search, paste and toast. Tokens in base.css.
    Sheets are native <dialog>s (views/kit/sheet.tsx SheetDialog and SheetFrame): a side sheet on the right, full screen
-   on phones (max-width 639px). Everything is scoped to .ct .ct-sheet / .ct-ask / .ct-toast-region so
+   on phones (max-width 639px). Everything is scoped to .ct .ct-sheet / .ct-toast-region so
    the shared class names (.ct-bar, .ct-tag) do not leak into the matrix (S2). No green in chrome:
    warnings use the site's --warning tokens, pairings the ink. */
 
@@ -11,7 +11,7 @@
   background: var(--surface); color: var(--text); box-shadow: var(--shadow);
   overscroll-behavior: contain;
 }
-.ct .ct-sheet::backdrop, .ct .ct-ask::backdrop { background: var(--backdrop, rgba(22, 21, 16, 0.42)); }
+.ct .ct-sheet::backdrop { background: var(--backdrop, rgba(22, 21, 16, 0.42)); }
 .ct .ct-sheet-inner { display: flex; flex-direction: column; min-height: 100%; }
 .ct .ct-sheet-head {
   position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -25,11 +25,11 @@
 .ct .ct-sheet h3 { font-size: 19px; margin-bottom: 8px; }
 .ct .ct-sheet section > p, .ct .ct-sheet li { font-size: 16px; line-height: 1.45; }
 .ct .ct-sheet ul { margin: 0; padding: 0; list-style: none; }
-.ct .ct-sheet .ct-muted, .ct .ct-ask .ct-muted { color: var(--text-muted); }
+.ct .ct-sheet .ct-muted { color: var(--text-muted); }
 .ct .ct-sheet .ct-small { font-size: 13.5px; }
 .ct .ct-sheet .ct-sci { font-style: italic; color: var(--text-secondary); }
 .ct .ct-sheet .ct-note { margin-top: 8px; padding: 8px 12px; border-left: 3px solid var(--warning-line); background: var(--warning-bg); font-size: 15px; }
-.ct :where(.ct-sheet, .ct-ask, .ct-toast-region) .ct-glyph { display: inline-block; width: 16px; height: 16px; flex: none; vertical-align: -3px; }
+.ct :where(.ct-sheet, .ct-toast-region) .ct-glyph { display: inline-block; width: 16px; height: 16px; flex: none; vertical-align: -3px; }
 
 /* Buttons that are not the site's .button */
 .ct .ct-icon-button {
@@ -41,11 +41,11 @@
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px 0 0;
   border: 0; background: none; color: var(--accent-ink); font-weight: 600; cursor: pointer;
 }
-.ct .ct-sheet .button, .ct .ct-ask .button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.ct .ct-sheet .button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
 .ct .ct-sheet .button[aria-pressed="true"] { background: var(--surface-alt); border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
 .ct .ct-sheet .button[aria-pressed="true"] .ct-glyph { color: var(--accent-ink); }
 .ct .ct-sheet .button:disabled { opacity: 0.55; cursor: not-allowed; }
-.ct :where(.ct-sheet, .ct-ask) .ct-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ct :where(.ct-sheet) .ct-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
 /* Photo and name */
 .ct .ct-photo { margin: -20px -24px 0; }
@@ -74,9 +74,9 @@
 .ct .ct-reasons li { padding-left: 12px; border-left: 2px solid var(--border); }
 .ct :where(.ct-sheet) .ct-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ct :where(.ct-sheet) .ct-chips li { padding: 3px 10px; border-radius: 999px; background: var(--surface-alt); font-size: 14.5px; }
-.ct :where(.ct-sheet, .ct-ask) .ct-warnlist { display: grid; gap: 8px; }
-.ct :where(.ct-sheet, .ct-ask) .ct-warnlist li { position: relative; padding-left: 18px; }
-.ct :where(.ct-sheet, .ct-ask) .ct-warnlist li::before {
+.ct :where(.ct-sheet) .ct-warnlist { display: grid; gap: 8px; }
+.ct :where(.ct-sheet) .ct-warnlist li { position: relative; padding-left: 18px; }
+.ct :where(.ct-sheet) .ct-warnlist li::before {
   content: ""; position: absolute; left: 2px; top: 0.55em; width: 8px; height: 8px; border-radius: 2px; background: var(--warning-line);
 }
 .ct :where(.ct-sheet) .ct-warnlist li.soft::before { background: var(--border-strong); border-radius: 50%; }
@@ -138,14 +138,6 @@
 .ct .ct-corr-status.is-error { color: var(--danger); font-weight: 600; }
 .ct .ct-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .ct .ct-paste-text { font-family: inherit; }
-
-/* "Add it anyway?" over a sheet */
-.ct .ct-ask {
-  width: min(440px, calc(100% - 32px)); padding: 22px; border: 1px solid var(--border-strong); border-radius: 10px;
-  background: var(--surface); color: var(--text); box-shadow: var(--shadow);
-}
-.ct .ct-ask h3 { font-size: 22px; margin-bottom: 12px; }
-.ct .ct-ask .ct-warnlist { margin: 0 0 18px; padding: 0; list-style: none; font-size: 16px; }
 
 /* Toast: bottom centre, above the page; always in the DOM so screen readers hear it. While a line
    shows, the page keeps room for it at its end and around focus (W7): every control can be scrolled

@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { CellRef, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asks as sortsLast } from '../../../lib/consortium/index.ts';
+import { warns } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, swapMember, taxonOf } from '../store.ts';
 import { BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { FitLine } from './kit/fit.tsx';
@@ -67,7 +67,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
   // Misfits and serious conflicts after the others (order only; nothing asks).
-  const fit = alts.filter((a) => !sortsLast(a.flags)), last = alts.filter((a) => sortsLast(a.flags));
+  const fit = alts.filter((a) => !warns(a.flags)), last = alts.filter((a) => warns(a.flags));
   const shown = all ? alts : [...fit.slice(0, SHOWN.fit), ...last.slice(0, SHOWN.last)];
   const cellWords = (cells: readonly CellRef[]) => listOf(cells.map(([s, p]) => (s === t.stratum?.value ? phasePlain(p) : `${T(`stratum.${s}`)} · ${phasePlain(p)}`)));
   const swap = (x: Taxon) => { closeSheet(); swapMember(id, x.id); };
@@ -77,7 +77,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
     if (!x) return null;
     const lines = flagLines(x, a.flags, scene);
     return (
-      <li key={a.id} class={far || sortsLast(a.flags) ? 'flagged' : ''}>
+      <li key={a.id} class={far || warns(a.flags) ? 'flagged' : ''}>
         <div class="ct-row-main">
           <strong>{nameOf(x)}</strong> <i class="ct-sci">{x.canonical_name}</i>
           <Bar taxon={x} />

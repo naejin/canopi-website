@@ -3,7 +3,7 @@ type: Convention
 title: Palette vector files
 description: Every JSON vector file of the Plant palette under scripts/vectors/ uses one envelope, modelled on canopi-data's range-verdict vectors, so the app's Rust code and canopi-data can run the same cases.
 tags: [consortium, tests, vectors]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T11:06:45Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:27Z }
 sources:
   - id: architecture-plant-palette-architecture
     resource: /architecture/plant-palette-architecture.md
@@ -13,17 +13,17 @@ sources:
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
     digest: sha256:284d7031eff5e113
-    last_modified: 2026-11-14T10:59:53Z
+    last_modified: 2026-11-14T11:07:02Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
-    digest: sha256:fbbd5cb7acd35672
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:950058cbfed10592
+    last_modified: 2026-11-15T05:48:54Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
     digest: sha256:da6bff4dfd200892
-    last_modified: 2026-11-14T11:00:10Z
+    last_modified: 2026-11-14T11:07:02Z
 ---
 
 # Palette vector files
@@ -68,7 +68,7 @@ Modelled on canopi-data's `tests/vectors/range_verdicts.json` (sibling repositor
 - `scripts/vectors/link-v5.json` (schema `canopi-palette-link/5`) has five plants and five places.
   - About 63 named cases: the version-status table, decode cases (expected notice, state, `brings_place` or `same_as`) and encode cases.
   - `scripts/consortium-link-v5.test.mjs` runs it, and `npm run test:vectors` checks the envelope.
-- `scripts/vectors/range-verdicts.json` is the stamped copy of canopi-data's `range_verdicts.json` (release `r-60ea417b5a15c3aa`).
+- `scripts/vectors/range-verdicts.json` is the stamped copy of canopi-data's `range_verdicts.json` (release `r-f3c6dd8b3c4391be`).
   - It stays in canopi-data's own shape, and `install-consortium.test.mjs` checks its sha and release id.
   - b2 reads it from the installed release once the installer carries it.
 

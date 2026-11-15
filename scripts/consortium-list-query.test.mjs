@@ -73,8 +73,8 @@ test('E6 list-query (R2 rules): Add\'s query as the view builds it, and Add\'s r
   }
   // A job's stage gap: a run of stages in any layer (stratum null); a plant with no placement is out.
   assert.deepEqual(ids(listQuery(POOL, addQuery({ cell: { stratum: null, from: 0, to: 0 }, job: null, anyway: true }, SITE, []))), ids(POOL.filter((t) => t.phases && phaseOrd(t.phases.start) === 0)));
-  // Asking rows last, then named in more languages, then by scientific name.
-  const named = (id, names, canonical) => ({ t: { id, names, canonical_name: canonical }, asks: false });
-  const rows = [{ ...named('a', { en: 'A' }, 'Zeta'), asks: true }, named('b', {}, 'Beta'), named('c', { en: 'C', fr: 'C' }, 'Gamma'), named('d', {}, 'Alpha')];
+  // Rows that warn last, then named in more languages, then by scientific name.
+  const named = (id, names, canonical) => ({ t: { id, names, canonical_name: canonical }, warns: false });
+  const rows = [{ ...named('a', { en: 'A' }, 'Zeta'), warns: true }, named('b', {}, 'Beta'), named('c', { en: 'C', fr: 'C' }, 'Gamma'), named('d', {}, 'Alpha')];
   assert.deepEqual(addOrder(rows).map((r) => r.t.id), ['c', 'd', 'b', 'a']);
 });

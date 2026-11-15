@@ -3,6 +3,7 @@
 // database whole and opens it with SQLite-WASM. Run by hand; the output is committed.
 //
 //   node scripts/install-consortium.mjs <export-dir> [--fixture [--no-images]] [--out <dir>]
+//   (env: CANOPI_DATA_DIR, the canopi-data checkout that verifies; CANOPI_DATA_DB, its database)
 //
 // A real install (no --fixture) needs canopi-data beside this repository and uv: after the checks
 // below, and before any photo, it runs `uv run canopi release verify <export-dir>` from there, on the
@@ -65,7 +66,8 @@ export const INDEX_PATH = join(DATA_DIR, INDEX_FILE);
 export const dataDirFor = (out, fixture) => (!fixture && resolve(out) === DEFAULT_OUT ? DATA_DIR : null);
 export const PUBLIC_BASE = '/data/consortium/';
 export const IMAGE_BASE = `${PUBLIC_BASE}images/`;
-// canopi-data beside this checkout; CANOPI_DATA_DIR overrides it (a git worktree sits elsewhere).
+// canopi-data beside this checkout; CANOPI_DATA_DIR overrides it (a git worktree sits elsewhere), and
+// CANOPI_DATA_DB names its database when that checkout has no data/ of its own (releaseVerifyProblem).
 export const CANOPI_DATA_DIR = process.env.CANOPI_DATA_DIR ? resolve(process.env.CANOPI_DATA_DIR) : resolve(ROOT, '..', 'canopi-data');
 // About 5 s, more when uv first has to sync the environment.
 const RELEASE_VERIFY_TIMEOUT_MS = 300_000;
@@ -157,7 +159,10 @@ function checkOut(out, exportDir) {
 export function releaseVerifyProblem(dir, { root = CANOPI_DATA_DIR, env = process.env, log = console.log } = {}) {
   const command = 'uv run canopi release verify';
   if (!existsSync(root)) return `canopi-data was not found at ${root}, so \`${command}\` cannot say whether this export may ship.`;
-  const run = spawnSync('uv', ['run', 'canopi', 'release', 'verify', dir], { cwd: root, env, encoding: 'utf8', timeout: RELEASE_VERIFY_TIMEOUT_MS });
+  // CANOPI_DATA_DB: canopi-data's database, for a checkout without its own data/ (a worktree at an
+  // older tag, such as schema3-last for a schema-3 export: canopi-data docs/consortium-handoff.md).
+  const db = env.CANOPI_DATA_DB ? ['--db-path', env.CANOPI_DATA_DB] : [];
+  const run = spawnSync('uv', ['run', 'canopi', 'release', 'verify', dir, ...db], { cwd: root, env, encoding: 'utf8', timeout: RELEASE_VERIFY_TIMEOUT_MS });
   const said = [run.stdout, run.stderr].map((text) => text?.trim()).filter(Boolean).join('\n');
   if (run.error && run.status === null && !run.signal) return `could not run \`${command}\` in ${root}: ${run.error.message}.`;
   if (run.status === 0) { if (said) log(said); return null; }

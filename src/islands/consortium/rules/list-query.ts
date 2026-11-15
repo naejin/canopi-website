@@ -40,9 +40,9 @@ export interface AddFor { cell: { stratum: Stratum | null; from: PhaseOrd; to: P
 export const addQuery = ({ cell, job, anyway }: AddFor, site: Site, canopy: readonly Taxon[]): ListQuery =>
   ({ stratum: cell?.stratum ?? null, from: cell?.from ?? null, to: cell?.to ?? null, job, site: cell ? site : null, canopy, anyway });
 
-// Add's row order with no query: plants that ask first last, then the better known (named in more
-// languages), then by scientific name.
-export function addOrder<R extends { t: Taxon; asks: boolean }>(rows: R[]): R[] {
+// Add's row order with no query: plants that warn (a site misfit, a serious conflict, outside their
+// climate range) last, then the better known (named in more languages), then by scientific name.
+export function addOrder<R extends { t: Taxon; warns: boolean }>(rows: R[]): R[] {
   const known = (t: Taxon) => Object.keys(t.names).length;
-  return rows.sort((a, b) => Number(a.asks) - Number(b.asks) || known(b.t) - known(a.t) || (a.t.canonical_name < b.t.canonical_name ? -1 : 1));
+  return rows.sort((a, b) => Number(a.warns) - Number(b.warns) || known(b.t) - known(a.t) || (a.t.canonical_name < b.t.canonical_name ? -1 : 1));
 }

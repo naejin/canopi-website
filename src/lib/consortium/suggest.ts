@@ -22,7 +22,7 @@ import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThan
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { cellKey, cellsOf } from './matrix.ts';
 import type { FlagContext } from './conflicts.ts';
-import { asks, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
+import { warns, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
 
 // Suggestions stay small (owner, 2026-10-28): 6, 9 or 12 plants by room; 9 with Room "Not sure"
 // (design check A7, coordinator row "v2 build setup", revertible). The room limits plant size, never
@@ -200,7 +200,7 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
       };
     });
   out.sort((x, y) =>
-    Number(asks(x.alt.flags)) - Number(asks(y.alt.flags))
+    Number(warns(x.alt.flags)) - Number(warns(y.alt.flags))
     || Number(y.alt.sameStratum) - Number(x.alt.sameStratum)
     || x.alt.leavesEmpty.length - y.alt.leavesEmpty.length
     || y.alt.alsoFills.length - x.alt.alsoFills.length

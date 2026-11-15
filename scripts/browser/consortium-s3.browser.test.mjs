@@ -285,7 +285,7 @@ test('BT-6 (S3 review): Undo goes away when the consortium changes another way; 
   await page.close();
 });
 
-test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pasted guest that misfits asks first and shows its warning; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
+test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pasted guest that misfits joins in one tap with its warning in words, no confirm step; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
   const page = await open({ width: 1280, data: 'fixture' });
   await start(page);
   for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
@@ -308,17 +308,18 @@ test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pas
   await page.locator(aria('button', 'Close')).click(); // Escape in a filled search box first clears it
   await closed(page);
 
-  // Deep shade: a sun plant from the Tropical list misfits, so "Add anyway" asks.
+  // Deep shade: a sun plant from the Tropical list misfits. Inform, don't block (owner 2026-11-14):
+  // its row says why in words, one tap on "Add anyway" adds it, and the toast names the warning.
   await setStore(page, () => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });
   await openBy(page, 'Paste a list');
   await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
-  assert.ok(await findAx(page, { name: /^Your site:/ }), 'the guest row shows its warning');
+  assert.ok(await findAx(page, { name: /^Your site:/ }), 'the guest row shows its warning in words');
   await page.locator(aria('button', 'Add anyway')).click();
-  assert.ok(await findAx(page, { role: 'alertdialog' }), 'a guest that misfits asks first');
-  await page.locator('dialog[role="alertdialog"] .button-primary').click();
+  assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical', 'the guest joins at once');
+  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
   assert.ok(await sheetOpen(page), 'the Paste sheet stays');
+  assert.ok(await findAx(page, { name: /1 added with a warning/ }), 'the toast names the warning');
   assert.ok(await has(page, aria('button', 'Undo')), 'the toast is reachable over the sheet');
-  assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical');
 
   // Pear (a member of the suggestion) is taken out, then pasted back in deep shade: it misfits.
   if (await isMember(page, 'Pyrus communis')) await dropMember(page, 'Pyrus communis');
@@ -388,5 +389,43 @@ test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "A
   await page.$eval('dialog[open] textarea', (el) => { el.value = 'Malus domestica\nCastanea sativa'; el.dispatchEvent(new Event('input', { bubbles: true })); el.closest('dialog').querySelector('.ct-add-bar .button-primary').click(); });
   await closed(page);
   assert.ok(await isMember(page, 'Malus domestica') && await isMember(page, 'Castanea sativa'), 'both lines are added');
+  await page.close();
+});
+
+// W4 (review paste-2, pf-2): "Add anyway" leaves the list as the plant joins, so the focus moves on, never
+// to <body> and never stays on the pressed (removed) button: to the next row's "Add anyway", else the
+// row before's, else the "Already in" heading. Rows are keyed by plant, so the pressed node leaves.
+test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next row\'s, else the row before\'s, then to the "Already in" heading, never to <body> or the pressed button', async () => {
+  const page = await open({ width: 1280, data: 'fixture' });
+  await start(page);
+  const [A, B, C] = ['Inga edulis', 'Musa acuminata', 'Carica papaya'];
+  for (const c of [A, B, C]) if (await isMember(page, c)) await dropMember(page, c);
+  await openBy(page, 'Paste a list');
+  await page.locator('::-p-aria([role="textbox"])').fill([A, B, C].join('\n'));
+  const rows = 'dialog[open] [aria-labelledby="ct-p-other"] li';
+  assert.ok(await page.waitForFunction((sel) => document.querySelectorAll(`${sel} button`).length === 3, { timeout: 5000 }, rows).then(() => true, () => false), 'three rows from another list');
+  // The "Add anyway" of a plant's row, by its scientific name.
+  const buttonOf = (name) => page.evaluate((sel, n) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === n)?.querySelector('button')?.getAttribute('aria-describedby') ?? null, rows, name);
+  const settle = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 50)))));
+  const focused = () => page.evaluate(() => {
+    const a = document.activeElement;
+    return { body: !a || a === document.body, inSheet: !!a?.closest('dialog[open]'), pressed: a?.dataset?.pressed === '1', tag: a?.tagName ?? null, text: a?.textContent?.trim() ?? '', describedby: a?.getAttribute('aria-describedby') ?? null };
+  });
+  // Presses a row's "Add anyway" by keyboard, the button tagged so the focus is never found on it again.
+  const press = async (name) => {
+    await page.evaluate((sel, n) => { const b = [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === n).querySelector('button'); b.dataset.pressed = '1'; b.focus(); }, rows, name);
+    await page.keyboard.press('Enter');
+    await settle();
+    const at = await focused();
+    assert.ok(!at.body && at.inSheet && !at.pressed, `after ${name}: the focus stays in the sheet, off the pressed button (${JSON.stringify(at)})`);
+    assert.ok(await isMember(page, name), `${name} joined`);
+    return at;
+  };
+  const b = await buttonOf(B);
+  assert.equal((await press(C)).describedby, b, 'the last row: the focus goes to the row before\'s "Add anyway"');
+  assert.equal((await press(A)).describedby, b, 'the first row: the focus goes to the next row\'s');
+  const at = await press(B);
+  assert.equal(at.tag, 'H3', `the list empty: the "Already in" heading (${JSON.stringify(at)})`);
+  assert.match(at.text, /Already in/i);
   await page.close();
 });

@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:26Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:31Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:41:05Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -112,8 +112,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:5d59c89d38f93b0d
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:662426a9e2d6b05e
+    last_modified: 2026-11-15T05:48:55Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -123,17 +123,17 @@ sources:
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
     digest: sha256:0b7db36679f25fcc
-    last_modified: 2026-11-14T21:52:54Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
-    digest: sha256:be4bbd1d3c23e9c1
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:bb3e2ea41339b8f7
+    last_modified: 2026-11-15T05:48:55Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
-    digest: sha256:4fa31efc0327a38b
-    last_modified: 2026-11-13T07:02:37Z
+    digest: sha256:0fada07f7575e635
+    last_modified: 2026-11-15T05:48:55Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -143,32 +143,32 @@ sources:
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:d7dd93580455ffe8
-    last_modified: 2026-11-14T21:55:10Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:a97de2c82f12d653
-    last_modified: 2026-11-14T22:37:57Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:534a06a167bf1509
-    last_modified: 2026-11-14T21:51:58Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:5c240108275b42b7
-    last_modified: 2026-11-14T21:52:20Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:337229af28a158c8
-    last_modified: 2026-11-14T21:51:58Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
     digest: sha256:5e8602c72249ab40
-    last_modified: 2026-11-14T21:52:26Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -178,7 +178,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:c109e9db6f45090c
-    last_modified: 2026-11-14T22:37:57Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -192,8 +192,8 @@ sources:
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
-    digest: sha256:32e2c238edfc7b5e
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:8c8c38cfe432a5b7
+    last_modified: 2026-11-15T05:48:55Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -212,8 +212,8 @@ sources:
   - id: paste-tsx
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
-    digest: sha256:9d57f6a7d24cde3c
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:904e8e3e5a71ad0b
+    last_modified: 2026-11-15T05:48:55Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
@@ -223,7 +223,7 @@ sources:
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
     digest: sha256:08784025942a4880
-    last_modified: 2026-11-14T21:53:49Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -243,12 +243,12 @@ sources:
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
     digest: sha256:51143f60a8813762
-    last_modified: 2026-11-14T22:08:25Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:3e8f63daa96fdca4
-    last_modified: 2026-11-13T07:02:37Z
+    digest: sha256:4793b06fedb7fa35
+    last_modified: 2026-11-15T05:48:55Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
@@ -307,8 +307,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:74e257618f1b4271
-    last_modified: 2026-11-13T03:45:07Z
+    digest: sha256:a635a47f805ea6e7
+    last_modified: 2026-11-15T05:48:55Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -382,8 +382,8 @@ sources:
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
-    digest: sha256:794b69777641c2ce
-    last_modified: 2026-11-13T07:02:37Z
+    digest: sha256:d89b0b8086198a1e
+    last_modified: 2026-11-15T05:48:55Z
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
@@ -407,13 +407,13 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:112488cf7fc1f78d
-    last_modified: 2026-11-14T13:27:54Z
+    digest: sha256:537d25093ae022cf
+    last_modified: 2026-11-15T05:48:55Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:096df107f940cfdd
-    last_modified: 2026-11-14T15:16:44Z
+    digest: sha256:39f3e985aba0677c
+    last_modified: 2026-11-15T05:48:55Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -442,8 +442,8 @@ sources:
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:b408e136e7bfa3ac
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:2228f658cddef572
+    last_modified: 2026-11-15T05:48:55Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
@@ -491,7 +491,7 @@ The core stays flat (no subfolder of `src/lib/consortium/`): whether the boundar
 ### ADR changes (rows in [Consortium v2 architecture](/decisions/consortium-v2-architecture.md); written into ADR-1 and ADR-2 by each push's commit 0)
 
 - **ADR-1 rule L10 one-verdict** (lands `warn` in PP-B commit 0, which writes its keys with `node scripts/quality/ratchet.mjs arch --write` (a new key fails CI, `ratchet.mjs:11,16`); the merge agent rewrites the baseline at each chunk merge; `error` at the end of PP-C, when c2 owns `.dependency-cruiser.cjs`, adds a breach fixture and an allowed neighbour to `scripts/quality/arch-rules.test.mjs` and empties the baseline). Inside `src/lib/consortium/`, only these import `range.ts`, `future.ts` or `site.ts`: the rule files themselves (`future.ts` → `range.ts` included), `verdict*.ts`, `place.ts`, `suggest.ts`, `site-climate.ts`, `matrix.ts` until it is deleted, and `index.ts` for re-exports only (named `site.ts` exports, never `fits`, and `future.ts` until e2): dependency-cruiser counts `export * from` as an edge (`index.ts:9,15,17`), so `index` is in the rule's `pathNot` with an arch-rules fixture, and the rule still turns `error` in c2 (index.ts keeps importing `site.ts` after that). A second line, `warn` beside L10: only `place.ts` reads `lookup.periods` (`climateFor`, section 3.1), a grep in the arch-rules test. `conflicts.ts`: its misfit flag moves into the verdict, so `FlagContext` drops `site` and `conflicts.ts` stops importing `site.ts` (option (a) of amendment 14; c2). `index.ts` replaces `export * from './site.ts'` with named exports (`canopyOf`, `misfitsBeside`, `ROOM_LIMIT_M`, `Canopy`; never `fits`); it stops re-exporting `range` in c2 (PP-C) and `future` in e2 (PP-E, the commit that deletes `views/future/**`). Callers moved in PP-B/PP-C: `rules/list-query.ts:7`, `views/tracks.ts:13`, `store.ts`, `rules/suggest-block.ts`, `views/Start.tsx`, `views/PoolSlot.tsx`, `views/Paste.tsx`, `views/kit/flags.ts`.
-- **ADR-1 statement:** L3 holds `rules/picture-*.ts`; a view draws, it never computes a position from plant data. No first-run module statically imports `verdict.ts`; verdicts, `holdsBy` and `asksBefore` are reached through `loadVerdictRule()` in the core module `verdict-load.ts` (as `marks.ts:47-51` does for the range rule today), which outlives `marks.ts` (deleted in c2).
+- **ADR-1 statement:** L3 holds `rules/picture-*.ts`; a view draws, it never computes a position from plant data. No first-run module statically imports `verdict.ts`; verdicts and `holdsBy` are reached through `loadVerdictRule()` in the core module `verdict-load.ts` (as `marks.ts:47-51` does for the range rule today), which outlives `marks.ts` (deleted in c2).
 - **ADR-2 roles:** delete `balance` (PP-B commit 0); rename `structure` to `matrix` (entry `views/Matrix.tsx` with `Actions`, cap 12 KB) in PP-B commit 0a so the matrix leaves the first run, and delete it with the matrix in commit 0a' (owner, 2026-11-14, "Delete first"; `Actions` returns to the first run until b2 hosts it); add `palette` and `verdict` (PP-B; `verdict` capped at 12 KB, then measured + 0.5 KB at the exit), `find` replacing `sheets` (PP-C), `plan` and `take` renamed from `later` (PP-D), `climate` replacing `future` (PP-E), `soil` (PP-F), `year` (PP-G); `range` and `markProviders` fold into `verdict` (PP-C); `pool` deleted once Place shows its count (PP-B, coordinator choice of 2026-11-14). Every role keeps a cap and every cap a role (`check-built-site.mjs:527`). **No `charts` role:** a statically shared module never gets a role (`built-modules.mjs:142-144`), so `views/kit/chart.tsx` is a kit module counted in full in each importing role's cost, and Details reaches it only through `lazyPart` (K3, `check-built-site.mjs:590-601`, fails a sheet chunk that statically imports a non-first-run chunk). Each commit 0 rewrites the one-chunk list (`check-built-site.mjs:528`), the sheet count (`:529`) and `sheetLike` (`:594`, Details + Find).
 
 ## 3. One owner per concept
@@ -504,7 +504,7 @@ The core stays flat (no subfolder of `src/lib/consortium/`): whether the boundar
 | Proposed climate zone | `site-climate.ts` `siteClimate` (`:100-119`); `hotterZone` added in PP-E | same | keep |
 | Period shown and scenario | state field `period` (saved, in the link); `scenario` signal (`store.ts:53`, session only) | each plant on its own period (`future.ts:49-52`) | add `period` |
 | Plant facts | `PlantSource`; `factAt` (`source.ts:42-60`) | bloom months only per plant through `details()` (`data/sqlite-source.ts:290-336`) | add `layerValues` |
-| Verdict of a plant at a place | `verdict.ts` | spread over `range.ts` `rangeCheck`/`rangeFit`/`withinRange`, `future.ts` `futureCheck`/`futureSummary`, `site.ts` `fits` (`:93`) and `misfitsBeside`, `site-marks.ts`, `range-marks.ts`, `future-marks.ts`, `rules/site-fit.ts`, `conflicts.ts` `asks` (`:178`), the pool panel's own list (`views/pool/pool.tsx:40`) | 3.2 |
+| Verdict of a plant at a place | `verdict.ts` | spread over `range.ts` `rangeCheck`/`rangeFit`/`withinRange`, `future.ts` `futureCheck`/`futureSummary`, `site.ts` `fits` (`:93`) and `misfitsBeside`, `site-marks.ts`, `range-marks.ts`, `future-marks.ts`, `rules/site-fit.ts`, `conflicts.ts` `warns` (`:179`, order only since "Inform, don't block"), the pool panel's own list (`views/pool/pool.tsx:40`) | 3.2 |
 | Holes | `holes.ts` | `jobGapsByPhase` (`jobs.ts:43-54`), matrix empty cells (`views/matrix-parts.tsx:70-72`), the commit-0 Balance registry (`balance.ts:27-37`), Suggest's cell terms (`suggest.ts:21,59`) | 3.3 |
 | Years of a phase | `years.ts` | words in locale files only (`en.json:231-237`) | new table |
 | Words for verdicts, holes and year spans | `verdict-line.ts` (`fitLine`, `holeLine`, `yearsLine`, returning `Line`), keys under `consortium.line.` (b2) | each surface writes its own (`views/kit/flags.ts`, `rules/site-fit.ts`, Matrix) | 3.2; Find, Swap, Details, print and the period switch never write their own keys for these |
@@ -572,7 +572,6 @@ export function judgedPeriod(taxon: Taxon, page: PeriodId): PeriodId;          /
 export function verdict(taxon: Taxon, ctx: VerdictContext): PlantVerdict;
 export function verdicts(taxa: readonly Taxon[], ctx: VerdictContext): Map<PlantId, PlantVerdict>;
 export function holdsBy(taxon: Taxon, ctx: VerdictContext, period: PeriodId): boolean;   // P34, P35; built in b2 on futureCheck
-export function asksBefore(v: PlantVerdict, conflicts: readonly Conflict[]): boolean;   // replaces conflicts.ts asks, :178
 // verdict-line.ts (leaf, first-run safe; signatures in commit 0, bodies b2, keys under consortium.line.):
 export type Line = { key: string; vars: Record<string, string | number>; count?: number };   // count feeds P() (strings.ts:51-56)
 export function fitLine(v: PlantVerdict): Line;
@@ -744,7 +743,7 @@ Each commit 0 and each stream hand-off runs `npm run check:dead` and a grep for 
 ## 7. Cycles and duplicates today, and their fix
 
 1. **Two `View` lists**: `store.ts:24` and core `views` (`types.ts:467`) → one list in `state/schema.ts`.
-2. **Verdict producers**: `rangeCheck`, `rangeFit`, `withinRange`, `futureCheck`, `futureSummary`, `site.ts fits` and `misfitsBeside`, `conflicts.ts asks`, the pool panel's list → `verdict.ts` and rule L10.
+2. **Verdict producers**: `rangeCheck`, `rangeFit`, `withinRange`, `futureCheck`, `futureSummary`, `site.ts fits` and `misfitsBeside`, `conflicts.ts warns` (order only), the pool panel's list → `verdict.ts` and rule L10.
 3. **Gap engines**: `jobGapsByPhase`, the commit-0 Balance registry, the matrix's empty cells, Suggest's cell terms → `holes.ts` and `fills`.
 4. **Two soil vocabularies**: the reader's texture and pH (`src/lib/climate/soil.ts:19-48`) and the core's three words (`types.ts:65`, `site.ts:38-39`) → `resolveSoil` is the only translation.
 5. **Phase length in words only** (`en.json:231-237`) → `years.ts`; the words stay for Details.

@@ -16,7 +16,7 @@ const {
   fits, misfitsBeside, ROOM_LIMIT_M, UNSURE_SITE,
   conflicts, isSerious, invasiveIn, pairings, countryStatus,
   jobsOf, jobGapsByPhase, jobIds,
-  flagsFor, flagsOf, asks,
+  flagsFor, flagsOf, warns,
   encodeLink, decodeLink, linkClimates, readPreset, LINK_VERSION, MAX_LINK_IDS, LONG_LINK, tokenOf, isLongLink,
   strata, phases,
 } = core;
@@ -253,26 +253,26 @@ test('suggest: a seeded guest counts for coverage; a guest is never picked', () 
   assert.ok(!s.members.includes(musa.id));
 });
 
-test('flags: a misfit and a high conflict ask before Add or Swap; invasive, toxicity and medium conflicts only warn', () => {
+test('flags: a misfit and a high conflict warn (listed last); invasive, toxicity and medium conflicts alone do not', () => {
   const c = ctx({ interactions: temperateInteractions, country: 'FR', countryStatus: 'checked', site: site({ room: 'small' }) });
   const robinia = T('Robinia pseudoacacia'); // invasive in FR, Severe, 12–25 m
-  // Taller than a small garden is advisory (owner request 2026-11-12): no misfit flag, no ask.
+  // Taller than a small garden is advisory (owner request 2026-11-12): no misfit flag, no warning.
   assert.deepEqual(flagsFor(robinia, [], c).map((f) => f.kind).sort(), ['invasive', 'toxicity']);
   const fl = flagsFor(robinia, [], { ...c, site: site({ light: 'shade' }) });
   assert.ok(fl.some((f) => f.kind === 'misfit'), 'a light misfit still flags');
-  assert.equal(asks(fl), true);
-  assert.equal(asks(flagsFor(robinia, [], { ...c, site: UNSURE_SITE })), false, 'invasive and toxicity never ask');
+  assert.equal(warns(fl), true);
+  assert.equal(warns(flagsFor(robinia, [], { ...c, site: UNSURE_SITE })), false, 'invasive and toxicity alone never warn');
   const malus = T('Malus domestica'), walnut = T('Juglans regia'), hazel = T('Corylus avellana'), chestnut = T('Castanea sativa');
   const high = flagsFor(malus, [walnut], { ...c, site: UNSURE_SITE });
   assert.deepEqual(high, [{ id: malus.id, kind: 'conflict', other: walnut.id, severity: 'high', type: 'allelopathic_harm', agent: null,
     note: { en: 'Juglone from walnut roots stunts apples planted under its crown.', fr: 'La juglone des racines du noyer freine les pommiers plantés sous sa couronne.' } }]);
-  assert.equal(asks(high), true);
+  assert.equal(warns(high), true);
   const medium = flagsFor(hazel, [chestnut], { ...c, site: UNSURE_SITE });
   assert.deepEqual(medium, [{ id: hazel.id, kind: 'conflict', other: chestnut.id, severity: 'medium', type: 'shared_pest', agent: 'Curculio nucum', note: null }]);
   // Low conflicts are flags too; views decide what to show (they leave low out of chips).
   const low = flagsFor(T('Ribes nigrum'), [T('Rubus idaeus')], { ...c, site: UNSURE_SITE });
   assert.deepEqual(low.map((f) => f.severity), ['low']);
-  assert.equal(asks(medium), false);
+  assert.equal(warns(medium), false);
   const all = flagsOf([malus, walnut], { ...c, site: UNSURE_SITE });
   assert.deepEqual(all.map((f) => `${f.id === malus.id ? 'malus' : 'walnut'} ${f.kind}`).sort(), ['malus conflict', 'walnut conflict']);
   // No country: no invasive flag (the soft worldwide count is the view's).
@@ -295,12 +295,12 @@ test('alternatives: "Also fills" and "Leaves empty" are the cells a swap changes
   assert.deepEqual(a.leavesEmpty, [['low', 0]]);
   assert.deepEqual(alts[1].alsoFills, [['high', 0]]);
   assert.deepEqual(alts[1].leavesEmpty, [['low', 0], ['low', 1]]);
-  // A candidate that asks (high conflict) comes after one that does not, with its flags.
+  // A candidate that warns (high conflict) comes after one that does not, with its flags.
   const walnut = T('Juglans regia'), malus = T('Malus domestica'), pear = T('Pyrus communis');
   const swap = alternatives(pear.id, [pear, walnut], temperate, ctx({ interactions: temperateInteractions }));
   const iMalus = swap.findIndex((x) => x.id === malus.id);
-  assert.ok(iMalus > 0 && asks(swap[iMalus].flags));
-  assert.ok(swap.slice(0, iMalus).every((x) => !asks(x.flags)));
+  assert.ok(iMalus > 0 && warns(swap[iMalus].flags));
+  assert.ok(swap.slice(0, iMalus).every((x) => !warns(x.flags)));
 });
 
 // ================= share state =================
@@ -477,7 +477,7 @@ test('core leaves: nearest.ts imports only types; placed.ts never imports placem
   assert.ok(!edges('conflicts.ts').includes('suggest.ts'), 'conflicts.ts does not reach the suggestion');
   const conflictsMod = await import('../src/lib/consortium/conflicts.ts');
   const suggestMod = await import('../src/lib/consortium/suggest.ts');
-  for (const name of ['flagsOf', 'flagsFor', 'asks']) {
+  for (const name of ['flagsOf', 'flagsFor', 'warns']) {
     assert.equal(typeof conflictsMod[name], 'function', `conflicts.ts exports ${name}`);
     assert.equal(suggestMod[name], undefined, `suggest.ts no longer declares ${name}`);
     assert.equal(core[name], conflictsMod[name], `the index exports conflicts.ts's ${name}`);

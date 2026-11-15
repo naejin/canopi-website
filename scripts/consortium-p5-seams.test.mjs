@@ -74,7 +74,7 @@ test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags k
   const low = taxon({ id: 'low', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'climax', sources: [] }, traits });
   const site = { light: 'part', soil: 'acid', water: 'dry', room: 'small' };
   const ms = core.siteFitMessages(low, site);
-  assert.deepEqual(ms.map((m) => [m.about, m.key, m.asks, m.severity, m.state ?? null]), [
+  assert.deepEqual(ms.map((m) => [m.about, m.key, m.misfit, m.severity, m.state ?? null]), [
     ['light', 'misfit.light.part', true, 'warning', null],
     ['soil', 'misfit.soil.acid', true, 'warning', null],
     ['water', 'water.dryMonths', false, 'note', 'dry_months'],

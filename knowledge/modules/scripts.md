@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:37:20Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:30Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:29:36Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:19:47Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:50f73a25abc5c9bf
-    last_modified: 2026-11-14T22:34:25Z
+    digest: sha256:88bce15b0e22a904
+    last_modified: 2026-11-15T05:48:54Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -114,7 +114,7 @@ sources:
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
     digest: sha256:fbd4102156210fb2
-    last_modified: 2026-11-14T21:49:16Z
+    last_modified: 2026-11-14T22:40:15Z
 ---
 
 # Responsibility
