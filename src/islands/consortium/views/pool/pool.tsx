@@ -21,7 +21,7 @@
 //   all plants).
 import { useEffect } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/consortium/index.ts';
-import { hasPlants, NEAREST_LISTS, siteToday, TODAY_PERIOD, yearMeanC } from '../../../../lib/consortium/index.ts';
+import { hasPlants, NEAREST_LISTS, periodIds, siteToday, yearMeanC } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { startEmpty } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
@@ -32,7 +32,9 @@ import { nothingFits } from '../../rules/suggest-block.ts';
 // The count line's words: borrowed (the nearest lists) or the climate's own list, today or a later period.
 function countText(zone: ClimateZone, own: boolean, n: number, of: number): string {
   const p = store.period.value;
-  const later = p !== TODAY_PERIOD;
+  // Today is the first period id (types.ts; the first run's state.ts reads it the same way). Not
+  // source.ts TODAY_PERIOD: importing it here split source.ts into a chunk Details shares (E6-5d, rule A).
+  const later = p !== periodIds[0];
   const vars = { total: num(of), climate: zoneName(zone), period: p.replace('-', '–') };
   return P(own ? (later ? 'place.count.ownLater' : 'place.count.own') : later ? 'place.count.borrowedLater' : 'range.pool.count', n, vars);
 }
