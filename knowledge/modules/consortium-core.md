@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:48:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:40:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:12Z }
 sources:
@@ -12,7 +12,7 @@ sources:
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:39f3e985aba0677c
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -61,8 +61,8 @@ sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:9dff8162d35386ce
-    last_modified: 2026-11-14T22:20:01Z
+    digest: sha256:ab356e6f94dec28b
+    last_modified: 2026-11-15T08:31:04Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -72,7 +72,7 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:a635a47f805ea6e7
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -82,7 +82,7 @@ sources:
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:537d25093ae022cf
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -117,7 +117,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:7a9a00b639b18f76
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -172,12 +172,12 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:b7ba8d57d358f1ec
-    last_modified: 2026-11-14T22:20:01Z
+    digest: sha256:3cbb582aa6638e42
+    last_modified: 2026-11-15T08:40:07Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -236,8 +236,8 @@ sources:
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
-    digest: sha256:950058cbfed10592
-    last_modified: 2026-11-14T22:20:01Z
+    digest: sha256:6dc8c9159b014383
+    last_modified: 2026-11-15T08:31:04Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -347,11 +347,14 @@ What it writes:
 - Staging is in `.cache/consortium-install/`, then a rename, with the `src/data/` files put back on failure.
 - `verifyInstall(dir, index)` re-checks a served folder against the index: the mark, each database by sha256, gzip and limits, every indexed photo present, and nothing else. `check-built-site.mjs` runs it on `dist/client/data/consortium/`.
 
-Installed now: release `r-f3c6dd8b3c4391be` (D2d), schema 3, `consortium-v3.r-f3c6dd8b3c4391be.7be9df0e298f.sqlite.gz`, 620,573 B gzipped, 515 plants (25 `grown_as_annual`), the same 190 photos. canopi-data exported it from its schema3-last worktree; installed with `CANOPI_DATA_DIR` set to that worktree and `CANOPI_DATA_DB` to the main checkout's `data/canopi.db`.
+Installed now: release `r-fcf4307ffd1549b3` (canopi-data D3 core, its rows equal to D8a's `r-ad27260496be31eb`), schema 3, `consortium-v3.r-fcf4307ffd1549b3.e80bc9aa6589.sqlite.gz`, 621,337 B gzipped, 515 plants, the same 190 photos. Installed as below (`CANOPI_DATA_DIR` the schema3-last worktree, `CANOPI_DATA_DB` the main checkout's `data/canopi.db`). `canopi release verify` accepts only an export of canopi-data's current release, so an older export cannot be installed once a newer release is built; canopi-data announces each release that moves the pin.
+- Against `r-f3c6dd8b3c4391be` (D2d): only the `layer_values` month rows changed (D8a): each now carries `scope_hemisphere` and `scope_latitude` (the band it was observed in) beside its country; Details (`views/layers.ts` `scopeText`) names the band. The PFAF month-row test checks the UK country and the band, not an exact scope.
+
+Previous install: release `r-f3c6dd8b3c4391be` (D2d), `consortium-v3.r-f3c6dd8b3c4391be.7be9df0e298f.sqlite.gz`, 620,573 B gzipped, 515 plants (25 `grown_as_annual`).
 - Against `r-60ea417b5a15c3aa`, plant fields moved: hardiness_zone_min 131, frost_tender 79, toxicity 74 (Slight 20→57, Moderate 14→39, Severe 2→8), nitrogen_fixer 22, deciduous_evergreen 14, is_annual 5 (Good-King-Henry is perennial now).
 - Figures re-pinned on it: seven sites' kept pools (1–4 fewer), the cool-season annual case (Siberian purslane), Kiambu countFits 305 (marker), PP-B39 now waits on b3's Slight flag.
 
-Previous install: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz`, rebuilt from canopi-data master `94a67a5` for the GBIF credit (`2e195da`).
+Earlier install: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz`, rebuilt from canopi-data master `94a67a5` for the GBIF credit (`2e195da`).
 - Against `r-b958a4239cc68f73` (the ranges rebuild's final rows) only `meta.built_at`, `meta.release_id` and the `gbif_occurrences` row of `sources` (the DOI follow-up sentence removed) differ; DDL and every other table are equal (audited table by table), so every count pinned on `r-b958a4239cc68f73` holds.
 - 578,005 B gzipped (`r-b958a4239cc68f73` 578,040 B; `r-01102782139409b5` 568,732 B; schema 2's `r-e0b162087a79eecf` 556,862 B).
 - 515 plants (24 `grown_as_annual`), 200 placements per climate (Tropical, Mediterranean, Temperate); 3,605 range rows (7 variables, 56 weak), 8,549 Köppen rows, 34,176 area rows.
@@ -381,7 +384,7 @@ This section supersedes the statements above where they disagree.
   - `verdict.ts`, `verdict-line.ts`, `verdict-load.ts`, `years.ts`, `holes.ts` and `weigh.ts` are seams tagged `@public`. b2 writes their bodies.
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
-- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-f3c6dd8b3c4391be`: `r-f3c6dd8b3c4391be.range_verdicts.json` beside the export, regenerated by canopi-data; only its source block differs from the export's own copy, which names `r-c3b3da5b6f36eed3`). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
+- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-fcf4307ffd1549b3`: `r-fcf4307ffd1549b3.range_verdicts.json` beside the export, regenerated by canopi-data; it names the installed release and export). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
 
 ### Link v5 contract additions (coordinator review of 0a, 2026-11-14)
 

@@ -458,7 +458,12 @@ test('month layers: every PFAF month row of the export carries its source region
   const facts = await real.details(plant('Vicia faba').id);
   const pfaf = facts.layerValues.filter((v) => v.source === 'pfaf');
   assert.ok(pfaf.length > 0);
-  for (const v of pfaf) assert.deepEqual(v.scope, { country: 'GB' }, `${v.field}: scoped to the UK`);
+  // D8a (canopi-data r-ad27260496be31eb, kept in r-fcf4307ffd1549b3): month rows also carry the
+  // hemisphere and the latitude band they were observed in; scopeText names the band, never "Everywhere".
+  for (const v of pfaf) {
+    assert.equal(v.scope?.country, 'GB', `${v.field}: scoped to the UK`);
+    if (v.months) assert.match(v.scope.latitude ?? '', /^-?\d+\.\.-?\d+$/, `${v.field}: a month row names its latitude band`);
+  }
 });
 
 // ---- review of 619e6a7 ----
