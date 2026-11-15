@@ -20,7 +20,7 @@ import { WARN } from '../kit/icons.tsx';
 import { PlantMarks } from '../PlantMarks.tsx';
 
 // Rows shown before "+ N more" (the pictures' lane fold, PICTURE_LANE_MAX, is 12 too).
-export const ROWS_MAX = 12;
+const ROWS_MAX = 12;
 
 function sizeWords(t: Taxon): string {
   const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
