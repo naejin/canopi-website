@@ -337,29 +337,6 @@ test('PP-B2 (b1a fix round 1, b1a2-3 map gone with its sheet): the sheet\'s map,
   assert.equal(await page.$('[data-location-map]'), null, 'the map opened by itself on Place');
 });
 
-// b1a2-6 (fix round 1): Undo of "Show my palette" pressed in the sheet's foot: the sheet goes with the
-// palette, and the focus lands on the page.
-test('PP-B2 (b1a fix round 1, b1a2-6 Undo in the sheet): Undo of "Show my palette" leaves no sheet open, one set of climate cards, and the focus on the page', async () => {
-  const page = await tool();
-  await temperatePalette(page);
-  // Back on Place, another card, then "Show my palette": it replaces the palette set aside, with Undo.
-  await placeTo(page, 'Mediterranean');
-  await page.locator('[data-place-show]').click();
-  assert.ok(await has(page, aria('button', W('place.sheet.open')), 8000), 'the palette');
-  await openPlaceSheet(page);
-  assert.ok(await has(page, 'dialog[open] .ct-toast-undo', 4000), 'the Undo in the sheet');
-  // The sheet closes in the same update as the view goes back to Place (not later, by Back's popstate).
-  const same = await page.evaluate(() => {
-    document.querySelector('dialog[open] .ct-toast-undo').click();
-    const s = window.__ctTest.store;
-    return { view: s.view.value, sheet: s.sheet.value };
-  });
-  assert.deepEqual(same, { view: 'start', sheet: null }, 'Undo went back to Place with the sheet still open');
-  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 4000), 'a sheet is still open');
-  assert.equal(await page.$$eval('#ct-climates', (l) => l.length), 1, 'one set of climate cards');
-  assert.ok(await until(page, () => document.activeElement && document.activeElement !== document.body, 4000), 'the focus fell to the body');
-});
-
 // c-4 (board ChangePlace): the sheet's foot has "Start over" and "Done"; Done closes it.
 test('PP-B2 (b1a fix round 1, c-4 the sheet\'s foot): "Start over" and "Done", and Done closes the sheet on the palette', async () => {
   const page = await tool();

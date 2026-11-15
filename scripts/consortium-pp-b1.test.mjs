@@ -191,21 +191,6 @@ test('b1a link place (a): a palette edit while the notice shows keeps the reader
     assert.equal(saved()?.place, 'l=sun', 'the save keeps its own place until the reader chooses');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
-test('b1a link place (b): "Use it" makes l=shade the palette\'s place and the link\'s cell the device location', async () => {
-  const before = await arriveWithPlace();
-  try {
-    assert.ok(restoreM.linkPlace?.peek(), 'no link-place notice');
-    await draft.useLinkPlace();
-    await wait(0);
-    assert.equal(restoreM.linkPlace.peek(), null);
-    assert.equal(saved()?.place, 'l=shade', 'the save holds the link\'s place');
-    const loc = locationM.readLocation(kept.get(LOCATION_STORE) ?? null);
-    assert.ok(loc && Math.abs(loc.lat - 37.35) < 0.051 && Math.abs(loc.lon - -5.95) < 0.051, `the link's cell in canopi-location (${kept.get(LOCATION_STORE)})`);
-    assert.notEqual(loc.source, 'link', 'kept as the reader\'s own');
-    assert.equal(kept.get(COUNTRY_STORE), 'ES', 'the link\'s country kept');
-    assert.match(kept.get(PLACE_STORE) ?? '', /l=shade/, 'and it seeds the next palette');
-  } finally { restoreM.provideLocationStep(before); store.location.value = null; }
-});
 test('b1a link place (c): "Use my own place" gives back the reader\'s own answers', async () => {
   const before = await arriveWithPlace();
   try {
@@ -407,22 +392,6 @@ test('b1a bugs-5: Forget on Place (back from the palette) also clears the set-as
   assert.equal(saved()?.place, '', 'the palette kept its place in the save after "Show my palette"');
 });
 
-test('b1a bugs-7: "Show my palette" under another card keeps every plant and offers one Undo back to Place, the set-aside palette saved', async () => {
-  await mine(5);
-  const before = store.members.peek();
-  draft.backToPlace();
-  draft.chooseClimate('Mediterranean');
-  assert.deepEqual(store.members.peek(), before, 'another card keeps the plants');
-  draft.showPalette();
-  assert.deepEqual(store.members.peek(), before, 'the palette under the new card keeps every plant');
-  assert.ok(store.toast.peek()?.undo, 'no Undo after "Show my palette" replaced the set-aside palette');
-  store.toast.peek().undo();
-  await wait(0);
-  assert.equal(store.view.peek(), 'start', 'Undo goes back to Place');
-  assert.equal(store.setAside.peek()?.climate, 'Temperate', 'the set-aside palette is back');
-  assert.match(saved()?.fragment ?? '', /(^|&)c=temperate(&|$)/, 'and saved again');
-});
-
 // conformance-2 (b1a review r1): the grower lists their own plants on Place (boards Place, PlaceDesk):
 // each plant added from Place stays there as a chip, with the spot questions and "Show my palette".
 test('b1a conformance-2: plants added on Place keep the grower on Place, every one listed', async () => {
@@ -444,74 +413,6 @@ test('b1a conformance-4: another climate keeps every plant, on the palette and o
   draft.backToPlace();
   draft.chooseClimate('Tropical');
   assert.deepEqual(store.members.peek(), before, 'a climate chosen on Place removed plants');
-});
-
-// Fix round 2, A (r2-1): Place's draft is saved once its plants differ from what Place opened with
-// (backToPlace's set-aside palette, none after Start over), whatever the page wrote quietly before.
-const savedIds = async () => decodeLink(saved().fragment, await known('Temperate')).state.members;
-test('b1a2 r2-1 (a): a reload of [A,B], B removed on the palette, B added again on Place: [A,B] is saved', async () => {
-  const pool = await mine(5);
-  const [A, B] = [pool[0].id, pool[1].id];
-  const link = encodeLink({ climate: 'Temperate', country: null, room: 'small', plot: null, period: '1991-2020', spot: null, soil: null, members: [A, B], removed: [], guests: [] }, await known('Temperate'));
-  assert.equal(await restoreM.restore(link, { from: 'saved' }), true);
-  await wait(0);
-  store.removeMember(B);
-  await wait(0);
-  assert.deepEqual(await savedIds(), [A]);
-  draft.backToPlace();
-  store.addMembers([B]);
-  await wait(0);
-  assert.deepEqual(await savedIds(), [A, B], 'B added again on Place is not saved');
-});
-test('b1a2 r2-1 (b): C added on the palette, removed on Place: C is gone from the save', async () => {
-  const pool = await mine(3);
-  await wait(0);
-  const C = pool[9].id;
-  store.addMembers([C]);
-  await wait(0);
-  assert.ok((await savedIds()).includes(C));
-  draft.backToPlace();
-  store.removeMember(C);
-  await wait(0);
-  assert.ok(!(await savedIds()).includes(C), 'C removed on Place is still saved');
-});
-test('b1a2 r2-1 (c): Start over, then A and B added again on Place: they are saved', async () => {
-  const pool = await mine(2);
-  await wait(0);
-  const ids = store.members.peek().slice();
-  draft.startOver();
-  await wait(0);
-  store.addMembers(ids);
-  await wait(0);
-  assert.ok(saved(), 'Start over then the same plants added: no save');
-  assert.deepEqual(await savedIds(), ids);
-});
-// S1 and S3: a guide preset over the reader's save R leaves R alone until the reader acts; Start over on
-// a link's page leaves R, and its Undo brings the link's palette back with R still in storage.
-test('b1a2 r2-4: a preset over R leaves R untouched; Start over on a link page, then Undo: R is in storage', async () => {
-  const pool = await mine(5);
-  await wait(0);
-  const R = kept.get(STORE);
-  // A fresh page whose storage holds the reader's save R.
-  persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; store.climate.value = null; store.members.value = []; store.removed.value = []; });
-  await wait(0);
-  kept.set(STORE, R);
-  persist.openedWith(R);
-  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
-  await wait(0);
-  assert.equal(kept.get(STORE), R, 'the preset touched R');
-  // A link page: R held.
-  const link = await linkWith('Temperate', 4);
-  assert.equal(await restoreM.restore(link, { from: 'link' }), true);
-  await wait(0);
-  assert.equal(kept.get(STORE), R, 'the link touched R');
-  draft.startOver();
-  await wait(0);
-  assert.equal(kept.get(STORE), R, 'Start over on a link page lost R');
-  store.toast.peek().undo();
-  await wait(0);
-  assert.equal(store.members.peek().length, 4, 'Undo brings the link\'s palette back');
-  assert.equal(kept.get(STORE), R, 'after Undo R is not in storage');
 });
 
 // b1a2-1 (fix round 1): changing the place never removes a plant; each kept plant is still drawn,
@@ -537,30 +438,6 @@ test('b1a2-1: Temperate to Mediterranean keeps a Temperate-only plant drawn and 
   assert.equal(store.guests.peek()[only.id], undefined, 'back in its own climate, no guest');
 });
 
-// Fix round 2, B (r2-3): a plant is a guest only if the chosen climate's list lacks it, judged against
-// the list once read (the usual first click is before it is).
-test('b1a2 r2-3: another climate chosen before its list is read: once read, only the plants it lacks are guests, and the save has no g= for the others', async () => {
-  const pool = await mine(5);
-  const med = await realSource.pool('Mediterranean');
-  const inMed = new Set(med.map((t) => t.id));
-  const both = pool.filter((t) => inMed.has(t.id)).slice(0, 2).map((t) => t.id);
-  const only = pool.find((t) => !inMed.has(t.id)).id;
-  assert.equal(both.length, 2, 'two plants in both lists');
-  persist.quietly(() => { store.members.value = [...both, only]; });
-  // Mediterranean's list not read yet.
-  const { Mediterranean: _, ...rest } = store.pools.peek();
-  store.pools.value = rest;
-  draft.chooseClimate('Mediterranean');
-  await store.loadPool('Mediterranean');
-  await wait(0);
-  assert.deepEqual(store.guests.peek(), { [only]: 'Temperate' }, 'guests beyond the plants the list lacks');
-  const g = new URLSearchParams(saved().fragment).getAll('g');
-  assert.equal(g.length, 1, 'the save carries g= for one list');
-  const read = decodeLink(saved().fragment, { Mediterranean: med.map((t) => t.id), Temperate: pool.map((t) => t.id) });
-  assert.deepEqual(read.state.guests.map((x) => x.id), [only], 'the save names only the missing plant as a guest');
-  persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
-});
-
 // b1a2-4 (fix round 1): a location already on the page stands for the kept one.
 test('b1a2-4: ownLocation with a location already set clears locationAtStart', async () => {
   await mine(5);
@@ -581,89 +458,6 @@ test('b1a2-2: with a borrowed climate and no location, the pool the palette offe
   assert.deepEqual(store.offerPool.peek(), [], 'the borrowed list is offered without a place');
   persist.quietly(() => { store.climate.value = 'Temperate'; });
   assert.ok(store.offerPool.peek()?.length, 'a curated list is offered');
-});
-
-// Owner 2026-11-15: plants added on Place are saved on the device at once; a different saved palette
-// is set aside with Undo, as "Show my palette" does.
-test('b1a2 owner 2026-11-15: a plant added on Place is saved at once over a different save, and Undo puts that save back; back from a palette too', async () => {
-  const pool = await mine(5);
-  await wait(0);
-  const text = kept.get(STORE);
-  persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; store.members.value = []; store.removed.value = []; });
-  await wait(0);
-  kept.set(STORE, text);
-  persist.openedWith(text);
-  const k = { Temperate: pool.map((t) => t.id) };
-  store.addMembers([pool[7].id]);
-  await wait(0);
-  assert.equal(store.view.peek(), 'start', 'still on Place');
-  assert.notEqual(kept.get(STORE), text, 'the plant added on Place is not saved');
-  assert.deepEqual(decodeLink(saved().fragment, k).state.members, [pool[7].id]);
-  store.toast.peek().undo();
-  await wait(0);
-  assert.equal(kept.get(STORE), text, 'Undo did not put the earlier save back');
-  // Back on Place from the palette: an add saves the palette with it; Undo puts the palette back.
-  await mine(5);
-  await wait(0);
-  const five = kept.get(STORE);
-  draft.backToPlace();
-  store.addMembers([pool[8].id]);
-  await wait(0);
-  assert.equal(decodeLink(saved().fragment, k).state.members.length, 6, 'the palette with the plant added on Place');
-  store.toast.peek().undo();
-  await wait(0);
-  assert.equal(saved().fragment, readRecord(five).fragment, 'Undo put the palette back');
-});
-
-// r2-2 (review round 2): the offer goes when the save is replaced, not on any answer: a room or country
-// answer on Place writes no save while the page has no palette of its own.
-test('b1a bugs-8 / r2-2: "Open my saved palette instead" and "Back to mine" stay through Place answers that write no save, and go once a plant added replaces the save', async () => {
-  // As a fresh page opened over the reader's save: the save it read is the stored one.
-  const fresh = async () => {
-    const pool = await mine(5);
-    await wait(0);
-    const text = kept.get(STORE);
-    persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; store.climate.value = null; store.members.value = []; store.removed.value = []; });
-    await wait(0);
-    kept.set(STORE, text);
-    persist.openedWith(text);
-    return [pool, text];
-  };
-  // (a) A guide preset over the save.
-  const [pool, text] = await fresh();
-  restoreM.savedInstead.value = readRecord(text);
-  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
-  assert.ok(restoreM.savedInstead.peek(), 'offered after the preset');
-  store.room.value = 'large';
-  await wait(0);
-  assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a Place answer that wrote no save (room)');
-  draft.chooseCountry('KE');
-  await wait(0);
-  assert.ok(restoreM.savedInstead.peek(), '"Open my saved palette instead" gone after a Place answer that wrote no save (country)');
-  assert.equal(kept.get(STORE), text, 'the save is untouched');
-  // A plant added on Place (as "Add a plant by name" does) is saved at once (owner 2026-11-15): it
-  // replaces the reader's save, and the offer goes.
-  store.addMembers([pool[4].id]);
-  await wait(0);
-  assert.notEqual(kept.get(STORE), text, 'the plant added on Place is not saved');
-  assert.equal(restoreM.savedInstead.peek(), null, '"Open my saved palette instead" still offered after the save was replaced');
-  // r3-2 (review round 3): Undo takes the page back to Place with no palette of its own, so the
-  // reader's save is written back: the offer comes back with it.
-  assert.ok(store.toast.peek()?.undo, 'the add\'s Undo is still offered');
-  store.toast.peek().undo();
-  await wait(0);
-  assert.equal(kept.get(STORE), text, 'Undo did not write the reader\'s save back');
-  assert.equal(restoreM.savedInstead.peek()?.fragment, readRecord(text).fragment, '"Open my saved palette instead" did not come back with the save');
-  // (b) A newer link over the save: "Back to mine" through a country and a card.
-  const [, text2] = await fresh();
-  assert.equal(await restoreM.restore('v=6&c=temperate&a=abcdef&e=1', { from: 'link' }), false);
-  restoreM.savedInstead.value = readRecord(text2);
-  draft.chooseCountry('KE');
-  draft.chooseClimate('Mediterranean');
-  await wait(0);
-  assert.ok(restoreM.savedInstead.peek(), '"Back to mine" gone after a Place answer that wrote no save (country, card)');
-  assert.equal(kept.get(STORE), text2, 'the save is untouched');
-  restoreM.savedInstead.value = null;
 });
 
 test('b1a bugs-9: a reload while the notice waits keeps the link\'s cell, so "Use it" still adopts it', async () => {

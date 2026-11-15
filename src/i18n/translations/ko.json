@@ -635,7 +635,6 @@
   "consortium.place.usedMine": "내 장소로 돌아왔습니다.",
   "consortium.place.openedSaved": "저장한 팔레트를 열었습니다.",
   "consortium.place.backToMine": "내 것으로 돌아가기",
-  "consortium.place.asideReplaced": "이전 팔레트가 이 팔레트로 바뀌었습니다.",
   "consortium.place.sheet.open": "내 장소 바꾸기",
   "consortium.place.sheet.title": "나의 장소",
   "consortium.place.sheet.lede": "언제든 바꿀 수 있고, 팔레트도 따라 바뀝니다. 장소를 바꿔도 식물은 빠지지 않습니다.",

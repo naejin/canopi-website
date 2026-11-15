@@ -635,7 +635,6 @@
   "consortium.place.usedMine": "自分の場所に戻りました。",
   "consortium.place.openedSaved": "保存したパレットを開きました。",
   "consortium.place.backToMine": "自分のものに戻る",
-  "consortium.place.asideReplaced": "以前のパレットはこのパレットに置き換わりました。",
   "consortium.place.sheet.open": "場所を変更",
   "consortium.place.sheet.title": "あなたの場所",
   "consortium.place.sheet.lede": "いつでも変更でき、パレットもそれに合わせて変わります。場所を変えても植物が外されることはありません。",

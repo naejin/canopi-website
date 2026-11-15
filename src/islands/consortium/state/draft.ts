@@ -38,34 +38,23 @@ export function chooseClimate(z: ClimateZone): void {
   });
   memory.write(SITE_CLIMATE, siteIdOf(z));
   attempt(() => { document.documentElement.dataset.climate = siteIdOf(z); });
-  // Judged against the list once read (the usual first click is before it is): a plant it holds is
-  // one of its own, not a guest (fix round 2, B).
-  if (!store.pools.peek()[z]) void store.loadPool(z).then((list) => { if (list && store.climate.peek() === z) store.guests.value = ownAgain(list); });
 }
 
 // Each member's home list once the climate goes from `was` to `z`: a guest of z is one of z's own
 // again; one of was's own that z's list lacks becomes a guest of was (each of them while z's list is
-// not read, so no plant loses its list; chooseClimate then keeps only those the list lacks).
+// not read, so no plant loses its list: a plant in both is drawn from z's own list either way,
+// store.ts guestTaxa, and the save leaves out a guest z's list holds, persist.ts palette).
 function homesAfter(was: ClimateZone | null, z: ClimateZone): Partial<Record<PlantId, ClimateZone>> {
   const now = store.guests.peek(), list = store.pools.peek()[z];
+  const inZ = list ? new Set(list.map((t) => t.id)) : null;
   const next: Partial<Record<PlantId, ClimateZone>> = {};
   for (const id of store.members.peek()) {
     const from = now[id];
-    if (from) next[id] = from;
-    else if (was && was !== z) next[id] = was;
+    if (from) { if (from !== z) next[id] = from; }
+    else if (was && was !== z && !inZ?.has(id)) next[id] = was;
   }
-  return list ? ownAgain(list, next) : same(now, next);
-}
-// The guests without those `list` (the chosen climate's) holds.
-function ownAgain(list: readonly { id: PlantId }[], guests = store.guests.peek()): Partial<Record<PlantId, ClimateZone>> {
-  const inList = new Set(list.map((t) => t.id));
-  const next: Partial<Record<PlantId, ClimateZone>> = {};
-  for (const [id, from] of Object.entries(guests)) if (from && !inList.has(id)) next[id] = from;
-  return same(store.guests.peek(), next);
-}
-// `now` itself when `next` holds the same entries (a new object would rebuild every guest's record).
-function same(now: Partial<Record<PlantId, ClimateZone>>, next: Partial<Record<PlantId, ClimateZone>>): Partial<Record<PlantId, ClimateZone>> {
-  return Object.keys(next).length === Object.keys(now).length && Object.entries(next).every(([id, from]) => now[id] === from) ? now : next;
+  const same = Object.keys(next).length === Object.keys(now).length && Object.entries(next).every(([id, from]) => now[id] === from);
+  return same ? now : next;
 }
 
 // The reader chooses a country (null: "No country"); kept on this device, apart from the consortium.
@@ -189,16 +178,12 @@ export function startEmpty(): void {
 }
 
 // "Show my palette": the palette with the grower's own plants (none is a valid start); the focus goes
-// to it (W4). A palette set aside on the way back to Place that this draft replaces (another card, a
-// plant added or removed on Place) gets one Undo, which goes back to Place with it still set aside.
+// to it (W4). Navigation only: Place's answers and plants are saved as they are given (owner
+// 2026-11-15), so nothing is replaced here and nothing is offered to undo.
 export function showPalette(): void {
-  const before = schema.snapshot();
-  const aside = store.setAside.peek();
   adoptPending();
   store.view.value = 'matrix';
   focusView();
-  const replaced = !!aside?.members.length && (aside.climate !== store.climate.peek() || JSON.stringify(aside.members) !== JSON.stringify(store.members.peek()));
-  if (replaced) store.offerUndo(T('place.asideReplaced'), before);
 }
 
 // "Add a plant by name" on Place: the search sheet (S3); a plant added joins the list on Place
