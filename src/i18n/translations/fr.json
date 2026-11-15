@@ -651,7 +651,7 @@
   "consortium.place.count.uncheckedOwn": "one: Aucune des {total} plantes {list} n’est connue pour convenir à votre lieu : # n’a pas pu être vérifiée. | other: Aucune des {total} plantes {list} n’est connue pour convenir à votre lieu : # n’ont pas pu être vérifiées.",
   "consortium.place.count.checking": "Vérification des plantes qui conviennent à votre lieu…",
   "consortium.place.count.failed": "Impossible de vérifier quelles plantes conviennent à votre lieu.",
-  "consortium.place.count.left": "Vous pouvez chercher n’importe quelle plante et l’ajouter ; une plante hors de sa zone climatique le signale, avec un avertissement.",
+  "consortium.place.count.left": "Vous pouvez chercher n’importe quelle plante et l’ajouter ; une plante hors de sa zone climatique est signalée, avec un avertissement.",
   "consortium.place.count.suggestStopped": "La vérification de l’adaptation n’a pas chargé : rien n’a été suggéré.",
   "consortium.site.title": "Votre coin",
   "consortium.site.intro": "Facultatif : ce qu’une carte ne peut pas savoir. Chaque réponse commence à « Je ne sais pas », qui ne vérifie rien.",

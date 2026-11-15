@@ -813,3 +813,14 @@ test('PP-B1 (b1b back online): with the verdict chunk refused, an "online" event
   while (asked.length === before && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50));
   assert.ok(asked.length > before, `a new load of the verdict chunk after "online" (${asked.length - before} requests)`);
 });
+
+// Fix round 3 (b1bg-1): "failed" always means the current load failed. After a refused load (a return
+// visit's fetchAhead offline, say), the next one (start()'s effect once a site climate arrives) clears
+// it as it starts, so the count line (which reads the flag) says "Checking…" meanwhile, not "Could not check".
+test('PP-B1 (b1b a new verdict load after a refused one): verdictFailed clears as the load starts', async () => {
+  const page = await tool({ block: { verdict: 404 } });
+  await atSite(page, 'seville');
+  assert.ok(await until(page, () => window.__ctTest.store.verdictFailed.value, 15_000), 'the first load refused');
+  const during = await page.evaluate(() => { const { store } = window.__ctTest; store.wantVerdict(); return store.verdictFailed.value; });
+  assert.equal(during, false, 'a load in flight is not "failed"');
+});

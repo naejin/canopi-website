@@ -651,7 +651,7 @@
   "consortium.place.count.uncheckedOwn": "one: None of the {total} plants on {list} is known to fit your place: # could not be checked. | other: None of the {total} plants on {list} is known to fit your place: # could not be checked.",
   "consortium.place.count.checking": "Checking which plants fit your place…",
   "consortium.place.count.failed": "Could not check which plants fit your place.",
-  "consortium.place.count.left": "You can search for any plant and add it; one outside its climate range says so, with a warning.",
+  "consortium.place.count.left": "You can search for any plant and add it; one outside its climate range is marked, with a warning.",
   "consortium.place.count.suggestStopped": "The fit check did not load, so nothing was suggested.",
   "consortium.site.title": "Your spot",
   "consortium.site.intro": "Optional: what a map cannot know. Every answer starts at “Not sure”, which checks nothing.",

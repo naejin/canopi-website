@@ -230,9 +230,12 @@ let verdictLoad: Promise<void> | null = null;
 // location every plant is "not checked"), and by main.ts beside the database download on a return
 // visit or a link (perf: the chunk is there when the page mounts): an action, not a start() effect.
 // A failed load is not kept: the next call tries again (retryVerdict; core verdict-load.ts fetches the
-// chunk again under ?retry=n).
+// chunk again under ?retry=n). verdictFailed says the current load failed: a new load clears it as it
+// starts (b1bg-1: a return visit's fetchAhead refused offline, then start()'s effect asks again once a
+// site climate arrives; meanwhile the count line checks and the waiting Suggest waits).
 export function wantVerdict(): void {
   if (verdictLoad) return;
+  verdictFailed.value = false;
   verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; }, (err: unknown) => {
     console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
     verdictLoad = null;
@@ -243,7 +246,6 @@ export function wantVerdict(): void {
 // in place, never a page reload (architecture 9).
 export function retryVerdict(): void {
   if (verdictLoad || verdictRule.peek()) return;
-  verdictFailed.value = false;
   wantVerdict();
 }
 // What every verdict reads: the palette's place, the location's lookup, the period shown, the
@@ -784,8 +786,8 @@ export function start(): void {
   // Offline (architecture 9): the page says so; what is loaded still works.
   if (typeof navigator !== 'undefined' && typeof addEventListener === 'function') {
     offline.value = navigator.onLine === false;
-    // Back online, a verdict chunk refused meanwhile is asked for again in place (one listener for the
-    // count line and the palette's notice; b1bc-8a).
+    // Back online, a verdict chunk refused meanwhile is asked for again in place, here, so no view
+    // needs a listener of its own for it (b1bc-8a).
     addEventListener('online', () => { offline.value = false; if (verdictFailed.peek()) retryVerdict(); });
     addEventListener('offline', () => { offline.value = true; });
   }

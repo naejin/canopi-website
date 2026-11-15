@@ -651,7 +651,7 @@
   "consortium.place.count.uncheckedOwn": "one: Von keiner der {total} Pflanzen aus {list} ist bekannt, dass sie zu deinem Ort passt: # konnte nicht geprüft werden. | other: Von keiner der {total} Pflanzen aus {list} ist bekannt, dass sie zu deinem Ort passt: # konnten nicht geprüft werden.",
   "consortium.place.count.checking": "Es wird geprüft, welche Pflanzen zu deinem Ort passen…",
   "consortium.place.count.failed": "Es konnte nicht geprüft werden, welche Pflanzen zu deinem Ort passen.",
-  "consortium.place.count.left": "Du kannst nach jeder Pflanze suchen und sie hinzufügen; liegt sie außerhalb ihres Klimabereichs, steht das mit einem Hinweis dabei.",
+  "consortium.place.count.left": "Du kannst nach jeder Pflanze suchen und sie hinzufügen; eine Pflanze außerhalb ihres Klimabereichs wird markiert, mit einem Hinweis.",
   "consortium.place.count.suggestStopped": "Die Eignungsprüfung wurde nicht geladen, darum wurde nichts vorgeschlagen.",
   "consortium.site.title": "Dein Platz",
   "consortium.site.intro": "Optional: was eine Karte nicht wissen kann. Jede Antwort beginnt bei „Weiß nicht“, das nichts prüft.",

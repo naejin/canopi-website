@@ -651,7 +651,7 @@
   "consortium.place.count.uncheckedOwn": "one: No se sabe de ninguna de las {total} plantas de {list} que se adapte a tu lugar: # no se pudo comprobar. | other: No se sabe de ninguna de las {total} plantas de {list} que se adapte a tu lugar: # no se pudieron comprobar.",
   "consortium.place.count.checking": "Comprobando qué plantas se adaptan a tu lugar…",
   "consortium.place.count.failed": "No se pudo comprobar qué plantas se adaptan a tu lugar.",
-  "consortium.place.count.left": "Puedes buscar cualquier planta y añadirla; si está fuera de su rango climático, lo indica con un aviso.",
+  "consortium.place.count.left": "Puedes buscar cualquier planta y añadirla; una planta fuera de su rango climático se marca, con un aviso.",
   "consortium.place.count.suggestStopped": "La comprobación de adaptación no se cargó, así que no se sugirió nada.",
   "consortium.site.title": "Tu rincón",
   "consortium.site.intro": "Opcional: lo que un mapa no puede saber. Cada respuesta empieza en «No lo sé», que no comprueba nada.",

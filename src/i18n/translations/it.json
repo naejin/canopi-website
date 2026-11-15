@@ -651,7 +651,7 @@
   "consortium.place.count.uncheckedOwn": "one: Nessuna delle {total} piante {list} risulta adatta al tuo luogo: # non è stata verificata. | other: Nessuna delle {total} piante {list} risulta adatta al tuo luogo: # non sono state verificate.",
   "consortium.place.count.checking": "Verifica delle piante adatte al tuo luogo…",
   "consortium.place.count.failed": "Impossibile verificare quali piante si adattano al tuo luogo.",
-  "consortium.place.count.left": "Puoi cercare qualsiasi pianta e aggiungerla; se è fuori dal suo intervallo climatico, lo dice con un avviso.",
+  "consortium.place.count.left": "Puoi cercare qualsiasi pianta e aggiungerla; una pianta fuori dal suo intervallo climatico viene segnalata, con un avviso.",
   "consortium.place.count.suggestStopped": "La verifica di adattamento non si è caricata, quindi non è stato suggerito nulla.",
   "consortium.site.title": "Il tuo angolo",
   "consortium.site.intro": "Facoltativo: ciò che una mappa non può sapere. Ogni risposta parte da «Non so», che non verifica nulla.",

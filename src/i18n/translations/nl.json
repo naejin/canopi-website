@@ -651,7 +651,7 @@
   "consortium.place.count.uncheckedOwn": "one: Van geen van de {total} planten op {list} is bekend dat die bij je plek past: # kon niet worden gecontroleerd. | other: Van geen van de {total} planten op {list} is bekend dat die bij je plek past: # konden niet worden gecontroleerd.",
   "consortium.place.count.checking": "Controleren welke planten bij je plek passen…",
   "consortium.place.count.failed": "Kon niet controleren welke planten bij je plek passen.",
-  "consortium.place.count.left": "Je kunt elke plant zoeken en toevoegen; staat die buiten zijn klimaatbereik, dan staat dat erbij, met een waarschuwing.",
+  "consortium.place.count.left": "Je kunt elke plant zoeken en toevoegen; een plant buiten zijn klimaatbereik wordt gemarkeerd, met een waarschuwing.",
   "consortium.place.count.suggestStopped": "De geschiktheidscontrole is niet geladen, dus er is niets voorgesteld.",
   "consortium.site.title": "Je plek",
   "consortium.site.intro": "Optioneel: wat een kaart niet kan weten. Elk antwoord begint bij ‘Weet ik niet’, dat niets toetst.",

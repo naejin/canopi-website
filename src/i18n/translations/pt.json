@@ -651,7 +651,7 @@
   "consortium.place.count.uncheckedOwn": "one: Não se sabe de nenhuma das {total} plantas da {list} que se adapte ao seu lugar: # não pôde ser verificada. | other: Não se sabe de nenhuma das {total} plantas da {list} que se adapte ao seu lugar: # não puderam ser verificadas.",
   "consortium.place.count.checking": "Verificando quais plantas se adaptam ao seu lugar…",
   "consortium.place.count.failed": "Não foi possível verificar quais plantas se adaptam ao seu lugar.",
-  "consortium.place.count.left": "Você pode buscar qualquer planta e adicioná-la; se ela estiver fora da sua faixa climática, isso aparece com um aviso.",
+  "consortium.place.count.left": "Você pode buscar qualquer planta e adicioná-la; uma planta fora da sua faixa climática é marcada, com um aviso.",
   "consortium.place.count.suggestStopped": "A verificação de adaptação não carregou, então nada foi sugerido.",
   "consortium.site.title": "O seu canto",
   "consortium.site.intro": "Opcional: o que um mapa não tem como saber. Cada resposta começa em “Não sei”, que não confere nada.",

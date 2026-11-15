@@ -57,10 +57,12 @@ function capped(): void {
   // ... but a guest list never read leaves nothing to run: the wait ends, with a word. (The database
   // itself, and the range rule, end their own waits: the load screen, rangeFailed.)
   if (store.pool.peek() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); return; }
-  // The verdict chunk asked for and never answered (a stalled request), the list read: the wait ends
-  // with Reload, as for the suggestion's chunk (no loader times out its import, so Retry could not ask
-  // again); taken down if the chunk then comes. A stall that outlasts it leaves "Checking…" until the
-  // browser fails the request (no timer of our own).
+  // The verdict chunk still missing, the list read. A refused load already ended the wait (the
+  // verdictFailed effect in watchSuggest), and verdictFailed means the current load failed (store.ts
+  // wantVerdict clears it as a load starts), so here the load is still pending: a stalled request. The
+  // wait ends with Reload, as for the suggestion's chunk (no loader times out its import, so Retry
+  // could not ask again), taken down if the chunk then comes. A stall that outlasts it leaves
+  // "Checking…" until the browser fails the request (no timer of our own).
   if (store.pool.peek() && store.suggestRule.peek() && verdictsMissing()) {
     dropSuggest(); reloadToast(); lateVerdictToast = store.toast.peek()?.id ?? null;
     return;
