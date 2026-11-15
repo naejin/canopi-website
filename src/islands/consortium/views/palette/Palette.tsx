@@ -8,8 +8,9 @@
 // guest list that failed named as missing with its plants not checked, the verdict chunk refused said
 // once with Retry in place, or, offline, "Needs a connection" and a retry once back online (PP-B20;
 // never a page reload, architecture 9). An empty palette shows no picture of nothing. Then Your plants
-// and Things to weigh (stream b3; weigh "checking" while a list loads, the plants of a list that failed
-// left out of it, as the notice above says).
+// and Things to weigh (stream b3; weigh "checking" while a list loads; the plants of a list that failed,
+// and those on none of this climate's lists, counted in the palette as not checked, each with its row
+// and Remove in Your plants).
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import type { PlantId } from '../../../../lib/consortium/index.ts';

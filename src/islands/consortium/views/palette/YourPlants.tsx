@@ -2,12 +2,14 @@
 // Your plants (inventory E11, boards PaletteMore and Focus; PP-B stream b3): each plant once, the warned
 // ones first (core weigh.ts yourPlants), each with its warnings in words with the warning icon (a
 // toxicity warning in the colour of its level: Slight the warning token, Moderate and Severe the danger
-// token, inventory F5), its marks (the pots height note, P4), its full-grown size, and Remove: only the
-// grower removes a plant (warn, never hide). Above ROWS_MAX plants the rest fold behind "+ N more";
-// opening it moves the focus to the first row it shows. Remove takes the focus to the next row (or the
-// heading after the last), never <body>; its toast has Undo. Nothing at 0 plants: the Next step's empty
-// card offers the ways in. Derived here (useMemo), never in the store (first run).
-import { useMemo, useRef, useState } from 'preact/hooks';
+// token, inventory F5), its marks (the height note, P4), its full-grown size, and Remove: only the
+// grower removes a plant (warn, never hide). A member the page cannot show (its guest list could not be
+// read, or it is on none of this climate's lists) has a plain row: its name when known, else its id,
+// why, and Remove. Above ROWS_MAX rows the rest fold behind "+ N more"; opening it moves the focus to
+// the first row it shows (a plain focus: the toast keeps its own way back). Remove takes the focus to
+// the next row (or the heading after the last), never <body>; its toast has Undo. Nothing at 0 plants:
+// the Next step's empty card offers the ways in. Derived here (useMemo), never in the store (first run).
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { PlantId, Taxon } from '../../../../lib/consortium/index.ts';
 import { moreLine, sizeLine, yourPlants } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
@@ -28,6 +30,10 @@ function sizeWords(t: Taxon): string {
   return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, len(v)])));
 }
 
+function Remove({ id, name, onRemove }: { id: PlantId; name: string; onRemove: (id: PlantId) => void }) {
+  return <button type="button" class="button button-secondary" aria-label={T('plants.removeName', { name })} onClick={() => onRemove(id)}>{T('plants.remove')}</button>;
+}
+
 function Row({ t, onRemove }: { t: Taxon; onRemove: (id: PlantId) => void }) {
   const lines = flagLines(t, store.flagsOfPlant(t), store.flagScene.value);
   const tox = t.warnings.toxicity?.level;
@@ -42,35 +48,57 @@ function Row({ t, onRemove }: { t: Taxon; onRemove: (id: PlantId) => void }) {
       ))}
       <PlantMarks taxon={t} surface="row" />
       <span class="ct-line">{sizeWords(t)}</span>
-      <button type="button" class="button button-secondary" aria-label={T('plants.removeName', { name: nameOf(t) })} onClick={() => onRemove(t.id)}>{T('plants.remove')}</button>
+      <Remove id={t.id} name={nameOf(t)} onRemove={onRemove} />
+    </li>
+  );
+}
+
+// A member the page cannot show: the name of any list's record of it, else its id, and why.
+function Missing({ id, why, onRemove }: { id: PlantId; why: 'failed' | 'unlisted'; onRemove: (id: PlantId) => void }) {
+  const t = store.taxonOf(id);
+  const name = t ? nameOf(t) : id;
+  return (
+    <li data-plant-id={id} data-missing={why}>
+      <span class="ct-plant-name">{name}{t && <>{' '}<i lang="la">{t.canonical_name}</i></>}</span>
+      <span class="ct-line">{why === 'failed' ? T('plants.notRead') : T('plants.notListed')}</span>
+      <Remove id={id} name={name} onRemove={onRemove} />
     </li>
   );
 }
 
 export function YourPlants({ members }: { members: readonly Taxon[] }) {
   const flags = store.flags.value;
-  const rows = useMemo(() => yourPlants(members, flags), [members, flags]);
+  const failed = store.failedMembers.value, unlisted = store.missingMembers.value.unlisted;
+  const rows = useMemo(() => yourPlants(members, flags, { failed, unlisted }), [members, flags, failed, unlisted]);
   const [open, setOpen] = useState(false);
+  const [unfolded, setUnfolded] = useState(false);
   const list = useRef<HTMLUListElement>(null);
+  // After "+ N more": the first row it shows takes the focus (never the toast's opener, focus.ts).
+  useEffect(() => {
+    if (!unfolded) return;
+    setUnfolded(false);
+    const row = list.current?.children[ROWS_MAX] as HTMLElement | undefined;
+    if (row) { row.tabIndex = -1; row.focus(); }
+  }, [unfolded]);
   if (!rows.length) return null;
   const shown = open ? rows : rows.slice(0, ROWS_MAX);
   const more = rows.length - shown.length;
+  const idOf = (r: (typeof rows)[number]): PlantId => ('plant' in r ? r.plant.id : r.id);
   const remove = (id: PlantId) => {
-    const at = rows.findIndex((r) => r.plant.id === id);
-    const next = rows[at + 1]?.plant.id ?? rows[at - 1]?.plant.id ?? null;
+    const at = rows.findIndex((r) => idOf(r) === id);
+    const near = rows[at + 1] ?? rows[at - 1];
+    const next = near ? idOf(near) : null;
     store.removeMember(id);
     focusAfterAdd(() => (next ? list.current?.querySelector<HTMLElement>(`[data-plant-id="${next}"] .button-secondary`) ?? null : null)
       ?? document.getElementById('ct-plants-t'));
   };
-  const unfold = () => {
-    setOpen(true);
-    focusAfterAdd(() => list.current?.children[ROWS_MAX] as HTMLElement | null);
-  };
   return (
     <section class="ct-plants" aria-labelledby="ct-plants-t">
       <h3 id="ct-plants-t" tabIndex={-1}>{T('plants.title')}</h3>
-      <ul ref={list} class="ct-plant-rows">{shown.map((r) => <Row key={r.plant.id} t={r.plant} onRemove={remove} />)}</ul>
-      {more > 0 && <button type="button" class="button button-secondary ct-plants-more" onClick={unfold}>{say(moreLine(more))}</button>}
+      <ul ref={list} class="ct-plant-rows">{shown.map((r) => ('plant' in r
+        ? <Row key={r.plant.id} t={r.plant} onRemove={remove} />
+        : <Missing key={r.id} id={r.id} why={r.missing} onRemove={remove} />))}</ul>
+      {more > 0 && <button type="button" class="button button-secondary ct-plants-more" onClick={() => { setOpen(true); setUnfolded(true); }}>{say(moreLine(more))}</button>}
     </section>
   );
 }

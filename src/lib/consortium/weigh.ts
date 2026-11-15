@@ -3,37 +3,46 @@
 // - Things to weigh: one family holding a large share of the palette, and water needs (soil hints come
 //   with PP-F). Things to keep in mind, never holes and never a verdict: nothing is removed or asked. A
 //   check without enough records says so ("n of m recorded: not enough to judge"), never a pass; family
-//   spread over many families claims nothing. On a borrowed list every line carries the estimate term
-//   (Line vars `term: 'estimate'`), as the placements it reads are estimates.
-// - Your plants: each plant once, warned plants first (owner "warn, never hide"), and its full-grown
-//   size as a Line (the view formats the lengths for the page language).
-import type { Flag, Line, PlantId, Taxon, WeighLine } from './types.ts';
+//   spread over many families claims nothing, and even water needs claim nothing either (owner
+//   2026-11-15: no all-clear line). On a borrowed list every line carries the estimate term (Line vars
+//   `term: 'estimate'`), as the placements it reads are estimates.
+// - Never a judgement of part of the palette as the whole: the plants not checked (a guest list that
+//   could not be read, a plant on none of this climate's lists) count in m and are said as not checked.
+// - A plant's water need is the factAt water_need fact (ADR-6) for the site and period it is given
+//   (climateFor's context, architecture 3.1; today's stored value whatever they are).
+// - Your plants: each plant once, warned plants first (owner "warn, never hide"), then the plants it
+//   cannot show, and its full-grown size as a Line (the view formats the lengths for the page language).
+import type { Flag, Line, PlantId, Taxon, VerdictContext, WeighLine } from './types.ts';
+import { factAt } from './source.ts';
 
 const K = (k: string): string => `consortium.plants.${k}`;
 
 // The one "not enough to judge" threshold: water needs recorded for at least this share of the plants.
-export const WATER_JUDGE_SHARE = 0.5;
+const WATER_JUDGE_SHARE = 0.5;
 // A family is a thing to weigh when it holds at least FAMILY_MIN plants and FAMILY_SHARE of the palette
-// (four of thirteen legumes at Seville, board MainMore; six of eight in Fabaceae, F1a-B1).
-export const FAMILY_MIN = 3;
-export const FAMILY_SHARE = 0.25;
+// (four of thirteen legumes at Seville, board MainMore; six of eight in Fabaceae, F1a-B1; owner
+// 2026-11-15 keeps both).
+const FAMILY_MIN = 3;
+const FAMILY_SHARE = 0.25;
 
-export type WaterNeed = 'dry' | 'medium' | 'wet';
-const DROUGHT: Record<string, WaterNeed> = { High: 'dry', Medium: 'medium', Low: 'wet', None: 'wet' };
-const MOISTURE: Record<string, WaterNeed> = { Low: 'dry', Medium: 'medium', High: 'wet' };
-// A plant's water need: its drought tolerance when recorded (the direct answer to "takes a dry
-// summer"), else its moisture use, else null (not recorded).
-export function waterNeed(t: Taxon): WaterNeed | null {
-  const { drought_tolerance: d, moisture_use: m } = t.traits;
-  return (d ? DROUGHT[d] : undefined) ?? (m ? MOISTURE[m] : undefined) ?? null;
+// The one water-need mapping: drought tolerance when recorded (the direct answer to "takes a dry
+// summer"), else moisture use; 'regular' reads "Needs regular water" (owner 2026-11-15, never "thirsty").
+type Need = 'dry' | 'medium' | 'regular';
+const DROUGHT: Record<string, Need> = { High: 'dry', Medium: 'medium', Low: 'regular', None: 'regular' };
+const MOISTURE: Record<string, Need> = { Low: 'dry', Medium: 'medium', High: 'regular' };
+
+type WeighContext = Pick<VerdictContext, 'lookup' | 'scenario' | 'period'>;
+interface WeighOptions {
+  pending?: boolean; // a list is still being read: 'checking'
+  unchecked?: number; // members of the palette not checked (a list unread, on no list of this climate)
 }
 
 // The things to weigh for these plants, family lines first (largest first), then the water line.
 // pending: a list is still being read, so the palette is not whole: 'checking', never a judgement of part.
-export function weighLines(members: readonly Taxon[], { pending = false } = {}): WeighLine[] | 'checking' {
+export function weighLines(members: readonly Taxon[], ctx: WeighContext, { pending = false, unchecked = 0 }: WeighOptions = {}): WeighLine[] | 'checking' {
   if (pending) return 'checking';
-  const m = members.length;
-  if (!m) return [];
+  const m = members.length + unchecked;
+  if (!members.length) return [];
   const term: Line['vars'] = members.some((t) => t.origin?.kind === 'borrowed') ? { term: 'estimate' } : {};
   const out: WeighLine[] = [];
   const byFamily = new Map<string, PlantId[]>();
@@ -41,18 +50,20 @@ export function weighLines(members: readonly Taxon[], { pending = false } = {}):
   const heavy = [...byFamily].filter(([, ids]) => ids.length >= FAMILY_MIN && ids.length >= FAMILY_SHARE * m)
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
   for (const [family, ids] of heavy) out.push({ kind: 'family', line: { key: K('weigh.family'), vars: { family, n: ids.length, m, ...term } }, members: ids });
-  const wet: PlantId[] = [], dry: PlantId[] = [];
+  const regular: PlantId[] = [], dry: PlantId[] = [];
   let n = 0;
   for (const t of members) {
-    const need = waterNeed(t);
-    if (need) n++;
-    if (need === 'wet') wet.push(t.id);
+    const w = factAt('water_need', t, ctx.lookup, ctx.period);
+    const need = w && ((w.drought ? DROUGHT[w.drought] : undefined) ?? (w.moisture ? MOISTURE[w.moisture] : undefined));
+    if (!need) continue;
+    n++;
+    if (need === 'regular') regular.push(t.id);
     if (need === 'dry') dry.push(t.id);
   }
-  const vars: Line['vars'] = { n, m, missing: m - n, ...term };
+  const vars: Line['vars'] = { n, m, missing: members.length - n, unchecked, ...term };
   if (n < WATER_JUDGE_SHARE * m) out.push({ kind: 'water', line: { key: K('weigh.waterFew'), vars }, members: [] });
-  else if (wet.length && dry.length) out.push({ kind: 'water', line: { key: K('weigh.waterMix'), vars: { ...vars, wet: wet.length, dry: dry.length } }, members: [...wet, ...dry] });
-  else out.push({ kind: 'water', line: { key: K('weigh.waterEven'), vars }, members: [] });
+  // members: the plants needing regular water, then the dry-loving ones (vars.regular of them first).
+  else if (regular.length && dry.length) out.push({ kind: 'water', line: { key: K('weigh.waterMix'), vars: { ...vars, regular: regular.length, dry: dry.length } }, members: [...regular, ...dry] });
   return out;
 }
 
@@ -60,21 +71,27 @@ export function weighLines(members: readonly Taxon[], { pending = false } = {}):
 // left to the plant's sheet, as kit/flags.ts flagLines does).
 const shown = (f: Flag): boolean => f.kind !== 'conflict' || f.severity !== 'low';
 
-export interface PlantRow { plant: Taxon; warned: boolean }
-// Your plants: each plant once, the warned ones first, each group in the palette's order.
-export function yourPlants(members: readonly Taxon[], flags: readonly Flag[]): PlantRow[] {
+type PlantRow = { plant: Taxon; warned: boolean } | { id: PlantId; missing: 'failed' | 'unlisted' };
+// Your plants: each plant once, the warned ones first, then the members it cannot show (a guest list
+// that could not be read, on none of this climate's lists: store.failedMembers, missingMembers.unlisted),
+// then the rest, each group in the palette's order.
+export function yourPlants(members: readonly Taxon[], flags: readonly Flag[], missing: { failed: readonly PlantId[]; unlisted: readonly PlantId[] } = { failed: [], unlisted: [] }): PlantRow[] {
   const warned = new Set(flags.filter(shown).map((f) => f.id));
-  const seen = new Set<PlantId>(), first: PlantRow[] = [], rest: PlantRow[] = [];
+  const seen = new Set<PlantId>(), first: PlantRow[] = [], gone: PlantRow[] = [], rest: PlantRow[] = [];
   for (const t of members) {
     if (seen.has(t.id)) continue;
     seen.add(t.id);
     (warned.has(t.id) ? first : rest).push({ plant: t, warned: warned.has(t.id) });
   }
-  return [...first, ...rest];
+  for (const [ids, why] of [[missing.failed, 'failed'], [missing.unlisted, 'unlisted']] as const) {
+    for (const id of ids) if (!seen.has(id)) { seen.add(id); gone.push({ id, missing: why }); }
+  }
+  return [...first, ...gone, ...rest];
 }
 
 // Its full-grown size: width and height when both are recorded, else the one recorded and that the
-// other is not, else "No size recorded" (lengths in metres; the view formats them).
+// other is not, else "No size recorded" (lengths in metres; the view formats them). The height is the
+// wild maximum (types.ts Traits.height_m), so the words say "in the wild".
 export function sizeLine(t: Taxon): Line {
   const height = t.traits.height_m?.max ?? null, width = t.traits.width_max_m ?? null;
   if (height !== null && width !== null) return { key: K('size'), vars: { width, height } };

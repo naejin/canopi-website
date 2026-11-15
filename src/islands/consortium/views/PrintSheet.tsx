@@ -7,12 +7,13 @@
 // No control is printed. Rendered by views/Actions.tsx.
 //
 // The drawing is the side view's own (views/SideView.tsx SideDrawing), at the time step chosen in
-// Through the years (store.yearStep; PP-B18).
+// Through the years (store.yearStep; PP-B18). A toxicity note prints its level (b3r-3).
 import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { jobsOf } from '../../../lib/consortium/index.ts';
-import { climate, country, flags, guests, memberTaxa, site, source, yearStep } from '../store.ts';
+import { climate, country, flagScene, flags, guests, memberTaxa, site, source, yearStep } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
+import { flagLines } from './kit/flags.ts';
 import { basisLine, countryName, nameOf, phasePlain, phaseTerm, zoneName } from './kit/names.ts';
 import { SideDrawing } from './SideView.tsx';
 
@@ -24,11 +25,13 @@ const phaseWords = (t: Taxon) => {
   return a === b ? a : `${a} → ${b}`;
 };
 
-function flagWords(f: Flag, names: Map<PlantId, string>, code: string | null): string {
+// A toxicity flag says its level on paper too (b3r-3: Slight never reads like Severe), in the words
+// of Your plants and Details (kit/flags.ts flagLines); the print keys stay for the other flags.
+function flagWords(t: Taxon, f: Flag, names: Map<PlantId, string>, code: string | null): string {
   if (f.kind === 'conflict') return T('print.flag.conflict', { other: (f.other && names.get(f.other)) ?? '?' });
   if (f.kind === 'misfit') return T('print.flag.misfit');
   if (f.kind === 'invasive') return T('print.flag.invasive', { country: code ? countryName(code) : '' });
-  return T('print.flag.toxicity');
+  return flagLines(t, [f], flagScene.value)[0]?.text ?? T('print.flag.toxicity');
 }
 
 export function PrintSheet() {
@@ -68,7 +71,7 @@ export function PrintSheet() {
         <tbody>
           {members.map((t) => {
             const marks = guests.value[t.id] ? [T('print.fromList', { climate: zoneName(guests.value[t.id]!) })] : [];
-            const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(f, names, code));
+            const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(t, f, names, code));
             return (
               <tr>
                 <th scope="row"><span class="ct-print-name">{nameOf(t)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}</th>
