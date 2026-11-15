@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:55Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:48:05Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:19:47Z }
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:723463cc01b74e81
-    last_modified: 2026-11-14T22:18:42Z
+    digest: sha256:5338d0d57ea8cc5a
+    last_modified: 2026-11-15T05:47:37Z
   - id: package-json
     resource: ../../package.json
     title: package.json

@@ -173,6 +173,7 @@ export function flagsOf(members: Taxon[], ctx: FlagContext): Flag[] {
   return out;
 }
 
-// Add and Swap ask first only for a site misfit or a high conflict, never for an invasive or toxicity
-// warning (owner row 2026-10-28; coordinator row "v2 mockup choices" 2026-11-11).
-export const asks = (flags: Flag[]): boolean => flags.some((f) => f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high'));
+// Whether a plant's flags warn: a site misfit or a serious (high) conflict, never an invasive or
+// toxicity warning alone. Nothing asks (owner row "Inform, don't block", 2026-11-14): these plants
+// come last in Add, Swap and the suggestion's alternatives, and Paste's toast says "added with a warning".
+export const warns = (flags: Flag[]): boolean => flags.some((f) => f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high'));

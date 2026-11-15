@@ -24,7 +24,7 @@ const UNKNOWN = { light: 'misfit.unk.light', soil: 'misfit.unk.soil', water: 'mi
 const SHORT: Record<string, string> = { 'water.dryMonths': 'water.dryMonthsShort', 'room.tall': 'room.tallShort' };
 
 // What the site answers say about a plant, in the order of fit.reasons: each misfit (light, soil with
-// the plant's pH range, water: it asks), what the check could not decide, and the notes (drought
+// the plant's pH range, water), what the check could not decide, and the notes (drought
 // tolerance Medium on a dry site: "water in the dry months"; a plant taller than a small or large
 // garden: "grows to N m", N to a tenth). Misfits are those of the plant alone; rules/site-fit.ts keeps
 // the ones that hold beside the members' canopy.
@@ -33,12 +33,12 @@ export function siteFitMessages(taxon: Taxon, site: Site, fit: Fit = fits(taxon,
   for (const r of fit.reasons) {
     if (r.verdict === 'misfit' && r.key !== 'room') {
       const ph = taxon.traits.soil_ph;
-      out.push({ id, about: r.key, severity: 'warning', asks: true, key: (MISFIT[r.key] as Record<string, string>)[site[r.key]], ...(r.key === 'soil' && { vars: { min: ph?.min ?? '?', max: ph?.max ?? '?' } }) });
+      out.push({ id, about: r.key, severity: 'warning', misfit: true, key: (MISFIT[r.key] as Record<string, string>)[site[r.key]], ...(r.key === 'soil' && { vars: { min: ph?.min ?? '?', max: ph?.max ?? '?' } }) });
     } else if (r.verdict === 'unknown') {
-      out.push({ id, about: r.key, severity: 'note', asks: false, key: UNKNOWN[r.key === 'room' && r.kind === 'climber' ? 'climber' : r.key] });
+      out.push({ id, about: r.key, severity: 'note', misfit: false, key: UNKNOWN[r.key === 'room' && r.kind === 'climber' ? 'climber' : r.key] });
     }
-    if (r.key === 'water' && r.note === 'dry_months') out.push({ id, about: 'water', severity: 'note', asks: false, key: 'water.dryMonths', state: 'dry_months' });
-    if (r.key === 'room' && r.kind === 'wild_height') out.push({ id, about: 'room', severity: 'note', asks: false, key: 'room.tall', vars: { m: Math.round(r.meters * 10) / 10 }, state: 'tall' });
+    if (r.key === 'water' && r.note === 'dry_months') out.push({ id, about: 'water', severity: 'note', misfit: false, key: 'water.dryMonths', state: 'dry_months' });
+    if (r.key === 'room' && r.kind === 'wild_height') out.push({ id, about: 'room', severity: 'note', misfit: false, key: 'room.tall', vars: { m: Math.round(r.meters * 10) / 10 }, state: 'tall' });
   }
   return out;
 }

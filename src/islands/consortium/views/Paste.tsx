@@ -3,22 +3,22 @@
 // column, picked when the paste has several; comma or semicolon columns read every cell unless one is picked), matched against this climate's list, then the other
 // climates' lists (views/paste.ts on S1's fold and word-prefix search). Each line is found, to choose
 // (a genus, a shared name, a word of a name), found in another climate's list, already in, listed
-// twice, or not found. Every warning stays on its row. Owner and coordinator rows
-// (knowledge/decisions/consortium-user-decisions.md): a single Add asks first when the plant misfits
-// the site or has a serious conflict, so a row's "Add anyway" (a guest, labelled "From the {climate}
-// list", A9) asks then; "Add all" adds the found and ticked plants without asking about each one, then
-// says "n added with a warning" with Show (2026-10-28 "Scale build, coordinator choices"). Each added
-// plant is kept. The text is read a moment after typing stops (and at once on "Add all"), at most
+// twice, or not found. Every warning stays on its row in words. Owner row "Inform, don't block"
+// (2026-11-14, knowledge/decisions/consortium-user-decisions.md): nothing asks first. A row's "Add
+// anyway" (a guest, labelled "From the {climate} list", A9) adds it in one tap and "Add all" adds the
+// found and ticked plants; a plant that warns (a site misfit or a serious conflict) makes the toast say
+// "n added with a warning" with Show. Each added plant is kept. The text is read a moment after typing stops (and at once on "Add all"), at most
 // MAX_LINES lines.
 // Loaded on first use (views/Sheets.tsx).
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { asks } from '../../../lib/consortium/index.ts';
+import { warns } from '../../../lib/consortium/index.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../store.ts';
-import { Ask, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
+import { focusAfterAdd } from '../focus.ts';
+import { SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { nameOf, zoneName } from './kit/names.ts';
 const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
 
@@ -36,7 +36,6 @@ export default function Paste({ Frame }: { Frame: Frame }) {
   const [settled, setSettled] = useState('');
   const [column, setColumn] = useState<number | null>(null); // null: the default (every cell for comma columns)
   const [ticked, setTicked] = useState<PlantId[]>([]);
-  const [asking, setAsking] = useState<{ t: Taxon; from: ClimateZone } | null>(null);
   const zones = store.curatedClimates.value;
   const others = zones.filter((z) => z !== climate);
   useEffect(() => { for (const z of others) void store.loadPool(z); }, [others.join()]);
@@ -73,11 +72,17 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     if (!ids.length) return;
     const from: Partial<Record<PlantId, ClimateZone>> = {};
     for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
-    const warned = ids.filter((id) => { const t = byId.get(id); return t ? asks(flagsOfPlant(t)) : false; });
+    const warned = ids.filter((id) => { const t = byId.get(id); return t ? warns(flagsOfPlant(t)) : false; });
     closeSheet();
     addMembers(ids, from, { warned });
   };
-  const addGuest = (t: Taxon, from: ClimateZone) => addMembers([t.id], { [t.id]: from });
+  // The row leaves for "Already in" as the plant joins (rows keyed by plant, so its node goes), and the
+  // focus moves on (W4): to the next row's "Add anyway" (next: its plant, else the row before's), else
+  // the "Already in" heading, else the sheet's title.
+  const addGuest = (t: Taxon, from: ClimateZone, next?: Taxon) => {
+    addMembers([t.id], { [t.id]: from }, { warned: warns(flagsOfPlant(t)) ? [t.id] : [] });
+    focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-already'));
+  };
   const toggle = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const sci = (t: Taxon) => <i class="ct-sci">{t.canonical_name}</i>;
   const warnings = (t: Taxon) => {
@@ -119,7 +124,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
             <h3 id="ct-p-found">{T('paste.g.found')}</h3>
             <ul class="ct-rows ct-paste-rows">
               {result.found.map((f) => (
-                <li><span><strong>{f.name}</strong> → {nameOf(f.taxon)} {sci(f.taxon)}</span>
+                <li key={f.taxon.id}><span><strong>{f.name}</strong> → {nameOf(f.taxon)} {sci(f.taxon)}</span>
                   {f.close && <span class="ct-muted">{T('paste.close', { name: f.close })}</span>}
                   {warnings(f.taxon)}</li>
               ))}
@@ -153,14 +158,14 @@ export default function Paste({ Frame }: { Frame: Frame }) {
           <section aria-labelledby="ct-p-other">
             <h3 id="ct-p-other">{T('otherLists')}</h3>
             <ul class="ct-rows ct-paste-rows">
-              {result.other.map((o) => {
+              {result.other.map((o, i) => {
                 return (
-                  <li class={asks(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
+                  <li key={o.taxon.id} class={warns(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
                     <span><strong>{o.name}</strong> → {nameOf(o.taxon)} {sci(o.taxon)}</span>
                     <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
                     {warnings(o.taxon)}
                     <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
-                      onClick={() => (asks(flagsOfPlant(o.taxon)) ? setAsking({ t: o.taxon, from: o.climate }) : addGuest(o.taxon, o.climate))}>{T('addAnyway')}</button>
+                      onClick={() => addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button>
                   </li>
                 );
               })}
@@ -169,10 +174,10 @@ export default function Paste({ Frame }: { Frame: Frame }) {
         )}
         {result.already.length > 0 && (
           <section aria-labelledby="ct-p-already">
-            <h3 id="ct-p-already">{T('paste.g.already')}</h3>
+            <h3 id="ct-p-already" tabIndex={-1}>{T('paste.g.already')}</h3>
             <ul class="ct-rows ct-paste-rows">
               {result.already.map((a) => (
-                <li><span><strong>{a.name}</strong> → {nameOf(a.taxon)} {sci(a.taxon)}</span>
+                <li key={a.taxon.id}><span><strong>{a.name}</strong> → {nameOf(a.taxon)} {sci(a.taxon)}</span>
                   {guests[a.taxon.id] && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[a.taxon.id]!) })}</span>}</li>
               ))}
             </ul>
@@ -194,15 +199,6 @@ export default function Paste({ Frame }: { Frame: Frame }) {
           </section>
         )}
       </div>
-      {asking && (
-        <Ask
-          title={T('add.ask')}
-          lines={flagLines(asking.t, flagsOfPlant(asking.t), scene).filter((l) => l.asks).map((l) => l.text)}
-          yes={T('addAnyway')}
-          onYes={() => { const { t, from } = asking; setAsking(null); addGuest(t, from); }}
-          onCancel={() => setAsking(null)}
-        />
-      )}
     </Frame>
   );
 }

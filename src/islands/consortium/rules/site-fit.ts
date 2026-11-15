@@ -14,8 +14,8 @@ export interface FlagScene { site: Site; members: readonly Taxon[]; country: str
 // could not decide, and the notes.
 export function siteFit(t: Taxon, site: Site, others: readonly Taxon[]): SiteFitMessage[] {
   const fit = fits(t, site), beside = misfitsBeside(t, site, others, fit);
-  return siteFitMessages(t, site, fit).filter((m) => !m.asks || beside.includes(m.about as SiteKey));
+  return siteFitMessages(t, site, fit).filter((m) => !m.misfit || beside.includes(m.about as SiteKey));
 }
-// The misfits (they ask first) and what the check could not decide (said aloud, never a silent fit).
-export const misfitsOf = (ms: readonly SiteFitMessage[]): SiteFitMessage[] => ms.filter((m) => m.asks);
-export const unknownsOf = (ms: readonly SiteFitMessage[]): SiteFitMessage[] => ms.filter((m) => !m.asks && !m.state);
+// The misfits (a warning in words) and what the check could not decide (said aloud, never a silent fit).
+export const misfitsOf = (ms: readonly SiteFitMessage[]): SiteFitMessage[] => ms.filter((m) => m.misfit);
+export const unknownsOf = (ms: readonly SiteFitMessage[]): SiteFitMessage[] => ms.filter((m) => !m.misfit && !m.state);

@@ -20,7 +20,6 @@
 // - "Higher than the town" or a hollow: note 'cold-air' on a plant within the margin of its cold limit.
 // - The level is the worst factor (outside, then look, then fits); 'unknown' when no climate factor
 //   was judged and no hint asks a second look.
-import type { Conflict } from './conflicts.ts';
 import type { Factor, FactorVerdict, Level, PeriodId, PlantId, PlantVerdict, Scenario, Taxon, VerdictContext, VerdictNote } from './types.ts';
 import { periodIds, scenarios } from './types.ts';
 import { aridityFit, boundPassed, coolSeasonOf, isAnnual, passes, RANGE_BOUNDS, RANGE_MARGIN_C } from './range.ts';
@@ -134,9 +133,3 @@ export function holdsBy(taxon: Taxon, ctx: VerdictContext, period: PeriodId): bo
   return !!c && c.factors.length > 0 && !c.factors.some((f) => f.level === 'outside');
 }
 
-// Whether a plant asks before it is added (replaces conflicts.ts asks; c2).
-/** @public forward seam for c2, which writes the body and drops the tag. */
-export function asksBefore(v: PlantVerdict, conflicts: readonly Conflict[]): boolean {
-  void v; void conflicts;
-  return false;
-}
