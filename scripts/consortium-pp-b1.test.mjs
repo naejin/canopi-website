@@ -1149,12 +1149,14 @@ test('save model invariants over random sequences: the save, the flag and every 
   const step0 = instantStep();
   const raf = globalThis.requestAnimationFrame;
   globalThis.requestAnimationFrame = () => 0;
+  let placedWaits = 0;
   try {
     for (let run = 0; run < 8; run++) {
       const [pool, R] = run % 2 ? await freshOver() : [await mine(4), null];
       await wait(0);
       if (R) await restoreM.applyPreset('Temperate', pool[run].canonical_name);
       let heldText = kept.get(STORE) ?? null, wasHeld = isHeld(), otherPending = false;
+      const PLANT_MOVES = ['add', 'paste', 'remove', 'swap', 'suggest', 'suggestWait', 'nextSuggest'];
       // The save mark each offered Undo saw, by toast id.
       const marks = new Map();
       const log = [];
@@ -1198,6 +1200,10 @@ test('save model invariants over random sequences: the save, the flag and every 
         if (shown?.undo && shown.id !== toast?.id) marks.set(shown.id, pre);
         if (name === 'search' && members.length) assert.deepEqual(store.members.peek(), members, `"Search all plants" removed plants ${at()}`);
         if (wasHeld && !now && !['undo', 'open'].includes(name)) assert.ok(shown?.undo && shown.id !== toast?.id, `${name} let the save go with no Undo of its own ${at()}`);
+        // Every plant change offers its own Undo, held or owned (review of f8c23a4, t-2).
+        const changed = store.members.peek().join() !== members.join();
+        if (PLANT_MOVES.includes(name) && changed) assert.ok(shown?.undo && shown.id !== toast?.id, `${name} changed the plants with no Undo of its own ${at()}`);
+        if (name === 'suggestWait' && changed) placedWaits++;
         if (undid) {
           assert.equal(now, undid.held, `Undo did not put back the held flag ${at()}`);
           if (undid.held) assert.equal(text, pre.text === OTHER ? OTHER : undid.text, `Undo back to held did not write back the save the action saw ${at()}`);
@@ -1212,6 +1218,8 @@ test('save model invariants over random sequences: the save, the flag and every 
         wasHeld = now;
       }
     }
+    // The waited suggestion is really placed in some runs, so its Undo is checked (t-1).
+    assert.ok(placedWaits > 0, 'no waited suggestion was ever placed');
   } finally {
     restoreM.provideLocationStep(step0);
     globalThis.requestAnimationFrame = raf;
