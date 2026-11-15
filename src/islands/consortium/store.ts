@@ -272,16 +272,17 @@ export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value, p = pool.value;
   return rule && p ? rule.verdicts([...p, ...guestTaxa.value], verdictContext.value) : null;
 });
-// The pool plants, guests included, that fit or need a second look for the page's period (levels kept
-// apart so the line can split them later); null until the verdicts are here. b2 writes its rule
-// (a borrowed list keeps every plant whose climate range includes the site); b1b reads it.
-/** @public seam for b1b, which drops the tag. */
+// The chosen climate's list (its own, or the nearest lists it borrows), guests left out: the plants
+// that fit or need a second look for the page's period (levels kept apart so the line can split them
+// later), of how many; null until the verdicts are here. Place's count line reads it (views/pool/pool.tsx,
+// b1b: "{n} of the {m} plants on the nearest lists fit your place today"). A borrowed list keeps every
+// plant whose climate range includes the site (owner, 2026-11-14). Kiambu: 305 of 515.
 export const countFits = computed<{ fits: number; look: number; of: number } | null>(() => {
-  const v = poolVerdicts.value;
-  if (!v) return null;
+  const v = poolVerdicts.value, p = pool.value;
+  if (!v || !p) return null;
   let fits = 0, look = 0;
-  for (const x of v.values()) { if (x.level === 'fits') fits++; else if (x.level === 'look') look++; }
-  return { fits, look, of: v.size };
+  for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits') fits++; else if (x === 'look') look++; }
+  return { fits, look, of: p.length };
 });
 // Whether the browser is offline (navigator.onLine and its events, wired in start(); App shows the line).
 export const offline = signal(false);
@@ -446,10 +447,13 @@ export function watchPools(): () => void {
   });
 }
 
+// Whether a suggestion needs the verdicts first: a site climate with range checks on (suggestMembers;
+// state/suggest-wait.ts waits for them and ends the wait when their chunk is refused).
+export const waitsForVerdicts = (): boolean => siteClimate.value && !rangeFailed.value;
 // "Suggest plants": a suggestion built around every plant already in the palette (the members are
 // its seed; inventory C6), leaving out removed plants (core suggest.ts). Needs the climate's pool and
-// every guest climate's (a guest must count); false, changing nothing, while any is not read
-// (guestsPending).
+// every guest climate's (a guest must count), and with a site climate the verdicts; false, changing
+// nothing, while any is not read (guestsPending, verdictRule).
 export function suggestMembers(): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
@@ -467,7 +471,14 @@ export function suggestMembers(): boolean {
   // (state/suggest-wait.ts).
   const algo = suggestRule.value;
   if (!algo) return false;
-  const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value });
+  // With a site climate, the verdicts too (F1a-P7, PP-B b1b): the gain counts the open holes a plant
+  // fills, and a member outside its range for the period fills none. Suggest waits for the verdict
+  // chunk, and a refused one ends the wait with a toast (state/suggest-wait.ts). Without a site climate
+  // every verdict is "not checked": nothing to wait for; nor with range checks off (rangeFailed: the
+  // verdict chunk imports the range rule's, so it cannot come either, and the page is P2's, P5-14e).
+  const verdicts = poolVerdicts.value;
+  if (waitsForVerdicts() && !verdicts) return false;
+  const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value, verdicts });
   // A suggestion placed is a plant change: the page owns the save from here (state/save.ts), and it
   // offers its own Undo, as Add, Remove and Swap do, taken just before it is placed (fix round 4, s-1,
   // s-2: every caller gets it, and no effect can drop it). A wait ends on any plant change, so this is
