@@ -4,7 +4,7 @@ title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:37:16Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T13:32:35Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:58Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -14,8 +14,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:f24acddf0d01b4f7
-    last_modified: 2026-11-14T13:27:54Z
+    digest: sha256:79c69772bc4dd0e6
+    last_modified: 2026-11-15T06:27:28Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -74,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:66e5404cce5f49d8
-    last_modified: 2026-11-14T21:54:34Z
+    digest: sha256:d82e33123aaf3462
+    last_modified: 2026-11-15T06:04:18Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -85,7 +85,7 @@ sources:
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:534a06a167bf1509
-    last_modified: 2026-11-14T21:51:58Z
+    last_modified: 2026-11-14T22:40:15Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:337229af28a158c8
-    last_modified: 2026-11-14T21:51:58Z
+    digest: sha256:7d5d453be535f762
+    last_modified: 2026-11-15T06:04:18Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css

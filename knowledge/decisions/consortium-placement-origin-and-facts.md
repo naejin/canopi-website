@@ -5,18 +5,18 @@ description: One placement origin on guest and borrowed plants replaces three fi
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:27Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:59Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:55Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:39f3e985aba0677c
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -42,8 +42,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:c109e9db6f45090c
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:c9bee389b56bb063
+    last_modified: 2026-11-15T06:27:28Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs

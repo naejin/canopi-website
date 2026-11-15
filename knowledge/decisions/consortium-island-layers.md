@@ -5,13 +5,13 @@ description: The consortium island's layers L0-L4, the import rules dependency-c
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:27Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:41:12Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:54Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:194e159214559141
-    last_modified: 2026-11-15T05:48:55Z
+    digest: sha256:bafb74f4ae2e1abc
+    last_modified: 2026-11-15T06:27:28Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -31,7 +31,7 @@ sources:
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
     digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -41,7 +41,7 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: sgconfig-yml
     resource: ../../sgconfig.yml
     title: sgconfig.yml
@@ -55,13 +55,13 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:0648114874935a3a
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:569aa46cc7bcee28
+    last_modified: 2026-11-15T06:27:28Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:1bbd681174e63de4
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx

@@ -510,7 +510,12 @@ function pushEntry(kind: Entry): void {
   const pp = [...shown, kind];
   try { history.pushState({ ...(history.state ?? {}), pp }, '', globalThis.location.href); } catch { return; }
   shown = pp;
+  linkEntry = false;
 }
+// The entry shown is a link opened in the tab (forgetEntries) with nothing the page pushed on it: a
+// move off it leaves that link for another start of the page, whose address is its own (a Back to the
+// palette shown before the link reopens that palette: S4 review round 2, 1).
+let linkEntry = false;
 const onEntry = (kind: Entry): boolean => shown[shown.length - 1] === kind;
 // Leaves the entry `kind` pushed and every entry above it in one move (the move then closes the sheet
 // or shows Place): false when the page has no such entry. `leaving` remembers the page asked for it,
@@ -524,13 +529,17 @@ export function leaveEntry(kind: Entry): boolean {
 // A Back or Forward (popstate) onto `state`: what main.ts does, `place` (back past the palette step:
 // Your place shows), then the rewrite of the entry landed on with the current link (`force`: even with
 // no palette of the page's own, except after an Undo back to Place, which wrote the address it wants).
-export function historyMoved(state: unknown): { place: boolean; force: boolean } {
-  const asked = leaving, was = shown, now = ppOf(state);
+// `away`: the move left a link opened in the tab: nothing is rewritten, so the hashchange that follows
+// opens the entry landed on as its own address (main.ts).
+export function historyMoved(state: unknown): { place: boolean; force: boolean; away: boolean } {
+  const asked = leaving, was = shown, now = ppOf(state), away = linkEntry;
   leaving = null;
+  linkEntry = false;
   shown = now;
+  if (away) return { place: false, force: false, away };
   if (asked !== 'sheet' && sheet.peek() && !now.includes('sheet')) sheet.value = null;
   const place = !paletteWaits && was.includes('palette') && !now.includes('palette') && step.peek() === 'palette';
-  return { place, force: !(asked === 'palette' && step.peek() === 'place') };
+  return { place, force: !(asked === 'palette' && step.peek() === 'place'), away };
 }
 // After a move and the rewrite: the entries asked for while the page's own Back was on its way (a push
 // then would race the traversal): the palette step (an action that closes a sheet, then opens the
@@ -542,7 +551,7 @@ export function pushWaiting(): void {
   if (sheet.peek() && !onEntry('sheet') && SHEET_KINDS.includes(sheet.peek()!.kind)) pushEntry('sheet');
 }
 // A link opened in the tab: its entry is a new start (state/arrival.ts restores it).
-export function forgetEntries(): void { shown = []; leaving = null; paletteWaits = false; }
+export function forgetEntries(): void { shown = []; leaving = null; paletteWaits = false; linkEntry = true; }
 // A return visit or a link opens on the palette page by itself: that first step is not the reader's
 // and pushes nothing (main.ts sets it; the step's effect in start() reads it once).
 let arrivalStep = false;

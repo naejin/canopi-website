@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:30Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:19:47Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:28:01Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:88bce15b0e22a904
-    last_modified: 2026-11-15T05:48:54Z
+    digest: sha256:73bfc83d80a884d5
+    last_modified: 2026-11-15T06:27:28Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -113,8 +113,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:fbd4102156210fb2
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:99eff2ead9719cb3
+    last_modified: 2026-11-15T06:04:18Z
 ---
 
 # Responsibility

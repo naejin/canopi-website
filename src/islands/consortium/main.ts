@@ -108,6 +108,7 @@ if (root && data) {
     // writes a state with every fragment it writes); its hashchange opens it.
     if (e.state == null && location.hash.length > 1) return;
     const moved = historyMoved(e.state);
+    if (moved.away) return; // off a link opened in the tab: its hashchange opens the entry landed on
     if (moved.place) backToPlace();
     writeAddress(moved.force);
     pushWaiting();

@@ -49,7 +49,10 @@ if (typeof document !== 'undefined') {
       const back = opener, plant = openerPlant;
       opener = null;
       requestAnimationFrame(() => {
-        const again = plant ? document.querySelector<HTMLElement>(`[data-plant-id="${CSS.escape(plant)}"]`) : null;
+        // Found again only while still in the palette and shown (not a removed plant offered to add
+        // back, or a control a phone's one time step hides): else the Undo, else the heading.
+        const again = plant && store.members.peek().includes(plant)
+          ? [...document.querySelectorAll<HTMLElement>(`#ct-root [data-plant-id="${CSS.escape(plant)}"]`)].find((el) => el.getClientRects().length) ?? null : null;
         const target = back?.isConnected ? back : again ?? document.querySelector<HTMLElement>('.ct-toast-undo');
         // The opener gone with its view (an Undo back to Place): the shown view's heading (b1a2-6).
         if (target) target.focus(); else focusView();

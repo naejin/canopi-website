@@ -106,9 +106,12 @@ export const OTHER_TAB = JSON.stringify({ fragment: 'v=4&c=tropical&l=unsure&s=u
 export const otherTabSaves = (page) => page.evaluate((x) => localStorage.setItem('canopi-consortium', x), OTHER_TAB);
 
 // A list pasted on Place stays on Place (b1a conformance-2); "Show my palette" makes it the palette.
+// "Show my palette", as the reader does, when Place shows (nothing to press when the palette page
+// already shows); then the palette's Share is on the page.
 export const showPalette = async (page) => {
-  await page.locator('[data-place-show]').click();
-  assert.ok(await has(page, aria('button', 'Share'), 5000));
+  const show = await page.$('[data-place-show]');
+  if (show) await show.click();
+  assert.ok(await has(page, aria('button', 'Share'), 5000), 'the palette page shows');
 };
 
 export const pasteOne = async (page, name) => {

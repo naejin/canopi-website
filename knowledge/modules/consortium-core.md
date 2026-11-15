@@ -6,13 +6,13 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:28Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:06:12Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:57Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:39f3e985aba0677c
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -42,7 +42,7 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:dd18c4fd263f21cf
-    last_modified: 2026-11-15T05:48:54Z
+    last_modified: 2026-11-14T22:20:01Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
@@ -62,7 +62,7 @@ sources:
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:9dff8162d35386ce
-    last_modified: 2026-11-15T05:48:54Z
+    last_modified: 2026-11-14T22:20:01Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -72,7 +72,7 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:a635a47f805ea6e7
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -82,7 +82,7 @@ sources:
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:537d25093ae022cf
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -117,7 +117,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:7a9a00b639b18f76
-    last_modified: 2026-11-15T05:48:54Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: mark-providers-ts
     resource: ../../src/lib/consortium/mark-providers.ts
     title: src/lib/consortium/mark-providers.ts
@@ -136,13 +136,13 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:c610211fbc99a8db
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:b09c7431458ad257
+    last_modified: 2026-11-15T06:04:18Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
     digest: sha256:83638646275badbd
-    last_modified: 2026-11-15T05:48:54Z
+    last_modified: 2026-11-14T22:20:01Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -172,12 +172,12 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
     digest: sha256:b7ba8d57d358f1ec
-    last_modified: 2026-11-15T05:48:54Z
+    last_modified: 2026-11-14T22:20:01Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -237,7 +237,7 @@ sources:
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:950058cbfed10592
-    last_modified: 2026-11-15T05:48:54Z
+    last_modified: 2026-11-14T22:20:01Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts

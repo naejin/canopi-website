@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:51Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:41:05Z }
 sources:
@@ -112,8 +112,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:662426a9e2d6b05e
-    last_modified: 2026-11-15T05:48:55Z
+    digest: sha256:caffd30f4ecda69b
+    last_modified: 2026-11-15T06:27:28Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -122,18 +122,18 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:0b7db36679f25fcc
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:02d773c08aae1d87
+    last_modified: 2026-11-15T06:27:28Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
     digest: sha256:bb3e2ea41339b8f7
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
     digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -142,13 +142,13 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:d7dd93580455ffe8
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:2ba3662647b07cca
+    last_modified: 2026-11-15T06:04:18Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:a97de2c82f12d653
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:f7500b563bbc6e76
+    last_modified: 2026-11-15T06:04:18Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -157,18 +157,18 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:5c240108275b42b7
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:02708fb644d42e24
+    last_modified: 2026-11-15T06:04:18Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:337229af28a158c8
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:7d5d453be535f762
+    last_modified: 2026-11-15T06:04:18Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:5e8602c72249ab40
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:5914d3cf541f463a
+    last_modified: 2026-11-15T06:04:18Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -177,8 +177,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:c109e9db6f45090c
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:c9bee389b56bb063
+    last_modified: 2026-11-15T06:27:28Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -193,7 +193,7 @@ sources:
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
     digest: sha256:8c8c38cfe432a5b7
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -213,7 +213,7 @@ sources:
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
     digest: sha256:904e8e3e5a71ad0b
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:51:25Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
@@ -222,8 +222,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:08784025942a4880
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:0ddf3da10e4a8954
+    last_modified: 2026-11-15T06:04:18Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -242,13 +242,13 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:51143f60a8813762
-    last_modified: 2026-11-14T22:40:15Z
+    digest: sha256:039f9c2d3415758d
+    last_modified: 2026-11-15T06:04:18Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
     digest: sha256:4793b06fedb7fa35
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
@@ -308,7 +308,7 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:a635a47f805ea6e7
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -383,7 +383,7 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
@@ -408,12 +408,12 @@ sources:
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:537d25093ae022cf
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:39f3e985aba0677c
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -442,18 +442,18 @@ sources:
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:2228f658cddef572
-    last_modified: 2026-11-15T05:48:55Z
+    digest: sha256:ba4b330855cdd8e3
+    last_modified: 2026-11-15T06:04:18Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:6d1269112848c942
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:b5a24f7ae4e9852c
+    last_modified: 2026-11-15T06:04:18Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:412fef8a80770ac5
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:7b86b2b18975f3d3
+    last_modified: 2026-11-15T06:04:18Z
 ---
 
 Target architecture of the [Plant palette redesign](/project/consortium-v2-plan.md) (grower-first design approved by the owner on 2026-11-14). Pushes and streams: [Plant palette slices](/project/plant-palette-slices.md). Layer rules: [ADR-1](/decisions/consortium-island-layers.md); caps: [ADR-2](/decisions/consortium-chunk-budgets.md); owner answers: [user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-14.
@@ -827,7 +827,7 @@ Not unreadable: an empty `a` (a valid empty palette); tokens that parse but are 
 The privacy text this storage must match is `privacy.tool.device`, owner-approved 2026-11-14 (plan, "Privacy text shipped in PP-B"): the palette (height limit, plot size, spot answers), country, location and site climate on this device; the last spot answers kept to start the next palette; "Forget this location" clears the location and the spot answers.
 
 - The address bar holds the public form only (inventory K7). `history.state` becomes `{ ct, src, pl, ask?, hold? }` (`state/arrival.ts` ownOf reads them); `pl` keeps a link's place for this tab (tab isolation: `writeSave` is shared across tabs); `ask: 1` while a link's place still waits on the reader (a reload asks again, against the reader's own place, country and cell, never the link's), `hold: 1` while the save is held for an arrival the reader has not acted on (a reload or Back keeps holding it; b1a review round 1, bugs-2 and 3). The address's `o` while the link's place waits is the link's cell, its `k` the link's country.
-- The save rule stays: a remove or put-back happens only while the save is what this page last wrote or read (`state/persist.ts:219-235`). Arriving by a link or a guide preset writes nothing until the reader acts; "Open my saved palette instead" calls `restore(saved.fragment, { from: 'saved' })`. The saved palette on offer is `savedInstead` (`state/persist.ts`, re-exported by `restore.ts`): set by a guide preset over a save and by a newer (`v=6`) or unreadable link over a save, where it shows as "Back to mine" on that line; it goes when this page replaces or removes the save (`writeSave`), so a Place answer that writes no save (room, plot, country, a card while the page has no palette of its own) keeps it (b1a review round 2, 2). A guide preset's climate is written quietly (not a reader action), so the offer stays.
+- The save rule stays: a remove or put-back happens only while the save is what this page last wrote or read (`state/persist.ts:219-235`). Arriving by a link or a guide preset writes nothing until the reader acts; "Open my saved palette instead" calls `restore(saved.fragment, { from: 'saved' })`. The saved palette on offer is `savedInstead` (`state/persist.ts`, re-exported by `restore.ts`): set by a guide preset over a save and by a newer (`v=6`) or unreadable link over a save, where it shows as "Back to mine" on that line; it goes when this page replaces or removes the save (`writeSave`), so a Place answer that writes no save (room, plot, country, a card while the page has no palette of its own) keeps it (b1a review round 2, 2); a plant added or removed on Place is saved at once (owner 2026-11-15), so it replaces the save and the offer goes, and its Undo brings both back. A guide preset's climate is written quietly (not a reader action), so the offer stays.
 - **A link without a place** is judged against the open palette's `place`, else `canopi-place`, plus the device location: the location half works today (`restore.ts:52-58`). The link "brings a place" when it has `o` or at least one spot or soil answer that is not `unsure` (decided on the decoded state, not on keys present). `m` and `z` never count as bringing a place: they belong to the palette, are always in the link and the save, and a link's or save's `m` and `z` win. A `k` with no `o` and no answer other than `unsure` does not bring a place, and the reader's country is kept. Vectors: every answer `unsure`; only `m` and `z`; `k` alone; `k` with `l=sun`.
 - **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`. **Start over** keeps the palette's `place`.
 - **A link that brings a place** (Arrivals board): it applies to that page only (`history.state.pl`, `location.source = 'link'`), with the notice "Use it" / "Use my own place"; `writeSave` keeps the save's own `place` until the reader chooses; "Use it" writes the link's spot and soil answers into the palette's `place`, its `o` into `canopi-location` through `state/location.ts` and its `k` through `state/draft.ts`, so they hold across reloads (coordinator row 2026-11-14: this reverses the [location module](/modules/consortium-location.md) rule that a link's `o=` is never saved over the reader's `canopi-location`). "Send the link to my computer" (P11) is `encodeLink(…, { origin, place: true })`, the grower's own link, and takes the same path. Unit tests: a palette edit keeps `l=sun`; "Use it" gives `l=shade` and the link's cell after reload; "Use my own place" restores the reader's own.

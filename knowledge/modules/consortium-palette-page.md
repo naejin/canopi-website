@@ -4,18 +4,18 @@ title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:34Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:40:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:59Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:412fef8a80770ac5
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:7b86b2b18975f3d3
+    last_modified: 2026-11-15T06:04:18Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:6d1269112848c942
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:b5a24f7ae4e9852c
+    last_modified: 2026-11-15T06:04:18Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:c109e9db6f45090c
-    last_modified: 2026-11-14T22:37:57Z
+    digest: sha256:c9bee389b56bb063
+    last_modified: 2026-11-15T06:27:28Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
