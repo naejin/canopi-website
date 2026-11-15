@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:57:57Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:57Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:c9bee389b56bb063
-    last_modified: 2026-11-15T06:27:28Z
+    digest: sha256:787f1eba6835e632
+    last_modified: 2026-11-15T06:56:20Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
@@ -25,13 +25,13 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:02708fb644d42e24
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:5bd373497791c3cf
+    last_modified: 2026-11-15T06:56:20Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:7d5d453be535f762
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:f5348fe9494bceaa
+    last_modified: 2026-11-15T06:52:44Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
@@ -40,8 +40,8 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:f7500b563bbc6e76
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:253affcde0d9fc94
+    last_modified: 2026-11-15T06:53:40Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -60,8 +60,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:02d773c08aae1d87
-    last_modified: 2026-11-15T06:27:28Z
+    digest: sha256:0c07788ec3b722bc
+    last_modified: 2026-11-15T06:56:20Z
   - id: consortium-start-test-mjs
     resource: ../../scripts/consortium-start.test.mjs
     title: scripts/consortium-start.test.mjs
@@ -130,7 +130,7 @@ All L7 cycles are gone after chunk 2 (coordinator row "E6 chunk-2 merge choices"
 |---|---|
 | `undo` | Undo puts it back (in the snapshot); a function computes what Undo writes from the value before and now (`view`: only to or from Start) |
 | `endsUndo` | a change to it ends the Undo offer (`climate`) |
-| `saved` | part of the `Consortium` the save keeps and going back to Place sets aside (plants added or removed on Place are saved at once, owner 2026-11-15); the save is the link's fragment, so a saved field is in the `#v=4` link under its own name in the core `ShareState`, and watched as `reader` |
+| `saved` | part of the `Consortium` the save keeps and going back to Place sets aside (plants added or removed on Place are saved at once, owner 2026-11-15; the save rule, fix round 2 A: `persist.own()` on Place is the draft once its plants differ from `placeBase`, the plants Place opened with, set only in the action functions: `backToPlace` the set-aside palette's, `startOver` none, `applyPreset` and `restore` the plants applied, each before its write; no page-lifetime memory kept by an effect. Start over on a held page (a link or preset over the reader's save) writes no save, and its Undo puts the held page back held, so the reader's save is never lost without an Undo. Guests after a climate change are judged against the chosen climate's list once read: `chooseClimate` reads it when not yet read and keeps as guests only the plants it lacks); the save is the link's fragment, so a saved field is in the `#v=4` link under its own name in the core `ShareState`, and watched as `reader` |
 | `link` | `put(v, o)` (into the link; default as it is) and `take(s, now, o)` (back from a decoded link or save; default the link's value, else the current one). `o` = `{ location, countryFrom }` |
 | `watched` | for an unsaved field: `reader` (a write is the reader acting: save, address and Share's link follow) or `save` (save and address follow) |
 | `plants` | one of the plant lists: saved, in Undo, ends Undo; Start over empties it, a change ends a waiting Suggest |

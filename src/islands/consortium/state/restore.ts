@@ -10,7 +10,7 @@ import { bringsPlace, decodeLink, emptyPlace, linkClimates, linkOrigin, linkVers
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace } from './persist.ts';
+import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, setPlaceBase, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace } from './persist.ts';
 import { lookingThrough } from './lookups.ts';
 
 // The notices a link (or the save) left for the reader (Place shows them).
@@ -221,6 +221,8 @@ export async function restore(fragment: string, { from, src = null, keep = false
     // Arriving by a link writes no save until the reader acts, nor does a reload or Back/Forward of it;
     // opening the save lets it go.
     holdSave(from === 'link' || !!ask || hold);
+    // Place, should it show, opens with the plants applied (set before the write the save follows).
+    setPlaceBase(d.state.members);
     // One batch; the watcher then saves it and writes the address (plants no longer in the list are
     // left out of the address, §5).
     // A link's place still waiting when another palette opens (Back to the reader's own, another link):
@@ -274,8 +276,12 @@ export async function applyPreset(climate: ClimateZone, plant: string | null): P
   const t = pool.find((x) => x.canonical_name === plant);
   if (!t) { notices.value = { ...notices.peek(), guideMissing: plant }; return; }
   // The guide's plant is the guide's choice, not the reader acting.
+  // Place opens with the guide's plant: no save until the reader changes the plants (S1). Set before
+  // the write, which the save follows at once.
+  const plants = [...new Set([...store.members.peek(), t.id])];
+  setPlaceBase(plants);
   quietly(() => batch(() => {
-    store.members.value = [...new Set([...store.members.peek(), t.id])];
+    store.members.value = plants;
     notices.value = { ...notices.peek(), guidePlant: t.id };
   }));
 }

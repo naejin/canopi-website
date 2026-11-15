@@ -191,15 +191,17 @@ export function adoptPending(): void {
 // view), so it rewrites the save too. Every write of the save goes through writeSave, which holds the
 // one multi-tab rule.
 
-// The plants as the page last wrote them itself (quietly: a restore, a guide's preset), so Place tells
-// the reader's adds and removes from the page's own writes; an Undo back to them is the page's again.
-let pagePlants: readonly PlantId[] = [];
+// Place's baseline: the plants Place opened with, set by the action that opens it (draft.ts backToPlace:
+// the palette set aside; startOver: none; restore.ts applyPreset: the guide's plant; a restore: what it
+// applied). On Place the draft is the palette, saved, once its plants differ from it (owner
+// 2026-11-15); an Undo back to them is Place as it opened again.
+let placeBase: readonly PlantId[] = [];
+export const setPlaceBase = (plants: readonly PlantId[]): void => { placeBase = plants; };
 // The consortium this page shows or set aside on Place (null: none of its own). shown: the store's
 // consortium fields whatever the view (Place's draft too), as a link of them reads.
 export function own(shown = false): Consortium | null {
   const aside = store.setAside.peek();
-  const plants = store.members.peek();
-  if (shown || store.view.peek() !== 'start' || (!samePlants(plants, aside?.members ?? []) && !samePlants(plants, pagePlants))) {
+  if (shown || store.view.peek() !== 'start' || !samePlants(store.members.peek(), placeBase)) {
     const climate = store.climate.peek();
     return climate && (schema.peek(schema.lists.saved) as Consortium);
   }
@@ -279,6 +281,7 @@ export const placeSaid = signal('');
 // action (watchStore) or a restore of the save lets it go.
 let held = false;
 export const holdSave = (on: boolean): void => { held = on; };
+export const saveHeld = (): boolean => held;
 
 // The save as this page last wrote it, or read it when it opened (openedWith).
 let lastSave: string | null = null;
@@ -340,9 +343,10 @@ export function writeAddress(force = false): void {
   // with this tab's place (pl: the save is shared by every tab; plant-palette-architecture 8.3).
   // ask: a link's place waits on the reader; hold: the save is held for a link they have not acted on.
   const ownState = fragment ? { ct: fragment, src: countryFrom(mine?.country), pl: addressPlace(mine), ...(linkPlace.peek() ? { ask: 1 } : held ? { hold: 1 } : {}) } : null;
-  // `pp`: the page's history entries up to this one (store.ts), kept through every rewrite and reload.
-  const pp = attempt(() => (history.state as { pp?: unknown } | null)?.pp);
-  const state = pp ? { ...(ownState ?? {}), pp } : ownState;
+  // `pp`: the page's history entries up to this one (store.ts), kept through every rewrite and reload;
+  // `st`: the entry's start (store.ts startId), so a move off a link opened in the tab is known.
+  const pp = attempt(() => (history.state as { pp?: unknown } | null)?.pp), st = store.startId();
+  const state = pp || st ? { ...(ownState ?? {}), ...(pp ? { pp } : {}), ...(st ? { st } : {}) } : ownState;
   written = fragment ?? '';
   if (next !== location.href || JSON.stringify(attempt(() => history.state)) !== JSON.stringify(state)) attempt(() => history.replaceState(state, '', next));
 }
@@ -403,11 +407,6 @@ export function watchStore(): void {
   });
   // A change the reader made (not quiet) lets a held save go, here as well as in the watcher above,
   // since the two effects run in no set order for one write.
-  // The plants the page writes quietly (own(): Place's plants are saved once the reader's differ).
-  effect(() => {
-    const plants = store.members.value;
-    if (quiet) pagePlants = plants;
-  });
   let firstSave = true;
   effect(() => {
     void schema.track(schema.lists.save);

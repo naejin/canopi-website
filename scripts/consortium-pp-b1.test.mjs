@@ -108,6 +108,7 @@ async function mine(n = 5) {
   // Nothing of an earlier test's arrival stays: its link-place notice, its held save, its saved-instead.
   persist.linkPlace.value = null;
   persist.holdSave(false);
+  persist.setPlaceBase?.([]);
   restoreM.savedInstead.value = null;
   store.setSource(realSource);
   store.load.value = { status: 'ready', error: null };
@@ -445,6 +446,74 @@ test('b1a conformance-4: another climate keeps every plant, on the palette and o
   assert.deepEqual(store.members.peek(), before, 'a climate chosen on Place removed plants');
 });
 
+// Fix round 2, A (r2-1): Place's draft is saved once its plants differ from what Place opened with
+// (backToPlace's set-aside palette, none after Start over), whatever the page wrote quietly before.
+const savedIds = async () => decodeLink(saved().fragment, await known('Temperate')).state.members;
+test('b1a2 r2-1 (a): a reload of [A,B], B removed on the palette, B added again on Place: [A,B] is saved', async () => {
+  const pool = await mine(5);
+  const [A, B] = [pool[0].id, pool[1].id];
+  const link = encodeLink({ climate: 'Temperate', country: null, room: 'small', plot: null, period: '1991-2020', spot: null, soil: null, members: [A, B], removed: [], guests: [] }, await known('Temperate'));
+  assert.equal(await restoreM.restore(link, { from: 'saved' }), true);
+  await wait(0);
+  store.removeMember(B);
+  await wait(0);
+  assert.deepEqual(await savedIds(), [A]);
+  draft.backToPlace();
+  store.addMembers([B]);
+  await wait(0);
+  assert.deepEqual(await savedIds(), [A, B], 'B added again on Place is not saved');
+});
+test('b1a2 r2-1 (b): C added on the palette, removed on Place: C is gone from the save', async () => {
+  const pool = await mine(3);
+  await wait(0);
+  const C = pool[9].id;
+  store.addMembers([C]);
+  await wait(0);
+  assert.ok((await savedIds()).includes(C));
+  draft.backToPlace();
+  store.removeMember(C);
+  await wait(0);
+  assert.ok(!(await savedIds()).includes(C), 'C removed on Place is still saved');
+});
+test('b1a2 r2-1 (c): Start over, then A and B added again on Place: they are saved', async () => {
+  const pool = await mine(2);
+  await wait(0);
+  const ids = store.members.peek().slice();
+  draft.startOver();
+  await wait(0);
+  store.addMembers(ids);
+  await wait(0);
+  assert.ok(saved(), 'Start over then the same plants added: no save');
+  assert.deepEqual(await savedIds(), ids);
+});
+// S1 and S3: a guide preset over the reader's save R leaves R alone until the reader acts; Start over on
+// a link's page leaves R, and its Undo brings the link's palette back with R still in storage.
+test('b1a2 r2-4: a preset over R leaves R untouched; Start over on a link page, then Undo: R is in storage', async () => {
+  const pool = await mine(5);
+  await wait(0);
+  const R = kept.get(STORE);
+  // A fresh page whose storage holds the reader's save R.
+  persist.quietly(() => { store.view.value = 'start'; store.setAside.value = null; store.climate.value = null; store.members.value = []; store.removed.value = []; });
+  await wait(0);
+  kept.set(STORE, R);
+  persist.openedWith(R);
+  await restoreM.applyPreset('Temperate', pool[3].canonical_name);
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'the preset touched R');
+  // A link page: R held.
+  const link = await linkWith('Temperate', 4);
+  assert.equal(await restoreM.restore(link, { from: 'link' }), true);
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'the link touched R');
+  draft.startOver();
+  await wait(0);
+  assert.equal(kept.get(STORE), R, 'Start over on a link page lost R');
+  store.toast.peek().undo();
+  await wait(0);
+  assert.equal(store.members.peek().length, 4, 'Undo brings the link\'s palette back');
+  assert.equal(kept.get(STORE), R, 'after Undo R is not in storage');
+});
+
 // b1a2-1 (fix round 1): changing the place never removes a plant; each kept plant is still drawn,
 // checked and saved. A plant the new climate's list lacks is a guest of the climate it came from.
 test('b1a2-1: Temperate to Mediterranean keeps a Temperate-only plant drawn and in the save; back to Temperate it is no guest', async () => {
@@ -466,6 +535,30 @@ test('b1a2-1: Temperate to Mediterranean keeps a Temperate-only plant drawn and 
   draft.chooseClimate('Temperate');
   await wait(0);
   assert.equal(store.guests.peek()[only.id], undefined, 'back in its own climate, no guest');
+});
+
+// Fix round 2, B (r2-3): a plant is a guest only if the chosen climate's list lacks it, judged against
+// the list once read (the usual first click is before it is).
+test('b1a2 r2-3: another climate chosen before its list is read: once read, only the plants it lacks are guests, and the save has no g= for the others', async () => {
+  const pool = await mine(5);
+  const med = await realSource.pool('Mediterranean');
+  const inMed = new Set(med.map((t) => t.id));
+  const both = pool.filter((t) => inMed.has(t.id)).slice(0, 2).map((t) => t.id);
+  const only = pool.find((t) => !inMed.has(t.id)).id;
+  assert.equal(both.length, 2, 'two plants in both lists');
+  persist.quietly(() => { store.members.value = [...both, only]; });
+  // Mediterranean's list not read yet.
+  const { Mediterranean: _, ...rest } = store.pools.peek();
+  store.pools.value = rest;
+  draft.chooseClimate('Mediterranean');
+  await store.loadPool('Mediterranean');
+  await wait(0);
+  assert.deepEqual(store.guests.peek(), { [only]: 'Temperate' }, 'guests beyond the plants the list lacks');
+  const g = new URLSearchParams(saved().fragment).getAll('g');
+  assert.equal(g.length, 1, 'the save carries g= for one list');
+  const read = decodeLink(saved().fragment, { Mediterranean: med.map((t) => t.id), Temperate: pool.map((t) => t.id) });
+  assert.deepEqual(read.state.guests.map((x) => x.id), [only], 'the save names only the missing plant as a guest');
+  persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
 });
 
 // b1a2-4 (fix round 1): a location already on the page stands for the kept one.

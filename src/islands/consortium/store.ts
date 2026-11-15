@@ -500,22 +500,30 @@ export const sheetCell = signal<SheetFor>(FOR_NOTHING);
 // no Navigation API, and a reload keeps it (persist.ts writeAddress keeps `pp`). A Forward onto an entry
 // the page left does nothing: the sheet stays closed, Back takes the reader on (owner 2026-11-14:
 // simplify; no refused Forward).
+// Each entry also carries its start (`st`): new for each link opened in the tab (forgetEntries),
+// inherited by the entries the page pushes on it, kept by every rewrite and read back after a reload.
+// A move onto an entry of another start (`away`) leaves that link: nothing is rewritten, and the
+// hashchange that follows reopens the entry landed on as its own address (main.ts adoptEntry; fix
+// round 2, C).
 type Entry = 'sheet' | 'palette';
 const ppOf = (s: unknown): Entry[] => {
   const pp = (s as { pp?: unknown } | null)?.pp;
   return Array.isArray(pp) ? pp.filter((k): k is Entry => k === 'sheet' || k === 'palette') : [];
 };
+const stOf = (s: unknown): string | null => {
+  const v = (s as { st?: unknown } | null)?.st;
+  return typeof v === 'string' && v ? v : null;
+};
+const newStart = (): string => Math.random().toString(36).slice(2, 10);
 let shown: Entry[] = []; // read from the entry shown when watchSteps starts (after a reload: its pp)
+let st = ''; // the start of the entry shown ('' until watchSteps reads it)
+// The start persist.ts writeAddress stamps on every entry it writes.
+export const startId = (): string => st;
 function pushEntry(kind: Entry): void {
   const pp = [...shown, kind];
-  try { history.pushState({ ...(history.state ?? {}), pp }, '', globalThis.location.href); } catch { return; }
+  try { history.pushState({ ...(history.state ?? {}), pp, ...(st ? { st } : {}) }, '', globalThis.location.href); } catch { return; }
   shown = pp;
-  linkEntry = false;
 }
-// The entry shown is a link opened in the tab (forgetEntries) with nothing the page pushed on it: a
-// move off it leaves that link for another start of the page, whose address is its own (a Back to the
-// palette shown before the link reopens that palette: S4 review round 2, 1).
-let linkEntry = false;
 const onEntry = (kind: Entry): boolean => shown[shown.length - 1] === kind;
 // Leaves the entry `kind` pushed and every entry above it in one move (the move then closes the sheet
 // or shows Place): false when the page has no such entry. `leaving` remembers the page asked for it,
@@ -529,13 +537,14 @@ export function leaveEntry(kind: Entry): boolean {
 // A Back or Forward (popstate) onto `state`: what main.ts does, `place` (back past the palette step:
 // Your place shows), then the rewrite of the entry landed on with the current link (`force`: even with
 // no palette of the page's own, except after an Undo back to Place, which wrote the address it wants).
-// `away`: the move left a link opened in the tab: nothing is rewritten, so the hashchange that follows
+// `away`: the entry landed on is another start's: nothing is rewritten, so the hashchange that follows
 // opens the entry landed on as its own address (main.ts).
 export function historyMoved(state: unknown): { place: boolean; force: boolean; away: boolean } {
-  const asked = leaving, was = shown, now = ppOf(state), away = linkEntry;
+  const asked = leaving, was = shown, now = ppOf(state), landed = stOf(state);
+  const away = landed !== null && landed !== st;
   leaving = null;
-  linkEntry = false;
   shown = now;
+  if (landed) st = landed;
   if (away) return { place: false, force: false, away };
   if (asked !== 'sheet' && sheet.peek() && !now.includes('sheet')) sheet.value = null;
   const place = !paletteWaits && was.includes('palette') && !now.includes('palette') && step.peek() === 'palette';
@@ -551,7 +560,10 @@ export function pushWaiting(): void {
   if (sheet.peek() && !onEntry('sheet') && SHEET_KINDS.includes(sheet.peek()!.kind)) pushEntry('sheet');
 }
 // A link opened in the tab: its entry is a new start (state/arrival.ts restores it).
-export function forgetEntries(): void { shown = []; leaving = null; paletteWaits = false; linkEntry = true; }
+export function forgetEntries(): void { shown = []; leaving = null; paletteWaits = false; st = newStart(); }
+// A hashchange onto an entry the page wrote itself (its own address, landed on by a move off a link):
+// its entries and its start are the entry's own.
+export function adoptEntry(state: unknown): void { shown = ppOf(state); st = stOf(state) ?? st; leaving = null; paletteWaits = false; }
 // A return visit or a link opens on the palette page by itself: that first step is not the reader's
 // and pushes nothing (main.ts sets it; the step's effect in start() reads it once).
 let arrivalStep = false;
@@ -561,7 +573,7 @@ export function arrivalOpensPalette(on: boolean): void { arrivalStep = on; }
 // made outside history (an Undo to Place, Start over) leaves that entry, as "Your place" does. Started
 // by main.ts beside watchPools (the page's history, not one of start()'s effects). Returns the disposer.
 export function watchSteps(): () => void {
-  try { shown = ppOf(history.state); } catch { /* no history: nothing pushed */ }
+  try { shown = ppOf(history.state); st = stOf(history.state) ?? newStart(); } catch { /* no history: nothing pushed */ }
   let was = step.peek();
   return effect(() => {
     const now = step.value;
@@ -669,9 +681,12 @@ const without = (list: PlantId[], ids: PlantId[]) => list.filter((x) => !ids.inc
 const SNAP_KEYS = state.lists.endsUndo;
 let undoAfter: ReturnType<typeof state.peek<(typeof SNAP_KEYS)[number]>> | null = null;
 // (Place's moves, in state/draft.ts and state/suggest-wait.ts, offer their Undo through it too.)
-export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = []): void {
+// wrap: how the Undo applies the restore (Start over on a page whose save is held restores quietly,
+// the save held again: state/draft.ts startOver).
+export function offerUndo(text: string, before: Snapshot, action: ToastAction | null = null, focus: PlantId[] = [], wrap?: (put: () => void) => void): void {
   undoAfter = state.peek(SNAP_KEYS);
-  showToast(text, () => { undoAfter = null; state.restore(before); }, action, focus);
+  const put = () => state.restore(before);
+  showToast(text, () => { undoAfter = null; if (wrap) wrap(put); else put(); }, action, focus);
 }
 // (The effect that ends the offer starts in start(), at the end of this file.)
 

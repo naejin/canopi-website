@@ -2,10 +2,10 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:58:39Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T21:05:45Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:58:09Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -20,13 +20,13 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:02d773c08aae1d87
-    last_modified: 2026-11-15T06:27:28Z
+    digest: sha256:0c07788ec3b722bc
+    last_modified: 2026-11-15T06:56:20Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:c9bee389b56bb063
-    last_modified: 2026-11-15T06:27:28Z
+    digest: sha256:787f1eba6835e632
+    last_modified: 2026-11-15T06:56:20Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -136,7 +136,7 @@ sources:
     resource: ../../scripts/browser/consortium-s4.browser.test.mjs
     title: scripts/browser/consortium-s4.browser.test.mjs
     digest: sha256:7a289f6d22c85f12
-    last_modified: 2026-11-15T06:27:28Z
+    last_modified: 2026-11-15T06:28:16Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -161,7 +161,7 @@ sources:
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
     digest: sha256:caffd30f4ecda69b
-    last_modified: 2026-11-15T06:27:28Z
+    last_modified: 2026-11-15T06:28:16Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -171,7 +171,7 @@ sources:
     resource: ../../scripts/browser/seams-helpers.mjs
     title: scripts/browser/seams-helpers.mjs
     digest: sha256:ebc726051d84ee71
-    last_modified: 2026-11-15T06:27:28Z
+    last_modified: 2026-11-15T06:28:16Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -231,7 +231,7 @@ sources:
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
     digest: sha256:79c69772bc4dd0e6
-    last_modified: 2026-11-15T06:27:28Z
+    last_modified: 2026-11-15T06:28:16Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -316,7 +316,7 @@ sources:
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
     digest: sha256:569aa46cc7bcee28
-    last_modified: 2026-11-15T06:27:28Z
+    last_modified: 2026-11-15T06:28:16Z
   - id: e6-browser-test-mjs
     resource: ../../scripts/browser/consortium-e6.browser.test.mjs
     title: scripts/browser/consortium-e6.browser.test.mjs
@@ -477,7 +477,7 @@ F1a is superseded by the Plant palette redesign (owner, 2026-11-14): PP-B commit
 
 `views/Start.tsx` moved to [views/place/Place.tsx](../../src/islands/consortium/views/place/Place.tsx) and was deleted. Place keeps the country line, the location slot, the climate cards and the pool slot, then: "How much room do you have?" (`roomValues` with `pots`, each answer's height limit through `formatLength`, never a count) with the optional plot size (`parsePlotSize`, `formatArea`); the grower's own plants (`[data-place-plants]`, chips with Remove, "Add a plant by name" opening the search sheet, Paste); today's light, soil and water ("Your spot", until PP-F); "Show my palette" (`[data-place-show]`) and "No plants in mind? Start from a small suggested palette" (`[data-place-suggest]`, one Undo). The Main crops picker and "Start empty and search" are gone from Place (`startEmpty` stays for the pool panel's nothing-fits line). Arrival lines live in one persistent `role=status` region (`[data-place-notice=…]`), and a second persistent status line carries the loading words (A25). Styles: [place.css](../../src/styles/consortium/place.css). Share gained the "Include my place" tick (`input[data-share-location]`), off by default.
 
-b1a-2 (review follow-ups): plants added on Place (search or paste, `store.addMembers`) stay on Place and are saved on the device at once (owner 2026-11-15, replacing "a draft until Show my palette"): `persist.ts` `own()` treats Place's plants as the palette once they differ from both the palette set aside and the plants the page last wrote quietly (a restore, a guide's preset), so a reload keeps them; a different saved palette is set aside and the add's Undo writes it back. Once the palette shows, Place's head has "Change your place" (`place.sheet.open`), which opens the "Your place" sheet (`SheetKind` `place`, in `SHEET_KINDS`, so Back closes it; `PlaceSheet` in Place.tsx, hosted by `views/Sheets.tsx` and in the first run): the location step, the climate cards with `PoolSlot` under them (a climate with no list here says why, with what Place offers), room and plot, the spot questions, and a foot with "Start over" and "Done" (`place.sheet.done`, closes as Close does). They change the palette in place, every plant kept: `chooseClimate` makes a member the new climate's list lacks a guest of the climate it was in (and a guest of the new climate one of its own again), so each kept plant is still drawn, checked and saved (fix round 1, b1a2-1). The palette suggests and swaps from `store.offerPool`, empty while the chosen climate's list is borrowed and not fitted to a place (`needsSite`/`needsRule`), and the palette head shows `PoolSlot` then (its "location" button opens the sheet). The country line stays in the head (one `#ct-country-select`). "Change site" and "Back to your palette" are gone; the palette's step 1 and phone Back still return to the Place form (`draft.ts` `backToPlace`). A sheet open when the view goes back to Place (an Undo in its foot) closes in the same update (`watchSteps`), and the sheet's focus-back falls to the shown view's heading when its opener has gone; the map dialog unmounted with its sheet clears `mapOpen` (location.tsx). The "Open my saved palette instead" offer comes back when an Undo writes the reader's save back as it was (`persist.ts` `replaced` keeps it as `offered`, cleared once used or when a new run of writes begins). A notice toast (an action and no Undo: a part that could not load, with Reload) keeps the toast's timer and sits in the page's flow at the end of the tool, never over content (Toast.tsx `ct-toast-notice`, details.css; UI hand-off). `arrival.ts` `openingArrival()` reads what the page opened with once, for main.ts and `startMemory`. A Back off a link opened in the tab (`store.forgetEntries`) rewrites nothing, so the entry landed on reopens as its own address (`historyMoved` `away`; S4 BT-7).
+b1a-2 (review follow-ups): plants added on Place (search or paste, `store.addMembers`) stay on Place and are saved on the device at once (owner 2026-11-15, replacing "a draft until Show my palette"): `persist.ts` `own()` treats Place's plants as the palette once they differ from `placeBase`, the plants Place opened with (set by `backToPlace`, `startOver`, `applyPreset` and `restore`; fix round 2 A), so a reload keeps them; a different saved palette is set aside and the add's Undo writes it back. Once the palette shows, Place's head has "Change your place" (`place.sheet.open`), which opens the "Your place" sheet (`SheetKind` `place`, in `SHEET_KINDS`, so Back closes it; `PlaceSheet` in Place.tsx, hosted by `views/Sheets.tsx` and in the first run): the location step, the climate cards with `PoolSlot` under them (a climate with no list here says why, with what Place offers), room and plot, the spot questions, and a foot with "Start over" and "Done" (`place.sheet.done`, closes as Close does). They change the palette in place, every plant kept: `chooseClimate` makes a member the new climate's list lacks a guest of the climate it was in (and a guest of the new climate one of its own again), so each kept plant is still drawn, checked and saved (fix round 1, b1a2-1); with the new list not read yet, every member is a guest until it is, then only those it lacks stay guests (fix round 2, r2-3). The palette suggests and swaps from `store.offerPool`, empty while the chosen climate's list is borrowed and not fitted to a place (`needsSite`/`needsRule`), and the palette head shows `PoolSlot` then (its "location" button opens the sheet). The country line stays in the head (one `#ct-country-select`). "Change site" and "Back to your palette" are gone; the palette's step 1 and phone Back still return to the Place form (`draft.ts` `backToPlace`). A sheet open when the view goes back to Place (an Undo in its foot) closes in the same update (`watchSteps`), and the sheet's focus-back falls to the shown view's heading when its opener has gone; the map dialog unmounted with its sheet clears `mapOpen` (location.tsx). The "Open my saved palette instead" offer comes back when an Undo writes the reader's save back as it was (`persist.ts` `replaced` keeps it as `offered`, cleared once used or when a new run of writes begins). A notice toast (an action and no Undo: a part that could not load, with Reload) keeps the toast's timer and sits in the page's flow at the end of the tool, never over content (Toast.tsx `ct-toast-notice`, details.css; UI hand-off). `arrival.ts` `openingArrival()` reads what the page opened with once, for main.ts and `startMemory`. A Back off a link opened in the tab rewrites nothing, so the entry landed on reopens as its own address: each entry carries a start id `st` (new per link, `store.forgetEntries`), and `historyMoved` `away` is the landed entry's `st` differing from the current one; the hashchange onto an entry the page wrote takes its `pp` and `st` (`adoptEntry`; S4 BT-7, fix round 2 r2-6, r2-7).
 
 ## Palette page (PP-B b2)
 

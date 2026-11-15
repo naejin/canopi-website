@@ -13,7 +13,7 @@ import * as store from '../store.ts';
 import { focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { T } from '../strings.ts';
-import { adoptPending, attempt, linkPlace, memory, own, placeSaid, placeSeed, release, writeSave, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
+import { adoptPending, attempt, holdSave, linkPlace, memory, own, placeSaid, placeSeed, quietly, release, saveHeld, setPlaceBase, writeSave, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
 import { adoptLinkLocation, notices, ownLocation, restore, savedInstead, NO_NOTICES } from './restore.ts';
 import { letGo } from './lookups.ts';
 
@@ -38,22 +38,34 @@ export function chooseClimate(z: ClimateZone): void {
   });
   memory.write(SITE_CLIMATE, siteIdOf(z));
   attempt(() => { document.documentElement.dataset.climate = siteIdOf(z); });
+  // Judged against the list once read (the usual first click is before it is): a plant it holds is
+  // one of its own, not a guest (fix round 2, B).
+  if (!store.pools.peek()[z]) void store.loadPool(z).then((list) => { if (list && store.climate.peek() === z) store.guests.value = ownAgain(list); });
 }
 
 // Each member's home list once the climate goes from `was` to `z`: a guest of z is one of z's own
-// again; one of was's own that z's list lacks (each of them while z's list is not read: a plant in
-// both is drawn from z's own list either way, store.ts memberTaxa) becomes a guest of was.
+// again; one of was's own that z's list lacks becomes a guest of was (each of them while z's list is
+// not read, so no plant loses its list; chooseClimate then keeps only those the list lacks).
 function homesAfter(was: ClimateZone | null, z: ClimateZone): Partial<Record<PlantId, ClimateZone>> {
   const now = store.guests.peek(), list = store.pools.peek()[z];
-  const inZ = list ? new Set(list.map((t) => t.id)) : null;
   const next: Partial<Record<PlantId, ClimateZone>> = {};
   for (const id of store.members.peek()) {
     const from = now[id];
-    if (from) { if (from !== z) next[id] = from; }
-    else if (was && was !== z && !inZ?.has(id)) next[id] = was;
+    if (from) next[id] = from;
+    else if (was && was !== z) next[id] = was;
   }
-  const same = Object.keys(next).length === Object.keys(now).length && Object.entries(next).every(([id, from]) => now[id] === from);
-  return same ? now : next;
+  return list ? ownAgain(list, next) : same(now, next);
+}
+// The guests without those `list` (the chosen climate's) holds.
+function ownAgain(list: readonly { id: PlantId }[], guests = store.guests.peek()): Partial<Record<PlantId, ClimateZone>> {
+  const inList = new Set(list.map((t) => t.id));
+  const next: Partial<Record<PlantId, ClimateZone>> = {};
+  for (const [id, from] of Object.entries(guests)) if (from && !inList.has(id)) next[id] = from;
+  return same(store.guests.peek(), next);
+}
+// `now` itself when `next` holds the same entries (a new object would rebuild every guest's record).
+function same(now: Partial<Record<PlantId, ClimateZone>>, next: Partial<Record<PlantId, ClimateZone>>): Partial<Record<PlantId, ClimateZone>> {
+  return Object.keys(next).length === Object.keys(now).length && Object.entries(next).every(([id, from]) => now[id] === from) ? now : next;
 }
 
 // The reader chooses a country (null: "No country"); kept on this device, apart from the consortium.
@@ -72,7 +84,9 @@ export function backToPlace(): void {
   placeSaid.value = '';
   batch(() => {
     dropLinkLocation();
-    store.setAside.value = own();
+    const aside = own();
+    setPlaceBase(aside?.members ?? []);
+    store.setAside.value = aside;
     store.view.value = 'start';
   });
 }
@@ -85,11 +99,14 @@ export const cardsLatched = signal(false);
 
 // Start over: the consortium goes, from the store, the save and the address; the climate, the
 // palette's place and the country stay. One Undo puts it back (with its save).
+// On a link's or a guide's page whose save is still held (the reader's own save R untouched), R stays,
+// and the Undo puts the page back as it was, R still held (S3).
 export function startOver(): void {
-  const before = schema.snapshot();
+  const before = schema.snapshot(), wasHeld = saveHeld();
   placeSaid.value = '';
   cardsLatched.value = false;
-  writeSave(null);
+  setPlaceBase([]);
+  if (!wasHeld) writeSave(null);
   batch(() => {
     store.setAside.value = null;
     schema.write(schema.valuesOf(schema.lists.plants));
@@ -98,7 +115,9 @@ export function startOver(): void {
     dropLinkLocation();
     notices.value = { ...NO_NOTICES };
   });
-  if (before.members.length || before.removed.length || Object.keys(before.guests).length) store.offerUndo(T('place.overDone'), before);
+  if (before.members.length || before.removed.length || Object.keys(before.guests).length) {
+    store.offerUndo(T('place.overDone'), before, null, [], wasHeld ? (put) => { holdSave(true); quietly(put); } : undefined);
+  }
 }
 
 // ---- the arrival notices' answers (plant-palette-architecture 8.3) ----

@@ -251,6 +251,46 @@ test('PP-B2 (b1a conformance-4 Your place sheet): the palette\'s place changes i
   assert.equal(await page.$(aria('button', 'Back to your palette')), null, '"Back to your palette" is still on the page');
 });
 
+// Fix round 2, C (8.3): each history entry carries what Back needs: `pp`, and its start `st` (new on
+// each link opened in the tab). A Back onto another start's entry reopens that entry's own palette.
+const pasteLink = async (page, link, n) => {
+  await page.evaluate((f) => { location.hash = f; }, link);
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k && !window.__ctTest.store.restoring?.value, 15_000, n), 'the pasted link opens');
+  await new Promise((r) => setTimeout(r, 300));
+};
+test('PP-B2 (b1a fix round 2, r2-6 Back off a pasted link through a sheet): paste L, open a plant, Back, Back: the palette before L reopens, its entry not rewritten', async () => {
+  const page = await tool();
+  await temperatePalette(page);
+  await new Promise((r) => setTimeout(r, 300));
+  const P = await page.evaluate(() => location.hash);
+  const n = await members(page);
+  const L = `#${await v5(4)}`;
+  assert.notEqual(n, 4, 'the palette is not the link\'s');
+  await pasteLink(page, L, 4);
+  await page.evaluate(() => { const s = window.__ctTest.store; s.openSheet('details', s.members.value[0]); });
+  assert.ok(await has(page, 'dialog[open].ct-sheet', 8000), 'the plant\'s details');
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 6000), 'Back closes the details');
+  await new Promise((r) => setTimeout(r, 300));
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, (p) => location.hash === p, 8000, P), 'the entry before the link was rewritten with the link');
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, 8000, n), 'the palette before the link reopens');
+});
+test('PP-B2 (b1a fix round 2, r2-7 Back to Place past a pasted link): Place, palette, paste L, Back, Back: Place shows', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await suggestFromPlace(page);
+  assert.ok(await until(page, () => window.__ctTest.store.view.value === 'matrix', 8000), 'the palette');
+  await new Promise((r) => setTimeout(r, 300));
+  const P = await page.evaluate(() => location.hash);
+  await pasteLink(page, `#${await v5(4)}`, 4);
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, (p) => location.hash === p, 8000, P), 'Back reopens the palette before the link');
+  await new Promise((r) => setTimeout(r, 500));
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, () => window.__ctTest.store.view.value === 'start', 8000), 'the second Back does not return to Place');
+});
+
 // b1a2-1 (fix round 1): changing the place never removes a plant; each kept plant is still drawn and
 // saved, so a reload keeps it.
 test('PP-B2 (b1a fix round 1, b1a2-1 a climate changed in the sheet): a Temperate-only plant stays through Temperate → Mediterranean and a reload', async () => {

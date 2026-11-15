@@ -2,9 +2,9 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:39:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:58:15Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:59Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:58:08Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:c9bee389b56bb063
-    last_modified: 2026-11-15T06:27:28Z
+    digest: sha256:787f1eba6835e632
+    last_modified: 2026-11-15T06:56:20Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
