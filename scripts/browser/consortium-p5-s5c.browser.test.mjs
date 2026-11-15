@@ -527,7 +527,7 @@ test('P5-27o (S5c seam review round 4, 1): a waiting Suggest whose guest list ne
 
 // Decision row "Climate ranges fixed before the P5 push" (2026-11-12): the zone from the cell's own means,
 // annuals beyond their heat range advised to the cool season, drought tolerance Medium on a dry site.
-test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Good-King-Henry (a recorded annual) is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways @real-data', async () => {
+test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Siberian purslane (a recorded annual) is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways @real-data', async () => {
   const [lat, lon] = SITES.nairobi;
   for (const width of [320, 390, 1280]) {
     const page = await tool({ width, geolocation: { lat, lon } });
@@ -540,23 +540,24 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
     assert.match(line, /Between Subtropical and Tropical; we picked Subtropical/);
     assert.match(line, /within 2 °C/);
     assert.equal(await proposedCard(page), 'subtropical', 'Subtropical proposed');
-    // Seville: Good-King-Henry (stored annual, Temperate list, heat limit 30.2 °C against 34.8 °C) stays, for the cool season.
+    // Seville: Siberian purslane (stored annual, Temperate list, heat limit 31.7 °C against 34.8 °C) stays, for the cool
+    // season (Siberian purslane until r-f3c6dd8b3c4391be, recorded perennial since D2d).
     await atSite(page, 'seville');
     await choose(page, 'Temperate');
     await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
     assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
-    await page.type('.ct-add .ct-search input', 'Chenopodium bonus-henricus');
+    await page.type('.ct-add .ct-search input', 'Claytonia sibirica');
     const row = '.ct-add .ct-rows li';
-    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Chenopodium bonus-henricus' && li.querySelector('[data-mark="season"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: Good-King-Henry in Add with its cool-season tag`);
-    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Chenopodium bonus-henricus').querySelector('[data-mark="season"]').textContent, row);
+    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Claytonia sibirica' && li.querySelector('[data-mark="season"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: Siberian purslane in Add with its cool-season tag`);
+    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Claytonia sibirica').querySelector('[data-mark="season"]').textContent, row);
     assert.equal(tag, 'grow in the cool season');
-    assert.equal(await page.evaluate((sel) => !![...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Chenopodium bonus-henricus').querySelector('[data-mark="outside"]'), row), false, 'not outside');
+    assert.equal(await page.evaluate((sel) => !![...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Claytonia sibirica').querySelector('[data-mark="outside"]'), row), false, 'not outside');
     const over = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag, dialog .ct-tag, dialog .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
     // doc ≤ 0: with the dialog open on desktop the page's scrollbar is hidden (scrollWidth < clientWidth).
     assert.deepEqual({ doc: Math.max(0, over.doc), marks: over.marks }, { doc: 0, marks: [] }, `${width} px: no sideways scroll, no mark past the edge`);
-    const annual = await page.evaluate(() => window.__ctTest.store.pools.value.Temperate.find((t) => t.canonical_name === 'Chenopodium bonus-henricus')?.id);
-    assert.ok(annual, 'Good-King-Henry is on the Temperate list');
+    const annual = await page.evaluate(() => window.__ctTest.store.pools.value.Temperate.find((t) => t.canonical_name === 'Claytonia sibirica')?.id);
+    assert.ok(annual, 'Siberian purslane is on the Temperate list');
     await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), annual);
     assert.ok(await has(page, '[data-mark-surface="details"][data-mark="season"]', 10_000), 'Details: the cool-season line');
     assert.equal(await text(page, '[data-mark-surface="details"][data-mark="season"]'), 'Too hot in summer here: grow it in the cool season.');

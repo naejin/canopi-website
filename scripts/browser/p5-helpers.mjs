@@ -67,7 +67,7 @@ export async function locationState(page, timeout = 15_000) {
 // which Preact runs after the next frame, so the sheet's input is in the page inside a closed (not
 // shown) dialog first (measured: there at 13 ms, open with the heading focused at 64 ms, more under
 // load). Typing that starts in that gap loses the keys sent before the heading takes the focus, and
-// the row looked for never shows (P5-27q "Good-King-Henry in Add with its cool-season tag").
+// the row looked for never shows (P5-27q "Siberian purslane in Add with its cool-season tag").
 export const ADD_OPEN = 'dialog.ct-add[open] .ct-search input';
 
 export const text = (page, sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
