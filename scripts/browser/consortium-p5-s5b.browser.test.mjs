@@ -446,7 +446,7 @@ test('P5-13 (S5b share with "include my location"): the link carries the cell ce
   assert.match(await text(opened, '[data-location-state]') ?? '', /approximate/i);
 });
 
-test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortium: Start over and Change site clear it', async () => {
+test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortium: Start over and the palette\'s "Your place" step (Change site until b1a conformance-4) clear it', async () => {
   const [lat, lon] = SITES.seville;
   const maker = await tool({ geolocation: { lat, lon } });
   await locationControls(maker);
@@ -456,10 +456,10 @@ test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortiu
   await maker.waitForSelector('input[data-share-location]', { visible: true, timeout: 10_000 });
   await maker.click('input[data-share-location]');
   const link = new URL(await maker.$eval('#ct-share-field', (e) => e.value));
-  for (const label of ['Start over', 'Change site']) {
+  for (const label of ['Start over', 'Your place']) {
     const page = await tool({ hash: link.hash });
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link opens with its location');
-    assert.ok(await page.evaluate((l) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === l); b?.click(); return !!b; }, label), label);
+    assert.ok(await page.evaluate((l) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === l || (x.matches('.ct-step') && x.textContent.trim().endsWith(l))); b?.click(); return !!b; }, label), label);
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value === null, { timeout: 5000 }).then(() => true, () => false), `${label} clears the link's location`);
   }
 });
@@ -558,16 +558,16 @@ test('P5-27e (S5b seam review 5): a link without o= keeps the reader\'s own save
   assert.ok(await ownSite(pasted), 'the reader\'s own site again, as a reload would give');
 });
 
-test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the saved consortium opens proposes nothing over it, and none comes back after Change site', async () => {
+test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the saved consortium opens proposes nothing over it, and none comes back back on Place (the palette\'s "Your place" step)', async () => {
   // The lookup first (the restore's list read waits for it).
   const first = await savedOpening({ list: 'open' });
   assert.ok(await ownSite(first), 'the saved site is read');
   assert.ok(await first.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
   assert.deepEqual(await proposal(first), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
   for (const page of [first]) {
-    assert.ok(await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Change site'); b?.click(); return !!b; }), 'Change site');
+    assert.ok(await page.evaluate(() => { const b = document.querySelector('button.ct-step'); b?.click(); return !!b; }), 'the "Your place" step');
     await new Promise((r) => setTimeout(r, 300));
-    assert.deepEqual(await proposal(page), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'after Change site: no stale proposal');
+    assert.deepEqual(await proposal(page), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'back on Place: no stale proposal');
   }
 });
 

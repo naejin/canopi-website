@@ -24,7 +24,7 @@ export interface Notices extends LinkNotice { oldSave: boolean; guideMissing: st
 export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false, oldSave: false, guideMissing: null, guidePlant: null, pasted: null, failed: false };
 export const notices = signal<Notices>({ ...NO_NOTICES });
 // A link that brings a place (persist.ts keeps the signal, below this module, so the save follows it),
-// and the save to go back to (persist.ts too, so the reader's first action ends it).
+// and the save to go back to (persist.ts derives it from the held save).
 export { linkPlace, savedInstead };
 
 // ---- the site location a page brings (P5 S5b) ----
@@ -74,9 +74,10 @@ export function ownCell(text?: string | null): LinkOrigin | null {
   return kept && typeof kept.lat === 'number' && typeof kept.lon === 'number' ? { lat: kept.lat, lon: kept.lon } : null;
 }
 
-// Whether the page opened with a location kept on this device (startMemory): Place counts it as a place
-// before its lookup returns, so the climate cards are decided once and never close under the grower
-// when the lookup comes back (review round 2, 1).
+// A location kept on this device whose lookup is still on the way (set by arrival.ts openWith, when the
+// page will look it up; cleared when that lookup settles, found or not, and by Forget): Place counts it
+// as a place meanwhile, so the climate cards never close under the grower when the lookup comes back
+// (review round 2, 1), and open once nothing stands for a place any more (review round 3, 1).
 export const locationAtStart = signal(false);
 
 // The reader's own saved site, looked up again while no other location is set. One rule for a fresh
@@ -88,9 +89,11 @@ export const locationAtStart = signal(false);
 // text: canopi-location as startMemory read it (so a plain open reads it once), else read here.
 let ownLookup: Promise<void> | null = null;
 export function ownLocation(text?: string | null): void {
-  if (ownLookup || store.location.peek()) return;
+  if (ownLookup) return;
+  // A location already on the page stands for the kept one: Place no longer waits for it (b1a2-4).
+  if (store.location.peek()) { locationAtStart.value = false; return; }
   const saved = text === undefined ? memory.read(LOCATION_STORE) : text;
-  if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; });
+  if (saved) ownLookup = settleLocation('saved', saved).finally(() => { ownLookup = null; locationAtStart.value = false; });
 }
 
 // ---- restoring a link or the save ----
@@ -154,9 +157,9 @@ export interface RestoreOptions { from: 'link' | 'saved'; src?: CountryFrom; kee
 // keep: a consortium is shown (a link pasted into the open tab, Back/Forward): a link that cannot
 // open changes nothing, says so where the reader is, and the address goes back to the consortium shown.
 // ask: a reload of a page whose link place still waited (history.state ask): the notice again, against
-// this own place, and the save held; the link's cell, kept in the tab's place (pl `o`), comes back.
-// hold: a reload or Back/Forward of a link the reader has not acted on (history.state hold): the save
-// stays held (8.3). country: the reader's own country, worked out before a link's was shown (startMemory),
+// this own place; the link's cell, kept in the tab's place (pl `o`), comes back. It holds nothing.
+// hold: a reload or Back/Forward of a page that held the save (history.state hold): the save stays
+// held (8.3). Each flag is read only as itself (fix round 4, s-3). country: the reader's own country, worked out before a link's was shown (startMemory),
 // which the notice gives back and the held save keeps.
 export async function restore(fragment: string, { from, src = null, keep = false, place = null, ask = undefined, hold = false, country = undefined }: RestoreOptions): Promise<boolean> {
   // A new arrival: what an earlier notice's answer did is said no more (review round 2, 4).
@@ -215,15 +218,15 @@ export async function restore(fragment: string, { from, src = null, keep = false
     const mayAsk = (from === 'link' || !!ask) && brings;
     const mine: OwnPlace = ask ?? waiting?.own ?? { spot: store.spot.peek(), soil: store.soil.peek(), country: country ?? store.country.peek(), location: mayAsk ? ownCell() : null };
     const asks = mayAsk && !samePlace(mine, d, origin);
-    // Arriving by a link writes no save until the reader acts, nor does a reload or Back/Forward of it;
-    // opening the save lets it go.
-    holdSave(from === 'link' || !!ask || hold);
     // One batch; the watcher then saves it and writes the address (plants no longer in the list are
     // left out of the address, §5).
     // A link's place still waiting when another palette opens (Back to the reader's own, another link):
     // the reader's own place and country come back first, so nothing of the earlier link stays.
     quietly(() => batch(() => {
       if (waiting && !ask) { store.spot.value = waiting.own.spot; store.soil.value = waiting.own.soil; store.country.value = waiting.own.country; }
+      // Arriving by a link holds the save until a plant change, as does a reload or Back/Forward of
+      // it; opening the save owns it (state/save.ts). In the batch, so the save sees the palette applied.
+      holdSave(from === 'link' || hold);
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings);
       // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
       // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays
@@ -231,7 +234,6 @@ export async function restore(fragment: string, { from, src = null, keep = false
       if (store.proposedFromSave.peek()) { store.proposedClimate.value = null; store.proposedFromSave.value = false; }
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: d.notice.cut, newer: d.notice.newer, period: d.notice.period, unreadable: false, pasted: null, failed: false };
       linkPlace.value = asks ? { own: mine } : null;
-      if (from === 'saved') savedInstead.value = null;
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
       // stale line shows and Share cannot attach its cell (review round 1, 2). The reader's own stays.
@@ -257,12 +259,12 @@ function samePlace(mine: OwnPlace, d: DecodedLink, origin: LinkOrigin | null): b
 }
 
 // A guide preset: the climate for this consortium only (never the shared site climate), and the
-// guide's plant: a member (plant-palette-architecture 8.3: a preset gives members == [id] and no save
-// until the reader acts; a new suggestion is built around it). The plant applies only if the reader
+// guide's plant: a member (plant-palette-architecture 8.3: a preset gives members == [id] and holds the
+// save until a plant change; a new suggestion is built around it). The plant applies only if the reader
 // has not acted while it was read (another card: pre-push review 2).
 export async function applyPreset(climate: ClimateZone, plant: string | null): Promise<void> {
   // The guide's climate is the guide's choice, not the reader acting (it ends no "Open my saved palette instead").
-  quietly(() => { store.climate.value = climate; });
+  quietly(() => batch(() => { holdSave(true); store.climate.value = climate; }));
   if (!plant) return;
   const began = actionCount();
   await waitForSource();

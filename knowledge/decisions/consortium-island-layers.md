@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:47:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:41:12Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:43Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:c5f9c61938aed9d6
-    last_modified: 2026-11-15T05:47:37Z
+    digest: sha256:113db0181e7f15db
+    last_modified: 2026-11-15T08:35:06Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -31,7 +31,7 @@ sources:
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
     digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -41,7 +41,7 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: sgconfig-yml
     resource: ../../sgconfig.yml
     title: sgconfig.yml
@@ -55,13 +55,13 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:3677ffab554a9095
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:569aa46cc7bcee28
+    last_modified: 2026-11-15T06:28:16Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:1bbd681174e63de4
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx

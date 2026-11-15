@@ -85,8 +85,16 @@ export const tropicalOnly = () => fixtureDb((db) => db.prepare("SELECT p.canonic
 
 export const param = (fragment, k) => (fragment ? new URLSearchParams(fragment.slice(1)).get(k) : undefined);
 
-export const changeSiteTo = async (page, card) => {
-  await page.locator(aria('button', 'Change site')).click();
+// From the palette back to Place: the palette page's step 1, "Your place" (Palette.tsx toPlace; "Change
+// site" went with b1a conformance-4, its "Change your place" is now a sheet that changes the palette
+// in place).
+export const toPlace = async (page) => {
+  await (await page.waitForSelector('button.ct-step', { visible: true, timeout: 4000 })).click();
+  assert.ok(await has(page, '[data-place-show]', 4000), 'Place shows');
+};
+
+export const placeTo = async (page, card) => {
+  await toPlace(page);
   await openCards(page);
   await page.locator(aria('radio', card)).click();
   assert.equal(await loadState(page), 'ready');
@@ -97,11 +105,20 @@ export const OTHER_TAB = JSON.stringify({ fragment: 'v=4&c=tropical&l=unsure&s=u
 
 export const otherTabSaves = (page) => page.evaluate((x) => localStorage.setItem('canopi-consortium', x), OTHER_TAB);
 
+// A list pasted on Place stays on Place (b1a conformance-2); "Show my palette" makes it the palette.
+// "Show my palette", as the reader does, when Place shows (nothing to press when the palette page
+// already shows); then the palette's Share is on the page.
+export const showPalette = async (page) => {
+  const show = await page.$('[data-place-show]');
+  if (show) await show.click();
+  assert.ok(await has(page, aria('button', 'Share'), 5000), 'the palette page shows');
+};
+
 export const pasteOne = async (page, name) => {
   await page.locator(aria('button', 'Paste a list')).click();
   await page.locator('#ct-paste-text').fill(name);
   await page.locator(aria('button', 'Add 1 plant')).click();
-  assert.ok(await has(page, aria('button', 'Share'), 5000));
+  await showPalette(page);
 };
 
 // Every visible control in #ct-root (outside an open sheet unless inSheet) with its box.

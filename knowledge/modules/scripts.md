@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:48:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:38Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:40:45Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T09:36:19Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:145670aed77a733a
-    last_modified: 2026-11-15T08:40:07Z
+    digest: sha256:0950f2ca9a1c3230
+    last_modified: 2026-11-15T09:34:48Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -113,8 +113,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:06d6221baafdb020
-    last_modified: 2026-11-14T15:12:09Z
+    digest: sha256:db4cb8c5307ae538
+    last_modified: 2026-11-15T08:51:41Z
 ---
 
 # Responsibility
@@ -167,7 +167,7 @@ F1a commit 0 adds three core tests written failing for the streams: `consortium-
 
 What the browser specs assume since b1a's Place and b2's palette page meet:
 - **Suggest on Place** is pressed through `[data-place-suggest]` ("Start from a small suggested palette", `en['consortium.start.suggest']`) only. On b1a's Place `.ct-cta .button-primary` is "Show my palette" and comes first in the document, so a selector list that names both presses the wrong button.
-- **Words b1a renamed** are read from `en.json`: `consortium.start.suggest`, `consortium.start.back` ("Back to your palette"). "Start empty and search" went; seams-p2 T4 shows an empty palette with `[data-place-show]` instead.
+- **Words b1a renamed** are read from `en.json`: `consortium.start.suggest`. "Start empty and search" went; seams-p2 T4 shows the palette with `[data-place-show]` instead. "Change site" and "Back to your palette" went in b1a-2 (conformance-4): `seams-helpers.mjs` `toPlace` presses the palette's step 1 (`button.ct-step`), and `showPalette` presses "Show my palette" after a paste, since a list added on Place stays there (conformance-2).
 - **The climate cards** sit behind "No location? Choose a climate": `location-fixtures.mjs` `openCards(page)` before a card, `pickCard(page, value)` to pick one. `pickCard` scrolls the card into view with `behavior: 'instant'`, since the site scrolls smoothly and a click measured mid-scroll misses (P5-27b at 1280 px).
 - **The suggested palette's Undo toast** (PP-B3) stays at the bottom of the viewport, so a control scrolled to the bottom edge can sit under it. Specs centre such a control before they press it: s3 `pressSend` ("Send suggestion"), the s5d scenario radio.
 - **PP-B titles:** `browser-tests.test.mjs` accepts `PP-B<n>` with an optional letter for a variant (`PP-B48b`), as it does for `E6-<n>`.

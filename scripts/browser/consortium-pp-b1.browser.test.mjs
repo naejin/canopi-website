@@ -21,6 +21,7 @@ import assert from 'node:assert/strict';
 import { aria, en, h, has, realDb, suggestReady, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
+import { placeTo } from './seams-helpers.mjs';
 import { liveLog, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -166,6 +167,263 @@ test('PP-B2 (b1a r2-3 a location with no climate read): the link says "No locati
   assert.match(await words(page, '.ct-climates') ?? '', /Without a location you still get a palette/, 'no "without a location" line for a location with no climate read');
 });
 
+// r3-1 (review round 3): Forget after the saved location was read leaves a climate chosen and no
+// location, so the cards open, as on any page with a climate and no place.
+test('PP-B2 (b1a r3-1 Forget with a kept climate): after the saved location is read and forgotten, the climate cards open', async () => {
+  const rec = JSON.stringify({ lat: 37.3891, lon: -5.9845, source: 'search', label: 'Sevilla' });
+  // Opened without tool()'s ready wait, which also waits out the lookup's busy line (slow on a loaded
+  // machine): the store says when the lookup is read.
+  const page = await h.open('/palette/', { mapTiles: 'stub', hook: true, setup: (pg) => pg.evaluateOnNewDocument((all) => {
+    if (sessionStorage.getItem('seeded')) return;
+    sessionStorage.setItem('seeded', '1');
+    for (const [k, v] of Object.entries(all)) localStorage.setItem(k, v);
+  }, { 'canopi-climate': 'temperate', 'canopi-location': rec }) });
+  assert.ok(await until(page, () => !!window.__ctTest?.store.location.value?.lookup && window.__ctTest.store.climate.value === 'Temperate', 60_000), 'the saved location was read');
+  assert.equal(await cardsShown(page), false, 'with the saved location the cards wait behind the link');
+  assert.ok(await has(page, aria('button', W('location.forget')), 4000), 'Forget this location');
+  await page.locator(aria('button', W('location.forget'))).click();
+  assert.ok(await until(page, () => window.__ctTest.store.location.value === null, 4000), 'the location goes');
+  assert.ok(await until(page, () => [...document.querySelectorAll('input[name="ct-climate"]')].some((r) => r.checkVisibility()), 4000), 'the cards stay hidden after Forget although a climate is chosen and there is no location');
+});
+
+// A palette made on Temperate (the store's own suggestion), shown on the palette page.
+async function temperatePalette(page) {
+  await choose(page, 'Temperate');
+  await suggestReady(page);
+  await page.evaluate(() => { const s = window.__ctTest.store; s.suggestMembers(); s.view.value = 'matrix'; });
+  assert.ok(await has(page, aria('button', W('place.sheet.open')), 8000), 'no "Change your place" on the palette');
+}
+// "Add a plant by name" on Place, as a grower does: the name searched, ticked and added; the page has
+// k plants then, and stays on Place.
+async function addByName(page, name, k) {
+  assert.ok(await has(page, '[data-place-add]', 8000), `plant ${k}: "Add a plant by name" on Place`);
+  await page.click('[data-place-add]');
+  assert.ok(await has(page, 'dialog[open].ct-sheet input[type="search"]', 10_000), 'the search sheet');
+  await page.locator('dialog[open].ct-sheet input[type="search"]').fill(name);
+  assert.ok(await until(page, (nm) => [...document.querySelectorAll('dialog[open] .ct-tick input')].some((b) => b.getAttribute('aria-label').endsWith(`, ${nm}`)), 8000, name), `${name} in the search`);
+  await page.evaluate((nm) => [...document.querySelectorAll('dialog[open] .ct-tick input')].find((b) => b.getAttribute('aria-label').endsWith(`, ${nm}`)).click(), name);
+  await page.locator(aria('button', 'Add 1 plant')).click();
+  assert.ok(await until(page, (n) => window.__ctTest.store.members.value.length === n, 8000, k), `plant ${k} added`);
+  assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', `plant ${k}: adding a plant left Place`);
+}
+const openPlaceSheet = async (page) => {
+  await page.locator(aria('button', W('place.sheet.open'))).click();
+  assert.ok(await has(page, 'dialog[open].ct-sheet #ct-place-sheet-h', 4000), 'the "Your place" sheet opens');
+};
+
+// conformance-2 (b1a review r1; boards Place, PlaceDesk): the grower lists the plants already growing
+// there on Place; each added plant joins the list and the rest of Place stays.
+test('PP-B2 (b1a conformance-2 own plants on Place): two plants added by name from Place both show under "What grows there already", and Your spot and "Show my palette" stay', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  for (const [i, n] of [3, 7].entries()) {
+    await addByName(page, await temperateName(n), i + 1);
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  }
+  assert.equal(await page.$$eval('[data-place-plants] .ct-own-chip', (l) => l.length), 2, 'both plants listed on Place');
+  assert.ok(await has(page, '#ct-site-h'), 'Your spot stays');
+  assert.ok(await has(page, '[data-place-show]'), '"Show my palette" stays');
+});
+
+// conformance-4 (b1a review r1; board ChangePlace, owner drop 11): "Your place" opens a sheet that
+// changes the place in place: the palette follows, no plant is removed, and Back closes it. "Change
+// site" and "Back to your palette" are gone.
+test('PP-B2 (b1a conformance-4 Your place sheet): the palette\'s place changes in a sheet that keeps every plant; Back closes it', async () => {
+  const page = await tool();
+  await temperatePalette(page);
+  const before = await page.evaluate(() => window.__ctTest.store.members.value.join());
+  assert.ok(before, 'a palette');
+  assert.equal(await page.$(aria('button', 'Change site')), null, '"Change site" is still on the page');
+  await page.locator(aria('button', W('place.sheet.open'))).click();
+  assert.ok(await has(page, 'dialog[open].ct-sheet', 4000), 'the sheet opens');
+  assert.equal(await words(page, 'dialog[open] h2[data-autofocus]'), W('place.sheet.title'));
+  assert.match(await words(page, 'dialog[open]') ?? '', /never removes a plant/, 'the sheet says the palette keeps its plants');
+  await page.click('dialog[open] input[name="ct-site-room"][value="large"]');
+  assert.ok(await until(page, () => window.__ctTest.store.room.value === 'large', 4000), 'the room answer');
+  assert.ok(await until(page, () => /(^|[#&])m=large(&|$)/.test(location.hash), 4000), 'the palette follows the room at once');
+  await page.click('dialog[open] input[name="ct-climate"][value="mediterranean"]');
+  assert.ok(await until(page, () => window.__ctTest.store.climate.value === 'Mediterranean', 4000), 'another climate');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.join()), before, 'another climate removed plants');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'matrix', 'the palette stays');
+  await page.goBack();
+  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 4000), 'Back closes the sheet');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'matrix', 'Back left the palette');
+  assert.equal(await page.$(aria('button', 'Back to your palette')), null, '"Back to your palette" is still on the page');
+});
+
+// Fix round 2, C (8.3): each history entry carries what Back needs: `pp`, and its start `st` (new on
+// each link opened in the tab). A Back onto another start's entry reopens that entry's own palette.
+const pasteLink = async (page, link, n) => {
+  await page.evaluate((f) => { location.hash = f; }, link);
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k && !window.__ctTest.store.restoring?.value, 15_000, n), 'the pasted link opens');
+  await new Promise((r) => setTimeout(r, 300));
+};
+// A Temperate palette on a fresh page, its address P and its plant count n, before a link is pasted.
+const paletteBeforeLink = async () => {
+  const page = await tool();
+  await temperatePalette(page);
+  await new Promise((r) => setTimeout(r, 300));
+  return { page, P: await page.evaluate(() => location.hash), n: await members(page) };
+};
+test('PP-B2 (b1a fix round 2, r2-6 Back off a pasted link through a sheet): paste L, open a plant, Back, Back: the palette before L reopens, its entry not rewritten', async () => {
+  const { page, P, n } = await paletteBeforeLink();
+  const L = `#${await v5(4)}`;
+  assert.notEqual(n, 4, 'the palette is not the link\'s');
+  await pasteLink(page, L, 4);
+  await page.evaluate(() => { const s = window.__ctTest.store; s.openSheet('details', s.members.value[0]); });
+  assert.ok(await has(page, 'dialog[open].ct-sheet', 8000), 'the plant\'s details');
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 6000), 'Back closes the details');
+  await new Promise((r) => setTimeout(r, 300));
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, (p) => location.hash === p, 8000, P), 'the entry before the link was rewritten with the link');
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, 8000, n), 'the palette before the link reopens');
+});
+test('PP-B2 (b1a fix round 2, r2-7 Back to Place past a pasted link): Place, palette, paste L, Back, Back: Place shows', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await suggestFromPlace(page);
+  assert.ok(await until(page, () => window.__ctTest.store.view.value === 'matrix', 8000), 'the palette');
+  await new Promise((r) => setTimeout(r, 300));
+  const P = await page.evaluate(() => location.hash);
+  await pasteLink(page, `#${await v5(4)}`, 4);
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, (p) => location.hash === p, 8000, P), 'Back reopens the palette before the link');
+  await new Promise((r) => setTimeout(r, 500));
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, () => window.__ctTest.store.view.value === 'start', 8000), 'the second Back does not return to Place');
+});
+
+// b1a2-1 (fix round 1): changing the place never removes a plant; each kept plant is still drawn and
+// saved, so a reload keeps it.
+test('PP-B2 (b1a fix round 1, b1a2-1 a climate changed in the sheet): a Temperate-only plant stays through Temperate → Mediterranean and a reload', async () => {
+  const page = await tool();
+  await temperatePalette(page);
+  const only = await page.evaluate(async () => {
+    const s = window.__ctTest.store, med = new Set((await s.loadPool('Mediterranean')).map((t) => t.id));
+    return s.members.value.filter((id) => !med.has(id));
+  });
+  assert.ok(only.length, 'a plant only Temperate lists');
+  const before = await page.evaluate(() => window.__ctTest.store.members.value.slice().sort().join());
+  await openPlaceSheet(page);
+  await page.click('dialog[open] input[name="ct-climate"][value="mediterranean"]');
+  assert.ok(await until(page, () => window.__ctTest.store.climate.value === 'Mediterranean', 4000), 'another climate');
+  assert.ok(await until(page, (ids) => ids.every((id) => window.__ctTest.store.memberTaxa.value.some((t) => t.id === id)), 8000, only), 'the Temperate-only plants are drawn');
+  await page.reload();
+  assert.ok(await until(page, (b) => window.__ctTest?.store.members.value.slice().sort().join() === b && window.__ctTest.store.climate.value === 'Mediterranean', 30_000, before), 'a reload lost a plant');
+});
+
+// b1a2-2 (fix round 1): a climate with no list of its own here says why in the sheet, with what Place
+// offers.
+test('PP-B2 (b1a fix round 1, b1a2-2 the sheet says why): Subtropical with no location says "needs your location" in the sheet', async () => {
+  const page = await tool();
+  await temperatePalette(page);
+  await openPlaceSheet(page);
+  await page.click('dialog[open] input[name="ct-climate"][value="subtropical"]');
+  assert.ok(await has(page, 'dialog[open] [data-needs-site]', 8000), 'the sheet says nothing about the borrowed list');
+});
+
+// b1a2-3 (fix round 1): a map left with its sheet is closed.
+test('PP-B2 (b1a fix round 1, b1a2-3 map gone with its sheet): the sheet\'s map, Back, the sheet again, then Start over: no map opens', async () => {
+  const page = await tool();
+  await temperatePalette(page);
+  await openPlaceSheet(page);
+  await page.click('dialog[open] [data-location-action="map"]');
+  assert.ok(await has(page, '[data-location-map] canvas', 10_000), 'the map draws');
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 6000), 'Back closed the sheet');
+  await openPlaceSheet(page);
+  assert.equal(await page.$('[data-location-map]'), null, 'the map opened by itself with the sheet');
+  await page.click('dialog[open] [data-place-sheet-foot] .link-button');
+  assert.ok(await until(page, () => window.__ctTest.store.view.value === 'start', 6000), 'Start over');
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(await page.$('[data-location-map]'), null, 'the map opened by itself on Place');
+});
+
+// b1a2-6 (fix round 1; moved in fix round 3, since "Show my palette" offers no Undo any more): an Undo
+// that goes back to Place pressed in the sheet's foot, here the suggestion's from Place: the sheet goes
+// with the palette, and the focus lands on the page.
+test('PP-B2 (b1a fix round 3, b1a2-6 Undo in the sheet): the suggestion\'s Undo pressed in the "Your place" sheet leaves no sheet open, one set of climate cards, and the focus on the page', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await suggestFromPlace(page);
+  assert.ok(await has(page, aria('button', W('place.sheet.open')), 8000), 'the palette');
+  await openPlaceSheet(page);
+  assert.ok(await has(page, 'dialog[open] .ct-toast-undo', 4000), 'the Undo in the sheet');
+  // The sheet closes in the same update as the view goes back to Place (not later, by Back's popstate).
+  const same = await page.evaluate(() => {
+    document.querySelector('dialog[open] .ct-toast-undo').click();
+    const s = window.__ctTest.store;
+    return { view: s.view.value, sheet: s.sheet.value };
+  });
+  assert.deepEqual(same, { view: 'start', sheet: null }, 'Undo went back to Place with the sheet still open');
+  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 4000), 'a sheet is still open');
+  assert.equal(await page.$$eval('#ct-climates', (l) => l.length), 1, 'one set of climate cards');
+  assert.ok(await until(page, () => document.activeElement && document.activeElement !== document.body, 4000), 'the focus fell to the body');
+});
+
+// r3-4 (fix round 3): entries the code before start ids wrote have no `st`. P's entry, a link pasted on
+// it, both without st, a reload on the link (the new code), Back: the entry before opens its own palette,
+// never rewritten with the link.
+test('PP-B2 (b1a fix round 3, r3-4 entries without st from before the deploy): a reload on a pasted link, then Back: the palette before reopens, its entry not rewritten', async () => {
+  const { page, P, n } = await paletteBeforeLink();
+  const strip = () => page.evaluate(() => { const { st: _, ...rest } = history.state ?? {}; history.replaceState(rest, '', location.href); });
+  await strip();
+  await pasteLink(page, `#${await v5(4)}`, 4);
+  await strip();
+  await page.reload();
+  assert.ok(await until(page, () => window.__ctTest?.store.members.value.length === 4, 30_000), 'the reload opens the link');
+  await new Promise((r) => setTimeout(r, 300));
+  await page.evaluate(() => history.back());
+  assert.ok(await until(page, (p) => location.hash === p, 8000, P), 'the entry before the link was rewritten with the link');
+  assert.ok(await until(page, (k) => window.__ctTest?.store.members.value.length === k, 30_000, n), 'the palette before the link reopens');
+});
+
+// c-4 (board ChangePlace): the sheet's foot has "Start over" and "Done"; Done closes it.
+test('PP-B2 (b1a fix round 1, c-4 the sheet\'s foot): "Start over" and "Done", and Done closes the sheet on the palette', async () => {
+  const page = await tool();
+  await temperatePalette(page);
+  await openPlaceSheet(page);
+  assert.equal(await words(page, 'dialog[open] [data-place-sheet-foot] .link-button'), W('start.over'));
+  await page.locator(aria('button', W('place.sheet.done'))).click();
+  assert.ok(await until(page, () => !document.querySelector('dialog[open]'), 4000), 'Done closes the sheet');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'matrix', 'Done left the palette');
+});
+
+// Owner 2026-11-15: plants added on Place are saved on the device at once, so a reload keeps them.
+test('PP-B2 (b1a owner 2026-11-15, Place adds saved): a plant added on Place stays after a reload on Place', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await addByName(page, await temperateName(3), 1);
+  assert.ok(await until(page, () => localStorage.getItem('canopi-consortium') !== null, 4000), 'the plant added on Place is not saved on the device');
+  await page.reload();
+  assert.ok(await until(page, () => window.__ctTest?.store.members.value.length === 1, 30_000), 'a reload on Place lost the plant');
+});
+
+test('PP-B2 (b1a UI hand-off, failed-chunk notice): a sheet whose chunk fails says so with Reload where it covers nothing, at 390, 960 and 1280 px', async () => {
+  for (const width of [390, 960, 1280]) {
+    const page = await tool({ width, data: 'fixture', block: { sheets: 404 } });
+    await openCards(page);
+    await page.locator(aria('radio', 'Temperate')).click();
+    await page.locator(aria('button', 'Paste a list')).click();
+    assert.ok(await has(page, '.ct-toast', 6000), `${width}: the notice`);
+    const seen = await page.evaluate(() => {
+      const card = document.querySelector('.ct-toast');
+      if (!card) return { gone: true };
+      const t = card.getBoundingClientRect();
+      const meets = (r) => r.width > 0 && r.height > 0 && r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top;
+      const under = [...document.querySelectorAll('#ct-root :is(button, a[href], input, label, h2, h3, p, li)')]
+        .filter((el) => !card.contains(el) && !el.contains(card) && !el.closest('dialog') && meets(el.getBoundingClientRect()))
+        .map((el) => `${el.tagName} ${(el.textContent || '').trim().slice(0, 30)}`);
+      return { gone: false, under, reload: !!card.querySelector('button') };
+    });
+    assert.equal(seen.gone, false, `${width}: the notice`);
+    assert.ok(seen.reload, `${width}: the notice has Reload`);
+    assert.deepEqual(seen.under, [], `${width}: the notice covers nothing of the page`);
+    await page.browserContext().close().catch(() => {});
+  }
+});
+
 test('PP-B3 (b1a suggested palette): "Start from a small suggested palette" adds plants, and one Undo takes them all away', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
@@ -223,6 +481,8 @@ test('PP-B5 (b1a shade answer): a "shade" answer moves a sun-only plant to "need
   await choose(page, 'Temperate');
   const sunOnly = await page.evaluate(() => window.__ctTest.store.pool.value.find((t) => t.traits.light?.length === 1 && t.traits.light[0] === 'full')?.id ?? window.__ctTest.store.pool.value[0].id);
   await page.evaluate((id) => { const s = window.__ctTest.store; s.addMembers([id]); s.spot.value = { ...s.spot.value, light: 'shade' }; }, sunOnly);
+  // A plant added on Place stays there (conformance-2): "Show my palette" makes it the palette, saved.
+  await page.click('[data-place-show]');
   assert.ok(await until(page, (id) => !!window.__ctTest.store.memberVerdicts.value?.get(id), 8000, sunOnly), 'no verdict for the sun-only plant');
   assert.equal(await page.evaluate((id) => window.__ctTest.store.memberVerdicts.value.get(id).level, sunOnly), 'look', 'no "needs a second look" verdict for a sun-only plant in shade');
   await page.reload();
@@ -249,9 +509,7 @@ test('PP-B10 (b1a share): with "Include my place" off the link holds none of k o
 
 test('PP-B11 (b1a Start over): Start over shows a toast with Undo, and Undo brings the palette back', async () => {
   const page = await tool();
-  await choose(page, 'Temperate');
-  await suggestReady(page);
-  await page.evaluate(() => { const s = window.__ctTest.store; s.suggestMembers(); s.view.value = 'matrix'; });
+  await temperatePalette(page);
   const before = await page.evaluate(() => window.__ctTest.store.members.value.join());
   assert.ok(await has(page, aria('button', W('start.over')), 8000), 'Start over');
   await page.locator(aria('button', W('start.over'))).click();

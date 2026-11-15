@@ -45,7 +45,8 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const next = nextStep(holes, skip);
   // The whole list, outside-range plants included: grouped behind "Show N outside their climate
   // range", visible, never hidden, and one tap adds them (inform, don't block; owner 2026-11-14).
-  const pool = store.pool.value ?? NONE;
+  // Nothing from a borrowed list not fitted to a place (store.offerPool; the head says why).
+  const pool = store.offerPool.value ?? NONE;
   const [showOutside, setShowOutside] = useState(false);
   const [allOutside, setAllOutside] = useState(false);
   const pv = store.poolVerdicts.value;

@@ -3,7 +3,7 @@
 import { effect, signal, untracked } from '@preact/signals';
 import * as store from '../store.ts';
 import { focusView } from '../focus.ts';
-import { P, T } from '../strings.ts';
+import { T } from '../strings.ts';
 import { state as schema } from './schema.ts';
 import { adoptPending } from './persist.ts';
 import { lookups, unread } from './lookups.ts';
@@ -36,7 +36,6 @@ const reloadToast = (): void => store.showToast(T('details.loadFailed'), null, {
 // Ends the wait (the one way to: views call it, as PoolSlot does when Start can no longer suggest).
 export function dropSuggest(): void {
   if (!pendingSuggest.peek()) return;
-  undoTo = null;
   clearTimeout(cap);
   waited.value = false;
   pendingSuggest.value = false;
@@ -55,20 +54,8 @@ function capped(): void {
     if (store.pool.peek()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, suggestWaitMs());
   }
 }
-// The palette before "Start from a small suggested palette" was pressed: the suggestion it places,
-// now or once its wait ends, comes with one Undo back to it (PP-B3). A dropped wait forgets it.
-let undoTo: ReturnType<typeof schema.snapshot> | null = null;
-export function suggestPalette(): void {
-  undoTo = schema.snapshot();
-  requestSuggest();
-}
-function placed(): void {
-  const before = undoTo;
-  undoTo = null;
-  if (before) store.offerUndo(P('place.suggested', store.members.peek().length), before);
-}
-
-// "Suggest plants": now when the plants are read, else once they are (§5 Loading).
+// "Suggest plants" (Place, the palette's next step): now when the plants are read, else once they are
+// (§5 Loading). The suggestion placed offers its own Undo (store.ts suggestMembers; PP-B3).
 export function requestSuggest(): void {
   adoptPending();
   // A location being read: Suggest waits for it (the effect below runs it once lookups settle), 10 s
@@ -79,7 +66,7 @@ export function requestSuggest(): void {
   // The suggestion's chunk still missing (or failed before: tried again, L8): this press waits for it.
   store.wantSuggest();
   const busy = lookups.peek() && !waited.peek();
-  if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; placed(); focusView(); return; }
+  if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
   if (!pendingSuggest.peek()) cap = setTimeout(capped, suggestWaitMs());
   pendingSuggest.value = true;
 }

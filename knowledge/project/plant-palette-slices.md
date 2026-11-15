@@ -4,9 +4,9 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:48:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:38Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:19:41Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:42Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -127,7 +127,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:7a9a00b639b18f76
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -196,23 +196,23 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:662426a9e2d6b05e
-    last_modified: 2026-11-15T05:47:37Z
+    digest: sha256:caffd30f4ecda69b
+    last_modified: 2026-11-15T06:28:16Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:652b11feed4df3eb
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:0c07788ec3b722bc
+    last_modified: 2026-11-15T07:15:54Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
     digest: sha256:bb3e2ea41339b8f7
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
     digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -221,18 +221,18 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:b5d16f20a23a4903
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:c0c5086cbc6f4b8d
+    last_modified: 2026-11-15T08:15:08Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:1afe77755f5cad27
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:5b1cc5e5b7385399
+    last_modified: 2026-11-15T08:35:06Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
     digest: sha256:8c8c38cfe432a5b7
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -247,7 +247,7 @@ sources:
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
     digest: sha256:904e8e3e5a71ad0b
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:51:25Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
@@ -256,18 +256,18 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:3677ffab554a9095
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:569aa46cc7bcee28
+    last_modified: 2026-11-15T06:28:16Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
     digest: sha256:4793b06fedb7fa35
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:1bbd681174e63de4
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -307,7 +307,7 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:a635a47f805ea6e7
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: future-marks-ts
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
@@ -352,7 +352,7 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
@@ -372,7 +372,7 @@ sources:
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:537d25093ae022cf
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json

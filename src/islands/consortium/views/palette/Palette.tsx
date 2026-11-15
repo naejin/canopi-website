@@ -13,7 +13,7 @@ import { signal } from '@preact/signals';
 import type { PlantId } from '../../../../lib/consortium/index.ts';
 import { holes as holesOf } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { changeSite } from '../../state/draft.ts';
+import { backToPlace } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
 import { markFirstView } from '../kit/start-mark.ts';
 import { prefetchLater } from '../lazy.tsx';
@@ -58,7 +58,7 @@ function FirstView() {
 
 // "Your place": back in history past the palette step's entry, and any sheet's above it, when the page
 // pushed it (store.leaveEntry: the next Back then leaves the page), else the step itself.
-const toPlace = (): void => { if (!store.leaveEntry('palette')) changeSite(); };
+const toPlace = (): void => { if (!store.leaveEntry('palette')) backToPlace(); };
 
 export function Palette() {
   const members = store.memberTaxa.value;

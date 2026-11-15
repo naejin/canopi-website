@@ -128,7 +128,10 @@ function MapDialog() {
         if (hook && typeof hook === 'object') (hook as Record<string, unknown>).mapCentre = ({ lat, lon }: { lat: number; lon: number }) => m.jumpTo({ center: [lon, lat] });
       }
     }).catch((err: unknown) => { console.error(`Consortium: the map did not load: ${(err as Error).message}`); if (!gone) setFailed(true); });
-    return () => { gone = true; map.current?.remove(); map.current = null; };
+    // Unmounted without its close event (the "Your place" sheet gone by Back or a swipe): closed, so it
+    // never opens again by itself (fix round 1, b1a2-3), first, before the map's own remove (which can
+    // throw).
+    return () => { gone = true; mapOpen.value = false; map.current?.remove(); map.current = null; };
   }, []);
   // Closed through the dialog itself, as Escape does, so the browser returns focus to the map button
   // (review round 1, 5); its close event then unmounts it.

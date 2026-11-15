@@ -4,7 +4,7 @@ title: Consortium v2 plan
 description: "Phases, the remaining order after the 2026-11-12 plan review (revised 2026-11-14: the Plant palette redesign replaces F1a as pushes PP-B to PP-G, F2 with F4 on link v6, F1b split, new curated order), exits, coordinator choices and owner actions for consortium v2 across canopi-website, canopi-data and opencanopi/canopi-climate."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:24:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:19:40Z }
 sources:
@@ -22,7 +22,7 @@ sources:
     resource: ../../scripts/plan/pp-b-owners.json
     title: scripts/plan/pp-b-owners.json
     digest: sha256:687ecb9e74c58484
-    last_modified: 2026-11-14T22:18:42Z
+    last_modified: 2026-11-15T05:48:54Z
 ---
 
 Architecture: [Consortium v2 architecture](/decisions/consortium-v2-architecture.md). Owner decisions (final, dated): [user decisions](/decisions/consortium-user-decisions.md). Adapter: [agentic delivery](/runbooks/agentic-delivery.md) (branch prefix `consortium/` instead of `guides/`). v1 plan for history: [Consortium tool plan](/project/consortium-tool-plan.md).

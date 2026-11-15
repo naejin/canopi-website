@@ -2,9 +2,9 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T15:16:42Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:37Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T20:46:53Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:39Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -64,20 +64,20 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:f24acddf0d01b4f7
-    last_modified: 2026-11-14T13:27:54Z
+    digest: sha256:79c69772bc4dd0e6
+    last_modified: 2026-11-15T06:28:16Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:c9c83d75e02ad46f
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:5d7ec19f2dc9687f
+    last_modified: 2026-11-15T08:35:06Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:b5d16f20a23a4903
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:c0c5086cbc6f4b8d
+    last_modified: 2026-11-15T08:15:08Z
 enforced_by:
   - scripts/consortium-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs

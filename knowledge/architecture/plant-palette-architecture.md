@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:47:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:37Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:41:05Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:43Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -112,8 +112,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:662426a9e2d6b05e
-    last_modified: 2026-11-15T05:47:37Z
+    digest: sha256:caffd30f4ecda69b
+    last_modified: 2026-11-15T06:28:16Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -122,18 +122,18 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:652b11feed4df3eb
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:0c07788ec3b722bc
+    last_modified: 2026-11-15T07:15:54Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
     digest: sha256:bb3e2ea41339b8f7
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
     digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -142,43 +142,43 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:2277cf3363de4243
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:1d308232da636c1e
+    last_modified: 2026-11-15T08:35:06Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:ad8040288e389492
-    last_modified: 2026-11-14T20:07:28Z
+    digest: sha256:ebcd8009a0571e36
+    last_modified: 2026-11-15T08:35:06Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:b5d16f20a23a4903
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:c0c5086cbc6f4b8d
+    last_modified: 2026-11-15T08:15:08Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:c9c83d75e02ad46f
-    last_modified: 2026-11-14T20:46:26Z
+    digest: sha256:5d7ec19f2dc9687f
+    last_modified: 2026-11-15T08:35:06Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:ff56dae40b77fd8a
-    last_modified: 2026-11-14T15:02:17Z
+    digest: sha256:fb1d3e6351899c0e
+    last_modified: 2026-11-15T08:35:06Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:b6b3c4a07c8b9b9d
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:189ba70475cc78d4
+    last_modified: 2026-11-15T08:15:08Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:914a0961338ae564
-    last_modified: 2026-11-14T20:07:28Z
+    digest: sha256:14359e44747de392
+    last_modified: 2026-11-15T08:35:06Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:1afe77755f5cad27
-    last_modified: 2026-11-14T21:05:18Z
+    digest: sha256:5b1cc5e5b7385399
+    last_modified: 2026-11-15T08:35:06Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -193,7 +193,7 @@ sources:
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx
     digest: sha256:8c8c38cfe432a5b7
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -213,7 +213,7 @@ sources:
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
     digest: sha256:904e8e3e5a71ad0b
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:51:25Z
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
@@ -222,8 +222,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:75ccb83d8615591a
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:0ddf3da10e4a8954
+    last_modified: 2026-11-15T06:04:18Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -242,13 +242,13 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:385653ccb2aee61b
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:039f9c2d3415758d
+    last_modified: 2026-11-15T06:04:18Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
     digest: sha256:4793b06fedb7fa35
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
@@ -308,7 +308,7 @@ sources:
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
     digest: sha256:a635a47f805ea6e7
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -383,7 +383,7 @@ sources:
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
     digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
@@ -408,12 +408,12 @@ sources:
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
     digest: sha256:537d25093ae022cf
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:39f3e985aba0677c
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -442,18 +442,23 @@ sources:
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:2228f658cddef572
-    last_modified: 2026-11-15T05:47:37Z
+    digest: sha256:ba4b330855cdd8e3
+    last_modified: 2026-11-15T06:04:18Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:6d1269112848c942
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:b5a24f7ae4e9852c
+    last_modified: 2026-11-15T06:04:18Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:412fef8a80770ac5
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:7b86b2b18975f3d3
+    last_modified: 2026-11-15T06:04:18Z
+  - id: save-ts
+    resource: ../../src/islands/consortium/state/save.ts
+    title: src/islands/consortium/state/save.ts
+    digest: sha256:df9021a1e31fef7c
+    last_modified: 2026-11-15T08:15:08Z
 ---
 
 Target architecture of the [Plant palette redesign](/project/consortium-v2-plan.md) (grower-first design approved by the owner on 2026-11-14). Pushes and streams: [Plant palette slices](/project/plant-palette-slices.md). Layer rules: [ADR-1](/decisions/consortium-island-layers.md); caps: [ADR-2](/decisions/consortium-chunk-budgets.md); owner answers: [user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-14.
@@ -665,7 +670,7 @@ Commit 0 checks contrast in both themes (text 4.5:1, graphics 3:1 against `--bg`
 | `period` | saved, share; not in undo | new |
 | `kept`, `crops`, `stage` | not written to v5 | marked deprecated in PP-B commit 0a; `kept` and `crops` removed in commit 0a' with their readers (Suggest's `kept` input becomes `seed`, fed from `members`) (`StageBar.tsx:14`, `PrintSheet.tsx:12`, `Details.tsx:149-150`, `Start.tsx:143-153`, `ShareInput` at `schema.ts:142`, `restore.ts:216-217`, `persist.ts`, `store.ts:391-534`); `stage` stays an unsaved signal read by print until b2 draws print at the year step chosen in Through the years (PP-B18), then goes |
 | `view` | reader | commit 0a' narrows it to `'start' | 'matrix'`, where `'matrix'` names the empty palette slot (its writers in `suggest-wait.ts`, `draft.ts`, `restore.ts` and `store.ts` unchanged), and drops the core `views` list (`types.ts:467`); b2 makes it `'place' | 'palette' | 'plan'` (header steps, P1), replacing `store.ts:24` `View` |
-| `setAside` | as today (`:146-158`) | keep |
+| `setAside` | — | removed in b1a fix round 3 (save model, 2026-11-15): Place and the palette page show one palette, so nothing is set aside |
 
 ## 4. Data flow
 
@@ -826,12 +831,18 @@ Not unreadable: an empty `a` (a valid empty palette); tokens that parse but are 
 
 The privacy text this storage must match is `privacy.tool.device`, owner-approved 2026-11-14 (plan, "Privacy text shipped in PP-B"): the palette (height limit, plot size, spot answers), country, location and site climate on this device; the last spot answers kept to start the next palette; "Forget this location" clears the location and the spot answers.
 
-- The address bar holds the public form only (inventory K7). `history.state` becomes `{ ct, src, pl, ask?, hold? }` (`state/arrival.ts` ownOf reads them); `pl` keeps a link's place for this tab (tab isolation: `writeSave` is shared across tabs); `ask: 1` while a link's place still waits on the reader (a reload asks again, against the reader's own place, country and cell, never the link's), `hold: 1` while the save is held for an arrival the reader has not acted on (a reload or Back keeps holding it; b1a review round 1, bugs-2 and 3). The address's `o` while the link's place waits is the link's cell, its `k` the link's country.
-- The save rule stays: a remove or put-back happens only while the save is what this page last wrote or read (`state/persist.ts:219-235`). Arriving by a link or a guide preset writes nothing until the reader acts; "Open my saved palette instead" calls `restore(saved.fragment, { from: 'saved' })`. The saved palette on offer is `savedInstead` (`state/persist.ts`, re-exported by `restore.ts`): set by a guide preset over a save and by a newer (`v=6`) or unreadable link over a save, where it shows as "Back to mine" on that line; it goes when this page replaces or removes the save (`writeSave`), so a Place answer that writes no save (room, plot, country, a card while the page has no palette of its own) keeps it (b1a review round 2, 2). A guide preset's climate is written quietly (not a reader action), so the offer stays.
+- The address bar holds the public form only (inventory K7). `history.state` becomes `{ ct, src, pl, ask?, hold? }` (`state/arrival.ts` ownOf reads them); `pl` keeps a link's place for this tab (tab isolation: `writeSave` is shared across tabs); each flag written from its own source and read only as itself (fix round 4, s-3): `ask: 1` while a link's place still waits on the reader (`linkPlace`; a reload asks again, against the reader's own place, country and cell, never the link's; it holds nothing), `hold: 1` while the save is held (`state/save.ts` `held`: a link's or a guide's page, or a page after Start over, until a plant change; a reload or Back keeps holding it; b1a review round 1, bugs-2 and 3). Each entry also carries its start id `st` (see "Sheets and browser history" below). The address's `o` while the link's place waits is the link's cell, its `k` the link's country.
+- **The save model** (b1a fix round 3, save-model design check 2026-11-15, owner decisions 2026-11-15; replaces `setAside`, `placeBase`, `own()`, `beneath`, `offered`, `release()` and the watcher's hold releases). One flag, `state/save.ts` `held`: this page's palette is not the save.
+  - Every page starts held. Only a restore of the save that applies, and a plant change that can be undone (`store.ts` `addMembers`, `removeMember`, `swapMember`, `suggestMembers`), set it false; each of those offers its own Undo from the snapshot it takes, so no effect can drop it (fix round 4: `suggestMembers` offers the suggestion's, waited or not, Place's or the Next step's); Start over sets it true. Navigation, Place's answers (card, room, plot, spot, soil), "Use it", "Use my own place" and "Show my palette" never touch it (owner decision 2).
+  - Not held, `persist()` writes the current palette (`persist.palette()`, which leaves out a guest the chosen climate's read list holds: r3-3) on every change, Place's answers included (owner decision 1: "Show my palette" is navigation only, with no Undo). Held, the save is left as it is.
+  - Every undoable action's snapshot (`store.snapshot()`) records `save: { text, held }` (`markSave`: the storage as read then, and the flag). Undo (`undoSave`) puts the flag and the state back in one batch, then, held again, the save byte for byte (`putSave`), only while the storage still holds what this page last wrote or read (`lastSave`), so another tab's save is never lost (R2-2, M1–M3).
+  - Start over: `putSave(null)` when not held (same multi-tab check), then holds; on a held page (a link or a guide preset over the reader's save) the save stays, so it is never lost without an Undo (r3-1).
+  - "Open my saved palette instead" / "Back to mine" (`persist.savedInstead`, re-exported by `restore.ts`) is computed, not bookkept: `held` and the readable save in storage (read again on each write of this page and on the `storage` event), unless the page shows that very palette (owner decision 3: offered on every held page whose save differs). Pressed, it reads storage, adopts it as `lastSave` and calls `restore(saved.fragment, { from: 'saved' })`, so another tab's save is offered and opened, never this page's stale palette written over it (fix round 4, s-5).
+  - Unit tests: one per walk row and section 4 addition of the design check, and a random-sequence test of the invariants (every plant change that lets the save go offers its own Undo; not held ⇒ the save is `currentFragment()`; held ⇒ the save unchanged unless another tab wrote; an Undo puts back the flag the action saw and, held again, the save it saw; "Search all plants" removes no plant; fix round 4, s-7) in `scripts/consortium-pp-b1.test.mjs` ("save model ..."); browser seams-p2 F1, R2-1, T2, D1.
 - **A link without a place** is judged against the open palette's `place`, else `canopi-place`, plus the device location: the location half works today (`restore.ts:52-58`). The link "brings a place" when it has `o` or at least one spot or soil answer that is not `unsure` (decided on the decoded state, not on keys present). `m` and `z` never count as bringing a place: they belong to the palette, are always in the link and the save, and a link's or save's `m` and `z` win. A `k` with no `o` and no answer other than `unsure` does not bring a place, and the reader's country is kept. Vectors: every answer `unsure`; only `m` and `z`; `k` alone; `k` with `l=sun`.
-- **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`. **Start over** keeps the palette's `place`.
+- **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`. **Start over** keeps the palette's `place`, removes a save the page owns and holds (see the save model above).
 - **A link that brings a place** (Arrivals board): it applies to that page only (`history.state.pl`, `location.source = 'link'`), with the notice "Use it" / "Use my own place"; `writeSave` keeps the save's own `place` until the reader chooses; "Use it" writes the link's spot and soil answers into the palette's `place`, its `o` into `canopi-location` through `state/location.ts` and its `k` through `state/draft.ts`, so they hold across reloads (coordinator row 2026-11-14: this reverses the [location module](/modules/consortium-location.md) rule that a link's `o=` is never saved over the reader's `canopi-location`). "Send the link to my computer" (P11) is `encodeLink(…, { origin, place: true })`, the grower's own link, and takes the same path. Unit tests: a palette edit keeps `l=sun`; "Use it" gives `l=shade` and the link's cell after reload; "Use my own place" restores the reader's own.
-- **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, simplified by the owner's simplify pass the same day; `store.ts` history block, `main.ts` popstate and hashchange): a sheet (Details, Swap, Add, search, Paste) pushes one entry with the same address; Back closes it and keeps every edit, a second Back leaves the page. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model: each pushed entry records the page's entries up to it in its own `history.state.pp` (for example `['palette', 'sheet']`), and `state/persist.ts` `writeAddress` keeps `pp` through every rewrite, so `historyMoved(state)` reads where a Back or Forward landed from the entry itself: no position counting, no Navigation API, and a reload keeps the entries (review r2 hist-2 closed). popstate closes a sheet the landed entry has not, or shows Place when it has no palette step, then `writeAddress` rewrites the landed entry with the current link (`force` false only after an Undo back to Place, which wrote the address it wants), then `pushWaiting` pushes an entry asked for while the page's own Back was on its way. The hashchange that may follow lands on the fragment the page last wrote (`persist.lastWritten`) and stops in `main.ts`, so `state/arrival.ts` never reads it as a link; any other hashchange is the reader's link and ends the entries (`forgetEntries`). Forward onto an entry the page left is allowed and changes nothing on screen (owner 2026-11-14: no refused Forward). Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go` (`leaveEntry('palette')`: "Your place", and `watchSteps` for a change made outside history). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40, PP-B41 and PP-B48/48b (a link pasted again, with and without the Navigation API) in `consortium-pp-b2.browser.test.mjs`.
+- **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, simplified by the owner's simplify pass the same day; `store.ts` history block, `main.ts` popstate and hashchange): a sheet (Details, Swap, Add, search, Paste, Your place) pushes one entry with the same address; Back closes it and keeps every edit, a second Back leaves the page. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model: each pushed entry records the page's entries up to it in its own `history.state.pp` (for example `['palette', 'sheet']`), and `state/persist.ts` `writeAddress` keeps `pp` through every rewrite, so `historyMoved(state)` reads where a Back or Forward landed from the entry itself: no position counting, no Navigation API, and a reload keeps the entries (review r2 hist-2 closed). popstate closes a sheet the landed entry has not, or shows Place when it has no palette step, then `writeAddress` rewrites the landed entry with the current link (`force` false only after an Undo back to Place, which wrote the address it wants), then `pushWaiting` pushes an entry asked for while the page's own Back was on its way. The hashchange that may follow lands on the fragment the page last wrote (`persist.lastWritten`) and stops in `main.ts`, so `state/arrival.ts` never reads it as a link; any other hashchange onto an entry the page wrote itself (its `history.state.ct` equals the fragment) takes that entry's `pp` and start (`adoptEntry`); any other is the reader's link and ends the entries (`forgetEntries`), which starts a new start id. Start ids (fix round 2, C, 2026-11-15): every entry carries `history.state.st`, new for each link opened in the tab, inherited by `pushEntry`, kept by `writeAddress` and read back after a reload (`watchSteps`); `historyMoved` returns `away` when the landed entry's `st` differs from the current one (or, for an entry with a `ct` and no `st`, written by the code before start ids: r3-4, browser case in `consortium-pp-b1.browser.test.mjs`), and popstate then rewrites nothing, so the hashchange that follows reopens that entry's own palette (browser cases r2-6 and r2-7 in `consortium-pp-b1.browser.test.mjs`). Forward onto an entry the page left is allowed and changes nothing on screen (owner 2026-11-14: no refused Forward). Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go` (`leaveEntry('palette')`: "Your place", and `watchSteps` for a change made outside history). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40, PP-B41 and PP-B48/48b (a link pasted again, with and without the Navigation API) in `consortium-pp-b2.browser.test.mjs`.
 - **Guide presets** (`?plant=&climate=`, `readPreset` `state.ts:279`, `applyPreset` `restore.ts:189-204`): the plant joins `members` inside the existing `quietly(batch())`; `guideKept` becomes `guidePlant`, and b1a replaces `consortium.start.guideKept` with a `consortium.place.` key that does not say "Kept". A preset gives `members == [id]` and no save until the reader acts.
 
 ### 8.4 The move to `/palette/` (PP-B commit 0)
@@ -852,13 +863,13 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 | `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Retry in place fetches the chunk again under `?retry=n` (core `verdict-load.ts`, the URL read from the error); offline "Needs a connection", asked again on `online`, never a page reload (PP-B20, `block: { verdict: 404 }`) | b2, c2 |
 | Guest lists | holes `pending`, "Loading the other lists" (inventory L2) | the list is named as missing; its plants "not checked" (PP-B21); a palette of such plants only is never "empty" (PP-B44); removing a failed list's last plant takes it off `failedPools`, so the notice and "not checked" go, and the list is read afresh if a plant of it comes back (PP-B45) | b2 |
 | Location lookup | asking, refused, timed out, unavailable, sea, coast, polar, between two climates (D2, D9) | search offline or failed, map could not load (D4, D6) | b1a |
-| No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page or kept on this device when the page opened (`restore.ts` `locationAtStart`), and then latched open, so a saved location's lookup never closes them (b1a review round 2, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
+| No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page and no location kept on this device is still being looked up (`restore.ts` `locationAtStart`, cleared when that lookup settles or Forget removes it), and then latched open until Start over (`draft.ts` `cardsLatched`), so a saved location's lookup never closes them and Forget opens them (b1a review rounds 2, 1 and 3, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
 | Soil tile | "Reading the soil map" | "The soil map has no value here" (sea, coast, ice: `types.ts:382-384`); answer stays `map`, `basis: 'none'`, soil factors `unknown` | f1 |
 | `layerValues` | grey year picture | "Months could not be read" with Reload; flowering "n of m recorded", never a pass | g1 |
 | Suggest | the live wait and its 10 s stop (`state/suggest-wait.ts`) | "Suggest stopped" (inventory J2) | b1a |
 | Link | — | section 8.2; a period not available here: today with the period notice | b1a (`state/restore.ts` notices) |
 | Toast | 12 s (`store.ts:353`), paused while pointer or focus is on it; on leaving, focus returns to the control that raised it, else the page title (never `body`) | — | b2 (`store.ts:348-364`, `focus.ts:42`) |
-| Start over | toast with Undo; one Undo restores members, removed, guests; the palette's `place` is kept | — | b1a (`state/draft.ts` `startOver`, `:53`) |
+| Start over | toast with Undo; one Undo restores members, removed, guests and the held flag, and, held again, the reader's save byte for byte; the palette's `place` is kept; a save the page owns is removed (unless another tab wrote since), a held one (a link's or a guide's page) stays (b1a fix round 3, r3-1) | — | b1a (`state/draft.ts` `startOver`; `state/save.ts` `undoSave`) |
 
 ## 10. Formats that outlive the code
 

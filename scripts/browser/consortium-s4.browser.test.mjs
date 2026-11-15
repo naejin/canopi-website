@@ -120,8 +120,9 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await done(page);
 
     // A link that brings a place (a country and a spot answer) round-trips with "Include my place"
-    // ticked; a reload of it keeps the country "from the shared link". Nothing of the link's place is
-    // saved before the reader answers "Use it" (PP-B b1a), which makes the country the reader's.
+    // ticked; a reload of it keeps the country "from the shared link". "Use it" makes the country the
+    // reader's; the save takes it with the first plant change (owner 2026-11-15, decision 2: only a
+    // plant change replaces the reader's save on a link's page).
     const staged = await stageLink();
     const shared = await h.open(`/palette/?run=${Date.now()}#${staged}`, { ...v, data: 'fixture' });
     assert.equal(await loadState(shared), 'ready');
@@ -134,6 +135,11 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     await shared.locator(aria('button', en['consortium.place.useIt'])).click();
     await shared.waitForFunction(() => !document.querySelector('[data-place-notice="linkPlace"]'), { timeout: 4000 });
     assert.match(await countryText(shared), /chosen by you/, '"Use it" makes the link\'s country the reader\'s');
+    // A plant removed (its details, Remove): the page's palette is saved, with the country taken.
+    await shared.evaluate(() => [...document.querySelectorAll('#ct-root .ct-palette-pictures button')].find((b) => b.closest('[data-plant-id]')).click());
+    assert.ok(await has(shared, 'dialog[open].ct-sheet', 8000), 'a plant\'s details');
+    await shared.locator(aria('button', en['consortium.details.remove'])).click();
+    assert.ok(await has(shared, aria('button', 'Undo'), 4000), 'the Remove is made');
     await shared.goto(new URL('/palette/', shared.url()).href);
     assert.ok(await has(shared, aria('button', 'Share'), 8000));
     assert.match(await countryText(shared), /chosen by you/, 'the save keeps the country the reader took');
@@ -250,7 +256,7 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
       const el = document.activeElement;
       const by = el?.getAttribute('aria-labelledby');
       const text = el?.getAttribute('aria-label') || (by && document.getElementById(by)?.textContent) || el?.labels?.[0]?.textContent || el?.textContent || '';
-      return { tag: el?.tagName.toLowerCase(), type: el?.type, text: text.trim(), role: el?.getAttribute('role'), cls: typeof el?.className === 'string' ? el.className : '', plant: el?.closest('[data-plant-id]')?.dataset.plantId ?? null, inSheet: !!el?.closest('dialog[open]') };
+      return { tag: el?.tagName.toLowerCase(), type: el?.type, text: text.trim(), role: el?.getAttribute('role'), cls: typeof el?.className === 'string' ? el.className : '', plant: el?.closest('[data-plant-id]')?.dataset.plantId ?? null, inPictures: !!el?.closest('.ct-palette-pictures'), inSheet: !!el?.closest('dialog[open]') };
     });
     // Tab (forward) until the focused control matches; every stop is a real focus, never <body>.
     const tabTo = async (match, what, max = 120) => {
@@ -273,48 +279,38 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     assert.equal(await loadState(page), 'ready');
     await tabTo((a) => a.text === SUGGEST, SUGGEST);
     await page.keyboard.press('Enter');
-    assert.ok(await findAx(page, { role: 'table' }, 8000), 'the matrix, reached by keyboard');
-    assert.notEqual((await active()).tag, 'body', 'focus moves to the matrix');
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page, reached by keyboard');
+    await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 4000 }).catch(() => {});
+    assert.notEqual((await active()).tag, 'body', 'focus moves to the palette page');
 
-    // Adjust: the tabs by arrow keys to All plants, then Remove a plant and Undo it.
-    await tabTo((a) => a.role === 'tab', 'the view tabs');
-    // Each press moves the focus once the next view renders (a lazy chunk may still load): wait for it,
-    // so a slow render is not read as the old tab and pressed past (a flake seen twice).
-    for (let i = 0; i < 4 && (await active()).text !== 'All plants'; i++) {
-      await page.evaluate(() => { window.__ctWas = document.activeElement; });
-      await page.keyboard.press('ArrowRight');
-      await page.waitForFunction(() => document.activeElement !== window.__ctWas, { timeout: 4000 }).catch(() => {});
-    }
-    assert.equal((await active()).text, 'All plants');
-    const before = await page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size);
-    const removed = await tabTo((a) => a.text.startsWith('Remove '), 'a Remove button');
-    assert.ok(removed.plant, 'the Remove button names its plant');
+    // Adjust: a plant of the palette opens its details; Remove there, then Undo.
+    const plants = () => page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size);
+    const plant = await tabTo((a) => !!a.plant && a.inPictures && !a.inSheet && a.tag === 'button', 'a plant of the palette');
+    const before = await plants();
     await page.keyboard.press('Enter');
-    assert.ok(await has(page, aria('button', 'Undo')), `${removed.text}: the toast offers Undo`);
-    assert.equal(await page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size), before - 1);
+    assert.ok(await has(page, 'dialog[open].ct-sheet', 8000), `${plant.text}: its details open`);
+    await tabTo((a) => a.inSheet && a.text === en['consortium.details.remove'], 'Remove in the details');
+    await page.keyboard.press('Enter');
+    assert.ok(await has(page, aria('button', 'Undo')), `${plant.text}: the toast offers Undo`);
+    await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root [data-plant-id]')].map((e) => e.dataset.plantId)).size === n - 1, { timeout: 3000 }, before);
     await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
     assert.notEqual((await active()).tag, 'body', 'focus stays in the page after Remove');
     await tabTo((a) => a.text === 'Undo', 'Undo');
     await page.keyboard.press('Enter');
     await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root [data-plant-id]')].map((e) => e.dataset.plantId)).size === n, { timeout: 3000 }, before);
     await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
-    assert.equal((await active()).plant, removed.plant, 'focus is on the restored plant');
-
-    // (The keep step went with Keep in PP-B commit 0a'.)
-    const members = await page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
+    assert.equal((await active()).plant, plant.plant, 'focus is on the restored plant');
 
     // Share: the link field holds the palette.
     await tabTo((a) => a.text === 'Share', 'Share');
     await page.keyboard.press('Enter');
     const field = await findAx(page, { role: 'textbox', name: /link/i });
     assert.match(field?.value ?? '', /#v=5/, 'the share field holds the link');
-    // The copied link, opened as a new document: the same members.
+    // The copied link, opened as a new document: the same palette (it writes back the same link).
     const copy = await h.open(`/palette/?run=${Date.now()}${hashOf(field.value)}`, v);
     assert.equal(await loadState(copy), 'ready');
     assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the link reopens the palette');
-    await copy.locator(aria('tab', 'All plants')).click();
-    await copy.waitForSelector('#ct-root [data-plant-id]');
-    assert.deepEqual(await copy.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort()), members, 'the same members');
+    assert.equal(hashOf(await shareLink(copy)), hashOf(field.value), 'the same palette');
     await done(copy);
     // Print.
     await tabTo((a) => a.text === 'Print', 'Print');

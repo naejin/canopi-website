@@ -11,7 +11,7 @@
 // - The climate cards one link away (boards Place, PlaceDesk, ClimateHand): "No location? Choose a
 //   climate", or "Not this climate? Choose another" once a location gives one (a climate read from it);
 //   they open when a link, a save or the shared site climate already chose one and there is no
-//   location, on the page or kept on this device, and then stay open. Behind the link, without a
+//   location, on the page or kept on this device and still being looked up, and then stay open. Behind the link, without a
 //   climate read from a location, what a grower without one loses; then the cards, nothing chosen (never a
 //   default climate): Ready, Needs your location (a climate that borrows plants, without a location:
 //   PoolSlot cardPill), or Not covered yet with "Ask for this climate". Picking one writes the shared
@@ -24,23 +24,26 @@
 //   (owner, 2026-11-14): all start at "Not sure".
 // - "Show my palette" and "No plants in mind? Start from a small suggested palette" (one Undo).
 // Once a palette is shown (store.view is not 'start'), Place shrinks to its head: the title with the
-// count and climate, the basis with "Change site" and "Start over" (one Undo), the location line and
-// the country line, until b2's palette page hosts them.
+// count and climate, the basis with "Change your place" and "Start over" (one Undo), the location line
+// and the country line, until b2's palette page hosts them. "Change your place" opens the "Your place"
+// sheet (PlaceSheet, hosted by views/Sheets.tsx; board ChangePlace, room and location parts; b1a review
+// r1 conformance-4): the location step, the climate cards, the room and plot, and the spot questions,
+// which change the palette's own place in place, every plant kept (state/draft.ts chooseClimate).
 import { signal } from '@preact/signals';
-import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room, Site } from '../../../../lib/consortium/index.ts';
 import { countryStatus, lights, roomValues, ROOM_LIMIT_M, soils, waters, zoneOf } from '../../../../lib/consortium/index.ts';
-import { climate, country, location as siteLocation, proposedClimate, knownCountries, memberTaxa, members, openSheet, plot, pool, removeMember, room, site, view } from '../../store.ts';
+import { climate, closeSheet, country, location as siteLocation, proposedClimate, knownCountries, memberTaxa, members, openSheet, plot, pool, removeMember, room, site, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { formatArea, formatLength, parsePlotSize } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
 import { climateChosen, climateShown, linkPlace, restoring } from '../../state/persist.ts';
 import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
-import { startMemory } from '../../state/arrival.ts';
-import { addOwnPlant, answering, backToConsortium, canGoBack, changeSite, chooseClimate, chooseCountry, openSavedInstead, pickingCountry, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
-import { pendingSuggest, suggestPalette } from '../../state/suggest-wait.ts';
+import { addOwnPlant, answering, cardsLatched, chooseClimate, chooseCountry, openSavedInstead, pickingCountry, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
+import { pendingSuggest, requestSuggest } from '../../state/suggest-wait.ts';
 import { page } from '../kit/page.ts';
+import type { Frame } from '../kit/sheet.tsx';
 import { markStart } from '../kit/start-mark.ts';
 import { basisLine, countryName, nameOf, zoneName } from '../kit/names.ts';
 
@@ -87,12 +90,9 @@ function CountryLine() {
 }
 
 // ---- the climate cards, one link away ----
-// Opened by the reader on this page (the link); kept open for the page.
+// Opened by the reader on this page (the link); kept open for the page. Opened by the page: latched
+// (state/draft.ts cardsLatched).
 const cardsAsked = signal(false);
-// Opened by the page (a climate chosen and no place): latched, so a location that comes later (the
-// saved location's lookup, about a second after load) never closes cards already open under the
-// grower's thumb (review round 2, 1).
-let cardsLatched = false;
 function openCards(): void {
   cardsAsked.value = true;
   // The link leaves with the press: the focus goes to the card Tab would land on (A25: never <body>).
@@ -122,13 +122,15 @@ function Climates() {
     const all = [...r.closest('fieldset')!.querySelectorAll<HTMLInputElement>('input')];
     all[(all.indexOf(r) + (/[RD]/.test(e.key[5]) ? 1 : all.length - 1)) % all.length].focus();
   };
-  // Open once asked for, or when a climate is already chosen (a link, a save, the shared site climate)
-  // and no place could stand for it: none on the page and none kept on this device when the page
-  // opened (state/restore.ts locationAtStart: a saved location counts before its lookup returns, review
-  // round 2, 1). The cards stay in the page while closed (hidden), so the link names what it opens.
+  // Open once asked for, or when a climate is already chosen (a link, a save, the shared site climate,
+  // a pick) and no place could stand for it: none on the page and no kept location still being looked
+  // up (state/restore.ts locationAtStart: it counts until its lookup settles or Forget removes it,
+  // review rounds 2, 1 and 3, 1). Latched until Start over. The cards stay in the page while closed
+  // (hidden), so the link names what it opens.
   const where = siteLocation.value;
-  if (!!chosen && !where && !locationAtStart.value) cardsLatched = true;
-  const open = cardsAsked.value || cardsLatched;
+  const latch = !!chosen && !where && !locationAtStart.value;
+  if (latch && !cardsLatched.peek()) cardsLatched.value = true;
+  const open = cardsAsked.value || cardsLatched.value || latch;
   // The words follow a climate read from the location (its lookup), not a location object: a location
   // whose tiles failed, or still loading, gives none of the checks (review round 2, 3).
   const read = !!where?.lookup;
@@ -323,17 +325,21 @@ function PlaceNotices() {
 // Head and the guide line name store.climate, not climateShown: a palette (and a guide preset's line)
 // shows only under a chosen climate, where the two are the same.
 function Head() {
-  const n = members.value.length;
+  const n = members.value.length, z = climate.value;
+  // A borrowed list not fitted to a place, or none at all: the palette suggests and swaps nothing
+  // from it (store.offerPool), and says why here (b1a2-2).
+  const why = z ? suggestBlock(z) : null;
   return (
     <div class="ct-result-head">
       <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneName(climate.value)}</span></h2>
       <p class="ct-basis">
         <span>{basisLine(site.value)}</span>
-        <button type="button" class="link-button ct-link" onClick={changeSite}>{T('start.changeSite')}</button>
+        <button type="button" class="link-button ct-link" onClick={() => openSheet('place')}>{T('place.sheet.open')}</button>
         <button type="button" class="link-button ct-link" data-start-over onClick={startOver}>{T('start.over')}</button>
       </p>
       <LocationSlot compact />
       <CountryLine />
+      {z && why && why !== 'nothingFits' && <PoolSlot zone={z} />}
     </div>
   );
 }
@@ -357,13 +363,12 @@ function PlaceForm() {
           <SpotQuestions />
           <div class="ct-cta">
             <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}</button>
-            {canGoBack.value && <button type="button" class="button button-secondary" onClick={backToConsortium}>{T('start.back')}</button>}
           </div>
           {/* One rule for "can Suggest now" (PoolSlot suggestBlock): here only nothing-fits can block it, PoolSlot saying why. */}
           {!suggestBlock(z) && (
             <p class="ct-place-suggest">
               {T('place.none')}{' '}
-              <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={suggestPalette}>{T('start.suggest')}</button>
+              <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={() => requestSuggest()}>{T('start.suggest')}</button>
             </p>
           )}
           <p class="ct-muted ct-small-text">{T('page.hypothesis')}</p>
@@ -373,10 +378,38 @@ function PlaceForm() {
   );
 }
 
+// ---- the "Your place" sheet (board ChangePlace, room and location parts; b1a review r1 conformance-4)
+// ---- The palette's own place, changed in place: no draft, nothing set aside, so the palette follows
+// each answer at once and no plant is removed. In its sheet frame (views/Sheets.tsx; Back closes it).
+// The country line stays in the head behind it (one picker on the page). A climate with no list of its
+// own here (Not covered yet, Needs your location) says why under the cards, with what Place offers
+// (PoolSlot; fix round 1, b1a2-2). Its foot: "Start over" and "Done" (board ChangePlace; Done closes,
+// as Close does).
+export function PlaceSheet({ Frame }: { Frame: Frame }) {
+  const z = climate.value;
+  return (
+    <Frame titleId="ct-place-sheet-h" foot={
+      <div class="ct-add-bar" data-place-sheet-foot>
+        <button type="button" class="link-button ct-link" onClick={startOver}>{T('start.over')}</button>
+        <button type="button" class="button button-primary" onClick={closeSheet}>{T('place.sheet.done')}</button>
+      </div>
+    }>
+      <div class="ct-start ct-place">
+        <div>
+          <h2 id="ct-place-sheet-h" tabIndex={-1} data-autofocus>{T('place.sheet.title')}</h2>
+          <p class="ct-muted ct-place-lede">{T('place.sheet.lede')}{members.value.length > 0 && <> {P('place.sheet.kept', members.value.length)}</>}</p>
+        </div>
+        <LocationSlot />
+        <Climates />
+        {z && <PoolSlot zone={z} />}
+        <RoomStep />
+        <SpotQuestions />
+      </div>
+    </Frame>
+  );
+}
+
 export function Place() {
-  // Before the first paint (a layout effect): the country guess, the stored climate and a link's
-  // pending climate are drawn in the first frame, not swapped in after it (N2 layout shift).
-  useLayoutEffect(() => { startMemory(); }, []);
   const waiting = pendingSuggest.value || restoring.value;
   return (
     <>

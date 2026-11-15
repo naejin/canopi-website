@@ -24,8 +24,21 @@ function focusSoon(find: () => HTMLElement | null, then?: (el: HTMLElement) => v
 const viewHeading = (): HTMLElement | null =>
   document.querySelector<HTMLElement>('#ct-root [data-view-heading]') ?? document.querySelector<HTMLElement>('#ct-root h2');
 
-// After "Suggest plants" (or anything that opens the views from Start).
-export const focusView = (): void => focusSoon(viewHeading);
+// After "Suggest plants" (or anything that opens the views from Start). The palette page's chunk may
+// still be loading: its placeholder's heading takes the focus, and the page's own heading takes it over
+// once it replaces the placeholder, if the focus went with the placeholder (a slow load: never <body>).
+export const focusView = (): void => focusSoon(viewHeading, (el) => {
+  const root = document.getElementById('ct-root');
+  if (!root || !el.closest('[data-palette-placeholder]')) return;
+  const watch = new MutationObserver(() => {
+    if (el.isConnected) return;
+    watch.disconnect();
+    clearTimeout(cap);
+    if (document.activeElement === document.body || !document.activeElement) focusView();
+  });
+  const cap = setTimeout(() => watch.disconnect(), 30_000);
+  watch.observe(root, { childList: true, subtree: true });
+});
 
 // After Undo: the restored plant's own control (its chip, its row's name), else the view's heading.
 export function focusPlant(id: PlantId | undefined): void {

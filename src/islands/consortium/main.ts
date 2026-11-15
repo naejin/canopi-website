@@ -11,10 +11,10 @@ import { h, render } from 'preact';
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App, PalettePage } from './App.tsx';
 import { effect } from '@preact/signals';
-import { arrivalOpensPalette, forgetEntries, historyMoved, load, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
-import { arrival, startMemory } from './state/arrival.ts';
-import { changeSite } from './state/draft.ts';
-import { currentFragment, lastWritten, memory, readRecord, STORE, writeAddress } from './state/persist.ts';
+import { adoptEntry, arrivalOpensPalette, forgetEntries, historyMoved, load, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
+import { openingArrival, startMemory } from './state/arrival.ts';
+import { backToPlace } from './state/draft.ts';
+import { currentFragment, lastWritten, writeAddress } from './state/persist.ts';
 import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
@@ -62,9 +62,10 @@ async function open(data: PageData): Promise<void> {
 
 // What the page starts, in order (E6 S3: no module starts anything when imported): the store's
 // effects (store.start), the location step's loader handed to the restore (island state never
-// imports a view, ADR-1 L2), the pools watcher, the database, then the render, whose Start runs
-// startMemory (state/arrival.ts: the waiting Suggest, the save and address watchers) in a layout
-// effect, before the first paint (N2 layout shift).
+// imports a view, ADR-1 L2), the pools and steps watchers, the database's open (its loader chunk's
+// import starts at once, before open's first await), then startMemory (state/arrival.ts: the
+// arrival, the waiting Suggest, the save and address watchers), then the first render, so the country
+// guess and a stored or linked climate are in its first frame (N2 layout shift).
 const root = document.getElementById('ct-root');
 const data = pageData() as PageData | null;
 if (root && data) {
@@ -76,9 +77,9 @@ if (root && data) {
   watchPools();
   watchSteps();
   // A return visit (a save or a link to restore) opens on the palette page's placeholder, never the
-  // Place form (P2): the memory starts before the first render, and the placeholder stays until the
-  // palette shows, the load fails, or the restore has had its time once the plants are read.
-  const how = arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), null, (() => { try { return history.state; } catch { return null; } })());
+  // Place form (P2): the placeholder stays until the palette shows, the load fails, or the restore
+  // has had its time once the plants are read.
+  const how = openingArrival();
   opening.value = how.kind === 'saved' || how.kind === 'link';
   // That opening's step to the palette page is the page's, not the reader's: no history entry.
   arrivalOpensPalette(opening.peek());
@@ -100,21 +101,26 @@ if (root && data) {
   // coordinator row 2026-11-14): the sheet closes or Place shows, then the entry landed on takes the
   // current link at once. The hashchange that may follow then lands on the address the page last
   // wrote (persist.ts lastWritten) and stops here, before the memory's own listener (registered after
-  // this one) could read it as a link to open. Any other hashchange is the reader's: a link opened in
-  // the tab, which ends the page's entries.
+  // this one) could read it as a link to open. A hashchange onto an entry of the page's own address
+  // takes that entry's entries and start; any other is the reader's: a link opened in the tab, which
+  // is a new start.
   addEventListener('popstate', (e) => {
     // A link opened in the tab fires popstate onto a new entry with a fragment and no state (the page
     // writes a state with every fragment it writes); its hashchange opens it.
     if (e.state == null && location.hash.length > 1) return;
     const moved = historyMoved(e.state);
-    if (moved.place) changeSite();
+    if (moved.away) return; // off a link opened in the tab: its hashchange opens the entry landed on
+    if (moved.place) backToPlace();
     writeAddress(moved.force);
     pushWaiting();
   });
   addEventListener('hashchange', (e) => {
     const f = location.hash.slice(1);
     if (f === lastWritten()) { e.stopImmediatePropagation(); return; }
-    if (f && f !== currentFragment()) forgetEntries();
+    // The page's own address (a move off a link landed on it): that entry's own entries and start.
+    const s = (() => { try { return history.state as { ct?: unknown } | null; } catch { return null; } })();
+    if (f && s?.ct === f) adoptEntry(s);
+    else if (f && f !== currentFragment()) forgetEntries();
   });
   // The database first: its loader chunk is on the way while the memory starts (the country guess).
   void open(data);

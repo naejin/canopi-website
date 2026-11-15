@@ -1,19 +1,20 @@
-// How the page opens (stream S4; E6 S2 split it out of memory.ts): what it opens with (a reload of
-// its own address, a share link, a guide preset, an outdated v1 link, the last consortium, else
-// Start), the reader's country at start and the browser's guess, a link pasted into the open tab, and
-// startMemory, which wires all of it once. The pure parts (arrival, hashAction, countryAtStart,
-// guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
+// How the page opens (stream S4; E6 S2 split it out of memory.ts): what it opens with (a reload of its
+// own address, a share link, a guide preset, an outdated v1 link, the last consortium, else Start), the
+// reader's country at start and the browser's guess, a link pasted into the open tab, and startMemory,
+// which reads the page once and wires all of it (openWith). The pure parts (arrival, hashAction,
+// countryAtStart, guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
 // (scripts/consortium-memory.test.mjs, scripts/consortium-pp-b1.test.mjs).
 import type { ClimateZone, LinkOrigin } from '../../../lib/consortium/index.ts';
 import { bringsPlace, countryZones, decodeLink, linkOrigin, readPreset, zoneOf } from '../../../lib/consortium/index.ts';
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import {
-  attempt, currentFragment, fromOf, memory, oldRecord, openedWith, own, quietly, readRecord, storageWorks, watchStore, writeSave,
+  attempt, currentFragment, fromOf, memory, oldRecord, quietly, readRecord, shows, storageWorks, watchStore,
   COUNTRY_STORE, LOCATION_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE, STORE, type CountryFrom, type OwnPlace, type SavedRecord,
 } from './persist.ts';
 import { state as schema } from './schema.ts';
-import { applyPreset, locationAtStart, notices, ownCell, ownLocation, restore, savedInstead, waitForSource, NO_NOTICES } from './restore.ts';
+import { applyPreset, locationAtStart, notices, ownCell, ownLocation, restore, waitForSource, NO_NOTICES } from './restore.ts';
+import { lastSave, putSave } from './save.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
 // A fragment is a share link when it holds the link's version or its member list (v1 links carried
@@ -33,8 +34,8 @@ export type Arrival =
 // history.state as replaceState left it: the page's own fragment, its country source and this tab's
 // place (pl: the private place answers, kept per tab since the save is shared by every tab; '' none;
 // with a link's country `k`, and its cell `o` while its place waits); ask: a link's place still waits
-// on "Use it" / "Use my own place", so a reload asks again and the save stays held; hold: a link the
-// reader has not acted on, so a reload or Back/Forward keeps the save held (persist.ts writeAddress).
+// on "Use it" / "Use my own place", so a reload asks again; hold: the page held the save, so a reload
+// or Back/Forward holds it again. Each is read only as itself (persist.ts writeAddress; fix round 4, s-3).
 interface OwnAddress { ct: string; src: CountryFrom; pl: string; ask: boolean; hold: boolean }
 const ownOf = (v: unknown): OwnAddress | null => {
   if (!v || typeof v !== 'object') return null;
@@ -61,14 +62,14 @@ export function arrival(loc: { hash: string; search: string }, saved: SavedRecor
 
 // A hashchange (a pasted link, or Back/Forward): the page's own address (history.state.ct, as
 // arrival reads it) reopens as the save with its country source; another link opens as a link; the
-// address of the consortium shown, or a fragment that is no link, is ignored. hold: the entry is a
-// link's the reader had not acted on (or whose place still waited), so its save stays held (8.3).
+// address of the consortium shown, or a fragment that is no link, is ignored. hold: the entry's page
+// held the save, so it stays held (8.3).
 export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom; place: string; hold?: true } | { kind: 'link'; fragment: string };
 export function hashAction(hash: string, state: unknown, current: string | null): HashAction {
   const f = hash.replace(/^#/, '');
   if (!f || !isLinkFragment(f) || f === current) return { kind: 'ignore' };
   const own = ownOf(state);
-  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl, ...(own.hold || own.ask ? { hold: true as const } : {}) };
+  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl, ...(own.hold ? { hold: true as const } : {}) };
   return { kind: 'link', fragment: f };
 }
 
@@ -159,21 +160,65 @@ export function arrivalPlan(how: Arrival, { saved, pref, guess, seed, cell }: Ar
 
 // ---- the wiring ----
 
+// What the page opens with, wired (startMemory calls it once with what it read; a unit test calls it
+// with a spy location step, review round 3, 3): the country shown, the saved location looked up again
+// unless a link's cell stands for it, the place seed, and the restore of a link or the save, a guide
+// preset, or the shared site climate. keptLocation: canopi-location as read once.
+export interface Opening { how: Arrival; plan: ArrivalPlan; saved: SavedRecord | null; seed: string | null; keptLocation: string | null }
+export function openWith({ how, plan, saved, seed, keptLocation }: Opening): void {
+  store.country.value = plan.country;
+
+  // The saved site location, looked up again once the plant list is open (so its tiles never compete
+  // with the database); a link's `o=` stands in for it on that page (ownLocation), also after a reload
+  // while its place still waits (the cell kept in the tab's place). Until that lookup settles, Place
+  // counts the kept location as a place (restore.ts locationAtStart).
+  locationAtStart.value = !plan.linkCell && ownCell(keptLocation) !== null;
+  if (!plan.linkCell) void waitForSource().then(() => ownLocation(keptLocation));
+
+  // A palette that starts with no place of its own takes the reader's last place answers as its seed
+  // (canopi-place, plant-palette-architecture 8.3); a link's room, plot and place still win over it.
+  if (how.kind !== 'saved') seedPlace(seed);
+
+  if (how.kind === 'link') {
+    // A newer or unreadable link over a readable save: "Back to mine" (Arrivals board; persist.ts
+    // savedInstead, derived from the held save).
+    void restore(how.fragment, { from: 'link', country: plan.own });
+  }
+  else if (how.kind === 'saved') {
+    // A reload while a link's place still waited on the reader: asked again (plan.ask).
+    void restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask: plan.ask, hold: how.hold });
+  }
+  else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
+  else if (how.kind === 'preset') {
+    // A guide preset over a saved palette: the save stays untouched, one press away (8.3).
+    void applyPreset(how.climate, how.plant);
+  }
+  else if (how.climate) store.climate.value = how.climate;
+}
+
+// What this page opened with, read once: main.ts reads it before the first render (the palette page's
+// placeholder, the prefetch), startMemory acts on it.
+let opened: Arrival | null = null;
+export function openingArrival(): Arrival {
+  return opened ??= arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), memory.read(SITE_CLIMATE), attempt(() => history.state));
+}
+
 let started = false;
-// Called once by Start when it first mounts (main.ts belongs to S1). Returns nothing: the effects
-// live as long as the page.
+// Called once by main.ts, before the first render (so the country guess, the stored climate and a
+// link's pending climate are drawn in the first frame: N2 layout shift), right after the database's
+// open has started. Returns nothing: the effects live as long as the page.
 export function startMemory(): void {
   if (started || typeof window === 'undefined') return;
   started = true;
   storageWorks.value = memory.works();
   const raw = memory.read(STORE);
   const saved = readRecord(raw);
-  openedWith(raw);
-  const how = arrival({ hash: location.hash, search: location.search }, saved, memory.read(SITE_CLIMATE), attempt(() => history.state));
+  lastSave.value = raw;
+  const how = openingArrival();
   // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
   if (how.kind === 'start' && oldRecord(raw)) {
     notices.value = { ...notices.peek(), oldSave: true };
-    writeSave(null);
+    putSave(null);
   }
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
@@ -184,47 +229,18 @@ export function startMemory(): void {
   // for a country the page has none for, or a page built without them.
   const guess = (): string | null => guessCountry([...store.knownCountries.peek().keys()], { zone, languages, zonesOf: (c) => store.zonesOfCountry(c) ?? countryZones(c) });
   const seed = memory.read(PLACE_STORE);
-  // canopi-location, read once here: whether the page opens with a location (Place's climate cards),
-  // the reader's own cell for a reload's ask, and the lookup below.
+  // canopi-location, read once here: whether Place's climate cards wait for its lookup, the reader's
+  // own cell for a reload's ask, and the lookup itself.
   const keptLocation = memory.read(LOCATION_STORE);
-  locationAtStart.value = ownCell(keptLocation) !== null;
   const plan = arrivalPlan(how, { saved, pref: memory.read(COUNTRY_STORE), guess, seed, cell: () => ownCell(keptLocation) });
-  store.country.value = plan.country;
-
-  // The saved site location, looked up again once the plant list is open (so its tiles never compete
-  // with the database); a link's `o=` stands in for it on that page (ownLocation), also after a reload
-  // while its place still waits (the cell kept in the tab's place).
-  if (!plan.linkCell) void waitForSource().then(() => ownLocation(keptLocation));
-
-  // A palette that starts with no place of its own takes the reader's last place answers as its seed
-  // (canopi-place, plant-palette-architecture 8.3); a link's room, plot and place still win over it.
-  if (how.kind !== 'saved') seedPlace(seed);
-
-  if (how.kind === 'link') {
-    // A newer or unreadable link over a readable save: "Back to mine" (Arrivals board).
-    void restore(how.fragment, { from: 'link', country: plan.own }).then((opened) => {
-      const n = notices.peek();
-      if (!opened && saved && (n.newer || n.unreadable)) savedInstead.value = saved;
-    });
-  }
-  else if (how.kind === 'saved') {
-    // A reload while a link's place still waited on the reader: asked again (plan.ask).
-    void restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask: plan.ask, hold: how.hold });
-  }
-  else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
-  else if (how.kind === 'preset') {
-    // A guide preset over a saved palette: the save stays untouched, one press away (8.3).
-    savedInstead.value = saved;
-    void applyPreset(how.climate, how.plant);
-  }
-  else if (how.climate) store.climate.value = how.climate;
+  openWith({ how, plan, saved, seed, keptLocation });
 
   // A link pasted into the open tab: opened, unless it is the page's own address (review 3).
   // Back/Forward to the page's own address reopens it as the save, its country label kept (round 2).
   window.addEventListener('hashchange', () => {
     const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
     if (act.kind === 'ignore') return;
-    const keep = own() !== null;
+    const keep = shows();
     if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep, place: act.place, hold: act.hold }); return; }
     notices.value = { ...NO_NOTICES };
     void restore(act.fragment, { from: 'link', keep });

@@ -4,7 +4,7 @@
 // Every step uses the page's own controls. The test hook (src/islands/consortium/test-hook.ts; a page
 // whose script sets window.__ctTest = true, on the npm run build:browser-test build) is used only to read membership
 // and guests, to set up a consortium no control makes in one step (a member taken out mid-sheet, deep
-// shade without the re-suggestion Change site makes), and to make a sheet's chunk fail to load.
+// shade without a re-suggestion), and to make a sheet's chunk fail to load.
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { fixture, loadState, startHarness } from './harness.mjs';
@@ -54,11 +54,12 @@ async function start(page, climate = 'Temperate') {
   await page.locator(aria('button', en['consortium.start.suggest'])).click();
   assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
 }
-// Opens a sheet by its button: "Paste a list" on Start (Change site); "Add plants" through the store's
-// opener (store.openSheet('add')) while the palette page has no general Add button (the matrix's went in
-// PP-B commit 0a'; Your plants, b3 in chunk 2, brings it back), so these cases keep testing the Add sheet.
+// Opens a sheet by its button: "Paste a list" on Place (the palette's "Your place" step); "Add plants"
+// through the store's opener (store.openSheet('add')) while the palette page has no general Add button
+// (the matrix's went in PP-B commit 0a'; Your plants, b3 in chunk 2, brings it back), so these cases
+// keep testing the Add sheet.
 async function openBy(page, button) {
-  if (button === 'Paste a list' && !(await has(page, aria('button', button), 300))) await page.locator(aria('button', 'Change site')).click();
+  if (button === 'Paste a list' && !(await has(page, aria('button', button), 300))) await page.locator('button.ct-step').click();
   if (button === 'Add plants' && !(await has(page, aria('button', button), 300))) await hooked(page, () => window.__ctTest.openSheet('add'));
   else await page.locator(aria('button', button)).click();
   assert.ok(await findAx(page, { role: 'dialog' }), `the ${button} sheet`);
@@ -192,10 +193,9 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict and an invas
     // Robinia: an invasive warning is shown and adds in one tap too (France: recorded invasive).
     if (await sheetOpen(page)) await page.locator('dialog[open] ' + aria('button', 'Close')).click();
     await closed(page);
-    await page.locator(aria('button', 'Change site')).click();
+    // The country line is in the palette's head (b1a conformance-4: no Change site and Back).
     await page.locator('[data-ct="country"] button[aria-expanded]').click();
     await page.select('#ct-country-select', 'FR');
-    await page.locator(aria('button', en['consortium.start.back'])).click();
     await addPlant(page, names['Robinia pseudoacacia']);
     assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'an invasive warning does not ask');
     assert.ok(await isMember(page, 'Robinia pseudoacacia'), 'Robinia is added');

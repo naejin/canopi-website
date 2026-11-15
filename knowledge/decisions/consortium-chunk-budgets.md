@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:47:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:27Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:04:27Z }
 sources:
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:1bbd681174e63de4
-    last_modified: 2026-11-15T05:47:37Z
+    last_modified: 2026-11-15T05:48:55Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
