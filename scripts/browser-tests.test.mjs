@@ -28,7 +28,7 @@ const SPEC_FILES = [
   'consortium-commit0.browser.test.mjs',
   'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
   'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5d.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
-  'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs',
+  'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs', 'consortium-pp-b3.browser.test.mjs',
   'consortium-s1.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
   'consortium-seams-layout.browser.test.mjs', 'consortium-seams-p2.browser.test.mjs', 'consortium-seams-p5.browser.test.mjs',
 ];
