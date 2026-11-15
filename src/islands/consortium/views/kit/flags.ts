@@ -6,8 +6,8 @@
 // Renders only (E6 R2; ADR-1 L5: the kit imports no store): what the site check says comes from the one
 // site-fit vocabulary (rules/site-fit.ts), the plant's flags from the store (store.ts flagsOfPlant), and
 // what the words read (site, members, country, the other plant of a conflict) from store.ts flagScene.
-import type { FactAt, Flag, Locale, SiteFitMessage, Site, Taxon } from '../../../../lib/consortium/index.ts';
-import { factAt, siteFitMessages } from '../../../../lib/consortium/index.ts';
+import type { Flag, Locale, SiteFitMessage, Site, Taxon } from '../../../../lib/consortium/index.ts';
+import { siteFitMessages } from '../../../../lib/consortium/index.ts';
 import { misfitsOf, siteFit, unknownsOf, type FlagScene } from '../../rules/site-fit.ts';
 import { T, pageLang } from '../../strings.ts';
 import { countryName, nameOf, num } from './names.ts';
@@ -16,12 +16,6 @@ import { countryName, nameOf, num } from './names.ts';
 const words = (m: SiteFitMessage): string => T(m.key, m.vars && Object.fromEntries(Object.entries(m.vars).map(([k, v]) => [k, typeof v === 'number' ? num(v) : v])));
 // What the site check could not decide, said aloud (never a silent fit, A7).
 export const unknownWords = (t: Taxon, site: Site): string[] => unknownsOf(siteFitMessages(t, site)).map(words);
-
-// The site- and period-dependent plant facts (ADR-6, source.ts factAt) for the views. Held here, in the
-// first run, because two lazy chunks read them (Details, and the palette chunk through core weigh.ts):
-// shared by lazy chunks alone, factAt would split into a chunk of its own, which a sheet chunk may not
-// import (check-built-site K3). Details reads it from here (b3 fix round 1).
-export const fact: FactAt = factAt;
 
 // level: a toxicity line's colour (inventory F5, owner: Slight the warning token, Moderate and Severe
 // the danger token; words and icon always). Your plants and Details colour by it; other lines are warnings.

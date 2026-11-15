@@ -15,7 +15,7 @@ let n = 0;
 const plant = (over = {}) => taxon({ id: `00000000-ba1a-4000-8000-${String(++n).padStart(12, '0')}`, canonical_name: `Plantus ${n}`, genus: `Plantus${n}`, ...over });
 const said = (l) => l.line.key.split('.').pop();
 // The context weighLines takes (the (site, period) of climateFor, architecture 3.1): today, no site.
-const TODAY = { lookup: null, scenario: 'historical', period: '1991-2020' };
+const TODAY = { lookup: null, period: '1991-2020' };
 
 // ---- weigh.json (the shared envelope; the adapter from the vectors' export fields lives here). The
 // parked F1a-B1, B2 and B4 (648baf2) are its cases "six of eight", "two of ten" and "borrowed". ----
@@ -47,12 +47,39 @@ test('weigh.json: each case gives its lines (family, water) in order, [] at 0 me
   }
 });
 
-test('weigh.ts reads a plant\'s water need through factAt with the site and period it is given (ADR-6), never the raw traits, and keeps no exports the views do not read', async () => {
-  const src = (await import('node:fs')).readFileSync(new URL('../src/lib/consortium/weigh.ts', import.meta.url), 'utf8');
-  assert.match(src, /factAt\('water_need', t, ctx\.lookup, ctx\.period\)/, 'factAt(\'water_need\', t, ctx.lookup, ctx.period)');
-  assert.doesNotMatch(src, /traits\.(drought_tolerance|moisture_use)|drought_tolerance:|moisture_use:/, 'no raw water traits');
+// The thresholds block, read against the behaviour at its boundaries (review b3f-5): exactly the
+// share recorded is judged, one fewer is "not enough"; the family minimum and share both bind.
+test('weigh.json thresholds: the water share and the family minimum and share are where weighLines turns', () => {
+  const { water_judge_share: share, family_min: min, family_share: fshare } = W.thresholds;
+  const m = 20, judged = Math.ceil(share * m);
+  const wet = (i) => plant({ family: `F${i}`, traits: { drought_tolerance: i % 2 ? 'High' : 'Low' } });
+  const bare = (i) => plant({ family: `G${i}`, traits: {} });
+  const water = (n) => lines(weighLines([...Array.from({ length: n }, (_, i) => wet(i)), ...Array.from({ length: m - n }, (_, i) => bare(i))], TODAY)).find((l) => l.kind === 'water');
+  assert.equal(said(water(judged)), 'waterMix', `${judged} of ${m} recorded is judged`);
+  assert.equal(said(water(judged - 1)), 'waterFew', `${judged - 1} of ${m} is not enough to judge`);
+  const fam = (k, size) => lines(weighLines([...Array.from({ length: k }, () => plant({ family: 'Fabaceae' })), ...Array.from({ length: size - k }, (_, i) => plant({ family: `H${i}` }))], TODAY)).some((l) => l.kind === 'family');
+  assert.equal(fam(min, min), true, `${min} of ${min}: a family line`);
+  assert.equal(fam(min - 1, min - 1), false, `${min - 1} plants are under the family minimum`);
+  const big = Math.ceil(min / fshare) + 4, need = Math.ceil(fshare * big);
+  assert.equal(fam(need, big), true, `${need} of ${big} is a quarter: a line`);
+  assert.equal(fam(need - 1, big), false, `${need - 1} of ${big} is under the share`);
+});
+const lines = (out) => { assert.ok(Array.isArray(out), 'lines, not "checking"'); return out; };
+
+// The one drought-then-moisture classifier, beside factAt, whose water_need site.ts's water check reads
+// too (review b3f-6/7); weigh.ts groups by it (L10: weigh.ts may not import site.ts).
+test('source.ts waterNeed: drought tolerance first (High dry, Medium medium, Low or None regular), else moisture use (Low dry, Medium medium, High regular), else not recorded', async () => {
+  const { waterNeed } = await import('../src/lib/consortium/source.ts');
+  const cases = [
+    [{ drought: 'High', moisture: 'High' }, 'dry'], [{ drought: 'Medium', moisture: null }, 'medium'], [{ drought: 'Low', moisture: 'Low' }, 'regular'],
+    [{ drought: 'None', moisture: null }, 'regular'], [{ drought: null, moisture: 'Low' }, 'dry'], [{ drought: null, moisture: 'Medium' }, 'medium'],
+    [{ drought: null, moisture: 'High' }, 'regular'], [null, null],
+  ];
+  for (const [w, want] of cases) assert.equal(waterNeed(w), want, JSON.stringify(w));
   const w = await import('../src/lib/consortium/weigh.ts');
   assert.deepEqual(Object.keys(w).sort(), ['sizeLine', 'weighLines', 'yourPlants'], 'weigh.ts exports');
+  const src = (await import('node:fs')).readFileSync(new URL('../src/lib/consortium/weigh.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /DROUGHT|MOISTURE/, 'weigh.ts keeps no water table of its own');
 });
 
 // ---- Your plants (new form of the deleted F1a-P10: each plant once, warnings first) ----
@@ -71,6 +98,9 @@ test('Your plants lists each plant once, warnings first (a Slight or Moderate to
   assert.deepEqual(yourPlants([], flags), [], 'nothing at 0 plants');
   assert.deepEqual(yourPlants([], [], { failed: ['x'], unlisted: [] }).map((r) => [r.id, r.missing]), [['x', 'failed']], 'a palette of one unread plant still has its row');
   assert.deepEqual(yourPlants([a], []).map((r) => r.plant.id), ['a'], 'one plant, one row');
+  // A guest of a list that failed which the chosen list holds too is shown (review b3f-1): no row of
+  // its own, so not counted as not checked.
+  assert.deepEqual(yourPlants([a, b], [], { failed: ['b', 'x'], unlisted: ['a'] }).map((r) => r.plant?.id ?? `${r.id}:${r.missing}`), ['x:failed', 'a', 'b']);
 });
 
 test('size line words: the height is the wild maximum (types.ts Traits.height_m), so each size line with a height says "in the wild", in every locale', async () => {

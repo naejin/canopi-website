@@ -7,10 +7,13 @@
 // No control is printed. Rendered by views/Actions.tsx.
 //
 // The drawing is the side view's own (views/SideView.tsx SideDrawing), at the time step chosen in
-// Through the years (store.yearStep; PP-B18). A toxicity note prints its level (b3r-3).
+// Through the years (store.yearStep; PP-B18). A toxicity note prints its level (b3r-3). The members the
+// page cannot show (a guest list unread, on none of this climate's lists) are on paper too, after the
+// plants, each with why, as Your plants says it (core yourPlants rows; review b3f-2), and the count is
+// the whole palette's.
 import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf } from '../../../lib/consortium/index.ts';
-import { climate, country, flagScene, flags, guests, memberTaxa, site, source, yearStep } from '../store.ts';
+import { jobsOf, yourPlants } from '../../../lib/consortium/index.ts';
+import { climate, country, failedMembers, flagScene, flags, guests, memberTaxa, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
 import { flagLines } from './kit/flags.ts';
@@ -45,10 +48,11 @@ export function PrintSheet() {
   const status = source.value && code ? (source.value.countries().get(code)?.invasiveChecked ? 'checked' : 'unchecked') : 'none';
   const release = source.value?.info().releaseId ?? '';
   const small = members.length <= PRINT_DRAWING_MAX;
+  const gone = yourPlants(members, [], { failed: failedMembers.value, unlisted: missingMembers.value.unlisted }).flatMap((r) => ('missing' in r ? [r] : []));
   return (
     <section class="ct-print" aria-labelledby="ct-print-h">
       <h2 id="ct-print-h" class="ct-print-title">{T('print.title')}</h2>
-      <p class="ct-print-sub">{zoneName(zone)} · {P('start.count', members.length)} · {new Date().toLocaleDateString(lang)}</p>
+      <p class="ct-print-sub">{zoneName(zone)} · {P('start.count', members.length + gone.length)} · {new Date().toLocaleDateString(lang)}</p>
       <p class="ct-print-basis">{basisLine(site.value)}</p>
       <p class="ct-print-basis">
         {code ? `${T('country.line')} ${countryName(code)}${country.value.source === 'guess' ? ` (${T('country.guessed')})` : ''}` : `${T('country.line')}: ${T('country.none')}. ${T('country.noneNote')}`}
@@ -79,6 +83,18 @@ export function PrintSheet() {
                 <td>{phaseWords(t)}</td>
                 <td>{jobsOf(t).map((j) => T(`job.${j}`)).join(', ') || '–'}</td>
                 <td>{notes.length ? notes.join('; ') : '–'}</td>
+              </tr>
+            );
+          })}
+          {gone.map((r) => {
+            const t = taxonOf(r.id);
+            return (
+              <tr>
+                <th scope="row"><span class="ct-print-name">{t ? nameOf(t) : r.id}</span>{t && <> <i class="ct-sci">{t.canonical_name}</i></>}</th>
+                <td>–</td>
+                <td>–</td>
+                <td>–</td>
+                <td>{r.missing === 'failed' ? T('plants.notRead') : T('plants.notListed')}</td>
               </tr>
             );
           })}

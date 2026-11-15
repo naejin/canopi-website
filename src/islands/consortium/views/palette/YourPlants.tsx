@@ -8,10 +8,12 @@
 // why, and Remove. Above ROWS_MAX rows the rest fold behind "+ N more"; opening it moves the focus to
 // the first row it shows (a plain focus: the toast keeps its own way back). Remove takes the focus to
 // the next row (or the heading after the last), never <body>; its toast has Undo. Nothing at 0 plants:
-// the Next step's empty card offers the ways in. Derived here (useMemo), never in the store (first run).
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+// the Next step's empty card offers the ways in. Its rows come from Palette (core yourPlants, useMemo
+// there, never in the store: first run), which counts Things to weigh's plants not checked from them.
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { moreLine, sizeLine, yourPlants } from '../../../../lib/consortium/index.ts';
+import type { yourPlants } from '../../../../lib/consortium/index.ts';
+import { moreLine, sizeLine } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { formatLength } from '../../format.ts';
@@ -66,10 +68,7 @@ function Missing({ id, why, onRemove }: { id: PlantId; why: 'failed' | 'unlisted
   );
 }
 
-export function YourPlants({ members }: { members: readonly Taxon[] }) {
-  const flags = store.flags.value;
-  const failed = store.failedMembers.value, unlisted = store.missingMembers.value.unlisted;
-  const rows = useMemo(() => yourPlants(members, flags, { failed, unlisted }), [members, flags, failed, unlisted]);
+export function YourPlants({ rows }: { rows: ReturnType<typeof yourPlants> }) {
   const [open, setOpen] = useState(false);
   const [unfolded, setUnfolded] = useState(false);
   const list = useRef<HTMLUListElement>(null);

@@ -4,16 +4,18 @@
 //   with PP-F). Things to keep in mind, never holes and never a verdict: nothing is removed or asked. A
 //   check without enough records says so ("n of m recorded: not enough to judge"), never a pass; family
 //   spread over many families claims nothing, and even water needs claim nothing either (owner
-//   2026-11-15: no all-clear line). On a borrowed list every line carries the estimate term (Line vars
+//   2026-11-15: no all-clear line); with no water line, the plants with no water need recorded are
+//   still said on a line of their own ('missing', never silent). On a borrowed list every line carries the estimate term (Line vars
 //   `term: 'estimate'`), as the placements it reads are estimates.
 // - Never a judgement of part of the palette as the whole: the plants not checked (a guest list that
 //   could not be read, a plant on none of this climate's lists) count in m and are said as not checked.
 // - A plant's water need is the factAt water_need fact (ADR-6) for the site and period it is given
-//   (climateFor's context, architecture 3.1; today's stored value whatever they are).
+//   (climateFor's context, architecture 3.1; today's stored value whatever they are), grouped by
+//   source.ts waterNeed, the one classifier, beside factAt (site.ts's water check reads the same fact).
 // - Your plants: each plant once, warned plants first (owner "warn, never hide"), then the plants it
 //   cannot show, and its full-grown size as a Line (the view formats the lengths for the page language).
 import type { Flag, Line, PlantId, Taxon, VerdictContext, WeighLine } from './types.ts';
-import { factAt } from './source.ts';
+import { factAt, waterNeed } from './source.ts';
 
 const K = (k: string): string => `consortium.plants.${k}`;
 
@@ -25,13 +27,7 @@ const WATER_JUDGE_SHARE = 0.5;
 const FAMILY_MIN = 3;
 const FAMILY_SHARE = 0.25;
 
-// The one water-need mapping: drought tolerance when recorded (the direct answer to "takes a dry
-// summer"), else moisture use; 'regular' reads "Needs regular water" (owner 2026-11-15, never "thirsty").
-type Need = 'dry' | 'medium' | 'regular';
-const DROUGHT: Record<string, Need> = { High: 'dry', Medium: 'medium', Low: 'regular', None: 'regular' };
-const MOISTURE: Record<string, Need> = { Low: 'dry', Medium: 'medium', High: 'regular' };
-
-type WeighContext = Pick<VerdictContext, 'lookup' | 'scenario' | 'period'>;
+type WeighContext = Pick<VerdictContext, 'lookup' | 'period'>;
 interface WeighOptions {
   pending?: boolean; // a list is still being read: 'checking'
   unchecked?: number; // members of the palette not checked (a list unread, on no list of this climate)
@@ -53,8 +49,7 @@ export function weighLines(members: readonly Taxon[], ctx: WeighContext, { pendi
   const regular: PlantId[] = [], dry: PlantId[] = [];
   let n = 0;
   for (const t of members) {
-    const w = factAt('water_need', t, ctx.lookup, ctx.period);
-    const need = w && ((w.drought ? DROUGHT[w.drought] : undefined) ?? (w.moisture ? MOISTURE[w.moisture] : undefined));
+    const need = waterNeed(factAt('water_need', t, ctx.lookup, ctx.period));
     if (!need) continue;
     n++;
     if (need === 'regular') regular.push(t.id);
@@ -64,6 +59,8 @@ export function weighLines(members: readonly Taxon[], ctx: WeighContext, { pendi
   if (n < WATER_JUDGE_SHARE * m) out.push({ kind: 'water', line: { key: K('weigh.waterFew'), vars }, members: [] });
   // members: the plants needing regular water, then the dry-loving ones (vars.regular of them first).
   else if (regular.length && dry.length) out.push({ kind: 'water', line: { key: K('weigh.waterMix'), vars: { ...vars, regular: regular.length, dry: dry.length } }, members: [...regular, ...dry] });
+  // No water line to show: the plants with no water need recorded, said on their own (review b3f-4).
+  else if (n < members.length) out.push({ kind: 'water', line: { key: K('weigh.missing'), vars }, members: [] });
   return out;
 }
 

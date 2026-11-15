@@ -15,7 +15,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, guestOf, jobsOf, pairings, phaseOrd, placementZone, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, factAt, guestOf, jobsOf, pairings, phaseOrd, placementZone, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../../data/consortium-guides.ts';
@@ -23,7 +23,6 @@ import { PlantMarks } from '../PlantMarks.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
 import { WARN } from '../kit/icons.tsx';
-import { fact } from '../kit/flags.ts';
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
 import { later } from '../lazy.tsx';
@@ -60,7 +59,7 @@ interface Trait { field: string; label: string; text: string; raw: unknown }
 function traitsOf(t: Taxon, labels: Labels): Trait[] {
   const tr = t.traits, unknown = T('unknown');
   // Water need is a site- and period-dependent fact (ADR-6): read through factAt, today's value.
-  const water = fact('water_need', t, store.location.value?.lookup ?? null, TODAY_PERIOD);
+  const water = factAt('water_need', t, store.location.value?.lookup ?? null, TODAY_PERIOD);
   const drought = water?.drought ?? null, moisture = water?.moisture ?? null;
   const label = (field: string, v: string | null) => (v === null ? unknown : labels[field]?.[v]?.[lang() as Locale] ?? v);
   const light = [tr.sun && T('details.sun'), tr.semi_shade && T('details.semiShade'), tr.full_shade && T('details.shade')].filter((x): x is string => !!x);

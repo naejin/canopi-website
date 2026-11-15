@@ -15,7 +15,9 @@
 //   row "Climate ranges fixed before the P5 push"; site-marks.ts says it). Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
 //   drought_tolerance High, or moisture_use Low when drought tolerance is unknown); it fits when
 //   well_drained is false, moisture_use is High or drought tolerance is known and not High. Average
-//   checks nothing.
+//   checks nothing. Drought tolerance and moisture use are read through factAt's water_need (ADR-6),
+//   today's period with no site (the stored value), so F2 changes one place (source.ts waterNeed,
+//   beside factAt, is the one drought-then-moisture classifier weigh.ts groups by).
 // - room: small garden ≤ 6 m, large garden ≤ 12 m, for the height only (the question asks how tall;
 //   mockup app.js:213). Advisory (owner request 2026-11-12): the matrix layers are relative sun
 //   exposure (syntropic strata), not heights (maize fills a small garden's emergent layer in the first
@@ -27,6 +29,7 @@
 import type { Fit, FitReason, PhaseOrd, Site, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
 import { siteKeys, strata } from './types.ts';
 import { phaseSpan } from './jobs.ts';
+import { TODAY_PERIOD, factAt } from './source.ts';
 
 // Every answer "Not sure": the site the page starts from (A7).
 export const UNSURE_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
@@ -62,7 +65,8 @@ const soil: Check = (t, site) => {
 
 const water: Check = (t, site) => {
   if (site.water === 'unsure' || site.water === 'average') return null;
-  const { drought_tolerance: dt, moisture_use: mu, well_drained: wd } = t.traits;
+  const w = factAt('water_need', t, null, TODAY_PERIOD);
+  const dt = w?.drought ?? null, mu = w?.moisture ?? null, wd = t.traits.well_drained;
   if (site.water === 'dry') {
     if (dt === 'Medium') return { key: 'water', verdict: 'fit', trait: 'drought_tolerance', note: 'dry_months' };
     if (dt !== null) return { key: 'water', verdict: dt === 'Low' || dt === 'None' ? 'misfit' : 'fit', trait: 'drought_tolerance' };

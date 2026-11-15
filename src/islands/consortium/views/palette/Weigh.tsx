@@ -2,8 +2,10 @@
 // Things to weigh (inventory P39, board MainMore "Balance: things to weigh, not holes"; PP-B stream b3):
 // one family holding a large share of the palette and the water needs, from core weigh.ts, in words.
 // Things to keep in mind, never holes or verdicts: nothing is removed and nothing asks. A check with too
-// few records says "not enough to judge"; the plants with no record, and the plants not checked (a list
-// unread, on none of this climate's lists), are counted aloud. "Checking" while a list loads; nothing
+// few records says "not enough to judge"; the plants with no water need recorded are counted aloud (under
+// a mixed-needs line, or on a line of their own when there is no other water line), and so are the
+// plants not checked (a list unread, on none of this climate's lists: the rows Your plants shows for
+// them, counted by Palette from the same yourPlants rows). "Checking" while a list loads; nothing
 // at 0 plants. On a borrowed list each line says "estimate". Derived here (useMemo), never in the store
 // (first run).
 import { useMemo } from 'preact/hooks';
@@ -31,10 +33,10 @@ function Item({ w, byId }: { w: WeighLine; byId: Map<PlantId, Taxon> }) {
   const { vars } = w.line, said = nameOfLine(w.line);
   // A water mix's members: the plants needing regular water (vars.regular of them), then the dry-loving.
   const cut = said === 'waterMix' ? Number(vars.regular) : 0;
-  const missing = w.kind === 'water' && said !== 'waterFew' ? Number(vars.missing) : 0;
+  const missing = said === 'waterMix' ? Number(vars.missing) : 0;
   return (
     <li data-weigh={w.kind} data-family={w.kind === 'family' ? String(vars.family) : undefined}>
-      <strong>{weigh(said, vars)}</strong>
+      <strong>{said === 'missing' ? P('plants.weigh.missing', Number(vars.missing)) : weigh(said, vars)}</strong>
       {vars.term === 'estimate' && <span class="ct-weigh-est">{T('estimate.short')}</span>}
       {w.kind === 'family' && <p>{names(w.members, byId)}. {weigh('familyHint')}</p>}
       {cut > 0 && <p>{weigh('regular', { names: names(w.members.slice(0, cut), byId) })} {weigh('dryLoving', { names: names(w.members.slice(cut), byId) })} {weigh('waterMixHint')}</p>}
@@ -43,11 +45,9 @@ function Item({ w, byId }: { w: WeighLine; byId: Map<PlantId, Taxon> }) {
   );
 }
 
-export function Weigh({ members, pending }: { members: readonly Taxon[]; pending: boolean }) {
-  const unchecked = store.failedMembers.value.length + store.missingMembers.value.unlisted.length;
-  const ctx = store.verdictContext.value;
-  const out = useMemo(() => weighLines(members, { lookup: ctx.lookup, scenario: ctx.scenario, period: ctx.period }, { pending, unchecked }),
-    [members, pending, unchecked, ctx.lookup, ctx.scenario, ctx.period]);
+export function Weigh({ members, pending, unchecked }: { members: readonly Taxon[]; pending: boolean; unchecked: number }) {
+  const { lookup, period } = store.verdictContext.value;
+  const out = useMemo(() => weighLines(members, { lookup, period }, { pending, unchecked }), [members, pending, unchecked, lookup, period]);
   const byId = useMemo(() => new Map(members.map((t) => [t.id, t])), [members]);
   // Nothing to weigh and every plant checked: no section (no all-clear line, owner 2026-11-15). Plants
   // not checked are said even with no line, as the check did not cover the whole palette.

@@ -1,7 +1,9 @@
 // PP-B stream b3 (Your plants and Things to weigh on the palette page; plant-palette-slices section 2,
 // row b3): its browser scenarios. PP-B9 and PP-B23 are the slices' rows; PP-B60 (B6) and PP-B61 (P4)
 // take numbers clear of the streams running beside b3, PP-B23b holds the 0 and 1 plant rows of the
-// chunk 2 drift check, and PP-B62 the plants Your plants cannot show (fix round 1, b3r-1 and b3r-6). B6 is the F1a Balance marker parked by PP-B commit 0
+// chunk 2 drift check, PP-B62 the plants Your plants cannot show (fix round 1, b3r-1 and b3r-6; on paper and counted
+// from the rows, fix round 2, b3f-1 and b3f-2) and PP-B63 the water needs not recorded said on their own
+// line (b3f-4). B6 is the F1a Balance marker parked by PP-B commit 0
 // (scripts/plan/parked-markers.json), restored from 648baf2's consortium-f1a-balance.browser.test.mjs
 // as the one scenario of "things to weigh"; P4's height note is the part of F1a-P4 that moved to b3
 // (the pots answer stays b1a's). Each asserts the words and state a grower relies on: the palette
@@ -206,19 +208,21 @@ test('PP-B23b (b3 Your plants at 1 and 0 plants): one row with no "+ N more"; it
 // Fix round 1 (b3r-1, b3c-6, b3r-6): a guest list that could not be read, and a plant on none of the
 // climate's lists: Things to weigh counts them in the palette (never "7 of 7" for a ten-plant palette)
 // and says they are not checked; Your plants gives each a plain row saying why, with Remove.
-test('PP-B62 (b3 plants not shown): with a guest list unread and a plant on no list of this climate, Your plants gives each a row saying why with Remove, and Things to weigh counts them as not checked in the whole palette', async () => {
+test('PP-B62 (b3 plants not shown): with a guest list unread and a plant on no list of this climate, Your plants gives each a row saying why with Remove, Things to weigh counts them as not checked in the whole palette (a guest of the unread list that this climate lists too is checked, not counted), and the print sheet names them with why in the whole count', async () => {
   const pick = await realDb((db) => {
     const ids = (sql, k) => db.prepare(sql).all(k).map((r) => String(r.id));
     const medOnly = "SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant NOT IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY p.canonical_name LIMIT ?";
     const [guest, stray] = ids(medOnly, 2);
-    return { own: ids("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT ?", 8), guest, stray };
+    // On both lists: a guest of the unread list that Temperate holds too (review b3f-1).
+    const [both] = ids("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY p.canonical_name DESC LIMIT ?", 1);
+    return { own: ids("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT ?", 8), guest, stray, both };
   });
   const page = await tool();
   await choose(page, 'Temperate');
   await page.evaluate((p) => {
     const { store } = window.__ctTest, src = store.source.value, read = src.pool.bind(src);
     src.pool = (c) => (c === 'Mediterranean' ? Promise.reject(new Error('test: list unreadable')) : read(c));
-    store.addMembers([...p.own, p.guest, p.stray], { [p.guest]: 'Mediterranean' });
+    store.addMembers([...p.own, p.both, p.guest, p.stray], { [p.guest]: 'Mediterranean', [p.both]: 'Mediterranean' });
     store.loadPool('Mediterranean');
   }, pick);
   await showPalette(page);
@@ -227,16 +231,49 @@ test('PP-B62 (b3 plants not shown): with a guest list unread and a plant on no l
   const row = (id) => list.find((r) => r.id === id)?.text ?? '';
   assert.ok(row(pick.guest).includes(W('notRead')), `the guest's row says its list could not be read (${row(pick.guest)})`);
   assert.ok(row(pick.stray).includes(W('notListed')), `the stray plant's row says it is on none of this climate's lists (${row(pick.stray)})`);
+  assert.ok(row(pick.both) && !row(pick.both).includes(W('notRead')), `the plant on both lists is shown as a plant (${row(pick.both)})`);
   await page.waitForFunction((w) => document.querySelector('.ct-weigh')?.textContent.includes(w), { timeout: 8000 }, plural(W('weigh.unchecked'), 2)).catch(() => {});
   const weigh = await section(page, W('weigh.title'));
   assert.ok(weigh && weigh.includes(plural(W('weigh.unchecked'), 2)), `Things to weigh: 2 plants not checked ("${weigh}")`);
   assert.ok(!weigh.includes(W('weigh.checking')), 'never "checking" for a list that failed');
-  assert.ok(!/\b\d+ of (?:your )?8\b/.test(weigh), `no line over the 8 shown plants as if they were the palette ("${weigh}")`);
+  assert.ok(!/\b\d+ of (?:your )?9\b/.test(weigh), `no line over the 9 shown plants as if they were the palette ("${weigh}")`);
+  // On paper too (review b3f-2): the two plants not shown, each with why, and the whole palette's count.
+  await page.evaluate(() => dispatchEvent(new Event('beforeprint')));
+  await page.waitForSelector('.ct-print tbody tr', { timeout: 20_000 });
+  const paper = await page.$eval('.ct-print', (e) => ({ sub: e.querySelector('.ct-print-sub').textContent, rows: [...e.querySelectorAll('tbody tr')].map((tr) => tr.textContent.replace(/\s+/g, ' ')) }));
+  assert.ok(paper.sub.includes(plural(en['consortium.start.count'], 11)), `print: the whole palette's 11 plants (${paper.sub})`);
+  assert.equal(paper.rows.length, 11, 'print: a row per plant, the two not shown included');
+  assert.equal(paper.rows.filter((r) => r.includes(W('notRead'))).length, 1, `print: the guest whose list could not be read, with why (${paper.rows.join(' | ')})`);
+  assert.equal(paper.rows.filter((r) => r.includes(W('notListed'))).length, 1, 'print: the plant on none of this climate\'s lists, with why');
+  await page.evaluate(() => dispatchEvent(new Event('afterprint')));
   await page.$eval(`${PLANTS} [data-plant-id="${pick.stray}"] .button-secondary`, (b) => { b.focus(); b.click(); });
   await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, pick.stray);
   await page.evaluate(() => window.__ctTest.store.hideToast());
   await page.$eval(`${PLANTS} [data-plant-id="${pick.guest}"] .button-secondary`, (b) => b.click());
   await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, pick.guest);
-  assert.equal((await members(page)).length, 8, 'only the grower removes them, through Remove');
+  assert.equal((await members(page)).length, 9, 'only the grower removes them, through Remove');
+  await done(page);
+});
+
+test('PP-B63 (b3 water needs not recorded, no water line): with enough water needs recorded and all of one need, Things to weigh still says how many plants have none recorded, on its own line (review b3f-4)', async () => {
+  const pick = await realDb((db) => {
+    const ids = (sql) => db.prepare(sql).all().map((r) => String(r.id));
+    const at = "FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate'";
+    // Four that take a dry summer, from four families, and one with no water need recorded.
+    const dry = db.prepare(`SELECT p.id, p.family ${at} AND p.drought_tolerance = 'High' ORDER BY p.canonical_name`).all();
+    const four = [], fams = new Set();
+    for (const r of dry) if (!fams.has(r.family) && four.length < 4) { fams.add(r.family); four.push(String(r.id)); }
+    const [bare] = ids(`SELECT p.id ${at} AND p.drought_tolerance IS NULL AND p.moisture_use IS NULL AND p.family NOT IN (${[...fams].map((f) => `'${f}'`).join(',')}) ORDER BY p.canonical_name LIMIT 1`);
+    return [...four, bare];
+  });
+  assert.equal(pick.length, 5, 'four dry and one unrecorded Temperate plants in the export');
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await paletteOf(page, pick);
+  const words = plural(W('weigh.missing'), 1);
+  await page.waitForFunction((w) => document.querySelector('.ct-weigh')?.textContent.includes(w), { timeout: 8000 }, words).catch(() => {});
+  const weigh = await section(page, W('weigh.title'));
+  assert.ok(weigh && weigh.includes(words), `Things to weigh: "${words}" ("${weigh}")`);
+  assert.equal(await page.$$eval(`${WEIGH} [data-weigh="water"]`, (e) => e.length), 1, 'one water line');
   await done(page);
 });

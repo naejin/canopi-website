@@ -1,6 +1,6 @@
 {
   "schema": "canopi-palette-weigh/1",
-  "source": "knowledge/project/plant-palette-slices.md row b3 and the chunk 2 drift check (2026-11-15) section 3; ux-inventory P39 (one family, water needs) and board MainMore (Balance: things to weigh, not holes); owner rows 'warn, never hide' and 'inform, don't block'. A plant's water need is the factAt water_need fact (ADR-6): its drought tolerance when recorded (High: dry, Medium: medium, Low or None: needs regular water), else its moisture use (Low: dry, Medium: medium, High: needs regular water), else not recorded. Owner 2026-11-15: the Low/None group reads 'Needs regular water'; the family line keeps 3 plants and 25 %; no water all-clear line (the water line shows only when needs are mixed or too few are recorded). Plants not checked (a guest list unread, a plant on none of the climate's lists: input 'unchecked') count in m, never a judgement of part of the palette as the whole. Written by PP-B stream b3.",
+  "source": "knowledge/project/plant-palette-slices.md row b3 and the chunk 2 drift check (2026-11-15) section 3; ux-inventory P39 (one family, water needs) and board MainMore (Balance: things to weigh, not holes); owner rows 'warn, never hide' and 'inform, don't block'. A plant's water need is the factAt water_need fact (ADR-6) through source.ts waterNeed, the one classifier: its drought tolerance when recorded (High: dry, Medium: medium, Low or None: needs regular water), else its moisture use (Low: dry, Medium: medium, High: needs regular water), else not recorded. Owner 2026-11-15: the Low/None group reads 'Needs regular water'; the family line keeps 3 plants and 25 %; no water all-clear line (the water line shows only when needs are mixed or too few are recorded; otherwise the plants with no water need recorded are said on their own, review b3f-4). Plants not checked (a guest list unread, a plant on none of the climate's lists: input 'unchecked') count in m, never a judgement of part of the palette as the whole. Written by PP-B stream b3.",
   "thresholds": {
     "water_judge_share": 0.5,
     "family_min": 3,
@@ -83,9 +83,11 @@
       ] }
     },
     {
-      "name": "half recorded, every one taking a dry summer: no water line (no all-clear, owner 2026-11-15)",
+      "name": "half recorded, every one taking a dry summer: no all-clear (owner 2026-11-15), only the 5 not recorded, which is not a pass",
       "input": { "members": ["oak", "olive", "almond", "rosemary", "fig", "unrecorded-1", "unrecorded-2", "unrecorded-3", "unrecorded-4", "unrecorded-5"] },
-      "expect": { "lines": [] }
+      "expect": { "lines": [
+        { "kind": "water", "says": "missing", "n": 5, "m": 10, "missing": 5, "unchecked": 0, "members": [], "estimate": false }
+      ] }
     },
     {
       "name": "half recorded with mixed needs is judged (the one threshold), 5 not recorded",
@@ -95,10 +97,11 @@
       ] }
     },
     {
-      "name": "Seville's thirteen (board MainMore): four of thirteen legumes is a line; nine recorded all take a dry summer: no water line",
+      "name": "Seville's thirteen (board MainMore): four of thirteen legumes is a line; nine recorded all take a dry summer: no all-clear, the four not recorded said",
       "input": { "members": ["olive", "almond", "fig", "pomegranate", "chickpea", "licorice", "broom", "crimson-clover", "rosemary", "myrtle", "pine", "cornflower", "laurustinus"] },
       "expect": { "lines": [
-        { "kind": "family", "says": "family", "family": "Fabaceae", "n": 4, "m": 13, "members": ["chickpea", "licorice", "broom", "crimson-clover"], "estimate": false }
+        { "kind": "family", "says": "family", "family": "Fabaceae", "n": 4, "m": 13, "members": ["chickpea", "licorice", "broom", "crimson-clover"], "estimate": false },
+        { "kind": "water", "says": "missing", "n": 9, "m": 13, "missing": 4, "unchecked": 0, "members": [], "estimate": false }
       ] }
     },
     {
@@ -147,6 +150,11 @@
         { "kind": "family", "says": "family", "family": "Fabaceae", "n": 3, "m": 10, "members": ["inga-1", "inga-2", "inga-3"], "estimate": false },
         { "kind": "water", "says": "water-few", "n": 0, "m": 10, "missing": 4, "unchecked": 6, "members": [], "estimate": false }
       ] }
+    },
+    {
+      "name": "every water need recorded, all one need: nothing to weigh, no line at all",
+      "input": { "members": ["oak", "olive", "almond", "rosemary"] },
+      "expect": { "lines": [] }
     }
   ]
 }
