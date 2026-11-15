@@ -121,7 +121,9 @@ export function invasiveIn(taxon: Taxon, country: string | null | undefined, che
 // with its countryStatus (only 'checked' gives invasive flags and "not recorded").
 export interface FlagContext { site: Site; interactions: Interaction[]; country?: string | null; countryStatus?: CountryStatus }
 
-const TOXIC = new Set(['Moderate', 'Severe']);
+// Every recorded level but None warns, Slight too (owner: mild = warning, moderate and above = danger;
+// the level travels on the plant, views/kit/flags.ts reads it).
+const TOXIC = new Set(['Slight', 'Moderate', 'Severe']);
 
 // A conflict found for a plant: the other member and the row (severity, type, agent, note).
 interface Found { other: PlantId; c: Conflict }
