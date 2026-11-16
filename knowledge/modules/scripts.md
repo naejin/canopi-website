@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:13Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:40Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T23:20:29Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:3779a232b3ee32f4
-    last_modified: 2026-11-16T21:53:51Z
+    digest: sha256:b2769cbac8e4e0c4
+    last_modified: 2026-11-16T23:20:08Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -43,8 +43,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:a51ff392be603f0e
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:e163330f575c0645
+    last_modified: 2026-11-16T23:20:08Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -63,8 +63,8 @@ sources:
   - id: ci-deploy-test-mjs
     resource: ../../scripts/ci-deploy.test.mjs
     title: scripts/ci-deploy.test.mjs
-    digest: sha256:9b06ba6820941ce1
-    last_modified: 2026-11-13T03:40:44Z
+    digest: sha256:e4bef9b9cbe6d003
+    last_modified: 2026-11-16T22:35:45Z
   - id: vectors-mjs
     resource: ../../scripts/fixtures/climate/vectors.mjs
     title: scripts/fixtures/climate/vectors.mjs
@@ -113,8 +113,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:c561d0b330138395
-    last_modified: 2026-11-16T21:53:51Z
+    digest: sha256:c293be4e4346b4c3
+    last_modified: 2026-11-16T22:46:56Z
 ---
 
 # Responsibility

@@ -7,7 +7,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:14Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:41Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T23:20:27Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d7febd141cb603ce
-    last_modified: 2026-11-16T19:25:04Z
+    digest: sha256:25e5ed486de7116b
+    last_modified: 2026-11-16T20:01:26Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -62,8 +62,8 @@ sources:
   - id: axe-smoke-mjs
     resource: ../../scripts/browser/smoke/axe.smoke.mjs
     title: scripts/browser/smoke/axe.smoke.mjs
-    digest: sha256:77a63fddedca8e5a
-    last_modified: 2026-11-14T15:16:44Z
+    digest: sha256:3c67f98ddf1f093a
+    last_modified: 2026-11-16T22:53:45Z
   - id: climate-vectors-test-mjs
     resource: ../../scripts/climate-vectors.test.mjs
     title: scripts/climate-vectors.test.mjs

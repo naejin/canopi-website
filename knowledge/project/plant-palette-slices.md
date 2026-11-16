@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:55:52Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T23:20:30Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -101,8 +101,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:a51ff392be603f0e
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:e163330f575c0645
+    last_modified: 2026-11-16T23:20:08Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
@@ -156,8 +156,8 @@ sources:
   - id: axe-json
     resource: ../../scripts/quality/baselines/axe.json
     title: scripts/quality/baselines/axe.json
-    digest: sha256:d9eebfa72531c53b
-    last_modified: 2026-11-13T03:26:34Z
+    digest: sha256:7635d798061b43a6
+    last_modified: 2026-11-16T22:56:43Z
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro

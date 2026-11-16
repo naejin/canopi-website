@@ -250,13 +250,15 @@ test('staticClosure: static imports only, import() not followed', () => {
 // would fail it in a plain `npm test`. Chunks compared by their name
 // without the hash (the hook changes main's hash and so every importer's), roles by their count.
 const BUILT = { production: 'dist/client', test: 'dist-test/client' };
+// The tool's page (at /palette/ since PP-B 0b; /consortium/ only redirects).
+const PAGE = join('palette', 'index.html');
 // CI's job 4 sets CANOPI_REQUIRE_BUILDS=1 with both builds present, so a missing build fails there.
-const builtHere = Object.values(BUILT).every((d) => existsSync(join(d, 'consortium', 'index.html')));
+const builtHere = Object.values(BUILT).every((d) => existsSync(join(d, PAGE)));
 const requireBuilds = process.env.CANOPI_REQUIRE_BUILDS === '1';
 test('L11: the dist-test chunk graph is the production graph plus the test hook\'s chunk, and the hook is absent from dist', { skip: requireBuilds ? false : 'set CANOPI_REQUIRE_BUILDS=1 after npm run build and npm run build:browser-test' }, () => {
-  assert.ok(builtHere, `CANOPI_REQUIRE_BUILDS=1 but ${Object.values(BUILT).filter((d) => !existsSync(join(d, 'consortium', 'index.html'))).join(' and ')} is missing`);
+  assert.ok(builtHere, `CANOPI_REQUIRE_BUILDS=1 but ${Object.values(BUILT).filter((d) => !existsSync(join(d, PAGE))).join(' and ')} is missing`);
   const stem = (p) => p.replace('/_astro/', '').replace(/\.[\w-]{8}\.js$/, '');
-  const graphs = Object.fromEntries(Object.entries(BUILT).map(([k, d]) => [k, moduleGraph(d, readFileSync(join(d, 'consortium', 'index.html'), 'utf8'))]));
+  const graphs = Object.fromEntries(Object.entries(BUILT).map(([k, d]) => [k, moduleGraph(d, readFileSync(join(d, PAGE), 'utf8'))]));
   const stems = (g) => [...g.keys()].map(stem).sort();
   const extra = [...graphs.test.keys()].filter((p) => !stems(graphs.production).includes(stem(p)));
   assert.equal(extra.length, 1, `one chunk more in dist-test (the hook's): ${extra.join(', ')}`);
