@@ -10,7 +10,7 @@ import { batch, signal } from '@preact/signals';
 import type { ClimateZone, PlantId } from '../../../lib/consortium/index.ts';
 import { siteIdOf } from '../../../lib/consortium/index.ts';
 import * as store from '../store.ts';
-import { focusView } from '../focus.ts';
+import { focusAfterStartOver, focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
 import { T } from '../strings.ts';
 import { adoptPending, attempt, holdSave, linkPlace, memory, placeSaid, placeSeed, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
@@ -101,6 +101,8 @@ export function startOver(): void {
     notices.value = { ...NO_NOTICES };
   });
   if (before.members.length || before.removed.length || Object.keys(before.guests).length) store.offerUndo(T('place.overDone'), before);
+  // Its button leaves with the palette: the toast's Undo, else Place's heading (pre-push fix 6, B).
+  focusAfterStartOver();
 }
 
 // ---- the arrival notices' answers (plant-palette-architecture 8.3) ----

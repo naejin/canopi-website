@@ -45,6 +45,7 @@ import { pendingSuggest, requestSuggest } from '../../state/suggest-wait.ts';
 import { page } from '../kit/page.ts';
 import type { Frame } from '../kit/sheet.tsx';
 import { markStart } from '../kit/start-mark.ts';
+import { focusAfterAdd } from '../../focus.ts';
 import { basisLine, countryName, nameOf, zoneName } from '../kit/names.ts';
 
 // ---- the country line ----
@@ -225,18 +226,28 @@ function RoomStep() {
 }
 
 // ---- What grows there already ----
+// A chip's × leaves with its plant: the focus goes to the neighbour's ×, else "Add a plant" (pre-push
+// fix 6, A); the chip carries data-plant-id, so Undo finds it again where it was (focus.ts focusPlant).
 function OwnPlants() {
   const taxa = memberTaxa.value;
+  const list = useRef<HTMLUListElement>(null);
+  const remove = (id: string) => {
+    const at = taxa.findIndex((t) => t.id === id);
+    const near = taxa[at + 1] ?? taxa[at - 1];
+    removeMember(id);
+    focusAfterAdd(() => (near ? list.current?.querySelector<HTMLElement>(`[data-plant-id="${CSS.escape(near.id)}"] button`) ?? null : null)
+      ?? document.querySelector<HTMLElement>('[data-place-add]'));
+  };
   return (
     <section class="ct-step ct-panel" aria-labelledby="ct-own-h" data-place-plants>
       <h2 class="ct-step-title" id="ct-own-h">{T('place.plants.title')}</h2>
       <p class="ct-muted ct-step-lede">{T('place.plants.lede')}</p>
       {taxa.length > 0 && (
-        <ul class="ct-own" aria-label={T('place.plants.title')}>
+        <ul ref={list} class="ct-own" aria-label={T('place.plants.title')}>
           {taxa.map((t) => (
-            <li class="ct-own-chip">
+            <li key={t.id} class="ct-own-chip" data-plant-id={t.id}>
               <span>{nameOf(t)}</span>
-              <button type="button" class="link-button ct-link" aria-label={T('place.plants.remove', { name: nameOf(t) })} onClick={() => removeMember(t.id)}>×</button>
+              <button type="button" class="link-button ct-link" aria-label={T('place.plants.remove', { name: nameOf(t) })} onClick={() => remove(t.id)}>×</button>
             </li>
           ))}
         </ul>

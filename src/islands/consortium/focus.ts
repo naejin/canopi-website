@@ -5,18 +5,49 @@
 // tool's first heading (Start's, after an Undo back to Start).
 import type { PlantId } from '../../lib/consortium/index.ts';
 
+// Focuses el (within an open sheet, else the sheet's [data-autofocus] heading; with nothing, the
+// tool's first heading); returns what took the focus.
+function land(found: HTMLElement | null): HTMLElement | null {
+  const sheet = document.querySelector<HTMLDialogElement>('dialog[open]');
+  let el = found;
+  if (sheet && el && !sheet.contains(el)) el = null;
+  el ??= sheet ? sheet.querySelector<HTMLElement>('[data-autofocus]') : document.querySelector<HTMLElement>('#ct-root h2');
+  if (!el) return null;
+  if (!el.matches('button, a[href], input, select, textarea, [tabindex]')) el.tabIndex = -1;
+  el.focus();
+  return el;
+}
 // then: told the element focused (the Next step's Add hands the toast's way back to it).
-function focusSoon(find: () => HTMLElement | null, then?: (el: HTMLElement) => void): void {
+export function focusSoon(find: () => HTMLElement | null, then?: (el: HTMLElement) => void): void {
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const sheet = document.querySelector<HTMLDialogElement>('dialog[open]');
-    let el = find();
-    if (sheet && el && !sheet.contains(el)) el = null;
-    el ??= sheet ? sheet.querySelector<HTMLElement>('[data-autofocus]') : document.querySelector<HTMLElement>('#ct-root h2');
-    if (!el) return;
-    if (!el.matches('button, a[href], input, select, textarea, [tabindex]')) el.tabIndex = -1;
-    el.focus();
-    then?.(el);
+    const el = land(find());
+    if (el) then?.(el);
   }));
+}
+
+// ---- the safety net (pre-push fix 6) ----
+// A control that removes itself or its region ("Show N outside", "Not now" on the last hole, a
+// Retry whose notice goes) must never leave the focus on <body>. The explicit helpers below still win:
+// they land two frames after the render, after this net. A region: the nearest section (or element
+// marked data-focus-region) around the control; the focus lands on its heading while it survives,
+// else on the shown view's heading (within an open sheet, its own heading). Started once by main.ts.
+const REGION = 'section, [data-focus-region]';
+let lastFocused: HTMLElement | null = null;
+let lastRegion: HTMLElement | null = null;
+const headingOf = (region: HTMLElement): HTMLElement | null => region.querySelector<HTMLElement>('h2, h3');
+export function watchFocus(root: HTMLElement): void {
+  root.addEventListener('focusin', (e) => {
+    lastFocused = e.target instanceof HTMLElement ? e.target : null;
+    lastRegion = lastFocused?.parentElement?.closest<HTMLElement>(REGION) ?? null;
+  });
+  new MutationObserver(() => {
+    if (!lastFocused || lastFocused.isConnected) return;
+    const at = document.activeElement;
+    const region = lastRegion?.isConnected ? lastRegion : null;
+    lastFocused = null;
+    if (at && at !== document.body) return; // the focus went somewhere already
+    land((region && headingOf(region)) ?? viewHeading());
+  }).observe(root, { childList: true, subtree: true });
 }
 
 // The shown view's heading: the matrix's caption (the phone overview table), or the view's h2.
@@ -41,14 +72,25 @@ export const focusView = (): void => focusSoon(viewHeading, (el) => {
 });
 
 // After Undo: the restored plant's own control (its chip, its row's name), else the view's heading.
-export function focusPlant(id: PlantId | undefined): void {
+// from: the region the change came from (toastRegion, noted when its toast showed): the plant's control
+// there wins over the first in DOM order, so an Undo after a remove in Your plants lands on its row,
+// not on the Years chart's chip (pre-push fix 6, C).
+export function focusPlant(id: PlantId | undefined, from: Element | null = null): void {
   focusSoon(() => {
-    const at = id === undefined ? null : [...document.querySelectorAll<HTMLElement>('#ct-root [data-plant-id]')]
-      .find((el) => el.dataset.plantId === String(id) && !el.closest('dialog') && el.getClientRects().length);
+    const all = id === undefined ? [] : [...document.querySelectorAll<HTMLElement>('#ct-root [data-plant-id]')]
+      .filter((el) => el.dataset.plantId === String(id) && !el.closest('dialog') && el.getClientRects().length);
+    const at = (from?.isConnected ? all.find((el) => from.contains(el)) : undefined) ?? all[0];
     const own = at && (at.matches('button, a[href]') ? at : at.querySelector<HTMLElement>('button, a[href]'));
     return own ?? viewHeading();
   });
 }
+
+// After Start over (the palette head's or the "Your place" sheet's): its button leaves with the
+// palette, so the toast's Undo takes the focus, else Place's heading (pre-push fix 6, B).
+export const focusAfterStartOver = (): void => {
+  if (typeof document === 'undefined') return;
+  focusSoon(() => document.querySelector<HTMLElement>('.ct-toast-page .ct-toast-undo') ?? viewHeading());
+};
 
 // F1a seam (commit 0; A25): where focus goes when the toast leaves (dismissed, its action or Undo run,
 // its timer fired). store.ts hideToast and the toast timer call it (commit 0) while the toast is still on
@@ -68,10 +110,13 @@ export function focusAfterAdd(find: () => HTMLElement | null): void {
 // After a Next step's Add: the Next step's title, which every state of the card shows (its next hole,
 // or none left), else the page title (Focus board; slices b2 P8).
 export const focusNextStep = (): void => focusAfterAdd(() => document.getElementById('ct-next-t') ?? viewHeading());
-export function noteToastOpener(): void {
-  if (typeof document === 'undefined') return;
+// Returns the region of the control that raised the toast (focusPlant's `from`), null for none.
+export function noteToastOpener(): Element | null {
+  if (typeof document === 'undefined') return null;
   const at = document.activeElement as HTMLElement | null;
-  if (at && at !== document.body && !at.closest('.ct-toast')) opener = at;
+  if (!at || at === document.body || at.closest('.ct-toast')) return null;
+  opener = at;
+  return at.parentElement?.closest(REGION) ?? null;
 }
 export function focusAfterToast(): void {
   if (typeof document === 'undefined') return;

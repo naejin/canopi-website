@@ -25,7 +25,7 @@ export function Toast({ where = 'page' }: { where?: Where }) {
           onFocusIn={() => holdToast(true)} onFocusOut={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) holdToast(false); }}>
           <span class="ct-toast-text">{line.text}</span>
           {line.undo && (
-            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0]); }}>{T('undo')}</button>
+            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0], line.from); }}>{T('undo')}</button>
           )}
           {line.action && (
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const run = line.action!.run; hideToast(); run(); }}>{line.action.label}</button>

@@ -434,6 +434,24 @@ test('PP-B49 (b2 verdict and range chunks refused; pre-push fix 4): back online,
   await done(page);
 });
 
+// Pre-push fix 6 (keyboard focus, D): the verdict notice's Retry leaves with its notice while the chunk
+// is asked again; the focus lands on a surviving element of the tool, never <body>.
+test('PP-B50 (b2 focus, D): pressing the verdict notice\'s Retry never leaves the focus on <body>', async () => {
+  const page = await tool({ block: { verdict: 404 } });
+  await atSite(page, 'lyon');
+  await choose(page, 'Temperate');
+  await ownPalette(page, 2);
+  const retry = `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`;
+  assert.ok(await has(page, retry, 10_000), 'the notice with Retry');
+  await page.focus(retry);
+  await page.keyboard.press('Enter');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 8000 }).then(() => true, () => false), 'refused again');
+  await frames(page);
+  const at = await page.evaluate(() => { const a = document.activeElement; return { body: !a || a === document.body, inRoot: !!a?.closest('#ct-root'), tag: a?.tagName ?? null }; });
+  await done(page);
+  assert.ok(!at.body && at.inRoot, `the focus stays in the tool (${JSON.stringify(at)})`);
+});
+
 test('PP-B21 (b2 a guest list fails): the list is named as missing and its plants are not checked; the tool stays', async () => {
   const page = await tool();
   await choose(page, 'Temperate');

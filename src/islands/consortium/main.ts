@@ -19,6 +19,7 @@ import { provideLocationStep } from './state/restore.ts';
 import { loadLocationStep } from './views/location/load.ts';
 import { zoneOf } from '../../lib/consortium/index.ts';
 import { setStrings } from './strings.ts';
+import { watchFocus } from './focus.ts';
 import { pageData, type PageData } from './views/kit/page.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 
@@ -137,7 +138,7 @@ if (root && data) {
   startMemory();
   // The root keeps its static loading line, aria-busy, until App renders into it.
   const onRetry = () => void open(data);
-  const show = () => { root.textContent = ''; render(h(App, { guide: data.guide, onRetry }), root); root.removeAttribute('aria-busy'); fetchAhead(); };
+  const show = () => { root.textContent = ''; render(h(App, { guide: data.guide, onRetry }), root); root.removeAttribute('aria-busy'); watchFocus(root); fetchAhead(); };
   // The browser-test build loads the test hook (window.__ctTest, __ctFaults) before the first
   // render, the root busy meanwhile, so a test that waits for the render (harness loadState) never
   // reads the loading line as ready, preloaded hook chunk or not; a production build folds

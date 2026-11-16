@@ -854,3 +854,42 @@ test('PP-B71 (b1a reload after another tab saved): the reload leaves the other t
   await new Promise((r) => setTimeout(r, 500));
   assert.equal(await page.evaluate(() => localStorage.getItem('canopi-consortium')), other, 'the other tab\'s save is left as it is');
 });
+
+// Pre-push fix 6 (keyboard focus): a control that removes itself never leaves the focus on <body>.
+const frames3 = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
+const focusAt = (page) => page.evaluate(() => {
+  const a = document.activeElement;
+  return { body: !a || a === document.body, plant: a?.closest('[data-plant-id]')?.dataset.plantId ?? null, own: !!a?.closest('[data-place-plants]'), add: a?.matches('[data-place-add]') ?? false, undo: a?.matches('.ct-toast-undo') ?? false, tag: a?.tagName ?? null, text: a?.textContent?.trim().slice(0, 40) ?? null };
+});
+test('PP-B72 (b1a focus, A): an own plant\'s × on Place hands the focus to the neighbour\'s ×, the last one to "Add a plant", and Undo lands on the chip where it was', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  const ids = (await temperateIds()).slice(0, 3);
+  await page.evaluate((x) => window.__ctTest.store.addMembers(x), ids);
+  assert.ok(await has(page, `[data-place-plants] [data-plant-id="${ids[1]}"] button`, 8000), 'the chips carry data-plant-id');
+  await page.click(`[data-place-plants] [data-plant-id="${ids[1]}"] button`);
+  await frames3(page);
+  let at = await focusAt(page);
+  assert.ok(at.own && at.plant === ids[2], `the neighbour's × (${JSON.stringify(at)})`);
+  await page.click('.ct-toast-undo');
+  await frames3(page);
+  at = await focusAt(page);
+  assert.ok(at.own && at.plant === ids[1], `Undo: the restored chip (${JSON.stringify(at)})`);
+  for (const id of ids.slice(1)) { await page.click(`[data-place-plants] [data-plant-id="${id}"] button`); await frames3(page); }
+  await page.click(`[data-place-plants] [data-plant-id="${ids[0]}"] button`);
+  await frames3(page);
+  at = await focusAt(page);
+  assert.ok(at.add, `the last ×: "Add a plant" (${JSON.stringify(at)})`);
+});
+
+test('PP-B73 (b1a focus, B): Start over in the palette head hands the focus to the toast\'s Undo, never <body>', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  await page.evaluate((x) => window.__ctTest.store.addMembers(x), (await temperateIds()).slice(0, 3));
+  await (await page.waitForSelector('[data-place-show]', { timeout: 8000 })).click();
+  assert.ok(await has(page, '.ct-result-head [data-start-over]', 8000), 'the palette head');
+  await page.click('.ct-result-head [data-start-over]');
+  await frames3(page);
+  const at = await focusAt(page);
+  assert.ok(at.undo, `the toast's Undo (${JSON.stringify(at)})`);
+});

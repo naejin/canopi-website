@@ -276,3 +276,22 @@ test('PP-B63 (b3 water needs not recorded, no water line): with enough water nee
   assert.equal(await page.$$eval(`${WEIGH} [data-weigh="water"]`, (e) => e.length), 1, 'one water line');
   await done(page);
 });
+
+// Pre-push fix 6 (keyboard focus, C): Undo after a remove in Your plants lands on that plant's row, not
+// on the first [data-plant-id] in the page (the Years chart's chip).
+test('PP-B64 (b3 focus, C): Undo after a remove in Your plants lands on the restored row in Your plants, not on the chart\'s chip', async () => {
+  const page = await tool();
+  await atSite(page, 'lyon');
+  await choose(page, 'Temperate');
+  const ids = await page.evaluate(() => window.__ctTest.store.pool.value.slice(0, 4).map((t) => t.id));
+  await paletteOf(page, ids);
+  const id = ids[1];
+  assert.ok(await has(page, `${PLANTS} [data-plant-id="${id}"] .button-secondary`, 8000), 'the row\'s Remove');
+  await page.click(`${PLANTS} [data-plant-id="${id}"] .button-secondary`);
+  await frames(page);
+  await page.click('.ct-toast-undo');
+  await frames(page);
+  const at = await page.evaluate(() => { const a = document.activeElement; return { plants: !!a?.closest('.ct-plants'), plant: a?.closest('[data-plant-id]')?.dataset.plantId ?? null, chart: !!a?.closest('.ct-chart') }; });
+  await done(page);
+  assert.ok(at.plants && at.plant === id && !at.chart, `the restored row in Your plants (${JSON.stringify(at)})`);
+});

@@ -13,7 +13,7 @@ import { useMemo, useState } from 'preact/hooks';
 import type { Hole, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
 import { fillers, fills, nextStep, periodIds, phaseOfYear } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { focusNextStep } from '../../focus.ts';
+import { focusNextStep, focusSoon } from '../../focus.ts';
 import { requestSuggest } from '../../state/suggest-wait.ts';
 import { nameOf, P, T } from '../../strings.ts';
 import { FitLine, holeWords } from '../kit/fit.tsx';
@@ -32,6 +32,9 @@ const warns = (t: Taxon, code: string | null): boolean =>
   (!!t.warnings.toxicity && t.warnings.toxicity.level !== 'None') || (t.warnings.invasive_in ?? []).some((r) => !code || r.country === code);
 
 const OUTSIDE_FIRST = 8, BEST = 3;
+// "Show N outside" and "Show all N" leave as they show the plants: the first plant they show takes the
+// focus (its Add), else the Next step's title (pre-push fix 6, D; focus.ts's net covers the rest).
+const focusShown = (i: number): void => focusSoon(() => document.querySelectorAll<HTMLElement>('.ct-next [data-outside] li button')[i] ?? document.getElementById('ct-next-t'));
 const NONE: readonly Taxon[] = [];
 
 function Card({ children, hole }: { children: ComponentChildren; hole?: string }) {
@@ -114,9 +117,9 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
           <ul class="ct-fillers" data-outside="">
             {(allOutside ? found.outside : found.outside.slice(0, OUTSIDE_FIRST)).map(filler)}
           </ul>
-          {!allOutside && found.outside.length > OUTSIDE_FIRST && <p><button type="button" class="button button-secondary" onClick={() => setAllOutside(true)}>{P('add.showAll', found.outside.length)}</button></p>}
+          {!allOutside && found.outside.length > OUTSIDE_FIRST && <p><button type="button" class="button button-secondary" onClick={() => { setAllOutside(true); focusShown(OUTSIDE_FIRST); }}>{P('add.showAll', found.outside.length)}</button></p>}
         </>
-      ) : <p><button type="button" class="button button-secondary" onClick={() => setShowOutside(true)}>{P('palette.showOutside', found.outside.length)}</button></p>)}
+      ) : <p><button type="button" class="button button-secondary" onClick={() => { setShowOutside(true); focusShown(0); }}>{P('palette.showOutside', found.outside.length)}</button></p>)}
       <p class="ct-next-actions">
         <button type="button" class="button button-secondary" onClick={() => openFillers(next)}>{P('palette.seeAll', all)}</button>
         <button type="button" class="button button-secondary" onClick={() => { store.notNow.value = new Set([...skip, next.id]); }}>{T('palette.notNow')}</button>

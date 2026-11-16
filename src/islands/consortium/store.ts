@@ -645,15 +645,16 @@ export const closeSheet = (): void => {
 
 export interface ToastAction { label: string; run: () => void }
 export type ToastWhere = 'page' | 'sheet';
-// focus: the plants Undo brings back; the first one's control takes the focus after Undo (W4).
-export interface ToastLine { id: number; text: string; undo: (() => void) | null; action: ToastAction | null; where: ToastWhere; focus: PlantId[] }
+// focus: the plants Undo brings back; the first one's control takes the focus after Undo (W4), in
+// `from`, the region of the control that raised the toast, when it is still there (focus.ts focusPlant).
+export interface ToastLine { id: number; text: string; undo: (() => void) | null; action: ToastAction | null; where: ToastWhere; focus: PlantId[]; from: Element | null }
 export const toast = signal<ToastLine | null>(null);
 const TOAST_MS = 12_000; // long enough to reach Undo with a keyboard or a screen reader
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 let toastSeq = 1;
 export function showToast(text: string, undo: (() => void) | null = null, action: ToastAction | null = null, focus: PlantId[] = []): void {
-  noteToastOpener();
-  const line: ToastLine = { id: toastSeq++, text, undo, action, where: sheet.peek() !== null ? 'sheet' : 'page', focus };
+  const from = noteToastOpener();
+  const line: ToastLine = { id: toastSeq++, text, undo, action, where: sheet.peek() !== null ? 'sheet' : 'page', focus, from };
   toast.value = line;
   armToast(line.id);
 }
