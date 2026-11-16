@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:24Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:54Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:43Z }
 sources:
@@ -52,8 +52,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d7febd141cb603ce
-    last_modified: 2026-11-16T19:25:04Z
+    digest: sha256:25e5ed486de7116b
+    last_modified: 2026-11-16T20:01:26Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -112,8 +112,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:caffd30f4ecda69b
-    last_modified: 2026-11-15T06:28:16Z
+    digest: sha256:532127fa0a50b7db
+    last_modified: 2026-11-16T20:25:28Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -122,8 +122,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:e7a1f6ee70b682e3
-    last_modified: 2026-11-16T18:57:05Z
+    digest: sha256:6709d3b6c2980998
+    last_modified: 2026-11-16T20:25:28Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -142,28 +142,28 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:1d308232da636c1e
-    last_modified: 2026-11-15T08:46:56Z
+    digest: sha256:ca909f4c2d9983b8
+    last_modified: 2026-11-16T20:21:19Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:ebcd8009a0571e36
-    last_modified: 2026-11-15T08:46:56Z
+    digest: sha256:b3a1124c924ed6bd
+    last_modified: 2026-11-16T20:25:28Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:c0c5086cbc6f4b8d
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:d871ca3eb6215b08
+    last_modified: 2026-11-16T20:16:07Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:5d7ec19f2dc9687f
-    last_modified: 2026-11-15T08:46:56Z
+    digest: sha256:8601a55034d14379
+    last_modified: 2026-11-16T20:16:07Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:fb1d3e6351899c0e
-    last_modified: 2026-11-15T08:46:56Z
+    digest: sha256:2a22bb57cf6662a9
+    last_modified: 2026-11-16T20:14:15Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -172,13 +172,13 @@ sources:
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:abb200f51d7752c9
-    last_modified: 2026-11-15T12:09:27Z
+    digest: sha256:dcb205b39aee2409
+    last_modified: 2026-11-16T20:17:56Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:63dfb3382fc20343
-    last_modified: 2026-11-15T12:09:27Z
+    digest: sha256:e21792d2c86518fa
+    last_modified: 2026-11-16T20:25:28Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -242,8 +242,8 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:039f9c2d3415758d
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:94b11768ec22f35a
+    last_modified: 2026-11-16T20:25:28Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -277,8 +277,8 @@ sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
-    digest: sha256:411e1ddf5c2860cb
-    last_modified: 2026-11-15T12:01:20Z
+    digest: sha256:a427ceebb27333a5
+    last_modified: 2026-11-16T20:17:56Z
   - id: side-ts
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
@@ -447,13 +447,13 @@ sources:
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:b5a24f7ae4e9852c
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:b15c1db318de3f0b
+    last_modified: 2026-11-16T20:25:28Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:71ce374feb2810af
-    last_modified: 2026-11-16T18:28:21Z
+    digest: sha256:7417c5234b060d6a
+    last_modified: 2026-11-16T20:17:56Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -614,7 +614,7 @@ export interface Hole {
 }
 export function holes(ctx: HoleContext): Hole[];          // sorted by rank, then fromYear, then id
 export function nextStep(list: readonly Hole[]): Hole | null;
-export function fills(hole: Hole, taxon: Taxon): boolean; // the one predicate fillers() and suggest.ts share
+export function fills(hole: Hole, taxon: Taxon): boolean; // the one predicate fillers() and suggest.ts share; the hole's start is clipped to JUDGED_FROM_YEAR, so a plant standing only before year 1 fills no judged hole (pre-push fix 1)
 export interface Fillers { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unknown: Taxon[] }
 export function fillers(hole: Hole, pool: readonly Taxon[], verdicts: ReadonlyMap<PlantId, PlantVerdict>,
   holds: ReadonlyMap<PlantId, boolean>, warned: ReadonlySet<PlantId>, members: readonly Taxon[]): Fillers;

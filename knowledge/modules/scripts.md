@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:13Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:56:16Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:35:01Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:9e12df12681c38d6
-    last_modified: 2026-11-16T19:55:56Z
+    digest: sha256:606396d103668a70
+    last_modified: 2026-11-16T20:26:25Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d7febd141cb603ce
-    last_modified: 2026-11-16T19:26:00Z
+    digest: sha256:25e5ed486de7116b
+    last_modified: 2026-11-16T20:01:26Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -113,8 +113,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:b2fe17977dd5adc7
-    last_modified: 2026-11-16T18:28:21Z
+    digest: sha256:4f8af7e6eb4b532d
+    last_modified: 2026-11-16T20:21:19Z
 ---
 
 # Responsibility

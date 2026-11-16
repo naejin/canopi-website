@@ -2,7 +2,7 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:55Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:16:10Z }
 sources:
@@ -74,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:4890cab7af3ac643
-    last_modified: 2026-11-15T11:37:20Z
+    digest: sha256:c056559958f5a0e4
+    last_modified: 2026-11-16T20:26:25Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:c0c5086cbc6f4b8d
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:d871ca3eb6215b08
+    last_modified: 2026-11-16T20:16:07Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:fb1d3e6351899c0e
-    last_modified: 2026-11-15T08:46:56Z
+    digest: sha256:2a22bb57cf6662a9
+    last_modified: 2026-11-16T20:14:15Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -155,5 +155,5 @@ At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied 
 ## PP-B b1a (2026-11-14)
 
 - **"Use it" for a link's place** reverses the old rule that a link's `o=` is never saved over the reader's `canopi-location` (coordinator row 2026-11-14): `state/location.ts` `adoptLinkLocation()` turns a `link` location into the reader's own (`source: 'map'`, kept with `keepLocation`); `views/location/location.tsx` re-exports it as `adopt`, reached through restore.ts's `LocationSettle.adopt`.
-- **Forget this location** also clears the palette's place (spot answers to unsure, soil to the map) and `canopi-place`, besides `canopi-location`; forgetting the reader's own kept location also clears `restore.ts` `locationAtStart`, so Place's climate cards open when a climate is chosen (b1a review round 3, 1).
+- **Forget this location** also clears the palette's place (spot answers to unsure, soil to the map) and `canopi-place`, besides `canopi-location`; forgetting the reader's own kept location also clears `restore.ts` `locationAtStart`, so Place's climate cards open when a climate is chosen (b1a review round 3, 1). On a held page (a link's place shown, or another tab owns the save) it also scrubs the stored record (`persist.ts` `forgetSavedPlace`): its place goes, and its country too when it came from the reader's own location; a link's country, the plants, room and plot stay (pre-push fix 3).
 - Share's tick is "Include my place" (place, not only location): ticked, the link carries `k o l w q r h s`; unticked none of them.

@@ -2,20 +2,20 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:34Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:56Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:42Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:71ce374feb2810af
-    last_modified: 2026-11-16T18:28:21Z
+    digest: sha256:7417c5234b060d6a
+    last_modified: 2026-11-16T20:17:56Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:b5a24f7ae4e9852c
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:b15c1db318de3f0b
+    last_modified: 2026-11-16T20:25:28Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:63dfb3382fc20343
-    last_modified: 2026-11-15T12:09:27Z
+    digest: sha256:e21792d2c86518fa
+    last_modified: 2026-11-16T20:25:28Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -116,7 +116,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   `.ct-offline` status line in `App.tsx`; `views/lazy.tsx` `LoadFailed` says "Needs a connection" and
   retries when the store's `offline` signal turns false (not a listener of its own, which an effect
   added after paint and so missed a connection back in that window: PP-B16b, PP-B exit); the verdict chunk's notice says "Needs a connection" and `store.start()` retries
-  it on `online`; online, Reload retries a retryable part in place (`?retry=n`).
+  it on `online`; online, Reload retries a retryable part in place (`?retry=n`). When the range or marks chunk failed too (`store.verdictNeedsReload`: Chromium keeps a failed module's dependency failed in that document), no retry is offered or run on `online`: the notice, the pool's count line and the Suggest toast show Reload (`load.reload`, a page reload) instead (pre-push fix 4).
 - A guest list that fails (`store.failedPools`, `failedMembers`) is named on the page with its plants not
   checked ("The Tropical list could not be read: …": `{lists}` takes the climate names, `zoneName`, since
   every locale's template carries its own "list" word); only the chosen climate's list failing is the
@@ -124,7 +124,13 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   the failed list's plants (P5-27n; core `suggest()` keeps unread seeds).
 - The verdict chunk refused: `store.verdictFailed`, one alert with Reload; every fit line says "Not checked".
 - Toasts wait under pointer or focus (`store.holdToast`) and return focus to the control that raised them
-  (`focus.ts` `noteToastOpener`, `focusAfterToast`).
+  (`focus.ts` `noteToastOpener`, `focusAfterToast`). Pre-push fix 6: an own plant's × on Place hands the focus to
+  the neighbour's ×, else "Add a plant"; Start over to the toast's Undo; Undo lands on the plant in the region it
+  was removed from (`ToastLine.from`); "Show N outside" and "Show all" to the first shown plant; and `watchFocus`
+  (main.ts) is the safety net: when the focused control leaves the page and focus falls to `<body>`, its
+  region's heading takes it.
+- Place's head on the palette step is a plain place line (count and climate, `.ct-result-sub`), not a
+  heading, so the step has one "Your palette" heading (pre-push fix 7).
 - The sqlite wasm is preloaded with `crossorigin` by `astro.config.mjs` (one wasm, checked at build).
 
 ## Tests

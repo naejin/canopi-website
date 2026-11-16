@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:55:52Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:44Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:35:03Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -106,8 +106,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d7febd141cb603ce
-    last_modified: 2026-11-16T19:26:00Z
+    digest: sha256:25e5ed486de7116b
+    last_modified: 2026-11-16T20:01:26Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -196,13 +196,13 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:caffd30f4ecda69b
-    last_modified: 2026-11-15T06:28:16Z
+    digest: sha256:532127fa0a50b7db
+    last_modified: 2026-11-16T20:25:28Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:e7a1f6ee70b682e3
-    last_modified: 2026-11-16T18:57:05Z
+    digest: sha256:6709d3b6c2980998
+    last_modified: 2026-11-16T20:25:28Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -221,13 +221,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:c0c5086cbc6f4b8d
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:d871ca3eb6215b08
+    last_modified: 2026-11-16T20:16:07Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:63dfb3382fc20343
-    last_modified: 2026-11-15T12:09:27Z
+    digest: sha256:e21792d2c86518fa
+    last_modified: 2026-11-16T20:25:28Z
   - id: add-tsx
     resource: ../../src/islands/consortium/views/Add.tsx
     title: src/islands/consortium/views/Add.tsx

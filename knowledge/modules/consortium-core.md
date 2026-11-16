@@ -6,7 +6,7 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:29Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:58Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -246,8 +246,8 @@ sources:
   - id: retry-import-ts
     resource: ../../src/lib/consortium/retry-import.ts
     title: src/lib/consortium/retry-import.ts
-    digest: sha256:4a85eb9ac17c021c
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:ae0ed9a2fe3bc1c3
+    last_modified: 2026-11-16T20:17:56Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs

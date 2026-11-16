@@ -5,13 +5,13 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:32Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T10:29:26Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:59Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
-    digest: sha256:411e1ddf5c2860cb
-    last_modified: 2026-11-15T12:01:20Z
+    digest: sha256:a427ceebb27333a5
+    last_modified: 2026-11-16T20:17:56Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
@@ -20,13 +20,13 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:e7a1f6ee70b682e3
-    last_modified: 2026-11-16T18:57:05Z
+    digest: sha256:6709d3b6c2980998
+    last_modified: 2026-11-16T20:25:28Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:63dfb3382fc20343
-    last_modified: 2026-11-15T12:09:27Z
+    digest: sha256:e21792d2c86518fa
+    last_modified: 2026-11-16T20:25:28Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -70,8 +70,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d7febd141cb603ce
-    last_modified: 2026-11-16T19:25:04Z
+    digest: sha256:25e5ed486de7116b
+    last_modified: 2026-11-16T20:01:26Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -105,8 +105,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:4890cab7af3ac643
-    last_modified: 2026-11-15T11:37:20Z
+    digest: sha256:c056559958f5a0e4
+    last_modified: 2026-11-16T20:26:25Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -125,8 +125,8 @@ sources:
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
-    digest: sha256:e00d688fb4ccf5e9
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:b09651c41dfe49fb
+    last_modified: 2026-11-16T20:26:25Z
   - id: print-css
     resource: ../../src/styles/consortium/print.css
     title: src/styles/consortium/print.css
@@ -145,8 +145,8 @@ sources:
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:49faf1ab88086e2b
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:d673f4f4098e21b5
+    last_modified: 2026-11-16T20:21:19Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
@@ -160,8 +160,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:caffd30f4ecda69b
-    last_modified: 2026-11-15T06:28:16Z
+    digest: sha256:532127fa0a50b7db
+    last_modified: 2026-11-16T20:25:28Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
