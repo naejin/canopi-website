@@ -471,7 +471,7 @@ test('state: guide presets keep ?plant=&climate=', () => {
 
 // ================= §8 recompute budget =================
 
-test('recompute: flags for 200 members, a suggestion and every Swap list stay fast (≤ 2.5× a same-process baseline; CONSORTIUM_PERF=1 holds 50 ms)', () => {
+test('recompute: flags for 200 members, a suggestion and every Swap list, timed against a same-process baseline and reported', (t) => {
   const all = [...temperate, ...tropical, ...mediterranean];
   const fresh = () => Array.from({ length: 200 }, (_, i) => {
     const t = structuredClone(all[i % all.length]);
@@ -503,8 +503,8 @@ test('recompute: flags for 200 members, a suggestion and every Swap list stay fa
   }
   assert.ok(out.f.length > 0 && out.s.members.length >= 3);
   const ratio = work / base;
-  assert.ok(ratio < 2.5, `cold run ${work.toFixed(1)} ms is ${ratio.toFixed(2)}x the baseline's ${base.toFixed(1)} ms (ceiling 2.5x)`);
-  if (process.env.CONSORTIUM_PERF === '1') assert.ok(work < 50, `${work.toFixed(1)} ms (budget 50 ms)`);
+  // Owner, 2026-11-16 (row "No hard limits"): timings are reported, never a failure.
+  t.diagnostic(`cold run ${work.toFixed(1)} ms, ${ratio.toFixed(2)}x the baseline's ${base.toFixed(1)} ms (reference 2.5x and 50 ms)`);
 });
 
 // E6 R1 (design check §3 chunk 1): the nearest-list table is a leaf both placement files read (cycle
