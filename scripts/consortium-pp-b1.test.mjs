@@ -1214,6 +1214,16 @@ test('second-round review 2: Back to an entry written before Forget brings no fo
     assert.match(arrivalM.hashAction(e3.hash, e3.state, null, false).place ?? '', /l=sun/, 'answers given after the Forget come back');
   } finally { restoreAddress(); store.location.value = null; }
 });
+// Second-round review 3: with no usable storage there is no other tab's save to protect: a reload of
+// the page's own address opens owned (its climate and answers lived only in the address), while
+// storage that works but holds no save keeps the held rule (pre-push fix 5).
+test('second-round review 3: a reload with storage unavailable opens owned; with storage holding no save, held', () => {
+  const state = { ct: 'v=5&c=temperate&l=sun&a=&e=1', src: null, pl: 'l=sun' };
+  const loc = { hash: `#${state.ct}`, search: '' };
+  assert.equal(arrivalM.arrival(loc, null, null, state, false).hold, undefined, 'storage unavailable: owned');
+  assert.equal(arrivalM.arrival(loc, null, null, state, true).hold, true, 'storage works, no save: held');
+  assert.equal(arrivalM.arrival(loc, null, null, { ...state, hold: 1 }, false).hold, true, 'an entry that held stays held');
+});
 test('fix round 4 s-4: "Search all plants" on a page with 6 plants opens the search and keeps every plant saved', async () => {
   await mine(6);
   await wait(0);

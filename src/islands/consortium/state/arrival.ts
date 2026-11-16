@@ -74,12 +74,14 @@ const stillSaved = (saved: SavedRecord | null, own: OwnAddress): boolean =>
 // reader set one (nothing is chosen otherwise: never a default climate).
 // A reload never overwrites a save that differs from what the page last wrote (pre-push fix 5): when
 // storage no longer holds the page's palette (another tab saved since, or removed it), the page opens
-// held, so "Open my saved palette instead" offers the stored one.
-export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null, state: unknown = null): Arrival {
+// held, so "Open my saved palette instead" offers the stored one. storageWorks false (blocked, or kept
+// nothing): there is no other tab's save to protect, so the page opens owned as before; its climate and
+// answers may live only in the address (second-round review 3).
+export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null, state: unknown = null, storageWorks = true): Arrival {
   const hash = loc.hash.replace(/^#/, '');
   const own = ownOf(state);
   if (hash && own && own.ct === hash) {
-    const hold = own.hold || !stillSaved(saved, own);
+    const hold = own.hold || (storageWorks && !stillSaved(saved, own));
     return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl, ...(own.ask ? { ask: true as const } : {}), ...(hold ? { hold: true as const } : {}) };
   }
   if (hash && isLinkFragment(hash)) return { kind: 'link', fragment: hash };
@@ -231,7 +233,7 @@ export function openWith({ how, plan, saved, seed, keptLocation }: Opening): voi
 // placeholder, the prefetch), startMemory acts on it.
 let opened: Arrival | null = null;
 export function openingArrival(): Arrival {
-  return opened ??= arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), memory.read(SITE_CLIMATE), attempt(() => history.state));
+  return opened ??= arrival({ hash: location.hash, search: location.search }, readRecord(memory.read(STORE)), memory.read(SITE_CLIMATE), attempt(() => history.state), memory.works());
 }
 
 let started = false;
