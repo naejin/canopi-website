@@ -167,6 +167,30 @@ const ownPalette = async (page, n) => {
   await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
 };
+// The reader's own n plants on the palette page, at Lyon (Temperate); options go to tool().
+const lyonPalette = async (n, options) => {
+  const page = await tool(options);
+  await atSite(page, 'lyon');
+  await choose(page, 'Temperate');
+  await ownPalette(page, n);
+  return page;
+};
+// Two own plants on the palette page with its Next step's fillers, toasts lasting 0.3 s, none showing.
+const fillersPalette = async () => {
+  const page = await tool({ timeouts: { toast: 300 } });
+  await choose(page, 'Temperate');
+  await ownPalette(page, 2);
+  await page.waitForSelector('.ct-fillers li .button-primary', { timeout: 8000 });
+  await page.evaluate(() => window.__ctTest.store.hideToast());
+  return page;
+};
+// Dismiss the toast from the keyboard and let the focus settle.
+const dismissToast = async (page) => {
+  await page.focus(DISMISS);
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__ctTest.store.toast.value === null, { timeout: 4000 });
+  await frames(page);
+};
 
 test('PP-B26 (b2 marks, F1a-S2 restored, A24; review r1 perf-5): ct:start fires once on a first visit, and ct:first-view once, only when the palette page shows its Next step', async () => {
   // The fit card itself (a hole named, or "No holes"), never the title every branch shows (review r2
@@ -363,11 +387,8 @@ test('PP-B16b (b2 offline, PP-B exit): back online the moment "Needs a connectio
 });
 
 test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus returns to the control that raised it', async () => {
-  const page = await tool({ timeouts: { toast: 300 } });
-  await choose(page, 'Temperate');
-  await ownPalette(page, 2);
-  await page.waitForSelector('.ct-fillers li .button-primary', { timeout: 8000 });
-  await page.evaluate(() => { window.__ctTest.store.hideToast(); document.querySelector('.ct-fillers li .button-primary').dataset.raiser = ''; });
+  const page = await fillersPalette();
+  await page.evaluate(() => { document.querySelector('.ct-fillers li .button-primary').dataset.raiser = ''; });
   await page.focus('[data-raiser]');
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => window.__ctTest.store.toast.value !== null, { timeout: 4000 });
@@ -375,10 +396,7 @@ test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus 
   await undo.focus();
   await new Promise((r) => setTimeout(r, 900));
   assert.notEqual(await page.evaluate(() => window.__ctTest.store.toast.value), null, 'the toast waits while focused (three times its 0.3 s)');
-  await page.focus(DISMISS);
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__ctTest.store.toast.value === null, { timeout: 4000 });
-  await frames(page);
+  await dismissToast(page);
   // The raiser (a Next step filler's Add) leaves as its plant joins: the focus went to the Next step's
   // title, which the toast hands it back to (review r1 conformance-3).
   const at = await page.evaluate(() => { const a = document.activeElement, r = document.querySelector('[data-raiser]'); return { raiser: !!r && a === r, next: a?.id === 'ct-next-t', connected: !!r }; });
@@ -388,10 +406,7 @@ test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus 
 
 test('PP-B20 (b2 verdict chunk refused; review r1 bugs-5): fit lines say "Not checked", never "Fits", the holes say they were computed without it, Retry fetches it again in place, and offline it waits for the connection', async () => {
   const log = [];
-  const page = await tool({ block: { verdict: 404 }, setup: logRequests(log) });
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await ownPalette(page, 2);
+  const page = await lyonPalette(2, { block: { verdict: 404 }, setup: logRequests(log) });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
   assert.ok(await has(page, '.ct-notice[role="alert"]', 4000), 'said once');
   assert.ok((await page.$eval('.ct-palette-page', (e) => e.textContent)).includes(en['consortium.palette.verdictFailed']), 'the holes computed without verdicts, in words');
@@ -417,10 +432,7 @@ test('PP-B20 (b2 verdict chunk refused; review r1 bugs-5): fit lines say "Not ch
 // work. Back online, the page offers Reload, never a Try again that cannot work, and asks for nothing.
 test('PP-B49 (b2 verdict and range chunks refused; pre-push fix 4): back online, the verdict notice offers Reload, never a dead Try again, and the online event asks for no chunk', async () => {
   const log = [];
-  const page = await tool({ block: { verdict: 'offline', range: 'offline' }, setup: logRequests(log) });
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await ownPalette(page, 2);
+  const page = await lyonPalette(2, { block: { verdict: 'offline', range: 'offline' }, setup: logRequests(log) });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
   await page.setOfflineMode(true);
@@ -538,10 +550,7 @@ test('PP-B18 (b2 print at the year step): print draws the side view at the time 
 
 // Owner decision 2026-11-14, "inform, don't block; the grower decides": nothing asks "Add it anyway?".
 test('PP-B25 (b2 inform, don\'t block): an outside-range plant added from a hole in one tap keeps "Outside its climate range" in words on its row, and Undo removes it', async () => {
-  const page = await tool();
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await ownPalette(page, 1);
+  const page = await lyonPalette(1);
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   await page.evaluate(() => window.__ctTest.store.hideToast());
   const show = async () => page.evaluateHandle(() => [...document.querySelectorAll('.ct-next .button')].find((b) => /outside/i.test(b.textContent)) ?? null);
@@ -673,11 +682,7 @@ test('PP-B41 (b2 review r2 hist-1): plants pasted on Your place, then Undo from 
 });
 
 test('PP-B33 (b2 keyboard Add from the Next step; review r1 bugs-2, conformance-3, conformance-9): the focus moves to the Next step, never <body>; the toast names the plant and hands the focus back there', async () => {
-  const page = await tool({ timeouts: { toast: 300 } });
-  await choose(page, 'Temperate');
-  await ownPalette(page, 2);
-  await page.waitForSelector('.ct-fillers li .button-primary', { timeout: 8000 });
-  await page.evaluate(() => window.__ctTest.store.hideToast());
+  const page = await fillersPalette();
   const name = await page.$eval('.ct-fillers li .ct-filler-name', (e) => e.firstChild.textContent.trim());
   await page.focus('.ct-fillers li .button-primary');
   await page.keyboard.press('Enter');
@@ -685,10 +690,7 @@ test('PP-B33 (b2 keyboard Add from the Next step; review r1 bugs-2, conformance-
   await frames(page);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-next-t', 'the focus on the Next step\'s title');
   assert.ok((await page.evaluate(() => window.__ctTest.store.toast.value.text)).includes(name), 'the toast names the plant added');
-  await page.focus(DISMISS);
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__ctTest.store.toast.value === null, { timeout: 4000 });
-  await frames(page);
+  await dismissToast(page);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-next-t', 'the toast hands the focus back to the Next step');
   await done(page);
 });
@@ -824,10 +826,7 @@ test('PP-B38 (b2 laptop; review r1 conformance-7, bugs-11): at 1280 px the Next 
 // garlic, asparagus): conflicts.ts raises Slight with its level since b3 ('Mildly toxic'), so the flag says
 // it in words (marker removed by b3, chunk 2).
 test('PP-B39 (b3 the Slight flag; b2 a second look, review r1 conformance-2): a filler with a warning sits under "Needs a second look" with its warning in words, and adds in one tap', async () => {
-  const page = await tool();
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await ownPalette(page, 1);
+  const page = await lyonPalette(1);
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value && document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
   await page.evaluate(() => window.__ctTest.store.hideToast());
   const look = () => page.$('.ct-next [data-look] li');

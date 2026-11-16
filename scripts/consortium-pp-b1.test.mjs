@@ -246,13 +246,18 @@ test('b1a a link\'s m and z never bring a place; k alone keeps the reader\'s cou
   }
 });
 
-test('b1a Forget this location clears canopi-location, canopi-place and the palette\'s place', async () => {
-  await mine(5);
-  kept.set(PLACE_STORE, 'm=small&l=sun');
+// A stored and current location at Seville, then Forget this location (and its writes settle).
+async function forgetSeville() {
   kept.set(LOCATION_STORE, JSON.stringify({ lat: 37.39, lon: -5.98, source: 'geo' }));
   store.location.value = { lat: 37.39, lon: -5.98, source: 'geo', lookup: null };
   locationM.forget();
   await wait(0);
+}
+
+test('b1a Forget this location clears canopi-location, canopi-place and the palette\'s place', async () => {
+  await mine(5);
+  kept.set(PLACE_STORE, 'm=small&l=sun');
+  await forgetSeville();
   assert.equal(kept.get(LOCATION_STORE), undefined, 'canopi-location goes');
   assert.equal(kept.get(PLACE_STORE), undefined, 'Forget left canopi-place');
   assert.deepEqual(store.spot.peek(), emptyPlace.spot);
@@ -273,10 +278,7 @@ test('b1a Forget this location on a held page: no stored record keeps the spot o
     kept.set(STORE, saveRecord(fragment, '2026-11-16T00:00:00.000Z', src, 'ES', 'l=sun&s=own.acid.-'));
     opened(kept.get(STORE));
     persist.holdSave(true);
-    kept.set(LOCATION_STORE, JSON.stringify({ lat: 37.39, lon: -5.98, source: 'geo' }));
-    store.location.value = { lat: 37.39, lon: -5.98, source: 'geo', lookup: null };
-    locationM.forget();
-    await wait(0);
+    await forgetSeville();
     const after = saved();
     assert.ok(after, `${src}: the save stays`);
     assert.equal(after.place, '', `${src}: the stored spot and soil answers go`);

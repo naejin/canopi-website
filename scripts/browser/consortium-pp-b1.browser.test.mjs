@@ -692,12 +692,18 @@ test('F1a-P7 → PP-B (b1b Suggest waits for the verdict chunk, owner Q2): with 
   assert.ok(await until(page, () => window.__ctTest.store.members.value.length > 0), 'then it suggests');
 });
 
-test('PP-B1 (b1b Suggest and a refused verdict chunk): a waiting Suggest ends with one toast, places nothing and is no longer busy; without a location Suggest never waits for it', async () => {
-  const page = await tool({ block: { verdict: 404 } });
+// A page at Seville on the Mediterranean list, its "Start from a small suggested palette" ready.
+async function sevilleSuggestReady(options) {
+  const page = await tool(options);
   await atSite(page, 'seville');
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
   assert.ok(await has(page, '[data-place-suggest]', 15_000));
   await suggestReady(page);
+  return page;
+}
+
+test('PP-B1 (b1b Suggest and a refused verdict chunk): a waiting Suggest ends with one toast, places nothing and is no longer busy; without a location Suggest never waits for it', async () => {
+  const page = await sevilleSuggestReady({ block: { verdict: 404 } });
   const toasts = await page.evaluate(() => { const { store } = window.__ctTest; window.__toasts = []; store.toast.subscribe((t) => { if (t) window.__toasts.push(t.text); }); return true; });
   assert.ok(toasts);
   await page.click('[data-place-suggest]');
@@ -781,11 +787,7 @@ test('PP-B1 (b1b count line, the plants left out): a sentence under the count sa
 // stalled chunk's Reload (Retry could not work: the import is still pending), and that toast goes
 // if the chunk comes after all.
 test('PP-B1 (b1b Suggest and a stalled verdict chunk): after the wait, a toast with Reload, not Retry; it goes when the chunk comes', async () => {
-  const page = await tool({ block: { verdict: 'hold' }, timeouts: { suggest: 1500 } });
-  await atSite(page, 'seville');
-  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
-  assert.ok(await has(page, '[data-place-suggest]', 15_000));
-  await suggestReady(page);
+  const page = await sevilleSuggestReady({ block: { verdict: 'hold' }, timeouts: { suggest: 1500 } });
   await page.click('[data-place-suggest]');
   assert.ok(await until(page, () => !!window.__ctTest.store.toast.value, 8000), 'a toast once the wait is up');
   const toast = await page.evaluate(() => { const t = window.__ctTest.store.toast.value; return { text: t.text, label: t.action?.label ?? null }; });
