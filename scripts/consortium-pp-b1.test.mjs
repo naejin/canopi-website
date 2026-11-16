@@ -260,6 +260,33 @@ test('b1a Forget this location clears canopi-location, canopi-place and the pale
   assert.equal(store.room.peek(), 'small', 'the room is the palette\'s, kept');
 });
 
+// Pre-push fix 3 (privacy.tool.device: "'Forget this location' clears your location and your spot
+// answers"): on a held page (a link, a guide preset, after Start over) persist writes nothing, so the
+// stored record kept its spot and soil answers and a country from the location, and "Open my saved
+// palette instead" or a plain visit brought them back. A link's own country, the plants, the room and
+// the plot stay.
+test('b1a Forget this location on a held page: no stored record keeps the spot or soil answers or a location-derived country', async () => {
+  for (const src of ['location', 'link']) {
+    await mine(5);
+    const fragment = 'v=5&c=temperate&m=small&z=40&a=&e=1';
+    kept.set(STORE, saveRecord(fragment, '2026-11-16T00:00:00.000Z', src, 'ES', 'l=sun&s=own.acid.-'));
+    opened(kept.get(STORE));
+    persist.holdSave(true);
+    kept.set(LOCATION_STORE, JSON.stringify({ lat: 37.39, lon: -5.98, source: 'geo' }));
+    store.location.value = { lat: 37.39, lon: -5.98, source: 'geo', lookup: null };
+    locationM.forget();
+    await wait(0);
+    const after = saved();
+    assert.ok(after, `${src}: the save stays`);
+    assert.equal(after.place, '', `${src}: the stored spot and soil answers go`);
+    assert.equal(after.fragment, fragment, `${src}: the plants, room and plot stay`);
+    if (src === 'location') { assert.equal(after.country, undefined, 'a country from the location goes'); assert.equal(after.src, null); }
+    else assert.deepEqual([after.src, after.country], ['link', 'ES'], 'a link\'s own country stays');
+    assert.ok(isHeld(), 'the page still holds the save');
+    persist.holdSave(false);
+  }
+});
+
 // ---- review round 1 (b1a-review-r1: bugs-1 to bugs-5, bugs-7 to bugs-10) ----
 
 // focus.ts waits two frames before it moves the focus; Node has no frames (and no document to focus).

@@ -263,6 +263,21 @@ function writeSave(next: string): void {
   if (memory.write(STORE, next)) lastSave.value = next;
 }
 
+// "Forget this location" (location.ts forget; privacy.tool.device): the stored record keeps no spot
+// or soil answers and no country from the location, held page or not (pre-push fix 3: a held page
+// writes nothing, so its save kept them and "Open my saved palette instead" or a plain visit brought
+// them back). A link's own country (src 'link'), the plants, the room and the plot (the fragment) stay.
+// own: the reader's own location was forgotten (a link's location goes alone, so the country the
+// reader's kept location gave stays with that location).
+export function forgetSavedPlace(own: boolean): void {
+  const r = readRecord(memory.read(STORE));
+  if (!r) return;
+  const fromLocation = own && r.src === 'location';
+  if (!r.place && !fromLocation) return;
+  const next = saveRecord(r.fragment, r.at, fromLocation ? null : r.src, fromLocation ? null : r.country ?? null, '');
+  if (memory.write(STORE, next)) lastSave.value = next;
+}
+
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
 // nothing written (browsers drop replaceState calls past a rate limit).
 // The fragment this page last wrote into the address bar ('' for none): a hashchange onto it is the
