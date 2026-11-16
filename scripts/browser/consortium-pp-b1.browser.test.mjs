@@ -182,7 +182,7 @@ test('PP-B2 (b1a r3-1 Forget with a kept climate): after the saved location is r
     sessionStorage.setItem('seeded', '1');
     for (const [k, v] of Object.entries(all)) localStorage.setItem(k, v);
   }, { 'canopi-climate': 'temperate', 'canopi-location': rec }) });
-  assert.ok(await until(page, () => !!window.__ctTest?.store.location.value?.lookup && window.__ctTest.store.climate.value === 'Temperate', 60_000), 'the saved location was read');
+  assert.ok(await until(page, () => !!window.__ctTest?.store?.location.value?.lookup && window.__ctTest.store.climate.value === 'Temperate', 60_000), 'the saved location was read');
   assert.equal(await cardsShown(page), false, 'with the saved location the cards wait behind the link');
   assert.ok(await has(page, aria('button', W('location.forget')), 4000), 'Forget this location');
   await page.locator(aria('button', W('location.forget'))).click();
@@ -314,7 +314,7 @@ test('PP-B2 (b1a fix round 1, b1a2-1 a climate changed in the sheet): a Temperat
   assert.ok(await until(page, () => window.__ctTest.store.climate.value === 'Mediterranean', 4000), 'another climate');
   assert.ok(await until(page, (ids) => ids.every((id) => window.__ctTest.store.memberTaxa.value.some((t) => t.id === id)), 8000, only), 'the Temperate-only plants are drawn');
   await page.reload();
-  assert.ok(await until(page, (b) => window.__ctTest?.store.members.value.slice().sort().join() === b && window.__ctTest.store.climate.value === 'Mediterranean', 30_000, before), 'a reload lost a plant');
+  assert.ok(await until(page, (b) => window.__ctTest?.store?.members.value.slice().sort().join() === b && window.__ctTest.store.climate.value === 'Mediterranean', 30_000, before), 'a reload lost a plant');
 });
 
 // b1a2-2 (fix round 1): a climate with no list of its own here says why in the sheet, with what Place
@@ -376,11 +376,11 @@ test('PP-B2 (b1a fix round 3, r3-4 entries without st from before the deploy): a
   await pasteLink(page, `#${await v5(4)}`, 4);
   await strip();
   await page.reload();
-  assert.ok(await until(page, () => window.__ctTest?.store.members.value.length === 4, 30_000), 'the reload opens the link');
+  assert.ok(await until(page, () => window.__ctTest?.store?.members.value.length === 4, 30_000), 'the reload opens the link');
   await new Promise((r) => setTimeout(r, 300));
   await page.evaluate(() => history.back());
   assert.ok(await until(page, (p) => location.hash === p, 8000, P), 'the entry before the link was rewritten with the link');
-  assert.ok(await until(page, (k) => window.__ctTest?.store.members.value.length === k, 30_000, n), 'the palette before the link reopens');
+  assert.ok(await until(page, (k) => window.__ctTest?.store?.members.value.length === k, 30_000, n), 'the palette before the link reopens');
 });
 
 // c-4 (board ChangePlace): the sheet's foot has "Start over" and "Done"; Done closes it.
@@ -401,7 +401,7 @@ test('PP-B2 (b1a owner 2026-11-15, Place adds saved): a plant added on Place sta
   await addByName(page, await temperateName(3), 1);
   assert.ok(await until(page, () => localStorage.getItem('canopi-consortium') !== null, 4000), 'the plant added on Place is not saved on the device');
   await page.reload();
-  assert.ok(await until(page, () => window.__ctTest?.store.members.value.length === 1, 30_000), 'a reload on Place lost the plant');
+  assert.ok(await until(page, () => window.__ctTest?.store?.members.value.length === 1, 30_000), 'a reload on Place lost the plant');
 });
 
 test('PP-B2 (b1a UI hand-off, failed-chunk notice): a sheet whose chunk fails says so with Reload where it covers nothing, at 390, 960 and 1280 px', async () => {
