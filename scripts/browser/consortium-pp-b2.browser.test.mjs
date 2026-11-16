@@ -397,6 +397,10 @@ test('PP-B21 (b2 a guest list fails): the list is named as missing and its plant
   assert.ok(await onPage(page), 'the palette page');
   const line = en['consortium.palette.listFailed'].split('{lists}')[0].replace(/^(one|other):\s*/, '').trim();
   assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t) && n.textContent.includes('Mediterranean')), { timeout: 8000 }, line).then(() => true, () => false), 'the Mediterranean list named as missing');
+  // PP-B exit (2026-11-16): {lists} is the climate's own name in every locale's template (zoneName), so
+  // the line never reads "The the Mediterranean list list".
+  const whole = en['consortium.palette.listFailed'].split('|')[0].replace(/^one:\s*/, '').trim().replace('{lists}', 'Mediterranean').replace('#', '1');
+  assert.ok(await page.evaluate((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t)), whole), `the line reads "${whole}"`);
   assert.equal(await page.evaluate(() => window.__ctTest.store.load.value.status), 'ready', 'the tool stays');
   assert.deepEqual(await page.evaluate(() => window.__ctTest.store.guestsPending.value), [], 'not "loading" for ever');
   // Review r1 bugs-8: a hole its missing plants may fill is never named: the Next step says why.

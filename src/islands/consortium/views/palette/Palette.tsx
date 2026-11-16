@@ -21,7 +21,7 @@ import { P, T } from '../../strings.ts';
 import { markFirstView } from '../kit/start-mark.ts';
 import { prefetchLater } from '../lazy.tsx';
 import { holeWords } from '../kit/fit.tsx';
-import { listName } from '../kit/names.ts';
+import { listOf, zoneName } from '../kit/names.ts';
 import { JobsPicture } from './JobsPicture.tsx';
 import { NextStep, openFillers } from './NextStep.tsx';
 import { Weigh } from './Weigh.tsx';
@@ -101,7 +101,7 @@ export function Palette() {
       <h2 data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
       {store.verdictFailed.value && <VerdictNotice />}
       {failedLists.length > 0 && (
-        <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: failedLists.map(listName).join(', ') })} {off ? T('load.needsConnection')
+        <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {off ? T('load.needsConnection')
           : <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('load.reload')}</button>}</p>
       )}
       <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
