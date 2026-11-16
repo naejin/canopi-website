@@ -202,7 +202,12 @@ export async function savedOpening({ list = null } = {}) {
       Object.defineProperty(window, '__ctTest', { configurable: true, get: () => hook, set: (v) => {
         hook = v;
         if (!v?.store || !outcome) return;
-        v.store.source.subscribe((src) => {
+        // The source is wrapped as it is assigned, before any subscriber runs: a subscribe() callback
+        // ran after the store's own watchPools effect had started the restore's read with the plain
+        // method, so the fault never landed (PP-B exit, 2026-11-16: P5-27i failed every run).
+        const sig = v.store.source, plain = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(sig), 'value');
+        Object.defineProperty(sig, 'value', { configurable: true, get() { return plain.get.call(this); }, set(src) { wrap(src); plain.set.call(this, src); } });
+        function wrap(src) {
           if (!src || src.wrapped) return;
           src.wrapped = true;
           const read = src.interactions.bind(src);
@@ -212,7 +217,7 @@ export async function savedOpening({ list = null } = {}) {
             once = false;
             return new Promise((resolve, reject) => { v.store.location.subscribe((l) => { if (l?.lookup) setTimeout(() => (outcome === 'fail' ? reject(new Error('test: list unreadable')) : resolve(read(z))), 50); }); });
           };
-        });
+        }
       } });
     }, JSON.stringify({ fragment: q, at: '2026-11-01', src: 'chosen' }), JSON.stringify({ lat: SITES.seville[0], lon: SITES.seville[1], source: 'geo' }), list) });
   await ready(page);

@@ -29,6 +29,8 @@ type Loader = typeof import('./data/load.ts');
 let loader: Promise<Loader> | null = null;
 const getLoader = () => (loader ??= import('./data/load.ts').catch((err: unknown) => { loader = null; throw err; }));
 
+// The browser-test build's hook chunk (test-hook.ts), once asked for; null in a production build.
+let testHook: Promise<unknown> | null = null;
 // Retry opens a new database: the one opened before is closed first (store.setSource).
 async function open(data: PageData): Promise<void> {
   load.value = { status: 'loading', error: null };
@@ -46,6 +48,10 @@ async function open(data: PageData): Promise<void> {
       opened.db.close(); // never left open (pre-push review 4)
       throw err;
     }
+    // The browser-test build hands the source over only once the test hook is in, so a test's fault on
+    // the source (window.__ctTest set before the island) is in place before the first read; the hook
+    // is a dynamic import racing the database (PP-B exit, P5-27i). A production build drops the line.
+    if (__CT_TEST_HOOK__) await testHook?.catch(() => {});
     setSource(source, () => opened.db.close());
     load.value = { status: 'ready', error: null };
   } catch (err) {
@@ -122,6 +128,8 @@ if (root && data) {
     if (f && s?.ct === f) adoptEntry(s);
     else if (f && f !== currentFragment()) forgetEntries();
   });
+  // The test build's hook, asked for first (open() waits for it before handing over the source).
+  if (__CT_TEST_HOOK__) testHook = import('./test-hook.ts');
   // The database first: its loader chunk is on the way while the memory starts (the country guess).
   void open(data);
   startMemory();
@@ -135,7 +143,7 @@ if (root && data) {
   // (design check A13) and the render follows at once. A hook that fails to load (or a first render
   // that throws) ends the wait with a load error naming it (harness loadState reads 'test-hook').
   if (__CT_TEST_HOOK__) {
-    void import('./test-hook.ts').then(show).catch((err: unknown) => {
+    void testHook!.then(show).catch((err: unknown) => {
       const why = `Consortium test build: the test hook or the first render failed: ${(err as Error)?.message ?? String(err)}`;
       console.error(why);
       const p = document.createElement('p');
