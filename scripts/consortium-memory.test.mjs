@@ -110,9 +110,12 @@ test('one zoneOf: the island reads climate ids with the core\'s (H15)', async ()
 
 test('arrival: the page\'s own address after a reload is the save, not a shared link (review 1)', () => {
   const own = { ct: 'v=5&c=temperate&m=small&a=&e=1', src: 'chosen', pl: 'l=sun' };
-  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=small&a=&e=1', search: '' }, null, null, own), { kind: 'saved', fragment: own.ct, at: '', src: 'chosen', place: 'l=sun' }, 'history.state.pl comes back as the place');
+  const stored = { fragment: own.ct, place: 'l=sun', at: '2026-11-16', src: 'chosen' };
+  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=small&a=&e=1', search: '' }, stored, null, own), { kind: 'saved', fragment: own.ct, at: '', src: 'chosen', place: 'l=sun' }, 'history.state.pl comes back as the place');
+  // Pre-push fix 5: storage no longer holding the page's palette (none, another palette, other answers): held.
+  for (const other of [null, { ...stored, fragment: 'v=5&c=tropical&a=&e=1' }, { ...stored, place: 'l=shade' }]) assert.equal(arrival({ hash: `#${own.ct}`, search: '' }, other, null, own).hold, true, JSON.stringify(other));
   assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=large&a=&e=1', search: '' }, null, null, own), { kind: 'link', fragment: 'v=5&c=temperate&m=large&a=&e=1' }, 'another link in the address is a link');
-  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=small&a=&e=1', search: '' }, null, null, { ct: own.ct, src: 'link' }).src, 'link', 'a country first opened from a link stays labelled so');
+  assert.deepEqual(arrival({ hash: '#v=5&c=temperate&m=small&a=&e=1', search: '' }, stored, null, { ct: own.ct, src: 'link' }).src, 'link', 'a country first opened from a link stays labelled so');
   assert.equal(arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, null, null, 'junk').kind, 'link');
 });
 

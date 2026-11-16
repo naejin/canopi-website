@@ -43,15 +43,33 @@ const ownOf = (v: unknown): OwnAddress | null => {
   return typeof ct === 'string' && ct ? { ct, src: fromOf(src), pl: typeof pl === 'string' && pl.length < 2_000 ? pl : '', ask: ask === 1, hold: hold === 1 } : null;
 };
 
+// The spot and soil answers of a place string, without a link's country `k` and cell `o` (the tab's
+// place carries them, the save's never does).
+const answersOf = (place: string): string => {
+  const q = new URLSearchParams(place);
+  q.delete('k'); q.delete('o');
+  return q.toString();
+};
+// Whether storage still holds the palette an owned page wrote before its reload (pre-push fix 5): its
+// fragment, and its place unless a link's place waited (the save then kept the reader's own place).
+const stillSaved = (saved: SavedRecord | null, own: OwnAddress): boolean =>
+  !!saved && saved.fragment === own.ct && (own.ask || answersOf(saved.place) === answersOf(own.pl));
+
 // What the page opens with, in order: the page's own address after a reload (history.state.ct is
 // the fragment: the save, with its country label); a share link in the fragment; a guide preset in
 // the query; a v1 query link (?v=3&c=…&a=…: the outdated notice, nothing restored, owner row
 // 2026-11-11); the last consortium on this device; else Start, on the shared site climate when the
 // reader set one (nothing is chosen otherwise: never a default climate).
+// A reload never overwrites a save that differs from what the page last wrote (pre-push fix 5): when
+// storage no longer holds the page's palette (another tab saved since, or removed it), the page opens
+// held, so "Open my saved palette instead" offers the stored one.
 export function arrival(loc: { hash: string; search: string }, saved: SavedRecord | null, siteClimate: string | null, state: unknown = null): Arrival {
   const hash = loc.hash.replace(/^#/, '');
   const own = ownOf(state);
-  if (hash && own && own.ct === hash) return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl, ...(own.ask ? { ask: true as const } : {}), ...(own.hold ? { hold: true as const } : {}) };
+  if (hash && own && own.ct === hash) {
+    const hold = own.hold || !stillSaved(saved, own);
+    return { kind: 'saved', fragment: hash, at: '', src: own.src, place: own.pl, ...(own.ask ? { ask: true as const } : {}), ...(hold ? { hold: true as const } : {}) };
+  }
   if (hash && isLinkFragment(hash)) return { kind: 'link', fragment: hash };
   const preset = readPreset(loc.search);
   if (preset.climate) return { kind: 'preset', climate: preset.climate, plant: preset.plant };
@@ -63,13 +81,14 @@ export function arrival(loc: { hash: string; search: string }, saved: SavedRecor
 // A hashchange (a pasted link, or Back/Forward): the page's own address (history.state.ct, as
 // arrival reads it) reopens as the save with its country source; another link opens as a link; the
 // address of the consortium shown, or a fragment that is no link, is ignored. hold: the entry's page
-// held the save, so it stays held (8.3).
+// held the save, so it stays held (8.3), and so does any entry while storage no longer holds what this
+// page last wrote or read (storageMoved: another tab saved or removed it since; pre-push fix 5).
 export type HashAction = { kind: 'ignore' } | { kind: 'saved'; fragment: string; src: CountryFrom; place: string; hold?: true } | { kind: 'link'; fragment: string };
-export function hashAction(hash: string, state: unknown, current: string | null): HashAction {
+export function hashAction(hash: string, state: unknown, current: string | null, storageMoved = false): HashAction {
   const f = hash.replace(/^#/, '');
   if (!f || !isLinkFragment(f) || f === current) return { kind: 'ignore' };
   const own = ownOf(state);
-  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl, ...(own.hold ? { hold: true as const } : {}) };
+  if (own && own.ct === f) return { kind: 'saved', fragment: f, src: own.src, place: own.pl, ...(own.hold || storageMoved ? { hold: true as const } : {}) };
   return { kind: 'link', fragment: f };
 }
 
@@ -238,7 +257,7 @@ export function startMemory(): void {
   // A link pasted into the open tab: opened, unless it is the page's own address (review 3).
   // Back/Forward to the page's own address reopens it as the save, its country label kept (round 2).
   window.addEventListener('hashchange', () => {
-    const act = hashAction(location.hash, attempt(() => history.state), currentFragment());
+    const act = hashAction(location.hash, attempt(() => history.state), currentFragment(), memory.read(STORE) !== lastSave.peek());
     if (act.kind === 'ignore') return;
     const keep = shows();
     if (act.kind === 'saved') { void restore(act.fragment, { from: 'saved', src: act.src, keep, place: act.place, hold: act.hold }); return; }

@@ -837,3 +837,20 @@ test('PP-B70 (b1a refused arrival): an old v4 link shows Place with the outdated
   assert.notEqual(state.ready, 'ready', 'shown before the plants were read');
   assert.equal(state.placeholder, false, 'no "Opening your palette…" placeholder');
 });
+
+// Pre-push fix 5: a reload of a page that owned its save, after another tab saved a different palette,
+// never writes over it: the page opens held, and "Open my saved palette instead" offers the stored one.
+test('PP-B71 (b1a reload after another tab saved): the reload leaves the other tab\'s save as it is and offers "Open my saved palette instead"', async () => {
+  const page = await tool();
+  await choose(page, 'Temperate');
+  const ids = await temperateIds();
+  await page.evaluate((x) => window.__ctTest.store.addMembers(x), ids.slice(0, 5));
+  assert.ok(await until(page, () => !!localStorage.getItem('canopi-consortium'), 8000), 'the page owns and writes its save');
+  const other = JSON.stringify({ fragment: await v5(2), place: '', at: '2026-11-16T10:00:00.000Z', src: null });
+  await page.evaluate((x) => localStorage.setItem('canopi-consortium', x), other);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.members.value.length === 5, { timeout: 20_000 }).then(() => true, () => false), 'the reload restores the page\'s own palette');
+  assert.ok(await has(page, '[data-open-saved]', 8000), '"Open my saved palette instead" names the stored palette');
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(await page.evaluate(() => localStorage.getItem('canopi-consortium')), other, 'the other tab\'s save is left as it is');
+});

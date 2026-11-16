@@ -91,11 +91,12 @@ test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the
   const rec = readRecord(saveRecord('v=5&c=temperate&m=pots&a=&e=1', '2026-11-14', 'location', 'KE', 'l=shade&w=dry'));
   assert.deepEqual(rec, { fragment: 'v=5&c=temperate&m=pots&a=&e=1', place: 'l=shade&w=dry', at: '2026-11-14', src: 'location', country: 'KE' });
   assert.deepEqual(arrivalM.arrival({ hash: '', search: '' }, rec, null), { kind: 'saved', fragment: rec.fragment, at: '2026-11-14', src: 'location', place: 'l=shade&w=dry' });
-  // A reload of the page's own address: the tab's place (history.state.pl), not the shared save's.
-  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'chosen', pl: 'l=sun' }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'chosen', place: 'l=sun' });
+  // A reload of the page's own address: the tab's place (history.state.pl), not the shared save's;
+  // held, since the save holds another palette (pre-push fix 5: never written over).
+  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'chosen', pl: 'l=sun' }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'chosen', place: 'l=sun', hold: true });
   // A reload while a link's place still waited (history.state ask: 1, with the link's country in pl):
   // asked again, so the save stays held until the reader chooses.
-  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'link', place: 'k=FR&l=sun', ask: true });
+  assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'link', place: 'k=FR&l=sun', ask: true, hold: true });
   // A save with no v, and v4 / v6 saves: not a record; v4 alone is the older one.
   for (const f of ['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1']) assert.equal(readRecord(saveRecord(f, 'x', null)), null, f);
   assert.deepEqual(['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1'].map((f) => oldRecord(saveRecord(f, 'x', null))), [false, true, false]);
@@ -1128,6 +1129,41 @@ test('fix round 4 s-3: a plant added while a link\'s place question is open: a r
     assert.ok(restoreM.linkPlace.peek(), 'the place question is asked again');
     assert.equal(isHeld(), false, 'the reload held a page that owns its save');
   } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; }
+});
+// Pre-push fix 5: a reload (or Back/Forward) of a page that owned its save never overwrites a save
+// another tab wrote since (or removed): history.state.ct alone said "the save", the restore owned it
+// and persist wrote it over the other tab's newer palette, silently. Now the page opens held when
+// storage no longer holds its palette, so "Open my saved palette instead" offers the stored one.
+test('pre-push fix 5: a reload of an owned page whose save another tab replaced (or removed) opens held; the stored save stays, and "Open my saved palette instead" names it', async () => {
+  const restoreAddress = fakeAddress();
+  try {
+    for (const other of ['replaced', 'removed']) {
+      await mine(5);
+      await wait(0);
+      assert.equal(isHeld(), false, 'the page owns its save');
+      const own = history.state;
+      assert.ok(own?.ct && own.hold === undefined, 'the address marks the owned page');
+      // Storage still holds this page's palette: a reload stays owned (s-3).
+      assert.equal(arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state).hold, undefined, 'storage unchanged: owned');
+      assert.equal(arrivalM.hashAction(location.hash, history.state, null, false).hold, undefined, 'Back/Forward, storage unchanged: owned');
+      // Another tab saves P2 (or Start over there removes the save).
+      const p2 = saveRecord(await linkWith('Tropical', 3), '2026-11-16T10:00:00.000Z', null, null, '');
+      if (other === 'replaced') kept.set(STORE, p2); else kept.delete(STORE);
+      assert.equal(arrivalM.hashAction(location.hash, history.state, null, true).hold, true, `Back/Forward, save ${other}: held`);
+      // The reload: every page starts held, and lastSave is what storage holds now (startMemory).
+      persist.holdSave(true);
+      opened(kept.get(STORE) ?? null);
+      const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state);
+      assert.equal(how.kind, 'saved');
+      assert.equal(how.hold, true, `save ${other}: the reload opens held`);
+      assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, hold: how.hold }), true);
+      await wait(0);
+      assert.equal(isHeld(), true, 'held after the restore');
+      assert.equal(kept.get(STORE), other === 'replaced' ? p2 : undefined, `the other tab's save (${other}) is left as it is`);
+      assert.equal(persist.savedInstead.peek()?.fragment ?? null, other === 'replaced' ? readRecord(p2).fragment : null, '"Open my saved palette instead" names the stored palette');
+      persist.holdSave(false);
+    }
+  } finally { restoreAddress(); }
 });
 test('fix round 4 s-4: "Search all plants" on a page with 6 plants opens the search and keeps every plant saved', async () => {
   await mine(6);
