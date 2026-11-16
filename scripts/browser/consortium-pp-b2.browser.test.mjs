@@ -964,7 +964,8 @@ test('PP-B48 (b2 review r3 hash-1): a shared link, Details opened and closed wit
 test('PP-B48b (b2 review r3 hash-1, no Navigation API): the same, in a browser without the Navigation API', () => pasteAgain({ noNavigationApi: true }));
 
 // ---- scale (owner directive 2026-11-14: smooth to 200 plants), CPU throttled 4× through CDP ----
-// The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Budgets:
+// The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Reference
+// figures (reported, never a failure since 2026-11-16, owner row "No hard limits"):
 // navigation → Next step visible 2.5 s; one Add from the Next step → the page updated 300 ms; no long task
 // over LONG_TASK_MS after the page is up; the palette page's DOM at most SCALE_DOM.
 // DOM budget raised at the PP-B exit (2026-11-16, row "Size budgets are a tripwire": no structural
@@ -987,7 +988,7 @@ const LONG_TASK_MS = 300;
 //   after load (native compile, style and layout once the later chunks are fetched, no island JS on top).
 // - 10 plants (fixed costs): Next step 2.0-2.1 s stubbed (3.1-4.4 s not), Add 89-141 ms, no long task.
 // The marker went at the PP-B exit (2026-11-16): Next step 1.6-2.1 s, Add within 300 ms.
-test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette shows its Next step within 2.5 s, one Add updates the page within 300 ms, no long task over 300 ms, the DOM within budget @real-data', { timeout: 240_000 }, async (t) => {
+test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette shows its Next step and takes one Add; timings and DOM reported against reference figures @real-data', { timeout: 240_000 }, async (t) => {
   const { savedRecord200 } = await import('../palette-200.mjs');
   const record = await savedRecord200();
   const figures = [], misses = [];
@@ -1035,5 +1036,7 @@ test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette
       await page.browserContext().close().catch(() => {});
     }
   }
-  assert.deepEqual(misses, [], `scale budgets missed: ${misses.join('; ')}`);
+  // Owner, 2026-11-16 (row "No hard limits"): the timings and the DOM count are measured and reported,
+  // never a failure; the test fails only if a 200-plant palette does not work (no Next step, no Add).
+  if (misses.length) t.diagnostic(`over the reference figures (reported, not a failure): ${misses.join('; ')}`);
 });

@@ -522,6 +522,10 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // is first checked for a structural mistake, else raised by the measured amount in a dated line. An
 // empty role (likely and native until S5e) has no chunk to cap yet; it gets its A14 maximum. (The E6 B4
 // caps of 2026-11-13 were set the same way.)
+// Owner, 2026-11-16 (row "No hard limits"): sizes are measured and reported, never a failure; the
+// size-optimisation stage trims. Over-reference sizes print as warnings below; the structural checks
+// (what loads lazily, what the first run reaches) and the Workers platform limits still fail.
+const sizeNotes = [];
 const FIRST_RUN_BUDGET = 40 * 1024; // measured 40,953 B at the PP-B exit tip (7 B under)
 const KB = 1024;
 const ROLE_CAPS = {
@@ -581,13 +585,13 @@ for (const lang of locales) {
   report.location = gz(lazy.location);
   report.maplibre = gz(lazy.maplibre) + roles.maplibreCss.reduce((n, p) => n + gzipSync(readFileSync(join(root, p)), { level: 9 }).length, 0);
   if (locationSource) assert.ok(report.maplibre > 0, `${path}: MapLibre counts 0 bytes: its chunks were not found`);
-  assert.ok(report.location <= LOCATION_BUDGET, `${path}: the location part is ${kb(report.location)} gzip, the budget is 20 KB`);
-  assert.ok(report.maplibre <= MAPLIBRE_BUDGET, `${path}: MapLibre is ${kb(report.maplibre)} gzip, the budget is 330 KB`);
+  if (report.location > LOCATION_BUDGET) sizeNotes.push(`${path}: the location part is ${kb(report.location)} gzip, the reference is 20 KB`);
+  if (report.maplibre > MAPLIBRE_BUDGET) sizeNotes.push(`${path}: MapLibre is ${kb(report.maplibre)} gzip, the reference is 330 KB`);
   // Per-part caps (A14).
   const roleOf = (p) => Object.entries(roles.features).find(([, list]) => list.includes(p))?.[0];
   for (const [chunk, cost] of Object.entries(lazy.costs)) {
     const role = roleOf(chunk);
-    assert.ok(cost.bytes <= ROLE_CAPS[role], `${path}: the ${role} part ${chunk} costs ${kb(cost.bytes)} gzip on first use (${cost.chunks.join(', ')}), its cap is ${kb(ROLE_CAPS[role])} (a raise is a coordinator row)`);
+    if (cost.bytes > ROLE_CAPS[role]) sizeNotes.push(`${path}: the ${role} part ${chunk} costs ${kb(cost.bytes)} gzip on first use (${cost.chunks.join(', ')}), its reference is ${kb(ROLE_CAPS[role])}`);
     report.costs[role] = Math.max(report.costs[role] ?? 0, cost.bytes);
   }
   // The first run.
@@ -596,7 +600,7 @@ for (const lang of locales) {
   for (const p of roleChunks) assert.ok(!firstRun.includes(p) && lazy.parts.includes(p), `${path}: the ${roleOf(p)} chunk ${p} is reached only through a dynamic import, not from the island's first run`);
   report.firstRun = gz(firstRun);
   report.firstRunList = firstRun;
-  assert.ok(report.firstRun < FIRST_RUN_BUDGET, `${path}: the island's first run is ${kb(report.firstRun)} gzip, the budget is ${FIRST_RUN_BUDGET / KB} KB`);
+  if (report.firstRun >= FIRST_RUN_BUDGET) sizeNotes.push(`${path}: the island's first run is ${kb(report.firstRun)} gzip, the reference is ${FIRST_RUN_BUDGET / KB} KB`);
   // Every island chunk is first run, the glue's (and what the glue imports statically), or a part's.
   const glueOwn = staticClosure(graph, glue);
   const costed = new Set(Object.values(lazy.costs).flatMap((c) => c.chunks));
@@ -635,6 +639,7 @@ for (const lang of locales) {
   report.preloads = modules;
 }
 const costLine = Object.keys(ROLE_CAPS).map((r) => `${r} ${report.costs[r] === undefined ? 'none' : kb(report.costs[r])}/${kb(ROLE_CAPS[r])}`).join(', ');
+for (const n of sizeNotes) console.warn(`size warning (reported, not a failure): ${n}`);
 console.log(`Consortium island JS (gzip -9, caps per chunk, no total): first run ${kb(report.firstRun)} over ${report.firstRunList.map((p) => p.replace('/_astro/', '')).join(', ')} (budget ${FIRST_RUN_BUDGET / KB} KB); parts on first use, largest per role/cap: ${costLine}; location with what only it reaches ${kb(report.location)} (budget 20 KB${locationSource ? '' : ', none before S5b'}); MapLibre with its worker and CSS ${kb(report.maplibre)} (budget 330 KB); modulepreload ${report.preloads.map((p) => p.replace('/_astro/', '')).join(', ')}.`);
 
 // P5 design check A: Workers static assets take at most 20,000 files on the Free plan (100,000 Paid);
