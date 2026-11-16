@@ -17,7 +17,9 @@ const words = (m: SiteFitMessage): string => T(m.key, m.vars && Object.fromEntri
 // What the site check could not decide, said aloud (never a silent fit, A7).
 export const unknownWords = (t: Taxon, site: Site): string[] => unknownsOf(siteFitMessages(t, site)).map(words);
 
-export interface Line { text: string; kind: Flag['kind'] | 'soft' }
+// level: a toxicity line's colour (inventory F5, owner: Slight the warning token, Moderate and Severe
+// the danger token; words and icon always). Your plants and Details colour by it; other lines are warnings.
+export interface Line { text: string; kind: Flag['kind'] | 'soft'; level?: 'warning' | 'danger' }
 // A plant's flags as lines: misfits, conflicts (high ones "serious"), invasive here, toxicity.
 // Low conflicts are left to details (soft: false keeps them, for the dialog).
 export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = false } = {}): Line[] {
@@ -38,7 +40,8 @@ export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = fal
     } else if (f.kind === 'invasive') {
       out.push({ text: T('d.invHere', { country: countryName(scene.country ?? '') }), kind: 'invasive' });
     } else if (f.kind === 'toxicity' && t.warnings.toxicity) {
-      out.push({ text: T('details.tox', { level: T(`tox.${t.warnings.toxicity.level}`) }), kind: 'toxicity' });
+      const level = t.warnings.toxicity.level;
+      out.push({ text: T('details.tox', { level: T(`tox.${level}`) }), kind: 'toxicity', level: level === 'Slight' ? 'warning' : 'danger' });
     }
   }
   return out;

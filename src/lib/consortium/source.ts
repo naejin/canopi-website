@@ -2,7 +2,8 @@
 // implements it with SQL over the gzipped SQLite export (src/islands/consortium/data/sqlite-source.ts,
 // stream S1); the app can implement it over its own catalogue later. Plain records only: the core
 // computes site fit, verdicts and reason counts from pool(), so every source gets them free.
-import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, LayerValue, Locale, Placement, PlantId, SourceInfo, Taxon } from './types.ts';
+import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, LayerValue, Locale, PeriodId, Placement, PlantId, SourceInfo, Taxon } from './types.ts';
+import { periodIds } from './types.ts';
 
 export interface PlantSource {
   info(): SourceInfo;
@@ -36,8 +37,9 @@ export type LoadFailure = (typeof loadFailures)[number];
 
 // ---- factAt (ADR-6, E6 R4): the plant facts that depend on the site and the climate period ----
 
-// The period a view reads today's facts for (SitePeriod.period of the historical scenario).
-export const TODAY_PERIOD = '1991-2020';
+// The period a view reads today's facts for (SitePeriod.period of the historical scenario): the one
+// "today", periodIds[0].
+export const TODAY_PERIOD: PeriodId = periodIds[0];
 // Each fact as the PlantSource stored it (null: not recorded, never a misfit). Read through factAt only,
 // so F2 (per site and period) and E7 (scoped stored facts) change one place, not the views.
 const STORED: { [K in FactKey]: (t: Taxon) => FactValues[K] | null } = {

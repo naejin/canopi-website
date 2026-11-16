@@ -151,7 +151,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const soft = [
     ...unknownWords(t, scene.site),
     ...invasiveSoft(t),
-    ...(t.warnings.toxicity === null ? [T('d.toxUnk')] : t.warnings.toxicity.level === 'Slight' ? [T('details.tox', { level: T('tox.Slight') })] : []),
+    ...(t.warnings.toxicity === null ? [T('d.toxUnk')] : []), // a recorded level is a flag line (kit/flags.ts), Slight too
     T(t.warnings.allelopathic === true ? 'd.allelo' : t.warnings.allelopathic === false ? 'd.alleloNone' : 'd.alleloUnk'),
     ...(t.warnings.weed_potential === true ? [T('d.spreads')] : []),
   ];
@@ -234,7 +234,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
       <section aria-labelledby="ct-d-warn">
         <h3 id="ct-d-warn">{T('withWarning')}</h3>
         <ul class="ct-warnlist">
-          {lines.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''}>{l.text}</li>)}
+          {lines.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-level={l.level}>{l.text}</li>)}
           {soft.map((x) => <li class="soft">{x}</li>)}
         </ul>
         <p class="ct-muted ct-small">{T('d.liab')}</p>

@@ -7,12 +7,17 @@
 // No control is printed. Rendered by views/Actions.tsx.
 //
 // The drawing is the side view's own (views/SideView.tsx SideDrawing), at the time step chosen in
-// Through the years (store.yearStep; PP-B18).
+// Through the years (store.yearStep; PP-B18). A toxicity note prints its level (b3r-3). The members the
+// page cannot show (a guest list unread, on none of this climate's lists) are on paper too, after the
+// plants, each with why, as Your plants says it (core yourPlants rows; review b3f-2), and the count is
+// the whole palette's. The filter is written out here, not core yourPlants: weigh.ts stays in the
+// palette chunk alone (shared by two lazy chunks it would split into a chunk of its own).
 import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { jobsOf } from '../../../lib/consortium/index.ts';
-import { climate, country, flags, guests, memberTaxa, site, source, yearStep } from '../store.ts';
+import { climate, country, failedMembers, flagScene, flags, guests, memberTaxa, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
+import { flagLines } from './kit/flags.ts';
 import { basisLine, countryName, nameOf, phasePlain, phaseTerm, zoneName } from './kit/names.ts';
 import { SideDrawing } from './SideView.tsx';
 
@@ -24,11 +29,13 @@ const phaseWords = (t: Taxon) => {
   return a === b ? a : `${a} → ${b}`;
 };
 
-function flagWords(f: Flag, names: Map<PlantId, string>, code: string | null): string {
+// A toxicity flag says its level on paper too (b3r-3: Slight never reads like Severe), in the words
+// of Your plants and Details (kit/flags.ts flagLines); the print keys stay for the other flags.
+function flagWords(t: Taxon, f: Flag, names: Map<PlantId, string>, code: string | null): string {
   if (f.kind === 'conflict') return T('print.flag.conflict', { other: (f.other && names.get(f.other)) ?? '?' });
   if (f.kind === 'misfit') return T('print.flag.misfit');
   if (f.kind === 'invasive') return T('print.flag.invasive', { country: code ? countryName(code) : '' });
-  return T('print.flag.toxicity');
+  return flagLines(t, [f], flagScene.value)[0]?.text ?? T('print.flag.toxicity');
 }
 
 export function PrintSheet() {
@@ -42,10 +49,16 @@ export function PrintSheet() {
   const status = source.value && code ? (source.value.countries().get(code)?.invasiveChecked ? 'checked' : 'unchecked') : 'none';
   const release = source.value?.info().releaseId ?? '';
   const small = members.length <= PRINT_DRAWING_MAX;
+  // The members not shown: a guest list unread first, then on none of this climate's lists, each once,
+  // none the table already holds.
+  const seen = new Set(names.keys()), gone: { id: PlantId; missing: 'failed' | 'unlisted' }[] = [];
+  for (const [ids, missing] of [[failedMembers.value, 'failed'], [missingMembers.value.unlisted, 'unlisted']] as const) {
+    for (const id of ids) if (!seen.has(id)) { seen.add(id); gone.push({ id, missing }); }
+  }
   return (
     <section class="ct-print" aria-labelledby="ct-print-h">
       <h2 id="ct-print-h" class="ct-print-title">{T('print.title')}</h2>
-      <p class="ct-print-sub">{zoneName(zone)} · {P('start.count', members.length)} · {new Date().toLocaleDateString(lang)}</p>
+      <p class="ct-print-sub">{zoneName(zone)} · {P('start.count', members.length + gone.length)} · {new Date().toLocaleDateString(lang)}</p>
       <p class="ct-print-basis">{basisLine(site.value)}</p>
       <p class="ct-print-basis">
         {code ? `${T('country.line')} ${countryName(code)}${country.value.source === 'guess' ? ` (${T('country.guessed')})` : ''}` : `${T('country.line')}: ${T('country.none')}. ${T('country.noneNote')}`}
@@ -68,7 +81,7 @@ export function PrintSheet() {
         <tbody>
           {members.map((t) => {
             const marks = guests.value[t.id] ? [T('print.fromList', { climate: zoneName(guests.value[t.id]!) })] : [];
-            const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(f, names, code));
+            const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(t, f, names, code));
             return (
               <tr>
                 <th scope="row"><span class="ct-print-name">{nameOf(t)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}</th>
@@ -76,6 +89,18 @@ export function PrintSheet() {
                 <td>{phaseWords(t)}</td>
                 <td>{jobsOf(t).map((j) => T(`job.${j}`)).join(', ') || '–'}</td>
                 <td>{notes.length ? notes.join('; ') : '–'}</td>
+              </tr>
+            );
+          })}
+          {gone.map((r) => {
+            const t = taxonOf(r.id);
+            return (
+              <tr>
+                <th scope="row"><span class="ct-print-name">{t ? nameOf(t) : r.id}</span>{t && <> <i class="ct-sci">{t.canonical_name}</i></>}</th>
+                <td>–</td>
+                <td>–</td>
+                <td>–</td>
+                <td>{r.missing === 'failed' ? T('plants.notRead') : T('plants.notListed')}</td>
               </tr>
             );
           })}

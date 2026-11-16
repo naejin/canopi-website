@@ -7,11 +7,14 @@
 // list loads, and not named while a guest list could not be read (its plants may fill one: PP-B21), a
 // guest list that failed named as missing with its plants not checked, the verdict chunk refused said
 // once with Retry in place, or, offline, "Needs a connection" and a retry once back online (PP-B20;
-// never a page reload, architecture 9). An empty palette shows no picture of nothing.
+// never a page reload, architecture 9; store.ts start() asks again once back online). An empty palette
+// shows no picture of nothing. Then Your plants and Things to weigh (stream b3; weigh "checking" while
+// a list loads; the plants of a list that failed, and those on none of this climate's lists, each with
+// its row and Remove in Your plants, and counted in the palette as not checked from those same rows).
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import type { PlantId } from '../../../../lib/consortium/index.ts';
-import { holes as holesOf } from '../../../../lib/consortium/index.ts';
+import { holes as holesOf, yourPlants } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { backToPlace } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
@@ -21,7 +24,9 @@ import { holeWords } from '../kit/fit.tsx';
 import { listName } from '../kit/names.ts';
 import { JobsPicture } from './JobsPicture.tsx';
 import { NextStep, openFillers } from './NextStep.tsx';
+import { Weigh } from './Weigh.tsx';
 import { Years } from './Years.tsx';
+import { YourPlants } from './YourPlants.tsx';
 
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
 // step on the phone never re-renders the page (review r1 bugs-10).
@@ -31,16 +36,10 @@ function Said() {
   return <p class="visually-hidden" role="status" aria-live="polite">{said.value}</p>;
 }
 
-// The verdict chunk refused: Retry fetches it again in place; offline, it needs a connection and is
-// asked again once the browser is back online.
+// The verdict chunk refused: Retry fetches it again in place; offline, it needs a connection (store.ts
+// start() asks again once the browser is back online).
 function VerdictNotice() {
   const off = store.offline.value;
-  useEffect(() => {
-    if (!off) return;
-    const again = () => store.retryVerdict();
-    addEventListener('online', again, { once: true });
-    return () => removeEventListener('online', again);
-  }, [off]);
   return (
     <p class="ct-notice" role="alert">{T('palette.verdictFailed')} {off ? T('load.needsConnection')
       : <button type="button" class="button button-secondary" onClick={() => store.retryVerdict()}>{T('load.retry')}</button>}</p>
@@ -64,8 +63,15 @@ export function Palette() {
   const members = store.memberTaxa.value;
   const verdicts = store.memberVerdicts.value;
   const missing = store.missingMembers.value;
-  const pending = store.guestsPending.value.length > 0 || missing.loading.length > 0 || store.failedMembers.value.length > 0;
+  const loading = store.guestsPending.value.length > 0 || missing.loading.length > 0;
+  const pending = loading || store.failedMembers.value.length > 0;
   const holes = useMemo(() => holesOf({ members, verdicts, pending }), [members, verdicts, pending]);
+  // Your plants' rows, the members the page cannot show among them: Things to weigh counts those rows
+  // as not checked, so the rows and the count share one source (a guest of an unread list that this
+  // climate lists too is shown, so never counted).
+  const flags = store.flags.value, failed = store.failedMembers.value;
+  const rows = useMemo(() => yourPlants(members, flags, { failed, unlisted: missing.unlisted }), [members, flags, failed, missing.unlisted]);
+  const unchecked = rows.filter((r) => 'missing' in r).length;
   useEffect(() => { store.wantVerdict(); }, []);
   // Stable while the holes and verdicts are: the pictures (memoised) redraw only when they change.
   const pic = useMemo(() => {
@@ -107,6 +113,8 @@ export function Palette() {
           </div>
         )}
       </div>
+      <YourPlants rows={rows} />
+      <Weigh members={members} pending={loading} unchecked={unchecked} />
       <Said />
       {shown && <FirstView />}
     </div>
