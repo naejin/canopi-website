@@ -303,7 +303,9 @@ test('flags: a misfit and a high conflict warn (listed last); invasive, toxicity
   assert.equal(warns(flagsFor(robinia, [], { ...c, site: UNSURE_SITE })), false, 'invasive and toxicity alone never warn');
   const malus = T('Malus domestica'), walnut = T('Juglans regia'), hazel = T('Corylus avellana'), chestnut = T('Castanea sativa');
   const high = flagsFor(malus, [walnut], { ...c, site: UNSURE_SITE });
-  assert.deepEqual(high, [{ id: malus.id, kind: 'conflict', other: walnut.id, severity: 'high', type: 'allelopathic_harm', agent: null,
+  // Malus is Slight: since b3 its toxicity is a flag too (with its level); the conflict is checked alone here.
+  assert.ok(high.some((f) => f.kind === 'toxicity' && f.id === malus.id), 'Slight toxicity flags (b3)');
+  assert.deepEqual(high.filter((f) => f.kind !== 'toxicity'), [{ id: malus.id, kind: 'conflict', other: walnut.id, severity: 'high', type: 'allelopathic_harm', agent: null,
     note: { en: 'Juglone from walnut roots stunts apples planted under its crown.', fr: 'La juglone des racines du noyer freine les pommiers plantés sous sa couronne.' } }]);
   assert.equal(warns(high), true);
   const medium = flagsFor(hazel, [chestnut], { ...c, site: UNSURE_SITE });
@@ -313,7 +315,7 @@ test('flags: a misfit and a high conflict warn (listed last); invasive, toxicity
   assert.deepEqual(low.map((f) => f.severity), ['low']);
   assert.equal(warns(medium), false);
   const all = flagsOf([malus, walnut], { ...c, site: UNSURE_SITE });
-  assert.deepEqual(all.map((f) => `${f.id === malus.id ? 'malus' : 'walnut'} ${f.kind}`).sort(), ['malus conflict', 'walnut conflict']);
+  assert.deepEqual(all.map((f) => `${f.id === malus.id ? 'malus' : 'walnut'} ${f.kind}`).sort(), ['malus conflict', 'malus toxicity', 'walnut conflict', 'walnut toxicity']); // both Slight (b3)
   // No country: no invasive flag (the soft worldwide count is the view's).
   assert.ok(!flagsFor(robinia, [], { ...c, country: null }).some((f) => f.kind === 'invasive'));
   assert.ok(!flagsFor(robinia, [], { ...c, country: 'TW', countryStatus: 'unchecked' }).some((f) => f.kind === 'invasive'));

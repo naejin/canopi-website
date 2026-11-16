@@ -46,7 +46,7 @@ export function siteFitMessages(taxon: Taxon, site: Site, fit: Fit = fits(taxon,
 // The notes of those messages, as marks: the full words in Details, the short ones on rows and in Add.
 export function siteMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface): Mark[] {
   const site = ctx.site;
-  if (surface === 'chip' || !site || (site.water !== 'dry' && site.room !== 'small' && site.room !== 'large')) return [];
+  if (surface === 'chip' || !site || (site.water !== 'dry' && site.room !== 'small' && site.room !== 'large' && site.room !== 'pots')) return [];
   const short = surface !== 'details';
   return siteFitMessages(taxon, site).flatMap((m) => (m.state
     ? [{ kind: m.about as MarkKind, key: short ? SHORT[m.key] : m.key, ...(m.vars && { vars: m.vars }), severity: m.severity, state: m.state }]

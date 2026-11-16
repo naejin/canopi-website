@@ -14,7 +14,6 @@ import { test } from 'node:test';
 import { en, h, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import { showPalette } from './seams-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 
 useHarness();
 
@@ -81,10 +80,8 @@ async function heightNote(room) {
   assert.ok(note, `${room}: the tall plant shows no height note on its row`);
 }
 test('PP-B61 (b3 the height note on Your plants, F1a-P4 split, A8): in a small garden a tall plant added shows its height note on its row', () => heightNote('small'));
-// core site-marks.ts siteMarks (:49) returns no mark unless the room is small or large (or the site
-// dry), so "Balcony or pots" never shows the height note on any surface: a one-word fix there, a file
-// no chunk-2 stream owns (b3 hand-off to the coordinator, 2026-11-15).
-failing('PP-B61b (b3 the height note with "Balcony or pots", F1a-P4 split, A8): with pots a tall plant added shows its height note on its row', { owner: 'b3', reason: /pots: the tall plant shows no height note on its row/ }, () => heightNote('pots'));
+// site-marks.ts siteMarks lets pots through as it does small and large (b3 hand-off, applied at the merge).
+test('PP-B61b (b3 the height note with "Balcony or pots", F1a-P4 split, A8): with pots a tall plant added shows its height note on its row', () => heightNote('pots'));
 
 // Owner rows: warn, never hide; the grower decides; warnings in words with an icon, never colour alone
 // (inventory F5: Slight the warning colour, Moderate and Severe the danger colour).
