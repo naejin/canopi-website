@@ -1184,6 +1184,36 @@ test('second-round review 1: Forget never makes another tab\'s save look like th
   assert.equal(readRecord(kept.get(STORE))?.fragment, readRecord(sb).fragment, 'B\'s palette is never written over');
   persist.holdSave(false);
 });
+// Second-round review 2: after Forget, no history entry brings the forgotten spot or soil back into
+// storage: Back (or a reload) onto an entry written before the Forget restores its history.state pl.
+test('second-round review 2: Back to an entry written before Forget brings no forgotten answers back into the save', async () => {
+  const restoreAddress = fakeAddress();
+  try {
+    await mine(5);
+    await wait(0);
+    const e1 = { hash: location.hash, state: history.state };
+    assert.match(e1.state.pl, /l=sun/, 'E1 carries the reader\'s answers');
+    assert.equal(await restoreM.restore(await linkWith('Temperate', 3), { from: 'link' }), true);
+    await wait(0);
+    locationM.forget();
+    await wait(0);
+    assert.equal(saved()?.place, '', 'Forget scrubbed the save');
+    // Back to E1, and a reload of E1 (its history.state as written before the Forget).
+    const back = arrivalM.hashAction(e1.hash, e1.state, null, false);
+    assert.equal(back.kind, 'saved');
+    assert.doesNotMatch(back.place, /l=/, 'Back brings no forgotten answer');
+    assert.doesNotMatch(arrivalM.arrival({ hash: e1.hash, search: '' }, saved(), null, e1.state).place, /l=/, 'a reload brings none');
+    assert.equal(await restoreM.restore(back.fragment, { from: 'saved', src: back.src, place: back.place, hold: back.hold }), true);
+    await wait(0);
+    assert.doesNotMatch(saved()?.place ?? '', /l=/, 'the save keeps no forgotten answer');
+    assert.deepEqual(store.spot.peek(), emptyPlace.spot);
+    // An entry written after the Forget keeps its own new answers.
+    store.spot.value = SUN;
+    await wait(0);
+    const e3 = { hash: location.hash, state: history.state };
+    assert.match(arrivalM.hashAction(e3.hash, e3.state, null, false).place ?? '', /l=sun/, 'answers given after the Forget come back');
+  } finally { restoreAddress(); store.location.value = null; }
+});
 test('fix round 4 s-4: "Search all plants" on a page with 6 plants opens the search and keeps every plant saved', async () => {
   await mine(6);
   await wait(0);

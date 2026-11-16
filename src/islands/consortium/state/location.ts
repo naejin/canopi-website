@@ -34,6 +34,7 @@ import { pageLang } from '../strings.ts';
 import { forgetSavedPlace, memory, pendingLinkClimate, quietly, LOCATION_STORE, PLACE_STORE } from './persist.ts';
 import { chooseClimate } from './draft.ts';
 import { locationAtStart } from './restore.ts';
+import { noteForget } from './save.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './lookups.ts';
 
 // ---- the site location kept on this device, and the country from it ----
@@ -213,6 +214,7 @@ export function confirmProposed(z: ClimateZone): void {
 // link's own country, the plants, the room and plot size are the palette's and stay. The kept location
 // no longer holds Place's climate cards.
 export function forget(): void {
+  noteForget();
   nextLookup();
   unread.value = false;
   const own = store.location.peek()?.source !== 'link';

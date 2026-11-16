@@ -63,3 +63,16 @@ export function undoSave(m: SaveMark, put: () => void): void {
   batch(() => { held.value = m.held; put(); });
   if (m.held) putSave(m.text);
 }
+
+// "Forget this location" in this tab, counted (sessionStorage, so it outlasts a reload, as the tab's
+// history entries do; a module count when the browser keeps none). Each address entry records the
+// count it was written under (persist.ts writeAddress `fg`); an entry written before the last Forget
+// brings back no spot or soil answers (arrival.ts ownOf; second-round review 2).
+const tab = guarded(() => (typeof sessionStorage === 'undefined' ? null : sessionStorage));
+const FORGET_KEY = 'canopi-forget';
+let forgetsHere = 0;
+export const forgets = (): number => Math.max(forgetsHere, Number(tab.read(FORGET_KEY)) || 0);
+export function noteForget(): void {
+  forgetsHere = forgets() + 1;
+  tab.write(FORGET_KEY, String(forgetsHere));
+}

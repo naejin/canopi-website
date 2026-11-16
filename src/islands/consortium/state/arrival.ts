@@ -14,7 +14,7 @@ import {
 } from './persist.ts';
 import { state as schema } from './schema.ts';
 import { applyPreset, locationAtStart, notices, ownCell, ownLocation, restore, waitForSource, NO_NOTICES } from './restore.ts';
-import { lastSave, putSave } from './save.ts';
+import { forgets, lastSave, putSave } from './save.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
 // A fragment is a share link when it holds the link's version or its member list (v1 links carried
@@ -36,11 +36,23 @@ export type Arrival =
 // with a link's country `k`, and its cell `o` while its place waits); ask: a link's place still waits
 // on "Use it" / "Use my own place", so a reload asks again; hold: the page held the save, so a reload
 // or Back/Forward holds it again. Each is read only as itself (persist.ts writeAddress; fix round 4, s-3).
+// fg: the tab's Forget count when the entry was written; an entry from before the last "Forget this
+// location" keeps only the link's own part of its place (its country `k` and cell `o`, which the link
+// itself carries), so no history entry brings the forgotten spot or soil answers back (second-round
+// review 2). A country from the reader's location is never in `pl`.
 interface OwnAddress { ct: string; src: CountryFrom; pl: string; ask: boolean; hold: boolean }
 const ownOf = (v: unknown): OwnAddress | null => {
   if (!v || typeof v !== 'object') return null;
-  const { ct, src, pl, ask, hold } = v as Record<string, unknown>;
-  return typeof ct === 'string' && ct ? { ct, src: fromOf(src), pl: typeof pl === 'string' && pl.length < 2_000 ? pl : '', ask: ask === 1, hold: hold === 1 } : null;
+  const { ct, src, pl, ask, hold, fg } = v as Record<string, unknown>;
+  if (typeof ct !== 'string' || !ct) return null;
+  let place = typeof pl === 'string' && pl.length < 2_000 ? pl : '';
+  if ((typeof fg === 'number' ? fg : 0) < forgets()) place = linkPartOf(place);
+  return { ct, src: fromOf(src), pl: place, ask: ask === 1, hold: hold === 1 };
+};
+const linkPartOf = (place: string): string => {
+  const q = new URLSearchParams(place), out = new URLSearchParams();
+  for (const key of ['k', 'o']) { const v = q.get(key); if (v) out.set(key, v); }
+  return out.toString().replace(/%2C/gi, ',');
 };
 
 // The spot and soil answers of a place string, without a link's country `k` and cell `o` (the tab's

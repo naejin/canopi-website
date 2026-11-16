@@ -48,7 +48,7 @@ import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
 import type { Consortium, ShareInput } from './schema.ts';
-import { attempt, held, lastSave, memory, STORE } from './save.ts';
+import { attempt, forgets, held, lastSave, memory, STORE } from './save.ts';
 
 export { attempt, guarded, memory, STORE, type StorageLike } from './save.ts';
 export const COUNTRY_STORE = 'canopi-country';
@@ -297,7 +297,10 @@ export function writeAddress(force = false): void {
   // with this tab's place (pl: the save is shared by every tab; plant-palette-architecture 8.3).
   // ask: a link's place waits on the reader (linkPlace); hold: the page holds the save (held). Each
   // from its own source, so a page that owns its save while the place question is open reloads owned.
-  const ownState = fragment ? { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : {}), ...(held.peek() ? { hold: 1 } : {}) } : null;
+  // fg: the Forgets this tab had seen when the entry was written; an entry from before the last one
+  // brings no answers back (arrival.ts ownOf; second-round review 2).
+  const fg = forgets();
+  const ownState = fragment ? { ct: fragment, src: countryFrom(), pl: addressPlace(), ...(linkPlace.peek() ? { ask: 1 } : {}), ...(held.peek() ? { hold: 1 } : {}), ...(fg ? { fg } : {}) } : null;
   // `pp`: the page's history entries up to this one (store.ts), kept through every rewrite and reload;
   // `st`: the entry's start (store.ts startId), so a move off a link opened in the tab is known.
   const pp = attempt(() => (history.state as { pp?: unknown } | null)?.pp), st = store.startId();
