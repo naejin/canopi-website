@@ -615,7 +615,6 @@
   "consortium.start.suggest": "小さなおすすめパレットから始める",
   "consortium.start.suggestStopped": "提案を中止しました：植物リストの読み込みに時間がかかりすぎました。もう一度押して再試行してください。",
   "consortium.start.paste": "リストを貼り付ける",
-  "consortium.start.yours": "あなたのパレット",
   "consortium.start.count": "other: # 種の植物",
   "consortium.start.over": "最初からやり直す",
   "consortium.start.oldSave": "前回のパレットは古いバージョンのツールで作られたため、植物を復元できませんでした。",

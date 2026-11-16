@@ -615,7 +615,6 @@
   "consortium.start.suggest": "Partir d’une petite palette suggérée",
   "consortium.start.suggestStopped": "Suggestion arrêtée : une liste de plantes a mis trop de temps à se lire. Appuyez de nouveau pour réessayer.",
   "consortium.start.paste": "Coller une liste",
-  "consortium.start.yours": "Votre palette",
   "consortium.start.count": "one: # plante | other: # plantes",
   "consortium.start.over": "Recommencer",
   "consortium.start.oldSave": "Votre dernière palette a été faite avec une ancienne version de l’outil ; ses plantes n’ont pas pu être rétablies.",

@@ -615,7 +615,6 @@
   "consortium.start.suggest": "Beginnen met een klein voorgesteld palet",
   "consortium.start.suggestStopped": "Voorstel gestopt: een plantenlijst deed er te lang over om te laden. Druk nogmaals om het opnieuw te proberen.",
   "consortium.start.paste": "Lijst plakken",
-  "consortium.start.yours": "Je palet",
   "consortium.start.count": "one: # plant | other: # planten",
   "consortium.start.over": "Opnieuw beginnen",
   "consortium.start.oldSave": "Je laatste palet is gemaakt met een oudere versie van de tool; de planten konden niet worden hersteld.",

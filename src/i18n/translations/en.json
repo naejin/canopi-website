@@ -615,7 +615,6 @@
   "consortium.start.suggest": "Start from a small suggested palette",
   "consortium.start.suggestStopped": "Suggest stopped: a plant list took too long to read. Press it again to try once more.",
   "consortium.start.paste": "Paste a list",
-  "consortium.start.yours": "Your palette",
   "consortium.start.count": "one: # plant | other: # plants",
   "consortium.start.over": "Start over",
   "consortium.start.oldSave": "Your last palette was made with an older version of the tool; its plants could not be restored.",

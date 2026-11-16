@@ -615,7 +615,6 @@
   "consortium.start.suggest": "작은 추천 팔레트로 시작",
   "consortium.start.suggestStopped": "추천을 멈췄습니다: 식물 목록을 읽는 데 너무 오래 걸렸습니다. 다시 눌러 한 번 더 시도하세요.",
   "consortium.start.paste": "목록 붙여넣기",
-  "consortium.start.yours": "내 팔레트",
   "consortium.start.count": "other: 식물 #종",
   "consortium.start.over": "처음부터 다시",
   "consortium.start.oldSave": "마지막 팔레트는 이전 버전의 도구로 만들어져서 식물을 되살릴 수 없었습니다.",

@@ -888,6 +888,8 @@ test('PP-B73 (b1a focus, B): Start over in the palette head hands the focus to t
   await page.evaluate((x) => window.__ctTest.store.addMembers(x), (await temperateIds()).slice(0, 3));
   await (await page.waitForSelector('[data-place-show]', { timeout: 8000 })).click();
   assert.ok(await has(page, '.ct-result-head [data-start-over]', 8000), 'the palette head');
+  // Pre-push fix 7 (E): one "Your palette" heading on the palette step; the head is a plain place line.
+  assert.equal(await page.$$eval('#ct-root h2', (hs, t) => hs.filter((x) => x.textContent.trim().startsWith(t)).length, W('palette.title')), 1, 'one "Your palette" heading');
   await page.click('.ct-result-head [data-start-over]');
   await frames3(page);
   const at = await focusAt(page);

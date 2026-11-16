@@ -615,7 +615,6 @@
   "consortium.start.suggest": "Mit einer kleinen vorgeschlagenen Palette beginnen",
   "consortium.start.suggestStopped": "Vorschlag abgebrochen: Eine Pflanzenliste brauchte zu lange zum Lesen. Erneut drücken, um es noch einmal zu versuchen.",
   "consortium.start.paste": "Liste einfügen",
-  "consortium.start.yours": "Deine Palette",
   "consortium.start.count": "one: # Pflanze | other: # Pflanzen",
   "consortium.start.over": "Neu beginnen",
   "consortium.start.oldSave": "Deine letzte Palette wurde mit einer älteren Version des Werkzeugs erstellt; ihre Pflanzen konnten nicht wiederhergestellt werden.",

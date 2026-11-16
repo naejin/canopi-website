@@ -615,7 +615,6 @@
   "consortium.start.suggest": "Начать с небольшой предложенной палитры",
   "consortium.start.suggestStopped": "Подбор остановлен: список растений читался слишком долго. Нажмите ещё раз, чтобы повторить.",
   "consortium.start.paste": "Вставить список",
-  "consortium.start.yours": "Ваша палитра",
   "consortium.start.count": "one: # растение | few: # растения | many: # растений | other: # растения",
   "consortium.start.over": "Начать заново",
   "consortium.start.oldSave": "Ваша последняя палитра сделана в старой версии инструмента; её растения не удалось восстановить.",

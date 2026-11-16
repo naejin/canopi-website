@@ -333,7 +333,7 @@ function PlaceNotices() {
   );
 }
 
-// Head and the guide line name store.climate, not climateShown: a palette (and a guide preset's line)
+// Head (the palette step's place line: count, climate, the place and its actions) and the guide line name store.climate, not climateShown: a palette (and a guide preset's line)
 // shows only under a chosen climate, where the two are the same.
 function Head() {
   const n = members.value.length, z = climate.value;
@@ -342,7 +342,9 @@ function Head() {
   const why = z ? suggestBlock(z) : null;
   return (
     <div class="ct-result-head">
-      <h2 class="ct-result-title">{T('start.yours')} <span class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneName(climate.value)}</span></h2>
+      {/* A plain place line, not a heading: the palette page's own title follows (pre-push fix 7, E:
+          one "Your palette" heading, as the mock-ups show). */}
+      <p class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneName(climate.value)}</p>
       <p class="ct-basis">
         <span>{basisLine(site.value)}</span>
         <button type="button" class="link-button ct-link" onClick={() => openSheet('place')}>{T('place.sheet.open')}</button>

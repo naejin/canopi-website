@@ -615,7 +615,6 @@
   "consortium.start.suggest": "Começar com uma pequena paleta sugerida",
   "consortium.start.suggestStopped": "Sugestão interrompida: uma lista de plantas demorou demasiado a ser lida. Prima de novo para tentar outra vez.",
   "consortium.start.paste": "Colar uma lista",
-  "consortium.start.yours": "A sua paleta",
   "consortium.start.count": "one: # planta | other: # plantas",
   "consortium.start.over": "Recomeçar",
   "consortium.start.oldSave": "A sua última paleta foi feita com uma versão antiga da ferramenta; as plantas dela não puderam ser restauradas.",
