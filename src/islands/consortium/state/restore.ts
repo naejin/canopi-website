@@ -166,7 +166,7 @@ export async function restore(fragment: string, { from, src = null, keep = false
   placeSaid.value = '';
   const refuse = (problem: PastedProblem, notice: Partial<Notices>): false => {
     if (keep) { notices.value = { ...notices.peek(), pasted: problem }; writeAddress(true); }
-    else notices.value = { ...notices.peek(), ...notice };
+    else { notices.value = { ...notices.peek(), ...notice }; store.endOpening(); }
     return false;
   };
   // Refusals take no restore number, never touch saving, and cancel the restore in flight: the

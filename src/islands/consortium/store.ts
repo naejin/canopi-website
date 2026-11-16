@@ -590,6 +590,10 @@ export function adoptEntry(state: unknown): void { shown = ppOf(state); st = stO
 // and pushes nothing (main.ts sets it; the step's effect in start() reads it once).
 let arrivalStep = false;
 export function arrivalOpensPalette(on: boolean): void { arrivalStep = on; }
+// A refused arrival (an older, newer, unreadable or cut link or save; one whose list did not load)
+// shows Place with its notice at once, never the placeholder until the plants are read (pre-push fix
+// 2): restore.ts ends the opening from its refuse path, and the arrival's step is no longer coming.
+export function endOpening(): void { opening.value = false; arrivalStep = false; }
 // The reader's step from Your place to Your palette pushes one history entry, so Back returns to
 // Place (coordinator row 2026-11-14); a return visit's or a link's own opening does not. The way back
 // made outside history (an Undo to Place, Start over) leaves that entry, as "Your place" does. Started

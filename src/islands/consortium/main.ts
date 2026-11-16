@@ -93,6 +93,8 @@ if (root && data) {
     let after: ReturnType<typeof setTimeout> | undefined;
     const stop = effect(() => {
       const { status } = load.value;
+      // Ended already: a refused link or save (restore.ts endOpening) shows Place with its notice.
+      if (!opening.value) { clearTimeout(after); queueMicrotask(() => stop()); return; }
       if (view.value !== 'start' || status === 'failed') { clearTimeout(after); opening.value = false; if (status === 'failed') arrivalOpensPalette(false); queueMicrotask(() => stop()); }
       else if (status === 'ready' && after === undefined) after = setTimeout(() => { opening.value = false; arrivalOpensPalette(false); }, 3000);
     });

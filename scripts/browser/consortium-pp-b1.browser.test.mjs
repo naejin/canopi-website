@@ -824,3 +824,16 @@ test('PP-B1 (b1b a new verdict load after a refused one): verdictFailed clears a
   const during = await page.evaluate(() => { const { store } = window.__ctTest; store.wantVerdict(); return store.verdictFailed.value; });
   assert.equal(during, false, 'a load in flight is not "failed"');
 });
+
+// Pre-push fix 2: a refused arrival (an older v4 link here) shows Place with its notice at once, never
+// "Opening your palette…" until the plants are read and 3 s more. The database is held, so the notice
+// must come before the load is ready.
+test('PP-B70 (b1a refused arrival): an old v4 link shows Place with the outdated notice while the plants are still loading, no placeholder', async () => {
+  const page = await h.open('/palette/#v=4&c=temperate&l=unsure&s=unsure&w=unsure&m=unsure&a=&e=1', { hook: true, mapTiles: 'stub', database: 'hold' });
+  const shown = await has(page, '[data-place-notice="outdated"]', 1500);
+  const state = await page.evaluate(() => ({ placeholder: !!document.querySelector('[data-palette-placeholder]'), ready: window.__ctTest?.store?.load.value.status ?? null }));
+  await page.releaseHeld();
+  assert.ok(shown, 'the outdated notice within 1.5 s');
+  assert.notEqual(state.ready, 'ready', 'shown before the plants were read');
+  assert.equal(state.placeholder, false, 'no "Opening your palette…" placeholder');
+});
