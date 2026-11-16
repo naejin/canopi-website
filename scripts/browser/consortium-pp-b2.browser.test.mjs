@@ -331,6 +331,37 @@ test('PP-B16 (b2 offline): the offline line shows, added plants stay, and a chun
   await done(page);
 });
 
+// PP-B exit (2026-11-16, flake PP-B16): the connection back in the very moment "Needs a connection"
+// shows, before the line's effects ran (views/lazy.tsx LoadFailed), still retries the part. The
+// browser's onLine and its events are the page's own here (no CDP round trip), flipped by a
+// MutationObserver as the line lands; the palette chunk's first request fails as offline, later ones pass.
+test('PP-B16b (b2 offline, PP-B exit): back online the moment "Needs a connection" shows, the palette page still loads by itself', async () => {
+  const fakeNet = (p) => p.evaluateOnNewDocument(() => {
+    let on = true;
+    Object.defineProperty(Navigator.prototype, 'onLine', { configurable: true, get: () => on });
+    window.__net = (v) => { on = v; dispatchEvent(new Event(v ? 'online' : 'offline')); };
+  });
+  const page = await tool({ block: { palette: 'offline-once' }, setup: fakeNet });
+  await choose(page, 'Temperate');
+  await page.evaluate(() => window.__net(false));
+  assert.ok(await page.waitForFunction((t) => document.querySelector('.ct-offline')?.textContent.includes(t), { timeout: 4000 }, en['consortium.load.offline']).then(() => true, () => false), 'the offline line');
+  const ids = await own(3);
+  await page.evaluate((x, t) => {
+    window.__flipped = false;
+    new MutationObserver((_, o) => {
+      if (![...document.querySelectorAll('#ct-root .ct-notice[role="alert"]')].some((n) => n.textContent.trim() === t)) return;
+      o.disconnect(); window.__flipped = true; window.__net(true);
+    }).observe(document.getElementById('ct-root'), { childList: true, subtree: true, characterData: true });
+    window.__ctTest.store.addMembers(x);
+  }, ids, en['consortium.load.needsConnection']);
+  await showPalette(page);
+  assert.ok(await page.waitForFunction(() => window.__flipped, { timeout: 8000 }).then(() => true, () => false), '"Needs a connection" showed, and the connection came back at once');
+  assert.ok(page.blocked.some((u) => h.roles.palette.includes(u)), 'the palette chunk was refused once');
+  assert.ok(await onPage(page, 10_000), 'the palette page loads by itself');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.members.value), ids, 'the added plants stay');
+  await done(page);
+});
+
 test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus returns to the control that raised it', async () => {
   const page = await tool({ timeouts: { toast: 300 } });
   await choose(page, 'Temperate');

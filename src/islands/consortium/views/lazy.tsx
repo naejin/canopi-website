@@ -68,10 +68,13 @@ export interface PartOptions<C extends Any> {
 // else reloads the page.
 export function LoadFailed({ retry, inPlace = false }: { retry?: () => void; inPlace?: boolean }) {
   const off = offline.value;
+  // Back online (store.ts sets `offline` from the browser's events), a part that failed offline is
+  // asked again. Read from the signal's change, not from a listener of its own: one added in an effect
+  // missed a connection back before the effect ran, with the line already shown (PP-B exit, PP-B16b).
+  const wasOff = useRef(off);
   useEffect(() => {
-    if (!off || !retry) return;
-    addEventListener('online', retry, { once: true });
-    return () => removeEventListener('online', retry);
+    if (off) { wasOff.current = true; return; }
+    if (wasOff.current && retry) { wasOff.current = false; retry(); }
   }, [off, retry]);
   if (off) return <p class="ct-notice" role="alert">{T('load.needsConnection')}</p>;
   return <p class="ct-notice" role="alert">{T('details.loadFailed')} <button type="button" class="button button-secondary" onClick={() => (retry && inPlace ? retry() : location.reload())}>{T('details.reload')}</button></p>;

@@ -192,9 +192,10 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   // - timeouts: { stall, read, suggest } in ms shortens the page's download stall (data/load.ts), its
   //   climate tile read (views/location/location.tsx) and Suggest's wait (state/suggest-wait.ts), test build only;
   // - geoTimeoutMs: with geolocation 'timeout', TIMEOUT comes after min(the call's timeout, this);
-  // - block: { <role>: 404 | 'offline' | 'hold' } fails a chunk role of consortium-chunks.json (pool,
+  // - block: { <role>: 404 | 'offline' | 'offline-once' | 'hold' } fails a chunk role of consortium-chunks.json (pool,
   //   location, future, markProviders, maplibre, details, sheets, later, suggest, range, testHook, …) from the
-  //   first request; page.blocked lists each URL so answered; 'hold' (E6 commit 0) answers nothing
+  //   first request ('offline-once': only the first request, as offline; PP-B exit, PP-B16b);
+  //   page.blocked lists each URL so answered; 'hold' (E6 commit 0) answers nothing
   //   until `await page.releaseHeld()` lets every held request through (and any later one), and
   //   page.held lists the URLs held;
   // - setup: async (page) => {} runs just before the navigation (extra evaluateOnNewDocument scripts).
@@ -311,6 +312,12 @@ export async function startHarness({ log = () => {}, dir } = {}) {
             page.held.push(url.pathname);
             heldRequests.push(request);
             return;
+          }
+          // 'offline-once': the first request is aborted as offline, every later one goes through.
+          if (how === 'offline-once') {
+            if (page.blocked.includes(url.pathname)) return request.continue();
+            page.blocked.push(url.pathname);
+            return request.abort('internetdisconnected');
           }
           page.blocked.push(url.pathname);
           return how === 'offline' ? request.abort('internetdisconnected') : request.respond({ status: Number(how), contentType: 'text/plain', body: 'Not found' });
