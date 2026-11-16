@@ -157,7 +157,9 @@ test('PP-B23 (b3 200 plants): Your plants folds to "+ N more", opening it moves 
   await page.$eval(`${PLANTS} [data-plant-id="${early}"] .button-secondary`, (b) => { b.focus(); b.click(); });
   await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, early);
   await frames(page);
-  await page.click(`${PLANTS} .ct-plants-more`);
+  // Pressed on the element, not at a point: a line coming in above after the Remove could move the
+  // button between Puppeteer's measure and its click, which then missed (1 in 5, PP-B exit).
+  await page.$eval(`${PLANTS} .ct-plants-more`, (b) => { b.focus(); b.click(); });
   await page.waitForFunction((k) => document.querySelectorAll('.ct-plants li[data-plant-id]').length > k, { timeout: 4000 }, shown);
   await frames(page);
   assert.equal(await page.evaluate((k) => document.activeElement === document.querySelectorAll('.ct-plants li[data-plant-id]')[k], shown), true, 'the focus on the first row it shows');
