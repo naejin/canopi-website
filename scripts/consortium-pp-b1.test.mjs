@@ -1165,6 +1165,25 @@ test('pre-push fix 5: a reload of an owned page whose save another tab replaced 
     }
   } finally { restoreAddress(); }
 });
+// Second-round review 1: Forget on a held page scrubs the stored record, which may be another tab's
+// save; adopting it as this page's lastSave made B's save look like A's own, so storageMoved and
+// putSave's guard stopped protecting it (Back to A's owned entry, or an open toast's Undo, wrote over it).
+test('second-round review 1: Forget never makes another tab\'s save look like this page\'s', async () => {
+  await mine(5);
+  await wait(0);
+  const p1 = kept.get(STORE);
+  assert.equal(saveM.lastSave.peek(), p1, 'the page owns P1');
+  persist.holdSave(true); // a pasted link's entry: held
+  const sb = saveRecord(await linkWith('Tropical', 3), '2026-11-16T10:00:00.000Z', null, null, 'l=shade');
+  kept.set(STORE, sb); // tab B saves
+  locationM.forget();
+  await wait(0);
+  assert.equal(saved()?.place, '', 'B\'s stored record loses the forgotten answers');
+  assert.notEqual(saveM.lastSave.peek(), kept.get(STORE), 'storage still differs from what this page last wrote');
+  saveM.putSave(p1); // an Undo of A's earlier action
+  assert.equal(readRecord(kept.get(STORE))?.fragment, readRecord(sb).fragment, 'B\'s palette is never written over');
+  persist.holdSave(false);
+});
 test('fix round 4 s-4: "Search all plants" on a page with 6 plants opens the search and keeps every plant saved', async () => {
   await mine(6);
   await wait(0);

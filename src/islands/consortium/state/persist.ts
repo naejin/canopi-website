@@ -269,13 +269,18 @@ function writeSave(next: string): void {
 // them back). A link's own country (src 'link'), the plants, the room and the plot (the fragment) stay.
 // own: the reader's own location was forgotten (a link's location goes alone, so the country the
 // reader's kept location gave stays with that location).
+// The scrubbed record becomes this page's lastSave only when what it scrubbed was this page's: another
+// tab's save, scrubbed, stays another tab's, so storageMoved and putSave keep protecting it (second-round
+// review 1).
 export function forgetSavedPlace(own: boolean): void {
-  const r = readRecord(memory.read(STORE));
+  const raw = memory.read(STORE);
+  const r = readRecord(raw);
   if (!r) return;
   const fromLocation = own && r.src === 'location';
   if (!r.place && !fromLocation) return;
   const next = saveRecord(r.fragment, r.at, fromLocation ? null : r.src, fromLocation ? null : r.country ?? null, '');
-  if (memory.write(STORE, next)) lastSave.value = next;
+  const mine = raw === lastSave.peek();
+  if (memory.write(STORE, next) && mine) lastSave.value = next;
 }
 
 // The address bar holds the consortium's link (replaceState, no history entry). Same address:
