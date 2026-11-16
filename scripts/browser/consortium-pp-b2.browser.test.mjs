@@ -10,7 +10,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { aria, en, h, has, layoutVariants, realDb, suggestReady, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 import { liveLog, resetLive, saidTwice, suggestedAt, watchLiveRegions } from './f1a-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { showPalette } from './seams-helpers.mjs';
@@ -936,15 +935,20 @@ test('PP-B48b (b2 review r3 hash-1, no Navigation API): the same, in a browser w
 // ---- scale (owner directive 2026-11-14: smooth to 200 plants), CPU throttled 4× through CDP ----
 // The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Budgets:
 // navigation → Next step visible 2.5 s; one Add from the Next step → the page updated 300 ms; no long task
-// over 200 ms after the page is up; the palette page's DOM at most SCALE_DOM (measured + 20 %).
-const SCALE_DOM = { 390: 393, 1280: 462 }; // measured 327 and 385 on 2026-11-14, + 20 %
-// Marker (owner b2), kept after review r1 (measured 2026-11-14, 4× throttle, 3 runs; ranges):
+// over 200 ms after the page is up; the palette page's DOM at most SCALE_DOM.
+// DOM budget raised at the PP-B exit (2026-11-16, row "Size budgets are a tripwire": no structural
+// cause, so raised by the measured amount): measured 574 and 659 (327 and 385 on 2026-11-14, before b3's
+// Your plants, about 196 elements folded to 12 rows, joined the page); nothing on it is invisible and no
+// list is mounted twice (every element has a box; the two pictures at their PICTURE_LANE_MAX fold, Your
+// plants at its fold). Budget: measured + about 5 %.
+const SCALE_DOM = { 390: 600, 1280: 690 };
+// History (owner b2, review r1, measured 2026-11-14, 4× throttle, 3 runs; ranges):
 // - 200 plants: Next step 2.6-4.5 s (2.4-3.1 s with arrival.ts's country guess stubbed: its getTimeZones
 //   for every country is perf-1, b1a's), Add 179-316 ms, DOM 374/459, one or two long tasks of 220-420 ms
 //   after load (native compile, style and layout once the later chunks are fetched, no island JS on top).
 // - 10 plants (fixed costs): Next step 2.0-2.1 s stubbed (3.1-4.4 s not), Add 89-141 ms, no long task.
-// So load misses on fixed costs (about 2 s before any plant), and the long tasks come with 200 plants.
-failing('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette shows its Next step within 2.5 s, one Add updates the page within 300 ms, no long task over 200 ms, the DOM within budget @real-data', { owner: 'b2', reason: /scale budgets missed/, timeout: 240_000 }, async (t) => {
+// The marker went at the PP-B exit (2026-11-16): Next step 1.6-2.1 s, Add within 300 ms.
+test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette shows its Next step within 2.5 s, one Add updates the page within 300 ms, no long task over 200 ms, the DOM within budget @real-data', { timeout: 240_000 }, async (t) => {
   const { savedRecord200 } = await import('../palette-200.mjs');
   const record = await savedRecord200();
   const figures = [], misses = [];
