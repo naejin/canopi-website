@@ -174,7 +174,10 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
     memberIds.add(best.taxon.id);
     add(cov, best);
   }
-  return { members: chosen.map((i) => i.taxon.id), limit };
+  // A seeded plant neither the pool nor the guests hold (a guest whose list failed, PP-B21, or one on
+  // no list at hand) is the grower's: it stays, after the plants read (PP-B exit, warn never hide).
+  const unread = [...seedIds].filter((id) => !memberIds.has(id));
+  return { members: [...chosen.map((i) => i.taxon.id), ...unread], limit };
 }
 
 export interface AlternativeOptions extends FlagContext { removed?: PlantId[]; verdicts?: HoleContext['verdicts'] }

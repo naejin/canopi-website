@@ -39,6 +39,19 @@ test('F1a-P13 → PP-B (b1a invasive tie, owner Q1): with no country chosen, the
   assert.ok(picked.includes(plain.id));
 });
 
+// PP-B exit (2026-11-16, found by the P5-27n rewrite): a seeded plant the suggestion cannot read (a guest
+// whose list failed, PP-B21, or one on no list at hand) is the grower's: it stays, in seed order, after
+// the plants the suggestion can read. Before, suggest() kept only the seeds it found, so the press
+// removed the plant silently (owner: warn, never hide).
+test('PP-B exit: a seeded plant the suggestion cannot read stays in the palette', () => {
+  const [a, b] = tied();
+  const unread = '00000000-9a1e-4000-8000-ffffffffffff';
+  const picked = suggest([a, b], suggestCtx({ seed: [unread, a.id] })).members;
+  assert.ok(picked.includes(unread), `the unread seed is dropped (${JSON.stringify(picked)})`);
+  assert.ok(picked.includes(a.id));
+  assert.equal(new Set(picked).size, picked.length, 'each plant once');
+});
+
 // ---- b1a: the place, arriving, Start over, the link's place, Forget (plant-palette-slices section 2,
 // row b1a; plant-palette-architecture 3.1, 8.3, 9). The state modules on the installed export, with a
 // storage double; Node has no location or history, so the address is left alone. ----
