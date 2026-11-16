@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:43Z }
 sources:
@@ -112,8 +112,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:532127fa0a50b7db
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:9ee078fc2501059d
+    last_modified: 2026-11-16T21:12:06Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -142,8 +142,8 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:ca909f4c2d9983b8
-    last_modified: 2026-11-16T20:21:19Z
+    digest: sha256:7514e2a4f130ca06
+    last_modified: 2026-11-16T21:53:51Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
@@ -152,13 +152,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:d871ca3eb6215b08
-    last_modified: 2026-11-16T20:16:07Z
+    digest: sha256:55d7bb694dd3d403
+    last_modified: 2026-11-16T21:53:25Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:8601a55034d14379
-    last_modified: 2026-11-16T20:16:07Z
+    digest: sha256:074ddea09653b8b8
+    last_modified: 2026-11-16T21:53:25Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -457,8 +457,8 @@ sources:
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
-    digest: sha256:df9021a1e31fef7c
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:84b25dca6b17666c
+    last_modified: 2026-11-16T21:53:25Z
 ---
 
 Target architecture of the [Plant palette redesign](/project/consortium-v2-plan.md) (grower-first design approved by the owner on 2026-11-14). Pushes and streams: [Plant palette slices](/project/plant-palette-slices.md). Layer rules: [ADR-1](/decisions/consortium-island-layers.md); caps: [ADR-2](/decisions/consortium-chunk-budgets.md); owner answers: [user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-14.
@@ -835,12 +835,12 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 - **The save model** (b1a fix round 3, save-model design check 2026-11-15, owner decisions 2026-11-15; replaces `setAside`, `placeBase`, `own()`, `beneath`, `offered`, `release()` and the watcher's hold releases). One flag, `state/save.ts` `held`: this page's palette is not the save.
   - Every page starts held. Only a restore of the save that applies, and a plant change that can be undone (`store.ts` `addMembers`, `removeMember`, `swapMember`, `suggestMembers`), set it false; each of those offers its own Undo from the snapshot it takes, so no effect can drop it (fix round 4: `suggestMembers` offers the suggestion's, waited or not, Place's or the Next step's); Start over sets it true. Navigation, Place's answers (card, room, plot, spot, soil), "Use it", "Use my own place" and "Show my palette" never touch it (owner decision 2).
   - Not held, `persist()` writes the current palette (`persist.palette()`, which leaves out a guest the chosen climate's read list holds: r3-3) on every change, Place's answers included (owner decision 1: "Show my palette" is navigation only, with no Undo). Held, the save is left as it is.
-  - Every undoable action's snapshot (`store.snapshot()`) records `save: { text, held }` (`markSave`: the storage as read then, and the flag). Undo (`undoSave`) puts the flag and the state back in one batch, then, held again, the save byte for byte (`putSave`), only while the storage still holds what this page last wrote or read (`lastSave`), so another tab's save is never lost (R2-2, M1–M3). Reloads and Back/Forward are covered too (pre-push fix 5): a reload of an owned page owns its save only while storage still holds that palette (`state/arrival.ts` `arrival`: the stored record's fragment equals `history.state.ct`, and its spot and soil answers equal the tab's `pl` unless a link's place waited), and a Back/Forward restore only while storage still holds what this page last wrote or read (`hashAction`'s `storageMoved`: `lastSave` against storage); otherwise the page opens held, so another tab's newer save (or its removal) is never overwritten and "Open my saved palette instead" offers the stored one. Unit test "pre-push fix 5" in `scripts/consortium-pp-b1.test.mjs`; browser case PP-B71 in `consortium-pp-b1.browser.test.mjs`.
+  - Every undoable action's snapshot (`store.snapshot()`) records `save: { text, held }` (`markSave`: the storage as read then, and the flag). Undo (`undoSave`) puts the flag and the state back in one batch, then, held again, the save byte for byte (`putSave`), only while the storage still holds what this page last wrote or read (`lastSave`), so another tab's save is never lost (R2-2, M1–M3). Reloads and Back/Forward are covered too (pre-push fix 5): a reload of an owned page owns its save only while storage still holds that palette (`state/arrival.ts` `arrival`: the stored record's fragment equals `history.state.ct`, and its spot and soil answers equal the tab's `pl` unless a link's place waited), and a Back/Forward restore only while storage still holds what this page last wrote or read (`hashAction`'s `storageMoved`: `lastSave` against storage); otherwise the page opens held, so another tab's newer save (or its removal) is never overwritten and "Open my saved palette instead" offers the stored one. Unit test "pre-push fix 5" in `scripts/consortium-pp-b1.test.mjs` (with storage unavailable, `memory.works()` false, a reload opens owned: no other tab's save exists to protect; unit test "second-round review 3"); browser case PP-B71 in `consortium-pp-b1.browser.test.mjs`.
   - Start over: `putSave(null)` when not held (same multi-tab check), then holds; on a held page (a link or a guide preset over the reader's save) the save stays, so it is never lost without an Undo (r3-1).
   - "Open my saved palette instead" / "Back to mine" (`persist.savedInstead`, re-exported by `restore.ts`) is computed, not bookkept: `held` and the readable save in storage (read again on each write of this page and on the `storage` event), unless the page shows that very palette (owner decision 3: offered on every held page whose save differs). Pressed, it reads storage, adopts it as `lastSave` and calls `restore(saved.fragment, { from: 'saved' })`, so another tab's save is offered and opened, never this page's stale palette written over it (fix round 4, s-5).
   - Unit tests: one per walk row and section 4 addition of the design check, and a random-sequence test of the invariants (every plant change that lets the save go offers its own Undo; not held ⇒ the save is `currentFragment()`; held ⇒ the save unchanged unless another tab wrote; an Undo puts back the flag the action saw and, held again, the save it saw; "Search all plants" removes no plant; fix round 4, s-7) in `scripts/consortium-pp-b1.test.mjs` ("save model ..."); browser seams-p2 F1, R2-1, T2, D1.
 - **A link without a place** is judged against the open palette's `place`, else `canopi-place`, plus the device location: the location half works today (`restore.ts:52-58`). The link "brings a place" when it has `o` or at least one spot or soil answer that is not `unsure` (decided on the decoded state, not on keys present). `m` and `z` never count as bringing a place: they belong to the palette, are always in the link and the save, and a link's or save's `m` and `z` win. A `k` with no `o` and no answer other than `unsure` does not bring a place, and the reader's country is kept. Vectors: every answer `unsure`; only `m` and `z`; `k` alone; `k` with `l=sun`.
-- **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`, and scrubs the stored `canopi-consortium` record on a held page too (`persist.ts` `forgetSavedPlace`, pre-push fix 3: a held page writes nothing, so its save kept the spot and soil answers and "Open my saved palette instead" or a plain visit brought them back): after Forget no stored record holds the reader's spot or soil answers, nor a country from their own location; a link's own country (`src: 'link'`), the plants, the room and the plot stay. Unit test "Forget this location on a held page" in `scripts/consortium-pp-b1.test.mjs`. **Start over** keeps the palette's `place`, removes a save the page owns and holds (see the save model above).
+- **Forget this location** runs today's `forget()` (`state/location.ts`) and also clears `canopi-place` and the open palette's `place`, and scrubs the stored `canopi-consortium` record on a held page too (`persist.ts` `forgetSavedPlace`, pre-push fix 3: a held page writes nothing, so its save kept the spot and soil answers and "Open my saved palette instead" or a plain visit brought them back): after Forget no stored record holds the reader's spot or soil answers, nor a country from their own location; a link's own country (`src: 'link'`), the plants, the room and the plot stay. Forget never makes another tab's save look like this page's: the scrubbed record becomes `lastSave` only when the stored one was this page's (second-round review 1). No history entry brings the forgotten answers back: the tab counts its Forgets (`state/save.ts` `forgets`, sessionStorage `canopi-forget`), `writeAddress` stamps each entry `fg`, and `arrival.ts` `ownOf` keeps only a link's `k` and `o` of an entry written before the last Forget (second-round review 2). Unit tests "Forget this location on a held page" and "second-round review 1" and "2" in `scripts/consortium-pp-b1.test.mjs`. **Start over** keeps the palette's `place`, removes a save the page owns and holds (see the save model above).
 - **A link that brings a place** (Arrivals board): it applies to that page only (`history.state.pl`, `location.source = 'link'`), with the notice "Use it" / "Use my own place"; `writeSave` keeps the save's own `place` until the reader chooses; "Use it" writes the link's spot and soil answers into the palette's `place`, its `o` into `canopi-location` through `state/location.ts` and its `k` through `state/draft.ts`, so they hold across reloads (coordinator row 2026-11-14: this reverses the [location module](/modules/consortium-location.md) rule that a link's `o=` is never saved over the reader's `canopi-location`). "Send the link to my computer" (P11) is `encodeLink(…, { origin, place: true })`, the grower's own link, and takes the same path. Unit tests: a palette edit keeps `l=sun`; "Use it" gives `l=shade` and the link's cell after reload; "Use my own place" restores the reader's own.
 - **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, simplified by the owner's simplify pass the same day; `store.ts` history block, `main.ts` popstate and hashchange): a sheet (Details, Swap, Add, search, Paste, Your place) pushes one entry with the same address; Back closes it and keeps every edit, a second Back leaves the page. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model: each pushed entry records the page's entries up to it in its own `history.state.pp` (for example `['palette', 'sheet']`), and `state/persist.ts` `writeAddress` keeps `pp` through every rewrite, so `historyMoved(state)` reads where a Back or Forward landed from the entry itself: no position counting, no Navigation API, and a reload keeps the entries (review r2 hist-2 closed). popstate closes a sheet the landed entry has not, or shows Place when it has no palette step, then `writeAddress` rewrites the landed entry with the current link (`force` false only after an Undo back to Place, which wrote the address it wants), then `pushWaiting` pushes an entry asked for while the page's own Back was on its way. The hashchange that may follow lands on the fragment the page last wrote (`persist.lastWritten`) and stops in `main.ts`, so `state/arrival.ts` never reads it as a link; any other hashchange onto an entry the page wrote itself (its `history.state.ct` equals the fragment) takes that entry's `pp` and start (`adoptEntry`); any other is the reader's link and ends the entries (`forgetEntries`), which starts a new start id. Start ids (fix round 2, C, 2026-11-15): every entry carries `history.state.st`, new for each link opened in the tab, inherited by `pushEntry`, kept by `writeAddress` and read back after a reload (`watchSteps`); `historyMoved` returns `away` when the landed entry's `st` differs from the current one (or, for an entry with a `ct` and no `st`, written by the code before start ids: r3-4, browser case in `consortium-pp-b1.browser.test.mjs`), and popstate then rewrites nothing, so the hashchange that follows reopens that entry's own palette (browser cases r2-6 and r2-7 in `consortium-pp-b1.browser.test.mjs`). Forward onto an entry the page left is allowed and changes nothing on screen (owner 2026-11-14: no refused Forward). Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go` (`leaveEntry('palette')`: "Your place", and `watchSteps` for a change made outside history). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40, PP-B41 and PP-B48/48b (a link pasted again, with and without the Navigation API) in `consortium-pp-b2.browser.test.mjs`.
 - **Guide presets** (`?plant=&climate=`, `readPreset` `state.ts:279`, `applyPreset` `restore.ts:189-204`): the plant joins `members` inside the existing `quietly(batch())`; `guideKept` becomes `guidePlant`, and b1a replaces `consortium.start.guideKept` with a `consortium.place.` key that does not say "Kept". A preset gives `members == [id]` and no save until the reader acts.

@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:55:52Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:35:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:42Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -196,8 +196,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:532127fa0a50b7db
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:9ee078fc2501059d
+    last_modified: 2026-11-16T21:12:06Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -221,8 +221,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:d871ca3eb6215b08
-    last_modified: 2026-11-16T20:16:07Z
+    digest: sha256:55d7bb694dd3d403
+    last_modified: 2026-11-16T21:53:25Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts

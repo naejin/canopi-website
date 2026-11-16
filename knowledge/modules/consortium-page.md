@@ -5,7 +5,7 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:32Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:59Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:36Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -160,8 +160,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:532127fa0a50b7db
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:9ee078fc2501059d
+    last_modified: 2026-11-16T21:12:06Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
@@ -170,8 +170,8 @@ sources:
   - id: seams-helpers-mjs
     resource: ../../scripts/browser/seams-helpers.mjs
     title: scripts/browser/seams-helpers.mjs
-    digest: sha256:ebc726051d84ee71
-    last_modified: 2026-11-15T06:28:16Z
+    digest: sha256:b5a476f30fee9fa5
+    last_modified: 2026-11-16T21:12:06Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
