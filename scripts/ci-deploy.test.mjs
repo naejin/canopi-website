@@ -16,7 +16,11 @@ const workflow = yaml.load(readFileSync(join(ROOT, '.github', 'workflows', 'ci.y
 const deployJob = workflow.jobs.deploy;
 const script = deployJob.steps.find((s) => s.name === 'Move deploy to this commit (fast-forward only)')?.run;
 
-const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+// Git hooks export GIT_DIR, GIT_INDEX_FILE and the like: inherited by a fixture's git, they would point it
+// at the real repository (a pre-push run once wrote the fixture's config into .git/config). Every git
+// and script here runs without them.
+const ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_')));
+const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: ENV }).trim();
 
 // A bare remote with master A -> B, and X, a commit beside B (not a descendant of B).
 function fixture() {
@@ -39,7 +43,7 @@ function fixture() {
 }
 
 function deploy(f, sha) {
-  const r = spawnSync('bash', ['-e', '-c', script], { cwd: f.work, encoding: 'utf8', env: { ...process.env, GITHUB_SHA: sha } });
+  const r = spawnSync('bash', ['-e', '-c', script], { cwd: f.work, encoding: 'utf8', env: { ...ENV, GITHUB_SHA: sha } });
   let tip = null;
   try { tip = git(f.remote, 'rev-parse', '--verify', '-q', 'refs/heads/deploy'); } catch { /* absent */ }
   return { code: r.status, out: `${r.stdout}${r.stderr}`, tip };
@@ -95,7 +99,7 @@ function changes(f, { sha, before, ref = 'refs/heads/master', event = 'push' }) 
   writeFileSync(out, '');
   const r = spawnSync('bash', ['-e', '-c', rangeScript], {
     cwd: f.work, encoding: 'utf8',
-    env: { ...process.env, EVENT: event, BEFORE: before ?? '', PR_BASE: '', REF: ref, GITHUB_SHA: sha, RUNNER_TEMP: f.dir, GITHUB_OUTPUT: out },
+    env: { ...ENV, EVENT: event, BEFORE: before ?? '', PR_BASE: '', REF: ref, GITHUB_SHA: sha, RUNNER_TEMP: f.dir, GITHUB_OUTPUT: out },
   });
   assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
   return readFileSync(out, 'utf8').match(/^docs_only=(true|false)$/m)?.[1];
