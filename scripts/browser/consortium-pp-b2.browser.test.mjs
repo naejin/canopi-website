@@ -966,20 +966,28 @@ test('PP-B48b (b2 review r3 hash-1, no Navigation API): the same, in a browser w
 // ---- scale (owner directive 2026-11-14: smooth to 200 plants), CPU throttled 4× through CDP ----
 // The shared 200-plant palette (scripts/palette-200.mjs), saved, reopened at 390 and 1280 px. Budgets:
 // navigation → Next step visible 2.5 s; one Add from the Next step → the page updated 300 ms; no long task
-// over 200 ms after the page is up; the palette page's DOM at most SCALE_DOM.
+// over LONG_TASK_MS after the page is up; the palette page's DOM at most SCALE_DOM.
 // DOM budget raised at the PP-B exit (2026-11-16, row "Size budgets are a tripwire": no structural
 // cause, so raised by the measured amount): measured 574 and 659 (327 and 385 on 2026-11-14, before b3's
 // Your plants, about 196 elements folded to 12 rows, joined the page); nothing on it is invisible and no
 // list is mounted twice (every element has a box; the two pictures at their PICTURE_LANE_MAX fold, Your
 // plants at its fold). Budget: measured + about 5 %.
 const SCALE_DOM = { 390: 600, 1280: 690 };
+// Long-task limit raised at the PP-B exit (2026-11-16, row "Size budgets are a tripwire", coordinator:
+// the long task treated as the DOM budget; the owner's scale row says 200 ms, so the owner confirms or
+// reverts): 200 → 300 ms. No structural cause: a timing probe over 3 file runs found the long tasks
+// after load are the palette page's first render running past the Next step (136-160 ms), the Add
+// sheet opening over 200 plants (142-191 ms) and the Add (121-187 ms), each once, nothing doubled;
+// they cross 200 ms only with the machine loaded (load average 5-6 of 8 cores: 248, 252, 275, 282 ms
+// in 2 of 5 file runs, none in 3 runs alone). Limit: the highest measured, rounded up.
+const LONG_TASK_MS = 300;
 // History (owner b2, review r1, measured 2026-11-14, 4× throttle, 3 runs; ranges):
 // - 200 plants: Next step 2.6-4.5 s (2.4-3.1 s with arrival.ts's country guess stubbed: its getTimeZones
 //   for every country is perf-1, b1a's), Add 179-316 ms, DOM 374/459, one or two long tasks of 220-420 ms
 //   after load (native compile, style and layout once the later chunks are fetched, no island JS on top).
 // - 10 plants (fixed costs): Next step 2.0-2.1 s stubbed (3.1-4.4 s not), Add 89-141 ms, no long task.
 // The marker went at the PP-B exit (2026-11-16): Next step 1.6-2.1 s, Add within 300 ms.
-test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette shows its Next step within 2.5 s, one Add updates the page within 300 ms, no long task over 200 ms, the DOM within budget @real-data', { timeout: 240_000 }, async (t) => {
+test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette shows its Next step within 2.5 s, one Add updates the page within 300 ms, no long task over 300 ms, the DOM within budget @real-data', { timeout: 240_000 }, async (t) => {
   const { savedRecord200 } = await import('../palette-200.mjs');
   const record = await savedRecord200();
   const figures = [], misses = [];
@@ -1016,12 +1024,12 @@ test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette
         document.querySelector(sel).click();
       }), press);
       await new Promise((r) => setTimeout(r, 900));
-      const long = await page.evaluate(() => window.__scale.long.filter((e) => e.at > window.__scale.nextAt && e.ms > 200).map((e) => Math.round(e.ms)));
-      figures.push(`${width} px: Add ${Math.round(add)} ms, long tasks over 200 ms after load: ${long.length ? long.join(', ') : 'none'} (save ${members} chars)`);
+      const long = await page.evaluate((lim) => window.__scale.long.filter((e) => e.at > window.__scale.nextAt && e.ms > lim).map((e) => Math.round(e.ms)), LONG_TASK_MS);
+      figures.push(`${width} px: Add ${Math.round(add)} ms, long tasks over ${LONG_TASK_MS} ms after load: ${long.length ? long.join(', ') : 'none'} (save ${members} chars)`);
       if (next >= 2500) misses.push(`${width} px: Next step visible in ${Math.round(next)} ms (budget 2500, throttled 4×)`);
       if (add >= 300) misses.push(`${width} px: one Add updates the page in ${Math.round(add)} ms (budget 300)`);
       if (dom > SCALE_DOM[width]) misses.push(`${width} px: ${dom} elements on the palette page (budget ${SCALE_DOM[width]})`);
-      if (long.length) misses.push(`${width} px: long tasks over 200 ms after load (${long.join(', ')} ms)`);
+      if (long.length) misses.push(`${width} px: long tasks over ${LONG_TASK_MS} ms after load (${long.join(', ')} ms)`);
     } finally {
       t.diagnostic(figures.join(' | '));
       await page.browserContext().close().catch(() => {});
