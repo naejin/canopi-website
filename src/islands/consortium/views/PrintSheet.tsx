@@ -10,9 +10,10 @@
 // Through the years (store.yearStep; PP-B18). A toxicity note prints its level (b3r-3). The members the
 // page cannot show (a guest list unread, on none of this climate's lists) are on paper too, after the
 // plants, each with why, as Your plants says it (core yourPlants rows; review b3f-2), and the count is
-// the whole palette's.
+// the whole palette's. The filter is written out here, not core yourPlants: weigh.ts stays in the
+// palette chunk alone (shared by two lazy chunks it would split into a chunk of its own).
 import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf, yourPlants } from '../../../lib/consortium/index.ts';
+import { jobsOf } from '../../../lib/consortium/index.ts';
 import { climate, country, failedMembers, flagScene, flags, guests, memberTaxa, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
@@ -48,7 +49,12 @@ export function PrintSheet() {
   const status = source.value && code ? (source.value.countries().get(code)?.invasiveChecked ? 'checked' : 'unchecked') : 'none';
   const release = source.value?.info().releaseId ?? '';
   const small = members.length <= PRINT_DRAWING_MAX;
-  const gone = yourPlants(members, [], { failed: failedMembers.value, unlisted: missingMembers.value.unlisted }).flatMap((r) => ('missing' in r ? [r] : []));
+  // The members not shown: a guest list unread first, then on none of this climate's lists, each once,
+  // none the table already holds.
+  const seen = new Set(names.keys()), gone: { id: PlantId; missing: 'failed' | 'unlisted' }[] = [];
+  for (const [ids, missing] of [[failedMembers.value, 'failed'], [missingMembers.value.unlisted, 'unlisted']] as const) {
+    for (const id of ids) if (!seen.has(id)) { seen.add(id); gone.push({ id, missing }); }
+  }
   return (
     <section class="ct-print" aria-labelledby="ct-print-h">
       <h2 id="ct-print-h" class="ct-print-title">{T('print.title')}</h2>

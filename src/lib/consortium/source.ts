@@ -61,13 +61,3 @@ const STORED: { [K in FactKey]: (t: Taxon) => FactValues[K] | null } = {
 // A fact of a plant at a site in a period: today the stored value whatever the site and period (the
 // signature is the seam F2 and E7 fill).
 export const factAt: FactAt = (key, taxon) => STORED[key](taxon);
-
-// A plant's water need, from its water_need fact (factAt), the one classifier (site.ts's water check reads
-// the same fact; weigh.ts groups by this): drought tolerance when recorded (the direct answer to
-// "takes a dry summer"), else moisture use; null when neither is. 'regular' reads "Needs regular water"
-// (owner 2026-11-15, never "thirsty").
-type WaterNeed = 'dry' | 'medium' | 'regular';
-const BY_DROUGHT: Record<string, WaterNeed> = { High: 'dry', Medium: 'medium', Low: 'regular', None: 'regular' };
-const BY_MOISTURE: Record<string, WaterNeed> = { Low: 'dry', Medium: 'medium', High: 'regular' };
-export const waterNeed = (w: FactValues['water_need'] | null): WaterNeed | null =>
-  (w?.drought ? BY_DROUGHT[w.drought] : undefined) ?? (w?.moisture ? BY_MOISTURE[w.moisture] : undefined) ?? null;

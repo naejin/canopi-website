@@ -66,20 +66,29 @@ test('weigh.json thresholds: the water share and the family minimum and share ar
 });
 const lines = (out) => { assert.ok(Array.isArray(out), 'lines, not "checking"'); return out; };
 
-// The one drought-then-moisture classifier, beside factAt, whose water_need site.ts's water check reads
-// too (review b3f-6/7); weigh.ts groups by it (L10: weigh.ts may not import site.ts).
-test('source.ts waterNeed: drought tolerance first (High dry, Medium medium, Low or None regular), else moisture use (Low dry, Medium medium, High regular), else not recorded', async () => {
-  const { waterNeed } = await import('../src/lib/consortium/source.ts');
+// Things to weigh's water-need classifier (weigh.ts, off the first run: only Things to weigh reads it).
+test('weigh.ts waterNeed: drought tolerance first (High dry, Medium medium, Low or None regular), else moisture use (Low dry, Medium medium, High regular), else not recorded; a drought value outside that list counts as not recorded', async () => {
+  const { waterNeed } = await import('../src/lib/consortium/weigh.ts');
   const cases = [
     [{ drought: 'High', moisture: 'High' }, 'dry'], [{ drought: 'Medium', moisture: null }, 'medium'], [{ drought: 'Low', moisture: 'Low' }, 'regular'],
     [{ drought: 'None', moisture: null }, 'regular'], [{ drought: null, moisture: 'Low' }, 'dry'], [{ drought: null, moisture: 'Medium' }, 'medium'],
     [{ drought: null, moisture: 'High' }, 'regular'], [null, null],
+    [{ drought: '', moisture: 'High' }, 'regular'], [{ drought: 'Very high', moisture: null }, null],
   ];
   for (const [w, want] of cases) assert.equal(waterNeed(w), want, JSON.stringify(w));
-  const w = await import('../src/lib/consortium/weigh.ts');
-  assert.deepEqual(Object.keys(w).sort(), ['sizeLine', 'weighLines', 'yourPlants'], 'weigh.ts exports');
-  const src = (await import('node:fs')).readFileSync(new URL('../src/lib/consortium/weigh.ts', import.meta.url), 'utf8');
-  assert.doesNotMatch(src, /DROUGHT|MOISTURE/, 'weigh.ts keeps no water table of its own');
+});
+
+// The site's water check answers its own question (does the plant suit a dry or wet site), but reads
+// drought tolerance as Things to weigh does (review b3g-3): a value outside High, Medium, Low, None is
+// not recorded, so moisture use decides, never a "fit" given for the drought reason.
+test('site.ts water check: an unexpected drought value (\'\' or a new word) counts as not recorded, as in weigh.ts waterNeed', async () => {
+  const { fits } = await import('../src/lib/consortium/site.ts');
+  const water = (traits, w) => fits(plant({ traits: { well_drained: null, ...traits } }), { light: 'unsure', soil: 'unsure', water: w, room: 'unsure' }).reasons.find((r) => r.key === 'water');
+  for (const drought of ['', 'Very high']) {
+    assert.deepEqual(water({ drought_tolerance: drought, moisture_use: 'High' }, 'dry'), { key: 'water', verdict: 'misfit', trait: 'moisture_use' }, `dry site, drought ${JSON.stringify(drought)}, moisture High`);
+    assert.deepEqual(water({ drought_tolerance: drought, moisture_use: null }, 'dry'), { key: 'water', verdict: 'unknown', trait: 'drought_tolerance' }, `dry site, drought ${JSON.stringify(drought)}, moisture not recorded`);
+    assert.deepEqual(water({ drought_tolerance: drought, moisture_use: null }, 'wet'), { key: 'water', verdict: 'unknown', trait: null }, `wet site, drought ${JSON.stringify(drought)}`);
+  }
 });
 
 // ---- Your plants (new form of the deleted F1a-P10: each plant once, warnings first) ----

@@ -71,7 +71,7 @@ export function Palette() {
   // climate lists too is shown, so never counted).
   const flags = store.flags.value, failed = store.failedMembers.value;
   const rows = useMemo(() => yourPlants(members, flags, { failed, unlisted: missing.unlisted }), [members, flags, failed, missing.unlisted]);
-  const unchecked = useMemo(() => rows.filter((r) => 'missing' in r).length, [rows]);
+  const unchecked = rows.filter((r) => 'missing' in r).length;
   useEffect(() => { store.wantVerdict(); }, []);
   // Stable while the holes and verdicts are: the pictures (memoised) redraw only when they change.
   const pic = useMemo(() => {

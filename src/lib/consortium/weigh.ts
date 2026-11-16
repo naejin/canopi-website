@@ -11,11 +11,13 @@
 //   could not be read, a plant on none of this climate's lists) count in m and are said as not checked.
 // - A plant's water need is the factAt water_need fact (ADR-6) for the site and period it is given
 //   (climateFor's context, architecture 3.1; today's stored value whatever they are), grouped by
-//   source.ts waterNeed, the one classifier, beside factAt (site.ts's water check reads the same fact).
+//   waterNeed below (site.ts's water check reads the same fact with its own dry/wet-site mapping; both
+//   take a drought value outside the list as not recorded).
 // - Your plants: each plant once, warned plants first (owner "warn, never hide"), then the plants it
 //   cannot show, and its full-grown size as a Line (the view formats the lengths for the page language).
 import type { Flag, Line, PlantId, Taxon, VerdictContext, WeighLine } from './types.ts';
-import { factAt, waterNeed } from './source.ts';
+import type { FactValues } from './types.ts';
+import { factAt } from './source.ts';
 
 const K = (k: string): string => `consortium.plants.${k}`;
 
@@ -26,6 +28,15 @@ const WATER_JUDGE_SHARE = 0.5;
 // 2026-11-15 keeps both).
 const FAMILY_MIN = 3;
 const FAMILY_SHARE = 0.25;
+
+// A plant's water need, from its water_need fact: drought tolerance when recorded (the direct answer to
+// "takes a dry summer"), else moisture use; null when neither is (a value outside these lists counts as
+// not recorded). 'regular' reads "Needs regular water" (owner 2026-11-15, never "thirsty").
+type WaterNeed = 'dry' | 'medium' | 'regular';
+const BY_DROUGHT: Record<string, WaterNeed> = { High: 'dry', Medium: 'medium', Low: 'regular', None: 'regular' };
+const BY_MOISTURE: Record<string, WaterNeed> = { Low: 'dry', Medium: 'medium', High: 'regular' };
+export const waterNeed = (w: FactValues['water_need'] | null): WaterNeed | null =>
+  (w?.drought ? BY_DROUGHT[w.drought] : undefined) ?? (w?.moisture ? BY_MOISTURE[w.moisture] : undefined) ?? null;
 
 type WeighContext = Pick<VerdictContext, 'lookup' | 'period'>;
 interface WeighOptions {
@@ -68,7 +79,7 @@ export function weighLines(members: readonly Taxon[], ctx: WeighContext, { pendi
 // left to the plant's sheet, as kit/flags.ts flagLines does).
 const shown = (f: Flag): boolean => f.kind !== 'conflict' || f.severity !== 'low';
 
-type PlantRow = { plant: Taxon; warned: boolean } | { id: PlantId; missing: 'failed' | 'unlisted' };
+export type PlantRow = { plant: Taxon; warned: boolean } | { id: PlantId; missing: 'failed' | 'unlisted' };
 // Your plants: each plant once, the warned ones first, then the members it cannot show (a guest list
 // that could not be read, on none of this climate's lists: store.failedMembers, missingMembers.unlisted),
 // then the rest, each group in the palette's order.

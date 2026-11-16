@@ -11,8 +11,7 @@
 // the Next step's empty card offers the ways in. Its rows come from Palette (core yourPlants, useMemo
 // there, never in the store: first run), which counts Things to weigh's plants not checked from them.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import type { yourPlants } from '../../../../lib/consortium/index.ts';
+import type { PlantId, PlantRow, Taxon } from '../../../../lib/consortium/index.ts';
 import { moreLine, sizeLine } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
@@ -68,7 +67,7 @@ function Missing({ id, why, onRemove }: { id: PlantId; why: 'failed' | 'unlisted
   );
 }
 
-export function YourPlants({ rows }: { rows: ReturnType<typeof yourPlants> }) {
+export function YourPlants({ rows }: { rows: readonly PlantRow[] }) {
   const [open, setOpen] = useState(false);
   const [unfolded, setUnfolded] = useState(false);
   const list = useRef<HTMLUListElement>(null);
