@@ -11,7 +11,9 @@
 .ct .ct-steps .ct-step { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; background: none; color: var(--text-secondary); font: inherit; }
 .ct .ct-steps button.ct-step { cursor: pointer; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .ct .ct-steps [aria-current="step"] .ct-step { color: var(--text); font-weight: 600; }
-.ct .ct-step-later { opacity: 0.75; }
+/* A later step is plain --text-secondary (no opacity: faded, it fell under 4.5:1 in the light theme,
+   axe); it differs from the current step by weight and the filled number, and from a done one by the link. */
+.ct .ct-step-later { color: var(--text-secondary); }
 .ct .ct-step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 13px; font-weight: 600; }
 .ct .ct-steps [aria-current="step"] .ct-step-n { border-color: var(--accent); background: var(--accent); color: var(--surface); }
 .ct .ct-placeholder { opacity: 0.9; }

@@ -48,6 +48,12 @@ async function axeCounts(page) {
   // from /data/featured-designs.json), and a count taken mid-fill flips between runs.
   await page.waitForNetworkIdle({ idleTime: 500, timeout: 15_000 });
   await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => r()))));
+  // And no fade-in under way: the home page's legend fades in (home.css caption-in, 420 ms) once the
+  // design is written, and a contrast read mid-fade counted its faded text (color-contrast 0 → 8-10,
+  // flipping between runs). Finite animations only, so a looping one cannot hold the count.
+  await page.evaluate(() => Promise.all(document.getAnimations()
+    .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
+    .map((a) => a.finished.catch(() => {}))));
   await page.evaluate(AXE_SOURCE);
   const result = await page.evaluate(async (tags) => {
     const r = await window.axe.run(document, { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] });
