@@ -18,8 +18,13 @@ function land(found: HTMLElement | null): HTMLElement | null {
   return el;
 }
 // then: told the element focused (the Next step's Add hands the toast's way back to it).
+// soon: explicit landings still to come; the safety net leaves the focus to them (one move, not two:
+// each focus() may scroll the page).
+let soon = 0;
 export function focusSoon(find: () => HTMLElement | null, then?: (el: HTMLElement) => void): void {
+  soon++;
   requestAnimationFrame(() => requestAnimationFrame(() => {
+    soon--;
     const el = land(find());
     if (el) then?.(el);
   }));
@@ -45,7 +50,7 @@ export function watchFocus(root: HTMLElement): void {
     const at = document.activeElement;
     const region = lastRegion?.isConnected ? lastRegion : null;
     lastFocused = null;
-    if (at && at !== document.body) return; // the focus went somewhere already
+    if ((at && at !== document.body) || soon > 0) return; // the focus went somewhere already, or will
     land((region && headingOf(region)) ?? viewHeading());
   }).observe(root, { childList: true, subtree: true });
 }
