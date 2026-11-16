@@ -2,7 +2,7 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:23:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T23:40:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
@@ -44,13 +44,13 @@ sources:
   - id: ci-deploy-test-mjs
     resource: ../../scripts/ci-deploy.test.mjs
     title: scripts/ci-deploy.test.mjs
-    digest: sha256:9b06ba6820941ce1
-    last_modified: 2026-11-13T03:40:44Z
+    digest: sha256:e4bef9b9cbe6d003
+    last_modified: 2026-11-16T22:35:45Z
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
-    digest: sha256:c15c0a1a12820dd3
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:ebe432e54fea2dc8
+    last_modified: 2026-11-16T23:39:47Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -143,17 +143,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 
 ## After a push that moves a page: the /palette/ move (PP-B commit 0b)
 
-The Plant palette moved from `/consortium/` to `/palette/` (and `/<lang>/palette/`). The old addresses answer with **301 redirects** (`public/_redirects`, 22 lines: 11 locales, with and without the trailing slash, no splat). The stub-page fallback of [the architecture](/architecture/plant-palette-architecture.md) section 8.4 is **not** used; never put a stub page and a redirect on one path.
+The Plant palette moved from `/consortium/` to `/palette/` (and `/<lang>/palette/`). **The old addresses are not forwarded; they answer 404** (owner, 2026-11-17: "Remove consortium link entirely. We don't have that many users yet"). `check-built-site.mjs` asserts no `/consortium/` rule in `_redirects`, no built page at the old addresses and none in the sitemap.
 
-- **Probe on wrangler dev (2026-11-14, before the push):** `scripts/browser/serve.mjs` on the production `dist/`. `/consortium/?plant=Zea+mays&climate=temperate` answered `301 Location: /palette/?plant=Zea+mays&climate=temperate`. `/fr/consortium/?v=3&c=temperate&a=AbCdEf` answered `301 /fr/palette/?v=3&c=temperate&a=AbCdEf`. In Chrome, `/consortium/#v=5&c=temperate&e=1` landed on `/palette/#v=5&c=temperate&e=1`. `/consortium` without the slash also redirected, and `/data/consortium/` was untouched.
-- **Production check, once `version.json` shows PP-B's sha:**
-
-  ```sh
-  curl -sI 'https://projectcanopi.com/consortium/?plant=Zea+mays&climate=temperate' | grep -iE '^(HTTP|location)'
-  curl -sI 'https://projectcanopi.com/fr/consortium/?v=3&c=temperate' | grep -iE '^(HTTP|location)'
-  curl -sI 'https://projectcanopi.com/ru/consortium' | grep -iE '^(HTTP|location)'
-  curl -sI 'https://projectcanopi.com/palette/' | grep -iE '^HTTP'
-  ```
-
-  Expect `301` with `location: /palette/?plant=Zea+mays&climate=temperate`, `/fr/palette/?v=3&c=temperate` and `/ru/palette/`, then `200` for `/palette/`. A fragment never reaches the server, so check it in a browser: `https://projectcanopi.com/consortium/#v=5&c=temperate` should end on `/palette/#v=5&c=temperate`.
-- **If production drops the query string:** change the 22 lines to `302` until the check passes (architecture 8.4). If it still drops it, switch to the stub fallback: remove the 22 lines, add the stub pages, and have `check-built-site.mjs` expect the stubs.
+- **Why not the planned 301s:** the 22 `_redirects` lines answered 301 on wrangler dev (probe 2026-11-14), but production answered 404 after push b52b42a (2026-11-17). Workers Builds does not apply `public/_redirects` here; the Web Edition's `/app/:route /app/ 200` rule has no effect in production either (`/app/xyz` answers 404). Never rely on `_redirects` for this site without a production `curl -sI` check.
+- **Production check after a page move:** `curl -sI 'https://projectcanopi.com/<new path>/' | grep -iE '^HTTP'` answers `200` once `version.json` shows the push's sha.

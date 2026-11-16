@@ -426,21 +426,16 @@ for (const lang of locales) {
   checkLinks(html, path);
   for (const asset of assetLinks(html)) assert.ok(existsSync(join(root, asset)), `${path}: missing asset ${asset}`);
 }
-// PP-B commit 0b (plant-palette-architecture 8.4): the old /consortium/ addresses are 301 redirects in
-// _redirects, never a built page (never a stub page and a redirect on one path), out of the sitemap,
-// and linked from no built page (checkLinks above fails a link to a page that is not built).
+// The old /consortium/ addresses (PP-B 0b moved the tool to /palette/) are not forwarded (owner,
+// 2026-11-17: few users yet): no rule, no built page, out of the sitemap, linked from no built page.
 {
   const lines = readFileSync(join(root, '_redirects'), 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
-  const moved = locales.flatMap((l) => {
-    const from = l === 'en' ? '/consortium' : `/${l}/consortium`;
-    return [`${from} ${consortiumPath(l)} 301`, `${from}/ ${consortiumPath(l)} 301`];
-  });
-  assert.deepEqual(lines.filter((l) => /consortium/.test(l.split(/\s+/)[0])).sort(), moved.sort(), '_redirects: the 22 /consortium/ lines, each to consortiumPath(lang), written out per locale with no splat');
+  assert.deepEqual(lines.filter((l) => /consortium/.test(l.split(/\s+/)[0])), [], '_redirects: no /consortium/ rule');
   assert.equal(lines[0], '/app/:route /app/ 200', '_redirects: the Web Edition fallback stays first');
   const sitemap = readFileSync(join(root, 'sitemap-0.xml'), 'utf8');
   for (const l of locales) {
     const old = l === 'en' ? 'consortium' : join(l, 'consortium');
-    assert.ok(!existsSync(join(root, old, 'index.html')), `/${old}/: no built page at the old address (the 301 answers there)`);
+    assert.ok(!existsSync(join(root, old, 'index.html')), `/${old}/: no built page at the old address`);
     assert.ok(!sitemap.includes(`https://projectcanopi.com/${old}/<`), `/${old}/: not in the sitemap`);
     assert.ok(sitemap.includes(`<loc>https://projectcanopi.com${consortiumPath(l)}</loc>`), `${consortiumPath(l)}: in the sitemap`);
   }

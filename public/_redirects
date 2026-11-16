@@ -3,29 +3,4 @@
 # Keep /app/assets/ and /app/canopi-catalog/ files direct.
 /app/:route /app/ 200
 
-# The Plant palette moved from /consortium/ to /palette/ (PP-B commit 0b; owner row "Plant palette name").
-# Written out per locale, with and without the trailing slash: no splat (/:lang/consortium/* would
-# catch /data/consortium/*), no Language= condition. Cloudflare keeps the query string; the fragment
-# (share links, #v=5...) never reaches the server and the browser keeps it across the 301.
-/consortium /palette/ 301
-/consortium/ /palette/ 301
-/fr/consortium /fr/palette/ 301
-/fr/consortium/ /fr/palette/ 301
-/es/consortium /es/palette/ 301
-/es/consortium/ /es/palette/ 301
-/pt/consortium /pt/palette/ 301
-/pt/consortium/ /pt/palette/ 301
-/it/consortium /it/palette/ 301
-/it/consortium/ /it/palette/ 301
-/zh/consortium /zh/palette/ 301
-/zh/consortium/ /zh/palette/ 301
-/de/consortium /de/palette/ 301
-/de/consortium/ /de/palette/ 301
-/ja/consortium /ja/palette/ 301
-/ja/consortium/ /ja/palette/ 301
-/ko/consortium /ko/palette/ 301
-/ko/consortium/ /ko/palette/ 301
-/nl/consortium /nl/palette/ 301
-/nl/consortium/ /nl/palette/ 301
-/ru/consortium /ru/palette/ 301
-/ru/consortium/ /ru/palette/ 301
+# The old /consortium/ addresses are not forwarded (owner, 2026-11-17: few users yet); they answer 404.
