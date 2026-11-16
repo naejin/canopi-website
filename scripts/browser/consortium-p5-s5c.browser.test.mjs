@@ -12,7 +12,10 @@
 // (npm run test:browser runs every file in shards: scripts/browser/run.mjs.)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadState } from './harness.mjs';
+import { ROOT } from './serve.mjs';
 import { aria, h, has, realDb, settled, suggestDirect, suggestReady, useHarness } from './helpers.mjs';
 import { SITES, pickCard } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
@@ -165,6 +168,15 @@ test('P5-14e (S5c range chunk offline): if the range chunk cannot load, the tool
   assert.ok(await page.waitForFunction((want) => { const { store } = window.__ctTest; return store.climate.value === 'Temperate' && store.view.value === 'matrix' && want.every((x) => store.members.value.includes(x)); }, { timeout: 15_000 }, ids.slice(0, 5)).then(() => true, () => false), 'a pasted link opens its consortium');
 });
 
+// The build's chunks that name the range chunk's file (the entry's import() included): its importers,
+// each of which may request it once.
+function rangeImporters() {
+  const dir = join(ROOT, h.dir, 'client', '_astro'), files = readdirSync(dir);
+  const range = files.find((f) => /^range\.[\w-]+\.js$/.test(f));
+  assert.ok(range, 'the range chunk is in the build');
+  return files.filter((f) => f.endsWith('.js') && f !== range && readFileSync(join(dir, f), 'utf8').includes(range)).length;
+}
+
 test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the only retry, one toast per failure, and the notice goes with the location', async () => {
   const page = await tool();
   const cdp = await page.createCDPSession();
@@ -178,13 +190,13 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the 
   await atSite(page, 'seville');
   assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
   await new Promise((r) => setTimeout(r, 1000));
-  // Three importers reach the same chunk at the first location: the store's rule, the Mediterranean
-  // panel (future.ts) and the mark providers (range-marks.ts), each its own chunk since E6 B4. Chrome
-  // 155 reuses the first failure for later imports; the CI runner's Chrome sends one request per
-  // importer. Either way it is one to three requests at the first location, and none more after a
-  // new one.
-  const before = failed.length;
-  assert.ok(before >= 1 && before <= 3, `the chunk was requested at Seville (${before})`);
+  // Several chunks reach the range chunk at the first location: the store's rule (import()) and every
+  // chunk that imports it statically (verdict since PP-B commit 0, mark providers, the pool and future
+  // parts, later). Chrome shares one request between imports in flight together, and reuses a failure
+  // for later ones locally, but the CI runner's Chrome sent four (run 43971791616). So the bound is
+  // read from the build, one request per importer at most, and none more after a new location.
+  const before = failed.length, importers = rangeImporters();
+  assert.ok(before >= 1 && before <= importers, `the chunk was requested at Seville (${before} of at most ${importers})`);
   await atSite(page, 'lyon');
   await new Promise((r) => setTimeout(r, 1000));
   assert.equal(failed.length, before, 'a new location does not import the chunk again');
