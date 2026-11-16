@@ -514,29 +514,30 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 //   and every page preloads the database (as=fetch, crossorigin, so the island's fetch reuses it).
 // The chunks are found by their entry module (chunk roles, written by the build: astro.config.mjs
 // canopi:consortium-chunk-roles), never by file name.
-// Caps (E6 stream B4, 2026-11-13): each role's measured cost at the B4 build (gzip -9) plus 0.5 KB
-// headroom, rounded up to 0.1 KB, never above design check A14's role maximum (sheets, details, later, suggest
-// ≤ 8 KB; a feature ≤ 12 KB; location ≤ 20 KB). A part that outgrows its cap is a coordinator row, not
-// a silent raise. An empty role (likely and native until S5e; palette until PP-B b2) has no chunk to cap
-// yet; it gets its A14 maximum.
-const FIRST_RUN_BUDGET = 40 * 1024;
+// Caps (PP-B exit, 2026-11-16; slices "Budgets": at the exit every cap is measured + 0.5 KB): each
+// role's measured cost at the PP-B exit build (gzip -9, first use, with the chunks it shares) plus 0.5 KB
+// headroom, rounded up to 0.1 KB, never above design check A14's role maximum (sheets, details, later,
+// suggest ≤ 8 KB; a feature ≤ 12 KB; location ≤ 20 KB). Size budgets are a tripwire until the
+// size-optimisation stage (row "Size budgets are a tripwire", 2026-11-16): a part that outgrows its cap
+// is first checked for a structural mistake, else raised by the measured amount in a dated line. An
+// empty role (likely and native until S5e) has no chunk to cap yet; it gets its A14 maximum. (The E6 B4
+// caps of 2026-11-13 were set the same way.)
+const FIRST_RUN_BUDGET = 40 * 1024; // measured 40,951 B at the PP-B exit (9 B under)
 const KB = 1024;
 const ROLE_CAPS = {
-  location: 11.8 * KB, // measured 11,493 B (A14 max 20)
-  markProviders: 2.9 * KB, // measured 2,375 B with the chunk it shares with future (A14 max 12)
-  future: 2.8 * KB, // measured 2,275 B with that shared chunk (A14 max 12)
-  pool: 1.4 * KB, // measured 891 B (A14 max 12)
+  location: 11.9 * KB, // measured 11,603 B (A14 max 20)
+  markProviders: 2.9 * KB, // measured 2,382 B with the chunk it shares with future (A14 max 12)
+  future: 2.8 * KB, // measured 2,282 B with that shared chunk (A14 max 12)
+  pool: 1.6 * KB, // measured 1,115 B: Place's count line since b1b (A14 max 12)
   likely: 12 * KB, // no chunk yet (S5e): A14 max
   native: 12 * KB, // no chunk yet (S5e): A14 max
-  range: 1.6 * KB, // measured 1,100 B (A14 max 12)
-  details: 6.7 * KB, // measured 6,296 B (A14 max 8)
-  sheets: 6.3 * KB, // each sheet; the largest (Paste) measured 5,933 B, Add 2,414, Correction 2,380, Swap 1,190 (A14 max 8)
-  later: 8 * KB, // measured 7,831 B: the A14 max of 8 KB leaves 0.35 KB headroom
-  suggest: 8 * KB, // set before R4's loadSuggest gave it a chunk (1.8 KB at the E6 hand-off build): A14 max
-  // PP-B (plant-palette-slices "Budgets"): 12 KB each until measured; set to measured + 0.5 KB at the
-  // PP-B exit (the matrix role went with the matrix in commit 0a').
-  palette: 12 * KB, // no chunk yet (b2)
-  verdict: 12 * KB, // the stub until b2 writes the rule
+  range: 1.6 * KB, // measured 1,123 B (A14 max 12)
+  details: 6.6 * KB, // measured 6,220 B (A14 max 8)
+  sheets: 6.3 * KB, // each sheet; the largest measured 5,881 B (A14 max 8)
+  later: 6.1 * KB, // measured 5,667 B (A14 max 8)
+  suggest: 3.8 * KB, // measured 3,280 B (A14 max 8)
+  palette: 10.6 * KB, // measured 10,263 B (b2's palette page with b3's Your plants; A14 max 12)
+  verdict: 2.9 * KB, // measured 2,367 B (A14 max 12)
 };
 const LOCATION_BUDGET = 20 * KB;
 const MAPLIBRE_BUDGET = 330 * KB;
