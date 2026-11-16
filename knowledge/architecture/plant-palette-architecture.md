@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:15:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:43Z }
 sources:
@@ -32,8 +32,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:9d29791375862387
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:4a41305cbf98fb21
+    last_modified: 2026-11-16T18:54:58Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -52,8 +52,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:73d0a99d6422b186
-    last_modified: 2026-11-14T21:33:54Z
+    digest: sha256:d7febd141cb603ce
+    last_modified: 2026-11-16T19:25:04Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -92,8 +92,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:56d00d4048591c6f
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:08bd3d1895fcd10e
+    last_modified: 2026-11-16T19:23:47Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -122,8 +122,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:0c07788ec3b722bc
-    last_modified: 2026-11-15T07:15:54Z
+    digest: sha256:e7a1f6ee70b682e3
+    last_modified: 2026-11-16T18:57:05Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -272,8 +272,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1049f9dc00bc792a
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:0b8463680869cfaf
+    last_modified: 2026-11-16T18:54:58Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
@@ -407,8 +407,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:d62de4358f36e9a2
-    last_modified: 2026-11-15T11:09:02Z
+    digest: sha256:eae84185062764a2
+    last_modified: 2026-11-16T18:28:21Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
@@ -452,8 +452,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:b67d268d49cfc1c5
-    last_modified: 2026-11-16T17:40:54Z
+    digest: sha256:71ce374feb2810af
+    last_modified: 2026-11-16T18:28:21Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -859,7 +859,7 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 | Tool and database | "Loading the tool"; "Still loading" after 5 s (inventory A6) from a `slow` callback of `data/load.ts` read in `main.ts:29-56`; the stall stays 15 s (`data/load.ts:21`); tested with the harness's new `database: 'hold'` (commit 0; `harness.mjs:312-315` answers at once or, for `stall`, never), released by `page.releaseHeld()`, and a `timeouts.slow` hook if the threshold needs one | the live screens (`App.tsx:28-36`) | b2 |
 | Offline | page-level line "You are offline. What is loaded still works." from `navigator.onLine` and its events | — | b2 (`store.ts` `offline`, shown by `App.tsx`) |
 | Return visit | the palette page's placeholder, never the Place form (marker P2, inventory P42) | "could not be restored" lines (`state/restore.ts:20-22`) | b2 |
-| Any lazy chunk | one loading line in place | `LoadFailed` with Reload; next use fetches `?retry=n` (`views/lazy.tsx:62-148`); the rest stays usable; offline: "Needs a connection", a retry on `online`, never a reload | `views/lazy.tsx` (b2 in PP-B) |
+| Any lazy chunk | one loading line in place | `LoadFailed` with Reload; next use fetches `?retry=n` (`views/lazy.tsx:62-148`); the rest stays usable; offline: "Needs a connection", a retry when the store's `offline` turns false (PP-B exit), never a reload | `views/lazy.tsx` (b2 in PP-B) |
 | `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Retry in place fetches the chunk again under `?retry=n` (core `verdict-load.ts`, the URL read from the error); offline "Needs a connection", asked again on `online`, never a page reload (PP-B20, `block: { verdict: 404 }`) | b2, c2 |
 | Guest lists | holes `pending`, "Loading the other lists" (inventory L2) | the list is named as missing; its plants "not checked" (PP-B21); a palette of such plants only is never "empty" (PP-B44); removing a failed list's last plant takes it off `failedPools`, so the notice and "not checked" go, and the list is read afresh if a plant of it comes back (PP-B45) | b2 |
 | Location lookup | asking, refused, timed out, unavailable, sea, coast, polar, between two climates (D2, D9) | search offline or failed, map could not load (D4, D6) | b1a |

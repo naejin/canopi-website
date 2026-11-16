@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:16:01Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:44Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -46,8 +46,8 @@ sources:
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:a090fc09acf02ec7
-    last_modified: 2026-11-14T12:25:38Z
+    digest: sha256:405af6ba4baa4b93
+    last_modified: 2026-11-16T18:31:35Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -91,8 +91,8 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:030cfba3a726655d
-    last_modified: 2026-11-15T10:24:56Z
+    digest: sha256:c638ae839c86107e
+    last_modified: 2026-11-16T18:57:58Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
@@ -106,8 +106,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:73d0a99d6422b186
-    last_modified: 2026-11-14T21:33:54Z
+    digest: sha256:d7febd141cb603ce
+    last_modified: 2026-11-16T19:25:04Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -176,8 +176,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:56d00d4048591c6f
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:08bd3d1895fcd10e
+    last_modified: 2026-11-16T19:23:47Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -201,8 +201,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:0c07788ec3b722bc
-    last_modified: 2026-11-15T07:15:54Z
+    digest: sha256:e7a1f6ee70b682e3
+    last_modified: 2026-11-16T18:57:05Z
   - id: list-query-ts
     resource: ../../src/islands/consortium/rules/list-query.ts
     title: src/islands/consortium/rules/list-query.ts
@@ -371,8 +371,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:d62de4358f36e9a2
-    last_modified: 2026-11-15T11:09:02Z
+    digest: sha256:eae84185062764a2
+    last_modified: 2026-11-16T18:28:21Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json

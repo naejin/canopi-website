@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:13Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T10:29:30Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:39Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:d8ccb651541908a1
-    last_modified: 2026-11-16T18:00:55Z
+    digest: sha256:3cd424e589477fb7
+    last_modified: 2026-11-16T19:25:04Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:73d0a99d6422b186
-    last_modified: 2026-11-14T21:33:54Z
+    digest: sha256:d7febd141cb603ce
+    last_modified: 2026-11-16T19:25:04Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -108,13 +108,13 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:9d29791375862387
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:4a41305cbf98fb21
+    last_modified: 2026-11-16T18:54:58Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:db4cb8c5307ae538
-    last_modified: 2026-11-15T08:51:41Z
+    digest: sha256:b2fe17977dd5adc7
+    last_modified: 2026-11-16T18:28:21Z
 ---
 
 # Responsibility

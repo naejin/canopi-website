@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:28Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T22:04:27Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:73d0a99d6422b186
-    last_modified: 2026-11-14T21:33:54Z
+    digest: sha256:d7febd141cb603ce
+    last_modified: 2026-11-16T19:25:04Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
     digest: sha256:1bbd681174e63de4
-    last_modified: 2026-11-15T05:48:55Z
+    last_modified: 2026-11-14T22:07:45Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -45,8 +45,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:56d00d4048591c6f
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:08bd3d1895fcd10e
+    last_modified: 2026-11-16T19:23:47Z
 enforced_by: [scripts/check-built-site.mjs, scripts/built-modules.test.mjs]
 ---
 
@@ -59,22 +59,24 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 ## Decision
 
 - **Per-chunk caps, no total cap.** `ISLAND_BUDGET` and `FEATURES_BUDGET` are gone. Each on-demand part has a role in `ROLE_ENTRIES` (`scripts/built-modules.mjs`, the one list: the P5 features `location`, `markProviders`, `future`, `pool`, `likely`, `native`, `range`, and the E6 lazy parts `details`, `sheets`, `later`, `suggest`). Its cost is what a first use fetches: the role chunk and its static imports that the page has not already loaded (`onDemandChunks(...).costs`; another role chunk it imports statically is costed on its own).
-- **Caps** (`ROLE_CAPS` in `check-built-site.mjs`): each role's measured cost at the B4 build (gzip -9) plus 0.5 KB, rounded up to 0.1 KB, never above the A14 maximum; an empty role gets its maximum.
+- **Caps** (`ROLE_CAPS` in `check-built-site.mjs`): each role's measured cost plus 0.5 KB, rounded up to 0.1 KB, never above the A14 maximum; an empty role gets its maximum. Set at the E6 B4 build (2026-11-13) and again at the PP-B exit (2026-11-16, slices "Budgets": every cap measured + 0.5 KB), the table's figures. Until the size-optimisation stage a budget is a tripwire (row "Size budgets are a tripwire", 2026-11-16, in [user decisions](/decisions/consortium-user-decisions.md)): a part over its cap is first checked for a structural mistake, else raised by the measured amount in a dated line.
 
-| Role | Cap (gzip) | Measured at B4 | A14 maximum |
+| Role | Cap (gzip) | Measured at the PP-B exit (2026-11-16) | A14 maximum |
 |---|---|---|---|
-| first run (the island entry and its static imports), `FIRST_RUN_BUDGET` | 40 KB since the owner's call of 2026-11-14 (PP-B; 38 KB from the E6 chunk-5 exit; 40 KB from the chunk-3 merge to the chunk-5 exit) | 38,538 B (37.6 KB) at the E6 chunk-5 exit; 38,836 B (~37.9 KB) at the E6 hand-off build, 76 B under the cap: the next feature that adds to the first run needs a coordinator row to raise it | measured rounded up to the next 0.5 KB |
-| `location` | 11.8 KB | 11,493 B | 20 KB (also: the location part with what only it reaches ≤ 20 KB) |
-| `markProviders` | 2.9 KB | 2,375 B (with the chunk it shares with `future`) | 12 KB |
-| `future` | 2.8 KB | 2,275 B | 12 KB |
-| `pool` | 1.4 KB | 891 B | 12 KB |
-| `range` | 1.6 KB | 1,100 B | 12 KB |
+| first run (the island entry and its static imports), `FIRST_RUN_BUDGET` | 40 KB since the owner's call of 2026-11-14 (PP-B; 38 KB from the E6 chunk-5 exit; 40 KB from the chunk-3 merge to the chunk-5 exit) | 40,953 B, 7 B under the cap (38,836 B at the E6 hand-off build) | measured rounded up to the next 0.5 KB |
+| `location` | 11.9 KB | 11,603 B | 20 KB (also: the location part with what only it reaches ≤ 20 KB) |
+| `markProviders` | 2.9 KB | 2,382 B (with the chunk it shares with `future`) | 12 KB |
+| `future` | 2.8 KB | 2,282 B | 12 KB |
+| `pool` | 1.6 KB | 1,115 B (Place's count line since b1b) | 12 KB |
+| `range` | 1.6 KB | 1,123 B | 12 KB |
 | `likely`, `native` | 12 KB | no chunk (S5e) | 12 KB |
-| `details` | 6.7 KB | 6,296 B | 8 KB |
-| `sheets` (each) | 6.3 KB | largest Paste 5,933 B (Add 2,414, Correction 2,380, Swap 1,190) | 8 KB |
-| `later` | 8 KB | 7,831 B (0.35 KB headroom: F1a adds lazy parts rather than growing it) | 8 KB |
-| `suggest` | 8 KB | own chunk since R4's `loadSuggest` (core `index.ts`; off the first run, loaded once a database is open); 1.8 KB at the E6 hand-off build (the cap was set before it had a chunk) | 8 KB |
-| MapLibre with its worker and CSS | 330 KB | — | 330 KB |
+| `details` | 6.6 KB | 6,220 B | 8 KB |
+| `sheets` (each) | 6.3 KB | largest 5,881 B | 8 KB |
+| `later` | 6.1 KB | 5,667 B | 8 KB |
+| `suggest` | 3.8 KB | 3,280 B | 8 KB |
+| `palette` | 10.6 KB | 10,263 B (the palette page with Your plants) | 12 KB |
+| `verdict` | 2.9 KB | 2,367 B | 12 KB |
+| MapLibre with its worker and CSS | 330 KB | 298.8 KB | 330 KB |
 
 - A part above its cap is a coordinator row, never a silent raise.
 - Every role has a cap and every cap a role; `markProviders`, `future`, `details`, `later`, `range`, `suggest` and `pool` must have exactly one chunk each (suggest and pool since the E6 hand-off), `sheets` four.

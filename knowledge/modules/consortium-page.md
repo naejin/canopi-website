@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:15:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:32Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T10:29:26Z }
@@ -20,8 +20,8 @@ sources:
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:0c07788ec3b722bc
-    last_modified: 2026-11-15T07:15:54Z
+    digest: sha256:e7a1f6ee70b682e3
+    last_modified: 2026-11-16T18:57:05Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -35,8 +35,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:56d00d4048591c6f
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:08bd3d1895fcd10e
+    last_modified: 2026-11-16T19:23:47Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -70,8 +70,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:73d0a99d6422b186
-    last_modified: 2026-11-14T21:33:54Z
+    digest: sha256:d7febd141cb603ce
+    last_modified: 2026-11-16T19:25:04Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -80,8 +80,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:9d29791375862387
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:4a41305cbf98fb21
+    last_modified: 2026-11-16T18:54:58Z
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
@@ -150,8 +150,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1049f9dc00bc792a
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:0b8463680869cfaf
+    last_modified: 2026-11-16T18:54:58Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -215,8 +215,8 @@ sources:
   - id: p5-helpers-mjs
     resource: ../../scripts/browser/p5-helpers.mjs
     title: scripts/browser/p5-helpers.mjs
-    digest: sha256:78cecb6314a594ee
-    last_modified: 2026-11-15T06:02:42Z
+    digest: sha256:d9774f5fd5db9542
+    last_modified: 2026-11-16T18:57:05Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -388,7 +388,7 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 | [views/Sheets.tsx](../../src/islands/consortium/views/Sheets.tsx) | E6 K3: the sheets' router, in the first run, rendered always by App.tsx: `store.sheet` → one `Opening` keyed `${kind}:${n}` (a `SheetDialog` with the part inside, drawing in a `Frame` = `SheetFrame` bound to this opening's close and `<Toast where="sheet" />`), then the page `<Toast />`. Parts are `later(retryableImport(() => import(…)), { onFail: 'closeSheet', loading })`: the plant dialog (`details/Details.tsx`, its loading frame `DetailsWaiting` naming the plant), Swap, Add (also `search`) and Paste (loading frame `SheetWaiting`). Renders nothing until the data is ready, for share/download or a plant sheet without an id. Focus back: an effect remembers the focused element when a sheet opens and refocuses it on close, else the chip found by `data-plant-id`, else the toast's Undo. Add, Swap and Paste take the `Frame` prop and show `SheetWaiting` while `store.pool` is null (the range rule loading; Swap also while the suggestion's chunk loads, 10 s at most), so a sheet opened then is never an empty modal (E6-3d) |
 | [views/details/Details.tsx](../../src/islands/consortium/views/details/Details.tsx) | S3's plant dialog (`PlantDetails`), a lazy chunk since E6 K3 (moved from `views/Details.tsx`): it draws in the `Frame` it is given; `views/layers.ts` (`layerRows`) and `src/data/consortium-guides.ts` (the guide list) are imported only here, so they come with this chunk; it reads water need through core `factAt('water_need', t, location.lookup, TODAY_PERIOD)` (ADR-6, E6 R4), the guest tag through `guestOf` and the borrowed Why line through `borrowedFrom` (`data-why-borrowed` = `siteIdOf(list)`); it reads `flagLines`/`unknownWords` through `kit/sheet.tsx` `shared` and loads the correction form (`views/Correction.tsx`, its own chunk) with `later(retryableImport(…), { onFail: 'closeSheet' })`, passing it `drafts` |
 | [focus.ts](../../src/islands/consortium/focus.ts) | `focusView()` (the shown view's caption, table or heading, after Suggest) and `focusPlant(id)` (after Undo, falling back to the heading), two frames later, so focus never drops to `<body>`; while a sheet is open the focus stays in it (its `[data-autofocus]` heading when the target is behind it), and with nothing found the tool's first heading (Start's, after an Undo back to Start). `focusAfterAdd(find)` (after an add whose control leaves as the plant joins) focuses what `find` gives and makes it the toast's way back (`opener`); `focusNextStep()` uses it for the Next step's title, and Paste's "Add anyway" for the next row's "Add anyway", else the "Already in" heading, else the sheet's title (review paste-2, W4) |
-| [test-hook.ts](../../src/islands/consortium/test-hook.ts) | The one browser-test hook, `window.__ctTest = { store, openSheet, failSheets, failLater, holdLater, releaseLater }` (the last three make the later parts fail or wait), imported only by main.ts, dynamically, before the first render, under `__CT_TEST_HOOK__` (A13, L8). Its fault object `testFault` is module-private since E6 K3 (no longer exported) and set as `globalThis.__ctFaults` (`test-seam.d.ts`), which `views/lazy.tsx` reads inline under the constant each time a part is used. `__CT_TEST_HOOK__` is defined by `astro.config.mjs` from `CANOPI_BROWSER_TEST === '1'` alone (`npm run build:browser-test`): not a PUBLIC_ variable, which Vite would also take from a `.env` file (review F6). `check-built-site.mjs` fails if `__ctTest`, `__ctViews`, `failSheets`, `__ctTimeouts` or `__ctFaults` is in a built chunk, or if the build's roles list a `testHook` chunk; the L11 test in `built-modules.test.mjs` (CI job 4, or locally with `CANOPI_REQUIRE_BUILDS=1` after both builds) checks that the `dist-test/` chunk graph is the production graph plus the hook's chunk. Since E6 chunk 5 no build modulepreloads the hook: main.ts awaits it before the first render with `#ct-root` still `aria-busy`, and the browser tests that read Start (W8, Walk-through 2 N2 in `consortium-seams-layout.browser.test.mjs`) wait for the render first; the harness can fault it as role `testHook` (E6-17 holds it, E6-19 fails it) |
+| [test-hook.ts](../../src/islands/consortium/test-hook.ts) | The one browser-test hook, `window.__ctTest = { store, openSheet, failSheets, failLater, holdLater, releaseLater }` (the last three make the later parts fail or wait), imported only by main.ts, dynamically, before the first render, under `__CT_TEST_HOOK__` (A13, L8). Its fault object `testFault` is module-private since E6 K3 (no longer exported) and set as `globalThis.__ctFaults` (`test-seam.d.ts`), which `views/lazy.tsx` reads inline under the constant each time a part is used. `__CT_TEST_HOOK__` is defined by `astro.config.mjs` from `CANOPI_BROWSER_TEST === '1'` alone (`npm run build:browser-test`): not a PUBLIC_ variable, which Vite would also take from a `.env` file (review F6). `check-built-site.mjs` fails if `__ctTest`, `__ctViews`, `failSheets`, `__ctTimeouts` or `__ctFaults` is in a built chunk, or if the build's roles list a `testHook` chunk; the L11 test in `built-modules.test.mjs` (CI job 4, or locally with `CANOPI_REQUIRE_BUILDS=1` after both builds) checks that the `dist-test/` chunk graph is the production graph plus the hook's chunk. Since E6 chunk 5 no build modulepreloads the hook: main.ts awaits it before the first render with `#ct-root` still `aria-busy`, and since the PP-B exit (2026-11-16) `open()` also awaits it before `setSource`, so a test's fault on the source (a `window.__ctTest` setter) is in place before the first list read (the hook is a dynamic import racing the database; P5-27i failed every run without it); while it loads `window.__ctTest` is `true`, so a polled predicate must read `window.__ctTest?.store?.…` (a throw after Puppeteer's first poll kills its rAF poller silently, and the wait runs to its timeout); and the browser tests that read Start (W8, Walk-through 2 N2 in `consortium-seams-layout.browser.test.mjs`) wait for the render first; the harness can fault it as role `testHook` (E6-17 holds it, E6-19 fails it) |
 | [data/sqlite-source.ts](../../src/islands/consortium/data/sqlite-source.ts), [data/search.ts](../../src/islands/consortium/data/search.ts) | S1's PlantSource over the database, in the loader's chunk beside the glue (off the first run); schema 3 (`info().schemaVersion` is `SCHEMA_VERSION`, pre-push review 2; `info().climateGrid` is information only, the one-grid check is the build's `consortium-grid-check.mjs`): `Taxon.climate` from one `selectArrays` join of `plant_climate_status` and `plant_climate` per pool, `areasKnown` from `wcvp_match`, `details().koppen` (the `Db` it takes needs `selectObjects` and `selectArrays`); `details(id, zone)` reads reasons and climate-scoped layer values for the list the plant was placed from: Details passes core `placementZone(t, climate)` (`Taxon.origin.list`: a borrowed placement's curated list or a guest's list, else the climate), heads the place section "Placed for" that list with `details.fromListNote`, sends that list as the correction's climate, leaves it out of "In other climates", and starts Why with the existing `estimate.from{List}` line (`[data-why-borrowed]`) (pre-push review 1; before it a borrowed climate always showed no reasons, live since P2); `interactions(c)` reads the general rows (`climate_zone IS NULL`) and those of the climate's own list, or for a borrowed climate those of `NEAREST_LISTS[c]` ∩ curated, one row per (subject, object, type, agent): the highest severity first, so a conflict warning never gets milder, then the general row, then the first list in that order (P5 S5c); the folded-name search (`searchIndex`; the fold itself is core `src/lib/consortium/fold.ts` since E6 commit 0, re-exported here so Paste is unchanged; Start's crop search uses `searchIndex` too since E6 K1) is its own module because Add and Paste import it, and importing anything from `sqlite-source.ts` in a sheet splits the PlantSource into a counted chunk (3.7 KB; `check-built-site` fails on its SQL in a counted chunk) |
 | [base.css](../../src/styles/consortium/base.css) | Under `.ct`: strata colours and inks (the mockups' Okabe-Ito), `--hatch`/`--hatch-fill`, `--bar`, `--cell-*` (desktop 96×56, phone 41×40, head 140 px, 196 px from 960 px; no other tier), dark values, and the shell styles. Breakpoints 639/960 are written out per file; the phone matrix (StageStepper.tsx `phone`, `(max-width: 959px)`; UX audit fix 3) shows below 960 px, so its rules hang on `.ct-phone` rather than the 639 px query, the overview capped at 540 px. `matrix.css` (S2; P5 seam review: a desktop lane is `--cell-min-h` tall and a chip's own name takes up to two lines, so 960 px shows names, not "Europea…" (walk-through F2, seams spec UX5); marks off chips (`[data-mark-surface]` other than `chip`) wrap within their row, so no phone page scrolls sideways (F1, P5-27g at 320/390 px in en/fr/ja)), `details.css` (S3); [shell.css](../../src/styles/consortium/shell.css) (S4: country line, cards, chips, site rows, notices, actions, share; chosen states in ink, never green) and [print.css](../../src/styles/consortium/print.css) (S4: in print only the print sheet shows, light palette on white, no control) |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides per plant, per job and for the explanations (unchanged from v1; S4's) |

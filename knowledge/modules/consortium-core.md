@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:15:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:29Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:57Z }
 sources:
@@ -81,8 +81,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:d62de4358f36e9a2
-    last_modified: 2026-11-15T11:09:02Z
+    digest: sha256:eae84185062764a2
+    last_modified: 2026-11-16T18:28:21Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -409,3 +409,7 @@ Of two candidates that bring the same gain, the suggestion picks the one that is
 - `holes.ts` is now reached by `suggest.ts` (the `suggest` role) as well as by the palette and verdict code through `index.ts`, so it builds as a chunk they share (commit 1 probed it against check-built-site).
 - `matrix.ts` keeps `cellsOf` and `cellKey` for Swap's "Also fills" until PP-C c2.
 - Tests: the `suggest:` and `alternatives:` cases of `scripts/consortium-core.test.mjs`.
+
+## PP-B exit: seeds the suggestion cannot read stay (2026-11-16)
+
+`suggest()` returns every seeded plant: the seeds the pool or the guests hold in tie order, then any seed neither holds (a guest whose list failed, PP-B21, or a plant on no list at hand), in seed order, so a press of Suggest never removes a grower's plant. Before, only the seeds it found came back, and a member of a failed guest list vanished silently (found by the P5-27n rewrite). Unit test "PP-B exit: a seeded plant the suggestion cannot read stays in the palette" in `scripts/consortium-pp-b1.test.mjs`.

@@ -522,7 +522,7 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // is first checked for a structural mistake, else raised by the measured amount in a dated line. An
 // empty role (likely and native until S5e) has no chunk to cap yet; it gets its A14 maximum. (The E6 B4
 // caps of 2026-11-13 were set the same way.)
-const FIRST_RUN_BUDGET = 40 * 1024; // measured 40,951 B at the PP-B exit (9 B under)
+const FIRST_RUN_BUDGET = 40 * 1024; // measured 40,953 B at the PP-B exit tip (7 B under)
 const KB = 1024;
 const ROLE_CAPS = {
   location: 11.9 * KB, // measured 11,603 B (A14 max 20)

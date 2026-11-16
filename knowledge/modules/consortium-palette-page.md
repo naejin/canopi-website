@@ -2,15 +2,15 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:42Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:b67d268d49cfc1c5
-    last_modified: 2026-11-16T17:40:54Z
+    digest: sha256:71ce374feb2810af
+    last_modified: 2026-11-16T18:28:21Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
@@ -39,13 +39,13 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:56d00d4048591c6f
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:08bd3d1895fcd10e
+    last_modified: 2026-11-16T19:23:47Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1049f9dc00bc792a
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:0b8463680869cfaf
+    last_modified: 2026-11-16T18:54:58Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -109,12 +109,19 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 
 - Still loading: `data/load.ts` calls `slow` after 5 s (`__ctTimeouts.slow` in the test build); `main.ts`
   sets `store.slow`.
+- The loading line (`App.tsx` `LoadingLine`, one `role="status"` from the first render) goes on the page
+  empty and takes "Loading the plant list…" after the first paint, so it is announced (PP-B3, A25; PP-B
+  exit, 2026-11-16: the first render always comes before the plants are read).
 - Offline: `store.offline` from `navigator.onLine` and its events (wired in `store.start()`); a persistent
   `.ct-offline` status line in `App.tsx`; `views/lazy.tsx` `LoadFailed` says "Needs a connection" and
-  retries on `online`; the verdict chunk's notice says "Needs a connection" and `store.start()` retries
+  retries when the store's `offline` signal turns false (not a listener of its own, which an effect
+  added after paint and so missed a connection back in that window: PP-B16b, PP-B exit); the verdict chunk's notice says "Needs a connection" and `store.start()` retries
   it on `online`; online, Reload retries a retryable part in place (`?retry=n`).
 - A guest list that fails (`store.failedPools`, `failedMembers`) is named on the page with its plants not
-  checked; only the chosen climate's list failing is the tool's failure screen.
+  checked ("The Tropical list could not be read: …": `{lists}` takes the climate names, `zoneName`, since
+  every locale's template carries its own "list" word); only the chosen climate's list failing is the
+  tool's failure screen. A Suggest pressed or waiting then suggests around the plants at hand and keeps
+  the failed list's plants (P5-27n; core `suggest()` keeps unread seeds).
 - The verdict chunk refused: `store.verdictFailed`, one alert with Reload; every fit line says "Not checked".
 - Toasts wait under pointer or focus (`store.holdToast`) and return focus to the control that raised them
   (`focus.ts` `noteToastOpener`, `focusAfterToast`).

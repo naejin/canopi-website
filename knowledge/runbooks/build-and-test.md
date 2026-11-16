@@ -7,7 +7,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:14Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T10:29:28Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:41Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:73d0a99d6422b186
-    last_modified: 2026-11-14T21:33:54Z
+    digest: sha256:d7febd141cb603ce
+    last_modified: 2026-11-16T19:25:04Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -107,8 +107,8 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:030cfba3a726655d
-    last_modified: 2026-11-15T10:24:56Z
+    digest: sha256:c638ae839c86107e
+    last_modified: 2026-11-16T18:57:58Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml
