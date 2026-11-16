@@ -2,15 +2,15 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:37Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:12Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:42Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:7b86b2b18975f3d3
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:b67d268d49cfc1c5
+    last_modified: 2026-11-16T17:40:54Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:5b1cc5e5b7385399
-    last_modified: 2026-11-15T08:35:06Z
+    digest: sha256:63dfb3382fc20343
+    last_modified: 2026-11-15T12:09:27Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -72,6 +72,8 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 | Next step | `views/palette/NextStep.tsx` | the first open hole in words and years (`holeWords` = lane name + `holeLine`), its best three fillers with fit line and one-tap Add, See all (Add preset to the hole), Not now (`store.notNow`, never saved), the other holes with Find; outside-range fillers behind "Show N outside their climate range" |
 | Through the years | `views/palette/Years.tsx`, `rules/picture-years.ts` | one lane per light level (and "not recorded"); phone (max-width 639px): one time step with Earlier / Later writing `store.yearStep` and announcing `changeSummary` |
 | Jobs | `views/palette/JobsPicture.tsx`, `rules/picture-jobs.ts` | one lane per job (and "no job recorded") |
+| Your plants | `views/palette/YourPlants.tsx`, core `weigh.ts` `yourPlants`, `sizeLine` | each plant once, warned plants first (owner "warn, never hide"), each warning in words with the warning icon (toxicity by level: Slight the `--warning` token with "Mildly toxic", Moderate and Severe the `--danger` token), its marks, its size ("in the wild": `height_m` is the wild maximum), and Remove (toast with Undo; focus to the next row's Remove, else the heading); then a plain row for each member the page cannot show (its guest list unread: `store.failedMembers`; on none of this climate's lists: `missingMembers.unlisted`; a member the shown plants already hold gets no such row) with why and Remove; `Palette.tsx` builds the rows once and passes them in; above 12 rows the rest fold behind "+ N more", opening it focuses the first row it shows (a plain focus, the toast keeps its opener); nothing at 0 plants |
+| Things to weigh | `views/palette/Weigh.tsx`, core `weigh.ts` `weighLines(members, {lookup, period}, {pending, unchecked})` | one family holding at least 3 plants and a quarter of the palette (neutral hint), and the water line only when needs are mixed ("Needs regular water" beside dry-loving) or under half are recorded ("not enough to judge"); no all-clear line (owner 2026-11-15); with no water line, the plants with no water need recorded still get a line of their own ("Water need not recorded for N plants"); water need read through `factAt('water_need', …)` (ADR-6) and grouped by core `weigh.ts` `waterNeed`; the plants not checked (the rows Your plants shows for them, counted by `Palette.tsx` from the same rows) count in m and are said ("N plants not checked"), never a judgement of part of the palette as the whole; "Checking" while a list loads, never for a list that failed; each line says "estimate" on a borrowed list; nothing at 0 plants |
 | Placeholder | `views/palette/Placeholder.tsx` | a return visit restoring, and the palette page until the plants are read (P2) |
 
 ## Rules
@@ -86,6 +88,20 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   unused-key check matches a template literal only against single-segment keys.
 - `kit/fit.tsx` reaches the first run through `views/kit/sheet.tsx` `shared` (Add reads `FitLine`; a
   sheet chunk may import first-run modules only, check-built-site K3).
+- Your plants and Things to weigh derive in the views (`useMemo`), never in the store (first run). Vectors:
+  `scripts/vectors/weigh.json`; unit tests `scripts/consortium-pp-b3.test.mjs`; browser
+  `consortium-pp-b3.browser.test.mjs`.
+- The toxicity level's colour shows only in Your plants and Details (`kit/flags.ts` `Line.level`,
+  `data-level` on the row's flag line and on the Details warning list item; colours in
+  `src/styles/consortium/plants.css`); never colour alone. The print sheet prints the level in words
+  (`PrintSheet.tsx` reuses `flagLines` for a toxicity note).
+- `factAt` is in the first run by real use: core `site.ts`'s water check reads `water_need` through it
+  (no site, `TODAY_PERIOD`), so the palette chunk (`weigh.ts`) and Details import it from the core
+  without a shared lazy chunk a sheet may not import (check-built-site K3). First run 39.7 KB of 40
+  (40,661 bytes gzip -9 at b3 fix round 3).
+- The print sheet lists the members the page cannot show after the plants, each with why (the words of
+  Your plants), and counts the whole palette. It writes that filter out instead of importing core
+  `yourPlants`: shared by the palette and later chunks, `weigh.ts` would split into a chunk of its own.
 - Inform, don't block (owner 2026-11-14): one tap adds any plant; a member outside its range or needing
   a second look carries its fit line on its chip in the pictures.
 
@@ -95,7 +111,8 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   sets `store.slow`.
 - Offline: `store.offline` from `navigator.onLine` and its events (wired in `store.start()`); a persistent
   `.ct-offline` status line in `App.tsx`; `views/lazy.tsx` `LoadFailed` says "Needs a connection" and
-  retries on `online`; online, Reload retries a retryable part in place (`?retry=n`).
+  retries on `online`; the verdict chunk's notice says "Needs a connection" and `store.start()` retries
+  it on `online`; online, Reload retries a retryable part in place (`?retry=n`).
 - A guest list that fails (`store.failedPools`, `failedMembers`) is named on the page with its plants not
   checked; only the chosen climate's list failing is the tool's failure screen.
 - The verdict chunk refused: `store.verdictFailed`, one alert with Reload; every fit line says "Not checked".

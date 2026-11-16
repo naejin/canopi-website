@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T05:49:28Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:57Z }
 sources:
@@ -16,8 +16,8 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:feb8e2ad064adef0
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:a18dba8e1a9e961a
+    last_modified: 2026-11-16T17:40:54Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -61,18 +61,18 @@ sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:9dff8162d35386ce
-    last_modified: 2026-11-14T22:20:01Z
+    digest: sha256:ab356e6f94dec28b
+    last_modified: 2026-11-15T08:40:47Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:7c81165a13deeae4
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:a8284276bae085f2
+    last_modified: 2026-11-16T17:40:54Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:a635a47f805ea6e7
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:97eb8abd71783b99
+    last_modified: 2026-11-15T10:05:29Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -81,8 +81,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:537d25093ae022cf
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:d62de4358f36e9a2
+    last_modified: 2026-11-15T11:09:02Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -141,8 +141,8 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:83638646275badbd
-    last_modified: 2026-11-14T22:20:01Z
+    digest: sha256:3ad4fb2a8b4606fb
+    last_modified: 2026-11-15T12:01:20Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -171,13 +171,13 @@ sources:
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
-    digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:eedd824ed60b2ff0
+    last_modified: 2026-11-16T18:00:55Z
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:b7ba8d57d358f1ec
-    last_modified: 2026-11-14T22:20:01Z
+    digest: sha256:b527fb36f486f5dc
+    last_modified: 2026-11-15T10:24:21Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -236,8 +236,8 @@ sources:
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
-    digest: sha256:950058cbfed10592
-    last_modified: 2026-11-14T22:20:01Z
+    digest: sha256:6dc8c9159b014383
+    last_modified: 2026-11-15T08:40:47Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -349,7 +349,7 @@ What it writes:
 
 Installed now: release `r-f3c6dd8b3c4391be` (D2d), schema 3, `consortium-v3.r-f3c6dd8b3c4391be.7be9df0e298f.sqlite.gz`, 620,573 B gzipped, 515 plants (25 `grown_as_annual`), the same 190 photos. canopi-data exported it from its schema3-last worktree; installed with `CANOPI_DATA_DIR` set to that worktree and `CANOPI_DATA_DB` to the main checkout's `data/canopi.db`.
 - Against `r-60ea417b5a15c3aa`, plant fields moved: hardiness_zone_min 131, frost_tender 79, toxicity 74 (Slight 20→57, Moderate 14→39, Severe 2→8), nitrogen_fixer 22, deciduous_evergreen 14, is_annual 5 (Good-King-Henry is perennial now).
-- Figures re-pinned on it: seven sites' kept pools (1–4 fewer), the cool-season annual case (Siberian purslane), Kiambu countFits 305 (marker), PP-B39 now waits on b3's Slight flag.
+- Figures re-pinned on it: seven sites' kept pools (1–4 fewer), the cool-season annual case (Siberian purslane), Kiambu countFits 305 (marker), PP-B39 waited on b3's Slight flag (it passes since b3, 2026-11-15, marker removed).
 
 Previous install: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz`, rebuilt from canopi-data master `94a67a5` for the GBIF credit (`2e195da`).
 - Against `r-b958a4239cc68f73` (the ranges rebuild's final rows) only `meta.built_at`, `meta.release_id` and the `gbif_occurrences` row of `sources` (the DOI follow-up sentence removed) differ; DDL and every other table are equal (audited table by table), so every count pinned on `r-b958a4239cc68f73` holds.
@@ -379,6 +379,8 @@ This section supersedes the statements above where they disagree.
 - **New modules:**
   - `place.ts` has real bodies: `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`), a minimal `resolveSoil` and `climateFor`.
   - `verdict.ts`, `verdict-line.ts`, `verdict-load.ts`, `years.ts`, `holes.ts` and `weigh.ts` are seams tagged `@public`. b2 writes their bodies.
+  - `weigh.ts` (PP-B b3, 2026-11-15, fix rounds 1 and 2): `weighLines(members, ctx, { pending, unchecked })` with `ctx` the `lookup` and `period` of `climateFor`'s context (ignored inside today); family lines at 3 plants and 25 % of m (owner keeps both), m counting the `unchecked` members; the water line from `factAt('water_need', t, ctx.lookup, ctx.period)` grouped by `waterNeed` (exported; drought tolerance High/Medium/Low-None → dry/medium/regular, else moisture use Low/Medium/High; any other value counts as not recorded), only `waterMix` (members: the `vars.regular` plants needing regular water, then the dry) or `waterFew` (under half recorded), else `missing` when any plant has no water need recorded, no all-clear; `'checking'` while a list is pending; `term: 'estimate'` on a borrowed list. `yourPlants` (warned, then the members not shown, then the rest; rows typed `PlantRow`) and `sizeLine`. Constants stay module-private. `site.ts`'s water check reads drought tolerance and moisture use through `factAt('water_need', t, null, TODAY_PERIOD)` (`well_drained` stays a direct read), with its own dry/wet-site mapping (a different question from Things to weigh's grouping), and like `waterNeed` reads a drought value outside High, Medium, Low, None as not recorded; every site-fit verdict of the 515 real plants over every site was byte-identical before and after (b3 fix round 2). `TODAY_PERIOD` is `periodIds[0]`.
+  - `conflicts.ts` flags every recorded toxicity level but None, Slight too (owner: mild is a warning, Moderate and above danger); toxicity never makes `warns()` true, so nothing asks.
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
 - **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-f3c6dd8b3c4391be`: `r-f3c6dd8b3c4391be.range_verdicts.json` beside the export, regenerated by canopi-data; only its source block differs from the export's own copy, which names `r-c3b3da5b6f36eed3`). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.

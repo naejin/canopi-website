@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:13:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:09Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:41Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T10:29:25Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -15,8 +15,8 @@ sources:
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
-    digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:eedd824ed60b2ff0
+    last_modified: 2026-11-16T18:00:55Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -25,13 +25,13 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:feb8e2ad064adef0
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:a18dba8e1a9e961a
+    last_modified: 2026-11-16T17:40:54Z
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:440656a8183511de
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:80fa400bffb295f4
+    last_modified: 2026-11-15T12:09:01Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: placed-ts
@@ -42,8 +42,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:5b1cc5e5b7385399
-    last_modified: 2026-11-15T08:35:06Z
+    digest: sha256:63dfb3382fc20343
+    last_modified: 2026-11-15T12:09:27Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
@@ -64,7 +64,7 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 - **One reader and writer**, core `placement.ts`: `asGuest(t, list)` (a copy, so the list's record stays unstamped; on a plant already borrowed it keeps the borrowed origin and adds `guest: list`), `guestOf(t)` (`origin.list` for a `guest` kind, else `origin.guest`, else null), `borrowedFrom(t)`, `placementZone(t, climate)` (`origin.list`, else the climate). The PlantSource's `borrowed()` writes the borrowed origin.
 - **Borrowed wins over guest, the guest label stays.** A plant that is both (reachable only through a member found in an earlier borrowed pool) keeps its borrowed origin, since its placement, reasons and estimate mark come from that list; since the E6 hand-off (D) the list it was picked in is noted as `origin.guest`, so every view still labels it a guest ("From the X list"). Nothing persisted changed: saves hold only the guests map.
 - **Which record a view gets** (`store.ts` `taxonOf`, E6 hand-off re-review 1 and review 4): the member, else the guest's record from the list it was added from (`guestTaxa`, from the consortium's guests map once that list is read), else the chosen climate's own list as read in `pools` (never a guest, even while `store.pool` waits for the range rule), else another climate's list already read, through `asGuest`. A guest is therefore never resolved from the first other list that happens to hold it. Tested by `scripts/consortium-taxon-of.test.mjs`.
-- **`factAt`.** `FactAt = (key, taxon, site, period) => FactValues[key] | null`, implemented in core `source.ts` (beside the `PlantSource` that stores the facts) with `TODAY_PERIOD` `'1991-2020'`. In E6 it returns the stored value whatever the site and period; views read these facts through it instead of `t.traits.*`. Only Details reads it so far (water need); F2 routes site fit and range through it and computes per site and period behind the same signature, and E7 reads scoped stored facts (most specific wins).
+- **`factAt`.** `FactAt = (key, taxon, site, period) => FactValues[key] | null`, implemented in core `source.ts` (beside the `PlantSource` that stores the facts) with `TODAY_PERIOD` `periodIds[0]` (`'1991-2020'`). In E6 it returns the stored value whatever the site and period; views read these facts through it instead of `t.traits.*`. Details (water need), the palette's Things to weigh (water need, grouped by `weigh.ts` `waterNeed`) and `site.ts`'s water check (drought tolerance and moisture use, PP-B b3 fix round 2, verdicts unchanged) read it; F2 routes the rest of site fit and range through it and computes per site and period behind the same signature, and E7 reads scoped stored facts (most specific wins).
 - **Its fact list, and only it** (`FactKey`): `life_cycle` (`annual`, `grown_as_annual` or `perennial` from the traits), `cold_limit` (`tminColdC`, `weak`), `heat_limit` (`tmaxWarmC`), `water_need` (`drought` and `moisture`, each `string | null`; widened from `drought: string` in R4 so a plant with only a moisture value still answers, and null only when both are unknown). Other traits stay direct reads; a fact joins the list only when a step needs it site- or period-dependent.
 - **`SiteFitMessage`** `{ id, about, severity, misfit, key, vars?, state? }` (`misfit` was `asks` until the 2026-11-14 "Inform, don't block" row: a misfit warns in words, never asks): one shape for site-fit lines (light, room, climate) so the views stop composing them. In use since E6 R2: core `site-marks.ts` `siteFitMessages` builds them, `rules/site-fit.ts` and `views/kit/flags.ts` word the flags from them, and `siteMarks` turns the notes (`state` set) into marks.
 

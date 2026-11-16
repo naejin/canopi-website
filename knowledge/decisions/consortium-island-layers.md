@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:08Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T10:29:28Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:113db0181e7f15db
-    last_modified: 2026-11-15T08:35:06Z
+    digest: sha256:abb12a106953c8b3
+    last_modified: 2026-11-16T17:41:49Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -35,13 +35,13 @@ sources:
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
-    digest: sha256:bc785e5e9d676b40
-    last_modified: 2026-11-13T07:27:10Z
+    digest: sha256:97f990e76c242bcb
+    last_modified: 2026-11-15T12:01:20Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
-    digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:eedd824ed60b2ff0
+    last_modified: 2026-11-16T18:00:55Z
   - id: sgconfig-yml
     resource: ../../sgconfig.yml
     title: sgconfig.yml
