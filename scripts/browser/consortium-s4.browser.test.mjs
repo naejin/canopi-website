@@ -284,7 +284,9 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     assert.notEqual((await active()).tag, 'body', 'focus moves to the palette page');
 
     // Adjust: a plant of the palette opens its details; Remove there, then Undo.
-    const plants = () => page.$$eval('#ct-root [data-plant-id]', (els) => new Set(els.map((e) => e.dataset.plantId)).size);
+    // The palette's own plants: the Next step's fillers carry data-plant-id too, and removing a plant reopens holes (b1b).
+    const MEMBERS = '#ct-root [data-plant-id]:not(.ct-fillers [data-plant-id])';
+    const plants = () => page.$$eval(MEMBERS, (els) => new Set(els.map((e) => e.dataset.plantId)).size);
     const plant = await tabTo((a) => !!a.plant && a.inPictures && !a.inSheet && a.tag === 'button', 'a plant of the palette');
     const before = await plants();
     await page.keyboard.press('Enter');
@@ -292,12 +294,12 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     await tabTo((a) => a.inSheet && a.text === en['consortium.details.remove'], 'Remove in the details');
     await page.keyboard.press('Enter');
     assert.ok(await has(page, aria('button', 'Undo')), `${plant.text}: the toast offers Undo`);
-    await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root [data-plant-id]')].map((e) => e.dataset.plantId)).size === n - 1, { timeout: 3000 }, before);
+    await page.waitForFunction(([n, sel]) => new Set([...document.querySelectorAll(sel)].map((e) => e.dataset.plantId)).size === n - 1, { timeout: 3000 }, [before, MEMBERS]);
     await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
     assert.notEqual((await active()).tag, 'body', 'focus stays in the page after Remove');
     await tabTo((a) => a.text === 'Undo', 'Undo');
     await page.keyboard.press('Enter');
-    await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root [data-plant-id]')].map((e) => e.dataset.plantId)).size === n, { timeout: 3000 }, before);
+    await page.waitForFunction(([n, sel]) => new Set([...document.querySelectorAll(sel)].map((e) => e.dataset.plantId)).size === n, { timeout: 3000 }, [before, MEMBERS]);
     await page.waitForFunction(() => document.activeElement && document.activeElement !== document.body, { timeout: 2000 }).catch(() => {});
     assert.equal((await active()).plant, plant.plant, 'focus is on the restored plant');
 
