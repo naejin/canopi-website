@@ -13,6 +13,7 @@ import { taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { verdict, verdicts, judgedPeriod, holdsBy } = await import('../src/lib/consortium/verdict.ts');
+const { gain } = await import('../src/lib/consortium/suggest.ts');
 const vectors = (f) => JSON.parse(readFileSync(new URL(`vectors/${f}`, import.meta.url), 'utf8'));
 const V = vectors('verdicts.json'), H = vectors('holes.json'), RV = vectors('range-verdicts.json');
 
@@ -194,6 +195,8 @@ test('PP-B (b2 holes, 3.3): holes.json (one hole for a job missing in years 3-15
       const holds = new Map(Object.entries(i.holds ?? {}));
       const got = core.fillers(hole, i.pool.map(hPlant), levelsOf(i.levels), holds, new Set(i.warned), i.members.map(hPlant), list);
       assert.deepEqual(Object.fromEntries(Object.entries(got).map(([g, ts]) => [g, ts.map((t) => t.id)])), { fits: e.fits, look: e.look, outside: e.outside, unknown: e.unknown }, c.name);
+      // suggest's hole term reads the same fills(): a plant that is no filler brings no hole gain.
+      for (const [k, want] of Object.entries(e.gain_holes ?? {})) assert.equal(gain(hPlant(k), i.members.map(hPlant), core.UNSURE_SITE, levelsOf(i.levels)).holes, want, `${c.name}: gain().holes of ${k}`);
       continue;
     }
     if (e.holes) assert.deepEqual(list.map((h) => ({ id: h.id, rank: h.rank, state: h.state, from: h.fromYear, to: h.toYear })), e.holes, c.name);
@@ -227,6 +230,34 @@ test('PP-B (b2 holes, 3.3): fills is the one predicate (the job or light level i
   assert.ok(!core.fills(hole, hPlant('no_food')), 'not the job');
   const after = core.holes({ members: [...members, hPlant('fit_a')], verdicts: null, pending: false });
   assert.equal(core.nextStep(after), null, 'filled: no next step');
+});
+
+// Pre-push fix 1: a plant counts as filling a hole only if adding it changes that hole. Holes are
+// judged from year 1, so a filler must stand in a judged year of the hole: Lettuce (first 90 days)
+// fills nothing of job:feeds_you:0-60 (the hole would stay open as 0.25-60).
+test('PP-B (pre-push fix 1): adding any plant fills() names changes its hole (its judged years shrink or it closes); a plant fills() refuses leaves it as it was', () => {
+  const judged = (h) => `${h.kind}:${h.job ?? h.stratum}:${Math.max(h.fromYear, core.JUDGED_FROM_YEAR)}-${h.toYear}`;
+  const openOf = (members) => core.holes({ members, verdicts: null, pending: false }).filter((h) => h.state === 'open');
+  const keys = Object.keys(H.plants);
+  const palettes = [[], ['tree_all', 'high_any', 'medium_any', 'low_any'], ['tree_all', 'high_any', 'low_any', 'crop_early', 'crop_late'], ['tree_all', 'high_any', 'crop_early']];
+  let checked = 0, refused = 0;
+  for (const m of palettes) {
+    const members = m.map(hPlant);
+    for (const hole of openOf(members)) {
+      for (const k of keys) {
+        if (m.includes(k)) continue;
+        const after = new Set(openOf([...members, hPlant(k)]).map(judged));
+        if (core.fills(hole, hPlant(k))) { checked++; assert.ok(!after.has(judged(hole)), `${k} fills ${hole.id}, so adding it changes that hole`); }
+        else { refused++; assert.ok(after.has(judged(hole)), `${k} is no filler of ${hole.id}, and adding it leaves the hole as it was`); }
+      }
+    }
+  }
+  assert.ok(checked > 10 && refused > 10, `pairs checked: ${checked} fillers, ${refused} not`);
+  const lettuce = hPlant('crop_skip');
+  const [feeds] = openOf(['tree_all', 'high_any', 'medium_any', 'low_any'].map(hPlant));
+  assert.equal(feeds.id, 'job:feeds_you:0-60');
+  assert.equal(core.fills(feeds, lettuce), false, 'a crop of the first 90 days fills nothing judged');
+  assert.equal(core.nextStep(core.holes({ members: ['tree_all', 'high_any', 'medium_any', 'low_any', 'crop_skip'].map(hPlant), verdicts: null, pending: false }))?.id, 'job:feeds_you:0.25-60', 'the hole stays open after it is added');
 });
 
 test('PP-B (b2 holes, 7.3): jobGapsByPhase moved to holes.ts (one gap engine), still exported from the core', async () => {

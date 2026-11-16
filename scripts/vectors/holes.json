@@ -62,6 +62,14 @@
         "holds": { "fit_a": true, "fit_b": false, "fit_c": false, "fit_e": true },
         "warned": ["invasive_in_range", "mild_toxic", "invasive_outside"]
       },
-      "expect": { "fits": ["fit_c", "fit_a", "fit_e", "fit_b"], "look": ["invasive_in_range", "mild_toxic"], "outside": ["invasive_outside"], "unknown": ["not_checked"] } }
+      "expect": { "fits": ["fit_c", "fit_a", "fit_e", "fit_b"], "look": ["invasive_in_range", "mild_toxic"], "outside": ["invasive_outside"], "unknown": ["not_checked"] } },
+    { "name": "fillers: a crop standing only before year 1 fills no hole judged from year 1 (not a filler, no hole gain)", "covers": "3.3 fills, judged window (pre-push fix 1)",
+      "input": {
+        "members": ["tree_all", "high_any", "medium_any", "low_any"],
+        "hole": "job:feeds_you:0-60",
+        "pool": ["crop_skip", "crop_first_year", "crop_from_1"],
+        "levels": { "crop_skip": "fits", "crop_first_year": "fits", "crop_from_1": "fits" }
+      },
+      "expect": { "fits": ["crop_from_1"], "look": [], "outside": [], "unknown": [], "gain_holes": { "crop_skip": 0, "crop_first_year": 0, "crop_from_1": 3 } } }
   ]
 }

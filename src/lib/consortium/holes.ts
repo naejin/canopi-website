@@ -103,13 +103,17 @@ export function nextStep(list: readonly Hole[], skip: ReadonlySet<string> = new 
   return list.find((h) => h.state === 'open' && !skip.has(h.id)) ?? null;
 }
 
-// Whether a plant fills a hole: it does the job (or stands in the light level) in some year of it.
-// The one predicate fillers() and suggest.ts share.
+// Whether a plant fills a hole: it does the job (or stands in the light level) in some judged year of
+// it. Holes are judged from JUDGED_FROM_YEAR, so the hole's start is clipped there: a plant standing
+// only before year 1 (Lettuce, first 90 days) would leave the hole open (0-60 becomes 0.25-60), and a
+// plant counts as filling a hole only if adding it changes that hole (pre-push fix 1). The one
+// predicate NextStep, fillers() and suggest.ts's hole gain share.
 export function fills(hole: Hole, taxon: Taxon): boolean {
   if (hole.kind === 'job' ? !hole.job || !jobsOf(taxon).includes(hole.job) : hole.kind === 'light' ? taxon.stratum?.value !== hole.stratum : true) return false;
   if (hole.kind !== 'job' && hole.kind !== 'light') return false;
   const y = yearsOf(taxon);
-  return !!y && y.from < hole.toYear && (y.to === null || y.to > hole.fromYear);
+  const from = Math.max(hole.fromYear, JUDGED_FROM_YEAR);
+  return !!y && y.from < hole.toYear && (y.to === null || y.to > from);
 }
 
 // The plants that fill a hole, grouped: fits; needs a second look (level look, or a toxic or invasive
