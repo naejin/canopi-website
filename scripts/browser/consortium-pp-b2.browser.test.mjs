@@ -412,6 +412,28 @@ test('PP-B20 (b2 verdict chunk refused; review r1 bugs-5): fit lines say "Not ch
   await done(page);
 });
 
+// Pre-push fix 4: the verdict chunk statically imports the range rule's chunk, and Chromium keeps a
+// failed import for the page's life, so once the range chunk failed no retry of the verdict chunk can
+// work. Back online, the page offers Reload, never a Try again that cannot work, and asks for nothing.
+test('PP-B49 (b2 verdict and range chunks refused; pre-push fix 4): back online, the verdict notice offers Reload, never a dead Try again, and the online event asks for no chunk', async () => {
+  const log = [];
+  const page = await tool({ block: { verdict: 'offline', range: 'offline' }, setup: logRequests(log) });
+  await atSite(page, 'lyon');
+  await choose(page, 'Temperate');
+  await ownPalette(page, 2);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
+  await page.setOfflineMode(true);
+  assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-palette-page .ct-notice')].some((n) => n.textContent.includes(t)), { timeout: 4000 }, en['consortium.load.needsConnection']).then(() => true, () => false), 'offline: "Needs a connection"');
+  const before = log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length;
+  await page.setOfflineMode(false);
+  assert.ok(await has(page, `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`, 4000), 'back online: Reload');
+  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`), null, 'no Try again that cannot work');
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length, before, 'the online event asked for no verdict chunk');
+  await done(page);
+});
+
 test('PP-B21 (b2 a guest list fails): the list is named as missing and its plants are not checked; the tool stays', async () => {
   const page = await tool();
   await choose(page, 'Temperate');

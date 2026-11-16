@@ -245,9 +245,16 @@ export function wantVerdict(): void {
 // The palette page's Try again (online) and the browser back online: the verdict chunk asked again,
 // in place, never a page reload (architecture 9).
 export function retryVerdict(): void {
-  if (verdictLoad || verdictRule.peek()) return;
+  if (verdictLoad || verdictRule.peek() || verdictNeedsReload.peek()) return;
   wantVerdict();
 }
+// Never a retry that cannot work (pre-push fix 4): the verdict chunk statically imports the range
+// rule's chunk and the shared future chunk, and Chromium keeps a failed import of either for the
+// page's life (retry-import.ts), so once the range rule or the mark providers failed (rangeBroken,
+// marksBroken: their imports share those chunks) no retry of the verdict chunk can load it. Then the
+// online listener asks for nothing, retryVerdict does nothing, and the views offer Reload
+// (load.reload, as chunkToast does) in place of Try again.
+export const verdictNeedsReload = computed(() => rangeBroken.value || marksBroken.value);
 // What every verdict reads: the palette's place, the location's lookup, the period shown, the
 // scenario, and the members' canopy (shade relief, 3.2).
 // The canopy kept by value: most adds leave it as it was, and a new array would recompute every
@@ -792,7 +799,8 @@ export function start(): void {
     offline.value = navigator.onLine === false;
     // Back online, a verdict chunk refused meanwhile is asked for again in place, here, so no view
     // needs a listener of its own for it (b1bc-8a).
-    addEventListener('online', () => { offline.value = false; if (verdictFailed.peek()) retryVerdict(); });
+    // Not when no retry can work (verdictNeedsReload): the views offer Reload then.
+    addEventListener('online', () => { offline.value = false; if (verdictFailed.peek() && !verdictNeedsReload.peek()) retryVerdict(); });
     addEventListener('offline', () => { offline.value = true; });
   }
   // The mark providers' chunk, loaded once a mark can show (markProviders, marksBroken).

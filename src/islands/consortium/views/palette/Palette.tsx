@@ -37,11 +37,13 @@ function Said() {
 }
 
 // The verdict chunk refused: Retry fetches it again in place; offline, it needs a connection (store.ts
-// start() asks again once the browser is back online).
+// start() asks again once the browser is back online). When no retry can work (store.ts
+// verdictNeedsReload: the range or marks chunk failed too), Reload in place of Try again.
 function VerdictNotice() {
   const off = store.offline.value;
   return (
     <p class="ct-notice" role="alert">{T('palette.verdictFailed')} {off ? T('load.needsConnection')
+      : store.verdictNeedsReload.value ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
       : <button type="button" class="button button-secondary" onClick={() => store.retryVerdict()}>{T('load.retry')}</button>}</p>
   );
 }

@@ -40,7 +40,10 @@ export const suggestWaitMs = (): number => (typeof __CT_TEST_HOOK__ !== 'undefin
 const reloadToast = (): void => store.showToast(T('details.loadFailed'), null, { label: T('details.reload'), run: () => globalThis.location.reload() });
 // The verdict chunk refused while a Suggest waited for it: nothing suggested; Try again asks for the
 // chunk again in place and waits once more (requestSuggest).
-const verdictToast = (): void => store.showToast(T('place.count.suggestStopped'), null, { label: T('load.retry'), run: () => requestSuggest() });
+// When no retry can work (store.ts verdictNeedsReload), Reload in place of Try again.
+const verdictToast = (): void => store.showToast(T('place.count.suggestStopped'), null, store.verdictNeedsReload.peek()
+  ? { label: T('load.reload'), run: () => globalThis.location.reload() }
+  : { label: T('load.retry'), run: () => requestSuggest() });
 // Verdicts the suggestion still waits for (store.ts waitsForVerdicts, suggestMembers).
 const verdictsMissing = (): boolean => untracked(store.waitsForVerdicts) && !store.verdictRule.peek();
 // Ends the wait (the one way to: views call it, as PoolSlot does when Start can no longer suggest).
@@ -85,8 +88,12 @@ export function requestSuggest(): void {
   if (!pendingSuggest.peek()) { clearTimeout(cap); waited.value = false; }
   // The suggestion's chunk still missing (or failed before: tried again, L8): this press waits for it.
   store.wantSuggest();
-  // So does a verdict chunk refused before, with a site climate: asked again in place.
-  if (store.verdictFailed.peek() && untracked(store.waitsForVerdicts)) store.retryVerdict();
+  // So does a verdict chunk refused before, with a site climate: asked again in place; when no retry
+  // can work (store.ts verdictNeedsReload), the press ends at once with Reload, never a 10 s wait.
+  if (store.verdictFailed.peek() && untracked(store.waitsForVerdicts)) {
+    if (store.verdictNeedsReload.peek()) { dropSuggest(); verdictToast(); return; }
+    store.retryVerdict();
+  }
   const busy = lookups.peek() && !waited.peek();
   if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
   if (!pendingSuggest.peek()) cap = setTimeout(capped, suggestWaitMs());

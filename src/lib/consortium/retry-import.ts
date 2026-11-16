@@ -7,8 +7,10 @@
 // the error of the failed import (Chromium and Firefox name the URL; where the error names none, or a file
 // outside the site's /_astro/ chunks, the next call imports it plainly and fails again: the page then
 // says so, with Reload). This mends the chunk itself only: its static imports keep their plain URLs (a
-// sheet chunk imports nothing but first-run modules: E6-5d; the future and pool parts statically import
-// the range rule's chunk, so were that one to fail every retry fails, Reload the fix; were an error to
+// sheet chunk imports nothing but first-run modules: E6-5d; the future and pool parts and the verdict
+// chunk statically import the range rule's chunk (the verdict chunk the shared future chunk too), so
+// were that one to fail every retry fails, Reload the fix: store.ts verdictNeedsReload then offers
+// Reload in place of the verdict's Try again and skips its online retry; were an error to
 // name such a dependency, the retry imports that file, which lacks the part: lazyPart counts the
 // missing part as a failure, and Download says it, Actions.tsx).
 // One attempt at a time, shared by every caller (several parts share one loader: views/later-chunk.ts),

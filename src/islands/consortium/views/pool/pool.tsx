@@ -12,7 +12,8 @@
 //   place today", or "on {list}" (consortium.list.*) for a curated climate; a later period from a link
 //   is named, never "today". Never "0 of m" (countKind): none fit says so, and none known to fit with
 //   some not checked says they could not be checked. While the verdict chunk loads, "Checking…";
-//   refused, "Could not check…" with Try again (store.retryVerdict, in place); offline, "Needs a
+//   refused, "Could not check…" with Try again (store.retryVerdict, in place; Reload when no retry can
+//   work, store.verdictNeedsReload); offline, "Needs a
 //   connection", asked again once back online (store.ts start()). Under it, one sentence, claiming
 //   nothing about what Suggest leaves out: any plant can be searched for and added, one outside its
 //   range with a warning (inform, don't block). The caveat that observed
@@ -58,6 +59,7 @@ function CountLine({ zone, own }: { zone: ClimateZone; own: boolean }) {
       {n ? countText(zone, own, n)
         : !failed ? T('place.count.checking')
         : off ? T('load.needsConnection')
+        : store.verdictNeedsReload.value ? <>{T('place.count.failed')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button></>
         : <>{T('place.count.failed')} <button type="button" class="button button-secondary ct-small" onClick={() => store.retryVerdict()}>{T('load.retry')}</button></>}
     </p>
   );
