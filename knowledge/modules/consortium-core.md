@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:15:56Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T06:27:57Z }
 sources:
@@ -347,11 +347,15 @@ What it writes:
 - Staging is in `.cache/consortium-install/`, then a rename, with the `src/data/` files put back on failure.
 - `verifyInstall(dir, index)` re-checks a served folder against the index: the mark, each database by sha256, gzip and limits, every indexed photo present, and nothing else. `check-built-site.mjs` runs it on `dist/client/data/consortium/`.
 
-Installed now: release `r-f3c6dd8b3c4391be` (D2d), schema 3, `consortium-v3.r-f3c6dd8b3c4391be.7be9df0e298f.sqlite.gz`, 620,573 B gzipped, 515 plants (25 `grown_as_annual`), the same 190 photos. canopi-data exported it from its schema3-last worktree; installed with `CANOPI_DATA_DIR` set to that worktree and `CANOPI_DATA_DB` to the main checkout's `data/canopi.db`.
+Installed now: release `r-fcf4307ffd1549b3` (canopi-data D3 core, its rows equal to D8a's `r-ad27260496be31eb`), schema 3, `consortium-v3.r-fcf4307ffd1549b3.e80bc9aa6589.sqlite.gz`, 621,337 B gzipped, 515 plants, the same 190 photos (10df7bf). Installed as below (`CANOPI_DATA_DIR` the schema3-last worktree, `CANOPI_DATA_DB` the main checkout's `data/canopi.db`). `canopi release verify` accepts only an export of canopi-data's current release, so an older export cannot be installed once a newer release is built; a release that moves only the id gets no new pin, and the website re-pins at the next release whose values or credits move (decision row "Data pins after D8a and D3", 2026-11-15).
+- Against `r-f3c6dd8b3c4391be` (D2d): only the `layer_values` month rows changed (D8a): each now carries `scope_hemisphere` and `scope_latitude` (the band it was observed in) beside its country; Details (`views/layers.ts` `scopeText`) names the band. The PFAF month-row test checks the UK country and the band, not an exact scope.
+- Kiambu's `countFits` on it: 305 of 515 with Subtropical chosen (196 fit, 109 look; the chosen list only, guests left out since b1b).
+
+Previous install: release `r-f3c6dd8b3c4391be` (D2d), `consortium-v3.r-f3c6dd8b3c4391be.7be9df0e298f.sqlite.gz`, 620,573 B gzipped, 515 plants (25 `grown_as_annual`).
 - Against `r-60ea417b5a15c3aa`, plant fields moved: hardiness_zone_min 131, frost_tender 79, toxicity 74 (Slight 20→57, Moderate 14→39, Severe 2→8), nitrogen_fixer 22, deciduous_evergreen 14, is_annual 5 (Good-King-Henry is perennial now).
 - Figures re-pinned on it: seven sites' kept pools (1–4 fewer), the cool-season annual case (Siberian purslane), Kiambu countFits 305 (marker), PP-B39 waited on b3's Slight flag (it passes since b3, 2026-11-15, marker removed).
 
-Previous install: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz`, rebuilt from canopi-data master `94a67a5` for the GBIF credit (`2e195da`).
+Earlier install: release `r-60ea417b5a15c3aa`, schema 3, `consortium-v3.r-60ea417b5a15c3aa.977fc4ceccc7.sqlite.gz`, rebuilt from canopi-data master `94a67a5` for the GBIF credit (`2e195da`).
 - Against `r-b958a4239cc68f73` (the ranges rebuild's final rows) only `meta.built_at`, `meta.release_id` and the `gbif_occurrences` row of `sources` (the DOI follow-up sentence removed) differ; DDL and every other table are equal (audited table by table), so every count pinned on `r-b958a4239cc68f73` holds.
 - 578,005 B gzipped (`r-b958a4239cc68f73` 578,040 B; `r-01102782139409b5` 568,732 B; schema 2's `r-e0b162087a79eecf` 556,862 B).
 - 515 plants (24 `grown_as_annual`), 200 placements per climate (Tropical, Mediterranean, Temperate); 3,605 range rows (7 variables, 56 weak), 8,549 Köppen rows, 34,176 area rows.
@@ -383,7 +387,7 @@ This section supersedes the statements above where they disagree.
   - `conflicts.ts` flags every recorded toxicity level but None, Slight too (owner: mild is a warning, Moderate and above danger); toxicity never makes `warns()` true, so nothing asks.
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
-- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-f3c6dd8b3c4391be`: `r-f3c6dd8b3c4391be.range_verdicts.json` beside the export, regenerated by canopi-data; only its source block differs from the export's own copy, which names `r-c3b3da5b6f36eed3`). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
+- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-fcf4307ffd1549b3`: `r-fcf4307ffd1549b3.range_verdicts.json` beside the export, regenerated by canopi-data; it names the installed release and export). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
 
 ### Link v5 contract additions (coordinator review of 0a, 2026-11-14)
 
@@ -396,3 +400,12 @@ This section supersedes the statements above where they disagree.
 ## PP-B b1a: the invasive tie in suggest.ts (2026-11-14)
 
 Of two candidates that bring the same gain, the suggestion picks the one that is not invasive: with a chosen country GRIIS checked (`countryStatus` 'checked'), "invasive" means invasive there (`invasiveIn(t, country, true)`); with no country (or one not checked), invasive in any GRIIS country. Unit tests F1a-P12 and F1a-P13 in `scripts/consortium-pp-b1.test.mjs`.
+
+## PP-B b1b: the suggestion's gain on open holes (2026-11-15)
+
+- `suggest.ts` scores **3 per open hole filled** in place of the old cell terms: the open holes of the plants chosen so far (`holes.ts` `holes()` with `pending: false`, kept on the coverage and worked out again after each add), each tested with `fills()`, the one predicate the palette's fillers share. The other terms are unchanged (10 per new job, 6 per new stratum, 4 per phase with nothing to eat yet, 4 per needed second doer of feeds-soil, ground or mulch, 1 per edibility point, −3 for weed potential, −0.5 per unknown site answer; counted in tenths).
+- `SuggestOptions.verdicts` and `AlternativeOptions.verdicts` (`HoleContext['verdicts']`, the store's `poolVerdicts` for the page period) feed the holes: a member outside its range for the period fills nothing, so the holes it leaves stay open, and a **candidate outside its range in the page period scores no hole gain** (holes() would not count it once added). `Gain.cells` became `Gain.holes`. Without verdicts nobody is outside.
+- `store.suggestMembers` passes the verdicts and, with a site climate and range checks on, waits for them; Swap passes the same verdicts to both `alternatives()` calls, so both rank on the same open holes.
+- `holes.ts` is now reached by `suggest.ts` (the `suggest` role) as well as by the palette and verdict code through `index.ts`, so it builds as a chunk they share (commit 1 probed it against check-built-site).
+- `matrix.ts` keeps `cellsOf` and `cellKey` for Swap's "Also fills" until PP-C c2.
+- Tests: the `suggest:` and `alternatives:` cases of `scripts/consortium-core.test.mjs`.

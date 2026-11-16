@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:37Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:15:53Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:43Z }
 sources:
@@ -137,18 +137,18 @@ sources:
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
-    digest: sha256:bc785e5e9d676b40
-    last_modified: 2026-11-13T07:27:10Z
+    digest: sha256:97f990e76c242bcb
+    last_modified: 2026-11-15T12:01:20Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:1d308232da636c1e
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:ebcd8009a0571e36
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -158,12 +158,12 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:5d7ec19f2dc9687f
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:fb1d3e6351899c0e
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -172,13 +172,13 @@ sources:
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:14359e44747de392
-    last_modified: 2026-11-15T08:35:06Z
+    digest: sha256:abb200f51d7752c9
+    last_modified: 2026-11-15T12:09:27Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:5b1cc5e5b7385399
-    last_modified: 2026-11-15T08:35:06Z
+    digest: sha256:63dfb3382fc20343
+    last_modified: 2026-11-15T12:09:27Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -222,8 +222,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:0ddf3da10e4a8954
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:2bff4d1119010d48
+    last_modified: 2026-11-15T12:01:20Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -247,8 +247,8 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:4793b06fedb7fa35
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:c6de651ff7d8e98e
+    last_modified: 2026-11-15T12:09:01Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
@@ -277,8 +277,8 @@ sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
-    digest: sha256:cd48284ff20e9d2d
-    last_modified: 2026-11-13T14:46:32Z
+    digest: sha256:411e1ddf5c2860cb
+    last_modified: 2026-11-15T12:01:20Z
   - id: side-ts
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
@@ -307,8 +307,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:a635a47f805ea6e7
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:97eb8abd71783b99
+    last_modified: 2026-11-15T10:05:29Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -382,8 +382,8 @@ sources:
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
-    digest: sha256:d89b0b8086198a1e
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:eedd824ed60b2ff0
+    last_modified: 2026-11-16T18:00:55Z
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
@@ -392,13 +392,13 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:7c81165a13deeae4
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:a8284276bae085f2
+    last_modified: 2026-11-16T17:40:54Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:feb8e2ad064adef0
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:a18dba8e1a9e961a
+    last_modified: 2026-11-16T17:40:54Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -407,8 +407,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:537d25093ae022cf
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:d62de4358f36e9a2
+    last_modified: 2026-11-15T11:09:02Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
@@ -442,8 +442,8 @@ sources:
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:ba4b330855cdd8e3
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:6aa5a72a2b74522c
+    last_modified: 2026-11-15T11:37:20Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
@@ -452,8 +452,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:7b86b2b18975f3d3
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:b67d268d49cfc1c5
+    last_modified: 2026-11-16T17:40:54Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -514,8 +514,8 @@ The core stays flat (no subfolder of `src/lib/consortium/`): whether the boundar
 | Years of a phase | `years.ts` | words in locale files only (`en.json:231-237`) | new table |
 | Words for verdicts, holes and year spans | `verdict-line.ts` (`fitLine`, `holeLine`, `yearsLine`, returning `Line`), keys under `consortium.line.` (b2) | each surface writes its own (`views/kit/flags.ts`, `rules/site-fit.ts`, Matrix) | 3.2; Find, Swap, Details, print and the period switch never write their own keys for these |
 | Colour meaning | the token block in `src/styles/tokens.css` (section 3.5), mapped from level, severity and job only in `views/kit/flags.ts` | role and layer colours in stream CSS | PP-B commit 0 |
-| Warnings (toxic, invasive, conflicts) | `conflicts.ts` `flagsFor` (`:149`); the level → token mapping in `views/kit/flags.ts` | Slight toxicity raises no flag (`conflicts.ts:124`) | raise it for Slight with its level (owner: mild = warning amber, moderate and above = danger red, words and icon always); a warning is never a verdict level and never asks (DEC:58, DEC:89) |
-| Suggested palette | `suggest.ts` through `loadSuggest()` (`index.ts:38-42`) | sizes at `suggest.ts:30`; gain scored on matrix cells | drop crops, and kept becomes the members `seed` (PP-B commit 0a', with Kept and Main crops); gain on "open holes filled" through a predicate `holes.ts` exports and `fillers` shares (b1b, chunk 2); invasive tie (markers P12, P13, b1a) |
+| Warnings (toxic, invasive, conflicts) | `conflicts.ts` `flagsFor` (`:149`); the level → token mapping in `views/kit/flags.ts` | Slight toxicity raised no flag before b3; since b3 (2026-11-15) every recorded level but None warns, Slight too (`conflicts.ts` `TOXIC`), and toxicity never makes `warns()` true | raise it for Slight with its level (done, b3) (owner: mild = warning amber, moderate and above = danger red, words and icon always); a warning is never a verdict level and never asks (DEC:58, DEC:89) |
+| Suggested palette | `suggest.ts` through `loadSuggest()` (`index.ts:38-42`) | sizes at `suggest.ts:30`; gain scored on matrix cells | drop crops, and kept becomes the members `seed` (PP-B commit 0a', with Kept and Main crops); gain on "open holes filled" through a predicate `holes.ts` exports and `fillers` shares (b1b, chunk 2; built: 3 per open hole filled, no hole gain for a candidate outside its range in the page period, Swap's `alternatives()` ranks on the same verdicts); invasive tie (markers P12, P13, b1a) |
 | Palette state | `state/schema.ts` `defineState` (`:45-95`) | fields `:106-158` | 3.6 |
 | Link and save | `state.ts` (codec, `linkVersionStatus`), `state/persist.ts` (record, address, `canopi-place`) | v4 (`state.ts:32`) | section 8 |
 | Filter and grouping of offered plants | `rules/find-query.ts` (PP-C) | `rules/list-query.ts:14-51` | rewrite on verdict levels and warnings |
@@ -592,7 +592,7 @@ Rules, each already decided:
 - A plant is judged for the years it stands in (owner, revision 4): `judgedPeriod` never goes later than `futurePeriod(taxon)`.
 - No location: every range factor is `unknown`, never `fits`.
 - **Shade relief** (today `conflicts.ts:141,152,166` with `site.ts:141-145`): `verdict.ts` drops the light factor when `ctx.canopy` says a taller member shades the plant; the store recomputes member and pool verdicts when members change. Vectors (b2, `verdicts.json`): a sun spot with a taller member gives no light factor; with no taller member, `look`; a `'part'` spot keeps the light factor.
-- **`countFits`** (b2 body, b1b reads it): the number of pool plants, guests included, whose level is `fits` or `look` for the page period (levels kept, so the line can split them later); a borrowed list keeps every plant whose climate range includes the site (owner, 2026-11-14). Vector: Kiambu 324 of 515 (a real-data unit test in b2, not a `verdicts.json` case).
+- **`countFits`** (b2 body; b1b narrowed it, 2026-11-15): over the chosen climate's list (its own, or the nearest lists it borrows), **guests left out**, the plants whose level is `fits` or `look` for the page period (levels kept, so the line can split them later), the plants not checked (`unknown`: no climate figures for the period, or no range recorded; never counted as fitting) and the list's size `of`; null until the verdicts are here. A borrowed list keeps every plant whose climate range includes the site (owner, 2026-11-14). Place's count line picks its words with `rules/suggest-block.ts` `countKind`: `count` when some fit or need a second look, `none` when every plant is judged outside, `unchecked` when none is known to fit and some are not checked; "0 of m" never renders. Real-data unit test (b2's file, not a `verdicts.json` case): Kiambu with Subtropical chosen, 305 of 515 on `r-fcf4307ffd1549b3` (196 fit, 109 look); the boards' 324 was illustrative. Kiambu's pinned cell reads Cfb, so the location step proposes Temperate: Kiambu is the "Not this climate? Choose another" case.
 - Soil and spot factors are hints (at most `look`); room is a note (`room-tall`), never a level (DEC:97).
 - "Higher than the town" and "hollow": note `cold-air` on plants within `RANGE_MARGIN_C` of their cold limit; no figure moves until canopi-climate ships a height correction (owner, revision 4).
 - The card marks (`marks.ts:25-27`, `mark-providers.ts:8`) become projections of `PlantVerdict`; `range-marks.ts`, `future-marks.ts`, `site-marks.ts`, `rules/site-fit.ts` are deleted in c2 (`site-fit.ts` and `site-marks.ts` last), `views/kit/flags.ts` and `PlantMarks.tsx` read `fitLine`.
@@ -727,7 +727,7 @@ A module exported from `index.ts` but used by one lazy chunk only lives in that 
 | `state/schema.ts`, `persist.ts`, `arrival.ts`, `restore.ts`, `draft.ts`, `location.ts` | refactor (fields, record with `place`, `canopi-place` as seed, notices) | commit 0 seams, then b1a |
 | `state/suggest-wait.ts` | keep | b1a |
 | `views/Start.tsx` | moved into `views/place/` (commit 0 creates `Place.tsx` re-exporting Start and points `App.tsx:16` at it), then rewritten and deleted there; country line (`:60-70`), climate cards and today's light, soil and water questions (until PP-F) kept as parts; the `markStart()` call moves with it | b1a |
-| `views/pool/pool.tsx`, `PoolSlot.tsx`, `rules/suggest-block.ts` | port to `poolVerdicts`; the count folds into Place, then the pool role and panel go | b1b (chunk 2, after b2's verdict engine) |
+| `views/pool/pool.tsx`, `PoolSlot.tsx`, `rules/suggest-block.ts` | port to `poolVerdicts`; the count folds into Place. **As built (b1b, amended by the chunk-2 drift check, 2026-11-15):** the pool role and panel are kept as the lazy home of the count line (`pool.tsx` `CountLine` from `store.countFits`, 0 B on the first run), shown in Place's form and the "Your place" sheet; Place's head keeps the needs lines only (`PoolSlot` `head`); `poolCounts` and the panel's edge and left lines went; `suggest-block.ts` keeps `suggestBlock` and `nothingFits` and gains `countKind` | b1b (chunk 2, after b2's verdict engine) |
 | `views/LocationSlot.tsx`, `views/location/**` | keep, inside Place | b1a |
 | `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx`, `matrix.css` (the shared rules kept views use to `shell.css`, the side drawing's rules to `print.css`, slices section 2), `palette.css` (F1a era, empty) | delete first (owner, 2026-11-14): commit 0a' deletes them with their tests and owns their importers (the matrix `lazyPart` in `App.tsx`, the `SideView`, Jobs and PlantList re-exports in `views/later.ts`, `ConsortiumPage.astro`'s two imports); b3 later mounts YourPlants and Weigh in `views/palette/Palette.tsx` | commit 0a' |
 | `views/tracks.ts` | helpers moved in commit 0a: `PHASE_ORDS` (`:40`), `Order`, `collatorFor`, `nameOrder` (`:18-30`), `warningCounts` (`:139`), `stepStage` (`:153`) to `views/kit/phase.ts` and `names.ts`; `spanOf` to `years.ts` (`views/kit/span.ts` deleted; `side.ts`, `SideView`, `StageBar`, `StageStepper` and `views/kit/sheet.tsx` (`:14`) repointed to `years.ts` `spanOf`); deleted in 0a' with `scripts/consortium-tracks.test.mjs` (its print cases move to `scripts/consortium-print.test.mjs`); `stepStage` and `PHASE_ORDS` deleted in 0a'; `warningCounts` stays in `kit/phase.ts` (StageBar's `warnings` and `Marks`, drawn in print) | commit 0a, 0a' |
@@ -738,7 +738,7 @@ A module exported from `index.ts` but used by one lazy chunk only lives in that 
 | `views/Add.tsx`, `Paste.tsx`, `paste.ts`, `Swap.tsx`, `Sheets.tsx` (`:69-72`), `kit/sheet.tsx`, `rules/list-query.ts` | rewritten as `views/find/**` and `rules/find-query.ts`; in PP-B b2 adds only the live regions to `Sheets.tsx` (`:58-63` renders the status text up front) and `kit/sheet.tsx` (marker A2) | c1 (Swap: c2); b2 in PP-B |
 | `views/Correction.tsx`, `views/details/**` | kept (the new page opens Details); the Keep button goes in commit 0a'; Details' toxicity sentence (`:156`) removed in b3; "Against your place" first in c2 | commit 0a', b3, c2 |
 | `views/future/**`, `views/FutureSlot.tsx` | replaced by `views/climate/**` | e2 |
-| `site-today.ts` | keep until the pool panel goes; then `check:dead` decides | b1b |
+| `site-today.ts` | kept: core `range.ts` reads `siteToday` (and the pool panel's nothing-fits line still does); the panel stays (b1b) | b1b |
 | `views/kit/**`, `views/lazy.tsx`, `focus.ts`, `strings.ts`, `views/Toast.tsx` | keep; `focusAfterToast` (`focus.ts:42`) gets its body; `views/kit/start-mark.ts` gets the `markStart` body (marker S2); `LoadFailed` (`lazy.tsx:62-63`, today `location.reload()`) reads `offline`: "Needs a connection", retries on `online`, never reloads | b2 |
 | `format.ts` | keep; gains the unit formatters and `parsePlotSize` (section 3, "Names and numbers") | PP-B commit 0 |
 | `astro.config.mjs` | the sqlite wasm preload (marker S1; only `modulepreload` at `:78` today) with a build check of `href`, `crossorigin` and a single wasm | b2 |
@@ -866,7 +866,8 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 | No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page and no location kept on this device is still being looked up (`restore.ts` `locationAtStart`, cleared when that lookup settles or Forget removes it), and then latched open until Start over (`draft.ts` `cardsLatched`), so a saved location's lookup never closes them and Forget opens them (b1a review rounds 2, 1 and 3, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |
 | Soil tile | "Reading the soil map" | "The soil map has no value here" (sea, coast, ice: `types.ts:382-384`); answer stays `map`, `basis: 'none'`, soil factors `unknown` | f1 |
 | `layerValues` | grey year picture | "Months could not be read" with Reload; flowering "n of m recorded", never a pass | g1 |
-| Suggest | the live wait and its 10 s stop (`state/suggest-wait.ts`) | "Suggest stopped" (inventory J2) | b1a |
+| Suggest | the live wait and its 10 s stop (`state/suggest-wait.ts`); with a site climate and range checks on (`store.waitsForVerdicts`) it also waits for the verdict chunk (b1b, F1a-P7) | "Suggest stopped" (inventory J2); the verdict chunk refused: a toast with Try again that asks again in place; the verdict chunk stalled at the cap: a toast with Reload (the import is still pending, so Try again could not ask again), taken down if the chunk then comes | b1a, b1b |
+| Place's count line | "Checking…" while the pool chunk or the verdict chunk loads | the verdict chunk refused: "Could not check…" with Try again (`store.retryVerdict`, in place); offline: "Needs a connection", asked again once back online (`store.ts` `start()`'s `online` listener); the pool chunk refused: the failed line with Reload (P5-14i) | b1b (`views/pool/pool.tsx`) |
 | Link | — | section 8.2; a period not available here: today with the period notice | b1a (`state/restore.ts` notices) |
 | Toast | 12 s (`store.ts:353`), paused while pointer or focus is on it; on leaving, focus returns to the control that raised it, else the page title (never `body`) | — | b2 (`store.ts:348-364`, `focus.ts:42`) |
 | Start over | toast with Undo; one Undo restores members, removed, guests and the held flag, and, held again, the reader's save byte for byte; the palette's `place` is kept; a save the page owns is removed (unless another tab wrote since), a held one (a link's or a guide's page) stays (b1a fix round 3, r3-1) | — | b1a (`state/draft.ts` `startOver`; `state/save.ts` `undoSave`) |

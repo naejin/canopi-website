@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:38Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:16:01Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:46Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:5b1cc5e5b7385399
-    last_modified: 2026-11-15T08:35:06Z
+    digest: sha256:63dfb3382fc20343
+    last_modified: 2026-11-15T12:09:27Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
@@ -26,27 +26,27 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:5d7ec19f2dc9687f
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:fb1d3e6351899c0e
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:1d308232da636c1e
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:ebcd8009a0571e36
-    last_modified: 2026-11-15T08:35:06Z
+    last_modified: 2026-11-15T08:46:56Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:14359e44747de392
-    last_modified: 2026-11-15T08:35:06Z
+    digest: sha256:abb200f51d7752c9
+    last_modified: 2026-11-15T12:09:27Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -97,7 +97,7 @@ E6 stream S2 split `memory.ts` (about 780 lines) into the modules below. E6 chun
 | [state/arrival.ts](../../src/islands/consortium/state/arrival.ts) | How the page opens: pure `arrival()`, `hashAction()`, `countryAtStart()`, `guessCountry()` and `arrivalPlan(how, { saved, pref, guess, seed, cell })` (`guess` and `cell` are functions: `countryAtStart` calls the browser's guess, which reads each country's time zones from the page (`countries.zones`, built at build time by `ConsortiumPage.astro` through the core's `countryZones`; asking the browser for all of them took about 0.4 s, 1.6 s on a slow phone, and Firefox has none), only when no link, choice or save names a country, at most once per arrival; b2 review perf-1) (the arrival's decisions: the country shown, the reader's own country worked out without a link's, the link's cell, and the ask of a reload while a link's place waits; Node-tested in `scripts/consortium-pp-b1.test.mjs`, b1a review round 2), `openWith({ how, plan, saved, seed, keptLocation })`, the wiring itself (the country, `locationAtStart`, the saved location's lookup unless a link's cell stands for it, the place seed, the restore or preset or shared climate; Node-tested through a spy location step, b1a review round 3, 3), and `startMemory()`, which reads the page once (`canopi-location` once: the ask's own cell and the lookup), calls `openWith`, then registers the address and save watchers |
 | [state/save.ts](../../src/islands/consortium/state/save.ts) | The save model's leaf (fix round 3, 2026-11-15), imported by store.ts and persist.ts so neither imports the other for it: `STORE`, `memory`, `attempt`, `guarded`; `held` (this page's palette is not the save: true on every page, false after a restore of the save or an undoable plant change, true again after Start over), `lastSave` (the save as this page last wrote or read it), `markSave` (an Undo snapshot's `{ text, held }`), `putSave` (the save put back or removed, only while the storage holds what this page last wrote: multi-tab), `undoSave` (flag and state back in one batch, then the save if held again) |
 | [state/draft.ts](../../src/islands/consortium/state/draft.ts) | Start's draft: `chooseClimate`, `chooseCountry`, `pickingCountry`, `backToPlace` (the palette's step 1 and Back to Place), `startOver`, `startEmpty` (the pool panel's "Search all plants": opens the search sheet and never removes a plant, fix round 4, s-4; each drops a link's location through `dropLinkLocation` → `letGo`), `openSavedInstead` (adopts what storage holds when pressed: `lastSave` set to it, so another tab's save is opened, never written over; fix round 4, s-5), `cardsLatched` (the climate cards opened by the page, latched until Start over), `cropExamples`. `chooseClimate` keeps every plant (b1a conformance-4: no climate change empties the palette) and makes a member the new climate's list lacks a guest of the climate it was in, so it is still drawn, checked and saved (b1a2-1); `canGoBack`/`backToConsortium` and the `start.back` key went with the "Your place" sheet |
-| [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) | The waiting Suggest, one owner: `pendingSuggest`, `waited`, `requestSuggest` (the one press, Place's and the Next step's; it keeps no Undo of its own: the suggestion placed offers it, `store.suggestMembers`, fix round 4, s-1, s-2; asks the store for the suggestion's chunk, `store.wantSuggest()`, then waits for the plant lists, the location lookups and that chunk, capped at 10 s, `suggestWaitMs()` (exported since the E6 hand-off: Swap's own wait for the chunk lasts as long), shortened in the test build by `window.__ctTimeouts.suggest`), `dropSuggest` (exported since the E6 hand-off: the one way a wait ends; `views/PoolSlot.tsx` calls it, untracked, when Start can no longer suggest for the chosen climate or another is chosen; no other island module writes `pendingSuggest`, checked by `scripts/consortium-memory.test.mjs`), `watchSuggest` (reruns a waiting Suggest when `store.suggestRule` arrives; since E6 R4 ends every waiting Suggest with the `details.loadFailed` toast and Reload when `store.suggestFailed`, L8). See the wait cap rule below |
+| [state/suggest-wait.ts](../../src/islands/consortium/state/suggest-wait.ts) | The waiting Suggest, one owner: `pendingSuggest`, `waited`, `requestSuggest` (the one press, Place's and the Next step's; it keeps no Undo of its own: the suggestion placed offers it, `store.suggestMembers`, fix round 4, s-1, s-2; asks the store for the suggestion's chunk, `store.wantSuggest()`, then waits for the plant lists, the location lookups and that chunk, capped at 10 s, `suggestWaitMs()` (exported since the E6 hand-off: Swap's own wait for the chunk lasts as long), shortened in the test build by `window.__ctTimeouts.suggest`), `dropSuggest` (exported since the E6 hand-off: the one way a wait ends; `views/PoolSlot.tsx` calls it, untracked, when Start can no longer suggest for the chosen climate or another is chosen; no other island module writes `pendingSuggest`, checked by `scripts/consortium-memory.test.mjs`), `watchSuggest` (reruns a waiting Suggest when `store.suggestRule` arrives; since E6 R4 ends every waiting Suggest with the `details.loadFailed` toast and Reload when `store.suggestFailed`, L8; since PP-B b1b also reruns it when `store.verdictRule` arrives and ends it with `place.count.suggestStopped` and Try again when the verdict chunk is refused while `store.waitsForVerdicts()`). See the wait cap rule below |
 | [state/lookups.ts](../../src/islands/consortium/state/lookups.ts) | The location lookups in flight, in the first run (the location module is lazy): `lookups`, `looking`, `lookingThrough`, `unread`, the result `line`, `nextLookup`/`liveLookup`, `unlessReplaced`, `letGo(drop)`. Moved out of `views/location/load.ts` (its re-exports for the seam tests removed in chunk 5) |
 | [state/location.ts](../../src/islands/consortium/state/location.ts) | The location step's state, in the lazy location chunk (only `views/location/location.tsx` imports it): `readLocation`, `locationRecord`, `siteFound`, `locationCountry`, the tile `read` (15 s cap, no soil until P5.2), `locate`, `settle`, `useMyLocation`, `searchPlace`, `placeName`, `confirmProposed`, `forget`. See [Consortium location step](/modules/consortium-location.md) |
 
@@ -123,6 +123,7 @@ Every waiting Suggest ends, with a suggestion or one toast, always through `drop
 - the suggestion's chunk (`store.suggestRule`) not come and the plant list read (a stalled request): the wait ends with one `details.loadFailed` toast with Reload, and its id is kept (`lateToast`);
 - the chunk not come and the list still being read: checked again after another cap, no toast (the load screen ends a failed list's wait);
 - in every case `waited` is set first: a location lookup no longer holds the wait (Suggest runs without the site; the line says so).
+- **the verdict wait (PP-B b1b, F1a-P7):** with a site climate and range checks on (`store.waitsForVerdicts()` = `siteClimate && !rangeFailed`), `store.suggestMembers` returns false until `poolVerdicts` exist, so the Suggest waits for the verdict chunk too (the gain counts the open holes a plant fills, and a member outside its range fills none). A **refused** verdict chunk ends the wait at once (an effect on `store.verdictFailed`) with the `place.count.suggestStopped` toast and Try again (`load.retry`), which calls `requestSuggest()` again; `requestSuggest` asks for the chunk again in place (`store.retryVerdict()`) when it had failed. A **stalled** verdict chunk at the cap (the list and the suggestion's chunk read, the verdicts still missing) ends the wait with the `details.loadFailed` toast and Reload, since the import is still pending and Try again could not ask again; its id is kept (`lateVerdictToast`) and the toast goes if the chunk then comes, only while it is still the toast shown. Without a site climate, or with range checks off, the suggestion never waits for verdicts.
 
 If the chunk then arrives, an effect in `watchSuggest` takes down only that Reload toast, and only while it is still the toast shown (a newer toast stays); the wait stays ended, so no suggestion runs. Browser tests E6-16, E6-16b and E6-18 (`consortium-e6-r4.browser.test.mjs`) cover the three cases.
 
@@ -181,4 +182,4 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 
 ## Store seams added by PP-B b2 (chunk 1)
 
-`store.ts` gains, additively: `step` (place or palette), `yearStep`, `notNow`, `slow`, `opening`, `offline`, `failedPools` and `failedMembers` (a guest list that failed), `verdictFailed`, `wantVerdict()` (the palette page asks for the verdict chunk on mount; `store.start()` keeps its three effects), `holdToast` and the exported `offerUndo` (Place's moves in `state/draft.ts` and `state/suggest-wait.ts` use it since the chunk-1 merge). The toast timer reads `__ctTimeouts.toast` in the test build.
+`store.ts` gains, additively: `step` (place or palette), `yearStep`, `notNow`, `slow`, `opening`, `offline`, `failedPools` and `failedMembers` (a guest list that failed), `verdictFailed`, `wantVerdict()` (the palette page asks for the verdict chunk on mount; `store.start()` keeps its three effects; since b1b a new load clears `verdictFailed` as it starts, so `verdictFailed` means the current load failed, and `retryVerdict()` only calls it when no load is pending and no rule is in; back online, `start()`'s `online` listener retries a refused verdict chunk in place, so no view needs a listener of its own), `waitsForVerdicts()` (b1b), `holdToast` and the exported `offerUndo` (Place's moves in `state/draft.ts` and `state/suggest-wait.ts` use it since the chunk-1 merge). The toast timer reads `__ctTimeouts.toast` in the test build.
