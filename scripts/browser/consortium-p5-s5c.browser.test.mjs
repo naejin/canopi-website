@@ -461,7 +461,10 @@ test('P5-27b (S5c seam review 1; on Place, PP-B b1a): a borrowed climate whose r
   }
 });
 
-test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, the range warnings it would show are replaced by a notice with Reload', async () => {
+// PP-B exit (2026-11-16): the notice that stayed under the matrix went with Matrix.tsx in PP-B 0a'
+// (store.ts marksBroken; PP-C c2 brings a lasting one back); what is promised today is the one toast
+// with Reload, said once the marks are wanted, and the palette page still listing its plants.
+test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, a toast says the warnings it would show are not shown, with Reload, and the palette still lists its plants', async () => {
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     const cdp = await page.createCDPSession();
@@ -469,10 +472,11 @@ test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, the range warn
     await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/mark-providers.*'] });
     await atSite(page, 'seville');
     await choose(page, 'Mediterranean');
-    await suggestDirect(page);
-    assert.ok(await has(page, '[data-plant-id]', 10_000), 'the matrix');
-    assert.ok(await has(page, '[data-marks-unavailable]', 10_000), `${width} px: a notice that the marks did not load`);
-    assert.match(await text(page, '[data-marks-unavailable]') ?? '', /Reload/);
+    const said = () => [...document.querySelectorAll('.ct-toast')].some((e) => /warnings are not shown/.test(e.textContent) && [...e.querySelectorAll('button')].some((b) => b.textContent === 'Reload'));
+    assert.ok(await page.waitForFunction(said, { timeout: 10_000 }).then(() => true, () => false), `${width} px: a toast that the marks did not load, with Reload`);
+    assert.ok(await suggestDirect(page), `${width} px: the suggestion runs`);
+    assert.ok(await has(page, '[data-plant-id]', 10_000), `${width} px: the palette lists its plants`);
+    assert.equal(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, `${width} px: no provider marks claimed`);
   }
 });
 
@@ -500,16 +504,26 @@ test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the
   assert.equal(await members(page), 1, 'no suggestion fills in around the plant the reader added');
 });
 
-test('P5-27n (S5c seam review round 4, 1): a waiting Suggest ends when the guest list fails (the load screen says so), and Retry runs nothing unasked', async () => {
+// PP-B exit (2026-11-16): a failed guest list is no longer the load screen with Retry; it is named on
+// the palette page with its plants "not checked" (PP-B21, architecture 9 "Guest lists"), and a press
+// made after it suggests around the plants at hand, so a waiting press does too. Its rewrite found
+// that the suggestion dropped the guest itself (core suggest.ts kept only the seeds it could read):
+// fixed test-first (consortium-pp-b1.test.mjs "PP-B exit").
+test('P5-27n (S5c seam review round 4, 1; PP-B exit): a waiting Suggest ends when the kept guest\'s list fails: it suggests around the plants it can read, keeps the guest, names the list as missing with Reload, and is no longer busy', async () => {
   const page = await placeGuestHeld(1280);
+  const guest = await page.evaluate(() => { const { store } = window.__ctTest, [id] = Object.keys(store.guests.value); store.addMembers([id], { [id]: 'Tropical' }); return id; });
   await page.click('[data-place-suggest]');
+  assert.equal(await page.$eval('[data-place-suggest]', (b) => b.getAttribute('aria-busy')), 'true', 'busy while it waits');
   await page.evaluate(() => window.__guest.fail());
-  assert.ok(await has(page, aria('button', 'Retry'), 10_000), 'the load screen with Retry');
-  await page.locator(aria('button', 'Retry')).click();
-  assert.equal(await loadState(page), 'ready');
-  await page.waitForFunction(() => window.__ctTest.store.source.value && window.__ctTest.store.guestsPending.value.length === 0, { timeout: 15_000 });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 1, { timeout: 10_000 }).then(() => true, () => false), 'the wait ends with a suggestion');
+  assert.ok(await page.evaluate((id) => window.__ctTest.store.members.value.includes(id), guest), 'the guest stays in the palette');
+  assert.equal(await loadState(page), 'ready', 'no load screen');
+  const named = () => [...document.querySelectorAll('.ct-notice')].some((n) => /The Tropical list could not be read: 1 plant from it is missing, not checked\./.test(n.textContent) && [...n.querySelectorAll('button')].some((b) => b.textContent === 'Reload'));
+  assert.ok(await page.waitForFunction(named, { timeout: 8000 }).then(() => true, () => false), 'the list named as missing, with Reload');
+  assert.ok(await has(page, `.ct-plants [data-plant-id="${guest}"][data-missing="failed"]`, 5000), 'Your plants lists the guest as not checked');
+  const n = await members(page);
   await new Promise((r) => setTimeout(r, 1000));
-  assert.equal(await members(page), 0, 'no suggestion runs on its own after Retry');
+  assert.equal(await members(page), n, 'nothing runs on its own after');
 });
 
 test('P5-27o (S5c seam review round 4, 1): a waiting Suggest whose guest list never arrives ends after 10 s, says so, and is no longer busy', async () => {
@@ -577,14 +591,16 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
   assert.deepEqual(page.thirdParty, []);
 });
 
-// Owner request 2026-11-12: the room answer is advisory. The matrix layers are relative sun exposure,
-// so a small garden never blocks a cell nor hides a tall plant in Add; the plant carries a note.
-test('P5-27r (S5c climate ranges, room advisory): in a small garden no cell is blocked for height, and Add lists a walnut with "grows to … m: prune", never behind "show anyway" @real-data', async () => {
+// Owner request 2026-11-12: the room answer is advisory ("inform, don't block"; "warn, never hide"): a
+// small garden never hides a tall plant in Add; the plant carries a note. PP-B exit (2026-11-16): the
+// matrix cells this test also read went in PP-B 0a' (its "no cell blocked" line went with them; the
+// palette's holes and fillers never read the room answer, core holes.ts); the walnut, once added,
+// is listed in Your plants with the same note, not hidden.
+test('P5-27r (S5c climate ranges, room advisory): in a small garden Add lists a walnut with "grows to … m: prune", never behind "show anyway", it joins without asking, and Your plants lists it with that note @real-data', async () => {
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     await choose(page, 'Temperate');
-    await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, room: 'small' }; store.view.value = 'matrix'; });
-    assert.equal(await page.evaluate(() => window.__ctTest.store.matrix.value.rows.flatMap((r) => r.cells).some((c) => c.empty === 'misfit')), false, `${width} px: no cell "can't be filled"`);
+    await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, room: 'small' }; });
     await page.evaluate(() => window.__ctTest.store.openSheet('add'));
     assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
     // A miss says what the sheet showed then.
@@ -611,6 +627,9 @@ test('P5-27r (S5c climate ranges, room advisory): in a small garden no cell is b
     await settled(page, '.ct-add-bar .button-primary'); // the sheet slides in (details.css ct-sheet-in)
     await page.click('.ct-add-bar .button-primary');
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), `${width} px: added without asking (${await sheet()})`);
+    await page.evaluate(() => { const { store } = window.__ctTest; store.closeSheet?.(); store.view.value = 'matrix'; });
+    const listed = await page.waitForFunction(() => [...document.querySelectorAll('.ct-plants li')].find((li) => li.querySelector('i[lang="la"]')?.textContent === 'Juglans regia')?.querySelector('[data-mark="room"]')?.textContent ?? null, { timeout: 8000 }).then((r) => r.jsonValue(), () => null);
+    assert.match(listed ?? '', /^grows to [\d.]+ m: prune$/, `${width} px: Your plants lists the walnut with its height note`);
     assert.deepEqual(page.thirdParty, []);
   }
 });
