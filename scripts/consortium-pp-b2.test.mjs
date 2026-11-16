@@ -296,7 +296,7 @@ test('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key under c
 });
 
 // The probe (slices "Probes", b2): verdicts + holes for a 200-plant palette, target under 150 ms.
-test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export take under 150 ms', async () => {
+test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export are timed and reported', async (t) => {
   const store = await kiambuStore();
   const members = store.pools.value.Subtropical.slice(0, 200);
   const ctx = { place: core.emptyPlace, lookup: KIAMBU.lookup, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
@@ -304,7 +304,7 @@ test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export take
   const v = verdicts(members, ctx);
   core.nextStep(core.holes({ members, verdicts: v, pending: false }));
   const ms = performance.now() - t0;
-  assert.ok(ms < 150, `${ms.toFixed(1)} ms`);
+  t.diagnostic(`${ms.toFixed(1)} ms (reference 150 ms; reported, never a failure: owner row "No hard limits", 2026-11-16)`);
 });
 
 // ---- the picture model (rules/picture.ts, picture-years.ts, picture-jobs.ts, change-summary.ts) ----
@@ -408,7 +408,7 @@ const derive = (P, members) => {
   core.nextStep(holes);
   return { v, holes, years: P.yearsPicture({ members, holes, nameOf }), jobs: P.jobsPicture({ members, holes, nameOf }) };
 };
-test('PP-B (b2 scale, 200 plants): verdicts and holes under 150 ms, every picture folds and its table lists all 200, and one plant added re-derives under 30 ms', async (t) => {
+test('PP-B (b2 scale, 200 plants): every picture folds and its table lists all 200; verdicts, holes and one added plant timed and reported', async (t) => {
   const P = await pictures();
   const { members } = await p200.palette200();
   assert.equal(members.length, 200);
@@ -435,8 +435,8 @@ test('PP-B (b2 scale, 200 plants): verdicts and holes under 150 ms, every pictur
   const runs = Array.from({ length: 5 }, () => { const t1 = performance.now(); derive(P, [...members, extra]); return performance.now() - t1; }).sort((a, b) => a - b);
   const add = runs[2];
   t.diagnostic(`200 plants: verdicts + holes ${probe.toFixed(1)} ms; one added, verdicts + holes + both pictures ${add.toFixed(1)} ms (median of 5)`);
-  assert.ok(probe < 150, `verdicts + holes ${probe.toFixed(1)} ms`);
-  assert.ok(add < 30, `one plant added re-derives in ${add.toFixed(1)} ms`);
+  // Owner, 2026-11-16 (row "No hard limits"): timings are reported, never a failure.
+  if (probe >= 150 || add >= 30) t.diagnostic(`over the reference figures (150 ms, 30 ms), reported, not a failure`);
 });
 
 test('PP-B (b2 years, review r1 conformance-12): phaseOfYear is the one year → time step rule (a start year, an end year, past 60 the last step)', () => {
