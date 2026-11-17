@@ -27,6 +27,7 @@ import { listName, nameOf, nameOrder, num } from '../kit/names.ts';
 import { formatLength } from '../../format.ts';
 import { page } from '../kit/page.ts';
 import { finder, namesState, releasePlants, wantNames } from './names.ts';
+import Paste from './Paste.tsx';
 
 // "Holds up by …": the first later period (types.ts periodIds), named as future.ts periodName names it
 // (not imported: it would bring the future and range chunks into Find's first use, as pool.tsx says).
@@ -108,6 +109,12 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const field = useRef<HTMLInputElement>(null);
+  // Paste opened from Find is drawn in Find's sheet; Cancel or an add comes back here, the focus on
+  // "Paste a list" (B11).
+  const [pasting, setPasting] = useState(false);
+  const pasteBtn = useRef<HTMLButtonElement>(null);
+  const [backFromPaste, setBackFromPaste] = useState(false);
+  useEffect(() => { if (backFromPaste && !pasting) { pasteBtn.current?.focus(); setBackFromPaste(false); } }, [backFromPaste, pasting]);
   useEffect(() => { if (source) wantNames(source, pageLang() as Locale); }, [source]);
 
   const pool = store.pool.value, offer = store.offerPool.value;
@@ -203,6 +210,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   }, [base, hits, filters, judging, ctx, verdicts, warned, pool, members, climate, atOpen, filled, stay, releasePlants.value]);
 
   if (!climate) return null;
+  if (pasting) return <Paste Frame={Frame} onBack={() => batch(() => { setPasting(false); setBackFromPaste(true); })} />;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
   const toggleFilter = (k: keyof FindFilters) => setFilters((f) => ({ ...f, [k]: !f[k] }));
@@ -474,7 +482,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
               <button type="button" class="ct-find-chip" data-find-mode="one" aria-pressed={select ? 'false' : 'true'} onClick={() => { setSelect(false); setTicked([]); }}>{T('find.oneByOne')}</button>
               <button type="button" class="ct-find-chip" data-find-mode="several" data-find-select="" aria-pressed={select ? 'true' : 'false'} onClick={() => setSelect(true)}>{T('find.select')}</button>
             </span>
-            <button type="button" class="text-link" data-find-paste="" onClick={() => store.openSheet('paste')}>{T('find.paste')}</button>
+            <button ref={pasteBtn} type="button" class="text-link" data-find-paste="" onClick={() => setPasting(true)}>{T('find.paste')}</button>
           </p>
           {job && (
             <div class="ct-find-job" data-job={job}>

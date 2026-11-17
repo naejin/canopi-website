@@ -6,13 +6,16 @@
 // names.ts releasePlants): opening Paste loads no list; a plant of another list loads its list only
 // when it is added (fix round 1, A8), so its warnings show once it is in. Each line is found, to choose
 // (a genus, a shared name, a word of a name), found in another climate's list, already in, listed
-// twice, or not found. Every warning stays on its row in words. Owner row "Inform, don't block"
+// twice, or not found, one row a line in the paste's order with the count of names read (board Paste,
+// fix round 1 B10); opened from Find it is drawn in Find's sheet and goes back to it (B11). Every
+// warning stays on its row in words, a plant outside its range says so. Owner row "Inform, don't block"
 // (2026-11-14, knowledge/decisions/consortium-user-decisions.md): nothing asks first. A row's "Add
 // anyway" (a guest, labelled "From the {climate} list", A9) adds it in one tap and "Add all" adds the
 // found and ticked plants; a plant with a warning (rules/find-query.ts addsWithWarning, as in Find) makes the toast say
 // "n added with a warning" with Show. Each added plant is kept. The text is read a moment after typing stops (and at once on "Add all"), at most
 // MAX_LINES lines.
 // Loaded on first use with Find, one chunk (views/find/index.ts, views/Sheets.tsx).
+import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
@@ -23,13 +26,15 @@ import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
 import { flagLines } from '../kit/flags.ts';
+import { FitLine } from '../kit/fit.tsx';
 import { nameOf, zoneName } from '../kit/names.ts';
 import { finder, releasePlants, wantNames } from './names.ts';
 
 const MAX_LINES = 500;
 const SETTLE_MS = 200;
 
-export default function Paste({ Frame }: { Frame: Frame }) {
+// onBack: opened from Find, Paste is drawn in Find's sheet and Cancel or an add goes back to it (B11).
+export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: () => void }) {
   const pool = store.pool.value;
   const climate = store.climate.value;
   const scene = store.flagScene.value;
@@ -88,16 +93,15 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
     // Only the lists of the plants added are read, now (A8).
     await Promise.all([...new Set(Object.values(from))].map((z) => store.loadPool(z!)));
-    closeSheet();
+    if (onBack) onBack(); else closeSheet();
     addMembers(ids, from, { warned: ids.filter(warnedNow) });
   };
-  // The row leaves for "Already in" as the plant joins (rows keyed by plant, so its node goes), and the
-  // focus moves on (W4): to the next row's "Add anyway" (next: its plant, else the row before's), else
-  // the "Already in" heading, else the sheet's title.
+  // The row turns to "in your palette" as the plant joins, and the focus moves on (W4): to the next
+  // row's "Add anyway" (next: its plant, else the row before's), else the count line.
   const addGuest = async (t: Named, from: ClimateZone, next?: Named) => {
     await store.loadPool(from);
     addMembers([t.id], { [t.id]: from }, { warned: warnedNow(t.id) ? [t.id] : [] });
-    focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-already'));
+    focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-count'));
   };
   const toggle = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const sci = (t: Named) => <i class="ct-sci">{t.canonical_name}</i>;
@@ -111,10 +115,51 @@ export default function Paste({ Frame }: { Frame: Frame }) {
   const empty = !result.found.length && !result.choose.length && !result.other.length && !result.already.length && !result.duplicate.length && !result.none.length;
   const sample = (c: number) => table.rows.find((r, i) => i > 0 && r[c]?.trim())?.[c]?.trim().slice(0, 24) ?? table.rows[0]?.[c]?.trim().slice(0, 24) ?? '';
 
+  // The paste in its order (board Paste, fix round 1 B10): one row a line, its reading said on it.
+  type Row = { at: number; name: string; status: 'found' | 'choose' | 'other' | 'already' | 'duplicate' | 'none'; body: ComponentChildren };
+  const pv = store.verdictFailed.value ? null : store.poolVerdicts.value;
+  const rangeWarn = (n: Named) => (pv?.get(n.id)?.level === 'outside' ? <FitLine v={pv.get(n.id)} /> : null);
+  const rows: Row[] = [
+    ...result.found.map((f): Row => ({ at: f.at, name: f.name, status: 'found', body: <>
+      <span>{nameOf(f.taxon)} {sci(f.taxon)} · {T('paste.isNew')}{f.close && <> · <span class="ct-muted">{T('paste.close', { name: f.close })}</span></>}</span>
+      {rangeWarn(f.taxon)}{warnings(f.taxon)}</> })),
+    ...result.choose.map((c): Row => ({ at: c.at, name: c.name, status: 'choose', body: <>
+      <span>{P('paste.which', c.taxa.length, { name: c.name })}</span>
+      <ul class="ct-plain">
+        {c.taxa.map((t) => (
+          members.includes(t.id)
+            ? <li class="ct-muted">{nameOf(t)} {sci(t)} · {T('inConsortium')}</li>
+            : (
+              <li><label class="ct-check"><input type="checkbox" checked={ticked.includes(t.id)} onChange={() => toggle(t.id)} /> {nameOf(t)} {sci(t)}
+                {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}</label>
+                {rangeWarn(t)}{warnings(t)}</li>
+            )
+        ))}
+      </ul></> })),
+    ...result.other.map((o, i): Row => ({ at: o.at, name: o.name, status: 'other', body: <>
+      <span>{nameOf(o.taxon)} {sci(o.taxon)} · {T('otherLists')}</span>
+      <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
+      {warnings(o.taxon)}
+      <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
+        onClick={() => void addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button></> })),
+    ...result.already.map((a): Row => ({ at: a.at, name: a.name, status: 'already', body: <>
+      <span>{nameOf(a.taxon)} {sci(a.taxon)} · {T('inConsortium')}</span>
+      {guests[a.taxon.id] && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[a.taxon.id]!) })}</span>}</> })),
+    ...result.duplicate.map((d): Row => ({ at: d.at, name: d.name, status: 'duplicate', body: <span>{nameOf(d.taxon)} {sci(d.taxon)} · {T('paste.twice')}</span> })),
+    ...result.none.map((x): Row => ({ at: x.at, name: x.name, status: 'none', body: <span>{T('paste.notFound')}</span> })),
+  ].sort((a, b) => a.at - b.at);
+  const lines = rows.length;
+  const sum = [
+    result.found.length + result.other.length > 0 && P('paste.sumNew', result.found.length + result.other.length),
+    result.already.length > 0 && P('paste.sumHave', result.already.length),
+    result.none.length > 0 && P('paste.sumNone', result.none.length),
+  ].filter(Boolean).join(', ');
+  const back = () => (onBack ? onBack() : closeSheet());
+
   return (
     <Frame titleId="ct-paste-title" class="ct-paste" head={<span class="ct-muted">{T('paste.title')}</span>} foot={
       <div class="ct-add-bar">
-        <span>{P('paste.toAdd', toAdd.length)}</span>
+        <button type="button" class="button button-secondary" data-paste-cancel="" onClick={back}>{T('paste.cancel')}</button>
         <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={() => void addAll()}>{P('paste.addAll', toAdd.length)}</button>
       </div>
     }>
@@ -138,85 +183,16 @@ export default function Paste({ Frame }: { Frame: Frame }) {
       {capped && <p class="ct-note">{T('paste.cap', { n: MAX_LINES })}</p>}
       <div aria-live="polite">
         {empty && <p class="ct-muted">{T('paste.empty')}</p>}
-        {result.found.length > 0 && (
-          <section aria-labelledby="ct-p-found">
-            <h3 id="ct-p-found">{T('paste.g.found')}</h3>
-            <ul class="ct-rows ct-paste-rows">
-              {result.found.map((f) => (
-                <li key={f.taxon.id}><span><strong>{f.name}</strong> → {nameOf(f.taxon)} {sci(f.taxon)}</span>
-                  {f.close && <span class="ct-muted">{T('paste.close', { name: f.close })}</span>}
-                  {warnings(f.taxon)}</li>
-              ))}
-            </ul>
-          </section>
+        {lines > 0 && <p id="ct-p-count" tabIndex={-1} data-paste-count=""><strong>{P('paste.read', lines)}</strong>{sum && <span class="ct-muted"> {sum}</span>}</p>}
+        {lines > 0 && (
+          <ul class="ct-rows ct-paste-rows">
+            {rows.map((r) => (
+              <li key={`${r.at}`} data-paste-row="" data-status={r.status}><strong>“{r.name}”</strong> {r.body}</li>
+            ))}
+          </ul>
         )}
-        {result.choose.length > 0 && (
-          <section aria-labelledby="ct-p-choose">
-            <h3 id="ct-p-choose">{T('paste.g.choose')}</h3>
-            <p class="ct-muted">{T('paste.chooseHint')}</p>
-            <ul class="ct-rows ct-paste-rows">
-              {result.choose.map((c) => (
-                <li><strong>{c.name}</strong>
-                  <ul class="ct-plain">
-                    {c.taxa.map((t) => (
-                      members.includes(t.id)
-                        ? <li class="ct-muted">{nameOf(t)} {sci(t)} · {T('inConsortium')}</li>
-                        : (
-                          <li><label class="ct-check"><input type="checkbox" checked={ticked.includes(t.id)} onChange={() => toggle(t.id)} /> {nameOf(t)} {sci(t)}
-                            {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}</label>
-                            {warnings(t)}</li>
-                        )
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-        {result.other.length > 0 && (
-          <section aria-labelledby="ct-p-other">
-            <h3 id="ct-p-other">{T('otherLists')}</h3>
-            <ul class="ct-rows ct-paste-rows">
-              {result.other.map((o, i) => {
-                return (
-                  <li key={o.taxon.id}>
-                    <span><strong>{o.name}</strong> → {nameOf(o.taxon)} {sci(o.taxon)}</span>
-                    <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
-                    {warnings(o.taxon)}
-                    <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
-                      onClick={() => void addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-        {result.already.length > 0 && (
-          <section aria-labelledby="ct-p-already">
-            <h3 id="ct-p-already" tabIndex={-1}>{T('paste.g.already')}</h3>
-            <ul class="ct-rows ct-paste-rows">
-              {result.already.map((a) => (
-                <li key={a.taxon.id}><span><strong>{a.name}</strong> → {nameOf(a.taxon)} {sci(a.taxon)}</span>
-                  {guests[a.taxon.id] && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[a.taxon.id]!) })}</span>}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-        {result.duplicate.length > 0 && (
-          <section aria-labelledby="ct-p-dup">
-            <h3 id="ct-p-dup">{T('paste.g.duplicate')}</h3>
-            <ul class="ct-rows ct-paste-rows">
-              {result.duplicate.map((d) => <li><span><strong>{d.name}</strong> → {nameOf(d.taxon)} {sci(d.taxon)}</span></li>)}
-            </ul>
-          </section>
-        )}
-        {result.none.length > 0 && (
-          <section aria-labelledby="ct-p-none">
-            <h3 id="ct-p-none">{T('paste.g.none')}</h3>
-            <ul class="ct-rows ct-paste-rows">{result.none.map((x) => <li><strong>{x.name}</strong></li>)}</ul>
-            <p class="ct-muted">{T('paste.noneText')}</p>
-          </section>
-        )}
+        {result.none.length > 0 && <p class="ct-muted">{T('paste.noneText')}</p>}
+        {lines > 0 && <p class="ct-muted" data-paste-note="">{T('paste.note')}</p>}
       </div>
     </Frame>
   );

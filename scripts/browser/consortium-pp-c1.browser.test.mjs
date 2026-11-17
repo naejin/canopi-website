@@ -620,3 +620,34 @@ test('PP-C c1 fix B9+B12+B14 (switch, toast result, typo rows)', async () => {
   const toast = await page.waitForFunction(() => document.querySelector('dialog.ct-find [role="status"], dialog.ct-find .ct-toast')?.textContent, { timeout: 3000 }).then((h) => h.jsonValue(), () => '');
   assert.match(toast, /is filled|now nobody/, `the toast says the hole's result (${toast})`);
 });
+
+// Fix round 1, B10 and B11 (board Paste; conformance c1 #13, #14): Paste opened from Find reads the
+// paste in its order with the count of names read, a plural common name asks "Which …?", a plant outside
+// its range says so on its row, the note says plants come with their warnings, and Cancel goes back to
+// Find with the focus on "Paste a list".
+test('PP-C c1 fix B10+B11 (Paste as the board): pasted order, count, Which …?, range warning, note, Cancel back to Find', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  const pick = await page.evaluate(() => {
+    const { store } = window.__ctTest, m = new Set(store.members.value), v = store.poolVerdicts.value, pool = store.pool.value;
+    const outside = pool.find((t) => !m.has(t.id) && v.get(t.id)?.level === 'outside').canonical_name;
+    const by = new Map();
+    for (const t of pool) { const w = (t.names.en ?? '').toLowerCase().split(' ').pop(); if (/^[a-z]{4,}$/.test(w) && !w.endsWith('s')) by.set(w, (by.get(w) ?? 0) + 1); }
+    const word = [...by].filter(([w, n]) => n >= 2 && !pool.some((t) => (t.names.en ?? '').toLowerCase() === `${w}s`)).sort((a, b) => b[1] - a[1])[0][0];
+    return { outside, plural: `${word}s`, member: store.memberTaxa.value[0].canonical_name };
+  });
+  await openFind(page);
+  await hasFind(page);
+  await page.click(`${FIND} [data-find-paste]`);
+  assert.ok(await has(page, 'dialog[open] #ct-paste-text', 3000), 'Paste opens in the sheet');
+  await page.locator('dialog[open] #ct-paste-text').fill([pick.member, 'zzqx not a plant', pick.plural, pick.outside].join('\n'));
+  await page.waitForFunction(() => document.querySelectorAll('dialog[open] [data-paste-row]').length === 4, { timeout: 4000 });
+  assert.deepEqual(await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => e.dataset.status)), ['already', 'none', 'choose', 'found'], 'the paste in its order');
+  assert.match(await page.$eval('dialog[open] [data-paste-count]', (e) => e.textContent), /4 names read/, 'the count of names read');
+  assert.match(await page.$eval('dialog[open] [data-paste-row][data-status="choose"]', (e) => e.textContent), /Which/, `"${pick.plural}": Which …?`);
+  assert.match(await page.$eval('dialog[open] [data-paste-row][data-status="found"]', (e) => e.textContent), /Outside its climate range/, 'the range warning on its row');
+  assert.ok(await page.$('dialog[open] [data-paste-note]'), 'added as they are, with their warnings');
+  await page.click('dialog[open] [data-paste-cancel]');
+  assert.ok(await has(page, `${FIND} [data-find-paste]`, 3000), 'Cancel goes back to Find');
+  assert.ok(await page.waitForFunction(() => document.activeElement?.matches('[data-find-paste]'), { timeout: 2000 }).then(() => true, () => false), 'the focus on "Paste a list"');
+});

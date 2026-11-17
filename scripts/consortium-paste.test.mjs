@@ -160,3 +160,12 @@ test('binomials keep a hyphenated or apostrophe epithet whole, authors dropped: 
   const read = readPaste(pasteNames('Opuntia ficus-indica (L.) Mill.\nRibes uva-crispa L.'), { here: lists.taxa.size ? [...lists.taxa.values()] : [] });
   assert.deepEqual(read.found.map((f) => f.taxon.id), ['h1', 'h2'], 'each found as its own plant (not "Opuntia ficus")');
 });
+
+// Fix round 1, B10 (board Paste): every reading keeps its line ("at"), so the sheet lists the paste in its
+// order; a plural common name ("beans") reads as the plants that share it, to choose, not "not found".
+test('B10: every reading keeps its line; "beans" asks which bean', () => {
+  const beans = [...temperate, plant('b1', 'Phaseolus vulgaris', { en: 'Common bean' }), plant('b2', 'Phaseolus lunatus', { en: 'Lima bean' })];
+  const r = readPaste(pasteNames('Hawthorn\nnot a plant\nbeans\nApple'), { here: beans, members: ['t1'] });
+  assert.deepEqual([r.found[0].at, r.none[0].at, r.choose[0].at, r.already[0].at], [0, 1, 2, 3]);
+  assert.deepEqual(r.choose[0].taxa.map((t) => t.id).sort(), ['b1', 'b2'], '"beans": which bean?');
+});

@@ -211,13 +211,14 @@ export function matchName<T extends Named>(name: string, lists: PasteLists<T>): 
 
 const PREFIX_LIMIT = 8;
 
+// `at`: the reading's line in the paste (the sheet lists the paste in its order, board Paste).
 export interface PasteResult<T> {
-  found: { name: string; taxon: T; close: string | null }[];
-  choose: { name: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null }[];
-  other: { name: string; climate: ClimateZone; taxon: T; close: string | null }[];
-  already: { name: string; taxon: T; close: string | null; climate: ClimateZone | null }[];
-  duplicate: { name: string; taxon: T }[];
-  none: { name: string }[];
+  found: { at: number; name: string; taxon: T; close: string | null }[];
+  choose: { at: number; name: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null }[];
+  other: { at: number; name: string; climate: ClimateZone; taxon: T; close: string | null }[];
+  already: { at: number; name: string; taxon: T; close: string | null; climate: ClimateZone | null }[];
+  duplicate: { at: number; name: string; taxon: T }[];
+  none: { at: number; name: string }[];
   header: string | null;
 }
 // A whole paste, sorted into the groups the sheet shows, each plant once:
@@ -235,27 +236,32 @@ export interface PasteResult<T> {
 export function readPaste<T extends Named>(names: PastedNames, { here, others = [], members = [], index }: { here: readonly T[]; others?: [ClimateZone, readonly T[]][]; members?: readonly PlantId[]; index?: Finder }): PasteResult<T> {
   const lists = pasteLists(here, others, index), ins = new Set(members), seen = new Set<PlantId>();
   const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], duplicate: [], none: [], header: null };
+  let at = 0;
   const one = (name: string, t: T, close: string | null) => {
     const climate = lists.climate.get(t.id) ?? null;
-    if (seen.has(t.id)) { out.duplicate.push({ name, taxon: t }); return; }
+    if (seen.has(t.id)) { out.duplicate.push({ at, name, taxon: t }); return; }
     seen.add(t.id);
-    if (ins.has(t.id)) out.already.push({ name, taxon: t, close, climate });
-    else if (climate) out.other.push({ name, climate, taxon: t, close });
-    else out.found.push({ name, taxon: t, close });
+    if (ins.has(t.id)) out.already.push({ at, name, taxon: t, close, climate });
+    else if (climate) out.other.push({ at, name, climate, taxon: t, close });
+    else out.found.push({ at, name, taxon: t, close });
   };
   // A choose group from one list: this climate's plants when it has any, else the first other list's.
   const group = (name: string, taxa: T[], limit = Infinity) => {
     const z = taxa.some((t) => lists.climate.get(t.id) === null) ? null : lists.climate.get(taxa[0].id) ?? null;
-    out.choose.push({ name, taxa: taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z).slice(0, limit), inside: [], climate: z });
+    out.choose.push({ at, name, taxa: taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z).slice(0, limit), inside: [], climate: z });
   };
-  for (const name of names) {
+  for (const [i, name] of names.entries()) {
+    at = i;
     const m = matchName(name, lists);
     if (m && m.how !== 'choose') { one(name, m.taxa[0], m.close ?? null); continue; }
     if (m) { group(name, m.taxa); continue; }
     // No name matched: Find's search (not for a piece of a longer cell).
-    if (names.split?.has(name)) { out.none.push({ name }); continue; }
-    const hits = lists.index(name).filter((h) => lists.taxa.has(h.id)).map((h) => lists.taxa.get(h.id)!);
-    if (hits.length) group(name, hits, PREFIX_LIMIT); else out.none.push({ name });
+    if (names.split?.has(name)) { out.none.push({ at, name }); continue; }
+    const search = (q: string) => lists.index(q).filter((h) => lists.taxa.has(h.id)).map((h) => lists.taxa.get(h.id)!);
+    // A plural common name ("beans", "pommes"): the plants named by its singular, to choose (B10).
+    let hits = search(name);
+    if (!hits.length && /\p{L}{3}s$/u.test(name.trim())) hits = search(name.trim().slice(0, -1));
+    if (hits.length) group(name, hits, PREFIX_LIMIT); else out.none.push({ at, name });
   }
   // Plants another line matched leave the choose groups; a group left empty goes.
   out.choose = out.choose.map((c) => ({ ...c, taxa: c.taxa.filter((t) => !seen.has(t.id)) })).filter((c) => c.taxa.length)
