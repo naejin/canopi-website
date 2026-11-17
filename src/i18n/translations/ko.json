@@ -959,7 +959,7 @@
   "consortium.find.f.jobFor": "팔레트에 부족한 것을 채우려면.",
   "consortium.find.f.fit": "기후 적합도",
   "consortium.find.f.fitFor": "얼마나 확실하길 원하는지. 범위 밖 식물은 계속 표시됩니다.",
-  "consortium.find.fits": "내 장소에 맞음 (기후 범위 밖 식물은 버튼 하나 뒤에)",
+  "consortium.find.fits": "내 장소에 맞음",
   "consortium.find.range": "범위 안쪽에 넉넉한 것만",
   "consortium.find.f.later": "미래 기후",
   "consortium.find.f.laterFor": "나무와 20년 키울 것을 위해.",
@@ -1023,5 +1023,12 @@
   "consortium.find.jobMeans.ground": "땅을 덮음: 흙에 그늘을 주고 붙잡아 둠.",
   "consortium.find.jobMeans.helpers": "도우미를 부름: 벌, 곤충, 새에게 꽃과 쉼터를 줌.",
   "consortium.find.jobMeans.shelter": "보호함: 바람을 막거나 그늘을 줌.",
+  "consortium.find.fitAll": "목록의 모든 식물",
+  "consortium.find.fitAllCount": "other: #종, 범위 밖 {outside}종",
+  "consortium.find.showN": "other: #종 보기",
+  "consortium.find.filtersLede": "other: #개 켜짐. 각 필터는 무엇을 위한 것인지 알려 줍니다.",
+  "consortium.find.removeFilter": "{name} 필터 제거",
+  "consortium.find.searchShort": "이름 또는 역할",
+  "consortium.find.clearSearch": "검색 지우기",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

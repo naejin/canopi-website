@@ -13,7 +13,7 @@
 // as a guest (its pool read only then). With no hit: close spellings, the other lists, and "Ask us to
 // add it" (the contact form with the query).
 import { batch } from '@preact/signals';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
@@ -107,6 +107,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const [select, setSelect] = useState(false);
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const field = useRef<HTMLInputElement>(null);
   useEffect(() => { if (source) wantNames(source, pageLang() as Locale); }, [source]);
 
   const pool = store.pool.value, offer = store.offerPool.value;
@@ -171,6 +172,15 @@ export default function Find({ Frame }: { Frame: Frame }) {
     toxic: (t: Taxon) => (t.warnings.toxicity ? t.warnings.toxicity.level !== 'None' : null),
     invasive: (t: Taxon) => (flagCtx.countryStatus === 'checked' && flagCtx.country && t.warnings.invasive_in ? t.warnings.invasive_in.some((r) => r.country === flagCtx.country) : null),
   }), [verdicts, rule, judging, vctx, flagCtx]);
+  // The counts the filters show (board FindFilters): the three fit choices, and each size and life chip.
+  const counts = useMemo(() => {
+    const n = (f: FindFilters) => applyFilters(base, f, ctx).rows.length;
+    const outside = base.filter((t) => verdicts?.get(t.id)?.level === 'outside').length;
+    return {
+      fits: base.length - outside, inside: judging ? n({ range: true }) : 0, all: base.length, outside,
+      size: new Map(SIZES.map((x) => [x, n({ size: [x] })])), life: new Map(LIVES.map((x) => [x, n({ life: [x] })])),
+    };
+  }, [base, ctx, verdicts, judging]);
   const view = useMemo(() => {
     const hitOf = new Map<PlantId, FindHit>(), rank = new Map<PlantId, number>();
     hits?.forEach((h, i) => { hitOf.set(h.id, h); rank.set(h.id, i); });
@@ -273,11 +283,11 @@ export default function Find({ Frame }: { Frame: Frame }) {
   };
 
   // The filters (board FindFilters): each group says what it is for; range and holds need `judging`.
-  const chips = (id: FilterId, list: readonly { value: string; label: string; on: boolean; toggle: () => void }[]): Chip[] => list.map((c) => ({ id, ...c }));
+  const chips = (id: FilterId, list: readonly { value: string; label: string; on: boolean; toggle: () => void; count?: number }[]): Chip[] => list.map((c) => ({ id, ...c }));
   const jobChips = chips('job', jobIds.map((j) => ({ value: j, label: T(`job.${j}`), on: !!filters.jobs?.includes(j), toggle: () => toggleIn('jobs', j), count: jobCounts.get(j) ?? 0 })));
   const lightChips = chips('light', LIGHTS.map((l) => ({ value: l, label: T(`find.light.${l}`), on: !!filters.light?.includes(l), toggle: () => toggleIn('light', l) })));
-  const sizeChips = chips('size', SIZES.map((s) => ({ value: s, label: T(`find.size.${s}`, { lo: num(2), len: formatLength(s === 'small' ? 2 : 8, pageLang()) }), on: !!filters.size?.includes(s), toggle: () => toggleIn('size', s) })));
-  const lifeChips = chips('life-cycle', LIVES.map((l) => ({ value: l, label: T(`find.life.${l}`), on: !!filters.life?.includes(l), toggle: () => toggleIn('life', l) })));
+  const sizeChips = chips('size', SIZES.map((s) => ({ value: s, label: T(`find.size.${s}`, { lo: num(2), len: formatLength(s === 'small' ? 2 : 8, pageLang()) }), on: !!filters.size?.includes(s), toggle: () => toggleIn('size', s), count: counts.size.get(s) ?? 0 })));
+  const lifeChips = chips('life-cycle', LIVES.map((l) => ({ value: l, label: T(`find.life.${l}`), on: !!filters.life?.includes(l), toggle: () => toggleIn('life', l), count: counts.life.get(l) ?? 0 })));
   const unknownLine = (id: FilterId, kept = false) => unknown[id] !== undefined && (
     <span class="ct-find-unknown" data-filter-unknown={id} data-count={unknown[id]}>{P(kept ? 'find.unknownKept' : 'find.unknown', unknown[id]!)}</span>
   );
@@ -302,15 +312,33 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const check = (id: FilterId, k: keyof FindFilters, label: string, kept = false) => (
     <label class="ct-check ct-find-check"><input type="checkbox" data-filter={id} checked={!!filters[k]} onChange={() => toggleFilter(k)} /> {label} {(id === 'toxic' || id === 'invasive') && hiddenLine(id)} {unknownLine(id, kept)}</label>
   );
-  const onCount = Object.values(filters).filter((v) => (Array.isArray(v) ? v.length : v)).length + (foldOutside ? 1 : 0);
+  // The filters on (the default fit choice, "Fits your place", is not one).
+  const onCount = Object.values(filters).filter((v) => (Array.isArray(v) ? v.length : v)).length;
+  const clearAll = () => { setFilters({}); setFoldOutside(true); };
+  // The fit filter: one three-way choice (board FindFilters, B8): fits (the outside plants folded),
+  // well inside its range (needs `judging`), every plant.
+  const fitNow = filters.range ? 'inside' : foldOutside ? 'fits' : 'all';
+  const setFit = (v: 'fits' | 'inside' | 'all') => { setFoldOutside(v !== 'all'); setFilters((f) => ({ ...f, range: v === 'inside' })); };
+  const fitChoice = (v: 'fits' | 'inside' | 'all', id: string, label: string, count: string) => (
+    <label class="ct-check ct-find-check"><input type="radio" name="ct-find-fit" value={v} data-filter={id} checked={fitNow === v} onChange={() => setFit(v)} /> {label} <span class="ct-find-unknown" data-fit-count="">{count}</span></label>
+  );
+  const invasiveLabel = flagCtx.country ? T('find.hideInvasive', { country: new Intl.DisplayNames([pageLang()], { type: 'region' }).of(flagCtx.country) ?? flagCtx.country }) : '';
+  // The active filters as removable chips under the search (board FindResults, B7).
+  const bools: [keyof FindFilters, string][] = [['range', T('find.range')], ['holds', T('find.holds', { period: holdsName })], ['edible', T('find.edible')], ['hideToxic', T('find.hideToxic')], ['hideInvasive', invasiveLabel]];
+  const active = [
+    ...[...jobChips, ...lightChips, ...sizeChips, ...lifeChips].filter((c) => c.on).map((c) => ({ key: `${c.id}:${c.value}`, label: c.label, off: c.toggle })),
+    ...bools.filter(([k]) => filters[k]).map(([k, label]) => ({ key: k, label, off: () => toggleFilter(k) })),
+  ];
   const panel = (
     <div class="ct-find-filters" id="ct-find-filters" data-open={showFilters ? '' : undefined}>
       {chipGroup('job', jobChips, 'job')}
       <fieldset class="ct-find-fgroup">
         <legend>{T('find.f.fit')}</legend>
         <p class="ct-muted ct-small">{T('find.f.fitFor')}</p>
-        <label class="ct-check ct-find-check"><input type="checkbox" data-filter="fits" checked={foldOutside} onChange={() => setFoldOutside(!foldOutside)} /> {T('find.fits')}</label>
-        {judging && check('range', 'range', T('find.range'))}
+        {fitChoice('fits', 'fits', T('find.fits'), P('find.count', counts.fits))}
+        {judging && fitChoice('inside', 'range', T('find.range'), P('find.count', counts.inside))}
+        {fitChoice('all', 'all', T('find.fitAll'), P('find.fitAllCount', counts.all, { outside: num(counts.outside) }))}
+        {judging && unknownLine('range')}
       </fieldset>
       {judging && (
         <fieldset class="ct-find-fgroup">
@@ -327,9 +355,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
         <p class="ct-muted ct-small">{T('find.f.moreFor')}</p>
         {check('edible', 'edible', T('find.edible'))}
         {check('toxic', 'hideToxic', T('find.hideToxic'), true)}
-        {flagCtx.countryStatus === 'checked' && flagCtx.country && check('invasive', 'hideInvasive', T('find.hideInvasive', { country: new Intl.DisplayNames([pageLang()], { type: 'region' }).of(flagCtx.country) ?? flagCtx.country }), true)}
+        {flagCtx.countryStatus === 'checked' && flagCtx.country && check('invasive', 'hideInvasive', invasiveLabel, true)}
       </fieldset>
-      {onCount > 0 && <p><button type="button" class="text-link" onClick={() => { setFilters({}); setFoldOutside(false); }}>{T('find.clear')}</button></p>}
+      {onCount > 0 && <p class="ct-find-clearall"><button type="button" class="text-link" onClick={clearAll}>{T('find.clear')}</button></p>}
     </div>
   );
 
@@ -358,8 +386,25 @@ export default function Find({ Frame }: { Frame: Frame }) {
     </section>
   );
 
+  // Below 960 px "Filters" opens the filters as their own view (board FindFilters, B7), with "Clear all"
+  // and "Show N plants" (back to the results); at 960 they are a column beside them, with no button.
+  if (showFilters) return (
+    <Frame titleId="ct-find-ftitle" class="ct-find" head={<span class="ct-muted">{title}</span>} foot={
+      <div class="ct-add-bar">
+        <button type="button" class="button button-secondary" data-find-filters-clear="" onClick={clearAll}>{T('find.clear')}</button>
+        <button type="button" class="button button-primary" data-find-filters-show="" onClick={() => setShowFilters(false)}>{P('find.showN', view.count)}</button>
+      </div>
+    }>
+      <div class="ct-find-top" data-find-filters-view="">
+        <h2 id="ct-find-ftitle" tabIndex={-1} data-autofocus>{T('find.filters')}</h2>
+        <p class="ct-muted">{P('find.filtersLede', onCount)}</p>
+      </div>
+      {panel}
+    </Frame>
+  );
+
   return (
-    <Frame titleId="ct-find-title" class="ct-find" head={<span class="ct-muted">{T('find.title')}</span>} foot={
+    <Frame titleId="ct-find-title" class="ct-find" head={hole ? <span class="ct-muted">{T('find.title')}</span> : null} foot={
       select ? (
         <div class="ct-add-bar" data-find-bar="">
           <span>{P('find.selected', ticked.length)}</span>
@@ -382,13 +427,28 @@ export default function Find({ Frame }: { Frame: Frame }) {
       <div class="ct-find-searchrow">
         <div class="ct-search">
           <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" /></svg>
-          <input type="search" data-find-search="" aria-label={T('find.search')} placeholder={T('find.search')} value={query}
+          <input ref={field} type="search" data-find-search="" aria-label={T('find.search')} placeholder={T('find.searchShort')} value={query}
             onInput={(e) => setQuery((e.target as HTMLInputElement).value)} onFocus={() => { if (source) wantNames(source, pageLang() as Locale); }} />
+          {query && (
+            <button type="button" class="ct-find-x" data-find-clear="" aria-label={T('find.clearSearch')} onClick={() => { setQuery(''); field.current?.focus(); }}>
+              <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>
+            </button>
+          )}
         </div>
         <button type="button" class="button button-secondary ct-find-filters-btn" aria-expanded={showFilters} aria-controls="ct-find-filters" onClick={() => setShowFilters(!showFilters)}>
           {onCount ? T('find.filtersOn', { n: onCount }) : T('find.filters')}
         </button>
       </div>
+      {active.length > 0 && (
+        <p class="ct-find-active" data-find-active="">
+          {active.map((c) => (
+            <button key={c.key} type="button" class="ct-find-chip" data-active-chip="" aria-label={T('find.removeFilter', { name: c.label })} onClick={c.off}>
+              {c.label} <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>
+            </button>
+          ))}
+          <button type="button" class="text-link" onClick={clearAll}>{T('find.clearShort')}</button>
+        </p>
+      )}
       <p class="ct-muted ct-small ct-find-names">
         {namesWords(search?.langs ?? [])}
         {names === 'loading' && <span data-find-names="loading"> {T('find.namesLoading')}</span>}

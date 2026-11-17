@@ -547,3 +547,45 @@ test('PP-C c1 fix B4+B6 (start state, job card): fit count, holes block, job chi
   assert.match(card, /Your palette has/, 'what the palette has for it');
   assert.match(await page.$eval(`${FIND} [data-find-jobwords]`, (e) => e.textContent).catch(() => ''), /mulch/, 'the job words understood');
 });
+
+// Fix round 1, B7, B8, B15, B16 (boards FindFilters, Find; conformance c1 #10, #11, #17, #19): the active
+// filters are removable chips under the search with Clear; below 960 px "Filters" opens the filters as
+// their own view with "Clear all / Show N plants"; the fit filter is one three-way choice with counts, and
+// size and life chips carry counts; the field has a clear button and a short placeholder; the title is
+// said once; on desktop no "Filters" button beside the open column.
+test('PP-C c1 fix B7+B8+B15+B16 (filters and field): chips, phone filters view, three-way fit, clear ×, title once', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
+  await openFind(page);
+  await hasFind(page);
+  assert.equal(await page.$eval(`${FIND} .ct-find-filters-btn`, (b) => getComputedStyle(b).display).catch(() => 'none'), 'none', 'no Filters button beside the open column');
+  assert.equal((await page.$$eval(`${FIND}`, (d) => (d[0].textContent.match(/Add plants/g) ?? []).length)), 1, 'the title said once');
+  const fit = await page.$$eval(`${FIND} input[name="ct-find-fit"]`, (els) => els.map((e) => e.value));
+  assert.deepEqual(fit, ['fits', 'inside', 'all'], 'one three-way fit choice');
+  assert.ok(await page.$$eval(`${FIND} [data-fit-count]`, (els) => els.length === 3 && els.every((e) => /\d/.test(e.textContent))), 'each with its count');
+  assert.ok(await page.$(`${FIND} [data-filter="size"] .ct-muted`), 'size chips carry counts');
+  assert.ok(await page.$(`${FIND} [data-filter="life-cycle"] .ct-muted`), 'life chips carry counts');
+  await page.click(`${FIND} [data-filter="size"][data-value="small"]`);
+  assert.ok(await has(page, `${FIND} [data-find-active] [data-active-chip]`, 2000), 'the active filter as a chip under the search');
+  await page.click(`${FIND} [data-find-active] [data-active-chip]`);
+  assert.equal(await page.$(`${FIND} [data-filter="size"][data-value="small"][aria-pressed="true"]`), null, 'its × removes it');
+  const ph = await page.$eval(`${FIND} [data-find-search]`, (i) => i.placeholder);
+  assert.ok(ph.length <= 20, `a short placeholder (${ph})`);
+  await search(page, 'apple');
+  await page.click(`${FIND} [data-find-clear]`);
+  assert.equal(await page.$eval(`${FIND} [data-find-search]`, (i) => i.value), '', 'the clear button empties the field');
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 }); // a phone's width (isMobile would reload)
+  await openFind(page);
+  await hasFind(page);
+  await page.click(`${FIND} .ct-find-filters-btn`);
+  assert.ok(await has(page, `${FIND} [data-find-filters-view]`, 2000), 'the filters as their own view');
+  assert.equal(await page.$(`${FIND} [data-find-row]`), null, 'no results under it');
+  const show = `${FIND} [data-find-filters-show]`;
+  assert.match(await page.$eval(show, (b) => b.textContent).catch(() => ''), /Show \d+ plants/, '"Show N plants"');
+  assert.ok(await page.$(`${FIND} [data-find-filters-clear]`), '"Clear all"');
+  await page.click(show);
+  assert.ok(await has(page, `${FIND} [data-find-row]`, 2000), 'Show returns to the results');
+});

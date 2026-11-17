@@ -959,7 +959,7 @@
   "consortium.find.f.jobFor": "Um zu füllen, was Ihrer Palette fehlt.",
   "consortium.find.f.fit": "Passung zum Klima",
   "consortium.find.f.fitFor": "Wie sicher Sie sein wollen. Pflanzen außerhalb ihres Bereichs bleiben markiert.",
-  "consortium.find.fits": "Passt zu Ihrem Ort (Pflanzen außerhalb ihres Klimabereichs hinter einer Schaltfläche)",
+  "consortium.find.fits": "Passt zu Ihrem Ort",
   "consortium.find.range": "Nur deutlich innerhalb des Bereichs",
   "consortium.find.f.later": "Künftiges Klima",
   "consortium.find.f.laterFor": "Für Bäume und alles, was Sie 20 Jahre behalten.",
@@ -1023,5 +1023,12 @@
   "consortium.find.jobMeans.ground": "Bedeckt den Boden: hält ihn schattig und an seinem Platz.",
   "consortium.find.jobMeans.helpers": "Lockt Helfer an: Blüten und Unterschlupf für Bienen, Insekten und Vögel.",
   "consortium.find.jobMeans.shelter": "Schützt: bricht den Wind oder spendet Schatten.",
+  "consortium.find.fitAll": "Jede Pflanze der Liste",
+  "consortium.find.fitAllCount": "one: # Pflanze; {outside} außerhalb ihres Bereichs | other: # Pflanzen; {outside} außerhalb ihres Bereichs",
+  "consortium.find.showN": "one: # Pflanze anzeigen | other: # Pflanzen anzeigen",
+  "consortium.find.filtersLede": "one: # aktiv. Jeder Filter sagt, wofür er da ist. | other: # aktiv. Jeder Filter sagt, wofür er da ist.",
+  "consortium.find.removeFilter": "Filter {name} entfernen",
+  "consortium.find.searchShort": "Name oder Aufgabe",
+  "consortium.find.clearSearch": "Suche löschen",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

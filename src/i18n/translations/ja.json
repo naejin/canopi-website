@@ -959,7 +959,7 @@
   "consortium.find.f.jobFor": "パレットに足りないものを補うために。",
   "consortium.find.f.fit": "気候との相性",
   "consortium.find.f.fitFor": "どこまで確かさを求めるか。範囲外の植物は印が付いたままです。",
-  "consortium.find.fits": "あなたの場所に合う（気候の範囲外の植物はボタンの後ろに）",
+  "consortium.find.fits": "あなたの場所に合う",
   "consortium.find.range": "範囲の内側に十分収まるものだけ",
   "consortium.find.f.later": "将来の気候",
   "consortium.find.f.laterFor": "木や、20 年育てるもののために。",
@@ -1023,5 +1023,12 @@
   "consortium.find.jobMeans.ground": "地面を覆う：土を日陰にし、流れないよう保つ。",
   "consortium.find.jobMeans.helpers": "助っ人を呼ぶ：ミツバチなどの虫や鳥に花と隠れ場所を与える。",
   "consortium.find.jobMeans.shelter": "守る：風をさえぎり、または日陰をつくる。",
+  "consortium.find.fitAll": "リストのすべての植物",
+  "consortium.find.fitAllCount": "other: # 種、うち範囲外 {outside} 種",
+  "consortium.find.showN": "other: # 種を表示",
+  "consortium.find.filtersLede": "other: # 件オン。各フィルターは用途を示します。",
+  "consortium.find.removeFilter": "フィルター「{name}」を外す",
+  "consortium.find.searchShort": "名前または役割",
+  "consortium.find.clearSearch": "検索をクリア",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

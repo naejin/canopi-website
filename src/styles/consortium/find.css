@@ -98,3 +98,12 @@
 .ct .ct-find-holelist { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .ct .ct-find-holelist > li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
 .ct .ct-find-job .ct-find-jobmeans { display: block; }
+
+/* The field's clear button and the active filters under it (fix round 1, B7, B15). */
+.ct .ct-find-x { flex: none; display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; margin: -8px -8px -8px 0; padding: 0; border: 0; background: none; color: var(--text-secondary); cursor: pointer; }
+.ct .ct-find-x:focus-visible { outline: 2px solid var(--focus); outline-offset: -4px; }
+.ct .ct-find-active { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -8px 0 0; }
+.ct .ct-find-clearall { margin: 0; }
+@media (min-width: 960px) {
+  .ct .ct-find-searchrow .ct-find-filters-btn { display: none; }
+}

@@ -959,7 +959,7 @@
   "consortium.find.f.jobFor": "补上你的调色板所缺的。",
   "consortium.find.f.fit": "与气候的契合",
   "consortium.find.f.fitFor": "你想要多大把握。超出范围的植物仍会标出。",
-  "consortium.find.fits": "适合你的地方（超出气候范围的植物收在一个按钮后）",
+  "consortium.find.fits": "适合你的地点",
   "consortium.find.range": "只要稳稳在范围内的",
   "consortium.find.f.later": "未来气候",
   "consortium.find.f.laterFor": "适用于树木和要留 20 年的植物。",
@@ -1023,5 +1023,12 @@
   "consortium.find.jobMeans.ground": "覆盖地面：为土壤遮阴并固土。",
   "consortium.find.jobMeans.helpers": "吸引益虫益鸟：为蜜蜂、其他昆虫和鸟类提供花与栖身处。",
   "consortium.find.jobMeans.shelter": "遮护：挡风或遮阴。",
+  "consortium.find.fitAll": "清单上的所有植物",
+  "consortium.find.fitAllCount": "other: # 种；{outside} 种超出范围",
+  "consortium.find.showN": "other: 显示 # 种植物",
+  "consortium.find.filtersLede": "other: 已开启 # 个。每个筛选都说明它的用途。",
+  "consortium.find.removeFilter": "移除筛选“{name}”",
+  "consortium.find.searchShort": "名称或作用",
+  "consortium.find.clearSearch": "清除搜索",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

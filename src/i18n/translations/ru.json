@@ -959,7 +959,7 @@
   "consortium.find.f.jobFor": "Чтобы восполнить то, чего не хватает палитре.",
   "consortium.find.f.fit": "Соответствие климату",
   "consortium.find.f.fitFor": "Насколько уверенно. Растения вне диапазона остаются отмеченными.",
-  "consortium.find.fits": "Подходит вашему месту (растения вне климатического диапазона за одной кнопкой)",
+  "consortium.find.fits": "Подходит вашему месту",
   "consortium.find.range": "Только с запасом внутри диапазона",
   "consortium.find.f.later": "Будущий климат",
   "consortium.find.f.laterFor": "Для деревьев и всего, что растёт у вас 20 лет.",
@@ -1023,5 +1023,12 @@
   "consortium.find.jobMeans.ground": "Покрывает землю: затеняет почву и удерживает её.",
   "consortium.find.jobMeans.helpers": "Привлекает помощников: цветы и укрытие для пчёл, насекомых и птиц.",
   "consortium.find.jobMeans.shelter": "Укрывает и защищает: ломает ветер или даёт тень.",
+  "consortium.find.fitAll": "Все растения списка",
+  "consortium.find.fitAllCount": "one: # растение; {outside} вне диапазона | few: # растения; {outside} вне диапазона | many: # растений; {outside} вне диапазона | other: # растения; {outside} вне диапазона",
+  "consortium.find.showN": "one: Показать # растение | few: Показать # растения | many: Показать # растений | other: Показать # растения",
+  "consortium.find.filtersLede": "one: Включён #. Каждый фильтр говорит, для чего он. | few: Включено #. Каждый фильтр говорит, для чего он. | many: Включено #. Каждый фильтр говорит, для чего он. | other: Включено #. Каждый фильтр говорит, для чего он.",
+  "consortium.find.removeFilter": "Убрать фильтр «{name}»",
+  "consortium.find.searchShort": "Название или роль",
+  "consortium.find.clearSearch": "Очистить поиск",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

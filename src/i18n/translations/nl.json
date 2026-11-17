@@ -959,7 +959,7 @@
   "consortium.find.f.jobFor": "Om aan te vullen wat je palet mist.",
   "consortium.find.f.fit": "Past bij je klimaat",
   "consortium.find.f.fitFor": "Hoe zeker je wilt zijn. Planten buiten hun bereik blijven gemarkeerd.",
-  "consortium.find.fits": "Past bij je plek (planten buiten hun klimaatbereik achter één knop)",
+  "consortium.find.fits": "Past bij je plek",
   "consortium.find.range": "Alleen ruim binnen het bereik",
   "consortium.find.f.later": "Toekomstig klimaat",
   "consortium.find.f.laterFor": "Voor bomen en alles wat je 20 jaar houdt.",
@@ -1023,5 +1023,12 @@
   "consortium.find.jobMeans.ground": "Bedekt de grond: houdt de bodem beschaduwd en op zijn plaats.",
   "consortium.find.jobMeans.helpers": "Trekt helpers aan: bloemen en beschutting voor bijen, insecten en vogels.",
   "consortium.find.jobMeans.shelter": "Beschut en beschermt: breekt de wind of geeft schaduw.",
+  "consortium.find.fitAll": "Elke plant op de lijst",
+  "consortium.find.fitAllCount": "one: # plant; {outside} buiten bereik | other: # planten; {outside} buiten bereik",
+  "consortium.find.showN": "one: # plant tonen | other: # planten tonen",
+  "consortium.find.filtersLede": "one: # aan. Elk filter zegt waarvoor het dient. | other: # aan. Elk filter zegt waarvoor het dient.",
+  "consortium.find.removeFilter": "Filter {name} weghalen",
+  "consortium.find.searchShort": "Naam of taak",
+  "consortium.find.clearSearch": "Zoekopdracht wissen",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

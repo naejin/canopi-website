@@ -959,7 +959,7 @@
   "consortium.find.f.jobFor": "To fill what your palette lacks.",
   "consortium.find.f.fit": "Fit to your climate",
   "consortium.find.f.fitFor": "How sure you want to be. Plants outside their range stay marked.",
-  "consortium.find.fits": "Fits your place (the plants outside their climate range behind one button)",
+  "consortium.find.fits": "Fits your place",
   "consortium.find.range": "Well inside its range only",
   "consortium.find.f.later": "Later climate",
   "consortium.find.f.laterFor": "For trees and anything you keep 20 years.",
@@ -1023,5 +1023,12 @@
   "consortium.find.jobMeans.ground": "Covers the ground: keeps the soil shaded and holds it in place.",
   "consortium.find.jobMeans.helpers": "Brings helpers: flowers and shelter for bees, other insects and birds.",
   "consortium.find.jobMeans.shelter": "Shelters and protects: breaks the wind or gives shade.",
+  "consortium.find.fitAll": "Every plant on the list",
+  "consortium.find.fitAllCount": "one: # plant; {outside} outside its range | other: # plants; {outside} outside their range",
+  "consortium.find.showN": "one: Show # plant | other: Show # plants",
+  "consortium.find.filtersLede": "one: # on. Every filter says what it is for. | other: # on. Every filter says what it is for.",
+  "consortium.find.removeFilter": "Remove the filter {name}",
+  "consortium.find.searchShort": "Name or job",
+  "consortium.find.clearSearch": "Clear the search",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
