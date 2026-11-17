@@ -253,7 +253,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-bd-range { fill: var(--text-secondary); fill-opacity: .3; stroke: none; }
 .ct .ct-band[data-few] .ct-bd-range { fill-opacity: .12; }
 .ct .ct-bd-edge, .ct .ct-bd-end { stroke: var(--text-secondary); stroke-width: 1; fill: none; }
-.ct .ct-bd-edge.is-dashed { stroke-dasharray: 3 2; }
+.ct .ct-bd-edge.is-dashed, .ct .ct-bd-end.is-dashed { stroke-dasharray: 3 2; }
 .ct .ct-bd-tick, .ct .ct-bd-now { stroke: var(--text); stroke-width: 2; }
 .ct .ct-bd-now-dot { fill: var(--text); stroke: var(--text); stroke-width: 1.6; }
 .ct .ct-bd-later { stroke: var(--accent-ink); stroke-width: 1.6; stroke-dasharray: 3 2; }

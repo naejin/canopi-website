@@ -32,41 +32,42 @@ const GLYPH: Record<Measure, string> = {
 };
 const W = 324, PAD = 6;
 
-// One measure's band, drawn (aria-hidden: the lines under it say it in words): the recorded range,
-// closed and numbered only at the ends the rule checks (an open side runs to the edge), the tick where
-// it is most often recorded, the place at the page's period (a dot, "today 19.0 °C") and in its later period (a ring),
-// the whole band dashed on few records, only the disputed stretch dashed when another source's limit
-// is looser.
+// One measure's band, drawn (aria-hidden: the lines under it say it in words): the recorded range
+// (always drawn from its recorded ends, so a place past them is never drawn inside it), with an end
+// stroke and number only at the ends the rule checks, the tick where it is most often recorded, the
+// place at the page's period (a dot, "today 19.0 °C") and in its later period (a ring), the whole band
+// dashed on few records. A disputed low (board DetailsDesk, "−8.2?"): its number carries a question
+// mark, and the stretch from it to the other source's stricter limit is dashed (without that value,
+// the end itself).
 function BandDraw({ b, disputes, period }: { b: Band; disputes: readonly Dispute[]; period: string | null }) {
   const lang = pageLang();
   const field = DISPUTED[b.measure];
   const limit = field ? disputes.map((d) => (d.field === field ? limitOf(d) : null)).find((x) => x) ?? null : null;
-  const xs = [b.low ?? b.recordedLow, b.high ?? b.recordedHigh, b.place, b.later, b.median, limit?.valueC].filter((x): x is number => x !== null && x !== undefined);
+  const xs = [b.recordedLow, b.recordedHigh, b.place, b.later, b.median, limit?.valueC].filter((x): x is number => x !== null && x !== undefined);
   const span = Math.max(...xs) - Math.min(...xs) || 1;
   const lo = Math.min(...xs) - span * 0.12, hi = Math.max(...xs) + span * 0.12;
   const x = (v: number) => PAD + ((v - lo) / (hi - lo)) * (W - 2 * PAD);
   const end = (v: number) => formatNumber(v, lang, 2); // a limit keeps its two decimals (R5)
   const at = (v: number) => (b.measure === 'aridity' ? formatNumber(v, lang, 2) : b.measure === 'soilPh' ? `pH ${formatNumber(v, lang, 1)}` : formatTemp(v, lang, 1));
-  const x0 = b.low !== null ? x(b.low) : 0, x1 = b.high !== null ? x(b.high) : W;
-  // The disputed stretch: from the other source's looser limit to the kept one (dashed); the kept
-  // range stays solid. Without the other value, the kept low end itself is dashed.
-  const dLo = b.disputedLow && b.low !== null ? (limit ? Math.min(x(limit.valueC), x0) : x0) : null;
+  const x0 = x(b.low ?? b.recordedLow), x1 = x(b.high ?? b.recordedHigh);
+  const disputed = b.disputedLow && b.low !== null;
+  // The other source's stricter low, where the solid range starts (the kept, looser stretch dashed).
+  const xs0 = disputed && limit && limit.valueC > b.low! ? x(limit.valueC) : x0;
   // Both labels on the same side of both markers, so neither crosses the other's line.
   const marks = [b.place, b.later].filter((v): v is number => v !== null).map(x);
   const right = Math.max(...marks) > W * 0.62;
   const label = (y: number, text: string, cls: string) => <text class={cls} x={right ? Math.min(...marks) - 5 : Math.max(...marks) + 5} y={y} text-anchor={right ? 'end' : 'start'}>{text}</text>;
-  const edge = (closed: boolean, xe: number) => (closed ? <path d={`M${xe} 38v10`} class="ct-bd-end" /> : null);
   return (
-    <svg class="ct-band" data-few={b.few ? '' : undefined} data-open={b.low === null ? 'low' : b.high === null ? 'high' : undefined} viewBox={`0 0 ${W} 66`} width={W} height="66" aria-hidden="true" focusable="false">
+    <svg class="ct-band" data-few={b.few ? '' : undefined} viewBox={`0 0 ${W} 66`} width={W} height="66" aria-hidden="true" focusable="false">
       <path d={`M0 43H${W}`} class="ct-bd-axis" />
-      <rect x={x0} y="38" width={Math.max(1, x1 - x0)} height="10" class="ct-bd-range" />
-      <path d={`M${x0} 38H${x1}M${x0} 48H${x1}`} class={b.few ? 'ct-bd-edge is-dashed' : 'ct-bd-edge'} />
-      {edge(b.low !== null && dLo === null, x0)}
-      {edge(b.high !== null, x1)}
-      {dLo !== null && <path data-disputed d={`M${dLo} 38H${x0}M${dLo} 48H${x0}M${dLo} 38v10M${x0} 38v10`} class="ct-bd-edge is-dashed" />}
+      <rect x={xs0} y="38" width={Math.max(1, x1 - xs0)} height="10" class="ct-bd-range" />
+      <path d={`M${xs0} 38H${x1}M${xs0} 48H${x1}`} class={b.few ? 'ct-bd-edge is-dashed' : 'ct-bd-edge'} />
+      {b.low !== null && <path d={`M${x0} 38v10`} class={disputed ? 'ct-bd-end is-dashed' : 'ct-bd-end'} />}
+      {b.high !== null && <path d={`M${x1} 38v10`} class="ct-bd-end" />}
+      {xs0 !== x0 && <path data-disputed d={`M${x0} 38H${xs0}M${x0} 48H${xs0}`} class="ct-bd-edge is-dashed" />}
       {b.median !== null && <path d={`M${x(b.median)} 36v14`} class="ct-bd-tick" />}
       <g class="ct-bd-num">
-        {b.low !== null && <text x={x0} y="62" text-anchor="middle">{end(b.low)}</text>}
+        {b.low !== null && <text x={x0} y="62" text-anchor="middle">{end(b.low)}{disputed ? '?' : ''}</text>}
         {b.high !== null && <text x={x1} y="62" text-anchor="middle">{end(b.high)}</text>}
       </g>
       {b.place !== null && <><path d={`M${x(b.place)} 4V54`} class="ct-bd-now" /><circle cx={x(b.place)} cy="43" r="4" class="ct-bd-now-dot" />{label(13, `${say(b.when.dot)} ${at(b.place)}`, 'ct-bd-now-text')}</>}
