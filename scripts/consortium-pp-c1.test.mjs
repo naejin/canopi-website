@@ -223,3 +223,10 @@ test('PP-C c1 fix B2: best first: the open holes a plant fills, then how long it
   const stay = new Map([[id(1), 2], [id(2), 0], [id(3), 0], [id(4), 1]]);
   assert.deepEqual(bestFirst(taxa, filled, stay).map((t) => t.id), [id(4), id(2), id(1), id(3)]);
 });
+
+test('PP-C c1 fix B14: oneOff catches one letter missing, extra, wrong or two letters swapped, from 4 letters', async () => {
+  const { oneOff } = await search();
+  for (const [a, b] of [['aple', 'apple'], ['chesnut', 'chestnut'], ['avacado', 'avocado'], ['chrery', 'cherry']]) assert.equal(oneOff(a, b), true, `${a} ~ ${b}`);
+  assert.equal(oneOff('okra', 'kale'), false);
+  assert.equal(oneOff('chrrey', 'cherry'), false, 'two edits');
+});

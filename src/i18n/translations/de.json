@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "Filter {name} entfernen",
   "consortium.find.searchShort": "Name oder Aufgabe",
   "consortium.find.clearSearch": "Suche löschen",
+  "consortium.find.oneByOne": "Einzeln",
+  "consortium.find.ticksStay": "Haken Sie so viele an, wie Sie möchten. Das Fenster bleibt offen; Ihre Haken bleiben, wenn Sie die Suche ändern.",
+  "consortium.find.addedFilled": "{name} hinzugefügt. {job}: die Lücke ist gefüllt.",
+  "consortium.find.addedShrunk": "{name} hinzugefügt. {job}: jetzt {hole}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -589,3 +589,34 @@ test('PP-C c1 fix B7+B8+B15+B16 (filters and field): chips, phone filters view, 
   await page.click(show);
   assert.ok(await has(page, `${FIND} [data-find-row]`, 2000), 'Show returns to the results');
 });
+
+// Fix round 1, B9, B12, B14 (boards FindMulti, FillHole, FindNone; conformance c1 #7, #12, #15): a "One by
+// one / Select several" switch with its line; adding a plant that fills a hole says the result in the
+// toast; a typing slip (one letter missing, extra or swapped) gives the close names as rows with Add.
+test('PP-C c1 fix B9+B12+B14 (switch, toast result, typo rows)', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await openFind(page);
+  await hasFind(page);
+  const modes = await page.$$eval(`${FIND} [data-find-mode]`, (els) => els.map((e) => [e.dataset.findMode, e.getAttribute('aria-pressed')]));
+  assert.deepEqual(modes, [['one', 'true'], ['several', 'false']], 'One by one / Select several, its state shown');
+  await page.click(`${FIND} [data-find-mode="several"]`);
+  assert.match(await page.$eval(`${FIND} [data-find-ticks]`, (e) => e.textContent).catch(() => ''), /ticks stay/, 'the ticks stay line');
+  await page.click(`${FIND} [data-find-mode="one"]`);
+  const slip = await page.evaluate(() => {
+    const { store } = window.__ctTest, m = new Set(store.members.value);
+    const t = store.pool.value.find((x) => !m.has(x.id) && /^[a-z]{6,}$/i.test(x.names.en ?? ''));
+    const n = t.names.en; return { id: t.id, q: n.slice(0, 2) + n[3] + n[2] + n.slice(4) };
+  });
+  await search(page, slip.q);
+  const row = `${FIND} [data-find-close-rows] [data-find-row][data-plant-id="${slip.id}"]`;
+  assert.ok(await has(page, row, 3000), `a swapped letter ("${slip.q}") gives the plant as a row`);
+  assert.ok(await page.$(`${row} [data-find-add]`), 'with Add');
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  await findFromHole(page);
+  const filler = await page.$eval(`${FIND} [data-find-row]`, (r) => r.dataset.plantId);
+  await page.click(`${FIND} [data-find-row][data-plant-id="${filler}"] [data-find-add]`);
+  const toast = await page.waitForFunction(() => document.querySelector('dialog.ct-find [role="status"], dialog.ct-find .ct-toast')?.textContent, { timeout: 3000 }).then((h) => h.jsonValue(), () => '');
+  assert.match(toast, /is filled|now nobody/, `the toast says the hole's result (${toast})`);
+});

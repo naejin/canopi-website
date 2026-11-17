@@ -107,3 +107,4 @@
 @media (min-width: 960px) {
   .ct .ct-find-searchrow .ct-find-filters-btn { display: none; }
 }
+.ct .ct-find-switch { display: inline-flex; flex-wrap: wrap; gap: 6px; }

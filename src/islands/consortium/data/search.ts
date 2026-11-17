@@ -147,10 +147,10 @@ function finder(b: Builder, langs: string[]): Finder {
     }
     return ordered(best);
   };
-  // The close spellings of a query nothing answers: names one letter off, each plant once (PP-C2).
+  // The close spellings of a query nothing answers: names one slip off, each plant once (PP-C2).
   find.close = (query: string): FindHit[] => {
     const q = fold(query), at: number[] = [];
-    if ([...q].length < 5) return [];
+    if ([...q].length < 4) return [];
     for (let i = 0; i < folded.length; i++) if (Math.abs(folded[i].length - q.length) <= 1 && oneOff(folded[i], q)) at.push(i);
     return byTier(at);
   };
@@ -246,17 +246,21 @@ export function whyLines(h: FindHit): Line[] {
 export const namesLine = (fileLangs: readonly string[]): Line =>
   fileLangs.length ? { key: 'consortium.find.namesFile', vars: { n: fileLangs.length }, count: fileLangs.length } : { key: 'consortium.find.namesCore', vars: {} };
 
-// At most one letter off (one added, dropped or changed), for names of five letters or more: the
+// At most one slip (a letter added, dropped or changed, or two letters swapped), for names of four
+// letters or more (fix round 1, B14: "aple", "chesnut"); a changed letter needs five ("rose" is not
+// "rost"): the
 // close spellings of Find's no-result state and Paste's close matches.
 export function oneOff(a: string, b: string): boolean {
   if (a === b) return true;
   const la = a.length, lb = b.length;
-  if (Math.abs(la - lb) > 1 || Math.min(la, lb) < 5) return false;
+  if (Math.abs(la - lb) > 1 || Math.min(la, lb) < 4) return false;
   let i = 0, j = 0, edits = 0;
   while (i < la && j < lb) {
     if (a[i] === b[j]) { i++; j++; continue; }
     if (++edits > 1) return false;
-    if (la > lb) i++; else if (lb > la) j++; else { i++; j++; }
+    // Two letters swapped ("chrery"): one slip.
+    if (la === lb && a[i] === b[j + 1] && a[i + 1] === b[j]) { i += 2; j += 2; continue; }
+    if (la > lb) i++; else if (lb > la) j++; else if (la < 5) return false; else { i++; j++; }
   }
   return edits + (la - i) + (lb - j) <= 1;
 }

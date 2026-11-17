@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "Quitar el filtro {name}",
   "consortium.find.searchShort": "Nombre o función",
   "consortium.find.clearSearch": "Borrar la búsqueda",
+  "consortium.find.oneByOne": "Una a una",
+  "consortium.find.ticksStay": "Marca tantas como quieras. La hoja sigue abierta; tus marcas se quedan cuando cambias la búsqueda.",
+  "consortium.find.addedFilled": "{name} añadida. {job}: el hueco está lleno.",
+  "consortium.find.addedShrunk": "{name} añadida. {job}: ahora {hole}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

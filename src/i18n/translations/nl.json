@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "Filter {name} weghalen",
   "consortium.find.searchShort": "Naam of taak",
   "consortium.find.clearSearch": "Zoekopdracht wissen",
+  "consortium.find.oneByOne": "Eén voor één",
+  "consortium.find.ticksStay": "Vink er zoveel aan als je wilt. Het venster blijft open; je vinkjes blijven als je de zoekopdracht wijzigt.",
+  "consortium.find.addedFilled": "{name} toegevoegd. {job}: het gat is gevuld.",
+  "consortium.find.addedShrunk": "{name} toegevoegd. {job}: nu {hole}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

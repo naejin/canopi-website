@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "Убрать фильтр «{name}»",
   "consortium.find.searchShort": "Название или роль",
   "consortium.find.clearSearch": "Очистить поиск",
+  "consortium.find.oneByOne": "По одному",
+  "consortium.find.ticksStay": "Отмечайте сколько угодно. Окно остаётся открытым; отметки сохраняются, когда вы меняете поиск.",
+  "consortium.find.addedFilled": "{name}: добавлено. {job}: пробел заполнен.",
+  "consortium.find.addedShrunk": "{name}: добавлено. {job}: теперь {hole}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

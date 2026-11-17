@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "フィルター「{name}」を外す",
   "consortium.find.searchShort": "名前または役割",
   "consortium.find.clearSearch": "検索をクリア",
+  "consortium.find.oneByOne": "1つずつ",
+  "consortium.find.ticksStay": "好きなだけチェックできます。シートは開いたまま、検索を変えてもチェックは残ります。",
+  "consortium.find.addedFilled": "{name} を追加しました。{job}：空きが埋まりました。",
+  "consortium.find.addedShrunk": "{name} を追加しました。{job}：今は{hole}。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

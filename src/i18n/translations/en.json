@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "Remove the filter {name}",
   "consortium.find.searchShort": "Name or job",
   "consortium.find.clearSearch": "Clear the search",
+  "consortium.find.oneByOne": "One by one",
+  "consortium.find.ticksStay": "Tick as many as you like. The sheet stays open; your ticks stay when you change the search.",
+  "consortium.find.addedFilled": "{name} added. {job} is filled.",
+  "consortium.find.addedShrunk": "{name} added. {job}: now {hole}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

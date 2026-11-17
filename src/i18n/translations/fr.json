@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "Retirer le filtre {name}",
   "consortium.find.searchShort": "Nom ou rôle",
   "consortium.find.clearSearch": "Effacer la recherche",
+  "consortium.find.oneByOne": "Une par une",
+  "consortium.find.ticksStay": "Cochez-en autant que vous voulez. La fenêtre reste ouverte ; vos coches restent quand vous changez la recherche.",
+  "consortium.find.addedFilled": "{name} ajoutée. {job} : le trou est comblé.",
+  "consortium.find.addedShrunk": "{name} ajoutée. {job} : désormais {hole}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

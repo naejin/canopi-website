@@ -1030,5 +1030,9 @@
   "consortium.find.removeFilter": "{name} 필터 제거",
   "consortium.find.searchShort": "이름 또는 역할",
   "consortium.find.clearSearch": "검색 지우기",
+  "consortium.find.oneByOne": "하나씩",
+  "consortium.find.ticksStay": "원하는 만큼 체크하세요. 시트는 열린 채로 있고, 검색을 바꿔도 체크는 남습니다.",
+  "consortium.find.addedFilled": "{name} 추가됨. {job}: 빈자리가 채워졌습니다.",
+  "consortium.find.addedShrunk": "{name} 추가됨. {job}: 이제 {hole}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

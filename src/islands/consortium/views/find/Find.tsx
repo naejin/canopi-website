@@ -211,9 +211,19 @@ export default function Find({ Frame }: { Frame: Frame }) {
     return { ...f, [k]: now.includes(v) ? now.filter((x) => x !== v) : [...now, v] };
   });
   const added = (id: PlantId) => members.includes(id);
+  // What adding a plant does to the hole it fills (B12, board FillHole: "… added. The ground is covered
+  // …"): the sheet's hole, else the first open hole it fills; closed, or what is left of it.
+  const addedWords = (t: Taxon): string => {
+    const name = nameOf(t), h = hole && fits?.(t) ? hole : open.find((x) => fills(x, t));
+    if (!h) return T('find.addedOne', { name });
+    const same = (x: typeof h) => x.kind === h.kind && x.job === h.job && x.stratum === h.stratum && x.fromYear < h.toYear && x.toYear > h.fromYear;
+    const left = holes({ members: [...memberTaxa, t], verdicts: memberVerdicts, pending: false }).find((x) => x.state === 'open' && same(x));
+    const job = T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`);
+    return left ? T('find.addedShrunk', { name, job, hole: say(holeLine(left)) }) : T('find.addedFilled', { name, job });
+  };
   const addOne = (t: Taxon, from?: ClimateZone) => {
     if (added(t.id)) return;
-    store.addMembers([t.id], from ? { [t.id]: from } : {}, { warned: warned.has(t.id) ? [t.id] : [], text: T('find.addedOne', { name: nameOf(t) }) });
+    store.addMembers([t.id], from ? { [t.id]: from } : {}, { warned: warned.has(t.id) ? [t.id] : [], text: addedWords(t) });
   };
   const addFrom = async (id: PlantId, z: ClimateZone) => {
     const list = await store.loadPool(z);
@@ -259,7 +269,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     return (
       <li key={t.id} data-find-row="" data-plant-id={t.id} data-fills={filled.get(t.id) ?? 0} class={on ? 'is-on' : undefined}>
         <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
-        {select && !done
+        {select && !done && !outside
           ? <label class="ct-tick"><input type="checkbox" checked={on} aria-label={`${nameOf(t)}, ${t.canonical_name}`} onChange={() => tick(t.id)} /></label>
           : (
             <button type="button" class={`button button-secondary ct-find-add${done ? ' is-added' : ''}`} data-find-add="" data-added={done ? '' : undefined}
@@ -459,7 +469,11 @@ export default function Find({ Frame }: { Frame: Frame }) {
         {panel}
         <div class="ct-find-results">
           <p class="ct-find-modes">
-            <button type="button" class="button button-secondary" data-find-select="" aria-pressed={select ? 'true' : 'false'} onClick={() => { setSelect(!select); setTicked([]); }}>{T('find.select')}</button>
+            {/* One by one / Select several (board FindMulti, B9): a switch, its state shown. */}
+            <span class="ct-find-switch" role="group">
+              <button type="button" class="ct-find-chip" data-find-mode="one" aria-pressed={select ? 'false' : 'true'} onClick={() => { setSelect(false); setTicked([]); }}>{T('find.oneByOne')}</button>
+              <button type="button" class="ct-find-chip" data-find-mode="several" data-find-select="" aria-pressed={select ? 'true' : 'false'} onClick={() => setSelect(true)}>{T('find.select')}</button>
+            </span>
             <button type="button" class="text-link" data-find-paste="" onClick={() => store.openSheet('paste')}>{T('find.paste')}</button>
           </p>
           {job && (
@@ -472,6 +486,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
               </button>
             </div>
           )}
+          {select && <p class="ct-muted ct-small" data-find-ticks="">{T('find.ticksStay')}</p>}
           {job && (
             <p class="ct-muted ct-small" data-find-jobwords="">{T('find.jobWordsAll', { words: jobIds.flatMap((j) => jobWords(j).slice(1)).join(', ') })}</p>
           )}
@@ -517,9 +532,13 @@ export default function Find({ Frame }: { Frame: Frame }) {
             <div class="ct-find-none" data-find-none="">
               <p><strong>{T('find.none', { q })}</strong></p>
               {search && (() => {
-                const close = search.close(q).filter((h) => base.some((t) => t.id === h.id)).slice(0, 3);
+                // The close names, as rows with Add (B14, board FindNone "Did you mean:").
+                const close = search.close(q).map((h) => base.find((t) => t.id === h.id) ?? (atOpen.has(h.id) ? store.taxonOf(h.id) : undefined)).filter((t): t is Taxon => !!t).slice(0, 3);
                 return close.length > 0 && (
-                  <p>{T('find.closeSpell')} {close.map((h) => <button key={h.id} type="button" class="text-link" data-find-close="" onClick={() => setQuery(h.why.text)}>{h.why.text}</button>)}</p>
+                  <>
+                    <p>{T('find.closeSpell')}</p>
+                    <ul class="ct-rows" data-find-close-rows="" data-find-close="">{close.map(row)}</ul>
+                  </>
                 );
               })()}
               {others}
