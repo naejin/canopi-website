@@ -104,9 +104,11 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.ok(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"], dialog')), 'focus moves into the dialog');
     assert.ok(await findAx(page, { role: 'img', name: `Photo of ${names['Castanea sativa']}` }), 'the photo, with its alt text');
     assert.ok(await findAx(page, { name: /Wikimedia Commons|iNaturalist|CC/ }), 'the photo credit');
-    assert.ok(await has(page, '::-p-aria(Placed for the Temperate climate)'));
-    assert.ok(await findAx(page, { role: 'heading', name: 'With a warning' }), 'the warning section');
-    assert.ok(await findAx(page, { role: 'heading', name: /Sources/ }), 'the sources');
+    // PP-C c2 (boards Details, DetailsMore): the list the plant is placed from is named under its name,
+    // the warnings and the sources are sections of their own.
+    assert.match(await page.$eval('dialog[open] .ct-d-name', (e) => e.textContent), /Castanea sativa · Temperate list/, 'placed from the Temperate list');
+    assert.ok(await findAx(page, { role: 'heading', name: /^Warnings/ }), 'the warning section');
+    assert.ok(await findAx(page, { role: 'heading', name: /sources/i }), 'the sources');
     await sendCorrection(page, 'The height looks wrong.');
     assert.ok(await findAx(page, { name: /^Thank you/ }), 'sent');
     assert.equal(page.correctionPosts.length, 1, 'one POST to /api/correction');
@@ -124,7 +126,9 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent), chip.name, 'focus returns to the chip');
     // Estimates: Apple's flowering months are derived for latitude bands.
     await hooked(page, () => { const { store, openSheet } = window.__ctTest; openSheet('details', store.pool.value.find((t) => t.canonical_name === 'Malus domestica').id); });
-    // The sheet renders after openSheet returns (its chunk may still load): poll, do not read once.
+    // The sheet renders after openSheet returns (its chunk may still load). PP-C c2 (board DetailsMore):
+    // the layer values sit in the closed "Light, time and size" section; the reader opens it.
+    await page.locator('dialog[open] summary ::-p-text(Light, time and size)').click();
     let estimate = null;
     for (let i = 0; i < 20 && !estimate; i++) { estimate = await findAx(page, { name: /^estimate$/ }); if (!estimate) await new Promise((r) => setTimeout(r, 200)); }
     assert.ok(estimate, 'an estimate tag on a layer value');
@@ -145,24 +149,25 @@ test('BT-5 (S3 details, offline): a correction sent offline says "Not sent" and 
   await page.close();
 });
 
-test('BT-6 (S3 adjust): Swap shows "Also fills…", an invasive warning adds in one tap, Remove then Undo, Paste offers Add anyway with a labelled chip', async (t) => {
+test('BT-6 (S3 adjust; PP-C c2 merge): Swap ("Find one that holds") shows "Also fills…", an invasive warning adds in one tap, Remove then Undo, Find adds a plant of another list, its Details naming the list', async (t) => {
   await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture' });
     await start(page);
     // Swap: the first member whose alternatives also fill a cell (the fixture's Temperate list has one).
     // The members' names from the store; each chip is found where the reader would find it (on a phone, its stage).
+    // PP-C c2 (board Swap): Details' "Find one that holds" opens Swap.
     const memberNames = await hooked(page, () => window.__ctTest.store.memberTaxa.value.map((t) => t.names.en ?? t.canonical_name));
     let fills = null;
     for (const n of memberNames) {
       const c = await chipOf(page, n);
       if (!c) continue;
       await page.locator(aria('button', c.name)).click();
-      if (!(await has(page, aria('button', 'Swap'), 1000))) { // a main crop
+      if (!(await has(page, aria('button', 'Find one that holds'), 1000))) { // not a member's Details
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('dialog[open]'));
         continue;
       }
-      await page.locator(aria('button', 'Swap')).click();
+      await page.locator(aria('button', 'Find one that holds')).click();
       fills = await findAx(page, { name: /^Also fills/ }, 1500);
       await page.keyboard.press('Escape');
       await page.waitForFunction(() => !document.querySelector('dialog[open]'));
@@ -193,16 +198,19 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", an invasive warning adds in 
     await page.locator(aria('button', 'Undo')).click();
     assert.ok(await chipOf(page, names['Malus domestica']), 'Undo restores the plant');
 
-    // Paste a Tropical-only plant from Temperate: Add anyway, then a chip labelled with its list.
-    await openBy(page, 'Paste a list');
-    await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
-    await page.locator(aria('button', 'Add anyway')).click();
-    if (await findAx(page, { role: 'table' }, 500)) {
-      assert.ok(await findAx(page, { role: 'button', name: new RegExp(`${names['Inga edulis']}.*From the Tropical list`) }), 'the guest chip is labelled');
-    } else {
-      assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical', 'Inga is a guest from the Tropical list');
-      assert.ok(await findAx(page, { name: /From the Tropical list/ }), 'labelled "From the Tropical list"');
-    }
+    // A Tropical-only plant from Temperate, through Find (PP-C c1): searched by name, it is offered
+    // "Add from the Tropical list"; once added, a chip labelled with its list. (The Paste sheet's
+    // "Add anyway" is the S3 review cases below.)
+    await hooked(page, () => window.__ctTest.openFind());
+    await page.locator('dialog.ct-find[open] [data-find-search]').fill('Inga edulis');
+    await page.locator(`dialog.ct-find[open] ${aria('button', 'Add from the Tropical list')}`).click();
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Inga edulis'), { timeout: 5000 }).then(() => true, () => false), 'Inga is added');
+    await page.locator(`dialog.ct-find[open] ${aria('button', 'Done')}`).click();
+    await closed(page);
+    assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical', 'Inga is a guest from the Tropical list');
+    // Its Details, opened from Your plants, says where it comes from (owner row: "From the {climate} list").
+    await page.locator(`.ct-plants ${aria('button', names['Inga edulis'])}`).click();
+    assert.ok(await findAx(page, { name: /From the Tropical list/ }), 'labelled "From the Tropical list"');
     await page.close();
   }, { phone: true });
 });
