@@ -24,6 +24,7 @@ import type { Alternative, Fit, Flag, Hole, Interaction, JobId, PlantId, Site, S
 import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { fills, holes } from './holes.ts';
+import { JUDGED_TO_YEAR, yearsOf as plantYears } from './years.ts';
 import type { HoleContext } from './holes.ts';
 import type { FlagContext } from './conflicts.ts';
 import { warns, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
@@ -217,8 +218,9 @@ function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: readonly H
 // in jobs and years first"): a plant taller than the room after those that fit it (pots or a balcony
 // never offer a 58 m tree as a fit; its row says its size), then clean before a caution (invasive in
 // the reader's country, toxic) before a warning (a site misfit, a serious conflict), then more of the
-// member's jobs, more hole-years closed (the years it covers), fewer holes left open, more holes
-// filled, better known, by name. Current members, removed plants and guests are not offered; plants
+// member's jobs, more of the member's years it stands in (its years overlapping the member's: years
+// 1–15 before "to year 3"), more hole-years closed, fewer holes left open, more holes filled, better
+// known, by name. Current members, removed plants and guests are not offered; plants
 // that ask are listed with their flags (warn, never hide): Swap and Details show this order as it is.
 const cautionOf = (flags: Flag[]): number => (warns(flags) ? 2 : flags.some((f) => f.kind === 'invasive' || f.kind === 'toxicity') ? 1 : 0);
 export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[], options: AlternativeOptions): Alternative[] {
@@ -232,6 +234,10 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
   const memberJobs = new Set(mInfo.jobs);
   const holeCtx: HoleContext = { members, verdicts: options.verdicts ?? null, pending: false };
   const before = swapBefore(holeCtx, member);
+  // The member's years a candidate stands in (a year past 60 counts to 60).
+  const span = (y: { from: number; to: number | null } | null) => (y ? { from: y.from, to: y.to ?? JUDGED_TO_YEAR } : null);
+  const m = span(plantYears(member));
+  const overlap = (t: Taxon): number => { const c = span(plantYears(t)); return m && c ? Math.max(0, Math.min(m.to, c.to) - Math.max(m.from, c.from)) : 0; };
   const out = pool
     .filter((t) => !inConsortium.has(t.id) && !removedIds.has(t.id))
     .map((t) => {
@@ -240,6 +246,7 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
       return {
         taxon: t,
         years: change.years,
+        overlap: overlap(t),
         tall: tallerThanRoom(i.fit),
         alt: {
           id: t.id,
@@ -255,6 +262,7 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
     Number(x.tall) - Number(y.tall)
     || cautionOf(x.alt.flags) - cautionOf(y.alt.flags)
     || y.alt.sharedJobs.length - x.alt.sharedJobs.length
+    || y.overlap - x.overlap
     || y.years - x.years
     || x.alt.leaves.length - y.alt.leaves.length
     || y.alt.fills.length - x.alt.fills.length

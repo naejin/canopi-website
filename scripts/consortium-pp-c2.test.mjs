@@ -671,3 +671,22 @@ test('c2 fix T8 (band ends the text names): Mendoza, Siberian elm: the 3.5 °C e
   assert.doesNotMatch(say(dry.line), /within/);
   for (const k of ['atDryEnd', 'atWetEnd', 'bandDryEdge', 'bandWetEdge']) for (const [lang, w] of Object.entries(words)) assert.ok(w[`consortium.line.${k}`], `${lang}: ${k}`);
 });
+
+// Fix round 3 T9 (Chrome K3): within equal shared jobs, the candidate standing in more of the member's
+// years comes first (Lyon, Madre de cacao, years 1 to 60: Autumn olive, years 1–15, above Chicory, to
+// year 3), whatever hole-years each closes.
+test('c2 fix T9 (Swap order): within equal shared jobs, more of the member\'s years first (years 1–15 above "to year 3")', async () => {
+  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const fn = (...fs) => fs.map((f) => ({ function: f, method: 'recorded', sources: [] }));
+  const t = (n, start, end, over = {}) => taxon({ id: `00000000-c2c2-4000-8000-0000000005${n}`, canonical_name: `Plantus ${n}`, role: 'support', stratum: { value: 'medium', sources: [] }, phases: { start, end, sources: [] }, functions: fn('nitrogen_fixer', 'wildlife_habitat'), climate: null, ...over });
+  const madre = t(10, 'placenta_iii', 'secondary_iii', { canonical_name: 'Gliricidia sepium', functions: fn('nitrogen_fixer', 'wildlife_habitat', 'windbreak') });
+  const chicory = t(11, 'placenta_ii', 'placenta_iii', { canonical_name: 'Cichorium intybus' });
+  const olive = t(12, 'placenta_iii', 'secondary_i', { canonical_name: 'Elaeagnus umbellata' });
+  // Another member holds the jobs from year 3 on, so both close the same hole-years (1 to 3) and the
+  // name would put Chicory first.
+  const keeper = t(13, 'secondary_i', 'climax', { functions: fn('nitrogen_fixer', 'wildlife_habitat', 'windbreak') });
+  const site = core.siteFor(core.emptyPlace, null);
+  const order = alternatives(madre.id, [madre, keeper], [chicory, olive], { site, interactions: [] }).map((a) => a.id);
+  assert.deepEqual(order, [olive.id, chicory.id], 'Autumn olive (years 1–15) above Chicory (to year 3)');
+});
