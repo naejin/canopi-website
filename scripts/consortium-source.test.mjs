@@ -313,11 +313,12 @@ function reset() {
 }
 const quiet = async (fn) => { const e = console.error; console.error = () => {}; try { return await fn(); } finally { console.error = e; } };
 
-test('store: a pool read that fails after the database opened is damage, and a later call reads again', async () => {
+test('store: a pool read of the chosen climate that fails after the database opened is damage, and a later call reads again', async () => {
   reset();
   let broken = true;
   const { src, reads } = counting(source, { fail: () => broken });
   store.setSource(src);
+  store.climate.value = 'Temperate';
   assert.equal(await quiet(() => store.loadPool('Temperate')), null);
   assert.deepEqual(store.load.value, { status: 'failed', error: 'damaged' });
   assert.equal(store.pools.value.Temperate, undefined, 'never a partial pool');
@@ -328,6 +329,23 @@ test('store: a pool read that fails after the database opened is damage, and a l
   // Read once: later calls share it.
   await store.loadPool('Temperate');
   assert.equal(reads.length, 2);
+});
+
+test('store (pf hand-off): another list that fails (no guest from it, not the chosen climate) stays local in failedOther, and a later read takes it off', async () => {
+  reset();
+  let broken = true;
+  const { src } = counting(source, { fail: (c) => broken && c === 'Mediterranean' });
+  store.setSource(src);
+  store.climate.value = 'Temperate';
+  assert.equal(await quiet(() => store.loadPool('Mediterranean')), null);
+  assert.deepEqual(store.load.value, { status: 'ready', error: null }, 'never the tool\'s failure screen');
+  assert.deepEqual(store.failedOther.value, ['Mediterranean']);
+  assert.deepEqual(store.failedPools.value, [], 'not a guest list: the palette names no missing list');
+  broken = false;
+  const again = store.loadPool('Mediterranean');
+  assert.deepEqual(store.failedOther.value, [], 'off the list while it reads again');
+  assert.ok((await again).length > 0);
+  assert.deepEqual(store.failedOther.value, []);
 });
 
 test('store: watchPools reads the chosen and guest climates once each, and never retries a failure in a loop', async () => {

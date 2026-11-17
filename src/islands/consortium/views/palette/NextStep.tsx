@@ -25,11 +25,6 @@ import { FindEntry } from '../Sheets.tsx';
 // job.
 export const openFillers = (h: Hole): void => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
 
-// A plant with a warning (toxic, or invasive in the reader's country, or anywhere with none chosen)
-// is listed as needing a second look, never dropped.
-const warns = (t: Taxon, code: string | null): boolean =>
-  (!!t.warnings.toxicity && t.warnings.toxicity.level !== 'None') || (t.warnings.invasive_in ?? []).some((r) => !code || r.country === code);
-
 const OUTSIDE_FIRST = 8, BEST = 3;
 // "Show N outside" and "Show all N" leave as they show the plants: the first plant they show takes the
 // focus (its Add), else the Next step's title (pre-push fix 6, D; focus.ts's net covers the rest).
@@ -53,7 +48,10 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const [allOutside, setAllOutside] = useState(false);
   const pv = store.poolVerdicts.value;
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
-  const code = store.country.value.code;
+  // The one warned rule (store.warnedPlant, as in Find): a site misfit, a serious conflict, invasive in
+  // the chosen country, toxic; listed as needing a second look, never dropped. Re-run when the flags'
+  // inputs change.
+  const flagCtx = store.flagContext.value;
   const found = useMemo(() => {
     if (!next) return null;
     // Holding to the latest period and the warnings, for the plants that fill this hole only.
@@ -61,9 +59,9 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
     const cands = pool.filter((t) => !ids.has(t.id) && fills(next, t));
     const last = periodIds[periodIds.length - 1];
     const holds = new Map<PlantId, boolean>(rule ? cands.map((t) => [t.id, rule.holdsBy(t, ctx, last)]) : []);
-    const warned = new Set(cands.filter((t) => warns(t, code)).map((t) => t.id));
+    const warned = new Set(cands.filter((t) => store.warnedPlant(t)).map((t) => t.id));
     return { ...fillers(next, cands, pv ?? new Map(), holds, warned, members, open), warned };
-  }, [next, pool, pv, rule, ctx, code, members, open]);
+  }, [next, pool, pv, rule, ctx, flagCtx, members, open]);
 
   // Empty: no member at all; plants of a guest list still loading or that failed are members too, only
   // not read yet (review r2 empty-1), so the branches after this one say so.

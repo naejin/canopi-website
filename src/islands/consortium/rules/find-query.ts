@@ -7,8 +7,8 @@
 // Inform, don't block (owner 2026-11-14): no group hides a plant. A plant with a warning (a serious
 // conflict, a site misfit, toxic, recorded as invasive in the country) that fits otherwise needs a
 // second look; a plant with no verdict is "not checked", never a fit.
-import type { Flag, JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, queryTokens, fold, warns, yearsOf } from '../../../lib/consortium/index.ts';
+import type { JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
+import { jobIds, jobsOf, queryTokens, fold, yearsOf } from '../../../lib/consortium/index.ts';
 
 export interface FindGroups { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unchecked: Taxon[] }
 export const GROUPS = ['fits', 'look', 'outside', 'unchecked'] as const;
@@ -42,12 +42,8 @@ export function bestFirst(taxa: readonly Taxon[], filled: ReadonlyMap<PlantId, n
 // Whether a verdict fits well inside the plant's range (fits, no factor near its edge).
 export const wellInside = (v: PlantVerdict | undefined): boolean => !!v && v.level === 'fits' && !v.factors.some((x) => x.confidence?.term === 'edge');
 
-// Whether an add says "added with a warning" (with Show): the one rule of every add in Find and Paste
-// (in the list, "Add from {list}", a pasted plant). A plant's flags here (store.flagsOfPlant): a site
-// misfit or a serious conflict (core warns), or recorded as invasive in the country, or toxic (a
-// toxicity flag is raised for a recorded level other than None).
-export const addsWithWarning = (flags: readonly Flag[]): boolean =>
-  warns(flags as Flag[]) || flags.some((x) => x.kind === 'invasive' || x.kind === 'toxicity');
+// Whether an add says "added with a warning" (with Show), and a plant's group "needs a second look":
+// the one rule in the store (store.warnedPlant over core secondLook; pf hand-off, owner answer Q2).
 
 // ---- filters (board FindFilters: each says what it is for) ----
 

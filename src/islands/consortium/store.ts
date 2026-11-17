@@ -5,7 +5,7 @@
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { Alternative, ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadSuggest, loadVerdictRule, periodIds, siteFor, zoneOf } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, holes, loadSuggest, loadVerdictRule, periodIds, secondLook, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -131,6 +131,11 @@ export const pools = signal<Partial<Record<ClimateZone, Taxon[]>>>({});
 // Each climate's interactions (PlantSource.interactions), read with its pool (S1).
 // The guest climates whose list could not be read (PP-B21; read again with Retry, setSource).
 export const failedPools = signal<ClimateZone[]>([]);
+// The other lists (neither the chosen climate's nor a guest's: Find's rows from other lists, Paste's
+// plants of another list) whose read failed (pf hand-off): said where they were asked for, with Try
+// again (loadPool asks again and takes the list off here while it reads); never the tool's failure
+// screen, never the palette's missing-list notice.
+export const failedOther = signal<ClimateZone[]>([]);
 export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>>>({});
 
 // ---- computed ----
@@ -417,6 +422,41 @@ export function flagsOfPlant(t: Taxon): Flag[] {
   if (members.value.includes(t.id)) return flags.value.filter((f) => f.id === t.id);
   return flagsFor(t, memberTaxa.value, flagContext.value);
 }
+// Whether a plant needs a second look (pf hand-off, owner answer Q2 2026-11-17): the one rule of the
+// Next step, Find and every add, over its flags (core conflicts.ts secondLook: a site misfit, a serious
+// conflict, recorded as invasive in the chosen country, toxic). No country chosen raises no invasive
+// flag, so it is no second look: invasiveCountries gives the soft count instead.
+export const warnedPlant = (t: Taxon): boolean => secondLook(flagsOfPlant(t));
+// The soft chip "Recorded invasive in N countries" (board Country; consortium.palette.invasiveCountries):
+// the countries a plant is recorded invasive in while no country is chosen, else 0 (the chosen country's
+// record is a flag, worded by flagLines).
+export function invasiveCountries(t: Taxon): number {
+  if (flagContext.value.countryStatus !== 'none') return 0;
+  return new Set((t.warnings.invasive_in ?? []).map((r) => r.country)).size;
+}
+
+// ---- holes (pf hand-off; plant-palette-architecture 3.3) ----
+// The palette's holes for the page period (core holes.ts), computed once per member, verdict or list
+// change, so the palette page (pictures, Next step) and Find (best first, "fills N holes", "lacks N")
+// read one list. Pending while a member's list is read or could not be read: every hole is 'pending'
+// then, never a false hole (its plants may fill one, PP-B21).
+export const holesPending = computed(() => guestsPending.value.length > 0 || missingMembers.value.loading.length > 0 || failedMembers.value.length > 0);
+export const paletteHoles = computed<Hole[]>(() => holes({ members: memberTaxa.value, verdicts: memberVerdicts.value, pending: holesPending.value }));
+// The holes open now, in rank order (not judged and pending ones left out).
+export const openHoles = computed<Hole[]>(() => paletteHoles.value.filter((h) => h.state === 'open'));
+// How many open holes a plant fills (core holes.ts fills): Find's best first and its "fills N holes".
+export function holeFillCount(t: Taxon): number {
+  let n = 0;
+  for (const h of openHoles.value) if (fills(h, t)) n++;
+  return n;
+}
+
+// Whether the verdicts are settled (pf hand-off): the rule is here, or its chunk failed (the page says
+// so, VerdictNotice). Until then the Next step says "Checking your plants…" and Find hides the filters
+// that read verdicts. Without a location the rule still loads (wantVerdict; openFind asks for it), so
+// it turns true and every plant reads "not checked".
+export const verdictsReady = computed(() => !!verdictRule.value || verdictFailed.value);
+
 // What the flags' words read (views/kit/flags.ts flagLines; rules/site-fit.ts FlagScene).
 export const flagScene = computed<FlagScene>(() => ({ site: site.value, members: memberTaxa.value, country: country.value.code, taxonOf }));
 
@@ -433,6 +473,7 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
   if (have) return withRule(Promise.resolve(have));
   let p = reading.get(c);
   if (!p) {
+    if (failedOther.peek().includes(c)) failedOther.value = failedOther.peek().filter((x) => x !== c);
     // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
     p = Promise.all([src.pool(c), src.interactions(c)]).then(([plants, rows]) => {
       if (source.peek() !== src) return null;
@@ -443,10 +484,12 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
       if (source.peek() !== src) return null;
       reading.delete(c);
       console.error(`Consortium data ${src.info().releaseId}: ${c}: ${(err as Error).message}`);
-      // A guest's list only: the palette names it as missing and its plants "not checked" (PP-B21);
-      // the chosen climate's list is the tool's own: its failure screen.
-      if (c !== climate.peek() && Object.values(guests.peek()).includes(c)) failedPools.value = [...failedPools.peek().filter((x) => x !== c), c];
-      else load.value = { status: 'failed', error: 'damaged' };
+      // The chosen climate's list is the tool's own: its failure screen. A guest's list: the palette
+      // names it as missing and its plants "not checked" (PP-B21). Any other list (Find, Paste): said
+      // where it was asked for (failedOther), the tool goes on (pf hand-off).
+      if (c === climate.peek()) load.value = { status: 'failed', error: 'damaged' };
+      else if (Object.values(guests.peek()).includes(c)) failedPools.value = [...failedPools.peek().filter((x) => x !== c), c];
+      else failedOther.value = [...failedOther.peek().filter((x) => x !== c), c];
       return null;
     });
     reading.set(c, p);
@@ -463,6 +506,7 @@ export function setSource(next: PlantSource | null, close: (() => void) | null =
   source.value = null;
   reading.clear();
   failedPools.value = [];
+  failedOther.value = [];
   try { prev?.(); } catch (err) { console.error(`Consortium data: closing the previous database: ${(err as Error).message}`); }
   source.value = next;
   closeCurrent = next ? close : null;
@@ -667,7 +711,9 @@ export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Pa
 // Find (PP-C c1; boards Find, FillHole): the one route into it, from "Add plants", "Find plants",
 // "See all N plants", a hole's Find and Place's "Add a plant by name"; a hole's opener passes the
 // SheetFor (views/palette/NextStep.tsx openFillers), the others nothing.
-export const openFind = (target: SheetFor = FOR_NOTHING): void => openSheet('find', null, target);
+// It asks for the verdict rule too (pf hand-off): opened from Place before the palette page ever
+// showed, Find would otherwise wait for verdicts that nobody asked for (verdictsReady).
+export const openFind = (target: SheetFor = FOR_NOTHING): void => { wantVerdict(); openSheet('find', null, target); };
 // Close (its button, Escape, the backdrop, an action that ends it): the sheet goes at once, and its
 // history entry with history.back() (main.ts then rewrites the entry under it with the current link).
 export const closeSheet = (): void => {

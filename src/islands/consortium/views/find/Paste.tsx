@@ -11,7 +11,7 @@
 // warning stays on its row in words, a plant outside its range says so. Owner row "Inform, don't block"
 // (2026-11-14, knowledge/decisions/consortium-user-decisions.md): nothing asks first. A row's "Add
 // anyway" (a guest, labelled "From the {climate} list", A9) adds it in one tap and "Add all" adds the
-// found and ticked plants; a plant with a warning (rules/find-query.ts addsWithWarning, as in Find) makes the toast say
+// found and ticked plants; a plant with a warning (store.warnedPlant, as in Find) makes the toast say
 // "n added with a warning" with Show. Each added plant is kept. The text is read a moment after typing
 // stops (at once on "Read the list" and on "Add all"), at most MAX_LINES lines (board Paste: 200). A
 // close spelling ("chesnut") is offered, "Read as European chestnut", and added only once ticked.
@@ -21,7 +21,6 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { addsWithWarning } from '../../rules/find-query.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, plan, readPaste, type Named } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
@@ -79,7 +78,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
 
   const toAdd = plan(result, ticked, members).ids;
   // A plant's warnings once its list is read (another list's plant: after its pool loads on add).
-  const warnedNow = (id: PlantId) => { const t = store.taxonOf(id); return !!t && addsWithWarning(flagsOfPlant(t)); };
+  const warnedNow = (id: PlantId) => { const t = store.taxonOf(id); return !!t && store.warnedPlant(t); };
   const addAll = async () => {
     // The text as it is now, not as it was a moment ago.
     const current = box.current?.value ?? text;

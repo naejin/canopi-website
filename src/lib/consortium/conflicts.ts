@@ -178,4 +178,12 @@ export function flagsOf(members: Taxon[], ctx: FlagContext): Flag[] {
 // Whether a plant's flags warn: a site misfit or a serious (high) conflict, never an invasive or
 // toxicity warning alone. Nothing asks (owner row "Inform, don't block", 2026-11-14): these plants
 // come last in Add, Swap and the suggestion's alternatives, and Paste's toast says "added with a warning".
-export const warns = (flags: Flag[]): boolean => flags.some((f) => f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high'));
+export const warns = (flags: readonly Flag[]): boolean => flags.some((f) => f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high'));
+
+// Whether a plant needs a second look (pf hand-off; owner answer Q2, 2026-11-17): its flags warn (a
+// site misfit, a serious conflict), or it is recorded as invasive in the chosen country (a flag only
+// where a source assessed that country: flagsWith), or toxic. The one rule of the Next step's grouping,
+// Find's and every add's "added with a warning" (store.ts warnedPlant reads it); no country chosen gives
+// no invasive flag, so no second look for it.
+export const secondLook = (flags: readonly Flag[]): boolean =>
+  warns(flags) || flags.some((f) => f.kind === 'invasive' || f.kind === 'toxicity');

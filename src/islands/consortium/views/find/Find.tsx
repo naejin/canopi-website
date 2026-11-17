@@ -24,9 +24,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, jobIds, jobsOf, periodIds, periodName, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fitLine, jobIds, jobsOf, periodIds, periodName, queryTokens, secondLook, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
-import { addsWithWarning, applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
+import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, type Frame } from '../kit/sheet.tsx';
 import { FitLine, JobIcon, holeWords, midSentence, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
@@ -107,7 +107,7 @@ function metaWords(t: Taxon, known: JobId | null): string {
   const y = yearsOf(t), jobs = rolesWords(own.filter((j) => j !== drop), !!drop);
   return [jobs, lightWords(t), sizeWords(t), y && say(yearsLine(y.from, y.to))].filter(Boolean).join(' · ');
 }
-// A hole's lane in words ("Covers the ground", "Needs full sun"), as holeWords says it.
+// A hole's lane in words ("Covers the ground", "Full sun"), as holeWords says it.
 const laneWords = (h: NonNullable<store.SheetFor['hole']>): string => T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`);
 
 // The add button's mark (board FindResults: "+ Add", "✓ Added"); the word carries the meaning.
@@ -217,13 +217,13 @@ export default function Find({ Frame }: { Frame: Frame }) {
     for (const t of base) m.set(t.id, store.flagsOfPlant(t));
     return m;
   }, [base, flagCtx, scene]);
-  const warned = useMemo(() => new Set(base.filter((t) => addsWithWarning(flagsOf.get(t.id) ?? [])).map((t) => t.id)), [base, flagsOf]);
-  // Best first (B2, K2): in a hole, the plants that fill it (its test `fits`, handed by the palette page:
-  // sheet chunks never import holes.ts, E6-5d), then the later periods a plant stays in range through,
-  // then well inside its range before near its edge, then the name. The palette's other holes are not
-  // known here (fix round 1: a seam for pf, one store computed of the holes that Palette and Find both
-  // read), so plain Find ranks by the years in range and the fit only.
-  const filled = useMemo(() => new Map(hole && fits ? base.map((t) => [t.id, fits(t) ? 1 : 0] as const) : []), [base, hole, fits]);
+  // The one warned rule (store.warnedPlant: core secondLook over the flags), on the flags read once above.
+  const warned = useMemo(() => new Set(base.filter((t) => secondLook(flagsOf.get(t.id) ?? [])).map((t) => t.id)), [base, flagsOf]);
+  // Best first (B2, K2): by the palette's open holes a plant fills (store.holeFillCount over
+  // store.openHoles, the one list the palette page reads too; pf hand-off), then the later periods a
+  // plant stays in range through, then well inside its range before near its edge, then the name.
+  const open = store.openHoles.value;
+  const filled = useMemo(() => new Map(base.map((t) => [t.id, store.holeFillCount(t)] as const)), [base, open]);
   // The periods after the one viewed (fix round 2, r2-09): an outside plant's first one in range ("In
   // range by 2071–2099", B5) and how many a plant stays in range through (best first).
   const after = periodIds.slice(periodIds.indexOf(vctx.period) + 1);
@@ -239,7 +239,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   }, [base, judging, rule, vctx]);
   const firm = useMemo(() => new Map(base.map((t) => [t.id, wellInside(verdicts?.get(t.id)) ? 1 : 0] as const)), [base, verdicts]);
   // Its warnings (fewer first, T7): the flags an add warns about.
-  const warnCount = useMemo(() => new Map(base.map((t) => [t.id, (flagsOf.get(t.id) ?? []).filter((f) => addsWithWarning([f])).length] as const)), [base, flagsOf]);
+  const warnCount = useMemo(() => new Map(base.map((t) => [t.id, (flagsOf.get(t.id) ?? []).filter((f) => secondLook([f])).length] as const)), [base, flagsOf]);
 
   // The query's hits, best first; those in the list, those in other lists, those already in the palette.
   const hits = useMemo(() => (q && search ? search(q) : null), [q, search]);
@@ -314,7 +314,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const addFrom = async (id: PlantId, z: ClimateZone) => {
     const list = await store.loadPool(z);
     const t = list?.find((x) => x.id === id);
-    if (t) store.addMembers([id], { [id]: z }, { warned: addsWithWarning(store.flagsOfPlant(t)) ? [id] : [], text: T('find.addedOne', { name: nameOf(t) }) });
+    if (t) store.addMembers([id], { [id]: z }, { warned: store.warnedPlant(t) ? [id] : [], text: T('find.addedOne', { name: nameOf(t) }) });
   };
   const addTicked = () => {
     const ids = ticked.filter((id) => !added(id));

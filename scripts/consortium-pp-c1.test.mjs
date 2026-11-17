@@ -184,12 +184,12 @@ test('PP-C c1 fix A5: why a row matched (whyLines, the one owner of those words)
   assert.deepEqual(whyLines(gombo).map((l) => [l.key, l.vars.lang, l.vars.name]), [['consortium.find.why.lang', 'fr', 'Gombo']], 'a name in another language, its language code for the view to name');
 });
 
-test('PP-C c1 fix A6: one warned rule for every add in Find and Paste (in-list, "Add from {list}", pasted): invasive, toxic, a site misfit or a serious conflict', async () => {
-  const { addsWithWarning } = await findQuery();
+test('PP-C c1 fix A6: one warned rule for every add in Find and Paste (in-list, "Add from {list}", pasted): invasive, toxic, a site misfit or a serious conflict (core secondLook since the pf hand-off; store.warnedPlant)', async () => {
+  const { secondLook } = await import('../src/lib/consortium/index.ts');
   const f = (kind, over = {}) => ({ id: id(1), kind, ...over });
-  assert.equal(addsWithWarning([]), false);
-  for (const flags of [[f('invasive')], [f('toxicity')], [f('misfit')], [f('conflict', { severity: 'high' })]]) assert.equal(addsWithWarning(flags), true, flags[0].kind);
-  assert.equal(addsWithWarning([f('conflict', { severity: 'low' })]), false, 'a low conflict is no warning on add');
+  assert.equal(secondLook([]), false);
+  for (const flags of [[f('invasive')], [f('toxicity')], [f('misfit')], [f('conflict', { severity: 'high' })]]) assert.equal(secondLook(flags), true, flags[0].kind);
+  assert.equal(secondLook([f('conflict', { severity: 'low' })]), false, 'a low conflict is no warning on add');
 });
 
 test('PP-C c1 fix A3: a hide filter says how many it hid, beside how many it could not judge (kept)', async () => {

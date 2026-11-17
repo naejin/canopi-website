@@ -3,7 +3,7 @@
 // header steps (Your place, Your palette, Planting plan), the Next step, Through the years and the
 // jobs, in its own chunk (role `palette`, App.tsx lazyPart). On a laptop (960 px and wider) the Next
 // step stands beside the pictures. Verdicts come from the core's verdict engine (store.memberVerdicts)
-// and holes from holes.ts, computed here, never in the store. Honest states: holes "checking" while a
+// and holes from the store's one list (store.paletteHoles, which Find reads too). Honest states: holes "checking" while a
 // list loads, and not named while a guest list could not be read (its plants may fill one: PP-B21), a
 // guest list that failed named as missing with its plants not checked, the verdict chunk refused said
 // once with Retry in place, or, offline, "Needs a connection" and a retry once back online (PP-B20;
@@ -14,7 +14,7 @@
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import type { PlantId } from '../../../../lib/consortium/index.ts';
-import { holes as holesOf, yourPlants } from '../../../../lib/consortium/index.ts';
+import { yourPlants } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { backToPlace } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
@@ -24,6 +24,7 @@ import { holeWords } from '../kit/fit.tsx';
 import { listOf, zoneName } from '../kit/names.ts';
 import { JobsPicture } from './JobsPicture.tsx';
 import { FindEntry } from '../Sheets.tsx';
+import { FindPanelSlot } from './FindPanelSlot.tsx';
 import { NextStep, openFillers } from './NextStep.tsx';
 import { Weigh } from './Weigh.tsx';
 import { Years } from './Years.tsx';
@@ -67,8 +68,8 @@ export function Palette() {
   const verdicts = store.memberVerdicts.value;
   const missing = store.missingMembers.value;
   const loading = store.guestsPending.value.length > 0 || missing.loading.length > 0;
-  const pending = loading || store.failedMembers.value.length > 0;
-  const holes = useMemo(() => holesOf({ members, verdicts, pending }), [members, verdicts, pending]);
+  const pending = store.holesPending.value;
+  const holes = store.paletteHoles.value;
   // Your plants' rows, the members the page cannot show among them: Things to weigh counts those rows
   // as not checked, so the rows and the count share one source (a guest of an unread list that this
   // climate lists too is shown, so never counted).
@@ -116,6 +117,7 @@ export function Palette() {
             <JobsPicture {...pic} />
           </div>
         )}
+        <FindPanelSlot />
       </div>
       <YourPlants rows={rows} />
       <Weigh members={members} pending={loading} unchecked={unchecked} />
