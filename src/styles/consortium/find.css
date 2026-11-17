@@ -36,7 +36,7 @@
 .ct .ct-find-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
 .ct .ct-find-results { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
 .ct .ct-find-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0; }
-.ct .ct-find .text-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ct :is(.ct-find, .ct-paste-rows) .text-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .ct .ct-find a.button { text-decoration: none; }
 .ct .ct-find-results .button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
 .ct .ct-find-group h3 { display: flex; gap: 8px; align-items: baseline; font-family: var(--font-sans); font-size: 16px; font-weight: 600; }
@@ -46,15 +46,20 @@
 .ct .ct-find-why { color: var(--text); }
 .ct .ct-find-jobs { color: var(--text-secondary); }
 .ct .ct-find-kept { margin: 0; overflow-wrap: anywhere; }
-.ct .ct-find-none { display: grid; gap: 10px; padding: 14px 16px; border-radius: 8px; background: var(--surface-alt); }
+/* No plant answers (board FindNone, c1r3 T8): the grey box with its search mark, the ways on below. */
+.ct .ct-find-none { display: grid; gap: 10px; }
 .ct .ct-find-none p { margin: 0; overflow-wrap: anywhere; }
+.ct .ct-find-nonebox { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-alt); }
+.ct .ct-find-nonebox > .ct-glyph { margin-top: 3px; }
 .ct .ct-find-none .ct-rows { border-top: 0; }
 .ct .ct-find-others { display: grid; gap: 8px; }
 .ct .ct-find-otherlists { display: flex; flex-wrap: wrap; gap: 8px; }
 .ct .ct-find-job { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; padding: 14px 16px; border: 1px solid var(--accent); border-radius: 8px; }
 .ct .ct-find-job p { margin: 0; }
 .ct .ct-find-job .button { grid-column: 1 / -1; justify-content: center; gap: 6px; }
-.ct .ct-find-jobtile { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: var(--surface-alt); border: 1px solid var(--border); }
+/* The job's tile (board FindJob, c1r3 T9): filled ink, the icon in the paper colour, both themes. */
+.ct .ct-find-jobtile { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: var(--text); }
+.ct .ct-find-jobtile .ct-job-icon { width: 22px; height: 22px; color: var(--surface); }
 .ct .ct-find-jobtext { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .ct .ct-find-slip { display: grid; gap: 8px; }
 .ct .ct-find-slip p { margin: 0; overflow-wrap: anywhere; }
@@ -83,8 +88,6 @@
 .ct .ct-find-chip[aria-pressed="true"] .ct-find-chipcount { color: var(--text); }
 .ct .ct-find-fhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 2px 8px; }
 .ct .ct-find-fhead h3 { margin: 0; font-family: var(--font-sans); font-size: 17px; font-weight: 600; }
-.ct .ct-find-fhead h3:focus { outline: none; }
-.ct .ct-find-fhead h3:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ct .ct-find-flede { grid-column: 1 / -1; margin: 0; }
 .ct .ct-find-fclear { min-height: 0 !important; }
 .ct .ct-find-ffoot {
@@ -139,10 +142,11 @@
 @media (min-width: 960px) {
   .ct .ct-find-searchrow .ct-find-filters-btn { display: none; }
 }
-.ct .ct-find-switch { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
-.ct .ct-find-switch > button { min-height: 44px; padding: 6px 10px; border: 0; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
-.ct .ct-find-switch > button + button { border-left: 1px solid var(--border-strong); }
-.ct .ct-find-switch > button[aria-pressed="true"] { background: var(--surface-alt); box-shadow: inset 0 -3px 0 var(--accent); font-weight: 600; }
+/* One by one / Select several (board FindMulti, c1r3 T11): a tray, the chosen side raised in paper with
+   an ink edge and bold words (never colour alone). */
+.ct .ct-find-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface-alt); }
+.ct .ct-find-switch > button { min-height: 44px; padding: 6px 10px; border: 1.5px solid transparent; border-radius: 8px; background: none; color: var(--text-secondary); font: inherit; font-size: 15px; cursor: pointer; overflow-wrap: anywhere; }
+.ct .ct-find-switch > button[aria-pressed="true"] { background: var(--surface); border-color: var(--text-secondary); color: var(--text); font-weight: 600; }
 .ct .ct-find-switch > button:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; }
 
 /* The short marks as pills (K12): an icon and words; the warning and danger tokens never alone. */
@@ -153,7 +157,15 @@
 .ct .ct-find-mark[data-level="danger"] .ct-glyph { color: var(--danger); }
 .ct .ct-find-fills .ct-glyph { color: var(--accent-ink); }
 
-/* Paste (K11, K17): a mark per line, the choices as chips. */
+/* The headings that take the focus on opening (c1r3 T19): no ring drawn; the focus stays there for a
+   screen reader, and the controls keep theirs. */
+.ct :is(.ct-find [tabindex="-1"], #ct-paste-title, #ct-p-count):focus { outline: none; }
+/* Paste (K11, K17): a mark per line, the choices as chips; the board's intro, "Read the list", the note
+   in its box (c1r3 T16). */
+.ct .ct-paste-intro { margin: 0; }
+.ct .ct-paste-read { width: 100%; justify-content: center; }
+.ct .ct-paste-info { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; margin: 12px 0 0; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text-secondary); }
+.ct .ct-paste-info > .ct-glyph { margin-top: 3px; }
 .ct .ct-paste-rows > li[data-paste-row] { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
 .ct .ct-paste-body { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
 .ct .ct-paste-mark { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--border-strong); }
@@ -161,7 +173,7 @@
 .ct .ct-paste-mark[data-status="none"] { color: var(--danger); border-color: var(--danger); }
 .ct .ct-paste-choices { display: flex; flex-wrap: wrap; gap: 6px; }
 .ct .ct-paste-choice {
-  display: inline-flex; align-items: center; min-height: 40px; padding: 4px 12px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 0.3em; flex-wrap: wrap; min-height: 40px; padding: 4px 12px; border-radius: 999px;
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 14.5px; cursor: pointer;
 }
 .ct .ct-paste-choice[aria-pressed="true"] { border-color: var(--text); background: var(--surface-alt); box-shadow: inset 0 0 0 1px var(--text); font-weight: 600; }

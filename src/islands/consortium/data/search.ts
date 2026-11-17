@@ -12,8 +12,7 @@
 //   other       names in any other language, labelled with it: exact, prefix, whole words;
 //   then        names where each query token begins a word inside the name (or, in scripts written
 //               without spaces, sits inside it), in tier order.
-// One hit per plant, at its best rank; each says why it matched (the name, its kind and language)
-// and how many other plants use that same name ("also used for 3 other plants").
+// One hit per plant, at its best rank; each says why it matched (the name, its kind and language).
 // Names are compared folded (core fold.ts, canopi-types normalization v1). The scan is linear over
 // the folded names (about 30,000, a few milliseconds per query at 4x CPU throttle; probe 2026-11-17),
 // with no sorted index. The names file is folded in slices that yield (indexSliced), so no task runs
@@ -35,8 +34,7 @@ export type Tier = 'site' | 'scientific' | 'other';
 export type MatchKind = 'exact' | 'prefix' | 'tokens' | 'alternate';
 export type NameKind = 'name' | 'alternate' | 'canonical' | 'synonym' | 'accepted' | 'other';
 export interface FindWhy { kind: NameKind; text: string; lang?: string; match: MatchKind }
-// shared: how many other plants carry the name that matched.
-export interface FindHit { id: PlantId; tier: Tier; why: FindWhy; shared: number }
+export interface FindHit { id: PlantId; tier: Tier; why: FindWhy }
 // A search over the index; langs: the languages of the names-file names it holds (none without it).
 export interface Finder { (query: string): FindHit[]; langs: readonly string[]; close(query: string, words?: boolean): FindHit[]; exact(query: string): FindHit[] }
 
@@ -57,8 +55,8 @@ class Builder {
   readonly lang: string[] = [];
   readonly text: string[] = [];
   readonly folded: string[] = [];
-  // The slots of each folded name, for exact lookups and "also used for N other plants" (kept as
-  // names are added, so the sliced build spreads it too).
+  // The slots of each folded name, for exact lookups (kept as names are added, so the sliced build
+  // spreads it too).
   readonly slots = new Map<string, number[]>();
   // Each plant's folded names (kind-blind), so a name already there under a better kind is not added again.
   private readonly seen: Set<string>[] = [];
@@ -100,12 +98,11 @@ class Builder {
 
 function finder(b: Builder, langs: string[]): Finder {
   const { plant, kind, lang, text, folded, ids, canonical, slots } = b;
-  const users = (f: string): number => new Set(slots.get(f)!.map((i) => plant[i])).size;
   const hitOf = (i: number, m: MatchKind): FindHit => {
     const k = KINDS[kind[i]];
     const why: FindWhy = { kind: k, text: text[i], match: k === 'alternate' ? 'alternate' : m };
     if (k === 'other' || k === 'alternate') why.lang = lang[i];
-    return { id: ids[plant[i]], tier: TIER_OF[k], why, shared: users(folded[i]) - 1 };
+    return { id: ids[plant[i]], tier: TIER_OF[k], why };
   };
   const ordered = (best: Map<number, [number, number, MatchKind]>): FindHit[] =>
     [...best].sort((x, y) => x[1][0] - y[1][0] || (canonical[x[0]] < canonical[y[0]] ? -1 : canonical[x[0]] > canonical[y[0]] ? 1 : 0))
@@ -233,14 +230,13 @@ export async function indexSliced({ names, lang, file, plantIds }: { names: read
 
 // Why a row matched, in Lines (the one owner of these words; Find and its other-lists rows read it):
 // the name that matched unless it is the plant's own name in the page's language or its canonical
-// name ("French name: Gombo", "Also called …", "Synonym: …", "Accepted name: …"), then, when other
-// plants carry that same name, "also used for N other plants" (any kind, the page's own names too).
+// name ("French name: Gombo", "Also called …", "Synonym: …", "Accepted name: …"). A name several
+// plants share gets no line (c1r3 T17, not on the boards): each row's scientific name tells them apart.
 // vars.lang is a language code: the view names it in the page's language.
 const WHY_KEY: Partial<Record<NameKind, string>> = { other: 'consortium.find.why.lang', alternate: 'consortium.find.why.alternate', synonym: 'consortium.find.why.synonym', accepted: 'consortium.find.why.accepted' };
 export function whyLines(h: FindHit): Line[] {
   const out: Line[] = [], key = WHY_KEY[h.why.kind];
   if (key) out.push({ key, vars: h.why.lang && h.why.kind === 'other' ? { lang: h.why.lang, name: h.why.text } : { name: h.why.text } });
-  if (h.shared) out.push({ key: 'consortium.find.why.shared', vars: {}, count: h.shared });
   return out;
 }
 

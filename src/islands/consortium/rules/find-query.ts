@@ -31,11 +31,13 @@ export function findGroups(taxa: readonly Taxon[], verdicts: ReadonlyMap<PlantId
 
 // Best first (board FindResults "Best first: the holes a plant fills, then how long it stays in its
 // climate range"): by the palette's open holes a plant fills, then the later periods it stays in range
-// through, then how firmly it fits (well inside its range before near its edge: 1, 0), then the order
-// it came in (stable: the name order).
-export function bestFirst(taxa: readonly Taxon[], filled: ReadonlyMap<PlantId, number>, stay: ReadonlyMap<PlantId, number>, firm: ReadonlyMap<PlantId, number> = new Map()): Taxon[] {
+// through, then how firmly it fits (well inside its range before near its edge: 1, 0), then the fewest
+// warnings, then the most jobs (c1r3 T7: ties after the years read best first, never A to Z), then the
+// order it came in (stable: the name order).
+export function bestFirst(taxa: readonly Taxon[], filled: ReadonlyMap<PlantId, number>, stay: ReadonlyMap<PlantId, number>, firm: ReadonlyMap<PlantId, number> = new Map(), warnings: ReadonlyMap<PlantId, number> = new Map()): Taxon[] {
   const f = (t: Taxon) => filled.get(t.id) ?? 0, y = (t: Taxon) => stay.get(t.id) ?? 0, w = (t: Taxon) => firm.get(t.id) ?? 0;
-  return [...taxa].sort((a, b) => f(b) - f(a) || y(b) - y(a) || w(b) - w(a));
+  const n = (t: Taxon) => warnings.get(t.id) ?? 0, jobs = new Map(taxa.map((t) => [t.id, jobsOf(t).length] as const));
+  return [...taxa].sort((a, b) => f(b) - f(a) || y(b) - y(a) || w(b) - w(a) || n(a) - n(b) || jobs.get(b.id)! - jobs.get(a.id)!);
 }
 // Whether a verdict fits well inside the plant's range (fits, no factor near its edge).
 export const wellInside = (v: PlantVerdict | undefined): boolean => !!v && v.level === 'fits' && !v.factors.some((x) => x.confidence?.term === 'edge');

@@ -499,7 +499,9 @@ test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s count
   const said = await num(chip);
   await page.click(chip);
   assert.equal(await listed(), said, `the chip said ${said}`);
-  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${said} plants?\\.`), 'the count line says the same');
+  // The count line counts every plant the screen lists, the palette's plants named too (c1r3 T14, T18).
+  const mine = await page.$eval(`${FIND} [data-find-inpalette-line]`, (e) => Number(/\d+/.exec(e.textContent)?.[0] ?? 0)).catch(() => 0);
+  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${said + mine} plants?\\.`), 'the count line says the same, with the palette\'s plants named');
   const all = await page.$eval(`${FIND} [data-filter="all"]`, (i) => Number(/(\d+) plants?/.exec(i.closest('label').textContent)?.[1]));
   await page.click(`${FIND} [data-filter="all"]`);
   assert.equal(await listed(), all, `"Every plant on the list" said ${all}`);
@@ -563,12 +565,14 @@ test('PP-C43 (c1 fix B1+B5+B13 row content): fills, light, size, years; Add anyw
 test('PP-C44 (c1 fix B4+B6 start state, job card): fit count, job chips; the job card explains', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.countFits.value, { timeout: 10_000 });
-  const n = await page.evaluate(() => { const c = window.__ctTest.store.countFits.value; return c.fits + c.look; });
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 }); // the start's job chips (at 960, the filter column's)
   await openFind(page);
   await hasFind(page);
   assert.equal(await visible(page, `${FIND} [data-find-row]`), false, 'the start lists no plant (K3)');
-  assert.match(await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent).catch(() => ''), new RegExp(`${n} of the`), `"${n} of the M plants … fit your place today"`);
+  // The subtitle and the fit choice say one number (c1r3 T14).
+  const n = await page.evaluate((sel) => [...document.querySelectorAll(`${sel} label`)].map((l) => /^Fits your place(\d+) plants?/.exec(l.textContent)?.[1]).find(Boolean), FIND);
+  assert.ok(n, 'the fit choice says how many fit');
+  assert.match(await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent).catch(() => ''), new RegExp(`^${n} of the \\d+ plants .* fit your place today`), `"${n} of the M plants … fit your place today", as the fit choice`);
   assert.ok(await page.$(`${FIND} [data-find-byjob] [data-job-chip]`), '"Or look by job" chips');
   await page.click(`${FIND} [data-find-byjob] [data-job-chip="ground"]`);
   assert.ok(await page.$(`${FIND} [data-filter="job"][data-value="ground"][aria-pressed="true"]`), 'a job chip filters by its job');
@@ -593,9 +597,9 @@ test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view
   await hasFind(page);
   assert.equal(await page.$eval(`${FIND} .ct-find-filters-btn`, (b) => getComputedStyle(b).display).catch(() => 'none'), 'none', 'no Filters button beside the open column');
   assert.equal((await page.$$eval(`${FIND}`, (d) => (d[0].textContent.match(/Add plants/g) ?? []).length)), 1, 'the title said once');
-  const fit = await page.$$eval(`${FIND} input[type="radio"]`, (els) => els.map((e) => e.closest('label').textContent));
-  assert.equal(fit.length, 3, 'one three-way fit choice');
-  for (const [i, label] of [en['consortium.find.fits'], en['consortium.find.range'], en['consortium.find.fitAll']].entries()) assert.match(fit[i], new RegExp(`^${label}\\d+ plants`), `"${label}" with its count (${fit[i]})`);
+  // The fit choice by its words (c1r3 T5): each choice with its count.
+  const labels = await page.$$eval(`${FIND} label`, (els) => els.map((e) => e.textContent));
+  for (const label of [en['consortium.find.fits'], en['consortium.find.range'], en['consortium.find.fitAll']]) assert.ok(labels.some((l) => new RegExp(`^${label}\\d+ plants`).test(l)), `"${label}" with its count`);
   for (const id of ['size', 'life-cycle', 'light', 'job']) assert.ok(await page.$$eval(`${FIND} [data-filter="${id}"]`, (els) => els.every((e) => /\d$/.test(e.textContent.trim()))), `${id} chips carry counts`);
   await page.click(`${FIND} [data-filter="size"][data-value="small"]`);
   assert.ok(await has(page, `${FIND} [data-find-active] [data-active-chip]`, 2000), 'the active filter as a chip under the search');
@@ -612,11 +616,12 @@ test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view
   await openFind(page);
   await hasFind(page);
   await search(page, 'apple');
-  // The plants the filters give (the rows already in the palette and other lists' rows aside).
-  const results = await page.$$eval(`${FIND} [data-find-group] [data-find-row]`, (els) => els.length);
+  // Every row the results list, the palette's and the other lists' included (c1r3 T14).
+  const results = await page.$$eval(`${FIND} [data-find-row]`, (els) => els.length);
   const focusText = () => page.evaluate(() => document.activeElement?.textContent?.trim() ?? '');
-  const filtersButton = () => page.evaluate(() => document.activeElement?.matches('.ct-find-filters-btn') ?? false);
-  await page.click(`${FIND} .ct-find-filters-btn`);
+  // The "Filters" button by its role and name (c1r3 T5): the heading also reads "Filters".
+  const filtersButton = async () => (await page.$('aria/Filters[role="button"]'))?.evaluate((b) => b === document.activeElement) ?? false;
+  await page.click('aria/Filters[role="button"]');
   assert.equal(await focusText(), 'Filters', 'the focus on the filters\' heading');
   assert.equal(await visible(page, `${FIND} [data-find-row]`), false, 'the filters in place of the results');
   const show = `${FIND} [data-find-filters-show]`;
@@ -626,7 +631,7 @@ test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view
   assert.ok(await visible(page, `${FIND} [data-find-row]`), 'Show returns to the results');
   assert.ok(await filtersButton(), 'the focus back on "Filters"');
   // Escape in the filters returns to the results, Find open, the query kept (r2-02).
-  await page.click(`${FIND} .ct-find-filters-btn`);
+  await page.click('aria/Filters[role="button"]');
   await page.keyboard.press('Escape');
   assert.ok(await page.$(FIND), 'Find stays open');
   assert.ok(await visible(page, `${FIND} [data-find-row]`), 'Escape returns to the results');
@@ -687,6 +692,79 @@ test('PP-C47 (c1 fix B10+B11 Paste as the board): pasted order, count, Which …
   await page.click('dialog[open] [data-paste-cancel]');
   assert.ok(await has(page, `${FIND} [data-find-paste]`, 3000), 'Cancel goes back to Find');
   assert.ok(await page.waitForFunction(() => document.activeElement?.matches('[data-find-paste]'), { timeout: 2000 }).then(() => true, () => false), 'the focus on "Paste a list"');
+});
+
+// c1r3 T3 + T14 (review c1r3-03, Chrome K14): the start offers the list ("Show the N plants that fit",
+// the subtitle's and the fit choice's number) and "Show N plants" in the phone filters lists the plants.
+test('PP-C50 (c1 r3 T3+T14): the start lists its plants on asking; "Show N plants" lists them', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 });
+  await openFind(page);
+  await hasFind(page);
+  const link = await page.$eval(`${FIND} [data-find-count] button`, (b) => b.textContent).catch(() => '');
+  const n = /^Show the (\d+) plants that fit$/.exec(link)?.[1];
+  assert.ok(n, `the start's "Show the N plants that fit" (${link})`);
+  assert.match(await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent), new RegExp(`^${n} of the`), 'the subtitle says the same number');
+  await page.click(`${FIND} [data-find-count] button`);
+  assert.ok(await visible(page, `${FIND} [data-find-row]`), 'the plants are listed');
+  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${n} plants\\.`), 'the count line says the same');
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  await openFind(page);
+  await hasFind(page);
+  await page.click('aria/Filters[role="button"]');
+  await page.click(`${FIND} [data-find-filters-show]`);
+  assert.ok(await visible(page, `${FIND} [data-find-row]`), '"Show N plants" lists them');
+});
+
+// c1r3 T2, T12, T13, T16 (review c1r3-02; Chrome K11, K12, K17): Paste reads the list at once on "Read the
+// list"; a choice names each plant with its scientific name; a name pasted twice is one row, said so; a
+// mark is Find's short pill.
+test('PP-C51 (c1 r3 T2+T12+T13+T16): Paste: Read the list, choices with their scientific names, listed twice, short marks', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  const pick = await page.evaluate(() => {
+    const { store } = window.__ctTest, m = new Set(store.members.value), pool = store.pool.value;
+    const by = new Map();
+    for (const t of pool) { const w = (t.names.en ?? '').toLowerCase().split(' ').pop(); if (/^[a-z]{4,}$/.test(w) && !w.endsWith('s')) by.set(w, (by.get(w) ?? 0) + 1); }
+    const word = [...by].filter(([w, n]) => n >= 2 && !pool.some((t) => (t.names.en ?? '').toLowerCase() === `${w}s`)).sort((a, b) => b[1] - a[1])[0][0];
+    const tox = pool.find((t) => !m.has(t.id) && t.warnings.toxicity && t.warnings.toxicity.level !== 'None').canonical_name;
+    return { plural: `${word}s`, tox };
+  });
+  await openFind(page);
+  await hasFind(page);
+  await page.click(`${FIND} [data-find-paste]`);
+  assert.ok(await has(page, 'dialog[open] #ct-paste-text', 3000), 'Paste opens');
+  assert.match(await page.$eval('dialog[open]', (e) => e.textContent), /The first 200 lines are read, on your device; nothing is sent\./, 'the board\'s intro');
+  await page.$eval('dialog[open] #ct-paste-text', (t, v) => { t.value = v; t.dispatchEvent(new Event('input', { bubbles: true })); }, [pick.tox, pick.plural, pick.tox.toLowerCase()].join('\n'));
+  await page.click('dialog[open] [data-paste-read]');
+  const rows = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => e.textContent));
+  assert.equal(rows.length, 2, 'a name pasted twice is one row');
+  assert.match(rows[0], /listed twice, counted once/, 'said on its row');
+  assert.match(rows[0], /toxic/i, 'its toxic mark');
+  assert.doesNotMatch(rows[0], /toxicity records/, 'the short pill, not the sentence');
+  const chips = await page.$$eval('dialog[open] [data-paste-row] button[aria-pressed]', (els) => els.map((b) => b.textContent));
+  const sci = await page.evaluate(() => window.__ctTest.store.pool.value.map((t) => t.canonical_name));
+  assert.ok(chips.filter((c) => c !== 'None').every((c) => sci.some((s) => c.endsWith(s))), `each choice names its scientific name (${chips.join(' | ')})`);
+});
+
+// c1r3 T6, T18, T20 (Chrome K1, N4, N6): a job list names the palette's plants that do the job with
+// "Show"; a roles list is lower case after its first word; the second-look group says why.
+test('PP-C52 (c1 r3 T6+T18+T20): In your palette on a job list, roles in lower case, why a second look', async () => {
+  const page = await plainFind();
+  assert.ok(await page.evaluate(() => window.__ctTest.store.memberTaxa.value.some((t) => t.role === 'crop')), 'the palette holds a food plant');
+  await byJob(page, 'feeds_you');
+  const line = await page.$eval(`${FIND} [data-find-inpalette-line]`, (e) => e.textContent).catch(() => '');
+  assert.match(line, /^In your palette \d+ · .+ · Show$/, `"In your palette N · names · Show" (${line})`);
+  await page.click(`${FIND} [data-find-inpalette-line] button`);
+  assert.ok(await has(page, `${FIND} [data-find-inpalette] [data-find-row]`, 2000), 'Show lists them');
+  const metas = await page.$$eval(`${FIND} [data-find-meta]`, (els) => els.map((e) => e.textContent.split(' · ')[0]));
+  assert.ok(metas.some((m) => m.includes(', ')), 'a row with several roles');
+  assert.ok(metas.every((m) => !/, [A-Z]/.test(m)), `roles in lower case after the first (${metas.find((m) => /, [A-Z]/.test(m))})`);
+  await page.click(`${FIND} [data-filter="all"]`);
+  const look = await page.$eval(`${FIND} [data-find-group="look"] h3`, (e) => e.textContent).catch(() => '');
+  assert.match(look, /\d+: a warning, or near the edge of its range/, 'why a second look');
 });
 
 // Fix round 1, B17 (conformance c1 #18): at 320 px nothing on the palette page scrolls sideways with

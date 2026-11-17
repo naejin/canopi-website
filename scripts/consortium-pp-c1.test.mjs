@@ -10,9 +10,9 @@
 //                  jobsMatching(query, wordsOf) -> JobId[] (a job word of the page's locale finds its job;
 //                  wordsOf(job): the job's words in that locale, rules importing the core only).
 //   search.ts      releaseIndex({ names, plants, lang }) -> (query) => FindHit[], where a FindHit is
-//                  { id, tier: 'site' | 'scientific' | 'other', why: { kind, text, lang?, match }, shared }
-//                  (match: 'exact' | 'prefix' | 'tokens' | 'alternate', the site tier's order; shared:
-//                  how many other plants use that name), hits in tier order, then match order; namesFor(fileHeader, page) -> boolean
+//                  { id, tier: 'site' | 'scientific' | 'other', why: { kind, text, lang?, match } }
+//                  (match: 'exact' | 'prefix' | 'tokens' | 'alternate', the site tier's order), hits in
+//                  tier order, then match order; namesFor(fileHeader, page) -> boolean
 //                  (false drops the names file: release_id or core_raw_sha256 differs);
 //                  oneOff(a, b) moved here from views/paste.ts (now views/find/paste.ts); namesLine(fileLangs) -> Line;
 //   views/find/paste.ts readPaste(names, { here, others, members, index }) matches through index (a
@@ -101,11 +101,14 @@ test('PP-C-u4 (c1 search tiers): site-language names first (exact, prefix, all t
   assert.equal(find('tomato')[0].tier, 'site');
 });
 
-test('PP-C-u5 (c1 search shared names): a name shared by several plants says so ("also used for N other plants")', async () => {
-  const { releaseIndex } = await search();
+// c1r3 T17 (coordinator 2026-11-17): the "also used for N other plants" line is gone (not on the
+// boards); a shared name finds each plant that carries it, its row told apart by its scientific name.
+test('PP-C-u5 (c1 search shared names): a name shared by several plants finds each of them, with no shared-name line', async () => {
+  const { releaseIndex, whyLines } = await search();
   const hits = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('yam');
-  const dioscorea = hits.find((h) => h.id === id(3));
-  assert.equal(dioscorea?.shared, 2, '"Yam" is also used for 2 other plants');
+  const yams = hits.filter((h) => h.why.kind === 'name' && h.why.text === 'Yam');
+  assert.deepEqual(yams.map((h) => h.id).sort(), [id(3), id(4)], '"Yam" finds both plants named so');
+  assert.ok(yams.every((h) => whyLines(h).length === 0), 'no "also used for" line');
 });
 
 // Normalization v1 as is (canopi-types; coordinator row 2026-11-17: some matches change to match the
@@ -173,11 +176,8 @@ test('PP-C c1 fix A13: "Holds by" names its period as a variable in all 11 local
   }
 });
 
-test('PP-C c1 fix A5: why a row matched (whyLines, the one owner of those words): a shared page-language name says "also used for N other plants" too', async () => {
+test('PP-C c1 fix A5: why a row matched (whyLines, the one owner of those words)', async () => {
   const { releaseIndex, whyLines } = await search();
-  const hits = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('yam');
-  const keys = (h) => whyLines(h).map((l) => [l.key, l.count]);
-  assert.deepEqual(keys(hits.find((h) => h.id === id(3))), [['consortium.find.why.shared', 2]], 'the page-language name "Yam", shared with 2 other plants');
   const tomato = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('tomato')[0];
   assert.deepEqual(whyLines(tomato), [], 'its own unshared name needs no why line');
   const gombo = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('gombo').find((h) => h.id === id(1));
@@ -234,6 +234,35 @@ test('PP-C c1 fix round 2 K2: best first breaks ties by the years in range, then
   const edge = { level: 'fits', factors: [{ confidence: { term: 'edge' } }] }, inside = { level: 'fits', factors: [] };
   const firm = new Map([[id(1), wellInside(edge) ? 1 : 0], [id(2), wellInside(inside) ? 1 : 0], [id(3), 0]]);
   assert.deepEqual(bestFirst(taxa, new Map(), stay, firm).map((t) => t.id), [id(3), id(2), id(1)]);
+});
+
+// c1r3 T4 (review c1r3-05): before the core's names are in, Find has no search (it says "Searching…",
+// never the whole list); a failed load is said (finderFailed) and the next want tries again.
+test('c1r3 T4: no search before the core names; a failure is said and retried', async () => {
+  const { wantNames, finder, finderFailed } = await import('../src/islands/consortium/views/find/names.ts');
+  let fail;
+  const source = { names: () => new Promise((_, reject) => { fail = reject; }) };
+  wantNames(source, 'en');
+  assert.equal(finder.value, null, 'no search yet');
+  assert.equal(finderFailed.value, false);
+  fail(new Error('offline'));
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(finderFailed.value, true, 'the failure is said');
+  source.names = async () => [{ id: id(1), plant: 1, canonical: 'Malus domestica', names: { en: 'Apple' }, lists: ['Temperate'] }];
+  wantNames(source, 'en');
+  assert.equal(finderFailed.value, false, 'tried again');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(finder.value('apple').map((h) => h.id), [id(1)], 'then the search works');
+});
+
+// c1r3 T7 (Chrome K2): ties left after the years and the fit read best first, never A to Z: the fewest
+// warnings, then the most jobs.
+test('c1r3 T7: best first breaks the ties left by the fewest warnings, then the most jobs', async () => {
+  const { bestFirst } = await findQuery();
+  const fn = (...f) => f.map((x) => ({ function: x }));
+  const taxa = [plant(1, { functions: fn('mulch') }), plant(2, { functions: fn('mulch', 'windbreak', 'insectary') }), plant(3, { functions: fn('mulch', 'windbreak') }), plant(4, { functions: fn('mulch', 'windbreak', 'insectary') })];
+  const warnings = new Map([[id(4), 1]]);
+  assert.deepEqual(bestFirst(taxa, new Map(), new Map(), new Map(), warnings).map((t) => t.id), [id(2), id(3), id(1), id(4)]);
 });
 
 test('PP-C c1 fix round 2 K9: "When it stands" keeps the plants standing in those years; a plant with no placement is counted, not hidden silently', async () => {

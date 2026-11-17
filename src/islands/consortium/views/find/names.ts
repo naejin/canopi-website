@@ -23,11 +23,14 @@ export type NamesState = 'none' | 'loading' | 'ready' | 'failed' | 'dropped';
 export const namesState = signal<NamesState>('none');
 // The search Find and Paste read: the core's names, then with the names file; null until the core's.
 export const finder = signal<Finder | null>(null);
+// The core's names failed to load (c1r3 T4): Find says so; the next focus on its search tries again.
+export const finderFailed = signal(false);
 // Every plant of the release: its lists (4.8: a hit outside the current list names them), its names.
 export interface ReleasePlant { id: PlantId; canonical: string; names: Partial<Record<string, string>>; lists: ClimateZone[] }
 export const releasePlants = signal<ReadonlyMap<PlantId, ReleasePlant>>(new Map());
 
-let core: Promise<{ entries: ReleasePlant[]; plantIds: Map<number, PlantId> }> | null = null;
+// The core's names, or null when they failed (said by finderFailed; the next want tries again).
+let core: Promise<{ entries: ReleasePlant[]; plantIds: Map<number, PlantId> } | null> | null = null;
 let file: Promise<void> | null = null;
 let forSource: PlantSource | null = null;
 
@@ -35,6 +38,7 @@ let forSource: PlantSource | null = null;
 // names file unless it loads, is in, or was dropped.
 export function wantNames(source: PlantSource, lang: Locale): void {
   if (source !== forSource) { forSource = source; core = null; file = null; finder.value = null; }
+  if (!core) finderFailed.value = false;
   core ??= source.names(lang).then((list) => {
     const entries = list.map((p) => ({ id: p.id, canonical: p.canonical, names: p.names, lists: p.lists }));
     if (forSource === source) {
@@ -42,7 +46,12 @@ export function wantNames(source: PlantSource, lang: Locale): void {
       finder.value ??= releaseIndex({ names: entries, lang });
     }
     return { entries, plantIds: new Map(list.map((p) => [p.plant, p.id])) };
-  }, (err: unknown) => { core = null; throw err; });
+  }, (err: unknown) => {
+    console.warn(`Consortium: the plant names did not load: ${(err as Error).message}`);
+    core = null;
+    if (forSource === source) finderFailed.value = true;
+    return null;
+  });
   const d = pageData(), ref = d?.names;
   if (!ref || !d?.db || !d.releaseId) return;
   const state = namesState.peek();
@@ -52,7 +61,9 @@ export function wantNames(source: PlantSource, lang: Locale): void {
   file = (async () => {
     try {
       const text = await loadNamesFile(ref, page);
-      const { entries, plantIds } = await core!;
+      const got = await core!;
+      if (!got) throw new NamesFileError(true, 'the core names did not load');
+      const { entries, plantIds } = got;
       const full = await indexSliced({ names: entries, lang, file: text, plantIds });
       if (forSource !== source) return;
       finder.value = full;

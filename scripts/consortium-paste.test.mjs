@@ -53,9 +53,8 @@ test('matching: a genus alone lets the reader choose; a close spelling is marked
   const genus = matchName('Rubus', idx);
   assert.equal(genus.how, 'choose');
   assert.deepEqual(genus.taxa.map((t) => t.id).sort(), ['t4', 't5']);
-  const close = matchName('Hawtorn', idx);
-  assert.equal(close.how, 'close');
-  assert.equal(close.close, 'Hawthorn');
+  const close = readPaste(pasteNames('Hawtorn'), { here: temperate }).found;
+  assert.deepEqual(close.map((f) => [f.taxon.id, f.close]), [['t3', 'Hawthorn']]);
   assert.equal(matchName('Zzzz plant', idx), null);
 });
 
@@ -85,8 +84,8 @@ test('readPaste lists a later line naming a plant already matched as a duplicate
 
 test('readPaste hides plants matched by another line from the choose groups; a group they leave empty keeps its line', () => {
   const r = readPaste(pasteNames('Rubus\nRaspberry'), { here: temperate, members: [] });
-  assert.deepEqual(r.found.map((f) => f.taxon.id), ['t4']);
-  assert.deepEqual(r.choose.map((c) => c.taxa.map((t) => t.id)), [['t5']]);
+  assert.deepEqual(r.found.map((f) => [f.name, f.taxon.id]).sort(), [['Raspberry', 't4'], ['Rubus', 't5']], 'a genus left with one plant is that plant, a found line (c1r3 T12: no "Which Rubus? 1 plant")');
+  assert.deepEqual(r.choose, []);
   const gone = readPaste(pasteNames('Rubus\nRaspberry\nBlackberry'), { here: temperate, members: [] });
   assert.deepEqual(gone.choose, []);
   assert.deepEqual(gone.duplicate.map((d) => [d.at, d.name]), [[0, 'Rubus']], '"Rubus" keeps its line, covered by the next lines');
@@ -110,10 +109,32 @@ test('r2-03: "PRUNUS AVIUM L." and "Malus Domestica Borkh." are found; ficus-ind
 
 test('readPaste falls back to a word-prefix search for a line with no match: "Chestnut" offers European chestnut to choose', () => {
   const r = readPaste(pasteNames('Chestnut\nIce'), { here: temperate, others: [['Tropical', tropical]], members: [] });
-  assert.deepEqual(r.choose, [], 'a choice of one plant is no question (K11)');
-  assert.deepEqual(r.found.map((f) => [f.name, f.taxon.id]), [['Chestnut', 't2']]);
-  assert.deepEqual(r.other.map((o) => [o.name, o.taxon.id, o.climate]), [['Ice', 'p1', 'Tropical']]);
-  assert.equal(r.none.length, 0);
+  assert.deepEqual(r.choose.map((c) => [c.name, c.taxa.map((t) => t.id), c.climate]), [['Chestnut', ['t2'], null], ['Ice', ['p1'], 'Tropical']], 'a search guess stays a question, even of one plant (c1r3 T1)');
+  assert.deepEqual([r.found, r.other, r.none], [[], [], []], 'nothing found unasked');
+});
+
+// c1r3 T1 (review c1r3-01): only a name (exact, or a genus) of one plant is found; Find's search is a
+// guess, a question the grower answers: "Date" never silently adds Date plum.
+test('c1r3 T1: "Date" asks about Date plum, never adds it; "Malus" (a genus of one) is found', () => {
+  const here = [...temperate, plant('d1', 'Diospyros lotus', { en: 'Date plum' })];
+  const r = readPaste(pasteNames('Date\nMalus'), { here, members: [] });
+  assert.deepEqual(r.choose.map((c) => [c.name, c.taxa.map((t) => t.id)]), [['Date', ['d1']]], '"Date": Which date? (Date plum)');
+  assert.deepEqual(r.found.map((f) => [f.name, f.taxon.id]), [['Malus', 't1']]);
+});
+
+// c1r3 T12 (board Paste "banana … listed twice, counted once"): a name pasted twice is one row, said so.
+test('c1r3 T12: a name pasted twice is read once, and said to be listed twice', () => {
+  const names = pasteNames('Apple\nHawthorn\napple');
+  assert.deepEqual([...names], ['Apple', 'Hawthorn']);
+  const r = readPaste(names, { here: temperate, members: [] });
+  assert.deepEqual([...r.twice], ['Apple'], '"Apple" listed twice, counted once');
+});
+
+// c1r3 T21 (Chrome N7): Paste reads a slip by Find's close-spelling rule, one missing letter in a word
+// of a longer name: "chesnut" is read as European chestnut (a close spelling, offered, not added).
+test('c1r3 T21: "chesnut" is read as European chestnut, a close spelling', () => {
+  const r = readPaste(pasteNames('chesnut'), { here: temperate, members: [] });
+  assert.deepEqual(r.found.map((f) => [f.taxon.id, f.close]), [['t2', 'European chestnut']]);
 });
 
 test('comma or semicolon columns: the same count on every line makes a table; a split cell never goes to the word-prefix search', () => {
