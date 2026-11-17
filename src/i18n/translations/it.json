@@ -813,7 +813,7 @@
   "consortium.range.pool.caveat": "Gli areali osservati vengono dai luoghi dove ogni pianta è registrata, coltivazioni comprese. Sono stime e non sono stati verificati.",
   "consortium.range.pool.aridityNotChecked": "Qui l’aridità non è verificata: il terreno non ha un valore di aridità (ghiaccio).",
   "consortium.range.empty.title": "Nessuna pianta dell’elenco è registrata in un clima come quello di questo terreno",
-  "consortium.range.empty.body": "Qui il mese più freddo ha una media di {cold} °C, il più caldo di {hot} °C e l’anno di {mean} °C. Controlla che il luogo sia giusto, oppure cerca tra tutte le piante e aggiungine qualcuna a mano: ognuna fuori dal suo areale osservato mostra un avviso.",
+  "consortium.range.empty.body": "Qui le notti del mese più freddo scendono in media a {cold} °C e le giornate del mese più caldo salgono in media a {hot} °C. Controlla che il luogo sia giusto, oppure cerca tra tutte le piante e aggiungine qualcuna a mano: ognuna fuori dal suo areale osservato mostra un avviso.",
   "consortium.range.empty.search": "Cerca tra tutte le piante",
   "consortium.range.unavailableBorrowed": "I controlli dell’areale non sono disponibili: una parte dello strumento non si è caricata, e {climate} ne ha bisogno per scegliere le piante, perché le sue piante vengono dagli elenchi più vicini. Ricarica la pagina per riprovare.",
   "consortium.range.needsSite": "{climate} non ha ancora un proprio elenco di piante: serve la posizione del tuo terreno per scegliere le piante. Gli elenchi più vicini vengono allora ridotti alle piante registrate in climi come quello del tuo terreno.",

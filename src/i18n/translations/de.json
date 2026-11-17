@@ -813,7 +813,7 @@
   "consortium.range.pool.caveat": "Die beobachteten Verbreitungsgebiete stammen von den Orten, an denen jede Pflanze verzeichnet ist, Anbau eingeschlossen. Es sind Schätzungen, die nicht geprüft wurden.",
   "consortium.range.pool.aridityNotChecked": "Die Trockenheit wird hier nicht geprüft: Der Standort hat keinen Ariditätswert (Eis).",
   "consortium.range.empty.title": "Keine Pflanze der Liste ist in einem Klima wie dem dieses Standorts verzeichnet",
-  "consortium.range.empty.body": "Hier liegt der kälteste Monat im Mittel bei {cold} °C, der wärmste bei {hot} °C und das Jahr bei {mean} °C. Prüfe, ob der Ort stimmt, oder suche unter allen Pflanzen und füge einige von Hand hinzu: Jede außerhalb ihres beobachteten Verbreitungsgebiets zeigt einen Hinweis.",
+  "consortium.range.empty.body": "Hier liegen die Nächte des kältesten Monats im Mittel bei {cold} °C und die Tage des wärmsten Monats erreichen im Mittel {hot} °C. Prüfe, ob der Ort stimmt, oder suche unter allen Pflanzen und füge einige von Hand hinzu: Jede außerhalb ihres beobachteten Verbreitungsgebiets zeigt einen Hinweis.",
   "consortium.range.empty.search": "Alle Pflanzen durchsuchen",
   "consortium.range.unavailableBorrowed": "Die Prüfung der Verbreitung ist nicht verfügbar: Ein Teil des Werkzeugs wurde nicht geladen, und {climate} braucht sie, um Pflanzen auszuwählen, da seine Pflanzen aus den nächstgelegenen Listen stammen. Lade die Seite neu, um es erneut zu versuchen.",
   "consortium.range.needsSite": "{climate} hat noch keine eigene Pflanzenliste: Um Pflanzen auszuwählen, braucht es den Standort deines Grundstücks. Die nächstgelegenen Listen werden dann auf die Pflanzen beschränkt, die in Klimata wie dem deines Grundstücks belegt sind.",

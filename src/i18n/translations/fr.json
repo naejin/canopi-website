@@ -813,7 +813,7 @@
   "consortium.range.pool.caveat": "Les aires observées viennent des lieux où chaque plante est recensée, cultures comprises. Ce sont des estimations, non vérifiées.",
   "consortium.range.pool.aridityNotChecked": "La sécheresse n’est pas vérifiée ici : le terrain n’a pas de valeur d’aridité (glace).",
   "consortium.range.empty.title": "Aucune plante de la liste n’est recensée sous un climat comme celui de ce terrain",
-  "consortium.range.empty.body": "Ici, le mois le plus froid est en moyenne à {cold} °C, le plus chaud à {hot} °C et l’année à {mean} °C. Vérifiez que le lieu est le bon, ou cherchez parmi toutes les plantes et ajoutez-en à la main : chacune hors de son aire observée affiche un avertissement.",
+  "consortium.range.empty.body": "Ici, les nuits du mois le plus froid descendent en moyenne à {cold} °C et les journées du mois le plus chaud montent en moyenne à {hot} °C. Vérifiez que le lieu est le bon, ou cherchez parmi toutes les plantes et ajoutez-en à la main : chacune hors de son aire observée affiche un avertissement.",
   "consortium.range.empty.search": "Chercher parmi toutes les plantes",
   "consortium.range.unavailableBorrowed": "Les vérifications d’aire sont indisponibles : une partie de l’outil n’a pas pu se charger, et {climate} en a besoin pour choisir des plantes, puisque ses plantes viennent des listes les plus proches. Rechargez la page pour réessayer.",
   "consortium.range.needsSite": "{climate} n’a pas encore sa propre liste de plantes : il faut la localisation de votre site pour choisir des plantes. Les listes les plus proches sont alors réduites aux plantes observées dans des climats comme celui de votre site.",
