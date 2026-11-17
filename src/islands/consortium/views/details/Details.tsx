@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
-import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone, Details as PlantFacts, JobId, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
 import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, keepLine, locales, pairings, phaseOrd, placementZone, rangeSources, restLine, siteIdOf, sourceTitle, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
 import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
@@ -50,6 +50,9 @@ function DataText({ text }: { text: { en: string } & Partial<Record<string, stri
   const own = text[lang()];
   return own ? <>{own}</> : <span lang="en">{text.en}</span>;
 }
+
+// A job's filled tile (boards Details, DetailsMore): its mark on the job's colour, beside its words.
+const JobTile = ({ job }: { job: JobId }) => <span class="ct-job-tile" data-job={job}><JobIcon job={job} /></span>;
 
 // ---- the plant dialog ----
 
@@ -344,7 +347,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         )}
         <section class="ct-d-summary" aria-label={T('jobsHeading')} data-summary>
           {jobs.length
-            ? <p class="ct-d-main"><span class="ct-d-main-icons">{jobs.map((j) => <JobIcon job={j} />)}</span><span><strong>{T(`job.${jobs[0]}`)}.</strong>{jobs.length > 1 && <> {T('details.alsoJobs', { list: listOf(jobs.slice(1).map((j) => T(`job.${j}`))) })}</>}</span></p>
+            ? <p class="ct-d-main"><span class="ct-d-main-icons">{jobs.map((j) => <JobTile job={j} />)}</span><span><strong>{T(`job.${jobs[0]}`)}.</strong>{jobs.length > 1 && <> {T('details.alsoJobs', { list: listOf(jobs.slice(1).map((j) => T(`job.${j}`))) })}</>}</span></p>
             : <p class="ct-muted">{T('d.jobsUnk')}</p>}
           <p class="ct-muted">{spanWords(t)} · {sizeWords(t)}</p>
           <ul class="ct-marks">
@@ -398,7 +401,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           )}
           <More k="jobs" title={T('details.secJobs')} hint={jobs.length ? P('details.secJobsCount', jobs.length) : undefined}>
             {jobs.length
-              ? <ul class="ct-d-jobtiles">{jobs.map((j, i) => <li data-job-tile={j}><JobIcon job={j} /><div><strong>{T(`job.${j}`)}{i === 0 && jobs.length > 1 && <span> · {T('details.mainHere')}</span>}</strong><p class="ct-muted">{T(`details.jobDesc.${j}`)}</p></div></li>)}</ul>
+              ? <ul class="ct-d-jobtiles">{jobs.map((j, i) => <li data-job-tile={j}><JobTile job={j} /><div><strong>{T(`job.${j}`)}{i === 0 && jobs.length > 1 && <span> · {T('details.mainHere')}</span>}</strong><p class="ct-muted">{T(`details.jobDesc.${j}`)}</p></div></li>)}</ul>
               : <p class="ct-muted">{T('d.jobsUnk')}</p>}
           </More>
           <More k="light" title={T('details.secLight')}>

@@ -225,6 +225,16 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-d-summary, .ct .ct-d-cando { padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
 .ct .ct-d-main { display: flex; gap: 8px; margin: 0; }
 .ct .ct-d-main-icons { display: flex; gap: 3px; flex: none; padding-top: 1px; }
+/* A job's filled tile (boards Details, DetailsMore): the job's mark on its colour, always beside its words. */
+.ct .ct-job-tile { display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 6px; background: var(--text-secondary); }
+.ct .ct-job-tile > .ct-job-icon[data-job] { width: 14px; height: 14px; color: var(--on-accent); }
+.ct .ct-job-tile[data-job="feeds_you"] { background: var(--role-food); }
+.ct .ct-job-tile[data-job="feeds_soil"] { background: var(--role-soil); }
+.ct .ct-job-tile[data-job="mulch"] { background: var(--role-mulch); }
+.ct .ct-job-tile[data-job="ground"] { background: var(--role-ground); }
+.ct .ct-job-tile[data-job="helpers"] { background: var(--role-helpers); }
+.ct .ct-job-tile[data-job="shelter"] { background: var(--role-shelter); }
+@media (forced-colors: active) { .ct .ct-job-tile { forced-color-adjust: none; background: Canvas; border: 1px solid CanvasText; } .ct .ct-job-tile > .ct-job-icon[data-job] { background: CanvasText; } }
 .ct .ct-d-summary > p { margin-top: 6px; }
 .ct .ct-marks { list-style: none; padding: 0; }
 .ct .ct-marks .ct-glyph { width: 14px; height: 14px; flex: none; }
