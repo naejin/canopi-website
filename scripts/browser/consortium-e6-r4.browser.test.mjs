@@ -59,7 +59,7 @@ async function swapOpen(page) {
 // E6-7 (L9): Swap opened while the suggest chunk is held shows the loading line, then alternatives.
 test('E6-7 (R4 seams): Swap opened while the suggest chunk is held shows a loading line, then the alternatives (L9)', async () => {
   assert.ok(h.roles.suggest.length, 'role `suggest` has no chunk in this build: alternatives() is still in the first run');
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 'hold' } });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 'hold' } });
   assert.equal(await loadState(page), 'ready');
   await swapOpen(page);
   assert.ok(await has(page, 'dialog[open] [role="status"]', 2000), 'a loading line (status)');
@@ -101,7 +101,7 @@ const toastIdle = async (page) => ({
   idle: await until(page, (name) => [...document.querySelectorAll('#ct-root button')].some((b) => b.textContent.trim() === name && b.getAttribute('aria-busy') !== 'true'), 4000, SUGGEST),
 });
 async function temperatePage(opts) {
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, ...opts });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, ...opts });
   assert.equal(await loadState(page), 'ready');
   await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
@@ -246,7 +246,7 @@ const swapFailed = (page, timeout) => until(page, (failed, reload) => {
 }, timeout, FAILED, RELOAD);
 
 test('E6-22 (R4 hand-off B): Swap opened while the suggest chunk never answers ends its wait at the cap with the failed line and Reload, then shows the alternatives if the chunk comes', async () => {
-  const page = await h.open('/consortium/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 'hold' }, timeouts: { suggest: 1500 } });
+  const page = await h.open('/palette/', { ...DESKTOP, data: 'fixture', hook: true, block: { suggest: 'hold' }, timeouts: { suggest: 1500 } });
   try {
     assert.equal(await loadState(page), 'ready');
     await swapOpen(page);

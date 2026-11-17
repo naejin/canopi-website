@@ -573,9 +573,9 @@ test('PP-B12 (b1a keyboard answers): Enter on "Use my own place" or "Open my sav
   assert.equal(await words(guide, '.ct-place-status'), W('place.openedSaved'));
 });
 
-test('PP-B14 (b1a guide link): ?plant=…&climate=… opens on /palette/ (also from the old /consortium/ address) with the plant as a member', async () => {
+test('PP-B14 (b1a guide link): ?plant=…&climate=… opens on /palette/ with the plant as a member (the old /consortium/ address is not forwarded: owner 2026-11-17)', async () => {
   const name = await temperateName(5);
-  for (const path of ['/palette/', '/consortium/']) {
+  for (const path of ['/palette/']) {
     const page = await h.open(`${path}?plant=${encodeURIComponent(name)}&climate=temperate`, { hook: true });
     assert.ok(await until(page, () => window.__ctTest?.store?.members.value.length === 1, 20_000), `${path}: the guide's plant is a member`);
     assert.equal(new URL(page.url()).pathname, '/palette/', `${path}: on /palette/`);
