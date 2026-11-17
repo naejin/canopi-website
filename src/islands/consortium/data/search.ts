@@ -233,6 +233,19 @@ export async function indexSliced({ names, lang, file, plantIds }: { names: read
 export const listsOf = (id: PlantId, lists: Partial<Record<ClimateZone, readonly PlantId[]>>): ClimateZone[] =>
   climateZones.filter((z) => lists[z]?.includes(id));
 
+// Why a row matched, in Lines (the one owner of these words; Find and its other-lists rows read it):
+// the name that matched unless it is the plant's own name in the page's language or its canonical
+// name ("French name: Gombo", "Also called …", "Synonym: …", "Accepted name: …"), then, when other
+// plants carry that same name, "also used for N other plants" (any kind, the page's own names too).
+// vars.lang is a language code: the view names it in the page's language.
+const WHY_KEY: Partial<Record<NameKind, string>> = { other: 'consortium.find.why.lang', alternate: 'consortium.find.why.alternate', synonym: 'consortium.find.why.synonym', accepted: 'consortium.find.why.accepted' };
+export function whyLines(h: FindHit): Line[] {
+  const out: Line[] = [], key = WHY_KEY[h.why.kind];
+  if (key) out.push({ key, vars: h.why.lang && h.why.kind === 'other' ? { lang: h.why.lang, name: h.why.text } : { name: h.why.text } });
+  if (h.shared) out.push({ key: 'consortium.find.why.shared', vars: {}, count: h.shared });
+  return out;
+}
+
 // The names line (boards FindType, FindNone): how many languages the names file holds, never a fixed
 // count; without the file, the page's language, English and scientific names.
 export const namesLine = (fileLangs: readonly string[]): Line =>

@@ -191,3 +191,14 @@ test('PP-C c1 fix A11: the "invasiveness not assessed" note is Find\'s key, cons
     assert.equal(w['consortium.add.notChecked'], undefined, `${lang}: consortium.add.notChecked deleted`);
   }
 });
+
+test('PP-C c1 fix A5: why a row matched (whyLines, the one owner of those words): a shared page-language name says "also used for N other plants" too', async () => {
+  const { releaseIndex, whyLines } = await search();
+  const hits = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('yam');
+  const keys = (h) => whyLines(h).map((l) => [l.key, l.count]);
+  assert.deepEqual(keys(hits.find((h) => h.id === id(3))), [['consortium.find.why.shared', 2]], 'the page-language name "Yam", shared with 2 other plants');
+  const tomato = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('tomato')[0];
+  assert.deepEqual(whyLines(tomato), [], 'its own unshared name needs no why line');
+  const gombo = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('gombo').find((h) => h.id === id(1));
+  assert.deepEqual(whyLines(gombo).map((l) => [l.key, l.vars.lang, l.vars.name]), [['consortium.find.why.lang', 'fr', 'Gombo']], 'a name in another language, its language code for the view to name');
+});

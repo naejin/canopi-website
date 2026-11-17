@@ -18,7 +18,7 @@ import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, jobIds, jobsOf, periodIds, queryTokens, warns } from '../../../../lib/consortium/index.ts';
-import { namesLine, type FindHit } from '../../data/search.ts';
+import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { applyFilters, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
 import { FitLine, JobIcon, holeWords, say } from '../kit/fit.tsx';
@@ -41,16 +41,16 @@ const langName = (code: string): string => {
 // the one owner of them: "Fits your place today", "Needs a second look", …), never Find's own copy.
 const groupWords = (g: Group, judged: PeriodId): string =>
   say(fitLine({ id: '', judged, ownYears: false, level: g === 'unchecked' ? 'unknown' : g, limiting: null, factors: [], notes: [] } satisfies PlantVerdict));
-// Why a row matched, unless it is the plant's own name in the page's language.
+// Why a row matched (data/search.ts whyLines owns the words), a language code named in the page's
+// language; data-lang and data-kind say which name it was.
 function whyWords(h: FindHit): { text: string; lang?: string; kind: string } | null {
-  const w = h.why;
-  if (w.kind === 'name') return null;
-  const shared = h.shared ? ` · ${P('find.why.shared', h.shared)}` : '';
-  if (w.kind === 'other') return { text: T('find.why.lang', { lang: langName(w.lang ?? ''), name: w.text }) + shared, lang: w.lang, kind: 'name' };
-  if (w.kind === 'alternate') return { text: T('find.why.alternate', { name: w.text }) + shared, lang: w.lang, kind: 'alternate' };
-  if (w.kind === 'synonym') return { text: T('find.why.synonym', { name: w.text }) + shared, kind: 'synonym' };
-  if (w.kind === 'accepted') return { text: T('find.why.accepted', { name: w.text }) + shared, kind: 'accepted' };
-  return shared ? { text: P('find.why.shared', h.shared), kind: 'canonical' } : null;
+  const lines = whyLines(h);
+  if (!lines.length) return null;
+  const text = lines.map((l) => {
+    const name = l.key.slice('consortium.find.why.'.length), vars = l.vars.lang ? { ...l.vars, lang: langName(String(l.vars.lang)) } : l.vars;
+    return l.count === undefined ? T(`find.why.${name}`, vars) : P(`find.why.${name}`, l.count, vars);
+  }).join(' · ');
+  return { text, lang: h.why.lang, kind: h.why.kind === 'other' ? 'name' : h.why.kind };
 }
 // The names line (boards FindType, FindNone): the languages the names file holds, never a fixed count.
 function namesWords(langs: readonly string[]): string {
