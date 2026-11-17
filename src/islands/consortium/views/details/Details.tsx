@@ -16,7 +16,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, JobId, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, keepLine, locales, pairings, phaseOrd, placementZone, rangeSources, restLine, siteIdOf, sourceTitle, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, keepLine, locales, pairings, phaseOrd, placementZone, rangeSources, restLine, siteIdOf, soilCheckLine, sourceTitle, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
 import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
@@ -388,7 +388,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         )}
         {/* The desk's two lines under What you can do (board DetailsDesk); phones read them in the sections. */}
         <div class="ct-d-desklines" data-desk-lines>
-          <p><span aria-hidden="true">✳ </span><strong>{T('details.soilCheck')}</strong> {traits.find((x) => x.field === 'soil_ph')!.text}</p>
+          <p data-soil-line><span aria-hidden="true">✳ </span><strong>{T('details.soilCheck')}</strong> {say(soilCheckLine(t, store.memberVerdicts.value?.get(id) ?? store.poolVerdicts.value?.get(id) ?? null, store.soil.value.from === 'own' ? store.soil.value.ph : null))}</p>
           <p><span aria-hidden="true">✳ </span><strong>{T('details.hardinessHead')}</strong> {traits.find((x) => x.field === 'hardiness_zone')!.text}</p>
         </div>
         <div class="ct-d-more">

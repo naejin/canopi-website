@@ -273,6 +273,16 @@ export function soilBandOf(t: Taxon, v: PlantVerdict, ph: number | null, traitSo
   return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false, when: whenOf(v.judged), range: { key: K('bandSoilRange'), vars: {}, parts: { source } } };
 }
 
+// The desk's soil line (board DetailsDesk, "Soil, to check: recorded on pH 7.0–7.5 … Not judged."):
+// the pH range sources give, then the soil check's status with the reader's own test, else "Not
+// judged" (the soil map's value is PP-F's).
+export function soilCheckLine(t: Taxon, v: PlantVerdict | null, ph: number | null): Line {
+  const r = t.traits.soil_ph;
+  if (!r || r.min === null || r.max === null) return L('soilDeskNone');
+  const b = v && ph !== null ? soilBandOf(t, v, ph) : null;
+  return L('soilDesk', { min: r.min, max: r.max }, [b && b.level !== 'unknown' ? b.status : L('soilNotJudged')]);
+}
+
 // A band's status in words (with the level's icon in the view): in range, near the edge (a place on a
 // checked end too), outside; the aridity band says drier or wetter, or near its dry or wet edge.
 function statusOf(f: FactorVerdict): Line {

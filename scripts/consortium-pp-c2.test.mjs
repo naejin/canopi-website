@@ -703,3 +703,14 @@ test('c2 fix T10 (disputing source named): a weak low names TreeGOER in Sources 
   assert.equal(lines[1], 'Climate range: records in 22 map squares (GBIF, TreeGOER), an estimate.');
   assert.deepEqual(line.rangeSources({ climate: { ...t.climate, tminCold: range(), tmeanYear: range() } }).map((x) => x.name), ['GBIF'], 'no TreeGOER when nothing is disputed');
 });
+
+// Fix round 3 T12 (Chrome K11): the desk's soil line as board DetailsDesk: "recorded on pH 3.5–7.3.
+// Not judged." (the soil map's value is PP-F's); with the reader's own test, the check's status.
+test('c2 fix T12 (desk soil line): "recorded on pH …" then "Not judged" without a test', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const t = taxon({ id: 'chestnut', canonical_name: 'Castanea sativa', traits: { soil_ph: { min: 3.5, max: 7.3 } } });
+  const v = verdict(t, { place: core.emptyPlace, lookup: null, period: '1991-2020', scenario: 'ssp245', canopy: null });
+  assert.equal(say(line.soilCheckLine(t, v, null)), 'recorded on pH 3.5–7.3. Not judged.');
+  assert.equal(say(line.soilCheckLine(t, null, 6)), 'recorded on pH 3.5–7.3. Not judged.');
+  assert.equal(say(line.soilCheckLine(taxon({ id: 'x', traits: { soil_ph: null } }), v, null)), 'no pH recorded.');
+});
