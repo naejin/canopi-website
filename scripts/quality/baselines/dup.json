@@ -25,6 +25,7 @@
     "scripts/consortium-canopi-file.test.mjs <> scripts/consortium-core.test.mjs (1)",
     "scripts/consortium-memory.test.mjs <> scripts/consortium-memory.test.mjs (1)",
     "scripts/consortium-memory.test.mjs <> scripts/consortium-memory.test.mjs (2)",
+    "scripts/consortium-p5-ranges.test.mjs <> scripts/consortium-p5-seams-s5d.test.mjs (1)",
     "scripts/consortium-p5-seams-s5b.test.mjs <> scripts/consortium-p5-seams-s5b.test.mjs (1)",
     "scripts/consortium-p5-seams-s5b.test.mjs <> scripts/consortium-p5-seams-s5b.test.mjs (2)",
     "scripts/contact.test.mjs <> scripts/correction.test.mjs (1)",
