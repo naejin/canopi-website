@@ -1,30 +1,13 @@
 // P5 commit 0: the shared seams the P5 streams fill (.local/consortium/v2/p5-owners.md). Each stream's
 // own seams have their own file (consortium-p5-seams-s5b/c/d/e.test.mjs), so a stream edits only its
-// file. This one pins where the host views mount each stream's slot and the one site-fit vocabulary
-// (the marks pipeline it pinned went with the mark providers in PP-C c2).
+// file. This one pins the one site-fit vocabulary (the marks pipeline it pinned went with the mark
+// providers in PP-C c2; where the host views mounted each slot, a source read of the PP-B Place and
+// Actions, went in pf commit 0: the boards replace those screens, consortium-pf-c.browser.test.mjs).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
+import { taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
-
-test('the host views mount every stream\'s slot', () => {
-  // The Place step (views/place/Place.tsx; b1a deletes Start.tsx): until b1a's merge Place.tsx re-exports Start.
-  const place = view('place/Place.tsx');
-  const start = place.includes("from '../Start.tsx'") ? view('Start.tsx') : place;
-  assert.ok(start.indexOf('<LocationSlot />') > 0 && start.indexOf('<LocationSlot />') < start.indexOf('<Climates />'), 'S5b: LocationSlot before the cards');
-  assert.match(start, /\{z && <PoolSlot zone=\{z\} \/>\}\s*\{z && hasList\(z\) && \(/, 'S5c: PoolSlot and hasList decide what follows the cards');
-  assert.match(start, /const pill = cardPill\(z\);/, 'S5c: the card\'s pill from PoolSlot (Ready, Needs your location, Not covered yet; hand-off H-S5c-5)');
-  assert.match(start, /climateShown\.value;[\s\S]*data-proposed/, 'S5b: a proposed climate shows as proposed, not checked (review round 1, 6)');
-  assert.match(view('later.ts'), /export \{ FutureSlot \} from '\.\/FutureSlot\.tsx';/, 'S5d: FutureSlot in the later chunk');
-  // In the palette slot, after Share, Print and Download, so they never move when it lands (hand-off branch).
-  assert.match(view('Actions.tsx'), /later\(\(\) => laterChunk\(\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:first-view or the data ready');
-  assert.match(view('Actions.tsx'), /<ActionsView \/><future\.View \/>/, 'S5d: the panel after the actions (the matrix views above it went in PP-B commit 0a\')');
-  // Details opens on "Against your place", its soil card naming the source of its range: read as the
-  // grower reads it, in consortium-pp-c2.browser.test.mjs PP-C6c (c2 fix round 4 V4).
-});
 
 // ---- E6 R2: the one site-fit vocabulary (core verdict-line.ts siteLines since fix round 1 B2, rules/site-fit.ts) ----
 test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags keep the misfits that hold beside the canopy', async () => {

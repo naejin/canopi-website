@@ -14,6 +14,11 @@
 // each stream's PP-B-n scenarios come with the streams (a stream empties a spec file of its cases but
 // never deletes it; main deletes emptied files at the chunk-3 exit). Parked markers:
 // scripts/plan/parked-markers.json.
+// pf commit 0 (2026-11-17; owner: the PP-B palette, place and location screens are rebuilt from the
+// boards): consortium-pp-b3, -p5-s5d and -pp-pf went, with the screen-level cases of pp-b1, pp-b2 and s4;
+// consortium-pf-a, -pf-b and -pf-c hold the boards as tests, one file per pf stream, each case marked
+// expected-fail under its stream ("PF<stream letter><n> (pf-x …)", or "<old id> → PP-C (pf-x …)" for a
+// moved F1a marker), with the sweep's ledger in each file's head.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -27,13 +32,14 @@ const testsOf = (text) => [...text.matchAll(/^(test|failing)\('((?:\\'|[^'])+)',
 const SPEC_FILES = [
   'consortium-commit0.browser.test.mjs',
   'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
-  'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5d.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
-  'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs', 'consortium-pp-b3.browser.test.mjs',
-  'consortium-pp-c1.browser.test.mjs', 'consortium-pp-c2.browser.test.mjs', 'consortium-pp-pf.browser.test.mjs',
+  'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
+  'consortium-pf-a.browser.test.mjs', 'consortium-pf-b.browser.test.mjs', 'consortium-pf-c.browser.test.mjs',
+  'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs',
+  'consortium-pp-c1.browser.test.mjs', 'consortium-pp-c2.browser.test.mjs',
   'consortium-s1.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
   'consortium-seams-layout.browser.test.mjs', 'consortium-seams-p2.browser.test.mjs', 'consortium-seams-p5.browser.test.mjs',
 ];
-test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6, one per PP-B stream file and one per PP-C stream, nothing else', () => {
+test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6, one per PP-B stream file, one per PP-C chunk-1 stream and one per pf stream, nothing else', () => {
   assert.deepEqual(files, SPEC_FILES);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /node scripts\/browser\/run\.mjs --list local$/);
@@ -48,7 +54,8 @@ test('every browser test runs: no todo, no skip, in any file but a P5 stream\'s 
     // A stream file under rewrite (s3 loses its matrix cases to b3) needs 2; a PP-B stream file starts
     // with the markers commit 0 moved into it (pp-b1 holds one) and grows with its stream; seams-p5 kept
     // one case when PP-B commit 0a' deleted UX4 with Jobs (consortium-s2 went whole).
-    assert.ok(testsOf(text).length >= (/-(pp-b\d|pp-(c1|c2|pf)|seams-p5)\./.test(file) ? 1 : /-(s1|s3|e6-r4)\./.test(file) ? 2 : 5), file);
+    // pf commit 0 (2026-11-17) moved s4's start case (BT-1) to the pf-c spec, so s4 keeps 4.
+    assert.ok(testsOf(text).length >= (/-(pp-b\d|pp-(c1|c2)|pf-[abc]|seams-p5)\./.test(file) ? 1 : /-(s1|s3|s4|e6-r4)\./.test(file) ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
@@ -98,7 +105,8 @@ test('every BT-1…BT-9 of design check §7 has a test (BT-2…BT-6 may go with 
 // P5: every P5 spec names its owner stream, the one its file is for; a todo may only name that
 // stream, so a stream removing its own todos passes and no stream marks another's spec; the commit-0
 // harness checks run; no skip.
-const P5_STREAMS = ['S5b', 'S5c', 'S5d', 'S5f'];
+// S5d's file went in pf commit 0 (its future panel is replaced by the Warnings card, consortium-pf-b).
+const P5_STREAMS = ['S5b', 'S5c', 'S5f'];
 test('P5 specs: each "P5-n (S5x …)" is in its stream\'s file, and a todo names only that stream; "P5-0 (commit 0 …)" checks run in commit0', () => {
   for (const stream of P5_STREAMS) {
     const file = `consortium-p5-${stream.toLowerCase()}.browser.test.mjs`;
@@ -321,24 +329,52 @@ test('PP-B specs: each names an owner the owners file gives its file; each marke
   }
 });
 
-// PP-C (commit 0, plan "Plant palette" push C; scripts/plan/pp-c-owners.json): consortium-pp-c1, -pp-c2 and
-// -pp-pf hold their stream's scenarios, written failing; each test names its owner stream, the one the
+// PP-C (commit 0, plan "Plant palette" push C; scripts/plan/pp-c-owners.json): consortium-pp-c1 and -pp-c2
+// (-pp-pf went in pf commit 0, for consortium-pf-a/b/c below) hold their stream's scenarios, written failing; each test names its owner stream, the one the
 // file is named for and the owners file gives it ("F1a-Xn → PP-C (<owner> …)" for a restored F1a marker,
 // "PP-C<n> (<owner> …)" or "PF<n> (<owner> …)" for a scenario); a marker names the owner of its title.
-const PPC_FILES = files.filter((f) => /^consortium-pp-(c1|c2|pf)\./.test(f));
+const PPC_FILES = files.filter((f) => /^consortium-pp-(c1|c2)\./.test(f));
 test('PP-C specs: each test names the stream its file is for, which the owners file gives it; each marker names the owner of its title', async () => {
   const { markers } = await import('./expect-fail.mjs');
   const owners = JSON.parse(readFileSync(new URL('./plan/pp-c-owners.json', import.meta.url), 'utf8'));
   const { matches } = await import('./plan/owners.mjs');
-  assert.equal(PPC_FILES.length, 3);
-  const marked = markers().filter((m) => /^browser\/consortium-pp-(c1|c2|pf)\./.test(m.file));
+  assert.equal(PPC_FILES.length, 2);
+  const marked = markers().filter((m) => /^browser\/consortium-pp-(c1|c2)\./.test(m.file));
   for (const file of PPC_FILES) {
-    const stream = file.match(/^consortium-pp-(c1|c2|pf)\./)[1];
+    const stream = file.match(/^consortium-pp-(c1|c2)\./)[1];
     assert.ok(owners.chunks.some((c) => c.streams[stream]?.files.some((p) => matches(p, `scripts/browser/${file}`))), `the owners file gives ${file} to ${stream}`);
     for (const { title, marked: isMarked } of testsOf(read(file))) {
       const owner = title.match(/^(?:F1a-[A-Z]\d+ → PP-C|PP-C\d+[a-z]?|PF\d+[a-z]?) \((\w+)\b/)?.[1];
       assert.equal(owner, stream, `${file}: "${title}" names ${stream}: F1a-Xn → PP-C (${stream} …), PP-Cn (${stream} …) or PFn (${stream} …)`);
       if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
     }
+  }
+});
+
+// pf commit 0 (2026-11-17): consortium-pf-a, -pf-b and -pf-c hold the boards of pf stream a ("What's
+// missing next"), b ("The pictures and your plants") and c ("Your place") as tests. Each case names
+// its file's stream ("PFA3 (pf-a …)", or "F1a-P2 → PP-C (pf-c …)" for a moved F1a marker) and is
+// marked expected-fail under it until the stream makes it pass; the file's head comment carries the
+// sweep's ledger, one line per old test it carries ("carries <old id>").
+const PF_FILES = files.filter((f) => /^consortium-pf-[abc]\./.test(f));
+test('pf specs: each test names the stream its file is for, which the owners file gives it; each marker names it; the head lists the old tests it carries', async () => {
+  const { markers } = await import('./expect-fail.mjs');
+  const owners = JSON.parse(readFileSync(new URL('./plan/pp-c-owners.json', import.meta.url), 'utf8'));
+  const { matches } = await import('./plan/owners.mjs');
+  assert.deepEqual(PF_FILES, ['consortium-pf-a.browser.test.mjs', 'consortium-pf-b.browser.test.mjs', 'consortium-pf-c.browser.test.mjs']);
+  const marked = markers().filter((m) => /^browser\/consortium-pf-[abc]\./.test(m.file));
+  for (const file of PF_FILES) {
+    const stream = `pf-${file.match(/^consortium-pf-([abc])\./)[1]}`;
+    const text = read(file);
+    assert.ok(owners.chunks.some((c) => c.streams[stream]?.files.some((p) => matches(p, `scripts/browser/${file}`))), `the owners file gives ${file} to ${stream}`);
+    const tests = testsOf(text);
+    assert.ok(tests.length >= 5, `${file} has its board cases`);
+    for (const { title, marked: isMarked } of tests) {
+      const owner = title.match(/^(?:PF[ABC]\d+[a-z]?|F1a-[A-Z]\d+ → PP-C) \((pf-[abc])\b/)?.[1];
+      assert.equal(owner, stream, `${file}: "${title}" names ${stream}: PF<X><n> (${stream} …)`);
+      if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
+    }
+    const head = text.slice(0, text.search(/^import /m));
+    assert.match(head, /carries /, `${file}: the ledger of the old tests it carries is in its head`);
   }
 });

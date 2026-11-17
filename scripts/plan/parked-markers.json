@@ -32,8 +32,10 @@
       "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
       "line": 55,
       "title": "F1a-P2 (pal1 return visit, A7): a saved consortium reopens on Palette with a Head placeholder while it restores; the Start form never shows",
-      "owner": "b2",
-      "to": "scripts/browser/consortium-pp-b2.browser.test.mjs"
+      "owner": "pf-c",
+      "to": "scripts/browser/consortium-pf-c.browser.test.mjs",
+      "push": "PP-C",
+      "note": "pf commit 0 (2026-11-17): moved on from consortium-pp-b2 to the pf-c spec, rewritten to the Arrivals board (\"Opening your palette…\")."
     },
     {
       "id": "F1a-P4",
@@ -290,7 +292,7 @@
       "push": "PP-B",
       "owner": "b2",
       "rewrite": "after \"Start from a small suggested palette\", Next step names one hole and opens Add preset to it through store.openSheet('add', null, {job, cell}); no hole a suggestion filled is the Next step",
-      "to": "scripts/browser/consortium-pp-b2.browser.test.mjs",
+      "to": "scripts/browser/consortium-pf-a.browser.test.mjs",
       "evidence": "F1a-P1 restored"
     },
     {
@@ -312,7 +314,7 @@
       "push": "PP-B",
       "owner": "b2",
       "rewrite": "header steps, Next step, Add, focus back on Next step; covers hole buttons and the changeSummary announcements",
-      "to": "scripts/browser/consortium-pp-b2.browser.test.mjs",
+      "to": "scripts/browser/consortium-pf-a.browser.test.mjs",
       "evidence": "F1a-P8 restored"
     },
     {
@@ -323,7 +325,7 @@
       "push": "PP-B",
       "owner": "b1a",
       "rewrite": "restored on Place (the palette page's regions are in A2)",
-      "to": "scripts/browser/consortium-pp-b1.browser.test.mjs",
+      "to": "scripts/browser/consortium-pf-c.browser.test.mjs",
       "evidence": "F1a-P9 restored"
     },
     {
@@ -367,7 +369,7 @@
       "push": "PP-B",
       "owner": "b3",
       "rewrite": "rewritten as the one scenario of \"things to weigh\"",
-      "to": "scripts/browser/consortium-pp-b3.browser.test.mjs",
+      "to": "scripts/browser/consortium-pf-b.browser.test.mjs",
       "evidence": "F1a-B6 restored"
     }
   ]

@@ -4,7 +4,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
-import { aria, axNodes, countAx, layoutVariants, behaviour, en, findAx, fixtureDb, has } from './helpers.mjs';
+import { aria, axNodes, layoutVariants, behaviour, en, findAx, fixtureDb, has } from './helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { CANOPI_FILE_SCHEMA, CURRENT_CANOPI_FILE_VERSION } from '../vendor/canopi-design-format/canopi-design-format.ts';
@@ -24,7 +24,6 @@ async function suggest(page, climate = 'Temperate') {
   await page.locator(aria('button', SUGGEST)).click();
   assert.ok(await has(page, aria('button', 'Share'), 8000), 'the result and its actions');
 }
-const memberNames = async (page) => (await axNodes(page)).filter((n) => n.role === 'button' && / · /.test(n.name ?? '')).map((n) => n.name).sort();
 // The share link; with `place`, "Include my place" ticked first (PP-B b1a: off by default).
 const shareLink = async (page, { place = false } = {}) => {
   // Open the Share panel (closed first if open, so the field is read fresh).
@@ -44,8 +43,6 @@ const hashOf = (url) => new URL(url).hash;
 const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
 const countryText = (page) => page.$eval('[data-ct="country"]', (el) => el.textContent);
 const fixtureTemperate = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
-// A phase column's header begins with its plain words (Years 1–3).
-const PHASE_WORDS = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'].map((p) => en[`consortium.phase.${p}.plain`]);
 const UNSURE_SPOT = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 // A #v=5 link of the first five fixture Temperate plants that brings a place: a country and a sun
 // answer (the stage and Keep went in PP-B commit 0a').
@@ -53,37 +50,6 @@ const stageLink = async () => {
   const ids = await fixtureTemperate();
   return encodeLink({ climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: { ...UNSURE_SPOT, light: 'sun' }, soil: null, members: ids.slice(0, 5), removed: [], guests: [] }, { Temperate: ids }, { place: true });
 };
-
-test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, Subtropical asks', async (t) => {
-  await layoutVariants(t, async (v) => {
-    const page = await h.open('/palette/', v);
-    // Place first (owner drop 10): the cards one link away.
-    assert.ok(await has(page, '[data-place-climates]', 8000), 'the climate cards, one link away');
-    await openCards(page);
-    assert.ok(await has(page, aria('radio', 'Temperate'), 8000), 'the climate cards');
-    const radios = (await axNodes(page)).filter((n) => n.role === 'radio');
-    assert.ok(radios.length >= 7, 'every climate is a choice');
-    assert.ok(radios.every((r) => !r.checked), 'nothing chosen at start');
-    const [country, card] = await page.evaluate(() => {
-      const top = (el) => el?.getBoundingClientRect().top ?? NaN;
-      return [top(document.querySelector('[data-ct="country"]')), top(document.querySelector('[role="radio"], input[type="radio"]'))];
-    });
-    assert.ok(country < card, 'the country line sits above the cards');
-    await page.locator(aria('radio', 'Temperate')).click();
-    // (The crop examples went with the Main crops picker in PP-B commit 0a'.)
-    assert.equal(await loadState(page), 'ready');
-    const borrowed = await h.open('/palette/', v);
-    await openCards(borrowed);
-    await borrowed.locator(aria('radio', 'Subtropical')).click();
-    // P5 owner answer 1: an uncovered climate borrows the nearest curated lists (S5c), once a location
-    // filters them (UX audit fix 1); without one, Subtropical says it needs the site's location, no
-    // palette. (Subtropical, not Arid: Arid has its own curated list since r-b7fb536f9cfd0700, D9a.)
-    assert.ok(await has(borrowed, '[data-needs-site]'), 'Subtropical needs the site\'s location to pick plants');
-    assert.equal(await borrowed.$('.ct-cta'), null, 'no Suggest from an unfiltered borrowed list');
-    assert.equal(await borrowed.$eval('[data-needs-site] a[href]', (a) => a.textContent.trim()).catch(() => null), 'Ask for this climate', 'P2\'s ask link stays (owner answer 1)');
-    await done(page, borrowed);
-  });
-});
 
 test('BT-7 (S4 share): a copied link opened as a new document restores the same palette; an unknown token and an old beta link (read as unreadable) give their notices; a reload restores the last palette', async (t) => {
   await behaviour(t, async (v) => {

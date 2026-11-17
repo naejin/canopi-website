@@ -148,7 +148,8 @@ test('parked markers: none parked or deleted is left in the tree; each moved one
     // it pass, so it is a plain test with the same title in the same file.
     // PP-C commit 0 widened the check to the push each entry names (no push: PP-B, which moved first).
     const head = `${m.id} → ${m.push ?? 'PP-B'} (${m.owner} `;
-    assert.match(`${m.push ?? 'PP-B'} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2))$/, m.id);
+    // pf commit 0 (2026-11-17): F1a-P2 moved on to its pf stream's spec (consortium-pf-c).
+    assert.match(`${m.push ?? 'PP-B'} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2|pf-[abc]))$/, m.id);
     const now = live.find((x) => x.title.startsWith(head) && `scripts/${x.file}` === m.to);
     const passing = !now && readFileSync(new URL(`../${m.to}`, import.meta.url), 'utf8').includes(head);
     assert.ok((now && `scripts/${now.file}` === m.to && now.owner === m.owner) || passing, `${m.id} moved to ${m.to} under ${m.owner}`);

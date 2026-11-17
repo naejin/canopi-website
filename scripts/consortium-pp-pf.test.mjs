@@ -11,8 +11,10 @@
 //                     only non-counting plants is the hole, and their bands are marked, mark.marked
 //                     'outside'); fillerReason(t, verdict, warned) -> Line | null: the warning
 //                     that put a filler under "Needs a second look" (the same source as fillers());
-//   verdict-line.ts   holeLine(h) one statement with the light level or job ("Nobody in full sun in the
-//                     first 3 years"); spreadsLine(t) -> Line | null from weed_potential; roomNote body;
+//   verdict-line.ts   holeLine(h) one statement, the light level or job first (owner pf Q1, one form
+//                     everywhere: "Full sun: nobody in the first 3 years"); spreadsLine(t) -> Line | null
+//                     from weed_potential; roomNote body (the Balcony board's "Grows to 12 m: keep it
+//                     pruned, or pick a smaller plant");
 //   change-summary.ts removedSummary(before, after) -> Line[] ("Its holes are open again.");
 //                     addedSummary(before, after | null) -> Line[]: the holes an added plant filled,
 //                     and nothing claimed while the result is not known (after null).
@@ -38,7 +40,7 @@ const say = (l) => {
 const id = (n) => `00000000-afaf-4000-8000-${String(n).padStart(12, '0')}`;
 const V = (pid, level) => [pid, { id: pid, judged: '1991-2020', ownYears: false, level, limiting: null, factors: [], notes: [] }];
 
-failing('PP-C-u16 (pf picture 3.7): a member outside its range is drawn as a marked band, and the hole cells count members only, so the chart and the hole line agree', { owner: 'pf', reason: /holes\.ts exports no counts predicate/ }, () => {
+failing('PP-C-u16 (pf-a picture 3.7): a member outside its range is drawn as a marked band, and the hole cells count members only, so the chart and the hole line agree', { owner: 'pf-a', reason: /holes\.ts exports no counts predicate/ }, () => {
   assert.equal(typeof holesMod.counts, 'function', 'holes.ts exports no counts predicate');
   const inRange = taxon({ id: id(1) }), outside = taxon({ id: id(2) });
   const verdicts = new Map([V(id(1), 'fits'), V(id(2), 'outside')]);
@@ -63,24 +65,24 @@ failing('PP-C-u16 (pf picture 3.7): a member outside its range is drawn as a mar
   sameCells(pic, tableOf(pic));
 });
 
-failing('PP-C-u17 (pf filler reason 3.8): a toxic but fitting filler under "Needs a second look" states the warning that put it there', { owner: 'pf', reason: /fillerReason is not a function/ }, () => {
+failing('PP-C-u17 (pf-a filler reason 3.8): a toxic but fitting filler under "Needs a second look" states the warning that put it there', { owner: 'pf-a', reason: /fillerReason is not a function/ }, () => {
   const toxic = taxon({ id: id(3), warnings: { toxicity: { level: 'Severe', sources: ['pfaf'] }, invasive_in: [], allelopathic: null, weed_potential: null } });
   const why = say(holesMod.fillerReason(toxic, V(id(3), 'fits')[1], new Set([id(3)])));
   assert.match(why ?? '', /toxic/i, `the warning in words ("${why}")`);
 });
 
-failing('PP-C-u18 (pf hole titles U5): a hole title is one statement ("Nobody in full sun in the first 3 years")', { owner: 'pf', reason: /U5: one statement/ }, () => {
+failing('PP-C-u18 (pf-a hole titles U5, owner Q1 one form): a hole title is one statement, the light level first ("Full sun: nobody in the first 3 years")', { owner: 'pf-a', reason: /U5: one statement/ }, () => {
   const h = { id: 'light:emergent:0-3', kind: 'light', rank: 2, stratum: 'emergent', fromYear: 0, toYear: 3, state: 'open' };
-  assert.equal(say(line.holeLine(h)), 'Nobody in full sun in the first 3 years', 'U5: one statement');
+  assert.equal(say(line.holeLine(h)), 'Full sun: nobody in the first 3 years', 'U5: one statement');
 });
 
-failing('PP-C-u19 (pf spreads U2): a filler with a weed potential carries a "spreads" line', { owner: 'pf', reason: /spreadsLine is not a function/ }, () => {
+failing('PP-C-u19 (pf-a spreads U2): a filler with a weed potential carries a "spreads" line', { owner: 'pf-a', reason: /spreadsLine is not a function/ }, () => {
   const weedy = taxon({ id: id(4), warnings: { toxicity: null, invasive_in: [], allelopathic: null, weed_potential: true } });
   assert.match(say(line.spreadsLine(weedy)) ?? '', /spread/i);
   assert.equal(line.spreadsLine(taxon({ id: id(5) })), null);
 });
 
-failing('PP-C-u20 (pf toasts #24): a removal says what it opened again through change-summary ("Its holes are open again."); an addition says the result when known', { owner: 'pf', reason: /removedSummary is not a function/ }, () => {
+failing('PP-C-u20 (pf-a toasts #24): a removal says what it opened again through change-summary ("Its holes are open again."); an addition says the result when known', { owner: 'pf-a', reason: /removedSummary is not a function/ }, () => {
   const pic = (holes) => ({ title: 't', summary: [], columns: [], rows: [{ key: 'r', head: { key: 'h', vars: {} }, state: 'data', marks: [], cells: holes.map((hole) => ({ ids: [], hidden: [], hole, judged: true })) }], names: {}, jobs: {} });
   const lines = summary.removedSummary(pic([null]), pic(['light:emergent:0-3']));
   assert.ok(lines.some((l) => say(l) === 'Its holes are open again.'), lines.map(say).join(' | '));
@@ -90,8 +92,8 @@ failing('PP-C-u20 (pf toasts #24): a removal says what it opened again through c
   assert.deepEqual(summary.addedSummary(pic(['light:emergent:0-3']), null), [], 'the result not known: nothing claimed');
 });
 
-failing('PP-C-u21 (pf room note #5): the room note is in the fit line: "taller than your room" in pots, nothing when the height is unknown', { owner: 'pf', reason: /roomNote\(.*\): not written yet \(PP-C pf\)/ }, () => {
-  assert.match(say(line.roomNote(20, 'pots')) ?? '', /taller than your room/);
+failing('PP-C-u21 (pf-a room note #5, Balcony board): a plant taller than the room carries "Grows to 20 m: keep it pruned, or pick a smaller plant" in pots, nothing when the height is unknown', { owner: 'pf-a', reason: /roomNote\(.*\): not written yet \(PP-C pf\)/ }, () => {
+  assert.equal(say(line.roomNote(20, 'pots')), 'Grows to 20 m: keep it pruned, or pick a smaller plant');
   assert.equal(line.roomNote(null, 'pots'), null);
   assert.equal(line.roomNote(2, 'field'), null);
 });

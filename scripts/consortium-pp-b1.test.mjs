@@ -1100,8 +1100,7 @@ test('fix round 4 s-2: NextStep\'s Suggest on an empty held palette (a guide pre
   draft.showPalette();
   await wait(0);
   assert.deepEqual(store.members.peek(), []);
-  // NextStep's button: the one press every Suggest goes through.
-  assert.match(readFileSync(new URL('../src/islands/consortium/views/palette/NextStep.tsx', import.meta.url), 'utf8'), /onClick=\{\(\) => requestSuggest\(\)\}/);
+  // Every Suggest press goes through requestSuggest (the source read of PP-B's NextStep went in pf commit 0).
   waitM.requestSuggest();
   await wait(0);
   assert.ok(store.members.peek().length, 'no suggestion placed');

@@ -710,30 +710,6 @@ test('climateShown agrees with the views\' own shown climate in every case (Star
   }
 });
 
-test('location.tsx\'s "Use {climate}" button is not climateShown: it shows for a proposal under a chosen climate (kept as is)', async () => {
-  // The button's own condition, read from location.tsx and evaluated over the real signals, so a
-  // change to that line (to climateShown, say) is what this test sees.
-  const src = readFileSync(new URL('../src/islands/consortium/views/location/location.tsx', import.meta.url), 'utf8');
-  assert.match(src, /const proposed = store\.proposedClimate\.value;/, 'LocationResult\'s proposed is the location\'s proposal');
-  const cond = src.match(/\{!compact && ([^\n]+?) && \(\s*<p><button[^\n]*data-location-confirm/)?.[1];
-  assert.ok(cond, 'the "Use {climate}" button\'s condition is found in location.tsx');
-  const store = await import('../src/islands/consortium/store.ts');
-  const button = () => new Function('proposed', 'store', 'pendingClimate', 'climateShown', `return !!(${cond});`)(store.proposedClimate.value, store, persist.pendingClimate, persist.climateShown);
-  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek(), inFlight: persist.inFlight.peek() };
-  try {
-    // A reader who chose Temperate, then "Use my location" in Seville: locate() proposes Mediterranean.
-    store.climate.value = 'Temperate'; persist.inFlight.value = null; store.proposedClimate.value = 'Mediterranean';
-    assert.equal(button(), true, 'the result line offers "Use Mediterranean"');
-    assert.equal(persist.climateShown.value.proposed, false, 'climateShown shows the chosen Temperate, no proposal: reading it here would hide the button');
-    store.proposedClimate.value = 'Temperate';
-    assert.equal(button(), false, 'no "Use Temperate" over Temperate chosen');
-    store.climate.value = null; persist.inFlight.value = { id: 1, climate: 'Tropical', from: 'link' }; store.proposedClimate.value = 'Mediterranean';
-    assert.equal(button(), false, 'none over a link\'s climate still opening');
-  } finally {
-    store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
-  }
-});
-
 // E6 hand-off F: the waiting Suggest has one owner (state/suggest-wait.ts). A view that must end it
 // (PoolSlot: nothing fits, a blocked climate, another climate chosen) calls dropSuggest, which also
 // clears the wait's timer and its "waited" mark; nothing else writes pendingSuggest.

@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { aria, en, h, has, layoutVariants, realDb, suggestReady, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
-import { liveLog, resetLive, saidTwice, suggestedAt, watchLiveRegions } from './f1a-helpers.mjs';
+import { liveLog, resetLive, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { showPalette } from './seams-helpers.mjs';
 
@@ -92,25 +92,6 @@ test('F1a-S1 → PP-B (b2 wasm preload, A24): the sqlite wasm is preloaded with 
   assert.ok(loader && wasm[0].at <= loader.at, 'the wasm is asked for before the loader chunk');
 });
 
-test('F1a-P2 → PP-B (b2 return visit, A7): a saved palette reopens on the palette page with its placeholder while it restores; the Place form never shows', async () => {
-  const save = JSON.stringify({ fragment: (await temperateLink()).slice(1), at: '2026-11-13T00:00:00.000Z', src: null });
-  const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((s) => {
-    if (!localStorage.getItem('canopi-consortium')) localStorage.setItem('canopi-consortium', s);
-    window.__seen = { start: false, placeholder: false };
-    new MutationObserver(() => {
-      if (document.querySelector('#ct-root input[name="ct-climate"]')) window.__seen.start = true;
-      if (document.querySelector('[data-palette-placeholder]')) window.__seen.placeholder = true;
-    }).observe(document, { subtree: true, childList: true, attributes: true });
-  }, save) });
-  assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.members.value.length === 5, { timeout: 20_000 }).then(() => true, () => false), 'the saved members restored');
-  const seen = await page.evaluate(() => window.__seen);
-  assert.equal(seen.start, false, 'return visit: the Start form showed while restoring');
-  assert.equal(seen.placeholder, true, 'return visit: no palette placeholder while restoring');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.step.value), 'palette', 'return visit: opens the palette page');
-  assert.ok(await has(page, '.ct-palette-page h2[data-view-heading]', 8000), 'the palette page shows');
-  await done(page);
-});
-
 // Moved unchanged from consortium-s4 in PP-B commit 0a' (plant-palette-slices 1b), so b1a never edits a
 // print case; b2 rewrites "printed above the drawing" for the year step of Through the years (PP-B18).
 test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 plants print the side view drawing', async (t) => {
@@ -148,17 +129,6 @@ test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 pl
 const PAGE = '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]';
 const onPage = (page, timeout = 15_000) => has(page, PAGE, timeout);
 const plural = (v, n) => { const m = /other:\s*([^|]*)/.exec(v); return (m ? m[1] : v).replace('#', String(n)).trim(); };
-const nextHole = (page) => page.$eval('.ct-next', (e) => e.dataset.hole ?? null).catch(() => null);
-// Whatever passes the right edge (or makes the page wider than the window), in words.
-const pastEdge = (page) => page.evaluate(() => {
-  const vw = document.documentElement.clientWidth, out = [];
-  for (const el of document.querySelectorAll('#ct-root button, #ct-root a, #ct-root input, #ct-root select, #ct-root [data-plant-id], #ct-root h2, #ct-root h3, #ct-root td, #ct-root th, dialog[open] button')) {
-    const r = el.getBoundingClientRect();
-    if (r.width && r.right > vw + 0.5) out.push(`${el.tagName.toLowerCase()}.${el.className} "${el.textContent.trim().slice(0, 30)}" ends at ${Math.round(r.right)} of ${vw}`);
-  }
-  if (document.documentElement.scrollWidth > vw) out.push(`page ${document.documentElement.scrollWidth} px wide at ${vw}`);
-  return out;
-});
 // Three Temperate plants of the real export (the paste a grower makes with their own list).
 const own = (n = 3) => realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT ?").all(n).map((r) => String(r.id)));
 // The reader's own plants added on Place, then "Show my palette": the palette page.
@@ -166,14 +136,6 @@ const ownPalette = async (page, n) => {
   await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(n));
   await showPalette(page);
   assert.ok(await onPage(page), 'the palette page');
-};
-// The reader's own n plants on the palette page, at Lyon (Temperate); options go to tool().
-const lyonPalette = async (n, options) => {
-  const page = await tool(options);
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await ownPalette(page, n);
-  return page;
 };
 // Two own plants on the palette page with its Next step's fillers, toasts lasting 0.3 s, none showing.
 const fillersPalette = async () => {
@@ -233,127 +195,6 @@ test('PP-B30 (b2 link arrival, review r1 perf-3): the palette page\'s chunk and 
   await done(page);
 });
 
-// See all opens Find (store.openFind with the hole). The title in the hole's words is c1's PP-C7
-// (FillHole), so this case stops at the preset (review c0 4.4: one test per behaviour).
-test('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palette page shows the Next step and both pictures, and a hole\'s See all opens Find preset to it', async () => {
-  const page = await suggestedAt('lyon', 'Temperate');
-  assert.ok(await onPage(page), 'Suggest opens the palette page');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.step.value), 'palette');
-  assert.ok(await has(page, '.ct-next h3', 8000), 'the Next step');
-  assert.equal(await page.$$eval('.ct-chart', (els) => els.length), 2, 'Through the years and the jobs');
-  assert.ok(await has(page, '.ct-chart [data-plant-id]', 4000), 'the members in the pictures');
-  await page.click('.ct-next-actions .button');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'find', { timeout: 10_000 }).then(() => true, () => false), 'the Next step\'s See all opens Find');
-  assert.ok(await page.evaluate(() => { const c = window.__ctTest.store.sheetTarget.value; return !!(c.hole && c.fits); }), 'Find opens preset to the hole');
-  await done(page);
-});
-
-test('PP-B28 (b2 keyboard journey, F1a-P8 restored, A25): with the keyboard only, the Next step\'s "See all" opens Find and closing it returns the focus to the button', async () => {
-  const page = await tool();
-  await choose(page, 'Temperate');
-  await ownPalette(page, 2);
-  assert.ok(await has(page, '.ct-next-actions .button', 8000), 'the Next step has See all');
-  await page.focus('.ct-next-actions .button');
-  await page.keyboard.press('Enter');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'find', { timeout: 10_000 }).then(() => true, () => false), 'Find opens');
-  await page.keyboard.press('Escape');
-  assert.ok(await page.waitForFunction(() => document.activeElement?.matches('.ct-next-actions .button'), { timeout: 4000 }).then(() => true, () => false), 'closing Find returns the focus to "See all"');
-  assert.equal(await page.$('dialog[open]'), null, 'no dialog left open');
-  await done(page);
-});
-
-test('PP-B6 (b2 Lyon, own plants): three plants pasted; the Next step names the first hole in words and years, and filling it moves the Next step on', async () => {
-  const page = await tool();
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await ownPalette(page, 3);
-  await page.waitForFunction(() => document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
-  const first = await nextHole(page);
-  const words = await page.$eval('.ct-next-hole', (e) => e.textContent.trim());
-  assert.match(words, /year|month|any time/i, `the hole in words and years ("${words}")`);
-  assert.doesNotMatch(words, /feeds_|job:|light:|\d-\d/, 'never the hole id');
-  assert.ok(await has(page, '.ct-fillers li', 4000), 'with the plants that fill it');
-  await page.click('.ct-fillers li .button-primary');
-  assert.ok(await page.waitForFunction((f) => (document.querySelector('.ct-next')?.dataset.hole ?? null) !== f, { timeout: 8000 }, first).then(() => true, () => false), 'filling it moves the Next step to another hole');
-  await done(page);
-});
-
-test('PP-B7 (b2 phone 390 px): Through the years shows one time step at a time, with Earlier and Later', async () => {
-  const page = await tool({ width: 390, hash: await temperateLink() });
-  assert.ok(await onPage(page), 'the palette page');
-  assert.ok(await has(page, '.ct-years .ct-stepper', 8000), 'the stepper on a phone');
-  const cols = () => page.$eval('.ct-years .ct-chart-columns', (e) => e.children.length).catch(() => null);
-  assert.equal(await cols(), 1, 'one time step');
-  const at = () => page.$eval('.ct-stepper-at', (e) => e.textContent.trim());
-  const before = await at();
-  await page.click(`.ct-stepper ${aria('button', en['consortium.palette.later'])}`);
-  await page.waitForFunction((b) => document.querySelector('.ct-stepper-at')?.textContent.trim() !== b, { timeout: 4000 }, before);
-  assert.notEqual(await at(), before, 'Later moves to the next time step');
-  assert.equal(await cols(), 1, 'still one time step');
-  // Review r1 bugs-14: every tap target of the page is at least 44 px high on a phone.
-  const small = await page.$$eval('.ct-palette-page .ct-chip, .ct-palette-page .ct-hole-button, .ct-palette-page .ct-step, .ct-palette-page .ct-other-holes summary', (els) => els.filter((e) => e.getBoundingClientRect().height && e.getBoundingClientRect().height < 44).map((e) => `${e.className} ${Math.round(e.getBoundingClientRect().height)} px`));
-  assert.deepEqual(small, [], 'tap targets of 44 px');
-  // Review r1 bugs-7: with the keyboard, Later to the last time step keeps the focus on the stepper.
-  await page.focus(`.ct-stepper ${aria('button', en['consortium.palette.later'])}`);
-  for (let i = 0; i < 8; i++) await page.keyboard.press('Enter');
-  await frames(page);
-  assert.ok(await page.evaluate(() => !!document.activeElement?.closest('.ct-stepper')), 'the focus stays on the stepper at the last time step');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.yearStep.value), 6, 'the last time step');
-  await done(page);
-});
-
-test('PP-B8 (b2 tables): "Show as a table" gives each picture\'s plants, holes and time steps as a table with headers', async () => {
-  const page = await tool({ hash: await temperateLink() });
-  assert.ok(await onPage(page), 'the palette page');
-  await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
-  const charts = await page.$$('.ct-chart');
-  assert.equal(charts.length, 2);
-  for (let i = 0; i < charts.length; i++) {
-    const names = await page.evaluate((n) => [...document.querySelectorAll('.ct-chart')[n].querySelectorAll('[data-plant-id]')].map((b) => b.textContent.trim()), i);
-    await page.evaluate((n) => document.querySelectorAll('.ct-chart')[n].querySelector('.ct-chart-toggle').click(), i);
-    const t = await page.evaluate((n) => {
-      const tb = document.querySelectorAll('.ct-chart')[n].querySelector('table');
-      return tb && { caption: tb.caption?.textContent.trim(), cols: tb.querySelectorAll('th[scope="col"]').length, rows: tb.querySelectorAll('th[scope="row"]').length, text: tb.textContent, pressed: document.querySelectorAll('.ct-chart')[n].querySelector('.ct-chart-toggle').getAttribute('aria-pressed') };
-    }, i);
-    assert.ok(t, `picture ${i}: a table`);
-    assert.equal(t.pressed, 'true');
-    assert.ok(t.caption, 'named by its summary');
-    assert.ok(t.cols >= 6 && t.rows >= 1, `column and row headers (${t.cols} × ${t.rows})`);
-    for (const n of names) assert.ok(t.text.includes(n), `picture ${i}: ${n} in the table`);
-  }
-  await done(page);
-});
-
-test('PP-B15 (b2 slow database): the database still coming after the threshold says "Still loading", then the tool', async () => {
-  const page = await h.open('/palette/', { hook: true, mapTiles: 'stub', database: 'hold', timeouts: { slow: 400 } });
-  const slow = plural(en['consortium.load.slow'], 0);
-  assert.ok(await page.waitForFunction((t) => document.querySelector('#ct-root')?.textContent.includes(t), { timeout: 8000 }, slow).then(() => true, () => false), '"Still loading"');
-  // Review r1 bugs-12: the line is a status region on the page from the start, so the change is announced.
-  assert.ok(await page.evaluate((t) => [...document.querySelectorAll('#ct-root [role="status"]')].some((e) => e.textContent.includes(t)), slow), '"Still loading" said in a status region');
-  await page.releaseHeld();
-  assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.load.value.status === 'ready', { timeout: 20_000 }).then(() => true, () => false), 'then the tool');
-  assert.equal(await page.evaluate((t) => document.querySelector('#ct-root').textContent.includes(t), slow), false, 'the line goes');
-  await done(page);
-});
-
-test('PP-B16 (b2 offline): the offline line shows, added plants stay, and a chunk that cannot come says "Needs a connection" and loads once back online', async () => {
-  const page = await tool();
-  await choose(page, 'Temperate');
-  // The browser offline (navigator.onLine false, its events, every request failing), then back.
-  const net = (on) => page.setOfflineMode(!on);
-  await net(false);
-  assert.ok(await page.waitForFunction((t) => document.querySelector('.ct-offline')?.textContent.includes(t), { timeout: 4000 }, en['consortium.load.offline']).then(() => true, () => false), 'the offline line');
-  const ids = await own(3);
-  await page.evaluate((x) => window.__ctTest.store.addMembers(x), ids);
-  await showPalette(page);
-  assert.ok(await page.waitForFunction((t) => document.querySelector('#ct-root')?.textContent.includes(t), { timeout: 8000 }, en['consortium.load.needsConnection']).then(() => true, () => false), '"Needs a connection" where the palette page goes');
-  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.members.value), ids, 'the added plants stay');
-  await net(true);
-  assert.ok(await onPage(page, 10_000), 'back online, the palette page loads by itself');
-  assert.equal(await page.$eval('.ct-offline', (e) => e.textContent.trim()), '', 'the offline line goes');
-  await done(page);
-});
-
 // PP-B exit (2026-11-16, flake PP-B16): the connection back in the very moment "Needs a connection"
 // shows, before the line's effects ran (views/lazy.tsx LoadFailed), still retries the part. The
 // browser's onLine and its events are the page's own here (no CDP round trip), flipped by a
@@ -406,182 +247,6 @@ test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus 
   // title, which the toast hands it back to (review r1 conformance-3).
   const at = await page.evaluate(() => { const a = document.activeElement, r = document.querySelector('[data-raiser]'); return { raiser: !!r && a === r, next: a?.id === 'ct-next-t', connected: !!r }; });
   assert.ok(at.connected ? at.raiser : at.next, `the focus returns to the control that raised it (or the Next step's title once it is gone): ${JSON.stringify(at)}`);
-  await done(page);
-});
-
-test('PP-B20 (b2 verdict chunk refused; review r1 bugs-5): fit lines say "Not checked", never "Fits", the holes say they were computed without it, Retry fetches it again in place, and offline it waits for the connection', async () => {
-  const log = [];
-  const page = await lyonPalette(2, { block: { verdict: 404 }, setup: logRequests(log) });
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
-  assert.ok(await has(page, '.ct-notice[role="alert"]', 4000), 'said once');
-  assert.ok((await page.$eval('.ct-palette-page', (e) => e.textContent)).includes(en['consortium.palette.verdictFailed']), 'the holes computed without verdicts, in words');
-  const fits = await page.$$eval('.ct-fit', (els) => els.map((e) => e.dataset.level));
-  assert.ok(fits.every((l) => l === 'unknown'), `every fit line "Not checked" (${fits.join(', ')})`);
-  const members = await page.evaluate(() => window.__ctTest.store.members.value.length);
-  // The harness refuses the file for the page's life: the press fetches it under a fresh URL, in place.
-  await page.click(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`);
-  assert.ok(await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => /verdict\.[\w-]+\.js\?retry=\d/.test(e.name)), { timeout: 8000 }).then(() => true, () => false) || log.some((r) => /verdict\.[\w-]+\.js\?retry=\d/.test(r.url)), 'the press fetched the verdict chunk again (?retry=n)');
-  assert.ok(await has(page, `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`, 8000), 'still refused: said again, with Retry');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), members, 'no page reload: the plants are still there');
-  // Offline: no Reload that would lose the page; it says it needs a connection.
-  await page.setOfflineMode(true);
-  assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-palette-page .ct-notice')].some((n) => n.textContent.includes(t)), { timeout: 4000 }, en['consortium.load.needsConnection']).then(() => true, () => false), 'offline: "Needs a connection"');
-  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`), null, 'offline: no Reload');
-  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`), null, 'offline: no Retry either');
-  await page.setOfflineMode(false);
-  await done(page);
-});
-
-// Pre-push fix 4: the verdict chunk statically imports the range rule's chunk, and Chromium keeps a
-// failed import for the page's life, so once the range chunk failed no retry of the verdict chunk can
-// work. Back online, the page offers Reload, never a Try again that cannot work, and asks for nothing.
-// PP-B49 retargeted (fix round 1, A14; coordinator 2026-11-17): stream c2 folds the range and mark
-// roles into the verdict chunk, so the case blocks the verdict chunk alone. The failure rule then: a
-// verdict file that did not arrive is asked again in place (Try again, and the browser back online),
-// never a Reload; Reload stays for a verdict file that arrived but whose import failed (not reachable
-// through the harness's block kinds, so not asserted here).
-test('PP-B49 (b2 verdict chunk refused offline; pre-push fix 4, retargeted to the verdict role): back online, the verdict chunk is asked again in place and the notice offers Try again, never a Reload', async () => {
-  const log = [];
-  const page = await lyonPalette(2, { block: { verdict: 'offline' }, setup: logRequests(log) });
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
-  await page.setOfflineMode(true);
-  assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-palette-page .ct-notice')].some((n) => n.textContent.includes(t)), { timeout: 4000 }, en['consortium.load.needsConnection']).then(() => true, () => false), 'offline: "Needs a connection"');
-  const before = log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length;
-  await page.setOfflineMode(false);
-  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`), null, 'no Reload for a file that never arrived');
-  // Back online the chunk is asked again in place: the online event asks for it (still refused here, so
-  // the notice then offers Try again, never Reload).
-  assert.ok(await has(page, `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`, 6000), 'back online: Try again');
-  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`), null, 'still no Reload');
-  assert.ok(log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length > before, 'the verdict chunk is asked again');
-  await done(page);
-});
-
-// Pre-push fix 6 (keyboard focus, D): the verdict notice's Retry leaves with its notice while the chunk
-// is asked again; the focus lands on a surviving element of the tool, never <body>.
-test('PP-B50 (b2 focus, D): pressing the verdict notice\'s Retry never leaves the focus on <body>', async () => {
-  const page = await tool({ block: { verdict: 404 } });
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await ownPalette(page, 2);
-  const retry = `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`;
-  assert.ok(await has(page, retry, 10_000), 'the notice with Retry');
-  await page.focus(retry);
-  await page.keyboard.press('Enter');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 8000 }).then(() => true, () => false), 'refused again');
-  await frames(page);
-  const at = await page.evaluate(() => { const a = document.activeElement; return { body: !a || a === document.body, inRoot: !!a?.closest('#ct-root'), tag: a?.tagName ?? null }; });
-  await done(page);
-  assert.ok(!at.body && at.inRoot, `the focus stays in the tool (${JSON.stringify(at)})`);
-});
-
-test('PP-B21 (b2 a guest list fails): the list is named as missing and its plants are not checked; the tool stays', async () => {
-  const page = await tool();
-  await choose(page, 'Temperate');
-  const guest = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant NOT IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY 1 LIMIT 1").get()?.id);
-  assert.ok(guest, 'a Mediterranean plant');
-  await page.evaluate((g, ids) => {
-    const { store } = window.__ctTest, src = store.source.value, read = src.pool.bind(src);
-    src.pool = (c) => (c === 'Mediterranean' ? Promise.reject(new Error('test: list unreadable')) : read(c));
-    store.addMembers([...ids, g], { [g]: 'Mediterranean' });
-    store.loadPool('Mediterranean');
-  }, String(guest), await own(2));
-  await showPalette(page);
-  assert.ok(await onPage(page), 'the palette page');
-  const line = en['consortium.palette.listFailed'].split('{lists}')[0].replace(/^(one|other):\s*/, '').trim();
-  assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t) && n.textContent.includes('Mediterranean')), { timeout: 8000 }, line).then(() => true, () => false), 'the Mediterranean list named as missing');
-  // PP-B exit (2026-11-16): {lists} is the climate's own name in every locale's template (zoneName), so
-  // the line never reads "The the Mediterranean list list".
-  const whole = en['consortium.palette.listFailed'].split('|')[0].replace(/^one:\s*/, '').trim().replace('{lists}', 'Mediterranean').replace('#', '1');
-  assert.ok(await page.evaluate((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t)), whole), `the line reads "${whole}"`);
-  assert.equal(await page.evaluate(() => window.__ctTest.store.load.value.status), 'ready', 'the tool stays');
-  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.guestsPending.value), [], 'not "loading" for ever');
-  // Review r1 bugs-8: a hole its missing plants may fill is never named: the Next step says why.
-  assert.ok(await page.waitForFunction((t) => document.querySelector('.ct-next')?.textContent.includes(t), { timeout: 4000 }, en['consortium.palette.holesListMissing']).then(() => true, () => false), 'the holes are not computed without the missing plants, said in words');
-  assert.equal(await nextHole(page), null, 'no hole named as the next step');
-  await done(page);
-});
-
-test('PP-B22 (b2 320 px): the palette page, its steps, pictures, tables and a sheet fit 320 px in en, de, ru and ja', async () => {
-  const hash = await temperateLink(null, 8);
-  for (const lang of ['en', 'de', 'ru', 'ja']) {
-    const page = await tool({ lang, width: 320, hash });
-    assert.ok(await onPage(page), `${lang}: the palette page`);
-    await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
-    assert.deepEqual(await pastEdge(page), [], `${lang}: the page`);
-    await page.$$eval('.ct-chart-toggle', (bs) => bs.forEach((b) => b.click()));
-    await page.waitForSelector('.ct-chart-table', { timeout: 4000 });
-    assert.deepEqual(await pastEdge(page), [], `${lang}: the tables`);
-    const see = await page.$('.ct-next-actions .button');
-    if (see) {
-      await see.click();
-      await page.waitForSelector('dialog[open]', { timeout: 10_000 });
-      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {})))); // the sheet slides in
-      await frames(page);
-      assert.deepEqual(await pastEdge(page), [], `${lang}: the Add sheet`);
-    }
-    await done(page);
-  }
-});
-
-test('PP-B24 (b2 palette chunk refused): Place stays usable, the page says it could not load with Reload, and the next press fetches ?retry=n', async () => {
-  const log = [];
-  const page = await tool({ block: { palette: 404 }, setup: async (pg) => { pg.on('request', (r) => log.push({ url: r.url() })); } });
-  await choose(page, 'Temperate');
-  await page.evaluate((ids) => window.__ctTest.store.addMembers(ids), await own(2));
-  await showPalette(page);
-  assert.ok(await page.waitForFunction((t) => document.querySelector('#ct-root')?.textContent.includes(t), { timeout: 8000 }, en['consortium.details.loadFailed']).then(() => true, () => false), '"could not load" where the palette page goes');
-  assert.ok(await has(page, `#ct-root ${aria('button', en['consortium.palette.stepPlace'])}, #ct-root ${aria('button', en['consortium.details.reload'])}`, 2000), 'a control still answers');
-  await page.click(`#ct-root .ct-notice ${aria('button', en['consortium.details.reload'])}`);
-  // The harness refuses the role's file for the page's life, so the retry fails too: the press
-  // fetched it again under a fresh URL, in place, and the failed line came back (no page reload).
-  assert.ok(await page.waitForFunction(() => performance.getEntriesByType('resource').some((e) => /Palette\.[\w-]+\.js\?retry=\d/.test(e.name)), { timeout: 8000 }).then(() => true, () => false) || log.some((r) => /Palette\.[\w-]+\.js\?retry=\d/.test(r.url)), 'the press fetched ?retry=n');
-  assert.ok(await has(page, `#ct-root .ct-notice ${aria('button', en['consortium.details.reload'])}`, 8000), 'the failed line again, with Reload');
-  assert.ok(await page.evaluate(() => window.__ctTest.store.members.value.length === 2), 'no page reload: the plants are still there');
-  await done(page);
-});
-
-const PHASES = ['placenta_i', 'placenta_ii', 'placenta_iii', 'secondary_i', 'secondary_ii', 'secondary_iii', 'climax'];
-test('PP-B18 (b2 print at the year step): print draws the side view at the time step chosen in Through the years, named above it', async () => {
-  const page = await tool({ width: 390, hash: await temperateLink() });
-  assert.ok(await onPage(page), 'the palette page');
-  await page.waitForSelector('.ct-stepper', { timeout: 8000 });
-  const later = `.ct-stepper ${aria('button', en['consortium.palette.later'])}`;
-  await page.click(later);
-  await page.click(later);
-  const step = await page.evaluate(() => window.__ctTest.store.yearStep.value);
-  assert.equal(step, 4, 'two steps later than years 1-3');
-  await h.pdf(page);
-  await page.waitForSelector('.ct-print .ct-print-stage', { timeout: 8000 }).catch(() => {}); // mounted for print (review r1 perf-4)
-  const above = await page.$eval('.ct-print .ct-print-stage', (e) => e.textContent).catch(() => '');
-  assert.ok(above.includes(en[`consortium.phase.${PHASES[step]}.plain`]), `the chosen time step named above the drawing ("${above}")`);
-  assert.ok(await page.$('.ct-print [role="img"]'), 'the drawing');
-  await done(page);
-});
-
-// Owner decision 2026-11-14, "inform, don't block; the grower decides": nothing asks "Add it anyway?".
-test('PP-B25 (b2 inform, don\'t block): an outside-range plant added from a hole in one tap keeps "Outside its climate range" in words on its row, and Undo removes it', async () => {
-  const page = await lyonPalette(1);
-  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
-  await page.evaluate(() => window.__ctTest.store.hideToast());
-  const show = async () => page.evaluateHandle(() => [...document.querySelectorAll('.ct-next .button')].find((b) => /outside/i.test(b.textContent)) ?? null);
-  let button = await show();
-  for (let i = 0; i < 10 && !(await button.jsonValue().catch(() => null)) && await page.$('.ct-next-actions'); i++) {
-    await page.click(`.ct-next-actions ${aria('button', en['consortium.palette.notNow'])}`);
-    await frames(page);
-    button = await show();
-  }
-  assert.ok(await button.evaluate((b) => !!b), 'a hole with plants outside their range behind "Show N outside their climate range"');
-  await button.click();
-  const id = await page.waitForSelector('.ct-next [data-outside] li', { timeout: 4000 }).then((li) => li.evaluate((e) => e.dataset.plantId));
-  assert.match(await page.$eval(`.ct-next [data-outside] li[data-plant-id="${id}"]`, (e) => e.textContent), new RegExp(en['consortium.line.outside']), 'its verdict in words beside Add');
-  await page.click(`.ct-next [data-outside] li[data-plant-id="${id}"] .button-primary`); // one tap
-  assert.equal(await page.$('dialog[open]'), null, 'nothing asks');
-  assert.ok(await page.evaluate((x) => window.__ctTest.store.members.value.includes(x), id), 'added in one tap');
-  const row = await page.waitForSelector(`.ct-years .ct-chip[data-plant-id="${id}"]`, { timeout: 4000 }).then((e) => e.evaluate((b) => b.textContent));
-  assert.match(row, new RegExp(en['consortium.line.outside']), `its row keeps "Outside its climate range" ("${row}")`);
-  await page.click(aria('button', en['consortium.undo']));
-  assert.ok(await page.waitForFunction((x) => !window.__ctTest.store.members.value.includes(x), { timeout: 4000 }, id).then(() => true, () => false), 'Undo removes it');
   await done(page);
 });
 
@@ -696,20 +361,6 @@ test('PP-B41 (b2 review r2 hist-1): plants pasted on Your place, then Undo from 
   await done(page);
 });
 
-test('PP-B33 (b2 keyboard Add from the Next step; review r1 bugs-2, conformance-3, conformance-9): the focus moves to the Next step, never <body>; the toast names the plant and hands the focus back there', async () => {
-  const page = await fillersPalette();
-  const name = await page.$eval('.ct-fillers li .ct-filler-name', (e) => e.firstChild.textContent.trim());
-  await page.focus('.ct-fillers li .button-primary');
-  await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__ctTest.store.toast.value !== null, { timeout: 4000 });
-  await frames(page);
-  assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-next-t', 'the focus on the Next step\'s title');
-  assert.ok((await page.evaluate(() => window.__ctTest.store.toast.value.text)).includes(name), 'the toast names the plant added');
-  await dismissToast(page);
-  assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-next-t', 'the toast hands the focus back to the Next step');
-  await done(page);
-});
-
 // A palette of four Temperate plants at a site, its verdicts in; then each member's Swap opened in
 // turn, yielding the label of its "Show N outside their climate range" ('' when none).
 const swapPage = async (site) => {
@@ -749,87 +400,6 @@ test('PP-B35 (b2 Swap; review r1 bugs-4): alternatives outside their climate ran
   await done(page);
 });
 
-test('PP-B36 (b2 empty palette; review r1 bugs-9, conformance-8): with every plant taken out, the page says it is empty and offers Paste and Suggest, with no picture', async () => {
-  const page = await tool({ hash: await temperateLink() });
-  assert.ok(await onPage(page), 'the palette page');
-  await page.evaluate(() => { const { store } = window.__ctTest; for (const id of store.members.value.slice()) store.removeMember(id); });
-  assert.ok(await page.waitForFunction((t) => document.querySelector('.ct-next')?.textContent.includes(t), { timeout: 4000 }, en['consortium.palette.empty']).then(() => true, () => false), 'says the palette is empty');
-  assert.ok(await has(page, `.ct-next ${aria('button', en['consortium.start.paste'])}`, 1000), 'Paste');
-  assert.ok(await has(page, `.ct-next ${aria('button', en['consortium.start.suggest'])}`, 1000), 'Suggest');
-  assert.equal(await page.$('.ct-chart'), null, 'no picture of nothing');
-  await done(page);
-});
-
-test('PP-B37 (b2 pictures key; review r1 conformance-6): each picture says what colour and icon mean, and each plant names its main job in words', async () => {
-  const page = await tool({ hash: await temperateLink() });
-  assert.ok(await onPage(page), 'the palette page');
-  await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
-  const jobs = ['feeds_you', 'feeds_soil', 'mulch', 'ground', 'helpers', 'shelter'].map((j) => en[`consortium.job.${j}`]).concat(en['consortium.palette.jobsNone']);
-  // Through the years has the key; the jobs picture's lane heads are the jobs, each with its icon and word.
-  for (const key of await page.$$eval('.ct-years .ct-chart', (els) => els.map((e) => e.querySelector('.ct-chart-key')?.textContent ?? ''))) {
-    assert.ok(key.includes(en['consortium.palette.jobKey']), `the key says what colour and icon mean ("${key.slice(0, 60)}")`);
-    assert.ok(jobs.some((j) => key.includes(j)), 'with the jobs in words');
-  }
-  // Its accessible name (one attribute, no extra element per chip: 200-plant scale); Through the years
-  // also shows the job's icon.
-  const chips = await page.$$eval('.ct-chart .ct-chip[data-plant-id]', (els) => els.map((e) => e.getAttribute('aria-label') ?? ''));
-  const bare = chips.filter((c) => !jobs.some((j) => c.includes(j)));
-  assert.deepEqual(bare, [], 'every plant names its main job');
-  assert.ok(await page.$$eval('.ct-years .ct-chip[data-plant-id]', (els) => els.length > 0 && els.every((e) => e.querySelector('.ct-job-icon'))), 'with its icon in Through the years');
-  const heads = await page.$$eval('.ct-palette-pictures > :not(.ct-years) .ct-chart-row', (els) => els.map((e) => ({ icon: !!e.querySelector('.ct-chart-head .ct-job-icon'), text: e.querySelector('.ct-chart-head').textContent })));
-  assert.ok(heads.length && heads.every((x) => x.icon && jobs.some((j) => x.text.includes(j))), `the jobs picture's lanes each name their job with its icon (${JSON.stringify(heads)})`);
-  await done(page);
-});
-
-test('PP-B38 (b2 laptop; review r1 conformance-7, bugs-11): at 1280 px the Next step stands beside the pictures, and the time step for print is chosen on the page', async () => {
-  const page = await tool({ width: 1280, hash: await temperateLink() });
-  assert.ok(await onPage(page), 'the palette page');
-  await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
-  const [next, chart] = await page.evaluate(() => [document.querySelector('.ct-next'), document.querySelector('.ct-chart')].map((e) => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top }; }));
-  assert.ok(next.left >= chart.right - 1 || chart.left >= next.right - 1, `side by side (Next step ${Math.round(next.left)}–${Math.round(next.right)}, picture ${Math.round(chart.left)}–${Math.round(chart.right)})`);
-  const later = `.ct-stepper ${aria('button', en['consortium.palette.later'])}`;
-  assert.ok(await has(page, later, 2000), 'the time step stepper on a laptop too');
-  await page.click(later);
-  await page.click(later);
-  const step = await page.evaluate(() => window.__ctTest.store.yearStep.value);
-  assert.equal(step, 4);
-  assert.ok(await page.$eval('.ct-years .ct-chart-columns', (e) => e.children.length) > 1, 'every time step still drawn');
-  // Review r1 perf-4: the print sheet is not in the page until printing (no hidden sheet re-rendered per add).
-  assert.equal(await page.$('.ct-print'), null, 'no print sheet on screen');
-  await h.pdf(page);
-  await page.waitForSelector('.ct-print .ct-print-stage', { timeout: 8000 }).catch(() => {}); // mounted for print (review r1 perf-4)
-  const above = await page.$eval('.ct-print .ct-print-stage', (e) => e.textContent).catch(() => '');
-  assert.ok(above.includes(en[`consortium.phase.${PHASES[step]}.plain`]), `the chosen time step printed ("${above}")`);
-  await done(page);
-});
-
-// Since r-f3c6dd8b3c4391be (D2d) the first second-look fillers at Lyon are Slight-toxicity plants (dandelion,
-// garlic, asparagus): conflicts.ts raises Slight with its level since b3 ('Mildly toxic'), so the flag says
-// it in words (marker removed by b3, chunk 2).
-test('PP-B39 (b3 the Slight flag; b2 a second look, review r1 conformance-2): a filler with a warning sits under "Needs a second look" with its warning in words, and adds in one tap', async () => {
-  const page = await lyonPalette(1);
-  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value && document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
-  await page.evaluate(() => window.__ctTest.store.hideToast());
-  const look = () => page.$('.ct-next [data-look] li');
-  for (let i = 0; i < 12 && !(await look()) && await page.$('.ct-next-actions'); i++) {
-    await page.click(`.ct-next-actions ${aria('button', en['consortium.palette.notNow'])}`);
-    await frames(page);
-  }
-  const li = await look();
-  assert.ok(li, 'a hole with a filler that needs a second look');
-  const head = await page.$eval('.ct-next [data-look]', (e) => e.previousElementSibling?.textContent ?? '');
-  assert.ok(head.includes(en['consortium.palette.secondLook'].split('{n}')[0].replace(/\($/, '').trim()), `under its heading ("${head}")`);
-  // Its warning mark is text sized, not stretched to the column (P5-19b layout shift).
-  const marks = await page.$$eval('.ct-next .ct-glyph', (els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
-  assert.ok(marks.length && marks.every((n) => n <= 20), `warning marks at text size (${marks})`);
-  assert.ok(await li.$('.ct-flag-line'), 'its warning in words with the icon');
-  const id = await li.evaluate((e) => e.dataset.plantId);
-  await li.$eval('.button-primary', (b) => b.click());
-  assert.equal(await page.$('dialog[open]'), null, 'nothing asks');
-  assert.ok(await page.evaluate((x) => window.__ctTest.store.members.value.includes(x), id), 'added in one tap');
-  await done(page);
-});
-
 // ---- review r2 (2026-11-14) ----
 
 // r2-swap-1: the outside group reaches every outside plant through its own "Show all N", whatever the
@@ -856,83 +426,6 @@ test('PP-B42 (b2 review r2 swap-1): with few alternatives in range and more than
   await done(page);
 });
 
-// r2-colour-1: the jobs picture's bands are drawn in their row's job (the lane head's icon and word),
-// so no band says a job by colour alone; the plants with no job recorded are neutral.
-test('PP-B43 (b2 review r2 colour-1): the jobs picture fills each band with its row\'s job, the colour its lane head names', async () => {
-  const page = await tool({ hash: await temperateLink(null, 8) });
-  assert.ok(await onPage(page), 'the palette page');
-  await page.waitForSelector('.ct-chart [data-plant-id]', { timeout: 8000 });
-  const odd = await page.$$eval('.ct-palette-pictures > :not(.ct-years) .ct-chart-svg', (svgs) => {
-    const out = [];
-    for (const svg of svgs) {
-      let lane = null;
-      for (const el of svg.children) {
-        if (el.classList.contains('ct-chart-lane')) lane = el.dataset.lane;
-        else if (el.classList.contains('ct-chart-band') && el.dataset.job !== lane) out.push(`${lane}: ${el.dataset.job}`);
-      }
-    }
-    return out;
-  });
-  assert.ok(await page.$('.ct-palette-pictures > :not(.ct-years) .ct-chart-band'), 'the jobs picture draws bands');
-  assert.deepEqual(odd, [], `bands in a job other than their row's: ${odd.join(', ')}`);
-  await done(page);
-});
-
-const failMediterranean = (page, ids, from) => page.evaluate((all, gs) => {
-  const { store } = window.__ctTest, src = store.source.value, read = src.pool.bind(src);
-  src.pool = (c) => (c === 'Mediterranean' ? Promise.reject(new Error('test: list unreadable')) : read(c));
-  store.addMembers(all, Object.fromEntries(gs.map((g) => [g, 'Mediterranean'])));
-  store.loadPool('Mediterranean');
-}, ids, from).then(() => showPalette(page));
-const mediterranean = (n) => realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' AND p.plant NOT IN (SELECT plant FROM placements WHERE climate_zone = 'Temperate') ORDER BY 1 LIMIT ?").all(n).map((r) => String(r.id)));
-const listMissing = (page) => page.waitForFunction((t) => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes(t) && n.textContent.includes('Mediterranean')), { timeout: 8000 }, en['consortium.palette.listFailed'].split('{lists}')[0].replace(/^(one|other):\s*/, '').trim()).then(() => true, () => false);
-
-// r2-empty-1: the empty check counts every member, the plants of a pending or failed guest list too.
-test('PP-B44 (b2 review r2 empty-1): a palette made only of plants from a guest list that fails is never called empty; the Next step says the holes wait for the list, and ct:first-view is not marked on it', async () => {
-  const page = await tool();
-  await choose(page, 'Temperate');
-  const gs = await mediterranean(2);
-  assert.equal(gs.length, 2, 'two Mediterranean plants');
-  await failMediterranean(page, gs, gs);
-  assert.ok(await onPage(page), 'the palette page');
-  assert.ok(await listMissing(page), 'the Mediterranean list named as missing');
-  await page.waitForFunction(() => window.__ctTest.store.verdictRule.value, { timeout: 10_000 }).catch(() => {});
-  await settled(page);
-  const text = await page.$eval('.ct-next', (e) => e.textContent);
-  assert.ok(!text.includes(en['consortium.palette.empty']) && text.includes(en['consortium.palette.holesListMissing']), `called empty while its plants wait for their list ("${text.slice(0, 80)}")`);
-  assert.equal(await page.evaluate(() => performance.getEntriesByName('ct:first-view', 'mark').length), 0, 'ct:first-view marked on a palette whose plants are not read');
-  await done(page);
-});
-
-// r2-empty-2: removing a failed list's last plant clears its "not checked" state.
-test('PP-B45 (b2 review r2 empty-2): once the grower removes the plants of a list that failed, the notice goes and the Next step names a hole', async () => {
-  const page = await tool();
-  await choose(page, 'Temperate');
-  const [g] = await mediterranean(1);
-  await failMediterranean(page, [...await own(2), g], [g]);
-  assert.ok(await onPage(page), 'the palette page');
-  assert.ok(await listMissing(page), 'the Mediterranean list named as missing');
-  await page.evaluate((x) => window.__ctTest.store.removeMember(x), g);
-  const ok = await page.waitForFunction(() => document.querySelector('.ct-next')?.dataset.hole, { timeout: 6000 }).then(() => true, () => false);
-  const notice = await page.evaluate(() => [...document.querySelectorAll('.ct-notice')].some((n) => n.textContent.includes('Mediterranean')));
-  assert.ok(ok && !notice, `the palette stays "not checked" with no plant of that list left (hole named ${ok}, notice ${notice})`);
-  await done(page);
-});
-
-// r2-offline-1: Actions' could-not-load line is lazy.tsx's LoadFailed: offline, never Reload.
-test('PP-B46 (b2 review r2 offline-1): offline, a Download whose chunk cannot come says "Needs a connection", with no Reload', async () => {
-  const page = await tool({ hash: await temperateLink() });
-  assert.ok(await onPage(page), 'the palette page');
-  await page.evaluate(() => { window.__ctFaults.later = 'fail'; });
-  await page.setOfflineMode(true);
-  await page.click(aria('button', en['consortium.download.button']));
-  assert.ok(await has(page, '.ct-page-actions .ct-notice', 4000), 'the line says it did not load');
-  const reload = await page.$(`.ct-page-actions .ct-notice ${aria('button', en['consortium.details.reload'])}`);
-  const text = await page.$eval('.ct-page-actions .ct-notice', (e) => e.textContent);
-  assert.ok(!reload && text.includes(en['consortium.load.needsConnection']), `Reload offline would replace the tool with the browser's offline page ("${text}")`);
-  await page.setOfflineMode(false);
-  await done(page);
-});
 
 // r2-print-1 (hardening): the browser's own Print (Ctrl+P: beforeprint, no print media emulated)
 // mounts the print sheet in the same task, before the print layout, once its chunk is in.
