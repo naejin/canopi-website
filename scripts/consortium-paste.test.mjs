@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const paste = await import('../src/islands/consortium/views/find/paste.ts');
-const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader } = await import('../src/islands/consortium/views/find/paste.ts');
+const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader, plan } = await import('../src/islands/consortium/views/find/paste.ts');
 const { oneOff } = await import('../src/islands/consortium/data/search.ts');
 
 const plant = (id, canonical_name, names = {}) => ({ id, canonical_name, genus: canonical_name.split(' ')[0], names });
@@ -135,6 +135,22 @@ test('c1r3 T12: a name pasted twice is read once, and said to be listed twice', 
 test('c1r3 T21: "chesnut" is read as European chestnut, a close spelling', () => {
   const r = readPaste(pasteNames('chesnut'), { here: temperate, members: [] });
   assert.deepEqual(r.found.map((f) => [f.taxon.id, f.close]), [['t2', 'European chestnut']]);
+});
+
+// c1r4 U4 + U6: a close spelling is a reading the grower confirms: "Add all" adds it only once ticked;
+// on another list or already in the palette it is still said to be a reading ("Read as …").
+test('c1r4 U4: "chesnut" unticked is not added; ticked, it is', () => {
+  const r = readPaste(pasteNames('chesnut\nApple'), { here: temperate, members: [] });
+  assert.deepEqual(plan(r, [], []).ids, ['t1'], 'unticked: only the found Apple');
+  assert.deepEqual(plan(r, ['t2'], []).ids.sort(), ['t1', 't2'], 'ticked: European chestnut too');
+  assert.deepEqual(plan(r, ['t2'], ['t2']).ids, ['t1'], 'never a plant already in the palette');
+});
+
+test('c1r4 U4 + U6: a close spelling on another list, or already in the palette, keeps its reading', () => {
+  const other = readPaste(pasteNames('chesnut'), { here: tropical, others: [['Temperate', temperate]], members: [] });
+  assert.deepEqual(other.other.map((o) => [o.taxon.id, o.close]), [['t2', 'European chestnut']]);
+  const mine = readPaste(pasteNames('chesnut'), { here: temperate, members: ['t2'] });
+  assert.deepEqual(mine.already.map((a) => [a.taxon.id, a.close]), [['t2', 'European chestnut']]);
 });
 
 test('comma or semicolon columns: the same count on every line makes a table; a split cell never goes to the word-prefix search', () => {

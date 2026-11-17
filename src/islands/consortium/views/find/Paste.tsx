@@ -22,7 +22,7 @@ import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
 import { addsWithWarning } from '../../rules/find-query.ts';
-import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste, type Named } from './paste.ts';
+import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, plan, readPaste, type Named } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
@@ -77,16 +77,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   if (!climate) return null;
   if (!pool || !result) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
-  // What "Add all" adds from a reading: the found plants (a close spelling once ticked) and the ticked
-  // choices, each once.
-  const plan = (r: NonNullable<typeof result>) => {
-    const climateOf = new Map<PlantId, ClimateZone>();
-    for (const c of r.choose) if (c.climate) for (const t of c.taxa) climateOf.set(t.id, c.climate);
-    const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)) || r.found.some((f) => f.close && f.taxon.id === id));
-    const ids = [...new Set([...r.found.filter((f) => !f.close).map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
-    return { ids, climateOf };
-  };
-  const toAdd = plan(result).ids;
+  const toAdd = plan(result, ticked, members).ids;
   // A plant's warnings once its list is read (another list's plant: after its pool loads on add).
   const warnedNow = (id: PlantId) => { const t = store.taxonOf(id); return !!t && addsWithWarning(flagsOfPlant(t)); };
   const addAll = async () => {
@@ -94,7 +85,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     const current = box.current?.value ?? text;
     const now = current === settled ? result : read(current).result;
     if (!now) return;
-    const { ids, climateOf } = plan(now);
+    const { ids, climateOf } = plan(now, ticked, members);
     if (!ids.length) return;
     const from: Partial<Record<PlantId, ClimateZone>> = {};
     for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
@@ -156,14 +147,17 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         </span>
         {c.taxa.filter((t) => ticked.includes(t.id)).map((t) => <>{rangeWarn(t)}{warnings(t)}</>)}</> };
     }),
-    ...result.other.map((o, i): Row => ({ at: o.at, name: o.name, status: 'other', body: <>
+    // A close spelling on another list (c1r4 U4) says how it was read, ⓘ: "Add anyway" adds that reading.
+    ...result.other.map((o, i): Row => ({ at: o.at, name: o.name, status: o.close ? 'choose' : 'other', body: <>
       <span><strong>{nameOf(o.taxon)}</strong> {sci(o.taxon)} · {T('otherLists')}{twice(o.name)}</span>
+      {o.close && <span>{T('paste.close', { name: o.close })}</span>}
       <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
       {warnings(o.taxon)}
       <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
         onClick={() => void addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button></> })),
     ...result.already.map((a): Row => ({ at: a.at, name: a.name, status: 'already', body: <>
       <span><strong>{nameOf(a.taxon)}</strong> {sci(a.taxon)} · {T('inConsortium')}{twice(a.name)}</span>
+      {a.close && <span>{T('paste.close', { name: a.close })}</span>}
       {guests[a.taxon.id] && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[a.taxon.id]!) })}</span>}</> })),
     ...result.duplicate.map((d): Row => ({ at: d.at, name: d.name, status: 'duplicate', body: <span><strong>{nameOf(d.taxon)}</strong> {sci(d.taxon)} · {T('paste.twice')}</span> })),
     ...result.none.map((x): Row => ({ at: x.at, name: x.name, status: 'none', body: <>

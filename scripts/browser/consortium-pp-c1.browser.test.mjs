@@ -749,6 +749,24 @@ test('PP-C51 (c1 r3 T2+T12+T13+T16): Paste: Read the list, choices with their sc
   assert.ok(chips.filter((c) => c !== 'None').every((c) => sci.some((s) => c.endsWith(s))), `each choice names its scientific name (${chips.join(' | ')})`);
 });
 
+// c1r4 U4 + U6 (Chrome T21): a close spelling says how it was read wherever the plant is: on another
+// climate's list (with the question mark, "Add anyway" adds that reading) and already in the palette.
+test('PP-C53 (c1 r4 U4+U6): Paste: "rosmary" on another list and "chesnut" already in the palette say "Read as …"', async () => {
+  const page = await tool({ data: 'fixture' });
+  await choose(page, 'Temperate');
+  await page.evaluate(() => { const { store } = window.__ctTest; store.addMembers([store.pool.value.find((t) => t.canonical_name === 'Castanea sativa').id]); });
+  await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
+  assert.ok(await has(page, '#ct-paste-text', 4000), 'Paste opens');
+  await page.locator('#ct-paste-text').fill('rosmary\nchesnut');
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await has(page, 'dialog[open] [data-paste-row]', 4000), 'the list is read');
+  const rows = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => ({ text: e.textContent, mark: e.querySelector('[data-status]')?.dataset.status })));
+  assert.match(rows[0].text, /Read as Rosemary/, `on another list, the reading said (${rows[0].text})`);
+  assert.equal(rows[0].mark, 'choose', 'with the question mark (ⓘ), not ✓');
+  assert.match(rows[1].text, /in your palette/i, 'European chestnut is in the palette');
+  assert.match(rows[1].text, /Read as European chestnut/, `already in the palette, the reading said (${rows[1].text})`);
+});
+
 // c1r3 T6, T18, T20 (Chrome K1, N4, N6): a job list names the palette's plants that do the job with
 // "Show"; a roles list is lower case after its first word; the second-look group says why.
 test('PP-C52 (c1 r3 T6+T18+T20): In your palette on a job list, roles in lower case, why a second look', async () => {

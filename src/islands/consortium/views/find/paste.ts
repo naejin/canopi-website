@@ -290,3 +290,14 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
   out.header = names.header ?? null;
   return out;
 }
+
+// What "Add all" adds from a reading: the found plants (a close spelling only once ticked: "chesnut"
+// is read as European chestnut, offered, never added unasked) and the ticked choices, each once, none
+// already in the palette; climateOf names the other list a ticked choice comes from.
+export function plan<T extends Named>(r: PasteResult<T>, ticked: readonly PlantId[], members: readonly PlantId[]): { ids: PlantId[]; climateOf: Map<PlantId, ClimateZone> } {
+  const climateOf = new Map<PlantId, ClimateZone>();
+  for (const c of r.choose) if (c.climate) for (const t of c.taxa) climateOf.set(t.id, c.climate);
+  const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)) || r.found.some((f) => f.close && f.taxon.id === id));
+  const ids = [...new Set([...r.found.filter((f) => !f.close).map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
+  return { ids, climateOf };
+}
