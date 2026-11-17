@@ -218,11 +218,17 @@ test('PP-C-u15 (c2 Swap gains): Swap\'s gains and losses are holes(members) agai
   const out = members[1], inn = t(3, 'medium', 'placenta_i', 'climax', ['pollinator_forage']);
   const verdicts = new Map([...members, inn].map((x) => [x.id, { id: x.id, judged: '1991-2020', ownYears: false, level: 'fits', limiting: null, factors: [], notes: [] }]));
   const ctx = { members, verdicts, pending: false };
-  const before = new Set(holesMod.holes(ctx).map((h) => h.id));
-  const after = new Set(holesMod.holes({ ...ctx, members: [members[0], inn] }).map((h) => h.id));
+  // Compared by lane (job or light level) and years (fix round 1 A1): filled = open before, no open
+  // years of its lane left over it; left = open after over years its lane did not have open before.
+  const open = (ms) => holesMod.holes({ ...ctx, members: ms }).filter((h) => h.state === 'open');
+  const before = open(members), after = open([members[0], inn]);
+  const lane = (h) => `${h.kind}:${h.job ?? h.stratum}`;
   const change = holesMod.swapChange(ctx, out, inn);
-  assert.deepEqual(change.fills.map((h) => h.id).sort(), [...before].filter((id) => !after.has(id)).sort(), 'what it fills: open before, closed after');
-  assert.deepEqual(change.leaves.map((h) => h.id).sort(), [...after].filter((id) => !before.has(id)).sort(), 'what it leaves empty: closed before, open after');
+  const filled = before.filter((h) => !after.some((x) => lane(x) === lane(h) && x.fromYear < h.toYear && h.fromYear < x.toYear));
+  const left = after.filter((h) => !before.some((x) => lane(x) === lane(h) && h.fromYear >= x.fromYear && h.toYear <= x.toYear));
+  assert.deepEqual(change.fills.map((h) => h.id).sort(), filled.map((h) => h.id).sort(), 'what it fills: open before, closed after');
+  assert.deepEqual(change.leaves.map((h) => h.id).sort(), left.map((h) => h.id).sort(), 'what it leaves empty: open after, not before');
+  assert.ok(change.fills.length + change.leaves.length > 0, 'the case changes some hole');
   assert.equal(change.strataGain, true, 'a stratum no member stands in (medium): the strata gain kept');
   assert.equal(holesMod.swapChange(ctx, out, t(4, 'low', 'placenta_i', 'secondary_ii', ['edible_fruit'])).strataGain, false, 'the same stratum: no strata gain');
 });
@@ -285,4 +291,36 @@ test('PP-C-u23 (c2 cool season): an annual past its heat range reads the cool-se
   const notesOf = (n) => againstLines(v(n), null, words).map((e) => e.note).filter(Boolean);
   assert.deepEqual(notesOf(['cool-season', 'annual']), ['cool-season']);
   assert.deepEqual(notesOf(['annual']), ['annual']);
+});
+
+// Fix round 1 A1 (c2-02): Swap compares holes by lane (a job or a light level) and the years it
+// covers, never by hole id (an id carries its years): a hole that only shrinks is in neither list, one
+// that grows is left more empty, and the sort ranks a candidate that narrows a hole above one that
+// changes nothing. C13: swapping out a member outside its range, the gaps count from what that member
+// would do, so a candidate that starts late leaves its early years empty (never "leaves no gap").
+test('c2 fix A1 + C13 (Swap by lane and years): a shrunk hole is in neither list; a grown one is left; narrowing ranks higher; an outside member\'s gaps count from its years', async () => {
+  const { swapChange, alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const crop = (n, start, end) => taxon({ id: `00000000-c2c2-4000-8000-00000000003${n}`, canonical_name: `Cropus ${n}`, role: 'crop', stratum: { value: 'low', sources: [] }, phases: { start, end, sources: [] }, functions: null, climate: null });
+  const a = crop(1, 'placenta_i', 'placenta_iii'); // years 0-3: feeds you and the low layer open 3-60
+  const longer = crop(2, 'placenta_i', 'secondary_i'); // years 0-15: the same holes, open 15-60 only
+  const shorter = crop(3, 'placenta_i', 'placenta_ii'); // years 0-1: open 1-60
+  const late = crop(4, 'secondary_i', 'climax'); // years 3 on
+  const fit = (xs) => new Map(xs.map((x) => [x.id, { id: x.id, judged: '1991-2020', ownYears: false, level: 'fits', limiting: null, factors: [], notes: [], range: 'judged' }]));
+  const ctx = { members: [a], verdicts: fit([a, longer, shorter, late]), pending: false };
+  const lanes = (hs) => hs.map((h) => `${h.kind}:${h.job ?? h.stratum}`).sort();
+  const grow = swapChange(ctx, a, longer);
+  assert.deepEqual(lanes(grow.fills), [], `a hole that only shrinks is not "also fills" (${grow.fills.map((h) => h.id)})`);
+  assert.deepEqual(lanes(grow.leaves), [], `nor "leaves empty" (${grow.leaves.map((h) => h.id)})`);
+  const shrink = swapChange(ctx, a, shorter);
+  assert.deepEqual(lanes(shrink.leaves), ['job:feeds_you', 'light:low'], 'a hole that grows is left more empty');
+  assert.deepEqual(lanes(shrink.fills), []);
+  const site = core.siteFor(core.emptyPlace, null);
+  const order = alternatives(a.id, [a], [shorter, longer, a], { site, interactions: [], verdicts: ctx.verdicts }).map((x) => x.id);
+  assert.deepEqual(order, [longer.id, shorter.id], 'the candidate that narrows the holes first');
+  // An outside member fills nothing today, but its replacement is judged against what it would do.
+  const verdicts = fit([a, late]);
+  verdicts.set(a.id, { ...verdicts.get(a.id), level: 'outside' });
+  const away = swapChange({ members: [a], verdicts, pending: false }, a, late);
+  assert.ok(away.leaves.some((h) => h.kind === 'job' && h.job === 'feeds_you' && h.fromYear === 0 && h.toYear === 3), `a late starter leaves the member's first years empty (${away.leaves.map((h) => h.id)})`);
 });

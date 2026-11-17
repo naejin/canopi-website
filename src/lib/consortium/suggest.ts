@@ -179,23 +179,43 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
 export interface AlternativeOptions extends FlagContext { removed?: PlantId[]; verdicts?: HoleContext['verdicts'] }
 
 // What swapping out for inn does to the palette's holes (PP-C c2, slices 3.3): holes(members) against
-// holes(members - out + inn), the candidates' verdicts read as the holes read them. fills: open before,
-// gone after; leaves: open after, not before. strataGain: inn stands in a stratum no member stands in
-// now (the one swapped out included).
-export interface SwapChange { fills: Hole[]; leaves: Hole[]; strataGain: boolean }
+// holes(members - out + inn), the candidates' verdicts read as the holes read them, compared by lane (a
+// job or a light level) and the years it covers, never by hole id (an id carries its years, so a hole
+// that only shrank would read as both filled and left). fills: open before and wholly closed after;
+// leaves: open after over years that were not open before. A hole that only narrows is in neither and
+// counts in `years` (hole-years closed, net), which the Swap list ranks on. `before` counts the member
+// swapped out even when it is outside its range: the candidate is judged against what that member
+// would do, so a late starter leaves its first years empty. strataGain: inn stands in a stratum no
+// member stands in now (the one swapped out included).
+interface SwapChange { fills: Hole[]; leaves: Hole[]; strataGain: boolean; years: number }
 const openOf = (ctx: HoleContext, members: readonly Taxon[]) => holes({ ...ctx, members }).filter((h) => h.state === 'open');
-export function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: readonly Hole[] = openOf(ctx, ctx.members)): SwapChange {
+const laneOf = (h: Hole): string => `${h.kind}:${h.job ?? h.stratum ?? ''}`;
+const overlaps = (a: Hole, b: Hole): boolean => a.fromYear < b.toYear && b.fromYear < a.toYear;
+const inside = (a: Hole, b: Hole): boolean => a.fromYear >= b.fromYear && a.toYear <= b.toYear;
+const yearsOf = (hs: readonly Hole[]): number => hs.reduce((n, h) => n + h.toYear - h.fromYear, 0);
+// The holes with `out` counted whatever its verdict (what the swap asks a candidate to replace).
+function swapBefore(ctx: HoleContext, out: Taxon): Hole[] {
+  if (ctx.verdicts?.get(out.id)?.level !== 'outside') return openOf(ctx, ctx.members);
+  const verdicts = new Map(ctx.verdicts);
+  verdicts.delete(out.id);
+  return openOf({ ...ctx, verdicts }, ctx.members);
+}
+export function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: readonly Hole[] = swapBefore(ctx, out)): SwapChange {
   const others = ctx.members.filter((t) => t.id !== out.id);
   const after = openOf(ctx, [...others, inn]);
-  const ids = (hs: readonly Hole[]) => new Set(hs.map((h) => h.id));
-  const was = ids(before), now = ids(after);
+  const same = (h: Hole, hs: readonly Hole[]) => hs.filter((x) => laneOf(x) === laneOf(h));
   const s = inn.stratum?.value ?? null;
-  return { fills: before.filter((h) => !now.has(h.id)), leaves: after.filter((h) => !was.has(h.id)), strataGain: s !== null && !ctx.members.some((t) => t.stratum?.value === s) };
+  return {
+    fills: before.filter((h) => !same(h, after).some((x) => overlaps(x, h))),
+    leaves: after.filter((h) => !same(h, before).some((x) => inside(h, x))),
+    strataGain: s !== null && !ctx.members.some((t) => t.stratum?.value === s),
+    years: yearsOf(before) - yearsOf(after),
+  };
 }
 
 // Plants of the climate that could take a member's place: plants that do not ask (no site misfit or
 // high conflict) before those that do, then same stratum, then fewer holes left open, more holes
-// filled, more jobs shared, higher gain, better known, by name. Current members, removed plants
+// filled, more hole-years closed (a hole narrowed), more jobs shared, higher gain, better known, by name. Current members, removed plants
 // and guests are not offered; plants that ask are listed with their flags (warn, never hide).
 export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[], options: AlternativeOptions): Alternative[] {
   const member = members.find((t) => t.id === memberId) ?? pool.find((t) => t.id === memberId);
@@ -209,7 +229,7 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
   const mInfo = infoOf(member, site);
   const memberJobs = new Set(mInfo.jobs);
   const holeCtx: HoleContext = { members, verdicts: options.verdicts ?? null, pending: false };
-  const before = openOf(holeCtx, members);
+  const before = swapBefore(holeCtx, member);
   const out = pool
     .filter((t) => !inConsortium.has(t.id) && !removedIds.has(t.id))
     .map((t) => {
@@ -217,6 +237,7 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
       const change = swapChange(holeCtx, member, t, before);
       return {
         taxon: t,
+        years: change.years,
         gain: tenths(i, cov).total,
         alt: {
           id: t.id,
@@ -234,6 +255,7 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
     || Number(y.alt.sameStratum) - Number(x.alt.sameStratum)
     || x.alt.leaves.length - y.alt.leaves.length
     || y.alt.fills.length - x.alt.fills.length
+    || y.years - x.years
     || y.alt.sharedJobs.length - x.alt.sharedJobs.length
     || y.gain - x.gain
     || byKnownThenName(x.taxon, y.taxon));
