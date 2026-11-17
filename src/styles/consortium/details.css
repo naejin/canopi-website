@@ -202,3 +202,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   .ct .ct-sheet[open] { animation: ct-sheet-in 160ms ease-out; }
   @keyframes ct-sheet-in { from { transform: translateX(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 }
+
+/* "How sure we are" (PP-C c2): disputes, audiences, corrected-value sources and the frost fact. */
+.ct-facts li { margin: 0.25rem 0; }
+.ct-facts li[data-dispute], .ct-facts li[data-audience] { padding-left: 0.5rem; border-left: 3px solid var(--warning-line); }

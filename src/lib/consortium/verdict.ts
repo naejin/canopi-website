@@ -121,10 +121,14 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   if (hints.dryMonths) notes.push('dry-months');
   if (isAnnual(taxon)) notes.push('annual');
   if (judged === TODAY && climate) notes.push(...laterNotes(taxon, ctx));
-  const limiting = worst(factors);
+  const worstOne = worst(factors);
   // A range recorded with no side that applies (an annual with only its winter cold) is 'fits': the
   // canopi-data range-verdict contract (DATA-1, SYN:annual.grown_as_annual: "inside") says so.
-  const level: Level = limiting ? limiting.level : climate ? 'fits' : 'unknown';
+  const level: Level = worstOne ? worstOne.level : climate ? 'fits' : 'unknown';
+  // What limits the plant: the worst measure; when nothing else is past 'fits', a dry edge (aridity
+  // past the band) names it, still without setting the level (Mendoza: the dry edge first).
+  const dryEdge = factors.find((f) => f.factor === 'dry' && f.level === 'look') ?? null;
+  const limiting = dryEdge && (!worstOne || worstOne.level === 'fits') ? dryEdge : worstOne;
   const range = climate ? 'judged' : climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, judged) ? 'not-recorded' : 'no-climate';
   const out: PlantVerdict = { id: taxon.id, judged, ownYears: judged !== ctx.period, level, limiting, factors, notes, range };
   const from = borrowedFrom(taxon);

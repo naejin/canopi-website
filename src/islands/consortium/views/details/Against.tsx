@@ -6,6 +6,7 @@
 // rule comes from the store (store.verdictRule, its own chunk, role `verdict`): this file never
 // imports verdict.ts, so the details chunk stays off the rule (K3). Until the rule is here the section
 // says it is checking; when its chunk failed, "Not checked" with Reload (3.1).
+import { useEffect } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { Line, PlantVerdict, Scenario, Taxon } from '../../../../lib/consortium/index.ts';
@@ -44,6 +45,9 @@ function Words({ line, terms }: { line: Line; terms: boolean }) {
 }
 
 export function Against({ t }: { t: Taxon }) {
+  // Details may open before the palette page asked for the rule (a link, a list chosen without a
+  // location): ask for it here too (one load, store.wantVerdict).
+  useEffect(() => store.wantVerdict(), []);
   const v = verdictOf(t);
   const head = <h3 id="ct-d-against">{T('details.against')}</h3>;
   if (!v) {
@@ -71,7 +75,7 @@ export function Against({ t }: { t: Taxon }) {
       {rest.length > 0 && (
         <ul class="ct-against-lines">
           {rest.map((e) => (
-            <li data-factor={e.factor} data-level={e.level} data-note={e.note} data-later={e.later ? '' : undefined} data-conf={e.conf}>
+            <li data-factor={e.factor} data-level={e.level} data-note={e.note} data-later={e.later ? "" : undefined} data-conf={e.conf} data-no-site={e.noSite ? "" : undefined}>
               <Words line={e.line} terms={!e.later} />
             </li>
           ))}

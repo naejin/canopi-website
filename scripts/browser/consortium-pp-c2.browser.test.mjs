@@ -67,7 +67,7 @@ failing('F1a-C5 → PP-C (c2 Oulu borrowed list, A9 A16): the borrowed list is n
   assert.deepEqual(unmarked, [], 'every borrowed plant keeps its estimate term');
 });
 
-failing('F1a-C6 → PP-C (c2 verdict chunk refused, Details half, A16 §5): with the verdict chunk refused, Details says "not checked", never a fit', { owner: 'c2', reason: NO_AGAINST }, async () => {
+test('F1a-C6 → PP-C (c2 verdict chunk refused, Details half, A16 §5): with the verdict chunk refused, Details says "not checked", never a fit', async () => {
   const page = await tool({ block: { verdict: 404 } });
   await atSite(page, 'seville');
   await choose(page, 'Mediterranean');
@@ -80,7 +80,7 @@ failing('F1a-C6 → PP-C (c2 verdict chunk refused, Details half, A16 §5): with
 
 // ---- scenarios ----
 
-failing('PP-C5 (c2 Mendoza dry edge): a plant at the dry edge shows its band, the place\'s value and the limiting measure first', { owner: 'c2', reason: NO_AGAINST }, async () => {
+test('PP-C5 (c2 Mendoza dry edge): a plant at the dry edge shows its band, the place\'s value and the limiting measure first', async () => {
   const page = await suggestedAt(MENDOZA, 'Arid');
   const id = await page.evaluate(() => [...window.__ctTest.store.memberVerdicts.value.values()].find((v) => v.limiting?.factor === 'dry')?.id ?? window.__ctTest.store.members.value[0]);
   await details(page, id);
@@ -113,7 +113,7 @@ failing('PP-C13 (c2 verdict chunk failed, 3.1): "Against your place" says "not c
   assert.ok(await has(page, `${DETAILS} [data-swap-row] [data-conf="not-checked"]`, 6000), 'Swap: "not checked"');
 });
 
-failing('PP-C14 (c2 plant not in the list, 3.2): a removed plant\'s, an unlisted id\'s and a failed guest list\'s Details show the frame with "No longer in this list" and Back/Close, never a blank modal', { owner: 'c2', reason: /no "No longer in this list" \(data-gone\)/ }, async () => {
+test('PP-C14 (c2 plant not in the list, 3.2): a removed plant\'s, an unlisted id\'s and a failed guest list\'s Details show the frame with "No longer in this list" and Back/Close, never a blank modal', async () => {
   const gone = async (page, what) => {
     assert.ok(await has(page, `${DETAILS} [data-gone]`, 4000), `no "No longer in this list" (data-gone): ${what}`);
     assert.ok(await has(page, `${DETAILS} .ct-sheet-head button[aria-label]`, 1000), `Close: ${what}`);
@@ -146,7 +146,7 @@ failing('PP-C14 (c2 plant not in the list, 3.2): a removed plant\'s, an unlisted
   await gone(page, 'a failed guest list');
 });
 
-failing('PP-C15 (c2 details query fails, 3.3): Details says it could not load, with Try again', { owner: 'c2', reason: /no "could not load" \(data-details-failed\)/ }, async () => {
+test('PP-C15 (c2 details query fails, 3.3): Details says it could not load, with Try again', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const id = await firstMember(page);
   await page.evaluate(() => { const { store } = window.__ctTest; const src = store.source.value; src.details = () => Promise.reject(new Error('test: details query failed')); });
@@ -155,15 +155,19 @@ failing('PP-C15 (c2 details query fails, 3.3): Details says it could not load, w
   assert.ok(await has(page, `${DETAILS} ${aria('button', 'Try again')}`, 1000), 'Try again');
 });
 
-failing('PP-C16 (c2 borrowed or guest plant, 3.4): Details names the list it comes from, its lines carry "estimate", and without a site climate it says the location is needed to check', { owner: 'c2', reason: /no "From the … list" header \(data-from-list\)/ }, async () => {
+test('PP-C16 (c2 borrowed or guest plant, 3.4): Details names the list it comes from, its lines carry "estimate", and without a site climate it says the location is needed to check', async () => {
   const page = await suggestedAt(OULU, 'Boreal');
   await details(page, await firstMember(page));
   assert.ok(await has(page, `${DETAILS} [data-from-list]`, 6000), 'no "From the … list" header (data-from-list)');
   assert.ok(await has(page, `${DETAILS} [data-conf="estimate"]`, 1000), '"estimate" on its lines');
   assert.equal(await page.$(`${DETAILS} [data-no-site]`), null, 'with a site climate, no "give your location" line');
-  // No location: a borrowed list chosen by hand; its plant's Details asks for the location.
-  const bare = await suggestedAt(null, 'Boreal');
-  await details(bare, await firstMember(bare));
+  // No location: a borrowed list's plants in the palette (as a shared link brings them; Suggest itself
+  // asks for the location first on a borrowed list, PoolSlot NeedsSite); its plant's Details asks for
+  // the location.
+  const bare = await tool();
+  await choose(bare, 'Boreal');
+  const plant = await bare.evaluate(async () => { const { store } = window.__ctTest; const t = (await store.loadPool('Boreal'))[0]; store.members.value = [t.id]; return t.id; });
+  await details(bare, plant);
   assert.ok(await has(bare, `${DETAILS} [data-from-list]`, 6000), 'the list it comes from');
   assert.match(await bare.$eval(`${DETAILS} [data-no-site]`, (e) => e.textContent).catch(() => ''), /location/i, 'the "gives your location" line: the location is needed to check');
 });
@@ -190,6 +194,7 @@ failing('PP-C17 (c2 disputes on one plant, 3.5): Hedera helix keeps its Slight c
     assert.ok(id, `the fixture holds ${name} on the ${zone} list`);
     await details(page, id);
     await against(page);
+    await has(page, `${DETAILS} ${hook}`, 4000); // the facts arrive with the details query, after the frame
     const line = await page.$eval(`${DETAILS} ${hook}`, (e) => e.textContent).catch(() => '');
     assert.match(line, words, `${name}: ${hook}`);
     if (name === 'Hedera helix') assert.match(await page.$eval(`${DETAILS} .ct-flag`, (e) => e.textContent).catch(() => ''), /Mildly toxic/i, 'Hedera keeps its Slight chip');
@@ -229,7 +234,7 @@ test('PP-C18 (c2 newer sheet stays, 3.6): ask Correction on one plant while its 
 // Schema 4.3 invasive scope in Details (coordinator 2026-11-17: the display is c2's; fixture: Tropaeolum
 // majus carries the note's Arundo donax pattern in ES). The reader's country Spain: one line per source
 // with its areas, [data-invasive-scope="<source>"].
-failing('PP-C21 (c2 invasive scope, 3.5 / schema 4.3): with Spain as the country, Tropaeolum majus\'s Details names the catálogo for the Canary Islands and the MITECO atlas for the Balearic Islands and mainland Spain, one line each', { owner: 'c2', reason: /no per-source invasive line/ }, async () => {
+test('PP-C21 (c2 invasive scope, 3.5 / schema 4.3): with Spain as the country, Tropaeolum majus\'s Details names the catálogo for the Canary Islands and the MITECO atlas for the Balearic Islands and mainland Spain, one line each', async () => {
   const page = await tool({ data: 'fixture' });
   await choose(page, 'Temperate');
   await page.evaluate(() => { window.__ctTest.store.country.value = { code: 'ES', source: 'chosen' }; });

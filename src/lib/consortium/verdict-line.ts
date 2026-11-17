@@ -3,7 +3,7 @@
 // A leaf, first-run safe. Each key is one segment after `consortium.line.` (the island draws any Line
 // through views/kit/fit.tsx `say`), so Find, Swap, Details, print and the period switch never write
 // their own words for these. Numbers stay numbers: the view formats them for the page language.
-import type { Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, FrostFact, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
+import type { Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, FrostFact, ClimateZone, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
 import { invasiveAreaCodes } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 
@@ -106,7 +106,7 @@ const SOURCE_KEY: Record<string, string> = { treegoer_ranges: 'sourceTreegoer', 
 export function reasonLine(f: FactorVerdict): Line {
   const also: Line[] = [];
   if (f.confidence) also.push(confidenceLine(f.confidence));
-  if (f.source) also.push(L(SOURCE_KEY[f.source] ?? 'sourceOther', { source: f.source }));
+  if (f.source) also.push(L(SOURCE_KEY[f.source] ?? 'sourceOther', { source: sourceName(f.source) }));
   if (f.disputed) also.push(L('confDisputedLimit'));
   const end = SIDE_END[f.factor];
   if (end && f.basis === 'range') {
@@ -157,13 +157,24 @@ export function noteLine(note: VerdictNote, vars: NoteVars = {}): Line | null {
 // range not recorded or not checked), so a view writes data-factor, data-level and data-conf; a
 // reason's hedges are its `also` lines (lineTerm). The later lines speak of another period: their
 // hedges are words only, so every surface writes the same terms for the page period (verdictTerms).
-export interface AgainstEntry { line: Line; factor?: Factor; level?: Level; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean }
+export interface AgainstEntry { line: Line; factor?: Factor; level?: Level; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean; noSite?: boolean }
 export interface AgainstWords { period: (p: PeriodId) => string; scenario: string; heightM: number | null }
 const RANK: Record<Level, number> = { outside: 0, look: 1, unknown: 3, fits: 2 };
+// How near a measure is to its limit, as a share of the plant's band (0 at the bound): among factors of
+// one level, the nearest comes first, so the measure that limits the plant leads (boards Details,
+// Mendoza: the dry edge first at a dry place). A side reads its own bound; aridity the nearer end.
+function nearness(f: FactorVerdict): number {
+  const { place, low, high } = f;
+  if (place === null || low === null || high === null || high <= low) return Infinity;
+  const end = SIDE_END[f.factor];
+  const gap = end === 'low' ? place - low : end === 'high' ? high - place : Math.min(place - low, high - place);
+  return Math.abs(gap) / (high - low);
+}
 export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: AgainstWords): AgainstEntry[] {
   const out: AgainstEntry[] = [{ line: fitLine(v), level: v.level }];
   const order = (f: FactorVerdict): number => (f === v.limiting ? -1 : RANK[f.level] * 2 + (f.basis === 'range' ? 0 : 1));
-  for (const f of [...v.factors].sort((a, b) => order(a) - order(b))) {
+  const byOrder = (a: FactorVerdict, b: FactorVerdict): number => order(a) - order(b) || nearness(a) - nearness(b);
+  for (const f of [...v.factors].sort(byOrder)) {
     out.push({ line: reasonLine(f), factor: f.factor, level: f.level });
   }
   if (v.range !== 'judged') {
@@ -179,8 +190,8 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
     if (line) out.push({ line, note: n });
   }
   if (v.borrowed) {
-    out.push({ line: L(`borrowed${v.borrowed}`), conf: 'estimate' });
-    if (v.range === 'no-climate') out.push({ line: L('reasonNoSite'), conf: 'estimate' });
+    out.push({ line: borrowedLine(v.borrowed), conf: 'estimate' });
+    if (v.range === 'no-climate') out.push({ line: L('reasonNoSite'), conf: 'estimate', noSite: true });
   }
   if (later && later.judged !== v.judged) {
     out.push({ line: L('byLater', { period: w.period(later.judged), scenario: w.scenario }, [fitLine(later)]), level: later.level, later: true });
@@ -190,6 +201,9 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
   }
   return out;
 }
+// A plant placed from a nearest list: "estimate: placed as on the Temperate list" (the curated lists a
+// nearest list can name: nearest.ts NEAREST_LISTS).
+export const borrowedLine = (zone: ClimateZone): Line => L(`borrowed${zone}`);
 const laterPeriodWords = (later: PlantVerdict | null, w: AgainstWords): NoteVars => (later ? { period: w.period(later.judged), scenario: w.scenario } : {});
 
 // The dataset-level hedge (A17): the observed ranges are estimates that have not been reviewed, driven
@@ -198,10 +212,21 @@ export function datasetLines(info: { rangesReview: string | null }): Line[] {
   return info.rangesReview === 'estimate_not_reviewed' ? [confidenceLine({ term: 'not-reviewed' })] : [];
 }
 
+// A source's short name, as a line names it ("Sources disagree: NC State …", "toxic to pets (ASPCA)"):
+// proper names, never translated; an id this table does not know is said as given (a view may pass a
+// label).
+const SOURCE_NAMES: Record<string, string> = {
+  pfaf: 'PFAF', griis: 'GRIIS', aspca: 'ASPCA', ncsu_plant_toolbox: 'NC State', treegoer_ranges: 'TreeGOER', treegoer: 'TreeGOER',
+  merck_vet_manual: 'Merck Veterinary Manual', ecocrop: 'EcoCrop', es_catalogo: 'catálogo', atlas_aloctonas_es: 'MITECO Atlas 2004', wikidata: 'Wikidata',
+};
+export const sourceName = (id: string): string => SOURCE_NAMES[id] ?? id;
+
 // ---- disputes, audiences, corrected values, frost (schema 4; none changes a verdict, a filter or a
 // ranking: format note, decision 17) ----
 
 const TOX = new Set(['None', 'Slight', 'Moderate', 'Severe']);
+// A queue value that says "no" (the export writes 1/0, true/false, or a word such as 'Invasive').
+const NO = new Set(['0', 'false', 'no', 'none', 'not invasive']);
 const QUEUE_KEY: Partial<Record<Dispute['field'], string>> = { plant_invasive: 'Invasive', weed_potential: 'Weed', allelopathic: 'Allelo' };
 // A dispute beside the shipped value (schema 4 plant_disputes): "Sources disagree: <source>[: <stricter
 // value>]", a derived row labelled, a flag-only row ("PFAF names a hazard, no level given").
@@ -210,31 +235,31 @@ export function disputeLine(d: Dispute, shipped: string | null): Line {
   if (d.kind === 'range' || d.field === 'tmin_cold.low' || d.field === 'tmean_year.low') {
     const other = d.value === null ? null : Number(d.value), mine = shipped === null ? null : Number(shipped);
     const derived = d.derived ? [D('disputeDerived')] : undefined;
-    if (other === null || !Number.isFinite(other)) return D('disputeFlag', { source: d.source }, derived);
+    if (other === null || !Number.isFinite(other)) return D('disputeFlag', { source: sourceName(d.source) }, derived);
     return mine === null || !Number.isFinite(mine)
-      ? D('disputeLimitOnly', { source: d.source, tempOther: other }, derived)
-      : D('disputeLimit', { source: d.source, tempOther: other, tempShipped: mine }, derived);
+      ? D('disputeLimitOnly', { source: sourceName(d.source), tempOther: other }, derived)
+      : D('disputeLimit', { source: sourceName(d.source), tempOther: other, tempShipped: mine }, derived);
   }
   if (d.field === 'toxicity') {
-    if (d.value === null) return shipped === null ? D('disputeToxUnrecorded', { source: d.source }) : D('disputeToxFlag', { source: d.source });
-    return D(`disputeTox${TOX.has(d.value) ? d.value : 'Slight'}`, { source: d.source });
+    if (d.value === null) return shipped === null ? D('disputeToxUnrecorded', { source: sourceName(d.source) }) : D('disputeToxFlag', { source: sourceName(d.source) });
+    return D(`disputeTox${TOX.has(d.value) ? d.value : 'Slight'}`, { source: sourceName(d.source) });
   }
   const q = QUEUE_KEY[d.field] ?? 'Invasive';
-  return D(`dispute${q}${d.value === 'false' ? 'Not' : ''}`, { source: d.source });
+  return D(`dispute${q}${NO.has((d.value ?? '').toLowerCase()) ? 'Not' : ''}`, { source: sourceName(d.source) });
 }
 
 // A range dispute drawn on the band: the other source's limit as a dashed mark (never the band's own).
 export function limitOf(d: Dispute): { valueC: number; dashed: true; source: string } | null {
   const v = d.value === null ? NaN : Number(d.value);
-  return Number.isFinite(v) ? { valueC: v, dashed: true, source: d.source } : null;
+  return Number.isFinite(v) ? { valueC: v, dashed: true, source: sourceName(d.source) } : null;
 }
 
 // An animal audience's toxicity (plant_toxicity_audience; never merged into the plant's own level):
 // "toxic to pets (ASPCA), no level given", or its level.
 export function audienceLine(a: ToxicityAudience): Line {
   const who = a.who === 'pets' ? 'Pets' : 'Livestock';
-  if (a.level === null || a.level === 'None') return D(`audience${who}${a.level === 'None' ? 'None' : ''}`, { source: a.source });
-  return D(`audience${who}Level`, { source: a.source }, undefined, { level: { key: `consortium.tox.${a.level}`, vars: {} } });
+  if (a.level === null || a.level === 'None') return D(`audience${who}${a.level === 'None' ? 'None' : ''}`, { source: sourceName(a.source) });
+  return D(`audience${who}Level`, { source: sourceName(a.source) }, undefined, { level: { key: `consortium.tox.${a.level}`, vars: {} } });
 }
 
 // Where a shipped value comes from when the list corrected it (trait_sources): "Canopi curator
@@ -249,9 +274,12 @@ export function sourceLine(ts: TraitSource): Line | null {
 
 // The dispute and corrected-value lines one plant shows, in one list Details and print both write
 // (ledger "Schema 4" Q3): each dispute beside its shipped value, then each corrected value's source.
-export interface FactInput { disputes: readonly Dispute[] | null; traitSources: readonly TraitSource[] | null; shipped: Partial<Record<string, string | null>> }
+// Each dispute line carries vars.field (the disputed field), each audience line vars.who, each source
+// line vars.field: a view writes them as data-dispute, data-audience, data-trait-source.
+export interface FactInput { disputes: readonly Dispute[] | null; audiences?: readonly ToxicityAudience[] | null; traitSources: readonly TraitSource[] | null; shipped: Partial<Record<string, string | null>> }
 export function factLines(d: FactInput): Line[] {
   const out: Line[] = [];
+  for (const a of d.audiences ?? []) { const l = audienceLine(a); out.push({ ...l, vars: { ...l.vars, who: a.who } }); }
   for (const x of d.disputes ?? []) { const l = disputeLine(x, d.shipped[x.field] ?? null); out.push({ ...l, vars: { ...l.vars, field: x.field } }); }
   for (const t of d.traitSources ?? []) { const l = sourceLine(t); if (l) out.push(l); }
   return out;
@@ -266,22 +294,22 @@ export function frostLine(facts: readonly FrostFact[] | null, releaseHasFrost: b
   if (!releaseHasFrost || facts === null) return null;
   const ktmp = facts.filter((f) => f.kind === 'ktmp' && f.valueC !== null);
   const species = ktmp.find((f) => f.variety === null && !f.coarse);
-  if (species) return D('frostSpecies', { tempKill: species.valueC!, source: species.source });
+  if (species) return D('frostSpecies', { tempKill: species.valueC!, source: sourceName(species.source) });
   const varieties = ktmp.filter((f) => f.variety !== null && !f.coarse);
   if (varieties.length) {
     const vals = varieties.map((f) => f.valueC!);
-    return D('frostVarieties', { tempLow: Math.min(...vals), tempHigh: Math.max(...vals), varieties: varieties.map((f) => f.variety).join(', '), source: varieties[0].source });
+    return D('frostVarieties', { tempLow: Math.min(...vals), tempHigh: Math.max(...vals), varieties: varieties.map((f) => f.variety).join(', '), source: sourceName(varieties[0].source) });
   }
   const cls = facts.find((f) => f.kind === 'class' && f.frostClass);
-  if (cls) return D(`frostClass${cls.frostClass === 'tender' ? 'Tender' : cls.frostClass === 'light' ? 'Light' : 'Hard'}`, { source: cls.source });
+  if (cls) return D(`frostClass${cls.frostClass === 'tender' ? 'Tender' : cls.frostClass === 'light' ? 'Light' : 'Hard'}`, { source: sourceName(cls.source) });
   const coarse = ktmp.find((f) => f.coarse);
-  if (coarse) return D('frostRough', { tempKill: coarse.valueC!, source: coarse.source });
+  if (coarse) return D('frostRough', { tempKill: coarse.valueC!, source: sourceName(coarse.source) });
   return D('frostNotRecorded');
 }
 // The killing temperature at rest (KTMPR, dormant), apart from the frost line, with its own label.
 export function restLine(facts: readonly FrostFact[] | null): Line | null {
   const r = facts?.find((f) => f.kind === 'ktmpr' && f.valueC !== null);
-  return r ? D('frostRest', { tempKill: r.valueC!, source: r.source }) : null;
+  return r ? D('frostRest', { tempKill: r.valueC!, source: sourceName(r.source) }) : null;
 }
 
 // ---- invasive scope (schema 4.3, canopi-data docs/website-handoff/2026-11-17-invasive-scope.md) ----
@@ -309,8 +337,8 @@ export function invasiveLines(d: InvasiveInput, where: { country: string | null;
     const areas = scopes.find((s) => s.source === src)?.areas ?? [];
     const whole = !areas.length || (code === AREA_COUNTRY && invasiveAreaCodes.every((a) => areas.includes(a)));
     const key = SOURCE_WORDS[src] ?? 'invOther';
-    if (whole && code !== AREA_COUNTRY) return D(key, { country: code, source: src });
-    return D(`${key}Area`, { source: src }, undefined, { where: whole ? areaLine(AREA_COUNTRY) : areas.map(areaLine) });
+    if (whole && code !== AREA_COUNTRY) return D(key, { country: code, source: sourceName(src), sourceId: src });
+    return D(`${key}Area`, { source: sourceName(src), sourceId: src }, undefined, { where: whole ? areaLine(AREA_COUNTRY) : areas.map(areaLine) });
   });
 }
 

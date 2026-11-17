@@ -15,12 +15,14 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, factAt, guestOf, jobsOf, pairings, phaseOrd, placementZone, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, frostLine, guestOf, invasiveLines, jobsOf, pairings, phaseOrd, placementZone, restLine, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
+import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../../data/consortium-guides.ts';
 import { PlantMarks } from '../PlantMarks.tsx';
 import { Against } from './Against.tsx';
+import { say } from '../kit/fit.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -80,20 +82,40 @@ function traitsOf(t: Taxon, labels: Labels): Trait[] {
   ];
 }
 
-// The invasive lines of the dialog that are not flags (soft): where it is recorded invasive, or that
-// the reader's country was not checked ("not checked in {country}", once, here).
-function invasiveSoft(t: Taxon): string[] {
-  const list = t.warnings.invasive_in;
-  if (list === null) return [T('d.invUnk')];
+// The invasive lines of the dialog (schema 4.3, core invasiveLines): in the reader's country one line
+// per source with the areas it names (an atlas names, a regulation lists, GRIIS records), or "not
+// checked" / "not recorded" there (invasive_checked: a source assessed invasiveness there), said once,
+// here; then where else it is recorded. Each carries its source (data-invasive-scope).
+interface Soft { text: string; scope?: string }
+function invasiveSoft(t: Taxon, facts: PlantFacts | null): Soft[] {
+  const list = facts?.invasiveIn ?? t.warnings.invasive_in;
   const { country, countryStatus } = store.flagContext.value;
   const code = country?.toUpperCase() ?? null;
-  const elsewhere = list.filter((r) => r.country !== code).map((r) => r.country);
-  const out: string[] = [];
-  if (countryStatus === 'unchecked' && code) out.push(T('details.invNotChecked', { country: countryName(code) }));
-  if (countryStatus === 'checked' && code && !list.some((r) => r.country === code)) out.push(T('details.invNotHere', { country: countryName(code) }));
-  if (elsewhere.length) out.push(P('details.invElse', elsewhere.length, { list: listOf(elsewhere.slice(0, 8).map(countryName)) + (elsewhere.length > 8 ? '…' : '') }));
-  else if (!list.length && !(countryStatus === 'checked' && code)) out.push(T('d.invNone'));
-  return out;
+  const here: Soft[] = invasiveLines({ invasiveIn: list, invasiveAreas: facts?.invasiveAreas ?? null }, { country: code, checked: countryStatus === 'checked' })
+    .map((l) => ({ text: say(l), scope: typeof l.vars.sourceId === 'string' ? l.vars.sourceId : undefined }));
+  if (list === null) return here.length ? here : [{ text: T('d.invUnk') }];
+  const elsewhere = [...new Set(list.filter((r) => r.country !== code).map((r) => r.country))];
+  if (elsewhere.length) here.push({ text: P('details.invElse', elsewhere.length, { list: listOf(elsewhere.slice(0, 8).map(countryName)) + (elsewhere.length > 8 ? '…' : '') }) });
+  else if (!list.length && !code) here.push({ text: T('d.invNone') });
+  return here;
+}
+
+// The values a dispute line sits beside (core factLines' shipped): the list's own value of each field.
+function shippedOf(t: Taxon): Partial<Record<string, string | null>> {
+  const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
+  return {
+    'tmin_cold.low': str(t.climate?.tminCold?.low), 'tmean_year.low': str(t.climate?.tmeanYear?.low), toxicity: t.warnings.toxicity?.level ?? null,
+    weed_potential: str(t.warnings.weed_potential), allelopathic: str(t.warnings.allelopathic), plant_invasive: t.warnings.invasive_in ? String(t.warnings.invasive_in.length > 0) : null,
+  };
+}
+// One fact line with the hook of what it is about: a dispute's field, an audience, a corrected trait.
+function FactItem({ l }: { l: Line }) {
+  const k = l.key, about = typeof l.vars.field === 'string' ? l.vars.field : undefined;
+  return (
+    <li data-dispute={k.includes('.dispute') ? about : undefined} data-audience={typeof l.vars.who === 'string' ? l.vars.who : undefined} data-trait-source={k.includes('.source') ? about : undefined}>
+      {say(l)}
+    </li>
+  );
 }
 
 // Guide titles in the guide's language (en or fr), from #ct-data `guideTitles` (slug → title), which
@@ -125,6 +147,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const zone = t ? placementZone(t, store.climate.value) : null;
   const guest = t && guestOf(t), borrowed = t && borrowedFrom(t);
   const [facts, setFacts] = useState<PlantFacts | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0); // Try again: the details query asked once more
   const [labels, setLabels] = useState<Labels>({});
   // A plant with a draft (closed by Escape or the backdrop) opens with its form and text back.
   const [correcting, setCorrecting] = useState(() => drafts.has(id));
@@ -135,23 +159,35 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   useEffect(() => {
     const src = store.source.value;
     setFacts(null);
-    setCorrecting(drafts.has(id));
+    setFailed(false);
+    if (attempt === 0) setCorrecting(drafts.has(id));
     byReader.current = false;
     if (!src || !zone) return;
     let live = true;
     src.details(id, zone, lang() as Locale).then((d) => { if (live) setFacts(d); })
-      .catch((err: unknown) => console.error(`Consortium details ${id}: ${(err as Error).message}`));
+      .catch((err: unknown) => { console.error(`Consortium details ${id}: ${(err as Error).message}`); if (live) setFailed(true); });
     labelsOf()?.then((l) => { if (live) setLabels(l); });
     return () => { live = false; };
-  }, [id, zone]);
-  if (!t || !zone) return null;
+  }, [id, zone, attempt]);
+  // Not in the lists the page reads (removed while open, an id the release does not list, a guest
+  // whose list failed): the frame with its title and Close, never a blank dialog (3.2).
+  if (!t || !zone) {
+    return (
+      <Frame titleId="ct-d-title" class="ct-details">
+        <div class="ct-d-name" data-gone>
+          <h2 id="ct-d-title" tabIndex={-1} data-autofocus>{T('details.gone')}</h2>
+          <p class="ct-muted">{T('details.goneBody')}</p>
+        </div>
+      </Frame>
+    );
+  }
 
   const member = store.members.value.includes(id);
   const flags = store.flagsOfPlant(t), scene = store.flagScene.value;
   const lines = flagLines(t, flags, scene, { low: true });
   const soft = [
     ...unknownWords(t, scene.site),
-    ...invasiveSoft(t),
+    ...invasiveSoft(t, facts).filter((x) => !x.scope).map((x) => x.text),
     ...(t.warnings.toxicity === null ? [T('d.toxUnk')] : []), // a recorded level is a flag line (kit/flags.ts), Slight too
     T(t.warnings.allelopathic === true ? 'd.allelo' : t.warnings.allelopathic === false ? 'd.alleloNone' : 'd.alleloUnk'),
     ...(t.warnings.weed_potential === true ? [T('d.spreads')] : []),
@@ -190,7 +226,9 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <h2 id="ct-d-title" tabIndex={-1} data-autofocus>{nameOf(t)}</h2>
         <p><i class="ct-sci">{t.canonical_name}</i>{t.family && <span class="ct-muted"> · {t.family}</span>}</p>
         <p class="ct-marks">
-          {guest && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guest) })}</span>}
+          {t.warnings.toxicity && t.warnings.toxicity.level !== 'None' && <span class="ct-flag" data-tox={t.warnings.toxicity.level}>{WARN}{T(`tox.${t.warnings.toxicity.level}`)}</span>}
+          {guest && <span class="ct-tag ct-tag-guest" data-from-list={guest}>{T('details.fromList', { climate: zoneName(guest) })}</span>}
+          {borrowed && <span class="ct-tag ct-tag-guest" data-from-list={borrowed} data-conf="estimate">{say(borrowedLine(borrowed))}</span>}
           {lines.filter((l) => l.kind !== 'soft').length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', lines.filter((l) => l.kind !== 'soft').length)}</span>}
           <PlantMarks taxon={t} surface="details" />
         </p>
@@ -238,6 +276,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <h3 id="ct-d-warn">{T('withWarning')}</h3>
         <ul class="ct-warnlist">
           {lines.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-level={l.level}>{l.text}</li>)}
+          {invasiveSoft(t, facts).filter((x) => x.scope).map((x) => <li class="soft" data-invasive-scope={x.scope}>{x.text}</li>)}
           {soft.map((x) => <li class="soft">{x}</li>)}
         </ul>
         <p class="ct-muted ct-small">{T('d.liab')}</p>
@@ -291,6 +330,21 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           <ul class="ct-plain">{guides.map((g) => <li><a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined} lang={g.titleLang ?? undefined}>{g.title}</a></li>)}</ul>
         </section>
       )}
+
+      <section aria-labelledby="ct-d-sure" data-sure>
+        <h3 id="ct-d-sure">{T('details.sure')}</h3>
+        {failed
+          ? <div data-details-failed>
+              <p>{T('details.failed')}</p>
+              <p><button type="button" class="button button-secondary" onClick={() => setAttempt((n) => n + 1)}>{T('details.tryAgain')}</button></p>
+            </div>
+          : !facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
+          : <ul class="ct-plain ct-facts">
+              {factLines({ disputes: facts.disputes, audiences: facts.audiences, traitSources: facts.traitSources, shipped: shippedOf(t) }).map((l) => <FactItem l={l} />)}
+              {[frostLine(facts.frost, facts.frost !== null), restLine(facts.frost)].filter((l): l is Line => !!l).map((l) => <li data-frost>{say(l)}</li>)}
+              {datasetLines(store.source.value?.info() ?? { rangesReview: null }).map((l) => <li class="ct-muted">{say(l)}</li>)}
+            </ul>}
+      </section>
 
       <section aria-labelledby="ct-d-sources">
         <h3 id="ct-d-sources">{T('sources')}</h3>
