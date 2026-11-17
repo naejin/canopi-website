@@ -878,7 +878,7 @@
   "dataSources.tool.lede": "A ferramenta Paleta de plantas lê o clima e o país do seu terreno na grade canopi-climate e as faixas climáticas observadas das plantas no GBIF (registros reduzidos a um por célula climática), com as faixas de árvores do TreeGOER onde elas são mais estritas. Nomes, citações e licenças aparecem tal como as fontes os publicam.",
   "dataSources.tool.gridUse": "O clima e o país do seu terreno, lidos no seu dispositivo.",
   "dataSources.tool.servedUse": "Vem com a grelha; a ferramenta ainda não o usa.",
-  "dataSources.tool.gbifUse": "As amplitudes climáticas observadas das plantas vêm destes mapas, plantas cultivadas incluídas. Um DOI de conjunto de dados derivado do GBIF será acrescentado aqui quando estiver registado.",
+  "dataSources.tool.gbifUse": "As amplitudes climáticas observadas das plantas vêm destes mapas, plantas cultivadas incluídas. Um DOI de conjunto de dados derivado do GBIF será acrescentado aqui quando estiver registrado.",
   "dataSources.tool.mapUse": "O mapa para escolher o seu terreno, carregado só quando o abre.",
   "dataSources.tool.searchUse": "A pesquisa de lugares, usada só quando carrega em Enter.",
   "dataSources.tool.privacy": "O que o mapa e a pesquisa de lugares recebem: {link}.",
