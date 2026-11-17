@@ -160,8 +160,8 @@ export const ROLE_ENTRIES = {
   // E6 lazy island parts (design check A5, A6, A11; L1-L12)
   details: { entry: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, chunks: 1 }, // K3: the plant dialog
   sheets: { entry: /\/src\/islands\/consortium\/views\/(Swap|Correction)\.tsx$/, chunks: 2 }, // K3
-  // PP-C c1: Find (views/find/**) and Paste (views/Paste.tsx until c1 moves it into views/find/).
-  find: { entry: /\/src\/islands\/consortium\/views\/(find\/.+\.tsx?|Paste\.tsx)$/, chunks: '1+' }, // K3
+  // PP-C c1: Find and Paste (views/find/**).
+  find: { entry: /\/src\/islands\/consortium\/views\/find\/.+\.tsx?$/, chunks: '1+' }, // K3
   later: { entry: /\/src\/islands\/consortium\/views\/later\.ts$/, chunks: 1 }, // K3: the views after the first view
   suggest: { entry: /\/src\/lib\/consortium\/suggest\.ts$/, chunks: 1 }, // R4: loadSuggest
   // PP-B parts (plant-palette-slices, commit 0; F1a's structure and balance roles went with it, and

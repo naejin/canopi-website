@@ -45,7 +45,7 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
   const root = '/w/e6';
   const chunk = (fileName, facadeModuleId, css = []) => ({ type: 'chunk', fileName, facadeModuleId, moduleIds: [facadeModuleId ?? '/x.ts'], code: '', viteMetadata: { importedCss: new Set(css), importedAssets: new Set() } });
   const bundle = Object.fromEntries([
-    ['_astro/Paste.a.js', `${root}/src/islands/consortium/views/Paste.tsx`],
+    ['_astro/Paste.a.js', `${root}/src/islands/consortium/views/find/Paste.tsx`],
     ['_astro/Find.f.js', `${root}/src/islands/consortium/views/find/Find.tsx`],
     ['_astro/Add.h.js', `${root}/src/islands/consortium/views/Add.tsx`],
     ['_astro/Swap.b.js', `${root}/src/islands/consortium/views/Swap.tsx`],
@@ -55,7 +55,7 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
     ['_astro/shared.g.js', null],
   ].map(([f, id, css]) => [f, chunk(f, id, css)]));
   const r = chunkRoles(bundle);
-  // PP-C commit 0: Find (views/find/**) and Paste are the find role; Add (deleted) has none.
+  // PP-C c1: Find and Paste (views/find/**) are the find role; Add (deleted) has none.
   assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Swap.b.js'], find: ['/_astro/Find.f.js', '/_astro/Paste.a.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
   assert.equal(r.lazy, undefined, 'one role list: no separate lazy table');
   // PP-B commit 0: the palette page and the verdict rule, by their entry modules (the matrix role went in 0a').
