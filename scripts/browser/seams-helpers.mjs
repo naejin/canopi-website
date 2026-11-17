@@ -59,11 +59,13 @@ export async function openFind(page) {
   await page.evaluate(() => window.__ctTest.openFind());
 }
 
-// Find's own rows (its groups, not "In another climate's list"), every one (after "Show N outside"),
-// as scientific names.
+// Find lists every plant (its fit choice "Every plant on the list", the outside plants unfolded): the
+// start lists none until the grower searches, picks a job or sets a filter (fix round 2, K3). A DOM
+// click, as the choice sits in the filters, behind "Filters" below 960 px.
+export const everyPlant = (page) => page.$eval('dialog.ct-find[open] [data-filter="all"]', (e) => { if (!e.checked) e.click(); });
+// Find's own rows (its groups, not "In another climate's list"), every one, as scientific names.
 export async function addRows(page) {
-  const more = await page.$('dialog.ct-find[open] [data-find-outside]');
-  if (more) await more.click();
+  await everyPlant(page);
   return page.$$eval('dialog.ct-find[open] [data-find-group] [data-find-row] .ct-sci', (els) => els.map((e) => e.textContent.trim()));
 }
 

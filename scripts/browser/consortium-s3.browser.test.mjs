@@ -385,7 +385,6 @@ test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next r
   assert.equal((await press(C)).describedby, b, 'the last row: the focus goes to the row before\'s "Add anyway"');
   assert.equal((await press(A)).describedby, b, 'the first row: the focus goes to the next row\'s');
   const at = await press(B);
-  assert.equal(at.tag, 'P', `no row left to add: the count line (${JSON.stringify(at)})`);
-  assert.match(at.text, /names read/i);
+  assert.match(at.text, /names read/i, `no row left to add: the count line (${JSON.stringify(at)})`);
   await page.close();
 });

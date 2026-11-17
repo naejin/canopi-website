@@ -56,6 +56,11 @@ const plainFind = async () => {
 };
 // Every "Show all N" of Find pressed, so each group lists all its plants (fix round 1, B2).
 const expandAll = async (page) => { for (let i = 0; i < 8 && await page.$(`${FIND} [data-find-showall]`); i++) await page.click(`${FIND} [data-find-showall]`); };
+// The start lists no plant (board Find, K3): "Every plant on the list" lists them all, a job chip
+// (the filter column at 960) its plants, as a grower does.
+const everyPlant = async (page) => { await page.click(`${FIND} [data-filter="all"]`); await has(page, `${FIND} [data-find-row]`, 4000); };
+const byJob = async (page, job = 'feeds_you') => { await page.click(`${FIND} [data-filter="job"][data-value="${job}"]`); await has(page, `${FIND} [data-find-row]`, 4000); };
+const visible = (page, sel) => page.$$eval(sel, (els) => els.some((e) => e.checkVisibility()));
 // Find opened from the Next step's hole ("See all N plants"), as a grower opens it.
 async function findFromHole(page) {
   assert.ok(await has(page, '.ct-next-actions .button', 10_000), 'the Next step names a hole');
@@ -75,6 +80,7 @@ test('F1a-F2 → PP-C (c1 Seville dry garden, P5.1 A14): "Holds up in the future
   const page = await suggestedAt('seville', 'Mediterranean');
   await openFind(page);
   await hasFind(page);
+  await everyPlant(page);
   const before = await toggle(page, 'holds');
   assert.notDeepEqual(await rowIds(page), before, '"Holds up" changes the pick at Seville');
 });
@@ -83,6 +89,7 @@ test('F1a-F3 → PP-C (c1 Nairobi smallholding, P5.1 A14): "Has edible parts" (e
   const page = await suggestedAt('nairobi', 'Subtropical');
   await openFind(page);
   await hasFind(page);
+  await everyPlant(page);
   const all = await toggle(page, 'edible');
   const edible = await rowIds(page);
   assert.ok(edible.length && edible.length < all.length, `"Has edible parts" narrows the list (${edible.length} of ${all.length})`);
@@ -95,15 +102,16 @@ test('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot judge 
   const page = await suggestedAt('seville', 'Mediterranean');
   await openFind(page);
   await hasFind(page);
+  await everyPlant(page); // every row shown
   await toggle(page, 'edible');
-  const n = await page.$eval(`${FIND} [data-filter-unknown="edible"]`, (e) => (e.dataset.count === undefined ? null : Number(e.dataset.count))).catch(() => null);
-  assert.ok(Number.isInteger(n) && n >= 0, 'the unknowns are counted');
-  // Fix round 1, A3 (review c1-04): a hide filter says how many it hid, beside "not recorded, still shown".
-  if (await page.$(`${FIND} [data-find-outside]`)) await page.click(`${FIND} [data-find-outside]`); // every row shown
+  const n = await page.$eval(`${FIND} [data-filter-unknown="edible"]`, (e) => /\d+ not recorded/.test(e.textContent)).catch(() => false);
+  assert.ok(n, 'the unknowns are counted ("N not recorded")');
+  // Fix round 1, A3 (review c1-04): a hide filter says how many it hides (its count on the right),
+  // beside "not recorded, still shown".
   const shown = (await rowIds(page)).length;
+  const hid = await page.$eval(`${FIND} [data-filter-count="toxic"]`, (e) => Number(e.textContent.replace(/\D/g, ''))).catch(() => null);
+  assert.ok(Number.isInteger(hid), 'how many "Hide toxic" hides is said');
   await toggle(page, 'toxic');
-  const hid = await page.$eval(`${FIND} [data-filter-hidden="toxic"]`, (e) => Number(e.dataset.count)).catch(() => null);
-  assert.ok(Number.isInteger(hid), '"N hidden as toxic" is said');
   assert.equal((await rowIds(page)).length, shown - hid, 'it counts exactly the plants it hid');
   assert.ok(await page.$(`${FIND} [data-filter-unknown="toxic"]`), 'beside "N not recorded, still shown"');
 });
@@ -123,6 +131,7 @@ test('F1a-C6 → PP-C (c1 verdict chunk refused, Find half, A16 §5): with the v
   await choose(page, 'Mediterranean');
   await openFind(page);
   await hasFind(page);
+  await everyPlant(page);
   assert.ok(await has(page, `${FIND} [data-find-group="unchecked"] [data-find-row]`, 8000), 'the plants are under "Not checked"');
   assert.equal(await page.$(`${FIND} [data-find-group="fits"] [data-find-row]`), null, 'none under "Fits your place"');
   // Fix round 1, A4 (review c1-05): the range and holds filters need the verdict rule; refused, they
@@ -175,6 +184,7 @@ test('PP-C3 (c1 Select several): three plants ticked are added with one toast an
   const before = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await openFind(page);
   await hasFind(page);
+  await byJob(page);
   await page.click(`${FIND} [data-find-select]`);
   const boxes = await page.$$(`${FIND} [data-find-row] input[type="checkbox"]`);
   assert.ok(boxes.length >= 3, 'three plants to tick');
@@ -199,7 +209,7 @@ test('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside its
   assert.ok(await page.$(`${row} [data-find-add][data-added]`), 'added in one tap');
   // The whole list (c1: Robinia's query holds no plant outside its range).
   await page.$eval(`${FIND} [data-find-search]`, (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); }); // as the field's clear button
-  await page.click(`${FIND} [data-find-outside]`); // plain Find folds them too (fix round 1, B3)
+  await everyPlant(page); // plain Find folds them; "Every plant on the list" shows them (fix round 1, B3)
   assert.ok(await has(page, `${FIND} [data-find-group="outside"] [data-find-row]`, 4000), 'a group outside its range');
   await page.click(`${FIND} [data-find-group="outside"] [data-find-row] [data-find-add]`);
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'nothing asks for an outside plant either');
@@ -456,7 +466,7 @@ test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a 
   await search(page, pick.plain);
   await toggle(page, 'edible');
   assert.equal(await page.$(`${FIND} [data-find-none]`), null, 'hidden by a filter is no "No plant answers"');
-  assert.equal(await page.$eval(`${FIND} [data-find-hidden-filters]`, (e) => Number(e.dataset.count)).catch(() => null), 1, '"1 hidden by your filters"');
+  assert.match(await page.$eval(`${FIND} [data-find-hidden-filters]`, (e) => e.textContent).catch(() => ''), /^1 hidden by your filters/, '"1 hidden by your filters"');
   await page.click(`${FIND} [data-find-hidden-filters] button`);
   assert.ok(await has(page, `${FIND} [data-find-row]`, 2000), 'Clear shows it');
   await page.evaluate(() => window.__ctTest.store.closeSheet());
@@ -470,9 +480,35 @@ test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a 
   assert.ok(away, 'a plant outside the hole');
   await search(page, away);
   assert.equal(await page.$(`${FIND} [data-find-none]`), null, 'outside the hole is no "No plant answers"');
-  assert.equal(await page.$eval(`${FIND} [data-find-outside-hole]`, (e) => Number(e.dataset.count)).catch(() => null), 1, '"1 on your list but outside this hole"');
+  assert.match(await page.$eval(`${FIND} [data-find-outside-hole]`, (e) => e.textContent).catch(() => ''), /^1 on your list but outside this hole/, '"1 on your list but outside this hole"');
   await page.click(`${FIND} [data-find-outside-hole] button`);
   assert.ok(await page.waitForFunction((sel, n) => [...document.querySelectorAll(sel)].some((r) => r.textContent.includes(n)), { timeout: 2000 }, `${FIND} [data-find-row]`, away).then(() => true, () => false), 'Show lists it');
+  // The whole list holds for that search only (r2-11): another search, the hole's plants again.
+  await search(page, 'zzqx');
+  await search(page, away);
+  assert.ok(await has(page, `${FIND} [data-find-outside-hole]`, 2000), 'searched again, the hole\'s preset is back');
+});
+
+// Fix round 2, r2-10 and r2-08: every number Find shows is the rows it then lists (a chip's, a fit
+// choice's, the count line's); "Best first" only when the list is ranked (a location's verdicts in).
+test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s counts are the rows they list; "Best first" only with a location', async () => {
+  const page = await plainFind();
+  const num = (sel) => page.$eval(sel, (e) => Number(/(\d+)\D*$/.exec(e.textContent.trim())?.[1] ?? NaN));
+  const listed = async () => { await expandAll(page); return page.$$eval(`${FIND} [data-find-group] [data-find-row]`, (els) => els.length); };
+  const chip = `${FIND} [data-filter="job"][data-value="ground"]`;
+  const said = await num(chip);
+  await page.click(chip);
+  assert.equal(await listed(), said, `the chip said ${said}`);
+  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${said} plants?\\.`), 'the count line says the same');
+  const all = await page.$eval(`${FIND} [data-filter="all"]`, (i) => Number(/(\d+) plants?/.exec(i.closest('label').textContent)?.[1]));
+  await page.click(`${FIND} [data-filter="all"]`);
+  assert.equal(await listed(), all, `"Every plant on the list" said ${all}`);
+  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), /Best first/, 'ranked: "Best first"');
+  const nowhere = await suggestedAt(null, 'Temperate');
+  await openFind(nowhere);
+  await hasFind(nowhere);
+  await nowhere.click(`${FIND} [data-filter="all"]`);
+  assert.doesNotMatch(await nowhere.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), /Best first/, 'no location: no "Best first"');
 });
 
 // Fix round 1, B2 and B3 (board FindResults; conformance c1 #2, #3): plain Find folds the plants outside
@@ -480,7 +516,8 @@ test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a 
 // wait for a store seam, pf) with the line saying so, and shows at most a screenful per group behind "Show all N".
 test('PP-C42 (c1 fix B2+B3 best first, folded outside, Show all): plain Find', async () => {
   const page = await plainFind();
-  assert.ok(await has(page, `${FIND} [data-find-best]`, 4000), 'the "Best first" line');
+  await page.click(`${FIND} [data-filter="light"][data-value="sun"]`); // a list, as a grower asks for one
+  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent).catch(() => ''), /^\d+ plants\. Best first/, 'the count line, then "Best first"');
   assert.equal(await page.$(`${FIND} [data-find-group="outside"]`), null, 'the outside plants are folded in plain Find');
   assert.ok(await page.$(`${FIND} [data-find-outside]`), '"Show N outside their climate range"');
   const shown = await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.length);
@@ -507,7 +544,7 @@ test('PP-C43 (c1 fix B1+B5+B13 row content): fills, light, size, years; Add anyw
   await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
   await openFind(page);
   await hasFind(page);
-  await page.click(`${FIND} [data-find-outside]`);
+  await everyPlant(page);
   const out = `${FIND} [data-find-group="outside"] [data-find-row]`;
   assert.ok(await has(page, out, 4000), 'an outside row');
   assert.match(await page.$eval(`${out} [data-find-add]`, (b) => b.textContent), /Add anyway/, '"Add anyway"');
@@ -527,12 +564,15 @@ test('PP-C44 (c1 fix B4+B6 start state, job card): fit count, job chips; the job
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.countFits.value, { timeout: 10_000 });
   const n = await page.evaluate(() => { const c = window.__ctTest.store.countFits.value; return c.fits + c.look; });
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 }); // the start's job chips (at 960, the filter column's)
   await openFind(page);
   await hasFind(page);
+  assert.equal(await visible(page, `${FIND} [data-find-row]`), false, 'the start lists no plant (K3)');
   assert.match(await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent).catch(() => ''), new RegExp(`${n} of the`), `"${n} of the M plants … fit your place today"`);
   assert.ok(await page.$(`${FIND} [data-find-byjob] [data-job-chip]`), '"Or look by job" chips');
   await page.click(`${FIND} [data-find-byjob] [data-job-chip="ground"]`);
   assert.ok(await page.$(`${FIND} [data-filter="job"][data-value="ground"][aria-pressed="true"]`), 'a job chip filters by its job');
+  assert.ok(await visible(page, `${FIND} [data-find-row]`), 'and lists its plants');
   await search(page, 'windbreak');
   const card = await page.$eval(`${FIND} .ct-find-job`, (e) => e.textContent).catch(() => '');
   assert.match(card, /wind/i, 'what the job means');
@@ -553,11 +593,10 @@ test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view
   await hasFind(page);
   assert.equal(await page.$eval(`${FIND} .ct-find-filters-btn`, (b) => getComputedStyle(b).display).catch(() => 'none'), 'none', 'no Filters button beside the open column');
   assert.equal((await page.$$eval(`${FIND}`, (d) => (d[0].textContent.match(/Add plants/g) ?? []).length)), 1, 'the title said once');
-  const fit = await page.$$eval(`${FIND} input[name="ct-find-fit"]`, (els) => els.map((e) => e.value));
-  assert.deepEqual(fit, ['fits', 'inside', 'all'], 'one three-way fit choice');
-  assert.ok(await page.$$eval(`${FIND} [data-fit-count]`, (els) => els.length === 3 && els.every((e) => /\d/.test(e.textContent))), 'each with its count');
-  assert.ok(await page.$(`${FIND} [data-filter="size"] .ct-muted`), 'size chips carry counts');
-  assert.ok(await page.$(`${FIND} [data-filter="life-cycle"] .ct-muted`), 'life chips carry counts');
+  const fit = await page.$$eval(`${FIND} input[type="radio"]`, (els) => els.map((e) => e.closest('label').textContent));
+  assert.equal(fit.length, 3, 'one three-way fit choice');
+  for (const [i, label] of [en['consortium.find.fits'], en['consortium.find.range'], en['consortium.find.fitAll']].entries()) assert.match(fit[i], new RegExp(`^${label}\\d+ plants`), `"${label}" with its count (${fit[i]})`);
+  for (const id of ['size', 'life-cycle', 'light', 'job']) assert.ok(await page.$$eval(`${FIND} [data-filter="${id}"]`, (els) => els.every((e) => /\d$/.test(e.textContent.trim()))), `${id} chips carry counts`);
   await page.click(`${FIND} [data-filter="size"][data-value="small"]`);
   assert.ok(await has(page, `${FIND} [data-find-active] [data-active-chip]`, 2000), 'the active filter as a chip under the search');
   await page.click(`${FIND} [data-find-active] [data-active-chip]`);
@@ -572,20 +611,34 @@ test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 1 }); // a phone's width (isMobile would reload)
   await openFind(page);
   await hasFind(page);
+  await search(page, 'apple');
+  // The plants the filters give (the rows already in the palette and other lists' rows aside).
+  const results = await page.$$eval(`${FIND} [data-find-group] [data-find-row]`, (els) => els.length);
+  const focusText = () => page.evaluate(() => document.activeElement?.textContent?.trim() ?? '');
+  const filtersButton = () => page.evaluate(() => document.activeElement?.matches('.ct-find-filters-btn') ?? false);
   await page.click(`${FIND} .ct-find-filters-btn`);
-  assert.ok(await has(page, `${FIND} [data-find-filters-view]`, 2000), 'the filters as their own view');
-  assert.equal(await page.$(`${FIND} [data-find-row]`), null, 'no results under it');
+  assert.equal(await focusText(), 'Filters', 'the focus on the filters\' heading');
+  assert.equal(await visible(page, `${FIND} [data-find-row]`), false, 'the filters in place of the results');
   const show = `${FIND} [data-find-filters-show]`;
-  assert.match(await page.$eval(show, (b) => b.textContent).catch(() => ''), /Show \d+ plants/, '"Show N plants"');
+  assert.equal(await page.$eval(show, (b) => b.textContent.trim()), `Show ${results} plant${results === 1 ? '' : 's'}`, '"Show N plants": the rows the results list');
   assert.ok(await page.$(`${FIND} [data-find-filters-clear]`), '"Clear all"');
   await page.click(show);
-  assert.ok(await has(page, `${FIND} [data-find-row]`, 2000), 'Show returns to the results');
+  assert.ok(await visible(page, `${FIND} [data-find-row]`), 'Show returns to the results');
+  assert.ok(await filtersButton(), 'the focus back on "Filters"');
+  // Escape in the filters returns to the results, Find open, the query kept (r2-02).
+  await page.click(`${FIND} .ct-find-filters-btn`);
+  await page.keyboard.press('Escape');
+  assert.ok(await page.$(FIND), 'Find stays open');
+  assert.ok(await visible(page, `${FIND} [data-find-row]`), 'Escape returns to the results');
+  assert.equal(await page.$eval(`${FIND} [data-find-search]`, (i) => i.value), 'apple', 'the query kept');
+  assert.ok(await filtersButton(), 'the focus back on "Filters"');
 });
 
 // Fix round 1, B9, B14 (boards FindMulti, FindNone; conformance c1 #7, #12): a "One by
 // one / Select several" switch with its line; a typing slip (one letter missing, extra or swapped) gives the close names as rows with Add.
 test('PP-C46 (c1 fix B9+B14 switch, typo rows)', async () => {
   const page = await plainFind();
+  await byJob(page);
   const modes = await page.$$eval(`${FIND} [data-find-mode]`, (els) => els.map((e) => [e.dataset.findMode, e.getAttribute('aria-pressed')]));
   assert.deepEqual(modes, [['one', 'true'], ['several', 'false']], 'One by one / Select several, its state shown');
   await page.click(`${FIND} [data-find-mode="several"]`);
@@ -623,11 +676,14 @@ test('PP-C47 (c1 fix B10+B11 Paste as the board): pasted order, count, Which …
   assert.ok(await has(page, 'dialog[open] #ct-paste-text', 3000), 'Paste opens in the sheet');
   await page.locator('dialog[open] #ct-paste-text').fill([pick.member, 'zzqx not a plant', pick.plural, pick.outside].join('\n'));
   await page.waitForFunction(() => document.querySelectorAll('dialog[open] [data-paste-row]').length === 4, { timeout: 4000 });
-  assert.deepEqual(await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => e.dataset.status)), ['already', 'none', 'choose', 'found'], 'the paste in its order');
+  const lines = [pick.member, 'zzqx not a plant', pick.plural, pick.outside];
+  const texts = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => e.textContent));
+  assert.deepEqual(texts.map((t) => lines.findIndex((l) => t.startsWith(`“${l}”`))), [0, 1, 2, 3], 'the paste in its order, each line by its name');
+  assert.match(texts[1], /Not found/i, 'the line no plant answers says so');
   assert.match(await page.$eval('dialog[open] [data-paste-count]', (e) => e.textContent), /4 names read/, 'the count of names read');
-  assert.match(await page.$eval('dialog[open] [data-paste-row][data-status="choose"]', (e) => e.textContent), /Which/, `"${pick.plural}": Which …?`);
-  assert.match(await page.$eval('dialog[open] [data-paste-row][data-status="found"]', (e) => e.textContent), /Outside its climate range/, 'the range warning on its row');
-  assert.ok(await page.$('dialog[open] [data-paste-note]'), 'added as they are, with their warnings');
+  assert.match(texts[2], new RegExp(`Which ${pick.plural.slice(0, -1)}\\? \\d+ plants match`), `"${pick.plural}": Which …? (its singular)`);
+  assert.match(texts[3], /Outside its climate range/, 'the range warning on its row');
+  assert.ok((await page.$eval('dialog[open]', (e) => e.textContent)).includes(en['consortium.paste.note']), 'added as they are, with their warnings');
   await page.click('dialog[open] [data-paste-cancel]');
   assert.ok(await has(page, `${FIND} [data-find-paste]`, 3000), 'Cancel goes back to Find');
   assert.ok(await page.waitForFunction(() => document.activeElement?.matches('[data-find-paste]'), { timeout: 2000 }).then(() => true, () => false), 'the focus on "Paste a list"');

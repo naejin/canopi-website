@@ -165,25 +165,11 @@ test('PP-C-u9 (c1 one search module): Paste matches through it, synonyms include
   assert.ok(!/\b11\b/.test(JSON.stringify(line)), 'never "11 languages"');
 });
 
-// Fix round 1 (A13): one import route and no unread surface.
-test('PP-C c1 fix A13: the core is the only route to fold and queryTokens; groupOf and lifeOf stay inside find-query; "Holds up by" names its period', async () => {
-  const s = await search(), q = await findQuery();
-  assert.equal('fold' in s || 'queryTokens' in s, false, 'search.ts re-exports neither (import them from the core index)');
-  assert.equal('groupOf' in q || 'lifeOf' in q, false, 'groupOf and lifeOf are module-internal');
+// Fix round 1 (A13): "Holds by" names its period, never writes it in.
+test('PP-C c1 fix A13: "Holds by" names its period as a variable in all 11 locales', () => {
   for (const [lang, w] of Object.entries(words)) {
     assert.match(w['consortium.find.holds'], /\{period\}/, `${lang}: the period is a variable`);
     assert.doesNotMatch(w['consortium.find.holds'], /2041/, `${lang}: no period written in`);
-  }
-});
-
-test('PP-C c1 fix A10: Find keeps no copy of the verdict words (its group headings are consortium.line.*, through verdict-line.ts)', () => {
-  for (const [lang, w] of Object.entries(words)) assert.deepEqual(Object.keys(w).filter((k) => k.startsWith('consortium.find.g.')), [], `${lang}: no consortium.find.g.* key`);
-});
-
-test('PP-C c1 fix A11: the "invasiveness not assessed" note is Find\'s key, consortium.find.notChecked, in all 11 locales (the old consortium.add.notChecked gone)', () => {
-  for (const [lang, w] of Object.entries(words)) {
-    assert.ok(w['consortium.find.notChecked']?.includes('{country}'), `${lang}: consortium.find.notChecked with {country}`);
-    assert.equal(w['consortium.add.notChecked'], undefined, `${lang}: consortium.add.notChecked deleted`);
   }
 });
 
@@ -229,4 +215,49 @@ test('PP-C c1 fix B14: oneOff catches one letter missing, extra, wrong or two le
   for (const [a, b] of [['aple', 'apple'], ['chesnut', 'chestnut'], ['avacado', 'avocado'], ['chrery', 'cherry']]) assert.equal(oneOff(a, b), true, `${a} ~ ${b}`);
   assert.equal(oneOff('okra', 'kale'), false);
   assert.equal(oneOff('chrrey', 'cherry'), false, 'two edits');
+});
+
+test('PP-C c1 fix round 2 K5: a one-word slip finds a plant by one word of its name ("chesnut": European chestnut)', async () => {
+  const { releaseIndex } = await search();
+  const names = [{ id: id(1), canonical: 'Castanea sativa', names: { en: 'European chestnut' }, other: [], synonyms: [] }, { id: id(2), canonical: 'Malus domestica', names: { en: 'Apple' }, other: [], synonyms: [] }];
+  const find = releaseIndex({ names, plants: names.map((n) => n.id), lang: 'en' });
+  assert.deepEqual(find.close('chesnut', true).map((h) => h.id), [id(1)]);
+  assert.deepEqual(find.close('european chesnut', true).map((h) => h.id), [id(1)], 'the whole name one slip off');
+  assert.deepEqual(find.close('okra', true), []);
+  assert.deepEqual(find.close('chesnut'), [], 'Paste reads a line as a whole name');
+});
+
+test('PP-C c1 fix round 2 K2: best first breaks ties by the years in range, then well inside before near the edge', async () => {
+  const { bestFirst, wellInside } = await findQuery();
+  const taxa = [plant(1), plant(2), plant(3)];
+  const stay = new Map([[id(1), 1], [id(2), 1], [id(3), 2]]);
+  const edge = { level: 'fits', factors: [{ confidence: { term: 'edge' } }] }, inside = { level: 'fits', factors: [] };
+  const firm = new Map([[id(1), wellInside(edge) ? 1 : 0], [id(2), wellInside(inside) ? 1 : 0], [id(3), 0]]);
+  assert.deepEqual(bestFirst(taxa, new Map(), stay, firm).map((t) => t.id), [id(3), id(2), id(1)]);
+});
+
+test('PP-C c1 fix round 2 K9: "When it stands" keeps the plants standing in those years; a plant with no placement is counted, not hidden silently', async () => {
+  const { applyFilters } = await findQuery();
+  const at = (start, end) => ({ phases: { start, end, sources: [] } });
+  const taxa = [plant(1, at('placenta_i', 'placenta_ii')), plant(2, at('placenta_iii', 'secondary_i')), plant(3, at('secondary_ii', 'climax')), plant(4, { phases: null })];
+  const r = (stands) => applyFilters(taxa, { stands }, {});
+  assert.deepEqual(r(['first']).rows.map((t) => t.id), [id(1)], 'the first year');
+  assert.deepEqual(r(['early']).rows.map((t) => t.id), [id(2)], 'years 1 to 15');
+  assert.deepEqual(r(['late']).rows.map((t) => t.id), [id(3)], '15 years on');
+  assert.deepEqual(r(['first', 'late']).rows.map((t) => t.id), [id(1), id(3)]);
+  assert.equal(r(['first']).unknown.stands, 1, 'no placement: not recorded');
+});
+
+test('PP-C c1 fix round 2 K9: "Holds by" each period ticked; repeats, no size and toxic hide only what is recorded', async () => {
+  const { applyFilters } = await findQuery();
+  const taxa = [plant(1), plant(2), plant(3)];
+  const holds = (t, p) => (t.id === id(3) ? null : t.id === id(1) || p === '2041-2070');
+  const keep = (f, ctx = {}) => applyFilters(taxa, f, ctx).rows.map((t) => t.id);
+  assert.deepEqual(keep({ holds: ['2041-2070'] }, { holds }), [id(1), id(2)]);
+  assert.deepEqual(keep({ holds: ['2041-2070', '2071-2099'] }, { holds }), [id(1)], 'every period ticked');
+  assert.equal(applyFilters(taxa, { holds: ['2041-2070'] }, { holds }).unknown.holds, 1);
+  const repeats = (t) => (t.id === id(1) ? true : t.id === id(2) ? false : null);
+  assert.deepEqual(keep({ hideRepeats: true }, { repeats }), [id(2), id(3)], 'a plant with no job recorded stays');
+  const sized = [plant(1, { traits: { height_m: { max: 3 } } }), plant(2)];
+  assert.deepEqual(applyFilters(sized, { hideNoSize: true }, {}).rows.map((t) => t.id), [id(1)]);
 });

@@ -38,7 +38,7 @@ export interface FindWhy { kind: NameKind; text: string; lang?: string; match: M
 // shared: how many other plants carry the name that matched.
 export interface FindHit { id: PlantId; tier: Tier; why: FindWhy; shared: number }
 // A search over the index; langs: the languages of the names-file names it holds (none without it).
-export interface Finder { (query: string): FindHit[]; langs: readonly string[]; close(query: string): FindHit[]; exact(query: string): FindHit[] }
+export interface Finder { (query: string): FindHit[]; langs: readonly string[]; close(query: string, words?: boolean): FindHit[]; exact(query: string): FindHit[] }
 
 const KINDS: readonly NameKind[] = ['name', 'alternate', 'canonical', 'synonym', 'accepted', 'other'];
 const TIER_OF: Record<NameKind, Tier> = { name: 'site', alternate: 'site', canonical: 'scientific', synonym: 'scientific', accepted: 'scientific', other: 'other' };
@@ -147,11 +147,14 @@ function finder(b: Builder, langs: string[]): Finder {
     }
     return ordered(best);
   };
-  // The close spellings of a query nothing answers: names one slip off, each plant once (PP-C2).
-  find.close = (query: string): FindHit[] => {
-    const q = fold(query), at: number[] = [];
+  // The close spellings of a query nothing answers: names one slip off, each plant once (PP-C2). With
+  // words (Find's "Did you mean", K5), a one-word query is also held against each word of a name
+  // ("chesnut": European chestnut); Paste reads a line as a whole name.
+  find.close = (query: string, words = false): FindHit[] => {
+    const q = fold(query), at: number[] = [], word = words && !/\s/.test(q);
     if ([...q].length < 4) return [];
-    for (let i = 0; i < folded.length; i++) if (Math.abs(folded[i].length - q.length) <= 1 && oneOff(folded[i], q)) at.push(i);
+    const near = (n: string) => Math.abs(n.length - q.length) <= 1 && oneOff(n, q);
+    for (let i = 0; i < folded.length; i++) if (near(folded[i]) || (word && folded[i].split(/[\s-]+/).some(near))) at.push(i);
     return byTier(at);
   };
   // The plants with a name that folds to exactly the query (Paste: a pasted line is a whole name).

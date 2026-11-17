@@ -12,7 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, layoutVariants, en, findAx, has, settled } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openFind, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
+import { everyPlant, esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openFind, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 
 useHarness();
@@ -127,7 +127,7 @@ test('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" nor 
       await openFind(page);
       // Find is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
       assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)');
-      if (!await page.$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]')) await page.click('dialog.ct-find[open] [data-find-select]');
+      if (!await page.$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]')) { await everyPlant(page); await page.click('dialog.ct-find[open] [data-find-select]'); }
       while (candidates.length) {
         const p = candidates.shift();
         await page.$eval('dialog.ct-find[open] [data-find-search]', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
@@ -352,7 +352,8 @@ test('Walk-through 2 N1 (review): with a toast in Find, the last controls tabbed
   const plants = await temperate();
   const page = await suggested({ width: 390, theme: 'light', hook: true });
   await openFind(page); // the store's opener, as in N1
-  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-select]', 15_000), 'no Find sheet (dialog.ct-find)'); // lazy chunk, as in N1
+  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)'); // lazy chunk, as in N1
+  await everyPlant(page); // the start lists no plant (K3)
   await page.click('dialog.ct-find[open] [data-find-select]');
   await page.click('dialog.ct-find[open] [data-find-row] input[type="checkbox"]');
   await page.click('dialog.ct-find[open] [data-find-bar] .button-primary');

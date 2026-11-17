@@ -32,9 +32,12 @@ import { finder, releasePlants, wantNames } from './names.ts';
 
 const MAX_LINES = 500;
 const SETTLE_MS = 200;
+const PLUS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
+const OK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 
-// onBack: opened from Find, Paste is drawn in Find's sheet and Cancel or an add goes back to it (B11).
-export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: () => void }) {
+// onBack: opened from Find, Paste is drawn in Find's sheet and Cancel or an add goes back to it (B11);
+// "Search by hand" goes back with the line's name for Find's search.
+export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?: string) => void }) {
   const pool = store.pool.value;
   const climate = store.climate.value;
   const scene = store.flagScene.value;
@@ -115,39 +118,52 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: () => 
   const empty = !result.found.length && !result.choose.length && !result.other.length && !result.already.length && !result.duplicate.length && !result.none.length;
   const sample = (c: number) => table.rows.find((r, i) => i > 0 && r[c]?.trim())?.[c]?.trim().slice(0, 24) ?? table.rows[0]?.[c]?.trim().slice(0, 24) ?? '';
 
-  // The paste in its order (board Paste, fix round 1 B10): one row a line, its reading said on it.
-  type Row = { at: number; name: string; status: 'found' | 'choose' | 'other' | 'already' | 'duplicate' | 'none'; body: ComponentChildren };
+  // The paste in its order (board Paste, fix round 1 B10): one row a line, its reading said on it, with
+  // its mark (K11): ✓ read, ⓘ a question, ✗ not found; the mark has its word on the row.
+  type Status = 'found' | 'choose' | 'other' | 'already' | 'duplicate' | 'none';
+  type Row = { at: number; name: string; status: Status; body: ComponentChildren };
   const pv = store.verdictFailed.value ? null : store.poolVerdicts.value;
   const rangeWarn = (n: Named) => (pv?.get(n.id)?.level === 'outside' ? <FitLine v={pv.get(n.id)} /> : null);
+  // "Search by hand" (board Paste): Find with the name in its search (opened alone: Find).
+  const byHand = (name: string) => (onBack ? onBack(name) : store.openFind());
   const rows: Row[] = [
     ...result.found.map((f): Row => ({ at: f.at, name: f.name, status: 'found', body: <>
-      <span>{nameOf(f.taxon)} {sci(f.taxon)} · {T('paste.isNew')}{f.close && <> · <span class="ct-muted">{T('paste.close', { name: f.close })}</span></>}</span>
+      <span><strong>{nameOf(f.taxon)}</strong> {sci(f.taxon)} · {T('paste.isNew')}{f.close && <> · <span class="ct-muted">{T('paste.close', { name: f.close })}</span></>}</span>
       {rangeWarn(f.taxon)}{warnings(f.taxon)}</> })),
-    ...result.choose.map((c): Row => ({ at: c.at, name: c.name, status: 'choose', body: <>
-      <span>{P('paste.which', c.taxa.length, { name: c.name })}</span>
-      <ul class="ct-plain">
-        {c.taxa.map((t) => (
-          members.includes(t.id)
-            ? <li class="ct-muted">{nameOf(t)} {sci(t)} · {T('inConsortium')}</li>
-            : (
-              <li><label class="ct-check"><input type="checkbox" checked={ticked.includes(t.id)} onChange={() => toggle(t.id)} /> {nameOf(t)} {sci(t)}
-                {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}</label>
-                {rangeWarn(t)}{warnings(t)}</li>
-            )
-        ))}
-      </ul></> })),
+    ...result.choose.map((c): Row => {
+      const none = !c.taxa.some((t) => ticked.includes(t.id));
+      return { at: c.at, name: c.name, status: 'choose', body: <>
+        <span>{P('paste.which', c.taxa.length, { name: c.word })}</span>
+        {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}
+        <span class="ct-paste-choices" role="group" aria-label={P('paste.which', c.taxa.length, { name: c.word })}>
+          {c.taxa.map((t) => (
+            members.includes(t.id)
+              ? <span class="ct-paste-choice is-in">{nameOf(t)} · {T('inConsortium')}</span>
+              : <button type="button" class="ct-paste-choice" aria-pressed={ticked.includes(t.id) ? 'true' : 'false'} title={t.canonical_name} onClick={() => toggle(t.id)}>{nameOf(t)}</button>
+          ))}
+          <button type="button" class="ct-paste-choice" aria-pressed={none ? 'true' : 'false'} onClick={() => setTicked((s) => s.filter((id) => !c.taxa.some((t) => t.id === id)))}>{T('paste.choiceNone')}</button>
+        </span>
+        {c.taxa.filter((t) => ticked.includes(t.id)).map((t) => <>{rangeWarn(t)}{warnings(t)}</>)}</> };
+    }),
     ...result.other.map((o, i): Row => ({ at: o.at, name: o.name, status: 'other', body: <>
-      <span>{nameOf(o.taxon)} {sci(o.taxon)} · {T('otherLists')}</span>
+      <span><strong>{nameOf(o.taxon)}</strong> {sci(o.taxon)} · {T('otherLists')}</span>
       <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
       {warnings(o.taxon)}
       <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
         onClick={() => void addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button></> })),
     ...result.already.map((a): Row => ({ at: a.at, name: a.name, status: 'already', body: <>
-      <span>{nameOf(a.taxon)} {sci(a.taxon)} · {T('inConsortium')}</span>
+      <span><strong>{nameOf(a.taxon)}</strong> {sci(a.taxon)} · {T('inConsortium')}</span>
       {guests[a.taxon.id] && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[a.taxon.id]!) })}</span>}</> })),
-    ...result.duplicate.map((d): Row => ({ at: d.at, name: d.name, status: 'duplicate', body: <span>{nameOf(d.taxon)} {sci(d.taxon)} · {T('paste.twice')}</span> })),
-    ...result.none.map((x): Row => ({ at: x.at, name: x.name, status: 'none', body: <span>{T('paste.notFound')}</span> })),
+    ...result.duplicate.map((d): Row => ({ at: d.at, name: d.name, status: 'duplicate', body: <span><strong>{nameOf(d.taxon)}</strong> {sci(d.taxon)} · {T('paste.twice')}</span> })),
+    ...result.none.map((x): Row => ({ at: x.at, name: x.name, status: 'none', body: <>
+      <span><strong>{T('paste.notFound')}</strong></span>
+      <button type="button" class="text-link" data-paste-byhand="" onClick={() => byHand(x.name)}>{T('paste.byHand')}</button></> })),
   ].sort((a, b) => a.at - b.at);
+  const MARK: Record<Status, ComponentChildren> = {
+    found: OK, other: OK, already: OK, duplicate: OK,
+    choose: <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 7v4.5M8 4.6v.8" stroke="currentColor" stroke-width="1.6" /></svg>,
+    none: <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>,
+  };
   const lines = rows.length;
   const sum = [
     result.found.length + result.other.length > 0 && P('paste.sumNew', result.found.length + result.other.length),
@@ -157,10 +173,10 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: () => 
   const back = () => (onBack ? onBack() : closeSheet());
 
   return (
-    <Frame titleId="ct-paste-title" class="ct-paste" head={<span class="ct-muted">{T('paste.title')}</span>} foot={
+    <Frame titleId="ct-paste-title" class="ct-paste" foot={
       <div class="ct-add-bar">
         <button type="button" class="button button-secondary" data-paste-cancel="" onClick={back}>{T('paste.cancel')}</button>
-        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={() => void addAll()}>{P('paste.addAll', toAdd.length)}</button>
+        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
       </div>
     }>
       <div>
@@ -187,7 +203,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: () => 
         {lines > 0 && (
           <ul class="ct-rows ct-paste-rows">
             {rows.map((r) => (
-              <li key={`${r.at}`} data-paste-row="" data-status={r.status}><strong>“{r.name}”</strong> {r.body}</li>
+              <li key={`${r.at}`} data-paste-row="" data-status={r.status}><span class="ct-paste-mark" data-status={r.status}>{MARK[r.status]}</span><span class="ct-paste-body">“{r.name}” {r.body}</span></li>
             ))}
           </ul>
         )}
