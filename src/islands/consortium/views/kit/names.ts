@@ -32,6 +32,10 @@ export { nameOf };
 
 // A number in the page language, to at most `max` decimals (src/islands/consortium/format.ts).
 export const num = (n: number, max = 1): string => formatNumber(n, pageLang(), max);
+// A place's coordinates in words, to two decimals ("45.76° N, 4.84° E"): the location card and Details'
+// "Against your place" line write them alike (one owner).
+export const coords = (lat: number, lon: number): string =>
+  T('location.coords', { lat: num(Math.abs(lat), 2), lon: num(Math.abs(lon), 2), ns: T(lat < 0 ? 'location.dir.s' : 'location.dir.n'), ew: T(lon < 0 ? 'location.dir.w' : 'location.dir.e') });
 // "a, b and c" in the page language.
 export const listOf = (items: string[]): string => new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items);
 

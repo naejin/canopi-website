@@ -19,7 +19,7 @@ import { T } from '../../strings.ts';
 import { climateShown, pendingClimate } from '../../state/persist.ts';
 import { line, unread, type Line } from '../../state/lookups.ts';
 import { confirmProposed, forget, locate, placeName } from '../../state/location.ts';
-import { num, zoneName } from '../kit/names.ts';
+import { coords, num, zoneName } from '../kit/names.ts';
 
 export { settle, useMyLocation, searchPlace, adoptLinkLocation as adopt } from '../../state/location.ts';
 
@@ -28,9 +28,6 @@ export const mapOpen = signal(false);
 export function openMap(): void { mapOpen.value = true; }
 
 // ---- words ----
-const coords = (lat: number, lon: number): string => {
-  return T('location.coords', { lat: num(Math.abs(lat), 2), lon: num(Math.abs(lon), 2), ns: T(lat < 0 ? 'location.dir.s' : 'location.dir.n'), ew: T(lon < 0 ? 'location.dir.w' : 'location.dir.e') });
-};
 // The class in plain words: its type (Af, BW, Cs, Df, ET…), then its temperature letter where it has one.
 function koppenWords(k: string): string {
   const type = k[0] === 'A' || k[0] === 'E' ? k : k.slice(0, 2), temp = k[0] === 'A' || k[0] === 'E' ? '' : k.slice(2);

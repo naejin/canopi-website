@@ -80,10 +80,10 @@ export function JobIcon({ job }: { job: JobId | null }) {
 export const jobWord = (job: JobId | null): string => (job ? T(`job.${job}`) : T('palette.jobsNone'));
 
 // A word mid-sentence: lower case after the sentence's start where the language writes it so (German
-// keeps its capitals, its nouns need them; Chinese, Japanese and Korean have no case). The same rule as
-// c1's roles list (views/find/Find.tsx LOWER, rolesWords): one copy to keep at the PP-C merge.
+// keeps its capitals, its nouns need them; Chinese, Japanese and Korean have no case). The one owner:
+// Find's roles list (views/find/Find.tsx rolesWords) reads it too.
 const LOWER = new Set(['en', 'fr', 'es', 'pt', 'it', 'nl', 'ru']);
-function midSentence(s: string): string {
+export function midSentence(s: string): string {
   const lang = pageLang();
   return LOWER.has(lang) ? s.charAt(0).toLocaleLowerCase(lang) + s.slice(1) : s;
 }

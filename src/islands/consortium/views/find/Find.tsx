@@ -24,11 +24,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, jobIds, jobsOf, periodIds, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fitLine, jobIds, jobsOf, periodIds, periodName, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { addsWithWarning, applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, type Frame } from '../kit/sheet.tsx';
-import { FitLine, JobIcon, holeWords, say } from '../kit/fit.tsx';
+import { FitLine, JobIcon, holeWords, midSentence, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
 import { listName, nameOf, nameOrder, num } from '../kit/names.ts';
 import { formatLength } from '../../format.ts';
@@ -37,10 +37,9 @@ import { finder, finderFailed, namesState, releasePlants, wantNames } from './na
 import { Marks } from './marks.tsx';
 import Paste from './Paste.tsx';
 
-// The later periods "Holds by …" offers (types.ts periodIds), named as future.ts periodName names them
-// (not imported: it would bring the future and range chunks into Find's first use, as pool.tsx says).
+// The later periods "Holds by …" offers (types.ts periodIds), named by verdict-line.ts periodName
+// (first-run words).
 const LATER = periodIds.slice(1);
-const periodWords = (p: PeriodId): string => p.replace('-', '–');
 
 // A language's name in the page's language ("French"), for "French name: Gombo".
 const langName = (code: string): string => {
@@ -94,13 +93,11 @@ function sizeWords(t: Taxon): string {
   return w !== null && h !== null ? T('find.sizeBoth', { w: W, h: H }) : h !== null ? T('find.sizeTall', { h: H }) : w !== null ? T('find.sizeWide', { w: W }) : T('find.sizeNone');
 }
 // The one roles list (c1r3 T20): lower case after its first word where the language writes it so
-// (German keeps its capitals, its nouns need them; Chinese, Japanese and Korean have no case). In a job
-// hole the hole's own job is left out, the rest "Also …" (board FillHole, T15): the row's first line
-// already says it fills the hole; so is a job list's one job (c1r4 U7): every row does it.
-const LOWER = new Set(['en', 'fr', 'es', 'pt', 'it', 'nl', 'ru']);
+// (kit/fit.tsx midSentence). In a job hole the hole's own job is left out, the rest "Also …" (board
+// FillHole, T15): the row's first line already says it fills the hole; so is a job list's one job
+// (c1r4 U7): every row does it.
 function rolesWords(jobs: readonly JobId[], also: boolean): string {
-  const lang = pageLang(), low = (s: string) => (LOWER.has(lang) ? s.charAt(0).toLocaleLowerCase(lang) + s.slice(1) : s);
-  const list = jobs.map((j, i) => (i > 0 || also ? low(T(`job.${j}`)) : T(`job.${j}`))).join(', ');
+  const list = jobs.map((j, i) => (i > 0 || also ? midSentence(T(`job.${j}`)) : T(`job.${j}`))).join(', ');
   return also && list ? T('find.also', { jobs: list }) : list;
 }
 // known: the job the list is filtered by, left out ("Also …") only on a row that does it (c1r5 W3: a
@@ -233,7 +230,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const inRangeBy = (t: Taxon): string | null => {
     if (!judging) return null;
     const p = after.find((x) => rule!.holdsBy(t, vctx, x));
-    return p ? periodWords(p) : null;
+    return p ? periodName(p) : null;
   };
   const stay = useMemo(() => {
     const m = new Map<PlantId, number>();
@@ -347,7 +344,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const later = store.period.value !== periodIds[0], fitsHere = judged;
   const subtitle = !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
     : hole ? P('find.holeLede', fitsHere, { list: listName(climate) })
-      : P(later ? 'find.fitCountLater' : 'find.fitCount', fitsHere, { total: num(base.length), list: listName(climate), period: periodWords(store.period.value) });
+      : P(later ? 'find.fitCountLater' : 'find.fitCount', fitsHere, { total: num(base.length), list: listName(climate), period: periodName(store.period.value) });
   const start = !q && !hole && onCount === 0 && !listed;
   // A query before the search index is in (T4): "Searching…", no rows; the core's names failed, the
   // could-not-load line (the next focus on the search tries again).
@@ -401,7 +398,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const standOpts = listOptions('stands', Object.keys(STANDS) as Stand[], (s) => { const [from, to] = STANDS[s as Stand]; return say(yearsLine(from, to)); });
   const sizeOpts = listOptions('size', SIZES, (s) => T(`find.size.${s}`, { lo: num(2), len: formatLength(s === 'small' ? 2 : 8, pageLang()) }));
   const lifeOpts = listOptions('life', LIVES, (l) => T(`find.life.${l}`));
-  const holdOpts = listOptions('holds', LATER, (p) => T('find.holds', { period: periodWords(p as PeriodId) }));
+  const holdOpts = listOptions('holds', LATER, (p) => T('find.holds', { period: periodName(p as PeriodId) }));
   const unknownLine = (id: FilterId, kept = false) => unknown[id] !== undefined && (
     <span class="ct-find-unknown" data-filter-unknown={id}>{P(kept ? 'find.unknownKept' : 'find.unknown', unknown[id]!)}</span>
   );

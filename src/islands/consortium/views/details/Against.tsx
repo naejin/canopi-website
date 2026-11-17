@@ -16,6 +16,7 @@ import type { ComponentChildren } from 'preact';
 import type { AgainstEntry, Band, Dispute, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
 import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, say } from '../kit/fit.tsx';
+import { coords } from '../kit/names.ts';
 import { formatNumber, formatTemp } from '../../format.ts';
 import { pageLang } from '../../strings.ts';
 
@@ -118,9 +119,9 @@ export function Against({ t, disputes = [], traitSources = null }: { t: Taxon; d
   useEffect(() => { if (!store.verdictFailed.peek()) store.wantVerdict(); }, []);
   const v = store.verdictOf(t);
   // The line under the heading (board Details): what the bands draw, near which place (its name, else
-  // its coordinates as the location card writes them: location.coords; same format, pf's location.tsx).
-  const loc = store.location.value, lang = pageLang();
-  const where = loc && (loc.label ?? T('location.coords', { lat: formatNumber(Math.abs(loc.lat), lang, 2), lon: formatNumber(Math.abs(loc.lon), lang, 2), ns: T(loc.lat < 0 ? 'location.dir.s' : 'location.dir.n'), ew: T(loc.lon < 0 ? 'location.dir.w' : 'location.dir.e') }));
+  // its coordinates as the location card writes them: kit/names.ts coords).
+  const loc = store.location.value;
+  const where = loc && (loc.label ?? coords(loc.lat, loc.lon));
   const head = <><h3 id="ct-d-against">{T('details.against')}</h3>{where && <p class="ct-against-lede" data-against-lede>{T('details.againstLede', { place: where })}</p>}</>;
   if (!v) {
     const failed = store.verdictFailed.value;
