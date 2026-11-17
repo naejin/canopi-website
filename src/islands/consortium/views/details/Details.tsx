@@ -235,7 +235,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // What the summary's chips name: each warning in short words (K17), the toxicity not checked.
   const chips = lines.filter((l) => l.kind !== 'soft');
   const missingNames = locales.length - names.length;
-  // The sources of the jobs, layer and years: the reasons' own (How sure says them).
+  // The sources of the jobs, layer and years: the reasons' own (How sure says them); a placement from
+  // another climate's list, borrowed or a guest's, is an estimate for this climate (T10).
   const listSources = [...new Set((facts?.reasons ?? []).map((r) => sourceTitle(r.source, facts?.sources[r.source]?.label ?? r.source)))];
   // "Tell us the name you use": the correction opened on this page language's name.
   const tellName = () => {
@@ -299,7 +300,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           ? <p class="ct-muted">{T('details.failed')}</p>
           : !facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
           : <ul class="ct-plain ct-facts">
-              {sureLines(t, { list: zoneName(zone), estimate: !!borrowed, listSources, disputes: facts.disputes ?? [], release }).map((l) => <li data-sure-fact>{say(l)}</li>)}
+              {sureLines(t, { list: zoneName(zone), estimate: !!(borrowed || guest), listSources, disputes: facts.disputes ?? [], release }).map((l) => <li data-sure-fact>{say(l)}</li>)}
               {factLines({ disputes: facts.disputes, audiences: facts.audiences, traitSources: facts.traitSources, shipped: shippedOf(t) }).map((l) => <FactItem l={l} />)}
               {[frostLine(facts.frost, facts.frost !== null), restLine(facts.frost)].filter((l): l is Line => !!l).map((l) => <li data-frost>{say(l)}</li>)}
               {datasetLines(store.source.value?.info() ?? { rangesReview: null }).map((l) => <li class="ct-muted">{say(l)}</li>)}

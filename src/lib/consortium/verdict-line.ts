@@ -423,11 +423,13 @@ export function sourceTitle(id: string, label: string): string {
 
 // The sources a plant's climate range cites (its records, any limit taken from another source, e.g.
 // TreeGOER) and the sources that dispute a limit, each once, by id and name: Details lists those its
-// own sources do not (C5, K7: TreeGOER when it disputes a limit; GBIF once).
+// own sources do not (C5, K7, T10: TreeGOER when it disputes a limit, a dispute row or a weak low,
+// whose stricter bound is TreeGOER's; GBIF once).
 export function rangeSources(t: Taxon, disputes: readonly Dispute[] = []): { id: string; name: string }[] {
   const c = t.climate;
   const rows = c ? [c.tminCold, c.tmaxWarm, c.tmeanYear, c.tmeanWarm, c.aridity] : [];
-  const ids = [c?.source, ...rows.flatMap((r) => (r ? [r.lowSource, r.highSource] : [])), ...disputes.filter((d) => d.kind === 'range' || RANGE_FIELD[d.field]).map((d) => d.source)].filter((x): x is string => !!x);
+  const weak = (['tminCold', 'tmeanYear'] as const).some((m) => c?.[m]?.weak && !c[m]!.lowSource);
+  const ids = [c?.source, ...rows.flatMap((r) => (r ? [r.lowSource, r.highSource] : [])), ...disputes.filter((d) => d.kind === 'range' || RANGE_FIELD[d.field]).map((d) => d.source), weak ? 'treegoer_ranges' : null].filter((x): x is string => !!x);
   const byName = new Map<string, string>();
   for (const id of ids) if (![...byName.values()].includes(sourceName(id))) byName.set(id, sourceName(id));
   return [...byName].map(([id, name]) => ({ id, name }));
@@ -453,7 +455,7 @@ export function sureLines(t: Taxon, w: { list: string; estimate: boolean; listSo
   const c = t.climate;
   if (!c) out.push(D('sureRangeNone'));
   else {
-    const names = rangeSources(t).map((x) => x.name).join(', ');
+    const names = rangeSources(t, w.disputes).map((x) => x.name).join(', ');
     out.push(c.cells === null ? D('sureRangeSources', { sources: names }) : D('sureRange', { n: c.cells, sources: names }));
   }
   const disputed = disputedMeasures(t, w.disputes);

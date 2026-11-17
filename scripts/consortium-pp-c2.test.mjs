@@ -690,3 +690,16 @@ test('c2 fix T9 (Swap order): within equal shared jobs, more of the member\'s ye
   const order = alternatives(madre.id, [madre, keeper], [chicory, olive], { site, interactions: [] }).map((a) => a.id);
   assert.deepEqual(order, [olive.id, chicory.id], 'Autumn olive (years 1–15) above Chicory (to year 3)');
 });
+
+// Fix round 3 T10 (Chrome K7): a weak low (sources disagree, TreeGOER stricter) names TreeGOER in
+// Sources and in the Climate range line, with no dispute row (Murphey agave: Coldest nights and Warmth
+// over the year disputed, Sources without TreeGOER).
+test('c2 fix T10 (disputing source named): a weak low names TreeGOER in Sources and the Climate range line', () => {
+  const range = (o = {}) => ({ low: 1, median: 5, high: 10, count: 9, basis: 'gbif', blocks: null, lowSource: null, highSource: null, weak: false, ...o });
+  const t = { climate: { source: 'gbif_occurrences', tminCold: range({ weak: true }), tmaxWarm: range(), tmeanYear: range({ weak: true }), tmeanWarm: null, aridity: null, cells: 22, nativeShare: null } };
+  assert.deepEqual(line.rangeSources(t).map((x) => x.name), ['GBIF', 'TreeGOER']);
+  const lines = line.sureLines(t, { list: 'Arid', estimate: true, listSources: [], disputes: [], release: '' }).map(say);
+  assert.equal(lines[0], 'Jobs, layer and years: Canopi’s Arid list, an estimate for your climate, not reviewed.');
+  assert.equal(lines[1], 'Climate range: records in 22 map squares (GBIF, TreeGOER), an estimate.');
+  assert.deepEqual(line.rangeSources({ climate: { ...t.climate, tminCold: range(), tmeanYear: range() } }).map((x) => x.name), ['GBIF'], 'no TreeGOER when nothing is disputed');
+});
