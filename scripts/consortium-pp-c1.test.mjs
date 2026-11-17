@@ -13,7 +13,7 @@
 //                  { id, tier: 'site' | 'scientific' | 'other', why: { kind, text, lang?, match }, shared }
 //                  (match: 'exact' | 'prefix' | 'tokens' | 'alternate', the site tier's order; shared:
 //                  how many other plants use that name), hits in tier order, then match order; namesFor(fileHeader, page) -> boolean
-//                  (false drops the names file: release_id or core_raw_sha256 differs); listsOf(id, lists);
+//                  (false drops the names file: release_id or core_raw_sha256 differs);
 //                  oneOff(a, b) moved here from views/paste.ts (now views/find/paste.ts); namesLine(fileLangs) -> Line;
 //   views/find/paste.ts readPaste(names, { here, others, members, index }) matches through index (a
 //                  releaseIndex), so a pasted synonym or names-file name is found as Find finds it.
@@ -146,11 +146,6 @@ test('PP-C-u7 (c1 names file 4.4): a names file whose release_id or core_raw_sha
   assert.equal(namesFor({ ...page }, page), true);
   assert.equal(namesFor({ ...page, release_id: 'r-0000000000000000' }, page), false);
   assert.equal(namesFor({ ...page, core_raw_sha256: '0'.repeat(64) }, page), false);
-});
-
-test('PP-C-u8 (c1 hit outside the list 4.8): a hit on a plant outside the current list names the lists that hold it', async () => {
-  const { listsOf } = await search();
-  assert.deepEqual(listsOf(id(1), { Tropical: [id(1)], Subtropical: [id(1), id(2)], Temperate: [id(2)] }), ['Tropical', 'Subtropical'], 'in the climate order');
 });
 
 test('PP-C-u9 (c1 one search module): Paste matches through it, synonyms included; oneOff gives the close spellings; the names line counts the languages the file holds, never "11 languages"', async () => {

@@ -2,7 +2,7 @@
 // Paste both read it, so a name is found the same way in each. One release-wide index over every
 // plant's names (the core's plant_names for the page's language and English, the canonical name) and,
 // once fetched, schema 4's names file (vernacular names in 20 languages, WCVP synonyms, accepted
-// names; views/find/names.ts fetches it). Pure: no DOM, no store, so scripts/consortium-pp-c1.test.mjs
+// names; data/names-file.ts fetches it). Pure: no DOM, no store, so scripts/consortium-pp-c1.test.mjs
 // runs it in Node. In the find chunk only (Find, Paste): never in the first run.
 //
 // Ranking tiers (the owner's design, the app's order within a tier):
@@ -18,8 +18,7 @@
 // the folded names (about 30,000, a few milliseconds per query at 4x CPU throttle; probe 2026-11-17),
 // with no sorted index. The names file is folded in slices that yield (indexSliced), so no task runs
 // long while it is read.
-import { fold, queryTokens, type ClimateZone, type Line, type PlantId } from '../../../lib/consortium/index.ts';
-import { climateZones } from '../../../lib/consortium/index.ts';
+import { fold, queryTokens, type Line, type PlantId } from '../../../lib/consortium/index.ts';
 
 // One plant as the index reads it. names: the core's names by locale (plant_names: English and the
 // page's language); other: names-file vernacular names (lang: its code; one in the page's language is an
@@ -228,10 +227,6 @@ export async function indexSliced({ names, lang, file, plantIds }: { names: read
 }
 
 // ---- around the search ----
-
-// The lists that hold a plant, in the climate order (4.8: a hit outside the current list names them).
-export const listsOf = (id: PlantId, lists: Partial<Record<ClimateZone, readonly PlantId[]>>): ClimateZone[] =>
-  climateZones.filter((z) => lists[z]?.includes(id));
 
 // Why a row matched, in Lines (the one owner of these words; Find and its other-lists rows read it):
 // the name that matched unless it is the plant's own name in the page's language or its canonical

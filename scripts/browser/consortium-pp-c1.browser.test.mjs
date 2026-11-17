@@ -325,6 +325,16 @@ test('PP-C10 (c1 names file 404 or offline, 4.2): one line, and the next focus r
     await page.focus(`${FIND} [data-find-search]`);
     assert.ok(await retried, `${names}: the next focus retries`);
   }
+  // Fix round 1, A7 (review c1-09): a stalled download is aborted (load.ts's stall, shortened by the
+  // test build) and the next focus tries again, never "still loading" for the page's life.
+  const page = await tool({ names: 'hold', timeouts: { stall: 600 } });
+  await choose(page, 'Tropical');
+  await openFind(page);
+  await hasFind(page);
+  assert.ok(await has(page, `${FIND} [data-find-names="failed"]`, 6000), 'stalled: aborted, one line');
+  const retried = page.waitForRequest((r) => /\/data\/consortium\/.*names/.test(r.url()), { timeout: 4000 }).then(() => true, () => false);
+  await page.focus(`${FIND} [data-find-search]`);
+  assert.ok(await retried, 'stalled: the next focus retries');
 });
 
 test('PP-C11 (c1 names file digest mismatch, 4.3): the file is dropped, and not fetched again until a reload', async () => {
