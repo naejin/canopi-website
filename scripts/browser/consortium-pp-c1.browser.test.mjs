@@ -651,3 +651,19 @@ test('PP-C c1 fix B10+B11 (Paste as the board): pasted order, count, Which …?,
   assert.ok(await has(page, `${FIND} [data-find-paste]`, 3000), 'Cancel goes back to Find');
   assert.ok(await page.waitForFunction(() => document.activeElement?.matches('[data-find-paste]'), { timeout: 2000 }).then(() => true, () => false), 'the focus on "Paste a list"');
 });
+
+// Fix round 1, B17 (conformance c1 #18): at 320 px nothing on the palette page scrolls sideways with
+// Find's ways in (the phone bar) showing.
+test('PP-C c1 fix B17: the palette page at 320 px, the Find bar showing, scrolls no wider than the window', async () => {
+  const page = await suggestedAt('nairobi', 'Subtropical'); // the board check's place (Kiambu, Subtropical)
+  await page.setViewport({ width: 320, height: 700, deviceScaleFactor: 1 });
+  await page.waitForFunction(() => document.querySelector('.ct-find-phonebar:not([hidden])'), { timeout: 6000 });
+  await new Promise((r) => setTimeout(r, 300));
+  const wide = await page.evaluate(() => {
+    const w = document.documentElement.clientWidth;
+    const over = [...document.querySelectorAll('#ct-root *')].filter((e) => e.getBoundingClientRect().right > w + 0.5 && getComputedStyle(e).position !== 'fixed')
+      .map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')} ${Math.round(e.getBoundingClientRect().right)}`).slice(0, 6);
+    return { scroll: document.documentElement.scrollWidth, w, over };
+  });
+  assert.ok(wide.scroll <= wide.w, `scrollWidth ${wide.scroll} > ${wide.w}: ${wide.over.join(' | ')}`);
+});
