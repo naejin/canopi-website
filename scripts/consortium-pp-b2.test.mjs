@@ -120,7 +120,6 @@ async function kiambuStore() {
   state.signals.climate.value = 'Subtropical';
   store.pools.value = { Subtropical: await real.pool('Subtropical') };
   store.location.value = KIAMBU;
-  store.rangeRule.value = await core.loadRangeRule();
   store.verdictRule.value = await core.loadVerdictRule();
   return store;
 }

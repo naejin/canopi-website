@@ -6,7 +6,7 @@
 // A climate has a list to suggest from when it is curated, or borrows a nearest list (core
 // placement.ts NEAREST_LISTS) once the site location has a climate: only the range rule fits a
 // borrowed pool to a real place (decision row "P5 fixes from the UX audit" (1)).
-import type { ClimateZone, RangeRule, SiteLocation, Taxon } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
 import { hasPlants } from '../../../lib/consortium/index.ts';
 
 // What the rule reads. curated: the climates the export curates (the page's list); siteClimate: the
@@ -14,11 +14,22 @@ import { hasPlants } from '../../../lib/consortium/index.ts';
 // while one asks for it (store.rangeFailed); nothingFits: see nothingFits below.
 export interface SuggestScene { curated: readonly ClimateZone[]; siteClimate: boolean; rangeFailed: boolean; nothingFits: boolean }
 
-// Nothing fits: a list with plants, none of which holds the site (the range rule loaded). Place then
-// offers no "Start from a small suggested palette" (it could only give an empty palette); the
-// nothing-fits state's "Search all plants" is the step.
-export const nothingFits = (list: Taxon[] | null, site: SiteLocation | null, rule: RangeRule | null): boolean =>
-  !!rule && !!list?.length && rule.withinRange(list, site).length === 0;
+// The verdicts the rules read (store.poolVerdicts: the page period's, null until the verdict rule is in).
+type Verdicts = ReadonlyMap<PlantId, PlantVerdict> | null;
+// Nothing fits: a list with plants, every one judged outside for the page period (store.countFits says
+// "none fit" from the same verdicts). Place then offers no "Start from a small suggested palette" (it
+// could only give an empty palette); the nothing-fits state's "Search all plants" is the step.
+export const nothingFits = (list: Taxon[] | null, verdicts: Verdicts): boolean =>
+  !!verdicts && !!list?.length && list.every((t) => verdicts.get(t.id)?.level === 'outside');
+// What suggestions and lists draw from (P5 S5c, owner answer 2; one verdict since PP-C c2): the list
+// less the plants judged outside, except those in keep (a plant added anyway stays the reader's). The
+// same array when none is left out (no verdicts, or none outside), so caches keyed on it hold.
+export function notOutside(list: Taxon[], verdicts: Verdicts, keep: readonly PlantId[] = []): Taxon[] {
+  if (!verdicts) return list;
+  const kept = new Set(keep);
+  const out = list.filter((t) => kept.has(t.id) || verdicts.get(t.id)?.level !== 'outside');
+  return out.length === list.length ? list : out;
+}
 
 const borrows = (z: ClimateZone, s: SuggestScene): boolean => hasPlants(z, s.curated) && !s.curated.includes(z);
 // A borrowed climate without a site climate: the climate needs the site's location.

@@ -48,12 +48,11 @@ test('P5-18 (S5d future summary): at Seville on the Mediterranean list the panel
   assert.doesNotMatch(await text(page, '[data-future]'), /too dry|dry by/i);
   const drier = await text(page, '[data-future-drier]');
   if (drier) assert.match(drier, /^Drier than where they are recorded by 20\d\d–20\d\d, may need watering: /);
-  // A member outside by its period carries the future mark in its dialog (the matrix chips that carried
-  // it went in PP-B commit 0a'; the palette page's chips carry the fit line, Your plants' rows the marks).
+  // A member outside by its period says its later period in its dialog ("Against your place", a dashed
+  // later line; the future mark went with the mark providers in PP-C c2).
   const out = await page.$eval('[data-future-verdict="outside"]', (e) => e.dataset.futurePlant);
   await page.evaluate((id) => window.__ctTest.openSheet('details', id), out);
-  assert.ok(await has(page, 'dialog[open] [data-mark="future"]', 10_000), 'a future mark in a member\'s dialog');
-  assert.equal(await page.$('[data-mark="future"].ct-flag'), null, 'drawn in ink, apart from the ochre warnings');
+  assert.ok(await has(page, 'dialog[open] [data-against] [data-later]', 10_000), 'its later period in the member\'s dialog');
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => !document.querySelector('dialog[open], dialog.ct-sheet'), { timeout: 5000 });
   // The scenario control: a real radio; SSP5-8.5 never puts fewer plants outside than SSP2-4.5.
@@ -69,7 +68,7 @@ test('P5-18 (S5d future summary): at Seville on the Mediterranean list the panel
   assert.ok(named.length > 0 && named.every((t) => t.includes('SSP5-8.5')), `every checked line names the chosen scenario (${named.join(' | ')})`);
   // Without a location nothing shows.
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
-  assert.ok(await page.waitForFunction(() => !document.querySelector('[data-future]') && !document.querySelector('[data-mark="future"]'), { timeout: 5000 }).then(() => true, () => false), 'no location: no panel and no future mark');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('[data-future]'), { timeout: 5000 }).then(() => true, () => false), 'no location: no panel');
 });
 
 test('P5-19 (S5d not checked): with no future data for the site the panel says "not checked", never "fine"', async () => {
@@ -81,7 +80,6 @@ test('P5-19 (S5d not checked): with no future data for the site the panel says "
   assert.ok(await has(page, '[data-future="not-checked"]', 10_000), 'the future panel says "not checked"');
   assert.match(await text(page, '[data-future="not-checked"]'), /not checked/);
   assert.equal(await page.$('[data-future-summary]'), null, 'no count that could read as "fine"');
-  assert.equal(await page.$('[data-mark="future"]'), null);
 });
 
 test('P5-19b (S5d future panel, hand-off layout shift): the panel lands below Share, Print and Download, and nothing above it moves when it arrives', async () => {

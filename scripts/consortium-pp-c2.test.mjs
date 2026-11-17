@@ -89,7 +89,7 @@ test('PP-C-u10 (c2 reasons per factor): the kinds the mark providers give today 
   assert.notEqual(unknown, unrecorded, '"not recorded" is apart from "not checked"');
   assert.match(say(line.reasonLine({ ...base, factor: 'water', level: 'unknown', basis: 'spot', place: null, low: null, high: null })), /not checked/i, 'wetter: not checked');
   assert.match(say(line.reasonLine({ ...base, factor: 'dry', level: 'unknown', place: null, low: null, high: null })), /not checked/i, 'aridity: not checked');
-  // The bound's source: a limit from TreeGOER says so (range-marks' source.treegoer today).
+  // The bound's source: a limit from TreeGOER says so.
   const bound = say(line.reasonLine({ ...base, level: 'look', place: -12, source: 'treegoer' }));
   assert.match(bound, /TreeGOER/, `the bound's source named ("${bound}")`);
   assert.doesNotMatch(say(line.reasonLine({ ...base, level: 'look', place: -12 })), /TreeGOER/, 'no source named when the bound has none');
@@ -265,125 +265,8 @@ test('PP-C-u21 (c2 invasive scope, schema 4.3): one line per source with its are
   for (const code of core.invasiveAreaCodes) for (const [lang, w] of Object.entries(words)) assert.ok(w[`consortium.details.invArea.${code}`], `${lang}: consortium.details.invArea.${code}`);
 });
 
-// ---- PP-C c2 commit 1, the mapping probe (removed with the mark providers) ----
-// Every mark the old providers give in Details (range-marks, future-marks, site-marks for surface
-// 'details') must have a line in the new words (verdict-line.ts againstLines over the verdict engine),
-// over every plant of the installed export, 9 places on the v0.2.0 tiles (historical and 8 scenario
-// slots each, inlined below: [period, scenario, koppen, margin, tminCold, tmaxWarm, tmeanCold,
-// tmeanWarm, aridity, precip, dryMonths]), the 3 page periods, and no location on two borrowed
-// climates. A place's own climate list is its pool, the other plants come in as guests. Each mark
-// kind/state maps to a predicate over the lines; the set no line says is printed and must be empty.
-const PROBE_PLACES = {
-  lyon: { lat: 45.7578, lon: 4.832, iso: "FR", slots: [["1991-2020", "historical", "Cfa", 0, 0.1, 26.6, 4.3, 22.4, 1.1, 809, 0], ["2041-2070", "ssp126", "Cfa", 0, 0.9, 28.4, 5.1, 24.2, 1.02, 800, 0], ["2041-2070", "ssp245", "Cfa", 0, 1.3, 28.8, 5.5, 24.6, 0.99, 791, 0], ["2041-2070", "ssp370", "Cfa", 0, 1.7, 29.1, 5.9, 24.9, 0.97, 785, 0], ["2041-2070", "ssp585", "Cfa", 0, 1.9, 29.7, 6.1, 25.5, 0.94, 780, 0], ["2071-2099", "ssp126", "Cfa", 0, 1.1, 28.3, 5.3, 24.1, 1.03, 811, 0], ["2071-2099", "ssp245", "Cfa", 0, 1.8, 29.6, 6, 25.4, 0.95, 785, 0], ["2071-2099", "ssp370", "Cfa", 0, 2.7, 31.1, 6.9, 26.9, 0.85, 758, 2], ["2071-2099", "ssp585", "Cfa", 0, 3.3, 32.3, 7.4, 28.1, 0.8, 746, 2]] },
-  seville: { lat: 37.3891, lon: -5.9845, iso: "ES", slots: [["1991-2020", "historical", "Csa", 0, 5.8, 34.8, 11, 27.8, 0.58, 566, 5], ["2041-2070", "ssp126", "Csa", 0, 6.6, 36.2, 11.8, 29.2, 0.51, 544, 5], ["2041-2070", "ssp245", "Csa", 0, 6.9, 36.6, 12.1, 29.6, 0.47, 517, 5], ["2041-2070", "ssp370", "Csa", 0, 7.1, 36.9, 12.3, 29.8, 0.46, 513, 5], ["2041-2070", "ssp585", "Csa", 0, 7.3, 37.4, 12.5, 30.3, 0.44, 497, 5], ["2071-2099", "ssp126", "Csa", 0, 6.7, 36.2, 11.9, 29.2, 0.51, 539, 5], ["2071-2099", "ssp245", "Csa", 0, 7.3, 37.2, 12.5, 30.2, 0.45, 507, 5], ["2071-2099", "ssp370", "Csa", 0, 8.1, 38.3, 13.3, 31.3, 0.39, 469, 5], ["2071-2099", "ssp585", "BSh", 0, 8.6, 39.2, 13.8, 32.1, 0.36, 449, 5]] },
-  kiambu: { lat: -1.1714, lon: 36.8356, iso: "KE", slots: [["1991-2020", "historical", "Cfb", 0, 12, 26.1, 17.2, 20.8, 1.15, 986, 3], ["2041-2070", "ssp126", "Aw", 0, 13, 27, 18.2, 21.6, 1.16, 1051, 3], ["2041-2070", "ssp245", "Aw", 0, 13.3, 27.3, 18.6, 22, 1.13, 1044, 3], ["2041-2070", "ssp370", "Aw", 0, 13.6, 27.6, 18.8, 22.3, 1.1, 1041, 4], ["2041-2070", "ssp585", "Aw", 0, 13.8, 27.8, 19.1, 22.4, 1.12, 1065, 4], ["2071-2099", "ssp126", "Aw", 0, 13, 27, 18.2, 21.6, 1.17, 1063, 3], ["2071-2099", "ssp245", "Aw", 0, 14, 27.8, 19.2, 22.5, 1.12, 1080, 3], ["2071-2099", "ssp370", "Aw", 0, 14.9, 28.6, 20.1, 23.3, 1.08, 1110, 4], ["2071-2099", "ssp585", "Aw", 0, 15.5, 29.1, 20.7, 23.8, 1.06, 1134, 4]] },
-  recife: { lat: -8.0476, lon: -34.877, iso: "BR", slots: [["1991-2020", "historical", "Am", 0, 22.7, 29.4, 24.6, 27.3, 1.14, 1770, 3], ["2041-2070", "ssp126", "Aw", 0, 23.5, 30.4, 25.4, 28.2, 1.02, 1704, 3], ["2041-2070", "ssp245", "Aw", 0, 23.8, 30.7, 25.7, 28.5, 0.97, 1666, 3], ["2041-2070", "ssp370", "Aw", 0, 24, 30.9, 25.9, 28.7, 0.95, 1671, 3], ["2041-2070", "ssp585", "Aw", 0, 24.2, 31.1, 26.1, 28.9, 0.92, 1635, 3], ["2071-2099", "ssp126", "Aw", 0, 23.6, 30.4, 25.5, 28.2, 1.01, 1694, 3], ["2071-2099", "ssp245", "Aw", 0, 24.2, 31.1, 26.1, 28.9, 0.92, 1642, 3], ["2071-2099", "ssp370", "Aw", 0, 25, 32, 26.9, 29.8, 0.87, 1626, 3], ["2071-2099", "ssp585", "Aw", 0, 25.4, 32.5, 27.3, 30.3, 0.83, 1595, 3]] },
-  oulu: { lat: 65.0121, lon: 25.4651, iso: "FI", slots: [["1991-2020", "historical", "Dfc", 0, -11.2, 19.5, -8.5, 16.6, 0.97, 549, 0], ["2041-2070", "ssp126", "Dfb", 0, -9.3, 20.9, -6.6, 18, 0.95, 577, 0], ["2041-2070", "ssp245", "Dfb", 0, -8.5, 21.3, -5.9, 18.4, 0.93, 579, 0], ["2041-2070", "ssp370", "Dfb", 0, -8, 21.6, -5.4, 18.8, 0.93, 585, 0], ["2041-2070", "ssp585", "Dfb", 0, -7.4, 22, -4.7, 19.1, 0.92, 589, 0], ["2071-2099", "ssp126", "Dfb", 0, -9.2, 21, -6.6, 18.2, 0.94, 574, 0], ["2071-2099", "ssp245", "Dfb", 0, -7.4, 22, -4.8, 19.2, 0.91, 588, 0], ["2071-2099", "ssp370", "Dfb", 0, -5.7, 23.1, -3.1, 20.3, 0.9, 611, 0], ["2071-2099", "ssp585", "Dfb", 0, -4.7, 23.8, -2.1, 20.9, 0.88, 619, 0]] },
-  mendoza: { lat: -32.8895, lon: -68.8458, iso: "AR", slots: [["1991-2020", "historical", "BWk", 0, 3.1, 29.3, 7.6, 24.3, 0.28, 233, 12], ["2041-2070", "ssp126", "BWk", 0, 4, 30.5, 8.4, 25.5, 0.27, 234, 12], ["2041-2070", "ssp245", "BWk", 0, 4.3, 30.9, 8.8, 25.9, 0.26, 233, 12], ["2041-2070", "ssp370", "BWh", 0, 4.6, 31.1, 9, 26.1, 0.25, 229, 12], ["2041-2070", "ssp585", "BWh", 0, 4.8, 31.5, 9.3, 26.4, 0.25, 234, 12], ["2071-2099", "ssp126", "BWk", 0, 4, 30.5, 8.4, 25.5, 0.27, 237, 12], ["2071-2099", "ssp245", "BWh", 0, 4.8, 31.5, 9.3, 26.4, 0.25, 232, 12], ["2071-2099", "ssp370", "BWh", 0, 5.6, 32.5, 10, 27.5, 0.23, 231, 12], ["2071-2099", "ssp585", "BWh", 0, 6.1, 33.3, 10.6, 28.3, 0.23, 237, 12]] },
-  kumasi: { lat: 6.6885, lon: -1.6244, iso: "GH", slots: [["1991-2020", "historical", "Aw", 0, 21.8, 33.7, 24.7, 28.1, 0.86, 1362, 2], ["2041-2070", "ssp126", "Aw", 0, 22.7, 34.7, 25.6, 29.1, 0.8, 1368, 3], ["2041-2070", "ssp245", "Aw", 0, 23, 35, 25.9, 29.4, 0.78, 1366, 3], ["2041-2070", "ssp370", "Aw", 0, 23.2, 35.2, 26.1, 29.6, 0.76, 1358, 3], ["2041-2070", "ssp585", "Aw", 0, 23.5, 35.3, 26.3, 29.7, 0.75, 1358, 3], ["2071-2099", "ssp126", "Aw", 0, 22.8, 34.7, 25.6, 29.1, 0.8, 1369, 3], ["2071-2099", "ssp245", "Aw", 0, 23.5, 35.7, 26.4, 30.1, 0.75, 1363, 3], ["2071-2099", "ssp370", "Aw", 0, 24.3, 36.4, 27.1, 30.8, 0.71, 1348, 3], ["2071-2099", "ssp585", "Aw", 0, 24.8, 36.9, 27.7, 31.3, 0.69, 1348, 3]] },
-  manaus: { lat: -3.119, lon: -60.0217, iso: "BR", slots: [["1991-2020", "historical", "Af", 0, 24, 31.2, 26.7, 28.3, 1.3, 2270, 0], ["2041-2070", "ssp126", "Af", 0, 25, 32.5, 27.8, 29.7, 1.2, 2235, 0], ["2041-2070", "ssp245", "Am", 0, 25.3, 33, 28.1, 30.2, 1.16, 2206, 1], ["2041-2070", "ssp370", "Am", 0, 25.6, 33.4, 28.3, 30.6, 1.12, 2169, 1], ["2041-2070", "ssp585", "Am", 0, 25.9, 34, 28.6, 31.1, 1.09, 2144, 1], ["2071-2099", "ssp126", "Af", 0, 25.1, 32.6, 27.8, 29.8, 1.18, 2216, 0], ["2071-2099", "ssp245", "Am", 0, 25.8, 33.9, 28.6, 31.1, 1.12, 2187, 1], ["2071-2099", "ssp370", "Am", 0, 26.8, 35.3, 29.6, 32.4, 1.03, 2104, 1], ["2071-2099", "ssp585", "Am", 0, 27.5, 36.6, 30.3, 33.8, 0.99, 2081, 2]] },
-  osaka: { lat: 34.6937, lon: 135.5023, iso: "JP", slots: [["1991-2020", "historical", "Cfa", 0, 0.9, 32.3, 5.9, 29.1, 1.53, 1414, 0], ["2041-2070", "ssp126", "Cfa", 0, 2.1, 33.5, 7.1, 30.4, 1.47, 1463, 0], ["2041-2070", "ssp245", "Cfa", 0, 2.4, 33.7, 7.4, 30.6, 1.44, 1449, 0], ["2041-2070", "ssp370", "Cfa", 0, 2.7, 34, 7.8, 30.8, 1.43, 1460, 0], ["2041-2070", "ssp585", "Cfa", 0, 3, 34.4, 8.1, 31.2, 1.41, 1474, 0], ["2071-2099", "ssp126", "Cfa", 0, 2.2, 33.5, 7.3, 30.4, 1.48, 1473, 0], ["2071-2099", "ssp245", "Cfa", 0, 3, 34.4, 8.1, 31.2, 1.42, 1478, 0], ["2071-2099", "ssp370", "Cfa", 0, 4, 35.2, 9, 32.1, 1.36, 1486, 0], ["2071-2099", "ssp585", "Cfa", 0, 4.7, 36, 9.7, 32.8, 1.32, 1505, 0]] },
-};
-const PROBE_ANSWERS = { mendoza: { water: 'dry' }, seville: { water: 'dry' }, lyon: { room: 'small' }, osaka: { room: 'pots' }, oulu: { room: 'large' } };
-test('PP-C c2 probe: every old Details mark (range, future, site) has a line in againstLines over the verdict engine (673 plants, 9 places, 3 periods, plus no location)', async () => {
-  const { gunzipSync } = await import('node:zlib');
-  const { rangeMarks } = await import('../src/lib/consortium/range-marks.ts');
-  const { futureMarks } = await import('../src/lib/consortium/future-marks.ts');
-  const { siteMarks } = await import('../src/lib/consortium/site-marks.ts');
-  const { koppenZone } = await import('../src/lib/consortium/site-climate.ts');
-  const { futurePeriod } = await import('../src/lib/consortium/future.ts');
-  const { periodName, scenarioName } = line;
-  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-  const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
-  const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
-  const src = createSqliteSource(opened.db, { images: {} });
-  const byId = new Map();
-  for (const c of src.info().climates) for (const t of await src.pool(c)) if (!byId.has(t.id)) byId.set(t.id, t);
-  const all = [...byId.values()];
-  const scenario = 'ssp245', scenarioWords = scenarioName(scenario);
-  const words = { period: (p) => periodName(p), scenario: scenarioWords, heightM: null };
-  const unmapped = new Map(); // "kind/state" -> example
-  let marks = 0, runs = 0;
-  const seen = new Map(); // "kind/key" -> marks of it
-  const has = (lines, p) => lines.some(p);
-  const k = (e) => e.line.key.replace(/^consortium\.(line|details)\./, '');
-  const also = (e, key) => (e.line.also ?? []).some((a) => a.key.endsWith(`.${key}`));
-  const SIDE_KEY = { cold: 'Cold', mild: 'Mild', cool: 'Cool', summer: 'Summer', hot: 'Hot' };
-  // One old mark against the lines of today's verdict (with the later one) at the page period today.
-  function mapped(m, lines, v, later) {
-    const now = lines.filter((e) => !e.later), then = lines.filter((e) => e.later);
-    const side = (e) => e.factor === m.state && !e.later;
-    switch (`${m.kind}:${m.key}`) {
-      case 'outside:range.outsideDetails': return v.level === 'outside' && m.state.split(' ').every((s) => has(now, (e) => e.factor === s && (e.level === 'outside' || e.level === 'look')));
-      case 'edge:range.edgeDetails': return v.level === 'look' && m.state.split(' ').every((s) => has(now, (e) => e.factor === s && e.level === 'look' && also(e, 'confEdge')));
-      case 'unknown:range.unknown': return has(now, (e) => k(e) === 'rangeNotRecorded');
-      case 'aridity:range.drier': return has(now, (e) => k(e) === 'pastDrier');
-      case 'aridity:range.wetter': return has(now, (e) => k(e) === 'pastWetter');
-      case 'season:range.coolSeason': return has(now, (e) => e.note === 'cool-season');
-      case 'unknown:range.annual': return has(now, (e) => e.note === 'annual');
-      // With no range recorded nothing is compared: "Range not recorded" says it, dryness included.
-      case 'unknown:range.aridityNotChecked': return has(now, (e) => k(e) === 'dryNotChecked' || k(e) === 'rangeNotRecorded');
-      case 'estimate:estimate.noSite': return has(now, (e) => k(e) === 'reasonNoSite');
-      case 'future:future.long.heat': return !!later && later.level === 'outside' && has(then, (e) => e.factor === 'hot' && e.level === 'outside');
-      case 'future:future.long.edge': return !!later && has(then, (e) => e.factor === 'hot' && e.level === 'look');
-      case 'future:future.warmEnough': return has(now, (e) => e.note === 'warm-enough-later');
-      case 'future:future.drier': return has(now, (e) => e.note === 'drier-later') || has(then, (e) => e.note === 'drier');
-      case 'season:future.coolSeason': return has(then, (e) => e.note === 'cool-season');
-      case 'water:water.dryMonths': return has(now, (e) => e.note === 'dry-months');
-      case 'room:room.tall': return has(now, (e) => e.note === 'room-tall');
-    }
-    if (m.key.startsWith('range.side.')) return has(now, (e) => side(e) && k(e) === `past${SIDE_KEY[m.state]}` && e.level === (m.kind === 'outside' ? 'outside' : 'look'));
-    if (m.key === 'range.source.treegoer') return has(now, (e) => e.level !== 'fits' && also(e, 'sourceTreegoer'));
-    if (m.key === 'range.disputed') return has(now, (e) => e.level !== 'fits' && also(e, 'confDisputedLimit'));
-    if (m.key.startsWith('estimate.from')) return has(now, (e) => k(e) === `borrowed${m.key.slice('estimate.from'.length)}` && e.conf === 'estimate');
-    return false;
-  }
-  function run(taxa, location, place, label) {
-    const lookup = location?.lookup ?? null;
-    const site = core.siteFor(place, lookup);
-    const mctx = { climate: null, location, site, scenario };
-    for (const period of ['1991-2020', '2041-2070', '2071-2099']) {
-      const ctx = { place, lookup, period, scenario };
-      for (const t of taxa) {
-        runs++;
-        const v = verdict(t, ctx);
-        const own = futurePeriod(t);
-        const later = own && own !== v.judged ? verdict(t, { ...ctx, period: own }) : null;
-        const lines = line.againstLines(v, later, { ...words, heightM: t.traits.height_m?.max ?? null });
-        if (period !== '1991-2020') continue; // the old marks speak of today and the plant's own later period
-        for (const m of [...rangeMarks(t, mctx, 'details'), ...futureMarks(t, mctx, 'details'), ...siteMarks(t, mctx, 'details')]) {
-          marks++;
-          const kk = `${m.kind}/${m.key}`; seen.set(kk, (seen.get(kk) ?? 0) + 1);
-          if (!mapped(m, lines, v, later)) {
-            const id = `${m.kind}/${m.key}/${m.state ?? ''}`.replace(/\/(cold|mild|cool|summer|hot)( (cold|mild|cool|summer|hot))*$/, '/<sides>');
-            const n = unmapped.get(id) ?? { n: 0, example: `${label}: ${t.canonical_name}` };
-            n.n++; unmapped.set(id, n);
-          }
-        }
-      }
-    }
-  }
-  for (const [name, p] of Object.entries(PROBE_PLACES)) {
-    const periods = p.slots.map(([period, sc, koppen, margin, tminColdC, tmaxWarmC, tmeanColdC, tmeanWarmC, aridityIndex, precipMm, dryMonths]) => ({ period, scenario: sc, koppen, koppenTemperatureMarginC: margin, tminColdC, tmaxWarmC, tmeanColdC, tmeanWarmC, aridityIndex, precipMm, dryMonths }));
-    const lookup = { lat: p.lat, lon: p.lon, climate: { cellLat: p.lat, cellLon: p.lon, distanceCells: 0, periods }, soil: null, regions: { wgsrpdL3: null, isoA2: p.iso } };
-    const zone = koppenZone(periods[0].koppen);
-    const pool = await src.pool(zone);
-    const own = new Set(pool.map((t) => t.id));
-    const answers = PROBE_ANSWERS[name] ?? {};
-    const place = { ...core.emptyPlace, room: answers.room ?? 'unsure', spot: { ...core.emptyPlace.spot, water: answers.water ?? 'unsure' } };
-    run([...pool, ...all.filter((t) => !own.has(t.id))], { lat: p.lat, lon: p.lon, source: 'search', lookup }, place, `${name} (${zone})`);
-  }
-  for (const zone of ['Subtropical', 'Boreal']) run(await src.pool(zone), null, core.emptyPlace, `no location (${zone})`);
-  // Two cases the real places do not give: ice (no aridity index) and plants with no range recorded.
-  const ice = PROBE_PLACES.oulu, iceSlots = ice.slots.map(([period, sc, koppen, margin, a, b, c, d, , precipMm, dryMonths]) => ({ period, scenario: sc, koppen, koppenTemperatureMarginC: margin, tminColdC: a, tmaxWarmC: b, tmeanColdC: c, tmeanWarmC: d, aridityIndex: null, precipMm, dryMonths }));
-  const iceLookup = { lat: ice.lat, lon: ice.lon, climate: { cellLat: ice.lat, cellLon: ice.lon, distanceCells: 0, periods: iceSlots }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
-  run([...all.slice(0, 50), ...all.slice(0, 50).map((t) => ({ ...t, id: `${t.id.slice(0, -4)}ffff`, climate: null }))], { lat: ice.lat, lon: ice.lon, source: 'search', lookup: iceLookup }, core.emptyPlace, 'ice, and no range');
-  const table = [...unmapped].map(([id, { n, example }]) => `${id}: ${n} (e.g. ${example})`);
-  console.log(`PP-C c2 probe: ${all.length} plants, ${runs} verdicts, ${marks} old Details marks (${[...seen].map(([kk, n]) => `${kk} ${n}`).join(', ')}); unmapped kinds: ${table.length ? '\n  ' + table.join('\n  ') : 'none'}`);
-  assert.ok(all.length >= 673, `${all.length} plants`);
-  assert.deepEqual(table, [], 'every old mark has a line');
-});
+// The mapping probe of c2 commit 1 (784ec759: 673 plants, 20,997 verdicts, 15,546 old Details marks,
+// unmapped set empty) went with the mark providers it compared against (c2 commit 4).
 
 // Coordinator 2026-11-17: schema 4.4 adds the dispute kind `source`; a kind the reader does not know is
 // skipped in Details' lines, never worded as another kind.
@@ -393,4 +276,13 @@ test('PP-C-u22 (c2 unknown dispute kind): factLines skips a plant_disputes kind 
   const lines = factLines({ disputes: [{ ...known, kind: 'source', source: 'les_alveoles' }, known], traitSources: null, shipped: { toxicity: 'Slight' } });
   assert.equal(lines.length, 1, 'the unknown kind is skipped');
   assert.equal(lines[0].vars.source, 'NC State');
+});
+
+test('PP-C-u23 (c2 cool season): an annual past its heat range reads the cool-season line, not the annual one', async () => {
+  const { againstLines } = await import('../src/lib/consortium/verdict-line.ts');
+  const v = (notes) => ({ id: 1, judged: '1991-2020', ownYears: false, level: 'fits', limiting: null, factors: [], notes, range: 'judged' });
+  const words = { period: (p) => p, scenario: 'SSP2-4.5', heightM: null };
+  const notesOf = (n) => againstLines(v(n), null, words).map((e) => e.note).filter(Boolean);
+  assert.deepEqual(notesOf(['cool-season', 'annual']), ['cool-season']);
+  assert.deepEqual(notesOf(['annual']), ['annual']);
 });

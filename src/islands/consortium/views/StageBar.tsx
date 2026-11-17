@@ -10,7 +10,6 @@ import type { Taxon } from '../../../lib/consortium/index.ts';
 import { guestOf } from '../../../lib/consortium/index.ts';
 import { flags, openSheet } from '../store.ts';
 import { P, T, pageLang } from '../strings.ts';
-import { PlantMarks } from './PlantMarks.tsx';
 import { warningCounts } from './kit/phase.ts';
 import { collatorFor, listName, nameOf, type Order } from './kit/names.ts';
 import { WarnIcon } from './kit/icons.tsx';
@@ -21,15 +20,13 @@ export const byName: Order = (a, b) => collatorFor(pageLang()).compare(nameOf(a)
 // Warnings per member, as the marks count them (no low conflicts).
 const warnings = computed(() => warningCounts(flags.value));
 
-// A plant's marks (print's side drawing key): the guest's list, the warning count with its words, the
-// plant marks.
+// A plant's marks (print's side drawing key): the guest's list and the warning count with its words.
 export function Marks({ taxon }: { taxon: Taxon }) {
   const w = warnings.value.get(taxon.id) ?? 0, guest = guestOf(taxon);
   return (
     <>
       {guest && <span class="ct-tag">{T('matrix.from', { list: listName(guest) })}</span>}
       {w > 0 && <span class="ct-flag" title={P('matrix.warnings', w)}><WarnIcon /><span aria-hidden="true">{w}</span><span class="visually-hidden">{P('matrix.warnings', w)}</span></span>}
-      <PlantMarks taxon={taxon} surface="row" />
     </>
   );
 }

@@ -11,7 +11,6 @@ import { ctx, lyon, placement, taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const { suggest } = await import('../src/lib/consortium/suggest.ts');
-const { rangeMarks } = await import('../src/lib/consortium/range-marks.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 
@@ -44,25 +43,6 @@ test('rangeFit: coldest month on both sides and warmest month on the hot side, "
   assert.equal(core.rangeFit(t, at(0, 5)), 'inside', 'a cool summer is never checked (hot side only)');
   assert.deepEqual(core.rangeCheck(t, at(-16, 31)).sides, ['cold', 'hot']);
   assert.deepEqual(core.rangeCheck(t, at(-18, 31)), { verdict: 'outside', sides: ['cold', 'hot'], beyond: ['cold'], aridity: 'unknown', coolSeason: false });
-});
-
-test('rangeCheck: an annual skips the winter-cold check on both sides; beyond the summer heat it is advised to the cool season (owner, "Annuals skip the winter-cold check"; "Climate ranges fixed before the P5 push")', () => {
-  // Harbin-like values: coldest-month minimum -24 °C, warmest-month maximum 29 °C.
-  const harbin = at(-24, 29);
-  const marks = (t, site, surface) => rangeMarks(t, ctx({ location: site }), surface).map((m) => [m.kind, m.key, m.severity]);
-  const warmRange = { ...taxon().climate, tminCold: { low: -2, median: 5, high: 12, count: 90, basis: 'thinned_cells' }, tmaxWarm: { low: 20, median: 27, high: 31, count: 90, basis: 'thinned_cells' } };
-  const annual = taxon({ traits: { is_annual: true }, climate: warmRange });
-  assert.deepEqual(core.rangeCheck(annual, harbin), { verdict: 'inside', sides: [], beyond: [], aridity: 'unknown', coolSeason: false }, 'cold: passes, no cold side');
-  assert.equal(core.rangeFit(taxon({ traits: { is_annual: false }, climate: warmRange }), harbin), 'outside', 'a perennial with the same range is still left out');
-  const mild = at(18, 29);
-  assert.equal(core.rangeCheck(annual, mild).sides.includes('mild'), false, 'nor the mild-winter side');
-  const hot = taxon({ traits: { is_annual: true }, climate: { ...warmRange, tmaxWarm: { ...warmRange.tmaxWarm, high: 25 } } });
-  assert.deepEqual(core.rangeCheck(hot, harbin), { verdict: 'inside', sides: [], beyond: [], aridity: 'unknown', coolSeason: true }, 'heat: 29 °C against 25 is the cool season, not outside');
-  assert.equal(core.rangeFit(hot, at(-24, 26)), 'edge', 'within the margin: near the edge, as any plant');
-  assert.deepEqual(core.withinRange([annual], harbin), [annual], 'kept in the filtered pool');
-  assert.deepEqual(marks(annual, harbin, 'row'), [['unknown', 'range.annualShort', 'note']], 'its row says it is an annual, no season claimed (a short tag: walk-through F1)');
-  assert.deepEqual(marks(annual, harbin, 'details'), [['unknown', 'range.annual', 'note']], 'Details: re-sown each year, winter cold not checked');
-  assert.deepEqual(marks(annual, harbin, 'chip'), [], 'not on chips');
 });
 
 test('passes: the one comparison of the range rule (range.ts), in hundredths of a degree, used by today\'s check and the future one', () => {
@@ -117,11 +97,10 @@ test('withinRange: leaves out only the plants outside, never a kept one; the sam
 
 // ---- "can Suggest now" (E6 R2, rules/suggest-block.ts): the rule views/PoolSlot.tsx and the store read ----
 
-test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits once the rule is in; the old pool counts gone (PP-B b1b)', async () => {
+test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits and notOutside from the verdicts (PP-C c2); the old pool counts gone (PP-B b1b)', async () => {
   const rules = await import('../src/islands/consortium/rules/suggest-block.ts');
-  const rule = await core.loadRangeRule();
-  assert.equal(rule.withinRange, core.withinRange, 'loadRangeRule gives the core rule');
-  assert.equal(await core.loadRangeRule(), rule, 'loaded once');
+  const rule = await core.loadVerdictRule();
+  assert.equal('withinRange' in rule, false, 'the islands read verdicts, never the range checks (PP-C c2, one verdict)');
   const scene = (over = {}) => ({ curated: ['Mediterranean', 'Temperate'], siteClimate: false, rangeFailed: false, nothingFits: false, ...over });
   // Boreal borrows Temperate (NEAREST_LISTS); Tropical's nearest lists are not curated here.
   const borrowed = 'Boreal', none = 'Tropical';
@@ -136,13 +115,21 @@ test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that ord
   assert.deepEqual(['Temperate', borrowed, none].map((z) => rules.hasList(z, scene({ siteClimate: true }))), [true, true, false]);
   assert.equal(rules.needsSite(borrowed, scene()), true);
   assert.equal(rules.needsRule(borrowed, scene({ siteClimate: true, rangeFailed: true })), true);
-  // nothingFits: a list with plants, none holding the site, once the rule is in.
+  // nothingFits: a list with plants, every one judged outside (the page period's verdicts, as
+  // store.poolVerdicts), once the rule is in.
   const pool = [taxon({ id: 'a' }), taxon({ id: 'c', climate: { ...taxon().climate, tminCold: { low: 5, median: 9, high: 15, count: 9, basis: 'thinned_cells' } } })];
-  assert.equal(rules.nothingFits(pool, at(-30, 25), rule), true, 'colder than every plant');
-  assert.equal(rules.nothingFits(pool, at(-30, 25), null), false, 'not before the rule arrives');
-  assert.equal(rules.nothingFits(pool, at(0, 25), rule), false);
-  assert.equal(rules.nothingFits([], at(-30, 25), rule), false, 'an empty list is not "nothing fits"');
-  assert.equal(rules.nothingFits(pool, null, rule), false, 'no site climate: nothing is checked');
+  const judged = (site, list = pool) => rule.verdicts(list, { place: core.emptyPlace, lookup: site?.lookup ?? null, period: '1991-2020', scenario: 'ssp245' });
+  assert.equal(rules.nothingFits(pool, judged(at(-30, 25))), true, 'colder than every plant');
+  assert.equal(rules.nothingFits(pool, null), false, 'not before the verdicts arrive');
+  assert.equal(rules.nothingFits(pool, judged(at(0, 25))), false);
+  assert.equal(rules.nothingFits([], judged(at(-30, 25))), false, 'an empty list is not "nothing fits"');
+  assert.equal(rules.nothingFits(pool, judged(null)), false, 'no site climate: nothing is checked');
+  // notOutside: the list less the plants judged outside, never a kept one; the same list when none goes.
+  const three = [...pool.slice(0, 1), taxon({ id: 'b', climate: null }), pool[1]];
+  assert.deepEqual(rules.notOutside(three, judged(at(0, 25), three)).map((t) => t.id), ['a', 'b']);
+  assert.deepEqual(rules.notOutside(three, judged(at(0, 25), three), ['c']).map((t) => t.id), ['a', 'b', 'c'], 'a kept plant stays, outside or not');
+  assert.equal(rules.notOutside(three, null), three, 'no verdicts: the same list');
+  assert.equal(rules.notOutside(three, judged(null, three)), three, 'no site climate: the same list');
   // PP-B b1b: Place's count line reads the verdicts (store.countFits); the range-verdict counts went.
   assert.equal('poolCounts' in rules, false);
 });
@@ -245,41 +232,6 @@ test('placementZone: the details query reads the list a plant was placed from (b
 
 // ---- marks ----
 
-test('rangeMarks: edge, outside and unknown with a site climate; estimate on a borrowed placement, with or without a location', () => {
-  const marks = (t, site, surface) => rangeMarks(t, ctx({ location: site }), surface).map((m) => [m.kind, m.key, m.severity]);
-  assert.deepEqual(marks(taxon(), null, 'row'), [], 'no location: no range mark (P2 unchanged)');
-  assert.deepEqual(marks(taxon(), at(0, 25), 'row'), [], 'inside: no mark');
-  assert.deepEqual(marks(taxon(), at(-16, 25), 'chip'), [['edge', 'range.edgeShort', 'note']]);
-  assert.deepEqual(marks(taxon(), at(-16, 25), 'row'), [['edge', 'range.edge', 'note']]);
-  assert.deepEqual(marks(taxon(), at(-20, 25), 'row'), [['outside', 'range.outside', 'warning']]);
-  assert.deepEqual(marks(taxon(), at(-20, 25), 'chip'), [['outside', 'range.outsideShort', 'warning']]);
-  assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'row'), [['unknown', 'range.unknown', 'note']]);
-  assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'chip'), [['unknown', 'range.unknownShort', 'note']], 'chips get the short word');
-  const details = rangeMarks(taxon(), ctx({ location: at(-20, 31) }), 'details');
-  assert.deepEqual(details.map((m) => [m.kind, m.key]), [['outside', 'range.outsideDetails'], ['outside', 'range.side.cold'], ['edge', 'range.side.hot']]);
-  assert.deepEqual(details[1].vars, { site: -20, bound: -15 });
-  assert.deepEqual(details[2].vars, { site: 31, bound: 30 });
-  // The values a Details line shows are those the verdict compared: a bound of 7.84 against 5.8 is
-  // outside (2.04 beyond) and the line says 7.84, never a rounded 7.8 that reads as within 2 °C.
-  const fine = taxon({ climate: { ...taxon().climate, tminCold: { low: 7.84, median: 9, high: 12, count: 9, basis: 'thinned_cells' } } });
-  const line = rangeMarks(fine, ctx({ location: at(5.8, 25) }), 'details').find((m) => m.key === 'range.side.cold');
-  assert.equal(line.kind, 'outside');
-  assert.deepEqual(line.vars, { site: 5.8, bound: 7.84 });
-  const arid = taxon({ climate: { ...taxon().climate, aridity: { low: 0.5, median: 1, high: 2, count: 9, basis: 'thinned_cells' } } });
-  assert.deepEqual(marks(arid, at(0, 25, 0.1), 'row'), [['aridity', 'range.drier', 'note']], 'aridity: a mark only, of its own kind, so "N near the edge" and the edge marks agree');
-  assert.deepEqual(marks(arid, at(0, 25, 0.1), 'chip'), [], 'not on the tight chips');
-  assert.deepEqual(marks(arid, at(0, 25, null), 'details'), [['unknown', 'range.aridityNotChecked', 'note']], 'ice: not checked');
-  const borrowed = taxon({ origin: { list: 'Mediterranean', kind: 'borrowed' } });
-  assert.deepEqual(marks(borrowed, null, 'chip'), [['estimate', 'estimate.short', 'note']]);
-  assert.deepEqual(marks(borrowed, null, 'row'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']], 'without a location: give one to check it (UX audit fix 1)');
-  assert.deepEqual(marks(borrowed, null, 'details'), [['estimate', 'estimate.fromMediterranean', 'note'], ['estimate', 'estimate.noSite', 'note']]);
-  assert.deepEqual(marks(borrowed, at(-16, 25), 'chip'), [['edge', 'range.edgeShort', 'note'], ['estimate', 'estimate.short', 'note']]);
-  // The estimate's state is the list's site id (zones.ts siteIdOf); a guest is no estimate.
-  assert.deepEqual(rangeMarks(borrowed, ctx(), 'row').map((m) => m.state), ['mediterranean', 'no-site']);
-  assert.deepEqual(rangeMarks(core.asGuest(taxon(), 'Tropical'), ctx(), 'row'), []);
-  assert.equal('rangeMarks' in core, false, 'not exported from index.ts, so out of the first run');
-});
-
 test('strings: every S5c key sits in its block, in all 11 locales, with the same placeholders and plural forms', () => {
   const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
   const blockOf = (l) => {
@@ -288,11 +240,9 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   };
   const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
   const mine = blockOf('en');
-  // What the code reads: range-marks.ts and pool.tsx keys (PP-B b1b: range.pool.count is the borrowed
-  // count line; the panel's edge and left sentences went with the panel).
-  const used = ['range.edge', 'range.edgeShort', 'range.edgeDetails', 'range.outside', 'range.outsideShort', 'range.outsideDetails', 'range.unknown', 'range.unknownShort', 'range.drier', 'range.wetter', 'range.aridityNotChecked',
-    'range.side.cold', 'range.side.mild', 'range.side.cool', 'range.side.summer', 'range.side.hot', 'range.disputed', 'range.source.treegoer', 'range.pool.count', 'range.pool.caveat', 'range.pool.aridityNotChecked',
-    'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'range.annual', 'range.annualShort', 'range.coolSeason', 'range.coolSeasonShort', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed', 'estimate.noSite', 'marks.unavailable'];
+  // What the code reads: pool.tsx, PoolSlot and Weigh keys (PP-B b1b: range.pool.count is the borrowed
+  // count line; the mark keys went with the mark providers in PP-C c2; range.disputed is handed off).
+  const used = ['range.disputed', 'range.pool.count', 'range.pool.caveat', 'range.pool.aridityNotChecked', 'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailable', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
   for (const l of locales) {
@@ -312,9 +262,10 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
     for (const k of mine) assert.doesNotMatch(strings[k], /\b2\s?°C/, `${l} ${k}: the margin comes from {margin} (RANGE_MARGIN_C)`);
     assert.match(strings['consortium.range.pool.count'], /\{total\}/, `${l}: the count line names how many plants the nearest lists hold`);
   }
-  assert.match(en['consortium.range.side.cold'], /mostly recorded down to \{bound\}/, 'Q05: "mostly recorded down to"');
-  assert.match(en['consortium.range.side.mild'], /mostly recorded up to \{bound\}/, 'Q95: "mostly recorded up to"');
-  assert.match(en['consortium.range.side.hot'], /mostly recorded up to \{bound\}/);
+  // The sides' words moved to verdict-line (consortium.line.*; PP-C c2), Q05 and Q95 kept.
+  assert.match(en['consortium.line.withinCold'], /mostly recorded down to \{tempBound\}/, 'Q05: "mostly recorded down to"');
+  assert.match(en['consortium.line.withinMild'], /mostly recorded up to \{tempBound\}/, 'Q95: "mostly recorded up to"');
+  assert.match(en['consortium.line.pastHot'], /mostly recorded up to \{tempBound\}/);
   assert.match(en['consortium.range.pool.caveat'], /cultivation included/);
   assert.match(en['consortium.range.pool.caveat'], /not been reviewed/);
   assert.match(en['consortium.range.pool.count'], /^one: # of the \{total\} plants on the nearest lists fits your place today\. \| other: # of the \{total\} plants on the nearest lists fit your place today\.$/, 'the count line\'s words (PP-B b1b)');

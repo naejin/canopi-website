@@ -299,7 +299,7 @@ test('E6-5d (K3 lazy Details): a module the sheet chunks share failed on its fir
 // range rule loads, right after a site with a climate is set) is never an empty modal: an open sheet
 // always has a named heading and a Close button; otherwise it does not open.
 test('E6-3d (K3 lazy sheets): Find, Paste and Swap opened while the range rule loads show a named sheet with Close, or no sheet, never an empty modal', async () => {
-  const page = await tool({ block: { range: 'hold' } });
+  const page = await tool({ block: { verdict: 'hold' } });
   await choose(page, 'Temperate');
   await atNowhere(page);
   await page.waitForFunction(() => window.__ctTest.store.pool.value === null, { timeout: 5000 });
@@ -406,7 +406,7 @@ test('E6-26 (K3 hand-off review 2): the idle future part waits for idle time on 
   try {
     const seen = futureRequests(page);
     await atSite(page, 'lyon');
-    await page.waitForFunction(() => !!window.__ctTest.store.rangeRule.value, { timeout: 8000 });
+    await page.waitForFunction(() => !!window.__ctTest.store.verdictRule.value, { timeout: 8000 });
     await page.waitForNetworkIdle({ idleTime: 1000, timeout: 6000 }).catch(() => {});
     assert.deepEqual(seen, [], 'no future chunk before the idle prefetch');
   } finally { await page.browserContext().close().catch(() => {}); }
@@ -423,7 +423,7 @@ test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed s
     await page.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(page), 'ready');
     await atSite(page, 'lyon');
-    await page.waitForFunction(() => !!window.__ctTest.store.rangeRule.value && !!window.__ctTest.store.pool.value, { timeout: 8000 });
+    await page.waitForFunction(() => !!window.__ctTest.store.verdictRule.value && !!window.__ctTest.store.pool.value, { timeout: 8000 });
     await page.locator(aria('button', en['consortium.start.suggest'])).click();
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
     assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');

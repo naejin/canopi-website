@@ -34,7 +34,7 @@ import { periodIds, scenarios } from './types.ts';
 import { borrowedFrom } from './placement.ts';
 import { aridityFit, boundPassed, coolSeasonOf, isAnnual, passes, RANGE_BOUNDS, RANGE_MARGIN_C, slotCheck } from './range.ts';
 import { futurePeriod } from './future.ts';
-import { fits, shadedBy, tallerThanRoom } from './site.ts';
+import { fits, misfitsBeside, shadedBy, tallerThanRoom } from './site.ts';
 import { climateFor, siteFor } from './place.ts';
 
 const TODAY: PeriodId = periodIds[0];
@@ -93,11 +93,14 @@ type SiteOf = ReturnType<typeof siteFor>;
 function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors: FactorVerdict[]; roomTall: boolean; dryMonths: boolean } {
   const fit = fits(taxon, site);
   const shaded = !!ctx.canopy && shadedBy(taxon, site, ctx.canopy);
+  // The misfits that hold beside the canopy: the one rule the flags read too (site.ts misfitsBeside,
+  // conflicts.ts flagsFor; parity PP-C-u14).
+  const beside = new Set(ctx.canopy ? misfitsBeside(taxon, site, ctx.canopy, fit) : fit.misfits);
   const factors: FactorVerdict[] = [];
   for (const r of fit.reasons) {
     if (r.key === 'room') continue;
     if (r.key === 'light' && shaded) continue;
-    const level: Level = r.verdict === 'misfit' ? 'look' : r.verdict === 'unknown' ? 'unknown' : 'fits';
+    const level: Level = r.verdict === 'misfit' ? (beside.has(r.key) ? 'look' : 'fits') : r.verdict === 'unknown' ? 'unknown' : 'fits';
     const factor: Factor = r.key === 'soil' ? 'soil-ph' : r.key;
     factors.push({ factor, level, basis: r.key === 'soil' ? 'soil-test' : 'spot', place: null, low: null, high: null });
   }
@@ -175,4 +178,3 @@ export function holdsBy(taxon: Taxon, ctx: VerdictContext, period: PeriodId): bo
   const c = climateFactors(taxon, ctx, judged, ctx.scenario);
   return !!c && c.factors.length > 0 && !c.factors.some((f) => f.level === 'outside');
 }
-

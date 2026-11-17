@@ -5,7 +5,7 @@
 // PP-C c2): "Also fills: …" and "Leaves empty: …", or that it fills or leaves none, and its fit line. Inform, don't block (owner decision 2026-11-14; it replaces the 2026-10-28
 // "Swap anyway?" rule): one tap swaps any plant; a site misfit or a serious (high) conflict keeps its
 // reason on its row in words, and those plants come last. Alternatives outside their climate range at
-// the site (as their verdict says, else the range rule) are offered too, behind "Show N outside their
+// the site (as their verdict says) are offered too, behind "Show N outside their
 // climate range", each saying so in words (review r1 bugs-4). Loaded on first use (views/Sheets.tsx). The list
 // comes from the suggestion's chunk (store.suggestRule, core loadSuggest): opening Swap asks for it
 // (store.wantSuggest, which tries a failed one again); while it or the pool loads, the loading line.
@@ -41,8 +41,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // whatever the in-range list shows.
   const [allOutside, setAllOutside] = useState(false);
   const verdicts = store.poolVerdicts.value;
-  const rule = store.rangeRule.value, loc = store.location.value;
-  const outside = (x: Taxon) => (verdicts ? verdicts.get(x.id)?.level === 'outside' : !!rule && rule.rangeFit(x, loc) === 'outside');
+  const outside = (x: Taxon) => verdicts?.get(x.id)?.level === 'outside';
   const algo = store.suggestRule.value;
   const [stalled, setStalled] = useState(false);
   // Asked once this opening rendered: until then an earlier failure reads as waiting, so the failed
@@ -65,7 +64,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
     // The page period's verdicts, as Suggest reads them: both rank on the same open holes (b1br-5).
     const opts = { ...ctx, removed, verdicts };
     return [algo.alternatives(id, members, offer.filter((x) => !away.has(x.id)), opts), out.length ? algo.alternatives(id, members, out, opts) : []];
-  }, [algo, id, offer, members, ctx, removed, verdicts, rule, loc]);
+  }, [algo, id, offer, members, ctx, removed, verdicts]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;

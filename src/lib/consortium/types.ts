@@ -463,22 +463,6 @@ export const scenarios = ['ssp126', 'ssp245', 'ssp370', 'ssp585'] as const;
 export type Scenario = (typeof scenarios)[number];
 export const DEFAULT_SCENARIO: Scenario = 'ssp245';
 
-// A plant's marks beside its name (matrix chips, phone rows, Details, Add), from marks.ts providers:
-// edge "near the edge of its observed range", outside (Add's warning), unknown "range not recorded",
-// estimate (a borrowed placement), future (drawn in ink, apart from the ochre warnings), native,
-// season (an annual too hot in summer: "grow it in the cool season"), water (drought tolerance Medium
-// on a dry site: "needs watering in the dry months").
-// key: a consortium.* string key without its prefix, read with T(key, vars).
-export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room'] as const;
-export type MarkKind = (typeof markKinds)[number];
-export type MarkSeverity = 'note' | 'warning';
-// state: a finer state the views write as data-mark-state (e.g. native: 'native' | 'not_recorded' | 'unknown').
-export interface Mark { kind: MarkKind; key: string; vars?: Record<string, string | number>; severity: MarkSeverity; state?: string }
-// Where a mark is drawn, so a provider can keep a mark to some places: matrix chips and phone rows are
-// tight; Details has room for words.
-export const markSurfaces = ['chip', 'row', 'details'] as const;
-export type MarkSurface = (typeof markSurfaces)[number];
-
 // ---- E6 seams (commit 0; ADR-6, decisions/consortium-placement-origin-and-facts.md; R4 implements them) ----
 
 // Where a plant's placement comes from (Taxon.origin, which replaced from / placedFrom / estimate in
@@ -491,8 +475,7 @@ export type PlacementKind = 'own' | 'guest' | 'borrowed';
 export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind; guest?: ClimateZone }
 
 // One site-fit message (stream R2): the one vocabulary of what the site answers say about a plant, which
-// Flags (Add, Swap, Paste, Details: kit/flags.ts) and site Marks (chips, rows, Details: site-marks.ts)
-// both derive from. Built by site-marks.ts siteFitMessages; rules/site-fit.ts keeps the misfits that hold
+// Flags (Swap, Paste, Details: kit/flags.ts) derive from. Built by site.ts siteFitMessages; rules/site-fit.ts keeps the misfits that hold
 // beside the other members. Three kinds: a misfit (misfit set: a warning in words, never a confirm
 // step), a note (state set: a fit that still asks something of the reader, shown as a site mark), and
 // what the check could not decide (neither). about: the site answer or the climate check it concerns; key: a
@@ -501,7 +484,7 @@ export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind; guest
 export interface SiteFitMessage {
   id: PlantId;
   about: SiteKey | 'climate';
-  severity: MarkSeverity;
+  severity: 'note' | 'warning';
   misfit: boolean;
   key: string;
   vars?: Record<string, string | number>;

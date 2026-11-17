@@ -29,7 +29,6 @@ export const PalettePage = lazyPart(retryableImport(() => import('./views/palett
 // Kept in the first run: modules the sheets, the later views and the future panel share, which no
 // first-run module imports since the matrix went (PP-B commit 0a'), so no part pays for them on first
 // use and no sheet imports a lazy chunk statically (check-built-site's K3 rule).
-import './views/PlantMarks.tsx';
 import './views/StageBar.tsx';
 
 export interface AppProps {

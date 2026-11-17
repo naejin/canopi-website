@@ -48,7 +48,7 @@ const FILES = {
   'src/islands/consortium/test-hook.ts': 'export const hook = 1;\n',
   'src/islands/consortium/views/lazy.tsx': "import { hook } from '../test-hook.ts';\nexport const l = hook;\n",
   'src/islands/consortium/main.ts': "import { hook } from './test-hook.ts';\nexport const m = hook;\n",
-  // L10 (warn), allowed: verdict.ts, and index.ts for re-exports
+  // L10 (error since PP-C c2), allowed: verdict.ts, and index.ts for re-exports
   'src/lib/consortium/site.ts': 'export const fits = 1;\n',
   'src/lib/consortium/holes.ts': "import { fits } from './site.ts';\nexport const h = fits;\n",
   'src/lib/consortium/verdict.ts': "import { fits } from './site.ts';\nexport const vd = fits;\n",
@@ -74,6 +74,7 @@ test('dependency-cruiser rules L1-L10 catch one breach each, allow their neighbo
     const I = 'src/islands/consortium';
     assert.deepEqual(errors, [
       'L1-lib-no-ui|src/lib/location/p.ts|@preact/signals',
+      'L10-one-verdict|src/lib/consortium/holes.ts|src/lib/consortium/site.ts',
       `L2-state-no-views|${I}/store.ts|${I}/views/v.tsx`,
       `L3-data-down|${I}/data/x.ts|${I}/store.ts`,
       `L4-views-core-entry|${I}/views/v.tsx|src/lib/consortium/a.ts`,
@@ -85,7 +86,7 @@ test('dependency-cruiser rules L1-L10 catch one breach each, allow their neighbo
       'L9-no-build-scripts-in-src|src/pages/z.ts|scripts/tool.mjs',
     ]);
     assert.ok(scanned < 100, `scanned ${scanned}: the symlinked node_modules is not walked`);
-    assert.deepEqual(keys, ['L10-one-verdict|src/lib/consortium/holes.ts|src/lib/consortium/site.ts'], 'the one warn rule, L10 (PP-B commit 0): holes.ts breaches it, verdict.ts and index.ts are allowed');
+    assert.deepEqual(keys, [], 'no warn rule left: L10 is an error since PP-C c2 (holes.ts breaches it, verdict.ts and index.ts are allowed)');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

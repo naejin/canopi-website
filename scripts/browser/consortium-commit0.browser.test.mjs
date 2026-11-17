@@ -211,21 +211,21 @@ test('P5-0c (commit 0 harness): Nominatim and OpenFreeMap are stubbed, WebGL can
   ]), ['failed', 'failed']);
 });
 
-test('P5-0d (commit 0 seams): without a location, on a covered climate, no range, future or native mark shows, marks render only through PlantMarks, and nothing calls a third party before a click (S5b: its controls show, nothing fetched)', async () => {
+test('P5-0d (commit 0 seams; PP-C c2: confidence terms in place of marks): without a location, on a covered climate, no range term shows, terms render only as known words, and nothing calls a third party before a click (S5b: its controls show, nothing fetched)', async () => {
   const page = await tool({ nominatim: 'fixture', mapTiles: 'stub' });
   assert.ok(await has(page, '[data-location-action="search"], [data-location-search]', 4000), 'S5b: the location controls show');
   assert.deepEqual(await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name).filter((n) => /maplibre|\/data\/climate\//.test(n))), [], 'no MapLibre and no climate tile before a click');
   await choose(page, 'Temperate');
   await suggestDirect(page);
-  assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0, { timeout: 10_000 }).then(() => true, () => false), 'members in the matrix');
-  const marks = () => page.$$eval('[data-mark]', (els) => els.map((e) => ({ kind: e.getAttribute('data-mark'), surface: e.getAttribute('data-mark-surface') })));
-  const promised = (list) => list.filter((m) => ['outside', 'edge', 'future', 'native'].includes(m.kind));
-  assert.deepEqual(promised(await marks()), [], 'no range, future or native mark without a location');
-  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, 'the providers do not even load without a location on a covered climate');
-  // With a location the providers load; whatever marks they give carry a PlantMarks surface.
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('[data-plant-id]').length > 0, { timeout: 10_000 }).then(() => true, () => false), 'members in the palette');
+  const terms = () => page.$$eval('[data-conf]', (els) => els.map((e) => e.getAttribute('data-conf')));
+  const ranged = (list) => list.filter((t) => ['edge', 'disputed', 'spread'].includes(t));
+  assert.deepEqual(ranged(await terms()), [], 'no range term without a location');
+  // With a location the verdict rule (the range checks with it) loads; every term is a known word.
   await atSite(page, 'lyon');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.markProviders.value.length === 2, { timeout: 10_000 }).then(() => true, () => false), 'the providers (range and future; native returns with P5.2) load for a location');
-  for (const m of await marks()) assert.ok(['chip', 'row', 'add', 'details'].includes(m.surface), `the ${m.kind} mark is drawn by PlantMarks on a surface`);
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.verdictRule.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict rule loads for a location');
+  const known = ['edge', 'disputed', 'estimate', 'worked-out', 'not-reviewed', 'not-recorded', 'not-checked', 'spread'];
+  for (const t of await terms()) assert.ok(known.includes(t), `the term ${t} is a ConfidenceTerm`);
   assert.deepEqual(page.thirdParty, []);
   assert.deepEqual(page.nominatim, []);
 });

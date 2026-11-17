@@ -8,8 +8,8 @@
 // { from: 'map' }; siteFor passes them to site.ts fits() in the old Site shape.
 import type { PeriodId, Place, ResolvedSoil, Site, SitePeriod, SiteLookup, SoilAnswer, SoilWord, VerdictContext } from './types.ts';
 import { ACID_BELOW, CHALKY_ABOVE } from './site.ts';
+import { TODAY_PERIOD } from './source.ts';
 
-const TODAY: PeriodId = '1991-2020';
 
 // Every answer "not sure", no plot size, the soil map: the place a palette starts from (DEC:89).
 export const emptyPlace: Place = Object.freeze({
@@ -49,6 +49,6 @@ export function siteFor(place: Place, lookup: SiteLookup | null): Site {
 // CLIM-4's height correction land here, so every rule reads the same climate.
 export function climateFor(ctx: Pick<VerdictContext, 'lookup' | 'scenario'>, period: PeriodId): SitePeriod | null {
   const periods = ctx.lookup?.climate?.periods ?? [];
-  const scenario = period === TODAY ? 'historical' : ctx.scenario;
+  const scenario = period === TODAY_PERIOD ? 'historical' : ctx.scenario;
   return periods.find((p) => p.period === period && p.scenario === scenario) ?? null;
 }

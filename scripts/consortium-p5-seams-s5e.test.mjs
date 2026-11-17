@@ -22,8 +22,8 @@ test('S5e ships nothing in P5: no native or soil-likely module, slot or reader',
   assert.doesNotMatch(view('details/Details.tsx'), /NativeSlot/);
   assert.doesNotMatch(text('islands/consortium/data/sqlite-source.ts'), /nativeIn|plant_areas/);
   assert.doesNotMatch(text('lib/consortium/source.ts'), /nativeIn/);
-  assert.doesNotMatch(text('lib/consortium/marks.ts'), /nativeIn/);
-  assert.deepEqual((await core.loadMarkProviders()).map((p) => p.name), ['rangeMarks', 'futureMarks']);
+  // (marks.ts and its providers went in PP-C c2: no mark can carry nativeness.)
+  assert.equal('loadMarkProviders' in core, false);
 });
 
 test('the location step reads no soil tile until P5.2 (soil likely) uses it', () => {

@@ -39,22 +39,25 @@ function namedKeys(src) {
 const named = namedKeys(island);
 // Keys the island holds in a table and passes to T later, each checked to be in the sources: the
 // layer values' labels (views/layers.ts), the load screens (App.tsx), the correction form's errors and
-// results (views/Correction.tsx), and the toast store.ts chunkToast says when the marks' chunk fails
-// (its persistent line went with Matrix.tsx in PP-B commit 0a'; PP-C c2 restores it).
+// results (views/Correction.tsx).
 const INDIRECT = [
   't.bloom', 't.fruit', 't.sowing', 't.wind',
-  'marks.unavailable',
   'load.tooOld', 'load.wasmBlocked', 'load.toolFailed', 'load.fetch', 'load.damaged', 'load.stale',
   'correction.fieldError', 'correction.proposedError', 'correction.unchanged', 'correction.tooLong', 'correction.emailError',
   'correction.consentError', 'correction.invalid', 'correction.failed', 'correction.refused', 'correction.offline',
 ];
-// The P5 mark providers (src/lib/consortium/*-marks.ts) write their keys as quoted strings;
-// views/PlantMarks.tsx passes each mark's key to T.
-const markSource = readdirSync(join(root, 'lib/consortium')).filter((f) => f.endsWith('-marks.ts'))
-  .map((f) => readFileSync(join(root, 'lib/consortium', f), 'utf8')).join('\n');
+// The site-fit vocabulary (src/lib/consortium/site.ts siteFitMessages) writes its keys as quoted
+// strings; views/kit/flags.ts passes each message's key to T. (The P5 mark providers that wrote theirs
+// the same way were deleted in PP-C c2.)
+const markSource = readFileSync(join(root, 'lib/consortium/site.ts'), 'utf8');
 const markKeys = new Set([...markSource.matchAll(/'([a-z]\w*(?:\.\w+)+)'/g)].map((m) => m[1]));
 const fromPage = new Set([...page.matchAll(/\b(?:tr|P)\('([\w.]+)'/g)].map((m) => m[1]));
-const asked = (k) => named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
+// Keys the deleted mark providers alone read that c2 may not delete (outside its key edits): handed off
+// to the merge (main, pf for future.*) to delete; listed so the unused-key check stays green until then.
+// range.unavailable: the curated list's range-unavailable notice, gone when the range role folded into
+// the verdict chunk (one failure state, the count line's).
+const HANDED_OFF = ['water.dryMonthsShort', 'room.tallShort', 'range.disputed', 'future.coolSeason', 'future.warmEnough', 'future.warmEnoughShort', 'future.drierShort', 'range.unavailable'];
+const asked = (k) => HANDED_OFF.includes(k) || named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
 
 test('no consortium key is left unused (H9)', () => {
   assert.deepEqual(short.filter((k) => !asked(k)), []);
@@ -104,7 +107,7 @@ test('the room hint and the Beta line say what the tool does, in all 11 locales'
 const UNIT_AFTER_PLACEHOLDER = /\{\w+\}\s?(m²|m2|cm|mm|km|ha|m|°C|°F|м|см|米|メートル|미터)(?![\p{L}\p{N}²])/u;
 const UNIT_KEYS_BEFORE_POLICY = new Set([
   'meters', 'room.tall', 'room.tallShort', 'side.height', 'side.metres', 'details.heightV', 'location.why', 'location.meansNear',
-  'range.side.cold', 'range.side.mild', 'range.side.cool', 'range.side.summer', 'range.side.hot', 'range.pool.count', 'range.empty.body',
+  'range.pool.count', 'range.empty.body',
 ]);
 test('no new consortium key writes a unit after a placeholder, in any locale (format.ts measures)', () => {
   for (const [lang, w] of Object.entries(words)) {

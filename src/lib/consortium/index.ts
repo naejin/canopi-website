@@ -17,9 +17,6 @@ export * from './state.ts';
 export * from './range.ts';
 export * from './placement.ts';
 export * from './future.ts';
-export * from './marks.ts';
-// E6 R2: the one site-fit vocabulary (its marks reach the views through plantMarks).
-export { siteFitMessages } from './site-marks.ts';
 // S5b: the location core (Köppen zone, borderline).
 export * from './site-climate.ts';
 // E6 commit 0: the one search fold (Add, Start's crop search, the plant list; design check A9).

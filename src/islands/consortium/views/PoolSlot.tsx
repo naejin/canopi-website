@@ -14,12 +14,12 @@
 // your place today", from the verdicts) and the "nothing fits" state. Without a location, a curated
 // climate shows nothing here, as in P2 (every verdict would be "not checked"). Place's form and the
 // "Your place" sheet mount it always; Place's head only for a needs-site, needs-rule or no-list reason. (store.ts
-// siteClimate; the range rule loads with its own chunk, store.ts rangeRule. The rule of "can Suggest
+// siteClimate; the range checks come with the verdict rule, store.ts verdictRule. The rule of "can Suggest
 // now" and the list a climate has: rules/suggest-block.ts.)
 import { effect, untracked } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { hasPlants } from '../../../lib/consortium/index.ts';
-import { curatedClimates, location, openSheet, pool, rangeFailed, rangeRule, siteClimate } from '../store.ts';
+import { curatedClimates, openSheet, pool, poolVerdicts, rangeFailed, siteClimate } from '../store.ts';
 import * as rule from '../rules/suggest-block.ts';
 import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
 import { climateChosen } from '../state/persist.ts';
@@ -40,7 +40,7 @@ const panel = lazyPart(retryableImport(() => import('./pool/pool.tsx'), (m) => m
 // The climates with plants of their own: the store's one owner, which suggestMembers reads too.
 const curated = (): ClimateZone[] => curatedClimates.value;
 // Nothing fits (the chosen climate's list, at the site; rules/suggest-block.ts nothingFits).
-const nothingFits = (): boolean => rule.nothingFits(pool.value, location.value, rangeRule.value);
+const nothingFits = (): boolean => rule.nothingFits(pool.value, poolVerdicts.value);
 // What the rule reads, from the store's signals: getters, so a view or effect calling these reads (and
 // tracks) only the signals the rule reaches, and the range check over the pool runs only when asked.
 const scene: SuggestScene = {
@@ -88,15 +88,18 @@ effect(() => {
 
 // The panel also says "Not covered yet" for a climate with no list at all (it never happens with the
 // real export, which curates a nearest list for every climate).
-// The range rule's chunk did not load (store.ts rangeFailed): say so here, in place of the panel,
-// which needs that chunk; the panel's own chunk failing shows its failed line (lazy.tsx LoadFailed).
+// A borrowed climate whose verdict chunk (the range checks with it) did not load (store.ts rangeFailed,
+// rules/suggest-block.ts needsRule): say so here, in place of the panel, since only the range checks fit
+// a borrowed list to a place. A curated climate keeps its panel, whose count line says "Could not
+// check" with Retry (PP-B b1b; one failure state since PP-C c2 folded the range role into the verdict
+// chunk); the panel's own chunk failing shows its failed line (lazy.tsx LoadFailed).
 // head: the palette page's head (Place.tsx Head), which keeps the needs lines only (amendment 3): the
 // needs-location and range-unavailable lines, and "Not covered yet" for a climate with no list; never
 // the count line, which Place's form and the "Your place" sheet show. A guard, not a path any state
 // reaches today: Head mounts this only for a needs-site, needs-rule (range rule failed) or no-list
 // reason, each answered above before the panel (so no browser case can tell it apart; review b1bf-2).
 export function PoolSlot({ zone, head = false }: { zone: ClimateZone; head?: boolean }) {
-  if (rangeFailed.value && hasPlants(zone, curated())) return <RangeUnavailable zone={zone} />;
+  if (needsRule(zone)) return <RangeUnavailable zone={zone} />;
   if (needsSite(zone)) return <NeedsSite zone={zone} />;
   if (head) return hasPlants(zone, curated()) ? null : <panel.View zone={zone} />;
   return !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
@@ -104,7 +107,7 @@ export function PoolSlot({ zone, head = false }: { zone: ClimateZone; head?: boo
 function RangeUnavailable({ zone }: { zone: ClimateZone }) {
   return (
     <p class="ct-notice" role="status" data-range-unavailable>
-      {needsRule(zone) ? T('range.unavailableBorrowed', { climate: zoneName(zone) }) : T('range.unavailable')} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
+      {T('range.unavailableBorrowed', { climate: zoneName(zone) })} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
     </p>
   );
 }

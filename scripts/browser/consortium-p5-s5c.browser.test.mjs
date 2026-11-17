@@ -66,7 +66,7 @@ test('P5-14i (S5c → PP-B b1b, the count line\'s chunk refused, pre-push review
   const page = await tool({ block: { pool: 404 } });
   await atSite(page, 'seville');
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeRule.value, { timeout: 10_000 }).then(() => true, () => false), 'the range rule loaded');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictRule.value, { timeout: 10_000 }).then(() => true, () => false), 'the range rule loaded');
   assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('.ct-notice[role="alert"]')].some((e) => /Reload/.test(e.textContent)), { timeout: 10_000 }).then(() => true, () => false), 'the failed line with Reload');
   assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), 'the pool chunk was requested and refused by the block');
   assert.equal(await page.$('[data-pool-count]'), null, 'no count line');
@@ -87,8 +87,8 @@ test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold ch
   assert.equal(await page.evaluate(() => { const { store } = window.__ctTest; const ok = store.suggestMembers(); store.view.value = 'matrix'; return ok && store.members.value.length > 0; }), true, 'Suggest gives a consortium');
   const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
   await page.evaluate((m) => window.__ctTest.openSheet('details', m), id);
-  assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="annual"]', 10_000), 'Details: the annual line');
-  assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="annual"]') ?? '', /^An annual, re-sown each year: its winter cold is not checked\.$/);
+  assert.ok(await has(page, '[data-against] [data-note="annual"]', 10_000), 'Details: the annual line');
+  assert.match(await text(page, '[data-against] [data-note="annual"]') ?? '', /^An annual, re-sown each year: its winter cold is not checked\.$/);
 });
 
 // PP-C commit 0: Add's half (no outside plant listed until typed, then added with nothing asking)
@@ -129,7 +129,7 @@ function rangeImporters() {
   return files.filter((f) => f.endsWith('.js') && f !== range && readFileSync(join(dir, f), 'utf8').includes(range)).length;
 }
 
-test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the only retry, one toast per failure, and the notice goes with the location', async () => {
+test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; PP-C c2: one verdict failure state): a curated list says in place that part of the tool did not load (its panel, which imports the range checks, fails as one), no toast, no request again for a new location, and the line goes with the location', async () => {
   const page = await tool();
   const cdp = await page.createCDPSession();
   const urls = new Map(), failed = [];
@@ -140,7 +140,9 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the 
   await page.evaluate(() => { window.__toasts = new Set(); window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.add(t.id); }); });
   await choose(page, 'Mediterranean');
   await atSite(page, 'seville');
-  assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
+  const FAILED = '#ct-root .ct-notice[role="alert"]';
+  assert.ok(await has(page, FAILED, 10_000), 'the failed line, in place');
+  assert.equal(await page.$('[data-range-unavailable]'), null, 'a curated list keeps its panel');
   await new Promise((r) => setTimeout(r, 1000));
   // Several chunks reach the range chunk at the first location: the store's rule (import()) and every
   // chunk that imports it statically (verdict since PP-B commit 0, mark providers, the pool and future
@@ -152,10 +154,10 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2): Reload is the 
   await atSite(page, 'lyon');
   await new Promise((r) => setTimeout(r, 1000));
   assert.equal(failed.length, before, 'a new location does not import the chunk again');
-  assert.equal(await page.evaluate(() => window.__toasts.size), 1, 'never a second toast for the same failure');
-  assert.ok(await has(page, '[data-range-unavailable]'), 'the notice stays, with Reload');
+  assert.equal(await page.evaluate(() => window.__toasts.size), 0, 'said in place, never by a toast');
+  assert.ok(await has(page, FAILED), 'the line stays');
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
-  assert.ok(await page.waitForFunction(() => !document.querySelector('[data-range-unavailable]') && !window.__ctTest.store.rangeFailed.value, { timeout: 5_000 }).then(() => true, () => false), 'location cleared: plain P2, no notice');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('#ct-root .ct-notice[role="alert"]') && !window.__ctTest.store.rangeFailed.value, { timeout: 5_000 }).then(() => true, () => false), 'location cleared: plain P2, no failed line');
 });
 
 test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Place with the nothing-fits state', async () => {
@@ -169,7 +171,7 @@ test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Sugg
   await atNowhere(page);
   const suggest = await page.waitForSelector('[data-place-suggest]', { timeout: 5_000 }).catch(() => null);
   assert.ok(suggest, 'Suggest is there while the rule loads');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.rangeRule.value), null, 'the rule has not arrived yet');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.verdictRule.value), null, 'the rule has not arrived yet');
   await suggest.click();
   assert.ok(await has(page, '[data-pool-empty]', 20_000), 'the nothing-fits state once the rule is in');
   await new Promise((r) => setTimeout(r, 500));
@@ -190,7 +192,7 @@ test('P5-15 (S5c near-edge mark): a Mediterranean plant whose range ends within 
     store.members.value = [t.id];
     store.view.value = 'matrix';
     await new Promise((r) => setTimeout(r, 300));
-    return [...document.querySelectorAll('[data-mark]')].map((e) => e.getAttribute('data-mark'));
+    return [...document.querySelectorAll('[data-conf]')].map((e) => e.getAttribute('data-conf'));
   }, edge);
   assert.ok(marks.includes('edge'), `${edge} is marked near the edge`);
 });
@@ -204,13 +206,15 @@ test('P5-15b (S5c range lines in Details, page language): in French, a plant nea
   assert.ok(name, 'a Mediterranean plant near its coldest-month bound at Seville');
   await choose(page, 'Mediterranean');
   await page.evaluate((n) => { const { store } = window.__ctTest; store.view.value = 'matrix'; store.openSheet('details', store.pool.value.find((x) => x.canonical_name === n).id); }, name);
-  assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="cold"], [data-mark-surface="details"][data-mark-state="mild"]', 10_000), 'a line per bound passed');
+  assert.ok(await has(page, '[data-against] [data-factor="cold"], [data-against] [data-factor="mild"]', 10_000), 'a line per bound passed');
   // The verdict mark of a one-sided plant carries the same state ('cold'), so the line is the one with values.
-  const line = await page.$$eval('[data-mark-surface="details"][data-mark-state="cold"], [data-mark-surface="details"][data-mark-state="mild"]', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()).find((t) => /°C/.test(t)) ?? null);
+  const line = await page.$$eval('[data-against] [data-factor="cold"], [data-against] [data-factor="mild"]', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()).find((t) => /°C/.test(t)) ?? null);
   assert.match(line, /5,8 °C/, `"${line}" writes the number the French way`);
-  // One of its edge marks (the verdict; the side lines carry values) says what the ranges include.
-  const edges = await page.$$eval('[data-mark-surface="details"][data-mark="edge"]', (els) => els.map((e) => e.textContent));
-  assert.ok(edges.some((t) => /cultures comprises/.test(t)), `the Details mark says observed ranges include cultivation (${edges.join(' | ')})`);
+  // Its edge term says so in French, and "How sure we are" says what the observed ranges include (the
+  // dataset hedge, once per surface: PP-C c2 moved it off the edge mark).
+  const edges = await page.$$eval('[data-against] [data-conf="edge"]', (els) => els.map((e) => e.textContent));
+  assert.ok(edges.some((t) => /en limite de son aire observée/.test(t)), `the edge term in French (${edges.join(' | ')})`);
+  assert.ok(await page.waitForFunction(() => /cultures comprises/.test(document.querySelector('dialog[open] [data-sure]')?.textContent ?? ''), { timeout: 5000 }).then(() => true, () => false), 'Details says observed ranges include cultivation');
 });
 
 test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from the nearest list and labelled "estimate"', async () => {
@@ -226,7 +230,7 @@ test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from t
   });
   assert.ok(count > 0, 'Subtropical borrows Mediterranean placements');
   await suggestDirect(page);
-  assert.ok(await has(page, '[data-mark="estimate"]', 10_000));
+  assert.ok(await has(page, '[data-conf="estimate"]', 10_000));
 });
 
 test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a plant\'s Details reads the list it was placed from: its reasons, with a note naming that list; a correction sends both climates', async () => {
@@ -287,10 +291,10 @@ test('P5-26 (S5c borrowed list from a link): #v=5&c=subtropical without o= opens
   assert.equal(await page.evaluate(() => window.__ctTest.store.location.value), null, 'no location: borrowing depends on the climate only');
   assert.ok(await page.waitForFunction((want) => JSON.stringify([...window.__ctTest.store.members.value].sort()) === JSON.stringify(want), { timeout: 10_000 }, members).then(() => true, () => false), 'UX audit fix (1): the link\'s plants are all restored, no data loss');
   await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; });
-  assert.ok(await has(page, '[data-mark="estimate"]', 10_000), 'borrowed plants marked "estimate"');
+  assert.ok(await has(page, '[data-conf="estimate"]', 10_000), 'borrowed plants marked "estimate"');
   await page.evaluate(() => { const { store } = window.__ctTest; store.openSheet('details', store.members.value[0]); });
-  assert.ok(await has(page, '[data-mark-surface="details"][data-mark-state="no-site"]', 10_000), 'Details says to give a location to check it');
-  assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="no-site"]') ?? '', /give your site.s location to check/i);
+  assert.ok(await has(page, '[data-against] [data-no-site]', 10_000), 'Details says to give a location to check it');
+  assert.match(await text(page, '[data-against] [data-no-site]') ?? '', /give your site.s location to check/i);
   await suggestReady(page);
   assert.equal(await page.evaluate(() => window.__ctTest.store.suggestMembers()), false, 'no new suggestion from a borrowed list without a location');
   assert.equal(await page.$('[data-pool-empty]'), null);
@@ -404,7 +408,7 @@ test('P5-27b (S5c seam review 1; on Place, PP-B b1a): a borrowed climate whose r
   for (const width of [390, 1280]) {
     // The range chunk fails from the first request (A8): blocking it after the page loaded raced its
     // modulepreload, so the test passed or failed by timing.
-    const page = await tool({ width, block: { range: 404 } });
+    const page = await tool({ width, block: { verdict: 404 } });
     await atSite(page, 'seville');
     await pickCard(page, 'subtropical'); // not Arid: curated since r-b7fb536f9cfd0700 (D9a)
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
@@ -412,26 +416,7 @@ test('P5-27b (S5c seam review 1; on Place, PP-B b1a): a borrowed climate whose r
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
     assert.match(await text(page, '[data-range-unavailable]') ?? '', /Subtropical needs them to pick plants/, `${width} px: it says why`);
     assert.ok(await has(page, '[data-range-unavailable] button'), `${width} px: with Reload`);
-    assert.ok(page.blocked.some((u) => h.roles.range.includes(u)), `${width} px: the range chunk was requested and refused by the block`);
-  }
-});
-
-// PP-B exit (2026-11-16): the notice that stayed under the matrix went with Matrix.tsx in PP-B 0a'
-// (store.ts marksBroken; PP-C c2 brings a lasting one back); what is promised today is the one toast
-// with Reload, said once the marks are wanted, and the palette page still listing its plants.
-test('P5-27f (S5c seam review 6): if the plant-marks chunk fails, a toast says the warnings it would show are not shown, with Reload, and the palette still lists its plants', async () => {
-  for (const width of [390, 1280]) {
-    const page = await tool({ width });
-    const cdp = await page.createCDPSession();
-    await cdp.send('Network.enable');
-    await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/mark-providers.*'] });
-    await atSite(page, 'seville');
-    await choose(page, 'Mediterranean');
-    const said = () => [...document.querySelectorAll('.ct-toast')].some((e) => /warnings are not shown/.test(e.textContent) && [...e.querySelectorAll('button')].some((b) => b.textContent === 'Reload'));
-    assert.ok(await page.waitForFunction(said, { timeout: 10_000 }).then(() => true, () => false), `${width} px: a toast that the marks did not load, with Reload`);
-    assert.ok(await suggestDirect(page), `${width} px: the suggestion runs`);
-    assert.ok(await has(page, '[data-plant-id]', 10_000), `${width} px: the palette lists its plants`);
-    assert.equal(await page.evaluate(() => window.__ctTest.store.markProviders.value.length), 0, `${width} px: no provider marks claimed`);
+    assert.ok(page.blocked.some((u) => h.roles.verdict.includes(u)), `${width} px: the verdict chunk (the range rule with it) was requested and refused by the block`);
   }
 });
 
@@ -522,10 +507,10 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
     const annual = await page.evaluate(() => window.__ctTest.store.pools.value.Temperate.find((t) => t.canonical_name === 'Claytonia sibirica')?.id);
     assert.ok(annual, 'Siberian purslane is on the Temperate list');
     await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), annual);
-    assert.ok(await has(page, '[data-mark-surface="details"][data-mark="season"]', 10_000), 'Details: the cool-season line');
-    assert.equal(await text(page, '[data-mark-surface="details"][data-mark="season"]'), 'Too hot in summer here: grow it in the cool season.');
-    assert.equal(await page.$('[data-mark-surface="details"][data-mark-state="annual"]'), null, 'not the warm-season note');
-    await settled(page, '[data-mark-surface="details"][data-mark="season"]'); // the sheet slides in (details.css ct-sheet-in)
+    assert.ok(await has(page, '[data-against] [data-note="cool-season"]', 10_000), 'Details: the cool-season line');
+    assert.equal(await text(page, '[data-against] [data-note="cool-season"]'), 'Too hot in summer here: grow it in the cool season.');
+    assert.equal(await page.$('[data-against] [data-note="annual"]'), null, 'not the warm-season note');
+    await settled(page, '[data-against] [data-note="cool-season"]'); // the sheet slides in (details.css ct-sheet-in)
     const over = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag, dialog .ct-tag, dialog .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
     // doc ≤ 0: with the dialog open on desktop the page's scrollbar is hidden (scrollWidth < clientWidth).
@@ -537,8 +522,8 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
   const lemon = await page.evaluate(() => window.__ctTest.store.pools.value.Mediterranean.find((t) => t.canonical_name === 'Citrus limon')?.id);
   assert.ok(lemon, 'lemon is on the Mediterranean list');
   await page.evaluate((id) => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, water: 'dry' }; store.openSheet('details', id); }, lemon);
-  assert.ok(await has(page, '[data-mark-surface="details"][data-mark="water"]', 10_000), 'Details: the watering line');
-  assert.equal(await text(page, '[data-mark-surface="details"][data-mark="water"]'), 'Needs watering in the dry months.');
+  assert.ok(await has(page, '[data-against] [data-note="dry-months"]', 10_000), 'Details: the watering line');
+  assert.equal(await text(page, '[data-against] [data-note="dry-months"]'), 'Needs watering in the dry months.');
   assert.deepEqual(page.thirdParty, []);
 });
 
@@ -559,8 +544,8 @@ test('P5-27r (S5c climate ranges, room advisory; PP-C commit 0): in a small gard
     assert.equal(await page.$('dialog[role="alertdialog"]'), null, `${width} px: no warning to confirm`);
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), `${width} px: added without asking`);
     await page.evaluate(() => { const { store } = window.__ctTest; store.closeSheet?.(); store.view.value = 'matrix'; });
-    const listed = await page.waitForFunction(() => [...document.querySelectorAll('.ct-plants li')].find((li) => li.querySelector('i[lang="la"]')?.textContent === 'Juglans regia')?.querySelector('[data-mark="room"]')?.textContent ?? null, { timeout: 8000 }).then((r) => r.jsonValue(), () => null);
-    assert.match(listed ?? '', /^grows to [\d.]+ m: prune$/, `${width} px: Your plants lists the walnut with its height note`);
+    const listed = await page.waitForFunction(() => [...document.querySelectorAll('.ct-plants li')].find((li) => li.querySelector('i[lang="la"]')?.textContent === 'Juglans regia')?.querySelector('[data-note="room-tall"]')?.textContent ?? null, { timeout: 8000 }).then((r) => r.jsonValue(), () => null);
+    assert.match(listed ?? '', /^Grows to [\d.]+ m: keep it pruned/, `${width} px: Your plants lists the walnut with its height note`);
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     assert.ok(over <= 0, `${width} px: no sideways scroll`);
     assert.deepEqual(page.thirdParty, []);

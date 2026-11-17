@@ -163,7 +163,7 @@ test('E6-16b (R4 re-review, chunk-5 exit fix round): the late suggest chunk leav
 // read (the range rule held: no pool), the wait goes on for another cap, with no toast, and suggests
 // once both arrive.
 test('E6-18 (R4 seams, chunk-5 exit fix round): at the cap with the list still unread and the suggest chunk held, Suggest waits again, then suggests', async () => {
-  const page = await temperatePage({ block: { range: 'hold', suggest: 'hold' }, timeouts: { suggest: 400 } });
+  const page = await temperatePage({ block: { verdict: 'hold', suggest: 'hold' }, timeouts: { suggest: 400 } });
   try {
     assert.ok(await until(page, () => !!window.__ctTest.store.pool.value, 5000), 'Temperate read without the range rule');
     await atSite(page, 'lyon');
@@ -212,7 +212,7 @@ test('E6-13 (R4 seams): a Suggest press after the chunk failed tries it again: a
 });
 
 test('E6-14 (R4 seams): Suggest pressed with the chunk failed while the range rule loads (no pool) ends in the toast with Reload, never silence', async () => {
-  const page = await temperatePage({ block: { range: 'hold', suggest: 404 } });
+  const page = await temperatePage({ block: { verdict: 'hold', suggest: 404 } });
   try {
     assert.ok(await until(page, () => !!window.__ctTest.store.pool.value, 5000));
     await atSite(page, 'lyon');

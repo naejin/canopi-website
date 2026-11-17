@@ -1,7 +1,7 @@
 // P5 commit 0: the shared seams the P5 streams fill (.local/consortium/v2/p5-owners.md). Each stream's
 // own seams have their own file (consortium-p5-seams-s5b/c/d/e.test.mjs), so a stream edits only its
-// file. This one pins what no stream changes: the marks pipeline (marks.ts, mark-providers.ts,
-// store.ts markProviders), the mark context, and where the host views mount each stream's slot.
+// file. This one pins where the host views mount each stream's slot and the one site-fit vocabulary
+// (the marks pipeline it pinned went with the mark providers in PP-C c2).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -10,45 +10,7 @@ import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
 const core = await import('../src/lib/consortium/index.ts');
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 
-test('marks.ts plantMarks: the loaded providers concatenated in order, for one surface; none loaded, no marks', async () => {
-  assert.deepEqual(core.plantMarks(taxon(), ctx(), 'chip'), [], 'no providers loaded (the site answers\' marks need a dry site or a sized room)');
-  const mark = (kind, state) => ({ kind, key: `test.${kind}`, severity: 'note', ...(state ? { state } : {}) });
-  const providers = [() => [mark('edge')], () => [], (t, c, surface) => (c.location && surface !== 'chip' ? [mark('native', 'native')] : [])];
-  assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'details', providers).map((m) => [m.kind, m.state]), [['edge', undefined], ['native', 'native']]);
-  assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'chip', providers).map((m) => m.kind), ['edge'], 'a provider keeps a mark off a surface');
-  assert.deepEqual(core.markSurfaces, ['chip', 'row', 'details'], 'no Add surface: Add was deleted in PP-C commit 0 (review c0-7)');
-  assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room']);
-  const loaded = await core.loadMarkProviders();
-  assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks'], 'range (S5c), future (S5d) (native, S5e, in P5.2); the site answers\' marks are on the island path (marks.ts)');
-  assert.equal(await core.loadMarkProviders(), loaded, 'loaded once');
-  for (const s of core.markSurfaces) assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), s, loaded), [], `the stubs mark nothing (${s})`);
-  assert.equal('markProviders' in core, false, 'the providers stay out of index.ts, so out of the first run');
-});
-
-test('marks.ts needsMarkProviders: the providers load only with a site location or a climate whose plants are borrowed', () => {
-  const curated = ['Tropical', 'Mediterranean', 'Temperate'];
-  assert.equal(core.needsMarkProviders({ climate: null, location: null }, curated), false);
-  assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null }, curated), false, 'today\'s path loads nothing');
-  assert.equal(core.needsMarkProviders({ climate: 'Subtropical', location: null }, curated), true);
-  assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: lyon }, curated), true);
-  assert.equal(core.needsMarkProviders({ climate: 'Temperate', location: null, site: { light: 'unsure', soil: 'unsure', water: 'dry', room: 'unsure' } }, curated), false, 'a dry site alone: its marks are on the island path (marks.ts plantMarks)');
-});
-
-test('store: markContext follows the climate, location and scenario; the providers load when a location is set', async () => {
-  const store = await import('../src/islands/consortium/store.ts');
-  store.start?.(); // the providers' load is an effect store.start() starts (main.ts; E6 S3)
-  assert.deepEqual(store.markContext.value, { climate: store.climate.value, location: null, scenario: 'ssp245', site: store.site.value });
-  assert.deepEqual(store.markProviders.value, [], 'none on the first run');
-  store.location.value = lyon;
-  try {
-    assert.equal(store.markContext.value.location, lyon);
-    await core.loadMarkProviders();
-    await new Promise((r) => setTimeout(r, 0));
-    assert.equal(store.markProviders.value.length, 2);
-  } finally { store.location.value = null; }
-});
-
-test('the host views mount every stream\'s slot, and PlantMarks names its surface everywhere', () => {
+test('the host views mount every stream\'s slot, and Details opens on Against your place', () => {
   // The Place step (views/place/Place.tsx; b1a deletes Start.tsx): until b1a's merge Place.tsx re-exports Start.
   const place = view('place/Place.tsx');
   const start = place.includes("from '../Start.tsx'") ? view('Start.tsx') : place;
@@ -60,15 +22,13 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   // In the palette slot, after Share, Print and Download, so they never move when it lands (hand-off branch).
   assert.match(view('Actions.tsx'), /later\(\(\) => laterChunk\(\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:first-view or the data ready');
   assert.match(view('Actions.tsx'), /<ActionsView \/><future\.View \/>/, 'S5d: the panel after the actions (the matrix views above it went in PP-B commit 0a\')');
-  assert.match(view('details/Details.tsx'), /<PlantMarks taxon=\{t\} surface="details" \/>/);
-  assert.match(view('StageBar.tsx'), /<PlantMarks taxon=\{taxon\} surface="row" \/>/);
-  assert.match(view('PlantMarks.tsx'), /data-mark=\{m\.kind\} data-mark-state=\{m\.state\}/);
+  // Details opens on "Against your place" (PP-C c2; PlantMarks went with the mark providers).
+  assert.match(view('details/Details.tsx'), /<Against t=\{t\} \/>/);
 });
 
-// ---- E6 R2: the one site-fit vocabulary (core site-marks.ts siteFitMessages, rules/site-fit.ts) ----
-test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags keep the misfits that hold beside the canopy; the site marks are its notes', async () => {
+// ---- E6 R2: the one site-fit vocabulary (core site.ts siteFitMessages, rules/site-fit.ts) ----
+test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags keep the misfits that hold beside the canopy', async () => {
   const { siteFit, misfitsOf, unknownsOf } = await import('../src/islands/consortium/rules/site-fit.ts');
-  const { siteMarks } = await import('../src/lib/consortium/site-marks.ts');
   const traits = { sun: true, semi_shade: false, full_shade: false, soil_ph: { min: 7.8, max: 8.4 }, drought_tolerance: 'Medium', moisture_use: null, well_drained: null, height_m: { max: 13.716 }, habit: 'Tree' };
   const low = taxon({ id: 'low', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'climax', sources: [] }, traits });
   const site = { light: 'part', soil: 'acid', water: 'dry', room: 'small' };
@@ -94,10 +54,4 @@ test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags k
   assert.deepEqual(misfitsOf(siteFit(shy, sunny, [])).map((m) => m.key), ['misfit.light.sun'], 'alone: a light misfit');
   assert.deepEqual(misfitsOf(siteFit(shy, sunny, [canopy])), [], 'under the canopy: none');
   assert.deepEqual(siteFit(shy, sunny, [canopy]).map((m) => m.key), ['water.dryMonths', 'room.tall'], 'the notes stay');
-  // The site marks are the notes of the same messages: full words in Details, "Short" elsewhere.
-  const c = { ...ctx(), site };
-  assert.deepEqual(siteMarks(low, c, 'details').map((m) => [m.kind, m.key, m.state]), [['water', 'water.dryMonths', 'dry_months'], ['room', 'room.tall', 'tall']]);
-  assert.deepEqual(siteMarks(low, c, 'row').map((m) => m.key), ['water.dryMonthsShort', 'room.tallShort']);
-  assert.deepEqual(siteMarks(low, c, 'chip'), []);
-  assert.equal('vars' in siteMarks(low, c, 'row')[0], false, 'a note without vars carries none');
 });

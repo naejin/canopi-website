@@ -78,8 +78,8 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
   const loc = store.location.value;
   const today = siteToday(loc);
   const temps = today ? { cold: num(today.tminColdC), hot: num(today.tmaxWarmC), mean: num(yearMeanC(today)) } : null;
-  // Nothing fits: the chosen climate's list read, the range rule in, and no plant within range.
-  const empty = !!temps && nothingFits(store.pool.value, loc, store.rangeRule.value);
+  // Nothing fits: the chosen climate's list read, its verdicts in, and every plant judged outside.
+  const empty = !!temps && nothingFits(store.pool.value, store.poolVerdicts.value);
   return (
     <div class="ct-pool" data-pool={zone.toLowerCase()}>
       {!own && (

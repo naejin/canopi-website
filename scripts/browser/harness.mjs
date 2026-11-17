@@ -112,7 +112,7 @@ export function servedNames(kind, fx) {
 }
 
 // The URLs of each chunk role of the served build, flat by role name (every on-demand part under
-// `features`, built-modules.mjs ROLE_ENTRIES: location, markProviders, future, pool, range, details,
+// `features`, built-modules.mjs ROLE_ENTRIES: location, future, pool, details,
 // sheets, find, later, suggest, palette, verdict; then maplibre, maplibreCss and testHook, the test build's
 // hook), for faults set by role. The roles are read by their one owner, built-modules.mjs readChunkRoles.
 const roleUrls = (builtDir) => {
@@ -210,7 +210,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   //   climate tile read (views/location/location.tsx) and Suggest's wait (state/suggest-wait.ts), test build only;
   // - geoTimeoutMs: with geolocation 'timeout', TIMEOUT comes after min(the call's timeout, this);
   // - block: { <role>: 404 | 'offline' | 'offline-once' | 'hold' } fails a chunk role of consortium-chunks.json (pool,
-  //   location, future, markProviders, maplibre, details, sheets, find, later, suggest, range, testHook, …) from the
+  //   location, future, maplibre, details, sheets, find, later, suggest, testHook, …) from the
   //   first request ('offline-once': only the first request, as offline; PP-B exit, PP-B16b);
   //   page.blocked lists each URL so answered; 'hold' (E6 commit 0) answers nothing
   //   until `await page.releaseHeld()` lets every held request through (and any later one), or

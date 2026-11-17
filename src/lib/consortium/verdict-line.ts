@@ -199,8 +199,12 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
   const judged = v.judged === TODAY_PERIOD ? {} : { period: w.period(v.judged), scenario: w.scenario };
   const laterOf = v.notes.includes('warm-enough-later') || v.notes.includes('drier-later') ? laterPeriodWords(later, w) : {};
   const dryShown = v.factors.some((f) => f.factor === 'dry' && f.place !== null);
+  // An annual past its heat range reads the cool-season line instead of the annual one (decision row
+  // "Climate ranges fixed before", as the range marks said it).
+  const cool = v.notes.includes('cool-season');
   for (const n of v.notes) {
     if (dryShown && (n === 'drier' || n === 'wetter')) continue;
+    if (cool && n === 'annual') continue;
     const line = noteLine(n, n === 'room-tall' ? { len: w.heightM ?? undefined } : n === 'warm-enough-later' || n === 'drier-later' ? laterOf : judged);
     if (line) out.push({ line, note: n });
   }

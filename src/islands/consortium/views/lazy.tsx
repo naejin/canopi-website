@@ -9,10 +9,10 @@
 // same promise (one request per chunk); a failed load clears it, so the next use asks again (L4), and,
 // for a part whose import() is wrapped in retryableImport() (core retry-import.ts: every lazyPart and later() in views/, the
 // later chunk's parts through its one loader, views/later-chunk.ts, and the location step's loader),
-// fetches again even in Chromium. The core's own loaders (marks.ts: the
-// mark providers and the range rule; lib/consortium/index.ts loadSuggest) stay plain, since lib may
-// not import views: in Chromium a failed one needs Reload (Swap and Suggest offer it; the range rule
-// says so in PoolSlot).
+// fetches again even in Chromium. The core's own loaders (verdict-load.ts loadVerdictRule;
+// lib/consortium/index.ts loadSuggest) stay plain, since lib may not import views: in Chromium a
+// failed one may need Reload (Swap and Suggest offer it; the verdict rule's failure is said in
+// PoolSlot and Against).
 //
 // While loading, a part shows its loading line (F5; a sheet its frame, views/Sheets.tsx); one that
 // fails says so with Reload, in place (a view), or, onFail 'closeSheet' (a sheet part), by closing

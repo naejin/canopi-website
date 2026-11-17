@@ -20,7 +20,6 @@ import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../../data/consortium-guides.ts';
-import { PlantMarks } from '../PlantMarks.tsx';
 import { Against } from './Against.tsx';
 import { say } from '../kit/fit.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
@@ -222,7 +221,6 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           {guest && <span class="ct-tag ct-tag-guest" data-from-list={guest}>{T('details.fromList', { climate: zoneName(guest) })}</span>}
           {borrowed && <span class="ct-tag ct-tag-guest" data-from-list={borrowed} data-conf="estimate">{say(borrowedLine(borrowed))}</span>}
           {lines.filter((l) => l.kind !== 'soft').length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', lines.filter((l) => l.kind !== 'soft').length)}</span>}
-          <PlantMarks taxon={t} surface="details" />
         </p>
       </div>
 
