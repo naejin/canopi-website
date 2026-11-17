@@ -45,6 +45,8 @@ const search = async (page, q) => {
 // Node-side wait for a condition on values the test collects (request logs).
 const waitFor = async (ok, ms) => { for (const end = Date.now() + ms; Date.now() < end; await new Promise((r) => setTimeout(r, 50))) if (ok()) return true; return ok(); };
 const openFind = async (page, target) => page.evaluate((t) => window.__ctTest.openFind(t ?? undefined), target ?? null);
+// Every "Show all N" of Find pressed, so each group lists all its plants (fix round 1, B2).
+const expandAll = async (page) => { for (let i = 0; i < 8 && await page.$(`${FIND} [data-find-showall]`); i++) await page.click(`${FIND} [data-find-showall]`); };
 // Find opened from the Next step's hole ("See all N plants"), as a grower opens it.
 async function findFromHole(page) {
   assert.ok(await has(page, '.ct-next-actions .button', 10_000), 'the Next step names a hole');
@@ -267,6 +269,33 @@ test('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit first;
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
     await page.click(`.ct-next-actions ${aria('button', en['consortium.palette.notNow'])}`);
   }
+});
+
+// Fix round 1, A9 (plan check c1-3): a hole with known outside fillers, opened as the Next step opens
+// one (store.openFind with the hole and its test): "Show N outside their climate range" is there and
+// folds exactly those N, unconditionally. The hole: the light level whose plants at Lyon have the most
+// outside their range.
+test('PP-C7b (c1 FillHole, fix A9): a hole with outside fillers shows "Show N outside their climate range", folding exactly those N', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  const n = await page.evaluate(() => {
+    const { store } = window.__ctTest, v = store.poolVerdicts.value, m = new Set(store.members.value);
+    const offer = store.offerPool.value.filter((t) => !m.has(t.id));
+    const out = (s) => offer.filter((t) => t.stratum?.value === s && v.get(t.id)?.level === 'outside').length;
+    const s = ['emergent', 'high', 'medium', 'low'].sort((a, b) => out(b) - out(a))[0];
+    window.__hole = { id: `light:${s}:0-60`, kind: 'light', stratum: s, rank: 2, fromYear: 0, toYear: 60, state: 'open' };
+    window.__ctTest.openFind({ hole: window.__hole, fits: (t) => t.stratum?.value === s, job: null });
+    return out(s);
+  });
+  assert.ok(n > 0, 'the fixture hole has plants outside their range');
+  await hasFind(page);
+  const btn = `${FIND} [data-find-outside]`;
+  assert.ok(await has(page, btn, 4000), '"Show N outside their climate range" is there');
+  assert.equal(await page.$eval(btn, (b) => Number(/\d+/.exec(b.textContent)?.[0])), n, `it says ${n}`);
+  assert.equal(await page.$(`${FIND} [data-find-group="outside"]`), null, 'folded until pressed');
+  await page.click(btn);
+  await expandAll(page);
+  assert.equal(await page.$$eval(`${FIND} [data-find-group="outside"] [data-find-row]`, (els) => els.length), n, 'it folds exactly those plants');
 });
 
 test('PP-C8 (c1 entries): "Add plants" right of the title at 1280 and in the phone bottom bar at 390, the toast above the bar, the bar hidden while a sheet is open; the empty palette\'s first row "Find plants"', async () => {
