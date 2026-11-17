@@ -7,8 +7,9 @@
 //
 // A download fails when it stalls (no byte for STALL_MS, before the response or between chunks), as
 // load.ts's database download does: a stalled request is aborted, so the next focus can try again
-// (4.2). Hand-off (fix round 1): load.ts keeps its own `download` unexported (not this stream's file);
-// once it is exported this file calls it and drops `fetchBody`.
+// (4.2). It keeps its own copy of load.ts's download on purpose: Find's chunk may import only
+// first-run modules (K3), and load.ts lives in the lazily loaded data chunk (check-built-site
+// fails the static import; tried at the c1 merge).
 import type { DbRef } from './bytes.ts';
 import { namesFor, namesHeader, type NamesHeader } from './search.ts';
 

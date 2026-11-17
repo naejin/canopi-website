@@ -15,7 +15,6 @@ import { test } from 'node:test';
 import { loadState } from './harness.mjs';
 import { aria, axNodes, en, h, has, realDb, useHarness } from './helpers.mjs';
 import { atNowhere, atSite, choose, tool } from './p5-helpers.mjs';
-import { searchIndex } from '../../src/islands/consortium/data/search.ts';
 import { openCards } from './location-fixtures.mjs';
 
 useHarness();
@@ -55,18 +54,6 @@ async function couldNotOpen(page, chip) {
 const requestsTo = (log, urls) => log.filter((p) => urls.includes(p));
 const recordRequests = (log) => async (page) => { page.on('request', (r) => { try { log.push(new URL(r.url()).pathname); } catch { /* data: urls */ } }); };
 
-// E6-1: Start's crop search and Add's search fold and match names the same way (A9). The export has
-// no "Weißkohl" and no crop named with "cœur" (design check exit wording); Süßholz (Glycyrrhiza
-// glabra, a Mediterranean crop) carries ß and ü, and the zh Temperate crops 葱 (onions, leek, chives,
-// ramsons) an unspaced substring. Expected hits: Add's searchIndex over the climate's crops with the
-// names Start shows (the page's language, English, the canonical name).
-const CROP_CASES = [
-  { lang: 'de', climate: 'Mediterranean', q: 'sussholz' },
-  { lang: 'zh', climate: 'Temperate', q: '葱' },
-];
-const cropsOf = (climate, lang) => realDb((db) => db.prepare(`SELECT p.id, p.canonical_name c,
-  (SELECT name FROM plant_names n WHERE n.plant = p.plant AND n.locale = ?) l, (SELECT name FROM plant_names n WHERE n.plant = p.plant AND n.locale = 'en') en
-  FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? AND x.role = 'crop'`).all(lang, climate));
 // E6-2 (L5, A5): before the data is ready nothing lazy is fetched: no modulepreload link for any lazy
 // part (every chunk role: the sheets, the plant dialog, the views after the matrix, suggest, the P5
 // features, MapLibre), and no request for one, while the database download is held. The page's
