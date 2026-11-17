@@ -11,7 +11,8 @@ import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
+// The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
+const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
 const { verdict, verdicts, judgedPeriod, holdsBy } = await import('../src/lib/consortium/verdict.ts');
 const { gain } = await import('../src/lib/consortium/suggest.ts');
 const vectors = (f) => JSON.parse(readFileSync(new URL(`vectors/${f}`, import.meta.url), 'utf8'));

@@ -6,16 +6,16 @@
 // Renders only (E6 R2; ADR-1 L5: the kit imports no store): what the site check says comes from the one
 // site-fit vocabulary (rules/site-fit.ts), the plant's flags from the store (store.ts flagsOfPlant), and
 // what the words read (site, members, country, the other plant of a conflict) from store.ts flagScene.
-import type { Flag, Locale, SiteFitMessage, Site, Taxon } from '../../../../lib/consortium/index.ts';
-import { siteFitMessages } from '../../../../lib/consortium/index.ts';
+import type { Flag, Locale, SiteLine, Site, Taxon } from '../../../../lib/consortium/index.ts';
 import { misfitsOf, siteFit, unknownsOf, type FlagScene } from '../../rules/site-fit.ts';
 import { T, pageLang } from '../../strings.ts';
 import { countryName, nameOf, num } from './names.ts';
 
-// A message in words (numbers to a tenth, in the page's language; '?' where not recorded).
-const words = (m: SiteFitMessage): string => T(m.key, m.vars && Object.fromEntries(Object.entries(m.vars).map(([k, v]) => [k, typeof v === 'number' ? num(v) : v])));
-// What the site check could not decide, said aloud (never a silent fit, A7).
-export const unknownWords = (t: Taxon, site: Site): string[] => unknownsOf(siteFitMessages(t, site)).map(words);
+// A site line in words (core verdict-line.ts siteLines; numbers to a tenth in the page's language, '?'
+// where not recorded). Its keys are whole (consortium.<key>); T takes them without the prefix.
+const words = ({ line }: SiteLine): string => T(line.key.slice('consortium.'.length), Object.fromEntries(Object.entries(line.vars).map(([k, v]) => [k, typeof v === 'number' ? num(v) : v])));
+// What the site check could not decide, said aloud (never a silent fit, A7); the members do not change it.
+export const unknownWords = (t: Taxon, site: Site): string[] => unknownsOf(siteFit(t, site, [])).map(words);
 
 // level: a toxicity line's colour (inventory F5, owner: Slight the warning token, Moderate and Severe
 // the danger token; words and icon always). Your plants and Details colour by it; other lines are warnings.

@@ -463,3 +463,13 @@ test('c2 fix A5 + A8 (verdict failure): rangeFailed is sticky until a load succe
   const against = readFileSync(new URL('../src/islands/consortium/views/details/Against.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(against, /verdictNeedsReload\.peek\(\) \? location\.reload\(\)/, 'one button per action (A6)');
 });
+
+test('c2 fix B2 + B3 (one vocabulary, named exports): the site answers\' words come from verdict-line.ts siteLines; index.ts names the pure helpers of site, range and future, never export *', () => {
+  const index = readFileSync(new URL('../src/lib/consortium/index.ts', import.meta.url), 'utf8');
+  for (const f of ['site', 'range', 'future']) assert.doesNotMatch(index, new RegExp(`export \\* from './${f}\\.ts'`), f);
+  assert.equal(typeof core.siteLines, 'function');
+  assert.equal(core.siteFitMessages, undefined);
+  assert.equal(core.rangeCheck, undefined, 'a rule\'s inner check stays in its file');
+  const fit = readFileSync(new URL('../src/islands/consortium/rules/site-fit.ts', import.meta.url), 'utf8');
+  assert.match(fit, /siteLines\(/);
+});

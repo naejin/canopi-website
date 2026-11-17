@@ -11,7 +11,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
+// The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
+const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 // Four sites as `canopi-climate lookup` answers them on the v0.2.0 grid (all 9 slots; see the README).
 const SITES = JSON.parse(readFileSync(new URL('fixtures/consortium-future/sites.json', import.meta.url), 'utf8'));

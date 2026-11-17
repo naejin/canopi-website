@@ -7,16 +7,17 @@ export * from './types.ts';
 export * from './source.ts';
 // Stream S4's file, exported here so S4 never edits this one.
 export * from './canopi-file.ts';
-export * from './site.ts';
+// The pure helpers the views and the island read (fix round 1 B3: named, never the whole rule file).
+export { canopyOf, fits, misfitsBeside, ROOM_LIMIT_M, UNSURE_SITE, type Canopy } from './site.ts';
 export * from './country-zones.ts';
 export * from './retry-import.ts';
 export * from './conflicts.ts';
 export * from './jobs.ts';
 export * from './state.ts';
 // P5 seams (commit 0), each filled by one stream (.local/consortium/v2/p5-owners.md).
-export * from './range.ts';
+export { RANGE_MARGIN_C, siteToday, yearMeanC } from './range.ts';
 export * from './placement.ts';
-export * from './future.ts';
+export { futureSummary, type FutureCheck, type FutureSummary } from './future.ts';
 // S5b: the location core (Köppen zone, borderline).
 export * from './site-climate.ts';
 // E6 commit 0: the one search fold (Add, Start's crop search, the plant list; design check A9).

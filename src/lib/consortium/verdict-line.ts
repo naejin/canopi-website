@@ -3,7 +3,7 @@
 // A leaf, first-run safe. Each key is one segment after `consortium.line.` (the island draws any Line
 // through views/kit/fit.tsx `say`), so Find, Swap, Details, print and the period switch never write
 // their own words for these. Numbers stay numbers: the view formats them for the page language.
-import type { Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, FrostFact, ClimateZone, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, Taxon, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
+import type { Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, Fit, FrostFact, ClimateZone, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, Site, SiteKey, Taxon, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
 import { invasiveAreaCodes } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 
@@ -414,6 +414,37 @@ export function invasiveLines(d: InvasiveInput, where: { country: string | null;
     if (whole && code !== AREA_COUNTRY) return D(key, { country: code, source: sourceName(src), sourceId: src });
     return D(`${key}Area`, { source: sourceName(src), sourceId: src }, undefined, { where: whole ? areaLine(AREA_COUNTRY) : areas.map(areaLine) });
   });
+}
+
+// ---- the site answers' words (moved from site.ts siteFitMessages in fix round 1 B2) ----
+// What the site answers say about a plant, in the order of fit.reasons: each misfit (light, soil with
+// the plant's pH range, water), what the check could not decide, and the notes (drought tolerance
+// Medium on a dry site: "water in the dry months"; a plant taller than a small or large garden: "grows
+// to N m", N to a tenth). Misfits are the plant's alone; rules/site-fit.ts keeps those that hold beside
+// the members' canopy. Its keys are written out whole (scripts/consortium-keys.test.mjs reads them).
+const MISFIT: { [K in 'light' | 'soil' | 'water']: Partial<Record<Site[K], string>> } = {
+  light: { sun: 'misfit.light.sun', part: 'misfit.light.part', shade: 'misfit.light.shade' },
+  soil: { acid: 'misfit.soil.acid', neutral: 'misfit.soil.neutral', chalky: 'misfit.soil.chalky' },
+  water: { dry: 'misfit.water.dry', wet: 'misfit.water.wet' },
+};
+const UNKNOWN = { light: 'misfit.unk.light', soil: 'misfit.unk.soil', water: 'misfit.unk.water', room: 'misfit.unk.room', climber: 'misfit.unk.climber' };
+// misfit: a warning in words (never a confirm step); note: a fit that still asks something of the
+// reader; neither: what the check could not decide (said aloud, never a silent fit).
+export interface SiteLine { about: SiteKey; misfit: boolean; note?: 'dry_months' | 'tall'; line: Line }
+const S = (k: string, vars: Line['vars'] = {}): Line => ({ key: `consortium.${k}`, vars });
+export function siteLines(taxon: Taxon, site: Site, fit: Fit): SiteLine[] {
+  const out: SiteLine[] = [];
+  for (const r of fit.reasons) {
+    if (r.verdict === 'misfit' && r.key !== 'room') {
+      const ph = taxon.traits.soil_ph;
+      out.push({ about: r.key, misfit: true, line: S((MISFIT[r.key] as Record<string, string>)[site[r.key]], r.key === 'soil' ? { min: ph?.min ?? '?', max: ph?.max ?? '?' } : {}) });
+    } else if (r.verdict === 'unknown') {
+      out.push({ about: r.key, misfit: false, line: S(UNKNOWN[r.key === 'room' && r.kind === 'climber' ? 'climber' : r.key]) });
+    }
+    if (r.key === 'water' && r.note === 'dry_months') out.push({ about: 'water', misfit: false, note: 'dry_months', line: S('water.dryMonths') });
+    if (r.key === 'room' && r.kind === 'wild_height') out.push({ about: 'room', misfit: false, note: 'tall', line: S('room.tall', { m: Math.round(r.meters * 10) / 10 }) });
+  }
+  return out;
 }
 
 // The room note of a plant against the reader's room ("taller than your room" on a balcony; "grows to

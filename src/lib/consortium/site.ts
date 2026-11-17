@@ -28,7 +28,7 @@
 //   plant"), and never makes a cell a misfit, a flag or an ask; only the suggestion leaves it out
 //   (suggest.ts). Catalog heights are wild maximums. A missing height is "height not recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
 //   2026-10-28), so its room verdict is unknown ('climber'). A field takes any size.
-import type { Fit, FitReason, PhaseOrd, Site, SiteFitMessage, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
+import type { Fit, FitReason, PhaseOrd, Site, SiteKey, Stratum, Taxon, Traits, Verdict } from './types.ts';
 import { siteKeys, strata } from './types.ts';
 import { phaseSpan } from './jobs.ts';
 import { TODAY_PERIOD, factAt } from './source.ts';
@@ -152,34 +152,3 @@ export function misfitsBeside(taxon: Taxon, site: Site, others: Canopy | Iterabl
   return shadedBy(taxon, site, canopy) ? fit.misfits.filter((k) => k !== 'light') : [...fit.misfits];
 }
 const isCanopy = (x: Canopy | Iterable<Taxon>): x is Canopy => Array.isArray(x) && (x.length === 0 ? false : typeof x[0] === 'number');
-
-// ---- the site-fit vocabulary (E6 R2; moved from site-marks.ts when PP-C c2 deleted the marks) ----
-// What the site answers say about a plant (types.ts SiteFitMessage): the flags' words
-// (rules/site-fit.ts, views/kit/flags.ts) derive from it. Its keys are written out whole
-// (scripts/consortium-keys.test.mjs reads them here).
-const MISFIT: { [K in 'light' | 'soil' | 'water']: Partial<Record<Site[K], string>> } = {
-  light: { sun: 'misfit.light.sun', part: 'misfit.light.part', shade: 'misfit.light.shade' },
-  soil: { acid: 'misfit.soil.acid', neutral: 'misfit.soil.neutral', chalky: 'misfit.soil.chalky' },
-  water: { dry: 'misfit.water.dry', wet: 'misfit.water.wet' },
-};
-const UNKNOWN = { light: 'misfit.unk.light', soil: 'misfit.unk.soil', water: 'misfit.unk.water', room: 'misfit.unk.room', climber: 'misfit.unk.climber' };
-
-// What the site answers say about a plant, in the order of fit.reasons: each misfit (light, soil with
-// the plant's pH range, water), what the check could not decide, and the notes (drought
-// tolerance Medium on a dry site: "water in the dry months"; a plant taller than a small or large
-// garden: "grows to N m", N to a tenth). Misfits are those of the plant alone; rules/site-fit.ts keeps
-// the ones that hold beside the members' canopy.
-export function siteFitMessages(taxon: Taxon, site: Site, fit: Fit = fits(taxon, site)): SiteFitMessage[] {
-  const out: SiteFitMessage[] = [], id = taxon.id;
-  for (const r of fit.reasons) {
-    if (r.verdict === 'misfit' && r.key !== 'room') {
-      const ph = taxon.traits.soil_ph;
-      out.push({ id, about: r.key, severity: 'warning', misfit: true, key: (MISFIT[r.key] as Record<string, string>)[site[r.key]], ...(r.key === 'soil' && { vars: { min: ph?.min ?? '?', max: ph?.max ?? '?' } }) });
-    } else if (r.verdict === 'unknown') {
-      out.push({ id, about: r.key, severity: 'note', misfit: false, key: UNKNOWN[r.key === 'room' && r.kind === 'climber' ? 'climber' : r.key] });
-    }
-    if (r.key === 'water' && r.note === 'dry_months') out.push({ id, about: 'water', severity: 'note', misfit: false, key: 'water.dryMonths', state: 'dry_months' });
-    if (r.key === 'room' && r.kind === 'wild_height') out.push({ id, about: 'room', severity: 'note', misfit: false, key: 'room.tall', vars: { m: Math.round(r.meters * 10) / 10 }, state: 'tall' });
-  }
-  return out;
-}

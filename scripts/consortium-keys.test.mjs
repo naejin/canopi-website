@@ -46,10 +46,10 @@ const INDIRECT = [
   'correction.fieldError', 'correction.proposedError', 'correction.unchanged', 'correction.tooLong', 'correction.emailError',
   'correction.consentError', 'correction.invalid', 'correction.failed', 'correction.refused', 'correction.offline',
 ];
-// The site-fit vocabulary (src/lib/consortium/site.ts siteFitMessages) writes its keys as quoted
-// strings; views/kit/flags.ts passes each message's key to T. (The P5 mark providers that wrote theirs
-// the same way were deleted in PP-C c2.)
-const markSource = readFileSync(join(root, 'lib/consortium/site.ts'), 'utf8');
+// The site-fit vocabulary (src/lib/consortium/verdict-line.ts siteLines, fix round 1 B2) writes its
+// keys as quoted strings; views/kit/flags.ts draws each line through say. (The P5 mark providers that
+// wrote theirs the same way were deleted in PP-C c2.)
+const markSource = readFileSync(join(root, 'lib/consortium/verdict-line.ts'), 'utf8');
 const markKeys = new Set([...markSource.matchAll(/'([a-z]\w*(?:\.\w+)+)'/g)].map((m) => m[1]));
 const fromPage = new Set([...page.matchAll(/\b(?:tr|P)\('([\w.]+)'/g)].map((m) => m[1]));
 const asked = (k) => named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
