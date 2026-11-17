@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "no size recorded",
   "consortium.find.inRangeBy": "In range by {period}",
   "consortium.find.anywayNote": "Adding it keeps the warning on it in your palette: your call.",
+  "consortium.find.holesLack": "one: Your palette lacks # hole | other: Your palette lacks # holes",
+  "consortium.find.byJob": "Or look by job",
+  "consortium.find.jobHas": "one: Your palette has # | other: Your palette has #",
+  "consortium.find.jobWordsAll": "Job words we understand, in your language: {words}",
+  "consortium.find.jobMeans.feeds_you": "Gives food: fruit, leaves, roots or seeds to eat.",
+  "consortium.find.jobMeans.feeds_soil": "Feeds the soil: fixes nitrogen or returns rich leaves to it.",
+  "consortium.find.jobMeans.mulch": "Makes mulch: a lot of leaves and stems to cut and lay on the soil.",
+  "consortium.find.jobMeans.ground": "Covers the ground: keeps the soil shaded and holds it in place.",
+  "consortium.find.jobMeans.helpers": "Brings helpers: flowers and shelter for bees, other insects and birds.",
+  "consortium.find.jobMeans.shelter": "Shelters and protects: breaks the wind or gives shade.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

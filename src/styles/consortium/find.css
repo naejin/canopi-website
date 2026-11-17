@@ -91,3 +91,10 @@
 /* A row's lines (fix round 1, B1): what it fills, its light, size and years. */
 .ct .ct-find-fills { color: var(--text); font-weight: 600; }
 .ct .ct-find-meta { color: var(--text-secondary); }
+
+/* The start (fix round 1, B4): the palette's holes and the jobs as chips. */
+.ct .ct-find-holes, .ct .ct-find-byjob { display: grid; gap: 6px; }
+.ct .ct-find-holes h3, .ct .ct-find-byjob h3 { margin: 0; font-family: var(--font-sans); font-size: 16px; font-weight: 600; }
+.ct .ct-find-holelist { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-find-holelist > li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
+.ct .ct-find-job .ct-find-jobmeans { display: block; }

@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "geen grootte bekend",
   "consortium.find.inRangeBy": "Binnen bereik tegen {period}",
   "consortium.find.anywayNote": "Toegevoegd houdt hij de waarschuwing in je palet: jij beslist.",
+  "consortium.find.holesLack": "one: Je palet heeft # gat | other: Je palet heeft # gaten",
+  "consortium.find.byJob": "Of zoek op taak",
+  "consortium.find.jobHas": "one: Je palet heeft er # | other: Je palet heeft er #",
+  "consortium.find.jobWordsAll": "Taakwoorden die we begrijpen, in je taal: {words}",
+  "consortium.find.jobMeans.feeds_you": "Geeft voedsel: vruchten, bladeren, wortels of zaden om te eten.",
+  "consortium.find.jobMeans.feeds_soil": "Voedt de bodem: legt stikstof vast of geeft er rijk blad aan terug.",
+  "consortium.find.jobMeans.mulch": "Geeft mulch: veel blad en stengels om te snoeien en op de grond te leggen.",
+  "consortium.find.jobMeans.ground": "Bedekt de grond: houdt de bodem beschaduwd en op zijn plaats.",
+  "consortium.find.jobMeans.helpers": "Trekt helpers aan: bloemen en beschutting voor bijen, insecten en vogels.",
+  "consortium.find.jobMeans.shelter": "Beschut en beschermt: breekt de wind of geeft schaduw.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

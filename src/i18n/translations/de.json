@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "keine Größe erfasst",
   "consortium.find.inRangeBy": "Im Bereich bis {period}",
   "consortium.find.anywayNote": "Hinzugefügt behält sie den Hinweis in Ihrer Palette: Ihre Entscheidung.",
+  "consortium.find.holesLack": "one: Ihrer Palette fehlt # Lücke | other: Ihrer Palette fehlen # Lücken",
+  "consortium.find.byJob": "Oder nach Aufgabe suchen",
+  "consortium.find.jobHas": "one: Ihre Palette hat # | other: Ihre Palette hat #",
+  "consortium.find.jobWordsAll": "Aufgabenwörter, die wir verstehen, in Ihrer Sprache: {words}",
+  "consortium.find.jobMeans.feeds_you": "Gibt Nahrung: Früchte, Blätter, Wurzeln oder Samen zum Essen.",
+  "consortium.find.jobMeans.feeds_soil": "Nährt den Boden: bindet Stickstoff oder gibt ihm reiches Laub zurück.",
+  "consortium.find.jobMeans.mulch": "Gibt Mulch: viele Blätter und Stängel zum Schneiden und Auflegen.",
+  "consortium.find.jobMeans.ground": "Bedeckt den Boden: hält ihn schattig und an seinem Platz.",
+  "consortium.find.jobMeans.helpers": "Lockt Helfer an: Blüten und Unterschlupf für Bienen, Insekten und Vögel.",
+  "consortium.find.jobMeans.shelter": "Schützt: bricht den Wind oder spendet Schatten.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

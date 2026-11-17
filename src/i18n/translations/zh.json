@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "未记录大小",
   "consortium.find.inRangeBy": "到 {period} 进入范围",
   "consortium.find.anywayNote": "添加后，它在调色板中仍带着警告：由你决定。",
+  "consortium.find.holesLack": "other: 你的调色板缺 # 个空缺",
+  "consortium.find.byJob": "或按作用查找",
+  "consortium.find.jobHas": "other: 你的调色板已有 # 种",
+  "consortium.find.jobWordsAll": "我们能理解的作用词（你的语言）：{words}",
+  "consortium.find.jobMeans.feeds_you": "提供食物：可食的果实、叶、根或种子。",
+  "consortium.find.jobMeans.feeds_soil": "养地：固氮，或以富含养分的叶片回馈土壤。",
+  "consortium.find.jobMeans.mulch": "产生覆盖物：大量可剪下铺在地面的枝叶。",
+  "consortium.find.jobMeans.ground": "覆盖地面：为土壤遮阴并固土。",
+  "consortium.find.jobMeans.helpers": "吸引益虫益鸟：为蜜蜂、其他昆虫和鸟类提供花与栖身处。",
+  "consortium.find.jobMeans.shelter": "遮护：挡风或遮阴。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

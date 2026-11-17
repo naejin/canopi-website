@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "大きさの記録なし",
   "consortium.find.inRangeBy": "{period} までに範囲内",
   "consortium.find.anywayNote": "追加しても、パレットで警告は残ります。判断はあなたに。",
+  "consortium.find.holesLack": "other: パレットに # つの空きがあります",
+  "consortium.find.byJob": "または役割で探す",
+  "consortium.find.jobHas": "other: パレットには # 種",
+  "consortium.find.jobWordsAll": "理解できる役割の言葉（あなたの言語）：{words}",
+  "consortium.find.jobMeans.feeds_you": "食べ物になる：果実、葉、根、種子。",
+  "consortium.find.jobMeans.feeds_soil": "土を肥やす：窒素を固定し、または豊かな葉を土に返す。",
+  "consortium.find.jobMeans.mulch": "マルチになる：刈って土に敷ける葉や茎が多い。",
+  "consortium.find.jobMeans.ground": "地面を覆う：土を日陰にし、流れないよう保つ。",
+  "consortium.find.jobMeans.helpers": "助っ人を呼ぶ：ミツバチなどの虫や鳥に花と隠れ場所を与える。",
+  "consortium.find.jobMeans.shelter": "守る：風をさえぎり、または日陰をつくる。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

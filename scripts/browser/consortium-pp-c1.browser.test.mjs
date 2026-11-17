@@ -515,3 +515,35 @@ test('PP-C c1 fix B1+B5+B13 (row content): fills, light, size, years; Add anyway
   assert.match(text, /toxic/i, 'the toxic mark');
   assert.doesNotMatch(text, /toxicity records/, 'not the full sentence on the row');
 });
+
+// Fix round 1, B4 and B6 (boards Find, FindJob; conformance c1 #4, #9): the start says how many plants fit
+// the place, lists the palette's holes (each opens Find for it) and offers the jobs as chips; a job word's
+// card says what the job means, what the palette already has for it, and the job words understood.
+test('PP-C c1 fix B4+B6 (start state, job card): fit count, holes block, job chips; the job card explains', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.countFits.value, { timeout: 10_000 });
+  const n = await page.evaluate(() => { const c = window.__ctTest.store.countFits.value; return c.fits + c.look; });
+  await openFind(page);
+  await hasFind(page);
+  assert.match(await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent).catch(() => ''), new RegExp(`${n} of the`), `"${n} of the M plants … fit your place today"`);
+  assert.ok(await page.$(`${FIND} [data-find-byjob] [data-job-chip]`), '"Or look by job" chips');
+  const holes = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.length);
+  assert.ok(holes > 0);
+  const hole = `${FIND} [data-find-holes] [data-find-hole]`;
+  if (await page.$(`${FIND} [data-find-holes]`)) {
+    const title = await page.$eval(hole, (b) => b.dataset.title);
+    await page.click(hole);
+    assert.ok(await page.waitForFunction((t) => document.querySelector('dialog.ct-find h2')?.textContent === t, { timeout: 3000 }, title).then(() => true, () => false), 'a hole opens Find for it');
+    await page.evaluate(() => window.__ctTest.store.closeSheet());
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+    await openFind(page);
+    await hasFind(page);
+  }
+  await page.click(`${FIND} [data-find-byjob] [data-job-chip="ground"]`);
+  assert.ok(await page.$(`${FIND} [data-filter="job"][data-value="ground"][aria-pressed="true"]`), 'a job chip filters by its job');
+  await search(page, 'windbreak');
+  const card = await page.$eval(`${FIND} .ct-find-job`, (e) => e.textContent).catch(() => '');
+  assert.match(card, /wind/i, 'what the job means');
+  assert.match(card, /Your palette has/, 'what the palette has for it');
+  assert.match(await page.$eval(`${FIND} [data-find-jobwords]`, (e) => e.textContent).catch(() => ''), /mulch/, 'the job words understood');
+});

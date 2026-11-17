@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fills, fitLine, holes, jobIds, jobsOf, periodIds, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fills, fitLine, holeLine, holes, jobIds, jobsOf, periodIds, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { addsWithWarning, applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
@@ -218,6 +218,20 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const tick = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const title = hole ? holeWords(hole) : T('find.title');
+  // The start (board Find, B4): how many plants fit the place (Place's count words, consortium.place.count.*),
+  // the palette's holes (each opens Find for it) and the jobs as chips.
+  const fit = store.countFits.value, later = store.period.value !== periodIds[0];
+  const fitCount = fit && fit.fits + fit.look > 0
+    ? P(later ? 'place.count.ownLater' : 'place.count.own', fit.fits + fit.look, { total: num(fit.of), list: listName(climate), period: store.period.value.replace('-', '–') })
+    : null;
+  const start = !q && !hole;
+  const fillersOf = (h: (typeof open)[number]) => (offer ?? []).filter((t) => !members.includes(t.id) && fills(h, t)).length;
+  const openHole = (h: (typeof open)[number]) => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
+  // A job's card (board FindJob, B6): what it means, what the palette has for it, the words understood.
+  const jobHas = (j: JobId) => {
+    const n = memberTaxa.filter((t) => jobsOf(t).includes(j)).length, gap = open.find((h) => h.kind === 'job' && h.job === j);
+    return `${P('find.jobHas', n)}${gap ? `, ${say(holeLine(gap))}` : ''}.`;
+  };
   const { groups, unknown, hidden } = view;
   const outsideFolded = foldOutside && !q && groups.outside.length > 0 && (groups.fits.length + groups.look.length + groups.unchecked.length) > 0;
   const shown = (g: Group) => groups[g].length > 0 && !(g === 'outside' && outsideFolded);
@@ -360,7 +374,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
     }>
       <div class="ct-find-top">
         <h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2>
-        <p class="ct-muted">{P('find.lede', base.length, { list: listName(climate) })}</p>
+        {fitCount && !hole
+          ? <p class="ct-muted" data-find-fitcount="">{fitCount}</p>
+          : <p class="ct-muted">{P('find.lede', base.length, { list: listName(climate) })}</p>}
         <NotChecked ctx={flagCtx} />
       </div>
       <div class="ct-find-searchrow">
@@ -390,10 +406,36 @@ export default function Find({ Frame }: { Frame: Frame }) {
             <div class="ct-find-job" data-job={job}>
               <p class="ct-muted ct-small">{T('find.jobIs', { q })}</p>
               <p><JobIcon job={job} /> <strong>{T(`job.${job}`)}</strong></p>
+              <p class="ct-find-jobmeans">{T(`find.jobMeans.${job}`)} {jobHas(job)}</p>
               <button type="button" class="button button-primary" onClick={() => { setFilters((f) => ({ ...f, jobs: [job] })); setQuery(''); }}>
                 {P('find.jobShow', base.filter((t) => jobsOf(t).includes(job)).length)}
               </button>
             </div>
+          )}
+          {job && (
+            <p class="ct-muted ct-small" data-find-jobwords="">{T('find.jobWordsAll', { words: jobIds.flatMap((j) => jobWords(j).slice(1)).join(', ') })}</p>
+          )}
+          {start && open.length > 0 && (
+            <section class="ct-find-holes" data-find-holes="" aria-labelledby="ct-find-holes">
+              <h3 id="ct-find-holes">{P('find.holesLack', open.length)}</h3>
+              <ul class="ct-find-holelist">
+                {open.slice(0, 4).map((h) => (
+                  <li key={h.id}><button type="button" class="text-link" data-find-hole="" data-title={holeWords(h)} onClick={() => openHole(h)}>{holeWords(h)}</button> <span class="ct-muted">{P('find.count', fillersOf(h))}</span></li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {start && (
+            <section class="ct-find-byjob" data-find-byjob="" aria-labelledby="ct-find-byjob">
+              <h3 id="ct-find-byjob">{T('find.byJob')}</h3>
+              <div class="ct-find-chips">
+                {jobIds.map((j) => (
+                  <button key={j} type="button" class="ct-find-chip" data-job-chip={j} aria-pressed={filters.jobs?.includes(j) ? 'true' : 'false'} onClick={() => toggleIn('jobs', j)}>
+                    <JobIcon job={j} />{T(`job.${j}`)}<span class="ct-muted">{num(jobCounts.get(j) ?? 0)}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
           )}
           {view.inPalette.length > 0 && (
             <section class="ct-find-group" data-find-inpalette="" aria-labelledby="ct-find-g-palette">

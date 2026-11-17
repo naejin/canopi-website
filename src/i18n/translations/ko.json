@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "크기 기록 없음",
   "consortium.find.inRangeBy": "{period}까지 범위 안",
   "consortium.find.anywayNote": "추가해도 팔레트에서 경고는 남습니다. 결정은 당신의 몫입니다.",
+  "consortium.find.holesLack": "other: 팔레트에 빈자리 #곳이 있습니다",
+  "consortium.find.byJob": "또는 역할로 찾기",
+  "consortium.find.jobHas": "other: 팔레트에 #종 있음",
+  "consortium.find.jobWordsAll": "이해하는 역할 단어(사용 언어): {words}",
+  "consortium.find.jobMeans.feeds_you": "먹거리를 줌: 먹을 수 있는 열매, 잎, 뿌리, 씨앗.",
+  "consortium.find.jobMeans.feeds_soil": "흙을 기름지게 함: 질소를 고정하거나 영양 많은 잎을 돌려줌.",
+  "consortium.find.jobMeans.mulch": "멀칭 재료: 잘라 흙에 덮을 잎과 줄기가 많음.",
+  "consortium.find.jobMeans.ground": "땅을 덮음: 흙에 그늘을 주고 붙잡아 둠.",
+  "consortium.find.jobMeans.helpers": "도우미를 부름: 벌, 곤충, 새에게 꽃과 쉼터를 줌.",
+  "consortium.find.jobMeans.shelter": "보호함: 바람을 막거나 그늘을 줌.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

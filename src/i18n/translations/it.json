@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "dimensioni non registrate",
   "consortium.find.inRangeBy": "Nel suo intervallo entro il {period}",
   "consortium.find.anywayNote": "Aggiungendola, l’avviso resta nella tua tavolozza: decidi tu.",
+  "consortium.find.holesLack": "one: Alla tua tavolozza manca # vuoto | other: Alla tua tavolozza mancano # vuoti",
+  "consortium.find.byJob": "Oppure cerca per funzione",
+  "consortium.find.jobHas": "one: La tua tavolozza ne ha # | other: La tua tavolozza ne ha #",
+  "consortium.find.jobWordsAll": "Parole di funzione che capiamo, nella tua lingua: {words}",
+  "consortium.find.jobMeans.feeds_you": "Dà cibo: frutti, foglie, radici o semi da mangiare.",
+  "consortium.find.jobMeans.feeds_soil": "Nutre il suolo: fissa l’azoto o gli restituisce foglie ricche.",
+  "consortium.find.jobMeans.mulch": "Dà pacciame: tante foglie e steli da tagliare e stendere sul suolo.",
+  "consortium.find.jobMeans.ground": "Copre il suolo: lo tiene in ombra e lo trattiene.",
+  "consortium.find.jobMeans.helpers": "Attira ausiliari: fiori e riparo per api, altri insetti e uccelli.",
+  "consortium.find.jobMeans.shelter": "Ripara e protegge: frena il vento o fa ombra.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

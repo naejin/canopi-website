@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "taille non relevée",
   "consortium.find.inRangeBy": "Dans son aire d’ici {period}",
   "consortium.find.anywayNote": "L’ajouter garde l’avertissement dans votre palette : à vous de voir.",
+  "consortium.find.holesLack": "one: Il manque # trou à votre palette | other: Il manque # trous à votre palette",
+  "consortium.find.byJob": "Ou cherchez par rôle",
+  "consortium.find.jobHas": "one: Votre palette en a # | other: Votre palette en a #",
+  "consortium.find.jobWordsAll": "Mots de rôle compris, dans votre langue : {words}",
+  "consortium.find.jobMeans.feeds_you": "Donne à manger : fruits, feuilles, racines ou graines.",
+  "consortium.find.jobMeans.feeds_soil": "Nourrit le sol : fixe l’azote ou lui rend des feuilles riches.",
+  "consortium.find.jobMeans.mulch": "Fait du paillis : beaucoup de feuilles et de tiges à couper et étaler sur le sol.",
+  "consortium.find.jobMeans.ground": "Couvre le sol : le garde à l’ombre et le retient.",
+  "consortium.find.jobMeans.helpers": "Attire des auxiliaires : fleurs et abri pour les abeilles, les insectes et les oiseaux.",
+  "consortium.find.jobMeans.shelter": "Abrite et protège : coupe le vent ou donne de l’ombre.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

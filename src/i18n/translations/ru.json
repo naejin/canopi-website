@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "размер не записан",
   "consortium.find.inRangeBy": "В диапазоне к {period}",
   "consortium.find.anywayNote": "Добавленное растение сохранит предупреждение в палитре: решать вам.",
+  "consortium.find.holesLack": "one: В вашей палитре # пробел | few: В вашей палитре # пробела | many: В вашей палитре # пробелов | other: В вашей палитре # пробела",
+  "consortium.find.byJob": "Или ищите по роли",
+  "consortium.find.jobHas": "one: В вашей палитре # | few: В вашей палитре # | many: В вашей палитре # | other: В вашей палитре #",
+  "consortium.find.jobWordsAll": "Слова ролей, которые мы понимаем, на вашем языке: {words}",
+  "consortium.find.jobMeans.feeds_you": "Даёт пищу: плоды, листья, корни или семена.",
+  "consortium.find.jobMeans.feeds_soil": "Кормит почву: связывает азот или возвращает ей богатую листву.",
+  "consortium.find.jobMeans.mulch": "Даёт мульчу: много листьев и стеблей, чтобы срезать и уложить на почву.",
+  "consortium.find.jobMeans.ground": "Покрывает землю: затеняет почву и удерживает её.",
+  "consortium.find.jobMeans.helpers": "Привлекает помощников: цветы и укрытие для пчёл, насекомых и птиц.",
+  "consortium.find.jobMeans.shelter": "Укрывает и защищает: ломает ветер или даёт тень.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

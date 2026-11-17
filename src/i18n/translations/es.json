@@ -1013,5 +1013,15 @@
   "consortium.find.sizeNone": "sin tamaño registrado",
   "consortium.find.inRangeBy": "Dentro de su rango hacia {period}",
   "consortium.find.anywayNote": "Al añadirla conserva el aviso en tu paleta: tú decides.",
+  "consortium.find.holesLack": "one: A tu paleta le falta # hueco | other: A tu paleta le faltan # huecos",
+  "consortium.find.byJob": "O busca por función",
+  "consortium.find.jobHas": "one: Tu paleta tiene # | other: Tu paleta tiene #",
+  "consortium.find.jobWordsAll": "Palabras de función que entendemos, en tu idioma: {words}",
+  "consortium.find.jobMeans.feeds_you": "Da alimento: frutos, hojas, raíces o semillas para comer.",
+  "consortium.find.jobMeans.feeds_soil": "Alimenta el suelo: fija nitrógeno o le devuelve hojas ricas.",
+  "consortium.find.jobMeans.mulch": "Da acolchado: muchas hojas y tallos para cortar y dejar sobre el suelo.",
+  "consortium.find.jobMeans.ground": "Cubre el suelo: lo mantiene a la sombra y lo sujeta.",
+  "consortium.find.jobMeans.helpers": "Atrae aliados: flores y refugio para abejas, otros insectos y aves.",
+  "consortium.find.jobMeans.shelter": "Protege: corta el viento o da sombra.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
