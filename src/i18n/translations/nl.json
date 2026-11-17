@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Wissen",
   "consortium.find.bestFirst": "De beste eerst: de gaten die een plant vult, dan hoe lang hij binnen zijn klimaatbereik blijft.",
   "consortium.find.showAll": "one: Alle # tonen | other: Alle # tonen",
+  "consortium.find.fillsN": "one: vult een gat | other: vult # gaten",
+  "consortium.find.fillsThis": "{years}: vult dit gat",
+  "consortium.find.lightSun": "heeft veel licht nodig",
+  "consortium.find.lightSome": "groeit in halfschaduw",
+  "consortium.find.lightDeep": "groeit in diepe schaduw",
+  "consortium.find.sizeBoth": "{w} breed, {h} hoog",
+  "consortium.find.sizeTall": "{h} hoog, geen breedte bekend",
+  "consortium.find.sizeWide": "{w} breed, geen hoogte bekend",
+  "consortium.find.sizeNone": "geen grootte bekend",
+  "consortium.find.inRangeBy": "Binnen bereik tegen {period}",
+  "consortium.find.anywayNote": "Toegevoegd houdt hij de waarschuwing in je palet: jij beslist.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

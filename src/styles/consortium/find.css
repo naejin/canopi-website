@@ -87,3 +87,7 @@
 .ct .ct-sheet.ct-find .ct-sheet-inner { height: 100%; min-height: 0; }
 .ct .ct-sheet.ct-find .ct-sheet-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .ct .ct-sheet.ct-find .ct-sheet-foot { position: static; }
+
+/* A row's lines (fix round 1, B1): what it fills, its light, size and years. */
+.ct .ct-find-fills { color: var(--text); font-weight: 600; }
+.ct .ct-find-meta { color: var(--text-secondary); }

@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Cancella",
   "consortium.find.bestFirst": "Le migliori prima: i vuoti che una pianta colma, poi per quanto resta nel suo intervallo climatico.",
   "consortium.find.showAll": "one: Mostra tutte le # | other: Mostra tutte le #",
+  "consortium.find.fillsN": "one: colma un vuoto | other: colma # vuoti",
+  "consortium.find.fillsThis": "{years}: colma questo vuoto",
+  "consortium.find.lightSun": "vuole molta luce",
+  "consortium.find.lightSome": "cresce a mezz’ombra",
+  "consortium.find.lightDeep": "cresce in ombra fitta",
+  "consortium.find.sizeBoth": "{w} di larghezza, {h} di altezza",
+  "consortium.find.sizeTall": "{h} di altezza, larghezza non registrata",
+  "consortium.find.sizeWide": "{w} di larghezza, altezza non registrata",
+  "consortium.find.sizeNone": "dimensioni non registrate",
+  "consortium.find.inRangeBy": "Nel suo intervallo entro il {period}",
+  "consortium.find.anywayNote": "Aggiungendola, l’avviso resta nella tua tavolozza: decidi tu.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

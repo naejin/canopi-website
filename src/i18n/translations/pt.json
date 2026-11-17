@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Limpar",
   "consortium.find.bestFirst": "As melhores primeiro: as lacunas que uma planta preenche e depois por quanto tempo ela fica dentro da sua faixa climática.",
   "consortium.find.showAll": "one: Mostrar todas as # | other: Mostrar todas as #",
+  "consortium.find.fillsN": "one: preenche uma lacuna | other: preenche # lacunas",
+  "consortium.find.fillsThis": "{years}: preenche esta lacuna",
+  "consortium.find.lightSun": "precisa de muita luz",
+  "consortium.find.lightSome": "cresce com um pouco de sombra",
+  "consortium.find.lightDeep": "cresce na sombra densa",
+  "consortium.find.sizeBoth": "{w} de largura, {h} de altura",
+  "consortium.find.sizeTall": "{h} de altura, sem largura registrada",
+  "consortium.find.sizeWide": "{w} de largura, sem altura registrada",
+  "consortium.find.sizeNone": "sem tamanho registrado",
+  "consortium.find.inRangeBy": "Dentro da faixa até {period}",
+  "consortium.find.anywayNote": "Ao adicioná-la, o aviso fica com ela na sua paleta: você decide.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

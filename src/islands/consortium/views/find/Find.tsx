@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fills, fitLine, holes, jobIds, jobsOf, periodIds, queryTokens } from '../../../../lib/consortium/index.ts';
+import { fills, fitLine, holes, jobIds, jobsOf, periodIds, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { addsWithWarning, applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
@@ -68,6 +68,22 @@ function askHref(q: string): string {
 
 // A group lists a screenful, the rest behind "Show all N" (board FindResults; no 500-row render).
 const SCREEN = 20;
+
+// A row's light, size and years (board FindResults: "needs a lot of light · 18 m wide, 40 m tall"),
+// measures through format.ts, years through verdict-line.ts.
+function lightWords(t: Taxon): string | null {
+  const { sun, semi_shade: some, full_shade: deep } = t.traits;
+  return deep ? T('find.lightDeep') : some ? T('find.lightSome') : sun ? T('find.lightSun') : null;
+}
+function sizeWords(t: Taxon): string {
+  const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
+  const W = w === null ? '' : formatLength(w, lang), H = h === null ? '' : formatLength(h, lang);
+  return w !== null && h !== null ? T('find.sizeBoth', { w: W, h: H }) : h !== null ? T('find.sizeTall', { h: H }) : w !== null ? T('find.sizeWide', { w: W }) : T('find.sizeNone');
+}
+function metaWords(t: Taxon): string {
+  const y = yearsOf(t);
+  return [lightWords(t), sizeWords(t), y && say(yearsLine(y.from, y.to))].filter(Boolean).join(' · ');
+}
 
 type Chip = { id: FilterId; value: string; label: string; on: boolean; toggle: () => void; count?: number };
 // The add button's mark (board FindResults: "+ Add", "✓ Added"); the word carries the meaning.
@@ -134,6 +150,12 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const open = useMemo(() => holes({ members: memberTaxa, verdicts: memberVerdicts, pending: false }).filter((h) => h.state === 'open'), [memberTaxa, memberVerdicts]);
   // Per plant: the open holes it fills, and the later periods it stays in its range through (best first).
   const filled = useMemo(() => new Map(base.map((t) => [t.id, open.filter((h) => fills(h, t)).length])), [base, open]);
+  // An outside plant's first later period in range ("In range by 2041–2070", B5).
+  const inRangeBy = (t: Taxon): string | null => {
+    if (!judging) return null;
+    const p = periodIds.slice(1).find((x) => rule!.holdsBy(t, vctx, x));
+    return p ? p.replace('-', '–') : null;
+  };
   const stay = useMemo(() => {
     const m = new Map<PlantId, number>();
     if (judging) for (const t of base) { let n = 0; for (const p of periodIds.slice(1)) { if (!rule!.holdsBy(t, vctx, p)) break; n++; } m.set(t.id, n); }
@@ -204,9 +226,12 @@ export default function Find({ Frame }: { Frame: Frame }) {
 
   const row = (t: Taxon) => {
     const h = view.hitOf.get(t.id), why = h ? whyWords(h) : null;
-    const lines = flagLines(t, flagsOf.get(t.id) ?? [], scene);
+    // The toxic mark is short on a row ("Mildly toxic"), the full wording in Details only (B13).
+    const lines = flagLines(t, flagsOf.get(t.id) ?? [], scene).map((l) => (l.kind === 'toxicity' && t.warnings.toxicity ? { ...l, text: T(`tox.${t.warnings.toxicity.level}`) } : l));
     const jobs = jobsOf(t);
     const on = ticked.includes(t.id), done = added(t.id);
+    const v = verdicts?.get(t.id), outside = v?.level === 'outside', n = filled.get(t.id) ?? 0, y = yearsOf(t);
+    const later = outside ? inRangeBy(t) : null;
     return (
       <li key={t.id} data-find-row="" data-plant-id={t.id} data-fills={filled.get(t.id) ?? 0} class={on ? 'is-on' : undefined}>
         <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
@@ -215,13 +240,18 @@ export default function Find({ Frame }: { Frame: Frame }) {
           : (
             <button type="button" class={`button button-secondary ct-find-add${done ? ' is-added' : ''}`} data-find-add="" data-added={done ? '' : undefined}
               aria-disabled={done ? 'true' : undefined} aria-label={done ? T('find.addedName', { name: nameOf(t) }) : T('find.addName', { name: nameOf(t) })} onClick={() => addOne(t)}>
-              {done ? TICK : PLUS} {done ? T('find.added') : T('find.add')}
+              {done ? TICK : PLUS} {done ? T('find.added') : outside ? T('addAnyway') : T('find.add')}
             </button>
           )}
         <div class="ct-row-why">
           {why && <span class="ct-find-why" data-find-why="" data-lang={why.lang} data-kind={why.kind}>{why.text}</span>}
+          {hole && fits?.(t) && y
+            ? <span class="ct-find-fills" data-find-fills="">{T('find.fillsThis', { years: say(yearsLine(y.from, y.to)) })}</span>
+            : n > 0 && <span class="ct-find-fills" data-find-fills="">{P('find.fillsN', n)}</span>}
           {jobs.length > 0 && <span class="ct-find-jobs">{jobs.map((j) => T(`job.${j}`)).join(' · ')}</span>}
-          <FitLine v={verdicts?.get(t.id)} />
+          <span class="ct-find-meta" data-find-meta="">{metaWords(t)}</span>
+          <FitLine v={v} />
+          {later && <span class="ct-line" data-find-inrange="">{T('find.inRangeBy', { period: later })}</span>}
           {lines.length ? <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span> : null}
         </div>
       </li>
@@ -399,6 +429,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
               {GROUPS.filter(shown).map((g) => (
                 <section key={g} class="ct-find-group" data-find-group={g} aria-labelledby={`ct-find-g-${g}`}>
                   <h3 id={`ct-find-g-${g}`}>{groupWords(g, store.period.value)} <span class="ct-muted">{num(groups[g].length)}</span></h3>
+                  {g === 'outside' && <p class="ct-muted ct-small" data-find-anyway="">{T('find.anywayNote')}</p>}
                   <ul class="ct-rows">{(whole.has(g) ? groups[g] : groups[g].slice(0, SCREEN)).map(row)}</ul>
                   {!whole.has(g) && groups[g].length > SCREEN && (
                     <p><button type="button" class="text-link" data-find-showall="" onClick={() => setWhole((w) => new Set([...w, g]))}>{P('find.showAll', groups[g].length)}</button></p>

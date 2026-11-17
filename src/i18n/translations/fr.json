@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Effacer",
   "consortium.find.bestFirst": "Les meilleures d’abord : les trous qu’une plante comble, puis combien de temps elle reste dans son aire climatique.",
   "consortium.find.showAll": "one: Afficher les # | other: Afficher les #",
+  "consortium.find.fillsN": "one: comble un trou | other: comble # trous",
+  "consortium.find.fillsThis": "{years} : comble ce trou",
+  "consortium.find.lightSun": "demande beaucoup de lumière",
+  "consortium.find.lightSome": "pousse à mi-ombre",
+  "consortium.find.lightDeep": "pousse à l’ombre profonde",
+  "consortium.find.sizeBoth": "{w} de large, {h} de haut",
+  "consortium.find.sizeTall": "{h} de haut, largeur non relevée",
+  "consortium.find.sizeWide": "{w} de large, hauteur non relevée",
+  "consortium.find.sizeNone": "taille non relevée",
+  "consortium.find.inRangeBy": "Dans son aire d’ici {period}",
+  "consortium.find.anywayNote": "L’ajouter garde l’avertissement dans votre palette : à vous de voir.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

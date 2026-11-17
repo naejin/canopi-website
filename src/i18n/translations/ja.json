@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "クリア",
   "consortium.find.bestFirst": "良いものから順に：その植物が埋める空き、次に気候範囲内にとどまる期間。",
   "consortium.find.showAll": "other: # 種をすべて表示",
+  "consortium.find.fillsN": "other: # つの空きを埋める",
+  "consortium.find.fillsThis": "{years}：この空きを埋める",
+  "consortium.find.lightSun": "多くの光が必要",
+  "consortium.find.lightSome": "半日陰で育つ",
+  "consortium.find.lightDeep": "深い日陰で育つ",
+  "consortium.find.sizeBoth": "幅 {w}、高さ {h}",
+  "consortium.find.sizeTall": "高さ {h}、幅の記録なし",
+  "consortium.find.sizeWide": "幅 {w}、高さの記録なし",
+  "consortium.find.sizeNone": "大きさの記録なし",
+  "consortium.find.inRangeBy": "{period} までに範囲内",
+  "consortium.find.anywayNote": "追加しても、パレットで警告は残ります。判断はあなたに。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

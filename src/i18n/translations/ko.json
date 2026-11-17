@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "지우기",
   "consortium.find.bestFirst": "좋은 순서대로: 식물이 채우는 빈자리, 그다음 기후 범위 안에 머무는 기간.",
   "consortium.find.showAll": "other: #종 모두 보기",
+  "consortium.find.fillsN": "other: 빈자리 #곳을 채움",
+  "consortium.find.fillsThis": "{years}: 이 빈자리를 채움",
+  "consortium.find.lightSun": "빛이 많이 필요함",
+  "consortium.find.lightSome": "반그늘에서 자람",
+  "consortium.find.lightDeep": "깊은 그늘에서 자람",
+  "consortium.find.sizeBoth": "너비 {w}, 높이 {h}",
+  "consortium.find.sizeTall": "높이 {h}, 너비 기록 없음",
+  "consortium.find.sizeWide": "너비 {w}, 높이 기록 없음",
+  "consortium.find.sizeNone": "크기 기록 없음",
+  "consortium.find.inRangeBy": "{period}까지 범위 안",
+  "consortium.find.anywayNote": "추가해도 팔레트에서 경고는 남습니다. 결정은 당신의 몫입니다.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

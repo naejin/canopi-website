@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Zurücksetzen",
   "consortium.find.bestFirst": "Die besten zuerst: die Lücken, die eine Pflanze füllt, dann wie lange sie in ihrem Klimabereich bleibt.",
   "consortium.find.showAll": "one: Alle # anzeigen | other: Alle # anzeigen",
+  "consortium.find.fillsN": "one: füllt eine Lücke | other: füllt # Lücken",
+  "consortium.find.fillsThis": "{years}: füllt diese Lücke",
+  "consortium.find.lightSun": "braucht viel Licht",
+  "consortium.find.lightSome": "wächst im Halbschatten",
+  "consortium.find.lightDeep": "wächst im tiefen Schatten",
+  "consortium.find.sizeBoth": "{w} breit, {h} hoch",
+  "consortium.find.sizeTall": "{h} hoch, keine Breite erfasst",
+  "consortium.find.sizeWide": "{w} breit, keine Höhe erfasst",
+  "consortium.find.sizeNone": "keine Größe erfasst",
+  "consortium.find.inRangeBy": "Im Bereich bis {period}",
+  "consortium.find.anywayNote": "Hinzugefügt behält sie den Hinweis in Ihrer Palette: Ihre Entscheidung.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

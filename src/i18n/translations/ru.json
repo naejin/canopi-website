@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Сбросить",
   "consortium.find.bestFirst": "Сначала лучшие: пробелы, которые растение заполняет, затем как долго оно остаётся в своём климатическом диапазоне.",
   "consortium.find.showAll": "one: Показать все # | few: Показать все # | many: Показать все # | other: Показать все #",
+  "consortium.find.fillsN": "one: заполняет # пробел | few: заполняет # пробела | many: заполняет # пробелов | other: заполняет # пробела",
+  "consortium.find.fillsThis": "{years}: заполняет этот пробел",
+  "consortium.find.lightSun": "нужно много света",
+  "consortium.find.lightSome": "растёт в полутени",
+  "consortium.find.lightDeep": "растёт в глубокой тени",
+  "consortium.find.sizeBoth": "ширина {w}, высота {h}",
+  "consortium.find.sizeTall": "высота {h}, ширина не записана",
+  "consortium.find.sizeWide": "ширина {w}, высота не записана",
+  "consortium.find.sizeNone": "размер не записан",
+  "consortium.find.inRangeBy": "В диапазоне к {period}",
+  "consortium.find.anywayNote": "Добавленное растение сохранит предупреждение в палитре: решать вам.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

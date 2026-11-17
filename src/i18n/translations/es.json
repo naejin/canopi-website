@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Borrar",
   "consortium.find.bestFirst": "Las mejores primero: los huecos que llena una planta y luego cuánto tiempo sigue dentro de su rango climático.",
   "consortium.find.showAll": "one: Mostrar las # | other: Mostrar las #",
+  "consortium.find.fillsN": "one: llena un hueco | other: llena # huecos",
+  "consortium.find.fillsThis": "{years}: llena este hueco",
+  "consortium.find.lightSun": "necesita mucha luz",
+  "consortium.find.lightSome": "crece con algo de sombra",
+  "consortium.find.lightDeep": "crece a la sombra densa",
+  "consortium.find.sizeBoth": "{w} de ancho, {h} de alto",
+  "consortium.find.sizeTall": "{h} de alto, sin ancho registrado",
+  "consortium.find.sizeWide": "{w} de ancho, sin altura registrada",
+  "consortium.find.sizeNone": "sin tamaño registrado",
+  "consortium.find.inRangeBy": "Dentro de su rango hacia {period}",
+  "consortium.find.anywayNote": "Al añadirla conserva el aviso en tu paleta: tú decides.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "清除",
   "consortium.find.bestFirst": "最佳优先：先看植物填补的空缺，再看它在气候范围内能保持多久。",
   "consortium.find.showAll": "other: 显示全部 # 种",
+  "consortium.find.fillsN": "other: 填补 # 个空缺",
+  "consortium.find.fillsThis": "{years}：填补这个空缺",
+  "consortium.find.lightSun": "需要充足光照",
+  "consortium.find.lightSome": "耐半阴",
+  "consortium.find.lightDeep": "耐浓荫",
+  "consortium.find.sizeBoth": "宽 {w}，高 {h}",
+  "consortium.find.sizeTall": "高 {h}，未记录宽度",
+  "consortium.find.sizeWide": "宽 {w}，未记录高度",
+  "consortium.find.sizeNone": "未记录大小",
+  "consortium.find.inRangeBy": "到 {period} 进入范围",
+  "consortium.find.anywayNote": "添加后，它在调色板中仍带着警告：由你决定。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

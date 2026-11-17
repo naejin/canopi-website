@@ -486,3 +486,32 @@ test('PP-C c1 fix B2+B3 (best first, folded outside, Show all): plain Find', asy
   await page.click(`${FIND} [data-find-group="fits"] [data-find-showall]`);
   assert.equal(await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.length), all, 'it lists them all');
 });
+
+// Fix round 1, B1, B5, B13 (boards FindResults, FillHole, AddAnyway; conformance c1 #1, #8, #16): a row
+// says what it fills, its light, size and years; an outside row says "Add anyway" and that the warning
+// stays (no question asked); a toxic plant carries the short mark, the full wording in Details only.
+test('PP-C c1 fix B1+B5+B13 (row content): fills, light, size, years; Add anyway; short toxic mark', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await findFromHole(page);
+  const first = `${FIND} [data-find-row]`;
+  assert.ok(await has(page, `${first} [data-find-fills]`, 4000), 'a row in a hole says it fills it');
+  const meta = await page.$eval(`${first} [data-find-meta]`, (e) => e.textContent).catch(() => '');
+  assert.match(meta, /wide|tall|no size recorded/, `its size (${meta})`);
+  assert.match(meta, /year|month|days|All the years/i, `its years (${meta})`);
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  await openFind(page);
+  await hasFind(page);
+  await page.click(`${FIND} [data-find-outside]`);
+  const out = `${FIND} [data-find-group="outside"] [data-find-row]`;
+  assert.ok(await has(page, out, 4000), 'an outside row');
+  assert.match(await page.$eval(`${out} [data-find-add]`, (b) => b.textContent), /Add anyway/, '"Add anyway"');
+  assert.match(await page.$eval(`${FIND} [data-find-group="outside"]`, (e) => e.textContent), /your call/, 'the warning stays: your call');
+  const tox = await page.evaluate(() => window.__ctTest.store.pool.value.find((t) => t.warnings.toxicity && t.warnings.toxicity.level !== 'None' && !window.__ctTest.store.members.value.includes(t.id))?.canonical_name);
+  assert.ok(tox, 'a toxic plant');
+  await search(page, tox);
+  const text = await page.$eval(`${FIND} [data-find-row]`, (r) => r.textContent);
+  assert.match(text, /toxic/i, 'the toxic mark');
+  assert.doesNotMatch(text, /toxicity records/, 'not the full sentence on the row');
+});

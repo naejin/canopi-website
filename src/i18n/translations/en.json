@@ -1002,5 +1002,16 @@
   "consortium.find.clearShort": "Clear",
   "consortium.find.bestFirst": "Best first: the holes a plant fills, then how long it stays in its climate range.",
   "consortium.find.showAll": "one: Show all # | other: Show all #",
+  "consortium.find.fillsN": "one: fills a hole | other: fills # holes",
+  "consortium.find.fillsThis": "{years}: fills this hole",
+  "consortium.find.lightSun": "needs a lot of light",
+  "consortium.find.lightSome": "grows in some shade",
+  "consortium.find.lightDeep": "grows in deep shade",
+  "consortium.find.sizeBoth": "{w} wide, {h} tall",
+  "consortium.find.sizeTall": "{h} tall, no width recorded",
+  "consortium.find.sizeWide": "{w} wide, no height recorded",
+  "consortium.find.sizeNone": "no size recorded",
+  "consortium.find.inRangeBy": "In range by {period}",
+  "consortium.find.anywayNote": "Adding it keeps the warning on it in your palette: your call.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
