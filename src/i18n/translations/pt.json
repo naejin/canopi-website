@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "as fontes divergem",
   "consortium.line.confWorkedOut": "deduzido de outros registros",
   "consortium.line.confSpread": "{agree} de {of} cenários climáticos concordam",
+  "consortium.line.confSpreadBy": "Até {period} ({scenario}): {agree} de {of} cenários climáticos concordam",
   "consortium.line.sourceOther": "Esse limite vem de {source}.",
   "consortium.line.lightMisfit": "Luz: não combina com o seu local.",
   "consortium.line.lightFits": "Luz: combina com o seu local.",

@@ -159,7 +159,8 @@ export function Against({ t, disputes = [], traitSources = null }: { t: Taxon; d
         <ul class="ct-band-key" data-band-key>
           <li><svg viewBox="0 0 26 12" width="26" height="12" aria-hidden="true"><rect x="1" y="1" width="24" height="10" rx="2" class="ct-bd-range ct-bd-edge" /><path d="M12 0v12" class="ct-bd-tick" /></svg>{T('details.keyRange')}</li>
           <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{say(climateBands[0].when.key)}</li>
-          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-later-dot" /></svg>{T('details.keyLater')}</li>
+          {/* The ring's entry only when a ring is drawn (round 4 V7: a later page draws none). */}
+          {period && climateBands.some((b) => b.later !== null) && <li data-key-later><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-later-dot" /></svg>{T('details.keyLater')}</li>}
           <li><svg viewBox="0 0 22 12" width="22" height="12" aria-hidden="true"><rect x="1" y="1" width="20" height="10" rx="2" class="ct-bd-edge is-dashed" fill="none" /></svg>{T('details.keyDashed')}</li>
         </ul>
       )}

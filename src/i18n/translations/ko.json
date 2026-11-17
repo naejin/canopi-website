@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "출처마다 다름",
   "consortium.line.confWorkedOut": "다른 기록에서 추정",
   "consortium.line.confSpread": "기후 시나리오 {of}개 중 {agree}개가 일치",
+  "consortium.line.confSpreadBy": "{period}({scenario})까지: 기후 시나리오 {of}개 중 {agree}개가 일치",
   "consortium.line.sourceOther": "이 한계는 {source}에서 나왔습니다.",
   "consortium.line.lightMisfit": "빛: 당신의 자리에 맞지 않습니다.",
   "consortium.line.lightFits": "빛: 당신의 자리에 맞습니다.",

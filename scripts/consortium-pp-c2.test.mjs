@@ -335,11 +335,14 @@ const keysOf = (es) => es.map((e) => e.line.key.slice('consortium.line.'.length)
 test('c2 fix A2 (scenario agreement): a verdict judged at its own later period says how many scenarios agree; a split carries the spread term on every surface', () => {
   const later = vOf({ judged: '2071-2099', ownYears: true, agree: 4, of: 4 });
   const all = line.againstLines(later, null, W);
-  const spread = all.find((e) => e.line.key === 'consortium.line.confSpread');
+  const spread = all.find((e) => /scenarios agree/.test(say(e.line)));
   assert.ok(spread, `the agreement said (${keysOf(all)})`);
+  // Round 4 V7: the line keeps its period, wherever Details shows it.
+  assert.equal(say(spread.line), 'By 2071–2099 (SSP2-4.5): 4 of 4 climate scenarios agree');
   assert.equal(spread.conf, undefined, 'all agree: no hedge term');
-  const split = line.againstLines({ ...later, agree: 2 }, null, W).find((e) => e.line.key === 'consortium.line.confSpread');
+  const split = line.againstLines({ ...later, agree: 2 }, null, W).find((e) => /scenarios agree/.test(say(e.line)));
   assert.equal(split?.conf, 'spread');
+  for (const [lang, w] of Object.entries(words)) assert.ok(w['consortium.line.confSpreadBy']?.includes('{period}'), `${lang}: confSpreadBy`);
   assert.ok(line.rowLines({ ...later, agree: 2 }, null, W).some((e) => e.conf === 'spread'), 'rows and print carry the split');
 });
 

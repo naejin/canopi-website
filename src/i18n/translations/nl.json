@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "bronnen zijn het oneens",
   "consortium.line.confWorkedOut": "afgeleid uit andere gegevens",
   "consortium.line.confSpread": "{agree} van {of} klimaatscenario’s komen overeen",
+  "consortium.line.confSpreadBy": "Tegen {period} ({scenario}): {agree} van {of} klimaatscenario’s komen overeen",
   "consortium.line.sourceOther": "Die grens komt van {source}.",
   "consortium.line.lightMisfit": "Licht: past niet bij jouw plek.",
   "consortium.line.lightFits": "Licht: past bij jouw plek.",

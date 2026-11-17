@@ -372,6 +372,14 @@ test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one ban
   assert.match(await page.$eval(`${DETAILS} [data-band-key]`, (e) => e.textContent), /where it is recorded growing.*your place today.*not a firm limit/s);
   const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
   assert.equal(sw[0], sw[1], 'Details at 320 px: nothing sideways');
+  // Round 4 V7: on a later page the key names the ring only when one is drawn, and the scenarios line keeps its period.
+  for (const p of ['1991-2020', '2071-2099']) {
+    await page.evaluate((x) => { window.__ctTest.store.period.value = x; }, p);
+    await page.waitForFunction(() => document.querySelector('dialog.ct-sheet[open] [data-band-key]'), { timeout: 6000 });
+    const k = await page.$eval(DETAILS, (d) => ({ rings: d.querySelectorAll('[data-measure] .ct-bd-later-dot').length, key: !!d.querySelector('[data-key-later]'), text: d.querySelector('[data-against]').textContent }));
+    assert.equal(k.key, k.rings > 0, `${p}: the ring's key entry only with a ring drawn (${k.rings} rings)`);
+    if (p !== '1991-2020') for (const m of k.text.matchAll(/(.{0,30})\d+ of \d+ climate scenarios agree/g)) assert.match(m[1], /By \d{4}–\d{4} \(SSP\d-\d\.\d\): $/, `${p}: the scenarios line keeps its period ("${m[0]}")`);
+  }
 });
 
 // R4, K15: on a phone the reading order is the page order (summary, Against, What you can do), and a

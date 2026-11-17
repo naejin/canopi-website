@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "情報源により異なる",
   "consortium.line.confWorkedOut": "他の記録から推定",
   "consortium.line.confSpread": "{of} の気候シナリオのうち {agree} が一致",
+  "consortium.line.confSpreadBy": "{period}（{scenario}）には：{of} の気候シナリオのうち {agree} が一致",
   "consortium.line.sourceOther": "この限界は {source} によるものです。",
   "consortium.line.lightMisfit": "光：あなたの場所には合いません。",
   "consortium.line.lightFits": "光：あなたの場所に合います。",

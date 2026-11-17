@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "источники расходятся",
   "consortium.line.confWorkedOut": "выведено из других данных",
   "consortium.line.confSpread": "согласны {agree} из {of} климатических сценариев",
+  "consortium.line.confSpreadBy": "К {period} ({scenario}): согласны {agree} из {of} климатических сценариев",
   "consortium.line.sourceOther": "Эта граница взята из {source}.",
   "consortium.line.lightMisfit": "Свет: не подходит для вашего места.",
   "consortium.line.lightFits": "Свет: подходит для вашего места.",

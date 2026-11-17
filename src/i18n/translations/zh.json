@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "来源说法不一",
   "consortium.line.confWorkedOut": "由其他记录推算",
   "consortium.line.confSpread": "{of} 个气候情景中有 {agree} 个一致",
+  "consortium.line.confSpreadBy": "到 {period}（{scenario}）：{of} 个气候情景中有 {agree} 个一致",
   "consortium.line.sourceOther": "该界限来自 {source}。",
   "consortium.line.lightMisfit": "光照：不适合你的位置。",
   "consortium.line.lightFits": "光照：适合你的位置。",

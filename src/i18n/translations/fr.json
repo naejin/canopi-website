@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "les sources divergent",
   "consortium.line.confWorkedOut": "déduit d’autres données",
   "consortium.line.confSpread": "{agree} scénarios climatiques sur {of} concordent",
+  "consortium.line.confSpreadBy": "D’ici {period} ({scenario}) : {agree} scénarios climatiques sur {of} concordent",
   "consortium.line.sourceOther": "Cette limite vient de {source}.",
   "consortium.line.lightMisfit": "Lumière : ne convient pas à votre emplacement.",
   "consortium.line.lightFits": "Lumière : convient à votre emplacement.",

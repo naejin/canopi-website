@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "Quellen widersprechen sich",
   "consortium.line.confWorkedOut": "aus anderen Daten abgeleitet",
   "consortium.line.confSpread": "{agree} von {of} Klimaszenarien stimmen überein",
+  "consortium.line.confSpreadBy": "Bis {period} ({scenario}): {agree} von {of} Klimaszenarien stimmen überein",
   "consortium.line.sourceOther": "Diese Grenze stammt von {source}.",
   "consortium.line.lightMisfit": "Licht: passt nicht zu deinem Standort.",
   "consortium.line.lightFits": "Licht: passt zu deinem Standort.",

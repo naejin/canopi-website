@@ -931,6 +931,7 @@
   "consortium.line.confDisputed": "sources disagree",
   "consortium.line.confWorkedOut": "worked out from other records",
   "consortium.line.confSpread": "{agree} of {of} climate scenarios agree",
+  "consortium.line.confSpreadBy": "By {period} ({scenario}): {agree} of {of} climate scenarios agree",
   "consortium.line.sourceOther": "That limit is from {source}.",
   "consortium.line.lightMisfit": "Light: does not suit your spot.",
   "consortium.line.lightFits": "Light: suits your spot.",

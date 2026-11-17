@@ -297,14 +297,16 @@ function statusOf(f: FactorVerdict): Line {
   return L(f.level === 'outside' ? 'bandOutside' : f.level === 'look' ? 'bandEdge' : f.level === 'unknown' ? 'bandUnknown' : 'bandFits');
 }
 
-const spreadOf = (v: PlantVerdict): AgainstEntry | null => (v.judged !== TODAY_PERIOD && v.of && v.agree !== undefined
-  ? { line: confidenceLine({ term: 'spread', agree: v.agree, of: v.of }), ...(v.agree < v.of && { conf: 'spread' as const }) }
+// How many scenarios agree on a later period's verdict; with `w`, said with its period ("By 2041–2070
+// (SSP2-4.5): 4 of 4 climate scenarios agree"), so it keeps its context wherever Details shows it.
+const spreadOf = (v: PlantVerdict, w?: AgainstWords): AgainstEntry | null => (v.judged !== TODAY_PERIOD && v.of && v.agree !== undefined
+  ? { line: w ? L('confSpreadBy', { period: w.period(v.judged), scenario: w.scenario, agree: v.agree, of: v.of }) : confidenceLine({ term: 'spread', agree: v.agree, of: v.of }), ...(v.agree < v.of && { conf: 'spread' as const }) }
   : null);
 const LATER_NOTES: readonly VerdictNote[] = ['warm-enough-later', 'drier-later'];
 
 export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: AgainstWords): AgainstEntry[] {
   const out: AgainstEntry[] = [{ line: headLine(v), level: v.level }];
-  const spread = spreadOf(v);
+  const spread = spreadOf(v, w);
   if (spread) out.push(spread);
   const order = (f: FactorVerdict): number => (f === v.limiting ? -1 : RANK[f.level] * 2 + (f.basis === 'range' ? 0 : 1));
   const byOrder = (a: FactorVerdict, b: FactorVerdict): number => order(a) - order(b) || nearness(a) - nearness(b);
