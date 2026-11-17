@@ -10,11 +10,12 @@
 import { Fragment } from 'preact';
 import { memo } from 'preact/compat';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
-import type { JobId, PlantId, PlantVerdict } from '../../../../lib/consortium/index.ts';
-import { fitLine, jobIds, phaseOfYear } from '../../../../lib/consortium/index.ts';
+import type { JobId, PlantId, PlantVerdict, Stratum } from '../../../../lib/consortium/index.ts';
+import { fitLine, jobIds, phaseOfYear, strata } from '../../../../lib/consortium/index.ts';
 import { columnOf, tableOf, type Picture } from '../../rules/picture.ts';
 import { T } from '../../strings.ts';
 import { FitLine, JobIcon, jobWord, say, sayAll } from './fit.tsx';
+import { LightIcon } from './icons.tsx';
 
 export interface ChartProps {
   picture: Picture;
@@ -98,7 +99,7 @@ function ChartView({ picture, intro, column = null, marked = null, holeWords, on
               const holes = [...new Set(r.cells.flatMap((c) => (c.hole ? [c.hole] : [])))];
               return (
                 <li key={r.key} class="ct-chart-row" data-lane={r.key} data-state={r.state}>
-                  <span class="ct-chart-head">{(jobIds as readonly string[]).includes(r.key) ? <JobIcon job={r.key as JobId} /> : <span class="ct-light-swatch" data-lane={r.key} aria-hidden="true" />}{say(r.head)}</span>
+                  <span class="ct-chart-head">{(jobIds as readonly string[]).includes(r.key) ? <JobIcon job={r.key as JobId} /> : (strata as readonly string[]).includes(r.key) ? <LightIcon stratum={r.key as Stratum} /> : <span class="ct-light-swatch" data-lane={r.key} aria-hidden="true" />}{say(r.head)}</span>
                   {ids.map((pid) => {
                     const v = verdictOf?.(pid), job = p.jobs[pid] ?? null, warn = !!v && (v.level === 'outside' || v.level === 'look');
                     // Its name read as one phrase: the plant, its main job, its fit when it warns.
