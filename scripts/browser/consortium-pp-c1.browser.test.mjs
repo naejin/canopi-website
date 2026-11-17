@@ -779,11 +779,12 @@ test('PP-C54 (c1 r4 U3): a later period without figures: the plain subtitle, no 
   const page = await tool();
   const lookup = await atSite(page, 'seville');
   await choose(page, 'Mediterranean');
-  await page.evaluate((lk) => {
-    const { store } = window.__ctTest;
-    store.location.value = { ...store.location.value, lookup: { ...lk, climate: { ...lk.climate, periods: lk.climate.periods.filter((p) => p.period === '2071-2099' && p.scenario === 'ssp585') } } };
+  const periods = lookup.climate.periods.filter((p) => p.period === '2071-2099' && p.scenario === 'ssp585');
+  await page.evaluate((only) => {
+    const { store } = window.__ctTest, at = store.location.value;
+    store.location.value = { ...at, lookup: { ...at.lookup, climate: { ...at.lookup.climate, periods: only } } };
     store.period.value = '2071-2099';
-  }, lookup);
+  }, periods);
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   await openFind(page);
   await hasFind(page);
