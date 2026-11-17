@@ -103,8 +103,11 @@ function rolesWords(jobs: readonly JobId[], also: boolean): string {
   const list = jobs.map((j, i) => (i > 0 || also ? low(T(`job.${j}`)) : T(`job.${j}`))).join(', ');
   return also && list ? T('find.also', { jobs: list }) : list;
 }
+// known: the job the list is filtered by, left out ("Also …") only on a row that does it (c1r5 W3: a
+// searched palette plant or a close spelling may not).
 function metaWords(t: Taxon, known: JobId | null): string {
-  const y = yearsOf(t), jobs = rolesWords(jobsOf(t).filter((j) => j !== known), !!known);
+  const own = jobsOf(t), drop = known && own.includes(known) ? known : null;
+  const y = yearsOf(t), jobs = rolesWords(own.filter((j) => j !== drop), !!drop);
   return [jobs, lightWords(t), sizeWords(t), y && say(yearsLine(y.from, y.to))].filter(Boolean).join(' · ');
 }
 // A hole's lane in words ("Covers the ground", "Needs full sun"), as holeWords says it.

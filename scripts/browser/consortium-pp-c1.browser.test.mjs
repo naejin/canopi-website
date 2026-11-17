@@ -795,6 +795,19 @@ test('PP-C54 (c1 r4 U3): a later period without figures: the plain subtitle, no 
   assert.match(fits, /\D0 plants/, `"Fits your place" counts none of the unchecked plants (${fits})`);
 });
 
+// c1r5 W3: the roles line leaves out the filtered job only on a row that does it: a palette plant a
+// search lists under a job filter, which may not do the job, says its own roles, never "Also …".
+test('PP-C57 (c1 r5 W3): a searched palette plant that does not do the filtered job keeps its roles line', async () => {
+  const page = await plainFind();
+  const pick = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.find((t) => t.role !== 'crop' && t.functions?.length)?.canonical_name ?? null);
+  assert.ok(pick, 'the palette holds a plant that does not feed you but has roles');
+  await byJob(page, 'feeds_you');
+  await search(page, pick);
+  const meta = await page.$eval(`${FIND} [data-find-inpalette] [data-find-row] [data-find-meta]`, (e) => e.textContent.split(' · ')[0]).catch(() => null);
+  assert.ok(meta, `its row in "In your palette" (${pick})`);
+  assert.doesNotMatch(meta, /^Also /, `its own roles, not "Also …" (${meta})`);
+});
+
 // c1r4 U4 + U6 (Chrome T21): a close spelling says how it was read wherever the plant is: on another
 // climate's list (with the question mark, "Add anyway" adds that reading) and already in the palette.
 test('PP-C53 (c1 r4 U4+U6): Paste: "rosmary" on another list and "chesnut" already in the palette say "Read as …"', async () => {
