@@ -36,6 +36,7 @@
 // together), so a hostile link cannot block the page; the rest are counted as unknown. Decoding never
 // throws: a token list that stops mid-token is read up to there and reported as cut.
 import type { ClimateZone, DecodedLink, LinkNotice, PeriodId, PlantId, ShareState, SiteLookup, SoilAnswer, Spot } from './types.ts';
+import { TODAY_PERIOD } from './source.ts';
 import { periodIds, roomValues, soilWords, spotGrounds, spotHeights, spotLights, spotWaters, spotWinds, textureIds } from './types.ts';
 import { climateZones, siteIdOf, zoneOfSiteId } from './zones.ts';
 
@@ -52,7 +53,6 @@ export const MAX_PLOT_M2 = 1_000_000;
 export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'o', 'l', 'w', 'q', 'r', 'h', 's', 'u', END_KEY] as const;
 // The private keys, written only with "Include my place" (encodePlace), in this order.
 export const PLACE_KEYS = ['k', 'o', 'l', 'w', 'q', 'r', 'h', 's'] as const;
-const TODAY_PERIOD_ID: PeriodId = periodIds[0];
 // Spot answers by link key.
 const SPOT_KEYS = { l: ['light', spotLights], w: ['water', spotWaters], q: ['wind', spotWinds], r: ['ground', spotGrounds], h: ['height', spotHeights] } as const;
 const UNSURE_SPOT: Spot = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
@@ -204,7 +204,7 @@ export function encodeLink(state: ShareState, known: KnownIds, { origin = null, 
   }
   const plot = plotOf(state.plot);
   if (plot !== null) pairs.push(['z', String(plot)]);
-  if (state.period !== TODAY_PERIOD_ID) pairs.push(['y', state.period]);
+  if (state.period !== TODAY_PERIOD) pairs.push(['y', state.period]);
   const priv = place ? encodePlace(state, origin) : '';
   return `${new URLSearchParams(pairs).toString()}${priv ? `&${priv}` : ''}&${END_KEY}=1`;
 }
@@ -280,7 +280,7 @@ function readSoil(v: string | null): SoilAnswer | null {
 }
 
 // A state that restores nothing: no climate, no plants, every answer as it starts.
-const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD_ID, spot: null, soil: null, members: [], removed: [], guests: [] });
+const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD, spot: null, soil: null, members: [], removed: [], guests: [] });
 const noNotice = (): LinkNotice => ({ unknownCount: 0, cut: false, newer: false, unreadable: false, period: false });
 
 // Reads a link (with or without its "#") against the ids at hand (see linkClimates). Never throws.
@@ -315,7 +315,7 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   const y = q.get('y');
   const period = oneOf(periodIds, y);
   if (y !== null && !period) notice.period = true;
-  state.period = period ?? TODAY_PERIOD_ID;
+  state.period = period ?? TODAY_PERIOD;
   const spot: Spot = { ...UNSURE_SPOT };
   for (const [key, [field, list]] of Object.entries(SPOT_KEYS) as [keyof typeof SPOT_KEYS, (typeof SPOT_KEYS)[keyof typeof SPOT_KEYS]][]) {
     (spot as unknown as Record<string, string>)[field] = spotWord(list as readonly string[], q.get(key));

@@ -20,12 +20,11 @@
 // not invasive in the chosen country (checked), or, with none, invasive in no GRIIS country, is picked.
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a seeded
 // guest is a member like any other and counts for coverage, with its home placement.
-import type { Alternative, CellRef, Fit, Hole, Interaction, JobId, PhaseOrd, PlantId, Site, Stratum, Taxon } from './types.ts';
-import { strata } from './types.ts';
+import type { Alternative, Fit, Flag, Hole, Interaction, JobId, PlantId, Site, Stratum, Taxon } from './types.ts';
 import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
-import { cellKey, cellsOf } from './matrix.ts';
 import { fills, holes } from './holes.ts';
+import { JUDGED_TO_YEAR, yearsOf as plantYears } from './years.ts';
 import type { HoleContext } from './holes.ts';
 import type { FlagContext } from './conflicts.ts';
 import { warns, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
@@ -46,9 +45,9 @@ export interface SuggestOptions extends FlagContext {
 export interface Suggestion { members: PlantId[]; limit: number }
 export interface Gain { total: number; jobs: number; holes: number; strata: number; food: number; backup: number; edibility: number; weedy: number; unknowns: number }
 
-interface Info { taxon: Taxon; jobs: JobId[]; stratum: Stratum | null; span: number[]; cells: number[]; edibility: number; weedy: boolean; fit: Fit }
+interface Info { taxon: Taxon; jobs: JobId[]; stratum: Stratum | null; span: number[]; edibility: number; weedy: boolean; fit: Fit }
 // The open holes of the members (taxa), worked out when a gain first asks and again after each add.
-interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; cells: Set<number>; food: Set<number>; canopy: number[]; taxa: Taxon[]; verdicts: HoleContext['verdicts']; open: Hole[] | null }
+interface Coverage { jobs: Map<JobId, number>; strata: Set<Stratum>; food: Set<number>; canopy: number[]; taxa: Taxon[]; verdicts: HoleContext['verdicts']; open: Hole[] | null }
 
 const BACKED_UP: readonly JobId[] = ['feeds_soil', 'ground', 'mulch'];
 
@@ -65,7 +64,6 @@ function infoOf(taxon: Taxon, site: Site): Info {
       jobs: jobsOf(taxon),
       stratum: taxon.stratum?.value ?? null,
       span: phaseSpan(taxon),
-      cells: cellsOf(taxon).map(([s, p]) => cellKey(s, p)),
       edibility: taxon.traits.edibility_rating ?? 0,
       weedy: taxon.warnings.weed_potential === true,
       fit: fits(taxon, site),
@@ -75,12 +73,11 @@ function infoOf(taxon: Taxon, site: Site): Info {
   return info;
 }
 
-const emptyCoverage = (verdicts: HoleContext['verdicts']): Coverage => ({ jobs: new Map(), strata: new Set(), cells: new Set(), food: new Set(), canopy: [...canopyOf([])], taxa: [], verdicts, open: null });
+const emptyCoverage = (verdicts: HoleContext['verdicts']): Coverage => ({ jobs: new Map(), strata: new Set(), food: new Set(), canopy: [...canopyOf([])], taxa: [], verdicts, open: null });
 function add(cov: Coverage, i: Info) {
   for (const j of i.jobs) cov.jobs.set(j, (cov.jobs.get(j) ?? 0) + 1);
   if (i.jobs.includes('feeds_you')) for (const p of i.span) cov.food.add(p);
   if (i.stratum) cov.strata.add(i.stratum);
-  for (const c of i.cells) cov.cells.add(c);
   raise(cov.canopy, i.taxon);
   cov.taxa.push(i.taxon);
   cov.open = null;
@@ -182,12 +179,50 @@ export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
 
 export interface AlternativeOptions extends FlagContext { removed?: PlantId[]; verdicts?: HoleContext['verdicts'] }
 
-const keyToRef = (k: number): CellRef => [strata[Math.floor(k / 7)], (k % 7) as PhaseOrd];
+// What swapping out for inn does to the palette's holes (PP-C c2, slices 3.3): holes(members) against
+// holes(members - out + inn), the candidates' verdicts read as the holes read them, compared by lane (a
+// job or a light level) and the years it covers, never by hole id (an id carries its years, so a hole
+// that only shrank would read as both filled and left). fills: open before and wholly closed after;
+// leaves: open after over years that were not open before. A hole that only narrows is in neither and
+// counts in `years` (hole-years closed, net), which the Swap list ranks on. `before` counts the member
+// swapped out even when it is outside its range: the candidate is judged against what that member
+// would do, so a late starter leaves its first years empty. strataGain: inn stands in a stratum no
+// member stands in now (the one swapped out included).
+interface SwapChange { fills: Hole[]; leaves: Hole[]; strataGain: boolean; years: number }
+const openOf = (ctx: HoleContext, members: readonly Taxon[]) => holes({ ...ctx, members }).filter((h) => h.state === 'open');
+const laneOf = (h: Hole): string => `${h.kind}:${h.job ?? h.stratum ?? ''}`;
+const overlaps = (a: Hole, b: Hole): boolean => a.fromYear < b.toYear && b.fromYear < a.toYear;
+const inside = (a: Hole, b: Hole): boolean => a.fromYear >= b.fromYear && a.toYear <= b.toYear;
+const yearsOf = (hs: readonly Hole[]): number => hs.reduce((n, h) => n + h.toYear - h.fromYear, 0);
+// The holes with `out` counted whatever its verdict (what the swap asks a candidate to replace).
+function swapBefore(ctx: HoleContext, out: Taxon): Hole[] {
+  if (ctx.verdicts?.get(out.id)?.level !== 'outside') return openOf(ctx, ctx.members);
+  const verdicts = new Map(ctx.verdicts);
+  verdicts.delete(out.id);
+  return openOf({ ...ctx, verdicts }, ctx.members);
+}
+function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: readonly Hole[] = swapBefore(ctx, out)): SwapChange {
+  const others = ctx.members.filter((t) => t.id !== out.id);
+  const after = openOf(ctx, [...others, inn]);
+  const same = (h: Hole, hs: readonly Hole[]) => hs.filter((x) => laneOf(x) === laneOf(h));
+  const s = inn.stratum?.value ?? null;
+  return {
+    fills: before.filter((h) => !same(h, after).some((x) => overlaps(x, h))),
+    leaves: after.filter((h) => !same(h, before).some((x) => inside(h, x))),
+    strataGain: s !== null && !ctx.members.some((t) => t.stratum?.value === s),
+    years: yearsOf(before) - yearsOf(after),
+  };
+}
 
-// Plants of the climate that could take a member's place: plants that do not ask (no site misfit or
-// high conflict) before those that do, then same stratum, then fewer cells left empty, more cells
-// also filled, more jobs shared, higher gain, better known, by name. Current members, removed plants
-// and guests are not offered; plants that ask are listed with their flags (warn, never hide).
+// Plants of the climate that could take a member's place, the closest first (board Swap: "The closest
+// in jobs and years first"): a plant taller than the room after those that fit it (pots or a balcony
+// never offer a 58 m tree as a fit; its row says its size), then clean before a caution (invasive in
+// the reader's country, toxic) before a warning (a site misfit, a serious conflict), then more of the
+// member's jobs, more of the member's years it stands in (its years overlapping the member's: years
+// 1–15 before "to year 3"), more hole-years closed, fewer holes left open, more holes filled, better
+// known, by name. Current members, removed plants and guests are not offered; plants
+// that ask are listed with their flags (warn, never hide): Swap and Details show this order as it is.
+const cautionOf = (flags: Flag[]): number => (warns(flags) ? 2 : flags.some((f) => f.kind === 'invasive' || f.kind === 'toxicity') ? 1 : 0);
 export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[], options: AlternativeOptions): Alternative[] {
   const member = members.find((t) => t.id === memberId) ?? pool.find((t) => t.id === memberId);
   if (!member) return [];
@@ -195,36 +230,42 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
   const inConsortium = new Set([...members.map((t) => t.id), memberId]);
   const removedIds = new Set(options.removed ?? []);
   const others = members.filter((t) => t.id !== memberId);
-  const otherInfos = others.map((t) => infoOf(t, site));
-  const cov = coverageOf(otherInfos, options.verdicts ?? null);
   const mInfo = infoOf(member, site);
   const memberJobs = new Set(mInfo.jobs);
-  const memberCells = new Set(mInfo.cells);
+  const holeCtx: HoleContext = { members, verdicts: options.verdicts ?? null, pending: false };
+  const before = swapBefore(holeCtx, member);
+  // The member's years a candidate stands in (a year past 60 counts to 60).
+  const span = (y: { from: number; to: number | null } | null) => (y ? { from: y.from, to: y.to ?? JUDGED_TO_YEAR } : null);
+  const m = span(plantYears(member));
+  const overlap = (t: Taxon): number => { const c = span(plantYears(t)); return m && c ? Math.max(0, Math.min(m.to, c.to) - Math.max(m.from, c.from)) : 0; };
   const out = pool
     .filter((t) => !inConsortium.has(t.id) && !removedIds.has(t.id))
     .map((t) => {
       const i = infoOf(t, site);
-      const candCells = new Set(i.cells);
+      const change = swapChange(holeCtx, member, t, before);
       return {
         taxon: t,
-        gain: tenths(i, cov).total,
+        years: change.years,
+        overlap: overlap(t),
+        tall: tallerThanRoom(i.fit),
         alt: {
           id: t.id,
-          sameStratum: mInfo.stratum !== null && i.stratum === mInfo.stratum,
-          alsoFills: i.cells.filter((c) => !cov.cells.has(c) && !memberCells.has(c)).map(keyToRef),
-          leavesEmpty: mInfo.cells.filter((c) => !cov.cells.has(c) && !candCells.has(c)).map(keyToRef),
+          fills: change.fills,
+          leaves: change.leaves,
+          strataGain: change.strataGain,
           sharedJobs: i.jobs.filter((j) => memberJobs.has(j)),
           flags: flagsFor(t, others, options),
         } satisfies Alternative,
       };
     });
   out.sort((x, y) =>
-    Number(warns(x.alt.flags)) - Number(warns(y.alt.flags))
-    || Number(y.alt.sameStratum) - Number(x.alt.sameStratum)
-    || x.alt.leavesEmpty.length - y.alt.leavesEmpty.length
-    || y.alt.alsoFills.length - x.alt.alsoFills.length
+    Number(x.tall) - Number(y.tall)
+    || cautionOf(x.alt.flags) - cautionOf(y.alt.flags)
     || y.alt.sharedJobs.length - x.alt.sharedJobs.length
-    || y.gain - x.gain
+    || y.overlap - x.overlap
+    || y.years - x.years
+    || x.alt.leaves.length - y.alt.leaves.length
+    || y.alt.fills.length - x.alt.fills.length
     || byKnownThenName(x.taxon, y.taxon));
   return out.map((x) => x.alt);
 }

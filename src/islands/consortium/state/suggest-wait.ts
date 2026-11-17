@@ -53,20 +53,23 @@ export function dropSuggest(): void {
   waited.value = false;
   pendingSuggest.value = false;
 }
+// The chosen climate's list is read (store.pools; store.pool itself stays null with a site climate
+// until the verdict rule settles, so it cannot tell a stalled verdict chunk from an unread list).
+const listRead = (): boolean => { const c = store.climate.peek(); return !!c && !!store.pools.peek()[c]; };
 function capped(): void {
   if (!pendingSuggest.peek()) return;
   // A location lookup no longer holds it (it runs without the site; the line says so) ...
   waited.value = true;
   // ... but a guest list never read leaves nothing to run: the wait ends, with a word. (The database
   // itself, and the range rule, end their own waits: the load screen, rangeFailed.)
-  if (store.pool.peek() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); return; }
+  if (listRead() && store.guestsPending.peek().length) { dropSuggest(); store.showToast(T('start.suggestStopped')); return; }
   // The verdict chunk still missing, the list read. A refused load already ended the wait (the
   // verdictFailed effect in watchSuggest), and verdictFailed means the current load failed (store.ts
   // wantVerdict clears it as a load starts), so here the load is still pending: a stalled request. The
   // wait ends with Reload, as for the suggestion's chunk (no loader times out its import, so Retry
   // could not ask again), taken down if the chunk then comes. A stall that outlasts it leaves
   // "Checking…" until the browser fails the request (no timer of our own).
-  if (store.pool.peek() && store.suggestRule.peek() && verdictsMissing()) {
+  if (listRead() && store.suggestRule.peek() && verdictsMissing()) {
     dropSuggest(); reloadToast(); lateVerdictToast = store.toast.peek()?.id ?? null;
     return;
   }
@@ -74,6 +77,8 @@ function capped(): void {
   // the wait ends with Reload (R4 re-review); with the list still being read, it is checked again
   // after another wait (the load screen ends a failed list's wait).
   if (!store.suggestRule.peek()) {
+    // (Here the pool, not listRead: with the range rule held too the pool is still to come, and the wait
+    // goes on, E6-18; only the stalled verdict chunk alone, above, reads the list itself.)
     if (store.pool.peek()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, suggestWaitMs());
   }
 }

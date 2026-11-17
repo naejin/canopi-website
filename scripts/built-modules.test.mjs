@@ -12,26 +12,26 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
-const noFeatures = { location: [], markProviders: [], future: [], pool: [], range: [], details: [], sheets: [], find: [], later: [], suggest: [], palette: [], verdict: [] };
+const noFeatures = { location: [], future: [], pool: [], details: [], sheets: [], find: [], later: [], suggest: [], palette: [], verdict: [] };
 const none = { features: noFeatures, maplibre: [], maplibreCss: [], testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
 
-test('chunkRoles: the location entry and the mark providers by their entry module, MapLibre by its modules, its worker and the CSS they import', () => {
+test('chunkRoles: the location entry and the suggestion by their entry module, MapLibre by its modules, its worker and the CSS they import', () => {
   const root = '/w/p5';
   const chunk = (fileName, facadeModuleId, moduleIds, css = [], code = '') => ({ type: 'chunk', fileName, facadeModuleId, moduleIds, code, viteMetadata: { importedCss: new Set(css), importedAssets: new Set() } });
   const bundle = {
-    '_astro/main.a.js': chunk('_astro/main.a.js', `${root}/src/islands/consortium/main.ts`, [`${root}/src/islands/consortium/main.ts`, `${root}/src/lib/consortium/marks.ts`]),
+    '_astro/main.a.js': chunk('_astro/main.a.js', `${root}/src/islands/consortium/main.ts`, [`${root}/src/islands/consortium/main.ts`, `${root}/src/lib/consortium/state.ts`]),
     '_astro/where.b.js': chunk('_astro/where.b.js', `${root}/src/islands/consortium/views/location/location.tsx`, [`${root}/src/islands/consortium/views/location/location.tsx`], ['_astro/where.c.css'], 'new Worker("/_astro/maplibre-gl-worker.d.js")'),
     '_astro/index.e.js': chunk('_astro/index.e.js', null, [`${root}/node_modules/maplibre-gl/dist/maplibre-gl.mjs`]),
-    '_astro/mark-providers.f.js': chunk('_astro/mark-providers.f.js', `${root}/src/lib/consortium/mark-providers.ts`, [`${root}/src/lib/consortium/mark-providers.ts`, `${root}/src/lib/consortium/range-marks.ts`]),
+    '_astro/suggest.f.js': chunk('_astro/suggest.f.js', `${root}/src/lib/consortium/suggest.ts`, [`${root}/src/lib/consortium/suggest.ts`, `${root}/src/lib/consortium/holes.ts`]),
     '_astro/maplibre-gl-worker.d.js': { type: 'asset', fileName: '_astro/maplibre-gl-worker.d.js', names: [], originalFileNames: [], source: 'self.onmessage' },
     '_astro/other.g.js': { type: 'asset', fileName: '_astro/other.g.js', names: [], originalFileNames: [], source: '' },
     '_astro/where.c.css': { type: 'asset', fileName: '_astro/where.c.css', names: ['location.css'], originalFileNames: [], source: '.maplibregl-map{}' },
   };
   bundle['_astro/f.h.js'] = chunk('_astro/f.h.js', `${root}/src/islands/consortium/views/future/future.tsx`, [`${root}/src/islands/consortium/views/future/future.tsx`]);
   assert.deepEqual(chunkRoles(bundle), {
-    features: { ...noFeatures, location: ['/_astro/where.b.js'], markProviders: ['/_astro/mark-providers.f.js'], future: ['/_astro/f.h.js'] },
+    features: { ...noFeatures, location: ['/_astro/where.b.js'], suggest: ['/_astro/suggest.f.js'], future: ['/_astro/f.h.js'] },
     maplibre: ['/_astro/index.e.js', '/_astro/maplibre-gl-worker.d.js'],
     maplibreCss: ['/_astro/where.c.css'],
     testHook: [],
@@ -149,7 +149,7 @@ test('onDemandChunks: every role chunk and what only role chunks reach are parts
     '/_astro/geo.g.js': [],
     '/_astro/search.h.js': [],
   });
-  assert.deepEqual(sets(onDemandChunks(g, ['/_astro/main.b.js'], roles({ location: ['/_astro/where.e.js'], markProviders: ['/_astro/marks.d.js'], future: ['/_astro/future.f.js'] }))), {
+  assert.deepEqual(sets(onDemandChunks(g, ['/_astro/main.b.js'], roles({ location: ['/_astro/where.e.js'], suggest: ['/_astro/marks.d.js'], future: ['/_astro/future.f.js'] }))), {
     parts: ['/_astro/future.f.js', '/_astro/geo.g.js', '/_astro/marks.d.js', '/_astro/search.h.js', '/_astro/where.e.js'],
     location: ['/_astro/search.h.js', '/_astro/where.e.js'],
     maplibre: [],
@@ -206,7 +206,7 @@ const PAGE_FILES = {
   'marks.k.js': 'export const m=1;',
 };
 const PAGE_HTML = '<head><script type="module" src="/_astro/page.a.js"></script></head>';
-const PAGE_ROLES = roles({ markProviders: ['/_astro/marks.k.js'], sheets: ['/_astro/Add.f.js', '/_astro/Correction.i.js'], details: ['/_astro/Details.g.js'], later: ['/_astro/later.h.js'] });
+const PAGE_ROLES = roles({ suggest: ['/_astro/marks.k.js'], sheets: ['/_astro/Add.f.js', '/_astro/Correction.i.js'], details: ['/_astro/Details.g.js'], later: ['/_astro/later.h.js'] });
 
 test('modulepreloadChunks: the first-run closure, the loader with the glue and the page script\'s static imports; no part reached only through import() (A5, L5)', () => {
   withBuild(PAGE_FILES, PAGE_HTML, (graph) => {

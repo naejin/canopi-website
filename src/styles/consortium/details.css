@@ -20,8 +20,8 @@
 .ct .ct-sheet-head-main { min-width: 0; font-size: 15px; }
 .ct .ct-sheet-body { display: grid; gap: 22px; padding: 20px 24px 28px; align-content: start; flex: 1; }
 .ct .ct-sheet h2 { font-size: 30px; letter-spacing: -0.015em; }
-.ct .ct-sheet h2:focus { outline: none; }
-.ct .ct-sheet h2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+/* A heading takes focus on open (tabindex=-1) so readers start there; it is not a control, so no ring. */
+.ct .ct-sheet h2[tabindex="-1"]:focus { outline: none; }
 .ct .ct-sheet h3 { font-size: 19px; margin-bottom: 8px; }
 .ct .ct-sheet section > p, .ct .ct-sheet li { font-size: 16px; line-height: 1.45; }
 .ct .ct-sheet ul { margin: 0; padding: 0; list-style: none; }
@@ -49,7 +49,7 @@
 
 /* Photo and name */
 .ct .ct-photo { margin: -20px -24px 0; }
-.ct .ct-photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surface-alt); }
+.ct .ct-photo img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 1; object-fit: cover; background: var(--surface-alt); }
 .ct .ct-photo figcaption { padding: 6px 24px 0; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
 .ct .ct-d-name { display: grid; gap: 4px; }
 .ct .ct-marks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -61,6 +61,19 @@
 .ct :where(.ct-sheet) .ct-tag-large { min-height: 44px; font-size: 15px; }
 .ct :where(.ct-sheet) .ct-flag { border-color: var(--warning-line); background: var(--warning-bg); color: var(--warning); }
 .ct .ct-place { display: grid; gap: 6px; padding: 14px 16px; border-radius: 8px; background: var(--surface-alt); }
+
+/* Against your place (PP-C c2): the fit line, then one line per factor, the limiting one first; the
+   level is in the words and the icon, the colour only repeats it (tokens of the fit line). */
+.ct .ct-against { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; }
+.ct .ct-against-fit { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-alt); font-weight: 600; color: var(--level-fits); }
+.ct .ct-against-fit[data-level="look"] { color: var(--level-look); }
+.ct .ct-against-fit[data-level="outside"] { color: var(--level-outside); }
+.ct .ct-against-fit[data-level="unknown"] { color: var(--level-unknown); }
+.ct .ct-against-lines { display: grid; gap: 8px; }
+.ct .ct-against-lines li { padding-left: 12px; border-left: 2px solid var(--border); overflow-wrap: anywhere; }
+.ct .ct-against-lines li[data-level="look"] { border-left-color: var(--level-look); }
+.ct .ct-against-lines li[data-level="outside"] { border-left-color: var(--level-outside); }
+.ct .ct-against-lines li[data-later] { border-left-style: dashed; }
 
 /* The stage bar: seven segments, the plant's span filled, the cell's stage outlined */
 .ct :where(.ct-sheet) .ct-bar { display: inline-flex; gap: 2px; vertical-align: middle; }
@@ -135,7 +148,10 @@
 .ct .ct-corr-consent label { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
 .ct .ct-corr-consent input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
 .ct .ct-corr-status:empty { display: none; }
-.ct .ct-corr-status.is-error { color: var(--danger); font-weight: 600; }
+.ct .ct-corr-status.is-error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--warning-line); border-radius: 8px; background: var(--warning-bg); color: var(--text); }
+.ct .ct-corr-status.is-error > .ct-glyph { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--warning); }
+/* Cancel and Send side by side, equal width (board Correction). */
+.ct .ct-corr > .ct-actions { display: grid; grid-template-columns: 1fr 1fr; }
 .ct .ct-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .ct .ct-paste-text { font-family: inherit; }
 
@@ -180,12 +196,131 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   .ct .ct-add-bar { padding: 10px 16px; }
   .ct .ct-sheet h2 { font-size: 26px; }
   .ct .ct-place .ct-bar i { width: 28px; }
-  .ct .ct-traits { grid-template-columns: 1fr; gap: 0 0; }
-  .ct .ct-traits dd { margin-bottom: 8px; }
+  .ct .ct-traits { grid-template-columns: minmax(6.5em, max-content) minmax(0, 1fr); gap: 6px 12px; }
   .ct .ct-toast-region { bottom: 12px; }
   :root { --ct-toast-room: 148px; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .ct .ct-sheet[open] { animation: ct-sheet-in 160ms ease-out; }
   @keyframes ct-sheet-in { from { transform: translateX(24px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+}
+
+/* "How sure we are" (PP-C c2): disputes, audiences, corrected-value sources and the frost fact. */
+.ct-facts li { margin: 0.25rem 0; }
+.ct-facts li[data-dispute], .ct-facts li[data-audience] { padding-left: 0.5rem; border-left: 3px solid var(--warning-line); }
+/* A confidence term said beside a fit line (rows, Details, print): words, never colour alone. */
+.ct-term { color: var(--text-muted); font-size: 0.9em; }
+.ct-row-note { color: var(--text); font-size: 0.9em; }
+.ct-row-note[data-later] { font-weight: 600; }
+.ct-print-fit { display: block; font-weight: 400; }
+.ct-print-fact { display: block; }
+
+/* Details (boards Details, DetailsMore, DetailsDesk; fix round 1 C7-C10, B1, B8). Phones: one column,
+   the photo a short strip so Against starts on the first screen, the summary card, Against, then the
+   closed sections; the sticky foot adds the plant, or holds a member's two actions. From 960px: a wide
+   two-column dialog, the photo, summary, "What you can do", the soil and hardiness lines and the
+   sections on the left, Against on the right; the DOM order is the reading order on both (R4). */
+.ct .ct-d-body { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.ct .ct-d-more { display: grid; min-width: 0; }
+.ct .ct-d-desklines, .ct .ct-d-cando-actions { display: none; }
+.ct .ct-d-summary, .ct .ct-d-cando { padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.ct .ct-d-main { display: flex; gap: 8px; margin: 0; }
+.ct .ct-d-main-icons { display: flex; gap: 3px; flex: none; padding-top: 1px; }
+/* A job's filled tile (boards Details, DetailsMore): the job's mark on its colour, always beside its words. */
+.ct .ct-job-tile { display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 6px; background: var(--text-secondary); }
+.ct .ct-job-tile > .ct-job-icon[data-job] { width: 14px; height: 14px; color: var(--on-accent); }
+.ct .ct-job-tile[data-job="feeds_you"] { background: var(--role-food); }
+.ct .ct-job-tile[data-job="feeds_soil"] { background: var(--role-soil); }
+.ct .ct-job-tile[data-job="mulch"] { background: var(--role-mulch); }
+.ct .ct-job-tile[data-job="ground"] { background: var(--role-ground); }
+.ct .ct-job-tile[data-job="helpers"] { background: var(--role-helpers); }
+.ct .ct-job-tile[data-job="shelter"] { background: var(--role-shelter); }
+@media (forced-colors: active) { .ct .ct-job-tile { forced-color-adjust: none; background: Canvas; border: 1px solid CanvasText; } .ct .ct-job-tile > .ct-job-icon[data-job] { background: CanvasText; } }
+.ct .ct-d-summary > p { margin-top: 6px; }
+.ct .ct-marks { list-style: none; padding: 0; }
+.ct .ct-marks .ct-glyph { width: 14px; height: 14px; flex: none; }
+.ct .ct-d-jobtiles { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ct .ct-d-jobtiles li { display: flex; gap: 10px; align-items: flex-start; }
+.ct .ct-d-jobtiles p { margin: 2px 0 0; }
+.ct .ct-d-jobtiles strong span { font-weight: 600; }
+.ct [data-allelo] { display: flex; gap: 6px; align-items: flex-start; }
+.ct [data-allelo] .ct-glyph { width: 16px; height: 16px; flex: none; margin-top: 3px; }
+.ct .ct-d-cando { display: grid; gap: 10px; }
+.ct .ct-d-cando h3 { margin: 0; }
+.ct .ct-more { border-top: 1px solid var(--border); }
+.ct .ct-more:last-of-type { border-bottom: 1px solid var(--border); }
+.ct .ct-more > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; cursor: pointer; list-style: none; }
+.ct .ct-more > summary::-webkit-details-marker { display: none; }
+.ct .ct-more > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); flex: none; }
+.ct .ct-more[open] > summary::after { transform: rotate(-135deg); }
+/* The sections' headings and their subheads in the board's bold sans (DetailsMore, DetailsDesk; round 4 V9). */
+.ct .ct-more > summary h3, .ct .ct-more h4 { font-family: var(--font-sans); font-weight: 600; line-height: 1.3; }
+.ct .ct-more > summary h3 { margin: 0; font-size: 17px; }
+.ct .ct-more > summary h3 .ct-muted { font-weight: 400; font-size: 15px; }
+.ct .ct-more > section { display: grid; gap: 10px; padding-bottom: 16px; }
+.ct .ct-more h4 { font-size: 15px; margin-top: 6px; }
+.ct .ct-against-lede { margin: -4px 0 4px; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-d-more .ct-correct { margin-top: 16px; }
+/* Today's band per factor (aria-hidden; the line under it is its text form). */
+.ct .ct-band { display: block; width: 100%; max-width: 440px; height: auto; margin: 2px 0; overflow: visible; }
+.ct .ct-bd-axis { stroke: var(--border-strong); stroke-width: 1; }
+.ct .ct-bd-range { fill: var(--text-secondary); fill-opacity: .3; stroke: none; }
+.ct .ct-band[data-few] .ct-bd-range { fill-opacity: .12; }
+.ct .ct-bd-edge, .ct .ct-bd-end { stroke: var(--text-secondary); stroke-width: 1; fill: none; }
+.ct .ct-bd-edge.is-dashed, .ct .ct-bd-end.is-dashed { stroke-dasharray: 3 2; }
+.ct .ct-bd-tick, .ct .ct-bd-now { stroke: var(--text); stroke-width: 2; }
+.ct .ct-bd-now-dot { fill: var(--text); stroke: var(--text); stroke-width: 1.6; }
+.ct .ct-bd-later { stroke: var(--accent-ink); stroke-width: 1.6; stroke-dasharray: 3 2; }
+.ct .ct-bd-later-dot { fill: var(--surface); stroke: var(--accent-ink); stroke-width: 1.6; }
+.ct .ct-bd-num text { fill: var(--text-secondary); font-size: 11px; }
+.ct .ct-bd-now-text { fill: var(--text); font-size: 11.5px; font-weight: 600; }
+.ct .ct-bd-later-text { fill: var(--accent-ink); font-size: 11.5px; font-weight: 600; }
+.ct .ct-bandcard { padding: 8px 0; border-top: 1px solid var(--border); }
+.ct .ct-bandcard-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: 14px; line-height: 20px; }
+.ct .ct-bandcard-head > b { flex: 1; min-width: 120px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.ct .ct-bandcard-glyph { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ct .ct-bandcard-status { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 99px; font-size: 13px; line-height: 20px; font-weight: 600; border: 1px solid var(--border-strong); background: var(--surface-alt); color: var(--text-secondary); max-width: 100%; }
+.ct .ct-bandcard-status[data-level="look"] { color: var(--level-look); border-color: currentColor; }
+.ct .ct-bandcard-status[data-level="outside"] { color: var(--level-outside); border-color: currentColor; }
+.ct .ct-bandcard .ct-against-lines li { border-left: 0; padding-left: 0; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-band-key { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-band-key svg { display: inline-block; vertical-align: -1px; margin-right: 4px; overflow: visible; }
+/* Swap: the header's reason and jobs; it wraps at 320px (C14). */
+.ct .ct-swap-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; overflow-wrap: anywhere; }
+/* A warning pill wraps inside its card at every width (Swap's header, the Details summary; round 4 V5). */
+.ct :is(.ct-swap-head, .ct-marks) :is(.ct-flag, .ct-tag) { white-space: normal; flex: 0 1 auto; min-width: 0; max-width: 100%; align-items: flex-start; border-radius: 12px; overflow-wrap: anywhere; }
+.ct :is(.ct-swap-head, .ct-marks) :is(.ct-flag, .ct-tag) svg { margin-top: 2px; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-flag-line { display: flex; gap: 6px; align-items: flex-start; white-space: normal; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-back-name { overflow-wrap: anywhere; min-width: 0; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-back { max-width: 100%; }
+.ct .ct-swap-foot { justify-content: flex-start; }
+/* A candidate's status (board Swap): its fit and each note as separate pills, aligned, one font size. */
+.ct .ct-swap-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; line-height: 18px; }
+.ct .ct-swap-status > * { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid var(--border); border-radius: 99px; font-size: inherit; max-width: 100%; }
+.ct .ct-swap-status > .ct-fit { font-weight: 600; border-color: currentColor; }
+.ct .ct-swap-status > .ct-fit svg { width: 14px; height: 14px; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body { grid-template-columns: minmax(0, 1fr); }
+.ct .ct-sheet:has(.ct-swap-head) .ct-row-why { overflow-wrap: anywhere; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body > p > .button { max-width: 100%; white-space: normal; text-align: start; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-rows > li { grid-template-columns: minmax(0, 1fr) auto; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-row-main .ct-bar { flex-wrap: wrap; max-width: 100%; }
+@media (min-width: 960px) {
+  .ct .ct-sheet:has(.ct-d-body) { inset: 40px 0 auto; margin-inline: auto; width: min(960px, calc(100% - 64px)); height: auto; max-height: calc(100% - 80px); border: 1px solid var(--border-strong); border-radius: 8px; }
+  .ct .ct-d-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-template-rows: repeat(5, auto) 1fr; gap: 18px 20px; align-items: start; }
+  .ct .ct-d-body > * { grid-column: 1; min-width: 0; }
+  .ct .ct-d-body > .ct-against { grid-column: 2; grid-row: 1 / 7; }
+  .ct .ct-d-desklines { display: grid; gap: 6px; font-size: 14px; }
+  .ct .ct-d-desklines p { margin: 0; }
+  /* Find, Keep and Remove on one row (board DetailsDesk): the buttons narrower, a long word wraps inside. */
+  .ct .ct-d-cando-actions { display: flex; flex-wrap: nowrap; gap: 8px; }
+  .ct .ct-d-cando-actions > .button { flex: 0 1 auto; min-width: 0; padding-inline: 12px; white-space: normal; }
+  .ct .ct-d-cando-actions > .ct-link-button { flex: none; }
+  .ct .ct-d-foot-member { display: none; }
+  .ct .ct-against [data-measure="soilPh"] { display: none; }
+  .ct .ct-d-body .ct-photo { margin: 0; }
+  .ct .ct-d-body .ct-photo figcaption { padding-inline: 0; }
+}
+@media (max-width: 639px) {
+  .ct .ct-d-summary, .ct .ct-d-cando, .ct .ct-against { padding: 12px; }
+  .ct .ct-d-foot .button { flex: 1; justify-content: center; }
 }

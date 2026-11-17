@@ -12,7 +12,7 @@
 //   overlap; otherwise unknown when a bound that decides is null.
 // - water: dry is a misfit for drought_tolerance Low or None, or, when it is unknown, moisture_use
 //   High; Medium fits with the note 'dry_months' ("needs watering in the dry months", owner, decision
-//   row "Climate ranges fixed before the P5 push"; site-marks.ts says it). Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
+//   row "Climate ranges fixed before the P5 push"; verdict-line.ts siteLines says it). Wet is a misfit for a drought-adapted plant that wants good drainage (well_drained and
 //   drought_tolerance High, or moisture_use Low when drought tolerance is unknown); it fits when
 //   well_drained is false, moisture_use is High or drought tolerance is known and not High. Average
 //   checks nothing. Drought tolerance and moisture use are read through factAt's water_need (ADR-6),
@@ -24,7 +24,7 @@
 //   mockup app.js:213). Advisory (owner request 2026-11-12): the matrix layers are relative sun
 //   exposure (syntropic strata), not heights (maize fills a small garden's emergent layer in the first
 //   seasons; a 12 m fig is routinely pruned to 3 m), so a taller plant fits, its reason kind
-//   'wild_height' (tallerThanRoom; site-marks.ts says "Grows to N m: keep it pruned, or pick a smaller
+//   'wild_height' (tallerThanRoom; verdict-line.ts siteLines says "Grows to N m: keep it pruned, or pick a smaller
 //   plant"), and never makes a cell a misfit, a flag or an ask; only the suggestion leaves it out
 //   (suggest.ts). Catalog heights are wild maximums. A missing height is "height not recorded" (unknown). A climber's recorded size can be a runner length (decision row "Side view"
 //   2026-10-28), so its room verdict is unknown ('climber'). A field takes any size.

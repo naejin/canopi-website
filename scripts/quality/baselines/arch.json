@@ -1,11 +1,5 @@
 {
   "tool": "dependency-cruiser",
   "version": "18.7.2",
-  "keys": [
-    "L10-one-verdict|src/lib/consortium/conflicts.ts|src/lib/consortium/site.ts",
-    "L10-one-verdict|src/lib/consortium/future-marks.ts|src/lib/consortium/future.ts",
-    "L10-one-verdict|src/lib/consortium/marks.ts|src/lib/consortium/range.ts",
-    "L10-one-verdict|src/lib/consortium/range-marks.ts|src/lib/consortium/range.ts",
-    "L10-one-verdict|src/lib/consortium/site-marks.ts|src/lib/consortium/site.ts"
-  ]
+  "keys": []
 }

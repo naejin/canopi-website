@@ -25,7 +25,7 @@
 //   all plants).
 import { useEffect } from 'preact/hooks';
 import type { ClimateZone } from '../../../../lib/consortium/index.ts';
-import { hasPlants, NEAREST_LISTS, periodIds, siteToday, yearMeanC } from '../../../../lib/consortium/index.ts';
+import { hasPlants, NEAREST_LISTS, periodIds, periodName, siteToday, yearMeanC } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { startEmpty } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
@@ -34,13 +34,12 @@ import { listName, num, zoneName } from '../kit/names.ts';
 import { countKind, nothingFits } from '../../rules/suggest-block.ts';
 
 // The count line's words (rules/suggest-block.ts countKind: never "0 of m"): borrowed (the nearest
-// lists) or the climate's own list (its consortium.list.* phrase), today or a later period, named as
-// future.ts periodName names it (not imported: it would bring the future chunk into the pool's first
-// use, 2.2 KB over the role's 1.4 KB cap, check-built-site). None fit keeps the period apart too.
+// lists) or the climate's own list (its consortium.list.* phrase), today or a later period (core
+// verdict-line.ts periodName, first-run words). None fit keeps the period apart too.
 function countText(zone: ClimateZone, own: boolean, n: { fits: number; look: number; unknown: number; of: number }): string {
   const p = store.period.value;
   const later = p !== periodIds[0];
-  const vars = { total: num(n.of), list: listName(zone), period: p.replace('-', '–') };
+  const vars = { total: num(n.of), list: listName(zone), period: periodName(p) };
   const kind = countKind(n);
   if (kind === 'unchecked') return P(own ? 'place.count.uncheckedOwn' : 'place.count.unchecked', n.unknown, vars);
   if (kind === 'none') return T(own ? (later ? 'place.count.noneOwnLater' : 'place.count.noneOwn') : later ? 'place.count.noneLater' : 'place.count.none', vars);
@@ -79,8 +78,8 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
   const loc = store.location.value;
   const today = siteToday(loc);
   const temps = today ? { cold: num(today.tminColdC), hot: num(today.tmaxWarmC), mean: num(yearMeanC(today)) } : null;
-  // Nothing fits: the chosen climate's list read, the range rule in, and no plant within range.
-  const empty = !!temps && nothingFits(store.pool.value, loc, store.rangeRule.value);
+  // Nothing fits: the chosen climate's list read, its verdicts in, and every plant judged outside.
+  const empty = !!temps && nothingFits(store.pool.value, store.poolVerdicts.value);
   return (
     <div class="ct-pool" data-pool={zone.toLowerCase()}>
       {!own && (

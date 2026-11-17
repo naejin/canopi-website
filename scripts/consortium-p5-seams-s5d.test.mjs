@@ -1,4 +1,4 @@
-// P5 stream S5d: the future climate check (src/lib/consortium/future.ts, future-marks.ts, the panel
+// P5 stream S5d: the future climate check (src/lib/consortium/future.ts, the panel
 // views/future/future.tsx behind the FutureSlot.tsx shell, store.scenario). Decision row "P5 engineering
 // choices": the latest period a plant's phases reach (phase_end ≥ 3 → 2041–2070; climax → 2071–2099),
 // SSP2-4.5 by default, the scenarios' agreement, too hot (warmest-month maximum beyond Q95 + 2 °C, the
@@ -11,8 +11,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
-const { futureMarks } = await import('../src/lib/consortium/future-marks.ts');
+// The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
+const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 // Four sites as `canopi-climate lookup` answers them on the v0.2.0 grid (all 9 slots; see the README).
 const SITES = JSON.parse(readFileSync(new URL('fixtures/consortium-future/sites.json', import.meta.url), 'utf8'));
@@ -175,31 +175,6 @@ test('real export, SSP2-4.5: whole lists through futureSummary (Lyon Temperate, 
 });
 
 // ---- the marks and the views ----
-
-test('futureMarks: an ink note (severity note) when outside on every surface, near the edge only where words fit, nothing otherwise', () => {
-  const t = ends('climax');
-  const loc = site([29, 29, 29, 29], [31, 33, 35, 37]);
-  const at245 = ctx({ location: loc });
-  for (const s of ['chip', 'row']) assert.deepEqual(futureMarks(t, at245, s), [{ kind: 'future', key: 'future.mark.heat', vars: { period: '2071–2099' }, severity: 'note', state: 'outside' }], s);
-  for (const s of ['add', 'details']) assert.deepEqual(futureMarks(t, at245, s), [{ kind: 'future', key: 'future.long.heat', vars: { period: '2071–2099', scenario: 'SSP2-4.5', agree: 3, of: 4 }, severity: 'note', state: 'outside' }], s);
-  // Drier by the period: a note where words fit ("may need watering"), never an outside mark nor on a chip (walk-through 2 N3).
-  const dryAt = ctx({ location: site([29, 29, 29, 29], undefined, { arid: [0.4, 0.4, 0.4, 0.4] }) });
-  const dry = withArid(0.5);
-  assert.deepEqual(futureMarks(dry, dryAt, 'chip'), []);
-  assert.deepEqual(futureMarks(dry, dryAt, 'row'), [{ kind: 'future', key: 'future.drierShort', vars: { period: '2071–2099' }, severity: 'note', state: 'drier' }]);
-  for (const s of ['add', 'details']) assert.deepEqual(futureMarks(dry, dryAt, s), [{ kind: 'future', key: 'future.drier', vars: { period: '2071–2099', scenario: 'SSP2-4.5' }, severity: 'note', state: 'drier' }], s);
-  const hotDry = futureMarks(dry, ctx({ location: site([29, 33, 34, 35], undefined, { arid: [0.4, 0.4, 0.4, 0.4] }) }), 'chip');
-  assert.deepEqual(hotDry.map((m) => m.key), ['future.mark.heat'], 'too hot and drier: the heat mark only on a chip');
-  const edge = ctx({ location: loc, scenario: 'ssp126' });
-  assert.deepEqual(futureMarks(t, edge, 'chip'), []);
-  assert.deepEqual(futureMarks(t, edge, 'details'), [{ kind: 'future', key: 'future.long.edge', vars: { period: '2071–2099', scenario: 'SSP1-2.6', agree: 1, of: 4 }, severity: 'note', state: 'edge' }]);
-  const hotToday = ctx({ location: site([34, 34, 34, 34], undefined, { today: { tmax: 33, arid: 1 } }) });
-  for (const s of core.markSurfaces) assert.deepEqual(futureMarks(t, hotToday, s), [], `already outside today: today's range mark (S5c) says it, not the future mark (${s})`);
-  assert.deepEqual(futureMarks(t, ctx({ location: site([29, 29, 29, 29]) }), 'details'), [], 'inside: no mark');
-  assert.deepEqual(futureMarks(t, ctx({ location: null }), 'details'), [], 'no location: nothing');
-  assert.deepEqual(futureMarks(t, ctx({ location: lyon }), 'details'), [], 'no projections: no mark (the panel says "not checked")');
-  assert.equal('futureMarks' in core, false, 'not exported from index.ts, so out of the first run');
-});
 
 test('store.scenario starts at SSP2-4.5; FutureSlot.tsx stays a shell; the panel is the future chunk with the scenario radios', async () => {
   const store = await import('../src/islands/consortium/store.ts');

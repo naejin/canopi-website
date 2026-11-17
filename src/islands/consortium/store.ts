@@ -4,9 +4,9 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, Hole, PhaseOrd, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, loadVerdictRule, needsMarkProviders, siteFor, zoneOf } from '../../lib/consortium/index.ts';
-import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
+import type { Alternative, ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadSuggest, loadVerdictRule, periodIds, siteFor, zoneOf } from '../../lib/consortium/index.ts';
+import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { TextureId as ReaderTexture } from '../../lib/climate/soil.ts';
@@ -141,21 +141,14 @@ export const interactionSets = signal<Partial<Record<ClimateZone, Interaction[]>
 export const pool = computed<Taxon[] | null>(() => {
   const c = climate.value;
   const p = c ? pools.value[c] ?? null : null;
-  return p && siteClimate.value && !rangeRule.value && !rangeFailed.value ? null : p;
+  return p && siteClimate.value && !verdictRule.value && !rangeFailed.value ? null : p;
 });
-// The range rule (core range.ts, owner answer 2) arrives with its own chunk (core marks.ts
-// loadRangeRule), loaded only once the site location has a climate, so it stays off the first run
-// (decision row "Island JavaScript budget for P5"). The page asks it nothing without one.
-export const rangeRule = signal<RangeRule | null>(null);
-// The rule's chunk did not load (rangeBroken, once per page: a browser remembers a failed module URL,
-// so the import is never tried again and Reload is the only retry, one toast for the failure).
-// rangeFailed: range checks are off (P2's unfiltered pool) while a location with a climate asks for
-// them; with no location (Forget, Start over) the page is plain P2 and says nothing of it.
-const rangeBroken = signal(false);
-export const rangeFailed = computed(() => rangeBroken.value && siteClimate.value);
-// The rule's load in flight (settled once rangeRule or rangeBroken is set): loadPool waits for it, so a
-// caller that awaited the pool finds it readable.
-let rangeLoad: Promise<void> | null = null;
+// The range checks come with the verdict rule (its chunk, role `verdict`; PP-C c2 folded the range role
+// into it), asked for once the site location has a climate.
+// rangeFailed: its chunk failed and has not loaded since, while a location with a climate asks for
+// range checks: the pool is then read unfiltered (P2), said in place (PoolSlot). Sticky until a load
+// succeeds (verdictEverFailed), so a retry in flight never sends the palette back to "loading".
+export const rangeFailed = computed(() => verdictEverFailed.value && !verdictRule.value && siteClimate.value);
 // The suggestion and the Swap list (core suggest.ts, design check A11): their own chunk (core
 // loadSuggest), off the first run, asked for once a database is open (setSource, as the data turns
 // ready) and again by a Suggest press or an opened Swap while it is missing (state/suggest-wait.ts
@@ -177,33 +170,22 @@ export function wantSuggest(): void {
     suggestFailed.value = true;
   });
 }
-// A pool read waits for the rules that judge it: the range rule while it loads for a site climate,
-// and the verdict rule's chunk while it loads (PP-B commit 0; both settle, never reject).
+// A pool read waits for the rule that judges it: the verdict rule's chunk while it loads (it holds the
+// range checks; it settles, never rejects).
 const withRule = <T>(p: Promise<T>): Promise<T> => {
   const waits: Promise<unknown>[] = [];
-  if (siteClimate.peek() && !rangeRule.peek() && rangeLoad) waits.push(rangeLoad);
   if (!verdictRule.peek() && verdictLoad) waits.push(verdictLoad);
   return waits.length ? Promise.all([p, ...waits]).then(([x]) => x as T) : p;
 };
 // Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
 export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
 // (Its load starts in start(), at the end of this file, once the location has a climate.)
-// One toast, with Reload, for the P5 chunks that did not load: the range rule's chunk is also a static
-// import of the mark providers' chunk, so one missing file (offline, or a deploy since the page loaded)
-// fails both; PoolSlot still says the range rule's.
-let chunkToasted = false;
-function chunkToast(key: string): void {
-  if (chunkToasted) return;
-  chunkToasted = true;
-  showToast(T(key), null, { label: T('load.reload'), run: () => globalThis.location.reload() });
-}
-// What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants outside
-// their observed range at the site location (core range.ts withinRange); the pool itself without one.
-// Members stay: a plant added anyway is never dropped from a list it is in. Add and Swap read it until
-// PP-C rebuilds them on verdicts.
+// What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants judged
+// outside for the page period (poolVerdicts, rules/suggest-block.ts notOutside); the pool itself without
+// verdicts. Members stay: a plant added anyway is never dropped from a list it is in.
 export const fitPool = computed<Taxon[] | null>(() => {
-  const p = pool.value, rule = rangeRule.value;
-  return p && (rule ? rule.withinRange(p, location.value, members.value) : p);
+  const p = pool.value;
+  return p && notOutside(p, poolVerdicts.value, members.value);
 });
 
 // What the palette suggests and swaps from (Next step, Swap): the pool, or nothing while it is a
@@ -224,6 +206,7 @@ export const offerPool = computed<Taxon[] | null>(() => {
 // checked". verdictFailed: its chunk did not load (b2 says it).
 export const verdictRule = signal<VerdictRule | null>(null);
 export const verdictFailed = signal(false);
+const verdictEverFailed = signal(false);
 let verdictLoad: Promise<void> | null = null;
 // Its load always settles, so a pool read waiting for it (withRule) never fails with it.
 // Also called by the palette page once it shows (its fit lines and holes read the rule; without a
@@ -232,29 +215,37 @@ let verdictLoad: Promise<void> | null = null;
 // A failed load is not kept: the next call tries again (retryVerdict; core verdict-load.ts fetches the
 // chunk again under ?retry=n). verdictFailed says the current load failed: a new load clears it as it
 // starts (b1bg-1: a return visit's fetchAhead refused offline, then start()'s effect asks again once a
-// site climate arrives; meanwhile the count line checks and the waiting Suggest waits).
+// site climate arrives; meanwhile the count line checks and the waiting Suggest waits). Never once only
+// a reload can work (verdictNeedsReload): every caller, the mount-time ones included, then asks nothing.
+// The automatic asks (the location's climate, the palette page, the prefetch) load it; only the
+// reader's Try again (or the browser back online) counts as a retry (A8: an automatic second ask
+// after a failure is not one, so it never turns Try again into Reload).
 export function wantVerdict(): void {
-  if (verdictLoad) return;
+  loadVerdict(false);
+}
+function loadVerdict(retry: boolean): void {
+  if (verdictLoad || verdictNeedsReload.peek()) return;
   verdictFailed.value = false;
-  verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; }, (err: unknown) => {
+  verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; verdictEverFailed.value = false; }, (err: unknown) => {
     console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
     verdictLoad = null;
-    verdictFailed.value = true;
+    batch(() => {
+      verdictFailed.value = true;
+      verdictEverFailed.value = true;
+      // A retry that fails while the browser says it is online will not load in place (A8).
+      if (retry && globalThis.navigator?.onLine !== false) verdictNeedsReload.value = true;
+    });
   });
 }
 // The palette page's Try again (online) and the browser back online: the verdict chunk asked again,
 // in place, never a page reload (architecture 9).
-export function retryVerdict(): void {
-  if (verdictLoad || verdictRule.peek() || verdictNeedsReload.peek()) return;
-  wantVerdict();
-}
-// Never a retry that cannot work (pre-push fix 4): the verdict chunk statically imports the range
-// rule's chunk and the shared future chunk, and Chromium keeps a failed import of either for the
-// page's life (retry-import.ts), so once the range rule or the mark providers failed (rangeBroken,
-// marksBroken: their imports share those chunks) no retry of the verdict chunk can load it. Then the
-// online listener asks for nothing, retryVerdict does nothing, and the views offer Reload
-// (load.reload, as chunkToast does) in place of Try again.
-export const verdictNeedsReload = computed(() => rangeBroken.value || marksBroken.value);
+export const retryVerdict = (): void => loadVerdict(true);
+// Never a retry that cannot work (pre-push fix 4): the verdict chunk statically imports shared chunks,
+// and Chromium keeps a failed import of one for the page's life (retry-import.ts), so a retry under a
+// fresh URL may not load. The simple rule (fix round 1 A8): a retry that fails while the browser is
+// online needs a reload; offline, the online listener retries. Then wantVerdict asks for nothing and
+// the views offer Reload (load.reload) in place of Try again.
+export const verdictNeedsReload = signal(false);
 // What every verdict reads: the palette's place, the location's lookup, the period shown, the
 // scenario, and the members' canopy (shade relief, 3.2).
 // The canopy kept by value: most adds leave it as it was, and a new array would recompute every
@@ -276,11 +267,52 @@ export const memberVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => 
   const rule = verdictRule.value;
   return rule ? rule.verdicts(memberTaxa.value, verdictContext.value) : null;
 });
+// The verdict at a plant's own later period (the rule's judgedPeriod for the last period: its own
+// years) when the page shows an earlier one, else null: what that period changes is worded from it
+// (core againstLines and rowLines), so Details, the rows and print say the same. The members' are
+// computed once per change (grouped by period), any other plant's on demand (Details).
+const LAST = periodIds[periodIds.length - 1];
+function laterVerdicts(rule: VerdictRule, taxa: readonly Taxon[], now: Map<PlantId, PlantVerdict>): Map<PlantId, PlantVerdict> {
+  const byPeriod = new Map<PeriodId, Taxon[]>();
+  for (const t of taxa) {
+    const own = rule.judgedPeriod(t, LAST), v = now.get(t.id);
+    if (v && own !== v.judged) byPeriod.set(own, [...(byPeriod.get(own) ?? []), t]);
+  }
+  const out = new Map<PlantId, PlantVerdict>();
+  for (const [p, ts] of byPeriod) for (const [id, lv] of rule.verdicts(ts, { ...verdictContext.value, period: p })) out.set(id, lv);
+  return out;
+}
+const memberLaterVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
+  const rule = verdictRule.value, now = memberVerdicts.value;
+  return rule && now ? laterVerdicts(rule, memberTaxa.value, now) : null;
+});
+export function laterVerdictOf(t: Taxon, v: PlantVerdict | null | undefined): PlantVerdict | null {
+  const rule = verdictRule.value;
+  if (!rule || !v) return null;
+  if (memberVerdicts.value?.get(t.id) === v) return memberLaterVerdicts.value?.get(t.id) ?? null;
+  return laterVerdicts(rule, [t], new Map([[t.id, v]])).get(t.id) ?? null;
+}
+// A plant's verdicts at each period of its own years, today first, in order (the keep line: today's
+// level, and the first later period it is outside); empty until the rule is here.
+export function periodVerdictsOf(t: Taxon): PlantVerdict[] {
+  const rule = verdictRule.value;
+  if (!rule) return [];
+  const own = periodIds.indexOf(rule.judgedPeriod(t, LAST));
+  return periodIds.slice(0, own + 1).map((p) => rule.verdicts([t], { ...verdictContext.value, period: p }).get(t.id)).filter((v): v is PlantVerdict => !!v);
+}
 // The pool's verdicts, guests' lists included once read (b1b's count, Find, the holes' fillers).
 export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value, p = pool.value;
   return rule && p ? rule.verdicts([...p, ...guestTaxa.value], verdictContext.value) : null;
 });
+// One plant's verdict for the page period (Details: Against and the desk's soil line read this one
+// lookup): from the members' or the pool's maps when it is there, else computed for this plant alone
+// (a plant opened from a link or a guest list); null until the rule is here.
+export function verdictOf(t: Taxon): PlantVerdict | null {
+  const rule = verdictRule.value;
+  if (!rule) return null;
+  return memberVerdicts.value?.get(t.id) ?? poolVerdicts.value?.get(t.id) ?? rule.verdicts([t], verdictContext.value).get(t.id) ?? null;
+}
 // The chosen climate's list (its own, or the nearest lists it borrows), guests left out: the plants
 // that fit or need a second look for the page's period (levels kept apart so the line can split them
 // later), and those not checked (no climate figures for the period, or no range recorded: 'unknown',
@@ -354,25 +386,25 @@ export const flagContext = computed<FlagContext>(() => {
     countryStatus: countryStatus(code, knownCountries.value),
   };
 });
-// What the plant marks read (core marks.ts plantMarks; views/PlantMarks.tsx renders them).
+// The plants that could take a member's place (core suggest.ts alternatives through the suggestion's
+// chunk, store.suggestRule): those in range for the page period, then apart those outside it, ranked
+// on the page period's verdicts as Suggest reads them (b1br-5). null until the chunk and the list are
+// here. Swap lists them; Details shows the first ones inline ("What you can do", board DetailsDesk).
+export function alternativesFor(id: PlantId): { fit: Alternative[]; outside: Alternative[] } | null {
+  const algo = suggestRule.value, offer = offerPool.value;
+  if (!algo || !offer) return null;
+  const verdicts = poolVerdicts.value;
+  const away = new Set(offer.filter((x) => verdicts?.get(x.id)?.level === 'outside').map((x) => x.id));
+  const opts = { ...flagContext.value, removed: removed.value, verdicts };
+  const out = offer.filter((x) => away.has(x.id));
+  return { fit: algo.alternatives(id, memberTaxa.value, offer.filter((x) => !away.has(x.id)), opts), outside: out.length ? algo.alternatives(id, memberTaxa.value, out, opts) : [] };
+}
 // A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
 // but store.climate stays unset until the reader confirms.
 export const proposedClimate = signal<ClimateZone | null>(null);
 // Whether that proposal came from the saved site looked up again (not the reader locating): only such
 // a proposal goes when a consortium opens (state/restore.ts restore; seam review round 4, 2).
 export const proposedFromSave = signal(false);
-export const markContext = computed<MarkContext>(() => ({ climate: climate.value, location: location.value, scenario: scenario.value, site: site.value }));
-// The mark providers (core mark-providers.ts, their own chunk): none until a mark can show (a site
-// location, or a climate the export does not curate), then loaded once. Off the first run (decision
-// row "Island JavaScript budget for P5").
-export const markProviders = signal<readonly MarkProvider[]>([]);
-export const wantsMarkProviders = computed(() => needsMarkProviders(markContext.value, curatedClimates.value));
-// The providers' chunk did not load (seam review 6): the range, future and estimate marks it would show
-// are missing, said by one toast with Reload; as for the range rule, the import is not tried again on
-// this page. (The notice that stayed under the members, inventory L3, went with Matrix.tsx in PP-B
-// commit 0a'; PP-C c2 brings it back.)
-const marksBroken = signal(false);
-// (Their load starts in start(), at the end of this file, once a mark can show.)
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core conflicts.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];
@@ -458,9 +490,11 @@ export function watchPools(): () => void {
   });
 }
 
-// Whether a suggestion needs the verdicts first: a site climate with range checks on (suggestMembers;
-// state/suggest-wait.ts waits for them and ends the wait when their chunk is refused).
-export const waitsForVerdicts = (): boolean => siteClimate.value && !rangeFailed.value;
+// Whether a suggestion needs the verdicts first: a site climate (suggestMembers; state/suggest-wait.ts
+// waits for them and ends the wait when their chunk is refused). The range checks come in the same
+// chunk since PP-C c2, so a refused chunk is one state: Suggest refuses with a toast, never P2's
+// unfiltered suggestion (P5-14e's, from when the range rule had its own chunk).
+export const waitsForVerdicts = (): boolean => siteClimate.value;
 // "Suggest plants": a suggestion built around every plant already in the palette (the members are
 // its seed; inventory C6), leaving out removed plants (core suggest.ts). Needs the climate's pool and
 // every guest climate's (a guest must count), and with a site climate the verdicts; false, changing
@@ -469,9 +503,9 @@ export function suggestMembers(): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
   const seed = members.value;
-  const rule = rangeRule.value;
+  const rule = verdictRule.value;
   // Nothing fits the site: no suggestion (it could only be an empty palette); Start shows why.
-  if (nothingFits(p, location.value, rule)) return false;
+  if (nothingFits(p, poolVerdicts.value)) return false;
   // A borrowed pool unfiltered (no site climate, or the rule's chunk failed): no suggestion, since only
   // the range filter fits it to a place (UX audit fix 1; fix review 29b709e, 2). The rule Start reads
   // (rules/suggest-block.ts), over the curated climates Start reads (curatedClimates); with a pool and
@@ -485,11 +519,10 @@ export function suggestMembers(): boolean {
   // With a site climate, the verdicts too (F1a-P7, PP-B b1b): the gain counts the open holes a plant
   // fills, and a member outside its range for the period fills none. Suggest waits for the verdict
   // chunk, and a refused one ends the wait with a toast (state/suggest-wait.ts). Without a site climate
-  // every verdict is "not checked": nothing to wait for; nor with range checks off (rangeFailed: the
-  // verdict chunk imports the range rule's, so it cannot come either, and the page is P2's, P5-14e).
+  // every verdict is "not checked": nothing to wait for.
   const verdicts = poolVerdicts.value;
   if (waitsForVerdicts() && !verdicts) return false;
-  const s = algo.suggest(rule ? rule.withinRange(p, location.value, seed) : p, { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value, verdicts });
+  const s = algo.suggest(notOutside(p, verdicts, seed), { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value, verdicts });
   // A suggestion placed is a plant change: the page owns the save from here (state/save.ts), and it
   // offers its own Undo, as Add, Remove and Swap do, taken just before it is placed (fix round 4, s-1,
   // s-2: every caller gets it, and no effect can drop it). A wait ends on any plant change, so this is
@@ -787,15 +820,9 @@ let started = false;
 export function start(): void {
   if (started) return;
   started = true;
-  // The range rule's chunk, loaded once the location has a climate (rangeRule, rangeBroken).
+  // The verdict rule's chunk (the range checks with it), asked for once the location has a climate.
   effect(() => {
-    if (!siteClimate.value || rangeLoad) return;
-    rangeLoad = loadRangeRule().then((rule) => { rangeRule.value = rule; }, (err: unknown) => {
-      console.error(err);
-      rangeBroken.value = true;
-      chunkToast('range.unavailable');
-    });
-    wantVerdict();
+    if (siteClimate.value) wantVerdict();
   });
   // Offline (architecture 9): the page says so; what is loaded still works.
   if (typeof navigator !== 'undefined' && typeof addEventListener === 'function') {
@@ -806,16 +833,6 @@ export function start(): void {
     addEventListener('online', () => { offline.value = false; if (verdictFailed.peek() && !verdictNeedsReload.peek()) retryVerdict(); });
     addEventListener('offline', () => { offline.value = true; });
   }
-  // The mark providers' chunk, loaded once a mark can show (markProviders, marksBroken).
-  effect(() => {
-    if (!wantsMarkProviders.value || markProviders.peek().length || marksBroken.peek()) return;
-    loadMarkProviders().then((list) => { markProviders.value = list; }, (err: unknown) => {
-      console.error(`Consortium: the plant marks did not load: ${(err as Error).message}`);
-      if (marksBroken.peek()) return;
-      marksBroken.value = true;
-      chunkToast('marks.unavailable');
-    });
-  });
   // The Undo offer ends on any other change of the plant lists or the climate (offerUndo).
   effect(() => {
     const now = state.track(SNAP_KEYS);

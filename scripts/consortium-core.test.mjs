@@ -321,7 +321,7 @@ test('flags: a misfit and a high conflict warn (listed last); invasive, toxicity
   assert.ok(!flagsFor(robinia, [], { ...c, country: 'TW', countryStatus: 'unchecked' }).some((f) => f.kind === 'invasive'));
 });
 
-test('alternatives: "Also fills" and "Leaves empty" are the cells a swap changes', () => {
+test('alternatives: the closest in years first, members and removed plants left out, warned candidates last', () => {
   const member = make({ stratum: 'low', start: 0, end: 2 });
   const other = make({ stratum: 'low', start: 2, end: 3 });
   const longer = make({ stratum: 'low', start: 1, end: 5 });
@@ -329,13 +329,10 @@ test('alternatives: "Also fills" and "Leaves empty" are the cells a swap changes
   const removed = make({ stratum: 'low', start: 0, end: 6 });
   const pool = [member, other, longer, high, removed];
   const alts = alternatives(member.id, [member, other], pool, { ...ctx(), removed: [removed.id] });
-  assert.deepEqual(alts.map((a) => a.id), [longer.id, high.id], 'same stratum first; members and removed plants are not offered');
-  const a = alts[0];
-  assert.equal(a.sameStratum, true);
-  assert.deepEqual(a.alsoFills, [['low', 4], ['low', 5]]);
-  assert.deepEqual(a.leavesEmpty, [['low', 0]]);
-  assert.deepEqual(alts[1].alsoFills, [['high', 0]]);
-  assert.deepEqual(alts[1].leavesEmpty, [['low', 0], ['low', 1]]);
+  assert.deepEqual(alts.map((a) => a.id), [longer.id, high.id], 'the one covering more years first; members and removed plants are not offered');
+  // The hole diff itself (swapChange, internal since c2 fix round 1 B7) is pinned through alternatives
+  // in consortium-pp-c2.test.mjs (u15, A1).
+  assert.equal(alts[1].strataGain, true, 'high: a stratum no member stands in');
   // A candidate that warns (high conflict) comes after one that does not, with its flags.
   const walnut = T('Juglans regia'), malus = T('Malus domestica'), pear = T('Pyrus communis');
   const swap = alternatives(pear.id, [pear, walnut], temperate, ctx({ interactions: temperateInteractions }));

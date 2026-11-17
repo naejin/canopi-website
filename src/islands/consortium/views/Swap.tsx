@@ -1,13 +1,14 @@
 /** @jsxImportSource preact */
-// Swap (stream S3; mockup 05 `swap`): the plants of the climate's list that could take a member's
-// place (core suggest.ts `alternatives`: same layer first, then what they leave empty and also fill,
-// the jobs they share). Each says what it does to the matrix: "Also fills: Years 25–60." or "Leaves
-// empty: Months 3–12." Inform, don't block (owner decision 2026-11-14; it replaces the 2026-10-28
-// "Swap anyway?" rule): one tap swaps any plant; a site misfit or a serious (high) conflict keeps its
-// reason on its row in words, and those plants come last. Alternatives outside their climate range at
-// the site (as their verdict says, else the range rule) are offered too, behind "Show N outside their
-// climate range", each saying so in words (review r1 bugs-4). Loaded on first use (views/Sheets.tsx). The list
-// comes from the suggestion's chunk (store.suggestRule, core loadSuggest): opening Swap asks for it
+// Swap (stream S3; boards Swap and DetailsDesk): the plants of the climate's list that could take a
+// member's place, in core's one order (store.alternativesFor over core suggest.ts `alternatives`: the
+// closest in jobs and years first, warned ones after, each saying why; shown as it comes). The header says why one might swap (the member's
+// warnings or its fit) and the jobs it does; each candidate says how many of those jobs it does and
+// names the ones it does not ("Does 3 of its 4 jobs (no mulch)"), its size, its fit and row notes
+// (room, later loss), and what it does to the palette's holes. The foot keeps the member or removes
+// it. Inform, don't block (owner decision 2026-11-14): one tap swaps any plant. Alternatives outside
+// their climate range at the site are offered too, behind "Show N outside their climate range", each
+// saying so in words (review r1 bugs-4). Loaded on first use (views/Sheets.tsx). The list comes from
+// the suggestion's chunk (store.suggestRule, core loadSuggest): opening Swap asks for it
 // (store.wantSuggest, which tries a failed one again); while it or the pool loads, the loading line.
 // Every wait for the chunk ends (E6 hand-off B): with the alternatives, or, if it failed or has not
 // come within the Suggest wait's 10 s (state/suggest-wait.ts suggestWaitMs; Swap's own timer, not that
@@ -16,33 +17,29 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
-import type { CellRef, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { warns } from '../../../lib/consortium/index.ts';
-import { closeSheet, openSheet, swapMember, taxonOf } from '../store.ts';
+import type { Alternative, Hole, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import { jobsOf } from '../../../lib/consortium/index.ts';
+import { closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
-import { FitLine } from './kit/fit.tsx';
-import { listOf, nameOf, phasePlain, spanWords } from './kit/names.ts';
+import { doesWords, FitLine, holeWords, jobList, sizeWords, yearsWords } from './kit/fit.tsx';
+import { listOf, nameOf } from './kit/names.ts';
+import { RowNotes } from './StageBar.tsx';
 import { LoadFailed } from './lazy.tsx';
 import { suggestWaitMs } from '../state/suggest-wait.ts';
 const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
 
-const SHOWN = { fit: 7, last: 2 };
+const SHOWN = 9;
 
 export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const t = taxonOf(id);
   const pool = store.pool.value;
-  const members = store.memberTaxa.value;
-  const ctx = store.flagContext.value;
   const scene = store.flagScene.value;
-  const removed = store.removed.value;
   const [all, setAll] = useState(false);
   const [showOutside, setShowOutside] = useState(false);
   // The outside group's own fold (review r2 swap-1): its "Show all N" reaches every outside plant,
   // whatever the in-range list shows.
   const [allOutside, setAllOutside] = useState(false);
   const verdicts = store.poolVerdicts.value;
-  const rule = store.rangeRule.value, loc = store.location.value;
-  const outside = (x: Taxon) => (verdicts ? verdicts.get(x.id)?.level === 'outside' : !!rule && rule.rangeFit(x, loc) === 'outside');
   const algo = store.suggestRule.value;
   const [stalled, setStalled] = useState(false);
   // Asked once this opening rendered: until then an earlier failure reads as waiting, so the failed
@@ -54,44 +51,42 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
     const cap = setTimeout(() => setStalled(true), suggestWaitMs());
     return () => clearTimeout(cap);
   }, [algo]);
-  // Within the list's plants inside their range, then, apart, those outside it (none without a
-  // location: nothing is outside then).
   // None from a borrowed list not fitted to a place (store.offerPool; the palette's head says why).
-  const offer = store.offerPool.value;
-  const [alts, outsideAlts] = useMemo(() => {
-    if (!offer || !algo) return [[], []];
-    const out = offer.filter(outside);
-    const away = new Set(out.map((x) => x.id));
-    // The page period's verdicts, as Suggest reads them: both rank on the same open holes (b1br-5).
-    const opts = { ...ctx, removed, verdicts };
-    return [algo.alternatives(id, members, offer.filter((x) => !away.has(x.id)), opts), out.length ? algo.alternatives(id, members, out, opts) : []];
-  }, [algo, id, offer, members, ctx, removed, verdicts, rule, loc]);
+  const offer = useMemo(() => store.alternativesFor(id), [algo, id, store.offerPool.value, store.memberTaxa.value, store.flagContext.value, store.removed.value, verdicts]);
+  const alts = offer?.fit ?? [], outsideAlts = offer?.outside ?? [];
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
-  // Misfits and serious conflicts after the others (order only; nothing asks).
-  const fit = alts.filter((a) => !warns(a.flags)), last = alts.filter((a) => warns(a.flags));
-  const shown = all ? alts : [...fit.slice(0, SHOWN.fit), ...last.slice(0, SHOWN.last)];
-  const cellWords = (cells: readonly CellRef[]) => listOf(cells.map(([s, p]) => (s === t.stratum?.value ? phasePlain(p) : `${T(`stratum.${s}`)} · ${phasePlain(p)}`)));
+  // Core's order as it is (closest first, warned ones after; nothing asks).
+  const shown = all ? alts : alts.slice(0, SHOWN);
+  const memberJobs = jobsOf(t);
+  const holeList = (hs: readonly Hole[]) => listOf(hs.map(holeWords));
   const swap = (x: Taxon) => { closeSheet(); swapMember(id, x.id); };
-  type Alt = (typeof alts)[number];
-  const row = (a: Alt, far = false) => {
+  // Why one might swap it: its warnings in words, else its fit when it is not a plain fit.
+  const why = flagLines(t, store.flagsOfPlant(t), scene);
+  const own = store.memberVerdicts.value?.get(id) ?? null;
+  const row = (a: Alternative, far = false) => {
     const x = byId.get(a.id);
     if (!x) return null;
     const lines = flagLines(x, a.flags, scene);
+    const v = verdicts?.get(x.id) ?? null;
     return (
-      <li key={a.id} class={far || warns(a.flags) ? 'flagged' : ''}>
+      <li key={a.id} class={far || a.flags.length ? 'flagged' : ''} data-swap-row>
         <div class="ct-row-main">
           <strong>{nameOf(x)}</strong> <i class="ct-sci">{x.canonical_name}</i>
           <Bar taxon={x} />
         </div>
         <button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => swap(x)}>{T('details.swap')}</button>
         <div class="ct-row-why">
-          <span>{spanWords(x)}{a.sharedJobs.length > 0 && ` · ${T('swap.shares', { jobs: listOf(a.sharedJobs.map((j) => T(`job.${j}`))) })}`}</span>
-          {far && <FitLine v={verdicts?.get(x.id)} known="outside" />}
-          {a.alsoFills.length > 0 && <strong class="ct-line">{T('swap.fills', { list: cellWords(a.alsoFills) })}</strong>}
-          {a.leavesEmpty.length > 0 && <strong class="ct-line">{T('swap.leaves', { list: cellWords(a.leavesEmpty) })}</strong>}
+          <span data-swap-does>{doesWords(memberJobs, a.sharedJobs)} · {yearsWords(x)}</span>
+          <span class="ct-line" data-swap-size>{sizeWords(x)}</span>
+          <span class="ct-line ct-swap-status" data-conf={v ? undefined : 'not-checked'}><FitLine v={v} known={far ? 'outside' : undefined} />{v && <RowNotes t={x} v={v} />}</span>
+          {/* What changes in the palette's gaps, said once (K12): what it fills, what it leaves empty, or that none change. */}
+          {a.fills.length > 0 && <span class="ct-line" data-swap-fills><strong>{T('swap.fills', { list: holeList(a.fills) })}</strong></span>}
+          {a.leaves.length > 0 && <span class="ct-line" data-swap-leaves><strong>{T('swap.leaves', { list: holeList(a.leaves) })}</strong></span>}
+          {!a.fills.length && !a.leaves.length && <span class="ct-line" data-swap-gaps-same>{T('details.swapGapsSame')}</span>}
+          {a.strataGain && <span class="ct-line" data-swap-layer>{T('details.swapNewLayer')}</span>}
           {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
         </div>
       </li>
@@ -100,11 +95,22 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
 
   return (
     <Frame titleId="ct-sw-title" class="ct-swap" head={
-      <button type="button" class="button-quiet ct-back" onClick={() => openSheet('details', id)}>{BACK}{T('swap.back', { name: nameOf(t) })}</button>
+      <button type="button" class="button-quiet ct-back" onClick={() => openSheet('details', id)}>{BACK}<span class="ct-back-name">{T('swap.back', { name: nameOf(t) })}</span></button>
+    } foot={
+      <div class="ct-add-bar ct-swap-foot">
+        <button type="button" class="button button-secondary" onClick={() => openSheet('details', id)}>{T('swap.keep', { name: nameOf(t) })}</button>
+        <button type="button" class="ct-link-button" onClick={() => { closeSheet(); removeMember(id); }}>{T('swap.remove')}</button>
+      </div>
     }>
       <div>
         <h2 id="ct-sw-title" tabIndex={-1} data-autofocus>{T('swap.title', { name: nameOf(t) })}</h2>
         <p class="ct-muted">{T('swap.lede')}</p>
+        <div class="ct-swap-head" data-swap-head>
+          {/* Why one might swap it (K12): its warnings, and its fit with the cause when it is not a plain fit. */}
+          {why.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.text}</span>)}
+          {own && own.level !== 'fits' && <FitLine v={own} head />}
+          <span>{memberJobs.length ? T('swap.headJobs', { jobs: jobList(memberJobs), span: yearsWords(t) }) : T('swap.headNoJobs', { span: yearsWords(t) })}</span>
+        </div>
         <NotChecked ctx={store.flagContext.value} />
       </div>
       {!algo ? <LoadFailed /> : shown.length ? (
@@ -115,8 +121,8 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
       )}
       {algo && outsideAlts.length > 0 && (showOutside ? (
         <>
-          <ul class="ct-rows" data-outside="">{(allOutside ? outsideAlts : outsideAlts.slice(0, SHOWN.fit)).map((a) => row(a, true))}</ul>
-          {!allOutside && outsideAlts.length > SHOWN.fit && (
+          <ul class="ct-rows" data-outside="">{(allOutside ? outsideAlts : outsideAlts.slice(0, SHOWN)).map((a) => row(a, true))}</ul>
+          {!allOutside && outsideAlts.length > SHOWN && (
             <p><button type="button" class="button button-secondary" onClick={() => setAllOutside(true)}>{P('add.showAll', outsideAlts.length)}</button></p>
           )}
         </>

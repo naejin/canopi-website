@@ -12,24 +12,19 @@
 // there, never in the store: first run), which counts Things to weigh's plants not checked from them.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { PlantId, PlantRow, Taxon } from '../../../../lib/consortium/index.ts';
-import { moreLine, sizeLine } from '../../../../lib/consortium/index.ts';
+import { moreLine, NEAREST_LISTS } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
-import { formatLength } from '../../format.ts';
-import { nameOf, pageLang, T } from '../../strings.ts';
-import { say } from '../kit/fit.tsx';
+import { nameOf, T } from '../../strings.ts';
+import { FitLine, say, sizeWords } from '../kit/fit.tsx';
+import { RowNotes } from '../StageBar.tsx';
+import { zoneName } from '../kit/names.ts';
 import { flagLines } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
-import { PlantMarks } from '../PlantMarks.tsx';
 
 // Rows shown before "+ N more" (the pictures' lane fold, PICTURE_LANE_MAX, is 12 too).
 const ROWS_MAX = 12;
 
-function sizeWords(t: Taxon): string {
-  const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
-  const len = (m: string | number) => formatLength(Number(m), pageLang());
-  return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, len(v)])));
-}
 
 function Remove({ id, name, onRemove }: { id: PlantId; name: string; onRemove: (id: PlantId) => void }) {
   return <button type="button" class="button button-secondary" aria-label={T('plants.removeName', { name })} onClick={() => onRemove(id)}>{T('plants.remove')}</button>;
@@ -38,6 +33,7 @@ function Remove({ id, name, onRemove }: { id: PlantId; name: string; onRemove: (
 function Row({ t, onRemove }: { t: Taxon; onRemove: (id: PlantId) => void }) {
   const lines = flagLines(t, store.flagsOfPlant(t), store.flagScene.value);
   const tox = t.warnings.toxicity?.level;
+  const v = store.memberVerdicts.value?.get(t.id);
   return (
     <li data-plant-id={t.id}>
       <span class="ct-plant-name">
@@ -47,10 +43,22 @@ function Row({ t, onRemove }: { t: Taxon; onRemove: (id: PlantId) => void }) {
       {lines.map((l) => (
         <span class="ct-line ct-flag-line" data-level={l.level ?? 'warning'}>{WARN} {l.kind === 'toxicity' && tox ? T(`tox.${tox}`) : l.text}</span>
       ))}
-      <PlantMarks taxon={t} surface="row" />
+      {v && <span class="ct-line"><FitLine v={v} /><RowNotes t={t} v={v} /></span>}
       <span class="ct-line">{sizeWords(t)}</span>
       <Remove id={t.id} name={nameOf(t)} onRemove={onRemove} />
     </li>
+  );
+}
+
+// The borrowed lists named once for the palette (A9): a climate with no list of its own takes its
+// plants from the nearest lists, each plant then marked "estimate" on its row.
+function BorrowedLists() {
+  const zone = store.climate.value, curated = store.curatedClimates.value;
+  if (!zone || curated.includes(zone) || !NEAREST_LISTS[zone]) return null;
+  return (
+    <p class="ct-muted" data-borrowed-lists>
+      {T('estimate.borrowed', { climate: zoneName(zone), lists: NEAREST_LISTS[zone].filter((z) => curated.includes(z)).map(zoneName).join(', ') })}
+    </p>
   );
 }
 
@@ -93,6 +101,7 @@ export function YourPlants({ rows }: { rows: readonly PlantRow[] }) {
   return (
     <section class="ct-plants" aria-labelledby="ct-plants-t">
       <h3 id="ct-plants-t" tabIndex={-1}>{T('plants.title')}</h3>
+      <BorrowedLists />
       <ul ref={list} class="ct-plant-rows">{shown.map((r) => ('plant' in r
         ? <Row key={r.plant.id} t={r.plant} onRemove={remove} />
         : <Missing key={r.id} id={r.id} why={r.missing} onRemove={remove} />))}</ul>

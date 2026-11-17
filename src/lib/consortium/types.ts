@@ -170,7 +170,7 @@ export type RangeBasis = 'thinned_cells' | 'treegoer_quantiles' | 'ecocrop_limit
 // cells; the warmest-month maximum's high is the heat limit, Q99), median their median; null where
 // not computed. blocks: the one-degree blocks the cells fall in; lowSource/highSource: the source of
 // each end (null: the row's own); weak (schema 3): a disputed limit (TreeGOER stricter by more than 4 °C,
-// the looser bound kept); range.ts compares it as any row, Details notes it ('range.disputed').
+// the looser bound kept); range.ts compares it as any row, the verdict marks it disputed (verdict-line.ts confDisputedLimit).
 export interface ClimateRange {
   low: number | null; median: number | null; high: number | null; count: number | null; basis: RangeBasis;
   blocks: number | null; lowSource: string | null; highSource: string | null; weak: boolean;
@@ -390,8 +390,8 @@ export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]
 
 // Swap: a plant that could take a member's place, with what it changes in the matrix ("Also fills…",
 // "Leaves empty…") and its warnings. Cells are [stratum, phase].
-export type CellRef = readonly [Stratum, PhaseOrd];
-export interface Alternative { id: PlantId; sameStratum: boolean; alsoFills: CellRef[]; leavesEmpty: CellRef[]; sharedJobs: JobId[]; flags: Flag[] }
+// fills / leaves: the holes swapping it in fills and leaves open (core suggest.ts swapChange).
+export interface Alternative { id: PlantId; fills: Hole[]; leaves: Hole[]; strataGain: boolean; sharedJobs: JobId[]; flags: Flag[] }
 
 // Jobs table: for each job, the phases where no member does it ("gaps name their stages", BT-4).
 export interface JobGap { job: JobId; members: PlantId[]; missing: PhaseOrd[] }
@@ -463,22 +463,6 @@ export const scenarios = ['ssp126', 'ssp245', 'ssp370', 'ssp585'] as const;
 export type Scenario = (typeof scenarios)[number];
 export const DEFAULT_SCENARIO: Scenario = 'ssp245';
 
-// A plant's marks beside its name (matrix chips, phone rows, Details, Add), from marks.ts providers:
-// edge "near the edge of its observed range", outside (Add's warning), unknown "range not recorded",
-// estimate (a borrowed placement), future (drawn in ink, apart from the ochre warnings), native,
-// season (an annual too hot in summer: "grow it in the cool season"), water (drought tolerance Medium
-// on a dry site: "needs watering in the dry months").
-// key: a consortium.* string key without its prefix, read with T(key, vars).
-export const markKinds = ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room'] as const;
-export type MarkKind = (typeof markKinds)[number];
-export type MarkSeverity = 'note' | 'warning';
-// state: a finer state the views write as data-mark-state (e.g. native: 'native' | 'not_recorded' | 'unknown').
-export interface Mark { kind: MarkKind; key: string; vars?: Record<string, string | number>; severity: MarkSeverity; state?: string }
-// Where a mark is drawn, so a provider can keep a mark to some places: matrix chips and phone rows are
-// tight; Details has room for words.
-export const markSurfaces = ['chip', 'row', 'details'] as const;
-export type MarkSurface = (typeof markSurfaces)[number];
-
 // ---- E6 seams (commit 0; ADR-6, decisions/consortium-placement-origin-and-facts.md; R4 implements them) ----
 
 // Where a plant's placement comes from (Taxon.origin, which replaced from / placedFrom / estimate in
@@ -489,24 +473,6 @@ export type MarkSurface = (typeof markSurfaces)[number];
 // it keeps its "From the {climate} list" label (placement.ts asGuest, guestOf; E6 hand-off D).
 export type PlacementKind = 'own' | 'guest' | 'borrowed';
 export interface PlacementOrigin { list: ClimateZone; kind: PlacementKind; guest?: ClimateZone }
-
-// One site-fit message (stream R2): the one vocabulary of what the site answers say about a plant, which
-// Flags (Add, Swap, Paste, Details: kit/flags.ts) and site Marks (chips, rows, Details: site-marks.ts)
-// both derive from. Built by site-marks.ts siteFitMessages; rules/site-fit.ts keeps the misfits that hold
-// beside the other members. Three kinds: a misfit (misfit set: a warning in words, never a confirm
-// step), a note (state set: a fit that still asks something of the reader, shown as a site mark), and
-// what the check could not decide (neither). about: the site answer or the climate check it concerns; key: a
-// consortium.* string key without its prefix, read with T(key, vars) (a mark on a short surface
-// appends "Short").
-export interface SiteFitMessage {
-  id: PlantId;
-  about: SiteKey | 'climate';
-  severity: MarkSeverity;
-  misfit: boolean;
-  key: string;
-  vars?: Record<string, string | number>;
-  state?: string;
-}
 
 // The plant facts that depend on the site and the climate period (ADR-6; owner row "Site- and
 // time-dependent plant facts"): only these go through factAt; other traits stay plain reads. A fact
@@ -586,9 +552,26 @@ export interface FactorVerdict {
   place: number | null;
   low: number | null;
   high: number | null;
-  confidence?: Confidence;
+  confidence?: Confidence; // the factor's hedge: 'edge' on a range side passed within the margin
+  source?: string; // a range bound taken from another source than the row's own (ClimateRange low/highSource, e.g. 'treegoer_ranges')
+  disputed?: boolean; // a low bound whose sources disagree (ClimateRange weak, schema 3): said, never softening the level
 }
-export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'warm-enough-later' | 'cold-air';
+// Whether a factor's level is the level it gives the verdict (verdict.ts worst; Details' bands read it
+// so a band never asks more than the headline): every factor but aridity, which sets the level only past
+// its wet end (owner row "Wetter than recorded is a second look"); its dry side is a note at 'fits' (PP-C5).
+export const setsLevel = (f: FactorVerdict): boolean => f.factor !== 'dry' || (f.place !== null && f.high !== null && f.place > f.high);
+// Notes beside the level, never a level themselves (3.2): the room ('room-tall', with the plant's height),
+// an annual ('annual': its winter cold is not checked), the cool-season advice, the place drier or wetter
+// than where it is recorded at the period judged, watering in the dry months ('dry-months': drought
+// tolerance Medium on a dry spot), cold air on a hill top or in a hollow, and, on today's verdict of a
+// plant judged later in its own years, what the later period changes: 'warm-enough-later' (too cool
+// today, within its range then) and 'drier-later' (drier then, not today); 'few-records': the ranges
+// rest on few recorded places (PlantVerdict.records), so their limits are not firm.
+export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'wetter' | 'dry-months' | 'warm-enough-later' | 'drier-later' | 'cold-air' | 'few-records';
+// Why the climate factors are what they are: compared ('judged'), a place climate with no range recorded
+// for the plant ('not-recorded'), or no climate for the period (no location, no projection: 'no-climate',
+// "not checked"). Kept apart so "not recorded" never reads as "not checked" (A15).
+export type RangeBasisState = 'judged' | 'not-recorded' | 'no-climate';
 export interface PlantVerdict {
   id: PlantId;
   judged: PeriodId; // min(page period, the plant's own years)
@@ -599,6 +582,9 @@ export interface PlantVerdict {
   notes: VerdictNote[];
   agree?: number; // scenarios (future.ts FutureCheck)
   of?: number;
+  range: RangeBasisState;
+  borrowed?: ClimateZone; // placed from a nearest list (Taxon.origin borrowed): its lines carry "estimate"
+  records?: number; // with 'few-records': the recorded places (TaxonClimate.cells) its ranges rest on
 }
 export interface VerdictContext {
   place: Place;
@@ -608,8 +594,13 @@ export interface VerdictContext {
   soil?: ResolvedSoil;
   canopy?: readonly number[]; // site.ts Canopy, from canopyOf(members) (the store builds it)
 }
-// One line of words: an i18n key, its variables and the count P() reads (verdict-line.ts, b2).
-export interface Line { key: string; vars: Record<string, string | number>; count?: number }
+// One line of words: an i18n key, its variables and the count P() reads (verdict-line.ts, b2); `also`:
+// sentences said after it (a reason's confidence, its bound's source), each a Line of its own. A
+// variable named temp… is a temperature in °C, len… a length in metres: the view formats it with its
+// unit (format.ts); every other number is a plain number.
+// `parts`: variables that are words themselves, a Line or a list of Lines said as a list ("the Balearic
+// Islands and mainland Spain"), filled into the key's {name} like a variable.
+export interface Line { key: string; vars: Record<string, string | number>; count?: number; also?: Line[]; parts?: Record<string, Line | Line[]> }
 
 // Holes (3.3; bodies in holes.ts, b2).
 export type HoleKind = 'job' | 'light' | 'flowering' | 'cool' | 'soil';

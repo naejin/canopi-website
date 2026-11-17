@@ -2,7 +2,7 @@
 // loaded with the test hook, a site set as the location step would, the climate chosen, the location
 // controls and result line, and the picks the specs make from the real export.
 //
-// The page contract the specs read (the streams implement it; marks already render data-mark):
+// The page contract the specs read (the streams implement it):
 // - S5b: [data-location-action="geo" | "search" | "map"] controls, input[data-location-search], the
 //   result line [data-location-state] ("ready", "denied", "timeout", "unavailable", "no-result",
 //   "offline", "sea", "coast", "polar", "borderline", "failed"), [data-location-privacy] beside each
@@ -10,7 +10,7 @@
 //   committed by [data-location-confirm] (owner answer 1), the map dialog [data-location-map] with [data-location-use-centre] (the test hook gains
 //   mapCentre({ lat, lon }) to move it), the share tick input[data-share-location], and
 //   store.country.value.source 'location' (never in a link without the tick: owner answer 5);
-// - S5c: [data-mark="edge" | "outside" | "estimate" | "unknown"] (views/PlantMarks.tsx), the empty
+// - S5c: the confidence terms [data-conf] (rows, Details, print; PP-C c2 replaced the marks), the empty
 //   pool [data-pool-empty], borrowed lists through views/PoolSlot.tsx;
 // - S5d: [data-future-summary], [data-future="not-checked"] (views/FutureSlot.tsx);
 // - S5e (P5.2; its slots and stubs removed before the P5 push, see consortium-p5-seams-s5e.test.mjs):

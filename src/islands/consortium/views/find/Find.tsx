@@ -48,7 +48,7 @@ const langName = (code: string): string => {
 };
 // A group's heading: the verdict words of its level for the page's period (verdict-line.ts fitLine,
 // the one owner of them: "Fits your place today", "Needs a second look", …), never Find's own copy.
-const verdictOf = (level: PlantVerdict['level'], judged: PeriodId): PlantVerdict => ({ id: '', judged, ownYears: false, level, limiting: null, factors: [], notes: [] });
+const verdictOf = (level: PlantVerdict['level'], judged: PeriodId): PlantVerdict => ({ id: '', judged, ownYears: false, level, limiting: null, factors: [], notes: [], range: 'judged' });
 const groupWords = (g: Group, judged: PeriodId): string => say(fitLine(verdictOf(g === 'unchecked' ? 'unknown' : g, judged)));
 // Why a row matched (data/search.ts whyLines owns the words), a language code named in the page's
 // language; data-lang and data-kind say which name it was.

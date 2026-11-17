@@ -155,12 +155,8 @@ export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
 export const ROLE_ENTRIES = {
   // P5 features
   location: { entry: /\/src\/islands\/consortium\/views\/location\/location\.tsx$/, chunks: 1 }, // S5b
-  markProviders: { entry: /\/src\/lib\/consortium\/mark-providers\.ts$/, chunks: 1 }, // S5c, S5d, S5e marks
   future: { entry: /\/src\/islands\/consortium\/views\/future\/future\.tsx$/, chunks: 1 }, // S5d
   pool: { entry: /\/src\/islands\/consortium\/views\/pool\/pool\.tsx$/, chunks: 1 }, // S5c
-  // The range rule (core marks.ts loadRangeRule; E6 design check A10): loaded once the site location
-  // has a climate.
-  range: { entry: /\/src\/lib\/consortium\/range\.ts$/, chunks: 1 }, // R2
   // E6 lazy island parts (design check A5, A6, A11; L1-L12)
   details: { entry: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, chunks: 1 }, // K3: the plant dialog
   sheets: { entry: /\/src\/islands\/consortium\/views\/(Swap|Correction)\.tsx$/, chunks: 2 }, // K3
@@ -172,6 +168,8 @@ export const ROLE_ENTRIES = {
   // commit 0a' deleted the matrix role with the matrix): the palette page (b2 gives it a chunk) and the
   // verdict rule (core verdict-load.ts).
   palette: { entry: /\/src\/islands\/consortium\/views\/palette\/Palette\.tsx$/, chunks: 1 }, // b2
+  // The verdict rule (core verdict-load.ts), the range checks with it (PP-C c2 folded the range and
+  // markProviders roles away with the mark providers).
   verdict: { entry: /\/src\/lib\/consortium\/verdict\.ts$/, chunks: 1 }, // b2 writes the body
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;

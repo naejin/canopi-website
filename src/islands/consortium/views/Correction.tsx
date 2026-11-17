@@ -15,6 +15,7 @@ import { pageLang, T } from '../strings.ts';
 import { LIMITS } from '../../../lib/correction.mjs';
 import { EMAIL_RE } from '../../../lib/contact.mjs';
 import { climate as siteClimate, taxonOf } from '../store.ts';
+import { WARN } from './kit/icons.tsx';
 import type { CorrectionDraft, CorrectionField } from './kit/correction.ts';
 
 const ENDPOINT = '/api/correction';
@@ -125,7 +126,7 @@ export default function Correction({ drafts, fields, plantId, plantName, plantLa
   const offline = message === 'correction.offline';
   return (
     <form class="ct-corr" noValidate onSubmit={send}>
-      <p class="ct-muted">{T('correction.lede')}</p>
+      <p class="ct-muted"><strong>{plantLabel}</strong> · {T('correction.lede')}</p>
       <div class="ct-field">
         <label for="ct-corr-field">{T('correction.field')}</label>
         <select id="ct-corr-field" value={form.field} aria-invalid={!!err('field')} aria-describedby={described('field')} onChange={(e) => set('field', (e.target as HTMLSelectElement).value)}>
@@ -158,17 +159,29 @@ export default function Correction({ drafts, fields, plantId, plantName, plantLa
         <label><input id="ct-corr-consent" type="checkbox" checked={form.consent} aria-invalid={!!err('consent')} aria-describedby={described('consent')} onChange={(e) => set('consent', (e.target as HTMLInputElement).checked)} /> <span>{T('correction.consent')}</span></label>
         {errorLine('consent')}
       </div>
-      <p class="ct-muted ct-small">{T('correction.context', { plant: plantLabel, release, climate: climateLabel, language: languageName(pageLang()) })}</p>
+      {/* What is sent, in full (board Correction): the reader's climate and the list it was placed from; never the location. */}
+      <p class="ct-muted ct-small" data-sent-with>{T('correction.context', { plant: plantLabel, release, climate: climateLabel, language: languageName(pageLang()) })}. {T('details.notLocation')}</p>
       <div class="ct-hp" aria-hidden="true">
         <label>{T('correction.honeypot')} <input type="text" tabIndex={-1} autocomplete="off" value={form.website} onInput={(e) => set('website', (e.target as HTMLInputElement).value)} /></label>
       </div>
+      {/* The board's order: what needs a look above the buttons, then Cancel and Send. */}
+      {/* A failure in a box with its icon and words (never colour alone; board Correction, K14): what
+          happened, then each field that needs a look, in the form's order. */}
+      <div class={`ct-corr-status${status === 'failed' ? ' is-error' : ''}`} role="status">
+        {status === 'sending' ? T('correction.sending') : message ? <>
+          {status === 'failed' && WARN}
+          <div>
+            <strong>{T(message)}</strong>
+            {message === 'correction.invalid' && <span> {ORDER.filter((n) => errors[n]).map((n) => T(errors[n]!, { max: n in MAX ? MAX[n as keyof typeof MAX] : '' })).join(' ')}</span>}
+          </div>
+        </> : null}
+      </div>
       <div class="ct-actions">
+        <button type="button" class="button button-secondary" onClick={() => { drafts.delete(plantId); onCancel(); }}>{T('correction.cancel')}</button>
         {offline
           ? <button type="submit" class="button button-primary">{T('correction.tryAgain')}</button>
           : <button type="submit" class="button button-primary" aria-disabled={status === 'sending' ? 'true' : undefined}>{T('correction.send')}</button>}
-        <button type="button" class="button button-secondary" onClick={() => { drafts.delete(plantId); onCancel(); }}>{T('correction.cancel')}</button>
       </div>
-      <p class={`ct-corr-status${status === 'failed' ? ' is-error' : ''}`} role="status">{status === 'sending' ? T('correction.sending') : message ? T(message) : ''}</p>
     </form>
   );
 }
