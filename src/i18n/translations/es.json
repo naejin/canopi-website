@@ -1085,7 +1085,7 @@
   "consortium.details.keyDashed": "pocos registros o en disputa: no es un límite firme",
   "consortium.details.notRecorded": "Sin registrar",
   "consortium.details.nMore": "one: # más | other: # más",
-  "consortium.details.alsoJobs": "También: {list}.",
+  "consortium.details.alsoJobs": "También {list}.",
   "consortium.details.chipSite.light": "Luz por revisar",
   "consortium.details.chipSite.water": "Agua por revisar",
   "consortium.details.chipSite.soil": "Suelo por revisar",

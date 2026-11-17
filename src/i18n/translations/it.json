@@ -1085,7 +1085,7 @@
   "consortium.details.keyDashed": "pochi dati o contestati: non un limite certo",
   "consortium.details.notRecorded": "Non registrato",
   "consortium.details.nMore": "one: altri # | other: altri #",
-  "consortium.details.alsoJobs": "Inoltre: {list}.",
+  "consortium.details.alsoJobs": "Inoltre {list}.",
   "consortium.details.chipSite.light": "Luce da verificare",
   "consortium.details.chipSite.water": "Acqua da verificare",
   "consortium.details.chipSite.soil": "Suolo da verificare",

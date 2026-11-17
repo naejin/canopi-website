@@ -1085,7 +1085,7 @@
   "consortium.details.keyDashed": "мало или спорные данные: не твёрдая граница",
   "consortium.details.notRecorded": "Не указано",
   "consortium.details.nMore": "one: ещё # | few: ещё # | many: ещё # | other: ещё #",
-  "consortium.details.alsoJobs": "Также: {list}.",
+  "consortium.details.alsoJobs": "Также {list}.",
   "consortium.details.chipSite.light": "Проверьте свет",
   "consortium.details.chipSite.water": "Проверьте полив",
   "consortium.details.chipSite.soil": "Проверьте почву",

@@ -1085,7 +1085,7 @@
   "consortium.details.keyDashed": "few or disputed records: not a firm limit",
   "consortium.details.notRecorded": "Not recorded",
   "consortium.details.nMore": "one: # more | other: # more",
-  "consortium.details.alsoJobs": "Also: {list}.",
+  "consortium.details.alsoJobs": "Also {list}.",
   "consortium.details.chipSite.light": "Light to check",
   "consortium.details.chipSite.water": "Water to check",
   "consortium.details.chipSite.soil": "Soil to check",

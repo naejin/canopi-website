@@ -1085,7 +1085,7 @@
   "consortium.details.keyDashed": "记录少或有争议：不是确定的界限",
   "consortium.details.notRecorded": "无记录",
   "consortium.details.nMore": "other: 另外 # 个",
-  "consortium.details.alsoJobs": "另外：{list}。",
+  "consortium.details.alsoJobs": "还能{list}。",
   "consortium.details.chipSite.light": "光照待确认",
   "consortium.details.chipSite.water": "水分待确认",
   "consortium.details.chipSite.soil": "土壤待确认",
