@@ -503,7 +503,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
             </section>
           )}
           {view.byFilters > 0 && (
-            <p class="ct-find-kept" data-find-hidden-filters="" data-count={view.byFilters}>{P('find.hiddenByFilters', view.byFilters)} · <button type="button" class="text-link" onClick={() => { setFilters({}); setFoldOutside(false); }}>{T('find.clearShort')}</button></p>
+            <p class="ct-find-kept" data-find-hidden-filters="" data-count={view.byFilters}>{P('find.hiddenByFilters', view.byFilters)} · <button type="button" class="text-link" onClick={clearAll}>{T('find.clearShort')}</button></p>
           )}
           {view.outsideHole > 0 && (
             <p class="ct-find-kept" data-find-outside-hole="" data-count={view.outsideHole}>{P('find.outsideHole', view.outsideHole)} · <button type="button" class="text-link" onClick={() => setWide(true)}>{T('find.show')}</button></p>
