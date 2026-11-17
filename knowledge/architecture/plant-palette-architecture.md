@@ -6,7 +6,7 @@ tags: [consortium, architecture]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:39Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:40Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -33,7 +33,7 @@ sources:
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
     digest: sha256:604335703ffbcbeb
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -48,12 +48,12 @@ sources:
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:ddc3af06c1c0d64c
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -98,17 +98,17 @@ sources:
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
     digest: sha256:0bf61b46e5182717
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
-    digest: sha256:9c922c58f2aad746
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:73297ee3a4f9bdb6
+    last_modified: 2026-11-17T16:37:51Z
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:5a68cb4f4f79a63e
-    last_modified: 2026-11-17T10:28:40Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -138,12 +138,12 @@ sources:
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:3a3beb27521f87d1
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:247825dbbd1ebd15
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -153,12 +153,12 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:7afb7646305b6cf2
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:13928dffc93f48fc
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -173,7 +173,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:15a62311180fe1fa
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -208,7 +208,7 @@ sources:
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
     digest: sha256:bfe0dfd02be2eeeb
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
@@ -223,7 +223,7 @@ sources:
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
     digest: sha256:21e328779beac381
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
@@ -243,7 +243,7 @@ sources:
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
     digest: sha256:c88ea78cc766445f
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: span-ts
     resource: ../../src/islands/consortium/views/kit/span.ts
     title: src/islands/consortium/views/kit/span.ts
@@ -263,7 +263,7 @@ sources:
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
     digest: sha256:1fa1952975c4ff18
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
@@ -302,8 +302,8 @@ sources:
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
-    digest: sha256:bfbb7316b150433b
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:dae939a445a54069
+    last_modified: 2026-11-17T11:57:14Z
   - id: future-marks-ts
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
@@ -358,7 +358,7 @@ sources:
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
     digest: sha256:3b5dee7987b5cbc0
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
@@ -388,12 +388,12 @@ sources:
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:ec1c9c66b312ff82
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -403,7 +403,7 @@ sources:
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:d406e9cf7fe5e4de
-    last_modified: 2026-11-17T10:28:03Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -438,12 +438,12 @@ sources:
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
     digest: sha256:d881634869e11783
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
     digest: sha256:39d03deba98c3fc8
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts

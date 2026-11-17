@@ -21,16 +21,15 @@ test('X8: a link opened while a sheet is up closes the sheet', async (t) => {
   await behaviour(t, async (v) => {
     const page = await suggested({ ...v, hook: true });
     const before = await page.evaluate(() => location.hash);
-    // PP-C commit 0: openFind opens Find (the Paste sheet until c1 builds Find, "Paste a list").
     await openFind(page);
-    assert.ok(await has(page, 'dialog.ct-sheet[open]', 10_000), 'Find is open');
+    assert.ok(await has(page, 'dialog.ct-find[open]', 10_000), 'Find is open');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
     // Back to the address with one plant fewer: the page's own link, opened as a restore.
     await page.evaluate(() => { const { store } = window.__ctTest; store.members.value = store.members.value.slice(1); });
     await page.waitForFunction((b) => location.hash !== b, {}, before);
     await openFind(page);
-    assert.ok(await has(page, 'dialog.ct-sheet[open]', 10_000), 'Find is open again');
+    assert.ok(await has(page, 'dialog.ct-find[open]', 10_000), 'Find is open again');
     await page.evaluate((f) => { history.pushState(null, '', f); window.dispatchEvent(new HashChangeEvent('hashchange')); }, before);
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
     await done(page);

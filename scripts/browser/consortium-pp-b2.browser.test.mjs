@@ -13,7 +13,6 @@ import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { liveLog, resetLive, saidTwice, suggestedAt, watchLiveRegions } from './f1a-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { showPalette } from './seams-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 
 useHarness();
 
@@ -234,9 +233,8 @@ test('PP-B30 (b2 link arrival, review r1 perf-3): the palette page\'s chunk and 
   await done(page);
 });
 
-// PP-C commit 0: the Add sheet is gone; See all opens Find (store.openFind with the hole; the Paste
-// sheet until c1 builds Find). The title in the hole's words is c1's PP-C7 (FillHole), so this case
-// stops at the preset (review c0 4.4: one test per behaviour).
+// See all opens Find (store.openFind with the hole). The title in the hole's words is c1's PP-C7
+// (FillHole), so this case stops at the preset (review c0 4.4: one test per behaviour).
 test('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palette page shows the Next step and both pictures, and a hole\'s See all opens Find preset to it', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   assert.ok(await onPage(page), 'Suggest opens the palette page');
@@ -437,19 +435,25 @@ test('PP-B20 (b2 verdict chunk refused; review r1 bugs-5): fit lines say "Not ch
 // Pre-push fix 4: the verdict chunk statically imports the range rule's chunk, and Chromium keeps a
 // failed import for the page's life, so once the range chunk failed no retry of the verdict chunk can
 // work. Back online, the page offers Reload, never a Try again that cannot work, and asks for nothing.
-test('PP-B49 (b2 verdict and range chunks refused; pre-push fix 4): back online, the verdict notice offers Reload, never a dead Try again, and the online event asks for no chunk', async () => {
+// PP-B49 retargeted (fix round 1, A14; coordinator 2026-11-17): stream c2 folds the range and mark
+// roles into the verdict chunk, so the case blocks the verdict chunk alone. The failure rule then: a
+// verdict file that did not arrive is asked again in place (Try again, and the browser back online),
+// never a Reload; Reload stays for a verdict file that arrived but whose import failed (not reachable
+// through the harness's block kinds, so not asserted here).
+test('PP-B49 (b2 verdict chunk refused offline; pre-push fix 4, retargeted to the verdict role): back online, the verdict chunk is asked again in place and the notice offers Try again, never a Reload', async () => {
   const log = [];
-  const page = await lyonPalette(2, { block: { verdict: 'offline', range: 'offline' }, setup: logRequests(log) });
+  const page = await lyonPalette(2, { block: { verdict: 'offline' }, setup: logRequests(log) });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
   await page.setOfflineMode(true);
   assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-palette-page .ct-notice')].some((n) => n.textContent.includes(t)), { timeout: 4000 }, en['consortium.load.needsConnection']).then(() => true, () => false), 'offline: "Needs a connection"');
   const before = log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length;
   await page.setOfflineMode(false);
-  assert.ok(await has(page, `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`, 4000), 'back online: Reload');
-  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`), null, 'no Try again that cannot work');
-  await new Promise((r) => setTimeout(r, 500));
-  assert.equal(log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length, before, 'the online event asked for no verdict chunk');
+  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`), null, 'no Reload for a file that never arrived');
+  // Back online the chunk is asked again in place: the online event asks for it (still refused here, so
+  // the notice then offers Try again, never Reload).
+  assert.ok(await has(page, `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`, 6000), 'back online: Try again');
+  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`), null, 'still no Reload');
+  assert.ok(log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length > before, 'the verdict chunk is asked again');
   await done(page);
 });
 
@@ -599,7 +603,7 @@ const findTicks = async (page) => {
 // one history entry; the phone's Back closes it and keeps every edit made in it; a second Back leaves
 // the page; Forward never reopens a stale sheet.
 // PP-C commit 0: the Add sheet's ticks went with it; written against Find's "Select several" (c1).
-failing('PP-B31 (b2 sheets and Back, K7; review r1 bugs-1; owner c1 \'Find ticks\'): Back closes Find keeping the plants added in it, the address keeps them, a second Back leaves the page, Forward never reopens it', { owner: 'c1', reason: /no Find sheet \(dialog\.ct-find\)/ }, async () => {
+test('PP-B31 (b2 sheets and Back, K7; review r1 bugs-1; owner c1 \'Find ticks\'): Back closes Find keeping the plants added in it, the address keeps them, a second Back leaves the page, Forward never reopens it', async () => {
   const page = await tool({ width: 390, hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForSelector('.ct-next-actions .button', { timeout: 10_000 });
@@ -1027,18 +1031,18 @@ test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette
       const members = await page.evaluate(() => JSON.parse(localStorage.getItem('canopi-consortium')).fragment.length);
       figures.push(`${width} px: Next step ${Math.round(next)} ms, DOM ${dom}`);
       // One Add from the Next step's filler; 200 plants of this palette leave no hole, so then through Find
-      // (PP-C commit 0: store.openFind, the Paste sheet until c1 builds Find; a plant not yet in the palette
-      // pasted by name, "Add 1 plant"): measured from the press to the second frame after the toast.
+      // (a plant of the climate's list not yet in the palette, searched by name, its row's Add): measured
+      // from the press to the second frame after the toast.
       let press = '.ct-next .ct-fillers button';
       if (!(await has(page, press, 1000))) {
-        const name = await page.evaluate(() => { const { store } = window.__ctTest, m = new Set(store.members.value); return Object.values(store.pools.value).flat().find((t) => !m.has(t.id))?.canonical_name ?? null; });
-        assert.ok(name, `${width} px: a plant not yet in the palette`);
+        const plant = await page.evaluate(() => { const { store } = window.__ctTest, m = new Set(store.members.value); const t = (store.pool.value ?? []).find((x) => !m.has(x.id)); return t ? { id: t.id, name: t.canonical_name } : null; });
+        assert.ok(plant, `${width} px: a plant not yet in the palette`);
         await page.evaluate(() => window.__ctTest.openFind());
-        await page.waitForSelector('dialog.ct-sheet[open] textarea', { timeout: 20_000 });
-        await page.type('dialog.ct-sheet[open] textarea', name);
-        press = 'dialog.ct-sheet[open] .ct-add-bar .button-primary';
-        // The pasted name matched: "Add 1 plant", enabled (else the press below waits for a toast that never comes).
-        assert.ok(await page.waitForFunction((sel) => { const b = document.querySelector(sel); return !!b && !b.disabled && /\b1\b/.test(b.textContent); }, { timeout: 20_000 }, press).then(() => true, () => false), `${width} px: "Add 1 plant" for ${name}`);
+        await page.waitForSelector('dialog.ct-find[open] [data-find-search]', { timeout: 20_000 });
+        await page.type('dialog.ct-find[open] [data-find-search]', plant.name);
+        press = `dialog.ct-find[open] [data-find-row][data-plant-id="${plant.id}"] [data-find-add]`;
+        // The name found: its row's Add (else the press below waits for a toast that never comes).
+        assert.ok(await has(page, press, 20_000), `${width} px: Find lists ${plant.name}`);
       }
       const add = await page.evaluate((sel) => new Promise((done) => {
         const t0 = performance.now();

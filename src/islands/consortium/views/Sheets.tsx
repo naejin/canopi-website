@@ -77,8 +77,11 @@ function DetailsWaiting({ id, Frame }: { id: PlantId; Frame: Frame }) {
 const sheet = { onFail: 'closeSheet', loading: SheetWaiting } as const;
 const details = later(retryableImport(() => import('./details/Details.tsx'), (m) => m.PlantDetails), { onFail: 'closeSheet', loading: DetailsWaiting });
 const swap = later(retryableImport(() => import('./Swap.tsx'), (m) => m.default), sheet);
-// Paste is in the find role (built-modules.mjs ROLE_ENTRIES; c1 moves it into views/find/).
-const paste = later(retryableImport(() => import('./Paste.tsx'), (m) => m.default), { ...sheet, find: true });
+// Find and Paste: one chunk, the find role (views/find/index.ts; built-modules.mjs ROLE_ENTRIES), so
+// the search module ships with them only.
+const findChunk = () => import('./find/index.ts');
+const find = later(retryableImport(findChunk, (m) => m.Find), { ...sheet, find: true });
+const paste = later(retryableImport(findChunk, (m) => m.Paste), { ...sheet, find: true });
 
 // One opening: one <dialog> (SheetDialog: one slide-in, one announcement), closing this sheet only
 // (Escape fires `close` a task later, maybe once another sheet opened), and the frame its part draws
@@ -95,9 +98,7 @@ function Part({ s, Frame }: { s: Opened; Frame: Frame }) {
   switch (s.kind) {
     case 'details': return <details.View id={s.id!} Frame={Frame} />;
     case 'swap': return <swap.View id={s.id!} Frame={Frame} />;
-    // PP-C commit 0 deleted the Add sheet; until c1's Find (views/find/) lands, Find opens the Paste
-    // sheet, the other way to add plants by name, so no opener leads to an empty modal.
-    case 'find': return <paste.View Frame={Frame} />;
+    case 'find': return <find.View Frame={Frame} />;
     case 'paste': return <paste.View Frame={Frame} />;
     case 'place': return <PlaceSheet Frame={Frame} />;
     default: return null;
@@ -115,15 +116,24 @@ function Router() {
   return <Opening key={`${s.kind}:${s.n}`} s={s} />;
 }
 
-// The ways into Find the palette page shows (PP-C commit 0, slices 3.2; boards Palette, Empty,
-// FindDesk): "Add plants" right of the palette's title at 1280 (`head`), the phone's bottom bar with
-// "Add plants" (`bar`; hidden while a sheet is open) and the empty palette's first row, "Find plants"
-// (`empty`). Mount points the palette page renders; c1 (which owns this file and views/find/) fills
-// them, each opening Find through store.openFind(), so the palette page's files never change for
-// them. Empty until then. The bar's height is --ct-bar-room (details.css).
+// The ways into Find the palette page shows (PP-C c1, slices 3.2; boards Palette, Empty, FindDesk):
+// "Add plants" right of the palette's title from 640 px (`head`), the phone's bottom bar with "Add
+// plants" (`bar`, under 640 px; hidden while a sheet is open, the sheet's foot holding its toasts) and
+// the empty palette's first row, "Find plants" (`empty`). Each opens Find through store.openFind().
+// The bar's height is --ct-bar-room (find.css sets it while the bar shows; details.css reads it for
+// the toast offset, the root padding and scroll-padding-bottom).
 export type FindEntryPlace = 'head' | 'bar' | 'empty';
-export function FindEntry(_: { where: FindEntryPlace }) {
-  return null;
+export function FindEntry({ where }: { where: FindEntryPlace }) {
+  const open = () => store.openFind();
+  if (where === 'bar') {
+    return (
+      <div class="ct-bar ct-find-phonebar" hidden={!!store.sheet.value}>
+        <button type="button" class="button button-primary" data-find-entry="bar" onClick={open}>{T('find.title')}</button>
+      </div>
+    );
+  }
+  if (where === 'head') return <button type="button" class="button button-secondary ct-find-head" data-find-entry="head" onClick={open}>{T('find.title')}</button>;
+  return <p class="ct-find-empty"><button type="button" class="button button-primary" data-find-entry="empty" onClick={open}>{T('find.findPlants')}</button></p>;
 }
 
 export function Sheets() {

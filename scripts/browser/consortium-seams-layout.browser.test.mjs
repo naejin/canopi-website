@@ -12,9 +12,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, layoutVariants, en, findAx, has, settled } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openFind, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
+import { everyPlant, esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openFind, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
-import { failing } from '../expect-fail.mjs';
 
 useHarness();
 
@@ -33,6 +32,9 @@ test('W6: on a phone, primary controls are at least 40 px tall, inline secondary
     if (await has(page, later, 300)) await page.locator(later).click().catch(() => {});
   }
   assert.ok(seen.has('chip') && seen.has(en['consortium.palette.later']) && seen.has(en['consortium.palette.showTable']), `the palette page's controls were measured (${[...seen].slice(0, 12)})`);
+  // Centred first: puppeteer clicks a control in view where it is, and at the window's foot the phone's
+  // bottom bar ("Add plants", fixed, PP-C c1) lies over it, as over any page content scrolled there.
+  await page.$eval('#ct-root .ct-chart button[data-plant-id]', (b) => b.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await page.locator('#ct-root .ct-chart button[data-plant-id]').click();
   assert.ok(await findAx(page, { role: 'dialog' }), 'a plant\'s dialog');
   bad.push(...small(await controls(page, true)).map((s) => `details: ${s}`));
@@ -105,9 +107,9 @@ test('W8, W9, X4: bold is 600, CJK headings keep words whole, sheet and page cla
 // P5 walk-through 2, N1 (data loss since P2): the Undo toast sat over the Add sheet's "Add N plants"
 // when a search left few rows, so the click undid the last add and added nothing. A toast never
 // covers a control: in a sheet it sits in the sheet's foot above the action bar, never over it.
-// PP-C commit 0: the Add sheet is gone; written against Find (its search, "Select several" ticks and
-// "Add N plants": c1's contract in consortium-pp-c1.browser.test.mjs), failing until c1 builds it.
-failing('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px); owner c1: Find replaces the Add sheet', { owner: 'c1', reason: /no Find sheet \(dialog\.ct-find\)/ }, async () => {
+// Written against Find (its search, "Select several" ticks and "Add N plants": c1's contract in
+// consortium-pp-c1.browser.test.mjs), which replaced the Add sheet.
+test('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px); owner c1: Find replaces the Add sheet', async () => {
   const plants = await temperate();
   for (const width of [320, 390, 700, 960, 1280]) {
     const page = await suggested({ width, theme: 'light', hook: true });
@@ -125,7 +127,7 @@ failing('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" n
       await openFind(page);
       // Find is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
       assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)');
-      if (!await page.$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]')) await page.click('dialog.ct-find[open] [data-find-select]');
+      if (!await page.$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]')) { await everyPlant(page); await page.click('dialog.ct-find[open] [data-find-select]'); }
       while (candidates.length) {
         const p = candidates.shift();
         await page.$eval('dialog.ct-find[open] [data-find-search]', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
@@ -155,8 +157,19 @@ failing('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" n
         const r = btn.getBoundingClientRect();
         const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         const meets = (x, y) => x.left < y.right && y.left < x.right && x.top < y.bottom && y.top < x.bottom;
+        // The part of a control the reader sees: its box clipped by every scrolling box around it (a
+        // result scrolled out of Find's body is not under the toast, it is out of view).
+        const seen = (el) => {
+          let r = el.getBoundingClientRect(), top = r.top, bottom = r.bottom, left = r.left, right = r.right;
+          for (let p = el.parentElement; p && p !== d.parentElement; p = p.parentElement) {
+            if (getComputedStyle(p).overflowY === 'visible') continue;
+            const c = p.getBoundingClientRect();
+            top = Math.max(top, c.top); bottom = Math.min(bottom, c.bottom); left = Math.max(left, c.left); right = Math.min(right, c.right);
+          }
+          return { top, bottom, left, right };
+        };
         const under = [...d.querySelectorAll('button, input, a[href], select, textarea')]
-          .filter((el) => !el.closest('.ct-toast') && el.getClientRects().length && meets(el.getBoundingClientRect(), toast))
+          .filter((el) => { if (el.closest('.ct-toast') || !el.getClientRects().length) return false; const v = seen(el); return v.top < v.bottom && v.left < v.right && meets(v, toast); })
           .map((el) => (el.getAttribute('aria-label') || el.textContent).trim().slice(0, 40));
         return { onButton: btn.contains(hit), hit: hit?.className ?? null, under };
       });
@@ -335,11 +348,12 @@ test('Layout stability (N2, late fonts): when the web fonts arrive after the fir
 // bottom, so the sheet keeps that much scroll padding: a control tabbed to near the end is shown above
 // the foot, and the foot's empty area beside the toast passes clicks through.
 // PP-C commit 0: as N1, written against Find.
-failing('Walk-through 2 N1 (review): with a toast in Find, the last controls tabbed to are fully visible above the foot and clickable (390 × 600); owner c1: Find replaces the Add sheet', { owner: 'c1', reason: /no Find sheet \(dialog\.ct-find\)/ }, async () => {
+test('Walk-through 2 N1 (review): with a toast in Find, the last controls tabbed to are fully visible above the foot and clickable (390 × 600); owner c1: Find replaces the Add sheet', async () => {
   const plants = await temperate();
   const page = await suggested({ width: 390, theme: 'light', hook: true });
   await openFind(page); // the store's opener, as in N1
-  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-select]', 15_000), 'no Find sheet (dialog.ct-find)'); // lazy chunk, as in N1
+  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)'); // lazy chunk, as in N1
+  await everyPlant(page); // the start lists no plant (K3)
   await page.click('dialog.ct-find[open] [data-find-select]');
   await page.click('dialog.ct-find[open] [data-find-row] input[type="checkbox"]');
   await page.click('dialog.ct-find[open] [data-find-bar] .button-primary');

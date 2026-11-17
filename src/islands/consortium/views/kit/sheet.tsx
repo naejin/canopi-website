@@ -18,17 +18,16 @@ import { countryName, spanWords } from './names.ts';
 // chunk whose first fetch failed would stay failed for the page's life (Chromium's module map), and
 // every sheet with it. So a sheet chunk imports first-run modules only, already loaded. An object, not
 // re-exports: Rollup places a module by the code that reaches it, and a re-export or a bare import
-// leaves it in a chunk of its own (1.2 KB gzip moved to the first run). The search (data/search.ts
-// searchIndex and fold, which Paste imports, and Find from c1) is held here since PP-B commit 0a'
-// deleted Start's crop search, which had kept it in the first run; Object.freeze keeps every property
-// (Rollup drops the properties of a plain object literal that no module reads, and the sheets read the
-// search from its module, not from here), so check-built-site's K3 rule finds no sheet chunk importing
-// it. Add's list query went with Add (PP-C commit 0, slices 3.2).
+// leaves it in a chunk of its own (1.2 KB gzip moved to the first run). Object.freeze keeps every
+// property (Rollup drops the properties of a plain object literal that no module reads, and the sheets
+// read these from their modules, not from here), so check-built-site's K3 rule finds no sheet chunk
+// importing them. The search (data/search.ts and core fold.ts) is not here: Find and Paste are one
+// chunk (views/find/, PP-C c1), the only readers of it, so it ships with them and never in the first
+// run (design check c1 6.2).
 import { flagLines, unknownWords } from './flags.ts';
-import { fold, searchIndex } from '../../data/search.ts';
 // The fit line (kit/fit.tsx), read by the sheets and the palette page (inform, don't block; owner 2026-11-14).
 import { FitLine } from './fit.tsx';
-export const shared = Object.freeze({ flagLines, unknownWords, searchIndex, fold, FitLine });
+export const shared = Object.freeze({ flagLines, unknownWords, FitLine });
 
 export { BACK, WARN } from './icons.tsx';
 
@@ -47,7 +46,7 @@ export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number;
 // ctx: the store's flag context (store.flagContext).
 export function NotChecked({ ctx }: { ctx: { country?: string | null; countryStatus?: string } }) {
   if (ctx.countryStatus !== 'unchecked' || !ctx.country) return null;
-  return <p class="ct-note">{T('add.notChecked', { country: countryName(ctx.country) })}</p>;
+  return <p class="ct-note">{T('find.notChecked', { country: countryName(ctx.country) })}</p>;
 }
 
 // A sheet: a modal <dialog>, a side sheet on desktop and full screen on phones, opened once per

@@ -16,6 +16,7 @@ export interface PageData {
   strings: Strings;
   releaseId: string;
   db: DbRef;
+  names?: DbRef | null; // schema 4's search names file (data/names-file.ts), null before schema 4
   climates: string[]; // site ids, lowercase ('tropical'), in the export's order
   images: Record<string, string>; // plant uuid → self-hosted photo path
   countries?: { checked: string; unchecked: string; zones?: Record<string, string> }; // space-separated ISO codes (store.knownCountries); each country's time zones (store.zonesOfCountry)

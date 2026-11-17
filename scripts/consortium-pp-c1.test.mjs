@@ -7,27 +7,24 @@
 // The contract these cases propose (c1 may rename within its chunk, keeping the cases):
 //   find-query.ts  findGroups(taxa, verdicts, warned) -> { fits, look, outside, unchecked } (Taxon[] each);
 //                  applyFilters(taxa, filters, ctx) -> { rows, unknown: Record<filterId, number> };
-//                  jobsMatching(query, lang) -> JobId[] (a job word of the page's locale finds its job).
+//                  jobsMatching(query, wordsOf) -> JobId[] (a job word of the page's locale finds its job;
+//                  wordsOf(job): the job's words in that locale, rules importing the core only).
 //   search.ts      releaseIndex({ names, plants, lang }) -> (query) => FindHit[], where a FindHit is
-//                  { id, tier: 'site' | 'scientific' | 'other', why: { kind, text, lang?, match }, shared }
-//                  (match: 'exact' | 'prefix' | 'tokens' | 'alternate', the site tier's order; shared:
-//                  how many other plants use that name), hits in tier order, then match order; namesFor(fileHeader, page) -> boolean
-//                  (false drops the names file: release_id or core_raw_sha256 differs); listsOf(id, lists);
-//                  oneOff(a, b) moved here from views/paste.ts; namesLine(fileLangs) -> Line;
-//   views/paste.ts readPaste(names, { here, others, members, index }) matches through index (a
+//                  { id, tier: 'site' | 'scientific' | 'other', why: { kind, text, lang?, match } }
+//                  (match: 'exact' | 'prefix' | 'tokens' | 'alternate', the site tier's order), hits in
+//                  tier order, then match order; namesFor(fileHeader, page) -> boolean
+//                  (false drops the names file: release_id or core_raw_sha256 differs);
+//                  oneOff(a, b) moved here from views/paste.ts (now views/find/paste.ts); namesLine(fileLangs) -> Line;
+//   views/find/paste.ts readPaste(names, { here, others, members, index }) matches through index (a
 //                  releaseIndex), so a pasted synonym or names-file name is found as Find finds it.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { failing } from './expect-fail.mjs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
-const { fold, jobIds } = await import('../src/lib/consortium/index.ts');
+const { fold, jobIds, queryTokens } = await import('../src/lib/consortium/index.ts');
 const words = Object.fromEntries(readdirSync(new URL('../src/i18n/translations/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(`../src/i18n/translations/${f}`, import.meta.url), 'utf8'))]));
-// The module c1 adds, through a variable so knip does not count a commit-0 import as unresolved.
-const FIND_QUERY = new URL('../src/islands/consortium/rules/find-query.ts', import.meta.url).href;
-const findQuery = () => import(FIND_QUERY);
-const NO_FIND_QUERY = /Cannot find module .*find-query\.ts/;
+const findQuery = () => import('../src/islands/consortium/rules/find-query.ts');
 const search = () => import('../src/islands/consortium/data/search.ts');
 
 const id = (n) => `00000000-c1c1-4000-8000-${String(n).padStart(12, '0')}`;
@@ -39,7 +36,7 @@ test('PP-C c1 unit file (commit 0): the job words it reads exist in all 11 local
   for (const [lang, w] of Object.entries(words)) for (const job of jobIds) assert.ok(w[`consortium.job.${job}`], `${lang}: consortium.job.${job}`);
 });
 
-failing('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (level look, or a toxic or invasive warning), outside its range and not checked', { owner: 'c1', reason: NO_FIND_QUERY }, async () => {
+test('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (level look, or a toxic or invasive warning), outside its range and not checked', async () => {
   const { findGroups } = await findQuery();
   const taxa = [plant(1), plant(2), plant(3), plant(4), plant(5)];
   const verdicts = new Map([[id(1), V('fits')], [id(2), V('look')], [id(3), V('outside')], [id(5), V('fits')]]);
@@ -50,19 +47,20 @@ failing('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (
   assert.deepEqual(g.unchecked.map((t) => t.id), [id(4)], 'no verdict: not checked, never a fit');
 });
 
-failing('PP-C-u2 (c1 find-query filters): every filter returns the count of plants it could not judge, and hides none of them silently', { owner: 'c1', reason: NO_FIND_QUERY }, async () => {
+test('PP-C-u2 (c1 find-query filters): every filter returns the count of plants it could not judge, and hides none of them silently', async () => {
   const { applyFilters } = await findQuery();
   const taxa = [plant(1, { traits: { edibility_rating: 4 } }), plant(2, { traits: { edibility_rating: 0 } }), plant(3, { traits: {} })];
-  const { rows, unknown } = applyFilters(taxa, { edible: true }, { climate: 'Temperate' });
+  const { rows, unknown } = applyFilters(taxa, { edible: true }, {});
   assert.deepEqual(rows.map((t) => t.id), [id(1)]);
   assert.equal(unknown.edible, 1, 'the plant with no edibility recorded is counted');
 });
 
-failing('PP-C-u3 (c1 find-query jobs): a job word in each of the 11 locales finds its job', { owner: 'c1', reason: NO_FIND_QUERY }, async () => {
+test('PP-C-u3 (c1 find-query jobs): a job word in each of the 11 locales finds its job', async () => {
   const { jobsMatching } = await findQuery();
   for (const [lang, w] of Object.entries(words)) for (const job of jobIds) {
     const word = w[`consortium.job.${job}`];
-    assert.ok(jobsMatching(word, lang).includes(job), `${lang}: "${word}" finds ${job}`);
+    // The job's words in the page's language, as Find hands them (rules import the core only).
+    assert.ok(jobsMatching(word, (j) => [w[`consortium.job.${j}`]]).includes(job), `${lang}: "${word}" finds ${job}`);
   }
 });
 
@@ -80,7 +78,7 @@ const NAMES = [
   { id: id(8), canonical: 'Plantus octavus', names: { en: 'Winged vine' }, other: [{ lang: 'en', text: 'Yam' }], synonyms: [] },
 ];
 
-failing('PP-C-u4 (c1 search tiers): site-language names first (exact, prefix, all tokens, alternates), then scientific names and synonyms, then other languages labelled with their language; each hit says why it matched', { owner: 'c1', reason: /releaseIndex is not a function/ }, async () => {
+test('PP-C-u4 (c1 search tiers): site-language names first (exact, prefix, all tokens, alternates), then scientific names and synonyms, then other languages labelled with their language; each hit says why it matched', async () => {
   const { releaseIndex } = await search();
   const find = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' });
   // The tiers in order, whatever the match within each: a site name's prefix before a scientific
@@ -103,11 +101,14 @@ failing('PP-C-u4 (c1 search tiers): site-language names first (exact, prefix, al
   assert.equal(find('tomato')[0].tier, 'site');
 });
 
-failing('PP-C-u5 (c1 search shared names): a name shared by several plants says so ("also used for N other plants")', { owner: 'c1', reason: /releaseIndex is not a function/ }, async () => {
-  const { releaseIndex } = await search();
+// c1r3 T17 (coordinator 2026-11-17): the "also used for N other plants" line is gone (not on the
+// boards); a shared name finds each plant that carries it, its row told apart by its scientific name.
+test('PP-C-u5 (c1 search shared names): a name shared by several plants finds each of them, with no shared-name line', async () => {
+  const { releaseIndex, whyLines } = await search();
   const hits = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('yam');
-  const dioscorea = hits.find((h) => h.id === id(3));
-  assert.equal(dioscorea?.shared, 2, '"Yam" is also used for 2 other plants');
+  const yams = hits.filter((h) => h.why.kind === 'name' && h.why.text === 'Yam');
+  assert.deepEqual(yams.map((h) => h.id).sort(), [id(3), id(4)], '"Yam" finds both plants named so');
+  assert.ok(yams.every((h) => whyLines(h).length === 0), 'no "also used for" line');
 });
 
 // Normalization v1 as is (canopi-types; coordinator row 2026-11-17: some matches change to match the
@@ -128,17 +129,21 @@ test('PP-C c1 unit file (commit 0): the v1 corpus is the pinned canopi-types fil
   assert.ok(v1.corpus.length > 0 && v1.corpus.some((c) => UNICODE_15_GAP.has(c.name)), 'the gap case is in the corpus');
 });
 
-failing('PP-C-u6 (c1 normalization v1): native NFKD, marks off, the two case folds, the v1 corpus run (the Unicode-15 gap documented): 배 is a prefix of 백합, ばら equals はら, Cœur no longer equals coeur', { owner: 'c1', reason: /v1: 배 is a prefix of 백합/ }, () => {
+test('PP-C-u6 (c1 normalization v1): native NFKD, marks off, the two case folds, the v1 corpus run, fold and query admission (the Unicode-15 gap documented): 배 is a prefix of 백합, ばら equals はら, Cœur no longer equals coeur', () => {
   assert.ok(fold('백합').startsWith(fold('배')), 'v1: 배 is a prefix of 백합 (NFKD keeps the jamo apart)');
   assert.equal(fold('ばら'), fold('はら'), 'v1: kana voicing is a mark, folded off');
   assert.notEqual(fold('Cœur'), fold('coeur'), 'v1: œ is not written out');
   for (const c of JSON.parse(V1).corpus) {
     if (UNICODE_15_GAP.has(c.name)) continue;
     assert.equal(fold(c.input), c.normalized_text, `v1 corpus "${c.name}"`);
+    // The query side too (fix round 1, A12): v1's admission and query tokens.
+    const q = queryTokens(c.input);
+    assert.equal(q.admission, c.admission, `v1 corpus "${c.name}": admission`);
+    assert.deepEqual(q.tokens, c.query_tokens, `v1 corpus "${c.name}": query_tokens`);
   }
 });
 
-failing('PP-C-u7 (c1 names file 4.4): a names file whose release_id or core_raw_sha256 differs from the page\'s db is dropped, never mapped onto the wrong integers', { owner: 'c1', reason: /namesFor is not a function/ }, async () => {
+test('PP-C-u7 (c1 names file 4.4): a names file whose release_id or core_raw_sha256 differs from the page\'s db is dropped, never mapped onto the wrong integers', async () => {
   const { namesFor } = await search();
   const page = { release_id: 'r-c15a216b9663d2fa', core_raw_sha256: 'a'.repeat(64) };
   assert.equal(namesFor({ ...page }, page), true);
@@ -146,18 +151,13 @@ failing('PP-C-u7 (c1 names file 4.4): a names file whose release_id or core_raw_
   assert.equal(namesFor({ ...page, core_raw_sha256: '0'.repeat(64) }, page), false);
 });
 
-failing('PP-C-u8 (c1 hit outside the list 4.8): a hit on a plant outside the current list names the lists that hold it', { owner: 'c1', reason: /listsOf is not a function/ }, async () => {
-  const { listsOf } = await search();
-  assert.deepEqual(listsOf(id(1), { Tropical: [id(1)], Subtropical: [id(1), id(2)], Temperate: [id(2)] }), ['Subtropical', 'Tropical']);
-});
-
-failing('PP-C-u9 (c1 one search module): Paste matches through it, synonyms included; oneOff gives the close spellings; the names line counts the languages the file holds, never "11 languages"', { owner: 'c1', reason: /oneOff is not a function/ }, async () => {
+test('PP-C-u9 (c1 one search module): Paste matches through it, synonyms included; oneOff gives the close spellings; the names line counts the languages the file holds, never "11 languages"', async () => {
   const { oneOff, namesLine, releaseIndex } = await search();
   assert.equal(oneOff('tomatoe', 'tomato'), true);
   assert.equal(oneOff('okra', 'kale'), false);
   // Paste reads through the search module: a pasted synonym and a names-file name are found as Find
   // finds them, and Paste keeps no matcher of its own.
-  const paste = await import('../src/islands/consortium/views/paste.ts');
+  const paste = await import('../src/islands/consortium/views/find/paste.ts');
   assert.equal('oneOff' in paste, false, 'oneOff lives in data/search.ts only');
   const index = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' });
   const here = NAMES.map((n) => ({ id: n.id, canonical_name: n.canonical, names: n.names }));
@@ -166,4 +166,127 @@ failing('PP-C-u9 (c1 one search module): Paste matches through it, synonyms incl
   const line = namesLine(['en', 'fr', 'de']);
   assert.equal(line.vars?.n, 3, 'the languages the file holds');
   assert.ok(!/\b11\b/.test(JSON.stringify(line)), 'never "11 languages"');
+});
+
+// Fix round 1 (A13): "Holds by" names its period, never writes it in.
+test('PP-C c1 fix A13: "Holds by" names its period as a variable in all 11 locales', () => {
+  for (const [lang, w] of Object.entries(words)) {
+    assert.match(w['consortium.find.holds'], /\{period\}/, `${lang}: the period is a variable`);
+    assert.doesNotMatch(w['consortium.find.holds'], /2041/, `${lang}: no period written in`);
+  }
+});
+
+test('PP-C c1 fix A5: why a row matched (whyLines, the one owner of those words)', async () => {
+  const { releaseIndex, whyLines } = await search();
+  const tomato = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('tomato')[0];
+  assert.deepEqual(whyLines(tomato), [], 'its own unshared name needs no why line');
+  const gombo = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('gombo').find((h) => h.id === id(1));
+  assert.deepEqual(whyLines(gombo).map((l) => [l.key, l.vars.lang, l.vars.name]), [['consortium.find.why.lang', 'fr', 'Gombo']], 'a name in another language, its language code for the view to name');
+});
+
+test('PP-C c1 fix A6: one warned rule for every add in Find and Paste (in-list, "Add from {list}", pasted): invasive, toxic, a site misfit or a serious conflict', async () => {
+  const { addsWithWarning } = await findQuery();
+  const f = (kind, over = {}) => ({ id: id(1), kind, ...over });
+  assert.equal(addsWithWarning([]), false);
+  for (const flags of [[f('invasive')], [f('toxicity')], [f('misfit')], [f('conflict', { severity: 'high' })]]) assert.equal(addsWithWarning(flags), true, flags[0].kind);
+  assert.equal(addsWithWarning([f('conflict', { severity: 'low' })]), false, 'a low conflict is no warning on add');
+});
+
+test('PP-C c1 fix A3: a hide filter says how many it hid, beside how many it could not judge (kept)', async () => {
+  const { applyFilters } = await findQuery();
+  const tox = (level) => ({ warnings: { toxicity: level === null ? null : { level } } });
+  const taxa = [plant(1, tox('Moderate')), plant(2, tox('Slight')), plant(3, tox('None')), plant(4, tox(null))];
+  const r = applyFilters(taxa, { hideToxic: true }, { toxic: (t) => (t.warnings.toxicity ? t.warnings.toxicity.level !== 'None' : null) });
+  assert.deepEqual(r.rows.map((t) => t.id), [id(3), id(4)], 'the unrecorded plant stays');
+  assert.equal(r.hidden.toxic, 2, '2 hidden as toxic');
+  assert.equal(r.unknown.toxic, 1, '1 not recorded, still shown');
+});
+
+test('PP-C c1 fix B2: best first: the open holes a plant fills, then how long it stays in its range, then the order it came in', async () => {
+  const { bestFirst } = await findQuery();
+  const taxa = [plant(1), plant(2), plant(3), plant(4)];
+  const filled = new Map([[id(1), 0], [id(2), 2], [id(3), 0], [id(4), 2]]);
+  const stay = new Map([[id(1), 2], [id(2), 0], [id(3), 0], [id(4), 1]]);
+  assert.deepEqual(bestFirst(taxa, filled, stay).map((t) => t.id), [id(4), id(2), id(1), id(3)]);
+});
+
+test('PP-C c1 fix B14: oneOff catches one letter missing, extra, wrong or two letters swapped, from 4 letters', async () => {
+  const { oneOff } = await search();
+  for (const [a, b] of [['aple', 'apple'], ['chesnut', 'chestnut'], ['avacado', 'avocado'], ['chrery', 'cherry']]) assert.equal(oneOff(a, b), true, `${a} ~ ${b}`);
+  assert.equal(oneOff('okra', 'kale'), false);
+  assert.equal(oneOff('chrrey', 'cherry'), false, 'two edits');
+});
+
+test('PP-C c1 fix round 2 K5: a one-word slip finds a plant by one word of its name ("chesnut": European chestnut)', async () => {
+  const { releaseIndex } = await search();
+  const names = [{ id: id(1), canonical: 'Castanea sativa', names: { en: 'European chestnut' }, other: [], synonyms: [] }, { id: id(2), canonical: 'Malus domestica', names: { en: 'Apple' }, other: [], synonyms: [] }];
+  const find = releaseIndex({ names, plants: names.map((n) => n.id), lang: 'en' });
+  assert.deepEqual(find.close('chesnut', true).map((h) => h.id), [id(1)]);
+  assert.deepEqual(find.close('european chesnut', true).map((h) => h.id), [id(1)], 'the whole name one slip off');
+  assert.deepEqual(find.close('okra', true), []);
+  assert.deepEqual(find.close('chesnut'), [], 'Paste reads a line as a whole name');
+});
+
+test('PP-C c1 fix round 2 K2: best first breaks ties by the years in range, then well inside before near the edge', async () => {
+  const { bestFirst, wellInside } = await findQuery();
+  const taxa = [plant(1), plant(2), plant(3)];
+  const stay = new Map([[id(1), 1], [id(2), 1], [id(3), 2]]);
+  const edge = { level: 'fits', factors: [{ confidence: { term: 'edge' } }] }, inside = { level: 'fits', factors: [] };
+  const firm = new Map([[id(1), wellInside(edge) ? 1 : 0], [id(2), wellInside(inside) ? 1 : 0], [id(3), 0]]);
+  assert.deepEqual(bestFirst(taxa, new Map(), stay, firm).map((t) => t.id), [id(3), id(2), id(1)]);
+});
+
+// c1r3 T4 (review c1r3-05): before the core's names are in, Find has no search (it says "Searching…",
+// never the whole list); a failed load is said (finderFailed) and the next want tries again.
+test('c1r3 T4: no search before the core names; a failure is said and retried', async () => {
+  const { wantNames, finder, finderFailed } = await import('../src/islands/consortium/views/find/names.ts');
+  let fail;
+  const source = { names: () => new Promise((_, reject) => { fail = reject; }) };
+  wantNames(source, 'en');
+  assert.equal(finder.value, null, 'no search yet');
+  assert.equal(finderFailed.value, false);
+  fail(new Error('offline'));
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(finderFailed.value, true, 'the failure is said');
+  source.names = async () => [{ id: id(1), plant: 1, canonical: 'Malus domestica', names: { en: 'Apple' }, lists: ['Temperate'] }];
+  wantNames(source, 'en');
+  assert.equal(finderFailed.value, false, 'tried again');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(finder.value('apple').map((h) => h.id), [id(1)], 'then the search works');
+});
+
+// c1r3 T7 (Chrome K2): ties left after the years and the fit read best first, never A to Z: the fewest
+// warnings, then the most jobs.
+test('c1r3 T7: best first breaks the ties left by the fewest warnings, then the most jobs', async () => {
+  const { bestFirst } = await findQuery();
+  const fn = (...f) => f.map((x) => ({ function: x }));
+  const taxa = [plant(1, { functions: fn('mulch') }), plant(2, { functions: fn('mulch', 'windbreak', 'insectary') }), plant(3, { functions: fn('mulch', 'windbreak') }), plant(4, { functions: fn('mulch', 'windbreak', 'insectary') })];
+  const warnings = new Map([[id(4), 1]]);
+  assert.deepEqual(bestFirst(taxa, new Map(), new Map(), new Map(), warnings).map((t) => t.id), [id(2), id(3), id(1), id(4)]);
+});
+
+test('PP-C c1 fix round 2 K9: "When it stands" keeps the plants standing in those years; a plant with no placement is counted, not hidden silently', async () => {
+  const { applyFilters } = await findQuery();
+  const at = (start, end) => ({ phases: { start, end, sources: [] } });
+  const taxa = [plant(1, at('placenta_i', 'placenta_ii')), plant(2, at('placenta_iii', 'secondary_i')), plant(3, at('secondary_ii', 'climax')), plant(4, { phases: null })];
+  const r = (stands) => applyFilters(taxa, { stands }, {});
+  assert.deepEqual(r(['first']).rows.map((t) => t.id), [id(1)], 'the first year');
+  assert.deepEqual(r(['early']).rows.map((t) => t.id), [id(2)], 'years 1 to 15');
+  assert.deepEqual(r(['late']).rows.map((t) => t.id), [id(3)], '15 years on');
+  assert.deepEqual(r(['first', 'late']).rows.map((t) => t.id), [id(1), id(3)]);
+  assert.equal(r(['first']).unknown.stands, 1, 'no placement: not recorded');
+});
+
+test('PP-C c1 fix round 2 K9: "Holds by" each period ticked; repeats, no size and toxic hide only what is recorded', async () => {
+  const { applyFilters } = await findQuery();
+  const taxa = [plant(1), plant(2), plant(3)];
+  const holds = (t, p) => (t.id === id(3) ? null : t.id === id(1) || p === '2041-2070');
+  const keep = (f, ctx = {}) => applyFilters(taxa, f, ctx).rows.map((t) => t.id);
+  assert.deepEqual(keep({ holds: ['2041-2070'] }, { holds }), [id(1), id(2)]);
+  assert.deepEqual(keep({ holds: ['2041-2070', '2071-2099'] }, { holds }), [id(1)], 'every period ticked');
+  assert.equal(applyFilters(taxa, { holds: ['2041-2070'] }, { holds }).unknown.holds, 1);
+  const repeats = (t) => (t.id === id(1) ? true : t.id === id(2) ? false : null);
+  assert.deepEqual(keep({ hideRepeats: true }, { repeats }), [id(2), id(3)], 'a plant with no job recorded stays');
+  const sized = [plant(1, { traits: { height_m: { max: 3 } } }), plant(2)];
+  assert.deepEqual(applyFilters(sized, { hideNoSize: true }, {}).rows.map((t) => t.id), [id(1)]);
 });

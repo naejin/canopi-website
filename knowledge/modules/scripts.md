@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:51:58Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:51:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T17:29:01Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:eca1385faedce843
-    last_modified: 2026-11-17T10:51:15Z
+    digest: sha256:5b7e9d15838db507
+    last_modified: 2026-11-17T17:28:25Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -44,12 +44,12 @@ sources:
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:0182599bf26892d7
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
     digest: sha256:765bd5c1dab1b6c2
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: font-fallback-metrics-mjs
     resource: ../../scripts/font-fallback-metrics.mjs
     title: scripts/font-fallback-metrics.mjs
@@ -74,7 +74,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -104,17 +104,17 @@ sources:
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
     digest: sha256:90184f3e6a1390d1
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
     digest: sha256:604335703ffbcbeb
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
     digest: sha256:a948fe5c4c08ecbe
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
 ---
 
 # Responsibility

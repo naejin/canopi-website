@@ -50,9 +50,8 @@ export async function suggested(v, { room = null, light = null } = {}) {
 // The members shown, as plant ids: the palette page's picture chips carry data-plant-id (the Next
 // step's fillers carry it too, but they are not members, so only the pictures are read).
 export const memberIds = (page) => page.$$eval('#ct-root .ct-chart [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))]);
-// Opens Find (PP-C commit 0 renamed the Add sheet's kind; c1 builds Find and retargets these helpers)
-// through "Add plants" when the page shows it (c1's mount points), else the store's one opener (the
-// page must be opened with hook: true).
+// Opens Find (c1) through "Add plants" when the page shows it (FindEntry beside the palette's title or
+// in the phone's bottom bar), else the store's one opener (the page must be opened with hook: true).
 export async function openFind(page) {
   if (await has(page, aria('button', 'Add plants'), 300)) return page.locator(aria('button', 'Add plants')).click();
   const ok = await page.waitForFunction(() => typeof window.__ctTest === 'object', { timeout: 20_000 }).then(() => true, () => false);
@@ -60,12 +59,18 @@ export async function openFind(page) {
   await page.evaluate(() => window.__ctTest.openFind());
 }
 
-// The Add sheet's own rows (not "In other lists"), every one (after "Show all N"); c1 retargets it onto
-// Find's results.
+// Find lists every plant (its fit choice "Every plant on the list", the outside plants unfolded): the
+// start lists none until the grower searches, picks a job or sets a filter (fix round 2, K3). A DOM
+// click, as the choice sits in the filters, behind "Filters" below 960 px.
+// None judged (c1r5 W2: no location, the verdicts refused), "Every plant" is already the choice: the
+// start's "Show N plants" lists the plants, as a grower does.
+export const everyPlant = (page) => page.$eval('dialog.ct-find[open] [data-filter="all"]', (e) => {
+  if (!e.checked) e.click(); else e.closest('dialog').querySelector('[data-find-list]')?.click();
+});
+// Find's own rows (its groups, not "In another climate's list"), every one, as scientific names.
 export async function addRows(page) {
-  const all = await page.$('.ct-add .ct-add-showall');
-  if (all) await all.click();
-  return page.$$eval('.ct-add .ct-sheet-body > ul.ct-rows > li .ct-sci', (els) => els.map((e) => e.textContent.trim()));
+  await everyPlant(page);
+  return page.$$eval('dialog.ct-find[open] [data-find-group] [data-find-row] .ct-sci', (els) => els.map((e) => e.textContent.trim()));
 }
 
 // The core's light rule (site.ts) in shade: a plant recorded as not taking full shade misfits; an
