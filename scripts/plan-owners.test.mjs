@@ -132,8 +132,8 @@ test('a stream diff outside its rows is named', () => {
 
 // PP-B commit 0 (plant-palette-slices section 1): the F1a markers are parked, moved or deleted, each
 // once; a parked or deleted one is no longer in the tree, a moved one is in its stream's file under
-// its new owner, and every entry points at its source line (PP-C commit 0 asserts the parked ones are
-// restored or deleted).
+// its new owner, and every entry points at its source line. PP-C commit 0 moved the PP-C entries (C6 in
+// two halves, one per stream file, so a moved id may appear twice with different owners and files).
 // The list itself was checked against the F1a source commit when it was written (it never changes);
 // what lasts is that no parked or deleted marker comes back and every moved one is still owned.
 test('parked markers: none parked or deleted is left in the tree; each moved one is still owned', async () => {
@@ -146,8 +146,32 @@ test('parked markers: none parked or deleted is left in the tree; each moved one
   for (const m of list.moved) {
     // Still a marker under its owner, or passing: its owner removed the marker in the commit that made
     // it pass, so it is a plain test with the same title in the same file.
-    const now = live.find((x) => x.title.startsWith(`${m.id} → PP-B (${m.owner} `));
-    const passing = !now && readFileSync(new URL(`../${m.to}`, import.meta.url), 'utf8').includes(`${m.id} → PP-B (${m.owner} `);
+    // PP-C commit 0 widened the check to the push each entry names (no push: PP-B, which moved first).
+    const head = `${m.id} → ${m.push ?? 'PP-B'} (${m.owner} `;
+    assert.match(`${m.push ?? 'PP-B'} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2))$/, m.id);
+    const now = live.find((x) => x.title.startsWith(head) && `scripts/${x.file}` === m.to);
+    const passing = !now && readFileSync(new URL(`../${m.to}`, import.meta.url), 'utf8').includes(head);
     assert.ok((now && `scripts/${now.file}` === m.to && now.owner === m.owner) || passing, `${m.id} moved to ${m.to} under ${m.owner}`);
   }
+});
+
+// PP-C commit 0 (slices section 0; review c0 1.3): every parked marker is restored or deleted. `parked`
+// is empty, and each restored one is in the file its owner restored it in (its phrase found there), no
+// longer a marker; an id is in one list only.
+test('parked markers: every parked marker is restored or deleted', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { markers } = await import('./expect-fail.mjs');
+  const list = JSON.parse(readFileSync(new URL('./plan/parked-markers.json', import.meta.url), 'utf8'));
+  assert.deepEqual(list.parked.map((m) => m.id), [], 'nothing left parked');
+  const live = markers();
+  for (const m of list.restored) {
+    assert.match(`${m.push} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2|pf))$/, m.id);
+    assert.ok(readFileSync(new URL(`../${m.to}`, import.meta.url), 'utf8').includes(m.evidence), `${m.id} restored in ${m.to} ("${m.evidence}")`);
+    assert.ok(!live.some((x) => x.title.startsWith(`${m.id} `)), `${m.id}: no marker left under its old title`);
+    // ... nor under its new one (review c0 round 2, 4c): a restored test is a plain test.
+    assert.ok(!live.some((x) => x.title.includes(m.evidence)), `${m.id}: no marker titled with "${m.evidence}"`);
+  }
+  // An id and its source file name one marker (F1a-P10 was two: a browser case and a unit case).
+  const ids = [...list.restored, ...list.deleted].map((m) => `${m.id} ${m.file}`);
+  assert.equal(new Set(ids).size, ids.length, 'a marker in one list only');
 });

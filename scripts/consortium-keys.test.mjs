@@ -5,6 +5,7 @@
 // by ConsortiumPage.astro. The same holds for the site-wide correction.* keys the island's form uses.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { failing } from './expect-fail.mjs';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -141,4 +142,19 @@ test('parsePlotSize: whole square metres 1 to MAX_PLOT_M2 in the language\'s sep
   for (const [text, lang, want] of cases) assert.equal(parsePlotSize(text, lang), want, `${JSON.stringify(text)} in ${lang}`);
   const src = readFileSync(join(root, 'islands/consortium/format.ts'), 'utf8');
   assert.match(src, new RegExp(`const MAX_PLOT_M2 = ${MAX_PLOT_M2.toLocaleString('en').replace(/,/g, '_')};`), 'format.ts pins the core MAX_PLOT_M2');
+});
+
+// PP-C commit 0 (slices 3.2; replaces the cross-stream "every line comes from verdict-line" test): the
+// verdict, hole and year words (consortium.line.*) are chosen in core verdict-line.ts only; a view
+// says the Line it is given (views/kit/fit.tsx say, which strips the prefix and writes `line.${name}`
+// as a template). So no other file of the island or the core writes "consortium.line." or asks T or P
+// for a named 'line.…' key. Today kit/fit.tsx FitLine builds `consortium.line.${level}` itself for a
+// plant with no verdict; c2 moves that line into verdict-line.ts (owner c2).
+const sources = (dir) => readdirSync(join(root, dir), { recursive: true }).filter((f) => /\.(ts|tsx)$/.test(f)).map((f) => [`${dir}/${f}`, readFileSync(join(root, dir, f), 'utf8')]);
+failing('PP-C0-keys (policy, c2): no consortium.line. key is written outside core verdict-line.ts', { owner: 'c2', reason: /islands\/consortium\/views\/kit\/fit\.tsx/ }, () => {
+  const stray = [...sources('islands/consortium'), ...sources('lib/consortium')]
+    .filter(([f]) => f !== 'lib/consortium/verdict-line.ts')
+    .filter(([, src]) => src.includes('consortium.line.') || /\b[TP]\(\s*['"`]line\.\w/.test(src))
+    .map(([f]) => f);
+  assert.deepEqual(stray, [], `consortium.line.* keys written outside verdict-line.ts: ${stray.join(', ')}`);
 });

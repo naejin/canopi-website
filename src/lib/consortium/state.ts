@@ -22,9 +22,9 @@
 // read up to its first "." and unknown words → unsure, s segments after the third ignored, an unknown
 // pH or texture → "-", y → today with LinkNotice.period); 3. a key whose absence would change a
 // verdict needs a bump or a place in the requires key `u=<comma list>`: a key listed there this
-// decoder does not know gives the "newer" notice, plants restored; 4. only v1–v4 are "older" (nothing
-// restored; owner 2026-11-14: no migration). Reserved letters: n, p and t (v4's Main crops, Kept and
-// stage) take no new meaning by accident; u is the requires key.
+// decoder does not know gives the "newer" notice, plants restored; 4. a version below 5 (the old beta
+// tool) is read as any unreadable link (owner 2026-11-17: no backward compatibility work). u is the
+// requires key.
 //
 // Ids. A token is the id's first 36 bits (9 hex digits, dashes aside) in 6 base64url characters, with
 // nothing between tokens. When another id the encoder knows shares those 36 bits, the id is written
@@ -47,8 +47,8 @@ export const END_KEY = 'e';
 export const GUEST_CODES: Record<ClimateZone, string> = { Tropical: 'tr', Subtropical: 'su', Arid: 'ar', Mediterranean: 'me', Temperate: 'te', Continental: 'co', Boreal: 'bo' };
 // The plot size a link and the save accept, whole square metres (8.1 `z`).
 export const MAX_PLOT_M2 = 1_000_000;
-// The keys this decoder knows (a key listed in `u=` and not here gives the "newer" notice). The
-// reserved letters n, p, t are not among them: v5 never writes them and ignores them.
+// The keys this decoder knows (a key listed in `u=` and not here gives the "newer" notice); any other
+// key (n, p and t included) is ignored.
 export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'o', 'l', 'w', 'q', 'r', 'h', 's', 'u', END_KEY] as const;
 // The private keys, written only with "Include my place" (encodePlace), in this order.
 export const PLACE_KEYS = ['k', 'o', 'l', 'w', 'q', 'r', 'h', 's'] as const;
@@ -138,17 +138,18 @@ const originText = (o: LinkOrigin): string | null => {
   return c ? `${c.lat.toFixed(2)},${c.lon.toFixed(2)}` : null;
 };
 
-// Where a link version stands against this decoder (8.2), from `v` alone: 'current' (5), 'older'
-// (1 to 4: nothing restored, an older save said once and removed), 'newer' (above 5: nothing restored,
-// a newer save kept), 'unreadable' (not a whole number from 1: nothing restored, the save kept),
-// 'absent' (no `v`: a fragment with `a` is unreadable, one without is no palette link). The one version
-// test: decodeLink, persist.ts readRecord and oldRecord, and restore.ts read it.
-export type LinkVersion = 'current' | 'older' | 'newer' | 'unreadable' | 'absent';
+// Where a link version stands against this decoder (8.2), from `v` alone: 'current' (5), 'newer'
+// (above 5: nothing restored, a newer save kept), 'unreadable' (not a whole number from 1, or below 5:
+// the old beta tool's links, read as any unreadable link (owner 2026-11-17, "No backward compatibility
+// work"): nothing restored, the save kept), 'absent' (no `v`: a fragment with `a` is unreadable, one
+// without is no palette link). The one version test: decodeLink, persist.ts readRecord and restore.ts
+// read it.
+export type LinkVersion = 'current' | 'newer' | 'unreadable' | 'absent';
 export function linkVersionStatus(v: string | null): LinkVersion {
   if (v === null) return 'absent';
   if (!/^[1-9]\d{0,8}$/.test(v)) return 'unreadable';
   const n = Number(v);
-  return n === LINK_VERSION ? 'current' : n < LINK_VERSION ? 'older' : 'newer';
+  return n === LINK_VERSION ? 'current' : n > LINK_VERSION ? 'newer' : 'unreadable';
 }
 
 // The soil answer as `s` writes it (null: the soil map, written as no `s`).
@@ -280,7 +281,7 @@ function readSoil(v: string | null): SoilAnswer | null {
 
 // A state that restores nothing: no climate, no plants, every answer as it starts.
 const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD_ID, spot: null, soil: null, members: [], removed: [], guests: [] });
-const noNotice = (): LinkNotice => ({ unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false });
+const noNotice = (): LinkNotice => ({ unknownCount: 0, cut: false, newer: false, unreadable: false, period: false });
 
 // Reads a link (with or without its "#") against the ids at hand (see linkClimates). Never throws.
 // place: a private part kept apart from the fragment (a save's `place`, history.state.pl), read for
@@ -294,9 +295,7 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   // Another version, a `v` that is no version, or no `v` with plants: nothing restored (8.2).
   if (status !== 'current') {
     const state = emptyState();
-    // An older link still names its climate, which Start shows with the notice (as for v1–v3 before).
-    if (status === 'older') { notice.outdated = true; state.climate = zoneOf(q.get('c')); }
-    else if (status === 'newer') notice.newer = true;
+    if (status === 'newer') notice.newer = true;
     else if (status === 'unreadable' || q.has('a')) notice.unreadable = true;
     return { state, notice };
   }

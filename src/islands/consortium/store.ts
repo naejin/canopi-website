@@ -4,7 +4,7 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { CellSpan, ClimateZone, Hole, PhaseOrd, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import type { ClimateZone, Hole, PhaseOrd, Flag, FlagContext, Interaction, JobId, MarkContext, MarkProvider, PlantId, PlantVerdict, RangeRule, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
 import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadMarkProviders, loadRangeRule, loadSuggest, loadVerdictRule, needsMarkProviders, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
@@ -32,7 +32,7 @@ export type Step = 'place' | 'palette';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
 // 'place': the "Your place" sheet (views/place/Place.tsx PlaceSheet), which changes the palette's place
 // in place.
-export type SheetKind = 'details' | 'swap' | 'add' | 'search' | 'paste' | 'place' | 'share' | 'download';
+export type SheetKind = 'details' | 'swap' | 'find' | 'paste' | 'place' | 'share' | 'download';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
 // sheet only, never one opened since (Escape closes the <dialog> at once and fires `close` a task later).
 export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
@@ -502,17 +502,15 @@ export function suggestMembers(): boolean {
 
 // ---- sheets: the one opener (H3, H7, H11, H12; seam review X1, X2) ----
 
-// What a sheet was opened for. Add reads it: a light level over a run of time steps (a light hole), a
-// job (a job hole: a run of time steps in any layer, stratum null). (CellSpan is core's, types.ts: Add's preset carries it too, F1a A22.)
-export type { CellSpan };
-// hole: the hole Add was opened for (the Next step, a hole button), whose words title the sheet.
-// Add lists every plant of the cell, run or job, site misfits included and flagged (inform, don't
-// block; owner 2026-11-14): nothing hides a plant, so nothing needs "Show them anyway".
-// `fits`: the hole's own test (core holes.ts fills), handed by the palette page so the sheet chunks
-// never import holes.ts, a module only the palette chunk has (E6-5d: sheets import first-run modules).
-export interface SheetFor { cell: CellSpan | null; job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null }
-export const FOR_NOTHING: SheetFor = { cell: null, job: null, hole: null, fits: null };
-export const sheetCell = signal<SheetFor>(FOR_NOTHING);
+// What Find was opened for (PP-C, slices 3.2): nothing ("Add plants", "Find plants", Place's "Add a
+// plant by name"), or a hole (the Next step's "See all", a hole's Find): its job, the hole itself,
+// whose words title the sheet (board FillHole), and `fits`, the hole's own test (core holes.ts fills),
+// handed by the palette page so the sheet chunks never import holes.ts, a module only the palette
+// chunk has (E6-5d: sheets import first-run modules). Find lists every plant, site misfits included
+// and flagged (inform, don't block; owner 2026-11-14).
+export interface SheetFor { job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null }
+export const FOR_NOTHING: SheetFor = { job: null, hole: null, fits: null };
+export const sheetTarget = signal<SheetFor>(FOR_NOTHING);
 
 // ---- browser history (coordinator row 2026-11-14, "Sheets and browser history", inventory K7) ----
 // A sheet (full screen on a phone) and the step from Your place to Your palette each push one history
@@ -627,12 +625,16 @@ export function watchSteps(): () => void {
 
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
 // Share and Download are not sheets (no entry).
-const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'add', 'search', 'paste', 'place'];
+const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste', 'place'];
 let opened = 0;
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
   if (SHEET_KINDS.includes(kind) && !onEntry('sheet')) pushEntry('sheet');
-  batch(() => { sheetCell.value = { ...FOR_NOTHING, ...target }; sheet.value = { kind, id, n: ++opened }; });
+  batch(() => { sheetTarget.value = { ...FOR_NOTHING, ...target }; sheet.value = { kind, id, n: ++opened }; });
 }
+// Find (PP-C c1; boards Find, FillHole): the one route into it, from "Add plants", "Find plants",
+// "See all N plants", a hole's Find and Place's "Add a plant by name"; a hole's opener passes the
+// SheetFor (views/palette/NextStep.tsx openFillers), the others nothing.
+export const openFind = (target: SheetFor = FOR_NOTHING): void => openSheet('find', null, target);
 // Close (its button, Escape, the backdrop, an action that ends it): the sheet goes at once, and its
 // history entry with history.back() (main.ts then rewrites the entry under it with the current link).
 export const closeSheet = (): void => {

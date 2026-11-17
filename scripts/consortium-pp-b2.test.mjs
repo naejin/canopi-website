@@ -216,7 +216,7 @@ test('PP-B (b2 holes, 3.3): each neighbouring HOLE_ORDER pair ranks in order, an
   assert.equal(core.holeRank('light', false), core.holeRank('job', false), 'a job or a light level empty for part of the years rank together');
   const list = core.holes({ members: [], verdicts: null, pending: false });
   assert.ok(list.every((h) => h.rank === core.holeRank(h.kind, h.fromYear === 0 && h.toYear === core.JUDGED_TO_YEAR)));
-  assert.ok(list.every((h) => h.kind !== 'job' || (h.preset.job === h.job && h.preset.hole === h.id)), 'a job hole opens Add preset to its job and hole');
+  assert.ok(list.every((h) => !('preset' in h)), 'a hole carries no Add preset (PP-C commit 0: Find opens for the hole through store.openFind)');
 });
 
 test('PP-B (b2 holes, P11 restored): while a guest list loads the holes are pending, never a false hole; with every list read, the holes', () => {
@@ -274,7 +274,7 @@ test('PP-B (b2 holes, 7.3): jobGapsByPhase moved to holes.ts (one gap engine), s
 
 // ---- verdict-line.ts: the only words of verdicts, holes and years ----
 const pv = (level, judged = '1991-2020') => ({ id: 'x', level, judged, ownYears: false, limiting: null, factors: [], notes: [] });
-const hole = (fromYear, toYear, state = 'open') => ({ id: `job:mulch:${fromYear}-${toYear}`, kind: 'job', rank: 4, job: 'mulch', fromYear, toYear, state, preset: {} });
+const hole = (fromYear, toYear, state = 'open') => ({ id: `job:mulch:${fromYear}-${toYear}`, kind: 'job', rank: 4, job: 'mulch', fromYear, toYear, state });
 test('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key under consortium.line. with numbers and counts, never "fits" for not checked', () => {
   const L = core;
   assert.deepEqual(L.fitLine(pv('fits')), { key: 'consortium.line.fits', vars: {} });

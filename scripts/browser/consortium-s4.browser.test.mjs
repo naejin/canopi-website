@@ -85,7 +85,7 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
   });
 });
 
-test('BT-7 (S4 share): a copied link opened as a new document restores the same palette; an unknown token and an outdated link give their notices; a reload restores the last palette', async (t) => {
+test('BT-7 (S4 share): a copied link opened as a new document restores the same palette; an unknown token and an old beta link (read as unreadable) give their notices; a reload restores the last palette', async (t) => {
   await behaviour(t, async (v) => {
     const page = await h.open('/palette/', { ...v, data: 'fixture' });
     await openCards(page);
@@ -109,9 +109,9 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     const unknown = await h.open(`/palette/?run=${Date.now()}${hashOf(link).replace('&a=', '&a=zzzzzz')}`, { ...v, data: 'fixture' });
     assert.ok(await findAx(unknown, { name: /no longer in the list; the rest is restored/ }), 'the unknown-plant notice');
     await done(unknown);
-    // An outdated link (another version): calm copy, nothing restored.
+    // An old beta link (v3): read as any unreadable link, nothing restored (owner 2026-11-17).
     const old = await h.open(`/palette/?run=${Date.now()}${hashOf(link).replace('v=5', 'v=3')}`, { ...v, data: 'fixture' });
-    assert.ok(await findAx(old, { name: /from an older version of the tool/ }), 'the outdated-link notice');
+    assert.ok(await findAx(old, { name: /This link could not be read/ }), 'the unreadable notice');
     await done(old);
 
     // A reload with no fragment restores the last palette (storage works).
@@ -178,9 +178,9 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.equal(hashOf(await shareLink(mine)), own, 'Back reopens the reader\'s own palette');
     assert.match(await countryText(mine), /chosen by you/, 'Back never relabels the reader\'s country');
 
-    // With a palette shown, an older or cut pasted link changes nothing, says so there, and the
-    // address goes back to the palette shown (round 2, 2 and 4).
-    for (const [bad, words] of [[staged.replace('v=5', 'v=3'), /pasted link is from an older version/], [staged.replace(/c=temperate&/, ''), /pasted link looks cut off/]]) {
+    // With a palette shown, an old beta (unreadable) or cut pasted link changes nothing, says so there,
+    // and the address goes back to the palette shown (round 2, 2 and 4).
+    for (const [bad, words] of [[staged.replace('v=5', 'v=3'), /pasted link could not be read/], [staged.replace(/c=temperate&/, ''), /pasted link looks cut off/]]) {
       await mine.evaluate((f) => { location.hash = f; }, bad);
       assert.ok(await findAx(mine, { name: words }), `the notice for the pasted link (${words})`);
       for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== own; i++) await new Promise((r) => setTimeout(r, 100));
@@ -196,17 +196,16 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.ok(await has(noClimate, aria('radio', 'Temperate')), 'Place stays');
     assert.equal(await has(noClimate, aria('button', 'Share'), 500), false, 'no result without a climate');
     await done(noClimate);
-    // A v1 query link: the outdated notice, nothing restored (review 5).
+    // The beta tool's query link and save are not read (owner 2026-11-17): Place, no notice.
     const v1 = await h.open(`/palette/?v=3&c=temperate&a=AbCdEf`, { ...v, data: 'fixture' });
-    assert.ok(await findAx(v1, { name: /from an older version of the tool/ }), 'the outdated notice for a v1 query link');
-    // A v1 save: said once, then removed (review 4).
+    await openCards(v1);
+    assert.ok(await has(v1, aria('radio', 'Temperate'), 8000), 'Place for the ?v=3 query link');
+    assert.equal(await v1.$('[data-place-notice]'), null, 'no notice for the beta tool\'s query link');
     await v1.evaluate(() => localStorage.setItem('canopi-consortium', JSON.stringify({ q: 'c=temperate&a=AbCdEf', at: '2026-10-01', src: 'chosen' })));
     await v1.goto(new URL('/palette/', v1.url()).href);
-    assert.ok(await findAx(v1, { name: /last palette was made with an older version/ }), 'the old-save notice');
-    await v1.goto(new URL('/palette/', v1.url()).href);
     await openCards(v1);
-    assert.ok(await has(v1, aria('radio', 'Temperate'), 8000));
-    assert.equal(await findAx(v1, { name: /last palette was made with an older version/ }, 500), null, 'only once');
+    assert.ok(await has(v1, aria('radio', 'Temperate'), 8000), 'Place');
+    assert.equal(await v1.$('[data-place-notice]'), null, 'no notice for the beta tool\'s save');
     await done(v1);
   }, { phone: true });
 });

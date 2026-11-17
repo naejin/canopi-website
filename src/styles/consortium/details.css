@@ -142,15 +142,20 @@
 /* Toast: bottom centre, above the page; always in the DOM so screen readers hear it. While a line
    shows, the page keeps room for it at its end and around focus (W7): every control can be scrolled
    or tabbed out from under it, and only the card itself takes clicks. */
-.ct .ct-toast-region { position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); pointer-events: none; }
+.ct .ct-toast-region { position: fixed; left: 50%; bottom: calc(20px + var(--ct-bar-room)); z-index: 50; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); pointer-events: none; }
 .ct .ct-toast-region .ct-toast { pointer-events: auto; }
 /* A notice (a part that could not load, with Reload; views/Toast.tsx): in the flow at the end of the
    tool, so it covers nothing at any width (b1a UI hand-off), and no toast room is kept for it. */
 .ct .ct-toast-page:has(.ct-toast-notice) { position: static; transform: none; width: auto; max-width: none; margin: 16px 0 0; }
 .ct .ct-toast-page .ct-toast-notice { width: fit-content; max-width: 100%; flex-wrap: wrap; overflow-wrap: anywhere; }
-.ct #ct-root:has(.ct-toast-page .ct-toast:not(.ct-toast-notice)) { padding-bottom: var(--ct-toast-room); }
-html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bottom: var(--ct-toast-room); }
-:root { --ct-toast-room: 96px; }
+/* The phone's bottom bar ("Add plants", PP-C c1, views/find/) keeps its own room, --ct-bar-room (0
+   until c1's find.css sets it on :root while the bar shows): the toast sits above it, and the page
+   keeps the bar's room (and the toast's above it) at its end and around focus (PP-C commit 0). */
+.ct #ct-root { padding-bottom: var(--ct-bar-room); }
+html { scroll-padding-bottom: var(--ct-bar-room); }
+.ct #ct-root:has(.ct-toast-page .ct-toast:not(.ct-toast-notice)) { padding-bottom: calc(var(--ct-toast-room) + var(--ct-bar-room)); }
+html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bottom: calc(var(--ct-toast-room) + var(--ct-bar-room)); }
+:root { --ct-toast-room: 96px; --ct-bar-room: 0px; }
 .ct .ct-toast {
   display: flex; align-items: center; gap: 6px 12px; padding: 6px 6px 6px 16px; border-radius: 10px;
   background: var(--text); color: var(--surface); box-shadow: var(--shadow); font-size: 15.5px;

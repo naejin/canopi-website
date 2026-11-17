@@ -2,8 +2,8 @@
 // The Next step (boards Main, Palette, HoleOpen, Empty): the first open hole in words and years, the
 // three plants that fill it best (holes filled, then holding to the latest period, then name), each
 // with its fit line, its warnings in words and Add, then the fillers that need a second look under
-// their own heading, "See all" opening Add for the hole (store.openSheet('add', null, {job, cell,
-// hole}); P1), and "Not now" (this page only). Then the other holes, each with Find. A hole a plant
+// their own heading, "See all" opening Find for the hole (store.openFind({job, hole, fits}); P1),
+// and "Not now" (this page only). Then the other holes, each with Find. A hole a plant
 // just added filled is gone from the list, so it is never the next step. An empty palette shows the
 // Empty board's ways in (Paste, Suggest), not a hole.
 // Outside-range fillers are grouped behind "Show N outside their climate range" and added in one tap
@@ -11,7 +11,7 @@
 import type { ComponentChildren } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
 import type { Hole, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fillers, fills, nextStep, periodIds, phaseOfYear } from '../../../../lib/consortium/index.ts';
+import { fillers, fills, nextStep, periodIds } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusNextStep, focusSoon } from '../../focus.ts';
 import { requestSuggest } from '../../state/suggest-wait.ts';
@@ -19,12 +19,11 @@ import { nameOf, P, T } from '../../strings.ts';
 import { FitLine, holeWords } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
+import { FindEntry } from '../Sheets.tsx';
 
-// What Add opens for: the hole itself (its plants, its words as the title), its job, and its light
-// level and time steps as a cell span.
-export const openFillers = (h: Hole): void => store.openSheet('add', null, {
-  hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null, cell: { stratum: h.stratum ?? null, from: phaseOfYear(h.fromYear), to: phaseOfYear(h.toYear, true) },
-});
+// What Find opens for (board FillHole): the hole itself (its plants, its words as the title) and its
+// job.
+export const openFillers = (h: Hole): void => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
 
 // A plant with a warning (toxic, or invasive in the reader's country, or anywhere with none chosen)
 // is listed as needing a second look, never dropped.
@@ -73,6 +72,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
       <Card>
         <Title />
         <p>{T('palette.empty')}</p>
+        <FindEntry where="empty" />
         <p class="ct-next-actions">
           <button type="button" class="button button-primary" onClick={() => requestSuggest()}>{T('start.suggest')}</button>
           <button type="button" class="button button-secondary" onClick={() => store.openSheet('paste')}>{T('start.paste')}</button>

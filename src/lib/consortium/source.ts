@@ -45,16 +45,6 @@ export const TODAY_PERIOD: PeriodId = periodIds[0];
 // Each fact as the PlantSource stored it (null: not recorded, never a misfit). Read through factAt only,
 // so F2 (per site and period) and E7 (scoped stored facts) change one place, not the views.
 const STORED: { [K in FactKey]: (t: Taxon) => FactValues[K] | null } = {
-  life_cycle: ({ traits: tr }) =>
-    tr.is_annual === true ? 'annual' : tr.grown_as_annual === true ? 'grown_as_annual' : tr.is_perennial === true ? 'perennial' : null,
-  cold_limit: ({ climate }) => {
-    const r = climate?.tminCold;
-    return r && r.low !== null ? { tminColdC: r.low, weak: r.weak === true } : null;
-  },
-  heat_limit: ({ climate }) => {
-    const high = climate?.tmaxWarm?.high ?? null;
-    return high === null ? null : { tmaxWarmC: high };
-  },
   water_need: ({ traits: tr }) => {
     const drought = tr.drought_tolerance ?? null, moisture = tr.moisture_use ?? null;
     return drought === null && moisture === null ? null : { drought, moisture };

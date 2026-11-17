@@ -63,13 +63,6 @@ export async function locationState(page, timeout = 15_000) {
   return page.$eval('[data-location-state]', (e) => e.getAttribute('data-location-state')).catch(() => null);
 }
 
-// The Add sheet, open and focused: SheetFrame calls showModal() and focuses its heading in an effect,
-// which Preact runs after the next frame, so the sheet's input is in the page inside a closed (not
-// shown) dialog first (measured: there at 13 ms, open with the heading focused at 64 ms, more under
-// load). Typing that starts in that gap loses the keys sent before the heading takes the focus, and
-// the row looked for never shows (P5-27q "Siberian purslane in Add with its cool-season tag").
-export const ADD_OPEN = 'dialog.ct-add[open] .ct-search input';
-
 export const text = (page, sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
 
 export const checkedCard = (page) => page.$eval('input[name="ct-climate"]:checked', (e) => e.value).catch(() => null);
@@ -227,26 +220,6 @@ export async function savedOpening({ list = null } = {}) {
 export const savedFailing = () => savedOpening({ list: 'fail' });
 
 export const proposal = (page) => page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
-
-// An empty Temperate matrix with a kept guest from Tropical whose list read is held: window.__guest
-// .release() lets it through, .fail() fails it (as after Start empty, which keeps guests).
-export async function guestHeld(width, { timeouts = null } = {}) {
-  const guest = await realDb((db) => String(db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Tropical' ORDER BY 1 LIMIT 1").get().id));
-  const page = await tool({ width, hash: '#v=4&c=temperate&a=&e=1', timeouts });
-  assert.ok(await has(page, '.ct-mx-empty .button-primary', 15_000), 'the empty matrix with "Suggest a start"');
-  await page.evaluate((id) => {
-    const { store } = window.__ctTest, src = store.source.value;
-    const pool = src.pool.bind(src), rows = src.interactions.bind(src);
-    let release, fail; const held = new Promise((r, j) => { release = r; fail = j; });
-    held.catch(() => {});
-    window.__guest = { release, fail: () => fail(new Error('test: guest list unreadable')) };
-    src.pool = (z) => (z === 'Tropical' ? held.then(() => pool(z)) : pool(z));
-    src.interactions = (z) => (z === 'Tropical' ? held.then(() => rows(z)) : rows(z));
-    store.guests.value = { [id]: 'Tropical' };
-  }, guest);
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the guest list is being read');
-  return page;
-}
 
 export const members = (page) => page.evaluate(() => window.__ctTest.store.members.value.length);
 

@@ -138,7 +138,7 @@ test('the meaning tokens are defined in tokens.css for light and both dark block
 // hook-only names below: containers and rows that tests, focus.ts or print.css's element rules find,
 // never styled by class. A class added here needs a reason; a class that gains a rule leaves the list.
 const HOOK_ONLY = new Set([
-  'ct-add', 'ct-add-showall', 'ct-climates', 'ct-corr-current', 'ct-corr-sent', 'ct-country-note', 'ct-details', 'ct-future-plants',
+  'ct-climates', 'ct-corr-current', 'ct-corr-sent', 'ct-country-note', 'ct-details', 'ct-future-plants',
   'ct-load-failed', 'ct-location', 'ct-location-result', 'ct-location-row', 'ct-paste', 'ct-pool', 'ct-print-marks', 'ct-print-stage',
   'ct-print-table', 'ct-share-location', 'ct-sv-plant', 'ct-swap', 'ct-toast-text',
 ]);

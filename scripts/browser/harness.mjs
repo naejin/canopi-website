@@ -34,6 +34,7 @@ export function fixture() {
     climates: manifest.climates.map((c) => c.climate_zone.toLowerCase()),
     file: entry.file,
     gz: readFileSync(join(FIXTURE_DIR, entry.file)),
+    names: manifest.names ? { file: manifest.names.file, gz: readFileSync(join(FIXTURE_DIR, manifest.names.file)) } : null,
   };
 }
 
@@ -80,7 +81,7 @@ export async function fixtureCountries() {
 // The database bytes served for a variant, and the reference the page is told (its digests are those
 // of the served bytes, so each broken copy fails where it is meant to, not at the digest):
 // - 'corrupt': bytes overwritten inside the gzip stream (does not inflate: damaged);
-// - 'user-version': a valid database with user_version 1 (schema; the page reads schema 3);
+// - 'user-version': a valid database with user_version 1 (schema; the page reads schemas 3 and 4);
 // - 'digest': the right bytes under a wrong sha256 (damaged);
 // - 'empty': an empty 200 body (damaged);
 // - 'stall': no response ever comes (a stalled connection: fetch, after the stall timer);
@@ -96,9 +97,23 @@ export function servedDatabase(kind, fx) {
   return { bytes: gz, ref: { sha256: wrongSha ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
 }
 
+// The search names file served for a variant (PP-C commit 0, slices 3.2; c1's failure rows 4.1-4.4)
+// and the reference #ct-data gives it (null: no names file on the page):
+// - null: the fixture's names file as it is;
+// - 404 | 'offline': not found, or the request aborted as offline;
+// - 'hold': answered once the test calls page.releaseHeld() (page.held lists its path);
+// - 'digest': the right bytes under a wrong sha256 (dropped, no retry until reload).
+// (A stale header, 4.4, is a unit row: c1's names reader against the fixture's file.)
+export function servedNames(kind, fx) {
+  if (!fx.names) return null;
+  const raw = gunzipSync(fx.names.gz), gz = fx.names.gz;
+  if (kind !== null && kind !== 404 && !['offline', 'hold', 'digest'].includes(kind)) throw new Error(`no names variant "${kind}"`);
+  return { bytes: gz, ref: { url: `/data/consortium/${fx.names.file}`, sha256: kind === 'digest' ? sha256(raw) : sha256(gz), bytes: gz.length, rawSha256: sha256(raw), rawBytes: raw.length } };
+}
+
 // The URLs of each chunk role of the served build, flat by role name (every on-demand part under
-// `features`, built-modules.mjs ROLE_ENTRIES: location, markProviders, future, pool, likely, native,
-// range, details, sheets, later, suggest; then maplibre, maplibreCss and testHook, the test build's
+// `features`, built-modules.mjs ROLE_ENTRIES: location, markProviders, future, pool, range, details,
+// sheets, find, later, suggest, palette, verdict; then maplibre, maplibreCss and testHook, the test build's
 // hook), for faults set by role. The roles are read by their one owner, built-modules.mjs readChunkRoles.
 const roleUrls = (builtDir) => {
   const { features, maplibre, maplibreCss, testHook } = readChunkRoles(join(builtDir, 'client'));
@@ -160,6 +175,8 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   //   fixture database, served from memory); database: 404 | 'corrupt' | 'user-version' | 'digest' |
   //   'empty' for the failure screens (with the fixture); 'stall' never answers; 'hold' (PP-B commit 0)
   //   answers the fixture once `await page.releaseHeld()` runs (page.held lists its path, as block's);
+  // - names (PP-C commit 0, with the fixture): 404 | 'offline' | 'hold' | 'digest'
+  //   serves the search names file broken that way (servedNames); unset, the fixture's names file;
   // - photos: true gives the fixture's 6 photo plants a self-served PNG (BT-5);
   // - wasm: false removes WebAssembly before any script runs (Lockdown Mode, P5);
   // - loader: 404 | 'offline' fails the island's loader chunk (a deploy; offline, navigator.onLine false);
@@ -193,13 +210,15 @@ export async function startHarness({ log = () => {}, dir } = {}) {
   //   climate tile read (views/location/location.tsx) and Suggest's wait (state/suggest-wait.ts), test build only;
   // - geoTimeoutMs: with geolocation 'timeout', TIMEOUT comes after min(the call's timeout, this);
   // - block: { <role>: 404 | 'offline' | 'offline-once' | 'hold' } fails a chunk role of consortium-chunks.json (pool,
-  //   location, future, markProviders, maplibre, details, sheets, later, suggest, range, testHook, …) from the
+  //   location, future, markProviders, maplibre, details, sheets, find, later, suggest, range, testHook, …) from the
   //   first request ('offline-once': only the first request, as offline; PP-B exit, PP-B16b);
   //   page.blocked lists each URL so answered; 'hold' (E6 commit 0) answers nothing
-  //   until `await page.releaseHeld()` lets every held request through (and any later one), and
-  //   page.held lists the URLs held;
+  //   until `await page.releaseHeld()` lets every held request through (and any later one), or
+  //   `await page.failHeld()` aborts each held one as offline (PP-C review c0 round 2: a chunk that
+  //   fails late, after the page moved on; later requests then go through), and page.held lists the
+  //   URLs held;
   // - setup: async (page) => {} runs just before the navigation (extra evaluateOnNewDocument scripts).
-  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null, hook = false, timeouts = null, geoTimeoutMs = null, block = null, setup = null } = {}) {
+  async function open(path, { width = 1280, theme = 'light', javaScript = true, data = 'real', database = null, names = null, photos = false, wasm = true, loader = null, island = null, wasmFile = null, storage = true, correction = null, geolocation = null, nominatim = null, mapTiles = null, webgl = true, climateTiles = null, hook = false, timeouts = null, geoTimeoutMs = null, block = null, setup = null } = {}) {
     alive();
     const blockedUrls = new Map();
     for (const [role, how] of Object.entries(block ?? {})) {
@@ -274,11 +293,17 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     page.held = [];
     const heldRequests = [];
     const heldDatabase = []; // database: 'hold', answered with the fixture bytes on release
+    const heldNames = []; // names: 'hold', answered with the names file on release
     let holding = true;
     page.releaseHeld = async () => {
       holding = false;
       for (const r of heldRequests.splice(0)) if (!r.isInterceptResolutionHandled()) await r.continue().catch(() => {});
       for (const r of heldDatabase.splice(0)) if (!r.isInterceptResolutionHandled()) await r.respond({ status: 200, contentType: 'application/gzip', body: served.bytes }).catch(() => {});
+      for (const r of heldNames.splice(0)) if (!r.isInterceptResolutionHandled()) await r.respond({ status: 200, contentType: 'application/gzip', body: namesServed.bytes }).catch(() => {});
+    };
+    page.failHeld = async () => {
+      holding = false;
+      for (const r of heldRequests.splice(0)) if (!r.isInterceptResolutionHandled()) await r.abort('internetdisconnected').catch(() => {});
     };
     page.nominatim = [];
     const p5 = !!(geolocation || nominatim || mapTiles || !webgl || climateTiles);
@@ -288,9 +313,10 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     page.capturedDownloads = () => (existsSync(dir) ? readdirSync(dir).filter((f) => !f.endsWith('.crdownload')).map((f) => ({ name: f, bytes: readFileSync(join(dir, f)) })) : []);
     page.correctionPosts = [];
 
-    const useFixture = data === 'fixture' || database !== null || photos;
+    const useFixture = data === 'fixture' || database !== null || names !== null || photos;
     const fx = useFixture ? fixture() : null;
     const served = useFixture && database !== 404 ? servedDatabase(database, fx) : null;
+    const namesServed = fx ? servedNames(names, fx) : null;
     const images = photos ? await fixturePhotos() : {};
     if (useFixture || loader || island || wasmFile || correction || p5 || blockedUrls.size) {
       await page.setRequestInterception(true);
@@ -331,6 +357,16 @@ export async function startHarness({ log = () => {}, dir } = {}) {
             return;
           }
           return request.respond({ status: 200, contentType: 'application/gzip', body: served.bytes });
+        }
+        if (namesServed && url.pathname === namesServed.ref.url) {
+          if (names === 404) return request.respond({ status: 404, contentType: 'text/plain', body: 'Not found' });
+          if (names === 'offline') return request.abort('internetdisconnected');
+          if (names === 'hold' && holding) {
+            page.held.push(url.pathname);
+            heldNames.push(request);
+            return;
+          }
+          return request.respond({ status: 200, contentType: 'application/gzip', body: namesServed.bytes });
         }
         if (photos && url.pathname.startsWith(FIXTURE_PHOTO_PREFIX)) return request.respond({ status: 200, contentType: 'image/png', body: PNG_1PX });
         if (loader && /^\/_astro\/load\.[\w-]+\.js$/.test(url.pathname)) {
@@ -376,6 +412,7 @@ export async function startHarness({ log = () => {}, dir } = {}) {
             d.releaseId = fx.releaseId;
             d.climates = fx.climates;
             d.db = { url: `/data/consortium/${fx.file}`, ...(served?.ref ?? servedDatabase(null, fx).ref) };
+            d.names = namesServed?.ref ?? null;
             d.images = images;
             d.countries = countries;
             return start + JSON.stringify(d).replace(/</g, '\\u003c') + end;

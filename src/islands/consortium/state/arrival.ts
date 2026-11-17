@@ -1,5 +1,5 @@
 // How the page opens (stream S4; E6 S2 split it out of memory.ts): what it opens with (a reload of its
-// own address, a share link, a guide preset, an outdated v1 link, the last consortium, else Start), the
+// own address, a share link, a guide preset, the last consortium, else Start), the
 // reader's country at start and the browser's guess, a link pasted into the open tab, and startMemory,
 // which reads the page once and wires all of it (openWith). The pure parts (arrival, hashAction,
 // countryAtStart, guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
@@ -9,25 +9,24 @@ import { bringsPlace, countryZones, decodeLink, linkOrigin, readPreset, zoneOf }
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import {
-  attempt, currentFragment, fromOf, memory, oldRecord, quietly, readRecord, shows, storageWorks, watchStore,
+  attempt, currentFragment, fromOf, memory, quietly, readRecord, shows, storageWorks, watchStore,
   COUNTRY_STORE, LOCATION_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE, STORE, type CountryFrom, type OwnPlace, type SavedRecord,
 } from './persist.ts';
 import { state as schema } from './schema.ts';
 import { applyPreset, locationAtStart, notices, ownCell, ownLocation, restore, waitForSource, NO_NOTICES } from './restore.ts';
-import { forgets, lastSave, putSave } from './save.ts';
+import { forgets, lastSave } from './save.ts';
 import { watchSuggest } from './suggest-wait.ts';
 
-// A fragment is a share link when it holds the link's version or its member list (v1 links carried
-// their state in `c` and the query; v2+ share links put `v` first).
+// A fragment is a share link when it holds the link's version or its member list (a member list with
+// no version is an unreadable link, 8.2; an old beta link of any version reads as unreadable too).
 const isLinkFragment = (hash: string): boolean => {
-  const q = new URLSearchParams(hash.replace(/^[#?]/, ''));
+  const q = new URLSearchParams(hash.replace(/^#/, ''));
   return q.has('v') || q.has('a');
 };
 
 export type Arrival =
   | { kind: 'link'; fragment: string }
   | { kind: 'preset'; climate: ClimateZone; plant: string | null }
-  | { kind: 'outdated' }
   | { kind: 'saved'; fragment: string; at: string; src: CountryFrom; place: string; ask?: true; hold?: true }
   | { kind: 'start'; climate: ClimateZone | null };
 
@@ -69,8 +68,8 @@ const stillSaved = (saved: SavedRecord | null, own: OwnAddress): boolean =>
 
 // What the page opens with, in order: the page's own address after a reload (history.state.ct is
 // the fragment: the save, with its country label); a share link in the fragment; a guide preset in
-// the query; a v1 query link (?v=3&c=…&a=…: the outdated notice, nothing restored, owner row
-// 2026-11-11); the last consortium on this device; else Start, on the shared site climate when the
+// the query (the old beta tool's query links, ?v=3&c=…, are not read: owner 2026-11-17, no backward
+// compatibility work); the last consortium on this device; else Start, on the shared site climate when the
 // reader set one (nothing is chosen otherwise: never a default climate).
 // A reload never overwrites a save that differs from what the page last wrote (pre-push fix 5): when
 // storage no longer holds the page's palette (another tab saved since, or removed it), the page opens
@@ -87,7 +86,6 @@ export function arrival(loc: { hash: string; search: string }, saved: SavedRecor
   if (hash && isLinkFragment(hash)) return { kind: 'link', fragment: hash };
   const preset = readPreset(loc.search);
   if (preset.climate) return { kind: 'preset', climate: preset.climate, plant: preset.plant };
-  if (isLinkFragment(loc.search)) return { kind: 'outdated' };
   if (saved) return { kind: 'saved', fragment: saved.fragment, at: saved.at, src: saved.src, place: saved.place };
   return { kind: 'start', climate: zoneOf(siteClimate) };
 }
@@ -221,7 +219,6 @@ export function openWith({ how, plan, saved, seed, keptLocation }: Opening): voi
     // A reload while a link's place still waited on the reader: asked again (plan.ask).
     void restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask: plan.ask, hold: how.hold });
   }
-  else if (how.kind === 'outdated') notices.value = { ...notices.peek(), outdated: true };
   else if (how.kind === 'preset') {
     // A guide preset over a saved palette: the save stays untouched, one press away (8.3).
     void applyPreset(how.climate, how.plant);
@@ -248,11 +245,6 @@ export function startMemory(): void {
   const saved = readRecord(raw);
   lastSave.value = raw;
   const how = openingArrival();
-  // An older save: said once, then removed, so the notice does not come back on every visit (review 4).
-  if (how.kind === 'start' && oldRecord(raw)) {
-    notices.value = { ...notices.peek(), oldSave: true };
-    putSave(null);
-  }
   const languages = attempt(() => [...navigator.languages]) ?? [];
   const zone = attempt(() => Intl.DateTimeFormat().resolvedOptions().timeZone) ?? null;
   // The time zone needs the known countries: the page names them (#ct-data `countries`, the

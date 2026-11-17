@@ -251,9 +251,9 @@ test('rangeMarks: edge, outside and unknown with a site climate; estimate on a b
   assert.deepEqual(marks(taxon(), at(0, 25), 'row'), [], 'inside: no mark');
   assert.deepEqual(marks(taxon(), at(-16, 25), 'chip'), [['edge', 'range.edgeShort', 'note']]);
   assert.deepEqual(marks(taxon(), at(-16, 25), 'row'), [['edge', 'range.edge', 'note']]);
-  assert.deepEqual(marks(taxon(), at(-20, 25), 'add'), [['outside', 'range.outside', 'warning']]);
+  assert.deepEqual(marks(taxon(), at(-20, 25), 'row'), [['outside', 'range.outside', 'warning']]);
   assert.deepEqual(marks(taxon(), at(-20, 25), 'chip'), [['outside', 'range.outsideShort', 'warning']]);
-  assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'add'), [['unknown', 'range.unknown', 'note']]);
+  assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'row'), [['unknown', 'range.unknown', 'note']]);
   assert.deepEqual(marks(taxon({ climate: null }), at(0, 25), 'chip'), [['unknown', 'range.unknownShort', 'note']], 'chips get the short word');
   const details = rangeMarks(taxon(), ctx({ location: at(-20, 31) }), 'details');
   assert.deepEqual(details.map((m) => [m.kind, m.key]), [['outside', 'range.outsideDetails'], ['outside', 'range.side.cold'], ['edge', 'range.side.hot']]);

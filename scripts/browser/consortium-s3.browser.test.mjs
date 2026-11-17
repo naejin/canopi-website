@@ -1,4 +1,4 @@
-// Stream S3's browser tests (details dialog, correction form, Swap, Add, Search, Paste; review C1).
+// Stream S3's browser tests (details dialog, correction form, Swap, Paste; review C1; the Add and Search sheets went in PP-C commit 0).
 // Design check §7 BT-5, BT-6. Run capped: npm run test:browser (see consortium-commit0).
 //
 // Every step uses the page's own controls. The test hook (src/islands/consortium/test-hook.ts; a page
@@ -54,27 +54,21 @@ async function start(page, climate = 'Temperate') {
   await page.locator(aria('button', en['consortium.start.suggest'])).click();
   assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
 }
-// Opens a sheet by its button: "Paste a list" on Place (the palette's "Your place" step); "Add plants"
-// through the store's opener (store.openSheet('add')) while the palette page has no general Add button
-// (the matrix's went in PP-B commit 0a'; Your plants, b3 in chunk 2, brings it back), so these cases
-// keep testing the Add sheet.
+// Opens a sheet by its button: "Paste a list" on Place (the palette's "Your place" step).
 async function openBy(page, button) {
   if (button === 'Paste a list' && !(await has(page, aria('button', button), 300))) await page.locator('button.ct-step').click();
-  if (button === 'Add plants' && !(await has(page, aria('button', button), 300))) await hooked(page, () => window.__ctTest.openSheet('add'));
-  else await page.locator(aria('button', button)).click();
+  await page.locator(aria('button', button)).click();
   assert.ok(await findAx(page, { role: 'dialog' }), `the ${button} sheet`);
 }
-// Add one plant: tick it and "Add 1 plant", or, on another list's row, its "Add {name}" button.
-async function addPlant(page, name) {
-  await openBy(page, 'Add plants');
-  await page.locator('::-p-aria([role="searchbox"])').fill(name);
-  const box = (await axNodes(page)).find((n) => n.role === 'checkbox' && (n.name ?? '').startsWith(name));
-  if (box) {
-    await page.locator(aria('checkbox', box.name)).click();
-    await page.locator(aria('button', 'Add 1 plant')).click();
-  } else {
-    await page.locator(aria('button', `Add ${name}`)).click();
-  }
+// Add one plant of the list by pasting its name, "Add 1 plant", in Find opened from the palette page
+// (PP-C commit 0 deleted the Add sheet; store.openFind opens the Paste sheet until c1's Find, which
+// brings back a search with its own cases in consortium-pp-c1). The page stays the palette page.
+async function addPlant(page, canonical) {
+  await hooked(page, () => window.__ctTest.openFind());
+  assert.ok(await findAx(page, { role: 'dialog' }), 'the Find sheet');
+  await page.locator('::-p-aria([role="textbox"])').fill(canonical);
+  await page.locator(aria('button', 'Add 1 plant')).click();
+  await closed(page);
 }
 // Membership by canonical name, through the store.
 const isMember = (page, canonical) => hooked(page, (c) => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === c), canonical);
@@ -150,7 +144,7 @@ test('BT-5 (S3 details, offline): a correction sent offline says "Not sent" and 
   await page.close();
 });
 
-test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict and an invasive warning add in one tap with the reason on the row, Remove then Undo, "Add 2 plants", Paste offers Add anyway with a labelled chip', async (t) => {
+test('BT-6 (S3 adjust): Swap shows "Also fills…", an invasive warning adds in one tap, Remove then Undo, Paste offers Add anyway with a labelled chip', async (t) => {
   await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture' });
     await start(page);
@@ -175,28 +169,17 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict and an invas
     }
     assert.ok(fills, 'Swap shows "Also fills…"');
 
-    // Juglans next to Malus: a high conflict (genus allelopathic harm) is said on its row, and one tap
-    // adds it with the Undo toast (inform, don't block; owner 2026-11-14 replaced the ask).
+    // The Add sheet's conflict row and its ticks went with Add (PP-C commit 0); Find's are c1's cases.
     for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
-    if (!(await isMember(page, 'Malus domestica'))) { await addPlant(page, names['Malus domestica']); await closed(page); }
+    if (!(await isMember(page, 'Malus domestica'))) await addPlant(page, 'Malus domestica');
     assert.ok(await isMember(page, 'Malus domestica'), 'Malus is in');
-    await openBy(page, 'Add plants');
-    await page.locator('::-p-aria([role="searchbox"])').fill(names['Juglans regia']);
-    assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('dialog[open] .ct-rows li')].some((li) => /Juglans regia/.test(li.textContent) && /hold back|serious/i.test(li.textContent)), { timeout: 4000 }).then(() => true, () => false), 'the row names the conflict');
-    await page.locator(aria('checkbox', `${names['Juglans regia']}, Juglans regia`)).click();
-    await page.locator(aria('button', 'Add 1 plant')).click();
-    assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'a high conflict does not ask');
-    await closed(page);
-    assert.ok(await isMember(page, 'Juglans regia'), 'Juglans is added in one tap');
-    assert.ok(await has(page, aria('button', 'Undo')), 'with Undo');
-    await dropMember(page, 'Juglans regia');
     // Robinia: an invasive warning is shown and adds in one tap too (France: recorded invasive).
     if (await sheetOpen(page)) await page.locator('dialog[open] ' + aria('button', 'Close')).click();
     await closed(page);
     // The country line is in the palette's head (b1a conformance-4: no Change site and Back).
     await page.locator('[data-ct="country"] button[aria-expanded]').click();
     await page.select('#ct-country-select', 'FR');
-    await addPlant(page, names['Robinia pseudoacacia']);
+    await addPlant(page, 'Robinia pseudoacacia');
     assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'an invasive warning does not ask');
     assert.ok(await isMember(page, 'Robinia pseudoacacia'), 'Robinia is added');
 
@@ -208,15 +191,6 @@ test('BT-6 (S3 adjust): Swap shows "Also fills…", a high conflict and an invas
     assert.equal(await chipOf(page, names['Malus domestica']), undefined);
     await page.locator(aria('button', 'Undo')).click();
     assert.ok(await chipOf(page, names['Malus domestica']), 'Undo restores the plant');
-
-    // Add with two selected.
-    await openBy(page, 'Add plants');
-    const boxes = (await axNodes(page)).filter((n) => n.role === 'checkbox' && !n.checked).slice(0, 2);
-    assert.equal(boxes.length, 2, 'two plants to tick');
-    for (const b of boxes) await page.locator(aria('checkbox', b.name)).click();
-    assert.ok(await has(page, aria('button', 'Add 2 plants')));
-    await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('dialog[open]'));
 
     // Paste a Tropical-only plant from Temperate: Add anyway, then a chip labelled with its list.
     await openBy(page, 'Paste a list');
@@ -286,29 +260,10 @@ test('BT-6 (S3 review): Undo goes away when the consortium changes another way; 
   await page.close();
 });
 
-test('BT-6 (S3 review): ticks add together, a serious conflict among them; a pasted guest that misfits joins in one tap with its warning in words, no confirm step; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
+test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its warning in words, no confirm step; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
   const page = await open({ width: 1280, data: 'fixture' });
   await start(page);
-  for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
-  if (!(await isMember(page, 'Malus domestica'))) await addPlant(page, names['Malus domestica']);
-  await closed(page);
-  await openBy(page, 'Add plants');
-  await page.locator('::-p-aria([role="searchbox"])').fill(names['Robinia pseudoacacia']);
-  await page.locator(aria('checkbox', `${names['Robinia pseudoacacia']}, Robinia pseudoacacia`)).click();
-  await page.locator('::-p-aria([role="searchbox"])').fill(names['Juglans regia']);
-  await page.locator(aria('checkbox', `${names['Juglans regia']}, Juglans regia`)).click();
-  await page.locator(aria('button', 'Add 2 plants')).click();
-  await closed(page);
-  assert.ok(await isMember(page, 'Juglans regia') && await isMember(page, 'Robinia pseudoacacia'), 'both ticked plants join, the serious conflict too (nothing asks)');
-
-  // A query lists 8 rows at most, best match first.
-  await openBy(page, 'Add plants');
-  await page.locator('::-p-aria([role="searchbox"])').fill('a');
-  const rows = (await axNodes(page)).filter((n) => n.role === 'checkbox' || /^Add (?!\d)/.test(n.name ?? '') && n.role === 'button');
-  assert.ok(rows.length <= 8, `at most 8 rows (${rows.length})`);
-  await page.locator(aria('button', 'Close')).click(); // Escape in a filled search box first clears it
-  await closed(page);
-
+  // The Add sheet's ticks and its 8-row query went with Add (PP-C commit 0); Find's are c1's cases.
   // Deep shade: a sun plant from the Tropical list misfits. Inform, don't block (owner 2026-11-14):
   // its row says why in words, one tap on "Add anyway" adds it, and the toast names the warning.
   await setStore(page, () => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });

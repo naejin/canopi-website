@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:51Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:44Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:4f8461ae048aaf06
-    last_modified: 2026-11-16T21:53:51Z
+    digest: sha256:261176350d2c714b
+    last_modified: 2026-11-17T10:28:40Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -55,18 +55,18 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:569aa46cc7bcee28
-    last_modified: 2026-11-15T06:28:16Z
+    digest: sha256:d02afa4080bb8249
+    last_modified: 2026-11-17T10:25:24Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:1bbd681174e63de4
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:335c1e2f120de60e
+    last_modified: 2026-11-17T10:25:24Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:0b8463680869cfaf
-    last_modified: 2026-11-16T18:54:58Z
+    digest: sha256:1fa1952975c4ff18
+    last_modified: 2026-11-17T10:25:24Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
@@ -75,8 +75,8 @@ sources:
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
-    digest: sha256:55ac26204d4ae1dd
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:74477f0acdeb315a
+    last_modified: 2026-11-17T10:25:24Z
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
@@ -124,7 +124,7 @@ dependency-cruiser owns layer direction and cycles; the boundary test owns "core
 
 ## Consequences
 
-- One owner per concept (design check §7.1): the zone list (core `zones.ts`, which declares `climateZones`; `types.ts` re-exports it), the search fold (`fold.ts`), the state schema (`state/schema.ts`), the filter rule of Add and the plant list (`rules/list-query.ts`), the Suggest block (`rules/suggest-block.ts`: `needsSite`, `needsRule`, `nothingFits`, read by the store's `suggestMembers` and by PoolSlot), the site-fit vocabulary (core `site-marks.ts` `siteFitMessages`, since the core cannot import the island; `rules/site-fit.ts` keeps the misfits that hold beside the members' canopy), the lazy loader (`views/lazy.tsx`), the number formatter (`src/islands/consortium/format.ts`, enforced by the ast-grep rule `number-format-only-in-format`, `sgconfig.yml`) and names (`views/kit/names.ts`).
+- One owner per concept (design check §7.1): the zone list (core `zones.ts`, which declares `climateZones`; `types.ts` re-exports it), the search fold (`fold.ts`), the state schema (`state/schema.ts`), the filter rule of the offered plants (`rules/list-query.ts` until PP-C commit 0 deleted it with Add; c1's `rules/find-query.ts` next), the Suggest block (`rules/suggest-block.ts`: `needsSite`, `needsRule`, `nothingFits`, read by the store's `suggestMembers` and by PoolSlot), the site-fit vocabulary (core `site-marks.ts` `siteFitMessages`, since the core cannot import the island; `rules/site-fit.ts` keeps the misfits that hold beside the members' canopy), the lazy loader (`views/lazy.tsx`), the number formatter (`src/islands/consortium/format.ts`, enforced by the ast-grep rule `number-format-only-in-format`, `sgconfig.yml`) and names (`views/kit/names.ts`).
 - `rules/**` (E6 R2) are pure functions over core types: they import only the core entry, never the store or a view; the store and views pass signals in as arguments (`FlagScene`, `SuggestScene`). `views/kit/flags.ts` renders only: `flagsOfPlant` and `flagScene` live in `store.ts`.
 - Feature code is loaded through core loaders (`loadMarkProviders`, `loadRangeRule` (chunk 2: the one import of `range.ts` outside the feature chunks that use it statically), `loadSuggest`), never by state importing a view; where a view owns a chunk, it hands its loader to state (`provideLocationStep` in `state/restore.ts`, given `views/location/load.ts`'s `loadLocationStep` by main.ts before the first render; since E6 S3 no module hands anything over at import).
 - After chunk 2: the cycles C1-C5 are gone (L7 still `warn` until chunk 5), `store.ts` no longer imports `views/pool/pool.tsx`, and `src/lib/location/place-search.ts` imports no `@preact/signals` (plain read-only boxes), so L1 holds although its severity in `.dependency-cruiser.cjs` is still `warn`.

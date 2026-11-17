@@ -205,20 +205,26 @@ test('the menus chrome.js closes are the ones the header renders', () => {
   }
 });
 
-test('the consortium tool has one short header word and one full name per locale, in the owner\'s terms', () => {
+test('the consortium tool\'s header item is its full name, or one short word where the name does not fit at 640px', () => {
   const root = new URL('../src/i18n/translations/', import.meta.url);
+  // Report #29 (PP-C commit 0): the header says "Plant palette" in every locale whose full name keeps
+  // the inline row on one line beside the logo from 640px (Header.astro), measured on the built pages
+  // at 640 to 960px in steps of 20 (2026-11-17): French "Palette végétale" and Russian "Палитра
+  // растений" push the links under the logo at 640 and 660px, so those two keep one short word.
+  const SHORT = { 'fr.json': 'Palette', 'ru.json': 'Палитра' };
   for (const file of readdirSync(root).filter((name) => name.endsWith('.json'))) {
     const strings = JSON.parse(readFileSync(new URL(file, root), 'utf8'));
     const word = strings['nav.consortium'], full = strings['nav.consortium.full'];
-    // The header item is one short word, measured at 640px; the Menu, the footer and the home title carry the full name.
-    assert.ok(!/\s/.test(word) && [...word].length <= 12, `${file}: nav.consortium is one short word`);
-    assert.ok(full.toLowerCase().includes(word.toLowerCase()), `${file}: the full name "${full}" uses the header word "${word}"`);
+    if (SHORT[file]) {
+      assert.equal(word, SHORT[file], `${file}: the short header word`);
+      assert.ok(!/\s/.test(word) && [...word].length <= 12, `${file}: nav.consortium is one short word`);
+      assert.ok(full.toLowerCase().includes(word.toLowerCase()), `${file}: the full name "${full}" uses the header word "${word}"`);
+    } else assert.equal(word, full, `${file}: the header says the full name (#29)`);
     assert.ok(strings['learn.consortium.link'].startsWith(full), `${file}: the Learn link starts with the full name "${full}"`);
   }
   const strings = (lang) => JSON.parse(readFileSync(new URL(`${lang}.json`, root), 'utf8'));
   // Owner row "Plant palette name" (2026-11-13): readers see "Plant palette" (PP-B commit 0b).
-  assert.equal(strings('fr')['nav.consortium'], 'Palette');
-  assert.equal(strings('en')['nav.consortium'], 'Palette');
+  assert.equal(strings('en')['nav.consortium'], 'Plant palette', '#29');
   assert.equal(strings('fr')['nav.consortium.full'], 'Palette végétale', 'the owner\'s French name');
   assert.equal(strings('en')['nav.consortium.full'], 'Plant palette', 'the owner\'s name');
   // The header, the footer and the home section name the tool exactly as its own page's title does.

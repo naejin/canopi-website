@@ -2,20 +2,20 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:06Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:46:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:59Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:7417c5234b060d6a
-    last_modified: 2026-11-16T20:17:56Z
+    digest: sha256:39d03deba98c3fc8
+    last_modified: 2026-11-17T09:22:58Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:b15c1db318de3f0b
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:d881634869e11783
+    last_modified: 2026-11-17T09:22:58Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
@@ -44,13 +44,13 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:0b8463680869cfaf
-    last_modified: 2026-11-16T18:54:58Z
+    digest: sha256:1fa1952975c4ff18
+    last_modified: 2026-11-17T09:22:58Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:e21792d2c86518fa
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:15a62311180fe1fa
+    last_modified: 2026-11-17T09:43:32Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs

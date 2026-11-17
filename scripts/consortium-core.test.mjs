@@ -354,7 +354,7 @@ const shareV5 = (over = {}) => ({
   climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: V5_SPOT, soil: null,
   members: [], removed: [], guests: [], ...over,
 });
-const NO_NOTICE = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false };
+const NO_NOTICE = { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false };
 
 const known = (extra = {}) => ({ Temperate: ids(temperate), Tropical: ids(tropical), ...extra });
 
@@ -428,15 +428,17 @@ test('state: a cut link opens what parses and says so; a long link is flagged; a
   assert.equal(isLongLink(url), true);
   assert.equal(isLongLink(`https://projectcanopi.com/palette/#${link}`), false);
   assert.ok(!('long' in decodeLink(url.split('#')[1], { Temperate: many }).notice));
-  for (const v of ['3', '4']) {
+  // The old beta tool's versions (below 5): unreadable like any link this decoder cannot read, nothing
+  // restored, not even the climate (owner 2026-11-17, no backward compatibility work).
+  for (const v of ['1', '3', '4']) {
     const old = decodeLink(`v=${v}&c=temperate&a=AAAAAA&e=1`, known());
     assert.deepEqual(old.state.members, [], `v=${v}`);
-    assert.equal(old.state.climate, 'Temperate', `v=${v}`);
-    assert.equal(old.notice.outdated, true, `v=${v}`);
+    assert.equal(old.state.climate, null, `v=${v}`);
+    assert.equal(old.notice.unreadable, true, `v=${v}`);
+    assert.ok(!('outdated' in old.notice), `v=${v}: no older-version notice`);
   }
-  // No v key with plants (v5, 8.2): unreadable, nothing restored, never "outdated".
+  // No v key with plants (v5, 8.2): unreadable, nothing restored.
   const bare = decodeLink(link.replace(/^v=5&/, ''), { Temperate: real });
-  assert.equal(bare.notice.outdated, false);
   assert.equal(bare.notice.unreadable, true);
   assert.deepEqual(bare.state.members, []);
 });
@@ -450,11 +452,11 @@ test('state: at most MAX_LINK_IDS tokens per key are read; malformed values fall
   assert.equal(e.state.climate, null);
   assert.equal(e.state.room, 'unsure');
   assert.equal(e.state.spot, null, 'an unknown light word reads as unsure, so no spot');
-  assert.equal('stage' in e.state, false, 't= (v4\'s stage) is a reserved letter, not read');
+  assert.equal('stage' in e.state, false, 't= is a key v5 does not know: ignored');
   assert.equal(e.state.country, null);
 });
 
-test('state: v5 reads no Main crops (n is a reserved letter): no crops, nothing counted unknown', () => {
+test('state: v5 reads no Main crops (n is a key v5 does not know, ignored): no crops, nothing counted unknown', () => {
   const five = [0, 1, 2, 3, 4].map((i) => idOf(0x300 + i * 0x1000000));
   const n = five.map((id) => tokenOf(id, five)).join('');
   const d = decodeLink(`v=5&c=temperate&a=&n=${n}&e=1`, { Temperate: five });
@@ -535,22 +537,16 @@ test('core barrel: suggest.ts is not re-exported; loadSuggest gives suggest and 
   assert.equal(rule.suggest, suggest);
 });
 
-// ADR-6: the four facts a view reads through factAt (source.ts), the stored value today.
+// ADR-6: the facts a view reads through factAt (source.ts), the stored value today. Since PP-C commit 0
+// (b3g-5) only water_need: a fact joins FactKey with its first reader.
 test('factAt: the stored value of each ADR-6 fact, null when not recorded (never a misfit)', async () => {
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const at = null, period = core.TODAY_PERIOD;
-  const t = taxon({ traits: { is_annual: false, grown_as_annual: true, is_perennial: true, drought_tolerance: 'Medium', moisture_use: null } });
+  const t = taxon({ traits: { drought_tolerance: 'Medium', moisture_use: null } });
   assert.equal(period, '1991-2020');
-  assert.equal(core.factAt('life_cycle', t, at, period), 'grown_as_annual');
-  assert.equal(core.factAt('life_cycle', taxon({ traits: { is_annual: true, is_perennial: true } }), at, period), 'annual');
-  assert.equal(core.factAt('life_cycle', taxon({ traits: { is_perennial: true } }), at, period), 'perennial');
-  assert.equal(core.factAt('life_cycle', taxon(), at, period), null);
-  assert.deepEqual(core.factAt('cold_limit', t, at, period), { tminColdC: -15, weak: false });
-  assert.deepEqual(core.factAt('heat_limit', t, at, period), { tmaxWarmC: 30 });
   assert.deepEqual(core.factAt('water_need', t, at, period), { drought: 'Medium', moisture: null });
   assert.deepEqual(core.factAt('water_need', taxon({ traits: { drought_tolerance: null, moisture_use: 'High' } }), at, period), { drought: null, moisture: 'High' });
-  const bare = taxon({ climate: null });
-  for (const key of ['life_cycle', 'cold_limit', 'heat_limit', 'water_need']) assert.equal(core.factAt(key, bare, at, period), null, key);
-  const weak = taxon({ climate: { ...taxon().climate, tminCold: { low: -8, median: 0, high: 4, count: 9, basis: 'thinned_cells', weak: true } } });
-  assert.deepEqual(core.factAt('cold_limit', weak, at, period), { tminColdC: -8, weak: true });
+  assert.equal(core.factAt('water_need', taxon({ traits: { drought_tolerance: null, moisture_use: null } }), at, period), null);
+  const stored = readFileSync(new URL('../src/lib/consortium/source.ts', import.meta.url), 'utf8');
+  for (const gone of ['life_cycle', 'cold_limit', 'heat_limit']) assert.ok(!stored.includes(gone), `${gone}: no reader, so no stored fact (b3g-5)`);
 });

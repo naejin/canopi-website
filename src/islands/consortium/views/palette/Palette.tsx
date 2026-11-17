@@ -23,6 +23,7 @@ import { prefetchLater } from '../lazy.tsx';
 import { holeWords } from '../kit/fit.tsx';
 import { listOf, zoneName } from '../kit/names.ts';
 import { JobsPicture } from './JobsPicture.tsx';
+import { FindEntry } from '../Sheets.tsx';
 import { NextStep, openFillers } from './NextStep.tsx';
 import { Weigh } from './Weigh.tsx';
 import { Years } from './Years.tsx';
@@ -101,6 +102,7 @@ export function Palette() {
         </ol>
       </nav>
       <h2 data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
+      <FindEntry where="head" />
       {store.verdictFailed.value && <VerdictNotice />}
       {failedLists.length > 0 && (
         <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {off ? T('load.needsConnection')
@@ -119,6 +121,7 @@ export function Palette() {
       <Weigh members={members} pending={loading} unchecked={unchecked} />
       <Said />
       {shown && <FirstView />}
+      <FindEntry where="bar" />
     </div>
   );
 }

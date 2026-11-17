@@ -121,7 +121,13 @@ jobs:
           path: ${{ runner.temp }}/canopi-climate
           key: canopi-climate-${{ steps.climate.outputs.sha256 }}
       - run: npm run check
-      - run: npm test
+      # On master (with .githooks/zero-markers at `fail`), failing() throws: a marker the scan below
+      # cannot see (a double-quoted title) still fails (PP-C commit 0, design check c2 5.3).
+      - run: |
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/master ] && [ "$(grep -v '^#' .githooks/zero-markers | tr -d '[:space:]')" = fail ]; then
+            export CANOPI_ZERO_MARKERS=1
+          fi
+          npm test
       # Ratchets (scripts/quality/ratchet.mjs): a new finding key fails in CI, a removed one warns.
       - run: npm run check:arch
       - run: npm run check:dup

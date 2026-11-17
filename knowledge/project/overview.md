@@ -4,10 +4,10 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds from the deploy branch, which CI moves to master only when it is green.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:59Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:45Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -37,8 +37,8 @@ sources:
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
-    digest: sha256:f54c110957ab8614
-    last_modified: 2026-11-13T12:11:05Z
+    digest: sha256:c6346b35ba567147
+    last_modified: 2026-11-17T06:47:08Z
   - id: node-version
     resource: ../../.node-version
     title: .node-version

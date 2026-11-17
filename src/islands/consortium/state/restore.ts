@@ -19,9 +19,9 @@ import { lookingThrough } from './lookups.ts';
 // pasted: a link pasted while a consortium was shown that changed nothing (older or newer version,
 // unreadable, cut with no climate, its plant list not loaded); failed: a link or the save whose plant
 // list did not load.
-type PastedProblem = 'outdated' | 'newer' | 'unreadable' | 'cut' | 'failed';
-export interface Notices extends LinkNotice { oldSave: boolean; guideMissing: string | null; guidePlant: PlantId | null; pasted: PastedProblem | null; failed: boolean }
-export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false, oldSave: false, guideMissing: null, guidePlant: null, pasted: null, failed: false };
+type PastedProblem = 'newer' | 'unreadable' | 'cut' | 'failed';
+export interface Notices extends LinkNotice { guideMissing: string | null; guidePlant: PlantId | null; pasted: PastedProblem | null; failed: boolean }
+export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false, guideMissing: null, guidePlant: null, pasted: null, failed: false };
 export const notices = signal<Notices>({ ...NO_NOTICES });
 // A link that brings a place (persist.ts keeps the signal, below this module, so the save follows it),
 // and the save to go back to (persist.ts derives it from the held save).
@@ -171,19 +171,10 @@ export async function restore(fragment: string, { from, src = null, keep = false
   };
   // Refusals take no restore number, never touch saving, and cancel the restore in flight: the
   // latest link wins even when it cannot open, and its notice stays.
-  // The version, by the core's one test (linkVersionStatus; plant-palette-architecture 8.2): older
-  // (v1–v4), newer (above 5) and unreadable restore nothing; a save of those is not removed here.
+  // The version, by the core's one test (linkVersionStatus; plant-palette-architecture 8.2): newer
+  // (above 5) and unreadable (the old beta tool's versions below 5 included) restore nothing; a save of
+  // those is not removed here.
   const status = linkVersionStatus(new URLSearchParams(fragment).get('v'));
-  if (status === 'older') {
-    cancelRestore();
-    // An older version: on Start, the climate it names (decodeLink still reads it; a link, not the
-    // reader acting) and the notice.
-    if (!keep && from === 'link') {
-      const d = decodeLink(fragment, {});
-      if (d.state.climate) quietly(() => { store.climate.value = d.state.climate; });
-    }
-    return refuse('outdated', from === 'link' ? { outdated: true } : { oldSave: true });
-  }
   if (status === 'newer') { cancelRestore(); return refuse('newer', { newer: true }); }
   if (status !== 'current') { cancelRestore(); return refuse('unreadable', { unreadable: true }); }
   // A link with no climate (cut before it, or edited): the cut notice, and nothing opens (review 7).

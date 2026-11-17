@@ -4,10 +4,10 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:14Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:09Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T23:20:27Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:58Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:25e5ed486de7116b
-    last_modified: 2026-11-16T20:01:26Z
+    digest: sha256:e5575be645ec3f24
+    last_modified: 2026-11-17T09:22:58Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -32,13 +32,13 @@ sources:
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
-    digest: sha256:94544e6efe25bcaa
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:765bd5c1dab1b6c2
+    last_modified: 2026-11-17T09:22:58Z
   - id: pre-push
     resource: ../../.githooks/pre-push
     title: .githooks/pre-push
-    digest: sha256:02956cb778d95bb8
-    last_modified: 2026-11-13T03:34:49Z
+    digest: sha256:ff9d7b9815f700a9
+    last_modified: 2026-11-17T09:22:58Z
   - id: pre-commit
     resource: ../../.githooks/pre-commit
     title: .githooks/pre-commit
@@ -63,7 +63,7 @@ sources:
     resource: ../../scripts/browser/smoke/axe.smoke.mjs
     title: scripts/browser/smoke/axe.smoke.mjs
     digest: sha256:3c67f98ddf1f093a
-    last_modified: 2026-11-16T22:53:45Z
+    last_modified: 2026-11-16T23:20:48Z
   - id: climate-vectors-test-mjs
     resource: ../../scripts/climate-vectors.test.mjs
     title: scripts/climate-vectors.test.mjs
@@ -97,8 +97,8 @@ sources:
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
-    digest: sha256:5c744fec4a232c42
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:de83b81abefa97df
+    last_modified: 2026-11-17T09:53:05Z
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
@@ -107,8 +107,8 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:c638ae839c86107e
-    last_modified: 2026-11-16T18:57:58Z
+    digest: sha256:9ba62be01727d68e
+    last_modified: 2026-11-17T09:22:58Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml

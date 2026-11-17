@@ -4,16 +4,16 @@
 // inside, and the toast under the tool. App.tsx renders it always.
 //
 // Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target): 'details'
-// and 'swap' take a plant id; 'add' takes what it was opened for (a cell or run of one layer, a job,
-// "Show them anyway"); 'search' (Start's "Start empty and search"), 'paste' ("Paste a list") and
-// 'place' (the "Your place" sheet, "Change your place" in the palette's head) take none. Nothing writes
+// and 'swap' take a plant id; 'find' opens through store.openFind(target?) with what it was opened
+// for (a hole: its job, the Hole and its test); 'paste' ("Paste a list") and 'place' (the "Your
+// place" sheet, "Change your place" in the palette's head) take none. Nothing writes
 // store.sheet directly, so what one sheet was opened for never leaks into the next. Whatever had the
 // focus when a sheet opened (a chip) gets it back when the sheet closes (Escape, Close, the backdrop, a
 // part that could not load); a chip that is gone by then is found again by `data-plant-id`, else the
 // toast's Undo takes the focus, else the shown view's heading.
 //
 // Each sheet but "Your place" is a part loaded on first use (views/lazy.tsx later(), onFail
-// 'closeSheet'): the plant dialog (views/details/Details.tsx), Swap, Add (also Search) and Paste. "Your
+// 'closeSheet'): the plant dialog (views/details/Details.tsx), Swap, Find and Paste. "Your
 // place" is Place's own parts (views/place/Place.tsx PlaceSheet), in the first run with Place. Each is
 // prefetched once the data is ready; one opened before its chunk is here opens at once in its frame
 // with a loading line (the dialog with the plant's name), and one whose chunk does not come closes with
@@ -77,8 +77,8 @@ function DetailsWaiting({ id, Frame }: { id: PlantId; Frame: Frame }) {
 const sheet = { onFail: 'closeSheet', loading: SheetWaiting } as const;
 const details = later(retryableImport(() => import('./details/Details.tsx'), (m) => m.PlantDetails), { onFail: 'closeSheet', loading: DetailsWaiting });
 const swap = later(retryableImport(() => import('./Swap.tsx'), (m) => m.default), sheet);
-const add = later(retryableImport(() => import('./Add.tsx'), (m) => m.default), sheet);
-const paste = later(retryableImport(() => import('./Paste.tsx'), (m) => m.default), sheet);
+// Paste is in the find role (built-modules.mjs ROLE_ENTRIES; c1 moves it into views/find/).
+const paste = later(retryableImport(() => import('./Paste.tsx'), (m) => m.default), { ...sheet, find: true });
 
 // One opening: one <dialog> (SheetDialog: one slide-in, one announcement), closing this sheet only
 // (Escape fires `close` a task later, maybe once another sheet opened), and the frame its part draws
@@ -95,15 +95,16 @@ function Part({ s, Frame }: { s: Opened; Frame: Frame }) {
   switch (s.kind) {
     case 'details': return <details.View id={s.id!} Frame={Frame} />;
     case 'swap': return <swap.View id={s.id!} Frame={Frame} />;
-    case 'add': return <add.View mode="add" Frame={Frame} />;
-    case 'search': return <add.View mode="search" Frame={Frame} />;
+    // PP-C commit 0 deleted the Add sheet; until c1's Find (views/find/) lands, Find opens the Paste
+    // sheet, the other way to add plants by name, so no opener leads to an empty modal.
+    case 'find': return <paste.View Frame={Frame} />;
     case 'paste': return <paste.View Frame={Frame} />;
     case 'place': return <PlaceSheet Frame={Frame} />;
     default: return null;
   }
 }
 
-const SHEETS: readonly SheetKind[] = ['details', 'swap', 'add', 'search', 'paste', 'place'];
+const SHEETS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste', 'place'];
 const WITH_PLANT: readonly SheetKind[] = ['details', 'swap'];
 function Router() {
   const s = store.sheet.value;
@@ -112,6 +113,17 @@ function Router() {
   // whose close listener knows its own sheet.
   if (!SHEETS.includes(s.kind) || (WITH_PLANT.includes(s.kind) && !s.id)) return null; // share and download are not sheets
   return <Opening key={`${s.kind}:${s.n}`} s={s} />;
+}
+
+// The ways into Find the palette page shows (PP-C commit 0, slices 3.2; boards Palette, Empty,
+// FindDesk): "Add plants" right of the palette's title at 1280 (`head`), the phone's bottom bar with
+// "Add plants" (`bar`; hidden while a sheet is open) and the empty palette's first row, "Find plants"
+// (`empty`). Mount points the palette page renders; c1 (which owns this file and views/find/) fills
+// them, each opening Find through store.openFind(), so the palette page's files never change for
+// them. Empty until then. The bar's height is --ct-bar-room (details.css).
+export type FindEntryPlace = 'head' | 'bar' | 'empty';
+export function FindEntry(_: { where: FindEntryPlace }) {
+  return null;
 }
 
 export function Sheets() {

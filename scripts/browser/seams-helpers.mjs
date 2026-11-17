@@ -50,16 +50,18 @@ export async function suggested(v, { room = null, light = null } = {}) {
 // The members shown, as plant ids: the palette page's picture chips carry data-plant-id (the Next
 // step's fillers carry it too, but they are not members, so only the pictures are read).
 export const memberIds = (page) => page.$$eval('#ct-root .ct-chart [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))]);
-// Opens Add through the store's opener (the page must be opened with hook: true): the palette page has
-// no general "Add plants" button until Your plants (PP-B b3, chunk 2).
-export async function openAdd(page) {
+// Opens Find (PP-C commit 0 renamed the Add sheet's kind; c1 builds Find and retargets these helpers)
+// through "Add plants" when the page shows it (c1's mount points), else the store's one opener (the
+// page must be opened with hook: true).
+export async function openFind(page) {
   if (await has(page, aria('button', 'Add plants'), 300)) return page.locator(aria('button', 'Add plants')).click();
   const ok = await page.waitForFunction(() => typeof window.__ctTest === 'object', { timeout: 20_000 }).then(() => true, () => false);
   assert.ok(ok, 'the test hook: build with npm run build:browser-test');
-  await page.evaluate(() => window.__ctTest.openSheet('add'));
+  await page.evaluate(() => window.__ctTest.openFind());
 }
 
-// The Add sheet's own rows (not "In other lists"), every one (after "Show all N").
+// The Add sheet's own rows (not "In other lists"), every one (after "Show all N"); c1 retargets it onto
+// Find's results.
 export async function addRows(page) {
   const all = await page.$('.ct-add .ct-add-showall');
   if (all) await all.click();

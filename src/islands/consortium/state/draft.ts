@@ -162,7 +162,7 @@ function answered(line: string): void {
   focusView();
 }
 
-// "Search all plants" (the pool panel's "nothing fits" line): S3's search sheet over the palette. It
+// "Search all plants" (the pool panel's "nothing fits" line): Find over the palette. It
 // never removes a plant (fix round 4, s-4): with plants, the search opens over them; with none, this is
 // the empty palette's start.
 export function startEmpty(): void {
@@ -170,7 +170,7 @@ export function startEmpty(): void {
   batch(() => {
     dropLinkLocation();
     store.view.value = 'matrix';
-    store.openSheet('search');
+    store.openFind();
   });
 }
 
@@ -183,9 +183,9 @@ export function showPalette(): void {
   focusView();
 }
 
-// "Add a plant by name" on Place: the search sheet (S3); a plant added joins the list on Place
+// "Add a plant by name" on Place: Find; a plant added joins the list on Place
 // (store.ts addMembers leaves the view alone; b1a review r1 conformance-2).
 export function addOwnPlant(): void {
   adoptPending();
-  store.openSheet('search');
+  store.openFind();
 }

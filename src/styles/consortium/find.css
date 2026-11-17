@@ -1,0 +1,6 @@
+/* Find (PP-C c1, owned by c1; slices 3.3): the Find sheet, its results and filters, FillHole, and the
+   ways into it (views/Sheets.tsx FindEntry: "Add plants" beside the palette's title, the phone's
+   bottom bar, "Find plants" on the empty palette). Page-level, imported by ConsortiumPage.astro, so no
+   stylesheet loads with a lazy chunk (A14). The bar sets --ct-bar-room on :root while it shows
+   (details.css reads it for the toast offset, the root padding and scroll-padding-bottom). Empty
+   until c1 (PP-C commit 0). */

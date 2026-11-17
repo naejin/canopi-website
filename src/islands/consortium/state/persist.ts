@@ -9,9 +9,9 @@
 // - The last consortium: localStorage STORE, { fragment, place, at, src, country? }, written on each
 //   change: fragment the public v5 form (room `m` and plot `z` live there), place the private place
 //   answers `l w q r h s` (no k, no o), src whether its country came from a shared link, so it keeps
-//   that label; a visit with no link opens it. A guide preset (?plant=&climate=, A5) wins over it. An
-//   older save (v1's { q, at, src }, or a v1–v4 fragment: core linkVersionStatus 'older') gives the
-//   "older version" notice once and is removed; a newer or unreadable one is left untouched.
+//   that label; a visit with no link opens it. A guide preset (?plant=&climate=, A5) wins over it. A
+//   save readRecord cannot read (the old beta tool's, a newer or unreadable one) opens nothing and is
+//   left untouched; the next change overwrites it (owner 2026-11-17: no backward compatibility work).
 // - PLACE_STORE (canopi-place): the reader's last place answers `m z l w q r h s`, written on every
 //   place change the reader makes, read only to seed a palette that starts with no place of its own
 //   (arrival.ts startMemory).
@@ -89,8 +89,8 @@ const parsed = (text: string | null): Record<string, unknown> | null => {
   const v = attempt(() => JSON.parse(text) as unknown);
   return v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
 };
-// A record read back, or null when it is not one: an older format, a fragment that is not of the
-// current link version (older, newer, unreadable, or no `v` at all: core linkVersionStatus), damaged
+// A record read back, or null when it is not one: the old beta format, a fragment that is not of the
+// current link version (newer, unreadable, or no `v` at all: core linkVersionStatus), damaged
 // JSON. A record without `place` reads with every place answer unsure ('').
 export function readRecord(text: string | null): SavedRecord | null {
   const v = parsed(text);
@@ -101,15 +101,6 @@ export function readRecord(text: string | null): SavedRecord | null {
   const from = fromOf(src);
   const pl = typeof place === 'string' && place.length < 2_000 ? place : '';
   return BESIDE.includes(from) && typeof country === 'string' && /^[A-Z]{2}$/.test(country) ? { fragment, place: pl, at, src: from, country } : { fragment, place: pl, at, src: from };
-}
-// A save from an older version of the tool, said once and removed: v1's { q, at, src }, or a record
-// whose fragment is v1–v4 (owner 2026-11-14). A newer or unreadable one is not older: left untouched.
-export function oldRecord(text: string | null): boolean {
-  const v = parsed(text);
-  if (!v) return false;
-  if (typeof v.q === 'string') return true;
-  if (typeof v.fragment !== 'string') return false;
-  return linkVersionStatus(versionOf(v.fragment)) === 'older';
 }
 
 // ---- the share state ----

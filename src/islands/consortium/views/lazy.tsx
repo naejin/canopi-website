@@ -26,16 +26,18 @@ import { effect, signal } from '@preact/signals';
 import { closeSheet, load as dataLoad, offline, showToast } from '../store.ts';
 import { T } from '../strings.ts';
 
-type Kind = 'sheets' | 'later' | 'page';
+type Kind = 'sheets' | 'find' | 'later' | 'page';
 // Browser-test builds only (A13): a part's chunk fails, or waits until the test releases it
 // (globalThis.__ctFaults, written by test-hook.ts; `sheets` for sheet parts, `later` for the others).
 // Read when a part is used, not when it is fetched, so a part the prefetch already loaded still fails
-// or waits as if its chunk had not come. The palette page itself (`page`) takes neither: the later
-// faults stand for the chunks after the first view.
+// or waits as if its chunk had not come. The palette page itself (`page`) and Find's parts (`find`)
+// take none: the later faults stand for the chunks after the first view, and a spec fails Find's
+// chunk by blocking its request (the harness's block: { find }; review c0 4.1).
 function faultOf(kind: Kind): 'fail' | 'hold' | null {
-  if (!__CT_TEST_HOOK__ || kind === 'page') return null;
+  if (!__CT_TEST_HOOK__ || kind === 'page' || kind === 'find') return null;
   const f = globalThis.__ctFaults;
-  return kind === 'sheets' ? (f?.sheets ? 'fail' : null) : (f?.later ?? null);
+  if (kind === 'sheets') return f?.sheets ? 'fail' : null;
+  return f?.later ?? null;
 }
 async function gate(kind: Kind): Promise<void> {
   if (!__CT_TEST_HOOK__) return;
@@ -58,6 +60,7 @@ export interface PartOptions<C extends Any> {
   loading?: ComponentType<PropsOf<C>>;
   retry?: boolean; // the importer is retryableImport(): a failed part is tried again in place
   page?: boolean; // the palette page (App.tsx): no later test fault holds or fails it
+  find?: boolean; // a sheet part of the find role (views/Sheets.tsx): the `find` test fault fails it
 }
 
 // The line a part that could not load shows in place, with Reload (L1, L7); Swap shows it too when
@@ -85,8 +88,8 @@ export function LoadFailed({ retry, inPlace = false }: { retry?: () => void; inP
 // loops on its own failure.
 const loadedTick = signal(0);
 
-export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading, retry = false, page = false }: PartOptions<C> = {}): LazyPart<C> {
-  const kind: Kind = onFail === 'closeSheet' ? 'sheets' : page ? 'page' : 'later';
+export function lazyPart<C extends Any>(importer: () => Promise<C>, { quiet = false, idle = false, onFail = 'notice', loading, retry = false, page = false, find = false }: PartOptions<C> = {}): LazyPart<C> {
+  const kind: Kind = onFail === 'closeSheet' ? (find ? 'find' : 'sheets') : page ? 'page' : 'later';
   const done = signal<C | null>(null);
   let pending: Promise<C> | null = null;
   // lastFailed: the last load failed, when loadedTick read failedAt.

@@ -13,6 +13,7 @@ import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { liveLog, resetLive, saidTwice, suggestedAt, watchLiveRegions } from './f1a-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { showPalette } from './seams-helpers.mjs';
+import { failing } from '../expect-fail.mjs';
 
 useHarness();
 
@@ -233,7 +234,10 @@ test('PP-B30 (b2 link arrival, review r1 perf-3): the palette page\'s chunk and 
   await done(page);
 });
 
-test('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palette page shows the Next step and both pictures, and a hole\'s Find opens Add preset to it', async () => {
+// PP-C commit 0: the Add sheet is gone; See all opens Find (store.openFind with the hole; the Paste
+// sheet until c1 builds Find). The title in the hole's words is c1's PP-C7 (FillHole), so this case
+// stops at the preset (review c0 4.4: one test per behaviour).
+test('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palette page shows the Next step and both pictures, and a hole\'s See all opens Find preset to it', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   assert.ok(await onPage(page), 'Suggest opens the palette page');
   assert.equal(await page.evaluate(() => window.__ctTest.store.step.value), 'palette');
@@ -241,24 +245,21 @@ test('PP-B27 (b2 Lyon first visit, F1a-P1 restored): after Suggest the palette p
   assert.equal(await page.$$eval('.ct-chart', (els) => els.length), 2, 'Through the years and the jobs');
   assert.ok(await has(page, '.ct-chart [data-plant-id]', 4000), 'the members in the pictures');
   await page.click('.ct-next-actions .button');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'add', { timeout: 10_000 }).then(() => true, () => false), 'the Next step\'s See all opens Add');
-  assert.ok(await page.evaluate(() => { const c = window.__ctTest.store.sheetCell.value; return !!(c.job || c.cell?.stratum); }), 'Add opens preset to the hole');
-  // Review r1 conformance-10: the sheet names the hole with the card's words.
-  const words = await page.$eval('.ct-next-hole', (e) => e.textContent.trim());
-  assert.equal(await page.waitForSelector('dialog.ct-add[open] h2', { timeout: 10_000 }).then((e) => e.evaluate((x) => x.textContent.trim())), words, 'Add titled with the hole in words');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'find', { timeout: 10_000 }).then(() => true, () => false), 'the Next step\'s See all opens Find');
+  assert.ok(await page.evaluate(() => { const c = window.__ctTest.store.sheetTarget.value; return !!(c.hole && c.fits); }), 'Find opens preset to the hole');
   await done(page);
 });
 
-test('PP-B28 (b2 keyboard journey, F1a-P8 restored, A25): with the keyboard only, the Next step\'s "See all" opens Add and closing it returns the focus to the button', async () => {
+test('PP-B28 (b2 keyboard journey, F1a-P8 restored, A25): with the keyboard only, the Next step\'s "See all" opens Find and closing it returns the focus to the button', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   await ownPalette(page, 2);
   assert.ok(await has(page, '.ct-next-actions .button', 8000), 'the Next step has See all');
   await page.focus('.ct-next-actions .button');
   await page.keyboard.press('Enter');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'add', { timeout: 10_000 }).then(() => true, () => false), 'Add opens');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind === 'find', { timeout: 10_000 }).then(() => true, () => false), 'Find opens');
   await page.keyboard.press('Escape');
-  assert.ok(await page.waitForFunction(() => document.activeElement?.matches('.ct-next-actions .button'), { timeout: 4000 }).then(() => true, () => false), 'closing Add returns the focus to "See all"');
+  assert.ok(await page.waitForFunction(() => document.activeElement?.matches('.ct-next-actions .button'), { timeout: 4000 }).then(() => true, () => false), 'closing Find returns the focus to "See all"');
   assert.equal(await page.$('dialog[open]'), null, 'no dialog left open');
   await done(page);
 });
@@ -586,30 +587,34 @@ const entry = (page) => page.evaluate(() => navigation.currentEntry.index);
 const back = (page) => page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.back(); }));
 const forward = (page) => page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.forward(); }));
 const sheetKind = (page) => page.evaluate(() => window.__ctTest.store.sheet.value?.kind ?? null);
-const openAdd = async (page) => {
+// Find from the Next step's See all, in "Select several" (c1's contract: consortium-pp-c1.browser.test.mjs).
+const findTicks = async (page) => {
   await page.click('.ct-next-actions .button');
-  await page.waitForSelector('dialog.ct-add[open] .ct-rows input[type="checkbox"]', { timeout: 10_000 });
+  assert.ok(await page.waitForSelector('dialog.ct-find[open]', { timeout: 10_000 }).then(() => true, () => false), 'no Find sheet (dialog.ct-find)');
+  await page.click('dialog.ct-find[open] [data-find-select]');
+  await page.waitForSelector('dialog.ct-find[open] [data-find-row] input[type="checkbox"]', { timeout: 4000 });
 };
 
 // Coordinator row 2026-11-14 "Sheets and browser history" (inventory K7): a full-screen sheet pushes
 // one history entry; the phone's Back closes it and keeps every edit made in it; a second Back leaves
 // the page; Forward never reopens a stale sheet.
-test('PP-B31 (b2 sheets and Back, K7; review r1 bugs-1): Back closes the Add sheet keeping the plants added in it, the address keeps them, a second Back leaves the page, Forward never reopens it', async () => {
+// PP-C commit 0: the Add sheet's ticks went with it; written against Find's "Select several" (c1).
+failing('PP-B31 (b2 sheets and Back, K7; review r1 bugs-1; owner c1 \'Find ticks\'): Back closes Find keeping the plants added in it, the address keeps them, a second Back leaves the page, Forward never reopens it', { owner: 'c1', reason: /no Find sheet \(dialog\.ct-find\)/ }, async () => {
   const page = await tool({ width: 390, hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
   await page.waitForSelector('.ct-next-actions .button', { timeout: 10_000 });
   const arrived = await entry(page), before = await page.evaluate(() => window.__ctTest.store.members.value.length);
-  await openAdd(page);
+  await findTicks(page);
   assert.equal(await entry(page), arrived + 1, 'the sheet took one history entry');
-  const ticks = await page.$$('dialog.ct-add[open] .ct-rows input[type="checkbox"]');
+  const ticks = await page.$$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]');
   await ticks[0].click();
   await ticks[1].click();
-  await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
+  await page.locator(aria('button', 'Add 2 plants')).click();
   assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 2 && !window.__ctTest.store.sheet.value, { timeout: 4000 }, before).then(() => true, () => false), '"Add 2 plants": both in, the sheet closed');
   await page.waitForFunction((a) => navigation.currentEntry.index === a, { timeout: 4000 }, arrived);
   // Open it again and press the phone's Back.
   await page.evaluate(() => window.__ctTest.store.hideToast());
-  await openAdd(page);
+  await findTicks(page);
   await back(page);
   assert.equal(await sheetKind(page), null, 'Back closes the sheet');
   assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), before + 2, 'the plants added stay');
@@ -698,40 +703,6 @@ test('PP-B33 (b2 keyboard Add from the Next step; review r1 bugs-2, conformance-
   assert.ok((await page.evaluate(() => window.__ctTest.store.toast.value.text)).includes(name), 'the toast names the plant added');
   await dismissToast(page);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-next-t', 'the toast hands the focus back to the Next step');
-  await done(page);
-});
-
-test('PP-B34 (b2 Lyon "See all", a dry shady spot; review r1 bugs-3, conformance-1): Add lists exactly the plants "See all N" counts, the site misfits flagged, never hidden', async () => {
-  const page = await tool();
-  await atSite(page, 'lyon');
-  await choose(page, 'Temperate');
-  await page.evaluate(() => { const { store } = window.__ctTest; store.spot.value = { ...store.spot.value, light: 'shade', water: 'dry' }; });
-  await ownPalette(page, 3);
-  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value && document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
-  await page.evaluate(() => window.__ctTest.store.hideToast());
-  const seen = [];
-  for (let i = 0; i < 6 && await page.$('.ct-next-actions'); i++) {
-    const hole = await nextHole(page);
-    const label = await page.$eval('.ct-next-actions .button', (e) => e.textContent.trim());
-    const n = Number(/\d+/.exec(label)?.[0] ?? 1);
-    await openAdd(page).catch(() => {});
-    if (await page.$('dialog.ct-add[open]')) {
-      const outside = await page.evaluateHandle(() => [...document.querySelectorAll('dialog.ct-add[open] .button')].find((b) => /outside/i.test(b.textContent)) ?? null);
-      if (await outside.evaluate((b) => !!b)) await outside.click();
-      const all = await page.$('dialog.ct-add[open] .ct-add-showall');
-      if (all) await all.click();
-      await frames(page);
-      const rows = await page.$$eval('dialog.ct-add[open] .ct-rows li', (els) => els.length);
-      seen.push(`${hole}: "${label}" lists ${rows}`);
-      if (rows !== n) seen.push('MISMATCH');
-      await page.evaluate(() => window.__ctTest.store.closeSheet());
-      await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-    } else if (n) seen.push(`${hole}: "${label}" opened no list`, 'MISMATCH');
-    await page.click(`.ct-next-actions ${aria('button', en['consortium.palette.notNow'])}`);
-    await frames(page);
-  }
-  assert.ok(seen.length > 0, 'a hole was checked');
-  assert.ok(!seen.includes('MISMATCH'), seen.join('; '));
   await done(page);
 });
 
@@ -1055,14 +1026,19 @@ test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette
       const dom = await page.evaluate(() => document.querySelectorAll('.ct-palette-page *').length);
       const members = await page.evaluate(() => JSON.parse(localStorage.getItem('canopi-consortium')).fragment.length);
       figures.push(`${width} px: Next step ${Math.round(next)} ms, DOM ${dom}`);
-      // One Add from the Next step's filler; 200 plants of this palette leave no hole, so then from the Add
-      // sheet (ticked, "Add 1 plant"): measured from the press to the second frame after the toast.
+      // One Add from the Next step's filler; 200 plants of this palette leave no hole, so then through Find
+      // (PP-C commit 0: store.openFind, the Paste sheet until c1 builds Find; a plant not yet in the palette
+      // pasted by name, "Add 1 plant"): measured from the press to the second frame after the toast.
       let press = '.ct-next .ct-fillers button';
       if (!(await has(page, press, 1000))) {
-        await page.evaluate(() => window.__ctTest.openSheet('add'));
-        await page.waitForSelector('dialog.ct-add[open] .ct-rows input[type="checkbox"]', { timeout: 20_000 });
-        await page.click('dialog.ct-add[open] .ct-rows input[type="checkbox"]');
-        press = 'dialog.ct-add[open] .ct-add-bar .button-primary';
+        const name = await page.evaluate(() => { const { store } = window.__ctTest, m = new Set(store.members.value); return Object.values(store.pools.value).flat().find((t) => !m.has(t.id))?.canonical_name ?? null; });
+        assert.ok(name, `${width} px: a plant not yet in the palette`);
+        await page.evaluate(() => window.__ctTest.openFind());
+        await page.waitForSelector('dialog.ct-sheet[open] textarea', { timeout: 20_000 });
+        await page.type('dialog.ct-sheet[open] textarea', name);
+        press = 'dialog.ct-sheet[open] .ct-add-bar .button-primary';
+        // The pasted name matched: "Add 1 plant", enabled (else the press below waits for a toast that never comes).
+        assert.ok(await page.waitForFunction((sel) => { const b = document.querySelector(sel); return !!b && !b.disabled && /\b1\b/.test(b.textContent); }, { timeout: 20_000 }, press).then(() => true, () => false), `${width} px: "Add 1 plant" for ${name}`);
       }
       const add = await page.evaluate((sel) => new Promise((done) => {
         const t0 = performance.now();

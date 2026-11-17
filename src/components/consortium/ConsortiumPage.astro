@@ -36,6 +36,8 @@ import '../../styles/consortium/p5/s5e.css';
 import '../../styles/consortium/palette-page.css';
 import '../../styles/consortium/place.css';
 import '../../styles/consortium/plants.css';
+// PP-C (commit 0): Find's stylesheet (c1), page-level for the same reason.
+import '../../styles/consortium/find.css';
 
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
@@ -121,7 +123,7 @@ const betaNote = P('betaNote', index.climates.length);
         <div class="callout"><p>{tr('noscript')}</p>{guide && <p><a class="text-link" href={guide.url} hreflang={guide.lang !== lang ? guide.lang : undefined}>{tr('noscript.link')}</a></p>}</div>
       </noscript>
       {/* How the page opens, set before the first paint so nothing jumps when the island mounts:
-          "link" for a share link (any fragment with v or a: #v=5…, an older #v=3…, or a v1 #a=…),
+          "link" for a share link (any fragment with v or a; one this tool cannot read says so on Place),
           "preset" for a guide's ?plant=&climate= (design check A5), else "start". The island reads the
           address itself; this only marks the head. */}
       <script is:inline>(function () { try {

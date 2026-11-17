@@ -7,7 +7,8 @@
 # - npm test (unit and policy tests);
 # - npm run check:arch (dependency-cruiser's layer rules through scripts/quality/ratchet.mjs);
 # - when a pushed ref is master: no expected-fail marker left (fails only once .githooks/zero-markers
-#   says `fail`; until then it warns with the count).
+#   says `fail`; until then it warns with the count); with `fail`, npm test runs with
+#   CANOPI_ZERO_MARKERS=1, so failing() throws for a marker the scan cannot see (PP-C commit 0).
 # Browser specs run in CI only. A push whose every range is documentation only (the rule of ci.yml's
 # `changes` job: knowledge/**, .beads/**, docs/**, root *.md) skips the first three. Deletions and
 # tags are skipped. Each command runs memory-capped and prints its time. Bypass once with
@@ -39,6 +40,9 @@ done
 need_node_modules pre-push || exit 1
 
 start=$(date +%s)
+if [ "$master" = yes ] && [ "$(grep -v '^#' .githooks/zero-markers 2>/dev/null | tr -d '[:space:]')" = fail ]; then
+  export CANOPI_ZERO_MARKERS=1
+fi
 if [ "$code" = yes ]; then
   echo "pre-push: check, unit tests, layer rules" >&2
   step "npm run check" npm run check --silent || exit 1

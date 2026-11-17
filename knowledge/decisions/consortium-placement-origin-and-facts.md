@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:52Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:35:02Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:43Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:39f3e985aba0677c
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:d406e9cf7fe5e4de
+    last_modified: 2026-11-17T10:28:03Z
   - id: site-marks-ts
     resource: ../../src/lib/consortium/site-marks.ts
     title: src/lib/consortium/site-marks.ts
@@ -25,8 +25,8 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:a18dba8e1a9e961a
-    last_modified: 2026-11-16T17:40:54Z
+    digest: sha256:766ed7fdb9ff7efa
+    last_modified: 2026-11-17T10:25:24Z
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
@@ -42,8 +42,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:e21792d2c86518fa
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:15a62311180fe1fa
+    last_modified: 2026-11-17T10:25:24Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
@@ -65,7 +65,7 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 - **Borrowed wins over guest, the guest label stays.** A plant that is both (reachable only through a member found in an earlier borrowed pool) keeps its borrowed origin, since its placement, reasons and estimate mark come from that list; since the E6 hand-off (D) the list it was picked in is noted as `origin.guest`, so every view still labels it a guest ("From the X list"). Nothing persisted changed: saves hold only the guests map.
 - **Which record a view gets** (`store.ts` `taxonOf`, E6 hand-off re-review 1 and review 4): the member, else the guest's record from the list it was added from (`guestTaxa`, from the consortium's guests map once that list is read), else the chosen climate's own list as read in `pools` (never a guest, even while `store.pool` waits for the range rule), else another climate's list already read, through `asGuest`. A guest is therefore never resolved from the first other list that happens to hold it. Tested by `scripts/consortium-taxon-of.test.mjs`.
 - **`factAt`.** `FactAt = (key, taxon, site, period) => FactValues[key] | null`, implemented in core `source.ts` (beside the `PlantSource` that stores the facts) with `TODAY_PERIOD` `periodIds[0]` (`'1991-2020'`). In E6 it returns the stored value whatever the site and period; views read these facts through it instead of `t.traits.*`. Details (water need), the palette's Things to weigh (water need, grouped by `weigh.ts` `waterNeed`) and `site.ts`'s water check (drought tolerance and moisture use, PP-B b3 fix round 2, verdicts unchanged) read it; F2 routes the rest of site fit and range through it and computes per site and period behind the same signature, and E7 reads scoped stored facts (most specific wins).
-- **Its fact list, and only it** (`FactKey`): `life_cycle` (`annual`, `grown_as_annual` or `perennial` from the traits), `cold_limit` (`tminColdC`, `weak`), `heat_limit` (`tmaxWarmC`), `water_need` (`drought` and `moisture`, each `string | null`; widened from `drought: string` in R4 so a plant with only a moisture value still answers, and null only when both are unknown). Other traits stay direct reads; a fact joins the list only when a step needs it site- or period-dependent.
+- **Its fact list, and only it** (`FactKey`): `water_need` (`drought` and `moisture`, each `string | null`; widened from `drought: string` in R4 so a plant with only a moisture value still answers, and null only when both are unknown). `life_cycle`, `cold_limit` and `heat_limit` were listed until PP-C commit 0 (b3g-5) deleted them: no view read them, and their stored readers cost first-run bytes. Other traits stay direct reads; a fact joins the list with its first reader (F2 for the facts it computes per site and period, E7 for scoped ones).
 - **`SiteFitMessage`** `{ id, about, severity, misfit, key, vars?, state? }` (`misfit` was `asks` until the 2026-11-14 "Inform, don't block" row: a misfit warns in words, never asks): one shape for site-fit lines (light, room, climate) so the views stop composing them. In use since E6 R2: core `site-marks.ts` `siteFitMessages` builds them, `rules/site-fit.ts` and `views/kit/flags.ts` word the flags from them, and `siteMarks` turns the notes (`state` set) into marks.
 
 ## Consequences

@@ -85,7 +85,7 @@ const store = await import('../src/islands/consortium/store.ts');
 const { state: schema } = await import('../src/islands/consortium/state/schema.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-const { STORE, PLACE_STORE, LOCATION_STORE, COUNTRY_STORE, readRecord, saveRecord, oldRecord } = persist;
+const { STORE, PLACE_STORE, LOCATION_STORE, COUNTRY_STORE, readRecord, saveRecord } = persist;
 
 test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the save, the tab\'s pl, and canopi-place only as a seed', () => {
   const rec = readRecord(saveRecord('v=5&c=temperate&m=pots&a=&e=1', '2026-11-14', 'location', 'KE', 'l=shade&w=dry'));
@@ -97,9 +97,8 @@ test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the
   // A reload while a link's place still waited (history.state ask: 1, with the link's country in pl):
   // asked again, so the save stays held until the reader chooses.
   assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'link', place: 'k=FR&l=sun', ask: true, hold: true });
-  // A save with no v, and v4 / v6 saves: not a record; v4 alone is the older one.
+  // A save with no v, and v4 / v6 saves: not a record.
   for (const f of ['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1']) assert.equal(readRecord(saveRecord(f, 'x', null)), null, f);
-  assert.deepEqual(['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1'].map((f) => oldRecord(saveRecord(f, 'x', null))), [false, true, false]);
   // The seed: room, plot, spot and soil read through the link's words; nothing else.
   const seed = arrivalM.placeOfSeed('m=pots&z=40&l=shade&q=windy&s=own.acid.-');
   assert.equal(seed.room, 'pots');
@@ -1233,7 +1232,7 @@ test('fix round 4 s-4: "Search all plants" on a page with 6 plants opens the sea
   draft.startEmpty();
   await wait(0);
   try {
-    assert.equal(store.sheet.peek()?.kind, 'search', 'the search is not open');
+    assert.equal(store.sheet.peek()?.kind, 'find', 'Find is not open');
     assert.deepEqual(store.members.peek(), ids, '"Search all plants" removed the reader\'s plants');
     assert.deepEqual(await savedIds(), ids, 'the save lost the reader\'s plants');
   } finally { store.closeSheet(); }
@@ -1242,7 +1241,7 @@ test('fix round 4 s-4: "Search all plants" on a page with 6 plants opens the sea
   draft.startEmpty();
   try {
     assert.equal(store.view.peek(), 'matrix');
-    assert.equal(store.sheet.peek()?.kind, 'search');
+    assert.equal(store.sheet.peek()?.kind, 'find');
   } finally { store.closeSheet(); }
 });
 test('fix round 4 s-5: "Open my saved palette instead" offers and opens what storage holds (another tab\'s T), and the next edit never writes this page\'s stale palette over it', async () => {

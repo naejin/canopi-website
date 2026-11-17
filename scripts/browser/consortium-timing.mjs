@@ -5,7 +5,7 @@
 // (CANOPI_BROWSER_PORT picks the port, as for the browser tests; CANOPI_TIMING_PROFILES=desktop or
 // =phone runs one profile, CANOPI_TIMING_RUNS changes the 5 runs; --dir times another production
 // build, e.g. a copy of dist/ kept from before a change, for a local before/after comparison.) Each
-// run opens a #v=4 link of 9 real Temperate plants (built with the core's encodeLink, so the page
+// run opens a #v=5 link of 9 real Temperate plants (built with the core's encodeLink, so the page
 // restores a consortium and draws its matrix) and reads the time of `performance.mark('ct:first-view')`
 // (the consortium is first on screen) from the start of navigation; a page that never sets it fails the
 // run. Cold: a fresh browser context (empty cache), a first visit. Warm: the same context reloaded

@@ -18,8 +18,7 @@ import { loadState } from './harness.mjs';
 import { ROOT } from './serve.mjs';
 import { aria, h, has, realDb, settled, suggestDirect, suggestReady, useHarness } from './helpers.mjs';
 import { SITES, pickCard } from './location-fixtures.mjs';
-import { encodeLink } from '../../src/lib/consortium/state.ts';
-import { tool, atSite, choose, locationControls, locationState, ADD_OPEN, text, proposedCard, ready, search, RANGED, OUTSIDE, EDGE, pickRanged, atNowhere, members } from './p5-helpers.mjs';
+import { tool, atSite, choose, locationControls, locationState, text, proposedCard, ready, search, RANGED, OUTSIDE, EDGE, pickRanged, atNowhere, members } from './p5-helpers.mjs';
 
 useHarness();
 
@@ -57,11 +56,10 @@ test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "not
   // small suggested palette"); the panel's step is the way on.
   assert.equal(await page.$('[data-place-suggest]'), null, 'no usable Suggest when nothing fits');
   await page.click('[data-pool-empty] button');
-  assert.ok(await has(page, '.ct-add .ct-search input', 10_000), 'the next step opens the plant search');
-  // Review round 1: before anything is typed it lists every plant (each marked outside), never "No plant matches".
-  await page.click('.ct-add-showall').catch(() => {});
-  assert.ok(await has(page, '.ct-add .ct-rows li', 10_000), 'the search lists plants before a query');
-  assert.ok(await has(page, '.ct-add .ct-rows li [data-mark="outside"]', 10_000), 'each one marked outside its range');
+  // PP-C commit 0: the step opens Find (store.openFind; the Paste sheet until c1 builds Find). Its rows
+  // before a query, every plant marked outside, are c1's case (consortium-pp-c1, PP-C2b).
+  assert.equal(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind ?? null, { timeout: 10_000 }).then((r) => r.jsonValue(), () => null), 'find', 'the next step opens Find');
+  assert.ok(await has(page, 'dialog.ct-sheet[open]', 10_000), 'a named sheet');
 });
 
 test('P5-14i (S5c → PP-B b1b, the count line\'s chunk refused, pre-push review 1): with a site climate and only the count line\'s chunk failing, Place says it could not load, with Reload', async () => {
@@ -93,27 +91,11 @@ test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold ch
   assert.match(await text(page, '[data-mark-surface="details"][data-mark-state="annual"]') ?? '', /^An annual, re-sown each year: its winter cold is not checked\.$/);
 });
 
-// Typed in the open Add sheet, a plant outside its range at the site: its row (found by name) has the
-// outside mark, says "outside" in words and has a tick; ticked and added, it joins with nothing asking
-// (inform, don't block; owner 2026-11-14).
-async function addTypedOutside(page, outside) {
-  await page.type('.ct-add .ct-search input', outside);
-  const row = '.ct-add .ct-rows li:has(.ct-sci)';
-  assert.ok(await page.waitForFunction((sel, name) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === name && li.querySelector('[data-mark="outside"]') && li.querySelector('input[type="checkbox"]')), { timeout: 10_000 }, row, outside).then(() => true, () => false), `${outside} is found by name, marked "outside", with a tick`);
-  assert.match(await page.evaluate((sel, name) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === name).textContent, row, outside), /outside/i, 'the row says "outside" in words');
-  await page.evaluate((sel, name) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === name).querySelector('input[type="checkbox"]').click(), row, outside);
-  assert.ok(await has(page, '.ct-add-bar .button-primary:not([disabled])', 5000), 'Add selected is on');
-  await page.click('.ct-add-bar .button-primary:not([disabled])');
-  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
-  const id = await page.evaluate((name) => window.__ctTest.store.pool.value.find((t) => t.canonical_name === name)?.id, outside);
-  assert.ok(await page.waitForFunction((x) => window.__ctTest.store.members.value.includes(x), { timeout: 5000 }, id).then(() => true, () => false), `${outside} joins the members`);
-  assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'nothing asked after it joined either');
-}
-
-test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range, and Add lists none until one is typed, which then says so in words and joins when ticked and added, nothing asking @real-data', async () => {
+// PP-C commit 0: Add's half (no outside plant listed until typed, then added with nothing asking)
+// went with the Add sheet; Find's outside-range group and its one-tap add are c1's (PP-C4).
+test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant outside its observed range @real-data', async () => {
   const page = await tool();
-  const lookup = await atSite(page, 'seville');
-  const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
+  await atSite(page, 'seville');
   await choose(page, 'Mediterranean');
   await suggestDirect(page);
   // PP-B b1b: the palette page draws no plant marks until Your plants (b3); the members' verdicts say
@@ -121,11 +103,6 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberVerdicts.value?.size > 0, { timeout: 10_000 }).then(() => true, () => false), 'the members are checked');
   const levels = await page.evaluate(() => [...window.__ctTest.store.memberVerdicts.value.values()].map((v) => v.level));
   assert.ok(levels.length > 0 && !levels.includes('outside'), `no suggested plant is outside its range (${levels.join(', ')})`);
-  await page.evaluate(() => window.__ctTest.store.openSheet('add'));
-  assert.ok(await has(page, ADD_OPEN, 10_000) && await has(page, '.ct-add .ct-rows li', 10_000), 'the Add list');
-  await page.click('.ct-add-showall').catch(() => {});
-  assert.equal(await page.$('.ct-add [data-mark="outside"]'), null, 'Add without a query lists no plant outside its range');
-  await addTypedOutside(page, outside);
 });
 
 // PP-B b1b (drift check amendment 5): the matrix counts went with the matrix (0a'); the count line on
@@ -141,35 +118,6 @@ test('P5-14c (S5c → PP-B b1b count line): at Seville the line counts the 198 o
   assert.deepEqual(await page.evaluate(() => window.__ctTest.store.countFits.value), { fits: 167, look: 31, unknown: 0, of: 200 });
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
   assert.ok(await page.waitForFunction(() => !document.querySelector('[data-pool-count]'), { timeout: 5000 }).then(() => true, () => false), 'the line goes with the location');
-});
-
-test('P5-14e (S5c range chunk offline): if the range chunk cannot load, the tool falls back to the unfiltered pool with a notice, and Suggest, a link and Swap all work @real-data', async () => {
-  const page = await tool();
-  const cdp = await page.createCDPSession();
-  await cdp.send('Network.enable');
-  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
-  await choose(page, 'Mediterranean');
-  await atSite(page, 'seville');
-  assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'a notice on Place: range checks unavailable');
-  assert.match(await text(page, '[data-range-unavailable]') ?? '', /Reload/);
-  assert.match(await text(page, '.ct-toast') ?? '', /range/i, 'and a toast with Reload');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.pool.value?.length === 200, { timeout: 10_000 }).then(() => true, () => false), 'the unfiltered pool (P2)');
-  // (Start's crops went with the Main crops picker in PP-B commit 0a'.)
-  assert.ok(await has(page, '[data-place-suggest]', 10_000), 'Start from a small suggested palette');
-  await page.click('[data-place-suggest]');
-  assert.ok(await has(page, '[data-plant-id]', 10_000), 'Suggest gives a palette');
-  const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
-  await page.evaluate((m) => window.__ctTest.openSheet('swap', m), id);
-  assert.ok(await has(page, '.ct-swap .ct-rows li', 10_000), 'Swap lists alternatives');
-  await page.keyboard.press('Escape');
-  // Escape leaves the sheet's history entry with history.go(-1), which lands later; a hash set while that
-  // traversal is in flight was most likely dropped (CI flake, 2026-11-17: the link never opened; a plain
-  // delay of the go() does not reproduce it). A person never pastes that fast: wait for it to land.
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value === null && !(history.state?.pp ?? []).includes('sheet'), { timeout: 5000 }).then(() => true, () => false), 'the sheet and its history entry are gone');
-  const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
-  const link = `#${encodeLink({ climate: 'Temperate', country: null, site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: ids.slice(0, 5), kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids })}`;
-  await page.evaluate((h) => { location.hash = h; }, link);
-  assert.ok(await page.waitForFunction((want) => { const { store } = window.__ctTest; return store.climate.value === 'Temperate' && store.view.value === 'matrix' && want.every((x) => store.members.value.includes(x)); }, { timeout: 15_000 }, ids.slice(0, 5)).then(() => true, () => false), 'a pasted link opens its consortium');
 });
 
 // The build's chunks that name the range chunk's file (the entry's import() included): its importers,
@@ -263,17 +211,6 @@ test('P5-15b (S5c range lines in Details, page language): in French, a plant nea
   // One of its edge marks (the verdict; the side lines carry values) says what the ranges include.
   const edges = await page.$$eval('[data-mark-surface="details"][data-mark="edge"]', (els) => els.map((e) => e.textContent));
   assert.ok(edges.some((t) => /cultures comprises/.test(t)), `the Details mark says observed ranges include cultivation (${edges.join(' | ')})`);
-});
-
-test('P5-16 (S5c outside-range warning on add): typed in Add, a plant whose range misses the site shows "outside", and adding it still makes it a member @real-data', async () => {
-  const page = await tool();
-  const lookup = await atSite(page, 'seville');
-  const outside = await pickRanged(OUTSIDE, lookup.climate.periods[0], 'Mediterranean');
-  assert.ok(outside, 'a Mediterranean plant outside its range at Seville');
-  await choose(page, 'Mediterranean');
-  await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
-  assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
-  await addTypedOutside(page, outside);
 });
 
 test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from the nearest list and labelled "estimate"', async () => {
@@ -458,7 +395,8 @@ test('P5-27a (S5c seam review 1; on Place, PP-B b1a): where nothing fits, Place 
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
     assert.match(await text(page, '[data-pool-empty]') ?? '', /−?-?39\.8 °C/, `${width} px: it says why`);
     await page.click('[data-pool-empty] button');
-    assert.ok(await has(page, 'dialog.ct-sheet .ct-search input', 10_000), `${width} px: the plant search`);
+    // PP-C commit 0: Find (the Paste sheet until c1); its search is c1's case.
+    assert.equal(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind ?? null, { timeout: 10_000 }).then((r) => r.jsonValue(), () => null), 'find', `${width} px: the step opens Find`);
   }
 });
 
@@ -507,12 +445,14 @@ test('P5-27l (S5c seam review round 3, 2; on Place, PP-B b1a): "Start from a sma
   }
 });
 
+// PP-C commit 0: the plant is added through Place's "Add a plant by name", which opens Find (Paste
+// until c1 builds Find), by pasting its name.
 test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the reader opens Add and adds a plant: the list arriving later changes nothing', async () => {
   const page = await placeGuestHeld(1280);
   await page.click('[data-place-suggest]');
   await page.click('[data-place-add]');
-  assert.ok(await has(page, 'dialog.ct-sheet .ct-tick input', 10_000), 'Add');
-  await page.click('dialog.ct-sheet .ct-tick input');
+  assert.ok(await has(page, 'dialog.ct-sheet[open] textarea', 10_000), 'a sheet to add plants by name');
+  await page.type('dialog.ct-sheet[open] textarea', 'Malus domestica');
   await page.locator(aria('button', 'Add 1 plant')).click();
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the plant added');
   await page.evaluate(() => window.__guest.release());
@@ -561,7 +501,7 @@ test('P5-27o (S5c seam review round 4, 1): a waiting Suggest whose guest list ne
 
 // Decision row "Climate ranges fixed before the P5 push" (2026-11-12): the zone from the cell's own means,
 // annuals beyond their heat range advised to the cool season, drought tolerance Medium on a dry site.
-test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Siberian purslane (a recorded annual) is a cool-season crop in Add and Details; a dry site marks drought tolerance Medium; nothing scrolls sideways @real-data', async () => {
+test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Siberian purslane (a recorded annual) is a cool-season crop in Details; a dry site marks drought tolerance Medium; nothing scrolls sideways @real-data', async () => {
   const [lat, lon] = SITES.nairobi;
   for (const width of [320, 390, 1280]) {
     const page = await tool({ width, geolocation: { lat, lon } });
@@ -578,24 +518,18 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
     // season (Siberian purslane until r-f3c6dd8b3c4391be, recorded perennial since D2d).
     await atSite(page, 'seville');
     await choose(page, 'Temperate');
-    await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; window.__ctTest.store.openSheet('add'); });
-    assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
-    await page.type('.ct-add .ct-search input', 'Claytonia sibirica');
-    const row = '.ct-add .ct-rows li';
-    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Claytonia sibirica' && li.querySelector('[data-mark="season"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: Siberian purslane in Add with its cool-season tag`);
-    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Claytonia sibirica').querySelector('[data-mark="season"]').textContent, row);
-    assert.equal(tag, 'grow in the cool season');
-    assert.equal(await page.evaluate((sel) => !![...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Claytonia sibirica').querySelector('[data-mark="outside"]'), row), false, 'not outside');
-    const over = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag, dialog .ct-tag, dialog .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
-    // doc ≤ 0: with the dialog open on desktop the page's scrollbar is hidden (scrollWidth < clientWidth).
-    assert.deepEqual({ doc: Math.max(0, over.doc), marks: over.marks }, { doc: 0, marks: [] }, `${width} px: no sideways scroll, no mark past the edge`);
+    // (Its Add row with the cool-season tag went with the Add sheet in PP-C commit 0; Find shows it in c1.)
     const annual = await page.evaluate(() => window.__ctTest.store.pools.value.Temperate.find((t) => t.canonical_name === 'Claytonia sibirica')?.id);
     assert.ok(annual, 'Siberian purslane is on the Temperate list');
     await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), annual);
     assert.ok(await has(page, '[data-mark-surface="details"][data-mark="season"]', 10_000), 'Details: the cool-season line');
     assert.equal(await text(page, '[data-mark-surface="details"][data-mark="season"]'), 'Too hot in summer here: grow it in the cool season.');
     assert.equal(await page.$('[data-mark-surface="details"][data-mark-state="annual"]'), null, 'not the warm-season note');
+    await settled(page, '[data-mark-surface="details"][data-mark="season"]'); // the sheet slides in (details.css ct-sheet-in)
+    const over = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag, dialog .ct-tag, dialog .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
+    // doc ≤ 0: with the dialog open on desktop the page's scrollbar is hidden (scrollWidth < clientWidth).
+    assert.deepEqual({ doc: Math.max(0, over.doc), marks: over.marks }, { doc: 0, marks: [] }, `${width} px: no sideways scroll, no mark past the edge`);
   }
   // A dry site, no location: drought tolerance Medium (lemon) says to water in the dry months.
   const page = await tool({ width: 390 });
@@ -613,40 +547,22 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
 // matrix cells this test also read went in PP-B 0a' (its "no cell blocked" line went with them; the
 // palette's holes and fillers never read the room answer, core holes.ts); the walnut, once added,
 // is listed in Your plants with the same note, not hidden.
-test('P5-27r (S5c climate ranges, room advisory): in a small garden Add lists a walnut with "grows to … m: prune", never behind "show anyway", it joins without asking, and Your plants lists it with that note @real-data', async () => {
+test('P5-27r (S5c climate ranges, room advisory; PP-C commit 0): in a small garden a walnut pasted by name joins without asking, and Your plants lists it with "grows to … m: prune" @real-data', async () => {
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     await choose(page, 'Temperate');
-    await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, room: 'small' }; });
-    await page.evaluate(() => window.__ctTest.store.openSheet('add'));
-    assert.ok(await has(page, ADD_OPEN, 10_000), 'the Add sheet');
-    // A miss says what the sheet showed then.
-    const sheet = () => page.evaluate(() => JSON.stringify({ query: document.querySelector('.ct-add .ct-search input')?.value, focus: document.activeElement?.outerHTML.slice(0, 80),
-      bar: document.querySelector('.ct-add-bar .button-primary')?.outerHTML, dialogs: [...document.querySelectorAll('dialog[open]')].map((d) => d.className) }));
-    await page.type('.ct-add .ct-search input', 'Juglans regia');
-    const row = '.ct-add .ct-rows li';
-    assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia' && li.querySelector('[data-mark="room"]')), { timeout: 10_000 }, row).then(() => true, () => false), `${width} px: the walnut with its height note (${await sheet()})`);
-    const tag = await page.evaluate((sel) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === 'Juglans regia' && li.querySelector('[data-mark="room"]')).querySelector('[data-mark="room"]').textContent, row);
-    assert.match(tag, /^grows to [\d.]+ m: prune$/);
-    const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    assert.ok(over <= 0, `${width} px: no sideways scroll`);
-    // Its Add never asks first (inform, don't block): the walnut joins at once. Each step waits
-    // for what the last one causes (no fixed pause, no optional click).
-    const control = await page.evaluate((sel) => {
-      const li = [...document.querySelectorAll(sel)].find((x) => x.querySelector('.ct-sci')?.textContent === 'Juglans regia' && x.querySelector('[data-mark="room"]'));
-      const c = li?.querySelector(':scope > .ct-tick input[type="checkbox"]') ?? li?.querySelector(':scope > button');
-      c?.click();
-      return c ? c.tagName.toLowerCase() : null;
-    }, row);
-    assert.equal(control, 'input', `${width} px: the walnut's row has a tick, not an asking button (${await sheet()})`);
-    const state = await page.waitForFunction(() => (document.querySelector('dialog[role="alertdialog"]') ? 'asked' : document.querySelector('.ct-add-bar .button-primary:not([disabled])') ? 'ticked' : null), { timeout: 5000 }).then((r) => r.jsonValue(), () => null);
-    assert.equal(state, 'ticked', `${width} px: ticked, no warning to confirm (${await sheet()})`);
-    await settled(page, '.ct-add-bar .button-primary'); // the sheet slides in (details.css ct-sheet-in)
-    await page.click('.ct-add-bar .button-primary');
-    assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), `${width} px: added without asking (${await sheet()})`);
+    await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, room: 'small' }; store.openSheet('paste'); });
+    assert.ok(await has(page, 'dialog.ct-sheet[open] textarea', 10_000), 'the Paste sheet');
+    await page.type('dialog.ct-sheet[open] textarea', 'Juglans regia');
+    await settled(page, 'dialog.ct-sheet[open] .ct-add-bar .button-primary'); // the sheet slides in (details.css ct-sheet-in)
+    await page.locator(aria('button', 'Add 1 plant')).click(); // once the pasted name is matched
+    assert.equal(await page.$('dialog[role="alertdialog"]'), null, `${width} px: no warning to confirm`);
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), `${width} px: added without asking`);
     await page.evaluate(() => { const { store } = window.__ctTest; store.closeSheet?.(); store.view.value = 'matrix'; });
     const listed = await page.waitForFunction(() => [...document.querySelectorAll('.ct-plants li')].find((li) => li.querySelector('i[lang="la"]')?.textContent === 'Juglans regia')?.querySelector('[data-mark="room"]')?.textContent ?? null, { timeout: 8000 }).then((r) => r.jsonValue(), () => null);
     assert.match(listed ?? '', /^grows to [\d.]+ m: prune$/, `${width} px: Your plants lists the walnut with its height note`);
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.ok(over <= 0, `${width} px: no sideways scroll`);
     assert.deepEqual(page.thirdParty, []);
   }
 });

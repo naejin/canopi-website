@@ -1,197 +1,7 @@
 {
-  "_comment": "Expected-fail markers parked by PP-B commit 0 (knowledge/project/plant-palette-slices.md section 1; zero markers before each push: park by splitting out). Each parked marker was removed from the tree at its source commit's file and line; its owner restores it with `git show 648baf2:<file>` in its stream's first commit, retitled with the owner and with its reason rewritten against the new seam's empty state (`rewrite`). PP-C commit 0 asserts every entry of `parked` is restored or deleted. `moved` and `deleted` record the other F1a markers (moved unchanged after a capped run showed each still fails for its stated reason; deleted with the plan's reason). Amended 2026-11-14 by the owner's 'Delete first': a marker whose subject is a deleted screen is deleted, never parked (P5, P6 and P10 unit moved from parked to deleted).",
+  "_comment": "Expected-fail markers parked by PP-B commit 0 (knowledge/project/plant-palette-slices.md section 1; zero markers before each push: park by splitting out). Each parked marker was removed from the tree at its source commit's file and line; its owner restores it with `git show 648baf2:<file>` in its stream's first commit, retitled with the owner and with its reason rewritten against the new seam's empty state (`rewrite`). PP-C commit 0 asserts every entry of `parked` is restored or deleted: `parked` is empty, and each `restored` entry names the file its owner restored it in (`to`) and a phrase found there (`evidence`; the weigh rows are vectors, so their phrase is the vector's `covers`), checked by plan-owners.test.mjs. `moved` and `deleted` record the other F1a markers (moved unchanged after a capped run showed each still fails for its stated reason; deleted with the plan's reason). Amended 2026-11-14 by the owner's 'Delete first': a marker whose subject is a deleted screen is deleted, never parked (P5, P6 and P10 unit moved from parked to deleted). PP-C commit 0 (2026-11-17) moved the 11 PP-C entries from parked to moved, restored as rewritten expected-fail tests in their stream's files (title \"F1a-Xn → PP-C (<owner> …\"), each verified failing for its stated reason; F1a-C6 is split in two entries, its Find half under c1 and its Details half under c2 (slices 3.4); a moved entry with push PP-C carries its rewrite. PP-C commit 0 (review c0 1.3) moved the 10 PP-B entries from parked to restored: PP-B shipped them (b1, b2, b3 files).",
   "source_commit": "648baf2",
-  "parked": [
-    {
-      "id": "F1a-S2",
-      "file": "scripts/browser/consortium-f1a-perf.browser.test.mjs",
-      "line": 35,
-      "title": "F1a-S2 (perf1 marks, A24): ct:start fires once on a first visit, and ct:first-view once when the consortium is first on screen",
-      "push": "PP-B",
-      "owner": "b2",
-      "rewrite": "first view = the palette page"
-    },
-    {
-      "id": "F1a-P11",
-      "file": "scripts/consortium-palette.test.mjs",
-      "line": 52,
-      "title": "F1a-P11 (pal2 guest list loading, design check §5 Busy): while a guest's list is still loading the gaps say loading, never a false gap",
-      "push": "PP-B",
-      "owner": "b2",
-      "rewrite": "rewritten on holes(): pending while a guest list loads"
-    },
-    {
-      "id": "F1a-P1",
-      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
-      "line": 43,
-      "title": "F1a-P1 (pal2 Lyon first visit, A3 A11 A12): after Suggest, Palette shows the cards, the health strip settles and a gap's \"Find…\" opens Add preset to that gap",
-      "push": "PP-B",
-      "owner": "b2",
-      "rewrite": "after \"Start from a small suggested palette\", Next step names one hole and opens Add preset to it through store.openSheet('add', null, {job, cell}); no hole a suggestion filled is the Next step"
-    },
-    {
-      "id": "F1a-P7",
-      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
-      "line": 151,
-      "title": "F1a-P7 (pal1 Suggest waits for the future chunk, owner Q2): with a location, Suggest places nothing until the future check can rank ties, then suggests",
-      "push": "PP-B",
-      "owner": "b1b",
-      "rewrite": "restored on the verdict chunk"
-    },
-    {
-      "id": "F1a-P8",
-      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
-      "line": 164,
-      "title": "F1a-P8 (pal2 keyboard journey, A25): with the keyboard only, the view switch moves between Palette and Structure, and Add opened by \"Find…\" returns the focus to it when closed",
-      "push": "PP-B",
-      "owner": "b2",
-      "rewrite": "header steps, Next step, Add, focus back on Next step; covers hole buttons and the changeSummary announcements"
-    },
-    {
-      "id": "F1a-P9",
-      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
-      "line": 184,
-      "title": "F1a-P9 (pal1 status regions on Start and the views, A25): from Start to the placed consortium, every live region is on the page before its message, and each line is announced once per reader's event",
-      "push": "PP-B",
-      "owner": "b1a",
-      "rewrite": "restored on Place (the palette page's regions are in A2)"
-    },
-    {
-      "id": "F1a-B1",
-      "file": "scripts/consortium-balance.test.mjs",
-      "line": 60,
-      "title": "F1a-B1 (bal2 family spread, A20): six of eight members in one family is a gap whose \"Find…\" opens Add with a hint; eight families pass",
-      "push": "PP-B",
-      "owner": "b3",
-      "rewrite": "rewritten on weigh.ts: six of eight in one family is a line to weigh with its hint"
-    },
-    {
-      "id": "F1a-B2",
-      "file": "scripts/consortium-balance.test.mjs",
-      "line": 70,
-      "title": "F1a-B2 (bal2 water mix, A20): a Tropical palette with two of ten water needs recorded says \"not enough data\", 2 of 10, never a pass",
-      "push": "PP-B",
-      "owner": "b3",
-      "rewrite": "rewritten on weigh.ts: 2 of 10 recorded is \"not enough to judge\""
-    },
-    {
-      "id": "F1a-B4",
-      "file": "scripts/consortium-balance.test.mjs",
-      "line": 87,
-      "title": "F1a-B4 (bal2 borrowed climate, A20, A15): on a borrowed list every check that ran carries the estimate term",
-      "push": "PP-B",
-      "owner": "b3",
-      "rewrite": "every weigh line on a borrowed list carries the estimate term"
-    },
-    {
-      "id": "F1a-B6",
-      "file": "scripts/browser/consortium-f1a-balance.browser.test.mjs",
-      "line": 40,
-      "title": "F1a-B6 (bal2 legume-heavy Tropical palette, A20): when most members share one family the family spread is a gap",
-      "push": "PP-B",
-      "owner": "b3",
-      "rewrite": "rewritten as the one scenario of \"things to weigh\""
-    },
-    {
-      "id": "F1a-C1",
-      "file": "scripts/consortium-confidence.test.mjs",
-      "line": 32,
-      "title": "F1a-C1 (conf1 key table, A15, A18): every term has a key on every surface and in all 11 locales, and a methods-page anchor",
-      "push": "PP-C",
-      "owner": "c2",
-      "rewrite": "surfaces = fit line, Details, Find, print (methods anchor waits for F1b-2)"
-    },
-    {
-      "id": "F1a-C2",
-      "file": "scripts/consortium-confidence.test.mjs",
-      "line": 45,
-      "title": "F1a-C2 (conf1 marks to terms, A15, A18): every mark kind maps to one term or is a site note; the range and placement hedges keep their meaning",
-      "push": "PP-C",
-      "owner": "c2",
-      "rewrite": "maps verdict factors to terms"
-    },
-    {
-      "id": "F1a-C3",
-      "file": "scripts/consortium-confidence.test.mjs",
-      "line": 57,
-      "title": "F1a-C3 (conf1 not reviewed, A17): \"not reviewed\" is one dataset-level line driven by SourceInfo.rangesReview, never a literal",
-      "push": "PP-C",
-      "owner": "c2",
-      "rewrite": "restored"
-    },
-    {
-      "id": "F1a-C4",
-      "file": "scripts/browser/consortium-f1a-confidence.browser.test.mjs",
-      "line": 26,
-      "title": "F1a-C4 (conf2 Riyadh borrowed plant, A16): a borrowed plant near the edge shows the same confidence terms on its card, in Details and in print",
-      "push": "PP-C",
-      "owner": "c2",
-      "rewrite": "restored"
-    },
-    {
-      "id": "F1a-C5",
-      "file": "scripts/browser/consortium-f1a-confidence.browser.test.mjs",
-      "line": 40,
-      "title": "F1a-C5 (conf2 Oulu borrowed list, A9 A16): the borrowed list is named once for the palette and every borrowed plant keeps its estimate term",
-      "push": "PP-C",
-      "owner": "c2",
-      "rewrite": "restored"
-    },
-    {
-      "id": "F1a-C6",
-      "file": "scripts/browser/consortium-f1a-confidence.browser.test.mjs",
-      "line": 48,
-      "title": "F1a-C6 (conf2 range rule fails, A16 §5): with the range rule's chunk refused, plants say \"not checked\" in Add and in Details, never a fit",
-      "push": "PP-C",
-      "owner": "c2",
-      "rewrite": "refuses the verdict chunk"
-    },
-    {
-      "id": "F1a-F1",
-      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
-      "line": 32,
-      "title": "F1a-F1 (add3 Lyon food forest, P5.1): a cell's \"+ Add\" opens with \"Fits your site\" on",
-      "push": "PP-C",
-      "owner": "c1",
-      "rewrite": "opens Find from a hole with \"Fits your place\" on"
-    },
-    {
-      "id": "F1a-F2",
-      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
-      "line": 37,
-      "title": "F1a-F2 (add3 Seville dry garden, P5.1 A14): \"Holds up in the future climate\" changes the plants offered",
-      "push": "PP-C",
-      "owner": "c1",
-      "rewrite": "uses holdsBy (live from PP-B)"
-    },
-    {
-      "id": "F1a-F3",
-      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
-      "line": 43,
-      "title": "F1a-F3 (add3 Nairobi smallholding, P5.1 A14): \"Has edible parts\" and a life cycle narrow the plants offered",
-      "push": "PP-C",
-      "owner": "c1",
-      "rewrite": "restored"
-    },
-    {
-      "id": "F1a-F4",
-      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
-      "line": 53,
-      "title": "F1a-F4 (add3 unknowns as counts, P5.1): a filter that cannot judge some plants says how many, never hides them silently",
-      "push": "PP-C",
-      "owner": "c1",
-      "rewrite": "restored"
-    },
-    {
-      "id": "F1a-F5",
-      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
-      "line": 60,
-      "title": "F1a-F5 (add3 no location, P5.1): without a site location the range and native filters are not offered, the others are",
-      "push": "PP-C",
-      "owner": "c1",
-      "rewrite": "\"range and holds filters\" (native is P5.2)"
-    }
-  ],
+  "parked": [],
   "moved": [
     {
       "id": "F1a-A1",
@@ -248,6 +58,126 @@
       "title": "F1a-P13 (pal1 invasive tie, owner Q1): with no country chosen, the tie goes to the plant invasive in no GRIIS country",
       "owner": "b1a",
       "to": "scripts/consortium-pp-b1.test.mjs"
+    },
+    {
+      "id": "F1a-C1",
+      "file": "scripts/consortium-confidence.test.mjs",
+      "line": 32,
+      "title": "F1a-C1 (conf1 key table, A15, A18): every term has a key on every surface and in all 11 locales, and a methods-page anchor",
+      "push": "PP-C",
+      "owner": "c2",
+      "to": "scripts/consortium-pp-c2.test.mjs",
+      "rewrite": "surfaces = fit line, Details, Find, print (methods anchor waits for F1b-2)"
+    },
+    {
+      "id": "F1a-C2",
+      "file": "scripts/consortium-confidence.test.mjs",
+      "line": 45,
+      "title": "F1a-C2 (conf1 marks to terms, A15, A18): every mark kind maps to one term or is a site note; the range and placement hedges keep their meaning",
+      "push": "PP-C",
+      "owner": "c2",
+      "to": "scripts/consortium-pp-c2.test.mjs",
+      "rewrite": "maps verdict factors to terms"
+    },
+    {
+      "id": "F1a-C3",
+      "file": "scripts/consortium-confidence.test.mjs",
+      "line": 57,
+      "title": "F1a-C3 (conf1 not reviewed, A17): \"not reviewed\" is one dataset-level line driven by SourceInfo.rangesReview, never a literal",
+      "push": "PP-C",
+      "owner": "c2",
+      "to": "scripts/consortium-pp-c2.test.mjs",
+      "rewrite": "restored"
+    },
+    {
+      "id": "F1a-C4",
+      "file": "scripts/browser/consortium-f1a-confidence.browser.test.mjs",
+      "line": 26,
+      "title": "F1a-C4 (conf2 Riyadh borrowed plant, A16): a borrowed plant near the edge shows the same confidence terms on its card, in Details and in print",
+      "push": "PP-C",
+      "owner": "c2",
+      "to": "scripts/browser/consortium-pp-c2.browser.test.mjs",
+      "rewrite": "restored"
+    },
+    {
+      "id": "F1a-C5",
+      "file": "scripts/browser/consortium-f1a-confidence.browser.test.mjs",
+      "line": 40,
+      "title": "F1a-C5 (conf2 Oulu borrowed list, A9 A16): the borrowed list is named once for the palette and every borrowed plant keeps its estimate term",
+      "push": "PP-C",
+      "owner": "c2",
+      "to": "scripts/browser/consortium-pp-c2.browser.test.mjs",
+      "rewrite": "restored"
+    },
+    {
+      "id": "F1a-C6",
+      "file": "scripts/browser/consortium-f1a-confidence.browser.test.mjs",
+      "line": 48,
+      "title": "F1a-C6 (conf2 range rule fails, A16 §5): with the range rule's chunk refused, plants say \"not checked\" in Add and in Details, never a fit",
+      "push": "PP-C",
+      "owner": "c1",
+      "to": "scripts/browser/consortium-pp-c1.browser.test.mjs",
+      "half": "Find: with the verdict chunk refused, Find's plants say \"not checked\", never a fit"
+    },
+    {
+      "id": "F1a-C6",
+      "file": "scripts/browser/consortium-f1a-confidence.browser.test.mjs",
+      "line": 48,
+      "title": "F1a-C6 (conf2 range rule fails, A16 §5): with the range rule's chunk refused, plants say \"not checked\" in Add and in Details, never a fit",
+      "push": "PP-C",
+      "owner": "c2",
+      "to": "scripts/browser/consortium-pp-c2.browser.test.mjs",
+      "half": "Details: with the verdict chunk refused, Details says \"not checked\", never a fit"
+    },
+    {
+      "id": "F1a-F1",
+      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
+      "line": 32,
+      "title": "F1a-F1 (add3 Lyon food forest, P5.1): a cell's \"+ Add\" opens with \"Fits your site\" on",
+      "push": "PP-C",
+      "owner": "c1",
+      "to": "scripts/browser/consortium-pp-c1.browser.test.mjs",
+      "rewrite": "opens Find from a hole with \"Fits your place\" on"
+    },
+    {
+      "id": "F1a-F2",
+      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
+      "line": 37,
+      "title": "F1a-F2 (add3 Seville dry garden, P5.1 A14): \"Holds up in the future climate\" changes the plants offered",
+      "push": "PP-C",
+      "owner": "c1",
+      "to": "scripts/browser/consortium-pp-c1.browser.test.mjs",
+      "rewrite": "uses holdsBy (live from PP-B)"
+    },
+    {
+      "id": "F1a-F3",
+      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
+      "line": 43,
+      "title": "F1a-F3 (add3 Nairobi smallholding, P5.1 A14): \"Has edible parts\" and a life cycle narrow the plants offered",
+      "push": "PP-C",
+      "owner": "c1",
+      "to": "scripts/browser/consortium-pp-c1.browser.test.mjs",
+      "rewrite": "restored"
+    },
+    {
+      "id": "F1a-F4",
+      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
+      "line": 53,
+      "title": "F1a-F4 (add3 unknowns as counts, P5.1): a filter that cannot judge some plants says how many, never hides them silently",
+      "push": "PP-C",
+      "owner": "c1",
+      "to": "scripts/browser/consortium-pp-c1.browser.test.mjs",
+      "rewrite": "restored"
+    },
+    {
+      "id": "F1a-F5",
+      "file": "scripts/browser/consortium-f1a-filters.browser.test.mjs",
+      "line": 60,
+      "title": "F1a-F5 (add3 no location, P5.1): without a site location the range and native filters are not offered, the others are",
+      "push": "PP-C",
+      "owner": "c1",
+      "to": "scripts/browser/consortium-pp-c1.browser.test.mjs",
+      "rewrite": "\"range and holds filters\" (native is P5.2)"
     }
   ],
   "deleted": [
@@ -327,6 +257,118 @@
       "line": 137,
       "title": "F1a-P6 (pal1 Structure chunk fails, §5 Unreadable/Retried): Palette stays usable, Structure says it could not load with Reload, and the next press fetches it again as ?retry=n",
       "why": "owner 'Delete first' (2026-11-14): its subject, the Structure view's chunk, is deleted; new form: b2's PP-B24 (the palette chunk refused)"
+    }
+  ],
+  "restored": [
+    {
+      "id": "F1a-S2",
+      "file": "scripts/browser/consortium-f1a-perf.browser.test.mjs",
+      "line": 35,
+      "title": "F1a-S2 (perf1 marks, A24): ct:start fires once on a first visit, and ct:first-view once when the consortium is first on screen",
+      "push": "PP-B",
+      "owner": "b2",
+      "rewrite": "first view = the palette page",
+      "to": "scripts/browser/consortium-pp-b2.browser.test.mjs",
+      "evidence": "F1a-S2 restored"
+    },
+    {
+      "id": "F1a-P11",
+      "file": "scripts/consortium-palette.test.mjs",
+      "line": 52,
+      "title": "F1a-P11 (pal2 guest list loading, design check §5 Busy): while a guest's list is still loading the gaps say loading, never a false gap",
+      "push": "PP-B",
+      "owner": "b2",
+      "rewrite": "rewritten on holes(): pending while a guest list loads",
+      "to": "scripts/consortium-pp-b2.test.mjs",
+      "evidence": "P11 restored"
+    },
+    {
+      "id": "F1a-P1",
+      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
+      "line": 43,
+      "title": "F1a-P1 (pal2 Lyon first visit, A3 A11 A12): after Suggest, Palette shows the cards, the health strip settles and a gap's \"Find…\" opens Add preset to that gap",
+      "push": "PP-B",
+      "owner": "b2",
+      "rewrite": "after \"Start from a small suggested palette\", Next step names one hole and opens Add preset to it through store.openSheet('add', null, {job, cell}); no hole a suggestion filled is the Next step",
+      "to": "scripts/browser/consortium-pp-b2.browser.test.mjs",
+      "evidence": "F1a-P1 restored"
+    },
+    {
+      "id": "F1a-P7",
+      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
+      "line": 151,
+      "title": "F1a-P7 (pal1 Suggest waits for the future chunk, owner Q2): with a location, Suggest places nothing until the future check can rank ties, then suggests",
+      "push": "PP-B",
+      "owner": "b1b",
+      "rewrite": "restored on the verdict chunk",
+      "to": "scripts/browser/consortium-pp-b1.browser.test.mjs",
+      "evidence": "F1a-P7 → PP-B (b1b "
+    },
+    {
+      "id": "F1a-P8",
+      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
+      "line": 164,
+      "title": "F1a-P8 (pal2 keyboard journey, A25): with the keyboard only, the view switch moves between Palette and Structure, and Add opened by \"Find…\" returns the focus to it when closed",
+      "push": "PP-B",
+      "owner": "b2",
+      "rewrite": "header steps, Next step, Add, focus back on Next step; covers hole buttons and the changeSummary announcements",
+      "to": "scripts/browser/consortium-pp-b2.browser.test.mjs",
+      "evidence": "F1a-P8 restored"
+    },
+    {
+      "id": "F1a-P9",
+      "file": "scripts/browser/consortium-f1a-palette.browser.test.mjs",
+      "line": 184,
+      "title": "F1a-P9 (pal1 status regions on Start and the views, A25): from Start to the placed consortium, every live region is on the page before its message, and each line is announced once per reader's event",
+      "push": "PP-B",
+      "owner": "b1a",
+      "rewrite": "restored on Place (the palette page's regions are in A2)",
+      "to": "scripts/browser/consortium-pp-b1.browser.test.mjs",
+      "evidence": "F1a-P9 restored"
+    },
+    {
+      "id": "F1a-B1",
+      "file": "scripts/consortium-balance.test.mjs",
+      "line": 60,
+      "title": "F1a-B1 (bal2 family spread, A20): six of eight members in one family is a gap whose \"Find…\" opens Add with a hint; eight families pass",
+      "push": "PP-B",
+      "owner": "b3",
+      "rewrite": "rewritten on weigh.ts: six of eight in one family is a line to weigh with its hint",
+      "to": "scripts/vectors/weigh.json",
+      "evidence": "\"covers\": \"F1a-B1, F1a-B2\""
+    },
+    {
+      "id": "F1a-B2",
+      "file": "scripts/consortium-balance.test.mjs",
+      "line": 70,
+      "title": "F1a-B2 (bal2 water mix, A20): a Tropical palette with two of ten water needs recorded says \"not enough data\", 2 of 10, never a pass",
+      "push": "PP-B",
+      "owner": "b3",
+      "rewrite": "rewritten on weigh.ts: 2 of 10 recorded is \"not enough to judge\"",
+      "to": "scripts/vectors/weigh.json",
+      "evidence": "\"covers\": \"F1a-B2\""
+    },
+    {
+      "id": "F1a-B4",
+      "file": "scripts/consortium-balance.test.mjs",
+      "line": 87,
+      "title": "F1a-B4 (bal2 borrowed climate, A20, A15): on a borrowed list every check that ran carries the estimate term",
+      "push": "PP-B",
+      "owner": "b3",
+      "rewrite": "every weigh line on a borrowed list carries the estimate term",
+      "to": "scripts/vectors/weigh.json",
+      "evidence": "\"covers\": \"F1a-B4\""
+    },
+    {
+      "id": "F1a-B6",
+      "file": "scripts/browser/consortium-f1a-balance.browser.test.mjs",
+      "line": 40,
+      "title": "F1a-B6 (bal2 legume-heavy Tropical palette, A20): when most members share one family the family spread is a gap",
+      "push": "PP-B",
+      "owner": "b3",
+      "rewrite": "rewritten as the one scenario of \"things to weigh\"",
+      "to": "scripts/browser/consortium-pp-b3.browser.test.mjs",
+      "evidence": "F1a-B6 restored"
     }
   ]
 }

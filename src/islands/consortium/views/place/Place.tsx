@@ -2,8 +2,8 @@
 // Place (PP-B stream b1a; boards Place, PlaceDesk, Arrivals, Balcony; plant-palette-architecture 3.1,
 // 8.3, 9): the grower names a place first, then starts from their own plants, with a small suggested
 // palette one link away. Moved here from views/Start.tsx (stream S4), which it replaces.
-// - The arrival lines first, in one live region that is always on the page (older, newer and
-//   unreadable with "Back to mine" over a saved palette, period, an older save, a guide's plant with
+// - The arrival lines first, in one live region that is always on the page (newer and
+//   unreadable with "Back to mine" over a saved palette, period, a guide's plant with
 //   "Open my saved palette instead", a link's place with "Use it" / "Use my own place").
 // - "Where is your place?" first (owner drop 10, decision row 127 (4)): the location step
 //   (LocationSlot: search, map, device), which can be skipped; then the country line, so the browser's
@@ -300,7 +300,6 @@ function PlaceNotices() {
   const backMine = saved && (n.newer || n.unreadable) ? <>{' '}<button type="button" class="link-button ct-link" data-back-mine onClick={() => void openSavedInstead()}>{T('place.backToMine')}</button></> : null;
   return (
     <div class="ct-place-notices" role="status">
-      {n.outdated && <p class="ct-notice" data-place-notice="outdated">{T('share.outdated')}</p>}
       {n.newer && (
         <p class="ct-notice" data-place-notice="newer">
           {T('place.newer')}{' '}
@@ -312,7 +311,6 @@ function PlaceNotices() {
       {n.period && <p class="ct-notice" data-place-notice="period">{T('place.period')}</p>}
       {n.cut && view.value === 'start' && <p class="ct-notice" data-place-notice="cut">{T('share.cut')}</p>}
       {n.failed && <p class="ct-notice" data-place-notice="failed">{T('share.failed')}</p>}
-      {n.oldSave && <p class="ct-notice" data-place-notice="oldSave">{T('start.oldSave')}</p>}
       {n.guideMissing && <p class="ct-notice" data-place-notice="guideMissing">{T('start.guideMissing', { name: n.guideMissing, climate: zoneName(climate.value) })}</p>}
       {(guide || (saved && !backMine)) && (
         <p class="ct-notice ct-notice-calm" data-place-notice="guide">

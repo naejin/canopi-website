@@ -10,7 +10,7 @@
 // - the room answers as input[name="ct-site-room"] (pots among them); "Show my palette"
 //   [data-place-show]; "Start from a small suggested palette" [data-place-suggest]; the own-plants
 //   step [data-place-plants] with its "Add a plant" [data-place-add];
-// - each arrival line as [data-place-notice="outdated" | "oldSave" | "newer" | "unreadable" | "period" |
+// - each arrival line as [data-place-notice="newer" | "unreadable" | "period" |
 //   "guide" | "linkPlace" | …], "Open my saved palette instead" [data-open-saved], "Back to mine"
 //   [data-back-mine] on the newer and unreadable lines over a saved palette, "Use it"
 //   [data-use-link-place] and "Use my own place" [data-use-own-place]; Start over [data-start-over];
@@ -197,15 +197,15 @@ async function temperatePalette(page) {
   await page.evaluate(() => { const s = window.__ctTest.store; s.suggestMembers(); s.view.value = 'matrix'; });
   assert.ok(await has(page, aria('button', W('place.sheet.open')), 8000), 'no "Change your place" on the palette');
 }
-// "Add a plant by name" on Place, as a grower does: the name searched, ticked and added; the page has
-// k plants then, and stays on Place.
+// "Add a plant by name" on Place, as a grower does: the name given and added; the page has k plants
+// then, and stays on Place. PP-C commit 0: the button opens Find (store.openFind), the Paste sheet until
+// c1 builds Find's search, so the name is pasted.
 async function addByName(page, name, k) {
   assert.ok(await has(page, '[data-place-add]', 8000), `plant ${k}: "Add a plant by name" on Place`);
   await page.click('[data-place-add]');
-  assert.ok(await has(page, 'dialog[open].ct-sheet input[type="search"]', 10_000), 'the search sheet');
-  await page.locator('dialog[open].ct-sheet input[type="search"]').fill(name);
-  assert.ok(await until(page, (nm) => [...document.querySelectorAll('dialog[open] .ct-tick input')].some((b) => b.getAttribute('aria-label').endsWith(`, ${nm}`)), 8000, name), `${name} in the search`);
-  await page.evaluate((nm) => [...document.querySelectorAll('dialog[open] .ct-tick input')].find((b) => b.getAttribute('aria-label').endsWith(`, ${nm}`)).click(), name);
+  assert.equal(await until(page, () => window.__ctTest.store.sheet.value?.kind === 'find', 10_000), true, 'Find opens');
+  assert.ok(await has(page, 'dialog[open].ct-sheet textarea', 10_000), 'the sheet to add plants by name');
+  await page.locator('dialog[open].ct-sheet textarea').fill(name);
   await page.locator(aria('button', 'Add 1 plant')).click();
   assert.ok(await until(page, (n) => window.__ctTest.store.members.value.length === n, 8000, k), `plant ${k} added`);
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', `plant ${k}: adding a plant left Place`);
@@ -406,7 +406,7 @@ test('PP-B2 (b1a owner 2026-11-15, Place adds saved): a plant added on Place sta
 
 test('PP-B2 (b1a UI hand-off, failed-chunk notice): a sheet whose chunk fails says so with Reload where it covers nothing, at 390, 960 and 1280 px', async () => {
   for (const width of [390, 960, 1280]) {
-    const page = await tool({ width, data: 'fixture', block: { sheets: 404 } });
+    const page = await tool({ width, data: 'fixture', block: { find: 404 } }); // Paste is in the find role (PP-C commit 0)
     await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
     await page.locator(aria('button', 'Paste a list')).click();
@@ -438,20 +438,6 @@ test('PP-B3 (b1a suggested palette): "Start from a small suggested palette" adds
   await page.locator(aria('button', W('undo'))).click();
   assert.ok(await until(page, () => window.__ctTest.store.members.value.length === 0), 'one Undo removes them all');
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', 'back on Place');
-});
-
-test('PP-B4 (b1a older save): a v4 saved palette says the older line once, and the tool is empty', async () => {
-  const save = JSON.stringify({ fragment: 'v=4&c=temperate&m=large&a=dhUvw6&e=1', at: '2026-11-12T10:00:00.000Z', src: 'chosen' });
-  const page = await withStorage({ 'canopi-consortium': save });
-  assert.ok(await has(page, '[data-place-notice="oldSave"]', 8000), 'no older-save line on Place');
-  assert.equal(await words(page, '[data-place-notice="oldSave"]'), W('start.oldSave'));
-  assert.doesNotMatch(W('start.oldSave'), /consortium/i, 'the grower reads "palette"');
-  assert.equal(await members(page), 0, 'nothing restored');
-  assert.equal(await page.evaluate(() => localStorage.getItem('canopi-consortium')), null, 'the older save is removed');
-  await page.reload();
-  await openCards(page);
-  assert.ok(await has(page, aria('radio', 'Temperate'), 8000));
-  assert.equal(await page.$('[data-place-notice="oldSave"]'), null, 'said once');
 });
 
 test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while the address holds none of k o l w q r h s', async () => {
@@ -827,15 +813,15 @@ test('PP-B1 (b1b a new verdict load after a refused one): verdictFailed clears a
   assert.equal(during, false, 'a load in flight is not "failed"');
 });
 
-// Pre-push fix 2: a refused arrival (an older v4 link here) shows Place with its notice at once, never
+// Pre-push fix 2: a refused arrival (an old beta v4 link here, unreadable since owner 2026-11-17) shows Place with its notice at once, never
 // "Opening your palette…" until the plants are read and 3 s more. The database is held, so the notice
 // must come before the load is ready.
-test('PP-B70 (b1a refused arrival): an old v4 link shows Place with the outdated notice while the plants are still loading, no placeholder', async () => {
+test('PP-B70 (b1a refused arrival): an old v4 link shows Place with the unreadable notice while the plants are still loading, no placeholder', async () => {
   const page = await h.open('/palette/#v=4&c=temperate&l=unsure&s=unsure&w=unsure&m=unsure&a=&e=1', { hook: true, mapTiles: 'stub', database: 'hold' });
-  const shown = await has(page, '[data-place-notice="outdated"]', 1500);
+  const shown = await has(page, '[data-place-notice="unreadable"]', 1500);
   const state = await page.evaluate(() => ({ placeholder: !!document.querySelector('[data-palette-placeholder]'), ready: window.__ctTest?.store?.load.value.status ?? null }));
   await page.releaseHeld();
-  assert.ok(shown, 'the outdated notice within 1.5 s');
+  assert.ok(shown, 'the unreadable notice within 1.5 s');
   assert.notEqual(state.ready, 'ready', 'shown before the plants were read');
   assert.equal(state.placeholder, false, 'no "Opening your palette…" placeholder');
 });

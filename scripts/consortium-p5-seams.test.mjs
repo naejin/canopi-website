@@ -16,7 +16,7 @@ test('marks.ts plantMarks: the loaded providers concatenated in order, for one s
   const providers = [() => [mark('edge')], () => [], (t, c, surface) => (c.location && surface !== 'chip' ? [mark('native', 'native')] : [])];
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'details', providers).map((m) => [m.kind, m.state]), [['edge', undefined], ['native', 'native']]);
   assert.deepEqual(core.plantMarks(taxon(), ctx({ location: lyon }), 'chip', providers).map((m) => m.kind), ['edge'], 'a provider keeps a mark off a surface');
-  assert.deepEqual(core.markSurfaces, ['chip', 'row', 'add', 'details']);
+  assert.deepEqual(core.markSurfaces, ['chip', 'row', 'details'], 'no Add surface: Add was deleted in PP-C commit 0 (review c0-7)');
   assert.deepEqual(core.markKinds, ['edge', 'outside', 'unknown', 'estimate', 'future', 'native', 'aridity', 'season', 'water', 'room']);
   const loaded = await core.loadMarkProviders();
   assert.deepEqual(loaded.map((p) => p.name), ['rangeMarks', 'futureMarks'], 'range (S5c), future (S5d) (native, S5e, in P5.2); the site answers\' marks are on the island path (marks.ts)');
@@ -61,7 +61,6 @@ test('the host views mount every stream\'s slot, and PlantMarks names its surfac
   assert.match(view('Actions.tsx'), /later\(\(\) => laterChunk\(\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:first-view or the data ready');
   assert.match(view('Actions.tsx'), /<ActionsView \/><future\.View \/>/, 'S5d: the panel after the actions (the matrix views above it went in PP-B commit 0a\')');
   assert.match(view('details/Details.tsx'), /<PlantMarks taxon=\{t\} surface="details" \/>/);
-  assert.equal((view('Add.tsx').match(/<PlantMarks taxon=\{t\} surface="add" \/>/g) ?? []).length, 2);
   assert.match(view('StageBar.tsx'), /<PlantMarks taxon=\{taxon\} surface="row" \/>/);
   assert.match(view('PlantMarks.tsx'), /data-mark=\{m\.kind\} data-mark-state=\{m\.state\}/);
 });

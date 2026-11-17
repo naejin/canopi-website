@@ -14,6 +14,11 @@
 //
 //   node scripts/expect-fail.mjs           lists every marker (file, owner, title)
 //   node scripts/expect-fail.mjs --zero    exits 1 while any marker is left (pre-push to master, CI on master)
+//
+// With CANOPI_ZERO_MARKERS=1 (set for npm test by .githooks/pre-push on a push to master and by CI job
+// 1 on master, while .githooks/zero-markers says `fail`), failing() itself throws, so a marker the
+// --zero scan cannot see (a title in double quotes or a template, which its pattern skips; design
+// check c2 5.3) still fails its file (PP-C commit 0).
 import test from 'node:test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -23,6 +28,7 @@ export function failing(title, { owner, reason, timeout } = {}, fn) {
   if (typeof owner !== 'string' || !owner) throw new Error(`failing("${title}"): name the owner stream`);
   if (!(reason instanceof RegExp)) throw new Error(`failing("${title}"): reason must be a RegExp of the expected failure`);
   if (!title.includes(owner)) throw new Error(`failing("${title}"): the title names its owner ${owner}`);
+  if (process.env.CANOPI_ZERO_MARKERS === '1') throw new Error(`failing("${title}"): an expected-fail marker is left (owner ${owner}), and CANOPI_ZERO_MARKERS=1 takes none: remove it in the commit that makes the test pass`);
   return test(title, timeout ? { timeout } : {}, async (t) => {
     let error = null;
     try { await fn(t); } catch (err) { error = err ?? new Error(String(err)); }

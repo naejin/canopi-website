@@ -3,16 +3,16 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:03Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:00Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:23bb22639127d9cf
-    last_modified: 2026-11-17T06:29:13Z
+    last_modified: 2026-11-17T06:50:38Z
   - id: header-astro
     resource: ../../src/components/Header.astro
     title: src/components/Header.astro
@@ -51,8 +51,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:935f3cb04b351fdd
-    last_modified: 2026-11-17T01:05:41Z
+    digest: sha256:e26526257beca5fa
+    last_modified: 2026-11-17T09:47:59Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -76,7 +76,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 
 # What was built
 
-- **Header** (`src/components/Header.astro`): Canopi · Guides · Books · Palette · Donate · language · theme. Discord and Docs live in the footer. `current: 'guides' | 'books' | 'consortium'` sets `aria-current="page"` (the tool page passes `'consortium'`). The tool's item is one short word, `nav.consortium` ("Palette", fr « Palette », es and pt "Paleta", nl "Palet", ru "Палитра", ko "팔레트", zh and ja the whole name 植物搭配, 植栽パレット; the "Plant palette" rename of PP-B commit 0b, owner row "Plant palette name"), linking to `consortiumPath(lang)` (`src/i18n/consortium-path.js`, re-exported by `utils.ts`, so `check-built-site.mjs` uses the same function).
+- **Header** (`src/components/Header.astro`): Canopi · Guides · Books · Plant palette · Donate · language · theme. Discord and Docs live in the footer. `current: 'guides' | 'books' | 'consortium'` sets `aria-current="page"` (the tool page passes `'consortium'`). The tool's item, `nav.consortium`, is the full name (report #29, PP-C commit 0: "Plant palette", es "Paleta vegetal", pt "Paleta de plantas", it "Palette vegetale", de "Pflanzenpalette", nl "Plantenpalet", ko "식물 팔레트", zh 植物搭配, ja 植栽パレット) except in French and Russian, which keep one short word (« Palette », "Палитра"): measured 2026-11-17 on the built pages at 640 to 960px in steps of 20 (headless Chrome, light), « Palette végétale » and "Палитра растений" push the links under the logo at 640 and 660px; every other locale stays on one row at every width, and nothing scrolls sideways at 390, 640, 700, 960 or 1280px. `homepage.test.mjs` pins the two short words. It links to `consortiumPath(lang)` (`src/i18n/consortium-path.js`, re-exported by `utils.ts`, so `check-built-site.mjs` uses the same function).
 - **640px fit**: between 640 and 959px a global style in `Header.astro` (`is:global`, so the header markup carries no `data-astro-cid` attributes that `check-built-site.mjs` would trip on) tightens the inline row (link padding 6px, gaps 2px, header gap 8px); from 960px `global.css` spacing applies. Measured 2026-10-27 in headless Chrome at 640px (625px client width with a classic scrollbar), light theme, all 11 locales: one row, no overlap, no horizontal scroll, language and theme controls inside the page margins. Russian is the tightest (16px between logo and links), then Japanese (30px). That fit needs Source Sans 3: re-measured the same day with the webfonts blocked (the stack then fell back to Noto Sans on Linux; since E6 the metric-matched local faces 'Source Sans 3 Fallback' and 'Literata Fallback' come first, before Noto, see [Metric-matched fallback fonts](/decisions/metric-matched-fallback-fonts.md); not re-measured with them), Russian overflowed by 3px at 640px, and with header text at 110% (a minimum font size or text-only zoom) French, Dutch and Russian overflowed too. So from 640px the header row may wrap (global style in `Header.astro`: `flex-wrap` on `.header-inner`, `.header-nav` and `.nav-inline`, links right-aligned): when the row is too long, the links move under the logo, and wrap again if they must, instead of scrolling sideways; no item is hidden. Re-measured at 640, 700, 800, 959 and 960px in all 11 locales with the webfonts, without them, without them at 110%, and in DejaVu Sans at 110%: no horizontal scroll, no overlap, every item visible; with the webfonts at the default size the row stays one line. A new header item needs this measurement again.
 - **No climate in the header**: the reader's climate is set from a chip on the pages it changes, not from the header (see [Climate UX](/decisions/climate-ux.md)).
 - **Phone Menu**: below 640px only the logo, a `<details data-nav-menu>` Menu and the theme toggle show. The panel holds Guides, Books, the tool's full name (`nav.consortium.full`, "Plant palette" / « Palette végétale »), Donate, Discord, Docs (if set), Contact and the 11 languages. It opens without script; `src/scripts/chrome.js` closes it on outside click, Escape, link activation and focus leaving. `donate.js` returns focus to the Menu summary.

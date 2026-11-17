@@ -12,8 +12,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, layoutVariants, en, findAx, has, settled } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openAdd, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
+import { esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openFind, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
+import { failing } from '../expect-fail.mjs';
 
 useHarness();
 
@@ -104,7 +105,9 @@ test('W8, W9, X4: bold is 600, CJK headings keep words whole, sheet and page cla
 // P5 walk-through 2, N1 (data loss since P2): the Undo toast sat over the Add sheet's "Add N plants"
 // when a search left few rows, so the click undid the last add and added nothing. A toast never
 // covers a control: in a sheet it sits in the sheet's foot above the action bar, never over it.
-test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px)', async () => {
+// PP-C commit 0: the Add sheet is gone; written against Find (its search, "Select several" ticks and
+// "Add N plants": c1's contract in consortium-pp-c1.browser.test.mjs), failing until c1 builds it.
+failing('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px); owner c1: Find replaces the Add sheet', { owner: 'c1', reason: /no Find sheet \(dialog\.ct-find\)/ }, async () => {
   const plants = await temperate();
   for (const width of [320, 390, 700, 960, 1280]) {
     const page = await suggested({ width, theme: 'light', hook: true });
@@ -114,27 +117,28 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
     const members = new Set(await memberIds(page));
     const candidates = plants.filter((p) => !members.has(p.id) && !plants.some((q) => q !== p && q.name.includes(p.name)));
-    const rows = 'dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li';
-    // Opens Add, searches the next candidate listed with a tick (few rows), and ticks it.
+    const rows = 'dialog.ct-find[open] [data-find-row]';
+    // Opens Find in "Select several", searches the next candidate listed with a tick (few rows), ticks it.
     const addOne = async () => {
       // Add through the store's opener: the palette page has no general Add button until Your plants
       // (PP-B b3, chunk 2); the matrix's view bar it pressed went in 0a'.
-      await openAdd(page);
-      // The Add sheet is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
-      await page.waitForSelector('dialog.ct-add[open] .ct-search input', { timeout: 15_000 });
+      await openFind(page);
+      // Find is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
+      assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)');
+      if (!await page.$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]')) await page.click('dialog.ct-find[open] [data-find-select]');
       while (candidates.length) {
         const p = candidates.shift();
-        await page.$eval('dialog.ct-add[open] .ct-search input', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
-        await page.type('dialog.ct-add[open] .ct-search input', p.name);
-        const ok = await page.waitForFunction((sel, n) => { const r = [...document.querySelectorAll(sel)]; return r.length <= 3 && r.some((li) => li.querySelector('.ct-sci')?.textContent.trim() === n && li.querySelector('input[type="checkbox"]')); }, { timeout: 1500 }, rows, p.name).then(() => true, () => false);
+        await page.$eval('dialog.ct-find[open] [data-find-search]', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
+        await page.type('dialog.ct-find[open] [data-find-search]', p.name);
+        const ok = await page.waitForFunction((sel, id) => { const r = [...document.querySelectorAll(sel)]; return r.length <= 3 && r.some((li) => li.dataset.plantId === id && li.querySelector('input[type="checkbox"]')); }, { timeout: 1500 }, rows, p.id).then(() => true, () => false);
         if (!ok) continue;
-        await page.evaluate((sel, n) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent.trim() === n).querySelector('input[type="checkbox"]').click(), rows, p.name);
+        await page.evaluate((sel, id) => [...document.querySelectorAll(sel)].find((li) => li.dataset.plantId === id).querySelector('input[type="checkbox"]').click(), rows, p.id);
         return p;
       }
       assert.fail(`${width} px: no plant to add`);
     };
     const a = await addOne();
-    await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
+    await page.click('dialog.ct-find[open] [data-find-bar] .button-primary');
     assert.ok(await has(page, '.ct-toast-page .ct-toast'), `${width} px: the first add's toast with Undo`);
     const b = await addOne();
     assert.ok(await has(page, 'dialog[open] .ct-toast .ct-toast-undo'), `${width} px: the toast moved into the sheet`);
@@ -145,9 +149,9 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
       await page.setViewport({ width, height, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       const seen = await page.evaluate(() => {
-        const d = document.querySelector('dialog.ct-add[open]');
+        const d = document.querySelector('dialog.ct-find[open]');
         const toast = d.querySelector('.ct-toast').getBoundingClientRect();
-        const btn = d.querySelector('.ct-add-bar .button-primary');
+        const btn = d.querySelector('[data-find-bar] .button-primary');
         const r = btn.getBoundingClientRect();
         const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         const meets = (x, y) => x.left < y.right && y.left < x.right && x.top < y.bottom && y.top < x.bottom;
@@ -161,7 +165,7 @@ test('Walk-through 2 N1: in the Add sheet the Undo toast never covers "Add N pla
     }
     assert.deepEqual(covered, [], `${width} px: no control of the sheet under the toast, at any window height`);
     await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
-    await page.locator('dialog.ct-add[open] .ct-add-bar .button-primary').click();
+    await page.locator('dialog.ct-find[open] [data-find-bar] .button-primary').click();
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
     const now = new Set(await memberIds(page));
     assert.ok(now.has(a.id) && now.has(b.id), `${width} px: both plants are in the consortium (${a.name}: ${now.has(a.id)}, ${b.name}: ${now.has(b.id)})`);
@@ -330,20 +334,22 @@ test('Layout stability (N2, late fonts): when the web fonts arrive after the fir
 // Review of p5-final (low 2): the sheet's sticky foot (toast above the action bar) covers the sheet's
 // bottom, so the sheet keeps that much scroll padding: a control tabbed to near the end is shown above
 // the foot, and the foot's empty area beside the toast passes clicks through.
-test('Walk-through 2 N1 (review): with a toast in the Add sheet, the last controls tabbed to are fully visible above the foot and clickable (390 × 600)', async () => {
+// PP-C commit 0: as N1, written against Find.
+failing('Walk-through 2 N1 (review): with a toast in Find, the last controls tabbed to are fully visible above the foot and clickable (390 × 600); owner c1: Find replaces the Add sheet', { owner: 'c1', reason: /no Find sheet \(dialog\.ct-find\)/ }, async () => {
   const plants = await temperate();
   const page = await suggested({ width: 390, theme: 'light', hook: true });
-  await openAdd(page); // the store's opener, as in N1
-  await page.waitForSelector('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]', { timeout: 15_000 }); // lazy chunk, as in N1
-  await page.click('dialog.ct-add[open] .ct-sheet-body > ul.ct-rows > li input[type="checkbox"]');
-  await page.click('dialog.ct-add[open] .ct-add-bar .button-primary');
+  await openFind(page); // the store's opener, as in N1
+  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-select]', 15_000), 'no Find sheet (dialog.ct-find)'); // lazy chunk, as in N1
+  await page.click('dialog.ct-find[open] [data-find-select]');
+  await page.click('dialog.ct-find[open] [data-find-row] input[type="checkbox"]');
+  await page.click('dialog.ct-find[open] [data-find-bar] .button-primary');
   assert.ok(await has(page, '.ct-toast-page .ct-toast'), 'the add\'s toast');
   await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
-  await openAdd(page);
-  assert.ok(await has(page, 'dialog.ct-add[open] .ct-toast'), 'the toast in the sheet');
+  await openFind(page);
+  assert.ok(await has(page, 'dialog.ct-find[open] .ct-toast'), 'the toast in the sheet');
   await page.setViewport({ width: 390, height: 600, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   assert.ok(plants.length > 3);
-  const focusables = 'dialog.ct-add[open] .ct-sheet-body :is(button, input, a[href], select, textarea):not([disabled])';
+  const focusables = 'dialog.ct-find[open] .ct-sheet-body :is(button, input, a[href], select, textarea):not([disabled])';
   const count = await page.$$eval(focusables, (els) => els.filter((e) => e.getClientRects().length).length);
   assert.ok(count >= 4, 'controls to tab through');
   await page.evaluate((sel) => { const els = [...document.querySelectorAll(sel)].filter((e) => e.getClientRects().length); els[els.length - 4].focus(); }, focusables);
@@ -353,8 +359,8 @@ test('Walk-through 2 N1 (review): with a toast in the Add sheet, the last contro
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
     const seen = await page.evaluate(() => {
       const el = document.activeElement;
-      const foot = document.querySelector('dialog.ct-add[open] .ct-sheet-foot').getBoundingClientRect();
-      const toast = document.querySelector('dialog.ct-add[open] .ct-toast')?.getBoundingClientRect();
+      const foot = document.querySelector('dialog.ct-find[open] .ct-sheet-foot').getBoundingClientRect();
+      const toast = document.querySelector('dialog.ct-find[open] .ct-toast')?.getBoundingClientRect();
       const r = el.getBoundingClientRect();
       const target = el.closest('label') ?? el;
       const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -368,7 +374,7 @@ test('Walk-through 2 N1 (review): with a toast in the Add sheet, the last contro
   assert.deepEqual(bad, [], 'each control tabbed to is above the foot and takes the click');
   // The foot's empty area beside the toast passes a click to what lies under it.
   const through = await page.evaluate(() => {
-    const d = document.querySelector('dialog.ct-add[open]');
+    const d = document.querySelector('dialog.ct-find[open]');
     const toast = d.querySelector('.ct-toast').getBoundingClientRect();
     const x = Math.max(4, toast.left - 6), y = toast.top + toast.height / 2;
     const hit = document.elementFromPoint(x, y);

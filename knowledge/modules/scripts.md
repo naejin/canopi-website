@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:51:58Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:51:57Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -19,12 +19,12 @@ sources:
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
     digest: sha256:b8abca84785bbb81
-    last_modified: 2026-11-17T06:29:08Z
+    last_modified: 2026-11-17T06:50:38Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:10b8f803bfba0964
-    last_modified: 2026-11-17T06:29:13Z
+    digest: sha256:eca1385faedce843
+    last_modified: 2026-11-17T10:51:15Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -43,13 +43,13 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:e163330f575c0645
-    last_modified: 2026-11-16T23:20:48Z
+    digest: sha256:0182599bf26892d7
+    last_modified: 2026-11-17T10:34:49Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
-    digest: sha256:94544e6efe25bcaa
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:765bd5c1dab1b6c2
+    last_modified: 2026-11-17T10:34:49Z
   - id: font-fallback-metrics-mjs
     resource: ../../scripts/font-fallback-metrics.mjs
     title: scripts/font-fallback-metrics.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:41987a1e7ce55c14
-    last_modified: 2026-11-16T23:43:54Z
+    digest: sha256:e5575be645ec3f24
+    last_modified: 2026-11-17T10:34:49Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -103,18 +103,18 @@ sources:
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
-    digest: sha256:343ead63d250aab9
-    last_modified: 2026-11-14T11:21:32Z
+    digest: sha256:90184f3e6a1390d1
+    last_modified: 2026-11-17T10:34:49Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:4a41305cbf98fb21
-    last_modified: 2026-11-16T18:54:58Z
+    digest: sha256:604335703ffbcbeb
+    last_modified: 2026-11-17T10:34:49Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:c293be4e4346b4c3
-    last_modified: 2026-11-16T23:20:48Z
+    digest: sha256:a948fe5c4c08ecbe
+    last_modified: 2026-11-17T10:34:49Z
 ---
 
 # Responsibility
@@ -137,7 +137,7 @@ Tooling around the Astro build. Nothing here ships to the browser except generat
 | [fixtures/consortium-v2/make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | writes the invented format 4 consortium fixture (38 plants in Tropical, Mediterranean and Temperate, gzipped SQLite built with `node:sqlite` from canopi-data's DDL, with its manifest, sums, TRY list and credits; deterministic) and the broken variants the installer test needs; never shipped | `node scripts/fixtures/consortium-v2/make-fixture.mjs [dir]`, see its README |
 | [browser/](../../scripts/browser) | `serve.mjs` (wrangler dev on 4420–4498 over a hard-linked copy of `dist-test/` by default, the production `dist/` on request, stopped by pid), `harness.mjs` (puppeteer-core with the system Chrome), `trace.mjs` (failure traces), `helpers.mjs` (with `suggestReady(page)`, which waits for the suggest chunk (`store.suggestRule`) or its failure before a test calls `store.suggestMembers()` itself, and `suggestDirect(page)`: wait, suggest, show the matrix; a reader's press waits through `state/suggest-wait.ts`, whose 10 s cap the test build shortens with `timeouts: { suggest }`), `run.mjs` + `shards.json` (the sharded runner: `--list local|ci`, `--shard N`, `--slots K`, `--no-scope`), and one test file per owner: `consortium-commit0.browser.test.mjs` (probes P1–P3, P6, P5-0, the BT-9 load screens, the E1 self-checks over `fixtures/`), `consortium-s1…s4.browser.test.mjs` (each stream's §7 tests), `consortium-p5-s5b/c/d/f` and `consortium-seams-p2/layout/p5` (shared code in `p5-helpers.mjs`, `seams-helpers.mjs`); `smoke/consortium.smoke.mjs` (production `dist/`, `npm run test:browser:smoke`); `smoke/axe.smoke.mjs` (axe-core WCAG A/AA on the production `dist/` against `quality/baselines/axe.json`, `npm run test:axe`); `consortium-e6.browser.test.mjs` and `consortium-e6-r4.browser.test.mjs` (E6's user paths, written failing with `failing()` markers in E6 commit 0); `consortium-timing.mjs` (§8 cold/warm time to first view, on demand and nightly, not a test; `--ratchet scripts/browser/timing.json`, `--dir <build>`); see [Consortium page](/modules/consortium-page.md) | `npm run test:browser` (local shards), `test:browser:shard <n>` (CI), `test:browser:smoke`, capped; never in `npm test` |
 | [plan/](../../scripts/plan) | `e6-owners.json`, `f1a-owners.json` (superseded: its top-level `superseded_by` names `pp-b-owners.json`, and `plan-owners.test.mjs` checks that a superseded file names a live one) and `pp-b-owners.json`: the owners files of the E3/E4/E5a/E6 batch, of F1a and of the Plant palette redesign's push PP-B (path → stream per chunk, with each stream's needs and duty; one owner per path per chunk; an optional `shared` list for the locale files: each named stream adds keys under its own prefix and changes or deletes only its `edits`); `owners.mjs`: their checks (`ownersProblems`, run by `plan-owners.test.mjs` on every `*-owners.json` in `npm test`), `node scripts/plan/owners.mjs validate [--file …]`, and `node scripts/plan/owners.mjs check <chunk> <stream> <base> [--file …]` (default the E6 file), which fails a stream diff outside its rows and, through `keyProblems`, a shared-file key outside the stream's prefix and edits; see [Consortium v2 plan](/project/consortium-v2-plan.md) | `npm test`; the main agent at each stream merge |
-| [expect-fail.mjs](../../scripts/expect-fail.mjs) | the expected-fail marker (E6 commit 0): `failing(title, { owner, reason }, fn)` wraps `test()`, passes only while `fn` throws a message matching `reason`, turns red with "now passes: remove the marker (owner X)" or "fails for another reason"; the title must name the owner stream; `markers()` lists every marker in `scripts/**/*.test.mjs`; `node scripts/expect-fail.mjs [--zero]` prints them (`--zero` fails if any is left, the gate before a push to master). Markers in commit 0: `consortium-zones` (R1), `consortium-list-query` (R2), `climate-vectors` (V, `npm run test:vectors`), and the browser specs E6-1…7 in `browser/consortium-e6{,-r4}.browser.test.mjs` (K1, B4, K3, R4); after chunk 1 (R1, V and K1 merged) `consortium-list-query` (R2) and E6-2…7 (B4, K3, R4) are left | `npm test`, `npm run test:browser` |
+| [expect-fail.mjs](../../scripts/expect-fail.mjs) | the expected-fail marker (E6 commit 0): `failing(title, { owner, reason }, fn)` wraps `test()`, passes only while `fn` throws a message matching `reason`, turns red with "now passes: remove the marker (owner X)" or "fails for another reason"; the title must name the owner stream; `markers()` lists every marker in `scripts/**/*.test.mjs`; `node scripts/expect-fail.mjs [--zero]` prints them (`--zero` fails if any is left, the gate before a push to master). With `CANOPI_ZERO_MARKERS=1` (CI job 1 and pre-push on a master push, PP-C commit 0) `failing()` itself throws, so a marker the scan misses still fails; the scan reads single-quoted titles (`\'` allowed). Markers in commit 0: `consortium-zones` (R1), `consortium-list-query` (R2), `climate-vectors` (V, `npm run test:vectors`), and the browser specs E6-1…7 in `browser/consortium-e6{,-r4}.browser.test.mjs` (K1, B4, K3, R4); after chunk 1 (R1, V and K1 merged) `consortium-list-query` (R2) and E6-2…7 (B4, K3, R4) are left | `npm test`, `npm run test:browser` |
 | [quality/](../../scripts/quality) | `ratchet.mjs` (E4): runs dependency-cruiser (`.dependency-cruiser.cjs`, layer rules L1–L9), jscpd (`.jscpd.json`) or knip (`knip.json`, through `knip-reporter.mjs`) and compares their findings, as sorted keys, with `baselines/{arch,dup,dead}.json`: a new key warns locally and fails in CI, a gone key prints "baseline stale", an `error` arch rule fails everywhere, a crash or empty scan fails, the tool's version must equal the baseline's; `--write` (merge agent only) rewrites a baseline; `baselines/axe.json` is the axe smoke's. `arch-rules.test.mjs` runs L1–L9 on a fixture tree (one breach and one allowed neighbour per rule; since E6 chunk 5 every breach is an error and no `warn` key is left, and `baselines/arch.json` is empty); `ratchet.test.mjs` tests the comparison; `ast-grep/` (E6 Q2): the ast-grep rules `sgconfig.yml` names (`rules/number-format-only-in-format.{typescript,tsx,javascript}.yml`), their snippet tests (`rule-tests/`, `ast-grep test`) and `rules.test.mjs`, which plants a tree with the rules, scans it for the file scopes and the `format.ts` exemption, and scans the real tree | `npm run check:arch`, `check:dup`, `check:dead`; the tests in `npm test` |
 | [ci-deploy.test.mjs](../../scripts/ci-deploy.test.mjs) | runs ci.yml's `deploy` job script against a fixture remote (fast-forward only) and checks the job names and settings the `deploy` ruleset and concurrency need, and the `changes` job's documentation-only rule; see [CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md) | `npm test` |
 | [fixtures/climate/](../../scripts/fixtures/climate) | the crate's synthetic tiles, `synthetic-expected.json` (canopi-climate 5a47016, v0.2.1), `lookup.json` + `lookup.json.sha256` (the v0.2.1 release vectors) and `vectors.mjs` (runs them through the reader); read by `climate-reader.test.mjs`, `climate-vectors.test.mjs` and `consortium-p5-ranges.test.mjs`; see [Climate reader](/modules/climate-reader.md) | `npm test`, `npm run test:vectors` |
@@ -182,5 +182,5 @@ What the browser specs assume since b1a's Place and b2's palette page meet:
   - `browser/consortium-pp-b1.browser.test.mjs` (P4)
   - `browser/consortium-pp-b2.browser.test.mjs` (A1, A2, S1, P2; owner b2)
   - `vectors/link-v5.json` and `vectors/range-verdicts.json`
-- **harness.mjs:** `database: 'hold'` holds the database request until `page.releaseHeld()`.
+- **harness.mjs:** `database: 'hold'` holds the database request until `page.releaseHeld()`; a `block: { <role>: 'hold' }` chunk is let through by `page.releaseHeld()` or aborted as offline by `page.failHeld()` (PP-C review c0 round 2: a chunk that fails after the page moved on).
 - **Import rules:** the rules are L1–L10. L10 is a warn rule ([island layers](/decisions/consortium-island-layers.md)).

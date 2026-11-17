@@ -2,15 +2,15 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T23:40:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:29:02Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
-    digest: sha256:f54c110957ab8614
-    last_modified: 2026-11-13T12:11:05Z
+    digest: sha256:c6346b35ba567147
+    last_modified: 2026-11-17T06:47:08Z
   - id: nightly-yml
     resource: ../../.github/workflows/nightly.yml
     title: .github/workflows/nightly.yml
@@ -29,8 +29,8 @@ sources:
   - id: pre-push
     resource: ../../.githooks/pre-push
     title: .githooks/pre-push
-    digest: sha256:02956cb778d95bb8
-    last_modified: 2026-11-13T03:34:49Z
+    digest: sha256:ff9d7b9815f700a9
+    last_modified: 2026-11-17T06:47:08Z
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
@@ -50,7 +50,7 @@ sources:
     resource: ../../public/_redirects
     title: public/_redirects
     digest: sha256:ebe432e54fea2dc8
-    last_modified: 2026-11-16T23:39:47Z
+    last_modified: 2026-11-16T23:43:54Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -68,7 +68,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 | Tier | Where | What | Budget |
 |---|---|---|---|
 | pre-commit | `.githooks/pre-commit` | ast-grep (`sgconfig.yml`) on the staged script files; nothing until a rule exists; no format or lint step (the repo has none) | 10 s |
-| pre-push | `.githooks/pre-push` | `npm run check`, `npm test`, `npm run check:arch`; skipped when every pushed range is documentation only; the zero-marker check when master is pushed (same `.githooks/zero-markers` switch) | 180 s |
+| pre-push | `.githooks/pre-push` | `npm run check`, `npm test`, `npm run check:arch`; skipped when every pushed range is documentation only; the zero-marker check when master is pushed (same `.githooks/zero-markers` switch; with `fail`, `npm test` runs with `CANOPI_ZERO_MARKERS=1`, so `failing()` throws even for a marker the scan cannot read, since PP-C commit 0) | 180 s |
 | CI | `.github/workflows/ci.yml` | everything below, on each push to master or `ci-probe/**` and each pull request | each shard within 15 min |
 | nightly | `.github/workflows/nightly.yml` | time to first view (desktop and phone, `--ratchet scripts/browser/timing.json`: warn above a value, fail above 1.5×; the file ships with null values, so the run only warns until the coordinator copies the first runner's `timing-json:` line after push B; values from runner runs only) and the `@real-data` browser tests | — |
 
@@ -81,7 +81,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 | Job | Runs | Notes |
 |---|---|---|
 | `changes` | always | `docs_only=true` when every changed path is `knowledge/**`, `.beads/**`, `docs/**` or a root `*.md` (never `src/data/*.md`). On master the base is the tip of `deploy` (the last commit tested green), not the previous push, so a documentation-only commit after a red code commit (or after a `--no-verify` push) still runs jobs 2–4. It is false when there is no base (no `deploy` yet, new branch, force push, manual run). Tested in `scripts/ci-deploy.test.mjs`. |
-| 1 `unit` | always | climate install, `npm run check`, `npm test` (0 skips), `check:arch`, `check:dup`, `check:dead`, ast-grep, and the zero-marker check on master pushes (`.githooks/zero-markers` says `fail` since the E3/E4/E5a/E6 batch's chunk-5 exit, with 0 markers left: any expected-fail marker blocks a master push and fails the job; `warn` would only report the count) |
+| 1 `unit` | always | climate install, `npm run check`, `npm test` (0 skips), `check:arch`, `check:dup`, `check:dead`, ast-grep, and the zero-marker check on master pushes (`.githooks/zero-markers` says `fail` since the E3/E4/E5a/E6 batch's chunk-5 exit, with 0 markers left: any expected-fail marker blocks a master push and fails the job; `warn` would only report the count; on a master push with `fail`, `npm test` runs with `CANOPI_ZERO_MARKERS=1` since PP-C commit 0). PP-C commit 0 brought markers back on its branch (the c1, c2 and pf tests written first), so PP-C is not pushed to master until its streams remove them |
 | 2 `browser-build` | code ranges | `npm run build:browser-test`; artifact `browser-test-build`: `dist-test/` + `src/data/climate-index.json` (1 day), read by jobs 3 and 4 |
 | 3 `browser` ×4 | code ranges | `npm run test:browser:shard -- N`; results artifact always |
 | 4 `site` | code ranges; waits for job 2 (`needs: [changes, browser-build]`) | `npm run build` → `check-built-site` → `test:browser:smoke` → `test:axe` → `test:vectors` with `CANOPI_REQUIRE_VECTORS=1` → downloads job 2's `browser-test-build` artifact → the L11 graph test, `node --test scripts/built-modules.test.mjs` with `CANOPI_REQUIRE_BUILDS=1` (the test build's chunk graph is the production graph plus the test hook's chunk; a missing build fails) |

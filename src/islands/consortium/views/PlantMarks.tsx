@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
 // P5 seam (commit 0): a plant's marks from the core providers (marks.ts plantMarks: range S5c, future
 // S5d, native S5e), rendered the same way on every surface: 'chip' (desktop matrix chips), 'row' (phone
-// rows, side and list views; StageBar Marks), 'add' (Add rows) and 'details', so a stream adds a mark
+// rows, side and list views; StageBar Marks) and 'details', so a stream adds a mark
 // without touching a view; a provider may keep a mark to some surfaces. Each mark is a span with
 // data-mark (its kind) and data-mark-state (its finer state, when it has one). The providers' marks wait
 // for their chunk, which loads only when one can show (store.ts markProviders); the site answers' marks do not. A warning mark is

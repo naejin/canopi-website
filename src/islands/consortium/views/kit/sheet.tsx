@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 // The parts every sheet shares (moved from Details.tsx; E6 design check §3 K1), so the sheets loaded
-// on first use (Add, Swap, Paste, Correction) import the kit and not the plant dialog's module (cycle
+// on first use (Swap, Paste, Correction; Find from PP-C c1) import the kit and not the plant dialog's module (cycle
 // C4): the sheet frame, the stage bar of a sheet row, and "Not checked in
 // {country}". Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is
 // inert, Escape closes). A leaf (E6 design check L5): what closes a sheet and its toast region come
@@ -19,21 +19,21 @@ import { countryName, spanWords } from './names.ts';
 // every sheet with it. So a sheet chunk imports first-run modules only, already loaded. An object, not
 // re-exports: Rollup places a module by the code that reaches it, and a re-export or a bare import
 // leaves it in a chunk of its own (1.2 KB gzip moved to the first run). The search (data/search.ts
-// searchIndex and fold, which Add and Paste import) is held here since PP-B commit 0a' deleted Start's
-// crop search, which had kept it in the first run; Object.freeze keeps every property (Rollup drops
-// the properties of a plain object literal that no module reads, and Add and Paste read the search
-// from its module, not from here), so check-built-site's K3 rule finds no sheet chunk importing it.
+// searchIndex and fold, which Paste imports, and Find from c1) is held here since PP-B commit 0a'
+// deleted Start's crop search, which had kept it in the first run; Object.freeze keeps every property
+// (Rollup drops the properties of a plain object literal that no module reads, and the sheets read the
+// search from its module, not from here), so check-built-site's K3 rule finds no sheet chunk importing
+// it. Add's list query went with Add (PP-C commit 0, slices 3.2).
 import { flagLines, unknownWords } from './flags.ts';
-import { addOrder, addQuery, listQuery } from '../../rules/list-query.ts';
 import { fold, searchIndex } from '../../data/search.ts';
-// The fit line (kit/fit.tsx), read by Add and the palette page (inform, don't block; owner 2026-11-14).
+// The fit line (kit/fit.tsx), read by the sheets and the palette page (inform, don't block; owner 2026-11-14).
 import { FitLine } from './fit.tsx';
-export const shared = Object.freeze({ flagLines, unknownWords, addOrder, addQuery, listQuery, searchIndex, fold, FitLine });
+export const shared = Object.freeze({ flagLines, unknownWords, searchIndex, fold, FitLine });
 
 export { BACK, WARN } from './icons.tsx';
 
 // The seven-segment stage bar, its span filled, with the span words as its name (mockup 05).
-// run: the stages Add was opened for (a cell or a run of cells), marked `cur` (X2).
+// run: the stages a sheet was opened for (a run of cells), marked `cur` (X2).
 export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number; to: number } | null }) {
   const s = spanOf(taxon);
   return (
@@ -43,7 +43,7 @@ export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number;
   );
 }
 
-// "Not checked in {country}": once per view (the Add and Swap sheets' top line, the dialog).
+// "Not checked in {country}": once per view (the Find and Swap sheets' top line, the dialog).
 // ctx: the store's flag context (store.flagContext).
 export function NotChecked({ ctx }: { ctx: { country?: string | null; countryStatus?: string } }) {
   if (ctx.countryStatus !== 'unchecked' || !ctx.country) return null;

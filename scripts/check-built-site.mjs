@@ -11,7 +11,7 @@ import { parseSourceCredits, shownCredits } from '../src/lib/source-credits.js';
 import { createHash } from 'node:crypto';
 import { safeHref } from '../src/lib/safe-href.js';
 import { gzipSync } from 'node:zlib';
-import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph, onDemandChunks, readChunkRoles, staticClosure, CHUNK_ROLES_FILE } from './built-modules.mjs';
+import { firstRunChunks, islandChunks, isSqliteGlue, moduleGraph, onDemandChunks, readChunkRoles, staticClosure, CHUNK_ROLES_FILE, ROLE_ENTRIES } from './built-modules.mjs';
 
 const root = existsSync('dist/client') ? 'dist/client' : 'dist';
 const release = readFileSync('src/data/release.ts', 'utf8');
@@ -505,8 +505,8 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 //   lazy chunk with no role fails here (give its entry a role);
 // - no role chunk sits in the first run, and no island chunk's preload list (__vite__mapDeps) loads a
 //   stylesheet with a lazy part (A14: a late stylesheet would flash), MapLibre's CSS aside;
-// - a plant dialog or sheet chunk statically imports only first-run chunks, not another sheet's or the
-//   dialog's (K3 round-2 review: a failed shared chunk would break every sheet until Reload, since
+// - a plant dialog, sheet or Find chunk statically imports only first-run chunks, not another sheet's
+//   or the dialog's (K3 round-2 review: a failed shared chunk would break every sheet until Reload, since
 //   Chromium never refetches a failed module; views/lazy.tsx retryable mends the part's own chunk only);
 // - the modulepreload links (A5, L5) carry the first run and the data loader with the sqlite glue, and
 //   no lazy part, feature or MapLibre chunk, so nothing lazy competes with the database on a slow
@@ -520,8 +520,9 @@ for (const gone of ['manifest.json', 'labels.json', 'SHA256SUMS', 'tropical.json
 // suggest ≤ 8 KB; a feature ≤ 12 KB; location ≤ 20 KB). Size budgets are a tripwire until the
 // size-optimisation stage (row "Size budgets are a tripwire", 2026-11-16): a part that outgrows its cap
 // is first checked for a structural mistake, else raised by the measured amount in a dated line. An
-// empty role (likely and native until S5e) has no chunk to cap yet; it gets its A14 maximum. (The E6 B4
-// caps of 2026-11-13 were set the same way.)
+// empty role has no chunk to cap yet; it gets its A14 maximum. (The E6 B4
+// caps of 2026-11-13 were set the same way.) A new role (find, PP-C commit 0) starts at its A14
+// maximum until its stream measures it.
 // Owner, 2026-11-16 (row "No hard limits"): sizes are measured and reported, never a failure; the
 // size-optimisation stage trims. Over-reference sizes print as warnings below; the structural checks
 // (what loads lazily, what the first run reaches) and the Workers platform limits still fail.
@@ -533,11 +534,10 @@ const ROLE_CAPS = {
   markProviders: 2.9 * KB, // measured 2,382 B with the chunk it shares with future (A14 max 12)
   future: 2.8 * KB, // measured 2,282 B with that shared chunk (A14 max 12)
   pool: 1.6 * KB, // measured 1,115 B: Place's count line since b1b (A14 max 12)
-  likely: 12 * KB, // no chunk yet (S5e): A14 max
-  native: 12 * KB, // no chunk yet (S5e): A14 max
   range: 1.6 * KB, // measured 1,123 B (A14 max 12)
   details: 6.6 * KB, // measured 6,220 B (A14 max 8)
   sheets: 6.3 * KB, // each sheet; the largest measured 5,881 B (A14 max 8)
+  find: 8 * KB, // each Find chunk (PP-C commit 0: Paste alone until c1; A14 max 8, slices 3 "about 8 KB")
   later: 6.1 * KB, // measured 5,667 B (A14 max 8)
   suggest: 3.8 * KB, // measured 3,280 B (A14 max 8)
   palette: 10.6 * KB, // measured 10,263 B (b2's palette page with b3's Your plants; A14 max 12)
@@ -553,8 +553,14 @@ assert.ok(!existsSync(join(root, CHUNK_ROLES_FILE)), `${CHUNK_ROLES_FILE} must n
 const roles = readChunkRoles(root);
 assert.deepEqual(roles.testHook, [], `the browser-test hook's chunk is in a production build (${roles.testHook.join(', ')}): build with npm run build`);
 assert.deepEqual(Object.keys(ROLE_CAPS).sort(), Object.keys(roles.features).sort(), 'every chunk role has a cap (ROLE_CAPS) and every cap a role');
-for (const kind of ['markProviders', 'future', 'details', 'later', 'range', 'suggest', 'pool', 'verdict']) assert.equal(roles.features[kind].length, 1, `one ${kind} chunk, found ${roles.features[kind].join(', ') || 'none'}`);
-assert.equal(roles.features.sheets.length, 4, `four sheet chunks (Add, Swap, Paste, Correction), found ${roles.features.sheets.join(', ') || 'none'}`);
+// Each role's chunk count, from its ROLE_ENTRIES row (PP-C commit 0, slices 3.2): a number exactly,
+// '1+' at least one.
+for (const [kind, { chunks }] of Object.entries(ROLE_ENTRIES)) {
+  if (kind === 'location' && !locationSource) continue; // asked below, per page
+  const found = roles.features[kind], list = found.join(', ') || 'none';
+  if (chunks === '1+') assert.ok(found.length >= 1, `at least one ${kind} chunk, found none`);
+  else assert.equal(found.length, chunks, `${chunks} ${kind} chunk(s), found ${list}`);
+}
 const report = { firstRun: 0, firstRunList: [], costs: {}, location: 0, maplibre: 0, preloads: [] };
 for (const lang of locales) {
   const path = `${consortiumPath(lang)}index.html`;
@@ -619,14 +625,15 @@ for (const lang of locales) {
     const css = lists.flatMap((l) => [...l.matchAll(/["']([^"']+\.css)["']/g)].map((m) => `/${m[1].replace(/^\//, '')}`)).filter((c) => !roles.maplibreCss.includes(c));
     assert.deepEqual(css, [], `${path}: ${p} loads the stylesheet ${css.join(', ')} with a lazy part: it would arrive late and flash`);
   }
-  // K3 round-2 review (E6 hand-off A): a plant dialog or sheet chunk statically imports only first-run
-  // chunks (and the page-wide chunks the first run imports), never another sheet's or the dialog's:
-  // retryable mends the part's own chunk only, so a failed shared chunk would stay failed.
+  // K3 round-2 review (E6 hand-off A; Find joins in PP-C commit 0): a plant dialog, sheet or Find
+  // chunk statically imports only first-run chunks (and the page-wide chunks the first run imports),
+  // never another sheet's or the dialog's: retryable mends the part's own chunk only, so a failed
+  // shared chunk would stay failed.
   const firstRunAll = new Set(staticClosure(graph, [...scripts, all.entry]));
-  const sheetLike = new Set([...roles.features.details, ...roles.features.sheets]);
+  const sheetLike = new Set([...roles.features.details, ...roles.features.sheets, ...roles.features.find]);
   for (const p of sheetLike) {
     const stray = staticClosure(graph, [p]).filter((q) => q !== p && !firstRunAll.has(q));
-    assert.deepEqual(stray, [], `${path}: the sheet or plant dialog chunk ${p} statically imports ${stray.join(', ')}, outside the first run: a failed request for it would break that sheet until Reload`);
+    assert.deepEqual(stray, [], `${path}: the sheet, Find or plant dialog chunk ${p} statically imports ${stray.join(', ')}, outside the first run: a failed request for it would break that sheet until Reload`);
   }
   // A5 (L5): the first run and the loader with the glue are preloaded; no lazy part, feature or
   // MapLibre chunk is.

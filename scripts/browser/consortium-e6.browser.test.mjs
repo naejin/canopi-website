@@ -298,14 +298,15 @@ test('E6-5d (K3 lazy Details): a module the sheet chunks share failed on its fir
 // E6-3d (L2, review 2): a sheet opened while its part has nothing to draw (the pool is null while the
 // range rule loads, right after a site with a climate is set) is never an empty modal: an open sheet
 // always has a named heading and a Close button; otherwise it does not open.
-test('E6-3d (K3 lazy sheets): Add, search, Paste and Swap opened while the range rule loads show a named sheet with Close, or no sheet, never an empty modal', async () => {
+test('E6-3d (K3 lazy sheets): Find, Paste and Swap opened while the range rule loads show a named sheet with Close, or no sheet, never an empty modal', async () => {
   const page = await tool({ block: { range: 'hold' } });
   await choose(page, 'Temperate');
   await atNowhere(page);
   await page.waitForFunction(() => window.__ctTest.store.pool.value === null, { timeout: 5000 });
   const id = await page.evaluate(() => Object.values(window.__ctTest.store.pools.value).flat()[0]?.id);
   const seen = [];
-  for (const [kind, plant] of [['add', null], ['search', null], ['paste', null], ['swap', id]]) {
+  // PP-C commit 0: Add and its search are one sheet kind, Find.
+  for (const [kind, plant] of [['find', null], ['paste', null], ['swap', id]]) {
     await page.evaluate((k, p) => window.__ctTest.store.openSheet(k, p), kind, plant);
     await new Promise((r) => setTimeout(r, 800));
     seen.push(`${kind}: ${await page.evaluate(() => {

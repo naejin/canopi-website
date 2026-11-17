@@ -5,16 +5,16 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:14Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:56Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:35:10Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:47Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:2812c8394f69c7f0
-    last_modified: 2026-11-16T20:17:56Z
+    digest: sha256:66d143fa358a76bf
+    last_modified: 2026-11-17T10:28:03Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -79,4 +79,4 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - `guides.ts` is the exception to "no Astro imports": it reads `astro:content` and runs only at build time.
 - Installer detection returns `null` (keep the chooser) for mobile, ChromeOS, touch Macs, 32-bit, Windows/Linux ARM, and Macs without a known architecture: never guess.
 
-Since PP-B commit 0a (2026-11-14), `state.ts` writes the `#v=5` link and treats v1–v4 as older. The core also holds the place seams (`place.ts`), plus the verdict, years, holes and weigh seams that b2 fills ([consortium core](/modules/consortium-core.md)).
+Since PP-B commit 0a (2026-11-14), `state.ts` writes the `#v=5` link and reads v1–v4 as unreadable (no backward compatibility work, owner 2026-11-17). The core also holds the place seams (`place.ts`), plus the verdict, years, holes and weigh seams that b2 fills ([consortium core](/modules/consortium-core.md)).

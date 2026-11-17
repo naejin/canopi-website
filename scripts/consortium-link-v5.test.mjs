@@ -11,7 +11,7 @@ const core = await import('../src/lib/consortium/index.ts');
 const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, emptyPlace, siteFor, resolveSoil, climateFor, LINK_VERSION } = core;
 const grid = await import('../src/lib/climate/grid.ts');
 const persist = await import('../src/islands/consortium/state/persist.ts');
-const { saveRecord, readRecord, oldRecord } = persist;
+const { saveRecord, readRecord } = persist;
 const { arrival, placeOfSeed } = await import('../src/islands/consortium/state/arrival.ts');
 const { state: schema } = await import('../src/islands/consortium/state/schema.ts');
 
@@ -54,7 +54,7 @@ function wordsOf(st) {
     guests: st.guests.map((g) => ({ plant: nameOfId.get(g.id) ?? g.id, list: siteIdOf(g.from) })),
   };
 }
-const noticeOf = (n) => ({ unknown_count: n.unknownCount, cut: n.cut, outdated: n.outdated, newer: n.newer, unreadable: n.unreadable, period: n.period });
+const noticeOf = (n) => ({ unknown_count: n.unknownCount, cut: n.cut, newer: n.newer, unreadable: n.unreadable, period: n.period });
 const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k]]));
 
 // ---- the file ----
@@ -162,14 +162,12 @@ test('link v5: the private place kept beside a save fills only the keys the frag
 
 // ---- the save record and the arrival on each version (8.2) ----
 const AT = '2026-11-14T00:00:00Z';
-test('the save record: only a v5 fragment is read back; v1–v4 are older (said once), v6 and no-v are left alone', () => {
+test('the save record: only a v5 fragment is read back; v1–v4 (the old beta tool), v6 and no-v are not read', () => {
   const r = (fragment) => saveRecord(fragment, AT, 'chosen', null, 'l=sun');
   assert.deepEqual(readRecord(r('v=5&c=temperate&a=&e=1')), { fragment: 'v=5&c=temperate&a=&e=1', place: 'l=sun', at: AT, src: 'chosen' });
   for (const f of ['v=4&c=temperate&a=&e=1', 'v=1&c=temperate&a=', 'v=6&c=temperate&a=&e=1', 'c=temperate&a=&e=1', 'v=5.0&c=temperate&a=']) assert.equal(readRecord(r(f)), null, f);
-  assert.equal(oldRecord(r('v=4&c=temperate&a=&e=1')), true);
-  assert.equal(oldRecord(r('v=1&c=temperate&a=')), true);
-  assert.equal(oldRecord(JSON.stringify({ q: 'v=3&c=te', at: AT, src: null })), true, 'v1 { q }');
-  for (const f of ['v=5&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1', 'c=temperate&a=&e=1', 'v=x&a=']) assert.equal(oldRecord(r(f)), false, f);
+  assert.equal(readRecord(JSON.stringify({ q: 'v=3&c=te', at: AT, src: null })), null, 'the beta tool\'s { q } save');
+  assert.equal('oldRecord' in persist, false, 'no older-save path (owner 2026-11-17)');
 });
 
 test('the save record keeps a link\'s or a location\'s country beside the public fragment, and a place under 2000 characters', () => {

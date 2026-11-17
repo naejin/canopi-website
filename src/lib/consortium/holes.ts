@@ -79,7 +79,6 @@ function holesOf(kind: 'job' | 'light', what: JobId | Stratum, doers: readonly T
     const hole: Hole = {
       id, kind, rank: holeRank(kind, whole), fromYear: from, toYear: to,
       state: notJudged ? 'not-judged' : pending ? 'pending' : 'open',
-      preset: kind === 'job' ? { job: what as JobId, hole: id } : { hole: id },
     };
     if (kind === 'job') hole.job = what as JobId; else hole.stratum = what as Stratum;
     return hole;

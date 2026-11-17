@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
-const noFeatures = { location: [], markProviders: [], future: [], pool: [], likely: [], native: [], range: [], details: [], sheets: [], later: [], suggest: [], palette: [], verdict: [] };
+const noFeatures = { location: [], markProviders: [], future: [], pool: [], range: [], details: [], sheets: [], find: [], later: [], suggest: [], palette: [], verdict: [] };
 const none = { features: noFeatures, maplibre: [], maplibreCss: [], testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
@@ -45,7 +45,9 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
   const root = '/w/e6';
   const chunk = (fileName, facadeModuleId, css = []) => ({ type: 'chunk', fileName, facadeModuleId, moduleIds: [facadeModuleId ?? '/x.ts'], code: '', viteMetadata: { importedCss: new Set(css), importedAssets: new Set() } });
   const bundle = Object.fromEntries([
-    ['_astro/Add.a.js', `${root}/src/islands/consortium/views/Add.tsx`],
+    ['_astro/Paste.a.js', `${root}/src/islands/consortium/views/Paste.tsx`],
+    ['_astro/Find.f.js', `${root}/src/islands/consortium/views/find/Find.tsx`],
+    ['_astro/Add.h.js', `${root}/src/islands/consortium/views/Add.tsx`],
     ['_astro/Swap.b.js', `${root}/src/islands/consortium/views/Swap.tsx`],
     ['_astro/later.c.js', `${root}/src/islands/consortium/views/later.ts`, ['_astro/later.x.css']],
     ['_astro/Details.d.js', `${root}/src/islands/consortium/views/details/Details.tsx`],
@@ -53,7 +55,8 @@ test('chunkRoles: the lazy island parts by their entry module, in the one role l
     ['_astro/shared.g.js', null],
   ].map(([f, id, css]) => [f, chunk(f, id, css)]));
   const r = chunkRoles(bundle);
-  assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Add.a.js', '/_astro/Swap.b.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
+  // PP-C commit 0: Find (views/find/**) and Paste are the find role; Add (deleted) has none.
+  assert.deepEqual(r.features, { ...noFeatures, details: ['/_astro/Details.d.js'], sheets: ['/_astro/Swap.b.js'], find: ['/_astro/Find.f.js', '/_astro/Paste.a.js'], later: ['/_astro/later.c.js'], suggest: ['/_astro/suggest.e.js'] });
   assert.equal(r.lazy, undefined, 'one role list: no separate lazy table');
   // PP-B commit 0: the palette page and the verdict rule, by their entry modules (the matrix role went in 0a').
   const ppb = chunkRoles({ ...bundle,
@@ -85,6 +88,18 @@ test('chunkRoles: a chunk holding a role\'s entry module reached only through im
   assert.deepEqual(r.sheets, ['/_astro/Correction.c.js']);
   assert.deepEqual(r.suggest, ['/_astro/suggest.s.js'], 'a facade-only chunk (query stripped); not the island entry, where suggest.ts is imported statically');
   assert.ok(!r.sheets.includes('/_astro/shared.n.js'), 'a chunk holding a sheet module that is imported statically takes no role');
+});
+
+// PP-C commit 0 (slices 3.2, design check c2 5.4): the role table is final, so each role's pattern
+// names a file of the tree (a role never waits for a stream to create its entry) and gives its chunk
+// count as a number or '1+'.
+test('ROLE_ENTRIES: each role\'s entry pattern names an existing source file, with a chunk count', () => {
+  const root = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
+  const files = readdirSync(join(root, 'src'), { recursive: true }).map((f) => `${root}/src/${String(f).replaceAll('\\', '/')}`);
+  for (const [role, { entry, chunks }] of Object.entries(ROLE_ENTRIES)) {
+    assert.ok(files.some((f) => entry.test(f)), `role ${role}: ${entry} names no file under src/`);
+    assert.ok(chunks === '1+' || (Number.isInteger(chunks) && chunks >= 1), `role ${role}: chunks is a whole number ≥ 1 or '1+' (${chunks})`);
+  }
 });
 
 test('readChunkRoles: a missing roles file gives every role empty', () => {

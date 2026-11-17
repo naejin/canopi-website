@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-15T08:14:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:39Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -22,8 +22,8 @@ sources:
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
-    digest: sha256:c15c0a1a12820dd3
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:ebe432e54fea2dc8
+    last_modified: 2026-11-16T23:43:54Z
   - id: consortium-f1a-palette-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-palette.browser.test.mjs
     title: scripts/browser/consortium-f1a-palette.browser.test.mjs
@@ -32,8 +32,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:4a41305cbf98fb21
-    last_modified: 2026-11-16T18:54:58Z
+    digest: sha256:604335703ffbcbeb
+    last_modified: 2026-11-17T10:25:24Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -47,13 +47,13 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:e6e2dd373870d866
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:ddc3af06c1c0d64c
+    last_modified: 2026-11-17T10:25:24Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:25e5ed486de7116b
-    last_modified: 2026-11-16T20:01:26Z
+    digest: sha256:e5575be645ec3f24
+    last_modified: 2026-11-17T10:25:24Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -97,8 +97,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:885e0b933a3243fd
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:0bf61b46e5182717
+    last_modified: 2026-11-17T10:13:18Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -107,8 +107,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:476f116c5e449766
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:5a68cb4f4f79a63e
+    last_modified: 2026-11-17T10:28:40Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -124,11 +124,6 @@ sources:
     title: src/islands/consortium/main.ts
     digest: sha256:6709d3b6c2980998
     last_modified: 2026-11-16T20:25:28Z
-  - id: list-query-ts
-    resource: ../../src/islands/consortium/rules/list-query.ts
-    title: src/islands/consortium/rules/list-query.ts
-    digest: sha256:bb3e2ea41339b8f7
-    last_modified: 2026-11-14T22:07:45Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -142,13 +137,13 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:7514e2a4f130ca06
-    last_modified: 2026-11-16T21:53:51Z
+    digest: sha256:3a3beb27521f87d1
+    last_modified: 2026-11-17T10:25:24Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:b3a1124c924ed6bd
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:247825dbbd1ebd15
+    last_modified: 2026-11-17T10:25:24Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -157,13 +152,13 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:074ddea09653b8b8
-    last_modified: 2026-11-16T21:53:25Z
+    digest: sha256:7afb7646305b6cf2
+    last_modified: 2026-11-17T10:25:24Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:2a22bb57cf6662a9
-    last_modified: 2026-11-16T20:14:15Z
+    digest: sha256:13928dffc93f48fc
+    last_modified: 2026-11-17T10:25:24Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -177,8 +172,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:e21792d2c86518fa
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:15a62311180fe1fa
+    last_modified: 2026-11-17T10:25:24Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -189,11 +184,6 @@ sources:
     title: src/islands/consortium/views/Actions.tsx
     digest: sha256:72ff813b5dca1050
     last_modified: 2026-11-14T21:28:50Z
-  - id: add-tsx
-    resource: ../../src/islands/consortium/views/Add.tsx
-    title: src/islands/consortium/views/Add.tsx
-    digest: sha256:8c8c38cfe432a5b7
-    last_modified: 2026-11-14T22:07:45Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -217,8 +207,8 @@ sources:
   - id: plantmarks-tsx
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
-    digest: sha256:19b90a13185c65b7
-    last_modified: 2026-11-12T10:10:38Z
+    digest: sha256:bfe0dfd02be2eeeb
+    last_modified: 2026-11-17T10:25:24Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
@@ -232,8 +222,8 @@ sources:
   - id: stagebar-tsx
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
-    digest: sha256:c6b0c27307229a27
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:21e328779beac381
+    last_modified: 2026-11-17T10:25:24Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
@@ -252,8 +242,8 @@ sources:
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
-    digest: sha256:b859102f4e89f2f4
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:c88ea78cc766445f
+    last_modified: 2026-11-17T10:25:24Z
   - id: span-ts
     resource: ../../src/islands/consortium/views/kit/span.ts
     title: src/islands/consortium/views/kit/span.ts
@@ -272,8 +262,8 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:0b8463680869cfaf
-    last_modified: 2026-11-16T18:54:58Z
+    digest: sha256:1fa1952975c4ff18
+    last_modified: 2026-11-17T10:25:24Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
@@ -352,8 +342,8 @@ sources:
   - id: nearest-ts
     resource: ../../src/lib/consortium/nearest.ts
     title: src/lib/consortium/nearest.ts
-    digest: sha256:051bd530078fc159
-    last_modified: 2026-11-13T03:45:07Z
+    digest: sha256:b8ccc5ba13429537
+    last_modified: 2026-11-17T01:10:16Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -367,8 +357,8 @@ sources:
   - id: range-marks-ts
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
-    digest: sha256:f95b4517b5a1d797
-    last_modified: 2026-11-13T10:58:21Z
+    digest: sha256:3b5dee7987b5cbc0
+    last_modified: 2026-11-17T10:25:24Z
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
@@ -397,13 +387,13 @@ sources:
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
-    digest: sha256:a18dba8e1a9e961a
-    last_modified: 2026-11-16T17:40:54Z
+    digest: sha256:766ed7fdb9ff7efa
+    last_modified: 2026-11-17T10:25:24Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:9a4b50c369042a6a
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:ec1c9c66b312ff82
+    last_modified: 2026-11-17T10:25:24Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -412,8 +402,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:39f3e985aba0677c
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:d406e9cf7fe5e4de
+    last_modified: 2026-11-17T10:28:03Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -447,13 +437,13 @@ sources:
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:b15c1db318de3f0b
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:d881634869e11783
+    last_modified: 2026-11-17T10:25:24Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:7417c5234b060d6a
-    last_modified: 2026-11-16T20:17:56Z
+    digest: sha256:39d03deba98c3fc8
+    last_modified: 2026-11-17T10:25:24Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -610,8 +600,7 @@ export interface Hole {
   job?: JobId; stratum?: Stratum; months?: readonly Month[];
   fromYear: number; toYear: number;
   state: 'open' | 'pending' | 'not-judged' | 'to-check';   // pending: a guest list loads; to-check: a soil hole on a filled map value
-  preset: AddPreset;              // { job?, hole: Hole['id'], filters?, hint? }
-}
+}                                 // no preset since PP-C commit 0: Find opens for a hole through store.openFind(SheetFor { job, hole, fits })
 export function holes(ctx: HoleContext): Hole[];          // sorted by rank, then fromYear, then id
 export function nextStep(list: readonly Hole[]): Hole | null;
 export function fills(hole: Hole, taxon: Taxon): boolean; // the one predicate fillers() and suggest.ts share; the hole's start is clipped to JUDGED_FROM_YEAR, so a plant standing only before year 1 fills no judged hole (pre-push fix 1)
@@ -735,7 +724,7 @@ A module exported from `index.ts` but used by one lazy chunk only lives in that 
 | `views/SideView.tsx`, `side.ts`, `draw.ts`, `PrintSheet.tsx` | print only: commit 0a' deletes the on-screen side view (its stage chips) and "At a glance" (`PrintSheet.tsx:34` reads `matrix`), keeping `SideDrawing` and the plant table; the side drawing shows the year step chosen in Through the years (coordinator choice, 2026-11-14; inventory E9 keeps it), the jobs and years tables follow in d2 | commit 0a', b2 (off `stage`, PP-B18), d2 (print) |
 | `views/Actions.tsx`, `views/FutureSlot.tsx` | hosted by the palette page | b2 until PP-E; `FutureSlot` deleted by e2 |
 | `views/later.ts`, `later-chunk.ts`, `Share.tsx` | `Share.tsx` wording and the "Include my place" tick in b1a; commit 0a' drops the SideView, Jobs and PlantList re-exports; files renamed into `views/take/**` | b1a, commit 0a', d2 |
-| `views/Add.tsx`, `Paste.tsx`, `paste.ts`, `Swap.tsx`, `Sheets.tsx` (`:69-72`), `kit/sheet.tsx`, `rules/list-query.ts` | rewritten as `views/find/**` and `rules/find-query.ts`; in PP-B b2 adds only the live regions to `Sheets.tsx` (`:58-63` renders the status text up front) and `kit/sheet.tsx` (marker A2) | c1 (Swap: c2); b2 in PP-B |
+| `views/Add.tsx` and `rules/list-query.ts` (deleted in PP-C commit 0, delete first: `store.openFind` opens the Paste sheet until c1's Find), `Paste.tsx`, `paste.ts`, `Swap.tsx`, `Sheets.tsx`, `kit/sheet.tsx` | rewritten as `views/find/**` and `rules/find-query.ts`; in PP-B b2 adds only the live regions to `Sheets.tsx` (`:58-63` renders the status text up front) and `kit/sheet.tsx` (marker A2) | c1 (Swap: c2); b2 in PP-B |
 | `views/Correction.tsx`, `views/details/**` | kept (the new page opens Details); the Keep button goes in commit 0a'; Details' toxicity sentence (`:156`) removed in b3; "Against your place" first in c2 | commit 0a', b3, c2 |
 | `views/future/**`, `views/FutureSlot.tsx` | replaced by `views/climate/**` | e2 |
 | `site-today.ts` | kept: core `range.ts` reads `siteToday` (and the pool panel's nothing-fits line still does); the panel stays (b1b) | b1b |
@@ -768,9 +757,9 @@ One version for the whole redesign, written from PP-B on; the decoder accepts ev
 1. A key the decoder does not know is ignored, wherever it appears (after `e` too): it changes neither the version status, nor the cut status, nor `unknownCount`, nor any other key. Vector: `…&e=1&zz=3` decodes the same as the link without `zz`. Today's `decodeLink` (`state.ts:148-204`) already does this, by accident; 0a makes it a tested rule.
 2. A value the decoder cannot read falls back for that key alone: `m` unknown → `unsure`; unknown climates in `c` are dropped; in `s`, segments after the third are ignored and an unknown texture or pH word reads as `-`. Vectors: `m=huge` → `unsure`; `s=own.65.loam.ec2` → own, 6.5, loam.
 3. **Bump rule.** A key whose absence cannot change a verdict is added under the same version. A key whose absence would change a verdict (watering, the ±3 °C adjustments, CLIM-4's height figure) needs a bump, or is listed in the requires key `u=<comma list of keys>`, reserved now: a decoder that does not know a key listed in `u` shows the "newer" line with the plants restored.
-4. The owner's rule "older version, nothing restored, save removed" covers v1–v4 only (owner-answers-2026-11-14.md:40). From v5 on, a later decoder reads v5 links and saves by default; `linkVersionStatus` marks only v < 5 as `older`; removing a v5 save would need a recorded owner answer.
-5. **Letters the next features expect** (reserved; none written in PP-B): goals, palette name, cautious switch, a Details deep link, watering. Watering gets its own key (for example `i`), never `w`: natural moisture and irrigation are separate facts, so `w=irrigated → unsure` stays only as an unknown-value case. CLIM-4's `h=higher.650` carries a figure in metres above sea level that must be understood (rule 3); the v5 vector `higher.650 → higher` stays. `n`, `p` and `t` (v4's Kept and Main crops) must not take a new meaning by accident; `u` is the requires key.
-6. **Plant tokens are ids, never names:** plant links, and any future deep link or plant page, use the UUID token; once canopi-data ships `plant_aliases` (DATA-12) `decodeLink` resolves an unknown token through it before counting it unknown. No PP-B code.
+4. **No backward compatibility work** (owner, 2026-11-17, superseding the 2026-11-14 "older version" rule): a version below 5 (the old beta tool's links and saves) is read as any unreadable link: nothing restored, no older-version line, a save left untouched until the next change overwrites it. The beta's v1 query form (`?v=3&c=…&a=…`) is not read at all: no notice, the save or Start opens. There is no `older` status, no older-save notice and no migration. Old links and saves need not survive a later data or format change either.
+5. **Letters the next features expect** (reserved; none written in PP-B): goals, palette name, cautious switch, a Details deep link, watering. Watering gets its own key (for example `i`), never `w`: natural moisture and irrigation are separate facts, so `w=irrigated → unsure` stays only as an unknown-value case. CLIM-4's `h=higher.650` carries a figure in metres above sea level that must be understood (rule 3); the v5 vector `higher.650 → higher` stays. `u` is the requires key (`n`, `p` and `t`, v4's letters, are free again: no backward compatibility work, owner 2026-11-17).
+6. **Plant tokens are ids, never names:** plant links, and any future deep link or plant page, use the UUID token. A token the release does not list is counted in `unknownCount`; the website never resolves it through `plant_aliases` (accepted in a schema-4 export, never read: owner 2026-11-17, "No backward compatibility work").
 
 ```
 #v=5&c=temperate&m=small&a=…&x=…&g=tr…&z=120&y=2041-2070[&k=FR&o=45.75,4.85&l=sun&w=average&q=sheltered&r=drains&h=town&s=own.65.loam]&e=1
@@ -797,23 +786,23 @@ Spot key grammar: read the word before the first `.`; an unknown word decodes to
 
 ```ts
 export const LINK_VERSION = 5;
-export type LinkVersion = 'current' | 'older' | 'newer' | 'unreadable' | 'absent';
-export function linkVersionStatus(v: string | null): LinkVersion;   // classifies v only (null → 'absent'); used by decodeLink, persist.ts readRecord/oldRecord, restore.ts
+export type LinkVersion = 'current' | 'newer' | 'unreadable' | 'absent';
+export function linkVersionStatus(v: string | null): LinkVersion;   // classifies v only (null → 'absent'; below 5 → 'unreadable'); used by decodeLink, persist.ts readRecord, restore.ts
 export function encodeLink(state: ShareState, known: KnownIds, opts?: { origin?: LinkOrigin | null; place?: boolean }): string;
 export function encodePlace(state: ShareState): string;             // "k=…&o=…&l=…&w=…&q=…&r=…&h=…&s=…", the private part alone; k from store.country, o from store.location
 export function decodeLink(link: string, known: KnownIds, place?: string | null): DecodedLink;
-export interface LinkNotice { unknownCount: number; cut: boolean; outdated: boolean; newer: boolean; unreadable: boolean; period: boolean }   // NO_NOTICES in step, restore.ts:20-21
+export interface LinkNotice { unknownCount: number; cut: boolean; newer: boolean; unreadable: boolean; period: boolean }   // NO_NOTICES in step, restore.ts:20-21
 ```
 
-### 8.2 Versions (owner, 2026-11-14: v4 links and saves are not restored; no migration code; the rule covers v1–v4 only, section 8.1 rule 4)
+### 8.2 Versions (owner, 2026-11-14: v4 links and saves are not restored, no migration code; owner, 2026-11-17: no backward compatibility work, versions below 5 read as unreadable, section 8.1 rule 4)
 
 | Fragment or save | Status | Result | Message |
 |---|---|---|---|
 | `v=5` | current | read | — |
-| `v` = 1 to 4, and the v1 query form | older | nothing restored; an older save is said once, then removed, as for v1–3 today (`state/arrival.ts:121-124`) | the live "older version" line (DEC:84) |
+| `v` = 1 to 4 (the old beta tool) | unreadable | nothing restored, save untouched; the v1 query form is not read at all | "could not be read" |
 | `v` > 5 | newer | nothing restored; a newer save is kept untouched | new: "from a newer version of the tool. Reload the page." |
 | `v` = 5 with a key listed in `u=` that this decoder does not know | current, `newer` notice | read, plants restored | the "newer" line |
-| `v` not a whole number | unreadable | nothing restored, save untouched | new: "could not be read" |
+| `v` not a whole number, or below 5 | unreadable | nothing restored, save untouched | new: "could not be read" |
 | no `v` (`linkVersionStatus(null)` = `absent`) | absent | a fragment with `a` reads as unreadable ("could not be read"); without `a` it is not a palette link and nothing happens; a save with no `v` is not a record (`readRecord` null) and is left untouched | as said |
 | `e=1` and `a` non-empty and no readable token (malformed) | current | `decodeLink` sets the `unreadable` notice (a token matter, not a version status); nothing restored, save untouched | "could not be read" |
 | `e` missing | current | read up to the cut | the live "cut" line |
@@ -845,12 +834,12 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 - **Sheets and browser history** (inventory K7; coordinator decision 2026-11-14, simplified by the owner's simplify pass the same day; `store.ts` history block, `main.ts` popstate and hashchange): a sheet (Details, Swap, Add, search, Paste, Your place) pushes one entry with the same address; Back closes it and keeps every edit, a second Back leaves the page. The step from Your place to Your palette pushes one entry (`watchSteps`), so Back returns to Place; a return visit's or a link's own opening pushes nothing (`arrivalOpensPalette`). The model: each pushed entry records the page's entries up to it in its own `history.state.pp` (for example `['palette', 'sheet']`), and `state/persist.ts` `writeAddress` keeps `pp` through every rewrite, so `historyMoved(state)` reads where a Back or Forward landed from the entry itself: no position counting, no Navigation API, and a reload keeps the entries (review r2 hist-2 closed). popstate closes a sheet the landed entry has not, or shows Place when it has no palette step, then `writeAddress` rewrites the landed entry with the current link (`force` false only after an Undo back to Place, which wrote the address it wants), then `pushWaiting` pushes an entry asked for while the page's own Back was on its way. The hashchange that may follow lands on the fragment the page last wrote (`persist.lastWritten`) and stops in `main.ts`, so `state/arrival.ts` never reads it as a link; any other hashchange onto an entry the page wrote itself (its `history.state.ct` equals the fragment) takes that entry's `pp` and start (`adoptEntry`); any other is the reader's link and ends the entries (`forgetEntries`), which starts a new start id. Start ids (fix round 2, C, 2026-11-15): every entry carries `history.state.st`, new for each link opened in the tab, inherited by `pushEntry`, kept by `writeAddress` and read back after a reload (`watchSteps`); `historyMoved` returns `away` when the landed entry's `st` differs from the current one (or, for an entry with a `ct` and no `st`, written by the code before start ids: r3-4, browser case in `consortium-pp-b1.browser.test.mjs`), and popstate then rewrites nothing, so the hashchange that follows reopens that entry's own palette (browser cases r2-6 and r2-7 in `consortium-pp-b1.browser.test.mjs`). Forward onto an entry the page left is allowed and changes nothing on screen (owner 2026-11-14: no refused Forward). Every palette to Place change leaves the palette step's entry, and any sheet's above it, in one `history.go` (`leaveEntry('palette')`: "Your place", and `watchSteps` for a change made outside history). Browser cases PP-B31 (K7), PP-B32 (Place step), PP-B40, PP-B41 and PP-B48/48b (a link pasted again, with and without the Navigation API) in `consortium-pp-b2.browser.test.mjs`.
 - **Guide presets** (`?plant=&climate=`, `readPreset` `state.ts:279`, `applyPreset` `restore.ts:189-204`): the plant joins `members` inside the existing `quietly(batch())`; `guideKept` becomes `guidePlant`, and b1a replaces `consortium.start.guideKept` with a `consortium.place.` key that does not say "Kept". A preset gives `members == [id]` and no save until the reader acts.
 
-### 8.4 The move to `/palette/` (PP-B commit 0)
+### 8.4 The move to `/palette/` (PP-B commit 0; no forwarding since 2026-11-17)
 
-- `src/i18n/consortium-path.js:6` returns `/palette/` and `/${lang}/palette/`; pages move from `src/pages/consortium.astro` and `src/pages/[lang]/consortium.astro` to `palette.astro`; the three literals in `ConsortiumPage.astro:81,95,100` use `consortiumPath`. Data path `/data/consortium/*.sqlite.gz`, storage keys and key prefixes keep their names. Links found by `grep -rn '/consortium' src`: the four guide MDX files (garden-helpers, flowers-for-pollinators, en and fr) and `src/components/guides/TryConsortium.astro`.
-- `public/_redirects` gains 22 lines, with and without the trailing slash, written out per locale (`/consortium /palette/ 301`, `/consortium/ /palette/ 301`, `/fr/consortium /fr/palette/ 301`, …); no splat (`/:lang/consortium/*` would catch `/data/consortium/*`), no `Language=` condition; `/app/:route /app/ 200` stays first-match-correct.
-- **Probe:** there is no Cloudflare preview (previews off, runbook "CI and deploy gate"), so the probe runs on wrangler dev (`scripts/browser/serve.mjs`): query and fragment survive for `/consortium/?plant=…`, `/fr/consortium/?v=3…` and `#v=4…`; after PP-B is live, `curl` production expects `Location: /fr/palette/?plant=…`. If production answers the redirect without the query or fragment, the 22 lines may ship as 302 until the production `curl` check passes. **Fallback:** drop the 22 lines (never a stub page and a redirect on one path) and add one stub page per locale at the old address, `/consortium/` and `/<lang>/consortium/`, each pointing to `consortiumPath(lang)` and running `location.replace('/palette/' + location.search + location.hash)`, with canonical, noindex and noscript, left out of the sitemap; `check-built-site` then expects the stubs.
-- Harness and checks the move edits: `scripts/browser/harness.mjs:354` (fixture match), `scripts/browser/{seams,p5,f1a}-helpers.mjs`, `scripts/browser/smoke/*.mjs`, `consortium-timing.mjs`, the specs that open the old path (`consortium-s4`, `-commit0`, `-e6` (fetch at `:277`), `-f1a-palette:57`, `-p5-s5f:38`), `scripts/guides-consortium.test.mjs:102-121`, `scripts/built-links.test.mjs:41-42`, `check-built-site.mjs` x-default (`:418`), `checkHeader(…,'/consortium/',…)` (`:421`) and `checkLinks`. The "no `/consortium/` left" test names the files it scans (`src/**/*.{astro,ts,tsx,js,mdx,md,json}` and `public/_redirects`, the stubs excepted) and checks URL strings only (href values, string literals starting `/consortium/` or `/<lang>/consortium/`, markdown link targets); import paths, `src/*/consortium/` and `/data/consortium/` are exempt. Specs that open `/consortium/` follow the 0b 301 in wrangler dev, so the fixture match on `/palette/` still applies; only the stub fallback's `location.replace` race needs a wait in the harness.
+- `src/i18n/consortium-path.js` returns `/palette/` and `/${lang}/palette/`; the pages are `src/pages/palette.astro` and `src/pages/[lang]/palette.astro`, and `ConsortiumPage.astro` builds its canonical, hreflang and og:url through `consortiumPath`. Data path `/data/consortium/*.sqlite.gz`, storage keys, key prefixes, folders and chunk roles keep the name "consortium".
+- **The old `/consortium/` and `/<lang>/consortium/` addresses answer 404** (owner row "No /consortium/ forwarding", 2026-11-17, [user decisions](/decisions/consortium-user-decisions.md): few users yet). PP-B's 22 `public/_redirects` lines were removed; they never applied in production anyway (Workers Builds ignores `public/_redirects`). There is no stub page at the old address and no redirect plan left: this supersedes the earlier 301 lines, their wrangler-dev probe and the stub-page fallback.
+- `scripts/check-built-site.mjs` holds it: `_redirects` has no `/consortium/` rule (and keeps the `/app/:route` line first), no old page is built, the sitemap has none, and no built page links one. Old share links (`/consortium/#v=…`) are not rewritten; a reader who has one lands on the 404 page.
+- What still says "consortium" on purpose: the internal names above, and `public/_redirects`' comment that records the decision.
 
 ## 9. Failure and loading states per path
 

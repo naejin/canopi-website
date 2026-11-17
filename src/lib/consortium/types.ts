@@ -416,12 +416,12 @@ export interface ShareState {
 // unknownCount: plants of the link no longer in the list ("2 plants from this link…"); cut: the link
 // lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not a notice of a
 // link being read: it is checked on the URL at share time (state.ts isLongLink).
-// outdated: a link of an older version (v1–v4, the v1 query form; owner 2026-11-14), nothing restored;
 // newer: from a newer version (v > 5, nothing restored), or a v5 link whose `u=` lists a key this
-// decoder does not know (plants restored); unreadable: `v` not a whole number, or `e=1` with a
+// decoder does not know (plants restored); unreadable: `v` not a whole number or below 5 (the old beta
+// tool's links: no backward compatibility work, owner 2026-11-17), or `e=1` with a
 // non-empty `a` holding no readable token (nothing restored); period: `y` names no period this page
 // knows (today shown instead). plant-palette-architecture 8.2.
-export interface LinkNotice { unknownCount: number; cut: boolean; outdated: boolean; newer: boolean; unreadable: boolean; period: boolean }
+export interface LinkNotice { unknownCount: number; cut: boolean; newer: boolean; unreadable: boolean; period: boolean }
 export interface DecodedLink { state: ShareState; notice: LinkNotice }
 
 // ---- P5 seams (commit 0; .local/consortium/v2/p5-owners.md): the reader's site location ----
@@ -475,8 +475,8 @@ export type MarkSeverity = 'note' | 'warning';
 // state: a finer state the views write as data-mark-state (e.g. native: 'native' | 'not_recorded' | 'unknown').
 export interface Mark { kind: MarkKind; key: string; vars?: Record<string, string | number>; severity: MarkSeverity; state?: string }
 // Where a mark is drawn, so a provider can keep a mark to some places: matrix chips and phone rows are
-// tight; Add and Details have room for words.
-export const markSurfaces = ['chip', 'row', 'add', 'details'] as const;
+// tight; Details has room for words.
+export const markSurfaces = ['chip', 'row', 'details'] as const;
 export type MarkSurface = (typeof markSurfaces)[number];
 
 // ---- E6 seams (commit 0; ADR-6, decisions/consortium-placement-origin-and-facts.md; R4 implements them) ----
@@ -509,12 +509,11 @@ export interface SiteFitMessage {
 }
 
 // The plant facts that depend on the site and the climate period (ADR-6; owner row "Site- and
-// time-dependent plant facts"): only these go through factAt; other traits stay plain reads.
-export type FactKey = 'life_cycle' | 'cold_limit' | 'heat_limit' | 'water_need';
+// time-dependent plant facts"): only these go through factAt; other traits stay plain reads. A fact
+// joins the list with its first reader (PP-C commit 0, b3g-5: life_cycle, cold_limit and heat_limit
+// had none and went; F2 and E7 add the facts they compute or scope).
+export type FactKey = 'water_need';
 export interface FactValues {
-  life_cycle: 'annual' | 'perennial' | 'grown_as_annual';
-  cold_limit: { tminColdC: number; weak: boolean }; // coldest-month minimum the plant is recorded at
-  heat_limit: { tmaxWarmC: number }; // warmest-month maximum
   water_need: { drought: string | null; moisture: string | null }; // null only when both are unknown
 }
 // A fact as a period sees it (SitePeriod.period: '1991-2020', '2041-2070', '2071-2099'), null when not
@@ -534,24 +533,6 @@ export const confidenceTerms = ['edge', 'disputed', 'estimate', 'worked-out', 'n
 export type ConfidenceTerm = (typeof confidenceTerms)[number];
 // A term, with the scenario counts the spread reads (agree of `of`).
 export interface Confidence { term: ConfidenceTerm; agree?: number; of?: number }
-
-// A cell or a run of cells: one layer (stratum null: any layer, as a job's stage gap) over the stages
-// from..to. What a sheet is opened for (store.ts SheetFor.cell: "+ Add" in a free cell, "Show them
-// anyway" on a blocked run, a job's stage gap) and what Add opens preset to.
-export interface CellSpan { stratum: Stratum | null; from: PhaseOrd; to: PhaseOrd }
-
-// What Add opens preset to (A22; store.ts openAdd, stream 1): a job, a cell span (the sheet's target
-// today, store.ts SheetFor.cell), the filters stream 2 defines, and a hint: the line of the hole or
-// the thing to weigh that opened it, a consortium.* key without its prefix with its variables (core holds no
-// strings), shown under Add's filters (add1).
-export interface AddPreset {
-  job?: JobId;
-  cell?: CellSpan;
-  // The hole (holes.ts Hole.id) a "Fill this hole" opened Add for (PP-B; replaces `cell` in PP-C).
-  hole?: string;
-  filters?: Readonly<Record<string, string | boolean>>;
-  hint?: { key: string; vars?: Record<string, string | number> };
-}
 
 // ---- Plant palette seams (PP-B commit 0; plant-palette-architecture 3.1–3.3) ----
 
@@ -643,8 +624,9 @@ export interface Hole {
   fromYear: number;
   toYear: number;
   state: 'open' | 'pending' | 'not-judged' | 'to-check';
-  preset: AddPreset;
 }
+// What Find opens for a hole is store.ts SheetFor (job, hole, fits), built by NextStep (PP-C commit 0
+// deleted AddPreset and Hole.preset with the Add sheet).
 export interface Fillers { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unknown: Taxon[] }
 // A line of "Things to weigh" (weigh.ts, b3) and of the planting plan (plan.ts, PP-D).
 export interface WeighLine { kind: 'family' | 'water' | 'soil'; line: Line; members: PlantId[] }

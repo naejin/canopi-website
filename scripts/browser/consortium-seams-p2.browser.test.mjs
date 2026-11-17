@@ -12,7 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, behaviour, en, findAx, has } from './helpers.mjs';
-import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, placeTo, toPlace, showPalette, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage, openAdd, savedPlace } from './seams-helpers.mjs';
+import { esc, done, temperate, cellIn, suggested, memberIds, addRows, fitsShade, linkOf, saved, savedFragment, tropicalOnly, param, placeTo, toPlace, showPalette, OTHER_TAB, otherTabSaves, pasteOne, focused, hookedPage, openFind, savedPlace } from './seams-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 
 useHarness();
@@ -21,14 +21,16 @@ test('X8: a link opened while a sheet is up closes the sheet', async (t) => {
   await behaviour(t, async (v) => {
     const page = await suggested({ ...v, hook: true });
     const before = await page.evaluate(() => location.hash);
-    await openAdd(page);
-    assert.ok(await findAx(page, { role: 'dialog', name: 'Add plants' }));
+    // PP-C commit 0: openFind opens Find (the Paste sheet until c1 builds Find, "Paste a list").
+    await openFind(page);
+    assert.ok(await has(page, 'dialog.ct-sheet[open]', 10_000), 'Find is open');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
     // Back to the address with one plant fewer: the page's own link, opened as a restore.
-    await page.locator('.ct-add input[type="checkbox"]').click();
-    await page.locator('.ct-add-bar .button-primary').click();
+    await page.evaluate(() => { const { store } = window.__ctTest; store.members.value = store.members.value.slice(1); });
     await page.waitForFunction((b) => location.hash !== b, {}, before);
-    await openAdd(page);
-    assert.ok(await findAx(page, { role: 'dialog', name: 'Add plants' }));
+    await openFind(page);
+    assert.ok(await has(page, 'dialog.ct-sheet[open]', 10_000), 'Find is open again');
     await page.evaluate((f) => { history.pushState(null, '', f); window.dispatchEvent(new HashChangeEvent('hashchange')); }, before);
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
     await done(page);

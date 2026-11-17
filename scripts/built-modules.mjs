@@ -140,32 +140,39 @@ export const staticClosure = (graph, roots, stop = new Set()) => [...walk(graph,
 // that chunk's facade (facadeModuleId null), and only its module list would still name the entry (K3
 // hand-off, measured 2026-11-13, when Correction imported the drafts from the plant dialog's chunk;
 // they now live in the first run, views/kit/correction.ts). A module also imported statically gives no
-// chunk its role: the role stays empty, and check-built-site says so (it asks for exactly one chunk of
-// each role that has an entry today, suggest and pool included).
-// Paths as the page names them ('/_astro/x.js'), sorted. A stream that moves code into a part names
-// its entry file here (a missing entry is simply no chunk).
+// chunk its role: the role stays empty, and check-built-site says so (it asks each role for its
+// `chunks` count below).
+// Paths as the page names them ('/_astro/x.js'), sorted.
+// Each role: `entry`, the pattern of its entry modules, and `chunks`, how many chunks a production
+// build gives it (a number: exactly that many; '1+': one or more, for a role whose stream adds or
+// moves entry files, so it never edits this table), which check-built-site reads (slices 3.2). Every
+// pattern names at least one file in src/ (built-modules.test.mjs), so a role never waits empty.
+// PP-C commit 0 wrote the final table (no stream edits it for its role): `find` (c1's Find, its
+// filters and FillHole under views/find/, and Paste, which c1 moves in; Paste stays named so the role
+// has a chunk at every commit); `sheets` = Swap and Correction (Add was deleted); the empty `likely`
+// and `native` roles were dropped (slices 3.7).
 export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
 export const ROLE_ENTRIES = {
   // P5 features
-  location: /\/src\/islands\/consortium\/views\/location\/location\.tsx$/, // S5b
-  markProviders: /\/src\/lib\/consortium\/mark-providers\.ts$/, // S5c, S5d, S5e marks
-  future: /\/src\/islands\/consortium\/views\/future\/future\.tsx$/, // S5d
-  pool: /\/src\/islands\/consortium\/views\/pool\/pool\.tsx$/, // S5c, if not tiny
-  likely: /\/src\/islands\/consortium\/views\/likely\/likely\.tsx$/, // S5e, if not tiny
-  native: /\/src\/islands\/consortium\/views\/native\/native\.tsx$/, // S5e, if not tiny
+  location: { entry: /\/src\/islands\/consortium\/views\/location\/location\.tsx$/, chunks: 1 }, // S5b
+  markProviders: { entry: /\/src\/lib\/consortium\/mark-providers\.ts$/, chunks: 1 }, // S5c, S5d, S5e marks
+  future: { entry: /\/src\/islands\/consortium\/views\/future\/future\.tsx$/, chunks: 1 }, // S5d
+  pool: { entry: /\/src\/islands\/consortium\/views\/pool\/pool\.tsx$/, chunks: 1 }, // S5c
   // The range rule (core marks.ts loadRangeRule; E6 design check A10): loaded once the site location
   // has a climate.
-  range: /\/src\/lib\/consortium\/range\.ts$/, // R2
+  range: { entry: /\/src\/lib\/consortium\/range\.ts$/, chunks: 1 }, // R2
   // E6 lazy island parts (design check A5, A6, A11; L1-L12)
-  details: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, // K3: the plant dialog
-  sheets: /\/src\/islands\/consortium\/views\/(Add|Swap|Paste|Correction)\.tsx$/, // K3
-  later: /\/src\/islands\/consortium\/views\/later\.ts$/, // K3: the views after the first view
-  suggest: /\/src\/lib\/consortium\/suggest\.ts$/, // R4: loadSuggest
+  details: { entry: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, chunks: 1 }, // K3: the plant dialog
+  sheets: { entry: /\/src\/islands\/consortium\/views\/(Swap|Correction)\.tsx$/, chunks: 2 }, // K3
+  // PP-C c1: Find (views/find/**) and Paste (views/Paste.tsx until c1 moves it into views/find/).
+  find: { entry: /\/src\/islands\/consortium\/views\/(find\/.+\.tsx?|Paste\.tsx)$/, chunks: '1+' }, // K3
+  later: { entry: /\/src\/islands\/consortium\/views\/later\.ts$/, chunks: 1 }, // K3: the views after the first view
+  suggest: { entry: /\/src\/lib\/consortium\/suggest\.ts$/, chunks: 1 }, // R4: loadSuggest
   // PP-B parts (plant-palette-slices, commit 0; F1a's structure and balance roles went with it, and
   // commit 0a' deleted the matrix role with the matrix): the palette page (b2 gives it a chunk) and the
   // verdict rule (core verdict-load.ts).
-  palette: /\/src\/islands\/consortium\/views\/palette\/Palette\.tsx$/, // b2
-  verdict: /\/src\/lib\/consortium\/verdict\.ts$/, // b2 writes the body
+  palette: { entry: /\/src\/islands\/consortium\/views\/palette\/Palette\.tsx$/, chunks: 1 }, // b2
+  verdict: { entry: /\/src\/lib\/consortium\/verdict\.ts$/, chunks: 1 }, // b2 writes the body
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 // The browser-test hook (main.ts imports it with import() under __CT_TEST_HOOK__ and awaits it before
@@ -183,7 +190,7 @@ export function chunkRoles(bundle, moduleInfo = null) {
   const path = (f) => `/${typeof f === 'string' ? f : f.fileName}`;
   const lazyOnly = (m) => { const info = moduleInfo?.(m); return !!info && info.dynamicImporters.length > 0 && info.importers.length === 0; };
   const holds = (c, re) => re.test(norm(c.facadeModuleId)) || (c.moduleIds ?? []).some((m) => re.test(norm(m)) && lazyOnly(m));
-  const byRole = Object.fromEntries(Object.entries(ROLE_ENTRIES).map(([k, re]) => [k, chunks.filter((c) => holds(c, re))]));
+  const byRole = Object.fromEntries(Object.entries(ROLE_ENTRIES).map(([k, { entry }]) => [k, chunks.filter((c) => holds(c, entry))]));
   const maplibreJs = chunks.filter((c) => (c.moduleIds ?? []).some((m) => MAPLIBRE_MODULE.test(norm(m))));
   const named = [...byRole.location, ...maplibreJs];
   const workers = files.filter((f) => f.type === 'asset' && f.fileName.endsWith('.js') && named.some((c) => c.code.includes(f.fileName.split('/').pop())));

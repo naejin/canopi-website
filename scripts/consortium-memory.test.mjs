@@ -18,7 +18,7 @@ const m = {
   ...(await import('../src/islands/consortium/state/draft.ts')),
   ...(await import('../src/islands/consortium/state/suggest-wait.ts')),
 };
-const { guarded, saveRecord, readRecord, oldRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
+const { guarded, saveRecord, readRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'save', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
@@ -68,21 +68,15 @@ test('the save record round-trips with its country source and refuses anything e
   for (const bad of [null, '', '{', 'null', '42', '{"q":"c=temperate","at":"x"}', '{"fragment":"","at":"x"}', JSON.stringify({ fragment: 'x'.repeat(30000), at: 'x' }), saveRecord('v=3&c=temperate&a=&e=1', 'x', null), saveRecord('v=4&c=temperate&a=&e=1', 'x', null), saveRecord('v=6&c=temperate&a=&e=1', 'x', null)]) assert.equal(readRecord(bad), null, String(bad).slice(0, 40));
 });
 
-test('an older save is told apart from nothing saved (review 4): v1 {q, at, src} and a v1–v4 fragment', () => {
-  assert.equal(oldRecord('{"q":"c=temperate&a=x","at":"2026-10-01","src":"chosen"}'), true);
-  assert.equal(oldRecord(saveRecord('v=3&c=temperate&a=&e=1', 'x', null)), true);
-  assert.equal(oldRecord(saveRecord('v=4&c=temperate&a=&e=1', 'x', 'chosen')), true, 'a v4 save is older since link v5');
-  for (const no of [null, '', '{', saveRecord('v=5&c=temperate&a=&e=1', 'x', 'chosen'), saveRecord('v=6&c=temperate&a=&e=1', 'x', 'chosen'), '42']) assert.equal(oldRecord(no), false, String(no));
-});
-
-test('arrival: a link wins, then a guide preset, then an old query link, then the last consortium, then the site climate, else nothing', () => {
+test('arrival: a link wins, then a guide preset, then the last consortium, then the site climate, else nothing; the beta tool\'s query links are not read', () => {
   const saved = { fragment: 'v=5&c=tropical&a=&e=1', place: '', at: 'x', src: null };
   assert.deepEqual(arrival({ hash: '#v=5&c=temperate&e=1', search: '?plant=Allium+cepa&climate=temperate' }, saved, 'arid'), { kind: 'link', fragment: 'v=5&c=temperate&e=1' });
-  for (const v of ['3', '4']) assert.deepEqual(arrival({ hash: `#v=${v}&c=temperate`, search: '' }, null, null).kind, 'link', `an older link (v=${v}) is still read as a link (decodeLink says outdated)`);
+  for (const v of ['3', '4']) assert.deepEqual(arrival({ hash: `#v=${v}&c=temperate`, search: '' }, null, null).kind, 'link', `an old link (v=${v}) is still read as a link (decodeLink says unreadable)`);
   assert.deepEqual(arrival({ hash: '#main', search: '?plant=Allium+cepa&climate=temperate' }, saved, 'arid'), { kind: 'preset', climate: 'Temperate', plant: 'Allium cepa' });
   assert.deepEqual(arrival({ hash: '', search: '?plant=Allium+cepa&climate=nowhere' }, saved, null), { kind: 'saved', fragment: saved.fragment, at: 'x', src: null, place: '' }, 'a preset with no climate is no preset');
-  assert.deepEqual(arrival({ hash: '', search: '?v=3&c=temperate&a=AbCdEf' }, saved, null), { kind: 'outdated' }, 'a v1 query link: the outdated notice, nothing restored (review 5)');
-  assert.deepEqual(arrival({ hash: '', search: '?c=temperate&a=AbCdEf' }, null, null), { kind: 'outdated' });
+  // The old beta tool's query links (?v=3&c=…&a=…) are not read: the save opens (owner 2026-11-17).
+  assert.deepEqual(arrival({ hash: '', search: '?v=3&c=temperate&a=AbCdEf' }, saved, null), { kind: 'saved', fragment: saved.fragment, at: 'x', src: null, place: '' });
+  assert.deepEqual(arrival({ hash: '', search: '?c=temperate&a=AbCdEf' }, null, null), { kind: 'start', climate: null });
   assert.deepEqual(arrival({ hash: '', search: '' }, null, 'mediterranean'), { kind: 'start', climate: 'Mediterranean' }, 'the shared site climate when the reader set one');
   assert.deepEqual(arrival({ hash: '', search: '' }, null, null), { kind: 'start', climate: null }, 'nothing chosen: never a default climate');
   assert.deepEqual(arrival({ hash: '', search: '' }, null, 'none'), { kind: 'start', climate: null });
@@ -181,7 +175,7 @@ test('a share state round-trips through the #v=5 link', async () => {
   const state = shareState({ climate: 'Temperate', country: { code: 'FR', source: 'chosen' }, room: 'large', plot: 300, period: '2041-2070', spot, soil, members: ids, removed: [pool[20].id], guests: {} }, { place: true });
   const known = { Temperate: pool.map((t) => t.id) };
   const back = decodeLink(encodeLink(state, known, { place: true }), known);
-  assert.deepEqual(back.notice, { unknownCount: 0, cut: false, outdated: false, newer: false, unreadable: false, period: false });
+  assert.deepEqual(back.notice, { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false });
   assert.deepEqual(back.state.members, ids);
   assert.deepEqual([back.state.room, back.state.plot, back.state.period], ['large', 300, '2041-2070']);
   assert.deepEqual(back.state.spot, spot);
@@ -234,7 +228,7 @@ async function shown() {
   store.view.value = 'matrix';
   // A palette restored from the save: the page owns it (state/save.ts held).
   m.holdSave(false);
-  m.notices.value = { ...m.notices.peek(), pasted: null, failed: false, cut: false, outdated: false };
+  m.notices.value = { ...m.notices.peek(), pasted: null, failed: false, cut: false, unreadable: false };
   writes = 0;
   return pool;
 }
@@ -299,7 +293,7 @@ test('restore: an edit made while a pasted link loads and fails is saved (round 
   assert.equal(decodeLink(saved.fragment, { Temperate: pool.map((t) => t.id) }).state.members.length, 7, 'the edit is the saved state');
 });
 
-test('restore: a cut or outdated link arriving during a first-visit restore leaves nothing stuck; edits save again (round 4, 1)', async () => {
+test('restore: a cut or old-version link arriving during a first-visit restore leaves nothing stuck; edits save again (round 4, 1)', async () => {
   const pool = await shown();
   store.view.value = 'start';
   store.climate.value = null;
@@ -308,8 +302,8 @@ test('restore: a cut or outdated link arriving during a first-visit restore leav
   delays.Tropical = 60;
   const a = m.restore(link, { from: 'link' });
   await wait(5);
-  assert.equal(await m.restore('v=4&k=FR', { from: 'link' }), false, 'cut');
-  assert.equal(await m.restore('v=1&c=temperate', { from: 'link' }), false, 'outdated');
+  assert.equal(await m.restore('v=5&k=FR', { from: 'link' }), false, 'cut');
+  assert.equal(await m.restore('v=1&c=temperate', { from: 'link' }), false, 'an old version: unreadable');
   assert.equal(await a, false, 'a newer link, even refused, wins over the older restore');
   assert.equal(m.restoring.peek(), false);
   assert.equal(m.pendingClimate.peek(), null);
@@ -593,29 +587,29 @@ test('a change to any field that ends Undo hides the Undo toast', async () => {
   store.hideToast();
 });
 
-// Saved data and links of v4 (written before link v5, 2026-11-12) are an older version since PP-B
-// commit 0a (owner 2026-11-14): nothing restored, said once; a v4 save is removed (oldRecord), a v4
-// link names its climate on Start with the outdated notice.
-const TODAY_SAVE = '{"fragment":"v=4&c=temperate&k=FR&l=part&s=acid&w=wet&m=large&a=*dhUvw6*hMnoF4cGXxubT_4pfUIFAvOY&x=Tc-F92&n=dhUvw6&g=trIFAvOY&t=2&e=1","at":"2026-11-12T10:00:00.000Z","src":"chosen"}';
-test('a v4 save written before link v5 is an older save: not read back, told apart from nothing saved', async () => {
+// Saved data and links of the old beta tool (v1–v4) are read as any unreadable save or link (owner
+// 2026-11-17, no backward compatibility work): nothing restored, no older-version line, the save kept
+// until the next change overwrites it.
+const BETA_SAVE = '{"fragment":"v=4&c=temperate&k=FR&l=part&s=acid&w=wet&m=large&a=*dhUvw6*hMnoF4cGXxubT_4pfUIFAvOY&x=Tc-F92&n=dhUvw6&g=trIFAvOY&t=2&e=1","at":"2026-11-12T10:00:00.000Z","src":"chosen"}';
+test('a beta-tool (v4) save is not read back and restores nothing', async () => {
   await blankShown();
-  assert.equal(readRecord(TODAY_SAVE), null);
-  assert.equal(oldRecord(TODAY_SAVE), true);
+  assert.equal(readRecord(BETA_SAVE), null);
+  assert.equal('oldRecord' in m, false, 'no older-save path');
   const before = store.members.peek();
-  m.notices.value = { ...m.notices.peek(), oldSave: false };
-  assert.equal(await m.restore(JSON.parse(TODAY_SAVE).fragment, { from: 'saved', src: 'chosen' }), false);
-  assert.equal(m.notices.peek().oldSave, true, 'the older-save line');
+  assert.equal(await m.restore(JSON.parse(BETA_SAVE).fragment, { from: 'saved', src: 'chosen' }), false);
+  assert.ok(!('oldSave' in m.notices.peek()), 'no older-save line');
   assert.deepEqual(store.members.peek(), before, 'nothing restored');
 });
-test('a #v=4 link written before link v5 opens nothing and says it is from an older version', async () => {
+test('a #v=4 beta-tool link opens nothing, names no climate and says it cannot be read', async () => {
   await blankShown();
   store.view.value = 'start';
   store.climate.value = null;
   store.members.value = [];
-  m.notices.value = { ...m.notices.peek(), outdated: false };
-  assert.equal(await m.restore(JSON.parse(TODAY_SAVE).fragment, { from: 'link' }), false);
-  assert.equal(m.notices.peek().outdated, true);
-  assert.equal(store.climate.peek(), 'Temperate', 'the climate it names shows on Start');
+  m.notices.value = { ...m.notices.peek(), unreadable: false };
+  assert.equal(await m.restore(JSON.parse(BETA_SAVE).fragment, { from: 'link' }), false);
+  assert.equal(m.notices.peek().unreadable, true);
+  assert.ok(!('outdated' in m.notices.peek()), 'no older-version notice');
+  assert.equal(store.climate.peek(), null, 'its climate is not read');
   assert.deepEqual(store.members.peek(), []);
   assert.deepEqual(store.country.peek(), { code: null, source: null }, 'its k is not read');
 });

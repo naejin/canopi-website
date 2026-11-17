@@ -31,8 +31,8 @@ import { siteIdOf } from './zones.ts';
 
 // Every key written out (consortium.* strings, S5c block), so a key check can find them.
 const VERDICT_KEYS: Record<'edge' | 'outside', Record<MarkSurface, string>> = {
-  edge: { chip: 'range.edgeShort', row: 'range.edge', add: 'range.edge', details: 'range.edgeDetails' },
-  outside: { chip: 'range.outsideShort', row: 'range.outside', add: 'range.outside', details: 'range.outsideDetails' },
+  edge: { chip: 'range.edgeShort', row: 'range.edge', details: 'range.edgeDetails' },
+  outside: { chip: 'range.outsideShort', row: 'range.outside', details: 'range.outsideDetails' },
 };
 const SIDE_KEYS: Record<RangeSide, string> = { cold: 'range.side.cold', mild: 'range.side.mild', cool: 'range.side.cool', summer: 'range.side.summer', hot: 'range.side.hot' };
 // The bound each side reads, and the site value it is compared with (range.ts RANGE_BOUNDS).

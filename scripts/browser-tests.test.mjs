@@ -29,10 +29,11 @@ const SPEC_FILES = [
   'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
   'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5d.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
   'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs', 'consortium-pp-b3.browser.test.mjs',
+  'consortium-pp-c1.browser.test.mjs', 'consortium-pp-c2.browser.test.mjs', 'consortium-pp-pf.browser.test.mjs',
   'consortium-s1.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
   'consortium-seams-layout.browser.test.mjs', 'consortium-seams-p2.browser.test.mjs', 'consortium-seams-p5.browser.test.mjs',
 ];
-test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6 and one per PP-B stream file, nothing else', () => {
+test('one browser test file for commit 0, one per P2 stream, one per P5 stream, one per seams owner, two for E6, one per PP-B stream file and one per PP-C stream, nothing else', () => {
   assert.deepEqual(files, SPEC_FILES);
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.match(pkg.scripts['test:browser'], /node scripts\/browser\/run\.mjs --list local$/);
@@ -47,7 +48,7 @@ test('every browser test runs: no todo, no skip, in any file but a P5 stream\'s 
     // A stream file under rewrite (s3 loses its matrix cases to b3) needs 2; a PP-B stream file starts
     // with the markers commit 0 moved into it (pp-b1 holds one) and grows with its stream; seams-p5 kept
     // one case when PP-B commit 0a' deleted UX4 with Jobs (consortium-s2 went whole).
-    assert.ok(testsOf(text).length >= (/-(pp-b\d|seams-p5)\./.test(file) ? 1 : /-(s1|s3|e6-r4)\./.test(file) ? 2 : 5), file);
+    assert.ok(testsOf(text).length >= (/-(pp-b\d|pp-(c1|c2|pf)|seams-p5)\./.test(file) ? 1 : /-(s1|s3|e6-r4)\./.test(file) ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
@@ -296,11 +297,14 @@ test('E6 specs: each "E6-n (<owner> …)" names an owner its file holds; each ma
 // PP-B (commit 0, plan "Plant palette redesign"; scripts/plan/pp-b-owners.json): each test of a PP-B
 // spec names its owner stream, one the owners file gives that file in some chunk ("F1a-Xn → PP-B (<owner>
 // …)" for a moved marker, "PP-B<n> (<owner> …)" for a stream's scenario, "PP-B<n><letter>" for its variant); a marked spec's marker names
-// the owner of its title. The markers are counted (zero before a push to master).
+// the owner of its title. The markers are counted (zero before a push to master). PP-C commit 0: a PP-B
+// case a PP-C stream must rewrite (the Add sheet's, gone) is marked under that stream, named in its title
+// as "owner <stream> '…'", one pp-c-owners.json gives the file.
 const PPB_FILES = files.filter((f) => f.startsWith('consortium-pp-b'));
 test('PP-B specs: each names an owner the owners file gives its file; each marker names the owner of its title', async () => {
   const { markers } = await import('./expect-fail.mjs');
   const owners = JSON.parse(readFileSync(new URL('./plan/pp-b-owners.json', import.meta.url), 'utf8'));
+  const ppc = JSON.parse(readFileSync(new URL('./plan/pp-c-owners.json', import.meta.url), 'utf8'));
   const { matches } = await import('./plan/owners.mjs');
   assert.ok(PPB_FILES.length >= 2);
   const marked = markers().filter((m) => m.file.startsWith('browser/consortium-pp-b'));
@@ -310,6 +314,30 @@ test('PP-B specs: each names an owner the owners file gives its file; each marke
     for (const { title, marked: isMarked } of testsOf(read(file))) {
       const owner = title.match(/^(?:F1a-[A-Z]\d+ → PP-B|PP-B\d+[a-z]?) \((\w+)\b/)?.[1];
       assert.ok(owner && holders.includes(owner), `${file}: "${title}" names one of ${holders.join(', ')}: F1a-Xn → PP-B (<owner> …) or PP-Bn (<owner> …)`);
+      const later = title.match(/; owner (\w+) '/)?.[1];
+      if (later) assert.ok(ppc.chunks.some((c) => c.streams[later]?.files.some((p) => matches(p, `scripts/browser/${file}`))), `"${title}": pp-c-owners.json gives ${file} to ${later}`);
+      if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === (later ?? owner)), `"${title}": its marker names ${later ?? owner}`);
+    }
+  }
+});
+
+// PP-C (commit 0, plan "Plant palette" push C; scripts/plan/pp-c-owners.json): consortium-pp-c1, -pp-c2 and
+// -pp-pf hold their stream's scenarios, written failing; each test names its owner stream, the one the
+// file is named for and the owners file gives it ("F1a-Xn → PP-C (<owner> …)" for a restored F1a marker,
+// "PP-C<n> (<owner> …)" or "PF<n> (<owner> …)" for a scenario); a marker names the owner of its title.
+const PPC_FILES = files.filter((f) => /^consortium-pp-(c1|c2|pf)\./.test(f));
+test('PP-C specs: each test names the stream its file is for, which the owners file gives it; each marker names the owner of its title', async () => {
+  const { markers } = await import('./expect-fail.mjs');
+  const owners = JSON.parse(readFileSync(new URL('./plan/pp-c-owners.json', import.meta.url), 'utf8'));
+  const { matches } = await import('./plan/owners.mjs');
+  assert.equal(PPC_FILES.length, 3);
+  const marked = markers().filter((m) => /^browser\/consortium-pp-(c1|c2|pf)\./.test(m.file));
+  for (const file of PPC_FILES) {
+    const stream = file.match(/^consortium-pp-(c1|c2|pf)\./)[1];
+    assert.ok(owners.chunks.some((c) => c.streams[stream]?.files.some((p) => matches(p, `scripts/browser/${file}`))), `the owners file gives ${file} to ${stream}`);
+    for (const { title, marked: isMarked } of testsOf(read(file))) {
+      const owner = title.match(/^(?:F1a-[A-Z]\d+ → PP-C|PP-C\d+[a-z]?|PF\d+[a-z]?) \((\w+)\b/)?.[1];
+      assert.equal(owner, stream, `${file}: "${title}" names ${stream}: F1a-Xn → PP-C (${stream} …), PP-Cn (${stream} …) or PFn (${stream} …)`);
       if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
     }
   }
