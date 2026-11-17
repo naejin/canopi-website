@@ -97,6 +97,13 @@ test('PP-C6 (c2 Swap; fix round 2 K12): Swap says what each candidate fills and 
   assert.ok(await has(page, `${DETAILS} [data-swap-row]`, 6000), 'Swap: no candidate rows (data-swap-row)');
   const rows = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ fills: !!e.querySelector('[data-swap-fills]'), leaves: !!e.querySelector('[data-swap-leaves]'), same: !!e.querySelector('[data-swap-gaps-same]'), fit: /\S/.test(e.querySelector('[data-conf], .ct-fit')?.textContent ?? '') })));
   assert.ok(rows.every((r) => (r.fills || r.leaves) !== r.same && r.fit), JSON.stringify(rows));
+  // Round 4 V8 (board Swap): short lines, job names lower case mid-sentence, the years in words, no phase jargon.
+  const does = await page.$$eval(`${DETAILS} [data-swap-does]`, (els) => els.map((e) => e.textContent.trim()));
+  for (const d of does) assert.match(d, /^Does (all its jobs|none of its jobs \(not: [a-z][^)]*\)|\d+ of its \d+ jobs \(not: [a-z][^)]*\)) · [a-z]/, `a candidate's first line ("${d}")`);
+  const head = await page.$eval(`${DETAILS} [data-swap-head]`, (e) => e.textContent);
+  assert.match(head, /Its jobs: [a-z]/, `the header's jobs lower case mid-sentence ("${head}")`);
+  const swapText = await page.$eval(DETAILS, (d) => d.textContent);
+  assert.doesNotMatch(swapText, /Placenta|Secondary \d|Climax/, 'no phase jargon in Swap');
 });
 
 // ---- failure states (3.1-3.6) ----

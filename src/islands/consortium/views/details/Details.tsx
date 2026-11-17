@@ -22,7 +22,7 @@ import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../../data/consortium-guides.ts';
 import { Against } from './Against.tsx';
-import { doesWords, FitLine, JobIcon, say, sizeWords } from '../kit/fit.tsx';
+import { doesWords, FitLine, JobIcon, jobList, say, sizeWords } from '../kit/fit.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -51,11 +51,6 @@ function DataText({ text }: { text: { en: string } & Partial<Record<string, stri
   return own ? <>{own}</> : <span lang="en">{text.en}</span>;
 }
 
-// The other jobs as the board says them: "Also feeds the soil, makes mulch, brings helpers." (each
-// job word is a verb phrase, so its first letter lowers in every cased language; the narrow list:
-// commas, no "and" in English).
-const alsoList = (jobs: readonly JobId[]): string => new Intl.ListFormat(pageLang(), { type: 'conjunction', style: 'narrow' })
-  .format(jobs.map((j) => { const w = T(`job.${j}`); return w.charAt(0).toLocaleLowerCase(pageLang()) + w.slice(1); }));
 
 // A job's filled tile (boards Details, DetailsMore): its mark on the job's colour, beside its words.
 const JobTile = ({ job }: { job: JobId }) => <span class="ct-job-tile" data-job={job}><JobIcon job={job} /></span>;
@@ -355,7 +350,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         )}
         <section class="ct-d-summary" aria-label={T('jobsHeading')} data-summary>
           {jobs.length
-            ? <p class="ct-d-main"><span class="ct-d-main-icons">{jobs.map((j) => <JobTile job={j} />)}</span><span><strong>{T(`job.${jobs[0]}`)}.</strong>{jobs.length > 1 && <> {T('details.alsoJobs', { list: alsoList(jobs.slice(1)) })}</>}</span></p>
+            ? <p class="ct-d-main"><span class="ct-d-main-icons">{jobs.map((j) => <JobTile job={j} />)}</span><span><strong>{T(`job.${jobs[0]}`)}.</strong>{jobs.length > 1 && <> {T('details.alsoJobs', { list: jobList(jobs.slice(1), 'narrow') })}</>}</span></p>
             : <p class="ct-muted">{T('d.jobsUnk')}</p>}
           <p class="ct-muted">{spanWords(t)} · {sizeWords(t)}</p>
           <ul class="ct-marks">

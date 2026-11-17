@@ -21,8 +21,8 @@ import type { Alternative, Hole, PlantId, Taxon } from '../../../lib/consortium/
 import { jobsOf } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
-import { doesWords, FitLine, holeWords, sizeWords } from './kit/fit.tsx';
-import { listOf, nameOf, spanWords } from './kit/names.ts';
+import { doesWords, FitLine, holeWords, jobList, sizeWords, yearsWords } from './kit/fit.tsx';
+import { listOf, nameOf } from './kit/names.ts';
 import { RowNotes } from './StageBar.tsx';
 import { LoadFailed } from './lazy.tsx';
 import { suggestWaitMs } from '../state/suggest-wait.ts';
@@ -79,7 +79,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
         </div>
         <button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => swap(x)}>{T('details.swap')}</button>
         <div class="ct-row-why">
-          <span data-swap-does>{doesWords(memberJobs, a.sharedJobs)} · {spanWords(x)}</span>
+          <span data-swap-does>{doesWords(memberJobs, a.sharedJobs)} · {yearsWords(x)}</span>
           <span class="ct-line" data-swap-size>{sizeWords(x)}</span>
           <span class="ct-line ct-swap-status" data-conf={v ? undefined : 'not-checked'}><FitLine v={v} known={far ? 'outside' : undefined} />{v && <RowNotes t={x} v={v} />}</span>
           {/* What changes in the palette's gaps, said once (K12): what it fills, what it leaves empty, or that none change. */}
@@ -109,7 +109,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
           {/* Why one might swap it (K12): its warnings, and its fit with the cause when it is not a plain fit. */}
           {why.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.text}</span>)}
           {own && own.level !== 'fits' && <FitLine v={own} head />}
-          <span>{memberJobs.length ? T('swap.headJobs', { jobs: listOf(memberJobs.map((j) => T(`job.${j}`))), span: spanWords(t) }) : T('swap.headNoJobs', { span: spanWords(t) })}</span>
+          <span>{memberJobs.length ? T('swap.headJobs', { jobs: jobList(memberJobs), span: yearsWords(t) }) : T('swap.headNoJobs', { span: yearsWords(t) })}</span>
         </div>
         <NotChecked ctx={store.flagContext.value} />
       </div>

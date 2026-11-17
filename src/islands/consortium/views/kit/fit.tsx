@@ -6,7 +6,7 @@
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
 // plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
 import type { Hole, JobId, Level, Line, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, headLine, holeLine, levelLine, sizeLine } from '../../../../lib/consortium/index.ts';
+import { fitLine, headLine, holeLine, levelLine, sizeLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { countryName } from './names.ts';
@@ -79,9 +79,27 @@ export function JobIcon({ job }: { job: JobId | null }) {
 // A main job's word (the jobs picture's "No job recorded" for none).
 export const jobWord = (job: JobId | null): string => (job ? T(`job.${job}`) : T('palette.jobsNone'));
 
+// A word mid-sentence: lower case after the sentence's start where the language writes it so (German
+// keeps its capitals, its nouns need them; Chinese, Japanese and Korean have no case). The same rule as
+// c1's roles list (views/find/Find.tsx LOWER, rolesWords): one copy to keep at the PP-C merge.
+const LOWER = new Set(['en', 'fr', 'es', 'pt', 'it', 'nl', 'ru']);
+export function midSentence(s: string): string {
+  const lang = pageLang();
+  return LOWER.has(lang) ? s.charAt(0).toLocaleLowerCase(lang) + s.slice(1) : s;
+}
+// Job names mid-sentence, as a list ("feeds the soil, makes mulch and brings helpers"; `narrow`: commas
+// only where the language allows, the summary's "Also …").
+export const jobList = (jobs: readonly string[], style: 'long' | 'narrow' = 'long'): string =>
+  new Intl.ListFormat(pageLang(), { type: 'conjunction', style }).format(jobs.map((j) => midSentence(T(`job.${j}`))));
+// A plant's years after planting, mid-sentence ("years 3–15"; board Swap: the years, not the phase names).
+export function yearsWords(t: Taxon): string {
+  const y = yearsOf(t);
+  return y ? midSentence(say(yearsLine(y.from, y.to))) : T('timingUnknown');
+}
+
 // How many of the member's jobs a candidate does, naming the ones it does not (board Swap).
 export function doesWords(memberJobs: readonly string[], shared: readonly string[]): string {
-  const missing = memberJobs.filter((j) => !shared.includes(j)).map((j) => T(`job.${j}`));
+  const missing = memberJobs.filter((j) => !shared.includes(j)).map((j) => midSentence(T(`job.${j}`)));
   if (!memberJobs.length || !missing.length) return T('swap.doesAll');
   if (missing.length === memberJobs.length) return T('swap.doesNone', { missing: listOf(missing) });
   return T('swap.doesSome', { n: shared.length, m: memberJobs.length, missing: listOf(missing) });
