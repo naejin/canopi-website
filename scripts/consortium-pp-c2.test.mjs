@@ -410,7 +410,8 @@ test('c2 fix R1 + T7 (wetter edge): Osaka, Murphey agave and Glycyrrhiza glabra 
   const va = verdict(agave, ctx);
   assert.equal(va.level, 'look', 'a second look: the palette groups and counts it so');
   assert.equal(say(line.againstLines(va, null, W)[0].line), 'Needs a second look · wetter here than where it is recorded');
-  assert.equal(say(line.bandsOf(va, null, agave.climate).find((b) => b.measure === 'aridity').status), 'Wetter than where it is recorded');
+  const wet = line.bandsOf(va, null, agave.climate).find((b) => b.measure === 'aridity');
+  assert.deepEqual([wet.level, say(wet.status)], ['look', 'Wetter than where it is recorded'], 'the band asks the second look the headline asks');
   assert.ok(line.rowLines(va, null, W).some((e) => say(e.line) === 'wetter here'), 'its row says why in short words');
   const licorice = taxon({ id: 'licorice', canonical_name: 'Glycyrrhiza glabra', phases: null, climate: { source: 'gbif_occurrences', cells: 900, nativeShare: null, tminCold: r(-12, 10), tmaxWarm: r(22, 40), tmeanYear: r(6, 22), tmeanWarm: null, aridity: r(0.14, 1.34) } });
   const v = verdict(licorice, ctx);
@@ -422,6 +423,8 @@ test('c2 fix R1 + T7 (wetter edge): Osaka, Murphey agave and Glycyrrhiza glabra 
   const dry = verdict({ ...licorice, climate: { ...licorice.climate, aridity: r(1.8, 3) } }, ctx);
   assert.equal(dry.level, 'fits');
   assert.equal(say(line.againstLines(dry, null, W)[0].line), 'Fits your place today · drier here than where it is recorded: may need watering');
+  const dryBand = line.bandsOf(dry, null, null).find((b) => b.measure === 'aridity');
+  assert.deepEqual([dryBand.level, say(dryBand.status)], ['fits', 'Drier than where it is recorded'], 'V1: the drier band is a note at fits, as the headline');
   for (const [lang, w] of Object.entries(words)) assert.ok(w['consortium.line.causeWetter'], `${lang}: causeWetter`);
 });
 
@@ -665,7 +668,7 @@ test('c2 fix T8 (band ends the text names): Mendoza, Siberian elm: the 3.5 °C e
   const bands = Object.fromEntries(line.bandsOf(v, later, elm.climate).map((b) => [b.measure, b]));
   assert.deepEqual([bands.tminCold.low, bands.tminCold.high, bands.tminCold.later], [-25.7, 3.5, 4.3], 'coldest nights: the 3.5 end drawn, the 2041–2070 ring past it');
   assert.equal(say(bands.aridity.status), 'Near its dry edge');
-  assert.equal(bands.aridity.level, 'look', 'flagged on the band');
+  assert.equal(bands.aridity.level, 'fits', 'V1: the band reads the verdict\'s level (fits), its words name the edge');
   const dry = line.againstLines(v, later, W).find((e) => e.factor === 'dry');
   assert.match(say(dry.line), /^Near its dry edge: .*0\.28 here, the dry end of the 0\.28 to 1\.72/);
   assert.doesNotMatch(say(dry.line), /within/);

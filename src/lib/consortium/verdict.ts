@@ -35,7 +35,7 @@
 //   thinned GBIF cells) note 'few-records' with the count: their limits are not firm (drawn dashed,
 //   said in words), never a level.
 import type { Factor, FactorVerdict, Level, PeriodId, PlantId, PlantVerdict, Scenario, Taxon, VerdictContext, VerdictNote } from './types.ts';
-import { periodIds, scenarios } from './types.ts';
+import { periodIds, scenarios, setsLevel } from './types.ts';
 import { borrowedFrom } from './placement.ts';
 import { aridityFit, boundPassed, coolSeasonOf, isAnnual, passes, RANGE_BOUNDS, RANGE_MARGIN_C, slotCheck } from './range.ts';
 import { futurePeriod } from './future.ts';
@@ -113,10 +113,9 @@ function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors
   return { factors, roomTall: tallerThanRoom(fit), dryMonths: fit.reasons.some((r) => r.key === 'water' && r.note === 'dry_months') };
 }
 
-// The aridity factor ('dry') sets the level only past the wet end (header).
-const wetter = (f: FactorVerdict): boolean => f.place !== null && f.high !== null && f.place > f.high;
+// The aridity factor ('dry') sets the level only past the wet end (header; types.ts setsLevel).
 const worst = (fs: readonly FactorVerdict[]): FactorVerdict | null =>
-  fs.reduce<FactorVerdict | null>((w, f) => ((f.factor !== 'dry' || wetter(f)) && ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
+  fs.reduce<FactorVerdict | null>((w, f) => (setsLevel(f) && ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
 
 export function verdict(taxon: Taxon, ctx: VerdictContext): PlantVerdict {
   return verdictAt(taxon, ctx, siteFor(ctx.place, ctx.lookup));

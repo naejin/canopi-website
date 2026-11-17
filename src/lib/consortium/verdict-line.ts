@@ -4,7 +4,7 @@
 // through views/kit/fit.tsx `say`), so Find, Swap, Details, print and the period switch never write
 // their own words for these. Numbers stay numbers: the view formats them for the page language.
 import type { ClimateRange, Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, Fit, FrostFact, ClimateZone, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, Site, SiteKey, Taxon, TaxonClimate, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
-import { invasiveAreaCodes } from './types.ts';
+import { invasiveAreaCodes, setsLevel } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 
 const K = (k: string): string => `consortium.line.${k}`;
@@ -242,9 +242,12 @@ export function bandsOf(v: PlantVerdict, later: PlantVerdict | null, climate: Ta
     if (end === 'low' || end === 'both') b.low = f.low;
     if (end === 'high' || end === 'both') b.high = f.high;
     if (f.disputed) b.disputedLow = true;
-    // A place exactly on a checked end is flagged at the edge (a fit still, the verdict unchanged).
-    const level: Level = f.level === 'fits' && endAt(f) ? 'look' : f.level;
-    if (RANK[level] < RANK[b.level]) { b.level = level; b.status = statusOf(f); }
+    // The band reads the level the factor gives the verdict (types.ts setsLevel): a drier place, or one
+    // exactly on an end, is a fit whose words name the edge ("Near its dry edge"), never a second look
+    // drawn under a headline that says it fits.
+    const level: Level = setsLevel(f) ? f.level : 'fits';
+    // The worst factor of the measure gives its status; at an equal level, words that say more than "In range".
+    if (RANK[level] < RANK[b.level] || (level === b.level && b.status.key === K('bandFits'))) { b.level = level; b.status = statusOf(f); }
     const then = later?.factors.find((x) => x.factor === f.factor && x.place !== null);
     if (then && then.place !== f.place) b.later = then.place;
     out.set(m, b);

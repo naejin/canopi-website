@@ -556,6 +556,10 @@ export interface FactorVerdict {
   source?: string; // a range bound taken from another source than the row's own (ClimateRange low/highSource, e.g. 'treegoer_ranges')
   disputed?: boolean; // a low bound whose sources disagree (ClimateRange weak, schema 3): said, never softening the level
 }
+// Whether a factor's level is the level it gives the verdict (verdict.ts worst; Details' bands read it
+// so a band never asks more than the headline): every factor but aridity, which sets the level only past
+// its wet end (owner row "Wetter than recorded is a second look"); its dry side is a note at 'fits' (PP-C5).
+export const setsLevel = (f: FactorVerdict): boolean => f.factor !== 'dry' || (f.place !== null && f.high !== null && f.place > f.high);
 // Notes beside the level, never a level themselves (3.2): the room ('room-tall', with the plant's height),
 // an annual ('annual': its winter cold is not checked), the cool-season advice, the place drier or wetter
 // than where it is recorded at the period judged, watering in the dry months ('dry-months': drought
