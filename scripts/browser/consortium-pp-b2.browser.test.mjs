@@ -391,9 +391,13 @@ test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus 
   await page.evaluate(() => { document.querySelector('.ct-fillers li .button-primary').dataset.raiser = ''; });
   await page.focus('[data-raiser]');
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__ctTest.store.toast.value !== null, { timeout: 4000 });
-  const undo = await page.waitForSelector(aria('button', en['consortium.undo']), { timeout: 4000 });
-  await undo.focus();
+  // Focus Undo in the page the frame it appears: the test toast lasts 0.3 s, which a separate
+  // waitForSelector then focus round trip could outlast on CI's slower runner (flake, 2026-11-17).
+  await page.waitForFunction((label) => {
+    const b = [...document.querySelectorAll('.ct-toast button')].find((e) => e.textContent.trim() === label);
+    b?.focus();
+    return !!b && document.activeElement === b;
+  }, { timeout: 4000, polling: 'raf' }, en['consortium.undo']);
   await new Promise((r) => setTimeout(r, 900));
   assert.notEqual(await page.evaluate(() => window.__ctTest.store.toast.value), null, 'the toast waits while focused (three times its 0.3 s)');
   await dismissToast(page);
