@@ -8,12 +8,9 @@ import { invasiveAreaCodes } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 
 const K = (k: string): string => `consortium.line.${k}`;
-const lastYear = (p: PeriodId): number => Number(p.slice(5));
 // Months for a year fraction under one (0.25 → 3).
 const monthOf = (y: number): number => Math.round(y * 12);
 
-// One plant's verdict: fits (to the end of a later period it is judged at), needs a second look,
-// outside its climate range, or not checked (never "fits" when nothing was compared).
 // How the page writes a scenario and a period: 'ssp245' → 'SSP2-4.5', '2041-2070' → '2041–2070'
 // (first-run words: a view names a period without the future chunk).
 export const scenarioName = (s: Scenario): string => `SSP${s[3]}-${s[4]}.${s[5]}`;
@@ -22,9 +19,14 @@ export const periodName = (p: PeriodId): string => p.replace('-', '–');
 // A level alone, for a plant with no verdict (the rule not loaded or refused: "Not checked"), or a level
 // another check gave.
 export const levelLine = (level: Level): Line => ({ key: K(level), vars: {} });
+// One plant's verdict: fits (today, or by the later period it is judged at), needs a second look,
+// outside its climate range, or not checked (never "fits" when nothing was compared). A fit says what
+// still limits it, so it never reads plain: the dry edge when it is the limiting measure (decision
+// PP-C5: named, the level unchanged), else few records under every range ('few-records').
 export function fitLine(v: PlantVerdict): Line {
-  if (v.level === 'fits' && v.judged !== TODAY_PERIOD) return { key: K('fitsTo'), vars: { year: lastYear(v.judged) } };
-  return { key: K(v.level), vars: {} };
+  if (v.level !== 'fits') return { key: K(v.level), vars: {} };
+  const by = v.judged !== TODAY_PERIOD, more = v.limiting?.factor === 'dry' ? 'Dry' : v.notes.includes('few-records') ? 'Few' : '';
+  return { key: K(`${by ? 'fitsTo' : 'fits'}${more}`), vars: by ? { period: periodName(v.judged) } : {} };
 }
 
 // The years of a hole, in words: who is missing and when. A pending hole waits for a list; a gap under
@@ -68,7 +70,7 @@ const TERM_KEY: Record<ConfidenceTerm, string> = {
 // The confidence term a hedge line says (an `also` line of reasonLine, a line of confidenceLine), or
 // null: so a view writes data-conf on the words that say it.
 const TERM_OF: Record<string, ConfidenceTerm> = Object.fromEntries([
-  ...Object.entries(TERM_KEY).map(([term, key]) => [K(key), term]), [K('confDisputedLimit'), 'disputed'],
+  ...Object.entries(TERM_KEY).map(([term, key]) => [K(key), term]), [K('confDisputedLimit'), 'disputed'], [K('confEdgeLine'), 'edge'],
 ]) as Record<string, ConfidenceTerm>;
 export const lineTerm = (l: Line): ConfidenceTerm | null => TERM_OF[l.key] ?? null;
 
@@ -76,21 +78,6 @@ export const lineTerm = (l: Line): ConfidenceTerm | null => TERM_OF[l.key] ?? nu
 // (the fit line, Details, Find, print). A spread names its scenario counts.
 export function confidenceLine(c: Confidence): Line {
   return c.term === 'spread' ? L(TERM_KEY.spread, { agree: c.agree ?? 0, of: c.of ?? 0 }) : L(TERM_KEY[c.term]);
-}
-
-// The hedges one verdict carries, in a fixed order (each surface writes them as data-conf, so a row,
-// Details and print show the same terms): near the edge, sources disagree, placed by estimate, not
-// recorded or not checked, the scenarios' spread on a later period.
-export function verdictTerms(v: PlantVerdict): Confidence[] {
-  const out: Confidence[] = [];
-  const range = v.factors.filter((f) => f.basis === 'range' && f.factor !== 'dry');
-  if (range.some((f) => f.confidence?.term === 'edge')) out.push({ term: 'edge' });
-  if (range.some((f) => f.disputed)) out.push({ term: 'disputed' });
-  if (v.borrowed) out.push({ term: 'estimate' });
-  if (v.range === 'not-recorded') out.push({ term: 'not-recorded' });
-  else if (v.range === 'no-climate') out.push({ term: 'not-checked' });
-  if (v.of && v.agree !== undefined && v.agree < v.of) out.push({ term: 'spread', agree: v.agree, of: v.of });
-  return out;
 }
 
 // The range sides: the place's value against the plant's band, said one way when the place passes the
@@ -105,7 +92,8 @@ const SOURCE_KEY: Record<string, string> = { treegoer_ranges: 'sourceTreegoer', 
 // what was not checked or not recorded.
 export function reasonLine(f: FactorVerdict): Line {
   const also: Line[] = [];
-  if (f.confidence) also.push(confidenceLine(f.confidence));
+  // The edge as a sentence after the reason (its term's short words are for rows and print).
+  if (f.confidence) also.push(f.confidence.term === 'edge' ? L('confEdgeLine') : confidenceLine(f.confidence));
   if (f.source) also.push(L(SOURCE_KEY[f.source] ?? 'sourceOther', { source: sourceName(f.source) }));
   if (f.disputed) also.push(L('confDisputedLimit'));
   const end = SIDE_END[f.factor];
@@ -131,7 +119,7 @@ export function reasonLine(f: FactorVerdict): Line {
 
 // A verdict note in words (the room note takes the plant's height in metres; the later notes the
 // period and the scenario as the page writes them).
-export interface NoteVars { period?: string; scenario?: string; len?: number }
+interface NoteVars { period?: string; scenario?: string; len?: number; n?: number }
 export function noteLine(note: VerdictNote, vars: NoteVars = {}): Line | null {
   const later = { period: vars.period ?? '', scenario: vars.scenario ?? '' };
   switch (note) {
@@ -144,6 +132,7 @@ export function noteLine(note: VerdictNote, vars: NoteVars = {}): Line | null {
     case 'cold-air': return L('noteColdAir');
     case 'warm-enough-later': return L('noteWarmEnoughLater', later);
     case 'drier-later': return L('noteDrierBy', later);
+    case 'few-records': return vars.n === undefined ? null : L('noteFewRecords', { n: vars.n });
   }
 }
 
@@ -151,14 +140,17 @@ export function noteLine(note: VerdictNote, vars: NoteVars = {}): Line | null {
 // limiting one first (then those that ask a second look, then the rest, the hints after the climate),
 // then the notes, then where the placement comes from. With nothing compared, one line says why: no
 // range recorded, or no climate (with a borrowed placement, "give your location to check it").
-// `later`: the verdict at the plant's own later period when the page shows an earlier one (its fit line
-// with the scenarios' agreement is said after the rest). Each entry keeps the factor and level it
-// says and the confidence term of a line with no hedge words of its own (a placement by estimate, a
-// range not recorded or not checked), so a view writes data-factor, data-level and data-conf; a
-// reason's hedges are its `also` lines (lineTerm). The later lines speak of another period: their
-// hedges are words only, so every surface writes the same terms for the page period (verdictTerms).
-export interface AgainstEntry { line: Line; factor?: Factor; level?: Level; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean; noSite?: boolean }
-export interface AgainstWords { period: (p: PeriodId) => string; scenario: string; heightM: number | null }
+// On a later period the scenarios' agreement follows the fit line ("4 of 4 climate scenarios agree";
+// a hedge term only when they split). `later`: the verdict at the plant's own later period when the
+// page shows an earlier one: its fit line, agreement, limits and notes are said after the rest, and
+// what that period changes is worded from it alone (one source: never "warm enough by P" beside P's
+// "needs a second look"), each note once. Each entry keeps the factor and level it says and the
+// confidence term of a line with no hedge words of its own (a placement by estimate, a range not
+// recorded or not checked, the scenarios split), so a view writes data-factor, data-level and
+// data-conf; a reason's hedges are its `also` lines (lineTerm). The later lines speak of another
+// period: their hedges are words only, so every surface writes the same terms for the page period.
+interface AgainstEntry { line: Line; factor?: Factor; level?: Level; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean; noSite?: boolean }
+interface AgainstWords { period: (p: PeriodId) => string; scenario: string; heightM: number | null }
 const RANK: Record<Level, number> = { outside: 0, look: 1, unknown: 3, fits: 2 };
 // How near a measure is to its limit, as a share of the plant's band (0 at the bound): among factors of
 // one level, the nearest comes first, so the measure that limits the plant leads (boards Details,
@@ -171,22 +163,28 @@ function nearness(f: FactorVerdict): number {
   return Math.abs(gap) / (high - low);
 }
 // The confidence terms "Against your place" says (today's lines only; a later period's hedges are
-// words only), in first-said order, once each: what a row and print carry for the plant, so the three
-// surfaces say the same terms (A16).
-export interface SaidTerm { term: ConfidenceTerm; line: Line }
-export function againstTerms(entries: readonly AgainstEntry[]): SaidTerm[] {
+// words only), in first-said order, once each, in their short words: what a row and print carry for
+// the plant, so the three surfaces say the same terms (A16).
+function againstTerms(entries: readonly AgainstEntry[]): { term: ConfidenceTerm; line: Line }[] {
   const out = new Map<ConfidenceTerm, Line>();
-  const add = (term: ConfidenceTerm | null | undefined, line: Line) => { if (term && !out.has(term)) out.set(term, line); };
+  const add = (term: ConfidenceTerm | null | undefined, line: Line) => { if (term && !out.has(term)) out.set(term, term === 'spread' ? line : confidenceLine({ term })); };
   for (const e of entries) {
     if (e.later) continue;
-    if (e.conf) add(e.conf, confidenceLine({ term: e.conf }));
+    if (e.conf) add(e.conf, e.line);
     for (const a of e.line.also ?? []) add(lineTerm(a), a);
   }
   return [...out].map(([term, line]) => ({ term, line }));
 }
 
+const spreadOf = (v: PlantVerdict): AgainstEntry | null => (v.judged !== TODAY_PERIOD && v.of && v.agree !== undefined
+  ? { line: confidenceLine({ term: 'spread', agree: v.agree, of: v.of }), ...(v.agree < v.of && { conf: 'spread' as const }) }
+  : null);
+const LATER_NOTES: readonly VerdictNote[] = ['warm-enough-later', 'drier-later'];
+
 export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: AgainstWords): AgainstEntry[] {
   const out: AgainstEntry[] = [{ line: fitLine(v), level: v.level }];
+  const spread = spreadOf(v);
+  if (spread) out.push(spread);
   const order = (f: FactorVerdict): number => (f === v.limiting ? -1 : RANK[f.level] * 2 + (f.basis === 'range' ? 0 : 1));
   const byOrder = (a: FactorVerdict, b: FactorVerdict): number => order(a) - order(b) || nearness(a) - nearness(b);
   for (const f of [...v.factors].sort(byOrder)) {
@@ -196,8 +194,8 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
     const term: ConfidenceTerm = v.range === 'not-recorded' ? 'not-recorded' : 'not-checked';
     out.push({ line: v.range === 'not-recorded' ? L('rangeNotRecorded') : L('rangeNotChecked'), level: 'unknown', conf: term });
   }
+  const then = later && later.judged !== v.judged ? later : null;
   const judged = v.judged === TODAY_PERIOD ? {} : { period: w.period(v.judged), scenario: w.scenario };
-  const laterOf = v.notes.includes('warm-enough-later') || v.notes.includes('drier-later') ? laterPeriodWords(later, w) : {};
   const dryShown = v.factors.some((f) => f.factor === 'dry' && f.place !== null);
   // An annual past its heat range reads the cool-season line instead of the annual one (decision row
   // "Climate ranges fixed before", as the range marks said it).
@@ -205,25 +203,72 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
   for (const n of v.notes) {
     if (dryShown && (n === 'drier' || n === 'wetter')) continue;
     if (cool && n === 'annual') continue;
-    const line = noteLine(n, n === 'room-tall' ? { len: w.heightM ?? undefined } : n === 'warm-enough-later' || n === 'drier-later' ? laterOf : judged);
+    // What the later period changes is worded from its own verdict (one source): warm enough then only
+    // when it fits then; drier then is the later block's note (below).
+    if (LATER_NOTES.includes(n)) {
+      if (n === 'warm-enough-later' && then?.level === 'fits') out.push({ line: L('noteWarmEnoughLater', { period: w.period(then.judged), scenario: w.scenario }), note: n });
+      continue;
+    }
+    const vars: NoteVars = n === 'room-tall' ? { len: w.heightM ?? undefined } : n === 'few-records' ? { n: v.records } : judged;
+    const line = noteLine(n, vars);
     if (line) out.push({ line, note: n });
   }
   if (v.borrowed) {
     out.push({ line: borrowedLine(v.borrowed), conf: 'estimate' });
     if (v.range === 'no-climate') out.push({ line: L('reasonNoSite'), conf: 'estimate', noSite: true });
   }
-  if (later && later.judged !== v.judged) {
-    out.push({ line: L('byLater', { period: w.period(later.judged), scenario: w.scenario }, [fitLine(later)]), level: later.level, later: true });
-    if (later.of && later.agree !== undefined) out.push({ line: confidenceLine({ term: 'spread', agree: later.agree, of: later.of }), later: true });
-    for (const f of later.factors) if (f.basis === 'range' && f.factor !== 'dry' && f.level !== 'fits') out.push({ line: reasonLine(f), factor: f.factor, level: f.level, later: true });
-    for (const n of later.notes) if (n === 'drier' || n === 'cool-season') { const line = noteLine(n, { period: w.period(later.judged), scenario: w.scenario }); if (line) out.push({ line, note: n, later: true }); }
+  if (then) {
+    const at = { period: w.period(then.judged), scenario: w.scenario };
+    out.push({ line: L('byLater', at, [fitLine(then)]), level: then.level, later: true });
+    const s = spreadOf(then);
+    if (s) out.push({ line: s.line, later: true });
+    for (const f of then.factors) if (f.basis === 'range' && f.factor !== 'dry' && f.level !== 'fits') out.push({ line: reasonLine(f), factor: f.factor, level: f.level, later: true });
+    // Its notes, each said once on the page: drier then (unless drier now), the cool season (unless now).
+    const drierNow = v.notes.includes('drier') || v.limiting?.factor === 'dry';
+    for (const n of then.notes) {
+      if ((n === 'drier' && !drierNow) || (n === 'cool-season' && !cool)) { const line = noteLine(n, at); if (line) out.push({ line, note: n, later: true }); }
+    }
   }
   return out;
 }
+
+// The short row form of a verdict (Your plants, print, the side view's key), after its fit line: what
+// the plant's own later period loses ("too hot by 2041–2070"), the notes in a few words (watering,
+// season, room, cold air, few records), then the confidence terms "Against your place" says. Built
+// from the same verdicts as againstLines, so the surfaces never disagree; Details keeps the full lines.
+// The fit line already says "Not checked": no not-checked term after it (no "Not checked Not checked").
+interface RowEntry { line: Line; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean }
+const LOSS_KEY: Partial<Record<Factor, string>> = { hot: 'rowLossHot', cold: 'rowLossCold', mild: 'rowLossMild', cool: 'rowLossCool', summer: 'rowLossSummer' };
+const ROW_NOTE: Partial<Record<VerdictNote, string>> = {
+  'dry-months': 'rowDryMonths', drier: 'rowDrier', wetter: 'rowWetter', 'cool-season': 'rowCoolSeason', annual: 'rowAnnual', 'cold-air': 'rowColdAir', 'few-records': 'rowFewRecords',
+};
+export function rowLines(v: PlantVerdict, later: PlantVerdict | null, w: AgainstWords): RowEntry[] {
+  const out: RowEntry[] = [];
+  const then = later && later.judged !== v.judged ? later : null;
+  const at = then ? { period: w.period(then.judged) } : null;
+  if (then && at && then.level === 'outside') out.push({ line: L((then.limiting && LOSS_KEY[then.limiting.factor]) ?? 'rowOutsideBy', at), later: true });
+  const fit = fitLine(v).key;
+  const cool = v.notes.includes('cool-season');
+  for (const n of v.notes) {
+    if (n === 'annual' && cool) continue;
+    if ((n === 'drier' && fit.endsWith('Dry')) || (n === 'few-records' && fit.endsWith('Few'))) continue;
+    if (n === 'room-tall') { if (w.heightM !== null) out.push({ line: L('rowRoomTall', { len: w.heightM }), note: n }); continue; }
+    if (n === 'warm-enough-later') { if (at && then?.level === 'fits') out.push({ line: L('rowWarmEnough', at), note: n }); continue; }
+    if (n === 'drier-later') { if (at) out.push({ line: L('rowDrierBy', at), note: n }); continue; }
+    const key = ROW_NOTE[n];
+    if (key) out.push({ line: L(key), note: n });
+  }
+  if (then && at && then.notes.includes('drier') && !v.notes.includes('drier') && !v.notes.includes('drier-later') && !fit.endsWith('Dry')) out.push({ line: L('rowDrierBy', at), note: 'drier-later' });
+  for (const t of againstTerms(againstLines(v, then, w))) {
+    if (t.term === 'not-checked' && v.level === 'unknown') continue;
+    out.push({ line: t.line, conf: t.term });
+  }
+  return out;
+}
+
 // A plant placed from a nearest list: "estimate: placed as on the Temperate list" (the curated lists a
 // nearest list can name: nearest.ts NEAREST_LISTS).
 export const borrowedLine = (zone: ClimateZone): Line => L(`borrowed${zone}`);
-const laterPeriodWords = (later: PlantVerdict | null, w: AgainstWords): NoteVars => (later ? { period: w.period(later.judged), scenario: w.scenario } : {});
 
 // The dataset-level hedge (A17): the observed ranges are estimates that have not been reviewed, driven
 // by SourceInfo.rangesReview (meta.ranges_review), never a literal; one line, said once per surface.
@@ -238,7 +283,7 @@ const SOURCE_NAMES: Record<string, string> = {
   pfaf: 'PFAF', griis: 'GRIIS', aspca: 'ASPCA', ncsu_plant_toolbox: 'NC State', treegoer_ranges: 'TreeGOER', treegoer: 'TreeGOER',
   merck_vet_manual: 'Merck Veterinary Manual', ecocrop: 'EcoCrop', es_catalogo: 'catálogo', atlas_aloctonas_es: 'MITECO Atlas 2004', wikidata: 'Wikidata',
 };
-export const sourceName = (id: string): string => SOURCE_NAMES[id] ?? id;
+const sourceName = (id: string): string => SOURCE_NAMES[id] ?? id;
 
 // ---- disputes, audiences, corrected values, frost (schema 4; none changes a verdict, a filter or a
 // ranking: format note, decision 17) ----
@@ -275,7 +320,7 @@ export function limitOf(d: Dispute): { valueC: number; dashed: true; source: str
 
 // An animal audience's toxicity (plant_toxicity_audience; never merged into the plant's own level):
 // "toxic to pets (ASPCA), no level given", or its level.
-export function audienceLine(a: ToxicityAudience): Line {
+function audienceLine(a: ToxicityAudience): Line {
   const who = a.who === 'pets' ? 'Pets' : 'Livestock';
   if (a.level === null || a.level === 'None') return D(`audience${who}${a.level === 'None' ? 'None' : ''}`, { source: sourceName(a.source) });
   return D(`audience${who}Level`, { source: sourceName(a.source) }, undefined, { level: { key: `consortium.tox.${a.level}`, vars: {} } });
@@ -284,7 +329,7 @@ export function audienceLine(a: ToxicityAudience): Line {
 // Where a shipped value comes from when the list corrected it (trait_sources): "Canopi curator
 // knowledge", "Canopi correction"; PFAF's frost_tender, a British record, "in Britain (PFAF)", never a
 // verdict. Any other source is the catalogue's own value: no line. vars.field: the trait it is about.
-export function sourceLine(ts: TraitSource): Line | null {
+function sourceLine(ts: TraitSource): Line | null {
   if (ts.source === 'canopi-knowledge') return D('sourceCanopiKnowledge', { field: ts.field });
   if (ts.source === 'canopi-correction') return D('sourceCanopiCorrection', { field: ts.field });
   if (ts.field === 'frost_tender' && ts.source === 'pfaf') return D('sourcePfafFrost', { field: ts.field });
@@ -303,7 +348,7 @@ export function shippedOf(t: Taxon): Partial<Record<string, string | null>> {
 }
 // Each dispute line carries vars.field (the disputed field), each audience line vars.who, each source
 // line vars.field: a view writes them as data-dispute, data-audience, data-trait-source.
-export interface FactInput { disputes: readonly Dispute[] | null; audiences?: readonly ToxicityAudience[] | null; traitSources: readonly TraitSource[] | null; shipped: Partial<Record<string, string | null>> }
+interface FactInput { disputes: readonly Dispute[] | null; audiences?: readonly ToxicityAudience[] | null; traitSources: readonly TraitSource[] | null; shipped: Partial<Record<string, string | null>> }
 export function factLines(d: FactInput): Line[] {
   const out: Line[] = [];
   for (const a of d.audiences ?? []) { const l = audienceLine(a); out.push({ ...l, vars: { ...l.vars, who: a.who } }); }
@@ -349,7 +394,7 @@ export function restLine(facts: readonly FrostFact[] | null): Line | null {
 const SOURCE_WORDS: Record<string, string> = { es_catalogo: 'invCatalogo', atlas_aloctonas_es: 'invAtlas', griis: 'invGriis' };
 const AREA_COUNTRY = 'ES';
 const areaLine = (code: string): Line => ({ key: `consortium.details.invArea.${code}`, vars: {} });
-export interface InvasiveInput { invasiveIn: readonly InvasiveRecord[] | null; invasiveAreas: readonly InvasiveScope[] | null }
+interface InvasiveInput { invasiveIn: readonly InvasiveRecord[] | null; invasiveAreas: readonly InvasiveScope[] | null }
 // The reader's country's invasive lines, one per source with its areas in words. checked: the country's
 // invasive_checked (since 4.3, "a source in the release assessed invasiveness there"): false says "not
 // checked"; true with no record "not recorded". A country var is an ISO code (the view writes its name).

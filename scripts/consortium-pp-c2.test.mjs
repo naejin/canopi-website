@@ -13,11 +13,11 @@
 //   verdict-line.ts  datasetLines({ rangesReview }) -> Line[] (the one "not reviewed" line);
 //                    reasonLine(f) reads f.source (the bound's source, e.g. 'treegoer') when given;
 //                    noteLine(note, { period, scenario }) -> Line | null for VerdictNote;
-//                    audienceLine(audience) -> Line; limitOf(rangeDispute) -> { valueC, dashed, source };
+//                    limitOf(rangeDispute) -> { valueC, dashed, source } (the band's dashed limit);
 //                    frostLine(facts: FrostFact[] | null, releaseHasFrost) -> Line | null (format note
 //                    Q7 precedence; a ktmpr never in it), restLine(facts) -> Line | null (the ktmpr,
 //                    apart, with its own label);
-//                    sourceLine(traitSource: TraitSource) -> Line ("Canopi curator knowledge",
+//                    factLines' source lines ("Canopi curator knowledge",
 //                    "Canopi correction", PFAF's frost_tender "in Britain (PFAF)");
 //                    factLines(details) -> Line[]: the dispute and corrected-value lines one plant shows,
 //                    the one list Details and print both write (ledger "Schema 4" Q3);
@@ -67,7 +67,9 @@ test('F1a-C1 → PP-C (c2 confidence words, A15, A18): every term has its words 
 test('F1a-C2 → PP-C (c2 verdict factors to terms, A15, A18): each factor\'s confidence maps to its term\'s words; a factor with none says nothing of confidence', () => {
   const f = { factor: 'cold', level: 'look', basis: 'range', place: -8, low: -6, high: 4 };
   const edge = say(line.reasonLine({ ...f, confidence: { term: 'edge' } }));
-  assert.ok(edge.includes(say(line.confidenceLine({ term: 'edge' }))), `the edge term in the reason ("${edge}")`);
+  // Fix round 1 C6: in a reason the edge is a full sentence of its own (confEdgeLine), the same term.
+  const edgeAlso = line.reasonLine({ ...f, confidence: { term: 'edge' } }).also ?? [];
+  assert.ok(edgeAlso.some((a) => line.lineTerm(a) === 'edge') && /edge of its observed range/i.test(edge), `the edge term in the reason ("${edge}")`);
   const est = say(line.reasonLine({ ...f, confidence: { term: 'estimate' } }));
   assert.ok(est.includes(say(line.confidenceLine({ term: 'estimate' }))), `the estimate term in the reason ("${est}")`);
   const plain = say(line.reasonLine(f));
@@ -105,6 +107,9 @@ test('PP-C-u10 (c2 reasons per factor): the kinds the mark providers give today 
   assert.equal(line.noteLine('drier', vars).key.startsWith('consortium.line.'), true, 'a consortium.line. key');
 });
 
+// The audience and source lines through factLines, their one reader (fix round 1 B7: no test-only exports).
+const aud = (a) => line.factLines({ disputes: null, audiences: [a], traitSources: null, shipped: {} })[0];
+const src1 = (t) => line.factLines({ disputes: null, traitSources: [t], shipped: {} })[0] ?? null;
 const SHIPPED = { field: 'toxicity', kind: 'queue', value: 'Moderate', unit: null, derived: false, scope: null, source: 'NC State' };
 // (None of these changes a verdict, a filter or NextStep's grouping: disputes, audiences, trait sources
 // and frost reach Details only, never the pool's Taxon those read: consortium-source.test.mjs.)
@@ -124,8 +129,8 @@ test('PP-C-u11 (c2 disputes): the shipped value plus "Sources disagree: <source>
   assert.ok(/-15|−15/.test(both) && /-10|−10/.test(both), `both values ("${both}")`);
   assert.deepEqual(line.limitOf(range), { valueC: -10, dashed: true, source: 'TreeGOER' });
   // The audience rows (Malus domestica, Taxus baccata in the fixture).
-  assert.equal(say(line.audienceLine({ who: 'pets', level: null, source: 'ASPCA' })), 'toxic to pets (ASPCA), no level given');
-  assert.match(say(line.audienceLine({ who: 'livestock', level: 'Severe', source: 'Merck Veterinary Manual' })), /livestock.*Merck Veterinary Manual/);
+  assert.equal(say(aud({ who: 'pets', level: null, source: 'ASPCA' })), 'toxic to pets (ASPCA), no level given');
+  assert.match(say(aud({ who: 'livestock', level: 'Severe', source: 'Merck Veterinary Manual' })), /livestock.*Merck Veterinary Manual/);
   // The one invasive dispute, a weed and an allelopathy case, each beside the shipped value.
   for (const [field, shipped] of [['plant_invasive', 'false'], ['weed_potential', 'false'], ['allelopathic', 'false']]) {
     const w = say(line.disputeLine({ field, kind: 'queue', value: 'true', unit: null, derived: false, scope: null, source: 'GRIIS' }, shipped));
@@ -137,8 +142,8 @@ test('PP-C-u11 (c2 disputes): the shipped value plus "Sources disagree: <source>
 const frost = (kind, valueC, over = {}) => ({ kind, valueC, frostClass: null, variety: null, coarse: kind === 'ktmp' && valueC === 0, source: 'ecocrop', scopeCountry: null, ...over });
 const ts = (field, source, scope = null) => ({ field, source, scope, kind: 'recorded' });
 test('PP-C-u12 (c2 corrected values and frost): a corrected value names "Canopi curator knowledge" or "Canopi correction"; the frost fact in words with its source (Q7 precedence, KTMPR apart); no frost line in a release without plant_frost rows; PFAF frost_tender is Britain information, never a verdict', () => {
-  assert.equal(say(line.sourceLine(ts('toxicity', 'canopi-knowledge'))), 'Canopi curator knowledge');
-  assert.equal(say(line.sourceLine(ts('toxicity', 'canopi-correction'))), 'Canopi correction');
+  assert.equal(say(src1(ts('toxicity', 'canopi-knowledge'))), 'Canopi curator knowledge');
+  assert.equal(say(src1(ts('toxicity', 'canopi-correction'))), 'Canopi correction');
   // frostLine: none in a release without rows; "not recorded" when the release has rows but not this plant.
   assert.equal(line.frostLine(null, false), null, 'no plant_frost row in the release: no frost line at all');
   assert.match(say(line.frostLine([], true)), /frost tolerance not recorded/i);
@@ -157,7 +162,7 @@ test('PP-C-u12 (c2 corrected values and frost): a corrected value names "Canopi 
   assert.match(say(line.restLine(rest)), /-20|−20/, 'the KTMPR in its own line');
   assert.equal(line.restLine([frost('ktmp', -5)]), null);
   // PFAF's frost_tender (a trait_sources row, scope GB): Britain information only, never a verdict.
-  assert.match(say(line.sourceLine(ts('frost_tender', 'pfaf', 'GB'))), /Britain \(PFAF\)/);
+  assert.match(say(src1(ts('frost_tender', 'pfaf', 'GB'))), /Britain \(PFAF\)/);
   const ctx = { place: core.emptyPlace, lookup: null, period: '1991-2020', scenario: 'ssp245' };
   const plant = { id: '00000000-c2c2-4000-8000-000000000001', canonical_name: 'Plantus', genus: 'Plantus', family: null, names: {}, image: null, role: 'crop', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'placenta_ii', sources: [] }, functions: null, warnings: { toxicity: null, invasive_in: [], allelopathic: null, weed_potential: null }, climate: null, areasKnown: true };
   assert.deepEqual(verdict({ ...plant, traits: { frost_tender: true } }, ctx), verdict({ ...plant, traits: { frost_tender: false } }, ctx), 'frost_tender never changes a verdict');
@@ -173,7 +178,7 @@ test('PP-C-u13 (c2 print): the dispute and corrected-value lines are on paper as
   };
   const lines = line.factLines(details).map(say);
   assert.ok(lines.includes(say(line.disputeLine(SHIPPED, 'Slight'))), `the dispute line (${lines.join(' | ')})`);
-  assert.ok(lines.includes(say(line.sourceLine(details.traitSources[0]))), 'the corrected value\'s source');
+  assert.ok(lines.includes(say(src1(details.traitSources[0]))), 'the corrected value\'s source');
   assert.deepEqual(line.factLines({ disputes: [], traitSources: [], shipped: {} }), [], 'nothing to say: no line');
 });
 
@@ -323,4 +328,128 @@ test('c2 fix A1 + C13 (Swap by lane and years): a shrunk hole is in neither list
   verdicts.set(a.id, { ...verdicts.get(a.id), level: 'outside' });
   const away = swapChange({ members: [a], verdicts, pending: false }, a, late);
   assert.ok(away.leaves.some((h) => h.kind === 'job' && h.job === 'feeds_you' && h.fromYear === 0 && h.toYear === 3), `a late starter leaves the member's first years empty (${away.leaves.map((h) => h.id)})`);
+});
+
+// ---- fix round 1: the verdict's words (A2, A3, A7, B5, C1-C4, C6) ----
+const vOf = (over = {}) => ({ id: 'p', judged: '1991-2020', ownYears: false, level: 'fits', limiting: null, factors: [], notes: [], range: 'judged', ...over });
+const W = { period: (p) => p.replace('-', '–'), scenario: 'SSP2-4.5', heightM: null };
+const keysOf = (es) => es.map((e) => e.line.key.slice('consortium.line.'.length));
+
+test('c2 fix A2 (scenario agreement): a verdict judged at its own later period says how many scenarios agree; a split carries the spread term on every surface; verdictTerms is gone', () => {
+  const later = vOf({ judged: '2071-2099', ownYears: true, agree: 4, of: 4 });
+  const all = line.againstLines(later, null, W);
+  const spread = all.find((e) => e.line.key === 'consortium.line.confSpread');
+  assert.ok(spread, `the agreement said (${keysOf(all)})`);
+  assert.equal(spread.conf, undefined, 'all agree: no hedge term');
+  const split = line.againstLines({ ...later, agree: 2 }, null, W).find((e) => e.line.key === 'consortium.line.confSpread');
+  assert.equal(split?.conf, 'spread');
+  assert.ok(line.rowLines({ ...later, agree: 2 }, null, W).some((e) => e.conf === 'spread'), 'rows and print carry the split');
+  assert.equal(line.verdictTerms, undefined);
+  assert.equal(core.verdictTerms, undefined);
+});
+
+test('c2 fix A3 + A7 (row form): rowLines gives the later loss, watering, season, room and few-records notes in short words, then the terms; no "Not checked" twice', () => {
+  const later = vOf({ judged: '2041-2070', level: 'outside', limiting: { factor: 'hot', level: 'outside', basis: 'range', place: 41, low: null, high: 36 } });
+  const rows = line.rowLines(vOf({ notes: ['dry-months'] }), later, W);
+  assert.deepEqual(keysOf(rows), ['rowLossHot', 'rowDryMonths']);
+  assert.deepEqual(rows[0].line.vars, { period: '2041–2070' });
+  assert.match(en['consortium.line.rowLossHot'], /^too hot by \{period\}$/);
+  assert.deepEqual(keysOf(line.rowLines(vOf({ notes: ['cool-season', 'annual'] }), null, W)), ['rowCoolSeason'], 'the cool season replaces annual');
+  assert.deepEqual(keysOf(line.rowLines(vOf({ notes: ['annual'] }), null, W)), ['rowAnnual']);
+  assert.deepEqual(keysOf(line.rowLines(vOf({ notes: ['drier-later'] }), vOf({ judged: '2071-2099', notes: ['drier'] }), W)), ['rowDrierBy']);
+  assert.deepEqual(keysOf(line.rowLines(vOf({ notes: ['room-tall'] }), null, { ...W, heightM: 12 })), ['rowRoomTall']);
+  // A7: the fit line already says "Not checked".
+  const none = line.rowLines(vOf({ level: 'unknown', range: 'no-climate' }), null, W);
+  assert.ok(!none.some((e) => e.conf === 'not-checked'), `no second "Not checked" (${keysOf(none)})`);
+  assert.ok(line.rowLines(vOf({ level: 'unknown', range: 'not-recorded' }), null, W).some((e) => e.conf === 'not-recorded'), 'not recorded is still said');
+});
+
+// The row, print and side-view marks of pp/c (d40b5640 range-, future- and site-marks.ts, the 'row'
+// surface the three shared): each kind, from the verdict that gave it, has its short row words now.
+test('c2 fix A3 (mapping probe, row surfaces): every old row mark kind maps to a rowLines entry or the fit line; the unmapped set is empty', () => {
+  const hot = { factor: 'hot', level: 'outside', basis: 'range', place: 41, low: null, high: 36 };
+  const OLD = {
+    'range.outside': [vOf({ level: 'outside', limiting: hot, factors: [hot] }), null, (fit) => fit === 'outside'],
+    'range.edge': [vOf({ level: 'look', factors: [{ ...hot, level: 'look', confidence: { term: 'edge' } }] }), null, (fit, r) => fit === 'look' && r.some((e) => e.conf === 'edge')],
+    'range.unknown': [vOf({ level: 'unknown', range: 'no-climate' }), null, (fit) => fit === 'unknown'],
+    'range.drier': [vOf({ notes: ['drier'] }), null, (_, r) => r.some((e) => e.note === 'drier')],
+    'range.wetter': [vOf({ notes: ['wetter'] }), null, (_, r) => r.some((e) => e.note === 'wetter')],
+    'range.coolSeasonShort': [vOf({ notes: ['cool-season', 'annual'] }), null, (_, r) => r.some((e) => e.note === 'cool-season')],
+    'range.annualShort': [vOf({ notes: ['annual'] }), null, (_, r) => r.some((e) => e.note === 'annual')],
+    'estimate.fromZone': [vOf({ borrowed: 'Tropical' }), null, (_, r) => r.some((e) => e.conf === 'estimate')],
+    'estimate.noSite': [vOf({ level: 'unknown', range: 'no-climate', borrowed: 'Tropical' }), null, (_, r) => r.some((e) => e.conf === 'estimate')],
+    'future.warmEnoughShort': [vOf({ notes: ['warm-enough-later'] }), vOf({ judged: '2071-2099' }), (_, r) => r.some((e) => e.note === 'warm-enough-later')],
+    'future.mark.heat': [vOf(), vOf({ judged: '2071-2099', level: 'outside', limiting: hot }), (_, r) => r.some((e) => e.later)],
+    'future.drierShort': [vOf({ notes: ['drier-later'] }), vOf({ judged: '2071-2099', notes: ['drier'] }), (_, r) => r.some((e) => e.note === 'drier-later')],
+    'water.dryMonthsShort': [vOf({ notes: ['dry-months'] }), null, (_, r) => r.some((e) => e.note === 'dry-months')],
+    'room.tallShort': [vOf({ notes: ['room-tall'] }), null, (_, r) => r.some((e) => e.note === 'room-tall'), 9],
+  };
+  const unmapped = Object.entries(OLD).filter(([, [v, later, mapped, h]]) => !mapped(v.level, line.rowLines(v, later, { ...W, heightM: h ?? null }))).map(([k]) => k);
+  assert.deepEqual(unmapped, []);
+  for (const k of Object.keys(en).filter((x) => x.startsWith('consortium.line.row'))) for (const [lang, w] of Object.entries(words)) assert.ok(w[k], `${lang}: ${k}`);
+});
+
+test('c2 fix C1 + C3 (fit line): a later fit names the period, never a grouped year or a stray "to"; the dry edge as the limiting note is in the headline, watering advice included', () => {
+  assert.deepEqual(line.fitLine(vOf({ judged: '2071-2099' })), { key: 'consortium.line.fitsTo', vars: { period: '2071–2099' } });
+  assert.doesNotMatch(en['consortium.line.fitsTo'], /\bto \{/);
+  const dry = { factor: 'dry', level: 'look', basis: 'range', place: 0.2, low: 0.5, high: 2 };
+  const v = vOf({ limiting: dry, factors: [dry] });
+  assert.equal(line.fitLine(v).key, 'consortium.line.fitsDry');
+  assert.equal(v.level, 'fits', 'the level unchanged (PP-C5)');
+  assert.match(en['consortium.line.fitsDry'], /drier here than where it is recorded: may need watering/);
+  assert.match(en['consortium.line.noteDrier'], /may need watering/, 'the note says what to do today too');
+  assert.match(en['consortium.line.pastDrier'], /aridity index/, 'aridity explained in words (C6)');
+});
+
+test('c2 fix C2 (few records): a range on fewer than 300 recorded places notes it with the count; the fit never reads plain', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const r = (low, high) => ({ low, median: null, high, count: 26, basis: 'thinned_cells', weak: true });
+  const slot = (period, scenario, over = {}) => ({ period, scenario, koppen: 'BWh', koppenTemperatureMarginC: 0, tminColdC: 4, tmaxWarmC: 34, tmeanColdC: 12, tmeanWarmC: 28, aridityIndex: 0.3, ...over });
+  const lookup = { lat: 0, lon: 0, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: [slot('1991-2020', 'historical')] }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
+  const agave = taxon({ id: 'agave', canonical_name: 'Agave murpheyi', phases: null, climate: { source: 'gbif_occurrences', cells: 22, nativeShare: null, tminCold: r(-2, 10), tmaxWarm: r(20, 42), tmeanYear: null, tmeanWarm: null, aridity: r(0.1, 0.6) } });
+  const ctx = { place: core.emptyPlace, lookup, period: '1991-2020', scenario: 'ssp245', canopy: null };
+  const v = verdict(agave, ctx);
+  assert.ok(v.notes.includes('few-records'), `notes ${v.notes}`);
+  assert.equal(v.records, 22);
+  assert.equal(line.fitLine(v).key, 'consortium.line.fitsFew');
+  assert.ok(line.againstLines(v, null, W).some((e) => e.line.key === 'consortium.line.noteFewRecords' && e.line.vars.n === 22));
+  const many = verdict({ ...agave, climate: { ...agave.climate, cells: 900 } }, ctx);
+  assert.ok(!many.notes.includes('few-records'));
+  assert.equal(line.fitLine(many).key, 'consortium.line.fits');
+});
+
+test('c2 fix C4 + B5 (later notes): warm enough later is worded from the later verdict, only when it fits then; drier later once; an annual\'s cool season said once; the engine gives both later notes', async () => {
+  const today = vOf({ level: 'look', notes: ['warm-enough-later', 'drier-later'] });
+  const lookLater = vOf({ judged: '2041-2070', level: 'look' });
+  const k1 = keysOf(line.againstLines(today, lookLater, W));
+  assert.ok(!k1.includes('noteWarmEnoughLater'), `no "warm enough" beside a later "second look" (${k1})`);
+  const k2 = keysOf(line.againstLines(today, vOf({ judged: '2041-2070', notes: ['drier'] }), W));
+  assert.ok(k2.includes('noteWarmEnoughLater'));
+  assert.equal(k2.filter((k) => k === 'noteDrierBy').length, 1, `drier later said once (${k2})`);
+  const cool = line.againstLines(vOf({ notes: ['cool-season', 'annual'] }), vOf({ judged: '2041-2070', notes: ['cool-season'] }), W);
+  assert.equal(cool.filter((e) => e.note === 'cool-season').length, 1, 'the cool season said once');
+  // The engine: too cool today and inside later; drier later and not today.
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const r = (low, high) => ({ low, median: null, high, count: 900, basis: 'thinned_cells', weak: false });
+  const slot = (period, scenario, over = {}) => ({ period, scenario, koppen: 'Cfb', koppenTemperatureMarginC: 0, tminColdC: 2, tmaxWarmC: 26, tmeanColdC: 6, tmeanWarmC: 17, aridityIndex: 1.2, ...over });
+  const periods = [slot('1991-2020', 'historical'), ...core.scenarios.flatMap((s) => [slot('2041-2070', s, { tmeanWarmC: 21, aridityIndex: 0.4 }), slot('2071-2099', s, { tmeanWarmC: 23, aridityIndex: 0.3 })])];
+  const lookup = { lat: 0, lon: 0, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
+  const tree = taxon({ id: 'tree', canonical_name: 'Arbor', phases: { start: 'secondary_i', end: 'climax', sources: [] }, climate: { source: 'gbif_occurrences', cells: 900, nativeShare: null, tminCold: r(-5, 12), tmaxWarm: r(22, 40), tmeanYear: r(14, 25), tmeanWarm: null, aridity: r(0.6, 3) } });
+  const v = verdict(tree, { place: core.emptyPlace, lookup, period: '1991-2020', scenario: 'ssp245', canopy: null });
+  assert.ok(v.notes.includes('warm-enough-later'), `notes ${v.notes}`);
+  assert.ok(v.notes.includes('drier-later'), `notes ${v.notes}`);
+});
+
+test('c2 fix B5 (limits keep their decimals): a cold limit of 7.84 against a place at 5.8 stays 7.84 in the line, never a rounded 7.8 that reads as within the 2 °C margin', () => {
+  const l = line.reasonLine({ factor: 'cold', level: 'outside', basis: 'range', place: 5.8, low: 7.84, high: 20 });
+  assert.equal(l.vars.tempBound, 7.84);
+  assert.equal(l.vars.tempPlace, 5.8);
+  const fit = readFileSync(new URL('../src/islands/consortium/views/kit/fit.tsx', import.meta.url), 'utf8');
+  assert.match(fit, /k === 'tempBound' \? 2 : 1/, 'the page writes the limit with its two decimals');
+});
+
+test('c2 fix A4 (print invasive): print words each source through invasiveLines; its fallback names no source, in all 11 locales', () => {
+  const print = readFileSync(new URL('../src/islands/consortium/views/PrintSheet.tsx', import.meta.url), 'utf8');
+  assert.match(print, /invasiveLines\(/);
+  for (const [lang, w] of Object.entries(words)) assert.doesNotMatch(w['consortium.print.flag.invasive'], /GRIIS/, lang);
 });

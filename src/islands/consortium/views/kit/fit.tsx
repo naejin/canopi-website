@@ -4,20 +4,28 @@
 // core's verdict-line.ts (plant-palette-architecture 3.2): no view writes its own. Numbers are
 // formatted for the page language by strings.ts. Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour.
-import type { Hole, JobId, Level, Line, PlantVerdict } from '../../../../lib/consortium/index.ts';
-import { againstLines, againstTerms, fitLine, holeLine, levelLine, periodName } from '../../../../lib/consortium/index.ts';
+import type { Hole, JobId, Level, Line, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import { fitLine, holeLine, levelLine, periodName, rowLines, scenarioName } from '../../../../lib/consortium/index.ts';
+import * as store from '../../store.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { countryName } from './names.ts';
 
 // A Line's variables for the page language: temp… in °C and len… in metres with their unit
-// (format.ts), country an ISO code as the country's name, every other number in the page's digits;
-// each part (a Line, or Lines said as a list) in words.
+// (format.ts), country an ISO code as the country's name, a year in plain digits (never "2,099"),
+// every other number in the page's digits; each part (a Line, or Lines said as a list) in words. A
+// plant's limit (tempBound) keeps its two decimals: 7.84 against a place's 5.8 is past the 2 °C
+// margin and never reads as a rounded 7.8 within it.
+function numberOf(k: string, v: number, lang: string): string {
+  if (k.startsWith('temp')) return formatTemp(v, lang, k === 'tempBound' ? 2 : 1);
+  if (k.startsWith('len')) return formatLength(v, lang);
+  if (k === 'year' || k.endsWith('Year')) return String(Math.round(v));
+  return formatNumber(v, lang, 2);
+}
 function varsOf(l: Line): Record<string, string> {
   const lang = pageLang(), out: Record<string, string> = {};
   for (const [k, v] of Object.entries(l.vars)) {
-    out[k] = typeof v === 'number' ? (k.startsWith('temp') ? formatTemp(v, lang) : k.startsWith('len') ? formatLength(v, lang) : formatNumber(v, lang, 2))
-      : k === 'country' && /^[A-Z]{2}$/.test(v) ? countryName(v) : v;
+    out[k] = typeof v === 'number' ? numberOf(k, v, lang) : k === 'country' && /^[A-Z]{2}$/.test(v) ? countryName(v) : v;
   }
   for (const [k, p] of Object.entries(l.parts ?? {})) out[k] = Array.isArray(p) ? listOf(p.map(words)) : words(p);
   return out;
@@ -57,12 +65,15 @@ export function FitLine({ v, known }: { v: PlantVerdict | null | undefined; know
   return <span class="ct-fit" data-level={level}><LevelIcon level={level} />{say(v ? fitLine(v) : levelLine(level))}</span>;
 }
 
-// A plant's confidence terms, the ones its "Against your place" says (core againstTerms): a row, print
-// and Details carry the same terms (A16), each a word with its data-conf hook (never colour alone).
-export function Terms({ v }: { v: PlantVerdict | null | undefined }) {
+// A plant's verdict in short form after its fit line (core rowLines): the later loss, the watering,
+// season, room and few-records notes, then the confidence terms its "Against your place" says, so
+// Your plants, print and the side view's key carry what Details says (A16). Each a word with its
+// data-note, data-later or data-conf hook (never colour alone).
+export function RowNotes({ t, v }: { t: Taxon; v: PlantVerdict | null | undefined }) {
   if (!v) return null;
-  const terms = againstTerms(againstLines(v, null, { period: periodName, scenario: '', heightM: null }));
-  return <>{terms.map(({ term, line }) => <> <span class="ct-term" data-conf={term}>{say(line)}</span></>)}</>;
+  const later = store.laterVerdictOf(t, v);
+  const words = { period: periodName, scenario: scenarioName(store.scenario.value), heightM: t.traits.height_m?.max ?? null };
+  return <>{rowLines(v, later, words).map((e) => <> <span class={e.conf ? 'ct-term' : 'ct-row-note'} data-conf={e.conf} data-note={e.note} data-later={e.later ? '' : undefined}>{say(e.line)}</span></>)}</>;
 }
 
 // A hole in words: its lane (a job, a light level) and its years. The Next step, the hole buttons and

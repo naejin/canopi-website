@@ -14,9 +14,9 @@
 // palette chunk alone (shared by two lazy chunks it would split into a chunk of its own).
 import { useEffect, useState } from 'preact/hooks';
 import type { Details, Flag, Locale, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { factLines, jobsOf, placementZone, shippedOf } from '../../../lib/consortium/index.ts';
+import { factLines, invasiveLines, jobsOf, placementZone, shippedOf } from '../../../lib/consortium/index.ts';
 import { climate, country, failedMembers, flagScene, flags, guests, memberTaxa, memberVerdicts, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
-import { say, Terms } from './kit/fit.tsx';
+import { FitLine, RowNotes, say } from './kit/fit.tsx';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
 import { flagLines } from './kit/flags.ts';
@@ -33,10 +33,16 @@ const phaseWords = (t: Taxon) => {
 
 // A toxicity flag says its level on paper too (b3r-3: Slight never reads like Severe), in the words
 // of Your plants and Details (kit/flags.ts flagLines); the print keys stay for the other flags.
-function flagWords(t: Taxon, f: Flag, names: Map<PlantId, string>, code: string | null): string {
+// An invasive flag says each source that records it in the reader's country, as Details does (core
+// invasiveLines: "Listed by Spain's catálogo", never "checked against GRIIS" for an atlas); before the
+// plant's facts are read, one line naming no source.
+function flagWords(t: Taxon, f: Flag, names: Map<PlantId, string>, code: string | null, facts: Details | undefined): string {
   if (f.kind === 'conflict') return T('print.flag.conflict', { other: (f.other && names.get(f.other)) ?? '?' });
   if (f.kind === 'misfit') return T('print.flag.misfit');
-  if (f.kind === 'invasive') return T('print.flag.invasive', { country: code ? countryName(code) : '' });
+  if (f.kind === 'invasive') {
+    const lines = facts ? invasiveLines({ invasiveIn: facts.invasiveIn ?? t.warnings.invasive_in, invasiveAreas: facts.invasiveAreas ?? null }, { country: code, checked: true }) : [];
+    return lines.length ? lines.map(say).join(' ') : T('print.flag.invasive', { country: code ? countryName(code) : '' });
+  }
   return flagLines(t, [f], flagScene.value)[0]?.text ?? T('print.flag.toxicity');
 }
 
@@ -104,12 +110,13 @@ export function PrintSheet() {
         <tbody>
           {members.map((t) => {
             const marks = guests.value[t.id] ? [T('print.fromList', { climate: zoneName(guests.value[t.id]!) })] : [];
-            const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(t, f, names, code));
             const f = facts.get(t.id);
+            const notes = (byPlant.get(t.id) ?? []).map((fl) => flagWords(t, fl, names, code, f));
+            const v = memberVerdicts.value?.get(t.id);
             const sure = f ? factLines({ disputes: f.disputes, audiences: f.audiences, traitSources: f.traitSources, shipped: shippedOf(t) }) : [];
             return (
               <tr data-plant-id={t.id}>
-                <th scope="row"><span class="ct-print-name">{nameOf(t)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}<Terms v={memberVerdicts.value?.get(t.id)} /></th>
+                <th scope="row"><span class="ct-print-name">{nameOf(t)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}{v && <span class="ct-print-fit"> <FitLine v={v} /><RowNotes t={t} v={v} /></span>}</th>
                 <td>{t.stratum ? T(`stratum.${t.stratum.value}`) : T('stratum.none')}</td>
                 <td>{phaseWords(t)}</td>
                 <td>{jobsOf(t).map((j) => T(`job.${j}`)).join(', ') || '–'}</td>

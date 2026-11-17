@@ -10,7 +10,7 @@ import { useEffect } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { Line, PlantVerdict, Scenario, Taxon } from '../../../../lib/consortium/index.ts';
-import { againstLines, levelLine, lineTerm, periodIds, periodName, scenarioName } from '../../../../lib/consortium/index.ts';
+import { againstLines, levelLine, lineTerm, periodName, scenarioName } from '../../../../lib/consortium/index.ts';
 import { say } from '../kit/fit.tsx';
 
 // The plant's verdict for the page period, from the store's maps when it is there (members, the pool),
@@ -20,15 +20,6 @@ function verdictOf(t: Taxon): PlantVerdict | null {
   if (!rule) return null;
   return store.memberVerdicts.value?.get(t.id) ?? store.poolVerdicts.value?.get(t.id) ?? rule.verdicts([t], store.verdictContext.value).get(t.id) ?? null;
 }
-// The verdict at the plant's own later period (the rule's judgedPeriod for the last period: its own
-// years, today for a short-lived plant), when the page shows an earlier one.
-function laterOf(t: Taxon, v: PlantVerdict): PlantVerdict | null {
-  const rule = store.verdictRule.value;
-  const own = rule?.judgedPeriod(t, periodIds[periodIds.length - 1]);
-  if (!rule || !own || own === v.judged) return null;
-  return rule.verdicts([t], { ...store.verdictContext.value, period: own }).get(t.id) ?? null;
-}
-
 // A line's words, then its hedges each in its own span, data-conf on those that say a confidence term
 // (`terms`: false on a later period's lines, whose hedges are words only).
 function Words({ line, terms }: { line: Line; terms: boolean }) {
@@ -66,7 +57,7 @@ export function Against({ t }: { t: Taxon }) {
     );
   }
   const scenario = scenarioName(store.verdictContext.value.scenario as Scenario);
-  const entries = againstLines(v, laterOf(t, v), { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null });
+  const entries = againstLines(v, store.laterVerdictOf(t, v), { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null });
   const [fit, ...rest] = entries;
   return (
     <section class="ct-against" data-against aria-labelledby="ct-d-against">

@@ -12,12 +12,12 @@
 // there, never in the store: first run), which counts Things to weigh's plants not checked from them.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { PlantId, PlantRow, Taxon } from '../../../../lib/consortium/index.ts';
-import { moreLine, NEAREST_LISTS, noteLine, sizeLine } from '../../../../lib/consortium/index.ts';
+import { moreLine, NEAREST_LISTS, sizeLine } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { formatLength } from '../../format.ts';
 import { nameOf, pageLang, T } from '../../strings.ts';
-import { FitLine, say, Terms } from '../kit/fit.tsx';
+import { FitLine, RowNotes, say } from '../kit/fit.tsx';
 import { zoneName } from '../kit/names.ts';
 import { flagLines } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -39,9 +39,6 @@ function Row({ t, onRemove }: { t: Taxon; onRemove: (id: PlantId) => void }) {
   const lines = flagLines(t, store.flagsOfPlant(t), store.flagScene.value);
   const tox = t.warnings.toxicity?.level;
   const v = store.memberVerdicts.value?.get(t.id);
-  // The height note (A8): taller than the room answered, said on the row (core noteLine).
-  const tall = t.traits.height_m?.max;
-  const room = v?.notes.includes('room-tall') && tall !== undefined && tall !== null ? noteLine('room-tall', { len: tall }) : null;
   return (
     <li data-plant-id={t.id}>
       <span class="ct-plant-name">
@@ -51,8 +48,7 @@ function Row({ t, onRemove }: { t: Taxon; onRemove: (id: PlantId) => void }) {
       {lines.map((l) => (
         <span class="ct-line ct-flag-line" data-level={l.level ?? 'warning'}>{WARN} {l.kind === 'toxicity' && tox ? T(`tox.${tox}`) : l.text}</span>
       ))}
-      {v && <span class="ct-line"><FitLine v={v} /><Terms v={v} /></span>}
-      {room && <span class="ct-line" data-note="room-tall">{say(room)}</span>}
+      {v && <span class="ct-line"><FitLine v={v} /><RowNotes t={t} v={v} /></span>}
       <span class="ct-line">{sizeWords(t)}</span>
       <Remove id={t.id} name={nameOf(t)} onRemove={onRemove} />
     </li>

@@ -578,8 +578,9 @@ export interface FactorVerdict {
 // than where it is recorded at the period judged, watering in the dry months ('dry-months': drought
 // tolerance Medium on a dry spot), cold air on a hill top or in a hollow, and, on today's verdict of a
 // plant judged later in its own years, what the later period changes: 'warm-enough-later' (too cool
-// today, within its range then) and 'drier-later' (drier then, not today).
-export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'wetter' | 'dry-months' | 'warm-enough-later' | 'drier-later' | 'cold-air';
+// today, within its range then) and 'drier-later' (drier then, not today); 'few-records': the ranges
+// rest on few recorded places (PlantVerdict.records), so their limits are not firm.
+export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'wetter' | 'dry-months' | 'warm-enough-later' | 'drier-later' | 'cold-air' | 'few-records';
 // Why the climate factors are what they are: compared ('judged'), a place climate with no range recorded
 // for the plant ('not-recorded'), or no climate for the period (no location, no projection: 'no-climate',
 // "not checked"). Kept apart so "not recorded" never reads as "not checked" (A15).
@@ -596,6 +597,7 @@ export interface PlantVerdict {
   of?: number;
   range: RangeBasisState;
   borrowed?: ClimateZone; // placed from a nearest list (Taxon.origin borrowed): its lines carry "estimate"
+  records?: number; // with 'few-records': the recorded places (TaxonClimate.cells) its ranges rest on
 }
 export interface VerdictContext {
   place: Place;

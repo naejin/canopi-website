@@ -208,4 +208,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct-facts li[data-dispute], .ct-facts li[data-audience] { padding-left: 0.5rem; border-left: 3px solid var(--warning-line); }
 /* A confidence term said beside a fit line (rows, Details, print): words, never colour alone. */
 .ct-term { color: var(--text-muted); font-size: 0.9em; }
+.ct-row-note { color: var(--text); font-size: 0.9em; }
+.ct-row-note[data-later] { font-weight: 600; }
+.ct-print-fit { display: block; font-weight: 400; }
 .ct-print-fact { display: block; }

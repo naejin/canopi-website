@@ -4,8 +4,8 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, Hole, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadSuggest, loadVerdictRule, siteFor, zoneOf } from '../../lib/consortium/index.ts';
+import type { ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadSuggest, loadVerdictRule, periodIds, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -261,6 +261,31 @@ export const memberVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => 
   const rule = verdictRule.value;
   return rule ? rule.verdicts(memberTaxa.value, verdictContext.value) : null;
 });
+// The verdict at a plant's own later period (the rule's judgedPeriod for the last period: its own
+// years) when the page shows an earlier one, else null: what that period changes is worded from it
+// (core againstLines and rowLines), so Details, the rows and print say the same. The members' are
+// computed once per change (grouped by period), any other plant's on demand (Details).
+const LAST = periodIds[periodIds.length - 1];
+function laterVerdicts(rule: VerdictRule, taxa: readonly Taxon[], now: Map<PlantId, PlantVerdict>): Map<PlantId, PlantVerdict> {
+  const byPeriod = new Map<PeriodId, Taxon[]>();
+  for (const t of taxa) {
+    const own = rule.judgedPeriod(t, LAST), v = now.get(t.id);
+    if (v && own !== v.judged) byPeriod.set(own, [...(byPeriod.get(own) ?? []), t]);
+  }
+  const out = new Map<PlantId, PlantVerdict>();
+  for (const [p, ts] of byPeriod) for (const [id, lv] of rule.verdicts(ts, { ...verdictContext.value, period: p })) out.set(id, lv);
+  return out;
+}
+const memberLaterVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
+  const rule = verdictRule.value, now = memberVerdicts.value;
+  return rule && now ? laterVerdicts(rule, memberTaxa.value, now) : null;
+});
+export function laterVerdictOf(t: Taxon, v: PlantVerdict | null | undefined): PlantVerdict | null {
+  const rule = verdictRule.value;
+  if (!rule || !v) return null;
+  if (memberVerdicts.value?.get(t.id) === v) return memberLaterVerdicts.value?.get(t.id) ?? null;
+  return laterVerdicts(rule, [t], new Map([[t.id, v]])).get(t.id) ?? null;
+}
 // The pool's verdicts, guests' lists included once read (b1b's count, Find, the holes' fillers).
 export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value, p = pool.value;

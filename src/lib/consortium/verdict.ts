@@ -29,6 +29,9 @@
 //   (a place climate, no range for the plant) apart from "not checked" (no climate for the period).
 // - Today's verdict of a plant judged later in its own years notes what that period changes:
 //   'warm-enough-later' (too cool today, within every bound then) and 'drier-later'.
+// - Few records: ranges resting on fewer than FEW_RECORDS recorded places (TaxonClimate.cells, the
+//   thinned GBIF cells) note 'few-records' with the count: their limits are not firm (drawn dashed,
+//   said in words), never a level.
 import type { Factor, FactorVerdict, Level, PeriodId, PlantId, PlantVerdict, Scenario, Taxon, VerdictContext, VerdictNote } from './types.ts';
 import { periodIds, scenarios } from './types.ts';
 import { borrowedFrom } from './placement.ts';
@@ -38,6 +41,7 @@ import { fits, misfitsBeside, shadedBy, tallerThanRoom } from './site.ts';
 import { climateFor, siteFor } from './place.ts';
 
 const TODAY: PeriodId = periodIds[0];
+const FEW_RECORDS = 300;
 const ORDER: Record<Level, number> = { fits: 0, unknown: 0, look: 1, outside: 2 };
 const OF_PASSED = { inside: 'fits', edge: 'look', beyond: 'outside' } as const;
 
@@ -124,6 +128,9 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   if (hints.dryMonths) notes.push('dry-months');
   if (isAnnual(taxon)) notes.push('annual');
   if (judged === TODAY && climate) notes.push(...laterNotes(taxon, ctx));
+  const cells = taxon.climate?.cells ?? null;
+  const few = !!climate && cells !== null && cells < FEW_RECORDS;
+  if (few) notes.push('few-records');
   const worstOne = worst(factors);
   // A range recorded with no side that applies (an annual with only its winter cold) is 'fits': the
   // canopi-data range-verdict contract (DATA-1, SYN:annual.grown_as_annual: "inside") says so.
@@ -136,6 +143,7 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   const out: PlantVerdict = { id: taxon.id, judged, ownYears: judged !== ctx.period, level, limiting, factors, notes, range };
   const from = borrowedFrom(taxon);
   if (from) out.borrowed = from;
+  if (few) out.records = cells!;
   // The scenarios that agree on a later period (each scenario's slot judged the same way).
   if (judged !== TODAY && climate) {
     let agree = 0, of = 0;

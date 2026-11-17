@@ -34,7 +34,7 @@ function plantOf(key, p) {
     },
     warnings: { toxicity: p.toxicity ?? null, invasive_in: (p.invasive_in ?? []).map((country) => ({ country, sources: ['griis'] })), allelopathic: null, weed_potential: null },
     climate: any ? {
-      source: p.range_source ?? 'gbif_occurrences', cells: 100, nativeShare: null,
+      source: p.range_source ?? 'gbif_occurrences', cells: 1000, nativeShare: null, // the vectors carry no record count: never 'few-records'
       tminCold: range(climate.tmin_cold), tmaxWarm: range(climate.tmax_warm), tmeanYear: range(climate.tmean_year), tmeanWarm: range(climate.tmean_warm), aridity: range(climate.aridity),
     } : null,
   });
@@ -277,7 +277,7 @@ const hole = (fromYear, toYear, state = 'open') => ({ id: `job:mulch:${fromYear}
 test('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key under consortium.line. with numbers and counts, never "fits" for not checked', () => {
   const L = core;
   assert.deepEqual(L.fitLine(pv('fits')), { key: 'consortium.line.fits', vars: {} });
-  assert.deepEqual(L.fitLine(pv('fits', '2071-2099')), { key: 'consortium.line.fitsTo', vars: { year: 2099 } });
+  assert.deepEqual(L.fitLine(pv('fits', '2071-2099')), { key: 'consortium.line.fitsTo', vars: { period: '2071–2099' } });
   assert.deepEqual(L.fitLine(pv('unknown')), { key: 'consortium.line.unknown', vars: {} });
   assert.deepEqual(L.fitLine(pv('look')), { key: 'consortium.line.look', vars: {} });
   assert.deepEqual(L.fitLine(pv('outside')), { key: 'consortium.line.outside', vars: {} });
