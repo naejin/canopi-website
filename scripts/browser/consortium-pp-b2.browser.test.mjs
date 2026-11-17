@@ -435,19 +435,25 @@ test('PP-B20 (b2 verdict chunk refused; review r1 bugs-5): fit lines say "Not ch
 // Pre-push fix 4: the verdict chunk statically imports the range rule's chunk, and Chromium keeps a
 // failed import for the page's life, so once the range chunk failed no retry of the verdict chunk can
 // work. Back online, the page offers Reload, never a Try again that cannot work, and asks for nothing.
-test('PP-B49 (b2 verdict and range chunks refused; pre-push fix 4): back online, the verdict notice offers Reload, never a dead Try again, and the online event asks for no chunk', async () => {
+// PP-B49 retargeted (fix round 1, A14; coordinator 2026-11-17): stream c2 folds the range and mark
+// roles into the verdict chunk, so the case blocks the verdict chunk alone. The failure rule then: a
+// verdict file that did not arrive is asked again in place (Try again, and the browser back online),
+// never a Reload; Reload stays for a verdict file that arrived but whose import failed (not reachable
+// through the harness's block kinds, so not asserted here).
+test('PP-B49 (b2 verdict chunk refused offline; pre-push fix 4, retargeted to the verdict role): back online, the verdict chunk is asked again in place and the notice offers Try again, never a Reload', async () => {
   const log = [];
-  const page = await lyonPalette(2, { block: { verdict: 'offline', range: 'offline' }, setup: logRequests(log) });
+  const page = await lyonPalette(2, { block: { verdict: 'offline' }, setup: logRequests(log) });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the verdict chunk failed');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
   await page.setOfflineMode(true);
   assert.ok(await page.waitForFunction((t) => [...document.querySelectorAll('.ct-palette-page .ct-notice')].some((n) => n.textContent.includes(t)), { timeout: 4000 }, en['consortium.load.needsConnection']).then(() => true, () => false), 'offline: "Needs a connection"');
   const before = log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length;
   await page.setOfflineMode(false);
-  assert.ok(await has(page, `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`, 4000), 'back online: Reload');
-  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`), null, 'no Try again that cannot work');
-  await new Promise((r) => setTimeout(r, 500));
-  assert.equal(log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length, before, 'the online event asked for no verdict chunk');
+  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`), null, 'no Reload for a file that never arrived');
+  // Back online the chunk is asked again in place: the online event asks for it (still refused here, so
+  // the notice then offers Try again, never Reload).
+  assert.ok(await has(page, `.ct-palette-page .ct-notice ${aria('button', en['consortium.load.retry'])}`, 6000), 'back online: Try again');
+  assert.equal(await page.$(`.ct-palette-page .ct-notice ${aria('button', en['consortium.load.reload'])}`), null, 'still no Reload');
+  assert.ok(log.filter((r) => /\/verdict\.[\w-]+\.js/.test(r.path)).length > before, 'the verdict chunk is asked again');
   await done(page);
 });
 
