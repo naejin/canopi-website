@@ -46,6 +46,14 @@ const search = async (page, q) => {
 // Node-side wait for a condition on values the test collects (request logs).
 const waitFor = async (ok, ms) => { for (const end = Date.now() + ms; Date.now() < end; await new Promise((r) => setTimeout(r, 50))) if (ok()) return true; return ok(); };
 const openFind = async (page, target) => page.evaluate((t) => window.__ctTest.openFind(t ?? undefined), target ?? null);
+// Plain Find at Lyon on the Temperate list, the verdicts in.
+const plainFind = async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await openFind(page);
+  await hasFind(page);
+  return page;
+};
 // Every "Show all N" of Find pressed, so each group lists all its plants (fix round 1, B2).
 const expandAll = async (page) => { for (let i = 0; i < 8 && await page.$(`${FIND} [data-find-showall]`); i++) await page.click(`${FIND} [data-find-showall]`); };
 // Find opened from the Next step's hole ("See all N plants"), as a grower opens it.
@@ -471,10 +479,7 @@ test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a 
 // their range behind one counted button too, lists best first (the years in range; the palette's holes
 // wait for a store seam, pf) with the line saying so, and shows at most a screenful per group behind "Show all N".
 test('PP-C42 (c1 fix B2+B3 best first, folded outside, Show all): plain Find', async () => {
-  const page = await suggestedAt('lyon', 'Temperate');
-  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
-  await openFind(page);
-  await hasFind(page);
+  const page = await plainFind();
   assert.ok(await has(page, `${FIND} [data-find-best]`, 4000), 'the "Best first" line');
   assert.equal(await page.$(`${FIND} [data-find-group="outside"]`), null, 'the outside plants are folded in plain Find');
   assert.ok(await page.$(`${FIND} [data-find-outside]`), '"Show N outside their climate range"');
@@ -580,10 +585,7 @@ test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view
 // Fix round 1, B9, B14 (boards FindMulti, FindNone; conformance c1 #7, #12): a "One by
 // one / Select several" switch with its line; a typing slip (one letter missing, extra or swapped) gives the close names as rows with Add.
 test('PP-C46 (c1 fix B9+B14 switch, typo rows)', async () => {
-  const page = await suggestedAt('lyon', 'Temperate');
-  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
-  await openFind(page);
-  await hasFind(page);
+  const page = await plainFind();
   const modes = await page.$$eval(`${FIND} [data-find-mode]`, (els) => els.map((e) => [e.dataset.findMode, e.getAttribute('aria-pressed')]));
   assert.deepEqual(modes, [['one', 'true'], ['several', 'false']], 'One by one / Select several, its state shown');
   await page.click(`${FIND} [data-find-mode="several"]`);
