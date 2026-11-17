@@ -19,7 +19,7 @@
 //   and `climate_ranges` with the grid the ranges were sampled from.
 // - each database file: a safe name of the contract's form (schema, release, digest of the raw
 //   database), its sha256 and bytes those of the manifest and SHA256SUMS, the gzip magic, at most
-//   MAX_GZIP_BYTES gzipped and under MAX_FILE_BYTES raw; then, read with node:sqlite: application_id,
+//   under MAX_FILE_BYTES raw (over MAX_GZIP_BYTES gzipped is reported, not a failure); then, read with node:sqlite: application_id,
 //   user_version, integrity_check, foreign_key_check, every table and column of
 //   scripts/consortium-schema.mjs, meta (schema, format, release, climates, built_at), each table's
 //   row count against meta and the manifest, every plant placed and every placement with a reason,
@@ -82,9 +82,10 @@ export const THUMB_WIDTH = 500;
 export const USER_AGENT = 'CanopiWebsite/1.0 (https://projectcanopi.com; contact form)';
 export const MAX_FAILED_SHARE = 0.1;
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // a larger file (a full-size original) counts as failed
-// Design check §8: a database file is at most 1 MB gzipped (the phone budget), and every file the
-// site serves stays under Cloudflare's 25 MiB per static asset (the raw database included, which the
-// browser holds whole).
+// Design check §8: a database file aims at 1 MB gzipped (the phone budget). Owner rule 2026-11-16 (no
+// hard limits): a larger file is reported with a warning, never refused. Every file the site serves
+// must stay under Cloudflare's 25 MiB per static asset (the raw database included, which the browser
+// holds whole): that platform limit still refuses.
 export const MAX_GZIP_BYTES = 1_000_000;
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const FORMAT_VERSION = 4;
@@ -367,7 +368,7 @@ export async function readDatabase(path, entry, manifest) {
 }
 
 // Reads and checks a whole export directory (the databases read from a scratch copy in `work`).
-export async function verifyExport(dir, { fixture = false, work }) {
+export async function verifyExport(dir, { fixture = false, work, log = console.log }) {
   const sums = readSums(dir);
   let manifest;
   try { manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8')); } catch (err) { refuse(`manifest.json is not valid JSON (${err.message}).`); }
@@ -392,7 +393,7 @@ export async function verifyExport(dir, { fixture = false, work }) {
     if (sha256(gz) !== entry.sha256 || sums.get(entry.file) !== entry.sha256) refuse(`${entry.file} does not match the manifest's sha256.`);
     if (gz.length !== entry.bytes) refuse(`${entry.file} is ${gz.length} bytes, the manifest says ${entry.bytes}.`);
     if (gz[0] !== 0x1f || gz[1] !== 0x8b) refuse(`${entry.file} is not gzip (no 1f 8b magic).`);
-    if (gz.length > MAX_GZIP_BYTES) refuse(`${entry.file} is ${gz.length} bytes gzipped, over the ${MAX_GZIP_BYTES} the page's budget allows (design check §8).`);
+    if (gz.length > MAX_GZIP_BYTES) log(`Warning: ${entry.file} is ${gz.length} bytes gzipped, over the ${MAX_GZIP_BYTES} of the page's budget (design check §8); reported, not a failure.`);
     let raw;
     try { raw = gunzipSync(gz, { maxOutputLength: MAX_FILE_BYTES + 1 }); } catch (err) { refuse(`${entry.file} does not gunzip (${err.code ?? err.message}).`); }
     if (raw.length > MAX_FILE_BYTES) refuse(`${entry.file} is over 25 MiB uncompressed.`);
@@ -463,9 +464,10 @@ export function indexProblem(index) {
 
 // Checks an installed directory as the site serves it (scripts/check-built-site.mjs runs it on
 // dist/client/data/consortium/, the tests on public/data/consortium/) against its index: the mark,
-// each database byte for byte by its sha256, the gzip magic and size limits, every photo of the index
+// each database byte for byte by its sha256, the gzip magic (its gzip size over the budget is only
+// reported), the 25 MiB limit, every photo of the index
 // present, and nothing else in the directory. Throws on the first problem; returns the counts.
-export function verifyInstall(dir, index) {
+export function verifyInstall(dir, index, { log = console.log } = {}) {
   const broken = (message) => { throw new Error(`Consortium install broken (${dir}): ${message}`); };
   const problem = indexProblem(index);
   if (problem) broken(problem);
@@ -478,7 +480,7 @@ export function verifyInstall(dir, index) {
     try { gz = readFileSync(join(dir, f.file)); } catch { broken(`${f.file} is missing.`); }
     if (sha256(gz) !== f.sha256) broken(`${f.file} does not match the index's sha256.`);
     if (gz[0] !== 0x1f || gz[1] !== 0x8b) broken(`${f.file} is not gzip.`);
-    if (gz.length > MAX_GZIP_BYTES) broken(`${f.file} is over ${MAX_GZIP_BYTES} bytes.`);
+    if (gz.length > MAX_GZIP_BYTES) log(`Warning: ${f.file} is ${gz.length} bytes gzipped, over the ${MAX_GZIP_BYTES} of the page's budget; reported, not a failure.`);
   }
   const wanted = new Set(Object.values(index.images).map((p) => p.slice(IMAGE_BASE.length)));
   const present = existsSync(join(dir, 'images')) ? readdirSync(join(dir, 'images')) : [];
@@ -597,7 +599,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   rmSync(staging, { recursive: true, force: true });
   mkdirSync(staging, { recursive: true });
   try {
-    const { manifest, databases, facts, tryList, credits } = await verifyExport(dir, { fixture, work: staging });
+    const { manifest, databases, facts, tryList, credits } = await verifyExport(dir, { fixture, work: staging, log });
     if (!fixture) {
       const problem = releaseCheck(dir, { log });
       if (problem) refuse(problem);

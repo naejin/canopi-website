@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -167,7 +167,7 @@ test('without --fixture, the all-zeros canopi_db_sha256 of the fixture is refuse
   assert.equal(asked, false);
 });
 
-test('the database file: its name, sha256, bytes, gzip magic, size budget and raw digest', async (t) => {
+test('the database file: its name, sha256, bytes, gzip magic and raw digest', async (t) => {
   const w = workspace(t);
   const rename = await variant(w, 'name', { after: (dir, m) => {
     const other = m.files[0].file.replace(/\.[0-9a-f]{12}\.sqlite\.gz$/, '.000000000000.sqlite.gz');
@@ -187,12 +187,29 @@ test('the database file: its name, sha256, bytes, gzip magic, size budget and ra
   await assert.rejects(install({ ...w, src: shaOff }), /does not match the manifest's sha256/);
   const rawOff = await variant(w, 'raw', { manifest: (m) => { m.files[0].raw_bytes += 1; } });
   await assert.rejects(install({ ...w, src: rawOff }), /does not match the manifest's raw_sha256 and raw_bytes/);
-  // Over the budget (refused before it is even gunzipped).
-  const big = await variant(w, 'big', { after: (dir, m) => {
-    const gz = Buffer.concat([readFileSync(join(dir, m.files[0].file)), Buffer.alloc(MAX_GZIP_BYTES)]);
-    writeFileSync(join(dir, m.files[0].file), gz); m.files[0].sha256 = sha(gz); m.files[0].bytes = gz.length; writeFileSync(join(dir, 'manifest.json'), JSON.stringify(m));
+});
+
+// Owner rule "no hard limits" (2026-11-16): a database over the page's gzip budget is reported with a
+// warning and installed; only the platform limit (Cloudflare's 25 MiB per file) refuses.
+test('the database file: over the gzip budget is reported, not a failure', async (t) => {
+  const w = workspace(t);
+  // One reason text of random base64 (it does not compress), so the gzipped database is over the budget.
+  const filler = randomBytes(MAX_GZIP_BYTES).toString('base64');
+  const big = await variant(w, 'big', { edit: (db) => {
+    db.prepare("UPDATE reason_texts SET text = ? WHERE (reason, locale) = (SELECT reason, locale FROM reason_texts WHERE locale = 'en' ORDER BY reason LIMIT 1)").run(filler);
   } });
-  await assert.rejects(install({ ...w, src: big }), /gzipped, over the 1000000 the page's budget allows/);
+  const manifest = JSON.parse(readFileSync(join(big, 'manifest.json'), 'utf8'));
+  assert.ok(manifest.files[0].bytes > MAX_GZIP_BYTES, `the variant is over the budget (${manifest.files[0].bytes} B)`);
+  const said = [];
+  const summary = await install({ ...w, src: big }, { log: (line) => said.push(line) });
+  assert.ok(said.some((line) => /^Warning: .* bytes gzipped, over the 1000000 of the page's budget .*; reported, not a failure\.$/.test(line)), said.join('\n'));
+  assert.equal(summary.files.length, 1, 'installed');
+  assert.ok(existsSync(join(w.out, summary.files[0])), 'the large database is in place');
+  // verifyInstall reports the same size and does not throw.
+  const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
+  const reported = [];
+  assert.deepEqual(verifyInstall(w.out, index, { log: (line) => reported.push(line) }), { databases: 1, images: 0 });
+  assert.ok(reported.some((line) => /reported, not a failure/.test(line)), reported.join('\n'));
 });
 
 test('the database inside: application_id, user_version, schema columns, meta and contract rules', async (t) => {
