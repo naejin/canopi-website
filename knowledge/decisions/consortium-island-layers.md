@@ -5,13 +5,13 @@ description: The consortium island's layers L0-L4, the import rules dependency-c
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:51Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:44Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:48Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:261176350d2c714b
-    last_modified: 2026-11-17T10:28:40Z
+    digest: sha256:127355dbb3a83aef
+    last_modified: 2026-11-17T16:37:51Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -55,18 +55,18 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:d02afa4080bb8249
-    last_modified: 2026-11-17T10:25:24Z
+    digest: sha256:23faca32f3f115d2
+    last_modified: 2026-11-17T12:58:14Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:335c1e2f120de60e
-    last_modified: 2026-11-17T10:25:24Z
+    digest: sha256:4bab1793e5e41fae
+    last_modified: 2026-11-17T13:26:50Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
     digest: sha256:1fa1952975c4ff18
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
@@ -76,7 +76,7 @@ sources:
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
     digest: sha256:74477f0acdeb315a
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs

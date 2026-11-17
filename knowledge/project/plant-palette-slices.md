@@ -4,7 +4,7 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:51:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:39Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:47Z }
 sources:
@@ -22,7 +22,7 @@ sources:
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
     digest: sha256:765bd5c1dab1b6c2
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: lib-sh
     resource: ../../.githooks/lib.sh
     title: .githooks/lib.sh
@@ -32,7 +32,7 @@ sources:
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
     digest: sha256:c6346b35ba567147
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
@@ -57,7 +57,7 @@ sources:
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:d9295d148d5753e0
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -92,22 +92,22 @@ sources:
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
     digest: sha256:9ba62be01727d68e
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:ddc3af06c1c0d64c
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:0182599bf26892d7
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -127,7 +127,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:4d1d283c1123981b
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -137,7 +137,7 @@ sources:
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
     digest: sha256:a05071a0e9ef5ca6
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -186,8 +186,8 @@ sources:
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
-    digest: sha256:9c922c58f2aad746
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:73297ee3a4f9bdb6
+    last_modified: 2026-11-17T16:37:51Z
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
@@ -222,7 +222,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:15a62311180fe1fa
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -242,12 +242,12 @@ sources:
     resource: ../../src/islands/consortium/views/PlantMarks.tsx
     title: src/islands/consortium/views/PlantMarks.tsx
     digest: sha256:bfe0dfd02be2eeeb
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:d02afa4080bb8249
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:23faca32f3f115d2
+    last_modified: 2026-11-17T12:58:14Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -256,8 +256,8 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:335c1e2f120de60e
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:4bab1793e5e41fae
+    last_modified: 2026-11-17T13:26:50Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -332,7 +332,7 @@ sources:
     resource: ../../src/lib/consortium/range-marks.ts
     title: src/lib/consortium/range-marks.ts
     digest: sha256:3b5dee7987b5cbc0
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -357,7 +357,7 @@ sources:
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -367,12 +367,12 @@ sources:
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
     digest: sha256:90184f3e6a1390d1
-    last_modified: 2026-11-17T10:34:49Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: pp-c-owners-json
     resource: ../../scripts/plan/pp-c-owners.json
     title: scripts/plan/pp-c-owners.json
     digest: sha256:59aeb6576501ce67
-    last_modified: 2026-11-17T10:51:15Z
+    last_modified: 2026-11-17T10:52:11Z
 ---
 
 Pushes of the [Plant palette redesign](/project/consortium-v2-plan.md), in order: **PP-B, PP-C, PP-D, PP-E, PP-F, PP-G** (owner answers of 2026-11-14: no separate push A; later climates, then soil and your spot, then through the year). Module names, shapes and link keys: [Plant palette architecture](/architecture/plant-palette-architecture.md); use them exactly. Boards are named by file in `.local/consortium/v2/f1a/mockups-v3/project/<Name>.dc.html` (main checkout, gitignored); inventory rows are those of `mockups-v3/ux-inventory.md`. Citations are at `f1a/int` 648baf2. Amended 2026-11-14 by the plan recheck and the look-ahead check and by the owner's plan check answers (decision rows "Plant palette plan check answers" and "Plant palette plan amendments"), then by the owner's "Delete first" answer (rows "Delete first" and "Plant palette delete-first amendments": PP-B's commit 0 deletes the old screens before the new page is built). Amended again at the PP-B chunk-2 plan commit (2026-11-16) by the decision rows of 2026-11-14 to 2026-11-16 (scale contract, budgets as a tripwire, process fitted to risk, no export split, things to weigh, frost, search, the b1b review) and by the chunk-2 drift check recorded in `scripts/plan/pp-b-owners.json`.
@@ -555,7 +555,7 @@ Schema 4.3 changed `countries.invasive_checked` to "a source in the release asse
 | Kind | Row |
 |---|---|
 | Unit | `find-query` groups fits / needs a second look (level `look`, a toxic or invasive warning) / outside its range / not checked; every filter returns the count it could not judge; a job word in each of 11 locales finds its job |
-| Unit | search tiers: site-language names (exact, prefix, all tokens, alternates), then scientific names and synonyms, then other languages labelled with their language; every hit says why it matched, and a name shared by several plants says so ("matched 'yam', also used for 3 other plants") |
+| Unit | search tiers: site-language names (exact, prefix, all tokens, alternates), then scientific names and synonyms, then other languages labelled with their language; every hit says why it matched; a name several plants share finds each of them (c1 fix round 3 T17 deleted the "also used for N other plants" line) |
 | Unit | canopi-types normalization v1 as is (native `normalize('NFKD')`, mark removal, the two case folds; the v1 corpus run in Node; the Unicode-15 gap documented); the 3 fold tests of `consortium-source.test.mjs:223-234` rewritten (배 is a prefix of 백합, ばら equals はら, Cœur no longer equals coeur) |
 | Unit | 4.4 a names file whose `core_raw_sha256` or `release_id` differs from the page's db is dropped, never mapped onto the wrong integers; 4.8 a hit on a plant outside the current list names its lists |
 | Unit | Paste matches through the one search module (synonyms included); `oneOff` gives the close spellings; the names line counts the languages the file holds (never "11 languages") |
