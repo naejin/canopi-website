@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
-const { fold, jobIds } = await import('../src/lib/consortium/index.ts');
+const { fold, jobIds, queryTokens } = await import('../src/lib/consortium/index.ts');
 const words = Object.fromEntries(readdirSync(new URL('../src/i18n/translations/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(`../src/i18n/translations/${f}`, import.meta.url), 'utf8'))]));
 const findQuery = () => import('../src/islands/consortium/rules/find-query.ts');
 const search = () => import('../src/islands/consortium/data/search.ts');
@@ -126,13 +126,17 @@ test('PP-C c1 unit file (commit 0): the v1 corpus is the pinned canopi-types fil
   assert.ok(v1.corpus.length > 0 && v1.corpus.some((c) => UNICODE_15_GAP.has(c.name)), 'the gap case is in the corpus');
 });
 
-test('PP-C-u6 (c1 normalization v1): native NFKD, marks off, the two case folds, the v1 corpus run (the Unicode-15 gap documented): 배 is a prefix of 백합, ばら equals はら, Cœur no longer equals coeur', () => {
+test('PP-C-u6 (c1 normalization v1): native NFKD, marks off, the two case folds, the v1 corpus run, fold and query admission (the Unicode-15 gap documented): 배 is a prefix of 백합, ばら equals はら, Cœur no longer equals coeur', () => {
   assert.ok(fold('백합').startsWith(fold('배')), 'v1: 배 is a prefix of 백합 (NFKD keeps the jamo apart)');
   assert.equal(fold('ばら'), fold('はら'), 'v1: kana voicing is a mark, folded off');
   assert.notEqual(fold('Cœur'), fold('coeur'), 'v1: œ is not written out');
   for (const c of JSON.parse(V1).corpus) {
     if (UNICODE_15_GAP.has(c.name)) continue;
     assert.equal(fold(c.input), c.normalized_text, `v1 corpus "${c.name}"`);
+    // The query side too (fix round 1, A12): v1's admission and query tokens.
+    const q = queryTokens(c.input);
+    assert.equal(q.admission, c.admission, `v1 corpus "${c.name}": admission`);
+    assert.deepEqual(q.tokens, c.query_tokens, `v1 corpus "${c.name}": query_tokens`);
   }
 });
 
