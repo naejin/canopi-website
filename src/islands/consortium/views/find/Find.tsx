@@ -103,8 +103,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The plants outside their range wait behind one counted button, in a hole and in plain Find (B3).
   const [foldOutside, setFoldOutside] = useState(true);
   const [whole, setWhole] = useState<ReadonlySet<Group>>(new Set()); // the groups shown whole ("Show all N")
-  // The hole's preset lifted ("N on your list but outside this hole · Show"): the whole list.
-  const [wide, setWide] = useState(false);
+  // The hole's preset lifted for a search ("N on your list but outside this hole · Show"): the whole
+  // list for that search only; another query or none, the hole's plants again (fix round 2, r2-12).
+  const [wideFor, setWideFor] = useState<string | null>(null);
   const [select, setSelect] = useState(false);
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -138,9 +139,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The plants Find lists: a hole's fillers from the offer list (what the Next step's "See all N"
   // counts), else the climate's list; members at opening left out.
   const base = useMemo(() => {
-    const list = hole && fits && !wide ? (offer ?? []).filter(fits) : pool ?? [];
+    const list = hole && fits && !(q && wideFor === q) ? (offer ?? []).filter(fits) : pool ?? [];
     return list.filter((t) => !atOpen.has(t.id)).sort(order);
-  }, [pool, offer, hole, fits, wide, atOpen, order]);
+  }, [pool, offer, hole, fits, !!q && wideFor === q, atOpen, order]);
   // How many of the listed plants do each job (board Find: "Feeds you 58").
   const jobCounts = useMemo(() => {
     const m = new Map<JobId, number>();
@@ -511,7 +512,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
             <p class="ct-find-kept" data-find-hidden-filters="" data-count={view.byFilters}>{P('find.hiddenByFilters', view.byFilters)} · <button type="button" class="text-link" onClick={clearAll}>{T('find.clearShort')}</button></p>
           )}
           {view.outsideHole > 0 && (
-            <p class="ct-find-kept" data-find-outside-hole="" data-count={view.outsideHole}>{P('find.outsideHole', view.outsideHole)} · <button type="button" class="text-link" onClick={() => setWide(true)}>{T('find.show')}</button></p>
+            <p class="ct-find-kept" data-find-outside-hole="" data-count={view.outsideHole}>{P('find.outsideHole', view.outsideHole)} · <button type="button" class="text-link" onClick={() => setWideFor(q)}>{T('find.show')}</button></p>
           )}
           {!q && <p class="ct-muted ct-small" data-find-best="">{P('find.count', view.count)} {T('find.bestFirst')}</p>}
           {nothing && job && !view.others.length ? (
