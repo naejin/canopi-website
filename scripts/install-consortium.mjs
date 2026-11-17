@@ -465,7 +465,7 @@ export function indexProblem(index) {
 // Checks an installed directory as the site serves it (scripts/check-built-site.mjs runs it on
 // dist/client/data/consortium/, the tests on public/data/consortium/) against its index: the mark,
 // each database byte for byte by its sha256, the gzip magic (its gzip size over the budget is only
-// reported), the 25 MiB limit, every photo of the index
+// reported), the 25 MiB limit on each database and photo, every photo of the index
 // present, and nothing else in the directory. Throws on the first problem; returns the counts.
 export function verifyInstall(dir, index, { log = console.log } = {}) {
   const broken = (message) => { throw new Error(`Consortium install broken (${dir}): ${message}`); };
@@ -480,6 +480,7 @@ export function verifyInstall(dir, index, { log = console.log } = {}) {
     try { gz = readFileSync(join(dir, f.file)); } catch { broken(`${f.file} is missing.`); }
     if (sha256(gz) !== f.sha256) broken(`${f.file} does not match the index's sha256.`);
     if (gz[0] !== 0x1f || gz[1] !== 0x8b) broken(`${f.file} is not gzip.`);
+    if (gz.length > MAX_FILE_BYTES) broken(`${f.file} is over 25 MiB, which Cloudflare refuses to serve.`);
     if (gz.length > MAX_GZIP_BYTES) log(`Warning: ${f.file} is ${gz.length} bytes gzipped, over the ${MAX_GZIP_BYTES} of the page's budget; reported, not a failure.`);
   }
   const wanted = new Set(Object.values(index.images).map((p) => p.slice(IMAGE_BASE.length)));

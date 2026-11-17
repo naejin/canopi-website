@@ -434,7 +434,7 @@ test('PlantSource.interactions: a borrowed climate keeps one row per (subject, o
   const bean = pool.find((t) => t.canonical_name === 'Phaseolus vulgaris'), maize = pool.find((t) => t.canonical_name === 'Zea mays');
   assert.ok(bean && maize, 'both in the Subtropical pool');
   assert.equal(core.pairings(bean, [maize], await real.interactions('Subtropical')).length, 1, 'one yield-gain pairing');
-  const rows = await real.interactions('Arid');
+  const rows = await real.interactions('Subtropical');
   const all = core.conflicts(pool, rows).map((c) => `${c.a.id} ${c.b.id} ${c.type} ${c.agent ?? ''}`);
   assert.equal(new Set(all).size, all.length, 'conflicts(): each pair and kind once');
 });

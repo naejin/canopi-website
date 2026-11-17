@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:04:02Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:10:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:58Z }
 sources:
@@ -41,8 +41,8 @@ sources:
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
-    digest: sha256:1e060a3a6fa12387
-    last_modified: 2026-11-17T00:05:45Z
+    digest: sha256:b16073ff4a0fa6e0
+    last_modified: 2026-11-17T01:08:39Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
@@ -62,7 +62,7 @@ sources:
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:054a6f6be4d35b40
-    last_modified: 2026-11-17T00:31:35Z
+    last_modified: 2026-11-17T01:05:41Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -141,8 +141,8 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:d552142f356c0f1b
-    last_modified: 2026-11-17T00:37:28Z
+    digest: sha256:b9a21f5fc226b4bd
+    last_modified: 2026-11-17T01:08:16Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -191,8 +191,8 @@ sources:
   - id: nearest-ts
     resource: ../../src/lib/consortium/nearest.ts
     title: src/lib/consortium/nearest.ts
-    digest: sha256:051bd530078fc159
-    last_modified: 2026-11-13T03:45:07Z
+    digest: sha256:b8ccc5ba13429537
+    last_modified: 2026-11-17T01:08:16Z
   - id: consortium-zones-test-mjs
     resource: ../../scripts/consortium-zones.test.mjs
     title: scripts/consortium-zones.test.mjs
@@ -237,7 +237,7 @@ sources:
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:672b357b2ac42b30
-    last_modified: 2026-11-17T00:11:21Z
+    last_modified: 2026-11-17T01:05:41Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -349,7 +349,7 @@ What it writes:
 
 Installed now: release `r-b7fb536f9cfd0700` (canopi-data D9a, the Arid list), schema 3, `consortium-v3.r-b7fb536f9cfd0700.5e36d6f89487.sqlite.gz`, 757,513 B gzipped (2,809,856 raw), 673 plants, 237 photos (48 new, 1 dropped).
 - Four curated climates: Tropical 200, Arid 226, Mediterranean 200, Temperate 200. The 158 new plants are on the Arid list only, so Subtropical, Continental and Boreal borrow the same lists as before (Kiambu stays 305 of 515: 196 fit, 109 look).
-- Arid sites read their own list now instead of borrowing 515: kept pools Dakar 270 → 87, Lima 278 → 116, Phoenix 147 → 130; every other site unchanged. Tests that used Arid as the borrowed climate (P5-26e, P5-27b, the s4 BT-1 start case, the Arid interactions case) use Subtropical; the home note names four climates in all 11 locales; GBIF's fetch window is 2026-11-11 03:18 – 2026-11-15 12:30 UTC.
+- Arid sites read their own list now instead of borrowing 515: kept pools Dakar 270 → 87, Lima 278 → 116, Phoenix 147 → 130; every other site unchanged. Tests that used Arid as the borrowed climate (P5-26e, P5-27b, the s4 BT-1 start case, the s5c zones case and its conflicts() check) use Subtropical; the home note names four climates in all 11 locales; GBIF's fetch window is 2026-11-11 03:18 – 2026-11-15 12:30 UTC.
 - Also in it (D9a review): corrections c161–c175 (toxicity raised for ten plants, `nitrogen_fixer` and `height_max_m` fixes), three interactions.
 - Over the 1,000,000 B budget is a warning only since this install (owner rule "no hard limits", 2026-11-16); 757,513 B is under it.
 - How it was installed: canopi-data's `data/canopi.db` and `data/curated/` had moved on since the release, so `canopi release verify` ran from a scratch tree: `git archive 4e33cb1` (the release commit's `data/curated/`) with the untracked `data/` entries linked in, `CANOPI_DATA_DB` = that tree's link to `data/canopi.db.pre-pfaf-negation` (sha256 `2b4f2a1f…`, the release's database; verify reads `curated/` beside the database path), and `CANOPI_DATA_DIR` = `git archive` of tag `schema3-last` (`e359e7c`; master's checker knows schema 4 only).

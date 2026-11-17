@@ -242,7 +242,7 @@ test('the home section\'s note names exactly the curated climates the installed 
     en: [/four climates/, /tropical/, /arid/, /Mediterranean/, /temperate/, /other climates borrow the nearest list, checked against your location/],
     fr: [/quatre climats/, /tropical/, /aride/, /méditerranéen/, /tempéré/, /autres climats empruntent la liste la plus proche, vérifiée selon votre lieu/],
     es: [/cuatro climas/, /tropical/, /árido/, /mediterráneo/, /templado/, /demás climas toman la lista más cercana, comprobada con tu ubicación/],
-    pt: [/quatro climas/, /tropical/, /árido/, /mediterrânico/, /temperado/, /outros climas usam a lista mais próxima, verificada com a sua localização/],
+    pt: [/quatro climas/, /tropical/, /árido/, /mediterrâneo/, /temperado/, /outros climas usam a lista mais próxima, verificada com a sua localização/],
     it: [/quattro climi/, /tropicale/, /arido/, /mediterraneo/, /temperato/, /altri climi prendono la lista più vicina, verificata sulla tua posizione/],
     de: [/vier Klimazonen/, /tropisch/, /arid/, /mediterran/, /gemäßigt/, /anderen Klimazonen leihen sich die nächstgelegene Liste, geprüft an deinem Standort/],
     nl: [/vier klimaten/, /tropisch/, /aride/, /mediterraan/, /gematigd/, /andere klimaten lenen de dichtstbijzijnde lijst, getoetst aan je locatie/],

@@ -334,6 +334,10 @@ test('verifyInstall: a stray file, a changed database, a missing photo and a bro
   writeFileSync(join(w.out, 'images', photo), JPEG);
   writeFileSync(join(w.out, index.files[0].file), gzipSync('x'));
   assert.throws(() => verifyInstall(w.out, index), /does not match the index's sha256/);
+  // A database Cloudflare would refuse (over 25 MiB) still fails, though its gzip size is only reported.
+  const huge = Buffer.concat([gzipSync('x'), randomBytes(25 * 1024 * 1024)]);
+  writeFileSync(join(w.out, index.files[0].file), huge);
+  assert.throws(() => verifyInstall(w.out, { ...index, files: [{ ...index.files[0], sha256: createHash('sha256').update(huge).digest('hex') }] }, { log: () => {} }), /over 25 MiB, which Cloudflare refuses/);
   assert.throws(() => verifyInstall(w.out, { ...index, images: { x: '/data/consortium/images/a.jpg' } }), /not a plant UUID/);
   assert.throws(() => verifyInstall(w.out, { ...index, release_id: 'r-1' }), /release_id "r-1"/);
   assert.throws(() => verifyInstall(w.out, { ...index, climate_grid_manifest_sha256: undefined }), /climate_grid_manifest_sha256/);
