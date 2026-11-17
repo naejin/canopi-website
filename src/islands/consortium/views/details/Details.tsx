@@ -25,7 +25,9 @@ import { Against } from './Against.tsx';
 import { doesWords, FitLine, JobIcon, say, sizeWords } from '../kit/fit.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
-import { INFO, WARN } from '../kit/icons.tsx';
+import { WARN } from '../kit/icons.tsx';
+// The not-checked and information mark beside its words (never alone): a circled i.
+const INFO = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 7.2v4" stroke="currentColor" stroke-width="1.6" /><circle cx="8" cy="5" r="0.9" fill="currentColor" /></svg>;
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
 import { later } from '../lazy.tsx';
