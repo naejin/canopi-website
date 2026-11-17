@@ -940,7 +940,7 @@
   "consortium.find.ask": "Chiedici di aggiungere «{q}»",
   "consortium.find.jobIs": "«{q}» è un ruolo",
   "consortium.find.jobShow": "one: Mostra questa # pianta | other: Mostra queste # piante",
-  "consortium.find.inYourPalette": "Nella tua tavolozza:",
+  "consortium.find.inYourPalette": "Nella tua tavolozza",
   "consortium.find.add": "Aggiungi",
   "consortium.find.added": "Aggiunta",
   "consortium.find.addName": "Aggiungi {name}",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "Invasività non valutata in: {country}. Nessuna fonte di questa versione copre quel paese.",
   "consortium.find.hiddenToxic": "one: # nascosta perché tossica | other: # nascoste perché tossiche",
   "consortium.find.hiddenInvasive": "one: # nascosta perché invasiva qui | other: # nascoste perché invasive qui",
+  "consortium.find.hiddenByFilters": "one: # nascosta dai tuoi filtri | other: # nascoste dai tuoi filtri",
+  "consortium.find.outsideHole": "one: # nella tua lista ma fuori da questo vuoto | other: # nella tua lista ma fuori da questo vuoto",
+  "consortium.find.show": "Mostra",
+  "consortium.find.clearShort": "Cancella",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

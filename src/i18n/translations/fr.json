@@ -940,7 +940,7 @@
   "consortium.find.ask": "Demandez-nous d’ajouter « {q} »",
   "consortium.find.jobIs": "« {q} » est un rôle",
   "consortium.find.jobShow": "one: Afficher cette # plante | other: Afficher ces # plantes",
-  "consortium.find.inYourPalette": "Dans votre palette :",
+  "consortium.find.inYourPalette": "Dans votre palette",
   "consortium.find.add": "Ajouter",
   "consortium.find.added": "Ajoutée",
   "consortium.find.addName": "Ajouter {name}",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "Caractère envahissant non évalué pour : {country}. Aucune source de cette version ne couvre ce pays.",
   "consortium.find.hiddenToxic": "one: # masquée comme toxique | other: # masquées comme toxiques",
   "consortium.find.hiddenInvasive": "one: # masquée comme envahissante ici | other: # masquées comme envahissantes ici",
+  "consortium.find.hiddenByFilters": "one: # masquée par vos filtres | other: # masquées par vos filtres",
+  "consortium.find.outsideHole": "one: # sur votre liste mais hors de ce trou | other: # sur votre liste mais hors de ce trou",
+  "consortium.find.show": "Afficher",
+  "consortium.find.clearShort": "Effacer",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

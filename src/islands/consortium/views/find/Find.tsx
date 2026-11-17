@@ -81,6 +81,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<FindFilters>({});
   const [foldOutside, setFoldOutside] = useState(!!hole);
+  // The hole's preset lifted ("N on your list but outside this hole · Show"): the whole list.
+  const [wide, setWide] = useState(false);
   const [select, setSelect] = useState(false);
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -104,9 +106,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The plants Find lists: a hole's fillers from the offer list (what the Next step's "See all N"
   // counts), else the climate's list; members at opening left out.
   const base = useMemo(() => {
-    const list = hole && fits ? (offer ?? []).filter(fits) : pool ?? [];
+    const list = hole && fits && !wide ? (offer ?? []).filter(fits) : pool ?? [];
     return list.filter((t) => !atOpen.has(t.id)).sort(order);
-  }, [pool, offer, hole, fits, atOpen, order]);
+  }, [pool, offer, hole, fits, wide, atOpen, order]);
   // How many of the listed plants do each job (board Find: "Feeds you 58").
   const jobCounts = useMemo(() => {
     const m = new Map<JobId, number>();
@@ -143,8 +145,12 @@ export default function Find({ Frame }: { Frame: Frame }) {
       const lists = p ? p.lists.filter((z) => z !== climate) : [];
       return p && lists.length ? [{ hit: h, plant: p, lists }] : [];
     }).slice(0, 8);
-    const inPalette = (hits ?? []).filter((h) => atOpen.has(h.id)).map((h) => h.id);
-    return { hitOf, groups, unknown, hidden, others, inPalette, count: rows.length };
+    // The hits kept out, each counted once with its way out (fix round 1, A1): in the palette (rows
+    // marked Added), hidden by the filters (Clear), on the list but outside the hole (Show).
+    const inPalette = (hits ?? []).filter((h) => atOpen.has(h.id)).map((h) => store.taxonOf(h.id)).filter((t): t is Taxon => !!t);
+    const byFilters = hits ? matched.length - rows.length : 0;
+    const outsideHole = hits ? hits.filter((h) => own.has(h.id) && !inList.has(h.id) && !atOpen.has(h.id)).length : 0;
+    return { hitOf, groups, unknown, hidden, others, inPalette, byFilters, outsideHole, count: rows.length };
   }, [base, hits, filters, judging, ctx, verdicts, warned, pool, members, climate, atOpen, releasePlants.value]);
 
   if (!climate) return null;
@@ -176,7 +182,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const { groups, unknown, hidden } = view;
   const outsideFolded = foldOutside && !q && groups.outside.length > 0 && (groups.fits.length + groups.look.length + groups.unchecked.length) > 0;
   const shown = (g: Group) => groups[g].length > 0 && !(g === 'outside' && outsideFolded);
-  const nothing = !!q && view.count === 0;
+  // Nothing answers at all: no plant of the release has the name (a hit kept out is counted instead).
+  const nothing = !!q && !hits?.length;
 
   const row = (t: Taxon) => {
     const h = view.hitOf.get(t.id), why = h ? whyWords(h) : null;
@@ -342,7 +349,16 @@ export default function Find({ Frame }: { Frame: Frame }) {
             </div>
           )}
           {view.inPalette.length > 0 && (
-            <p class="ct-find-inpalette"><strong>{T('find.inYourPalette')}</strong> {view.inPalette.map((id) => store.taxonOf(id)).filter((t): t is Taxon => !!t).map(nameOf).join(', ')}</p>
+            <section class="ct-find-group" data-find-inpalette="" aria-labelledby="ct-find-g-palette">
+              <h3 id="ct-find-g-palette">{T('find.inYourPalette')} <span class="ct-muted">{num(view.inPalette.length)}</span></h3>
+              <ul class="ct-rows">{view.inPalette.map(row)}</ul>
+            </section>
+          )}
+          {view.byFilters > 0 && (
+            <p class="ct-find-kept" data-find-hidden-filters="" data-count={view.byFilters}>{P('find.hiddenByFilters', view.byFilters)} · <button type="button" class="text-link" onClick={() => { setFilters({}); setFoldOutside(false); }}>{T('find.clearShort')}</button></p>
+          )}
+          {view.outsideHole > 0 && (
+            <p class="ct-find-kept" data-find-outside-hole="" data-count={view.outsideHole}>{P('find.outsideHole', view.outsideHole)} · <button type="button" class="text-link" onClick={() => setWide(true)}>{T('find.show')}</button></p>
           )}
           {!q && <p class="ct-muted ct-small">{P('find.count', view.count)}</p>}
           {nothing && job && !view.others.length ? (

@@ -940,7 +940,7 @@
   "consortium.find.ask": "Vraag ons ‘{q}’ toe te voegen",
   "consortium.find.jobIs": "‘{q}’ is een taak",
   "consortium.find.jobShow": "one: Deze # plant tonen | other: Deze # planten tonen",
-  "consortium.find.inYourPalette": "In je palet:",
+  "consortium.find.inYourPalette": "In je palet",
   "consortium.find.add": "Toevoegen",
   "consortium.find.added": "Toegevoegd",
   "consortium.find.addName": "{name} toevoegen",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "Invasiviteit niet beoordeeld voor: {country}. Geen bron in deze versie dekt dat land.",
   "consortium.find.hiddenToxic": "one: # verborgen als giftig | other: # verborgen als giftig",
   "consortium.find.hiddenInvasive": "one: # verborgen als hier invasief | other: # verborgen als hier invasief",
+  "consortium.find.hiddenByFilters": "one: # verborgen door je filters | other: # verborgen door je filters",
+  "consortium.find.outsideHole": "one: # op je lijst, maar buiten dit gat | other: # op je lijst, maar buiten dit gat",
+  "consortium.find.show": "Tonen",
+  "consortium.find.clearShort": "Wissen",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

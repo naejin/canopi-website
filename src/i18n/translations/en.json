@@ -940,7 +940,7 @@
   "consortium.find.ask": "Ask us to add “{q}”",
   "consortium.find.jobIs": "“{q}” is a job",
   "consortium.find.jobShow": "one: Show this # plant | other: Show these # plants",
-  "consortium.find.inYourPalette": "In your palette:",
+  "consortium.find.inYourPalette": "In your palette",
   "consortium.find.add": "Add",
   "consortium.find.added": "Added",
   "consortium.find.addName": "Add {name}",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "Invasiveness not assessed in {country}: no source in this release covers it.",
   "consortium.find.hiddenToxic": "one: # hidden as toxic | other: # hidden as toxic",
   "consortium.find.hiddenInvasive": "one: # hidden as invasive here | other: # hidden as invasive here",
+  "consortium.find.hiddenByFilters": "one: # hidden by your filters | other: # hidden by your filters",
+  "consortium.find.outsideHole": "one: # on your list but outside this hole | other: # on your list but outside this hole",
+  "consortium.find.show": "Show",
+  "consortium.find.clearShort": "Clear",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

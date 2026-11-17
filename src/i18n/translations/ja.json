@@ -940,7 +940,7 @@
   "consortium.find.ask": "「{q}」の追加を依頼する",
   "consortium.find.jobIs": "「{q}」は役割です",
   "consortium.find.jobShow": "other: この # 種を表示",
-  "consortium.find.inYourPalette": "パレットにあるもの：",
+  "consortium.find.inYourPalette": "パレットにあるもの",
   "consortium.find.add": "加える",
   "consortium.find.added": "追加済み",
   "consortium.find.addName": "{name}を加える",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "{country}での侵略性は未評価：このリリースにはその国を扱う出典がありません。",
   "consortium.find.hiddenToxic": "other: 有毒として # 種を非表示",
   "consortium.find.hiddenInvasive": "other: この地で侵略的として # 種を非表示",
+  "consortium.find.hiddenByFilters": "other: 絞り込みで # 種を非表示",
+  "consortium.find.outsideHole": "other: リストにあるが、この空きの外: # 種",
+  "consortium.find.show": "表示",
+  "consortium.find.clearShort": "クリア",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -147,7 +147,10 @@ test('PP-C2 (c1 no result): a query with no plant offers close spellings, the ot
   assert.ok(await has(page, `${FIND} [data-find-close]`, 2000), 'close spellings');
   // A plant only another climate's list holds (the fixture's okra: Tropical only) offers that list.
   await search(page, 'Abelmoschus esculentus');
-  assert.ok(await has(page, `${FIND} [data-find-none] [data-find-other]`, 4000), 'the other lists');
+  assert.ok(await has(page, `${FIND} [data-find-other]`, 4000), 'the other lists');
+  // Fix round 1, A1: the release holds it, so no "No plant answers" and no "Ask us to add".
+  assert.equal(await page.$(`${FIND} [data-find-none]`), null, 'a plant of another list is no "No plant answers"');
+  assert.equal(await page.$(`${FIND} a[data-find-ask]`), null, 'no "Ask us to add" for a plant the release holds');
   assert.match(await page.$eval(`${FIND} [data-find-other]`, (e) => e.textContent).catch(() => ''), /Tropical/, 'the other list named');
   await search(page, 'Zzyzx plantus');
   const ask = await page.$eval(`${FIND} a[data-find-ask]`, (a) => a.getAttribute('href')).catch(() => null);
@@ -390,4 +393,44 @@ test('PP-C c1 fix A8 (Paste, one index): Paste loads no other list on opening; a
   await page.click(`dialog[open] ${aria('button', en['consortium.addAnyway'])}`);
   assert.ok(await page.waitForFunction(() => { const { store } = window.__ctTest; return store.members.value.some((id) => store.guests.value[id] === 'Tropical'); }, { timeout: 6000 }).then(() => true, () => false), 'added as a guest of the Tropical list');
   assert.ok((await pools()).includes('Tropical'), 'the Tropical list loads on add');
+});
+
+// Fix round 1, A1 (review c1-02): "No plant answers" only when nothing answers at all; a hit the
+// filters, the hole or the palette keeps out is counted on one line with its way out, and the release
+// never gets "Ask us to add" for a plant it holds.
+test('PP-C c1 fix A1 (hits kept out are counted): in the palette, hidden by a filter, outside the hole: each said with its way out, never "No plant answers"', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const pick = await page.evaluate(() => {
+    const { store } = window.__ctTest, m = new Set(store.members.value);
+    const member = store.memberTaxa.value[0]?.canonical_name;
+    const plain = store.pool.value.find((t) => !m.has(t.id) && t.traits.edibility_rating === 0)?.canonical_name;
+    return { member, plain };
+  });
+  assert.ok(pick.member && pick.plain, 'a member and a plant with no edible part');
+  await openFind(page);
+  await hasFind(page);
+  await search(page, pick.member);
+  assert.equal(await page.$(`${FIND} [data-find-none]`), null, 'a member is no "No plant answers"');
+  assert.ok(await page.$(`${FIND} [data-find-inpalette] [data-find-row] [data-find-add][data-added]`), 'the member is a row marked Added, in the palette');
+  assert.equal(await page.$(`${FIND} a[data-find-ask]`), null, 'no "Ask us to add" for a plant the release holds');
+  await search(page, pick.plain);
+  await toggle(page, 'edible');
+  assert.equal(await page.$(`${FIND} [data-find-none]`), null, 'hidden by a filter is no "No plant answers"');
+  assert.equal(await page.$eval(`${FIND} [data-find-hidden-filters]`, (e) => Number(e.dataset.count)).catch(() => null), 1, '"1 hidden by your filters"');
+  await page.click(`${FIND} [data-find-hidden-filters] button`);
+  assert.ok(await has(page, `${FIND} [data-find-row]`, 2000), 'Clear shows it');
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  // A hole: a plant of the list that does not fill it.
+  await findFromHole(page);
+  const away = await page.evaluate(() => {
+    const { store } = window.__ctTest, { fits } = store.sheetTarget.value, m = new Set(store.members.value);
+    return store.pool.value.find((t) => !m.has(t.id) && !fits(t))?.canonical_name ?? null;
+  });
+  assert.ok(away, 'a plant outside the hole');
+  await search(page, away);
+  assert.equal(await page.$(`${FIND} [data-find-none]`), null, 'outside the hole is no "No plant answers"');
+  assert.equal(await page.$eval(`${FIND} [data-find-outside-hole]`, (e) => Number(e.dataset.count)).catch(() => null), 1, '"1 on your list but outside this hole"');
+  await page.click(`${FIND} [data-find-outside-hole] button`);
+  assert.ok(await page.waitForFunction((sel, n) => [...document.querySelectorAll(sel)].some((r) => r.textContent.includes(n)), { timeout: 2000 }, `${FIND} [data-find-row]`, away).then(() => true, () => false), 'Show lists it');
 });

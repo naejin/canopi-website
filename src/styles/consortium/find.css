@@ -45,7 +45,7 @@
 .ct .ct-find-add.is-added { background: var(--surface-alt); border-color: var(--text); }
 .ct .ct-find-why { color: var(--text); }
 .ct .ct-find-jobs { color: var(--text-secondary); }
-.ct .ct-find-inpalette { margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.ct .ct-find-kept { margin: 0; overflow-wrap: anywhere; }
 .ct .ct-find-none { display: grid; gap: 10px; padding: 14px 16px; border-radius: 8px; background: var(--surface-alt); }
 .ct .ct-find-none p { margin: 0; overflow-wrap: anywhere; }
 .ct .ct-find-none .ct-rows { border-top: 0; }

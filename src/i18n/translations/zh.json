@@ -940,7 +940,7 @@
   "consortium.find.ask": "请我们添加“{q}”",
   "consortium.find.jobIs": "“{q}”是一项作用",
   "consortium.find.jobShow": "other: 显示这 # 种植物",
-  "consortium.find.inYourPalette": "已在你的调色板中：",
+  "consortium.find.inYourPalette": "已在你的调色板中",
   "consortium.find.add": "添加",
   "consortium.find.added": "已添加",
   "consortium.find.addName": "添加{name}",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "未在{country}评估入侵性：本版本没有覆盖该国的来源。",
   "consortium.find.hiddenToxic": "other: 已隐藏 # 种有毒植物",
   "consortium.find.hiddenInvasive": "other: 已隐藏 # 种在此地有入侵记录的植物",
+  "consortium.find.hiddenByFilters": "other: # 种被你的筛选隐藏",
+  "consortium.find.outsideHole": "other: # 种在你的清单上，但不填补这个空缺",
+  "consortium.find.show": "显示",
+  "consortium.find.clearShort": "清除",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

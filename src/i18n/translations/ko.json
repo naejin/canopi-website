@@ -940,7 +940,7 @@
   "consortium.find.ask": "“{q}” 추가 요청하기",
   "consortium.find.jobIs": "“{q}”는 역할입니다",
   "consortium.find.jobShow": "other: 이 #종 보기",
-  "consortium.find.inYourPalette": "팔레트에 있음:",
+  "consortium.find.inYourPalette": "팔레트에 있음",
   "consortium.find.add": "추가",
   "consortium.find.added": "추가됨",
   "consortium.find.addName": "{name} 추가",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "{country}의 침입성은 평가되지 않음: 이 릴리스에는 그 나라를 다루는 출처가 없습니다.",
   "consortium.find.hiddenToxic": "other: 독성으로 #종 숨김",
   "consortium.find.hiddenInvasive": "other: 이곳에서 침입종으로 #종 숨김",
+  "consortium.find.hiddenByFilters": "other: 필터로 #종 숨김",
+  "consortium.find.outsideHole": "other: 목록에는 있지만 이 빈자리 밖: #종",
+  "consortium.find.show": "보기",
+  "consortium.find.clearShort": "지우기",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

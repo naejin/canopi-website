@@ -940,7 +940,7 @@
   "consortium.find.ask": "Попросить нас добавить «{q}»",
   "consortium.find.jobIs": "«{q}» — это задача",
   "consortium.find.jobShow": "one: Показать # растение | few: Показать эти # растения | many: Показать эти # растений | other: Показать эти # растения",
-  "consortium.find.inYourPalette": "В вашей палитре:",
+  "consortium.find.inYourPalette": "В вашей палитре",
   "consortium.find.add": "Добавить",
   "consortium.find.added": "Добавлено",
   "consortium.find.addName": "Добавить: {name}",
@@ -996,5 +996,9 @@
   "consortium.find.notChecked": "Инвазивность не оценена для страны: {country}. Ни один источник этого выпуска её не охватывает.",
   "consortium.find.hiddenToxic": "one: # скрыто как ядовитое | few: # скрыто как ядовитые | many: # скрыто как ядовитые | other: # скрыто как ядовитые",
   "consortium.find.hiddenInvasive": "one: # скрыто как инвазивное здесь | few: # скрыто как инвазивные здесь | many: # скрыто как инвазивные здесь | other: # скрыто как инвазивные здесь",
+  "consortium.find.hiddenByFilters": "one: # скрыто вашими фильтрами | few: # скрыто вашими фильтрами | many: # скрыто вашими фильтрами | other: # скрыто вашими фильтрами",
+  "consortium.find.outsideHole": "one: # в вашем списке, но вне этого пробела | few: # в вашем списке, но вне этого пробела | many: # в вашем списке, но вне этого пробела | other: # в вашем списке, но вне этого пробела",
+  "consortium.find.show": "Показать",
+  "consortium.find.clearShort": "Сбросить",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
