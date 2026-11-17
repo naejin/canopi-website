@@ -293,6 +293,28 @@ test('PP-C6b (c2 boards, fix round 1 C10 C14): Swap at 320 px scrolls nothing si
   assert.ok(await has(page, `${DETAILS} [data-cando] ${aria('button', 'Find one that holds')}`, 1000), 'What you can do');
 });
 
+// Review c2r5-01 (owner rule: a drawn value comes from data or is labelled): a disputed low's dashed
+// stretch ends where data puts it: the other source's value when a dispute row gives one, else a mark
+// the band draws (the place's dot or ring, or the tick where it is most often recorded); a firm range
+// never starts at an invented point.
+async function firmStartsOnData(page, id) {
+  const field = { tminCold: 'tmin_cold.low', tmeanYear: 'tmean_year.low' };
+  const valued = await page.evaluate(async (pid) => {
+    const { store } = window.__ctTest;
+    const d = await store.source.value.details(pid, store.climate.value, 'en').catch(() => ({ disputes: [] }));
+    return (d.disputes ?? []).filter((x) => x.value !== null && Number.isFinite(Number(x.value))).map((x) => x.field);
+  }, id);
+  const bands = await page.$$eval(`${DETAILS} [data-against] [data-measure]`, (els) => els.filter((e) => e.querySelector('[data-disputed]')).map((e) => {
+    const cx = (el) => { if (!el) return null; const b = el.getBBox(); return b.x + b.width / 2; };
+    return { m: e.dataset.measure, start: e.querySelector('.ct-bd-range').getBBox().x, marks: [cx(e.querySelector('.ct-bd-now-dot')), cx(e.querySelector('.ct-bd-later-dot')), cx(e.querySelector('.ct-bd-tick'))].filter((x) => x !== null) };
+  }));
+  for (const b of bands) {
+    if (valued.includes(field[b.m])) continue; // drawn to the dispute row's own value
+    assert.ok(b.marks.some((x) => Math.abs(x - b.start) < 0.6), `band ${b.m}: the firm range starts at a drawn data mark, not an invented point (${JSON.stringify(b)})`);
+  }
+  return bands.length;
+}
+
 // Fix round 4 V5 (Chrome N1): a conflict pill in the summary card says it as the board, in a few words
 // ("With Olive: a shared pest or disease (Xylella)"; the long advice stays in With your other plants),
 // and every pill wraps inside the card: nothing sideways at 390 px, no pill past the card on the desk.
@@ -320,6 +342,7 @@ test('PP-C6f (c2 fix round 4 V5): Seville, Almond beside Olive: the summary\'s c
       // Its disputed cold limit (TreeGOER stricter): the dashed stretch the board draws, "−8.2?" with a true minus.
       const cold = await page.$eval(`${DETAILS} [data-measure="tminCold"]`, (e) => ({ dashed: !!e.querySelector('[data-disputed]'), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent) }));
       assert.ok(cold.dashed && cold.nums.some((n) => /^\u2212\d+(\.\d+)?\?$/.test(n)), `the disputed low as the board (${JSON.stringify(cold)})`);
+      assert.ok(await firmStartsOnData(page, almond) > 0, 'a disputed band checked');
     }
     const long = await page.$eval(`${DETAILS} [data-more="pairs"] [data-conflict]`, (e) => e.textContent.trim()).catch(() => '');
     assert.ok(long.startsWith('With Olive:') && long.length > conflict.length, `the long words in With your other plants ("${long}")`);
@@ -346,7 +369,7 @@ test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one ban
     const box = (el) => (el ? el.getBBox() : null);
     const rect = box(e.querySelector('.ct-bd-range')), dashed = box(e.querySelector('[data-disputed]')), dot = box(e.querySelector('.ct-bd-now-dot'));
     const x0 = Math.min(rect.x, dashed ? dashed.x : Infinity);
-    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: rect.x + rect.width, dot: dot ? dot.x + dot.width / 2 : null, dashed: !!dashed, range: e.querySelector('[data-band-range]')?.textContent.trim() ?? null };
+    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: rect.x + rect.width, dot: dot ? dot.x + dot.width / 2 : null, dashed: !!dashed || !!e.querySelector('.ct-bd-end.is-dashed'), range: e.querySelector('[data-band-range]')?.textContent.trim() ?? null };
   }));
   // The soil card names where its range comes from (the trait's corrected-value source, else the catalogue).
   const soil = bands.find((b) => b.m === 'soilPh');
@@ -376,6 +399,7 @@ test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one ban
     }
   }
   assert.ok(checked > 0, 'a climate band compared with core');
+  await firmStartsOnData(page, id);
   assert.match(await page.$eval(`${DETAILS} [data-band-key]`, (e) => e.textContent), /where it is recorded growing.*your place today.*not a firm limit/s);
   const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
   assert.equal(sw[0], sw[1], 'Details at 320 px: nothing sideways');
