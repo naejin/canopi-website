@@ -158,17 +158,19 @@ export default function Correction({ drafts, fields, plantId, plantName, plantLa
         <label><input id="ct-corr-consent" type="checkbox" checked={form.consent} aria-invalid={!!err('consent')} aria-describedby={described('consent')} onChange={(e) => set('consent', (e.target as HTMLInputElement).checked)} /> <span>{T('correction.consent')}</span></label>
         {errorLine('consent')}
       </div>
-      <p class="ct-muted ct-small">{T('correction.context', { plant: plantLabel, release, climate: climateLabel, language: languageName(pageLang()) })}</p>
+      {/* What is sent, in full (board Correction): the reader's climate and the list it was placed from; never the location. */}
+      <p class="ct-muted ct-small" data-sent-with>{T('correction.context', { plant: plantLabel, release, climate: climateLabel, language: languageName(pageLang()) })}. {T('details.notLocation')}</p>
       <div class="ct-hp" aria-hidden="true">
         <label>{T('correction.honeypot')} <input type="text" tabIndex={-1} autocomplete="off" value={form.website} onInput={(e) => set('website', (e.target as HTMLInputElement).value)} /></label>
       </div>
+      {/* The board's order: what needs a look above the buttons, then Cancel and Send. */}
+      <p class={`ct-corr-status${status === 'failed' ? ' is-error' : ''}`} role="status">{status === 'sending' ? T('correction.sending') : message ? T(message) : ''}</p>
       <div class="ct-actions">
+        <button type="button" class="button button-secondary" onClick={() => { drafts.delete(plantId); onCancel(); }}>{T('correction.cancel')}</button>
         {offline
           ? <button type="submit" class="button button-primary">{T('correction.tryAgain')}</button>
           : <button type="submit" class="button button-primary" aria-disabled={status === 'sending' ? 'true' : undefined}>{T('correction.send')}</button>}
-        <button type="button" class="button button-secondary" onClick={() => { drafts.delete(plantId); onCancel(); }}>{T('correction.cancel')}</button>
       </div>
-      <p class={`ct-corr-status${status === 'failed' ? ' is-error' : ''}`} role="status">{status === 'sending' ? T('correction.sending') : message ? T(message) : ''}</p>
     </form>
   );
 }

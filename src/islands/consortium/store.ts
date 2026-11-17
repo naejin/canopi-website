@@ -4,7 +4,7 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import type { Alternative, ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
 import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadSuggest, loadVerdictRule, periodIds, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
@@ -207,7 +207,7 @@ export const offerPool = computed<Taxon[] | null>(() => {
 export const verdictRule = signal<VerdictRule | null>(null);
 export const verdictFailed = signal(false);
 const verdictEverFailed = signal(false);
-let verdictLoad: Promise<void> | null = null, verdictTries = 0;
+let verdictLoad: Promise<void> | null = null;
 // Its load always settles, so a pool read waiting for it (withRule) never fails with it.
 // Also called by the palette page once it shows (its fit lines and holes read the rule; without a
 // location every plant is "not checked"), and by main.ts beside the database download on a return
@@ -217,10 +217,15 @@ let verdictLoad: Promise<void> | null = null, verdictTries = 0;
 // starts (b1bg-1: a return visit's fetchAhead refused offline, then start()'s effect asks again once a
 // site climate arrives; meanwhile the count line checks and the waiting Suggest waits). Never once only
 // a reload can work (verdictNeedsReload): every caller, the mount-time ones included, then asks nothing.
+// The automatic asks (the location's climate, the palette page, the prefetch) load it; only the
+// reader's Try again (or the browser back online) counts as a retry (A8: an automatic second ask
+// after a failure is not one, so it never turns Try again into Reload).
 export function wantVerdict(): void {
+  loadVerdict(false);
+}
+function loadVerdict(retry: boolean): void {
   if (verdictLoad || verdictNeedsReload.peek()) return;
   verdictFailed.value = false;
-  const retry = verdictTries++ > 0;
   verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; verdictEverFailed.value = false; }, (err: unknown) => {
     console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
     verdictLoad = null;
@@ -234,7 +239,7 @@ export function wantVerdict(): void {
 }
 // The palette page's Try again (online) and the browser back online: the verdict chunk asked again,
 // in place, never a page reload (architecture 9).
-export const retryVerdict = (): void => wantVerdict();
+export const retryVerdict = (): void => loadVerdict(true);
 // Never a retry that cannot work (pre-push fix 4): the verdict chunk statically imports shared chunks,
 // and Chromium keeps a failed import of one for the page's life (retry-import.ts), so a retry under a
 // fresh URL may not load. The simple rule (fix round 1 A8): a retry that fails while the browser is
@@ -365,6 +370,19 @@ export const flagContext = computed<FlagContext>(() => {
     countryStatus: countryStatus(code, knownCountries.value),
   };
 });
+// The plants that could take a member's place (core suggest.ts alternatives through the suggestion's
+// chunk, store.suggestRule): those in range for the page period, then apart those outside it, ranked
+// on the page period's verdicts as Suggest reads them (b1br-5). null until the chunk and the list are
+// here. Swap lists them; Details shows the first ones inline ("What you can do", board DetailsDesk).
+export function alternativesFor(id: PlantId): { fit: Alternative[]; outside: Alternative[] } | null {
+  const algo = suggestRule.value, offer = offerPool.value;
+  if (!algo || !offer) return null;
+  const verdicts = poolVerdicts.value;
+  const away = new Set(offer.filter((x) => verdicts?.get(x.id)?.level === 'outside').map((x) => x.id));
+  const opts = { ...flagContext.value, removed: removed.value, verdicts };
+  const out = offer.filter((x) => away.has(x.id));
+  return { fit: algo.alternatives(id, memberTaxa.value, offer.filter((x) => !away.has(x.id)), opts), outside: out.length ? algo.alternatives(id, memberTaxa.value, out, opts) : [] };
+}
 // A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
 // but store.climate stays unset until the reader confirms.
 export const proposedClimate = signal<ClimateZone | null>(null);

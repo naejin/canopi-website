@@ -280,10 +280,36 @@ export function datasetLines(info: { rangesReview: string | null }): Line[] {
 // proper names, never translated; an id this table does not know is said as given (a view may pass a
 // label).
 const SOURCE_NAMES: Record<string, string> = {
-  pfaf: 'PFAF', griis: 'GRIIS', aspca: 'ASPCA', ncsu_plant_toolbox: 'NC State', treegoer_ranges: 'TreeGOER', treegoer: 'TreeGOER',
+  pfaf: 'PFAF', griis: 'GRIIS', gbif_occurrences: 'GBIF', gbif: 'GBIF', aspca: 'ASPCA', ncsu_plant_toolbox: 'NC State', treegoer_ranges: 'TreeGOER', treegoer: 'TreeGOER',
   merck_vet_manual: 'Merck Veterinary Manual', ecocrop: 'EcoCrop', es_catalogo: 'catálogo', atlas_aloctonas_es: 'MITECO Atlas 2004', wikidata: 'Wikidata',
 };
 const sourceName = (id: string): string => SOURCE_NAMES[id] ?? id;
+
+// The sources a plant's climate range cites (its records, then any limit taken from another source,
+// e.g. TreeGOER), by name, each once: Details lists them under Sources beside the details' own (C5).
+export function rangeSourceNames(t: Taxon): string[] {
+  const c = t.climate;
+  if (!c) return [];
+  const rows = [c.tminCold, c.tmaxWarm, c.tmeanYear, c.tmeanWarm, c.aridity];
+  const ids = [c.source, ...rows.flatMap((r) => (r ? [r.lowSource, r.highSource] : []))].filter((x): x is string => !!x);
+  return [...new Set(ids.map(sourceName))];
+}
+
+// How sure, per fact (C5, board DetailsMore "Sources and how sure we are"): where the jobs, layer and
+// years come from (the list, an estimate when borrowed), the climate range's records and sources (an
+// estimate), a limit whose sources disagree when Against says so and no dispute row says it, and the
+// data release.
+export function sureLines(t: Taxon, w: { list: string; estimate: boolean; disputeShown: boolean; release: string }): Line[] {
+  const out: Line[] = [D(w.estimate ? 'sureListEstimate' : 'sureList', { list: w.list })];
+  const c = t.climate;
+  if (!c) out.push(D('sureRangeNone'));
+  else {
+    out.push(c.cells === null ? D('sureRangeSources', { sources: rangeSourceNames(t).join(', ') }) : D('sureRange', { n: c.cells, sources: rangeSourceNames(t).join(', ') }));
+    if (!w.disputeShown && [c.tminCold, c.tmeanYear].some((r) => r?.weak)) out.push(D('sureDisputed'));
+  }
+  if (w.release) out.push(D('sureRelease', { release: w.release }));
+  return out;
+}
 
 // ---- disputes, audiences, corrected values, frost (schema 4; none changes a verdict, a filter or a
 // ranking: format note, decision 17) ----

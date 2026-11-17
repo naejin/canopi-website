@@ -77,7 +77,9 @@ function capped(): void {
   // the wait ends with Reload (R4 re-review); with the list still being read, it is checked again
   // after another wait (the load screen ends a failed list's wait).
   if (!store.suggestRule.peek()) {
-    if (listRead()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, suggestWaitMs());
+    // (Here the pool, not listRead: with the range rule held too the pool is still to come, and the wait
+    // goes on, E6-18; only the stalled verdict chunk alone, above, reads the list itself.)
+    if (store.pool.peek()) { dropSuggest(); reloadToast(); lateToast = store.toast.peek()?.id ?? null; } else cap = setTimeout(capped, suggestWaitMs());
   }
 }
 // "Suggest plants" (Place, the palette's next step): now when the plants are read, else once they are

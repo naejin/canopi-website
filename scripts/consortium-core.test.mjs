@@ -21,7 +21,7 @@ const {
   strata, phases,
 } = core;
 // The suggestion and the Swap list: their own chunk on the page (core loadSuggest), not in the barrel.
-const { suggest, SIZE_LIMIT, gain, alternatives, swapChange } = await import('../src/lib/consortium/suggest.ts');
+const { suggest, SIZE_LIMIT, gain, alternatives } = await import('../src/lib/consortium/suggest.ts');
 
 // ---- the fixture through the adapter ----
 const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
@@ -321,7 +321,7 @@ test('flags: a misfit and a high conflict warn (listed last); invasive, toxicity
   assert.ok(!flagsFor(robinia, [], { ...c, country: 'TW', countryStatus: 'unchecked' }).some((f) => f.kind === 'invasive'));
 });
 
-test('alternatives: "Also fills" and "Leaves empty" are the holes a swap changes (swapChange)', () => {
+test('alternatives: same stratum first, members and removed plants left out, warned candidates last', () => {
   const member = make({ stratum: 'low', start: 0, end: 2 });
   const other = make({ stratum: 'low', start: 2, end: 3 });
   const longer = make({ stratum: 'low', start: 1, end: 5 });
@@ -332,10 +332,8 @@ test('alternatives: "Also fills" and "Leaves empty" are the holes a swap changes
   assert.deepEqual(alts.map((a) => a.id), [longer.id, high.id], 'same stratum first; members and removed plants are not offered');
   const a = alts[0];
   assert.equal(a.sameStratum, true);
-  for (const x of alts) {
-    const change = swapChange({ members: [member, other], verdicts: null, pending: false }, member, pool.find((t) => t.id === x.id));
-    assert.deepEqual([x.fills, x.leaves, x.strataGain], [change.fills, change.leaves, change.strataGain], 'each row is the hole diff');
-  }
+  // The hole diff itself (swapChange, internal since c2 fix round 1 B7) is pinned through alternatives
+  // in consortium-pp-c2.test.mjs (u15, A1).
   assert.equal(alts[1].strataGain, true, 'high: a stratum no member stands in');
   // A candidate that warns (high conflict) comes after one that does not, with its flags.
   const walnut = T('Juglans regia'), malus = T('Malus domestica'), pear = T('Pyrus communis');

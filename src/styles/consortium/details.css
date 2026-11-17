@@ -49,7 +49,7 @@
 
 /* Photo and name */
 .ct .ct-photo { margin: -20px -24px 0; }
-.ct .ct-photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surface-alt); }
+.ct .ct-photo img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 1; object-fit: cover; background: var(--surface-alt); }
 .ct .ct-photo figcaption { padding: 6px 24px 0; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
 .ct .ct-d-name { display: grid; gap: 4px; }
 .ct .ct-marks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -212,3 +212,65 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct-row-note[data-later] { font-weight: 600; }
 .ct-print-fit { display: block; font-weight: 400; }
 .ct-print-fact { display: block; }
+
+/* Details (boards Details, DetailsMore, DetailsDesk; fix round 1 C7-C10, B1, B8). Phones: one column,
+   the photo a short strip so Against starts on the first screen, the summary card, Against, then the
+   closed sections; the sticky foot adds the plant. From 960px: a wide two-column dialog, the photo,
+   summary and "What you can do" on the left, Against on the right. */
+.ct .ct-d-body { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.ct .ct-d-left, .ct .ct-d-right { display: contents; }
+.ct .ct-d-left > .ct-photo { order: 1; }
+.ct .ct-d-summary { order: 2; }
+.ct .ct-d-right > .ct-against { order: 3; }
+.ct .ct-d-cando { order: 4; }
+.ct .ct-d-more { order: 5; display: grid; min-width: 0; }
+.ct .ct-d-summary, .ct .ct-d-cando { padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.ct .ct-d-jobs { display: flex; flex-wrap: wrap; gap: 4px 14px; font-weight: 600; }
+.ct .ct-d-jobs li { display: inline-flex; align-items: center; gap: 6px; }
+.ct .ct-d-summary > p { margin-top: 6px; }
+.ct .ct-d-cando { display: grid; gap: 10px; }
+.ct .ct-d-cando h3 { margin: 0; }
+.ct .ct-more { border-top: 1px solid var(--border); }
+.ct .ct-more:last-of-type { border-bottom: 1px solid var(--border); }
+.ct .ct-more > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; cursor: pointer; list-style: none; }
+.ct .ct-more > summary::-webkit-details-marker { display: none; }
+.ct .ct-more > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); flex: none; }
+.ct .ct-more[open] > summary::after { transform: rotate(-135deg); }
+.ct .ct-more > summary h3 { margin: 0; font-size: 17px; }
+.ct .ct-more > summary h3 .ct-muted { font-weight: 400; font-size: 15px; }
+.ct .ct-more > section { display: grid; gap: 10px; padding-bottom: 16px; }
+.ct .ct-more h4 { font-size: 15px; margin-top: 6px; }
+.ct .ct-d-more .ct-correct { margin-top: 16px; }
+/* Today's band per factor (aria-hidden; the line under it is its text form). */
+.ct .ct-band { position: relative; height: 34px; margin: 4px 0 2px; }
+.ct .ct-band::before { content: ""; position: absolute; left: 0; right: 0; top: 11px; border-top: 1px solid var(--border-strong); }
+.ct .ct-band-range { position: absolute; top: 6px; height: 10px; border: 1px solid var(--text-muted); border-radius: 3px; background: var(--border); }
+.ct .ct-band[data-few] .ct-band-range { border-style: dashed; background: transparent; }
+.ct .ct-band-place, .ct .ct-band-later { position: absolute; top: 5px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; }
+.ct .ct-band-place { background: var(--text); }
+.ct .ct-band-later { border: 2px solid var(--accent-ink); background: var(--surface); }
+.ct .ct-band-limit { position: absolute; top: 0; height: 22px; border-left: 2px dashed var(--accent-ink); }
+.ct .ct-band-num { position: absolute; top: 20px; transform: translateX(-50%); font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+/* Swap: the header's reason and jobs; it wraps at 320px (C14). */
+.ct .ct-swap-head { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-back-name { overflow-wrap: anywhere; min-width: 0; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-back { max-width: 100%; }
+.ct .ct-swap-foot { justify-content: flex-start; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body { grid-template-columns: minmax(0, 1fr); }
+.ct .ct-sheet:has(.ct-swap-head) .ct-row-why { overflow-wrap: anywhere; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body > p > .button { max-width: 100%; white-space: normal; text-align: start; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-rows > li { grid-template-columns: minmax(0, 1fr) auto; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-row-main .ct-bar { flex-wrap: wrap; max-width: 100%; }
+@media (min-width: 960px) {
+  .ct .ct-sheet:has(.ct-d-body) { inset: 40px 0 auto; margin-inline: auto; width: min(960px, calc(100% - 64px)); height: auto; max-height: calc(100% - 80px); border: 1px solid var(--border-strong); border-radius: 8px; }
+  .ct .ct-d-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; align-items: start; }
+  .ct .ct-d-body > .ct-d-left { display: grid; gap: 18px; grid-column: 1; grid-row: 1; min-width: 0; }
+  .ct .ct-d-body > .ct-d-right { display: block; grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
+  .ct .ct-d-body > .ct-d-more { grid-column: 1; grid-row: 2; }
+  .ct .ct-d-body .ct-photo { margin: 0; }
+  .ct .ct-d-body .ct-photo figcaption { padding-inline: 0; }
+}
+@media (max-width: 639px) {
+  .ct .ct-d-summary, .ct .ct-d-cando, .ct .ct-against { padding: 12px; }
+  .ct .ct-d-foot .button { flex: 1; justify-content: center; }
+}

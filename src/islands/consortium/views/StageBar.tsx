@@ -7,12 +7,13 @@
 // PP-C commit 0).
 import { computed } from '@preact/signals';
 import type { PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { guestOf, periodName, rowLines, scenarioName } from '../../../lib/consortium/index.ts';
+import { guestOf, periodName, rowLines, scenarioName, sizeLine } from '../../../lib/consortium/index.ts';
+import { formatLength } from '../format.ts';
 import { flags, laterVerdictOf, memberVerdicts, openSheet, scenario } from '../store.ts';
 import { FitLine, say } from './kit/fit.tsx';
 import { P, T, pageLang } from '../strings.ts';
 import { warningCounts } from './kit/phase.ts';
-import { collatorFor, listName, nameOf, type Order } from './kit/names.ts';
+import { collatorFor, listName, listOf, nameOf, type Order } from './kit/names.ts';
 import { WarnIcon } from './kit/icons.tsx';
 
 // Plants by their shown name, with the page language's one collator (kit/names.ts collatorFor).
@@ -30,6 +31,20 @@ export function RowNotes({ t, v }: { t: Taxon; v: PlantVerdict | null | undefine
   const later = laterVerdictOf(t, v);
   const words = { period: periodName, scenario: scenarioName(scenario.value), heightM: t.traits.height_m?.max ?? null };
   return <>{rowLines(v, later, words).map((e) => <> <span class={e.conf ? 'ct-term' : 'ct-row-note'} data-conf={e.conf} data-note={e.note} data-later={e.later ? '' : undefined}>{say(e.line)}</span></>)}</>;
+}
+
+// How many of the member's jobs a candidate does, naming the ones it does not (board Swap).
+export function doesWords(memberJobs: readonly string[], shared: readonly string[]): string {
+  const missing = memberJobs.filter((j) => !shared.includes(j)).map((j) => T(`job.${j}`));
+  if (!memberJobs.length || !missing.length) return T('swap.doesAll');
+  if (missing.length === memberJobs.length) return T('swap.doesNone', { missing: listOf(missing) });
+  return T('swap.doesSome', { n: shared.length, m: memberJobs.length, missing: listOf(missing) });
+}
+
+// A plant's size in words, its measures through format.ts (Your plants, Swap, Details).
+export function sizeWords(t: Taxon): string {
+  const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
+  return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, formatLength(Number(v), pageLang())])));
 }
 
 // A plant's marks (print's side drawing key): the guest's list, the warning count with its words, and

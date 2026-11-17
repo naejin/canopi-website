@@ -10,18 +10,20 @@
 // information; "not checked in {country}" is said once per view and in details, never as a chip; a
 // guest added from another climate's list is labelled "From the {climate} list"; pairings are
 // yield-gain field trials only (no companion folklore).
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, pairings, phaseOrd, placementZone, restLine, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, pairings, phaseOrd, placementZone, rangeSourceNames, restLine, siteIdOf, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
 import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../../data/consortium-guides.ts';
 import { Against } from './Against.tsx';
-import { say } from '../kit/fit.tsx';
+import { FitLine, JobIcon, say } from '../kit/fit.tsx';
+import { doesWords, sizeWords } from '../StageBar.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -37,6 +39,8 @@ const correction = later(retryableImport(() => import('../Correction.tsx'), (m) 
 // ---- words ----
 
 const lang = () => pageLang();
+// A language's own name ("Español", "中文"), for the names section.
+const ownName = (code: string) => { try { return new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code; } catch { return code; } };
 // A layer's name for a plant ("No layer yet" without one).
 const layerOf = (t: Taxon): string => (t.stratum ? layerName(t.stratum.value) : T('stratum.none'));
 const words = (): Words => ({ lang: lang(), T, climate: (z) => zoneName(z as ClimateZone), country: countryName, region: (r) => T(`region.${r}`), num });
@@ -176,15 +180,25 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const member = store.members.value.includes(id);
   const flags = store.flagsOfPlant(t), scene = store.flagScene.value;
   const lines = flagLines(t, flags, scene, { low: true });
-  const soft = [
+  const invasive = invasiveSoft(t, facts);
+  const scoped = invasive.filter((x) => x.scope);
+  // The invasive status said once (C9): the per-source lines when the country has them, else the flag's.
+  const warnLines = lines.filter((l) => l.kind !== 'invasive' || !scoped.length);
+  const unknownSoft = [
     ...unknownWords(t, scene.site),
-    ...invasiveSoft(t, facts).filter((x) => !x.scope).map((x) => x.text),
+    ...invasive.filter((x) => !x.scope).map((x) => x.text),
     ...(t.warnings.toxicity === null ? [T('d.toxUnk')] : []), // a recorded level is a flag line (kit/flags.ts), Slight too
+  ];
+  const soft = [
+    ...unknownSoft,
     T(t.warnings.allelopathic === true ? 'd.allelo' : t.warnings.allelopathic === false ? 'd.alleloNone' : 'd.alleloUnk'),
     ...(t.warnings.weed_potential === true ? [T('d.spreads')] : []),
   ];
+  const notAllChecked = t.warnings.toxicity === null || t.warnings.allelopathic === null || (facts?.invasiveIn ?? t.warnings.invasive_in) === null;
+  const hard = warnLines.filter((l) => l.kind !== 'soft');
   const others = store.memberTaxa.value.filter((o) => o.id !== id);
   const pairs = pairings(t, others, store.flagContext.value.interactions);
+  const conflictCount = warnLines.filter((l) => l.kind === 'conflict').length;
   const jobs = jobsOf(t);
   const traits = traitsOf(t, labels);
   const sourceLabel = (sid: string) => facts?.sources[sid]?.label ?? sid;
@@ -195,166 +209,207 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const photoHref = image ? safeHref(image.source_page_url) : null;
   const release = store.source.value?.info().releaseId ?? '';
   const s = spanOf(t);
+  const names = (Object.entries(t.names) as [Locale, string][]).filter(([, n]) => n);
+  // The list it is placed from, said once (C8): a guest's list, a borrowed placement's estimate, else
+  // the list of the climate; Correction sends the same ("Subtropical, placed as on the Tropical list").
+  const here = store.climate.value;
+  const listLine = guest ? T('details.fromList', { climate: zoneName(guest) }) : borrowed ? say(borrowedLine(borrowed)) : T('details.onList', { climate: zoneName(zone) });
+  const climateLabel = here && here !== zone ? T('details.climatePlaced', { climate: zoneName(here), list: zoneName(zone) }) : zoneName(zone);
+  const alts = member ? store.alternativesFor(id)?.fit.slice(0, 2) ?? [] : [];
+  const add = () => store.addMembers([id], guest ? { [id]: guest } : {}, { warned: warns(flags) ? [id] : [], text: T('palette.added', { name: nameOf(t) }) });
   const fields: CorrectionField[] = [
     ...traits.map((x) => ({ field: x.field, label: x.label, current: x.text === T('unknown') ? '' : x.text, raw: x.raw })),
     { field: 'stratum', label: T('correction.fieldLayer'), current: t.stratum ? layerOf(t) : '', raw: t.stratum?.value ?? null },
     { field: 'phases', label: T('correction.fieldTiming'), current: t.phases ? spanWords(t) : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
     { field: `names.${lang()}`, label: T('correction.fieldName'), current: t.names[lang() as Locale] ?? '', raw: t.names[lang() as Locale] ?? null },
   ];
+  // A closed section says what it holds (B8, board DetailsMore); Against stays open, outside them.
+  const More = ({ k, title, hint, children }: { k: string; title: string; hint?: string; children: ComponentChildren }) => (
+    <details class="ct-more" data-more={k}>
+      <summary><h3 id={`ct-d-${k}`}>{title}{hint && <span class="ct-muted"> {hint}</span>}</h3></summary>
+      <section aria-labelledby={`ct-d-${k}`}>{children}</section>
+    </details>
+  );
 
   return (
-    <Frame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerOf(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}>
-      {image && (
-        <figure class="ct-photo">
-          <img src={image.url} alt={T('details.photoAlt', { name: nameOf(t) })} loading="lazy" decoding="async" width={480} height={360} />
-          <figcaption>
-            {T('details.photo', { credit: [image.credit, image.licence].filter(Boolean).join(' · ') })}
-            {photoHref && <> · <a class="text-link" href={photoHref} rel="noopener">{T('details.photoSource')}</a></>}
-          </figcaption>
-        </figure>
-      )}
+    <Frame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerOf(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}
+      foot={member ? undefined : <div class="ct-add-bar ct-d-foot"><button type="button" class="button button-primary" data-add onClick={add}>{T('details.addToPalette')}</button></div>}>
       <div class="ct-d-name">
         <h2 id="ct-d-title" tabIndex={-1} data-autofocus>{nameOf(t)}</h2>
-        <p><i class="ct-sci">{t.canonical_name}</i>{t.family && <span class="ct-muted"> · {t.family}</span>}</p>
-        <p class="ct-marks">
-          {t.warnings.toxicity && t.warnings.toxicity.level !== 'None' && <span class="ct-flag" data-tox={t.warnings.toxicity.level}>{WARN}{T(`tox.${t.warnings.toxicity.level}`)}</span>}
-          {guest && <span class="ct-tag ct-tag-guest" data-from-list={guest}>{T('details.fromList', { climate: zoneName(guest) })}</span>}
-          {borrowed && <span class="ct-tag ct-tag-guest" data-from-list={borrowed} data-conf="estimate">{say(borrowedLine(borrowed))}</span>}
-          {lines.filter((l) => l.kind !== 'soft').length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', lines.filter((l) => l.kind !== 'soft').length)}</span>}
-        </p>
+        <p><i class="ct-sci">{t.canonical_name}</i> · <span data-from-list={guest ?? borrowed ?? zone} data-conf={borrowed ? 'estimate' : undefined}>{listLine}</span>{member && <span class="ct-muted"> · {T('details.inPalette')}</span>}</p>
       </div>
-
-      <Against t={t} />
-
-      <section class="ct-place" aria-labelledby="ct-d-place">
-        <h3 id="ct-d-place">{T('details.placedFor', { climate: zoneName(zone) })}</h3>
-        <p><strong>{layerOf(t)}</strong>{t.stratum && <> · {T(`stratum.${t.stratum.value}.needs`)}</>}</p>
-        <Bar taxon={t} />
-        <p>{spanWords(t)}</p>
-        {t.origin && <p class="ct-muted">{T('details.fromListNote')}</p>}
-      </section>
-
-      {member && (
-        <div class="ct-actions">
-          <button type="button" class="button button-secondary" onClick={() => openSheet('swap', id)}>{T('details.swap')}</button>
-          <button type="button" class="button button-secondary" onClick={() => { closeSheet(); removeMember(id); }}>{T('details.remove')}</button>
+      <div class="ct-d-body">
+        <div class="ct-d-left">
+          {image && (
+            <figure class="ct-photo">
+              <img src={image.url} alt={T('details.photoAlt', { name: nameOf(t) })} loading="lazy" decoding="async" width={480} height={160} />
+              <figcaption>
+                {T('details.photo', { credit: [image.credit, image.licence].filter(Boolean).join(' · ') })}
+                {photoHref && <> · <a class="text-link" href={photoHref} rel="noopener">{T('details.photoSource')}</a></>}
+              </figcaption>
+            </figure>
+          )}
+          <section class="ct-d-summary" aria-label={T('jobsHeading')} data-summary>
+            {jobs.length ? <ul class="ct-d-jobs">{jobs.map((j) => <li><JobIcon job={j} /> {T(`job.${j}`)}</li>)}</ul> : <p class="ct-muted">{T('d.jobsUnk')}</p>}
+            <p>{spanWords(t)} · {sizeWords(t)}</p>
+            <p class="ct-marks">
+              {t.warnings.toxicity && t.warnings.toxicity.level !== 'None' && <span class="ct-flag" data-tox={t.warnings.toxicity.level}>{WARN}{T(`tox.${t.warnings.toxicity.level}`)}</span>}
+              {t.warnings.toxicity === null && <span class="ct-tag" data-conf="not-checked">{T('details.toxUnkChip')}</span>}
+              {hard.length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', hard.length)}</span>}
+            </p>
+          </section>
+          {member && (
+            <section class="ct-d-cando" aria-labelledby="ct-d-cando" data-cando>
+              <h3 id="ct-d-cando">{T('details.canDo')}</h3>
+              {alts.length > 0 && (
+                <ul class="ct-rows">
+                  {alts.map((a) => {
+                    const x = taxonOf(a.id);
+                    return x && (
+                      <li data-swap-row>
+                        <div class="ct-row-main"><strong>{nameOf(x)}</strong> <i class="ct-sci">{x.canonical_name}</i></div>
+                        <button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => { closeSheet(); store.swapMember(id, x.id); }}>{T('details.swap')}</button>
+                        <div class="ct-row-why"><span>{doesWords(jobs, a.sharedJobs)}</span> <span class="ct-line"><FitLine v={store.poolVerdicts.value?.get(x.id) ?? null} /></span></div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div class="ct-actions">
+                <button type="button" class="button button-secondary" onClick={() => openSheet('swap', id)}>{T('details.findHolds')}</button>
+                <button type="button" class="ct-link-button" onClick={() => { closeSheet(); removeMember(id); }}>{T('details.remove')}</button>
+              </div>
+            </section>
+          )}
         </div>
-      )}
-
-      <section aria-labelledby="ct-d-why">
-        <h3 id="ct-d-why">{T('why')}</h3>
-        {borrowed && <p class="ct-muted" data-why-borrowed={siteIdOf(borrowed)}>{T(`estimate.from${borrowed}`)}</p>}
-        {!facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
-          : facts.reasons.length ? (
-            <ul class="ct-reasons">
-              {facts.reasons.map((r) => (
-                <li>
-                  <p><DataText text={r.text} /></p>
-                  <p class="ct-muted">{T('details.reasonFrom', { region: T(`region.${r.region}`) })} <SourceItem id={r.source} facts={facts} /></p>
-                </li>
-              ))}
-            </ul>
-          ) : <p class="ct-muted">{T('noSource')}</p>}
-      </section>
-
-      <section aria-labelledby="ct-d-jobs">
-        <h3 id="ct-d-jobs">{T('jobsHeading')}</h3>
-        {jobs.length ? <ul class="ct-chips">{jobs.map((j) => <li>{T(`job.${j}`)}</li>)}</ul> : <p class="ct-muted">{T('d.jobsUnk')}</p>}
-      </section>
-
-      <section aria-labelledby="ct-d-warn">
-        <h3 id="ct-d-warn">{T('withWarning')}</h3>
-        <ul class="ct-warnlist">
-          {lines.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-level={l.level}>{l.text}</li>)}
-          {invasiveSoft(t, facts).filter((x) => x.scope).map((x) => <li class="soft" data-invasive-scope={x.scope}>{x.text}</li>)}
-          {soft.map((x) => <li class="soft">{x}</li>)}
-        </ul>
-        <p class="ct-muted ct-small">{T('d.liab')}</p>
-      </section>
-
-      <section aria-labelledby="ct-d-pairs">
-        <h3 id="ct-d-pairs">{T('details.pairings')}</h3>
-        {pairs.length
-          ? <ul class="ct-oklist">{pairs.map((p) => <li>{T('details.pairing', { other: nameOf(p.other) })}</li>)}</ul>
-          : <p class="ct-muted">{T('details.noPairing')}</p>}
-      </section>
-
-      <section aria-labelledby="ct-d-traits">
-        <h3 id="ct-d-traits">{T('traits')}</h3>
-        <dl class="ct-traits">{traits.map((x) => <><dt>{x.label}</dt><dd>{x.text}</dd></>)}</dl>
-      </section>
-
-      {rows.length > 0 && (
-        <section aria-labelledby="ct-d-layers">
-          <h3 id="ct-d-layers">{T('details.layerValues')}</h3>
-          <dl class="ct-traits">
-            {rows.map((r) => (
-              <>
-                <dt>{r.label}</dt>
-                <dd>{r.values.map((v) => <div>{v.text} <span class="ct-muted ct-small">· {v.where}</span>{v.estimate && <span class="ct-est">{T('est.word')}</span>}</div>)}</dd>
-              </>
-            ))}
-          </dl>
-          {rows.some((r) => r.values.some((v) => v.estimate)) && <p class="ct-muted ct-small"><span class="ct-est">{T('est.word')}</span> {T('est.legend')}</p>}
-        </section>
-      )}
-
-      {elsewhere.length > 0 && (
-        <section aria-labelledby="ct-d-else">
-          <h3 id="ct-d-else">{T('details.otherClimates')}</h3>
-          <ul class="ct-plain">
-            {elsewhere.map(([z, p]) => (
-              <li>{T('details.otherPlacement', {
-                climate: zoneName(z as ClimateZone),
-                layer: p!.stratum ? T(`stratum.${p!.stratum}`) : T('stratum.none'),
-                span: p!.start && p!.end ? (p!.start === p!.end ? phasePlain(phaseOrd(p!.start)) : `${phasePlain(phaseOrd(p!.start))} → ${phasePlain(phaseOrd(p!.end))}`) : T('timingUnknown'),
-              })}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {guides.length > 0 && (
-        <section aria-labelledby="ct-d-guides">
-          <h3 id="ct-d-guides">{T('details.guides')}</h3>
-          <ul class="ct-plain">{guides.map((g) => <li><a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined} lang={g.titleLang ?? undefined}>{g.title}</a></li>)}</ul>
-        </section>
-      )}
-
-      <section aria-labelledby="ct-d-sure" data-sure>
-        <h3 id="ct-d-sure">{T('details.sure')}</h3>
-        {failed
-          ? <div data-details-failed>
+        <div class="ct-d-right">
+          <Against t={t} disputes={facts?.disputes ?? []} />
+        </div>
+        <div class="ct-d-more">
+          {/* A failed details query is said above the closed sections, where it is seen, with Try again (3.3). */}
+          {failed && (
+            <div data-details-failed>
               <p>{T('details.failed')}</p>
               <p><button type="button" class="button button-secondary" onClick={() => setAttempt((n) => n + 1)}>{T('details.tryAgain')}</button></p>
             </div>
-          : !facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
-          : <ul class="ct-plain ct-facts">
-              {factLines({ disputes: facts.disputes, audiences: facts.audiences, traitSources: facts.traitSources, shipped: shippedOf(t) }).map((l) => <FactItem l={l} />)}
-              {[frostLine(facts.frost, facts.frost !== null), restLine(facts.frost)].filter((l): l is Line => !!l).map((l) => <li data-frost>{say(l)}</li>)}
-              {datasetLines(store.source.value?.info() ?? { rangesReview: null }).map((l) => <li class="ct-muted">{say(l)}</li>)}
-            </ul>}
-      </section>
-
-      <section aria-labelledby="ct-d-sources">
-        <h3 id="ct-d-sources">{T('sources')}</h3>
-        {facts && Object.keys(facts.sources).length
-          ? <ul class="ct-sources">{Object.keys(facts.sources).map((sid) => <li><SourceItem id={sid} facts={facts} /></li>)}</ul>
-          : <p class="ct-muted">{facts ? T('noSource') : T('details.loading')}</p>}
-      </section>
-
-      {release && (
-        <section class="ct-correct" aria-labelledby="ct-corr-title">
-          <h3 id="ct-corr-title">{T('correction.title')}</h3>
-          {correcting
-            ? <correction.View drafts={drafts} fields={fields} plantId={id} plantName={t.canonical_name} plantLabel={nameOf(t)} release={release} climate={zone} climateLabel={zoneName(zone)} onCancel={() => setCorrecting(false)} focusFirst={byReader.current} />
-            : <>
-                <p class="ct-muted">{T('correction.lede')}</p>
-                <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button></p>
-              </>}
-        </section>
-      )}
-      <p class="ct-muted ct-small">{T('release', { id: release })}</p>
+          )}
+          <More k="jobs" title={T('details.secJobs')} hint={jobs.length ? P('details.secJobsCount', jobs.length) : undefined}>
+            {jobs.length ? <ul class="ct-chips">{jobs.map((j) => <li>{T(`job.${j}`)}</li>)}</ul> : <p class="ct-muted">{T('d.jobsUnk')}</p>}
+          </More>
+          <More k="light" title={T('details.secLight')}>
+            <p class="ct-muted" id="ct-d-place">{T('details.placedFor', { climate: zoneName(zone) })}</p>
+            <p><strong>{layerOf(t)}</strong>{t.stratum && <> · {T(`stratum.${t.stratum.value}.needs`)}</>}</p>
+            <Bar taxon={t} />
+            <p>{spanWords(t)}</p>
+            <h4>{T('traits')}</h4>
+            <dl class="ct-traits">{traits.map((x) => <><dt>{x.label}</dt><dd>{x.text}</dd></>)}</dl>
+            {rows.length > 0 && (
+              <>
+                <h4>{T('details.layerValues')}</h4>
+                <dl class="ct-traits">
+                  {rows.map((r) => (
+                    <>
+                      <dt>{r.label}</dt>
+                      <dd>{r.values.map((v) => <div>{v.text} <span class="ct-muted ct-small">· {v.where}</span>{v.estimate && <span class="ct-est">{T('est.word')}</span>}</div>)}</dd>
+                    </>
+                  ))}
+                </dl>
+                {rows.some((r) => r.values.some((v) => v.estimate)) && <p class="ct-muted ct-small"><span class="ct-est">{T('est.word')}</span> {T('est.legend')}</p>}
+              </>
+            )}
+            {elsewhere.length > 0 && (
+              <>
+                <h4>{T('details.otherClimates')}</h4>
+                <ul class="ct-plain">
+                  {elsewhere.map(([z, p]) => (
+                    <li>{T('details.otherPlacement', {
+                      climate: zoneName(z as ClimateZone),
+                      layer: p!.stratum ? T(`stratum.${p!.stratum}`) : T('stratum.none'),
+                      span: p!.start && p!.end ? (p!.start === p!.end ? phasePlain(phaseOrd(p!.start)) : `${phasePlain(phaseOrd(p!.start))} → ${phasePlain(phaseOrd(p!.end))}`) : T('timingUnknown'),
+                    })}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </More>
+          <More k="pairs" title={T('details.secOthers')} hint={conflictCount ? P('details.conflictCount', conflictCount) : T('details.noConflict')}>
+            {pairs.length
+              ? <ul class="ct-oklist">{pairs.map((p) => <li>{T('details.pairing', { other: nameOf(p.other) })}</li>)}</ul>
+              : <p class="ct-muted">{T('details.noPairing')}</p>}
+          </More>
+          <More k="warn" title={T('details.secWarnings')} hint={notAllChecked ? T('details.notAllChecked') : hard.length ? P('details.warnCount', hard.length) : undefined}>
+            <ul class="ct-warnlist">
+              {warnLines.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-level={l.level}>{l.text}</li>)}
+              {scoped.map((x) => <li class="soft" data-invasive-scope={x.scope}>{x.text}</li>)}
+              {soft.map((x) => <li class="soft">{x}</li>)}
+            </ul>
+            <p class="ct-muted ct-small">{T('d.liab')}</p>
+          </More>
+          {names.length > 0 && (
+            <More k="names" title={T('details.secNames')} hint={P('details.secNamesCount', names.length)}>
+              <dl class="ct-traits">
+                {names.map(([l, n]) => <><dt lang={l}>{ownName(l)}</dt><dd lang={l}>{n}</dd></>)}
+                <dt>{T('details.scientific')}</dt><dd><i class="ct-sci">{t.canonical_name}</i></dd>
+              </dl>
+            </More>
+          )}
+          <More k="why" title={T('why')}>
+            {borrowed && <p class="ct-muted" data-why-borrowed={siteIdOf(borrowed)}>{T(`estimate.from${borrowed}`)}</p>}
+            {!facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
+              : facts.reasons.length ? (
+                <ul class="ct-reasons">
+                  {facts.reasons.map((r) => (
+                    <li>
+                      <p><DataText text={r.text} /></p>
+                      <p class="ct-muted">{T('details.reasonFrom', { region: T(`region.${r.region}`) })} <SourceItem id={r.source} facts={facts} /></p>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p class="ct-muted">{T('noSource')}</p>}
+            {t.origin && <p class="ct-muted">{T('details.fromListNote')}</p>}
+            {guides.length > 0 && (
+              <>
+                <h4>{T('details.guides')}</h4>
+                <ul class="ct-plain">{guides.map((g) => <li><a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined} lang={g.titleLang ?? undefined}>{g.title}</a></li>)}</ul>
+              </>
+            )}
+          </More>
+          <More k="sure" title={T('details.secSources')}>
+            <div data-sure>
+              <h4>{T('details.sure')}</h4>
+              {failed
+                ? <p class="ct-muted">{T('details.failed')}</p>
+                : !facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
+                : <ul class="ct-plain ct-facts">
+                    {sureLines(t, { list: zoneName(zone), estimate: !!borrowed, disputeShown: (facts.disputes ?? []).some((d) => d.field === 'tmin_cold.low' || d.field === 'tmean_year.low'), release }).map((l) => <li data-sure-fact>{say(l)}</li>)}
+                    {factLines({ disputes: facts.disputes, audiences: facts.audiences, traitSources: facts.traitSources, shipped: shippedOf(t) }).map((l) => <FactItem l={l} />)}
+                    {[frostLine(facts.frost, facts.frost !== null), restLine(facts.frost)].filter((l): l is Line => !!l).map((l) => <li data-frost>{say(l)}</li>)}
+                    {datasetLines(store.source.value?.info() ?? { rangesReview: null }).map((l) => <li class="ct-muted">{say(l)}</li>)}
+                  </ul>}
+            </div>
+            <h4>{T('sources')}</h4>
+            {(() => {
+              const own = facts ? Object.keys(facts.sources) : [];
+              const labels = new Set(own.map(sourceLabel));
+              const range = rangeSourceNames(t).filter((n) => !labels.has(n));
+              return own.length || range.length
+                ? <ul class="ct-sources">{own.map((sid) => <li><SourceItem id={sid} facts={facts} /></li>)}{range.map((n) => <li data-range-source>{n}</li>)}</ul>
+                : <p class="ct-muted">{facts ? T('noSource') : T('details.loading')}</p>;
+            })()}
+          </More>
+          {release && (
+            <section class="ct-correct" aria-labelledby="ct-corr-title">
+              <h3 id="ct-corr-title">{T('correction.title')}</h3>
+              {correcting
+                ? <correction.View drafts={drafts} fields={fields} plantId={id} plantName={t.canonical_name} plantLabel={nameOf(t)} release={release} climate={zone} climateLabel={climateLabel} onCancel={() => setCorrecting(false)} focusFirst={byReader.current} />
+                : <>
+                    <p class="ct-muted">{T('correction.lede')}</p>
+                    <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button></p>
+                  </>}
+            </section>
+          )}
+        </div>
+      </div>
     </Frame>
   );
 }

@@ -256,3 +256,29 @@ test('PP-C21 (c2 invasive scope, 3.5 / schema 4.3): with Spain as the country, T
   assert.doesNotMatch(atlas, /regulated|legal/i, 'an atlas row is never a legal listing');
 });
 
+
+// Fix round 1 C10, C14 and the phone foot (owner 2026-11-17: as the boards): Swap fits at 320 px with
+// its header and Keep/Remove foot; Details of a plant not in the palette offers "Add to my palette" in
+// its sticky foot; from 960 px Details is two columns with Against on the right.
+test('PP-C fix C10 C14 (c2 boards): Swap at 320 px scrolls nothing sideways; Details adds from its foot; two columns from 960 px', async () => {
+  const page = await suggestedAt('nairobi', 'Subtropical');
+  const id = await firstMember(page);
+  await page.setViewport({ width: 320, height: 700 });
+  await page.evaluate((pid) => window.__ctTest.openSheet('swap', pid), id);
+  assert.ok(await has(page, `${DETAILS} [data-swap-head]`, 10_000), 'Swap\'s header');
+  await page.waitForFunction(() => document.querySelector('dialog.ct-sheet[open] [data-swap-row]'), { timeout: 10_000 });
+  const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
+  assert.equal(sw[0], sw[1], 'Swap at 320 px: nothing sideways');
+  assert.ok(await has(page, `${DETAILS} .ct-swap-foot ${aria('button', 'Remove it')}`, 1000), 'the foot removes it');
+  const other = await page.evaluate(() => { const { store } = window.__ctTest; return store.pool.value.find((t) => !store.members.value.includes(t.id)).id; });
+  await page.evaluate((pid) => window.__ctTest.openSheet('details', pid), other);
+  assert.ok(await has(page, `${DETAILS} .ct-d-foot ${aria('button', 'Add to my palette')}`, 6000), 'the foot adds it');
+  await page.click(`${DETAILS} .ct-d-foot [data-add]`);
+  assert.ok(await page.waitForFunction((pid) => window.__ctTest.store.members.value.includes(pid), { timeout: 4000 }, other).then(() => true, () => false), 'added');
+  await page.setViewport({ width: 1280, height: 1000 });
+  await page.evaluate((pid) => window.__ctTest.openSheet('details', pid), id);
+  await against(page);
+  const cols = await page.evaluate(() => { const d = document.querySelector('dialog.ct-sheet[open]'); const a = d.querySelector('[data-against]').getBoundingClientRect(), s = d.querySelector('[data-summary]').getBoundingClientRect(); return { right: a.left > s.right - 1, width: d.getBoundingClientRect().width }; });
+  assert.ok(cols.right && cols.width > 900, `two columns, Against on the right (${JSON.stringify(cols)})`);
+  assert.ok(await has(page, `${DETAILS} [data-cando] ${aria('button', 'Find one that holds')}`, 1000), 'What you can do');
+});

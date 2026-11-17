@@ -20,7 +20,7 @@
 // not invasive in the chosen country (checked), or, with none, invasive in no GRIIS country, is picked.
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a seeded
 // guest is a member like any other and counts for coverage, with its home placement.
-import type { Alternative, Fit, Hole, Interaction, JobId, PlantId, Site, Stratum, Taxon } from './types.ts';
+import type { Alternative, Fit, Flag, Hole, Interaction, JobId, PlantId, Site, Stratum, Taxon } from './types.ts';
 import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { fills, holes } from './holes.ts';
@@ -200,7 +200,7 @@ function swapBefore(ctx: HoleContext, out: Taxon): Hole[] {
   verdicts.delete(out.id);
   return openOf({ ...ctx, verdicts }, ctx.members);
 }
-export function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: readonly Hole[] = swapBefore(ctx, out)): SwapChange {
+function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: readonly Hole[] = swapBefore(ctx, out)): SwapChange {
   const others = ctx.members.filter((t) => t.id !== out.id);
   const after = openOf(ctx, [...others, inn]);
   const same = (h: Hole, hs: readonly Hole[]) => hs.filter((x) => laneOf(x) === laneOf(h));
@@ -217,6 +217,7 @@ export function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: rea
 // high conflict) before those that do, then same stratum, then fewer holes left open, more holes
 // filled, more hole-years closed (a hole narrowed), more jobs shared, higher gain, better known, by name. Current members, removed plants
 // and guests are not offered; plants that ask are listed with their flags (warn, never hide).
+const cautionOf = (flags: Flag[]): number => (warns(flags) ? 2 : flags.some((f) => f.kind === 'invasive' || f.kind === 'toxicity') ? 1 : 0);
 export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[], options: AlternativeOptions): Alternative[] {
   const member = members.find((t) => t.id === memberId) ?? pool.find((t) => t.id === memberId);
   if (!member) return [];
@@ -250,8 +251,10 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
         } satisfies Alternative,
       };
     });
+  // A clean candidate first, then one with a caution (invasive in the reader's country, toxic), then
+  // one with a warning (a site misfit, a serious conflict); each says why on its row (C12).
   out.sort((x, y) =>
-    Number(warns(x.alt.flags)) - Number(warns(y.alt.flags))
+    cautionOf(x.alt.flags) - cautionOf(y.alt.flags)
     || Number(y.alt.sameStratum) - Number(x.alt.sameStratum)
     || x.alt.leaves.length - y.alt.leaves.length
     || y.alt.fills.length - x.alt.fills.length

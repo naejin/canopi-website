@@ -213,7 +213,7 @@ test('P5-15b (S5c range lines in Details, page language): in French, a plant nea
   // Its edge term says so in French, and "How sure we are" says what the observed ranges include (the
   // dataset hedge, once per surface: PP-C c2 moved it off the edge mark).
   const edges = await page.$$eval('[data-against] [data-conf="edge"]', (els) => els.map((e) => e.textContent));
-  assert.ok(edges.some((t) => /en limite de son aire observée/.test(t)), `the edge term in French (${edges.join(' | ')})`);
+  assert.ok(edges.some((t) => /en limite de son aire observée/i.test(t)), `the edge term in French (${edges.join(' | ')})`);
   assert.ok(await page.waitForFunction(() => /cultures comprises/.test(document.querySelector('dialog[open] [data-sure]')?.textContent ?? ''), { timeout: 5000 }).then(() => true, () => false), 'Details says observed ranges include cultivation');
 });
 
@@ -545,7 +545,8 @@ test('P5-27r (S5c climate ranges, room advisory; PP-C commit 0): in a small gard
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.memberTaxa.value.some((t) => t.canonical_name === 'Juglans regia'), { timeout: 5000 }).then(() => true, () => false), `${width} px: added without asking`);
     await page.evaluate(() => { const { store } = window.__ctTest; store.closeSheet?.(); store.view.value = 'matrix'; });
     const listed = await page.waitForFunction(() => [...document.querySelectorAll('.ct-plants li')].find((li) => li.querySelector('i[lang="la"]')?.textContent === 'Juglans regia')?.querySelector('[data-note="room-tall"]')?.textContent ?? null, { timeout: 8000 }).then((r) => r.jsonValue(), () => null);
-    assert.match(listed ?? '', /^Grows to [\d.]+ m: keep it pruned/, `${width} px: Your plants lists the walnut with its height note`);
+    // The row's short form (verdict-line.ts rowLines, c2 fix round 1 A3); Details keeps the full sentence.
+    assert.match(listed ?? '', /^grows to [\d.]+ m: prune/, `${width} px: Your plants lists the walnut with its height note`);
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     assert.ok(over <= 0, `${width} px: no sideways scroll`);
     assert.deepEqual(page.thirdParty, []);

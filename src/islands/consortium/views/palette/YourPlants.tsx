@@ -12,13 +12,12 @@
 // there, never in the store: first run), which counts Things to weigh's plants not checked from them.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { PlantId, PlantRow, Taxon } from '../../../../lib/consortium/index.ts';
-import { moreLine, NEAREST_LISTS, sizeLine } from '../../../../lib/consortium/index.ts';
+import { moreLine, NEAREST_LISTS } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
-import { formatLength } from '../../format.ts';
-import { nameOf, pageLang, T } from '../../strings.ts';
+import { nameOf, T } from '../../strings.ts';
 import { FitLine, say } from '../kit/fit.tsx';
-import { RowNotes } from '../StageBar.tsx';
+import { RowNotes, sizeWords } from '../StageBar.tsx';
 import { zoneName } from '../kit/names.ts';
 import { flagLines } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -26,11 +25,6 @@ import { WARN } from '../kit/icons.tsx';
 // Rows shown before "+ N more" (the pictures' lane fold, PICTURE_LANE_MAX, is 12 too).
 const ROWS_MAX = 12;
 
-function sizeWords(t: Taxon): string {
-  const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
-  const len = (m: string | number) => formatLength(Number(m), pageLang());
-  return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, len(v)])));
-}
 
 function Remove({ id, name, onRemove }: { id: PlantId; name: string; onRemove: (id: PlantId) => void }) {
   return <button type="button" class="button button-secondary" aria-label={T('plants.removeName', { name })} onClick={() => onRemove(id)}>{T('plants.remove')}</button>;
