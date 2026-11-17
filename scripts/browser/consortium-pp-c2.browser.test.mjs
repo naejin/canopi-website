@@ -91,12 +91,12 @@ test('PP-C5 (c2 Mendoza dry edge): a plant at the dry edge shows its band, the p
   assert.match(first.text, /\d/, 'the band and the place\'s value in numbers');
 });
 
-test('PP-C6 (c2 Swap): Swap lists what each candidate also fills and leaves empty, with its fit line', async () => {
+test('PP-C6 (c2 Swap; fix round 2 K12): Swap says what each candidate fills and leaves empty, or that no gap changes, never both "none" lines, with its fit line', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.evaluate((id) => window.__ctTest.openSheet('swap', id), await firstMember(page));
   assert.ok(await has(page, `${DETAILS} [data-swap-row]`, 6000), 'Swap: no candidate rows (data-swap-row)');
-  const rows = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ fills: !!e.querySelector('[data-swap-fills]'), leaves: !!e.querySelector('[data-swap-leaves]'), fit: /\S/.test(e.querySelector('[data-conf], .ct-fit')?.textContent ?? '') })));
-  assert.ok(rows.every((r) => r.fills && r.leaves && r.fit), JSON.stringify(rows));
+  const rows = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ fills: !!e.querySelector('[data-swap-fills]'), leaves: !!e.querySelector('[data-swap-leaves]'), same: !!e.querySelector('[data-swap-gaps-same]'), fit: /\S/.test(e.querySelector('[data-conf], .ct-fit')?.textContent ?? '') })));
+  assert.ok(rows.every((r) => (r.fills || r.leaves) !== r.same && r.fit), JSON.stringify(rows));
 });
 
 // ---- failure states (3.1-3.6) ----
@@ -281,4 +281,66 @@ test('PP-C6b (c2 boards, fix round 1 C10 C14): Swap at 320 px scrolls nothing si
   const cols = await page.evaluate(() => { const d = document.querySelector('dialog.ct-sheet[open]'); const a = d.querySelector('[data-against]').getBoundingClientRect(), s = d.querySelector('[data-summary]').getBoundingClientRect(); return { right: a.left > s.right - 1, width: d.getBoundingClientRect().width }; });
   assert.ok(cols.right && cols.width > 900, `two columns, Against on the right (${JSON.stringify(cols)})`);
   assert.ok(await has(page, `${DETAILS} [data-cando] ${aria('button', 'Find one that holds')}`, 1000), 'What you can do');
+});
+
+// ---- fix round 2 (the boards, as the grower reads and does) ----
+
+// K2, K5, K8, K16, R5: one band per measure, each with its name and its status in words; a band never
+// numbers more than the two ends of its range and its numbers keep at most two decimals; nothing
+// scrolls sideways at 320 px; the key says the four marks in words.
+test('PP-C-r2 bands (c2 fix round 2 K2 K8 K16 R5): Details draws one band per measure, each named with its status in words, numbers at two decimals at most, the key in words; nothing sideways at 320 px', async () => {
+  const page = await suggestedAt('seville', 'Mediterranean');
+  await page.setViewport({ width: 320, height: 700 });
+  const id = await firstMember(page);
+  await details(page, id);
+  await against(page);
+  assert.ok(await has(page, `${DETAILS} [data-against] [data-measure]`, 6000), 'no band ([data-measure])');
+  const bands = await page.$$eval(`${DETAILS} [data-against] [data-measure]`, (els) => els.filter((e) => e.offsetParent).map((e) => ({ m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent) })));
+  assert.equal(new Set(bands.map((b) => b.m)).size, bands.length, `one band per measure (${bands.map((b) => b.m)})`);
+  for (const b of bands) {
+    assert.ok(b.title && b.status, `band ${b.m}: its name and status in words`);
+    assert.ok(b.nums.length <= 2 && b.nums.every((n) => !/[.,]\d{3}/.test(n)), `band ${b.m}: at most two ends, two decimals (${b.nums})`);
+  }
+  assert.match(await page.$eval(`${DETAILS} [data-band-key]`, (e) => e.textContent), /where it is recorded growing.*your place today.*not a firm limit/s);
+  const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
+  assert.equal(sw[0], sw[1], 'Details at 320 px: nothing sideways');
+});
+
+// R4, K15: on a phone the reading order is the page order (summary, Against, What you can do), and a
+// member's two actions stay in the sticky foot; the desk keeps them in What you can do.
+test('PP-C-r2 order (c2 fix round 2 R4 K15): on a phone the DOM order is the visual order and the foot holds Find one that holds; on the desk What you can do does', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.setViewport({ width: 390, height: 800 });
+  await details(page, await firstMember(page));
+  await against(page);
+  const order = await page.evaluate(() => [...document.querySelectorAll('dialog.ct-sheet[open] :is([data-summary], [data-against], [data-cando])')].map((e) => [e.matches('[data-summary]') ? 'summary' : e.matches('[data-against]') ? 'against' : 'cando', e.getBoundingClientRect().top]));
+  assert.deepEqual(order.map((x) => x[0]), ['summary', 'against', 'cando'], 'the DOM order');
+  assert.ok(order.every((x, i) => i === 0 || x[1] > order[i - 1][1]), `the visual order is the DOM order (${JSON.stringify(order)})`);
+  assert.ok(await has(page, `${DETAILS} .ct-sheet-foot ${aria('button', 'Find one that holds')}`, 1000), 'the phone foot holds Find one that holds');
+  await page.setViewport({ width: 1280, height: 1000 });
+  assert.ok(await has(page, `${DETAILS} [data-cando] ${aria('button', 'Find one that holds')}`, 2000), 'the desk: in What you can do');
+  assert.equal(await page.$eval(`${DETAILS} .ct-d-foot-member`, (e) => e.offsetParent === null), true, 'the desk: no member foot');
+});
+
+// K14, K19 and the board's Correction order (fix round 1 C15): "Tell us the name you use" opens the
+// form on this language's name; sending it empty says what needs a look in a box with its icon,
+// above Cancel, then Send.
+test('PP-C-r2 correction (c2 fix round 2 K14 K19, C15): the name link opens the form on the name; an empty send says what needs a look above Cancel, then Send', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const id = await page.evaluate(() => { const { store } = window.__ctTest; return store.members.value.find((m) => Object.values(store.taxonOf(m).names).filter(Boolean).length < 11) ?? null; });
+  assert.ok(id, 'a member with a language missing a name');
+  await page.setViewport({ width: 390, height: 800 });
+  await details(page, id);
+  await page.evaluate(() => document.querySelector('dialog.ct-sheet[open] details[data-more="names"]')?.setAttribute('open', ''));
+  await page.$eval(`${DETAILS} [data-tell-name]`, (e) => e.click());
+  await page.waitForSelector(`${DETAILS} #ct-corr-field`, { timeout: 6000 });
+  assert.equal(await page.$eval(`${DETAILS} #ct-corr-field`, (e) => e.value), 'names.en', 'the form opens on the English name');
+  assert.match(await page.$eval(`${DETAILS} .ct-corr`, (e) => e.querySelector('p').textContent), new RegExp(await page.$eval('#ct-d-title', (e) => e.textContent)), 'the form names the plant');
+  await page.click(`${DETAILS} .ct-corr button[type="submit"]`);
+  const box = await page.waitForSelector(`${DETAILS} .ct-corr-status.is-error`, { timeout: 3000 });
+  assert.ok(await box.$('svg'), 'the summary has its icon');
+  assert.match(await box.evaluate((e) => e.textContent), /need a look.*Tick this box/s, 'what needs a look, in words');
+  const buttons = await page.$$eval(`${DETAILS} .ct-corr .ct-actions button`, (els) => els.map((e) => e.textContent.trim()));
+  assert.deepEqual(buttons, ['Cancel', 'Send suggestion'], 'Cancel, then Send');
+  assert.ok(await page.$eval(`${DETAILS} .ct-corr`, (f) => !!(f.querySelector('.ct-corr-status').compareDocumentPosition(f.querySelector('.ct-actions')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'the summary above the buttons');
 });

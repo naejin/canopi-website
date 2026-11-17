@@ -16,7 +16,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, pairings, phaseOrd, placementZone, rangeSourceNames, restLine, siteIdOf, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, keepLine, locales, pairings, phaseOrd, placementZone, rangeSources, restLine, siteIdOf, sourceTitle, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
 import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
@@ -25,7 +25,7 @@ import { Against } from './Against.tsx';
 import { doesWords, FitLine, JobIcon, say, sizeWords } from '../kit/fit.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
-import { WARN } from '../kit/icons.tsx';
+import { INFO, WARN } from '../kit/icons.tsx';
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
 import { later } from '../lazy.tsx';
@@ -62,7 +62,7 @@ function labelsOf(): Promise<Labels> | null {
 interface Trait { field: string; label: string; text: string; raw: unknown }
 
 function traitsOf(t: Taxon, labels: Labels): Trait[] {
-  const tr = t.traits, unknown = T('unknown');
+  const tr = t.traits, unknown = T('details.notRecorded');
   // Water need is a site- and period-dependent fact (ADR-6): read through factAt, today's value.
   const water = factAt('water_need', t, store.location.value?.lookup ?? null, TODAY_PERIOD);
   const drought = water?.drought ?? null, moisture = water?.moisture ?? null;
@@ -97,7 +97,7 @@ function invasiveSoft(t: Taxon, facts: PlantFacts | null): Soft[] {
     .map((l) => ({ text: say(l), scope: typeof l.vars.sourceId === 'string' ? l.vars.sourceId : undefined }));
   if (list === null) return here.length ? here : [{ text: T('d.invUnk') }];
   const elsewhere = [...new Set(list.filter((r) => r.country !== code).map((r) => r.country))];
-  if (elsewhere.length) here.push({ text: P('details.invElse', elsewhere.length, { list: listOf(elsewhere.slice(0, 8).map(countryName)) + (elsewhere.length > 8 ? '…' : '') }) });
+  if (elsewhere.length) here.push({ text: P('details.invElse', elsewhere.length, { list: listOf([...elsewhere.slice(0, 8).map(countryName), ...(elsewhere.length > 8 ? [P('details.nMore', elsewhere.length - 8)] : [])]) }) });
   else if (!list.length && !code) here.push({ text: T('d.invNone') });
   return here;
 }
@@ -130,8 +130,22 @@ function guideLinks(t: Taxon): { url: string; title: string; titleLang: string |
 function SourceItem({ id, facts }: { id: string; facts: PlantFacts | null }) {
   const s = facts?.sources[id];
   if (!s) return <>{id}</>;
-  const href = safeHref(s.url);
-  return href ? <a class="text-link" href={href} rel="noopener">{s.label}</a> : <>{s.label}</>;
+  const href = safeHref(s.url), label = sourceTitle(id, s.label);
+  return href ? <a class="text-link" href={href} rel="noopener">{label}</a> : <>{label}</>;
+}
+
+// The desk layout (min-width 960px, the project's desktop breakpoint): Why, names and sources in one
+// section, as the board DetailsDesk; phones keep them apart (board DetailsMore).
+const DESK = '(min-width: 960px)';
+function useDesk(): boolean {
+  const [desk, setDesk] = useState(() => typeof matchMedia === 'function' && matchMedia(DESK).matches);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const m = matchMedia(DESK), on = () => setDesk(m.matches);
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return desk;
 }
 
 export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
@@ -147,6 +161,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // A plant with a draft (closed by Escape or the backdrop) opens with its form and text back.
   const [correcting, setCorrecting] = useState(() => drafts.has(id));
   const openButton = useRef<HTMLButtonElement>(null);
+  const desk = useDesk();
   const reopened = useRef(false);
   const byReader = useRef(false); // opened with the button (focus the form), not brought back with a draft
   useEffect(() => { if (!correcting && reopened.current) openButton.current?.focus(); reopened.current = correcting; }, [correcting]);
@@ -188,11 +203,9 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
     ...invasive.filter((x) => !x.scope).map((x) => x.text),
     ...(t.warnings.toxicity === null ? [T('d.toxUnk')] : []), // a recorded level is a flag line (kit/flags.ts), Slight too
   ];
-  const soft = [
-    ...unknownSoft,
-    T(t.warnings.allelopathic === true ? 'd.allelo' : t.warnings.allelopathic === false ? 'd.alleloNone' : 'd.alleloUnk'),
-    ...(t.warnings.weed_potential === true ? [T('d.spreads')] : []),
-  ];
+  const soft = [...unknownSoft, ...(t.warnings.weed_potential === true ? [T('d.spreads')] : [])];
+  // Whether it holds back neighbours is about its neighbours: said under With your other plants (K17).
+  const allelo = t.warnings.allelopathic;
   const notAllChecked = t.warnings.toxicity === null || t.warnings.allelopathic === null || (facts?.invasiveIn ?? t.warnings.invasive_in) === null;
   const hard = warnLines.filter((l) => l.kind !== 'soft');
   const others = store.memberTaxa.value.filter((o) => o.id !== id);
@@ -215,9 +228,23 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const listLine = guest ? T('details.fromList', { climate: zoneName(guest) }) : borrowed ? say(borrowedLine(borrowed)) : T('details.onList', { climate: zoneName(zone) });
   const climateLabel = here && here !== zone ? T('details.climatePlaced', { climate: zoneName(here), list: zoneName(zone) }) : zoneName(zone);
   const alts = member ? store.alternativesFor(id)?.fit.slice(0, 2) ?? [] : [];
+  const ownVerdict = member ? store.memberVerdicts.value?.get(id) ?? null : null;
+  const keep = member ? keepLine(store.laterVerdictOf(t, ownVerdict), new Date().getFullYear()) : null;
+  // What the summary's chips name: each warning in short words (K17), the toxicity not checked.
+  const chips = lines.filter((l) => l.kind !== 'soft');
+  const missingNames = locales.length - names.length;
+  // The sources of the jobs, layer and years: the reasons' own (How sure says them).
+  const listSources = [...new Set((facts?.reasons ?? []).map((r) => sourceTitle(r.source, facts?.sources[r.source]?.label ?? r.source)))];
+  // "Tell us the name you use": the correction opened on this page language's name.
+  const tellName = () => {
+    if (!drafts.has(id)) drafts.set(id, { field: `names.${lang()}`, proposed: '', note: '', email: '', consent: false, website: '' });
+    byReader.current = true;
+    setCorrecting(true);
+    requestAnimationFrame(() => document.getElementById('ct-corr-field')?.focus());
+  };
   const add = () => store.addMembers([id], guest ? { [id]: guest } : {}, { warned: warns(flags) ? [id] : [], text: T('palette.added', { name: nameOf(t) }) });
   const fields: CorrectionField[] = [
-    ...traits.map((x) => ({ field: x.field, label: x.label, current: x.text === T('unknown') ? '' : x.text, raw: x.raw })),
+    ...traits.map((x) => ({ field: x.field, label: x.label, current: x.text === T('details.notRecorded') ? '' : x.text, raw: x.raw })),
     { field: 'stratum', label: T('correction.fieldLayer'), current: t.stratum ? layerOf(t) : '', raw: t.stratum?.value ?? null },
     { field: 'phases', label: T('correction.fieldTiming'), current: t.phases ? spanWords(t) : '', raw: t.phases ? { start: t.phases.start, end: t.phases.end } : null },
     { field: `names.${lang()}`, label: T('correction.fieldName'), current: t.names[lang() as Locale] ?? '', raw: t.names[lang() as Locale] ?? null },
@@ -230,59 +257,133 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
     </details>
   );
 
+  const why = (
+    <>
+      {borrowed && <p class="ct-muted" data-why-borrowed={siteIdOf(borrowed)}>{T(`estimate.from${borrowed}`)}</p>}
+      {!facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
+        : facts.reasons.length ? (
+          <ul class="ct-reasons">
+            {facts.reasons.map((r) => (
+              <li>
+                <p><DataText text={r.text} /></p>
+                <p class="ct-muted">{T('details.reasonFrom', { region: T(`region.${r.region}`) })} <SourceItem id={r.source} facts={facts} /></p>
+              </li>
+            ))}
+          </ul>
+        ) : <p class="ct-muted">{T('noSource')}</p>}
+      {t.origin && <p class="ct-muted">{T('details.fromListNote')}</p>}
+      {guides.length > 0 && (
+        <>
+          <h4>{T('details.guides')}</h4>
+          <ul class="ct-plain">{guides.map((g) => <li><a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined} lang={g.titleLang ?? undefined}>{g.title}</a></li>)}</ul>
+        </>
+      )}
+    </>
+  );
+  const nameList = (
+    <>
+      <dl class="ct-traits">
+        {names.map(([l, n]) => <><dt lang={l}>{ownName(l)}</dt><dd lang={l}>{n}</dd></>)}
+        <dt>{T('details.scientific')}</dt><dd><i class="ct-sci">{t.canonical_name}</i></dd>
+      </dl>
+      {release && missingNames > 0 && <p class="ct-muted ct-small" data-names-missing>{P('details.namesMissing', missingNames)} <button type="button" class="ct-link-button" data-tell-name onClick={tellName}>{T('details.tellName')}</button></p>}
+    </>
+  );
+  const sources = (
+    <>
+      <div data-sure>
+        <h4>{T('details.sure')}</h4>
+        {failed
+          ? <p class="ct-muted">{T('details.failed')}</p>
+          : !facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
+          : <ul class="ct-plain ct-facts">
+              {sureLines(t, { list: zoneName(zone), estimate: !!borrowed, listSources, disputes: facts.disputes ?? [], release }).map((l) => <li data-sure-fact>{say(l)}</li>)}
+              {factLines({ disputes: facts.disputes, audiences: facts.audiences, traitSources: facts.traitSources, shipped: shippedOf(t) }).map((l) => <FactItem l={l} />)}
+              {[frostLine(facts.frost, facts.frost !== null), restLine(facts.frost)].filter((l): l is Line => !!l).map((l) => <li data-frost>{say(l)}</li>)}
+              {datasetLines(store.source.value?.info() ?? { rangesReview: null }).map((l) => <li class="ct-muted">{say(l)}</li>)}
+            </ul>}
+        <p class="ct-small" data-sure-legend><strong>{T('details.sureLegendHead')}</strong> {T('details.sureLegend')}</p>
+      </div>
+      <h4>{T('sources')}</h4>
+      {(() => {
+        const own = facts ? Object.keys(facts.sources) : [];
+        const range = rangeSources(t, facts?.disputes ?? []).filter((x) => !own.includes(x.id));
+        return own.length || range.length
+          ? <ul class="ct-sources">{own.map((sid) => <li><SourceItem id={sid} facts={facts} /></li>)}{range.map((x) => <li data-range-source>{x.name}</li>)}</ul>
+          : <p class="ct-muted">{facts ? T('noSource') : T('details.loading')}</p>;
+      })()}
+    </>
+  );
+  const findOne = () => openSheet('swap', id);
+  const remove = () => { closeSheet(); removeMember(id); };
+
   return (
     <Frame titleId="ct-d-title" class="ct-details" head={<span class="ct-muted">{layerOf(t)}{s ? ` · ${phasePlain(s.from)}` : ''}</span>}
-      foot={member ? undefined : <div class="ct-add-bar ct-d-foot"><button type="button" class="button button-primary" data-add onClick={add}>{T('details.addToPalette')}</button></div>}>
+      foot={member
+        // Phones: the member's two actions stay at hand (board Details foot); the desk has them in What you can do.
+        ? <div class="ct-add-bar ct-d-foot ct-d-foot-member"><button type="button" class="button button-secondary" onClick={findOne}>{T('details.findHolds')}</button><button type="button" class="ct-link-button" onClick={remove}>{T('details.remove')}</button></div>
+        : <div class="ct-add-bar ct-d-foot"><button type="button" class="button button-primary" data-add onClick={add}>{T('details.addToPalette')}</button></div>}>
       <div class="ct-d-name">
         <h2 id="ct-d-title" tabIndex={-1} data-autofocus>{nameOf(t)}</h2>
         <p><i class="ct-sci">{t.canonical_name}</i> · <span data-from-list={guest ?? borrowed ?? zone} data-conf={borrowed ? 'estimate' : undefined}>{listLine}</span>{member && <span class="ct-muted"> · {T('details.inPalette')}</span>}</p>
       </div>
+      {/* One order for eyes and keys (R4): photo, summary, Against, What you can do, the sections; the
+          desk places them in two columns (details.css), never by reordering. */}
       <div class="ct-d-body">
-        <div class="ct-d-left">
-          {image && (
-            <figure class="ct-photo">
-              <img src={image.url} alt={T('details.photoAlt', { name: nameOf(t) })} loading="lazy" decoding="async" width={480} height={160} />
-              <figcaption>
-                {T('details.photo', { credit: [image.credit, image.licence].filter(Boolean).join(' · ') })}
-                {photoHref && <> · <a class="text-link" href={photoHref} rel="noopener">{T('details.photoSource')}</a></>}
-              </figcaption>
-            </figure>
-          )}
-          <section class="ct-d-summary" aria-label={T('jobsHeading')} data-summary>
-            {jobs.length ? <ul class="ct-d-jobs">{jobs.map((j) => <li><JobIcon job={j} /> {T(`job.${j}`)}</li>)}</ul> : <p class="ct-muted">{T('d.jobsUnk')}</p>}
-            <p>{spanWords(t)} · {sizeWords(t)}</p>
-            <p class="ct-marks">
-              {t.warnings.toxicity && t.warnings.toxicity.level !== 'None' && <span class="ct-flag" data-tox={t.warnings.toxicity.level}>{WARN}{T(`tox.${t.warnings.toxicity.level}`)}</span>}
-              {t.warnings.toxicity === null && <span class="ct-tag" data-conf="not-checked">{T('details.toxUnkChip')}</span>}
-              {hard.length > 0 && <span class="ct-flag">{WARN}{P('details.warnCount', hard.length)}</span>}
-            </p>
+        {image && (
+          <figure class="ct-photo">
+            <img src={image.url} alt={T('details.photoAlt', { name: nameOf(t) })} loading="lazy" decoding="async" width={480} height={160} />
+            <figcaption>
+              {T('details.photo', { credit: [image.credit, image.licence].filter(Boolean).join(' · ') })}
+              {photoHref && <> · <a class="text-link" href={photoHref} rel="noopener">{T('details.photoSource')}</a></>}
+            </figcaption>
+          </figure>
+        )}
+        <section class="ct-d-summary" aria-label={T('jobsHeading')} data-summary>
+          {jobs.length
+            ? <p class="ct-d-main"><span class="ct-d-main-icons">{jobs.map((j) => <JobIcon job={j} />)}</span><span><strong>{T(`job.${jobs[0]}`)}.</strong>{jobs.length > 1 && <> {T('details.alsoJobs', { list: listOf(jobs.slice(1).map((j) => T(`job.${j}`))) })}</>}</span></p>
+            : <p class="ct-muted">{T('d.jobsUnk')}</p>}
+          <p class="ct-muted">{spanWords(t)} · {sizeWords(t)}</p>
+          <ul class="ct-marks">
+            {chips.map((l) => <li class="ct-flag" data-level={l.level ?? 'warning'} data-chip={l.kind}>{WARN}{l.chip ?? l.text}</li>)}
+            {t.warnings.toxicity === null && <li class="ct-tag" data-conf="not-checked">{INFO}{T('details.toxUnkChip')}</li>}
+          </ul>
+        </section>
+        <Against t={t} disputes={facts?.disputes ?? []} />
+        {member && (
+          <section class="ct-d-cando" aria-labelledby="ct-d-cando" data-cando>
+            <h3 id="ct-d-cando">{T('details.canDo')}</h3>
+            {alts.length > 0 && (
+              <ul class="ct-rows">
+                {alts.map((a) => {
+                  const x = taxonOf(a.id);
+                  const warn = x ? flagLines(x, a.flags, scene) : [];
+                  return x && (
+                    <li data-swap-row>
+                      <div class="ct-row-main"><strong>{nameOf(x)}</strong> <i class="ct-sci">{x.canonical_name}</i></div>
+                      <button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => { closeSheet(); store.swapMember(id, x.id); }}>{T('details.swap')}</button>
+                      <div class="ct-row-why">
+                        <span>{doesWords(jobs, a.sharedJobs)}</span> <span class="ct-line"><FitLine v={store.poolVerdicts.value?.get(x.id) ?? null} /></span>
+                        {/* Its warnings in words, as Swap's rows (warn, never hide; R2). */}
+                        {warn.length > 0 && <span class="ct-line ct-flag-line" data-swap-warn>{WARN} {warn.map((l) => l.text).join(' · ')}</span>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div class="ct-actions ct-d-cando-actions">
+              <button type="button" class="button button-secondary" onClick={findOne}>{T('details.findHolds')}</button>
+              <button type="button" class="button button-secondary" onClick={closeSheet}>{T('details.keepIt')}</button>
+              <button type="button" class="ct-link-button" onClick={remove}>{T('details.remove')}</button>
+            </div>
+            {keep && <p class="ct-muted ct-small" data-keep>{say(keep)}</p>}
           </section>
-          {member && (
-            <section class="ct-d-cando" aria-labelledby="ct-d-cando" data-cando>
-              <h3 id="ct-d-cando">{T('details.canDo')}</h3>
-              {alts.length > 0 && (
-                <ul class="ct-rows">
-                  {alts.map((a) => {
-                    const x = taxonOf(a.id);
-                    return x && (
-                      <li data-swap-row>
-                        <div class="ct-row-main"><strong>{nameOf(x)}</strong> <i class="ct-sci">{x.canonical_name}</i></div>
-                        <button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => { closeSheet(); store.swapMember(id, x.id); }}>{T('details.swap')}</button>
-                        <div class="ct-row-why"><span>{doesWords(jobs, a.sharedJobs)}</span> <span class="ct-line"><FitLine v={store.poolVerdicts.value?.get(x.id) ?? null} /></span></div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              <div class="ct-actions">
-                <button type="button" class="button button-secondary" onClick={() => openSheet('swap', id)}>{T('details.findHolds')}</button>
-                <button type="button" class="ct-link-button" onClick={() => { closeSheet(); removeMember(id); }}>{T('details.remove')}</button>
-              </div>
-            </section>
-          )}
-        </div>
-        <div class="ct-d-right">
-          <Against t={t} disputes={facts?.disputes ?? []} />
+        )}
+        {/* The desk's two lines under What you can do (board DetailsDesk); phones read them in the sections. */}
+        <div class="ct-d-desklines" data-desk-lines>
+          <p><span aria-hidden="true">✳ </span><strong>{T('details.soilCheck')}</strong> {traits.find((x) => x.field === 'soil_ph')!.text}</p>
+          <p><span aria-hidden="true">✳ </span><strong>{T('details.hardinessHead')}</strong> {traits.find((x) => x.field === 'hardiness_zone')!.text}</p>
         </div>
         <div class="ct-d-more">
           {/* A failed details query is said above the closed sections, where it is seen, with Try again (3.3). */}
@@ -293,11 +394,12 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             </div>
           )}
           <More k="jobs" title={T('details.secJobs')} hint={jobs.length ? P('details.secJobsCount', jobs.length) : undefined}>
-            {jobs.length ? <ul class="ct-chips">{jobs.map((j) => <li>{T(`job.${j}`)}</li>)}</ul> : <p class="ct-muted">{T('d.jobsUnk')}</p>}
+            {jobs.length
+              ? <ul class="ct-d-jobtiles">{jobs.map((j, i) => <li data-job-tile={j}><JobIcon job={j} /><div><strong>{T(`job.${j}`)}{i === 0 && jobs.length > 1 && <span> · {T('details.mainHere')}</span>}</strong><p class="ct-muted">{T(`details.jobDesc.${j}`)}</p></div></li>)}</ul>
+              : <p class="ct-muted">{T('d.jobsUnk')}</p>}
           </More>
           <More k="light" title={T('details.secLight')}>
-            <p class="ct-muted" id="ct-d-place">{T('details.placedFor', { climate: zoneName(zone) })}</p>
-            <p><strong>{layerOf(t)}</strong>{t.stratum && <> · {T(`stratum.${t.stratum.value}.needs`)}</>}</p>
+            <p><strong>{layerOf(t)}</strong></p>
             <Bar taxon={t} />
             <p>{spanWords(t)}</p>
             <h4>{T('traits')}</h4>
@@ -309,7 +411,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
                   {rows.map((r) => (
                     <>
                       <dt>{r.label}</dt>
-                      <dd>{r.values.map((v) => <div>{v.text} <span class="ct-muted ct-small">· {v.where}</span>{v.estimate && <span class="ct-est">{T('est.word')}</span>}</div>)}</dd>
+                      <dd>{r.values.map((v) => <div>{v.text} <span class="ct-muted ct-small">· {v.where}</span>{v.estimate && <> <span class="ct-est">{T('est.word')}</span></>}</div>)}</dd>
                     </>
                   ))}
                 </dl>
@@ -335,6 +437,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             {pairs.length
               ? <ul class="ct-oklist">{pairs.map((p) => <li>{T('details.pairing', { other: nameOf(p.other) })}</li>)}</ul>
               : <p class="ct-muted">{T('details.noPairing')}</p>}
+            <p class={allelo === true ? '' : 'ct-muted'} data-allelo>{allelo === true ? WARN : INFO} {T(allelo === true ? 'd.allelo' : allelo === false ? 'd.alleloNone' : 'd.alleloUnk')}</p>
           </More>
           <More k="warn" title={T('details.secWarnings')} hint={notAllChecked ? T('details.notAllChecked') : hard.length ? P('details.warnCount', hard.length) : undefined}>
             <ul class="ct-warnlist">
@@ -344,65 +447,20 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             </ul>
             <p class="ct-muted ct-small">{T('d.liab')}</p>
           </More>
-          {names.length > 0 && (
-            <More k="names" title={T('details.secNames')} hint={P('details.secNamesCount', names.length)}>
-              <dl class="ct-traits">
-                {names.map(([l, n]) => <><dt lang={l}>{ownName(l)}</dt><dd lang={l}>{n}</dd></>)}
-                <dt>{T('details.scientific')}</dt><dd><i class="ct-sci">{t.canonical_name}</i></dd>
-              </dl>
-            </More>
-          )}
-          <More k="why" title={T('why')}>
-            {borrowed && <p class="ct-muted" data-why-borrowed={siteIdOf(borrowed)}>{T(`estimate.from${borrowed}`)}</p>}
-            {!facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
-              : facts.reasons.length ? (
-                <ul class="ct-reasons">
-                  {facts.reasons.map((r) => (
-                    <li>
-                      <p><DataText text={r.text} /></p>
-                      <p class="ct-muted">{T('details.reasonFrom', { region: T(`region.${r.region}`) })} <SourceItem id={r.source} facts={facts} /></p>
-                    </li>
-                  ))}
-                </ul>
-              ) : <p class="ct-muted">{T('noSource')}</p>}
-            {t.origin && <p class="ct-muted">{T('details.fromListNote')}</p>}
-            {guides.length > 0 && (
-              <>
-                <h4>{T('details.guides')}</h4>
-                <ul class="ct-plain">{guides.map((g) => <li><a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined} lang={g.titleLang ?? undefined}>{g.title}</a></li>)}</ul>
-              </>
-            )}
-          </More>
-          <More k="sure" title={T('details.secSources')}>
-            <div data-sure>
-              <h4>{T('details.sure')}</h4>
-              {failed
-                ? <p class="ct-muted">{T('details.failed')}</p>
-                : !facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
-                : <ul class="ct-plain ct-facts">
-                    {sureLines(t, { list: zoneName(zone), estimate: !!borrowed, disputeShown: (facts.disputes ?? []).some((d) => d.field === 'tmin_cold.low' || d.field === 'tmean_year.low'), release }).map((l) => <li data-sure-fact>{say(l)}</li>)}
-                    {factLines({ disputes: facts.disputes, audiences: facts.audiences, traitSources: facts.traitSources, shipped: shippedOf(t) }).map((l) => <FactItem l={l} />)}
-                    {[frostLine(facts.frost, facts.frost !== null), restLine(facts.frost)].filter((l): l is Line => !!l).map((l) => <li data-frost>{say(l)}</li>)}
-                    {datasetLines(store.source.value?.info() ?? { rangesReview: null }).map((l) => <li class="ct-muted">{say(l)}</li>)}
-                  </ul>}
-            </div>
-            <h4>{T('sources')}</h4>
-            {(() => {
-              const own = facts ? Object.keys(facts.sources) : [];
-              const labels = new Set(own.map(sourceLabel));
-              const range = rangeSourceNames(t).filter((n) => !labels.has(n));
-              return own.length || range.length
-                ? <ul class="ct-sources">{own.map((sid) => <li><SourceItem id={sid} facts={facts} /></li>)}{range.map((n) => <li data-range-source>{n}</li>)}</ul>
-                : <p class="ct-muted">{facts ? T('noSource') : T('details.loading')}</p>;
-            })()}
-          </More>
+          {desk
+            ? <More k="why" title={T('details.secWhyAll')}>{why}{names.length > 0 && <><h4>{T('details.secNames')}</h4>{nameList}</>}<h4>{T('details.secSources')}</h4>{sources}</More>
+            : <>
+                {names.length > 0 && <More k="names" title={T('details.secNames')} hint={P('details.secNamesCount', names.length)}>{nameList}</More>}
+                <More k="why" title={T('why')}>{why}</More>
+                <More k="sure" title={T('details.secSources')}>{sources}</More>
+              </>}
           {release && (
             <section class="ct-correct" aria-labelledby="ct-corr-title">
               <h3 id="ct-corr-title">{T('correction.title')}</h3>
               {correcting
                 ? <correction.View drafts={drafts} fields={fields} plantId={id} plantName={t.canonical_name} plantLabel={nameOf(t)} release={release} climate={zone} climateLabel={climateLabel} onCancel={() => setCorrecting(false)} focusFirst={byReader.current} />
                 : <>
-                    <p class="ct-muted">{T('correction.lede')}</p>
+                    <p class="ct-muted"><strong>{nameOf(t)}</strong> · {T('correction.lede')}</p>
                     <p><button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button></p>
                   </>}
             </section>

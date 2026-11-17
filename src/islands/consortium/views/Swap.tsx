@@ -84,8 +84,10 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
           <span data-swap-does>{doesWords(memberJobs, a.sharedJobs)} · {spanWords(x)}</span>
           <span class="ct-line" data-swap-size>{sizeWords(x)}</span>
           <span class="ct-line" data-conf={v ? undefined : 'not-checked'}><FitLine v={v} known={far ? 'outside' : undefined} />{v && <RowNotes t={x} v={v} />}</span>
-          <span class="ct-line" data-swap-fills>{a.fills.length ? <strong>{T('swap.fills', { list: holeList(a.fills) })}</strong> : T('details.swapFillsNone')}</span>
-          <span class="ct-line" data-swap-leaves>{a.leaves.length ? <strong>{T('swap.leaves', { list: holeList(a.leaves) })}</strong> : T('details.swapLeavesNone')}</span>
+          {/* What changes in the palette's gaps, said once (K12): what it fills, what it leaves empty, or that none change. */}
+          {a.fills.length > 0 && <span class="ct-line" data-swap-fills><strong>{T('swap.fills', { list: holeList(a.fills) })}</strong></span>}
+          {a.leaves.length > 0 && <span class="ct-line" data-swap-leaves><strong>{T('swap.leaves', { list: holeList(a.leaves) })}</strong></span>}
+          {!a.fills.length && !a.leaves.length && <span class="ct-line" data-swap-gaps-same>{T('details.swapGapsSame')}</span>}
           {a.strataGain && <span class="ct-line" data-swap-layer>{T('details.swapNewLayer')}</span>}
           {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
         </div>
@@ -106,9 +108,9 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <h2 id="ct-sw-title" tabIndex={-1} data-autofocus>{T('swap.title', { name: nameOf(t) })}</h2>
         <p class="ct-muted">{borrowed && list ? T('swap.ledeBorrowed', { list: zoneName(list) }) : T('swap.lede')}</p>
         <div class="ct-swap-head" data-swap-head>
-          {why.length > 0
-            ? why.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.text}</span>)
-            : own && own.level !== 'fits' ? <FitLine v={own} /> : null}
+          {/* Why one might swap it (K12): its warnings, and its fit with the cause when it is not a plain fit. */}
+          {why.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.text}</span>)}
+          {own && own.level !== 'fits' && <FitLine v={own} head />}
           <span>{memberJobs.length ? T('swap.headJobs', { jobs: listOf(memberJobs.map((j) => T(`job.${j}`))), span: spanWords(t) }) : T('swap.headNoJobs', { span: spanWords(t) })}</span>
         </div>
         <NotChecked ctx={store.flagContext.value} />
