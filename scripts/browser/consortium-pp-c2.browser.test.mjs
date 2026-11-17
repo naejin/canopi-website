@@ -260,7 +260,7 @@ test('PP-C21 (c2 invasive scope, 3.5 / schema 4.3): with Spain as the country, T
 // Fix round 1 C10, C14 and the phone foot (owner 2026-11-17: as the boards): Swap fits at 320 px with
 // its header and Keep/Remove foot; Details of a plant not in the palette offers "Add to my palette" in
 // its sticky foot; from 960 px Details is two columns with Against on the right.
-test('PP-C fix C10 C14 (c2 boards): Swap at 320 px scrolls nothing sideways; Details adds from its foot; two columns from 960 px', async () => {
+test('PP-C6b (c2 boards, fix round 1 C10 C14): Swap at 320 px scrolls nothing sideways; Details adds from its foot; two columns from 960 px', async () => {
   const page = await suggestedAt('nairobi', 'Subtropical');
   const id = await firstMember(page);
   await page.setViewport({ width: 320, height: 700 });
