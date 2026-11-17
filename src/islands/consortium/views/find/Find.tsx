@@ -323,18 +323,20 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // names) and the other lists' rows; the count line, the status and "Show N plants" all say it.
   const paletteRows = q || paletteOpen ? view.inPalette.length : 0;
   const shownCount = count(filters) + paletteRows + view.others.length;
-  // What fits the place, the outside plants left out even when a search shows them (T14): the fit
-  // choice's "Fits your place" and the subtitle say it.
-  const fitsCount = (f: FindFilters, list = matched) => count(f, 'fits', list, true);
+  // What fits the place: the plants judged to fit or to need a second look, never an outside or an
+  // unchecked one (a later period without figures, a plant without a range: c1r4 U3); the fit choice's
+  // "Fits your place" and the subtitle say it.
+  const fitsCount = (f: FindFilters, list = matched) => applyFilters(list, { ...f, range: false }, ctx).rows
+    .filter((t) => { const l = verdicts?.get(t.id)?.level; return l === 'fits' || l === 'look'; }).length;
 
   const title = hole ? holeWords(hole) : T('find.title');
   // The subtitle (board Find, B4, K3, T14): how many of the plants not yet in the palette fit the place,
   // the number the fit choice says with no filter; in a hole, how many fill it and fit, the number its
-  // count line says. The start lists the jobs as chips; no list until the grower searches, picks a job,
-  // sets a filter or asks for the list. (The board's "Your palette lacks N holes" needs the holes in a
+  // count line says; none judged to fit (nothing checked), the plain count (c1r4 U3). The start lists
+  // the jobs as chips; no list until the grower searches, picks a job, sets a filter or asks for it. (The board's "Your palette lacks N holes" needs the holes in a
   // store computed: sheet chunks never import holes.ts; a seam for pf.)
   const later = store.period.value !== periodIds[0], fitsHere = fitsCount({}, base);
-  const subtitle = !verdicts ? P('find.lede', base.length, { list: listName(climate) })
+  const subtitle = !verdicts || !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
     : hole ? P('find.holeLede', fitsHere, { list: listName(climate) })
       : P(later ? 'find.fitCountLater' : 'find.fitCount', fitsHere, { total: num(base.length), list: listName(climate), period: periodWords(store.period.value) });
   const start = !q && !hole && onCount === 0 && !listed;

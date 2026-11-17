@@ -754,6 +754,28 @@ test('PP-C51 (c1 r3 T2+T12+T13+T16): Paste: Read the list, choices with their sc
   assert.ok(chips.filter((c) => c !== 'None').every((c) => sci.some((s) => c.endsWith(s))), `each choice names its scientific name (${chips.join(' | ')})`);
 });
 
+// c1r4 U3: a later period with no climate figures for the place leaves every plant unchecked: Find never
+// says they fit ("N of N fit your place in 2071–2099"); its subtitle is the plain count. (As PP-B1: the
+// lookup keeps only an SSP5-8.5 slot, so the page's SSP2-4.5 has none for any period.)
+test('PP-C54 (c1 r4 U3): a later period without figures: the plain subtitle, no plant said to fit', async () => {
+  const page = await tool();
+  const lookup = await atSite(page, 'seville');
+  await choose(page, 'Mediterranean');
+  await page.evaluate((lk) => {
+    const { store } = window.__ctTest;
+    store.location.value = { ...store.location.value, lookup: { ...lk, climate: { ...lk.climate, periods: lk.climate.periods.filter((p) => p.period === '2071-2099' && p.scenario === 'ssp585') } } };
+    store.period.value = '2071-2099';
+  }, lookup);
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await openFind(page);
+  await hasFind(page);
+  const sub = await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent.trim());
+  assert.match(sub, /^\d+ plants on .+ not yet in your palette$/, `the plain count (${sub})`);
+  assert.doesNotMatch(sub, /fit/, 'no plant said to fit');
+  const fits = await page.$eval(`${FIND} [data-filter="fits"]`, (i) => i.closest('label').textContent);
+  assert.match(fits, /\b0 plants/, `"Fits your place" counts none of the unchecked plants (${fits})`);
+});
+
 // c1r4 U4 + U6 (Chrome T21): a close spelling says how it was read wherever the plant is: on another
 // climate's list (with the question mark, "Add anyway" adds that reading) and already in the palette.
 test('PP-C53 (c1 r4 U4+U6): Paste: "rosmary" on another list and "chesnut" already in the palette say "Read as …"', async () => {
