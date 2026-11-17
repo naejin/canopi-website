@@ -288,7 +288,7 @@ test('PP-C6b (c2 boards, fix round 1 C10 C14): Swap at 320 px scrolls nothing si
 // K2, K5, K8, K16, R5: one band per measure, each with its name and its status in words; a band never
 // numbers more than the two ends of its range and its numbers keep at most two decimals; nothing
 // scrolls sideways at 320 px; the key says the four marks in words.
-test('PP-C-r2 bands (c2 fix round 2 K2 K8 K16 R5): Details draws one band per measure, each named with its status in words, numbers at two decimals at most, the key in words; nothing sideways at 320 px', async () => {
+test('PP-C6c (c2 fix round 2 K2 K8 K16 R5): Details draws one band per measure, each named with its status in words, numbers at two decimals at most, the key in words; nothing sideways at 320 px', async () => {
   const page = await suggestedAt('seville', 'Mediterranean');
   await page.setViewport({ width: 320, height: 700 });
   const id = await firstMember(page);
@@ -308,7 +308,7 @@ test('PP-C-r2 bands (c2 fix round 2 K2 K8 K16 R5): Details draws one band per me
 
 // R4, K15: on a phone the reading order is the page order (summary, Against, What you can do), and a
 // member's two actions stay in the sticky foot; the desk keeps them in What you can do.
-test('PP-C-r2 order (c2 fix round 2 R4 K15): on a phone the DOM order is the visual order and the foot holds Find one that holds; on the desk What you can do does', async () => {
+test('PP-C6d (c2 fix round 2 R4 K15): on a phone the DOM order is the visual order and the foot holds Find one that holds; on the desk What you can do does', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.setViewport({ width: 390, height: 800 });
   await details(page, await firstMember(page));
@@ -325,7 +325,7 @@ test('PP-C-r2 order (c2 fix round 2 R4 K15): on a phone the DOM order is the vis
 // K14, K19 and the board's Correction order (fix round 1 C15): "Tell us the name you use" opens the
 // form on this language's name; sending it empty says what needs a look in a box with its icon,
 // above Cancel, then Send.
-test('PP-C-r2 correction (c2 fix round 2 K14 K19, C15): the name link opens the form on the name; an empty send says what needs a look above Cancel, then Send', async () => {
+test('PP-C6e (c2 fix round 2 K14 K19, C15): the name link opens the form on the name; an empty send says what needs a look above Cancel, then Send', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const id = await page.evaluate(() => { const { store } = window.__ctTest; return store.members.value.find((m) => Object.values(store.taxonOf(m).names).filter(Boolean).length < 11) ?? null; });
   assert.ok(id, 'a member with a language missing a name');
