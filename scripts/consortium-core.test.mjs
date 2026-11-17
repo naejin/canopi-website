@@ -321,7 +321,7 @@ test('flags: a misfit and a high conflict warn (listed last); invasive, toxicity
   assert.ok(!flagsFor(robinia, [], { ...c, country: 'TW', countryStatus: 'unchecked' }).some((f) => f.kind === 'invasive'));
 });
 
-test('alternatives: same stratum first, members and removed plants left out, warned candidates last', () => {
+test('alternatives: the closest in years first, members and removed plants left out, warned candidates last', () => {
   const member = make({ stratum: 'low', start: 0, end: 2 });
   const other = make({ stratum: 'low', start: 2, end: 3 });
   const longer = make({ stratum: 'low', start: 1, end: 5 });
@@ -329,9 +329,7 @@ test('alternatives: same stratum first, members and removed plants left out, war
   const removed = make({ stratum: 'low', start: 0, end: 6 });
   const pool = [member, other, longer, high, removed];
   const alts = alternatives(member.id, [member, other], pool, { ...ctx(), removed: [removed.id] });
-  assert.deepEqual(alts.map((a) => a.id), [longer.id, high.id], 'same stratum first; members and removed plants are not offered');
-  const a = alts[0];
-  assert.equal(a.sameStratum, true);
+  assert.deepEqual(alts.map((a) => a.id), [longer.id, high.id], 'the one covering more years first; members and removed plants are not offered');
   // The hole diff itself (swapChange, internal since c2 fix round 1 B7) is pinned through alternatives
   // in consortium-pp-c2.test.mjs (u15, A1).
   assert.equal(alts[1].strataGain, true, 'high: a stratum no member stands in');

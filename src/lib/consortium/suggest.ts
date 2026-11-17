@@ -213,10 +213,13 @@ function swapChange(ctx: HoleContext, out: Taxon, inn: Taxon, before: readonly H
   };
 }
 
-// Plants of the climate that could take a member's place: plants that do not ask (no site misfit or
-// high conflict) before those that do, then same stratum, then fewer holes left open, more holes
-// filled, more hole-years closed (a hole narrowed), more jobs shared, higher gain, better known, by name. Current members, removed plants
-// and guests are not offered; plants that ask are listed with their flags (warn, never hide).
+// Plants of the climate that could take a member's place, the closest first (board Swap: "The closest
+// in jobs and years first"): a plant taller than the room after those that fit it (pots or a balcony
+// never offer a 58 m tree as a fit; its row says its size), then clean before a caution (invasive in
+// the reader's country, toxic) before a warning (a site misfit, a serious conflict), then more of the
+// member's jobs, more hole-years closed (the years it covers), fewer holes left open, more holes
+// filled, better known, by name. Current members, removed plants and guests are not offered; plants
+// that ask are listed with their flags (warn, never hide): Swap and Details show this order as it is.
 const cautionOf = (flags: Flag[]): number => (warns(flags) ? 2 : flags.some((f) => f.kind === 'invasive' || f.kind === 'toxicity') ? 1 : 0);
 export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[], options: AlternativeOptions): Alternative[] {
   const member = members.find((t) => t.id === memberId) ?? pool.find((t) => t.id === memberId);
@@ -225,8 +228,6 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
   const inConsortium = new Set([...members.map((t) => t.id), memberId]);
   const removedIds = new Set(options.removed ?? []);
   const others = members.filter((t) => t.id !== memberId);
-  const otherInfos = others.map((t) => infoOf(t, site));
-  const cov = coverageOf(otherInfos, options.verdicts ?? null);
   const mInfo = infoOf(member, site);
   const memberJobs = new Set(mInfo.jobs);
   const holeCtx: HoleContext = { members, verdicts: options.verdicts ?? null, pending: false };
@@ -239,10 +240,9 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
       return {
         taxon: t,
         years: change.years,
-        gain: tenths(i, cov).total,
+        tall: tallerThanRoom(i.fit),
         alt: {
           id: t.id,
-          sameStratum: mInfo.stratum !== null && i.stratum === mInfo.stratum,
           fills: change.fills,
           leaves: change.leaves,
           strataGain: change.strataGain,
@@ -251,16 +251,13 @@ export function alternatives(memberId: PlantId, members: Taxon[], pool: Taxon[],
         } satisfies Alternative,
       };
     });
-  // A clean candidate first, then one with a caution (invasive in the reader's country, toxic), then
-  // one with a warning (a site misfit, a serious conflict); each says why on its row (C12).
   out.sort((x, y) =>
-    cautionOf(x.alt.flags) - cautionOf(y.alt.flags)
-    || Number(y.alt.sameStratum) - Number(x.alt.sameStratum)
+    Number(x.tall) - Number(y.tall)
+    || cautionOf(x.alt.flags) - cautionOf(y.alt.flags)
+    || y.alt.sharedJobs.length - x.alt.sharedJobs.length
+    || y.years - x.years
     || x.alt.leaves.length - y.alt.leaves.length
     || y.alt.fills.length - x.alt.fills.length
-    || y.years - x.years
-    || y.alt.sharedJobs.length - x.alt.sharedJobs.length
-    || y.gain - x.gain
     || byKnownThenName(x.taxon, y.taxon));
   return out.map((x) => x.alt);
 }

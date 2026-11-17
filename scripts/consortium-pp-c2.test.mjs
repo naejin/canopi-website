@@ -523,6 +523,32 @@ test('c2 fix C12: a candidate with a caution (toxic, invasive here) ranks after 
   assert.ok(alts[1].flags.some((f) => f.kind === 'toxicity'), 'the toxic one says why');
 });
 
+// Fix round 2 R3 + K3 + K13 (board Swap: "The closest in jobs and years first"): Swap and Details show
+// core's one order. A candidate doing more of the member's jobs comes before one that only fills other
+// holes (Murphey agave: Quince, which feeds you as it does, before Antelope bitterbrush); then the
+// years it covers; warned ones after the clean ones; in pots a plant taller than the room comes last.
+test('c2 fix R3 + K3 + K13 (Swap order): closest in jobs, then years; clean before a caution; taller than the room last', async () => {
+  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const fn = (...fs) => fs.map((f) => ({ function: f, method: 'recorded', sources: [] }));
+  const t = (n, over = {}) => taxon({ id: `00000000-c2c2-4000-8000-0000000004${n}`, canonical_name: `Plantus ${n}`, role: 'support', stratum: { value: 'medium', sources: [] }, phases: { start: 'placenta_iii', end: 'secondary_ii', sources: [] }, functions: null, climate: null, ...over });
+  const agave = t(10, { canonical_name: 'Agave murpheyi', role: 'crop', functions: fn('pollinator_forage') });
+  const quince = t(11, { canonical_name: 'Cydonia oblonga', role: 'crop', functions: fn('pollinator_forage') });
+  const bitterbrush = t(12, { canonical_name: 'Purshia tridentata', stratum: { value: 'low', sources: [] }, functions: fn('nitrogen_fixer', 'ground_cover', 'wildlife_habitat') });
+  const longer = t(13, { canonical_name: 'Cydonia longa', role: 'crop', functions: fn('pollinator_forage'), phases: { start: 'placenta_iii', end: 'climax', sources: [] } });
+  const toxic = t(14, { canonical_name: 'Toxicus', role: 'crop', functions: fn('pollinator_forage'), warnings: { ...taxon({}).warnings, toxicity: { level: 'Severe', sources: [] } } });
+  const site = core.siteFor(core.emptyPlace, null);
+  const ids = (alts) => alts.map((a) => a.id);
+  const order = alternatives(agave.id, [agave], [bitterbrush, toxic, quince, longer], { site, interactions: [] });
+  assert.deepEqual(ids(order), [longer.id, quince.id, bitterbrush.id, toxic.id], 'jobs, then years among the clean ones; a warned one after them (warnings after, board Swap)');
+  // Pots: a plant taller than the room is offered last, whatever it does.
+  const pots = core.siteFor({ ...core.emptyPlace, room: 'pots' }, null);
+  const tall = { ...longer, traits: { height_m: { min: null, max: 58 } } };
+  assert.deepEqual(ids(alternatives(agave.id, [agave], [tall, bitterbrush, quince], { site: pots, interactions: [] })), [quince.id, bitterbrush.id, tall.id]);
+  // Its row says its size against the room in words, never "keep it pruned".
+  for (const k of ['noteRoomTall', 'rowRoomTall']) assert.doesNotMatch(en[`consortium.line.${k}`], /prune/i, k);
+});
+
 test('c2 fix C5: Sources names every range source (GBIF, TreeGOER) once; How sure says the list, the records, a disputed limit and the release', () => {
   const range = (o = {}) => ({ low: 1, median: 5, high: 10, count: 9, basis: 'gbif', blocks: null, lowSource: null, highSource: null, weak: false, ...o });
   const t = { climate: { source: 'gbif_occurrences', tminCold: range({ lowSource: 'treegoer_ranges', weak: true }), tmaxWarm: range(), tmeanYear: null, tmeanWarm: null, aridity: null, cells: 872, nativeShare: null } };

@@ -1,8 +1,7 @@
 /** @jsxImportSource preact */
 // Swap (stream S3; boards Swap and DetailsDesk): the plants of the climate's list that could take a
-// member's place (store.alternativesFor over core suggest.ts `alternatives`: clean ones first, then
-// those with a caution, then those with a warning, each saying why; then the same layer, what they
-// leave empty and also fill, the years they cover). The header says why one might swap (the member's
+// member's place, in core's one order (store.alternativesFor over core suggest.ts `alternatives`: the
+// closest in jobs and years first, warned ones after, each saying why; shown as it comes). The header says why one might swap (the member's
 // warnings or its fit) and the jobs it does; each candidate says how many of those jobs it does and
 // names the ones it does not ("Does 3 of its 4 jobs (no mulch)"), its size, its fit and row notes
 // (room, later loss), and what it does to the palette's holes. The foot keeps the member or removes
@@ -19,17 +18,17 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { Alternative, Hole, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf } from '../../../lib/consortium/index.ts';
+import { jobsOf, placementZone } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { FitLine, holeWords } from './kit/fit.tsx';
-import { listOf, nameOf, spanWords } from './kit/names.ts';
+import { listOf, nameOf, spanWords, zoneName } from './kit/names.ts';
 import { doesWords, RowNotes, sizeWords } from './StageBar.tsx';
 import { LoadFailed } from './lazy.tsx';
 import { suggestWaitMs } from '../state/suggest-wait.ts';
 const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
 
-const SHOWN = { fit: 7, last: 2 };
+const SHOWN = 9;
 
 export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const t = taxonOf(id);
@@ -59,9 +58,8 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
-  // Clean candidates, then those that say a caution or a warning (order only; nothing asks).
-  const fit = alts.filter((a) => !a.flags.length), last = alts.filter((a) => a.flags.length);
-  const shown = all ? alts : [...fit.slice(0, SHOWN.fit), ...last.slice(0, SHOWN.last)];
+  // Core's order as it is (closest first, warned ones after; nothing asks).
+  const shown = all ? alts : alts.slice(0, SHOWN);
   const memberJobs = jobsOf(t);
   const holeList = (hs: readonly Hole[]) => listOf(hs.map(holeWords));
   const swap = (x: Taxon) => { closeSheet(); swapMember(id, x.id); };
@@ -69,6 +67,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const why = flagLines(t, store.flagsOfPlant(t), scene);
   const own = store.memberVerdicts.value?.get(id) ?? null;
   const borrowed = !!store.climate.value && !store.curatedClimates.value.includes(store.climate.value);
+  const list = placementZone(t, store.climate.value);
   const row = (a: Alternative, far = false) => {
     const x = byId.get(a.id);
     if (!x) return null;
@@ -105,7 +104,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
     }>
       <div>
         <h2 id="ct-sw-title" tabIndex={-1} data-autofocus>{T('swap.title', { name: nameOf(t) })}</h2>
-        <p class="ct-muted">{T(borrowed ? 'swap.ledeBorrowed' : 'swap.lede')}</p>
+        <p class="ct-muted">{borrowed && list ? T('swap.ledeBorrowed', { list: zoneName(list) }) : T('swap.lede')}</p>
         <div class="ct-swap-head" data-swap-head>
           {why.length > 0
             ? why.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.text}</span>)
@@ -122,8 +121,8 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
       )}
       {algo && outsideAlts.length > 0 && (showOutside ? (
         <>
-          <ul class="ct-rows" data-outside="">{(allOutside ? outsideAlts : outsideAlts.slice(0, SHOWN.fit)).map((a) => row(a, true))}</ul>
-          {!allOutside && outsideAlts.length > SHOWN.fit && (
+          <ul class="ct-rows" data-outside="">{(allOutside ? outsideAlts : outsideAlts.slice(0, SHOWN)).map((a) => row(a, true))}</ul>
+          {!allOutside && outsideAlts.length > SHOWN && (
             <p><button type="button" class="button button-secondary" onClick={() => setAllOutside(true)}>{P('add.showAll', outsideAlts.length)}</button></p>
           )}
         </>

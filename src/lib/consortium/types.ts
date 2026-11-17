@@ -391,7 +391,7 @@ export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]
 // Swap: a plant that could take a member's place, with what it changes in the matrix ("Also fills…",
 // "Leaves empty…") and its warnings. Cells are [stratum, phase].
 // fills / leaves: the holes swapping it in fills and leaves open (core suggest.ts swapChange).
-export interface Alternative { id: PlantId; sameStratum: boolean; fills: Hole[]; leaves: Hole[]; strataGain: boolean; sharedJobs: JobId[]; flags: Flag[] }
+export interface Alternative { id: PlantId; fills: Hole[]; leaves: Hole[]; strataGain: boolean; sharedJobs: JobId[]; flags: Flag[] }
 
 // Jobs table: for each job, the phases where no member does it ("gaps name their stages", BT-4).
 export interface JobGap { job: JobId; members: PlantId[]; missing: PhaseOrd[] }
