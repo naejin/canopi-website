@@ -5,7 +5,7 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:54Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:44Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T17:28:56Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -170,8 +170,8 @@ sources:
   - id: seams-helpers-mjs
     resource: ../../scripts/browser/seams-helpers.mjs
     title: scripts/browser/seams-helpers.mjs
-    digest: sha256:af8bb331bfd66043
-    last_modified: 2026-11-17T15:57:17Z
+    digest: sha256:d293b8729e57f4f1
+    last_modified: 2026-11-17T17:28:25Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
