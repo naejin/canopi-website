@@ -5,15 +5,15 @@ description: Build-time content and link authorities for the site (release URLs,
 resource: ../../src/data
 tags: [module, data]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T05:46:27Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:08Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:04:09Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:04Z }
 sources:
   - id: data
     resource: ../../src/data
     title: src/data/
-    digest: sha256:51afea684736b289
-    last_modified: 2026-11-17T05:27:20Z
+    digest: sha256:b64d895820899907
+    last_modified: 2026-11-17T06:29:13Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json

@@ -3,16 +3,16 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:05Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T05:46:28Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T06:30:04Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:8de62ab2a93e05b9
-    last_modified: 2026-11-17T05:27:20Z
+    digest: sha256:23bb22639127d9cf
+    last_modified: 2026-11-17T06:29:13Z
   - id: header-astro
     resource: ../../src/components/Header.astro
     title: src/components/Header.astro

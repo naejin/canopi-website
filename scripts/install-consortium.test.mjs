@@ -398,13 +398,13 @@ test('the command line: a real export is refused when verify cannot say yes, and
 });
 
 // PP-B commit 0 (palette-vectors convention): canopi-data's range-verdict vectors, a stamped copy of
-// its range_verdicts.json for the installed release (r-c15a216b9663d2fa: canopi-data's
-// r-c15a216b9663d2fa.range_verdicts.json beside the export; sha256 below) until install-consortium.mjs
+// its range_verdicts.json for the installed release (r-4db8a127ab860011: canopi-data's
+// r-4db8a127ab860011.range_verdicts.json beside the export; sha256 below) until install-consortium.mjs
 // reads them from the installed release. The copy must be for the release the site installs: a new
 // export pin without new vectors fails here, never silently (b2 runs the cases).
 test('the stamped range-verdict vectors are for the installed consortium release', () => {
   const bytes = readFileSync(new URL('vectors/range-verdicts.json', import.meta.url));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), 'cede64e8149b7c250648488c94cc29faa5c8a569a7838b73b72f8dcae5ff7d55', 'the copy is canopi-data\'s file, unedited');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), 'b9e39c071e10a7a0ff8a36dac5b7e5ec7b3c685b3c1e6064895f350f5a71c768', 'the copy is canopi-data\'s file, unedited');
   const vectors = JSON.parse(bytes.toString('utf8'));
   const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
   assert.equal(vectors.schema, 'canopi-range-verdicts/1');
