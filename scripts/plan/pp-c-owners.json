@@ -352,10 +352,8 @@
             "scripts/consortium-print.test.mjs",
             "scripts/vectors/verdicts.json",
             "scripts/browser/consortium-commit0.browser.test.mjs",
-            "scripts/browser/consortium-pp-b3.browser.test.mjs",
             "scripts/browser/p5-helpers.mjs",
             "scripts/browser/consortium-p5-s5c.browser.test.mjs",
-            "scripts/browser/consortium-p5-s5d.browser.test.mjs",
             "scripts/browser/consortium-e6.browser.test.mjs",
             "scripts/browser/consortium-e6-r4.browser.test.mjs",
             "scripts/consortium-pp-c2.test.mjs",
@@ -388,9 +386,9 @@
             "scripts/browser/consortium-pp-c1.browser.test.mjs",
             "scripts/vectors/holes.json",
             "scripts/consortium-pp-pf.test.mjs",
-            "scripts/browser/consortium-pp-pf.browser.test.mjs",
             "scripts/consortium-pf-a.test.mjs",
-            "scripts/browser/consortium-pf-a.browser.test.mjs"
+            "scripts/browser/consortium-pf-a.browser.test.mjs",
+            "scripts/browser/pf-helpers.mjs"
           ],
           "duty": "pf-a 'What's missing next' (design check .local/consortium/v2/ppc/pf-design-check.md section 2 W1, owner answers pf-decisions.md): holes to Next step, Other holes card (Find on each row), the hole rows in one form ('Full sun: nobody in the first 3 years', Q1, through consortium.palette.holeTitle), the FillHole result line with Undo, Empty 'Start with the plants you want', the Balcony room card (roomNote), the 320 overflow, one count ('See all N' equal to what the hole opens), ch22 one warned rule (store.warnedPlant; no country: the soft chip, Q2), 'Checking your plants...' on store.verdictsReady; in Find: 'fills N holes' and ranking from store.holeFillCount (wired in the hand-off), 'Your palette lacks N holes', K6 other-list rows (store.failedOther for the failed read), hole rows' light words; DeskStates: Find as a panel beside the chart at 960 px and wider (Q5): Sheets.tsx and views/palette/FindPanelSlot.tsx (the slot Palette.tsx mounts in the palette grid; its grid placement styled from find.css), its focus model and layout tests. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, persist.ts and the core outside holes.ts and verdict-line.ts have no chunk-2 owner after the hand-off: a stream that needs one asks the main agent. Each stream deletes its old screens and their tests in its own branch first, then rebuilds them from the boards (owner rules 'Delete first', 'Board-first builds'); its expected-fail board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs, written in commit 0) turns green."
         },
