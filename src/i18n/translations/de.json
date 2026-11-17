@@ -580,7 +580,6 @@
   "consortium.swap.none": "Keine andere Pflanze dieser Liste kann ihren Platz einnehmen.",
   "consortium.add.showAll": "one: Alle # zeigen | other: Alle # zeigen",
   "consortium.add.otherLine": "In der Liste „{other}“ gefunden, nicht in der Liste „{climate}“.",
-  "consortium.add.notChecked": "Invasivität nicht bewertet für: {country}. Keine Quelle dieser Version deckt dieses Land ab.",
   "consortium.paste.title": "Eine Pflanzenliste einfügen",
   "consortium.misfit.unk.light": "Lichtbedarf nicht erfasst, daher nicht mit deinem Standort abgeglichen.",
   "consortium.misfit.unk.soil": "Boden-pH nicht erfasst, daher nicht mit deinem Boden abgeglichen.",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "Bodendecker, Bodenbedeckung, Teppich",
   "consortium.find.jobWords.helpers": "Bienen, Bestäuber, Insekten, Vögel, Wildtiere",
   "consortium.find.jobWords.shelter": "Windschutz, Hecke, Schatten, Schutz, Wind",
+  "consortium.find.notChecked": "Invasivität nicht bewertet für: {country}. Keine Quelle dieser Version deckt dieses Land ab.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

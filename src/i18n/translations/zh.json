@@ -580,7 +580,6 @@
   "consortium.swap.none": "这个列表中没有其他植物能取代它。",
   "consortium.add.showAll": "other: 显示全部 # 个",
   "consortium.add.otherLine": "在“{other}”列表中找到，不在“{climate}”列表中。",
-  "consortium.add.notChecked": "未在{country}评估入侵性：本版本没有覆盖该国的来源。",
   "consortium.paste.title": "粘贴植物列表",
   "consortium.misfit.unk.light": "光照需求未记录，因此未对照你的场地核查。",
   "consortium.misfit.unk.soil": "土壤 pH 未记录，因此未对照你的土壤核查。",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "地被, 覆盖, 地毯",
   "consortium.find.jobWords.helpers": "蜜蜂, 传粉者, 昆虫, 鸟, 野生动物",
   "consortium.find.jobWords.shelter": "防风, 树篱, 遮阴, 庇护, 风",
+  "consortium.find.notChecked": "未在{country}评估入侵性：本版本没有覆盖该国的来源。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

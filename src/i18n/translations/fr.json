@@ -580,7 +580,6 @@
   "consortium.swap.none": "Aucune autre plante de cette liste ne peut prendre sa place.",
   "consortium.add.showAll": "one: Tout afficher (#) | other: Tout afficher (#)",
   "consortium.add.otherLine": "Dans la liste « {other} », pas dans la liste « {climate} ».",
-  "consortium.add.notChecked": "Caractère envahissant non évalué pour : {country}. Aucune source de cette version ne couvre ce pays.",
   "consortium.paste.title": "Coller une liste de plantes",
   "consortium.misfit.unk.light": "Besoins en lumière non connus : non vérifiés pour votre terrain.",
   "consortium.misfit.unk.soil": "pH du sol non connu : non vérifié pour votre sol.",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "couvre-sol, couvert, tapis",
   "consortium.find.jobWords.helpers": "abeilles, pollinisateurs, insectes, oiseaux, faune",
   "consortium.find.jobWords.shelter": "brise-vent, haie, ombre, abri, vent",
+  "consortium.find.notChecked": "Caractère envahissant non évalué pour : {country}. Aucune source de cette version ne couvre ce pays.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

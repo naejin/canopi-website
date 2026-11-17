@@ -580,7 +580,6 @@
   "consortium.swap.none": "이 목록에는 그 자리를 대신할 식물이 없습니다.",
   "consortium.add.showAll": "other: #개 모두 보기",
   "consortium.add.otherLine": "‘{other}’ 목록에 있고 ‘{climate}’ 목록에는 없습니다.",
-  "consortium.add.notChecked": "{country}의 침입성은 평가되지 않음: 이 릴리스에는 그 나라를 다루는 출처가 없습니다.",
   "consortium.paste.title": "식물 목록 붙여넣기",
   "consortium.misfit.unk.light": "빛 요구 기록이 없어 당신의 터와 비교하지 않았습니다.",
   "consortium.misfit.unk.soil": "토양 pH 기록이 없어 당신의 흙과 비교하지 않았습니다.",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "지피식물, 피복, 융단",
   "consortium.find.jobWords.helpers": "벌, 수분 매개자, 곤충, 새, 야생동물",
   "consortium.find.jobWords.shelter": "방풍, 산울타리, 그늘, 피난처, 바람",
+  "consortium.find.notChecked": "{country}의 침입성은 평가되지 않음: 이 릴리스에는 그 나라를 다루는 출처가 없습니다.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

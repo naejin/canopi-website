@@ -580,7 +580,6 @@
   "consortium.swap.none": "No other plant in this list can take its place.",
   "consortium.add.showAll": "one: Show all # | other: Show all #",
   "consortium.add.otherLine": "Found in the {other} list, not in the {climate} list.",
-  "consortium.add.notChecked": "Invasiveness not assessed in {country}: no source in this release covers it.",
   "consortium.paste.title": "Paste a list of plants",
   "consortium.misfit.unk.light": "Light needs not recorded, so not checked against your site.",
   "consortium.misfit.unk.soil": "Soil pH not recorded, so not checked against your soil.",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "ground cover, cover crop, carpet",
   "consortium.find.jobWords.helpers": "bees, pollinators, insects, birds, wildlife",
   "consortium.find.jobWords.shelter": "windbreak, hedge, shade, shelter, wind",
+  "consortium.find.notChecked": "Invasiveness not assessed in {country}: no source in this release covers it.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

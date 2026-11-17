@@ -180,3 +180,10 @@ test('PP-C c1 fix A13: the core is the only route to fold and queryTokens; group
 test('PP-C c1 fix A10: Find keeps no copy of the verdict words (its group headings are consortium.line.*, through verdict-line.ts)', () => {
   for (const [lang, w] of Object.entries(words)) assert.deepEqual(Object.keys(w).filter((k) => k.startsWith('consortium.find.g.')), [], `${lang}: no consortium.find.g.* key`);
 });
+
+test('PP-C c1 fix A11: the "invasiveness not assessed" note is Find\'s key, consortium.find.notChecked, in all 11 locales (the old consortium.add.notChecked gone)', () => {
+  for (const [lang, w] of Object.entries(words)) {
+    assert.ok(w['consortium.find.notChecked']?.includes('{country}'), `${lang}: consortium.find.notChecked with {country}`);
+    assert.equal(w['consortium.add.notChecked'], undefined, `${lang}: consortium.add.notChecked deleted`);
+  }
+});

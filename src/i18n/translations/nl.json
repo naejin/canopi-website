@@ -580,7 +580,6 @@
   "consortium.swap.none": "Geen andere plant uit deze lijst kan haar plek innemen.",
   "consortium.add.showAll": "one: Alle # tonen | other: Alle # tonen",
   "consortium.add.otherLine": "Gevonden in de lijst ‘{other}’, niet in de lijst ‘{climate}’.",
-  "consortium.add.notChecked": "Invasiviteit niet beoordeeld voor: {country}. Geen bron in deze versie dekt dat land.",
   "consortium.paste.title": "Een lijst met planten plakken",
   "consortium.misfit.unk.light": "Lichtbehoefte niet bekend, dus niet getoetst aan jouw plek.",
   "consortium.misfit.unk.soil": "Bodem-pH niet bekend, dus niet getoetst aan jouw bodem.",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "bodembedekker, bodembedekking, tapijt",
   "consortium.find.jobWords.helpers": "bijen, bestuivers, insecten, vogels, dieren",
   "consortium.find.jobWords.shelter": "windscherm, haag, schaduw, beschutting, wind",
+  "consortium.find.notChecked": "Invasiviteit niet beoordeeld voor: {country}. Geen bron in deze versie dekt dat land.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -580,7 +580,6 @@
   "consortium.swap.none": "Ни одно другое растение из этого списка не может занять его место.",
   "consortium.add.showAll": "one: Показать все (#) | few: Показать все (#) | many: Показать все (#) | other: Показать все (#)",
   "consortium.add.otherLine": "Есть в списке «{other}», нет в списке «{climate}».",
-  "consortium.add.notChecked": "Инвазивность не оценена для страны: {country}. Ни один источник этого выпуска её не охватывает.",
   "consortium.paste.title": "Вставить список растений",
   "consortium.misfit.unk.light": "Потребность в свете не указана, поэтому не сверено с вашим участком.",
   "consortium.misfit.unk.soil": "pH почвы не указан, поэтому не сверено с вашей почвой.",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "почвопокровное, покров, ковёр",
   "consortium.find.jobWords.helpers": "пчёлы, опылители, насекомые, птицы, живность",
   "consortium.find.jobWords.shelter": "ветрозащита, живая изгородь, тень, укрытие, ветер",
+  "consortium.find.notChecked": "Инвазивность не оценена для страны: {country}. Ни один источник этого выпуска её не охватывает.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

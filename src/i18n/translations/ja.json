@@ -580,7 +580,6 @@
   "consortium.swap.none": "このリストには代わりになる植物がありません。",
   "consortium.add.showAll": "other: # 件すべて表示",
   "consortium.add.otherLine": "「{other}」のリストにあり、「{climate}」のリストにはありません。",
-  "consortium.add.notChecked": "{country}での侵略性は未評価：このリリースにはその国を扱う出典がありません。",
   "consortium.paste.title": "植物のリストを貼り付ける",
   "consortium.misfit.unk.light": "光の必要量の記録がないため、あなたの場所とは照合していません。",
   "consortium.misfit.unk.soil": "土壌 pH の記録がないため、あなたの土とは照合していません。",
@@ -994,5 +993,6 @@
   "consortium.find.jobWords.ground": "グランドカバー, 被覆, じゅうたん",
   "consortium.find.jobWords.helpers": "ハチ, 送粉者, 昆虫, 鳥, 生きもの",
   "consortium.find.jobWords.shelter": "防風, 生け垣, 日陰, 避難, 風",
+  "consortium.find.notChecked": "{country}での侵略性は未評価：このリリースにはその国を扱う出典がありません。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

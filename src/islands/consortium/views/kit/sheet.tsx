@@ -46,7 +46,7 @@ export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number;
 // ctx: the store's flag context (store.flagContext).
 export function NotChecked({ ctx }: { ctx: { country?: string | null; countryStatus?: string } }) {
   if (ctx.countryStatus !== 'unchecked' || !ctx.country) return null;
-  return <p class="ct-note">{T('add.notChecked', { country: countryName(ctx.country) })}</p>;
+  return <p class="ct-note">{T('find.notChecked', { country: countryName(ctx.country) })}</p>;
 }
 
 // A sheet: a modal <dialog>, a side sheet on desktop and full screen on phones, opened once per
