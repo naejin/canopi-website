@@ -96,15 +96,15 @@ function sizeWords(t: Taxon): string {
 // The one roles list (c1r3 T20): lower case after its first word where the language writes it so
 // (German keeps its capitals, its nouns need them; Chinese, Japanese and Korean have no case). In a job
 // hole the hole's own job is left out, the rest "Also …" (board FillHole, T15): the row's first line
-// already says it fills the hole.
+// already says it fills the hole; so is a job list's one job (c1r4 U7): every row does it.
 const LOWER = new Set(['en', 'fr', 'es', 'pt', 'it', 'nl', 'ru']);
 function rolesWords(jobs: readonly JobId[], also: boolean): string {
   const lang = pageLang(), low = (s: string) => (LOWER.has(lang) ? s.charAt(0).toLocaleLowerCase(lang) + s.slice(1) : s);
   const list = jobs.map((j, i) => (i > 0 || also ? low(T(`job.${j}`)) : T(`job.${j}`))).join(', ');
   return also && list ? T('find.also', { jobs: list }) : list;
 }
-function metaWords(t: Taxon, holeJob: JobId | null): string {
-  const y = yearsOf(t), jobs = rolesWords(jobsOf(t).filter((j) => j !== holeJob), !!holeJob);
+function metaWords(t: Taxon, known: JobId | null): string {
+  const y = yearsOf(t), jobs = rolesWords(jobsOf(t).filter((j) => j !== known), !!known);
   return [jobs, lightWords(t), sizeWords(t), y && say(yearsLine(y.from, y.to))].filter(Boolean).join(' · ');
 }
 // A hole's lane in words ("Covers the ground", "Needs full sun"), as holeWords says it.
@@ -374,7 +374,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
         <div class="ct-row-why">
           {hole && fits?.(t) && y && <span class="ct-find-fills" data-find-fills="">{TICK} {T('find.fillsThis', { what: laneWords(hole), years: say(yearsLine(y.from, y.to)) })}</span>}
           {why && <span class="ct-find-why" data-find-why="" data-lang={why.lang} data-kind={why.kind}>{why.text}</span>}
-          <span class="ct-find-meta" data-find-meta="">{metaWords(t, hole?.kind === 'job' ? hole.job ?? null : null)}</span>
+          <span class="ct-find-meta" data-find-meta="">{metaWords(t, hole?.kind === 'job' ? hole.job ?? null : filters.jobs?.length === 1 ? filters.jobs[0] : null)}</span>
           <FitLine v={shownV} />
           {later && <span class="ct-line" data-find-inrange="">{T('find.inRangeBy', { period: later })}</span>}
           <Marks t={t} lines={lines} country={scene.country} />

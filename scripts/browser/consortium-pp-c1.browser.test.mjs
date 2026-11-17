@@ -796,7 +796,7 @@ test('PP-C53 (c1 r4 U4+U6): Paste: "rosmary" on another list and "chesnut" alrea
 
 // c1r3 T6, T18, T20 (Chrome K1, N4, N6): a job list names the palette's plants that do the job with
 // "Show"; a roles list is lower case after its first word; the second-look group says why.
-test('PP-C52 (c1 r3 T6+T18+T20): In your palette on a job list, roles in lower case, why a second look', async () => {
+test('PP-C52 (c1 r3 T6+T18+T20, r4 U7): In your palette on a job list, roles in lower case without the job, why a second look', async () => {
   const page = await plainFind();
   assert.ok(await page.evaluate(() => window.__ctTest.store.memberTaxa.value.some((t) => t.role === 'crop')), 'the palette holds a food plant');
   await byJob(page, 'feeds_you');
@@ -807,6 +807,9 @@ test('PP-C52 (c1 r3 T6+T18+T20): In your palette on a job list, roles in lower c
   const metas = await page.$$eval(`${FIND} [data-find-meta]`, (els) => els.map((e) => e.textContent.split(' · ')[0]));
   assert.ok(metas.some((m) => m.includes(', ')), 'a row with several roles');
   assert.ok(metas.every((m) => !/, [A-Z]/.test(m)), `roles in lower case after the first (${metas.find((m) => /, [A-Z]/.test(m))})`);
+  // c1r4 U7: on a job list every row does the job; its roles line says the others, "Also …".
+  assert.ok(metas.every((m) => !/feeds you/i.test(m)), `the filtered job left out (${metas.find((m) => /feeds you/i.test(m))})`);
+  assert.ok(metas.some((m) => /^Also /.test(m)), 'the other roles as "Also …"');
   await page.click(`${FIND} [data-filter="all"]`);
   const look = await page.$eval(`${FIND} [data-find-group="look"] h3`, (e) => e.textContent).catch(() => '');
   assert.match(look, /\d+: a warning, or near the edge of its range/, 'why a second look');
