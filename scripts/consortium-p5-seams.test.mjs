@@ -23,7 +23,7 @@ test('the host views mount every stream\'s slot, and Details opens on Against yo
   assert.match(view('Actions.tsx'), /later\(\(\) => laterChunk\(\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:first-view or the data ready');
   assert.match(view('Actions.tsx'), /<ActionsView \/><future\.View \/>/, 'S5d: the panel after the actions (the matrix views above it went in PP-B commit 0a\')');
   // Details opens on "Against your place" (PP-C c2; PlantMarks went with the mark providers).
-  assert.match(view('details/Details.tsx'), /<Against t=\{t\} disputes=\{facts\?\.disputes \?\? \[\]\} \/>/);
+  assert.match(view('details/Details.tsx'), /<Against t=\{t\} disputes=\{facts\?\.disputes \?\? \[\]\} traitSources=\{facts\?\.traitSources \?\? null\} \/>/);
 });
 
 // ---- E6 R2: the one site-fit vocabulary (core verdict-line.ts siteLines since fix round 1 B2, rules/site-fit.ts) ----
