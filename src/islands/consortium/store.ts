@@ -5,7 +5,7 @@
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { Alternative, ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, flagsFor, flagsOf, loadSuggest, loadVerdictRule, periodIds, siteFor, zoneOf } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, failedChunk, flagsFor, flagsOf, loadSuggest, loadVerdictRule, periodIds, siteFor, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -232,9 +232,12 @@ function loadVerdict(retry: boolean): void {
     batch(() => {
       verdictFailed.value = true;
       verdictEverFailed.value = true;
-      // A retry that fails while the browser says it is online will not load in place (A8).
-      if (retry && globalThis.navigator?.onLine !== false) verdictNeedsReload.value = true;
     });
+    // A retry that fails though the verdict file itself answers will not load in place (A8's HEAD of
+    // the verdict URL; A14): Reload then. A file that did not arrive (refused, dropped, offline) keeps
+    // Try again, and the browser back online asks again.
+    const url = retry ? failedChunk(err) : null;
+    if (url) fetch(url, { method: 'HEAD', cache: 'no-store' }).then((r) => { if (r.ok && verdictFailed.peek()) verdictNeedsReload.value = true; }, () => {});
   });
 }
 // The palette page's Try again (online) and the browser back online: the verdict chunk asked again,
@@ -242,9 +245,10 @@ function loadVerdict(retry: boolean): void {
 export const retryVerdict = (): void => loadVerdict(true);
 // Never a retry that cannot work (pre-push fix 4): the verdict chunk statically imports shared chunks,
 // and Chromium keeps a failed import of one for the page's life (retry-import.ts), so a retry under a
-// fresh URL may not load. The simple rule (fix round 1 A8): a retry that fails while the browser is
-// online needs a reload; offline, the online listener retries. Then wantVerdict asks for nothing and
-// the views offer Reload (load.reload) in place of Try again.
+// fresh URL may not load. The rule (fix round 1 A8, A14): a retry that fails while the verdict file
+// itself answers (a HEAD of its URL) needs a reload; a file that did not arrive keeps Try again, and
+// offline the online listener retries. Then wantVerdict asks for nothing and the views offer Reload
+// (load.reload) in place of Try again.
 export const verdictNeedsReload = signal(false);
 // What every verdict reads: the palette's place, the location's lookup, the period shown, the
 // scenario, and the members' canopy (shade relief, 3.2).

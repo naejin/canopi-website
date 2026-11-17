@@ -108,7 +108,9 @@ test('PP-C6 (c2 Swap; fix round 2 K12): Swap says what each candidate fills and 
 
 // ---- failure states (3.1-3.6) ----
 
-test('PP-C13 (c2 verdict chunk failed, 3.1; fix round 1 A5, A6, A8): "Against your place" says "not checked" with Try again in place; a retry that fails online offers Reload; the palette never goes back to loading; Swap\'s fit lines say "not checked"', async () => {
+// c2 merge (A8's HEAD rule, A14): Reload only when the verdict file answers yet will not import (not
+// reachable through the harness's block kinds); a refused file keeps Try again (PP-B20, PP-B49).
+test('PP-C13 (c2 verdict chunk failed, 3.1; fix round 1 A5, A6, A8, A14): "Against your place" says "not checked" with Try again in place; a retry whose file is still refused offers Try again again, never Reload; the palette never goes back to loading; Swap\'s fit lines say "not checked"', async () => {
   // A saved palette (Suggest waits for the verdict rule, so it places nothing with the chunk refused).
   const page = await tool({ block: { verdict: 404 }, hash: await temperateLink() });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the palette\'s plants');
@@ -117,8 +119,13 @@ test('PP-C13 (c2 verdict chunk failed, 3.1; fix round 1 A5, A6, A8): "Against yo
   await against(page);
   assert.ok(await has(page, `${DETAILS} [data-against] ${aria('button', 'Try again')}`, 2000), 'Try again in the section, first');
   assert.equal(await page.evaluate(() => document.querySelector('[data-against]').textContent.includes('Reload the page')), false, 'no "reload the page" beside Try again');
+  const refused = page.blocked.length;
   await page.click(`${DETAILS} [data-against] ${aria('button', 'Try again')}`);
-  assert.ok(await has(page, `${DETAILS} [data-against] ${aria('button', 'Reload')}`, 4000), 'the retry failed online: Reload');
+  for (let i = 0; i < 80 && page.blocked.length <= refused; i++) await new Promise((r) => setTimeout(r, 100));
+  assert.ok(page.blocked.length > refused, 'Try again asked for the verdict chunk again');
+  assert.ok(await has(page, `${DETAILS} [data-against] ${aria('button', 'Try again')}`, 4000), 'the file still refused: Try again again');
+  await new Promise((r) => setTimeout(r, 500)); // the HEAD of the verdict URL settles
+  assert.equal(await page.$(`${DETAILS} [data-against] ${aria('button', 'Reload')}`), null, 'never Reload for a file that did not arrive');
   assert.ok(await page.evaluate(() => window.__ctTest.store.pool.value !== null), 'the palette kept its plants through the retry');
   await page.keyboard.press('Escape');
   await page.evaluate((pid) => window.__ctTest.openSheet('swap', pid), id);
