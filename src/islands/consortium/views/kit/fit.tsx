@@ -66,9 +66,11 @@ export function FitLine({ v, known, head = false }: { v: PlantVerdict | null | u
   return <span class="ct-fit" data-level={level}><LevelIcon level={level} />{say(v ? (head ? headLine(v) : fitLine(v)) : levelLine(level))}</span>;
 }
 
-// A hole in words: its lane (a job, a light level) and its years. The Next step, the hole buttons and
-// Add's title (opened for a hole) all say it the same way.
-export const holeWords = (h: Hole): string => `${T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`)}: ${say(holeLine(h))}`;
+// A hole in words, one form everywhere (owner answer Q1, 2026-11-17): its lane (a job, a light level:
+// "Full sun") and its years ("nobody in the first 3 years"), through consortium.palette.holeTitle so
+// each language sets its own punctuation: "Full sun: nobody in the first 3 years". The Next step, the
+// hole buttons, the rows and Find's title (opened for a hole) all say it so.
+export const holeWords = (h: Hole): string => T('palette.holeTitle', { lane: T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`), span: say(holeLine(h)) });
 
 // A plant's main job as an icon in the job's colour (palette-page.css [data-job]: one element, the
 // job's mark drawn as a mask, so 200 plants' chips stay light; 200-plant scale), always beside its word
