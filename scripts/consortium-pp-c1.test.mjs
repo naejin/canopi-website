@@ -80,7 +80,7 @@ const NAMES = [
   { id: id(8), canonical: 'Plantus octavus', names: { en: 'Winged vine' }, other: [{ lang: 'en', text: 'Yam' }], synonyms: [] },
 ];
 
-failing('PP-C-u4 (c1 search tiers): site-language names first (exact, prefix, all tokens, alternates), then scientific names and synonyms, then other languages labelled with their language; each hit says why it matched', { owner: 'c1', reason: /releaseIndex is not a function/ }, async () => {
+test('PP-C-u4 (c1 search tiers): site-language names first (exact, prefix, all tokens, alternates), then scientific names and synonyms, then other languages labelled with their language; each hit says why it matched', async () => {
   const { releaseIndex } = await search();
   const find = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' });
   // The tiers in order, whatever the match within each: a site name's prefix before a scientific
@@ -103,7 +103,7 @@ failing('PP-C-u4 (c1 search tiers): site-language names first (exact, prefix, al
   assert.equal(find('tomato')[0].tier, 'site');
 });
 
-failing('PP-C-u5 (c1 search shared names): a name shared by several plants says so ("also used for N other plants")', { owner: 'c1', reason: /releaseIndex is not a function/ }, async () => {
+test('PP-C-u5 (c1 search shared names): a name shared by several plants says so ("also used for N other plants")', async () => {
   const { releaseIndex } = await search();
   const hits = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('yam');
   const dioscorea = hits.find((h) => h.id === id(3));
@@ -128,7 +128,7 @@ test('PP-C c1 unit file (commit 0): the v1 corpus is the pinned canopi-types fil
   assert.ok(v1.corpus.length > 0 && v1.corpus.some((c) => UNICODE_15_GAP.has(c.name)), 'the gap case is in the corpus');
 });
 
-failing('PP-C-u6 (c1 normalization v1): native NFKD, marks off, the two case folds, the v1 corpus run (the Unicode-15 gap documented): 배 is a prefix of 백합, ばら equals はら, Cœur no longer equals coeur', { owner: 'c1', reason: /v1: 배 is a prefix of 백합/ }, () => {
+test('PP-C-u6 (c1 normalization v1): native NFKD, marks off, the two case folds, the v1 corpus run (the Unicode-15 gap documented): 배 is a prefix of 백합, ばら equals はら, Cœur no longer equals coeur', () => {
   assert.ok(fold('백합').startsWith(fold('배')), 'v1: 배 is a prefix of 백합 (NFKD keeps the jamo apart)');
   assert.equal(fold('ばら'), fold('はら'), 'v1: kana voicing is a mark, folded off');
   assert.notEqual(fold('Cœur'), fold('coeur'), 'v1: œ is not written out');
@@ -138,7 +138,7 @@ failing('PP-C-u6 (c1 normalization v1): native NFKD, marks off, the two case fol
   }
 });
 
-failing('PP-C-u7 (c1 names file 4.4): a names file whose release_id or core_raw_sha256 differs from the page\'s db is dropped, never mapped onto the wrong integers', { owner: 'c1', reason: /namesFor is not a function/ }, async () => {
+test('PP-C-u7 (c1 names file 4.4): a names file whose release_id or core_raw_sha256 differs from the page\'s db is dropped, never mapped onto the wrong integers', async () => {
   const { namesFor } = await search();
   const page = { release_id: 'r-c15a216b9663d2fa', core_raw_sha256: 'a'.repeat(64) };
   assert.equal(namesFor({ ...page }, page), true);
@@ -146,12 +146,12 @@ failing('PP-C-u7 (c1 names file 4.4): a names file whose release_id or core_raw_
   assert.equal(namesFor({ ...page, core_raw_sha256: '0'.repeat(64) }, page), false);
 });
 
-failing('PP-C-u8 (c1 hit outside the list 4.8): a hit on a plant outside the current list names the lists that hold it', { owner: 'c1', reason: /listsOf is not a function/ }, async () => {
+test('PP-C-u8 (c1 hit outside the list 4.8): a hit on a plant outside the current list names the lists that hold it', async () => {
   const { listsOf } = await search();
-  assert.deepEqual(listsOf(id(1), { Tropical: [id(1)], Subtropical: [id(1), id(2)], Temperate: [id(2)] }), ['Subtropical', 'Tropical']);
+  assert.deepEqual(listsOf(id(1), { Tropical: [id(1)], Subtropical: [id(1), id(2)], Temperate: [id(2)] }), ['Tropical', 'Subtropical'], 'in the climate order');
 });
 
-failing('PP-C-u9 (c1 one search module): Paste matches through it, synonyms included; oneOff gives the close spellings; the names line counts the languages the file holds, never "11 languages"', { owner: 'c1', reason: /oneOff is not a function/ }, async () => {
+test('PP-C-u9 (c1 one search module): Paste matches through it, synonyms included; oneOff gives the close spellings; the names line counts the languages the file holds, never "11 languages"', async () => {
   const { oneOff, namesLine, releaseIndex } = await search();
   assert.equal(oneOff('tomatoe', 'tomato'), true);
   assert.equal(oneOff('okra', 'kale'), false);

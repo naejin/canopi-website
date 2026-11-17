@@ -5,7 +5,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const paste = await import('../src/islands/consortium/views/paste.ts');
-const { pasteNames, pasteTable, binomial, oneOff, matchName, nameIndex, readPaste, looksLikeHeader } = await import('../src/islands/consortium/views/paste.ts');
+const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader } = await import('../src/islands/consortium/views/paste.ts');
+const { oneOff } = await import('../src/islands/consortium/data/search.ts');
 
 const plant = (id, canonical_name, names = {}) => ({ id, canonical_name, genus: canonical_name.split(' ')[0], names });
 const temperate = [
@@ -40,7 +41,7 @@ test('binomials drop authors and rank words; one letter off needs five letters o
 });
 
 test('matching: scientific name, then binomial, then a common name in any language, folded (marks, ß, case)', () => {
-  const idx = nameIndex(temperate);
+  const idx = pasteLists(temperate);
   assert.deepEqual(matchName('MALUS DOMESTICA', idx), { how: 'exact', taxa: [temperate[0]] });
   assert.equal(matchName('Malus domestica Borkh.', idx).taxa[0].id, 't1');
   assert.equal(matchName('chataignier', idx).taxa[0].id, 't2');
@@ -48,7 +49,7 @@ test('matching: scientific name, then binomial, then a common name in any langua
 });
 
 test('matching: a genus alone lets the reader choose; a close spelling is marked', () => {
-  const idx = nameIndex(temperate);
+  const idx = pasteLists(temperate);
   const genus = matchName('Rubus', idx);
   assert.equal(genus.how, 'choose');
   assert.deepEqual(genus.taxa.map((t) => t.id).sort(), ['t4', 't5']);
