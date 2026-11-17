@@ -159,15 +159,17 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The palette's other holes are not known here (fix round 1: a seam for pf, one store computed of
   // the holes that Palette and Find both read), so plain Find ranks by the years in range only.
   const filled = useMemo(() => new Map(hole && fits ? base.map((t) => [t.id, fits(t) ? 1 : 0] as const) : []), [base, hole, fits]);
-  // An outside plant's first later period in range ("In range by 2041–2070", B5).
+  // The periods after the one viewed (fix round 2, r2-09): an outside plant's first one in range ("In
+  // range by 2071–2099", B5) and how many a plant stays in range through (best first).
+  const after = periodIds.slice(periodIds.indexOf(vctx.period) + 1);
   const inRangeBy = (t: Taxon): string | null => {
     if (!judging) return null;
-    const p = periodIds.slice(1).find((x) => rule!.holdsBy(t, vctx, x));
+    const p = after.find((x) => rule!.holdsBy(t, vctx, x));
     return p ? p.replace('-', '–') : null;
   };
   const stay = useMemo(() => {
     const m = new Map<PlantId, number>();
-    if (judging) for (const t of base) { let n = 0; for (const p of periodIds.slice(1)) { if (!rule!.holdsBy(t, vctx, p)) break; n++; } m.set(t.id, n); }
+    if (judging) for (const t of base) { let n = 0; for (const p of after) { if (!rule!.holdsBy(t, vctx, p)) break; n++; } m.set(t.id, n); }
     return m;
   }, [base, judging, rule, vctx]);
 
