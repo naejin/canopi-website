@@ -1,15 +1,15 @@
 /** @jsxImportSource preact */
 // The words and marks the kept views share (the future panel's Details opener and plant order,
-// print's side drawing key), kept in this leaf module so the views never import each other in a
+// print's side drawing key, a verdict's short row form for Your plants, print and the side view), kept in this leaf module so the views never import each other in a
 // cycle (the shared words and glyphs are in views/kit/names.ts and kit/icons.tsx). The stage bar, the
 // popovers and the matrix views that read the rest went in PP-B commit 0a'; the file goes when its
 // last readers move (the future panel in PP-E, print in b2/d2; Add's job title went with Add in
 // PP-C commit 0).
 import { computed } from '@preact/signals';
-import type { Taxon } from '../../../lib/consortium/index.ts';
-import { guestOf } from '../../../lib/consortium/index.ts';
-import { flags, memberVerdicts, openSheet } from '../store.ts';
-import { FitLine, RowNotes } from './kit/fit.tsx';
+import type { PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
+import { guestOf, periodName, rowLines, scenarioName } from '../../../lib/consortium/index.ts';
+import { flags, laterVerdictOf, memberVerdicts, openSheet, scenario } from '../store.ts';
+import { FitLine, say } from './kit/fit.tsx';
 import { P, T, pageLang } from '../strings.ts';
 import { warningCounts } from './kit/phase.ts';
 import { collatorFor, listName, nameOf, type Order } from './kit/names.ts';
@@ -20,6 +20,17 @@ export const byName: Order = (a, b) => collatorFor(pageLang()).compare(nameOf(a)
 
 // Warnings per member, as the marks count them (no low conflicts).
 const warnings = computed(() => warningCounts(flags.value));
+
+// A plant's verdict in short form after its fit line (core rowLines): the later loss, the watering,
+// season, room and few-records notes, then the confidence terms its "Against your place" says, so
+// Your plants, print and the side view's key carry what Details says (A16). Each a word with its
+// data-note, data-later or data-conf hook (never colour alone).
+export function RowNotes({ t, v }: { t: Taxon; v: PlantVerdict | null | undefined }) {
+  if (!v) return null;
+  const later = laterVerdictOf(t, v);
+  const words = { period: periodName, scenario: scenarioName(scenario.value), heightM: t.traits.height_m?.max ?? null };
+  return <>{rowLines(v, later, words).map((e) => <> <span class={e.conf ? 'ct-term' : 'ct-row-note'} data-conf={e.conf} data-note={e.note} data-later={e.later ? '' : undefined}>{say(e.line)}</span></>)}</>;
+}
 
 // A plant's marks (print's side drawing key): the guest's list, the warning count with its words, and
 // its verdict in short form (fit line and core rowLines, as on its row), outside said on paper too.

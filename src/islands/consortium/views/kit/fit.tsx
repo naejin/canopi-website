@@ -4,9 +4,8 @@
 // core's verdict-line.ts (plant-palette-architecture 3.2): no view writes its own. Numbers are
 // formatted for the page language by strings.ts. Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour.
-import type { Hole, JobId, Level, Line, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, holeLine, levelLine, periodName, rowLines, scenarioName } from '../../../../lib/consortium/index.ts';
-import * as store from '../../store.ts';
+import type { Hole, JobId, Level, Line, PlantVerdict } from '../../../../lib/consortium/index.ts';
+import { fitLine, holeLine, levelLine } from '../../../../lib/consortium/index.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { countryName } from './names.ts';
@@ -63,17 +62,6 @@ function LevelIcon({ level }: { level: Level }) {
 export function FitLine({ v, known }: { v: PlantVerdict | null | undefined; known?: Level }) {
   const level: Level = v?.level ?? known ?? 'unknown';
   return <span class="ct-fit" data-level={level}><LevelIcon level={level} />{say(v ? fitLine(v) : levelLine(level))}</span>;
-}
-
-// A plant's verdict in short form after its fit line (core rowLines): the later loss, the watering,
-// season, room and few-records notes, then the confidence terms its "Against your place" says, so
-// Your plants, print and the side view's key carry what Details says (A16). Each a word with its
-// data-note, data-later or data-conf hook (never colour alone).
-export function RowNotes({ t, v }: { t: Taxon; v: PlantVerdict | null | undefined }) {
-  if (!v) return null;
-  const later = store.laterVerdictOf(t, v);
-  const words = { period: periodName, scenario: scenarioName(store.scenario.value), heightM: t.traits.height_m?.max ?? null };
-  return <>{rowLines(v, later, words).map((e) => <> <span class={e.conf ? 'ct-term' : 'ct-row-note'} data-conf={e.conf} data-note={e.note} data-later={e.later ? '' : undefined}>{say(e.line)}</span></>)}</>;
 }
 
 // A hole in words: its lane (a job, a light level) and its years. The Next step, the hole buttons and
