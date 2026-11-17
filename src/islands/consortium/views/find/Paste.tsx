@@ -2,7 +2,9 @@
 // Paste a list (stream S3; mockup 01 `paste`, design check A8): one name per line (or a spreadsheet
 // column, picked when the paste has several; comma or semicolon columns read every cell unless one is picked), matched against this climate's list, then the other
 // climates' lists (views/find/paste.ts, through Find's search: data/search.ts, synonyms and the names
-// file's names included). Each line is found, to choose
+// file's names included). The other lists are the release's plants as Find reads them (views/find/
+// names.ts releasePlants): opening Paste loads no list; a plant of another list loads its list only
+// when it is added (fix round 1, A8), so its warnings show once it is in. Each line is found, to choose
 // (a genus, a shared name, a word of a name), found in another climate's list, already in, listed
 // twice, or not found. Every warning stays on its row in words. Owner row "Inform, don't block"
 // (2026-11-14, knowledge/decisions/consortium-user-decisions.md): nothing asks first. A row's "Add
@@ -16,13 +18,13 @@ import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
 import { addsWithWarning } from '../../rules/find-query.ts';
-import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
+import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste, type Named } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
 import { flagLines } from '../kit/flags.ts';
 import { nameOf, zoneName } from '../kit/names.ts';
-import { finder, wantNames } from './names.ts';
+import { finder, releasePlants, wantNames } from './names.ts';
 
 const MAX_LINES = 500;
 const SETTLE_MS = 200;
@@ -39,21 +41,28 @@ export default function Paste({ Frame }: { Frame: Frame }) {
   const [column, setColumn] = useState<number | null>(null); // null: the default (every cell for comma columns)
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const zones = store.curatedClimates.value;
-  const others = zones.filter((z) => z !== climate);
-  useEffect(() => { for (const z of others) void store.loadPool(z); }, [others.join()]);
+  const release = releasePlants.value;
   const source = store.source.value, index = finder.value ?? undefined;
   useEffect(() => { if (source) wantNames(source, pageLang() as Locale); }, [source]);
   useEffect(() => { const id = setTimeout(() => setSettled(text), SETTLE_MS); return () => clearTimeout(id); }, [text]);
 
   const table = pasteTable(settled);
   const col = pasteColumn(settled, column);
-  const lists = others.flatMap((z) => { const l = store.pools.value[z]; return l ? [[z, l] as [ClimateZone, Taxon[]]] : []; });
+  // The plants only other lists hold, each under its first list in the export's order.
+  const lists = useMemo(() => {
+    const here = new Set(pool?.map((t) => t.id) ?? []), by = new Map<ClimateZone, Named[]>();
+    for (const p of release.values()) {
+      const z = here.has(p.id) ? undefined : zones.find((c) => c !== climate && p.lists.includes(c));
+      if (z) by.set(z, [...(by.get(z) ?? []), { id: p.id, canonical_name: p.canonical, genus: p.canonical.split(' ')[0], names: p.names }]);
+    }
+    return zones.flatMap((z) => (by.has(z) ? [[z, by.get(z)!] as [ClimateZone, Named[]]] : []));
+  }, [release, pool, climate, zones]);
   const read = (src: string) => {
     const all = pasteNames(src, pasteColumn(src, column));
     const names = all.length > MAX_LINES ? Object.assign(all.slice(0, MAX_LINES), { header: all.header, split: all.split }) : all;
-    return { capped: all.length > MAX_LINES, result: pool ? readPaste(names, { here: pool, others: lists, members, index }) : null };
+    return { capped: all.length > MAX_LINES, result: pool ? readPaste<Named>(names, { here: pool, others: lists, members, index }) : null };
   };
-  const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, store.pools.value, index]);
+  const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, lists, index]);
   if (!climate) return null;
   if (!pool || !result) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
@@ -63,33 +72,39 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     for (const c of r.choose) if (c.climate) for (const t of c.taxa) climateOf.set(t.id, c.climate);
     const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)));
     const ids = [...new Set([...r.found.map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
-    const byId = new Map<PlantId, Taxon>([...r.found.map((f) => [f.taxon.id, f.taxon] as const), ...r.choose.flatMap((c) => c.taxa.map((t) => [t.id, t] as const))]);
-    return { ids, climateOf, byId };
+    return { ids, climateOf };
   };
   const toAdd = plan(result).ids;
-  const addAll = () => {
+  // A plant's warnings once its list is read (another list's plant: after its pool loads on add).
+  const warnedNow = (id: PlantId) => { const t = store.taxonOf(id); return !!t && addsWithWarning(flagsOfPlant(t)); };
+  const addAll = async () => {
     // The text as it is now, not as it was a moment ago.
     const current = box.current?.value ?? text;
     const now = current === settled ? result : read(current).result;
     if (!now) return;
-    const { ids, climateOf, byId } = plan(now);
+    const { ids, climateOf } = plan(now);
     if (!ids.length) return;
     const from: Partial<Record<PlantId, ClimateZone>> = {};
     for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
-    const warned = ids.filter((id) => { const t = byId.get(id); return t ? addsWithWarning(flagsOfPlant(t)) : false; });
+    // Only the lists of the plants added are read, now (A8).
+    await Promise.all([...new Set(Object.values(from))].map((z) => store.loadPool(z!)));
     closeSheet();
-    addMembers(ids, from, { warned });
+    addMembers(ids, from, { warned: ids.filter(warnedNow) });
   };
   // The row leaves for "Already in" as the plant joins (rows keyed by plant, so its node goes), and the
   // focus moves on (W4): to the next row's "Add anyway" (next: its plant, else the row before's), else
   // the "Already in" heading, else the sheet's title.
-  const addGuest = (t: Taxon, from: ClimateZone, next?: Taxon) => {
-    addMembers([t.id], { [t.id]: from }, { warned: addsWithWarning(flagsOfPlant(t)) ? [t.id] : [] });
+  const addGuest = async (t: Named, from: ClimateZone, next?: Named) => {
+    await store.loadPool(from);
+    addMembers([t.id], { [t.id]: from }, { warned: warnedNow(t.id) ? [t.id] : [] });
     focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-already'));
   };
   const toggle = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  const sci = (t: Taxon) => <i class="ct-sci">{t.canonical_name}</i>;
-  const warnings = (t: Taxon) => {
+  const sci = (t: Named) => <i class="ct-sci">{t.canonical_name}</i>;
+  // A row's warnings in words: a plant of this list (another list's plant shows its own once added).
+  const warnings = (n: Named) => {
+    const t = 'warnings' in n ? n as Taxon : null;
+    if (!t) return null;
     const lines = flagLines(t, flagsOfPlant(t), scene);
     return lines.length ? <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span> : null;
   };
@@ -100,7 +115,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     <Frame titleId="ct-paste-title" class="ct-paste" head={<span class="ct-muted">{T('paste.title')}</span>} foot={
       <div class="ct-add-bar">
         <span>{P('paste.toAdd', toAdd.length)}</span>
-        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={addAll}>{P('paste.addAll', toAdd.length)}</button>
+        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={() => void addAll()}>{P('paste.addAll', toAdd.length)}</button>
       </div>
     }>
       <div>
@@ -164,12 +179,12 @@ export default function Paste({ Frame }: { Frame: Frame }) {
             <ul class="ct-rows ct-paste-rows">
               {result.other.map((o, i) => {
                 return (
-                  <li key={o.taxon.id} class={addsWithWarning(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
+                  <li key={o.taxon.id}>
                     <span><strong>{o.name}</strong> → {nameOf(o.taxon)} {sci(o.taxon)}</span>
                     <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
                     {warnings(o.taxon)}
                     <button type="button" class="button button-secondary" aria-describedby={`ct-p-o-${o.taxon.id}`}
-                      onClick={() => addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button>
+                      onClick={() => void addGuest(o.taxon, o.climate, (result.other[i + 1] ?? result.other[i - 1])?.taxon)}>{T('addAnyway')}</button>
                   </li>
                 );
               })}

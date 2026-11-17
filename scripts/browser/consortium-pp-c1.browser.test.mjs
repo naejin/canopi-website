@@ -367,3 +367,20 @@ test('PP-C12 (c1 sheet closed mid-fetch, 4.5; Find from Place, 4.6): reopening u
   await page.waitForRequest((r) => /names/.test(r.url()) && asked.length >= 1, { timeout: 2000 }).catch(() => {});
   assert.equal(asked.length, 1, 'nothing refetched');
 });
+
+// Fix round 1, A8 (review c1-11): Paste reads the release-wide index and the release's plants, as Find
+// does: opening it loads no other climate's list; a pool loads only when its plant is added.
+test('PP-C c1 fix A8 (Paste, one index): Paste loads no other list on opening; a plant only another list holds is found and its list loads only on add', async () => {
+  const page = await tool({ data: 'fixture' });
+  await choose(page, 'Temperate');
+  const pools = () => page.evaluate(() => Object.keys(window.__ctTest.store.pools.value).sort());
+  const before = await pools();
+  await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
+  assert.ok(await has(page, '#ct-paste-text', 4000), 'Paste opens');
+  await page.locator('#ct-paste-text').fill('Abelmoschus esculentus');
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('dialog[open] li')].some((li) => /Abelmoschus esculentus/.test(li.textContent)), { timeout: 4000 }).then(() => true, () => false), 'okra (Tropical only) is found');
+  assert.deepEqual(await pools(), before, 'no other list loaded by opening Paste or reading the list');
+  await page.click(`dialog[open] ${aria('button', en['consortium.addAnyway'])}`);
+  assert.ok(await page.waitForFunction(() => { const { store } = window.__ctTest; return store.members.value.some((id) => store.guests.value[id] === 'Tropical'); }, { timeout: 6000 }).then(() => true, () => false), 'added as a guest of the Tropical list');
+  assert.ok((await pools()).includes('Tropical'), 'the Tropical list loads on add');
+});
