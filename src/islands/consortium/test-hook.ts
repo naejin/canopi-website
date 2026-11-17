@@ -1,6 +1,6 @@
 // The one browser-test hook (H16), imported only by main.ts, in the test build, before the first
 // render (A13). A page whose script set window.__ctTest = true before the island loaded gets
-// { store, openSheet, openFind, failSheets } there; nothing in the site sets the flag. The browser tests use
+// { store, openSheet, openFind, bandsOf, failSheets } there; nothing in the site sets the flag. The browser tests use
 // it only for what no control does: reading the store, a consortium no control makes in one step, and
 // a sheet chunk that fails to load (failSheets; views/lazy.tsx lazyPart; Find's chunk fails by the
 // harness's block: { find }).
@@ -8,6 +8,7 @@
 // sees CANOPI_BROWSER_TEST=1 (npm run build:browser-test); a production build replaces it with false
 // and drops the block, and check-built-site fails if __ctTest or failSheets reach dist/.
 import * as store from './store.ts';
+import { bandsOf } from '../../lib/consortium/index.ts';
 
 // (Read as __CT_TEST_HOOK__ where it is used, not through an exported const, so the production build
 // drops each guarded line and testFault with it.)
@@ -26,6 +27,8 @@ if (__CT_TEST_HOOK__) {
   let release = () => {};
   if (probe.__ctTest === true) probe.__ctTest = {
     store, openSheet: store.openSheet, openFind: store.openFind,
+    // The bands core draws for a plant (Details' band numbers are checked against them).
+    bandsOf,
     failSheets: () => { testFault.sheets = true; },
     failLater: () => { testFault.later = 'fail'; },
     holdLater: () => { testFault.later = 'hold'; testFault.release = new Promise((r) => { release = r; }); },

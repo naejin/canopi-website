@@ -285,22 +285,43 @@ test('PP-C6b (c2 boards, fix round 1 C10 C14): Swap at 320 px scrolls nothing si
 
 // ---- fix round 2 (the boards, as the grower reads and does) ----
 
-// K2, K5, K8, K16, R5: one band per measure, each with its name and its status in words; a band never
-// numbers more than the two ends of its range and its numbers keep at most two decimals; nothing
-// scrolls sideways at 320 px; the key says the four marks in words.
-test('PP-C6c (c2 fix round 2 K2 K8 K16 R5): Details draws one band per measure, each named with its status in words, numbers at two decimals at most, the key in words; nothing sideways at 320 px', async () => {
+// K2, K5, K8, K16, R5, round 3 T3 T6: one band per measure, each with its name and its status in words;
+// a band numbers exactly the ends core's bandsOf gives that measure (the ends the rule checks), at two
+// decimals at most; the recorded range is drawn from its recorded ends, so the place's dot sits outside
+// it exactly when the place is past them; nothing scrolls sideways at 320 px; the key says the marks.
+test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one band per measure, each named with its status in words, numbering the ends core gives it, the place outside the drawn range only when past it; the key in words; nothing sideways at 320 px', async () => {
   const page = await suggestedAt('seville', 'Mediterranean');
   await page.setViewport({ width: 320, height: 700 });
   const id = await firstMember(page);
   await details(page, id);
   await against(page);
   assert.ok(await has(page, `${DETAILS} [data-against] [data-measure]`, 6000), 'no band ([data-measure])');
-  const bands = await page.$$eval(`${DETAILS} [data-against] [data-measure]`, (els) => els.filter((e) => e.offsetParent).map((e) => ({ m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent) })));
+  const bands = await page.$$eval(`${DETAILS} [data-against] [data-measure]`, (els) => els.filter((e) => e.offsetParent).map((e) => {
+    const rect = e.querySelector('.ct-bd-range'), dashed = e.querySelector('[data-disputed]'), dot = e.querySelector('.ct-bd-now-dot');
+    const x0 = Math.min(Number(rect.getAttribute('x')), dashed ? Number(dashed.getAttribute('d').match(/^M([\d.]+)/)[1]) : Infinity);
+    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: Number(rect.getAttribute('x')) + Number(rect.getAttribute('width')), dot: dot ? Number(dot.getAttribute('cx')) : null };
+  }));
+  const core = await page.evaluate((pid) => {
+    const { store, bandsOf } = window.__ctTest;
+    const t = store.taxonOf(pid), v = store.memberVerdicts.value.get(pid);
+    return Object.fromEntries(bandsOf(v, store.laterVerdictOf(t, v), t.climate).map((b) => [b.measure, b]));
+  }, id);
   assert.equal(new Set(bands.map((b) => b.m)).size, bands.length, `one band per measure (${bands.map((b) => b.m)})`);
+  const num = (s) => Number(s.replace('\u2212', '-').replace('?', ''));
+  let checked = 0;
   for (const b of bands) {
     assert.ok(b.title && b.status, `band ${b.m}: its name and status in words`);
-    assert.ok(b.nums.length <= 2 && b.nums.every((n) => !/[.,]\d{3}/.test(n)), `band ${b.m}: at most two ends, two decimals (${b.nums})`);
+    assert.ok(b.nums.every((n) => !/[.,]\d{3}/.test(n)), `band ${b.m}: two decimals at most (${b.nums})`);
+    const c = core[b.m];
+    if (!c) continue; // the soil card (soilBandOf)
+    checked++;
+    assert.deepEqual(b.nums.map(num), [c.low, c.high].filter((x) => x !== null).map((x) => Math.round(x * 100) / 100), `band ${b.m}: the ends core gives (${b.nums})`);
+    if (b.dot !== null) {
+      assert.equal(b.dot < b.x0 - 0.5, c.place < c.recordedLow, `band ${b.m}: the dot left of the drawn range only when the place is below its recorded low (${c.place} vs ${c.recordedLow})`);
+      assert.equal(b.dot > b.x1 + 0.5, c.place > c.recordedHigh, `band ${b.m}: the dot right of the drawn range only when the place is above its recorded high (${c.place} vs ${c.recordedHigh})`);
+    }
   }
+  assert.ok(checked > 0, 'a climate band compared with core');
   assert.match(await page.$eval(`${DETAILS} [data-band-key]`, (e) => e.textContent), /where it is recorded growing.*your place today.*not a firm limit/s);
   const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
   assert.equal(sw[0], sw[1], 'Details at 320 px: nothing sideways');
