@@ -52,12 +52,7 @@ const INDIRECT = [
 const markSource = readFileSync(join(root, 'lib/consortium/site.ts'), 'utf8');
 const markKeys = new Set([...markSource.matchAll(/'([a-z]\w*(?:\.\w+)+)'/g)].map((m) => m[1]));
 const fromPage = new Set([...page.matchAll(/\b(?:tr|P)\('([\w.]+)'/g)].map((m) => m[1]));
-// Keys the deleted mark providers alone read that c2 may not delete (outside its key edits): handed off
-// to the merge (main, pf for future.*) to delete; listed so the unused-key check stays green until then.
-// range.unavailable: the curated list's range-unavailable notice, gone when the range role folded into
-// the verdict chunk (one failure state, the count line's).
-const HANDED_OFF = ['water.dryMonthsShort', 'room.tallShort', 'range.disputed', 'future.coolSeason', 'future.warmEnough', 'future.warmEnoughShort', 'future.drierShort', 'range.unavailable'];
-const asked = (k) => HANDED_OFF.includes(k) || named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
+const asked = (k) => named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
 
 test('no consortium key is left unused (H9)', () => {
   assert.deepEqual(short.filter((k) => !asked(k)), []);
@@ -106,7 +101,7 @@ test('the room hint and the Beta line say what the tool does, in all 11 locales'
 // the policy; each moves when its stream rewrites it (and leaves this list), never a new one joins.
 const UNIT_AFTER_PLACEHOLDER = /\{\w+\}\s?(m²|m2|cm|mm|km|ha|m|°C|°F|м|см|米|メートル|미터)(?![\p{L}\p{N}²])/u;
 const UNIT_KEYS_BEFORE_POLICY = new Set([
-  'meters', 'room.tall', 'room.tallShort', 'side.height', 'side.metres', 'details.heightV', 'location.why', 'location.meansNear',
+  'meters', 'room.tall', 'side.height', 'side.metres', 'details.heightV', 'location.why', 'location.meansNear',
   'range.pool.count', 'range.empty.body',
 ]);
 test('no new consortium key writes a unit after a placeholder, in any locale (format.ts measures)', () => {

@@ -1,7 +1,7 @@
 // E6 S3 (entry lifecycle): importing the island's state starts nothing. store.ts and state/* register
 // no effect and touch no localStorage when imported; main.ts calls store.start(), which
-// registers store.ts's effects, in the order they ran when they were module-level (the range
-// rule's load, the mark providers' load, the Undo offer's end).
+// registers store.ts's effects, in the order they ran when they were module-level (the verdict
+// rule's load, the Undo offer's end).
 // The effects are counted by redirecting the island's `@preact/signals` import to a wrapper that
 // records each effect() call (a module resolve hook; @preact/signals' own internal effect is not
 // counted). Node runs each test file in its own process, so the hook reaches this file only.
@@ -42,15 +42,15 @@ test('store.start registers store.ts\'s effects in their old module order', asyn
   const before = effects().length;
   store.start();
   const made = effects().slice(before);
-  assert.equal(made.length, 3, 'the range rule, the mark providers and the Undo offer');
+  assert.equal(made.length, 2, 'the verdict rule and the Undo offer (PP-C c2 folded the range rule into the verdict chunk and deleted the mark providers)');
   // The store.ts line that called effect() in each (the stack's first frame below the wrapper).
   const lines = made.map((s) => Number(/store\.ts:(\d+)/.exec(s)?.[1]));
   const src = readFileSync(new URL('store.ts', island), 'utf8').split('\n');
   const at = (re) => src.findIndex((l) => re.test(l)) + 1;
   // Each effect's first body line, found by content; its effect( call is the line above.
-  const bodies = [at(/if \(!siteClimate\.value \|\| rangeLoad\) return;/), at(/if \(!wantsMarkProviders\.value/), at(/const now = state\.track\(SNAP_KEYS\);/)];
-  assert.ok(bodies.every((n) => n > 0), 'the three effect bodies are found');
-  assert.deepEqual(lines, bodies.map((n) => n - 1), 'made in the old order: the range rule, the mark providers, the Undo offer');
+  const bodies = [at(/if \(siteClimate\.value\) wantVerdict\(\);/), at(/const now = state\.track\(SNAP_KEYS\);/)];
+  assert.ok(bodies.every((n) => n > 0), 'the two effect bodies are found');
+  assert.deepEqual(lines, bodies.map((n) => n - 1), 'made in the old order: the verdict rule, the Undo offer');
   assert.deepEqual(touches, [], 'starting the effects reads no localStorage');
 });
 
