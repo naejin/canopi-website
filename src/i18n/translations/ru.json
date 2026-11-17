@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "пчёлы, опылители, насекомые, птицы, живность",
   "consortium.find.jobWords.shelter": "ветрозащита, живая изгородь, тень, укрытие, ветер",
   "consortium.find.notChecked": "Инвазивность не оценена для страны: {country}. Ни один источник этого выпуска её не охватывает.",
+  "consortium.find.hiddenToxic": "one: # скрыто как ядовитое | few: # скрыто как ядовитые | many: # скрыто как ядовитые | other: # скрыто как ядовитые",
+  "consortium.find.hiddenInvasive": "one: # скрыто как инвазивное здесь | few: # скрыто как инвазивные здесь | many: # скрыто как инвазивные здесь | other: # скрыто как инвазивные здесь",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

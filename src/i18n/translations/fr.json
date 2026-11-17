@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "abeilles, pollinisateurs, insectes, oiseaux, faune",
   "consortium.find.jobWords.shelter": "brise-vent, haie, ombre, abri, vent",
   "consortium.find.notChecked": "Caractère envahissant non évalué pour : {country}. Aucune source de cette version ne couvre ce pays.",
+  "consortium.find.hiddenToxic": "one: # masquée comme toxique | other: # masquées comme toxiques",
+  "consortium.find.hiddenInvasive": "one: # masquée comme envahissante ici | other: # masquées comme envahissantes ici",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

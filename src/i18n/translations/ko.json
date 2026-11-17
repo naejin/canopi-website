@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "벌, 수분 매개자, 곤충, 새, 야생동물",
   "consortium.find.jobWords.shelter": "방풍, 산울타리, 그늘, 피난처, 바람",
   "consortium.find.notChecked": "{country}의 침입성은 평가되지 않음: 이 릴리스에는 그 나라를 다루는 출처가 없습니다.",
+  "consortium.find.hiddenToxic": "other: 독성으로 #종 숨김",
+  "consortium.find.hiddenInvasive": "other: 이곳에서 침입종으로 #종 숨김",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

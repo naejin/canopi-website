@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "ハチ, 送粉者, 昆虫, 鳥, 生きもの",
   "consortium.find.jobWords.shelter": "防風, 生け垣, 日陰, 避難, 風",
   "consortium.find.notChecked": "{country}での侵略性は未評価：このリリースにはその国を扱う出典がありません。",
+  "consortium.find.hiddenToxic": "other: 有毒として # 種を非表示",
+  "consortium.find.hiddenInvasive": "other: この地で侵略的として # 種を非表示",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

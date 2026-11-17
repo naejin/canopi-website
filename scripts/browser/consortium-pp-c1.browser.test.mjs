@@ -87,6 +87,13 @@ test('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot judge 
   await toggle(page, 'edible');
   const n = await page.$eval(`${FIND} [data-filter-unknown="edible"]`, (e) => (e.dataset.count === undefined ? null : Number(e.dataset.count))).catch(() => null);
   assert.ok(Number.isInteger(n) && n >= 0, 'the unknowns are counted');
+  // Fix round 1, A3 (review c1-04): a hide filter says how many it hid, beside "not recorded, still shown".
+  const shown = (await rowIds(page)).length;
+  await toggle(page, 'toxic');
+  const hid = await page.$eval(`${FIND} [data-filter-hidden="toxic"]`, (e) => Number(e.dataset.count)).catch(() => null);
+  assert.ok(Number.isInteger(hid), '"N hidden as toxic" is said');
+  assert.equal((await rowIds(page)).length, shown - hid, 'it counts exactly the plants it hid');
+  assert.ok(await page.$(`${FIND} [data-filter-unknown="toxic"]`), 'beside "N not recorded, still shown"');
 });
 
 test('F1a-F5 → PP-C (c1 no location, P5.1): without a location the range and holds filters are not offered, the others are', async () => {

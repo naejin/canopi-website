@@ -134,7 +134,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const hitOf = new Map<PlantId, FindHit>(), rank = new Map<PlantId, number>();
     hits?.forEach((h, i) => { hitOf.set(h.id, h); rank.set(h.id, i); });
     const matched = hits ? base.filter((t) => hitOf.has(t.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!) : base;
-    const { rows, unknown } = applyFilters(matched, judging ? filters : { ...filters, range: false, holds: false }, ctx);
+    const { rows, unknown, hidden } = applyFilters(matched, judging ? filters : { ...filters, range: false, holds: false }, ctx);
     const groups = findGroups(rows, verdicts, warned);
     const inList = new Set(base.map((t) => t.id));
     const own = new Set(pool?.map((t) => t.id) ?? []);
@@ -144,7 +144,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
       return p && lists.length ? [{ hit: h, plant: p, lists }] : [];
     }).slice(0, 8);
     const inPalette = (hits ?? []).filter((h) => atOpen.has(h.id)).map((h) => h.id);
-    return { hitOf, groups, unknown, others, inPalette, count: rows.length };
+    return { hitOf, groups, unknown, hidden, others, inPalette, count: rows.length };
   }, [base, hits, filters, judging, ctx, verdicts, warned, pool, members, climate, atOpen, releasePlants.value]);
 
   if (!climate) return null;
@@ -173,7 +173,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const tick = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const title = hole ? holeWords(hole) : T('find.title');
-  const { groups, unknown } = view;
+  const { groups, unknown, hidden } = view;
   const outsideFolded = foldOutside && !q && groups.outside.length > 0 && (groups.fits.length + groups.look.length + groups.unchecked.length) > 0;
   const shown = (g: Group) => groups[g].length > 0 && !(g === 'outside' && outsideFolded);
   const nothing = !!q && view.count === 0;
@@ -227,8 +227,12 @@ export default function Find({ Frame }: { Frame: Frame }) {
       {unknownLine(id)}
     </fieldset>
   );
+  // A hide filter says how many it hid (fix round 1, A3), beside how many it could not judge.
+  const hiddenLine = (id: 'toxic' | 'invasive') => hidden[id] !== undefined && (
+    <span class="ct-find-unknown" data-filter-hidden={id} data-count={hidden[id]}>{id === 'toxic' ? P('find.hiddenToxic', hidden[id]!) : P('find.hiddenInvasive', hidden[id]!)}</span>
+  );
   const check = (id: FilterId, k: keyof FindFilters, label: string, kept = false) => (
-    <label class="ct-check ct-find-check"><input type="checkbox" data-filter={id} checked={!!filters[k]} onChange={() => toggleFilter(k)} /> {label} {unknownLine(id, kept)}</label>
+    <label class="ct-check ct-find-check"><input type="checkbox" data-filter={id} checked={!!filters[k]} onChange={() => toggleFilter(k)} /> {label} {(id === 'toxic' || id === 'invasive') && hiddenLine(id)} {unknownLine(id, kept)}</label>
   );
   const onCount = Object.values(filters).filter((v) => (Array.isArray(v) ? v.length : v)).length + (foldOutside ? 1 : 0);
   const panel = (

@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "api, impollinatori, insetti, uccelli, fauna",
   "consortium.find.jobWords.shelter": "frangivento, siepe, ombra, riparo, vento",
   "consortium.find.notChecked": "Invasività non valutata in: {country}. Nessuna fonte di questa versione copre quel paese.",
+  "consortium.find.hiddenToxic": "one: # nascosta perché tossica | other: # nascoste perché tossiche",
+  "consortium.find.hiddenInvasive": "one: # nascosta perché invasiva qui | other: # nascoste perché invasive qui",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

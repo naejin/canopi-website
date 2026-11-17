@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "abelhas, polinizadores, insetos, aves, fauna",
   "consortium.find.jobWords.shelter": "quebra-vento, cerca viva, sombra, abrigo, vento",
   "consortium.find.notChecked": "Caráter invasor não avaliado em: {country}. Nenhuma fonte desta versão cobre esse país.",
+  "consortium.find.hiddenToxic": "one: # oculta por ser tóxica | other: # ocultas por serem tóxicas",
+  "consortium.find.hiddenInvasive": "one: # oculta por ser invasora aqui | other: # ocultas por serem invasoras aqui",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

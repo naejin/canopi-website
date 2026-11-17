@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "蜜蜂, 传粉者, 昆虫, 鸟, 野生动物",
   "consortium.find.jobWords.shelter": "防风, 树篱, 遮阴, 庇护, 风",
   "consortium.find.notChecked": "未在{country}评估入侵性：本版本没有覆盖该国的来源。",
+  "consortium.find.hiddenToxic": "other: 已隐藏 # 种有毒植物",
+  "consortium.find.hiddenInvasive": "other: 已隐藏 # 种在此地有入侵记录的植物",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

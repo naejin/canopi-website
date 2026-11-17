@@ -205,3 +205,13 @@ test('PP-C c1 fix A6: one warned rule for every add in Find and Paste (in-list, 
   for (const flags of [[f('invasive')], [f('toxicity')], [f('misfit')], [f('conflict', { severity: 'high' })]]) assert.equal(addsWithWarning(flags), true, flags[0].kind);
   assert.equal(addsWithWarning([f('conflict', { severity: 'low' })]), false, 'a low conflict is no warning on add');
 });
+
+test('PP-C c1 fix A3: a hide filter says how many it hid, beside how many it could not judge (kept)', async () => {
+  const { applyFilters } = await findQuery();
+  const tox = (level) => ({ warnings: { toxicity: level === null ? null : { level } } });
+  const taxa = [plant(1, tox('Moderate')), plant(2, tox('Slight')), plant(3, tox('None')), plant(4, tox(null))];
+  const r = applyFilters(taxa, { hideToxic: true }, { toxic: (t) => (t.warnings.toxicity ? t.warnings.toxicity.level !== 'None' : null) });
+  assert.deepEqual(r.rows.map((t) => t.id), [id(3), id(4)], 'the unrecorded plant stays');
+  assert.equal(r.hidden.toxic, 2, '2 hidden as toxic');
+  assert.equal(r.unknown.toxic, 1, '1 not recorded, still shown');
+});

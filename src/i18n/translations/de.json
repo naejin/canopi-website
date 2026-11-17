@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "Bienen, Bestäuber, Insekten, Vögel, Wildtiere",
   "consortium.find.jobWords.shelter": "Windschutz, Hecke, Schatten, Schutz, Wind",
   "consortium.find.notChecked": "Invasivität nicht bewertet für: {country}. Keine Quelle dieser Version deckt dieses Land ab.",
+  "consortium.find.hiddenToxic": "one: # als giftig ausgeblendet | other: # als giftig ausgeblendet",
+  "consortium.find.hiddenInvasive": "one: # als hier invasiv ausgeblendet | other: # als hier invasiv ausgeblendet",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -994,5 +994,7 @@
   "consortium.find.jobWords.helpers": "bijen, bestuivers, insecten, vogels, dieren",
   "consortium.find.jobWords.shelter": "windscherm, haag, schaduw, beschutting, wind",
   "consortium.find.notChecked": "Invasiviteit niet beoordeeld voor: {country}. Geen bron in deze versie dekt dat land.",
+  "consortium.find.hiddenToxic": "one: # verborgen als giftig | other: # verborgen als giftig",
+  "consortium.find.hiddenInvasive": "one: # verborgen als hier invasief | other: # verborgen als hier invasief",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

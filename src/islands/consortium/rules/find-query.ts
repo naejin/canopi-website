@@ -106,21 +106,24 @@ function tests(f: FindFilters, ctx: FilterContext): [FilterId, (t: Taxon) => boo
   return out;
 }
 
-// The plants every active filter keeps, and per filter the number it could not judge (left out, and
-// said: "12 with no size recorded", never hidden silently). A hide filter (toxic, invasive) keeps a
-// plant it cannot judge: it hides only what is recorded.
-export function applyFilters(taxa: readonly Taxon[], filters: FindFilters, ctx: FilterContext): { rows: Taxon[]; unknown: Partial<Record<FilterId, number>> } {
-  const active = tests(filters, ctx), unknown: Partial<Record<FilterId, number>> = {};
-  for (const [id] of active) unknown[id] = 0;
+// The plants every active filter keeps; per filter the number it could not judge (left out, and said:
+// "12 with no size recorded", never hidden silently) and the number only it left out (the plants it took
+// off the list; a hide filter says it: "12 hidden as toxic"). A hide filter (toxic, invasive) keeps a plant it cannot judge: it hides only
+// what is recorded.
+export function applyFilters(taxa: readonly Taxon[], filters: FindFilters, ctx: FilterContext): { rows: Taxon[]; unknown: Partial<Record<FilterId, number>>; hidden: Partial<Record<FilterId, number>> } {
+  const active = tests(filters, ctx), unknown: Partial<Record<FilterId, number>> = {}, hidden: Partial<Record<FilterId, number>> = {};
+  for (const [id] of active) { unknown[id] = 0; hidden[id] = 0; }
   const rows = taxa.filter((t) => {
-    let keep = true;
+    const out: [FilterId, boolean][] = []; // the filters leaving it out, and whether each judged it
     for (const [id, test] of active) {
       const r = test(t);
-      if (r === null) { unknown[id]! += 1; if (id !== 'toxic' && id !== 'invasive') keep = false; } else if (!r) keep = false;
+      if (r === null) { unknown[id]! += 1; if (id !== 'toxic' && id !== 'invasive') out.push([id, false]); } else if (!r) out.push([id, true]);
     }
-    return keep;
+    // A plant this filter alone leaves out counts as hidden by it: the plants it took off the list.
+    if (out.length === 1 && out[0][1]) hidden[out[0][0]]! += 1;
+    return out.length === 0;
   });
-  return { rows, unknown };
+  return { rows, unknown, hidden };
 }
 
 // ---- job words (board FindJob) ----
