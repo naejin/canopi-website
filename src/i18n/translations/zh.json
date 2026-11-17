@@ -968,7 +968,7 @@
   "consortium.find.range": "只要稳稳在范围内的",
   "consortium.find.f.later": "未来气候",
   "consortium.find.f.laterFor": "适用于树木和要留 20 年的植物。",
-  "consortium.find.holds": "到 2041–2070 年仍能适应",
+  "consortium.find.holds": "到 {period} 年仍能适应",
   "consortium.find.f.light": "所需光照",
   "consortium.find.f.lightFor": "填补植物下方或上方的空层。",
   "consortium.find.light.sun": "全日照",

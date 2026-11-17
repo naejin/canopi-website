@@ -968,7 +968,7 @@
   "consortium.find.range": "Solo bien dentro de su rango",
   "consortium.find.f.later": "Clima futuro",
   "consortium.find.f.laterFor": "Para árboles y todo lo que mantengas 20 años.",
-  "consortium.find.holds": "Aguanta hacia 2041–2070",
+  "consortium.find.holds": "Aguanta hacia {period}",
   "consortium.find.f.light": "Luz que necesita",
   "consortium.find.f.lightFor": "Para llenar un estrato vacío bajo tus plantas o sobre ellas.",
   "consortium.find.light.sun": "Pleno sol",

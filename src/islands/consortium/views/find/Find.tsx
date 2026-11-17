@@ -17,8 +17,8 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, warns } from '../../../../lib/consortium/index.ts';
-import { namesLine, queryTokens, type FindHit } from '../../data/search.ts';
+import { jobIds, jobsOf, periodIds, queryTokens, warns } from '../../../../lib/consortium/index.ts';
+import { namesLine, type FindHit } from '../../data/search.ts';
 import { applyFilters, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
 import { FitLine, JobIcon, holeWords } from '../kit/fit.tsx';
@@ -28,7 +28,10 @@ import { formatLength } from '../../format.ts';
 import { page } from '../kit/page.ts';
 import { finder, namesState, releasePlants, wantNames } from './names.ts';
 
-const HOLDS_PERIOD = '2041-2070';
+// "Holds up by …": the first later period (types.ts periodIds), named as future.ts periodName names it
+// (not imported: it would bring the future and range chunks into Find's first use, as pool.tsx says).
+const HOLDS_PERIOD = periodIds[1];
+const holdsName = HOLDS_PERIOD.replace('-', '–');
 
 // A language's name in the page's language ("French"), for "French name: Gombo".
 const langName = (code: string): string => {
@@ -117,12 +120,11 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const hits = useMemo(() => (q && search ? search(q) : null), [q, search]);
   const job = useMemo(() => (q ? jobsMatching(q, jobWords)[0] ?? null : null), [q]);
   const ctx = useMemo(() => ({
-    climate,
     verdicts,
     holds: rule && located ? (t: Taxon) => rule.holdsBy(t, vctx, HOLDS_PERIOD) : undefined,
     toxic: (t: Taxon) => (t.warnings.toxicity ? t.warnings.toxicity.level !== 'None' : null),
     invasive: (t: Taxon) => (flagCtx.countryStatus === 'checked' && flagCtx.country && t.warnings.invasive_in ? t.warnings.invasive_in.some((r) => r.country === flagCtx.country) : null),
-  }), [climate, verdicts, rule, located, vctx, flagCtx]);
+  }), [verdicts, rule, located, vctx, flagCtx]);
   const view = useMemo(() => {
     const hitOf = new Map<PlantId, FindHit>(), rank = new Map<PlantId, number>();
     hits?.forEach((h, i) => { hitOf.set(h.id, h); rank.set(h.id, i); });
@@ -237,7 +239,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
         <fieldset class="ct-find-fgroup">
           <legend>{T('find.f.later')}</legend>
           <p class="ct-muted ct-small">{T('find.f.laterFor')}</p>
-          {check('holds', 'holds', T('find.holds'))}
+          {check('holds', 'holds', T('find.holds', { period: holdsName }))}
         </fieldset>
       )}
       {chipGroup('light', lightChips, 'light')}

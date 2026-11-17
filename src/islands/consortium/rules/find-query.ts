@@ -15,7 +15,7 @@ export const GROUPS = ['fits', 'look', 'outside', 'unchecked'] as const;
 export type Group = (typeof GROUPS)[number];
 
 // A plant's group: its verdict's level, a warned fit moved to "needs a second look".
-export function groupOf(level: Level | undefined, warned: boolean): Group {
+function groupOf(level: Level | undefined, warned: boolean): Group {
   if (level === 'outside') return 'outside';
   if (level === 'look' || (level === 'fits' && warned)) return 'look';
   if (level === 'fits') return 'fits';
@@ -45,7 +45,7 @@ export interface FindFilters {
   life?: readonly Life[];
   edible?: boolean;
   range?: boolean; // well inside its range only (needs a location)
-  holds?: boolean; // holds up by 2041-2070 (needs a location)
+  holds?: boolean; // holds up by the first later period (needs a location)
   hideToxic?: boolean;
   hideInvasive?: boolean;
 }
@@ -54,7 +54,6 @@ export type FilterId = 'job' | 'light' | 'size' | 'life-cycle' | 'edible' | 'ran
 // What the filters read beyond the plant: its verdict, whether it holds up later, whether it is toxic
 // or invasive in the country (null: not known).
 export interface FilterContext {
-  climate: string | null;
   verdicts?: ReadonlyMap<PlantId, PlantVerdict> | null;
   holds?: (t: Taxon) => boolean | null;
   toxic?: (t: Taxon) => boolean | null;
@@ -70,7 +69,7 @@ const sizeOf = (t: Taxon): Size | null => {
   return h == null ? null : h < 2 ? 'small' : h <= 8 ? 'middle' : 'tall';
 };
 // One season: annual or grown as one; a few years: a short lifespan; long-lived: moderate or long.
-export const lifeOf = (t: Taxon): Life | null => {
+const lifeOf = (t: Taxon): Life | null => {
   if (t.traits.is_annual || t.traits.grown_as_annual) return 'season';
   const span = t.traits.lifespan;
   return span === 'Short' ? 'few' : span === 'Moderate' || span === 'Long' ? 'long' : null;

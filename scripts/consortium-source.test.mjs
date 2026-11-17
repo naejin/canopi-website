@@ -13,7 +13,8 @@ import { writeFixtureExport, FIXTURE_GRID_SHA256 } from './fixtures/consortium-v
 
 const { openBytes, LoadError } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-const { fold, releaseIndex } = await import('../src/islands/consortium/data/search.ts');
+const { fold } = await import('../src/lib/consortium/index.ts');
+const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
 const core = await import('../src/lib/consortium/index.ts');
 const { suggest } = await import('../src/lib/consortium/suggest.ts');
 

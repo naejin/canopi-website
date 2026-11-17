@@ -50,7 +50,7 @@ test('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (lev
 test('PP-C-u2 (c1 find-query filters): every filter returns the count of plants it could not judge, and hides none of them silently', async () => {
   const { applyFilters } = await findQuery();
   const taxa = [plant(1, { traits: { edibility_rating: 4 } }), plant(2, { traits: { edibility_rating: 0 } }), plant(3, { traits: {} })];
-  const { rows, unknown } = applyFilters(taxa, { edible: true }, { climate: 'Temperate' });
+  const { rows, unknown } = applyFilters(taxa, { edible: true }, {});
   assert.deepEqual(rows.map((t) => t.id), [id(1)]);
   assert.equal(unknown.edible, 1, 'the plant with no edibility recorded is counted');
 });
@@ -164,4 +164,15 @@ test('PP-C-u9 (c1 one search module): Paste matches through it, synonyms include
   const line = namesLine(['en', 'fr', 'de']);
   assert.equal(line.vars?.n, 3, 'the languages the file holds');
   assert.ok(!/\b11\b/.test(JSON.stringify(line)), 'never "11 languages"');
+});
+
+// Fix round 1 (A13): one import route and no unread surface.
+test('PP-C c1 fix A13: the core is the only route to fold and queryTokens; groupOf and lifeOf stay inside find-query; "Holds up by" names its period', async () => {
+  const s = await search(), q = await findQuery();
+  assert.equal('fold' in s || 'queryTokens' in s, false, 'search.ts re-exports neither (import them from the core index)');
+  assert.equal('groupOf' in q || 'lifeOf' in q, false, 'groupOf and lifeOf are module-internal');
+  for (const [lang, w] of Object.entries(words)) {
+    assert.match(w['consortium.find.holds'], /\{period\}/, `${lang}: the period is a variable`);
+    assert.doesNotMatch(w['consortium.find.holds'], /2041/, `${lang}: no period written in`);
+  }
 });

@@ -968,7 +968,7 @@
   "consortium.find.range": "Только с запасом внутри диапазона",
   "consortium.find.f.later": "Будущий климат",
   "consortium.find.f.laterFor": "Для деревьев и всего, что растёт у вас 20 лет.",
-  "consortium.find.holds": "Выдержит к 2041–2070",
+  "consortium.find.holds": "Выдержит к {period}",
   "consortium.find.f.light": "Сколько света нужно",
   "consortium.find.f.lightFor": "Чтобы заполнить пустой ярус под растениями или над ними.",
   "consortium.find.light.sun": "Полное солнце",

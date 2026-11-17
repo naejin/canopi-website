@@ -968,7 +968,7 @@
   "consortium.find.range": "Bien dans son aire seulement",
   "consortium.find.f.later": "Climat futur",
   "consortium.find.f.laterFor": "Pour les arbres et tout ce que vous gardez 20 ans.",
-  "consortium.find.holds": "Tient d’ici 2041–2070",
+  "consortium.find.holds": "Tient d’ici {period}",
   "consortium.find.f.light": "Lumière",
   "consortium.find.f.lightFor": "Pour remplir un étage vide sous vos plantes ou au-dessus.",
   "consortium.find.light.sun": "Plein soleil",

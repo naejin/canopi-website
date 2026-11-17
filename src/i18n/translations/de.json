@@ -968,7 +968,7 @@
   "consortium.find.range": "Nur deutlich innerhalb des Bereichs",
   "consortium.find.f.later": "Künftiges Klima",
   "consortium.find.f.laterFor": "Für Bäume und alles, was Sie 20 Jahre behalten.",
-  "consortium.find.holds": "Hält bis 2041–2070",
+  "consortium.find.holds": "Hält bis {period}",
   "consortium.find.f.light": "Lichtbedarf",
   "consortium.find.f.lightFor": "Um eine leere Schicht unter oder über Ihren Pflanzen zu füllen.",
   "consortium.find.light.sun": "Volle Sonne",

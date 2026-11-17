@@ -21,8 +21,6 @@
 import { fold, queryTokens, type ClimateZone, type Line, type PlantId } from '../../../lib/consortium/index.ts';
 import { climateZones } from '../../../lib/consortium/index.ts';
 
-export { fold, queryTokens };
-
 // One plant as the index reads it. names: the core's names by locale (plant_names: English and the
 // page's language); other: names-file vernacular names (lang: its code; one in the page's language is an
 // alternate); synonyms, accepted: names-file scientific names.
@@ -203,16 +201,14 @@ const pause = (): Promise<void> => {
   return s?.yield ? s.yield() : new Promise((r) => setTimeout(r, 0));
 };
 
-// The index over the core's entries and the names file's rows, folded in slices of `slice` names
-// that yield between them (4.7: no long task while the file is read). plantIds: the core's integer
+// The index over the core's entries and the names file's rows, folded in slices of SLICE names that
+// yield between them (4.7: no long task while the file is read; the probe's 2,000, 2026-11-17). plantIds: the core's integer
 // plants.plant → id (PlantSource.names); a row of a plant the core does not list is skipped.
 // The text must already be checked to belong to the page's database (namesFor).
-export async function indexSliced(
-  { names, lang, file, plantIds }: { names: readonly FindEntry[]; lang: string; file: string; plantIds: ReadonlyMap<number, PlantId> },
-  { slice = 2000, rest = pause }: { slice?: number; rest?: () => Promise<void> } = {},
-): Promise<Finder> {
+const SLICE = 2000;
+export async function indexSliced({ names, lang, file, plantIds }: { names: readonly FindEntry[]; lang: string; file: string; plantIds: ReadonlyMap<number, PlantId> }): Promise<Finder> {
   const b = new Builder(lang);
-  for (let i = 0; i < names.length; i++) { b.entry(names[i]); if ((i + 1) % slice === 0) await rest(); }
+  for (let i = 0; i < names.length; i++) { b.entry(names[i]); if ((i + 1) % SLICE === 0) await pause(); }
   const codes = kindCodes(file), langs = new Set<string>();
   let at = 0, n = 0;
   // Past the three header lines (#canopi-names, #codes, the column line).
@@ -226,7 +222,7 @@ export async function indexSliced(
     if (p !== undefined && k && text) {
       if (k === 'vernacular') { if (l) { b.vernacular(p, l, text); langs.add(l); } } else b.add(p, k, '', text);
     }
-    if (++n % slice === 0) await rest();
+    if (++n % SLICE === 0) await pause();
   }
   return b.finish(langs);
 }

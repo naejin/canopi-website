@@ -968,7 +968,7 @@
   "consortium.find.range": "Alleen ruim binnen het bereik",
   "consortium.find.f.later": "Toekomstig klimaat",
   "consortium.find.f.laterFor": "Voor bomen en alles wat je 20 jaar houdt.",
-  "consortium.find.holds": "Houdt stand tot 2041–2070",
+  "consortium.find.holds": "Houdt stand tot {period}",
   "consortium.find.f.light": "Licht dat hij nodig heeft",
   "consortium.find.f.lightFor": "Om een lege laag onder of boven je planten te vullen.",
   "consortium.find.light.sun": "Volle zon",

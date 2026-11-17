@@ -968,7 +968,7 @@
   "consortium.find.range": "Well inside its range only",
   "consortium.find.f.later": "Later climate",
   "consortium.find.f.laterFor": "For trees and anything you keep 20 years.",
-  "consortium.find.holds": "Holds up by 2041–2070",
+  "consortium.find.holds": "Holds up by {period}",
   "consortium.find.f.light": "Light it needs",
   "consortium.find.f.lightFor": "To fill an empty level under or above your plants.",
   "consortium.find.light.sun": "Full sun",

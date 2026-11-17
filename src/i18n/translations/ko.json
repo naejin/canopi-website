@@ -968,7 +968,7 @@
   "consortium.find.range": "범위 안쪽에 넉넉한 것만",
   "consortium.find.f.later": "미래 기후",
   "consortium.find.f.laterFor": "나무와 20년 키울 것을 위해.",
-  "consortium.find.holds": "2041–2070년까지 견딤",
+  "consortium.find.holds": "{period}년까지 견딤",
   "consortium.find.f.light": "필요한 빛",
   "consortium.find.f.lightFor": "식물 아래나 위의 빈 층을 채우려면.",
   "consortium.find.light.sun": "양지",

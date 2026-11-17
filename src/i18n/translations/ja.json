@@ -968,7 +968,7 @@
   "consortium.find.range": "範囲の内側に十分収まるものだけ",
   "consortium.find.f.later": "将来の気候",
   "consortium.find.f.laterFor": "木や、20 年育てるもののために。",
-  "consortium.find.holds": "2041–2070 年まで持ちこたえる",
+  "consortium.find.holds": "{period} 年まで持ちこたえる",
   "consortium.find.f.light": "必要な光",
   "consortium.find.f.lightFor": "植物の下や上の空いた層を埋めるために。",
   "consortium.find.light.sun": "日なた",
