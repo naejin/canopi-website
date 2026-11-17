@@ -62,6 +62,19 @@
 .ct :where(.ct-sheet) .ct-flag { border-color: var(--warning-line); background: var(--warning-bg); color: var(--warning); }
 .ct .ct-place { display: grid; gap: 6px; padding: 14px 16px; border-radius: 8px; background: var(--surface-alt); }
 
+/* Against your place (PP-C c2): the fit line, then one line per factor, the limiting one first; the
+   level is in the words and the icon, the colour only repeats it (tokens of the fit line). */
+.ct .ct-against { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; }
+.ct .ct-against-fit { margin: 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-alt); font-weight: 600; color: var(--level-fits); }
+.ct .ct-against-fit[data-level="look"] { color: var(--level-look); }
+.ct .ct-against-fit[data-level="outside"] { color: var(--level-outside); }
+.ct .ct-against-fit[data-level="unknown"] { color: var(--level-unknown); }
+.ct .ct-against-lines { display: grid; gap: 8px; }
+.ct .ct-against-lines li { padding-left: 12px; border-left: 2px solid var(--border); overflow-wrap: anywhere; }
+.ct .ct-against-lines li[data-level="look"] { border-left-color: var(--level-look); }
+.ct .ct-against-lines li[data-level="outside"] { border-left-color: var(--level-outside); }
+.ct .ct-against-lines li[data-later] { border-left-style: dashed; }
+
 /* The stage bar: seven segments, the plant's span filled, the cell's stage outlined */
 .ct :where(.ct-sheet) .ct-bar { display: inline-flex; gap: 2px; vertical-align: middle; }
 .ct :where(.ct-sheet) .ct-bar i { display: block; width: 20px; height: 8px; border-radius: 2px; background: var(--bar-soft); }

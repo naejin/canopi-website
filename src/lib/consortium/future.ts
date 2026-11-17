@@ -131,6 +131,4 @@ export function futureSummary(taxa: readonly Taxon[], site: SiteLocation | null,
   return { available, periods: futurePeriods.flatMap((p) => byPeriod.get(p) ?? []), already, todayOnly, notChecked, checks };
 }
 
-// How the page writes a scenario and a period: 'ssp245' → 'SSP2-4.5', '2041-2070' → '2041–2070'.
-export const scenarioName = (s: Scenario): string => `SSP${s[3]}-${s[4]}.${s[5]}`;
-export const periodName = (p: FuturePeriod): string => p.replace('-', '–');
+// How the page writes a scenario and a period: verdict-line.ts scenarioName, periodName (the year words' one owner).

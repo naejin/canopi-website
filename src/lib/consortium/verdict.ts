@@ -16,13 +16,23 @@
 // - Spot and soil answers are hints: a misfit is 'look' at most; an unknown trait is a factor
 //   'unknown' that never lowers the level. Shade relief: a sun spot's light factor is dropped when a
 //   taller member shades the plant in a phase they share (ctx.canopy, site.ts shadedBy).
-// - Room is a note ('room-tall'), never a level (DEC:97). Aridity is a note ('drier'), never a level.
+// - Room is a note ('room-tall'), never a level (DEC:97). Aridity is a note ('drier', 'wetter'), never
+//   a level: its factor 'dry' (the place's aridity index against the plant's band; 'look' beyond it,
+//   'unknown' on ice, "not checked") is said with its measure and skipped by worst().
+//   Drought tolerance Medium on a dry spot: note 'dry-months' ("needs watering in the dry months").
 // - "Higher than the town" or a hollow: note 'cold-air' on a plant within the margin of its cold limit.
 // - The level is the worst factor (outside, then look, then fits); 'unknown' when no climate factor
 //   was judged and no hint asks a second look.
+// - Hedges (A15): a range side passed within the margin carries confidence 'edge'; a bound from another
+//   source than its row names it (`source`); a disputed low (ClimateRange weak) is `disputed`; a plant
+//   placed from a nearest list is `borrowed` (its lines say "estimate"); `range` keeps "not recorded"
+//   (a place climate, no range for the plant) apart from "not checked" (no climate for the period).
+// - Today's verdict of a plant judged later in its own years notes what that period changes:
+//   'warm-enough-later' (too cool today, within every bound then) and 'drier-later'.
 import type { Factor, FactorVerdict, Level, PeriodId, PlantId, PlantVerdict, Scenario, Taxon, VerdictContext, VerdictNote } from './types.ts';
 import { periodIds, scenarios } from './types.ts';
-import { aridityFit, boundPassed, coolSeasonOf, isAnnual, passes, RANGE_BOUNDS, RANGE_MARGIN_C } from './range.ts';
+import { borrowedFrom } from './placement.ts';
+import { aridityFit, boundPassed, coolSeasonOf, isAnnual, passes, RANGE_BOUNDS, RANGE_MARGIN_C, slotCheck } from './range.ts';
 import { futurePeriod } from './future.ts';
 import { fits, shadedBy, tallerThanRoom } from './site.ts';
 import { climateFor, siteFor } from './place.ts';
@@ -54,9 +64,18 @@ function climateFactors(taxon: Taxon, ctx: VerdictContext, period: PeriodId, sce
     const range = taxon.climate?.[b.range] ?? null;
     const cool = coolSeasonOf(taxon, b, p);
     if (cool) notes.push('cool-season');
-    factors.push({ factor: b.side as Factor, level: cool ? 'fits' : OF_PASSED[p], basis: 'range', place: b.site(slot), low: range?.low ?? null, high: range?.high ?? null });
+    const level: Level = cool ? 'fits' : OF_PASSED[p];
+    const f: FactorVerdict = { factor: b.side as Factor, level, basis: 'range', place: b.site(slot), low: range?.low ?? null, high: range?.high ?? null };
+    if (level === 'look') f.confidence = { term: 'edge' };
+    const source = b.end === 'low' ? range?.lowSource : range?.highSource;
+    if (source) f.source = source;
+    else if (range?.weak && b.end === 'low') f.disputed = true;
+    factors.push(f);
   }
-  if (aridityFit(taxon, slot) === 'drier') notes.push('drier');
+  const arid = aridityFit(taxon, slot), band = taxon.climate?.aridity;
+  if (arid === 'drier' || arid === 'wetter') notes.push(arid);
+  if (arid === 'not-checked') factors.push({ factor: 'dry', level: 'unknown', basis: 'range', place: null, low: null, high: null });
+  else if (arid !== 'unknown') factors.push({ factor: 'dry', level: arid === 'inside' ? 'fits' : 'look', basis: 'range', place: slot.aridityIndex, low: band?.low ?? null, high: band?.high ?? null });
   const height = ctx.place.spot.height;
   if ((height === 'higher' || height === 'hollow') && taxon.climate?.tminCold?.low != null && isColdLimited(taxon, slot.tminColdC)) notes.push('cold-air');
   return { factors, notes };
@@ -71,7 +90,7 @@ function isColdLimited(taxon: Taxon, tmin: number): boolean {
 // The spot and soil hints asked today (light, water, a soil word), each at most 'look'.
 // site: siteFor(ctx.place, ctx.lookup), read once per verdicts() call (resolveSoil runs in it).
 type SiteOf = ReturnType<typeof siteFor>;
-function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors: FactorVerdict[]; roomTall: boolean } {
+function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors: FactorVerdict[]; roomTall: boolean; dryMonths: boolean } {
   const fit = fits(taxon, site);
   const shaded = !!ctx.canopy && shadedBy(taxon, site, ctx.canopy);
   const factors: FactorVerdict[] = [];
@@ -82,11 +101,12 @@ function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors
     const factor: Factor = r.key === 'soil' ? 'soil-ph' : r.key;
     factors.push({ factor, level, basis: r.key === 'soil' ? 'soil-test' : 'spot', place: null, low: null, high: null });
   }
-  return { factors, roomTall: tallerThanRoom(fit) };
+  return { factors, roomTall: tallerThanRoom(fit), dryMonths: fit.reasons.some((r) => r.key === 'water' && r.note === 'dry_months') };
 }
 
+// The aridity factor ('dry') is shown with its measure and never sets the level (header).
 const worst = (fs: readonly FactorVerdict[]): FactorVerdict | null =>
-  fs.reduce<FactorVerdict | null>((w, f) => (ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
+  fs.reduce<FactorVerdict | null>((w, f) => (f.factor !== 'dry' && ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
 
 export function verdict(taxon: Taxon, ctx: VerdictContext): PlantVerdict {
   return verdictAt(taxon, ctx, siteFor(ctx.place, ctx.lookup));
@@ -98,12 +118,17 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   const factors = [...(climate?.factors ?? []), ...hints.factors];
   const notes: VerdictNote[] = [...new Set<VerdictNote>(climate?.notes ?? [])];
   if (hints.roomTall) notes.push('room-tall');
+  if (hints.dryMonths) notes.push('dry-months');
   if (isAnnual(taxon)) notes.push('annual');
+  if (judged === TODAY && climate) notes.push(...laterNotes(taxon, ctx));
   const limiting = worst(factors);
   // A range recorded with no side that applies (an annual with only its winter cold) is 'fits': the
   // canopi-data range-verdict contract (DATA-1, SYN:annual.grown_as_annual: "inside") says so.
   const level: Level = limiting ? limiting.level : climate ? 'fits' : 'unknown';
-  const out: PlantVerdict = { id: taxon.id, judged, ownYears: judged !== ctx.period, level, limiting, factors, notes };
+  const range = climate ? 'judged' : climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, judged) ? 'not-recorded' : 'no-climate';
+  const out: PlantVerdict = { id: taxon.id, judged, ownYears: judged !== ctx.period, level, limiting, factors, notes, range };
+  const from = borrowedFrom(taxon);
+  if (from) out.borrowed = from;
   // The scenarios that agree on a later period (each scenario's slot judged the same way).
   if (judged !== TODAY && climate) {
     let agree = 0, of = 0;
@@ -116,6 +141,20 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
     }
     if (of) { out.agree = agree; out.of = of; }
   }
+  return out;
+}
+
+// What a plant's own later period changes, said on today's verdict (header): too cool today and within
+// every bound then ('warm-enough-later'), drier then and not today ('drier-later'); under the scenario
+// of the context.
+function laterNotes(taxon: Taxon, ctx: VerdictContext): VerdictNote[] {
+  const own = futurePeriod(taxon);
+  const later = own && climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, own);
+  const today = climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, TODAY);
+  if (!later || !today) return [];
+  const out: VerdictNote[] = [];
+  if (slotCheck(taxon, today).beyond.some((s) => s === 'cool' || s === 'summer') && slotCheck(taxon, later).beyond.length === 0) out.push('warm-enough-later');
+  if (aridityFit(taxon, later) === 'drier' && aridityFit(taxon, today) !== 'drier') out.push('drier-later');
   return out;
 }
 

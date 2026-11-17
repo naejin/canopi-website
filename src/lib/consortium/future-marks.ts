@@ -13,7 +13,8 @@
 // and Details, never on chips (today's aridity mark is not on chips either), with any verdict.
 import type { Mark, MarkSurface, Taxon } from './types.ts';
 import type { MarkContext } from './marks.ts';
-import { futureCheck, periodName, scenarioName } from './future.ts';
+import { futureCheck } from './future.ts';
+import { periodName, scenarioName } from './verdict-line.ts';
 
 export function futureMarks(taxon: Taxon, ctx: MarkContext, surface: MarkSurface): Mark[] {
   if (!ctx.location) return [];

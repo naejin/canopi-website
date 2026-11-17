@@ -20,6 +20,7 @@ import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides } from '../../../../data/consortium-guides.ts';
 import { PlantMarks } from '../PlantMarks.tsx';
+import { Against } from './Against.tsx';
 import { Bar, shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phasePlain, spanWords, zoneName } from '../kit/names.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -194,6 +195,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           <PlantMarks taxon={t} surface="details" />
         </p>
       </div>
+
+      <Against t={t} />
 
       <section class="ct-place" aria-labelledby="ct-d-place">
         <h3 id="ct-d-place">{T('details.placedFor', { climate: zoneName(zone) })}</h3>

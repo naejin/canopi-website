@@ -586,9 +586,21 @@ export interface FactorVerdict {
   place: number | null;
   low: number | null;
   high: number | null;
-  confidence?: Confidence;
+  confidence?: Confidence; // the factor's hedge: 'edge' on a range side passed within the margin
+  source?: string; // a range bound taken from another source than the row's own (ClimateRange low/highSource, e.g. 'treegoer_ranges')
+  disputed?: boolean; // a low bound whose sources disagree (ClimateRange weak, schema 3): said, never softening the level
 }
-export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'warm-enough-later' | 'cold-air';
+// Notes beside the level, never a level themselves (3.2): the room ('room-tall', with the plant's height),
+// an annual ('annual': its winter cold is not checked), the cool-season advice, the place drier or wetter
+// than where it is recorded at the period judged, watering in the dry months ('dry-months': drought
+// tolerance Medium on a dry spot), cold air on a hill top or in a hollow, and, on today's verdict of a
+// plant judged later in its own years, what the later period changes: 'warm-enough-later' (too cool
+// today, within its range then) and 'drier-later' (drier then, not today).
+export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'wetter' | 'dry-months' | 'warm-enough-later' | 'drier-later' | 'cold-air';
+// Why the climate factors are what they are: compared ('judged'), a place climate with no range recorded
+// for the plant ('not-recorded'), or no climate for the period (no location, no projection: 'no-climate',
+// "not checked"). Kept apart so "not recorded" never reads as "not checked" (A15).
+export type RangeBasisState = 'judged' | 'not-recorded' | 'no-climate';
 export interface PlantVerdict {
   id: PlantId;
   judged: PeriodId; // min(page period, the plant's own years)
@@ -599,6 +611,8 @@ export interface PlantVerdict {
   notes: VerdictNote[];
   agree?: number; // scenarios (future.ts FutureCheck)
   of?: number;
+  range: RangeBasisState;
+  borrowed?: ClimateZone; // placed from a nearest list (Taxon.origin borrowed): its lines carry "estimate"
 }
 export interface VerdictContext {
   place: Place;
@@ -608,8 +622,13 @@ export interface VerdictContext {
   soil?: ResolvedSoil;
   canopy?: readonly number[]; // site.ts Canopy, from canopyOf(members) (the store builds it)
 }
-// One line of words: an i18n key, its variables and the count P() reads (verdict-line.ts, b2).
-export interface Line { key: string; vars: Record<string, string | number>; count?: number }
+// One line of words: an i18n key, its variables and the count P() reads (verdict-line.ts, b2); `also`:
+// sentences said after it (a reason's confidence, its bound's source), each a Line of its own. A
+// variable named temp… is a temperature in °C, len… a length in metres: the view formats it with its
+// unit (format.ts); every other number is a plain number.
+// `parts`: variables that are words themselves, a Line or a list of Lines said as a list ("the Balearic
+// Islands and mainland Spain"), filled into the key's {name} like a variable.
+export interface Line { key: string; vars: Record<string, string | number>; count?: number; also?: Line[]; parts?: Record<string, Line | Line[]> }
 
 // Holes (3.3; bodies in holes.ts, b2).
 export type HoleKind = 'job' | 'light' | 'flowering' | 'cool' | 'soil';
