@@ -162,6 +162,10 @@ test('P5-14e (S5c range chunk offline): if the range chunk cannot load, the tool
   await page.evaluate((m) => window.__ctTest.openSheet('swap', m), id);
   assert.ok(await has(page, '.ct-swap .ct-rows li', 10_000), 'Swap lists alternatives');
   await page.keyboard.press('Escape');
+  // Escape leaves the sheet's history entry with history.go(-1), which lands later; a hash set while that
+  // traversal is in flight was most likely dropped (CI flake, 2026-11-17: the link never opened; a plain
+  // delay of the go() does not reproduce it). A person never pastes that fast: wait for it to land.
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheet.value === null && !(history.state?.pp ?? []).includes('sheet'), { timeout: 5000 }).then(() => true, () => false), 'the sheet and its history entry are gone');
   const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
   const link = `#${encodeLink({ climate: 'Temperate', country: null, site: { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' }, members: ids.slice(0, 5), kept: [], removed: [], guests: [], crops: [], stage: null }, { Temperate: ids })}`;
   await page.evaluate((h) => { location.hash = h; }, link);
