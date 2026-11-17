@@ -473,3 +473,10 @@ test('c2 fix B2 + B3 (one vocabulary, named exports): the site answers\' words c
   const fit = readFileSync(new URL('../src/islands/consortium/rules/site-fit.ts', import.meta.url), 'utf8');
   assert.match(fit, /siteLines\(/);
 });
+
+test('c2 fix B6 (pt is Brazilian): the c2 words carry no European Portuguese forms', () => {
+  const EU = /\bregist(o|os|ad[ao]s?)\b|nessa altura|para a verificar|\becrã|\butilizador|\bcontacto|\bficheiro|está a \w+r\b/;
+  const mine = Object.entries(words.pt).filter(([k]) => /^consortium\.(line|details|d|swap|print|marks|misfit|scope)\./.test(k));
+  assert.ok(mine.length > 100);
+  assert.deepEqual(mine.filter(([, v]) => EU.test(v)).map(([k, v]) => `${k}: ${v}`), []);
+});
