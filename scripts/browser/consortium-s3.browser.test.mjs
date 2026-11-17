@@ -266,11 +266,13 @@ test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its wa
   await start(page);
   // The Add sheet's ticks and its 8-row query went with Add (PP-C commit 0); Find's are c1's cases.
   // Deep shade: a sun plant from the Tropical list misfits. Inform, don't block (owner 2026-11-14):
-  // its row says why in words, one tap on "Add anyway" adds it, and the toast names the warning.
+  // its row says in words that it is another climate's plant (fix round 1, A8: its list, and so its
+  // misfit, is read only when it is added), one tap on "Add anyway" adds it, and the toast names the
+  // warning.
   await setStore(page, () => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });
   await openBy(page, 'Paste a list');
   await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
-  assert.ok(await findAx(page, { name: /^Your site:/ }), 'the guest row shows its warning in words');
+  assert.ok(await page.waitForFunction(() => /Tropical/.test(document.querySelector('dialog[open] [data-paste-row][data-status="other"]')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the guest row says in words it is from the Tropical list');
   await page.locator(aria('button', 'Add anyway')).click();
   assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical', 'the guest joins at once');
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
@@ -351,15 +353,16 @@ test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "A
 
 // W4 (review paste-2, pf-2): "Add anyway" leaves the list as the plant joins, so the focus moves on, never
 // to <body> and never stays on the pressed (removed) button: to the next row's "Add anyway", else the
-// row before's, else the "Already in" heading. Rows are keyed by plant, so the pressed node leaves.
-test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next row\'s, else the row before\'s, then to the "Already in" heading, never to <body> or the pressed button', async () => {
+// row before's, else the count line (fix round 1, B10: the paste in its order, no "Already in" group;
+// a joined row says "In your palette", its button gone).
+test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next row\'s, else the row before\'s, then to the count line, never to <body> or the pressed button', async () => {
   const page = await open({ width: 1280, data: 'fixture' });
   await start(page);
   const [A, B, C] = ['Inga edulis', 'Musa acuminata', 'Carica papaya'];
   for (const c of [A, B, C]) if (await isMember(page, c)) await dropMember(page, c);
   await openBy(page, 'Paste a list');
   await page.locator('::-p-aria([role="textbox"])').fill([A, B, C].join('\n'));
-  const rows = 'dialog[open] [aria-labelledby="ct-p-other"] li';
+  const rows = 'dialog[open] [data-paste-row][data-status="other"]';
   assert.ok(await page.waitForFunction((sel) => document.querySelectorAll(`${sel} button`).length === 3, { timeout: 5000 }, rows).then(() => true, () => false), 'three rows from another list');
   // The "Add anyway" of a plant's row, by its scientific name.
   const buttonOf = (name) => page.evaluate((sel, n) => [...document.querySelectorAll(sel)].find((li) => li.querySelector('.ct-sci')?.textContent === n)?.querySelector('button')?.getAttribute('aria-describedby') ?? null, rows, name);
@@ -382,7 +385,7 @@ test('BT-6 (S3 paste focus): Enter on "Add anyway" moves the focus to the next r
   assert.equal((await press(C)).describedby, b, 'the last row: the focus goes to the row before\'s "Add anyway"');
   assert.equal((await press(A)).describedby, b, 'the first row: the focus goes to the next row\'s');
   const at = await press(B);
-  assert.equal(at.tag, 'H3', `the list empty: the "Already in" heading (${JSON.stringify(at)})`);
-  assert.match(at.text, /Already in/i);
+  assert.equal(at.tag, 'P', `no row left to add: the count line (${JSON.stringify(at)})`);
+  assert.match(at.text, /names read/i);
   await page.close();
 });
