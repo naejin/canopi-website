@@ -412,7 +412,7 @@ test('PP-C12 (c1 sheet closed mid-fetch, 4.5; Find from Place, 4.6): reopening u
 
 // Fix round 1, A8 (review c1-11): Paste reads the release-wide index and the release's plants, as Find
 // does: opening it loads no other climate's list; a pool loads only when its plant is added.
-test('PP-C c1 fix A8 (Paste, one index): Paste loads no other list on opening; a plant only another list holds is found and its list loads only on add', async () => {
+test('PP-C40 (c1 fix A8 Paste, one index): Paste loads no other list on opening; a plant only another list holds is found and its list loads only on add', async () => {
   const page = await tool({ data: 'fixture' });
   await choose(page, 'Temperate');
   const pools = () => page.evaluate(() => Object.keys(window.__ctTest.store.pools.value).sort());
@@ -430,7 +430,7 @@ test('PP-C c1 fix A8 (Paste, one index): Paste loads no other list on opening; a
 // Fix round 1, A1 (review c1-02): "No plant answers" only when nothing answers at all; a hit the
 // filters, the hole or the palette keeps out is counted on one line with its way out, and the release
 // never gets "Ask us to add" for a plant it holds.
-test('PP-C c1 fix A1 (hits kept out are counted): in the palette, hidden by a filter, outside the hole: each said with its way out, never "No plant answers"', async () => {
+test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a filter, outside the hole: each said with its way out, never "No plant answers"', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const pick = await page.evaluate(() => {
     const { store } = window.__ctTest, m = new Set(store.members.value);
@@ -468,9 +468,9 @@ test('PP-C c1 fix A1 (hits kept out are counted): in the palette, hidden by a fi
 });
 
 // Fix round 1, B2 and B3 (board FindResults; conformance c1 #2, #3): plain Find folds the plants outside
-// their range behind one counted button too, lists best first (the holes a plant fills, said on the
-// row) with the line saying so, and shows at most a screenful per group behind "Show all N".
-test('PP-C c1 fix B2+B3 (best first, folded outside, Show all): plain Find', async () => {
+// their range behind one counted button too, lists best first (the years in range; the palette's holes
+// wait for a store seam, pf) with the line saying so, and shows at most a screenful per group behind "Show all N".
+test('PP-C42 (c1 fix B2+B3 best first, folded outside, Show all): plain Find', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   await openFind(page);
@@ -478,9 +478,8 @@ test('PP-C c1 fix B2+B3 (best first, folded outside, Show all): plain Find', asy
   assert.ok(await has(page, `${FIND} [data-find-best]`, 4000), 'the "Best first" line');
   assert.equal(await page.$(`${FIND} [data-find-group="outside"]`), null, 'the outside plants are folded in plain Find');
   assert.ok(await page.$(`${FIND} [data-find-outside]`), '"Show N outside their climate range"');
-  const fills = await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.map((e) => Number(e.dataset.fills)));
-  assert.ok(fills.length > 0 && fills.length <= 20, `a screenful at most (${fills.length})`);
-  assert.ok(fills.every((n, i) => i === 0 || n <= fills[i - 1]), `best first: ${fills.join(',')}`);
+  const shown = await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.length);
+  assert.ok(shown > 0 && shown <= 20, `a screenful at most (${shown})`);
   const all = await page.$eval(`${FIND} [data-find-group="fits"] [data-find-showall]`, (b) => Number(/\d+/.exec(b.textContent)?.[0])).catch(() => null);
   assert.ok(all > 20, '"Show all N"');
   await page.click(`${FIND} [data-find-group="fits"] [data-find-showall]`);
@@ -490,7 +489,7 @@ test('PP-C c1 fix B2+B3 (best first, folded outside, Show all): plain Find', asy
 // Fix round 1, B1, B5, B13 (boards FindResults, FillHole, AddAnyway; conformance c1 #1, #8, #16): a row
 // says what it fills, its light, size and years; an outside row says "Add anyway" and that the warning
 // stays (no question asked); a toxic plant carries the short mark, the full wording in Details only.
-test('PP-C c1 fix B1+B5+B13 (row content): fills, light, size, years; Add anyway; short toxic mark', async () => {
+test('PP-C43 (c1 fix B1+B5+B13 row content): fills, light, size, years; Add anyway; short toxic mark', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   await findFromHole(page);
@@ -517,9 +516,9 @@ test('PP-C c1 fix B1+B5+B13 (row content): fills, light, size, years; Add anyway
 });
 
 // Fix round 1, B4 and B6 (boards Find, FindJob; conformance c1 #4, #9): the start says how many plants fit
-// the place, lists the palette's holes (each opens Find for it) and offers the jobs as chips; a job word's
+// the place and offers the jobs as chips (the holes block waits for a store seam, pf); a job word's
 // card says what the job means, what the palette already has for it, and the job words understood.
-test('PP-C c1 fix B4+B6 (start state, job card): fit count, holes block, job chips; the job card explains', async () => {
+test('PP-C44 (c1 fix B4+B6 start state, job card): fit count, job chips; the job card explains', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.countFits.value, { timeout: 10_000 });
   const n = await page.evaluate(() => { const c = window.__ctTest.store.countFits.value; return c.fits + c.look; });
@@ -527,18 +526,6 @@ test('PP-C c1 fix B4+B6 (start state, job card): fit count, holes block, job chi
   await hasFind(page);
   assert.match(await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent).catch(() => ''), new RegExp(`${n} of the`), `"${n} of the M plants … fit your place today"`);
   assert.ok(await page.$(`${FIND} [data-find-byjob] [data-job-chip]`), '"Or look by job" chips');
-  const holes = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.length);
-  assert.ok(holes > 0);
-  const hole = `${FIND} [data-find-holes] [data-find-hole]`;
-  if (await page.$(`${FIND} [data-find-holes]`)) {
-    const title = await page.$eval(hole, (b) => b.dataset.title);
-    await page.click(hole);
-    assert.ok(await page.waitForFunction((t) => document.querySelector('dialog.ct-find h2')?.textContent === t, { timeout: 3000 }, title).then(() => true, () => false), 'a hole opens Find for it');
-    await page.evaluate(() => window.__ctTest.store.closeSheet());
-    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-    await openFind(page);
-    await hasFind(page);
-  }
   await page.click(`${FIND} [data-find-byjob] [data-job-chip="ground"]`);
   assert.ok(await page.$(`${FIND} [data-filter="job"][data-value="ground"][aria-pressed="true"]`), 'a job chip filters by its job');
   await search(page, 'windbreak');
@@ -553,7 +540,7 @@ test('PP-C c1 fix B4+B6 (start state, job card): fit count, holes block, job chi
 // their own view with "Clear all / Show N plants"; the fit filter is one three-way choice with counts, and
 // size and life chips carry counts; the field has a clear button and a short placeholder; the title is
 // said once; on desktop no "Filters" button beside the open column.
-test('PP-C c1 fix B7+B8+B15+B16 (filters and field): chips, phone filters view, three-way fit, clear ×, title once', async () => {
+test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view, three-way fit, clear ×, title once', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   await page.setViewport({ width: 1280, height: 900, deviceScaleFactor: 1 });
@@ -590,10 +577,9 @@ test('PP-C c1 fix B7+B8+B15+B16 (filters and field): chips, phone filters view, 
   assert.ok(await has(page, `${FIND} [data-find-row]`, 2000), 'Show returns to the results');
 });
 
-// Fix round 1, B9, B12, B14 (boards FindMulti, FillHole, FindNone; conformance c1 #7, #12, #15): a "One by
-// one / Select several" switch with its line; adding a plant that fills a hole says the result in the
-// toast; a typing slip (one letter missing, extra or swapped) gives the close names as rows with Add.
-test('PP-C c1 fix B9+B12+B14 (switch, toast result, typo rows)', async () => {
+// Fix round 1, B9, B14 (boards FindMulti, FindNone; conformance c1 #7, #12): a "One by
+// one / Select several" switch with its line; a typing slip (one letter missing, extra or swapped) gives the close names as rows with Add.
+test('PP-C46 (c1 fix B9+B14 switch, typo rows)', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   await openFind(page);
@@ -612,20 +598,13 @@ test('PP-C c1 fix B9+B12+B14 (switch, toast result, typo rows)', async () => {
   const row = `${FIND} [data-find-close-rows] [data-find-row][data-plant-id="${slip.id}"]`;
   assert.ok(await has(page, row, 3000), `a swapped letter ("${slip.q}") gives the plant as a row`);
   assert.ok(await page.$(`${row} [data-find-add]`), 'with Add');
-  await page.evaluate(() => window.__ctTest.store.closeSheet());
-  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-  await findFromHole(page);
-  const filler = await page.$eval(`${FIND} [data-find-row]`, (r) => r.dataset.plantId);
-  await page.click(`${FIND} [data-find-row][data-plant-id="${filler}"] [data-find-add]`);
-  const toast = await page.waitForFunction(() => document.querySelector('dialog.ct-find [role="status"], dialog.ct-find .ct-toast')?.textContent, { timeout: 3000 }).then((h) => h.jsonValue(), () => '');
-  assert.match(toast, /is filled|now nobody/, `the toast says the hole's result (${toast})`);
 });
 
 // Fix round 1, B10 and B11 (board Paste; conformance c1 #13, #14): Paste opened from Find reads the
 // paste in its order with the count of names read, a plural common name asks "Which …?", a plant outside
 // its range says so on its row, the note says plants come with their warnings, and Cancel goes back to
 // Find with the focus on "Paste a list".
-test('PP-C c1 fix B10+B11 (Paste as the board): pasted order, count, Which …?, range warning, note, Cancel back to Find', async () => {
+test('PP-C47 (c1 fix B10+B11 Paste as the board): pasted order, count, Which …?, range warning, note, Cancel back to Find', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   const pick = await page.evaluate(() => {
@@ -654,7 +633,7 @@ test('PP-C c1 fix B10+B11 (Paste as the board): pasted order, count, Which …?,
 
 // Fix round 1, B17 (conformance c1 #18): at 320 px nothing on the palette page scrolls sideways with
 // Find's ways in (the phone bar) showing.
-test('PP-C c1 fix B17: the palette page at 320 px, the Find bar showing, scrolls no wider than the window', async () => {
+test('PP-C48 (c1 fix B17): the palette page at 320 px, the Find bar showing, scrolls no wider than the window', async () => {
   const page = await suggestedAt('nairobi', 'Subtropical'); // the board check's place (Kiambu, Subtropical)
   await page.setViewport({ width: 320, height: 700, deviceScaleFactor: 1 });
   await page.waitForFunction(() => document.querySelector('.ct-find-phonebar:not([hidden])'), { timeout: 6000 });

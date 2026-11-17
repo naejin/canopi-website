@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fills, fitLine, holeLine, holes, jobIds, jobsOf, periodIds, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fitLine, jobIds, jobsOf, periodIds, queryTokens, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { addsWithWarning, applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
@@ -151,13 +151,11 @@ export default function Find({ Frame }: { Frame: Frame }) {
     return m;
   }, [base, flagCtx, scene]);
   const warned = useMemo(() => new Set(base.filter((t) => addsWithWarning(flagsOf.get(t.id) ?? [])).map((t) => t.id)), [base, flagsOf]);
-  // The palette's open holes, computed here read-only with the core's holes() from the store's members
-  // as Palette.tsx computes them (fix round 1, B: Find may not edit Palette or the store); pf will move
-  // Palette and Find onto one store computed.
-  const memberTaxa = store.memberTaxa.value, memberVerdicts = store.memberVerdicts.value;
-  const open = useMemo(() => holes({ members: memberTaxa, verdicts: memberVerdicts, pending: false }).filter((h) => h.state === 'open'), [memberTaxa, memberVerdicts]);
-  // Per plant: the open holes it fills, and the later periods it stays in its range through (best first).
-  const filled = useMemo(() => new Map(base.map((t) => [t.id, open.filter((h) => fills(h, t)).length])), [base, open]);
+  // Best first (B2): in a hole, the plants that fill it (its test `fits`, handed by the palette page:
+  // sheet chunks never import holes.ts, E6-5d), then the later periods a plant stays in range through.
+  // The palette's other holes are not known here (fix round 1: a seam for pf, one store computed of
+  // the holes that Palette and Find both read), so plain Find ranks by the years in range only.
+  const filled = useMemo(() => new Map(hole && fits ? base.map((t) => [t.id, fits(t) ? 1 : 0] as const) : []), [base, hole, fits]);
   // An outside plant's first later period in range ("In range by 2041–2070", B5).
   const inRangeBy = (t: Taxon): string | null => {
     if (!judging) return null;
@@ -219,19 +217,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
     return { ...f, [k]: now.includes(v) ? now.filter((x) => x !== v) : [...now, v] };
   });
   const added = (id: PlantId) => members.includes(id);
-  // What adding a plant does to the hole it fills (B12, board FillHole: "… added. The ground is covered
-  // …"): the sheet's hole, else the first open hole it fills; closed, or what is left of it.
-  const addedWords = (t: Taxon): string => {
-    const name = nameOf(t), h = hole && fits?.(t) ? hole : open.find((x) => fills(x, t));
-    if (!h) return T('find.addedOne', { name });
-    const same = (x: typeof h) => x.kind === h.kind && x.job === h.job && x.stratum === h.stratum && x.fromYear < h.toYear && x.toYear > h.fromYear;
-    const left = holes({ members: [...memberTaxa, t], verdicts: memberVerdicts, pending: false }).find((x) => x.state === 'open' && same(x));
-    const job = T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`);
-    return left ? T('find.addedShrunk', { name, job, hole: say(holeLine(left)) }) : T('find.addedFilled', { name, job });
-  };
   const addOne = (t: Taxon, from?: ClimateZone) => {
     if (added(t.id)) return;
-    store.addMembers([t.id], from ? { [t.id]: from } : {}, { warned: warned.has(t.id) ? [t.id] : [], text: addedWords(t) });
+    store.addMembers([t.id], from ? { [t.id]: from } : {}, { warned: warned.has(t.id) ? [t.id] : [], text: T('find.addedOne', { name: nameOf(t) }) });
   };
   const addFrom = async (id: PlantId, z: ClimateZone) => {
     const list = await store.loadPool(z);
@@ -247,18 +235,17 @@ export default function Find({ Frame }: { Frame: Frame }) {
 
   const title = hole ? holeWords(hole) : T('find.title');
   // The start (board Find, B4): how many plants fit the place (Place's count words, consortium.place.count.*),
-  // the palette's holes (each opens Find for it) and the jobs as chips.
+  // and the jobs as chips. (The board's "Your palette lacks N holes" needs the holes in a store computed:
+  // sheet chunks never import holes.ts; a seam for pf.)
   const fit = store.countFits.value, later = store.period.value !== periodIds[0];
   const fitCount = fit && fit.fits + fit.look > 0
     ? P(later ? 'place.count.ownLater' : 'place.count.own', fit.fits + fit.look, { total: num(fit.of), list: listName(climate), period: store.period.value.replace('-', '–') })
     : null;
   const start = !q && !hole;
-  const fillersOf = (h: (typeof open)[number]) => (offer ?? []).filter((t) => !members.includes(t.id) && fills(h, t)).length;
-  const openHole = (h: (typeof open)[number]) => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
   // A job's card (board FindJob, B6): what it means, what the palette has for it, the words understood.
   const jobHas = (j: JobId) => {
-    const n = memberTaxa.filter((t) => jobsOf(t).includes(j)).length, gap = open.find((h) => h.kind === 'job' && h.job === j);
-    return `${P('find.jobHas', n)}${gap ? `, ${say(holeLine(gap))}` : ''}.`;
+    const n = store.memberTaxa.value.filter((t) => jobsOf(t).includes(j)).length;
+    return `${P('find.jobHas', n)}.`;
   };
   const { groups, unknown, hidden } = view;
   const outsideFolded = foldOutside && !q && groups.outside.length > 0 && (groups.fits.length + groups.look.length + groups.unchecked.length) > 0;
@@ -272,10 +259,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const lines = flagLines(t, flagsOf.get(t.id) ?? [], scene).map((l) => (l.kind === 'toxicity' && t.warnings.toxicity ? { ...l, text: T(`tox.${t.warnings.toxicity.level}`) } : l));
     const jobs = jobsOf(t);
     const on = ticked.includes(t.id), done = added(t.id);
-    const v = verdicts?.get(t.id), outside = v?.level === 'outside', n = filled.get(t.id) ?? 0, y = yearsOf(t);
+    const v = verdicts?.get(t.id), outside = v?.level === 'outside', y = yearsOf(t);
     const later = outside ? inRangeBy(t) : null;
     return (
-      <li key={t.id} data-find-row="" data-plant-id={t.id} data-fills={filled.get(t.id) ?? 0} class={on ? 'is-on' : undefined}>
+      <li key={t.id} data-find-row="" data-plant-id={t.id} class={on ? 'is-on' : undefined}>
         <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
         {select && !done && !outside
           ? <label class="ct-tick"><input type="checkbox" checked={on} aria-label={`${nameOf(t)}, ${t.canonical_name}`} onChange={() => tick(t.id)} /></label>
@@ -287,9 +274,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
           )}
         <div class="ct-row-why">
           {why && <span class="ct-find-why" data-find-why="" data-lang={why.lang} data-kind={why.kind}>{why.text}</span>}
-          {hole && fits?.(t) && y
-            ? <span class="ct-find-fills" data-find-fills="">{T('find.fillsThis', { years: say(yearsLine(y.from, y.to)) })}</span>
-            : n > 0 && <span class="ct-find-fills" data-find-fills="">{P('find.fillsN', n)}</span>}
+          {hole && fits?.(t) && y && <span class="ct-find-fills" data-find-fills="">{T('find.fillsThis', { years: say(yearsLine(y.from, y.to)) })}</span>}
           {jobs.length > 0 && <span class="ct-find-jobs">{jobs.map((j) => T(`job.${j}`)).join(' · ')}</span>}
           <span class="ct-find-meta" data-find-meta="">{metaWords(t)}</span>
           <FitLine v={v} />
@@ -497,16 +482,6 @@ export default function Find({ Frame }: { Frame: Frame }) {
           {select && <p class="ct-muted ct-small" data-find-ticks="">{T('find.ticksStay')}</p>}
           {job && (
             <p class="ct-muted ct-small" data-find-jobwords="">{T('find.jobWordsAll', { words: jobIds.flatMap((j) => jobWords(j).slice(1)).join(', ') })}</p>
-          )}
-          {start && open.length > 0 && (
-            <section class="ct-find-holes" data-find-holes="" aria-labelledby="ct-find-holes">
-              <h3 id="ct-find-holes">{P('find.holesLack', open.length)}</h3>
-              <ul class="ct-find-holelist">
-                {open.slice(0, 4).map((h) => (
-                  <li key={h.id}><button type="button" class="text-link" data-find-hole="" data-title={holeWords(h)} onClick={() => openHole(h)}>{holeWords(h)}</button> <span class="ct-muted">{P('find.count', fillersOf(h))}</span></li>
-                ))}
-              </ul>
-            </section>
           )}
           {start && (
             <section class="ct-find-byjob" data-find-byjob="" aria-labelledby="ct-find-byjob">
