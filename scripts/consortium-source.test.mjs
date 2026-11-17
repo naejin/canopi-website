@@ -54,7 +54,7 @@ test('open: application_id, user_version, the release id and the climates are ch
 });
 
 test('info and countries come from meta and the countries table', () => {
-  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 3, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true, climateGrid: FIXTURE_GRID_SHA256, rangesReview: 'estimate_not_reviewed' });
+  assert.deepEqual(source.info(), { releaseId: manifest.release_id, schemaVersion: 4, builtAt: manifest.generated_at, climates: expected.climates, griisAvailable: true, climateGrid: FIXTURE_GRID_SHA256, rangesReview: 'estimate_not_reviewed', frostRecorded: true });
   const countries = source.countries();
   assert.equal(countries.get('FR').invasiveChecked, true);
   assert.equal(countries.get('TW').invasiveChecked, false);
@@ -105,7 +105,7 @@ test('pool: a Taxon carries names, traits, warnings, functions and the self-host
   assert.equal(by('Phacelia tanacetifolia').traits.height_m, null, 'height not recorded');
   assert.equal(by('Rubus idaeus').functions, null, 'no rows: not curated, never none');
   const robinia = by('Robinia pseudoacacia');
-  assert.deepEqual(robinia.warnings.invasive_in.map((r) => r.country).sort(), ['DE', 'FR', 'IT', 'ZA']);
+  assert.deepEqual(robinia.warnings.invasive_in.map((r) => r.country).sort(), ['DE', 'ES', 'FR', 'IT', 'ZA'], 'GRIIS, and ES from the atlas (4.3)');
   assert.deepEqual(robinia.warnings.invasive_in[0].sources, ['griis']);
   assert.equal(robinia.warnings.weed_potential, true);
   assert.equal(robinia.warnings.toxicity.level, 'Severe');
@@ -208,7 +208,7 @@ test('details: reasons per region, layer values in run order, sources cited, pla
   const onion = await source.details(idOf('Allium cepa'), 'Temperate', 'en');
   assert.deepEqual(onion.layerValues.find((v) => v.field === 'sowing_months').months, ['Mar', 'Apr']);
   const robinia = await source.details(idOf('Robinia pseudoacacia'), 'Temperate', 'en');
-  assert.deepEqual(robinia.invasiveIn.map((r) => r.country).sort(), ['DE', 'FR', 'IT', 'ZA']);
+  assert.deepEqual(robinia.invasiveIn.map((r) => r.country).sort(), ['DE', 'ES', 'FR', 'IT', 'ZA']);
   assert.ok(robinia.sources.griis);
 });
 
@@ -408,4 +408,159 @@ test('store: setSource closes the database before it (Retry), and a read of the 
   store.setSource(null);
   assert.deepEqual(closed, ['first', 'second']);
   assert.equal(store.source.value, null);
+});
+
+// ---- schema 4 (PP-C commit 0): the optional tables and the release-wide names ----
+
+test('schema 4: Details reads disputes, audiences, trait sources, frost, toxic parts and gbif_records', async () => {
+  const d = (name, c) => source.details(idOf(name), c, 'en');
+  const hedera = await d('Hedera helix', 'Mediterranean');
+  assert.deepEqual(hedera.disputes, [{ field: 'toxicity', kind: 'queue', value: 'Moderate', unit: null, derived: false, scope: null, source: 'ncsu_plant_toolbox' }]);
+  assert.deepEqual(hedera.traitSources.map((t) => [t.field, t.source, t.scope]), [['frost_tender', 'pfaf', 'GB'], ['toxicity', 'canopi-correction', null]]);
+  assert.equal(hedera.sources.ncsu_plant_toolbox.label, 'NC State Extension Gardener Plant Toolbox');
+  assert.equal(hedera.sources['canopi-correction'].label, 'Canopi reader correction');
+  const castanea = await d('Castanea sativa', 'Temperate');
+  assert.deepEqual(castanea.disputes.map((x) => [x.field, x.kind, x.value, x.unit, x.derived]), [['tmean_year.low', 'range', '9.5', 'C', true], ['tmin_cold.low', 'range', '-10.0', 'C', false]]);
+  assert.equal(typeof castanea.gbifRecords === 'number' || castanea.gbifRecords === null, true);
+  // A flag-only row beside a NULL toxicity and beside 'None'.
+  assert.deepEqual((await d('Pyrus communis', 'Temperate')).disputes.map((x) => [x.field, x.value, x.source]), [['toxicity', null, 'pfaf']]);
+  assert.deepEqual((await d('Corylus avellana', 'Temperate')).disputes.map((x) => [x.field, x.value]), [['toxicity', null]]);
+  assert.deepEqual((await d('Olea europaea', 'Mediterranean')).disputes.map((x) => [x.field, x.value, x.scope]), [['plant_invasive', 'Invasive', 'AU']]);
+  assert.deepEqual((await d('Malus domestica', 'Temperate')).audiences, [{ who: 'pets', level: null, source: 'aspca' }]);
+  assert.deepEqual((await d('Taxus baccata', 'Temperate')).audiences, [{ who: 'livestock', level: 'Severe', source: 'merck_vet_manual' }]);
+  assert.deepEqual((await d('Zingiber officinale', 'Tropical')).traitSources.map((t) => t.source), ['canopi-knowledge']);
+  // Frost: the release has a row, so a plant without one reads [] ("not recorded"), Mangifera its fact.
+  assert.equal(source.info().frostRecorded, true);
+  assert.deepEqual((await d('Mangifera indica', 'Tropical')).frost, [{ kind: 'ktmp', valueC: -1, frostClass: null, variety: null, coarse: false, source: 'ecocrop', scopeCountry: null }]);
+  assert.deepEqual(castanea.frost, []);
+  // 4.2 toxic parts, whole plant first, the bare part before its conditioned forms.
+  const parsley = await d('Petroselinum crispum', 'Mediterranean');
+  assert.deepEqual(parsley.toxicityParts.map((p) => [p.part, p.condition]), [['whole_plant', 'large_amounts'], ['whole_plant', 'skin_contact'], ['essential_oil', null], ['seeds', 'pregnancy']]);
+  assert.deepEqual((await d('Manihot esculenta', 'Tropical')).toxicityParts.map((p) => [p.part, p.condition, p.source]), [['roots', null, 'pfaf'], ['roots', 'raw', 'ncsu_plant_toolbox']]);
+  assert.equal((await d('Allium cepa', 'Temperate')).toxicityParts[0].genusWide, true);
+  assert.deepEqual((await d('Taxus baccata', 'Temperate')).toxicityParts, [{ who: 'livestock', part: 'leaves', condition: null, genusWide: false, source: 'merck_vet_manual' }]);
+});
+
+// Schema 4.3 (canopi-data docs/website-handoff/2026-11-17-invasive-scope.md): plant_invasive_areas,
+// each source's areas within a country, per source (Details only; the pool keeps country level).
+test('schema 4.3: plant_invasive_areas gives each source its areas within the country; a pair with no rows is the whole country', async () => {
+  const d = (name, climate) => source.details(idOf(name), climate, 'en');
+  // The Arundo donax pattern (format note): the atlas names Baleares and mainland Spain, the catálogo Canarias.
+  const tropaeolum = await d('Tropaeolum majus', 'Temperate');
+  assert.deepEqual(tropaeolum.invasiveIn, [{ country: 'ES', sources: ['atlas_aloctonas_es'] }], 'the plant_invasive row: the wider scope');
+  assert.deepEqual(tropaeolum.invasiveAreas, [
+    { country: 'ES', source: 'atlas_aloctonas_es', areas: ['BAL', 'SPA'] },
+    { country: 'ES', source: 'es_catalogo', areas: ['CNY'] },
+  ]);
+  assert.match(tropaeolum.sources.atlas_aloctonas_es.label, /expert atlas, not a legal list/, 'the atlas credited by its label');
+  assert.ok(tropaeolum.sources.es_catalogo, 'a source named only in the areas is credited too');
+  // The Ricinus pattern: one source covering all three areas (the whole country) beside a narrower one.
+  assert.deepEqual((await d('Robinia pseudoacacia', 'Temperate')).invasiveAreas, [
+    { country: 'ES', source: 'atlas_aloctonas_es', areas: ['BAL', 'CNY', 'SPA'] },
+    { country: 'ES', source: 'es_catalogo', areas: ['CNY'] },
+  ]);
+  // One source naming part of the country.
+  const guava = await d('Psidium guajava', 'Tropical');
+  assert.deepEqual(guava.invasiveAreas, [{ country: 'ES', source: 'atlas_aloctonas_es', areas: ['CNY'] }]);
+  assert.ok(guava.invasiveIn.some((r) => r.country === 'AU'), 'its whole-country GRIIS rows stay country level');
+  // A pair with an area code the reader has no words for falls back to country level (never wrong).
+  const elaeagnus = await d('Elaeagnus umbellata', 'Temperate');
+  assert.ok(elaeagnus.invasiveIn.some((r) => r.country === 'ES'), 'still invasive in ES');
+  assert.deepEqual(elaeagnus.invasiveAreas, [], 'its ES rows dropped: an area outside the closed list');
+  assert.deepEqual((await d('Castanea sativa', 'Temperate')).invasiveAreas, []);
+  assert.deepEqual([...core.invasiveAreaCodes], ['BAL', 'CNY', 'SPA']);
+  assert.deepEqual([...core.invasiveSources], ['griis', 'es_catalogo', 'atlas_aloctonas_es']);
+});
+
+test('schema 4.3: an unknown source in plant_invasive_areas drops that pair to country level', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'consortium-areas-'));
+  try {
+    const { file } = await writeFixtureExport(join(dir, 'x'), { edit: (db) => db.exec(`
+      INSERT INTO sources VALUES ('pt_lista', 'Lista Nacional (PT)', NULL, NULL, NULL);
+      INSERT INTO plant_invasive_areas VALUES ((SELECT plant FROM plants WHERE canonical_name = 'Psidium guajava'), 'ES', 'pt_lista', 'SPA')`) });
+    const db = (await openBytes(new Uint8Array(gunzipSync(readFileSync(join(dir, 'x', file)))), expected)).db;
+    const g = await createSqliteSource(db, { images: {} }).details(idOf('Psidium guajava'), 'Tropical', 'en');
+    assert.deepEqual(g.invasiveAreas, []);
+    assert.ok(g.invasiveIn.some((r) => r.country === 'ES'));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('schema 4: a value the reader does not know skips its row, never the plant', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'consortium-vocab-'));
+  try {
+    const { file } = await writeFixtureExport(join(dir, 'x'), { edit: (db) => db.exec(`
+      INSERT INTO plant_disputes VALUES (1, 'flammability', 'queue', 'High', NULL, 0, NULL, 'pfaf');
+      INSERT INTO plant_toxicity_parts VALUES (1, NULL, 'thorns', NULL, 0, 'pfaf');
+      INSERT INTO layer_values (plant, field, flag, source, kind) VALUES (1, 'tolerates_salt', 1, 'pfaf', 'recorded')`) });
+    const db = (await openBytes(new Uint8Array(gunzipSync(readFileSync(join(dir, 'x', file)))), expected)).db;
+    const d = await createSqliteSource(db, { images: {} }).details(idOf('Castanea sativa'), 'Temperate', 'en');
+    assert.ok(!d.disputes.some((x) => x.field === 'flammability'));
+    assert.deepEqual(d.toxicityParts, []);
+    assert.ok(!d.layerValues.some((v) => v.field === 'tolerates_salt'));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('schema 3: the export opens; every schema-4 field is null (the feature off), no frost line', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'consortium-s3-'));
+  try {
+    const { file } = await writeFixtureExport(join(dir, 'x'), { schema: 3 });
+    const db = (await openBytes(new Uint8Array(gunzipSync(readFileSync(join(dir, 'x', file)))), expected)).db;
+    const s3 = createSqliteSource(db, { images: {} });
+    assert.equal(s3.info().schemaVersion, 3);
+    assert.equal(s3.info().frostRecorded, false);
+    const d = await s3.details(idOf('Hedera helix'), 'Mediterranean', 'en');
+    assert.deepEqual([d.disputes, d.audiences, d.traitSources, d.frost, d.toxicityParts, d.invasiveAreas], [null, null, null, null, null, null]);
+    assert.ok((await s3.names('fr')).length > 0);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('names(): every plant of the release with its integer, its lists, en and the page language', async () => {
+  const all = await source.names('fr');
+  assert.equal(all.length, oracle.prepare('SELECT count(*) n FROM plants').get().n);
+  const okra = all.find((p) => p.canonical === 'Abelmoschus esculentus');
+  assert.deepEqual(okra, { plant: oracle.prepare("SELECT plant FROM plants WHERE canonical_name = 'Abelmoschus esculentus'").get().plant, id: idOf('Abelmoschus esculentus'), canonical: 'Abelmoschus esculentus', names: { en: 'Okra' }, lists: ['Tropical'] });
+  // "Gombo" is in the names file only, never in plant_names.
+  assert.ok(!all.some((p) => Object.values(p.names).includes('Gombo')));
+  assert.deepEqual(all.find((p) => p.canonical === 'Castanea sativa').lists, ['Mediterranean', 'Temperate']);
+});
+
+// PP-C c2 unit row (disputes): none of the schema-4 facts changes a verdict, a filter or NextStep's
+// grouping, since they reach Details only: the pool's Taxon (which verdict.ts, Find's filters and
+// holes.ts fillers read) carries none of them.
+test('schema 4: disputes, audiences, trait sources and frost reach Details only, never the pool\'s Taxon', async () => {
+  const pool = await source.pool('Mediterranean');
+  const hedera = pool.find((t) => t.canonical_name === 'Hedera helix');
+  assert.ok(hedera, 'the fixture places Hedera helix on the Mediterranean list');
+  for (const t of pool) for (const k of ['disputes', 'audiences', 'traitSources', 'frost', 'toxicityParts']) assert.equal(k in t, false, `${t.canonical_name}: no ${k} on the Taxon`);
+  assert.equal(hedera.warnings.toxicity?.level, 'Slight', 'the shipped level, not the disputed one');
+  assert.ok((await source.details(hedera.id, 'Mediterranean', 'en')).disputes.length > 0, 'the dispute is on Details');
+});
+
+// Review c0-4 and round 2 (4a; open vocabularies): every trait_sources.field naming a plants column the
+// reader reads is kept (the staging export ships 21, such as tolerates_full_sun and nitrogen_fixer:
+// c2's sourceLine labels a corrected value); one naming no column it reads (a later minor's addition)
+// is skipped, as an unknown dispute field or audience is, never handed to the views.
+test('trait_sources: every plants column the reader reads is kept; a field it does not know is skipped', async () => {
+  const path = join(oracleDir, 'extra.sqlite');
+  writeFileSync(path, gunzipSync(gz));
+  const rw = new DatabaseSync(path);
+  const plant = rw.prepare('SELECT plant FROM plants WHERE canonical_name = ?').get('Hedera helix').plant;
+  rw.prepare("INSERT INTO trait_sources VALUES (?, 'spread_rate', 'pfaf', NULL, 'recorded')").run(plant);
+  for (const f of ['tolerates_full_sun', 'nitrogen_fixer', 'weed_potential']) rw.prepare("INSERT INTO trait_sources VALUES (?, ?, 'canopi-correction', NULL, 'recorded')").run(plant, f);
+  const columns = rw.prepare('PRAGMA table_info(plants)').all().map((c) => c.name);
+  assert.deepEqual(core.traitFields.filter((f) => !columns.includes(f)), [], 'each trait field is a plants column');
+  rw.close();
+  const copy = await openBytes(new Uint8Array(readFileSync(path)), expected);
+  const d = await createSqliteSource(copy.db, { images: {} }).details(idOf('Hedera helix'), 'Mediterranean', 'en');
+  assert.deepEqual(d.traitSources.map((t) => t.field).sort(), ['frost_tender', 'nitrogen_fixer', 'tolerates_full_sun', 'toxicity', 'weed_potential'], 'the known columns kept, spread_rate skipped');
+  // Every plants column the staging export's trait_sources names is one the reader knows.
+  const STAGING = ['allelopathic', 'deciduous_evergreen', 'drought_tolerance', 'edibility_rating', 'frost_tender', 'habit', 'hardiness_zone_max', 'hardiness_zone_min', 'height_max_m', 'is_annual', 'is_perennial', 'mycorrhizal_type', 'nitrogen_fixer', 'sexual_system', 'soil_ph_max', 'soil_ph_min', 'taproot_persistent', 'tolerates_full_shade', 'tolerates_full_sun', 'toxicity', 'weed_potential'];
+  assert.deepEqual(STAGING.filter((f) => !core.traitFields.includes(f)), [], 'staging r-c15a216b9663d2fa: no field dropped');
+});
+
+// plant_aliases (declared in the fixture with two rows) is accepted and never read (owner 2026-11-17,
+// "No backward compatibility work"): the source has no aliases reader.
+test('plant_aliases: a schema-4 export holding rows opens; the source offers no aliases reader', () => {
+  assert.equal('aliases' in source, false);
+  assert.ok(opened.db.selectObjects('SELECT COUNT(*) AS n FROM plant_aliases')[0].n > 0, 'the fixture ships alias rows');
 });

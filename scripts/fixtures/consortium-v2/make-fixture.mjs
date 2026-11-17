@@ -1,14 +1,17 @@
-// The invented consortium v2 fixture: a canopi-data export of format 4, schema 3 (canopi-data
-// docs/consortium-export-v2.md), small enough to read, built in Node with node:sqlite (coordinator
-// row "v2 build setup", 2026-11-11: no Python on the website). See README.md for what it covers.
+// The invented consortium v2 fixture: a canopi-data export of format 4, schema 4 (canopi-data
+// docs/consortium-export-v2.md and docs/website-handoff/2026-11-14-schema4-format.md; `schema: 3` writes
+// the schema-3 variant the reader still accepts until PP-C 0b), small enough to read, built in Node with
+// node:sqlite (coordinator row "v2 build setup", 2026-11-11: no Python on the website). See README.md
+// for what it covers.
 //
 //   node scripts/fixtures/consortium-v2/make-fixture.mjs [<export-dir>]
 //
 // writes the export directory (default: scripts/fixtures/consortium-v2/export/, committed): the
-// gzipped database under its contract name, manifest.json, SHA256SUMS, try_references.tsv and
-// source_credits.tsv. Tests import writeFixtureExport() and pass `edit` (SQL run on the filled
-// database), `manifest` (an edit of the manifest object) or `after` (a hook on the directory) to
-// build the broken variants they need.
+// gzipped database under its contract name, manifest.json, SHA256SUMS, try_references.tsv,
+// source_credits.tsv and (schema 4) the names file under its digest-bearing name. Tests import
+// writeFixtureExport() and pass `schema` (3 or 4), `edit` (SQL run on the filled database), `names` (an
+// edit of the names file's lines), `manifest` (an edit of the manifest object) or `after` (a hook on the
+// directory) to build the variants they need (UNDECLARED_EXTRA and DECLARED_COLUMN below: the tier rule).
 //
 // The values are plausible but INVENTED: never shipped. canopi_db_sha256 is all zeros, which a real
 // install refuses, and the release id ends in f1c7.
@@ -18,7 +21,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { DDL, DATA_TABLES } from '../../consortium-schema.mjs';
+import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, INVASIVE_AREAS_ADDITIONS, INVASIVE_AREAS_DDL, LATEST_SCHEMA, TOXICITY_PARTS_ADDITIONS, TOXICITY_PARTS_DDL } from '../../consortium-schema.mjs';
 
 export const FIXTURE_RELEASE = 'r-000000000000f1c7';
 export const FIXTURE_BUILT_AT = '2026-11-11T00:00:00Z';
@@ -28,7 +31,7 @@ export const FIXTURE_GRID_SHA256 = '04ec85f4603f29c5add8eada88c79599d044a61732b5
 export const DEFAULT_EXPORT = join(dirname(fileURLToPath(import.meta.url)), 'export');
 const ZERO_SHA = '0'.repeat(64);
 
-export { DDL, DATA_TABLES };
+export { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, LATEST_SCHEMA };
 
 const CLIMATE_ORDER = ['Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal'];
 // Three curated climates, as the real export; Arid and the others are uncovered ("Ask for this climate").
@@ -44,6 +47,9 @@ const SOURCES = [
   ['try', 'TRY Plant Trait Database', 'https://www.try-db.org/', null, null],
   ['canopi-correction', 'Canopi reader correction', null, null, null],
   ['griis', 'Global Register of Introduced and Invasive Species', 'https://griis.org/', 'CC BY 4.0', null],
+  // Schema 4.3's two Spanish sources, labelled as the staging export r-0dfc15e7cfe22e19 labels them.
+  ['es_catalogo', 'Catálogo Español de Especies Exóticas Invasoras (RD 630/2013)', null, null, null],
+  ['atlas_aloctonas_es', 'Atlas de las Plantas Alóctonas Invasoras en España (MITECO 2004; expert atlas, not a legal list)', null, null, null],
   ['wcvp', 'World Checklist of Vascular Plants', 'https://powo.science.kew.org/', 'CC BY 4.0', 'Royal Botanic Gardens, Kew'],
   ['eppo', 'EPPO Global Database', 'https://gd.eppo.int/', null, null],
   ['eppo-distribution', 'EPPO distribution page', 'https://gd.eppo.int/taxon/ANSTOB/distribution', null, null],
@@ -52,6 +58,15 @@ const SOURCES = [
   ['yield-trials', 'Intercropping trials review', 'https://example.org/intercropping-review', null, null],
   ['phenology-photos', 'Dated photographs (derived months)', null, null, null],
   ['gbif_occurrences', 'GBIF occurrence maps', 'https://www.gbif.org/', 'CC BY 4.0', 'GBIF.org'],
+  // Schema 4's sources (disputes, audiences, trait labels, frost, the names file), labelled as the
+  // staging export r-c15a216b9663d2fa labels them.
+  ['treegoer_ranges', 'TreeGOER environmental ranges', 'https://zenodo.org/', 'CC BY 4.0', null],
+  ['ncsu_plant_toolbox', 'NC State Extension Gardener Plant Toolbox', 'https://plants.ces.ncsu.edu/', null, null],
+  ['aspca', 'ASPCA Animal Poison Control toxic and non-toxic plants list', 'https://www.aspca.org/', null, null],
+  ['merck_vet_manual', 'Merck Veterinary Manual', 'https://www.merckvetmanual.com/', null, null],
+  ['canopi-knowledge', 'Canopi curator knowledge', null, null, null],
+  ['ecocrop', 'FAO EcoCrop', 'https://gaez.fao.org/', null, null],
+  ['wikidata', 'Wikidata', 'https://www.wikidata.org/', 'CC0', null],
 ];
 
 // Schema 2 climate ranges (invented, by rule): each plant's home climate (its first placement) gives
@@ -75,7 +90,9 @@ const round3 = (x) => Math.round(x * 1000) / 1000;
 
 // Countries: a handful, with invented GRIIS coverage (TW, PR and AQ unchecked: "not checked", never "none").
 const COUNTRIES = [['AQ', 0], ['AU', 1], ['BR', 1], ['DE', 1], ['ES', 1], ['FR', 1], ['GB', 1], ['IT', 1], ['NZ', 1], ['PR', 0], ['PT', 1], ['TW', 0], ['US', 1], ['ZA', 1]];
-const AREAS = [['BZE', 'southern_america'], ['BZN', 'southern_america'], ['CHC', 'asia_temperate'], ['FRA', 'europe'], ['GER', 'europe'], ['GRB', 'europe'], ['ITA', 'europe'], ['PER', 'southern_america'], ['SPA', 'europe']];
+const AREAS = [['BZE', 'southern_america'], ['BZN', 'southern_america'], ['CHC', 'asia_temperate'], ['FRA', 'europe'], ['GER', 'europe'], ['GRB', 'europe'], ['ITA', 'europe'], ['PER', 'southern_america'], ['SPA', 'europe'],
+  // 4.3's ES areas (BAL Baleares, CNY Canarias; SPA above), and MOR, a code the reader has no words for.
+  ['BAL', 'europe'], ['CNY', 'africa'], ['MOR', 'africa']];
 const LABELS = [
   ['moisture_use', 'High', 'fr', 'Élevée'], ['moisture_use', 'Low', 'fr', 'Faible'], ['moisture_use', 'Medium', 'fr', 'Moyenne'],
   ['drought_tolerance', 'High', 'fr', 'Élevée'], ['drought_tolerance', 'Low', 'fr', 'Faible'], ['drought_tolerance', 'None', 'fr', 'Aucune'],
@@ -131,6 +148,14 @@ const P = [
   ['Psidium guajava', 'Myrtaceae', { ever: 1, h: [3, 10], w: 5, sun: 1, semi: 1, shade: 0, ph: [4.5, 8.5], moist: 'Medium', habit: 'Tree', weed: 1, frost: 1 }, { Tropical: ['crop', 'medium', 2, 5] }, { en: 'Guava', fr: 'Goyavier', pt: 'Goiabeira' }, { functions: ['wildlife_habitat'], invasive: ['AU', 'ZA', 'US'] }],
   ['Manihot esculenta', 'Euphorbiaceae', { h: [1, 3], w: 1, sun: 1, semi: 0, shade: 0, ph: [4.5, 8], wd: 1, moist: 'Low', drought: 'High', habit: 'Shrub', tox: 'Severe', frost: 1 }, { Tropical: ['crop', 'low', 0, 2] }, { en: 'Cassava', fr: 'Manioc', pt: 'Mandioca' }, { functions: [] }],
   ['Arachis pintoi', 'Fabaceae', { h: [0.1, 0.3], w: 1, sun: 1, semi: 1, shade: 1, ph: [4.5, 7], moist: 'Medium', habit: 'Herb', nfix: 1, frost: 1 }, { Tropical: ['support', 'low', 0, 6] }, { en: 'Pinto peanut', pt: 'Amendoim-forrageiro' }, { functions: ['nitrogen_fixer', 'ground_cover'] }],
+  // PP-C commit 0 (appended, so every earlier plant keeps its id and integer): okra, whose French name
+  // "Gombo" is in the names file only (PP-C1); the tomato, with the WCVP synonym Lycopersicon esculentum
+  // in the names file; Hedera helix, shipped Slight with NC State's stricter Moderate as a dispute.
+  ['Abelmoschus esculentus', 'Malvaceae', { h: [1, 2], w: 0.6, sun: 1, semi: 0, shade: 0, ph: [6, 7.5], moist: 'Medium', annual: 1, habit: 'Herb', frost: 1 }, { Tropical: ['crop', 'low', 0, 1] }, { en: 'Okra', pt: 'Quiabo' }, { functions: [] }],
+  ['Solanum lycopersicum', 'Solanaceae', { grownAnnual: 1, h: [0.6, 2], w: 0.6, sun: 1, semi: 0, shade: 0, ph: [5.5, 7.5], moist: 'Medium', habit: 'Herb', tox: 'Slight', frost: 1 }, { Mediterranean: ['crop', 'low', 0, 1] }, { en: 'Tomato', fr: 'Tomate', es: 'Tomate', it: 'Pomodoro' }, { functions: [] }],
+  ['Hedera helix', 'Araliaceae', { ever: 1, h: [10, 30], w: 5, sun: 0, semi: 1, shade: 1, ph: [5, 8], moist: 'Medium', drought: 'Medium', habit: 'Climber', tox: 'Slight' }, { Mediterranean: ['support', 'low', 2, 6] }, { en: 'Ivy', fr: 'Lierre grimpant', de: 'Gemeiner Efeu' }, { functions: ['wildlife_habitat'] }],
+  // Schema 4.2: parsley, Slight, with its toxic parts (canopi-data toxicity-parts note, fixture table).
+  ['Petroselinum crispum', 'Apiaceae', { h: [0.2, 0.6], w: 0.3, sun: 1, semi: 1, shade: 0, ph: [5.5, 7.5], moist: 'Medium', habit: 'Herb', tox: 'Slight' }, { Mediterranean: ['support', 'low', 0, 2] }, { en: 'Parsley', fr: 'Persil', de: 'Petersilie' }, { functions: ['insectary'] }],
 ];
 
 // Interactions: [subject, subject_rank, object, object_rank, type, climate, agent, severity, notes, sources].
@@ -160,14 +185,126 @@ const LAYERS = [
 ];
 
 const uuid = (i) => `00000000-f1c7-4000-8000-${String(i + 1).padStart(12, '0')}`;
+const idOf = (name) => uuid(P.findIndex((p) => p[0] === name));
+
+// ---- schema 4 (PP-C commit 0: the rows every PP-C stream test needs; format note tables) ----
+
+// plant_disputes: [canonical, field, kind, other_value, unit, derived, scope, source]. A range dispute
+// with its stricter value and a derived one (TreeGOER), Hedera helix's stricter Moderate beside its
+// shipped Slight, a flag-only row beside a NULL toxicity and one beside 'None', one invasive dispute
+// (scoped to a country with no plant_invasive row for the plant), a weed and an allelopathy case.
+export const FIXTURE_DISPUTES = [
+  ['Castanea sativa', 'tmin_cold.low', 'range', '-10.0', 'C', 0, null, 'treegoer_ranges'],
+  ['Castanea sativa', 'tmean_year.low', 'range', '9.5', 'C', 1, null, 'treegoer_ranges'],
+  ['Hedera helix', 'toxicity', 'queue', 'Moderate', null, 0, null, 'ncsu_plant_toolbox'],
+  ['Pyrus communis', 'toxicity', 'queue', null, null, 0, null, 'pfaf'],
+  ['Corylus avellana', 'toxicity', 'queue', null, null, 0, null, 'pfaf'],
+  ['Olea europaea', 'plant_invasive', 'queue', 'Invasive', null, 0, 'AU', 'griis'],
+  ['Rubus idaeus', 'weed_potential', 'queue', '1', null, 0, null, 'pfaf'],
+  ['Sambucus nigra', 'allelopathic', 'queue', '1', null, 0, null, 'pfaf'],
+];
+// plant_toxicity_audience: [canonical, who, level, source]. ASPCA states no level (NULL).
+export const FIXTURE_AUDIENCE = [
+  ['Malus domestica', 'pets', null, 'aspca'],
+  ['Taxus baccata', 'livestock', 'Severe', 'merck_vet_manual'],
+];
+// trait_sources: every non-null frost_tender is PFAF's (scope GB) but two: Zingiber by curator knowledge,
+// Mangifera by a correction (scope NULL); plus the declared extra field value 'toxicity' (Hedera helix's
+// owner-corrected Slight), schema_additions since 1, as the staging export declares its 33.
+const TRAIT_SOURCE = { 'Zingiber officinale': 'canopi-knowledge', 'Mangifera indica': 'canopi-correction' };
+// Schema 4.2 adds plant_toxicity_parts (since 2: TOXICITY_PARTS_ADDITIONS) and 4.3 plant_invasive_areas
+// (since 3: INVASIVE_AREAS_ADDITIONS), so the fixture is 4.3.
+export const FIXTURE_ADDITIONS = [{ table: 'trait_sources', column: 'field', value: 'toxicity', since: 1 }, ...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS];
+export const FIXTURE_SCHEMA_MINOR = 3;
+// 4.3 (canopi-data docs/website-handoff/2026-11-17-invasive-scope.md): the ES plant_invasive rows, one per
+// plant ([canonical, source]: the widest scope), and their plant_invasive_areas ([canonical, source, area]).
+// The cases are the note's, put on fixture plants (invented for these plants; only Psidium guajava's is
+// as the staging export has it): Tropaeolum majus the Arundo donax pattern (atlas BAL SPA, catálogo CNY);
+// Robinia pseudoacacia the Ricinus one (atlas BAL CNY SPA, the whole country, beside catálogo CNY);
+// Psidium guajava one source naming part of the country (atlas CNY); Elaeagnus umbellata an area the
+// reader has no words for (MOR), so its ES rows read at country level.
+export const FIXTURE_INVASIVE_ES = [
+  ['Tropaeolum majus', 'atlas_aloctonas_es'], ['Robinia pseudoacacia', 'atlas_aloctonas_es'],
+  ['Psidium guajava', 'atlas_aloctonas_es'], ['Elaeagnus umbellata', 'es_catalogo'],
+];
+export const FIXTURE_INVASIVE_AREAS = [
+  ['Tropaeolum majus', 'atlas_aloctonas_es', 'BAL'], ['Tropaeolum majus', 'atlas_aloctonas_es', 'SPA'], ['Tropaeolum majus', 'es_catalogo', 'CNY'],
+  ['Robinia pseudoacacia', 'atlas_aloctonas_es', 'BAL'], ['Robinia pseudoacacia', 'atlas_aloctonas_es', 'CNY'], ['Robinia pseudoacacia', 'atlas_aloctonas_es', 'SPA'], ['Robinia pseudoacacia', 'es_catalogo', 'CNY'],
+  ['Psidium guajava', 'atlas_aloctonas_es', 'CNY'],
+  ['Elaeagnus umbellata', 'es_catalogo', 'MOR'],
+];
+// plant_toxicity_parts (4.2): [canonical, who, part, condition, genus_wide, source]. Parsley's rows as
+// canopi-data's fixture has them (grouped: "whole plant (in large amounts; on skin contact); essential
+// oil; seeds (in pregnancy)"), a bare part beside its conditioned form (Manihot: "roots (also raw)"), a
+// genus-wide row (Allium) and an audience row beside Taxus's livestock warning.
+export const FIXTURE_TOXICITY_PARTS = [
+  ['Petroselinum crispum', null, 'whole_plant', 'large_amounts', 0, 'pfaf'],
+  ['Petroselinum crispum', null, 'whole_plant', 'skin_contact', 0, 'pfaf'],
+  ['Petroselinum crispum', null, 'essential_oil', null, 0, 'pfaf'],
+  ['Petroselinum crispum', null, 'seeds', 'pregnancy', 0, 'pfaf'],
+  ['Manihot esculenta', null, 'roots', null, 0, 'pfaf'],
+  ['Manihot esculenta', null, 'roots', 'raw', 0, 'ncsu_plant_toolbox'],
+  ['Allium cepa', null, 'bulbs', 'large_amounts', 1, 'pfaf'],
+  ['Taxus baccata', 'livestock', 'leaves', null, 0, 'merck_vet_manual'],
+];
+// plant_frost: one row (empty in every real export until D8), so the "frost tolerance not recorded" half
+// is testable: [canonical, kind, value_c, class, variety, coarse, source, scope_country].
+export const FIXTURE_FROST = [['Mangifera indica', 'ktmp', -1.0, null, null, 0, 'ecocrop', null]];
+// plant_aliases: [old_id, new_id | null, old_canonical_name]: one retired id, one merged into Malus
+// domestica. Both share their 9-hex prefix with the live ids, as every fixture id does. The website
+// accepts the table and never reads it (owner 2026-11-17, "No backward compatibility work"): the rows
+// show a filled table is accepted.
+export const FIXTURE_ALIASES = [
+  ['00000000-f1c7-4000-8000-0000000000a1', null, 'Mespilus germanica'],
+  ['00000000-f1c7-4000-8000-0000000000a2', idOf('Malus domestica'), 'Malus pumila'],
+];
+// The names file's rows: [canonical, kind (1 vernacular, 2 scientific_synonym, 3 accepted_name), lang,
+// name, source id]. "Gombo" (fr) for okra exists only here; Lycopersicon esculentum names the tomato;
+// "Oak" sits on two plants (a shared name); fi and sw are languages outside the 11 locales (sw outside
+// the data's 20 too: a reader that admits only those fails on it, as it must not).
+export const FIXTURE_NAMES = [
+  ['Castanea sativa', 2, '', 'Castanea vesca', 'wcvp'],
+  ['Castanea sativa', 1, 'fi', 'Jalokastanja', 'wikidata'],
+  ['Quercus robur', 1, 'en', 'Oak', 'wikidata'],
+  ['Quercus robur', 1, 'en', 'Pedunculate oak', 'wikidata'],
+  ['Elaeagnus umbellata', 3, '', 'Elaeagnus parvifolia', 'wcvp'],
+  ['Quercus ilex', 1, 'en', 'Oak', 'wikidata'],
+  ['Mangifera indica', 1, 'sw', 'Mwembe', 'wikidata'],
+  ['Abelmoschus esculentus', 1, 'en', "Lady's fingers", 'wikidata'],
+  ['Abelmoschus esculentus', 1, 'fr', 'Gombo', 'wikidata'],
+  ['Solanum lycopersicum', 1, 'en', 'Love apple', 'wikidata'],
+  ['Solanum lycopersicum', 2, '', 'Lycopersicon esculentum', 'wcvp'],
+];
+const NAMES_SOURCES = ['wikidata', 'wcvp'];
+const utf8Order = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b));
+// The names file's lines (format note, "The names file"), sorted by plant, kind, lang, name.
+export function fixtureNamesLines(coreRawSha) {
+  const rows = FIXTURE_NAMES.map(([name, kind, lang, text, src]) => [P.findIndex((p) => p[0] === name) + 1, kind, lang, text, NAMES_SOURCES.indexOf(src) + 1])
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1] || utf8Order(a[2], b[2]) || utf8Order(a[3], b[3]));
+  return [
+    `#canopi-names/1 release_id=${FIXTURE_RELEASE} core_raw_sha256=${coreRawSha}`,
+    `#codes kind=1:vernacular,2:scientific_synonym,3:accepted_name source=${NAMES_SOURCES.map((s, i) => `${i + 1}:${s}`).join(',')}`,
+    'plant\tkind\tlang\tname\tsource',
+    ...rows.map((r) => r.join('\t')),
+  ];
+}
+// The tier rule's variants (format note, installer rules 2-4): an edit adding a table no manifest
+// declares, and an edit plus a manifest edit adding a declared trailing column.
+export const UNDECLARED_EXTRA = (db) => db.exec('CREATE TABLE plant_spacing (plant INTEGER NOT NULL REFERENCES plants (plant), spacing_m REAL)');
+export const DECLARED_COLUMN = {
+  edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN flammability TEXT'),
+  manifest: (m) => { m.schema_minor = 4; m.schema_additions = [...m.schema_additions, { table: 'plants', column: 'flammability', since: 4 }]; },
+};
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 // Fills a new database at `path` (absent). Returns nothing; the caller gzips it.
-export async function buildFixtureDb(path, { edit = null, userVersion = 3, applicationId = 0x43434f4e } = {}) {
+export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null, userVersion = schema, applicationId = 0x43434f4e } = {}) {
   const { DatabaseSync } = await import('node:sqlite');
   const db = new DatabaseSync(path);
   db.exec('PRAGMA page_size = 4096; PRAGMA foreign_keys = ON;');
-  db.exec(DDL);
+  db.exec(DDL_BY_SCHEMA[schema]);
+  if (schema >= 4) db.exec(TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL);
+  const DATA_TABLES = DATA_TABLES_BY_SCHEMA[schema];
   const run = (sql, ...rows) => { const st = db.prepare(sql); for (const r of rows) st.run(...r); };
   db.exec('BEGIN');
   run('INSERT INTO climates VALUES (?, ?)', ...FIXTURE_CLIMATES.map((c) => [c, CLIMATE_ORDER.indexOf(c)]));
@@ -243,9 +380,23 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 3, appli
     run('INSERT INTO layer_values VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [i + 1, plantOf(name), climate, field, mask, months ? months[0] : null, flag,
       scope?.climate ?? null, scope?.country ?? null, scope?.hemisphere ?? null, scope?.latitude ?? null, scope?.region ?? null, source, kind]);
   });
+  if (schema >= 4) {
+    for (const [name, field, kind, other, unit, derived, scope, source] of FIXTURE_DISPUTES) run('INSERT INTO plant_disputes VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [plantOf(name), field, kind, other, unit, derived, scope, source]);
+    for (const [name, who, level, source] of FIXTURE_AUDIENCE) run('INSERT INTO plant_toxicity_audience VALUES (?, ?, ?, ?)', [plantOf(name), who, level, source]);
+    P.forEach(([name], i) => {
+      const source = TRAIT_SOURCE[name] ?? 'pfaf';
+      run('INSERT INTO trait_sources VALUES (?, ?, ?, ?, ?)', [i + 1, 'frost_tender', source, source === 'pfaf' ? 'GB' : null, 'recorded']);
+    });
+    run('INSERT INTO trait_sources VALUES (?, ?, ?, ?, ?)', [plantOf('Hedera helix'), 'toxicity', 'canopi-correction', null, 'recorded']);
+    for (const [name, ...rest] of FIXTURE_FROST) run('INSERT INTO plant_frost VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [plantOf(name), ...rest]);
+    run('INSERT INTO plant_aliases VALUES (?, ?, ?)', ...FIXTURE_ALIASES);
+    for (const [name, ...rest] of FIXTURE_TOXICITY_PARTS) run('INSERT INTO plant_toxicity_parts VALUES (?, ?, ?, ?, ?, ?)', [plantOf(name), ...rest]);
+    for (const [name, src] of FIXTURE_INVASIVE_ES) run('INSERT INTO plant_invasive VALUES (?, ?, ?)', [plantOf(name), 'ES', src]);
+    for (const [name, src, area] of FIXTURE_INVASIVE_AREAS) run('INSERT INTO plant_invasive_areas VALUES (?, ?, ?, ?)', [plantOf(name), 'ES', src, area]);
+  }
   const notFound = P.filter((p) => 'wcvp' in p[5] && p[5].wcvp === null).map((p) => p[0]).join('; ');
   const meta = {
-    schema_version: '3', format_version: '4', release_id: FIXTURE_RELEASE, canopi_db_sha256: ZERO_SHA, built_at: FIXTURE_BUILT_AT,
+    schema_version: String(schema), format_version: '4', release_id: FIXTURE_RELEASE, canopi_db_sha256: ZERO_SHA, built_at: FIXTURE_BUILT_AT,
     part: 'all', climates: FIXTURE_CLIMATES.join(','), griis_available: '1', areas_source: 'wcvp', wcvp_not_found: notFound,
     wcvp_sha256: ZERO_SHA, wcvp_record: 'WCVP (fixture: invented)', photo_state: 'fixture',
     ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', ranges_thinning: 'block_degrees=1.0; weak_blocks=20 (fixture)', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256,
@@ -256,12 +407,14 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 3, appli
   if (edit) edit(db);
   // A table an edit dropped counts 0 (the installer then refuses it by name).
   const has = (table) => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
-  for (const table of DATA_TABLES) meta[`count.${table}`] = String(has(table) ? db.prepare(`SELECT count(*) n FROM ${table}`).get().n : 0);
-  run('INSERT OR REPLACE INTO meta VALUES (?, ?)', ...DATA_TABLES.map((t) => [`count.${t}`, meta[`count.${t}`]]));
+  // Schema 4.2's and 4.3's declared tables are counted beside them (their count keys are declared: FIXTURE_ADDITIONS).
+  const COUNTED = schema >= 4 ? [...DATA_TABLES, 'plant_toxicity_parts', 'plant_invasive_areas'] : DATA_TABLES;
+  for (const table of COUNTED) meta[`count.${table}`] = String(has(table) ? db.prepare(`SELECT count(*) n FROM ${table}`).get().n : 0);
+  run('INSERT OR REPLACE INTO meta VALUES (?, ?)', ...COUNTED.map((t) => [`count.${t}`, meta[`count.${t}`]]));
   db.exec('COMMIT');
   db.exec(`PRAGMA application_id = ${applicationId}; PRAGMA user_version = ${userVersion};`);
   db.exec('VACUUM');
-  const counts = Object.fromEntries(DATA_TABLES.map((t) => [t, Number(meta[`count.${t}`])]));
+  const counts = Object.fromEntries(COUNTED.map((t) => [t, Number(meta[`count.${t}`])]));
   const perClimate = Object.fromEntries(FIXTURE_CLIMATES.map((c) => [c, {
     plants: db.prepare('SELECT count(*) n FROM placements WHERE climate_zone = ?').get(c).n,
     interactions: db.prepare(`SELECT count(*) n FROM interactions i WHERE (i.climate_zone IS NULL OR i.climate_zone = ?1) AND EXISTS (
@@ -273,26 +426,39 @@ export async function buildFixtureDb(path, { edit = null, userVersion = 3, appli
 }
 
 export const FIXTURE_TRY = 'dataset_id\tdataset\tcustodian\treference\n1\tInvented Leaf Database\tA. Custodian\tCustodian, A. 2001. An invented paper. Journal of Fixtures 1: 1-2.\n1\tInvented Leaf Database\tA. Custodian\tCustodian, A. 2003. A second invented paper.\n2\tInvented Root Database\tB. Keeper\tKeeper, B. 2010. Roots, invented. https://example.org/roots\n';
-export const FIXTURE_CREDITS = 'source\ttags\tname\tcredit\tlicence\tlicence_status\turl\tstatus\ntry\ttry\tTRY Plant Trait Database\t\t\tterms\thttps://www.try-db.org/\tused\npfaf\tpfaf\tPlants For A Future\tPlants For A Future (pfaf.org)\t\tpermission\thttps://pfaf.org/\tused\nsample-review\tsample-review\tCanopi sample review\t\t\tnone\t\tinternal\n';
+export const FIXTURE_CREDITS = 'source\ttags\tname\tcredit\tlicence\tlicence_status\turl\tstatus\ntry\ttry\tTRY Plant Trait Database\t\t\tterms\thttps://www.try-db.org/\tused\npfaf\tpfaf\tPlants For A Future\tPlants For A Future (pfaf.org)\t\tpermission\thttps://pfaf.org/\tused\nsample-review\tsample-review\tCanopi sample review\t\t\tnone\t\tinternal\n'
+  // The names file's sources (each declared source has a credit row: format note, names checks).
+  + 'wikidata\twikidata\tWikidata\t\tCC0\tconfirmed\thttps://www.wikidata.org/\tused\nwcvp\twcvp\tWorld Checklist of Vascular Plants\tRoyal Botanic Gardens, Kew\tCC BY 4.0\tconfirmed\thttps://powo.science.kew.org/\tused\n';
+const CREDIT_ROWS = FIXTURE_CREDITS.trim().split('\n').length - 1;
 
-// Writes a whole export directory (format 4) at `dir`, which must be absent or empty. Returns
-// { dir, file, manifest }.
-export async function writeFixtureExport(dir, { edit = null, userVersion = 3, applicationId = 0x43434f4e, manifest: editManifest = null, after = null } = {}) {
+// Writes a whole export directory (format 4, schema `schema`) at `dir`, which must be absent or empty.
+// Returns { dir, file, manifest }.
+export async function writeFixtureExport(dir, { schema = LATEST_SCHEMA, edit = null, userVersion = schema, applicationId = 0x43434f4e, names: editNames = null, manifest: editManifest = null, after = null } = {}) {
   mkdirSync(dir, { recursive: true });
   if (readdirSync(dir).length) throw new Error(`${dir} is not empty`);
   const work = mkdtempSync(join(tmpdir(), 'consortium-fixture-'));
   try {
     const raw = join(work, 'fixture.sqlite');
-    const { counts, perClimate } = await buildFixtureDb(raw, { edit, userVersion, applicationId });
+    const { counts, perClimate } = await buildFixtureDb(raw, { schema, edit, userVersion, applicationId });
     const rawBytes = readFileSync(raw);
     const gz = gzipSync(rawBytes, { level: 9 });
     const rawSha = sha256(rawBytes);
-    const file = `consortium-v3.${FIXTURE_RELEASE}.${rawSha.slice(0, 12)}.sqlite.gz`;
+    const file = `consortium-v${schema}.${FIXTURE_RELEASE}.${rawSha.slice(0, 12)}.sqlite.gz`;
     writeFileSync(join(dir, file), gz);
     writeFileSync(join(dir, 'try_references.tsv'), FIXTURE_TRY);
     writeFileSync(join(dir, 'source_credits.tsv'), FIXTURE_CREDITS);
+    // The names file (schema 4): gzip -9, mtime 0, no name (node's gzip writes neither), under its digest.
+    let names = null;
+    if (schema >= 4) {
+      const lines = fixtureNamesLines(rawSha);
+      const text = `${(editNames ? editNames(lines) : lines).join('\n')}\n`;
+      const rawNames = Buffer.from(text), gzNames = gzipSync(rawNames, { level: 9 });
+      const namesSha = sha256(rawNames);
+      names = { file: `names.${FIXTURE_RELEASE}.${namesSha.slice(0, 12)}.tsv.gz`, sha256: sha256(gzNames), bytes: gzNames.length, raw_sha256: namesSha, raw_bytes: rawNames.length, rows: text.split('\n').length - 4, core_raw_sha256: rawSha };
+      writeFileSync(join(dir, names.file), gzNames);
+    }
     const manifest = {
-      format_version: 4, schema_version: 3, generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
+      format_version: 4, schema_version: schema, ...(schema >= 4 ? { schema_minor: FIXTURE_SCHEMA_MINOR, schema_additions: structuredClone(FIXTURE_ADDITIONS) } : {}), generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
       split: false, max_gzip_bytes: 10_000_000,
       files: [{ file, climate_zones: FIXTURE_CLIMATES, sha256: sha256(gz), bytes: gz.length, raw_sha256: rawSha, raw_bytes: rawBytes.length, counts }],
       climates: FIXTURE_CLIMATES.map((c) => ({ climate_zone: c, regions: REGIONS[c], ...perClimate[c] })),
@@ -300,7 +466,8 @@ export async function writeFixtureExport(dir, { edit = null, userVersion = 3, ap
       wcvp: { sha256: ZERO_SHA, record: 'WCVP (fixture: invented)', plants_with_areas: counts.plants - 1, plants_not_found: ['Phacelia tanacetifolia'] },
       climate_ranges: { ranges_review: 'estimate_not_reviewed', ranges_min_cells: '20', ranges_thinning: 'block_degrees=1.0; weak_blocks=20 (fixture)', climate_grid_version: '0.2.0', climate_grid_manifest_sha256: FIXTURE_GRID_SHA256, climate_grid_period: '1991-2020 historical', plants_by_range_source: { gbif_occurrences: counts.plant_climate_status - Object.keys(NO_RANGE).length } },
       try_references: { file: 'try_references.tsv', sha256: sha256(Buffer.from(FIXTURE_TRY)), rows: 3, dataset_ids: 2 },
-      source_credits: { file: 'source_credits.tsv', sha256: sha256(Buffer.from(FIXTURE_CREDITS)), rows: 3 },
+      source_credits: { file: 'source_credits.tsv', sha256: sha256(Buffer.from(FIXTURE_CREDITS)), rows: CREDIT_ROWS },
+      ...(names ? { names } : {}),
     };
     if (editManifest) editManifest(manifest);
     writeFileSync(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);

@@ -13,29 +13,38 @@
 //
 // Checks, in order, and refuses on the first failure (nothing is written then):
 // - SHA256SUMS: every listed file exists and matches; every other file of the directory is listed.
-// - manifest.json: format_version 4 and schema_version 3 (anything else refused by name), release_id
+// - manifest.json: format_version 4 and schema_version 3 or 4 (anything else refused by name; PP-C
+//   commit 0 reads both until the schema-4 export is installed), release_id
 //   (`r-` and 16 hex digits), canopi_db_sha256 not all zeros unless --fixture, `split` false (the page
 //   reads one file) with one file, the climates of the files those of `climates`, the TRY list and credits entries,
-//   and `climate_ranges` with the grid the ranges were sampled from.
+//   and `climate_ranges` with the grid the ranges were sampled from; schema 4: schema_minor,
+//   schema_additions (canopi-data docs/website-handoff/2026-11-14-schema4-format.md, the additive tier)
+//   and the names entry (bound to the one core file).
 // - each database file: a safe name of the contract's form (schema, release, digest of the raw
 //   database), its sha256 and bytes those of the manifest and SHA256SUMS, the gzip magic, at most
 //   under MAX_FILE_BYTES raw (over MAX_GZIP_BYTES gzipped is reported, not a failure); then, read with node:sqlite: application_id,
-//   user_version, integrity_check, foreign_key_check, every table and column of
-//   scripts/consortium-schema.mjs, meta (schema, format, release, climates, built_at), each table's
+//   user_version, integrity_check, foreign_key_check, every table, column, index and base statement of
+//   scripts/consortium-schema.mjs (schema 4: declared extras accepted, undeclared ones and missing
+//   declared ones refused, open-vocabulary values held to the base lists plus the declared values; the
+//   tier rules 1-5 of the format note), meta (schema, format, release, climates, built_at), each table's
 //   row count against meta and the manifest, every plant placed and every placement with a reason,
 //   source and photo page urls http(s) only, invasive rows only in countries GRIIS checked; schemas 2 and 3:
 //   meta.ranges_review "estimate_not_reviewed", meta.climate_grid_manifest_sha256 a sha256 equal to the
 //   manifest's, a plant_climate_status row for every plant and range rows only beside a range_source.
+// - the names file (schema 4): the format note's list "What the check refuses" (all but its two fold
+//   re-checks, which are canopi-data's): sums, sizes and digests, one plain gzip member, UTF-8 lines, the
+//   header bound to the release and the core, the codes, every row's fields, order and plant.
 // - try_references.tsv and source_credits.tsv: listed, their sha256 and rows those of the manifest
 //   entry, and parsed as the site's build parses them.
 //
 // What it writes:
 // - <out>/ (default public/data/consortium/): each database byte for byte under its own name (the
-//   name changes with the content, so public/_headers caches it forever), images/<uuid>.<digest>.<ext>
-//   and the INSTALLED_BY mark. Nothing else: no manifest, no sums (the index holds the digests).
+//   name changes with the content, so public/_headers caches it forever), the names file (schema 4)
+//   under its digest-bearing name, images/<uuid>.<digest>.<ext> and the INSTALLED_BY mark. Nothing else: no manifest, no sums (the index holds the digests).
 // - The index, src/data/consortium-index.json (design check A4): release id, the database files with
-//   their sha256, climates, the canonical names placed in each climate, {plant uuid: photo path}, and
-//   (schemas 2 and 3) climate_grid_manifest_sha256 and ranges_review from the database's meta: the climate
+//   their sha256, climates, the canonical names placed in each climate, {plant uuid: photo path},
+//   schema 4's schema_minor, schema_additions and search_names (the names file), and
+//   climate_grid_manifest_sha256 and ranges_review from the database's meta: the climate
 //   tiles' installer (install-climate.mjs) and scripts/check-built-site.mjs compare the installed grid with it.
 //   Build-time readers (guide presets, the page, scripts/check-built-site.mjs) read it; nothing at
 //   build time reads SQLite. An install outside the site (--out, --fixture) writes it inside <out>.
@@ -52,10 +61,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gunzipSync } from 'node:zlib';
+import { gunzipSync, inflateRawSync } from 'node:zlib';
 import { parseTryReferences } from '../src/lib/try-references.js';
 import { CREDIT_FILE, parseSourceCredits } from '../src/lib/source-credits.js';
-import { DDL, DATA_TABLES } from './consortium-schema.mjs';
+import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, LATEST_SCHEMA, SCHEMAS, VOCABULARIES_4, VOCABULARIES_42 } from './consortium-schema.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_OUT = join(ROOT, 'public', 'data', 'consortium');
@@ -88,9 +97,13 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // a larger file (a full-size original)
 // holds whole): that platform limit still refuses.
 export const MAX_GZIP_BYTES = 1_000_000;
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
+// The names budget the website recorded (format note "Size ceiling": canopi-data's NAMES_MAX_GZIP_BYTES
+// equals it). Owner rule 2026-11-16 (no hard limits): a larger file is reported, never refused.
+export const NAMES_BUDGET_BYTES = 300_000;
 export const FORMAT_VERSION = 4;
-export const SCHEMA_VERSION = 3;
-// The only review state schemas 2 and 3 allow (plant_climate.review CHECK): the site words ranges as estimates.
+// The schemas this installer reads: 3 and 4 until the schema-4 export is installed (PP-C 0b).
+export const SCHEMA_VERSIONS = SCHEMAS;
+// The only review state schemas 2 to 4 allow (plant_climate.review CHECK): the site words ranges as estimates.
 export const RANGES_REVIEW = 'estimate_not_reviewed';
 export const APPLICATION_ID = 0x43434f4e; // "CCON"
 const ZERO_SHA = '0'.repeat(64);
@@ -109,7 +122,10 @@ const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
 
 // The contract's database name: consortium-v<schema>.<release>.<12 hex of the raw sha256>.sqlite.gz,
 // with the climate (lowercase) before the digest in a split export.
-export const databaseName = (release, rawSha, climate = null) => `consortium-v${SCHEMA_VERSION}.${release}.${climate ? `${climate.toLowerCase()}.` : ''}${rawSha.slice(0, 12)}.sqlite.gz`;
+export const databaseName = (release, rawSha, climate = null, schema = LATEST_SCHEMA) => `consortium-v${schema}.${release}.${climate ? `${climate.toLowerCase()}.` : ''}${rawSha.slice(0, 12)}.sqlite.gz`;
+// The names file's name (schema 4): names.<release>.<12 hex of the raw TSV's sha256>.tsv.gz.
+export const namesFileName = (release, rawSha) => `names.${release}.${rawSha.slice(0, 12)}.tsv.gz`;
+const NAMES_KEYS = ['file', 'sha256', 'bytes', 'raw_sha256', 'raw_bytes', 'rows', 'core_raw_sha256'];
 
 export const isHttpUrl = (value) => {
   if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) return false;
@@ -239,7 +255,7 @@ export function creditsProblem(bytes, { sha256: hash, rows }) {
 export function manifestProblem(m, { fixture = false } = {}) {
   if (!isObject(m)) return 'manifest.json is not an object.';
   if (m.format_version !== FORMAT_VERSION) return `manifest.json format_version is ${JSON.stringify(m.format_version)}; this installer reads format ${FORMAT_VERSION} only (format 3 was the v1 tool's).`;
-  if (m.schema_version !== SCHEMA_VERSION) return `manifest.json schema_version is ${JSON.stringify(m.schema_version)}; this installer reads schema ${SCHEMA_VERSION} only.`;
+  if (!SCHEMA_VERSIONS.includes(m.schema_version)) return `manifest.json schema_version is ${JSON.stringify(m.schema_version)}; this installer reads schemas ${SCHEMA_VERSIONS.join(' and ')} only.`;
   if (typeof m.release_id !== 'string' || !RELEASE_ID.test(m.release_id)) return `manifest.json release_id ${JSON.stringify(m.release_id)} is not r- and 16 lowercase hex digits.`;
   if (typeof m.canopi_db_sha256 !== 'string' || !HEX64.test(m.canopi_db_sha256)) return 'manifest.json canopi_db_sha256 is not a sha256.';
   if (m.canopi_db_sha256 === ZERO_SHA && !fixture) return 'canopi_db_sha256 is all zeros: this is the invented fixture, never installed for real (tests pass --fixture).';
@@ -274,28 +290,126 @@ export function manifestProblem(m, { fixture = false } = {}) {
   if (!isObject(s) || s.file !== CREDIT_FILE || typeof s.sha256 !== 'string' || !HEX64.test(s.sha256) || (s.rows !== undefined && (!Number.isInteger(s.rows) || s.rows < 1))) return `manifest.json source_credits is not { file: "${CREDIT_FILE}", sha256, rows }.`;
   const r = m.climate_ranges;
   if (!isObject(r) || typeof r.climate_grid_manifest_sha256 !== 'string' || !HEX64.test(r.climate_grid_manifest_sha256)) return 'manifest.json climate_ranges is not { climate_grid_manifest_sha256, … } (schema 2 names the grid its ranges were sampled from).';
+  return m.schema_version >= 4 ? schema4Problem(m) : null;
+}
+
+// Schema 4's manifest keys (format note, manifest.json): schema_minor, schema_additions and names.
+function schema4Problem(m) {
+  if (!Number.isInteger(m.schema_minor) || m.schema_minor < 0) return `manifest.json schema_minor is ${JSON.stringify(m.schema_minor)}, not an integer of 0 or more.`;
+  if (!Array.isArray(m.schema_additions)) return 'manifest.json schema_additions is not a list.';
+  for (const a of m.schema_additions) {
+    const what = JSON.stringify(a);
+    if (!isObject(a) || typeof a.table !== 'string' || !a.table) return `manifest.json schema_additions: ${what} names no table.`;
+    if (Object.keys(a).some((k) => !['table', 'column', 'index', 'value', 'since'].includes(k))) return `manifest.json schema_additions: ${what} has a key outside table, column, index, value, since.`;
+    for (const k of ['column', 'index', 'value']) if (k in a && (typeof a[k] !== 'string' || !a[k])) return `manifest.json schema_additions: ${what}: ${k} is not a name.`;
+    if ('value' in a && !('column' in a)) return `manifest.json schema_additions: ${what} has a value without its column.`;
+    if ('index' in a && ('column' in a || 'value' in a)) return `manifest.json schema_additions: ${what} has an index with a column or value.`;
+    if (!Number.isInteger(a.since) || a.since < 1 || a.since > m.schema_minor) return `manifest.json schema_additions: ${what}: since is not from 1 to schema_minor ${m.schema_minor}.`;
+  }
+  const n = m.names;
+  if (!isObject(n)) return 'manifest.json has no names entry (required at schema 4).';
+  if (Object.keys(n).join() !== NAMES_KEYS.join()) return `manifest.json names has the keys ${Object.keys(n).join(', ')}, not ${NAMES_KEYS.join(', ')}.`;
+  for (const key of ['sha256', 'raw_sha256', 'core_raw_sha256']) if (typeof n[key] !== 'string' || !HEX64.test(n[key])) return `manifest.json names: ${key} is not a sha256.`;
+  for (const key of ['bytes', 'raw_bytes', 'rows']) if (!Number.isInteger(n[key]) || n[key] <= 0) return `manifest.json names: ${key} is not a positive integer.`;
+  if (n.file !== namesFileName(m.release_id, n.raw_sha256)) return `manifest.json names: file ${JSON.stringify(n.file)} is not ${namesFileName(m.release_id, n.raw_sha256)}.`;
+  if (n.core_raw_sha256 !== m.files[0].raw_sha256) return 'manifest.json names: core_raw_sha256 is not the core file\'s raw_sha256.';
   return null;
 }
 
-// The expected schema: each table's column names, from scripts/consortium-schema.mjs.
-let expectedColumns = null;
-async function schemaColumns() {
-  if (expectedColumns) return expectedColumns;
+// The declared additions of a manifest, by kind (schema 4; none at schema 3).
+function declaredOf(manifest) {
+  const list = manifest.schema_version >= 4 ? manifest.schema_additions : [];
+  const tables = new Set(), columns = new Set(), indexes = new Set(), values = new Map();
+  for (const a of list) {
+    if (a.index) indexes.add(a.index);
+    else if (a.value !== undefined) { const k = `${a.table}.${a.column}`; values.set(k, [...(values.get(k) ?? []), a.value]); }
+    else if (a.column) columns.add(`${a.table}.${a.column}`);
+    else tables.add(a.table);
+  }
+  return { tables, columns, indexes, values };
+}
+
+// The expected schema per version: each table's column names, each index, and every statement as SQLite
+// stores it, from scripts/consortium-schema.mjs.
+const expected = new Map();
+async function schemaShape(version) {
+  if (expected.has(version)) return expected.get(version);
   const { DatabaseSync } = await import('node:sqlite');
   const db = new DatabaseSync(':memory:');
-  db.exec(DDL);
-  expectedColumns = columnsOf(db);
+  db.exec(DDL_BY_SCHEMA[version]);
+  const shape = shapeOf(db);
   db.close();
-  return expectedColumns;
+  expected.set(version, shape);
+  return shape;
 }
-const columnsOf = (db) => new Map(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all()
-  .map(({ name }) => [name, db.prepare(`SELECT name FROM pragma_table_info(?)`).all(name).map((c) => c.name).join(',')]));
+// tables: name -> [column names]; indexes: name -> table; sql: name -> stored statement. An index is one
+// with a statement (SQLite's sqlite_autoindex_* entries belong to their table: format note, rule 1-5).
+const shapeOf = (db) => ({
+  tables: new Map(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all()
+    .map(({ name }) => [name, db.prepare('SELECT name FROM pragma_table_info(?)').all(name).map((c) => c.name)])),
+  indexes: new Map(db.prepare("SELECT name, tbl_name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL ORDER BY name").all().map((r) => [r.name, r.tbl_name])),
+  sql: new Map(db.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL').all().map((r) => [r.name, r.sql])),
+});
+
+// The stored schema against the expected one: schema 3 exactly; schema 4 by the additive tier (format
+// note, installer rule): 1. every base table, column (in order) and index; 2. an extra table, a trailing
+// extra column or an extra index only when declared; 3. an undeclared extra is refused; 4. a declared one
+// that is missing is refused; 5. statement text is compared for the base statements only (a base table
+// with declared trailing columns is held to its columns: ALTER TABLE rewrites its statement). The first
+// problem, or null.
+function structureProblem(file, have, want, manifest) {
+  const tier = manifest.schema_version >= 4;
+  const declared = declaredOf(manifest);
+  for (const [table, cols] of want.tables) {
+    if (!have.tables.has(table)) return `${file}: table ${table} is missing.`;
+    const got = have.tables.get(table);
+    if (got.slice(0, cols.length).join() !== cols.join() || (!tier && got.length !== cols.length)) return `${file}: table ${table} has the columns ${got.join(',')}, the schema says ${cols.join(',')}.`;
+    const extra = got.slice(cols.length);
+    const undeclared = extra.filter((c) => !declared.columns.has(`${table}.${c}`));
+    if (undeclared.length) return `${file}: table ${table} has columns outside the schema and schema_additions: ${undeclared.join(', ')}.`;
+    if (!extra.length && have.sql.get(table) !== want.sql.get(table)) return `${file}: table ${table}'s statement differs from the schema's.`;
+  }
+  for (const [index, table] of want.indexes) {
+    if (have.indexes.get(index) !== table) return `${file}: index ${index} on ${table} is missing.`;
+    if (have.sql.get(index) !== want.sql.get(index)) return `${file}: index ${index}'s statement differs from the schema's.`;
+  }
+  const extraTables = [...have.tables.keys()].filter((t) => !want.tables.has(t));
+  const outside = extraTables.filter((t) => !declared.tables.has(t));
+  if (outside.length) return `${file}: tables outside the schema${tier ? ' and schema_additions' : ''}: ${outside.join(', ')}.`;
+  const extraIndexes = [...have.indexes.keys()].filter((i) => !want.indexes.has(i) && !declared.indexes.has(i));
+  if (extraIndexes.length) return `${file}: indexes outside the schema${tier ? ' and schema_additions' : ''}: ${extraIndexes.join(', ')}.`;
+  for (const t of declared.tables) if (!have.tables.has(t)) return `${file}: schema_additions declares the table ${t}, which the database lacks.`;
+  for (const c of declared.columns) {
+    const [t, col] = c.split('.');
+    if (!(have.tables.get(t) ?? []).includes(col)) return `${file}: schema_additions declares the column ${c}, which the database lacks.`;
+  }
+  for (const i of declared.indexes) if (!have.indexes.has(i)) return `${file}: schema_additions declares the index ${i}, which the database lacks.`;
+  return null;
+}
+
+// Schema 4's open vocabularies (consortium-schema.mjs VOCABULARIES_4, and VOCABULARIES_42 when the
+// declared 4.2 table plant_toxicity_parts is present): a stored value outside the base list and the
+// declared values is refused (a declared value may have no rows yet). The first problem, or null.
+function vocabularyProblem(file, all, manifest) {
+  if (manifest.schema_version < 4) return null;
+  const declared = declaredOf(manifest).values;
+  const present = new Set(all("SELECT name FROM sqlite_master WHERE type = 'table'").map((r) => r.name));
+  for (const [key, base] of Object.entries({ ...VOCABULARIES_4, ...VOCABULARIES_42 })) {
+    const [table, column] = key.split('.');
+    if (!present.has(table)) continue;
+    const known = new Set([...base, ...(declared.get(key) ?? [])]);
+    const stray = all(`SELECT DISTINCT ${column} v FROM ${table} WHERE ${column} IS NOT NULL ORDER BY 1`).map((r) => String(r.v)).filter((v) => !known.has(v));
+    if (stray.length) return `${file}: ${key} holds values outside schema 4 and schema_additions: ${stray.slice(0, 5).join(', ')}.`;
+  }
+  return null;
+}
 
 // One database, already gunzipped and written at `path`: the first problem as a sentence, or the
 // facts the index needs ({ climates, names, images, griis, countries }).
 export async function readDatabase(path, entry, manifest) {
   const { DatabaseSync } = await import('node:sqlite');
-  const want = await schemaColumns();
+  const schema = manifest.schema_version;
+  const want = await schemaShape(schema);
   let db;
   try {
     db = new DatabaseSync(path, { readOnly: true });
@@ -309,33 +423,32 @@ export async function readDatabase(path, entry, manifest) {
     try { appId = one('PRAGMA application_id').application_id; } catch (err) { return { problem: `${entry.file} is not a SQLite database (${err.message}).` }; }
     if (appId !== APPLICATION_ID) return { problem: `${entry.file}: application_id is ${appId}, not ${APPLICATION_ID} ("CCON").` };
     const uv = one('PRAGMA user_version').user_version;
-    if (uv !== SCHEMA_VERSION) return { problem: `${entry.file}: user_version is ${uv}, not schema ${SCHEMA_VERSION}.` };
+    if (uv !== schema) return { problem: `${entry.file}: user_version is ${uv}, not schema ${schema}.` };
     const integrity = all('PRAGMA integrity_check').map((r) => r.integrity_check);
     if (integrity.join() !== 'ok') return { problem: `${entry.file}: integrity_check says ${integrity.slice(0, 3).join('; ')}.` };
     const fk = all('PRAGMA foreign_key_check');
     if (fk.length) return { problem: `${entry.file}: foreign_key_check finds ${fk.length} rows, first in ${fk[0].table}.` };
-    const have = columnsOf(db);
-    for (const [table, cols] of want) {
-      if (!have.has(table)) return { problem: `${entry.file}: table ${table} is missing.` };
-      if (have.get(table) !== cols) return { problem: `${entry.file}: table ${table} has the columns ${have.get(table)}, the schema says ${cols}.` };
-    }
-    const extra = [...have.keys()].filter((t) => !want.has(t));
-    if (extra.length) return { problem: `${entry.file}: tables outside the schema: ${extra.join(', ')}.` };
+    const shape = structureProblem(entry.file, shapeOf(db), want, manifest) ?? vocabularyProblem(entry.file, all, manifest);
+    if (shape) return { problem: shape };
     const meta = Object.fromEntries(all('SELECT key, value FROM meta').map((r) => [r.key, r.value]));
-    if (meta.schema_version !== String(SCHEMA_VERSION)) return { problem: `${entry.file}: meta.schema_version is ${JSON.stringify(meta.schema_version)}.` };
+    if (meta.schema_version !== String(schema)) return { problem: `${entry.file}: meta.schema_version is ${JSON.stringify(meta.schema_version)}.` };
     if (meta.format_version !== String(FORMAT_VERSION)) return { problem: `${entry.file}: meta.format_version is ${JSON.stringify(meta.format_version)}.` };
     if (meta.release_id !== manifest.release_id) return { problem: `${entry.file}: meta.release_id is ${JSON.stringify(meta.release_id)}, the manifest says ${manifest.release_id}.` };
     if (meta.built_at !== manifest.generated_at) return { problem: `${entry.file}: meta.built_at is ${JSON.stringify(meta.built_at)}, the manifest says ${manifest.generated_at}.` };
     if (meta.climates !== entry.climate_zones.join(',')) return { problem: `${entry.file}: meta.climates is ${JSON.stringify(meta.climates)}, the manifest says ${entry.climate_zones.join(',')}.` };
-    // Schema 2 and 3: the ranges' review state and the grid they were sampled from (an empty value is missing).
+    // Schemas 2 to 4: the ranges' review state and the grid they were sampled from (an empty value is missing).
     if (meta.ranges_review !== RANGES_REVIEW) return { problem: `${entry.file}: meta.ranges_review is ${JSON.stringify(meta.ranges_review)}; this installer reads "${RANGES_REVIEW}" ranges only.` };
     const grid = meta.climate_grid_manifest_sha256 || undefined;
     if (typeof grid !== 'string' || !HEX64.test(grid)) return { problem: `${entry.file}: meta.climate_grid_manifest_sha256 is ${JSON.stringify(grid)}, not a sha256.` };
     if (grid !== manifest.climate_ranges.climate_grid_manifest_sha256) return { problem: `${entry.file}: meta.climate_grid_manifest_sha256 is ${JSON.stringify(grid)}, the manifest says ${JSON.stringify(manifest.climate_ranges.climate_grid_manifest_sha256)}.` };
     const climates = all('SELECT id FROM climates ORDER BY ord').map((r) => r.id);
     if (climates.join() !== entry.climate_zones.join()) return { problem: `${entry.file}: holds the climates ${climates.join(', ')}, the manifest says ${entry.climate_zones.join(', ')}.` };
-    for (const table of DATA_TABLES) {
-      const n = one(`SELECT count(*) n FROM ${table}`).n;
+    // The counted tables, and a declared table whose count key is declared too (4.2:
+    // count.plant_toxicity_parts), each against meta and the manifest.
+    const declared = declaredOf(manifest);
+    const counted = [...DATA_TABLES_BY_SCHEMA[schema], ...[...declared.tables].filter((t) => (declared.values.get('meta.key') ?? []).includes(`count.${t}`))];
+    for (const table of counted) {
+      const n = one(`SELECT count(*) n FROM "${table.replaceAll('"', '""')}"`).n;
       if (String(n) !== meta[`count.${table}`]) return { problem: `${entry.file}: ${table} has ${n} rows, meta says ${meta[`count.${table}`]}.` };
       if (n !== entry.counts[table]) return { problem: `${entry.file}: ${table} has ${n} rows, the manifest says ${entry.counts[table]}.` };
     }
@@ -361,10 +474,104 @@ export async function readDatabase(path, entry, manifest) {
     // The known countries and whether GRIIS checked each: the page guesses the reader's country and
     // says "not checked" from its first frame, before the database opens (layout stability, N2).
     const countries = Object.fromEntries(all('SELECT code, invasive_checked FROM countries ORDER BY code').map((r) => [String(r.code), Number(r.invasive_checked) === 1]));
-    return { climates, names, images, griis: meta.griis_available === '1', grid, rangesReview: meta.ranges_review, countries };
+    // The core's plant integers and source ids, for the names file's checks (schema 4).
+    const plants = new Set(all('SELECT plant FROM plants').map((r) => Number(r.plant)));
+    const sources = new Set(all('SELECT id FROM sources').map((r) => String(r.id)));
+    return { climates, names, images, griis: meta.griis_available === '1', grid, rangesReview: meta.ranges_review, countries, plants, sources };
   } finally {
     db.close();
   }
+}
+
+// The names file's lines (format note, "The names file"): its rules as code. The `lang` rule: a BCP-47
+// langtag in canonical case, less what the data never gives.
+const NAMES_HEADER = /^#canopi-names\/1 release_id=(r-[0-9a-f]{16}) core_raw_sha256=([0-9a-f]{64})$/;
+const NAMES_KINDS = 'kind=1:vernacular,2:scientific_synonym,3:accepted_name';
+const NAMES_COLUMNS = 'plant\tkind\tlang\tname\tsource';
+const NAMES_SOURCE_ORDER = ['wikidata', 'gbif', 'plantatlas', 'pfaf'];
+const CANONICAL_INT = /^[1-9][0-9]*$/;
+const LANG = /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?((-([a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*)$/;
+const langOk = (lang) => {
+  const m = LANG.exec(lang);
+  if (!m) return false;
+  const variants = m[4].split('-').filter(Boolean);
+  return new Set(variants).size === variants.length;
+};
+const utf8Order = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b));
+
+// One plain gzip member as canopi-data's writer makes it (no flag, mtime 0, nothing after it): a
+// browser's DecompressionStream may refuse what a lenient reader takes. The first problem, or null.
+function gzipMemberProblem(gz, what) {
+  if (gz.length < 18 || gz[0] !== 0x1f || gz[1] !== 0x8b) return `${what} is not gzip (no 1f 8b magic).`;
+  if (gz[2] !== 8 || gz[3] !== 0) return `${what} has a gzip header with flags set (${gz[3]}); the writer sets none.`;
+  if (gz.readUInt32LE(4) !== 0) return `${what} has a gzip mtime other than 0.`;
+  let used;
+  try { used = inflateRawSync(gz.subarray(10), { info: true }).engine.bytesWritten; } catch (err) { return `${what} does not gunzip (${err.code ?? err.message}).`; }
+  if (10 + used + 8 !== gz.length) return `${what} has more than one gzip member or bytes after it.`;
+  return null;
+}
+
+// The names file of a schema-4 export against its manifest entry, the core it binds to (plant integers,
+// source ids), the release and the source credits: the first problem as a sentence, or null.
+export function namesProblem(gz, entry, { releaseId, coreRawSha, plants, sources, credits }) {
+  const f = entry.file;
+  if (sha256(gz) !== entry.sha256) return `${f} does not match the manifest's sha256.`;
+  if (gz.length !== entry.bytes) return `${f} is ${gz.length} bytes, the manifest says ${entry.bytes}.`;
+  if (gz.length > MAX_FILE_BYTES) return `${f} is over 25 MiB, which Cloudflare refuses to serve.`;
+  const member = gzipMemberProblem(gz, f);
+  if (member) return member;
+  let raw;
+  try { raw = gunzipSync(gz, { maxOutputLength: MAX_FILE_BYTES + 1 }); } catch (err) { return `${f} does not gunzip (${err.code ?? err.message}).`; }
+  if (sha256(raw) !== entry.raw_sha256 || raw.length !== entry.raw_bytes) return `${f}: the TSV inside does not match the manifest's raw_sha256 and raw_bytes.`;
+  let text;
+  try { text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(raw); } catch { return `${f} is not UTF-8.`; }
+  if (text.startsWith('\uFEFF')) return `${f} starts with a byte order mark.`;
+  if (text.includes('\r')) return `${f} has a carriage return; lines end in LF.`;
+  if (!text.endsWith('\n')) return `${f}: the last line has no LF.`;
+  const lines = text.slice(0, -1).split('\n');
+  if (lines.some((l) => l === '')) return `${f} has a blank line.`;
+  const head = NAMES_HEADER.exec(lines[0] ?? '');
+  if (!head) return `${f}: the first line is not "#canopi-names/1 release_id=<id> core_raw_sha256=<hex>".`;
+  if (head[1] !== releaseId) return `${f}: release_id ${head[1]} is not the manifest's ${releaseId}.`;
+  if (head[2] !== coreRawSha || entry.core_raw_sha256 !== coreRawSha) return `${f}: core_raw_sha256 is not the core's raw_sha256.`;
+  const codes = /^#codes (\S+) source=(\S+)$/.exec(lines[1] ?? '');
+  if (!codes || codes[1] !== NAMES_KINDS) return `${f}: the second line is not "#codes ${NAMES_KINDS} source=…".`;
+  const sourceOf = new Map();
+  const declared = codes[2].split(',').map((part) => /^([1-9][0-9]*):([a-z0-9_-]+)$/.exec(part));
+  if (declared.some((m) => !m)) return `${f}: the source codes are not <code>:<id>,…`;
+  declared.forEach((m) => sourceOf.set(m[1], m[2]));
+  const ids = declared.map((m) => m[2]);
+  if (sourceOf.size !== declared.length || new Set(ids).size !== ids.length) return `${f}: a source code or id is declared twice.`;
+  if (declared.some((m, i) => m[1] !== String(i + 1))) return `${f}: the source codes are not numbered 1, 2, 3, … with no gap.`;
+  const order = [...NAMES_SOURCE_ORDER.filter((id) => ids.includes(id)), ...ids.filter((id) => !NAMES_SOURCE_ORDER.includes(id)).sort(utf8Order)];
+  if (order.join() !== ids.join()) return `${f}: the sources are not in the order ${NAMES_SOURCE_ORDER.join(', ')}, then the others by id.`;
+  const credited = new Set(credits.map((c) => c.source));
+  for (const id of ids) if (!credited.has(id) || !sources.has(id)) return `${f}: the source ${id} has no source_credits.tsv row or is not in the core's sources.`;
+  if (lines[2] !== NAMES_COLUMNS) return `${f}: the column line is not "plant kind lang name source".`;
+  const rows = lines.slice(3);
+  if (rows.length !== entry.rows) return `${f} has ${rows.length} rows, the manifest says ${entry.rows}.`;
+  let prev = null;
+  for (const [i, line] of rows.entries()) {
+    const at = `${f}:${i + 4}`;
+    const cells = line.split('\t');
+    if (cells.length !== 5) return `${at}: ${cells.length} fields, not 5.`;
+    const [plant, kind, lang, name, source] = cells;
+    if (![plant, kind, source].every((v) => CANONICAL_INT.test(v))) return `${at}: an integer is not in canonical form.`;
+    if (!plants.has(Number(plant))) return `${at}: plant ${plant} is not a plants.plant of the core.`;
+    if (!['1', '2', '3'].includes(kind)) return `${at}: kind ${kind} is not declared.`;
+    if (!sourceOf.has(source)) return `${at}: source ${source} is not declared.`;
+    if (kind === '1' ? !langOk(lang) : lang !== '') return `${at}: lang ${JSON.stringify(lang)} does not fit the kind (the lang rule on vernacular rows, empty on the others).`;
+    if ((kind === '1') === (sourceOf.get(source) === 'wcvp')) return `${at}: source ${sourceOf.get(source)} does not fit the kind.`;
+    if (!name || name.trim() !== name || /\s{2,}/.test(name)) return `${at}: the name is empty, has whitespace at an end or a run of whitespace.`;
+    const key = [Number(plant), Number(kind), lang, name];
+    if (prev) {
+      const c = prev[0] - key[0] || prev[1] - key[1] || utf8Order(prev[2], key[2]) || utf8Order(prev[3], key[3]);
+      if (c > 0) return `${at}: rows out of order.`;
+      if (c === 0) return `${at}: a duplicate (plant, kind, lang, name).`;
+    }
+    prev = key;
+  }
+  return null;
 }
 
 // Reads and checks a whole export directory (the databases read from a scratch copy in `work`).
@@ -386,7 +593,7 @@ export async function verifyExport(dir, { fixture = false, work, log = console.l
   if (creditProblem) refuse(creditProblem);
 
   const databases = [];
-  const facts = { names: {}, images: new Map(), griis: true, grid: null, rangesReview: null, countries: {} };
+  const facts = { names: {}, images: new Map(), griis: true, grid: null, rangesReview: null, countries: {}, plants: new Set(), sources: new Set() };
   for (const entry of manifest.files) {
     if (!sums.has(entry.file)) refuse(`${entry.file} is not listed in SHA256SUMS.`);
     const gz = readFileSync(join(dir, entry.file));
@@ -398,7 +605,7 @@ export async function verifyExport(dir, { fixture = false, work, log = console.l
     try { raw = gunzipSync(gz, { maxOutputLength: MAX_FILE_BYTES + 1 }); } catch (err) { refuse(`${entry.file} does not gunzip (${err.code ?? err.message}).`); }
     if (raw.length > MAX_FILE_BYTES) refuse(`${entry.file} is over 25 MiB uncompressed.`);
     if (sha256(raw) !== entry.raw_sha256 || raw.length !== entry.raw_bytes) refuse(`${entry.file}: the database inside does not match the manifest's raw_sha256 and raw_bytes.`);
-    const expected = databaseName(manifest.release_id, entry.raw_sha256, manifest.split ? entry.climate_zones[0] : null);
+    const expected = databaseName(manifest.release_id, entry.raw_sha256, manifest.split ? entry.climate_zones[0] : null, manifest.schema_version);
     if (entry.file !== expected) refuse(`${entry.file} is not named ${expected} (schema, release and digest of its content).`);
     const path = join(work, `check-${databases.length}.sqlite`);
     writeFileSync(path, raw);
@@ -411,12 +618,25 @@ export async function verifyExport(dir, { fixture = false, work, log = console.l
     Object.assign(facts.countries, read.countries);
     facts.grid = read.grid;
     facts.rangesReview = read.rangesReview;
+    for (const p of read.plants) facts.plants.add(p);
+    for (const id of read.sources) facts.sources.add(id);
     databases.push({ entry, gz });
   }
   for (const c of manifest.climates) {
     if ((facts.names[c.climate_zone] ?? []).length !== c.plants) refuse(`${c.climate_zone} has ${(facts.names[c.climate_zone] ?? []).length} plants, the manifest says ${c.plants}.`);
   }
-  return { manifest, databases, facts, tryList: { entry: tryEntry, bytes: tryBytes }, credits: { entry: creditEntry, bytes: creditBytes } };
+  // Schema 4's names file: a bad one refuses the whole install (format note Q9, accepted).
+  let names = null;
+  if (manifest.schema_version >= 4) {
+    const entry = manifest.names;
+    if (!sums.has(entry.file) || sums.get(entry.file) !== entry.sha256) refuse(`${entry.file} is not listed in SHA256SUMS with the manifest's sha256.`);
+    const gz = readFileSync(join(dir, entry.file));
+    const bad = namesProblem(gz, entry, { releaseId: manifest.release_id, coreRawSha: manifest.files[0].raw_sha256, plants: facts.plants, sources: facts.sources, credits: parseSourceCredits(creditBytes.toString('utf8'), CREDIT_FILE) });
+    if (bad) refuse(bad);
+    if (gz.length > NAMES_BUDGET_BYTES) log(`Warning: ${entry.file} is ${gz.length} bytes gzipped, over the recorded names budget of ${NAMES_BUDGET_BYTES}; reported, not a failure.`);
+    names = { entry, bytes: gz };
+  }
+  return { manifest, databases, facts, names, tryList: { entry: tryEntry, bytes: tryBytes }, credits: { entry: creditEntry, bytes: creditBytes } };
 }
 
 // The index the site reads at build time (design check A4). Plain data, stable key order.
@@ -437,13 +657,20 @@ export function buildIndex(manifest, facts, photos) {
     source_credits: { sha256: manifest.source_credits.sha256, ...(manifest.source_credits.rows !== undefined ? { rows: manifest.source_credits.rows } : {}) },
     climate_grid_manifest_sha256: facts.grid,
     ranges_review: facts.rangesReview,
+    // Schema 4 (format note, answer 1: schema_minor and schema_additions copied into the index; the names
+    // file the page fetches after first paint, its own key since `names` holds each climate's plants).
+    ...(manifest.schema_version >= 4 ? {
+      schema_minor: manifest.schema_minor,
+      schema_additions: manifest.schema_additions,
+      search_names: { file: manifest.names.file, url: `${PUBLIC_BASE}${manifest.names.file}`, sha256: manifest.names.sha256, bytes: manifest.names.bytes, raw_sha256: manifest.names.raw_sha256, raw_bytes: manifest.names.raw_bytes },
+    } : {}),
   };
 }
 
 // The index's shape, as the build and the built-site check rely on it: the first problem, or null.
 export function indexProblem(index) {
   if (!isObject(index)) return 'the index is not an object.';
-  if (index.format_version !== FORMAT_VERSION || index.schema_version !== SCHEMA_VERSION) return `the index is format ${index.format_version}, schema ${index.schema_version}.`;
+  if (index.format_version !== FORMAT_VERSION || !SCHEMA_VERSIONS.includes(index.schema_version)) return `the index is format ${index.format_version}, schema ${index.schema_version}.`;
   if (typeof index.release_id !== 'string' || !RELEASE_ID.test(index.release_id)) return `the index release_id ${JSON.stringify(index.release_id)} is not r- and 16 hex digits.`;
   if (!Array.isArray(index.files) || !index.files.length) return 'the index lists no database file.';
   for (const f of index.files) {
@@ -459,6 +686,13 @@ export function indexProblem(index) {
     if (!UUID.test(id)) return `the index image key ${JSON.stringify(id)} is not a plant UUID.`;
     if (typeof path !== 'string' || !path.startsWith(IMAGE_BASE) || !SAFE_NAME.test(path.slice(IMAGE_BASE.length))) return `the index image ${JSON.stringify(path)} is not a local ${IMAGE_BASE} file.`;
   }
+  // The names file: always named at schema 4 (a bad one refuses the install), never at schema 3.
+  const n = index.search_names;
+  if (index.schema_version < 4) return n === undefined ? null : 'the index names a search_names file, but it is schema 3.';
+  if (!isObject(n)) return 'the index has no search_names entry (schema 4).';
+  if (typeof n.file !== 'string' || n.file !== namesFileName(index.release_id, n.raw_sha256 ?? '') || n.url !== `${PUBLIC_BASE}${n.file}`) return `the index search_names ${JSON.stringify(n.file)} is not a digest-bearing names file under ${PUBLIC_BASE}.`;
+  if (!HEX64.test(n.sha256 ?? '') || !HEX64.test(n.raw_sha256 ?? '')) return 'the index search_names has no sha256 or raw_sha256.';
+  if (!Number.isInteger(n.bytes) || n.bytes <= 0 || n.bytes > MAX_FILE_BYTES || !Number.isInteger(n.raw_bytes) || n.raw_bytes <= 0) return 'the index search_names sizes are not positive integers under 25 MiB.';
   return null;
 }
 
@@ -472,7 +706,8 @@ export function verifyInstall(dir, index, { log = console.log } = {}) {
   const problem = indexProblem(index);
   if (problem) broken(problem);
   if (!existsSync(join(dir, INSTALL_MARK))) broken(`${INSTALL_MARK} is missing.`);
-  const allowed = new Set([INSTALL_MARK, 'images', INDEX_FILE, ...index.files.map((f) => f.file)]);
+  const namesFile = index.search_names?.file;
+  const allowed = new Set([INSTALL_MARK, 'images', INDEX_FILE, ...index.files.map((f) => f.file), ...(namesFile ? [namesFile] : [])]);
   const stray = readdirSync(dir).filter((n) => !allowed.has(n));
   if (stray.length) broken(`files the index does not name: ${stray.join(', ')}.`);
   for (const f of index.files) {
@@ -483,13 +718,21 @@ export function verifyInstall(dir, index, { log = console.log } = {}) {
     if (gz.length > MAX_FILE_BYTES) broken(`${f.file} is over 25 MiB, which Cloudflare refuses to serve.`);
     if (gz.length > MAX_GZIP_BYTES) log(`Warning: ${f.file} is ${gz.length} bytes gzipped, over the ${MAX_GZIP_BYTES} of the page's budget; reported, not a failure.`);
   }
+  if (namesFile) {
+    let gz;
+    try { gz = readFileSync(join(dir, namesFile)); } catch { broken(`${namesFile} is missing.`); }
+    if (sha256(gz) !== index.search_names.sha256 || gz.length !== index.search_names.bytes) broken(`${namesFile} does not match the index's sha256 and bytes.`);
+    if (gz[0] !== 0x1f || gz[1] !== 0x8b) broken(`${namesFile} is not gzip.`);
+    if (gz.length > MAX_FILE_BYTES) broken(`${namesFile} is over 25 MiB, which Cloudflare refuses to serve.`);
+    if (gz.length > NAMES_BUDGET_BYTES) log(`Warning: ${namesFile} is ${gz.length} bytes gzipped, over the recorded names budget of ${NAMES_BUDGET_BYTES}; reported, not a failure.`);
+  }
   const wanted = new Set(Object.values(index.images).map((p) => p.slice(IMAGE_BASE.length)));
   const present = existsSync(join(dir, 'images')) ? readdirSync(join(dir, 'images')) : [];
   for (const name of wanted) if (!present.includes(name)) broken(`images/${name} is missing.`);
   const extra = present.filter((n) => !wanted.has(n));
   if (extra.length) broken(`images the index does not name: ${extra.slice(0, 5).join(', ')}.`);
   for (const name of present) if (statSync(join(dir, 'images', name)).size > MAX_FILE_BYTES) broken(`images/${name} is over 25 MiB.`);
-  return { databases: index.files.length, images: wanted.size };
+  return { databases: index.files.length, images: wanted.size, names: namesFile ? 1 : 0 };
 }
 
 // Hosts a photo may be fetched from after a redirect, besides the host first asked.
@@ -600,7 +843,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
   rmSync(staging, { recursive: true, force: true });
   mkdirSync(staging, { recursive: true });
   try {
-    const { manifest, databases, facts, tryList, credits } = await verifyExport(dir, { fixture, work: staging, log });
+    const { manifest, databases, facts, names, tryList, credits } = await verifyExport(dir, { fixture, work: staging, log });
     if (!fixture) {
       const problem = releaseCheck(dir, { log });
       if (problem) refuse(problem);
@@ -613,6 +856,7 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
 
     const written = new Map();
     for (const { entry, gz } of databases) written.set(entry.file, gz);
+    if (names) written.set(names.entry.file, names.bytes);
     written.set(INSTALL_MARK, Buffer.from(INSTALL_MARK_TEXT));
     for (const { name, bytes } of photos.files.values()) written.set(`images/${name}`, bytes);
     if (!listDir) written.set(INDEX_FILE, indexBytes);
@@ -654,10 +898,11 @@ export async function installConsortium({ exportDir, outDir = DEFAULT_OUT, fixtu
     const summary = {
       out, index: listDir ? join(listDir, INDEX_FILE) : join(out, INDEX_FILE),
       files: databases.map((d) => d.entry.file),
+      names: names?.entry.file ?? null,
       climates: index.climates.map((c) => ({ climate: c, plants: index.names[c].length })),
       photos: { total: photos.total, downloaded: photos.files.size, failed: photos.failed, skipped: photos.skipped },
     };
-    log(`Installed the consortium database ${summary.files.join(', ')} (${summary.climates.map((c) => `${c.climate} ${c.plants}`).join(', ')}) in ${out}`);
+    log(`Installed the consortium database ${summary.files.join(', ')}${names ? ` and the names file ${names.entry.file}` : ''} (${summary.climates.map((c) => `${c.climate} ${c.plants}`).join(', ')}) in ${out}`);
     if (images) log(`Photos: ${photos.files.size} of ${photos.total} downloaded${photos.failed.length ? `; no photo for ${photos.failed.map((f) => f.name).join(', ')}` : ''}${photos.skipped ? `; ${photos.skipped} not http(s), left out` : ''}.`);
     else log('Photos: skipped (--no-images).');
     log(`Index: ${summary.index}.`);

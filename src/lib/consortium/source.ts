@@ -2,7 +2,7 @@
 // implements it with SQL over the gzipped SQLite export (src/islands/consortium/data/sqlite-source.ts,
 // stream S1); the app can implement it over its own catalogue later. Plain records only: the core
 // computes site fit, verdicts and reason counts from pool(), so every source gets them free.
-import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, LayerValue, Locale, PeriodId, Placement, PlantId, SourceInfo, Taxon } from './types.ts';
+import type { ClimateZone, Details, FactAt, FactKey, FactValues, Interaction, Labels, LayerValue, Locale, PeriodId, Placement, PlantId, PlantNames, SourceInfo, Taxon } from './types.ts';
 import { periodIds } from './types.ts';
 
 export interface PlantSource {
@@ -18,8 +18,10 @@ export interface PlantSource {
   // Ranks (genus, family) are matched in the core.
   interactions(c: ClimateZone): Promise<Interaction[]>;
   placements(ids: PlantId[]): Promise<Map<PlantId, Partial<Record<ClimateZone, Placement>>>>;
-  // Every plant's names in en and l, for search in JavaScript over folded names (never LIKE, A6).
-  names(l: Locale): Promise<{ id: PlantId; canonical: string; names: Partial<Record<Locale, string>> }[]>;
+  // Every plant of the release (all lists, PP-C commit 0) with its names in en and l and the lists that
+  // place it, for search in JavaScript over folded names (never LIKE, A6); `plant` maps the names file's
+  // integers onto ids (only for the release the file is bound to: c1 drops a file bound to another).
+  names(l: Locale): Promise<PlantNames[]>;
   details(id: PlantId, c: ClimateZone, l: Locale): Promise<Details>;
   labels(l: Locale): Promise<Labels>;
   // Plant palette seam (PP-B commit 0; body in PP-G with the `year` chunk): the month layer values

@@ -13,10 +13,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import {
-  installConsortium, verifyInstall, thumbnailUrl, databaseName, indexProblem, releaseVerifyProblem, stagingDirFor,
+  installConsortium, verifyInstall, thumbnailUrl, databaseName, namesFileName, indexProblem, releaseVerifyProblem, stagingDirFor,
   DEFAULT_OUT, DATA_DIR, INDEX_PATH, STAGING_DIR, USER_AGENT, CANOPI_DATA_DIR, MAX_GZIP_BYTES,
 } from './install-consortium.mjs';
-import { writeFixtureExport, FIXTURE_RELEASE, FIXTURE_TRY, FIXTURE_CREDITS, FIXTURE_GRID_SHA256 } from './fixtures/consortium-v2/make-fixture.mjs';
+import { writeFixtureExport, FIXTURE_RELEASE, FIXTURE_TRY, FIXTURE_CREDITS, FIXTURE_GRID_SHA256, FIXTURE_ADDITIONS, UNDECLARED_EXTRA, DECLARED_COLUMN } from './fixtures/consortium-v2/make-fixture.mjs';
 
 const committed = fileURLToPath(new URL('fixtures/consortium-v2/export/', import.meta.url));
 const script = fileURLToPath(new URL('install-consortium.mjs', import.meta.url));
@@ -43,6 +43,13 @@ function resum(dir) {
   const names = readdirSync(dir).filter((n) => n !== 'SHA256SUMS').sort();
   writeFileSync(join(dir, 'SHA256SUMS'), names.map((n) => `${sha(readFileSync(join(dir, n)))}  ${n}\n`).join(''));
 }
+// Each case's variant (written into root/<prefix><i>) refused with its message.
+async function refusedAll(w, prefix, cases) {
+  for (const [i, [opts, message]] of cases.entries()) {
+    const src = await variant(w, `${prefix}${i}`, opts);
+    await assert.rejects(install({ ...w, src }), message, String(message));
+  }
+}
 const install = (w, opts = {}) => installConsortium({ exportDir: w.src, outDir: w.out, fixture: true, images: false, log: quiet, stagingDir: join(w.root, 'staging'), ...opts });
 // A stub fetch answering every photo with a small JPEG; `calls` records urls and User-Agents.
 function photoFetch(calls = [], answer = () => new Response(JPEG, { status: 200, headers: { 'content-type': 'image/jpeg' } })) {
@@ -58,10 +65,11 @@ test('the committed fixture is what make-fixture.mjs writes today (rows and byte
 test('the fixture installs with --fixture --no-images --out: the database byte for byte, the mark and the index, nothing else', (t) => {
   const w = workspace(t);
   const stdout = execFileSync(process.execPath, [script, w.src, '--fixture', '--no-images', '--out', w.out], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  assert.match(stdout, /Installed the consortium database consortium-v3\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz \(Tropical 11, Mediterranean 10, Temperate 21\)/);
+  assert.match(stdout, /Installed the consortium database consortium-v4\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz and the names file names\.r-000000000000f1c7\.[0-9a-f]{12}\.tsv\.gz \(Tropical 12, Mediterranean 13, Temperate 21\)/);
   const manifest = JSON.parse(readFileSync(join(w.src, 'manifest.json'), 'utf8'));
   const db = manifest.files[0].file;
-  assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'consortium-index.json', db].sort());
+  assert.deepEqual(readdirSync(w.out).sort(), ['INSTALLED_BY', 'consortium-index.json', db, manifest.names.file].sort());
+  assert.deepEqual(readFileSync(join(w.out, manifest.names.file)), readFileSync(join(w.src, manifest.names.file)));
   assert.deepEqual(readFileSync(join(w.out, db)), readFileSync(join(w.src, db)));
   const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
   assert.equal(indexProblem(index), null);
@@ -81,6 +89,12 @@ test('the fixture installs with --fixture --no-images --out: the database byte f
   // it) and the ranges' review state, from the database's meta.
   assert.equal(index.climate_grid_manifest_sha256, FIXTURE_GRID_SHA256);
   assert.equal(index.ranges_review, 'estimate_not_reviewed');
+  // Schema 4: the additive tier's state and the names file the page fetches after first paint.
+  assert.equal(index.schema_version, 4);
+  assert.equal(index.schema_minor, 3);
+  assert.deepEqual(index.schema_additions, FIXTURE_ADDITIONS);
+  const n = manifest.names;
+  assert.deepEqual(index.search_names, { file: n.file, url: `/data/consortium/${n.file}`, sha256: n.sha256, bytes: n.bytes, raw_sha256: n.raw_sha256, raw_bytes: n.raw_bytes });
   assert.ok(!readdirSync(w.root).includes('.consortium-install'), 'no staging left');
 });
 
@@ -112,11 +126,12 @@ test('SHA256SUMS: a changed file, a listed file missing and an unlisted file are
   assert.ok(!existsSync(w.out) && !existsSync(w2.out) && !existsSync(w3.out), 'nothing written');
 });
 
-test('the manifest: format 4 and schema 3 only, by name; release id, split, climates and entries', async (t) => {
+test('the manifest: format 4 and schemas 3 and 4 only, by name; release id, split, climates and entries', async (t) => {
   const w = workspace(t);
   const cases = [
     [(m) => { m.format_version = 3; }, /format_version is 3; this installer reads format 4 only/],
-    [(m) => { m.schema_version = 2; }, /schema_version is 2; this installer reads schema 3 only/],
+    [(m) => { m.schema_version = 2; }, /schema_version is 2; this installer reads schemas 3 and 4 only/],
+    [(m) => { m.schema_version = 5; }, /schema_version is 5; this installer reads schemas 3 and 4 only/],
     // Schema 2 carries the grid its climate ranges were sampled from, in meta and the manifest alike.
     [(m) => { m.climate_ranges.climate_grid_manifest_sha256 = 'b'.repeat(64); }, /meta\.climate_grid_manifest_sha256 is "04ec85f4[0-9a-f]+", the manifest says "b{64}"/],
     [(m) => { delete m.release_id; }, /release_id undefined is not r- and 16/],
@@ -127,10 +142,10 @@ test('the manifest: format 4 and schema 3 only, by name; release id, split, clim
     [(m) => { m.split = true; }, /split is true: the page reads one database file only/],
     [(m) => { m.climates.reverse(); }, /not in climate order/],
     [(m) => { m.climates.splice(1, 0, { climate_zone: 'Arid', regions: ['africa'], plants: 0, interactions: 0 }); }, /the files hold Tropical, Mediterranean, Temperate/],
-    [(m) => { m.climates[0].plants = 12; }, /Tropical has 11 plants, the manifest says 12/],
+    [(m) => { m.climates[0].plants = 13; }, /Tropical has 12 plants, the manifest says 13/],
     [(m) => { delete m.try_references; }, /try_references is not/],
     [(m) => { delete m.source_credits; }, /source_credits is not/],
-    [(m) => { m.files[0].counts.plants = 39; }, /plants has 38 rows, the manifest says 39/],
+    [(m) => { m.files[0].counts.plants = 99; }, /plants has 42 rows, the manifest says 99/],
     [(m) => { m.generated_at = '2026-11-11'; }, /generated_at is not/],
   ];
   for (const [i, [edit, message]] of cases.entries()) {
@@ -174,7 +189,7 @@ test('the database file: its name, sha256, bytes, gzip magic and raw digest', as
     cpSync(join(dir, m.files[0].file), join(dir, other)); rmSync(join(dir, m.files[0].file));
     m.files[0].file = other; writeFileSync(join(dir, 'manifest.json'), JSON.stringify(m));
   } });
-  await assert.rejects(install({ ...w, src: rename }), /is not named consortium-v3\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz/);
+  await assert.rejects(install({ ...w, src: rename }), /is not named consortium-v4\.r-000000000000f1c7\.[0-9a-f]{12}\.sqlite\.gz/);
   const plain = await variant(w, 'plain', { after: (dir, m) => {
     const raw = readFileSync(join(dir, m.files[0].file));
     const notGz = Buffer.concat([Buffer.from('xx'), raw.subarray(2)]);
@@ -208,17 +223,20 @@ test('the database file: over the gzip budget is reported, not a failure', async
   // verifyInstall reports the same size and does not throw.
   const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
   const reported = [];
-  assert.deepEqual(verifyInstall(w.out, index, { log: (line) => reported.push(line) }), { databases: 1, images: 0 });
+  assert.deepEqual(verifyInstall(w.out, index, { log: (line) => reported.push(line) }), { databases: 1, images: 0, names: 1 });
   assert.ok(reported.some((line) => /reported, not a failure/.test(line)), reported.join('\n'));
 });
 
 test('the database inside: application_id, user_version, schema columns, meta and contract rules', async (t) => {
   const w = workspace(t);
   const cases = [
-    [{ userVersion: 2 }, /user_version is 2, not schema 3/],
+    [{ userVersion: 2 }, /user_version is 2, not schema 4/],
+    [{ schema: 3, userVersion: 4 }, /user_version is 4, not schema 3/],
     [{ applicationId: 7 }, /application_id is 7, not 1128484686/],
-    [{ edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN extra TEXT') }, /table plants has the columns .*extra, the schema says/],
-    [{ edit: (db) => db.exec('CREATE TABLE extra (x)') }, /tables outside the schema: extra/],
+    [{ edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN extra TEXT') }, /table plants has columns outside the schema and schema_additions: extra/],
+    [{ edit: (db) => db.exec('CREATE TABLE extra (x)') }, /tables outside the schema and schema_additions: extra/],
+    [{ schema: 3, edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN extra TEXT') }, /table plants has the columns .*extra, the schema says/],
+    [{ schema: 3, edit: (db) => db.exec('CREATE TABLE extra (x)') }, /tables outside the schema: extra/],
     [{ edit: (db) => db.exec("UPDATE meta SET value = 'r-0000000000000000' WHERE key = 'release_id'") }, /meta\.release_id is "r-0000000000000000"/],
     [{ edit: (db) => db.exec("INSERT INTO plants (plant, id, canonical_name, genus, grown_as_annual) VALUES (99, '00000000-f1c7-4000-8000-000000000099', 'Plantus inventus', 'Plantus', 0)") }, /1 plants have no placement/],
     [{ edit: (db) => db.exec("DELETE FROM reason_texts WHERE reason IN (SELECT reason FROM placement_reasons WHERE plant = 1); DELETE FROM placement_reasons WHERE plant = 1") }, /placements have no reason/],
@@ -233,10 +251,7 @@ test('the database inside: application_id, user_version, schema columns, meta an
     [{ edit: (db) => db.exec('DELETE FROM plant_climate WHERE plant = 1; DELETE FROM plant_koppen WHERE plant = 1; DELETE FROM plant_climate_status WHERE plant = 1') }, /1 plants have no plant_climate_status row/],
     [{ edit: (db) => db.exec("UPDATE plant_climate_status SET range_source = NULL, reason = 'no records' WHERE plant = 2") }, /Juglans regia has climate range rows but no range_source/],
   ];
-  for (const [i, [opts, message]] of cases.entries()) {
-    const src = await variant(w, `d${i}`, opts);
-    await assert.rejects(install({ ...w, src }), message, String(message));
-  }
+  await refusedAll(w, 'd', cases);
   assert.ok(!existsSync(w.out), 'nothing written');
 });
 
@@ -252,7 +267,7 @@ test('the TRY list and the source credits are checked as the site parses them', 
   } });
   await assert.rejects(install({ ...w, src: credits }), /status "maybe" is not one of used, held, internal/);
   const rows = await variant(w, 'rows', { manifest: (m) => { m.source_credits.rows = 2; } });
-  await assert.rejects(install({ ...w, src: rows }), /source_credits\.tsv has 3 rows, the manifest says 2/);
+  await assert.rejects(install({ ...w, src: rows }), /source_credits\.tsv has 5 rows, the manifest says 2/);
 });
 
 test('a real install writes src/data/: the index, the TRY list with its meta, the credits; --out and --fixture never do', async (t) => {
@@ -266,7 +281,7 @@ test('a real install writes src/data/: the index, the TRY list with its meta, th
   assert.equal(readFileSync(join(w.data, 'source_credits.tsv'), 'utf8'), FIXTURE_CREDITS);
   assert.ok(!existsSync(join(w.out, 'consortium-index.json')), 'the index is not served');
   const index = JSON.parse(readFileSync(join(w.data, 'consortium-index.json'), 'utf8'));
-  assert.deepEqual(verifyInstall(w.out, index), { databases: 1, images: 6 });
+  assert.deepEqual(verifyInstall(w.out, index), { databases: 1, images: 6, names: 1 });
   // The defaults: only the site's own folder writes src/data/.
   assert.equal(DATA_DIR, fileURLToPath(new URL('../src/data', import.meta.url)));
   assert.equal(INDEX_PATH, join(DATA_DIR, 'consortium-index.json'));
@@ -284,7 +299,7 @@ test('photos: thumbnails with the User-Agent, named by plant and digest, mapped 
   const name = `00000000-f1c7-4000-8000-000000000001.${sha(JPEG).slice(0, 12)}.jpg`;
   assert.equal(index.images['00000000-f1c7-4000-8000-000000000001'], `/data/consortium/images/${name}`);
   assert.deepEqual(readFileSync(join(w.out, 'images', name)), JPEG);
-  assert.deepEqual(verifyInstall(w.out, index), { databases: 1, images: 6 });
+  assert.deepEqual(verifyInstall(w.out, index), { databases: 1, images: 6, names: 1 });
 });
 
 test('photos: a failed one is left out and listed; over 10% failing stops the install with nothing written', async (t) => {
@@ -317,8 +332,101 @@ test('thumbnailUrl: Commons and iNaturalist originals become 500 px copies; svg 
 });
 
 test('databaseName: schema, release, 12 hex digits of the raw database, and the climate when split', () => {
-  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32)), 'consortium-v3.r-0123456789abcdef.abababababab.sqlite.gz');
-  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32), 'Tropical'), 'consortium-v3.r-0123456789abcdef.tropical.abababababab.sqlite.gz');
+  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32)), 'consortium-v4.r-0123456789abcdef.abababababab.sqlite.gz');
+  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32), 'Tropical'), 'consortium-v4.r-0123456789abcdef.tropical.abababababab.sqlite.gz');
+  assert.equal(databaseName('r-0123456789abcdef', 'ab'.repeat(32), null, 3), 'consortium-v3.r-0123456789abcdef.abababababab.sqlite.gz');
+  assert.equal(namesFileName('r-0123456789abcdef', 'cd'.repeat(32)), 'names.r-0123456789abcdef.cdcdcdcdcdcd.tsv.gz');
+});
+
+// PP-C commit 0: the schema-3 export (installed until 0b) still installs, with no names file.
+test('schema 3: the variant installs as before, named v3, with no names file and no search_names', async (t) => {
+  const w = workspace(t);
+  const src = await variant(w, 's3', { schema: 3 });
+  const summary = await install({ ...w, src });
+  assert.match(summary.files[0], /^consortium-v3\./);
+  assert.equal(summary.names, null);
+  const index = JSON.parse(readFileSync(join(w.out, 'consortium-index.json'), 'utf8'));
+  assert.equal(index.schema_version, 3);
+  assert.ok(!('search_names' in index) && !('schema_minor' in index));
+  assert.deepEqual(verifyInstall(w.out, index), { databases: 1, images: 0, names: 0 });
+  assert.equal(indexProblem({ ...index, search_names: { file: 'x' } }), 'the index names a search_names file, but it is schema 3.');
+});
+
+// The additive tier (canopi-data format note, installer rules 1-5).
+test('schema 4, the additive tier: declared extras install, undeclared ones and missing declared ones are refused', async (t) => {
+  const w = workspace(t);
+  // 2: a declared trailing column installs.
+  await install({ ...w, src: await variant(w, 'declared', DECLARED_COLUMN), out: join(w.root, 'out-declared') });
+  // 4.1 (no plant_toxicity_parts nor plant_invasive_areas, their declarations gone) installs: the tables are optional.
+  const v41 = await variant(w, 'v41', {
+    edit: (db) => db.exec("DROP TABLE plant_toxicity_parts; DROP TABLE plant_invasive_areas; DELETE FROM meta WHERE key IN ('count.plant_toxicity_parts', 'count.plant_invasive_areas')"),
+    manifest: (m) => { m.schema_minor = 1; m.schema_additions = m.schema_additions.filter((a) => a.since === 1); delete m.files[0].counts.plant_toxicity_parts; delete m.files[0].counts.plant_invasive_areas; },
+  });
+  await install({ ...w, src: v41, out: join(w.root, 'out-41') });
+  // 4.2 (no plant_invasive_areas, its two declarations gone) installs: the table is optional.
+  const v42 = await variant(w, 'v42', {
+    edit: (db) => db.exec("DROP TABLE plant_invasive_areas; DELETE FROM meta WHERE key = 'count.plant_invasive_areas'"),
+    manifest: (m) => { m.schema_minor = 2; m.schema_additions = m.schema_additions.filter((a) => a.since <= 2); delete m.files[0].counts.plant_invasive_areas; },
+  });
+  await install({ ...w, src: v42, out: join(w.root, 'out-42') });
+  const cases = [
+    // 3: undeclared extras.
+    [{ edit: UNDECLARED_EXTRA }, /tables outside the schema and schema_additions: plant_spacing/],
+    [{ edit: (db) => db.exec('CREATE INDEX plants_by_genus_x ON plants (genus)') }, /indexes outside the schema and schema_additions: plants_by_genus_x/],
+    [{ edit: DECLARED_COLUMN.edit }, /table plants has columns outside the schema and schema_additions: flammability/],
+    // 4: a declared addition the database lacks.
+    [{ manifest: (m) => { m.schema_minor = 4; m.schema_additions.push({ table: 'plant_spacing', since: 4 }); } }, /schema_additions declares the table plant_spacing, which the database lacks/],
+    // 4.3's table undeclared (a 4.2 manifest beside it).
+    [{ manifest: (m) => { m.schema_minor = 2; m.schema_additions = m.schema_additions.filter((a) => a.since <= 2); delete m.files[0].counts.plant_invasive_areas; } }, /tables outside the schema and schema_additions: plant_invasive_areas/],
+    [{ manifest: DECLARED_COLUMN.manifest }, /schema_additions declares the column plants\.flammability, which the database lacks/],
+    // 1 and 5: a base table or index missing or changed.
+    [{ edit: (db) => db.exec('DROP TABLE plant_frost') }, /table plant_frost is missing/],
+    [{ edit: (db) => db.exec('DROP INDEX plant_disputes_key') }, /index plant_disputes_key on plant_disputes is missing/],
+    // Open vocabularies: a value outside the base list and the declared values.
+    [{ edit: (db) => db.exec("INSERT INTO trait_sources VALUES (1, 'weed_potential', 'pfaf', 'GB', 'recorded')") }, /trait_sources\.field holds values outside schema 4 and schema_additions: weed_potential/],
+    [{ edit: (db) => db.exec("INSERT INTO plant_toxicity_parts VALUES (1, NULL, 'thorns', NULL, 0, 'pfaf')"), manifest: (m) => { m.files[0].counts.plant_toxicity_parts += 1; } }, /plant_toxicity_parts\.part holds values outside schema 4 and schema_additions: thorns/],
+    [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.value !== 'toxicity'); } }, /trait_sources\.field holds values outside schema 4 and schema_additions: toxicity/],
+    // The manifest's own keys.
+    [{ manifest: (m) => { delete m.schema_minor; } }, /schema_minor is undefined/],
+    [{ manifest: (m) => { m.schema_additions[0].since = 9; } }, /since is not from 1 to schema_minor 3/],
+    [{ manifest: (m) => { delete m.names; } }, /has no names entry \(required at schema 4\)/],
+    [{ manifest: (m) => { m.names.core_raw_sha256 = 'c'.repeat(64); } }, /core_raw_sha256 is not the core file's raw_sha256/],
+  ];
+  await refusedAll(w, 't', cases);
+  // The declared extra value is accepted: the default fixture stores trait_sources.field 'toxicity'.
+  assert.ok(!existsSync(w.out), 'nothing written');
+});
+
+// The names file (format note, "What the check refuses"): a bad one refuses the whole install.
+test('schema 4, the names file: header, codes, rows and order are checked; a bad one refuses the install', async (t) => {
+  const w = workspace(t);
+  const cases = [
+    [(l) => [l[0].replace(/release_id=\S+/, 'release_id=r-0000000000000000'), ...l.slice(1)], /release_id r-0000000000000000 is not the manifest's/],
+    [(l) => [l[0].replace(/core_raw_sha256=\S+/, `core_raw_sha256=${'e'.repeat(64)}`), ...l.slice(1)], /core_raw_sha256 is not the core's raw_sha256/],
+    [(l) => [l[0], l[1].replace('1:vernacular', '1:common'), ...l.slice(2)], /the second line is not/],
+    [(l) => [l[0], l[1].replace('1:wikidata,2:wcvp', '1:wcvp,2:wikidata'), ...l.slice(2)], /sources are not in the order/],
+    [(l) => [l[0], l[1].replace('2:wcvp', '2:wcvp,3:zeta'), ...l.slice(2)], /the source zeta has no source_credits\.tsv row/],
+    [(l) => [...l.slice(0, 3), ...l.slice(3).reverse()], /rows out of order/],
+    [(l) => [...l, l[l.length - 1]], /a duplicate \(plant, kind, lang, name\)/],
+    [(l) => [...l, '999\t1\ten\tNobody\t1'], /plant 999 is not a plants\.plant of the core/],
+    [(l) => [...l.slice(0, 3), l[3].replace(/^\d+/, (d) => `0${d}`), ...l.slice(4)], /not in canonical form/],
+    [(l) => [...l, '42\t1\tEN\tParsley herb\t1'], /lang "EN" does not fit the kind/],
+    [(l) => [...l, '42\t1\ten\tParsley herb\t2'], /source wcvp does not fit the kind/],
+    [(l) => [...l, '42\t1\ten\tParsley  herb\t1'], /a run of whitespace/],
+  ];
+  for (const [i, [edit, message]] of cases.entries()) {
+    const src = await variant(w, `n${i}`, { names: edit });
+    await assert.rejects(install({ ...w, src }), message, String(message));
+  }
+  // A names file that is not one plain gzip member (a trailing second member).
+  const twice = await variant(w, 'twice', { after: (dir, m) => {
+    const gz = readFileSync(join(dir, m.names.file));
+    const both = Buffer.concat([gz, gzipSync(Buffer.alloc(0))]);
+    writeFileSync(join(dir, m.names.file), both); m.names.sha256 = sha(both); m.names.bytes = both.length;
+    writeFileSync(join(dir, 'manifest.json'), JSON.stringify(m)); resum(dir);
+  } });
+  await assert.rejects(install({ ...w, src: twice }), /more than one gzip member or bytes after it/);
+  assert.ok(!existsSync(w.out), 'nothing written');
 });
 
 test('verifyInstall: a stray file, a changed database, a missing photo and a broken index fail', async (t) => {
@@ -341,6 +449,13 @@ test('verifyInstall: a stray file, a changed database, a missing photo and a bro
   assert.throws(() => verifyInstall(w.out, { ...index, images: { x: '/data/consortium/images/a.jpg' } }), /not a plant UUID/);
   assert.throws(() => verifyInstall(w.out, { ...index, release_id: 'r-1' }), /release_id "r-1"/);
   assert.throws(() => verifyInstall(w.out, { ...index, climate_grid_manifest_sha256: undefined }), /climate_grid_manifest_sha256/);
+  // Schema 4: the names file must be there, as the index says.
+  assert.throws(() => verifyInstall(w.out, { ...index, search_names: undefined }), /no search_names entry/);
+  writeFileSync(join(w.out, index.files[0].file), readFileSync(join(w.src, index.files[0].file)));
+  writeFileSync(join(w.out, index.search_names.file), gzipSync('x'));
+  assert.throws(() => verifyInstall(w.out, index), /names\..*\.tsv\.gz does not match the index's sha256 and bytes/);
+  rmSync(join(w.out, index.search_names.file));
+  assert.throws(() => verifyInstall(w.out, index), /names\..*\.tsv\.gz is missing/);
 });
 
 test('verifyInstall: the committed public/data/consortium/ matches the committed index', () => {

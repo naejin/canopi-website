@@ -344,9 +344,9 @@ test('futureCheck: warming that lifts a site out of "too cool" is said, positive
   assert.equal(cold.warmEnough, false);
 });
 
-test('schema 3: the reader and the installer read schema 3, the source reads blocks, sources and weak', async () => {
+test('schema 3: the reader and the installer read schema 3 (and 4, PP-C), the source reads blocks, sources and weak', async () => {
   const types = await import('../src/lib/consortium/types.ts');
-  assert.equal(types.SCHEMA_VERSION, 3);
+  assert.deepEqual(types.SCHEMA_VERSIONS, [3, 4]);
   const cacao = plant('Theobroma cacao').climate;
   assert.deepEqual(cacao.tmeanYear, { low: 21.3, median: 25.2, high: 27.5, count: cacao.tmeanYear.count, basis: 'thinned_cells', blocks: 499, lowSource: 'treegoer_ranges', highSource: null, weak: false });
   assert.equal(cacao.tmaxWarm.highSource, 'treegoer_ranges');
@@ -468,11 +468,15 @@ test('month layers: every PFAF month row of the export carries its source region
 
 // ---- review of 619e6a7 ----
 
+// PP-C commit 0: the schema of the installed export's version (3 until 0b installs schema 4). Schema 4's
+// declared additions (schema_additions in the index) are left out of the comparison: they are judged by
+// the installer's tier rule, never copied as base statements.
 test('schema module: every table, column and statement, in order, as the installed export holds them (the fixture is built from the same DDL)', async () => {
-  const { DDL } = await import('./consortium-schema.mjs');
+  const { DDL_BY_SCHEMA } = await import('./consortium-schema.mjs');
   const { DatabaseSync } = await import('node:sqlite');
   const mem = new DatabaseSync(':memory:');
-  mem.exec(DDL);
+  mem.exec(DDL_BY_SCHEMA[index.schema_version]);
+  const additions = new Set((index.schema_additions ?? []).flatMap((a) => (a.column ? [] : [a.index ?? a.table])));
   const cols = (db) => Object.fromEntries(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all().map(({ name }) => [name, db.prepare('SELECT name, "notnull" FROM pragma_table_info(?)').all(name).map((c) => `${c.name}${c.notnull ? '!' : ''}`).join(',')]));
   const ours = cols(mem);
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
@@ -480,8 +484,9 @@ test('schema module: every table, column and statement, in order, as the install
   const dir = mkdtempSync(`${tmpdir()}/ct-schema-`);
   writeFileSync(`${dir}/x.sqlite`, gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url))));
   const installed = new DatabaseSync(`${dir}/x.sqlite`, { readOnly: true });
-  const exp = cols(installed);
-  const expSql = Object.fromEntries(installed.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name').all().map((r) => [r.name, r.sql]));
+  const drop = (o) => Object.fromEntries(Object.entries(o).filter(([name]) => !additions.has(name)));
+  const exp = drop(cols(installed));
+  const expSql = drop(Object.fromEntries(installed.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name').all().map((r) => [r.name, r.sql])));
   installed.close();
   rmSync(dir, { recursive: true });
   assert.deepEqual(ours, exp);

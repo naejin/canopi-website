@@ -3,7 +3,7 @@
 // DecompressionStream unless the server already decoded it (P3: no 1f 8b magic; bytes.ts), deserialized read-only, then checked
 // against the index the page was built with (§4 "open"). Each failure maps to a §5 screen.
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
-import { APPLICATION_ID, SCHEMA_VERSION } from '../../../lib/consortium/types.ts';
+import { APPLICATION_ID, SCHEMA_VERSIONS } from '../../../lib/consortium/types.ts';
 import { decodeDatabase, LoadError, type DbRef } from './bytes.ts';
 
 export { LoadError, type DbRef };
@@ -167,7 +167,8 @@ function openWith(sqlite3: Sqlite3, bytes: Uint8Array, expected: Expected): Open
     } catch (err) {
       throw new LoadError('damaged', `not a database: ${(err as Error).message}`);
     }
-    if (appId !== APPLICATION_ID || userVersion !== SCHEMA_VERSION) throw new LoadError('schema', `application_id ${String(appId)}, user_version ${String(userVersion)}`);
+    // Schemas 3 and 4 until PP-C 0b (types.ts SCHEMA_VERSIONS); any other is the Reload screen.
+    if (appId !== APPLICATION_ID || !(SCHEMA_VERSIONS as readonly unknown[]).includes(userVersion)) throw new LoadError('schema', `application_id ${String(appId)}, user_version ${String(userVersion)}`);
     let release: unknown, climates: unknown[];
     try {
       release = db.selectValue("SELECT value FROM meta WHERE key = 'release_id'");

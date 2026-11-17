@@ -1,6 +1,40 @@
 {
   "format_version": 4,
-  "schema_version": 3,
+  "schema_version": 4,
+  "schema_minor": 3,
+  "schema_additions": [
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "toxicity",
+      "since": 1
+    },
+    {
+      "table": "meta",
+      "column": "key",
+      "value": "count.plant_toxicity_parts",
+      "since": 2
+    },
+    {
+      "table": "plant_toxicity_parts",
+      "since": 2
+    },
+    {
+      "table": "plant_toxicity_parts",
+      "index": "plant_toxicity_parts_key",
+      "since": 2
+    },
+    {
+      "table": "meta",
+      "column": "key",
+      "value": "count.plant_invasive_areas",
+      "since": 3
+    },
+    {
+      "table": "plant_invasive_areas",
+      "since": 3
+    }
+  ],
   "generated_at": "2026-11-11T00:00:00Z",
   "canopi_db_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "release_id": "r-000000000000f1c7",
@@ -8,45 +42,52 @@
   "max_gzip_bytes": 10000000,
   "files": [
     {
-      "file": "consortium-v3.r-000000000000f1c7.d2dadef1512e.sqlite.gz",
+      "file": "consortium-v4.r-000000000000f1c7.309de0f912a7.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "28cd67ca1af95b558cba68aa6da5320b65fa935cfb18aca52008a2da062c860d",
-      "bytes": 30925,
-      "raw_sha256": "d2dadef1512e264f9129e4a307ece9eacc3596ae3925b16457533494e5e2390c",
-      "raw_bytes": 258048,
+      "sha256": "578e4cc1a8b221aaad95b7298f09b58070ed9a19d9e60805ff64424d16dfd73b",
+      "bytes": 35700,
+      "raw_sha256": "309de0f912a79eac48cf942c6813878d9b72f4ccd12bb217bf243edd3be99a80",
+      "raw_bytes": 307200,
       "counts": {
         "climates": 3,
         "climate_regions": 4,
         "strata": 4,
         "phases": 7,
-        "sources": 13,
+        "sources": 22,
         "countries": 14,
-        "areas": 9,
+        "areas": 12,
         "labels": 14,
-        "plants": 38,
-        "plant_names": 103,
+        "plants": 42,
+        "plant_names": 115,
         "plant_images": 6,
-        "toxicity_sources": 12,
-        "plant_invasive": 9,
-        "plant_areas": 105,
-        "placements": 42,
-        "placement_reasons": 43,
-        "reason_texts": 85,
-        "functions": 42,
-        "function_sources": 42,
+        "toxicity_sources": 15,
+        "plant_invasive": 13,
+        "plant_areas": 116,
+        "placements": 46,
+        "placement_reasons": 47,
+        "reason_texts": 92,
+        "functions": 44,
+        "function_sources": 44,
         "interactions": 8,
         "interaction_notes": 5,
         "interaction_sources": 9,
         "agent_names": 2,
         "agent_name_sources": 2,
         "layer_values": 8,
-        "plant_climate_status": 38,
-        "plant_climate": 259,
-        "plant_koppen": 250
+        "plant_climate_status": 42,
+        "plant_climate": 287,
+        "plant_koppen": 277,
+        "plant_disputes": 8,
+        "plant_aliases": 2,
+        "trait_sources": 43,
+        "plant_frost": 1,
+        "plant_toxicity_audience": 2,
+        "plant_toxicity_parts": 8,
+        "plant_invasive_areas": 9
       }
     }
   ],
@@ -56,7 +97,7 @@
       "regions": [
         "southern_america"
       ],
-      "plants": 11,
+      "plants": 12,
       "interactions": 2
     },
     {
@@ -64,7 +105,7 @@
       "regions": [
         "europe"
       ],
-      "plants": 10,
+      "plants": 13,
       "interactions": 0
     },
     {
@@ -93,7 +134,7 @@
   "wcvp": {
     "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
     "record": "WCVP (fixture: invented)",
-    "plants_with_areas": 37,
+    "plants_with_areas": 41,
     "plants_not_found": [
       "Phacelia tanacetifolia"
     ]
@@ -106,7 +147,7 @@
     "climate_grid_manifest_sha256": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c",
     "climate_grid_period": "1991-2020 historical",
     "plants_by_range_source": {
-      "gbif_occurrences": 37
+      "gbif_occurrences": 41
     }
   },
   "try_references": {
@@ -117,7 +158,16 @@
   },
   "source_credits": {
     "file": "source_credits.tsv",
-    "sha256": "9f9486b84fb733a0718c734b6dc45f803bfce065b5673c893fa19c9de5344688",
-    "rows": 3
+    "sha256": "69cda68c50fa9235ca57a8df41d9d11a64057503fcf23e75f32ca9ea591b7391",
+    "rows": 5
+  },
+  "names": {
+    "file": "names.r-000000000000f1c7.d10a2fa34525.tsv.gz",
+    "sha256": "8002b41f2f666540be9870f315dc3c91b3f13ee6992c5a98e98eb228dd3721a4",
+    "bytes": 344,
+    "raw_sha256": "d10a2fa34525a1655f278864a660735637cc3921c763da6e9e94224e333f833b",
+    "raw_bytes": 478,
+    "rows": 11,
+    "core_raw_sha256": "309de0f912a79eac48cf942c6813878d9b72f4ccd12bb217bf243edd3be99a80"
   }
 }

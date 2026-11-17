@@ -1,14 +1,19 @@
 // Consortium v2 core types (frozen seam, commit 0 of P2; design check §4). The core
 // (src/lib/consortium/) reads plants only through PlantSource (./source.ts) as these plain records,
 // imports nothing outside this folder and touches no DOM (scripts/consortium-boundary.test.mjs).
-// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 3); the adapter
+// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schemas 3 and 4; schema 4:
+// docs/website-handoff/2026-11-14-schema4-format.md, 4.2 2026-11-17-toxicity-parts.md); the adapter
 // (src/islands/consortium/data/sqlite-source.ts, stream S1) fills these records from SQL.
 // Streams may add fields; renaming or removing one is a seam change for the coordinator.
 //
 // null means unknown or not recorded. The schema's "no rows" for functions means not curated, never
 // "none": Taxon.functions is null then.
 
-export const SCHEMA_VERSION = 3;
+// The schemas the reader opens (PRAGMA user_version): 3 and 4 until PP-C 0b installs schema 4. A
+// schema-4 table absent from the database (a schema-3 export, or a later table of the additive tier)
+// is the feature off, read with the same "not recorded" words (Details fields null).
+export const SCHEMA_VERSIONS = [3, 4] as const;
+export type SchemaVersion = (typeof SCHEMA_VERSIONS)[number];
 // PRAGMA application_id of the export ("CCON"), checked when the database opens.
 export const APPLICATION_ID = 0x43434f4e;
 
@@ -139,8 +144,20 @@ export interface Traits {
 }
 
 export interface Toxicity { level: ToxicityLevel; sources: string[] }
-// ISO 3166-1 alpha-2 countries from GRIIS; read with countries().invasiveChecked.
+// ISO 3166-1 alpha-2 countries (GRIIS, and since schema 4.3 ES's es_catalogo and atlas_aloctonas_es; one
+// plant_invasive row per country, its source the widest scope); read with countries().invasiveChecked,
+// which since 4.3 means "a source in the release assessed invasiveness there" (0: "not checked").
 export interface InvasiveRecord { country: string; sources: string[] }
+// Schema 4.3 plant_invasive_areas (canopi-data docs/website-handoff/2026-11-17-invasive-scope.md): the
+// closed lists the reader has words for. Area: a WCVP level-3 code (BAL Baleares, CNY Canarias, SPA
+// mainland Spain); source: the sources whose wording differs (an atlas row is never a legal listing).
+export const invasiveAreaCodes = ['BAL', 'CNY', 'SPA'] as const;
+export type InvasiveAreaCode = (typeof invasiveAreaCodes)[number];
+export const invasiveSources = ['griis', 'es_catalogo', 'atlas_aloctonas_es'] as const;
+export type InvasiveSource = (typeof invasiveSources)[number];
+// One source naming the plant invasive in part of a country: its areas, in code order. A (plant,
+// country) with no scope rows is the whole country (InvasiveRecord alone).
+export interface InvasiveScope { country: string; source: InvasiveSource; areas: InvasiveAreaCode[] }
 
 // ---- schemas 2 and 3: observed climate ranges (P5 commit 0; the ranges rebuild) ----
 
@@ -258,7 +275,67 @@ export interface Details {
   sources: Record<string, Source>; // every source id the sheet cites
   placements: Partial<Record<ClimateZone, Placement>>; // this plant in every curated climate
   koppen: KoppenShare[]; // schema 2: the Köppen classes of its observed cells, largest share first; [] with no range
+  // Schema 4 (PP-C commit 0; each null when its table is absent: the feature off; c2 draws them). None of
+  // them changes a verdict, a filter or a ranking (format note, decision 17: inform, don't block).
+  disputes: Dispute[] | null; // plant_disputes: other sources that disagree with a shipped value
+  audiences: ToxicityAudience[] | null; // plant_toxicity_audience: one row per animal audience and source
+  traitSources: TraitSource[] | null; // trait_sources: where a shipped trait value comes from and holds
+  // plant_frost: this plant's frost facts. null: the table is absent, or the release has no row at all
+  // (no frost line); [] with frostRecorded: the release has rows, none for this plant ("not recorded").
+  frost: FrostFact[] | null;
+  toxicityParts: ToxicityPart[] | null; // 4.2 plant_toxicity_parts: the parts a source names as toxic
+  // 4.3 plant_invasive_areas: per (country, source), the areas it names; a pair holding an area or a
+  // source outside the closed lists is left out whole, so it reads at country level (never wrong).
+  invasiveAreas: InvasiveScope[] | null;
+  gbifRecords: number | null; // plant_climate_status.gbif_records: the occurrence records the range rests on
 }
+
+// ---- Schema 4 records (format note tables; open vocabularies as strings: a value the reader does not
+// know skips its row, never the plant) ----
+
+// A source that disagrees with the shipped value. field: 'tmin_cold.low' | 'tmean_year.low' (range,
+// with unit 'C') | 'toxicity' | 'plant_invasive' | 'weed_potential' | 'allelopathic' (queue). value: the
+// source's stricter value, null for a flag-only row ("names a hazard, no level given"). derived: the
+// value is computed from the source's data, not stated by it. scope: a country (ISO alpha-2) or null.
+export type DisputeField = 'tmin_cold.low' | 'tmean_year.low' | 'toxicity' | 'plant_invasive' | 'weed_potential' | 'allelopathic';
+export interface Dispute { field: DisputeField; kind: 'range' | 'queue'; value: string | null; unit: 'C' | null; derived: boolean; scope: string | null; source: string }
+// An animal audience's toxicity (never merged into one pick). level null: the source states none.
+export interface ToxicityAudience { who: 'livestock' | 'pets'; level: ToxicityLevel | null; source: string }
+// Where a shipped trait value comes from (field: 'frost_tender' and the declared values) and where it
+// holds (scope: a country, null for everywhere); kind as layer_values.kind.
+// traitFields: the plants columns this reader reads (sqlite-source.ts traitsOf and the warnings), by
+// their export names (a view maps tolerates_full_sun to Traits.sun); frost_tender is the format note's
+// base value, the others declared additions (the staging export ships 21; c2's sourceLine labels a
+// corrected value). A field naming no column read here is skipped (review c0-4, round 2 4a).
+export const traitFields = [
+  'height_min_m', 'height_max_m', 'width_max_m', 'tolerates_full_sun', 'tolerates_semi_shade', 'tolerates_full_shade',
+  'hardiness_zone_min', 'hardiness_zone_max', 'frost_tender', 'soil_ph_min', 'soil_ph_max', 'well_drained', 'moisture_use',
+  'drought_tolerance', 'fertility_requirement', 'deciduous_evergreen', 'active_growth_period', 'bloom_period', 'harvest_period',
+  'lifespan', 'growth_rate', 'age_of_maturity_years', 'root_depth_min_cm', 'taproot_persistent', 'root_system_type',
+  'mycorrhizal_type', 'nitrogen_fixer', 'edibility_rating', 'self_fertile', 'sexual_system', 'pollinators',
+  'vegetative_spread_rate', 'clonal_growth_form', 'is_annual', 'grown_as_annual', 'is_perennial', 'habit',
+  'toxicity', 'allelopathic', 'weed_potential',
+] as const;
+export type TraitField = (typeof traitFields)[number];
+export interface TraitSource { field: TraitField; source: string; scope: string | null; kind: LayerKind }
+// A frost fact (plant_frost, empty until canopi-data D8; schema-4 format note, plant_frost). kind 'ktmp':
+// EcoCrop's killing temperature while growing (°C); 'ktmpr': EcoCrop's killing temperature at rest
+// (dormant, °C), shown apart with its own label and never merged with KTMP or part of the precedence;
+// 'class': 'tender' | 'light' | 'hard' from the pinned vegetable table. variety null: the species; a
+// variety row is a ktmp (or ktmpr) row with `variety` set. coarse: a ktmp of exactly 0 °C (a rough
+// value). Precedence (format note Q7): the species KTMP when not coarse, else the range of the variety
+// KTMPs that are not coarse (with their names), else the class, else a coarse 0 worded as an estimate.
+export interface FrostFact { kind: 'ktmp' | 'ktmpr' | 'class'; valueC: number | null; frostClass: 'tender' | 'light' | 'hard' | null; variety: string | null; coarse: boolean; source: string; scopeCountry: string | null }
+// A toxic part as a source names it (4.2). who null: the plant's own warning (beside plants.toxicity);
+// else that animal's audience row. condition null: none stated. Carries no level, never narrows the
+// whole plant, never says "only" (toxicity-parts note, Display).
+export type ToxicPart = 'whole_plant' | 'leaves' | 'stems' | 'shoots' | 'bark' | 'sap' | 'flowers' | 'fruits' | 'berries' | 'seeds' | 'pods' | 'nuts' | 'roots' | 'bulbs' | 'tubers' | 'essential_oil';
+export type ToxicCondition = 'raw' | 'unripe' | 'immature' | 'wilted' | 'sprouted' | 'large_amounts' | 'prolonged_use' | 'skin_contact' | 'pregnancy';
+export interface ToxicityPart { who: 'livestock' | 'pets' | null; part: ToxicPart; condition: ToxicCondition | null; genusWide: boolean; source: string }
+// One plant of the release for search (PlantSource.names): the core's integer (plants.plant, which the
+// names file's rows name; renumbered by a release, never stored), its id, its canonical name, its
+// plant_names in en and the page language, and the curated lists that place it.
+export interface PlantNames { plant: number; id: PlantId; canonical: string; names: Partial<Record<Locale, string>>; lists: ClimateZone[] }
 
 // labels: trait field → English value → locale → label (a missing label shows the English value).
 export type Labels = Record<string, Record<string, Partial<Record<Locale, string>>>>;
@@ -266,8 +343,10 @@ export type Labels = Record<string, Record<string, Partial<Record<Locale, string
 // climateGrid: the canopi-climate grid manifest sha256 the ranges were sampled from (meta), for
 // information: the page does not compare it; the build fails unless the consortium index names the same
 // grid as the installed climate tiles (scripts/consortium-grid-check.mjs). rangesReview:
-// 'estimate_not_reviewed' today. schemaVersion: the user_version load.ts accepted (SCHEMA_VERSION).
-export interface SourceInfo { releaseId: string; schemaVersion: typeof SCHEMA_VERSION; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null }
+// 'estimate_not_reviewed' today. schemaVersion: the user_version load.ts accepted (SCHEMA_VERSIONS).
+// frostRecorded: the release has any plant_frost row (then a plant without one reads "frost tolerance
+// not recorded"; without, no frost line at all).
+export interface SourceInfo { releaseId: string; schemaVersion: SchemaVersion; builtAt: string; climates: ClimateZone[]; griisAvailable: boolean; climateGrid: string | null; rangesReview: string | null; frostRecorded: boolean }
 
 // A warning on a member (store.ts `flags`): a conflict between two members, a site misfit, an
 // invasive or toxicity warning. Add and Swap ask only about 'misfit' and a high 'conflict'.

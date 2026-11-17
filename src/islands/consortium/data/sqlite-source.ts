@@ -1,17 +1,20 @@
 // The PlantSource over the opened SQLite database (stream S1; design check §4; canopi-data
-// docs/consortium-export-v2.md, format 4, schema 3). It reads plain records with SQL and hands them to
+// docs/consortium-export-v2.md, format 4, schemas 3 and 4). It reads plain records with SQL and hands them to
 // the core, which computes the matrix, site fit and reason counts itself. No sqlite-wasm import here:
 // it takes any database with OO1's selectObjects and selectArrays, so the tests run it on the package's Node build.
 // Photos come from the index's {uuid: path} map (design check A4), never the export's remote URLs.
 // Search runs in JavaScript over folded names (A6, `fold`): lower case, Latin/Greek/Cyrillic marks
 // stripped, ß/œ/æ written out, word prefix;
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
+// Schema 4's tables (PP-C commit 0) are optional: each is read only when the database has it (a
+// schema-3 export, a 4.1 export without 4.2's plant_toxicity_parts, a 4.2 one without 4.3's
+// plant_invasive_areas), else its Details field is null,
+// the feature off. Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
 import type {
-  ClimateRange, ClimateZone, Details, FunctionId, FunctionMethod, Image, Interaction, InvasiveRecord, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
-  PlantId, RangeBasis, RangeVariable, Reason, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicityLevel, Traits,
+  ClimateRange, ClimateZone, Details, Dispute, DisputeField, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
+  PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
 } from '../../../lib/consortium/index.ts';
-import { firstPlaced, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities } from '../../../lib/consortium/index.ts';
-import { SCHEMA_VERSION } from '../../../lib/consortium/types.ts';
+import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -25,6 +28,49 @@ const str = (v: unknown): string | null => (v === null || v === undefined ? null
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
 const bool = (v: unknown): boolean | null => (v === null || v === undefined ? null : Number(v) === 1);
 const range = (min: unknown, max: unknown) => (min === null && max === null ? null : { min: num(min), max: num(max) });
+const oneOf = <T extends string>(list: readonly T[], v: unknown): T | null => (list as readonly unknown[]).includes(v) ? (v as T) : null;
+
+// Schema 4's known values (format note; 4.2 toxicity-parts note). A later value is declared by the
+// export and skipped here until the reader knows it.
+const DISPUTE_FIELDS: readonly DisputeField[] = ['tmin_cold.low', 'tmean_year.low', 'toxicity', 'plant_invasive', 'weed_potential', 'allelopathic'];
+const AUDIENCES = ['livestock', 'pets'] as const;
+const FROST_KINDS = ['ktmp', 'ktmpr', 'class'] as const;
+const FROST_CLASSES = ['tender', 'light', 'hard'] as const;
+const LAYER_FIELDS: readonly LayerValue['field'][] = ['bloom_months', 'ripening_or_fruit_seen_months', 'sowing_months', 'tolerates_wind'];
+const TOXIC_PARTS: readonly ToxicPart[] = ['whole_plant', 'leaves', 'stems', 'shoots', 'bark', 'sap', 'flowers', 'fruits', 'berries', 'seeds', 'pods', 'nuts', 'roots', 'bulbs', 'tubers', 'essential_oil'];
+const TOXIC_CONDITIONS: readonly ToxicCondition[] = ['raw', 'unripe', 'immature', 'wilted', 'sprouted', 'large_amounts', 'prolonged_use', 'skin_contact', 'pregnancy'];
+
+const disputeOf = (r: Row): Dispute[] => {
+  const field = oneOf(DISPUTE_FIELDS, r.field), kind = oneOf(['range', 'queue'] as const, r.kind);
+  if (!field || !kind || (r.unit !== null && r.unit !== 'C')) return [];
+  return [{ field, kind, value: str(r.other_value), unit: r.unit === 'C' ? 'C' : null, derived: Number(r.derived) === 1, scope: str(r.scope), source: String(r.source) }];
+};
+const audienceOf = (r: Row): ToxicityAudience[] => {
+  const who = oneOf(AUDIENCES, r.who), level = r.level === null ? null : oneOf(toxicityLevels, r.level);
+  return who && (r.level === null || level) ? [{ who, level, source: String(r.source) }] : [];
+};
+// A field this reader has no words for (open vocabulary) is skipped (review c0-4).
+const traitSourceOf = (r: Row): TraitSource[] => {
+  const kind = oneOf(layerKinds, r.kind), field = oneOf(traitFields, r.field);
+  return kind && field ? [{ field, source: String(r.source), scope: str(r.scope_country), kind }] : [];
+};
+const frostOf = (r: Row): FrostFact[] => {
+  const kind = oneOf(FROST_KINDS, r.kind), frostClass = r.class === null ? null : oneOf(FROST_CLASSES, r.class);
+  return kind && (r.class === null || frostClass) ? [{ kind, valueC: num(r.value_c), frostClass, variety: str(r.variety), coarse: Number(r.coarse) === 1, source: String(r.source), scopeCountry: str(r.scope_country) }] : [];
+};
+const partOf = (r: Row): ToxicityPart[] => {
+  const part = oneOf(TOXIC_PARTS, r.part), condition = r.condition === null ? null : oneOf(TOXIC_CONDITIONS, r.condition);
+  const who = r.who === null ? null : oneOf(AUDIENCES, r.who);
+  return part && (r.condition === null || condition) && (r.who === null || who) ? [{ who, part, condition, genusWide: Number(r.genus_wide) === 1, source: String(r.source) }] : [];
+};
+// 4.3 plant_invasive_areas rows of one plant (ordered by country, source, area) → one scope per
+// (country, source). A country whose rows hold an area or a source outside the closed lists is left out
+// whole: it then reads at country level from plant_invasive, less precise but never wrong (format note).
+const scopesOf = (rows: Row[]): InvasiveScope[] => [...group(rows, (r) => String(r.country))].flatMap(([country, list]) => {
+  const known = list.every((r) => (invasiveAreaCodes as readonly string[]).includes(String(r.area)) && (invasiveSources as readonly string[]).includes(String(r.source)));
+  if (!known) return [];
+  return [...group(list, (r) => String(r.source))].map(([source, of]) => ({ country, source: source as InvasiveSource, areas: of.map((r) => String(r.area) as InvasiveAreaCode) }));
+});
 
 function group<K>(rows: Row[], key: (r: Row) => K): Map<K, Row[]> {
   const out = new Map<K, Row[]>();
@@ -122,14 +168,25 @@ const interactionsIn = (zones: readonly ClimateZone[]): string =>
 
 export function createSqliteSource(db: Db, options: SourceOptions): PlantSource {
   const meta = new Map(db.selectObjects('SELECT key, value FROM meta').map((r) => [String(r.key), String(r.value)]));
+  // The tables the database holds: a schema-4 table absent is its feature off.
+  const tables = new Set(db.selectObjects("SELECT name FROM sqlite_master WHERE type = 'table'").map((r) => String(r.name)));
+  const has = (table: string): boolean => tables.has(table);
+  // The rows of an optional table for one plant (or null when the table is absent).
+  const rowsOf = <T>(table: string, plant: number, read: (r: Row) => T[], order: string): T[] | null =>
+    has(table) ? db.selectObjects(`SELECT * FROM ${table} WHERE plant = ?1 ORDER BY ${order}`, [plant]).flatMap(read) : null;
+  // plant_aliases (a declared schema-4 table) is accepted and never read: old links need not survive a
+  // data change (owner 2026-11-17, "No backward compatibility work"); an unreadable token is unknown.
+  const frostRecorded = has('plant_frost') && db.selectObjects('SELECT 1 FROM plant_frost LIMIT 1').length > 0;
   const info: SourceInfo = {
     releaseId: meta.get('release_id') ?? '',
-    schemaVersion: SCHEMA_VERSION,
+    // load.ts opened it only at a schema the reader knows.
+    schemaVersion: Number(meta.get('schema_version') ?? 3) as SchemaVersion,
     builtAt: meta.get('built_at') ?? '',
     climates: db.selectObjects('SELECT id FROM climates ORDER BY ord').map((r) => r.id as ClimateZone),
     griisAvailable: meta.get('griis_available') === '1',
     climateGrid: meta.get('climate_grid_manifest_sha256') || null,
     rangesReview: meta.get('ranges_review') || null,
+    frostRecorded,
   };
   const countries: ReadonlyMap<string, { invasiveChecked: boolean }> = new Map(
     db.selectObjects('SELECT code, invasive_checked FROM countries ORDER BY code').map((r) => [String(r.code), { invasiveChecked: Number(r.invasive_checked) === 1 }]));
@@ -278,13 +335,17 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       });
     },
     async placements(ids) { return placementsOf(ids); },
-    async names(l) {
-      const rows = db.selectObjects(`SELECT p.id, p.canonical_name, n.locale, n.name FROM plants p
-        LEFT JOIN plant_names n ON n.plant = p.plant AND n.locale IN ('en', ?1) ORDER BY p.canonical_name`, [l]);
-      return [...group(rows, (r) => String(r.id))].map(([id, list]) => ({
-        id,
+    // The release-wide reader (PP-C commit 0): every plant, whatever list places it, with the lists.
+    async names(l): Promise<PlantNames[]> {
+      const rows = db.selectObjects(`SELECT p.plant, p.id, p.canonical_name, n.locale, n.name FROM plants p
+        LEFT JOIN plant_names n ON n.plant = p.plant AND n.locale IN ('en', ?1) ORDER BY p.canonical_name, p.plant`, [l]);
+      const lists = group(db.selectObjects('SELECT x.plant, x.climate_zone FROM placements x JOIN climates c ON c.id = x.climate_zone ORDER BY x.plant, c.ord'), (r) => Number(r.plant));
+      return [...group(rows, (r) => Number(r.plant))].map(([plant, list]) => ({
+        plant,
+        id: String(list[0].id),
         canonical: String(list[0].canonical_name),
         names: Object.fromEntries(list.filter((r) => r.locale !== null).map((r) => [r.locale, String(r.name)])) as Partial<Record<Locale, string>>,
+        lists: (lists.get(plant) ?? []).map((r) => r.climate_zone as ClimateZone),
       }));
     },
     async details(id, c, l): Promise<Details> {
@@ -297,7 +358,8 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         const text = textOf(list);
         return text ? [{ region: list[0].region as Reason['region'], text, source: String(list[0].source) }] : [];
       });
-      const layerValues: LayerValue[] = db.selectObjects('SELECT * FROM layer_values WHERE plant = ?1 AND (climate_zone IS NULL OR climate_zone = ?2) ORDER BY layer_value', [plant, c]).map((r) => {
+      // Schema 4: layer_values.field is an open vocabulary; a field the reader does not know is skipped.
+      const layerValues: LayerValue[] = db.selectObjects('SELECT * FROM layer_values WHERE plant = ?1 AND (climate_zone IS NULL OR climate_zone = ?2) ORDER BY layer_value', [plant, c]).filter((r) => oneOf(LAYER_FIELDS, r.field)).map((r) => {
         const scope: LayerScope = {};
         if (r.scope_climate !== null) scope.climate = r.scope_climate as ClimateZone;
         if (r.scope_country !== null) scope.country = String(r.scope_country);
@@ -320,11 +382,21 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const placements = placementsOf([id]).get(id) ?? {};
       const koppen: KoppenShare[] = db.selectObjects('SELECT koppen, share, cells FROM plant_koppen WHERE plant = ?1 ORDER BY share DESC, koppen', [plant])
         .map((r) => ({ code: String(r.koppen), share: Number(r.share), cells: Number(r.cells) }));
-      const rangeSource = db.selectObjects('SELECT range_source FROM plant_climate_status WHERE plant = ?1 AND range_source IS NOT NULL', [plant]).map((r) => String(r.range_source));
+      const status = db.selectObjects('SELECT range_source, gbif_records FROM plant_climate_status WHERE plant = ?1', [plant])[0];
+      const rangeSource = status && status.range_source !== null ? [String(status.range_source)] : [];
+      const gbifRecords = status ? num(status.gbif_records) : null;
+      // Schema 4's optional tables (null: absent). Frost: null too when the release has no row at all.
+      const disputes = rowsOf('plant_disputes', plant, disputeOf, 'field, source, scope');
+      const audiences = rowsOf('plant_toxicity_audience', plant, audienceOf, 'who, source');
+      const traitSources = rowsOf('trait_sources', plant, traitSourceOf, 'field');
+      const frost = frostRecorded ? rowsOf('plant_frost', plant, frostOf, 'kind, variety, source') : null;
+      const toxicityParts = rowsOf('plant_toxicity_parts', plant, partOf, "who IS NOT NULL, who, part <> 'whole_plant', part, condition IS NOT NULL, condition, source");
+      const invasiveAreas = has('plant_invasive_areas') ? scopesOf(db.selectObjects('SELECT country, source, area FROM plant_invasive_areas WHERE plant = ?1 ORDER BY country, source, area', [plant])) : null;
       const fnSources = db.selectObjects('SELECT s.source FROM functions f JOIN function_sources s USING (function_id) WHERE f.plant = ?1', [plant]).map((r) => String(r.source));
       const cited = new Set<string>([
         ...reasons.map((r) => r.source), ...layerValues.map((v) => v.source), ...toxicitySources, ...fnSources,
         ...(invasiveIn ?? []).flatMap((r) => r.sources), ...Object.values(placements).flatMap((p) => (p?.source ? [p.source] : [])), ...rangeSource,
+        ...[disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas].flatMap((list) => (list ?? []).map((x) => x.source)),
       ]);
       const list = [...cited];
       const sources: Record<string, Source> = {};
@@ -333,7 +405,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           sources[String(r.id)] = { label: String(r.label), url: str(r.url), licence: str(r.licence), attribution: str(r.attribution) };
         }
       }
-      return { id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen };
+      return { id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen, disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas, gbifRecords };
     },
     async labels(l) {
       const out: Labels = {};

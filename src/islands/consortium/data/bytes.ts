@@ -5,7 +5,8 @@
 // magic is there, the raw database's when the server already decoded it (P3).
 import type { LoadFailure } from '../../../lib/consortium/source.ts';
 
-// What the page names (ConsortiumPage.astro, from src/data/consortium-index.json).
+// What the page names (ConsortiumPage.astro, from src/data/consortium-index.json): the database, and at
+// schema 4 the names file (#ct-data `names`; null before), fetched by c1 after first paint, never preloaded.
 export interface DbRef { url: string; sha256: string; bytes: number; rawSha256: string; rawBytes: number }
 
 export class LoadError extends Error {
@@ -35,11 +36,13 @@ async function inflate(gz: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-// The raw database from the fetched body, or a LoadError('damaged').
-export async function decodeDatabase(body: Uint8Array, ref: DbRef): Promise<Uint8Array> {
+// The raw bytes of a fetched gzipped file the page names by its digests (the database, or schema 4's
+// names file: PP-C commit 0, one checker for both), or a LoadError('damaged'). what: the file's name in
+// the messages ('database', 'names file').
+export async function decodeChecked(body: Uint8Array, ref: DbRef, what: string): Promise<Uint8Array> {
   if (!body.byteLength) throw new LoadError('damaged', `${ref.url}: empty body`);
   if (!isGzip(body)) {
-    await check(body, ref.rawSha256, ref.rawBytes, 'decoded database', ref.url);
+    await check(body, ref.rawSha256, ref.rawBytes, `decoded ${what}`, ref.url);
     return body;
   }
   await check(body, ref.sha256, ref.bytes, 'gzipped file', ref.url);
@@ -49,6 +52,9 @@ export async function decodeDatabase(body: Uint8Array, ref: DbRef): Promise<Uint
   } catch (err) {
     throw new LoadError('damaged', `${ref.url} does not decompress: ${(err as Error).message}`);
   }
-  await check(raw, ref.rawSha256, ref.rawBytes, 'database', ref.url);
+  await check(raw, ref.rawSha256, ref.rawBytes, what, ref.url);
   return raw;
 }
+
+// The raw database from the fetched body, or a LoadError('damaged').
+export const decodeDatabase = (body: Uint8Array, ref: DbRef): Promise<Uint8Array> => decodeChecked(body, ref, 'database');

@@ -59,6 +59,10 @@ const food = guides.find((entry) => slugOf(entry) === explainGuide);
 const guide = food ? { url: localizedUrl(`/guides/${explainGuide}/`, guideLang), lang: guideLang } : null;
 const contact = localizedUrl('/', lang) + '#contact';
 const db = index.files[0];
+// Schema 4's names file (PP-C commit 0; the index names it from schema 4 on, src/data/consortium-index.json
+// search_names): its reference only, fetched by Find after first paint, never preloaded. null before.
+type NamesRef = { url: string; sha256: string; bytes: number; raw_sha256: string; raw_bytes: number };
+const searchNames = (index as { search_names?: NamesRef }).search_names ?? null;
 const countryCodes = (c: Record<string, boolean>) => ({ checked: Object.keys(c).filter((k) => c[k]).join(' '), unchecked: Object.keys(c).filter((k) => !c[k]).join(' '), zones: zonesByCountry(Object.keys(c)) });
 // Each country's time zones from Node's CLDR data (the same the browser's Intl.Locale has), so the
 // island's country guess never asks the browser for all of them (store.zonesOfCountry; about 3.4 KB gzip).
@@ -70,6 +74,7 @@ const data = {
   strings,
   releaseId: index.release_id,
   db: { url: db.url, sha256: db.sha256, bytes: db.bytes, rawSha256: db.raw_sha256, rawBytes: db.raw_bytes },
+  names: searchNames && { url: searchNames.url, sha256: searchNames.sha256, bytes: searchNames.bytes, rawSha256: searchNames.raw_sha256, rawBytes: searchNames.raw_bytes },
   climates: index.climates.map((c) => c.toLowerCase()),
   // The known countries, those GRIIS checked and those it did not (space-separated ISO codes), so the
   // country line shows its final guess and "not checked" note in its first frame (N2 layout shift).
