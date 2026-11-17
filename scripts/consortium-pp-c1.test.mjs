@@ -202,3 +202,11 @@ test('PP-C c1 fix A5: why a row matched (whyLines, the one owner of those words)
   const gombo = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' })('gombo').find((h) => h.id === id(1));
   assert.deepEqual(whyLines(gombo).map((l) => [l.key, l.vars.lang, l.vars.name]), [['consortium.find.why.lang', 'fr', 'Gombo']], 'a name in another language, its language code for the view to name');
 });
+
+test('PP-C c1 fix A6: one warned rule for every add in Find and Paste (in-list, "Add from {list}", pasted): invasive, toxic, a site misfit or a serious conflict', async () => {
+  const { addsWithWarning } = await findQuery();
+  const f = (kind, over = {}) => ({ id: id(1), kind, ...over });
+  assert.equal(addsWithWarning([]), false);
+  for (const flags of [[f('invasive')], [f('toxicity')], [f('misfit')], [f('conflict', { severity: 'high' })]]) assert.equal(addsWithWarning(flags), true, flags[0].kind);
+  assert.equal(addsWithWarning([f('conflict', { severity: 'low' })]), false, 'a low conflict is no warning on add');
+});

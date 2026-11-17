@@ -7,7 +7,7 @@
 // twice, or not found. Every warning stays on its row in words. Owner row "Inform, don't block"
 // (2026-11-14, knowledge/decisions/consortium-user-decisions.md): nothing asks first. A row's "Add
 // anyway" (a guest, labelled "From the {climate} list", A9) adds it in one tap and "Add all" adds the
-// found and ticked plants; a plant that warns (a site misfit or a serious conflict) makes the toast say
+// found and ticked plants; a plant with a warning (rules/find-query.ts addsWithWarning, as in Find) makes the toast say
 // "n added with a warning" with Show. Each added plant is kept. The text is read a moment after typing stops (and at once on "Add all"), at most
 // MAX_LINES lines.
 // Loaded on first use with Find, one chunk (views/find/index.ts, views/Sheets.tsx).
@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { warns } from '../../../../lib/consortium/index.ts';
+import { addsWithWarning } from '../../rules/find-query.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
@@ -76,7 +76,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
     if (!ids.length) return;
     const from: Partial<Record<PlantId, ClimateZone>> = {};
     for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
-    const warned = ids.filter((id) => { const t = byId.get(id); return t ? warns(flagsOfPlant(t)) : false; });
+    const warned = ids.filter((id) => { const t = byId.get(id); return t ? addsWithWarning(flagsOfPlant(t)) : false; });
     closeSheet();
     addMembers(ids, from, { warned });
   };
@@ -84,7 +84,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
   // focus moves on (W4): to the next row's "Add anyway" (next: its plant, else the row before's), else
   // the "Already in" heading, else the sheet's title.
   const addGuest = (t: Taxon, from: ClimateZone, next?: Taxon) => {
-    addMembers([t.id], { [t.id]: from }, { warned: warns(flagsOfPlant(t)) ? [t.id] : [] });
+    addMembers([t.id], { [t.id]: from }, { warned: addsWithWarning(flagsOfPlant(t)) ? [t.id] : [] });
     focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-already'));
   };
   const toggle = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
@@ -164,7 +164,7 @@ export default function Paste({ Frame }: { Frame: Frame }) {
             <ul class="ct-rows ct-paste-rows">
               {result.other.map((o, i) => {
                 return (
-                  <li key={o.taxon.id} class={warns(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
+                  <li key={o.taxon.id} class={addsWithWarning(flagsOfPlant(o.taxon)) ? 'flagged' : ''}>
                     <span><strong>{o.name}</strong> → {nameOf(o.taxon)} {sci(o.taxon)}</span>
                     <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate) })}</span>
                     {warnings(o.taxon)}

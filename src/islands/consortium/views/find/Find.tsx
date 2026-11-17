@@ -17,9 +17,9 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, jobIds, jobsOf, periodIds, queryTokens, warns } from '../../../../lib/consortium/index.ts';
+import { fitLine, jobIds, jobsOf, periodIds, queryTokens } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
-import { applyFilters, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
+import { addsWithWarning, applyFilters, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
 import { FitLine, JobIcon, holeWords, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
@@ -119,10 +119,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     for (const t of base) m.set(t.id, store.flagsOfPlant(t));
     return m;
   }, [base, flagCtx, scene]);
-  const warned = useMemo(() => new Set(base.filter((t) => {
-    const f = flagsOf.get(t.id) ?? [];
-    return warns(f) || f.some((x) => x.kind === 'invasive' || (x.kind === 'toxicity' && t.warnings.toxicity?.level !== 'None'));
-  }).map((t) => t.id)), [base, flagsOf]);
+  const warned = useMemo(() => new Set(base.filter((t) => addsWithWarning(flagsOf.get(t.id) ?? [])).map((t) => t.id)), [base, flagsOf]);
 
   // The query's hits, best first; those in the list, those in other lists, those already in the palette.
   const hits = useMemo(() => (q && search ? search(q) : null), [q, search]);
@@ -166,7 +163,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const addFrom = async (id: PlantId, z: ClimateZone) => {
     const list = await store.loadPool(z);
     const t = list?.find((x) => x.id === id);
-    if (t) store.addMembers([id], { [id]: z }, { warned: warns(store.flagsOfPlant(t)) ? [id] : [], text: T('find.addedOne', { name: nameOf(t) }) });
+    if (t) store.addMembers([id], { [id]: z }, { warned: addsWithWarning(store.flagsOfPlant(t)) ? [id] : [], text: T('find.addedOne', { name: nameOf(t) }) });
   };
   const addTicked = () => {
     const ids = ticked.filter((id) => !added(id));

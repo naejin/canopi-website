@@ -7,8 +7,8 @@
 // Inform, don't block (owner 2026-11-14): no group hides a plant. A plant with a warning (a serious
 // conflict, a site misfit, toxic, recorded as invasive in the country) that fits otherwise needs a
 // second look; a plant with no verdict is "not checked", never a fit.
-import type { JobId, Level, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, queryTokens, fold } from '../../../lib/consortium/index.ts';
+import type { Flag, JobId, Level, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
+import { jobIds, jobsOf, queryTokens, fold, warns } from '../../../lib/consortium/index.ts';
 
 export interface FindGroups { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unchecked: Taxon[] }
 export const GROUPS = ['fits', 'look', 'outside', 'unchecked'] as const;
@@ -28,6 +28,13 @@ export function findGroups(taxa: readonly Taxon[], verdicts: ReadonlyMap<PlantId
   for (const t of taxa) out[groupOf(verdicts?.get(t.id)?.level, warned.has(t.id))].push(t);
   return out;
 }
+
+// Whether an add says "added with a warning" (with Show): the one rule of every add in Find and Paste
+// (in the list, "Add from {list}", a pasted plant). A plant's flags here (store.flagsOfPlant): a site
+// misfit or a serious conflict (core warns), or recorded as invasive in the country, or toxic (a
+// toxicity flag is raised for a recorded level other than None).
+export const addsWithWarning = (flags: readonly Flag[]): boolean =>
+  warns(flags as Flag[]) || flags.some((x) => x.kind === 'invasive' || x.kind === 'toxicity');
 
 // ---- filters (board FindFilters: each says what it is for) ----
 
