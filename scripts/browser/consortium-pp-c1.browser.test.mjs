@@ -791,7 +791,7 @@ test('PP-C54 (c1 r4 U3): a later period without figures: the plain subtitle, no 
   assert.match(sub, /^\d+ plants on .+ not yet in your palette$/, `the plain count (${sub})`);
   assert.doesNotMatch(sub, /fit/, 'no plant said to fit');
   const fits = await page.$eval(`${FIND} [data-filter="fits"]`, (i) => i.closest('label').textContent);
-  assert.match(fits, /\b0 plants/, `"Fits your place" counts none of the unchecked plants (${fits})`);
+  assert.match(fits, /\D0 plants/, `"Fits your place" counts none of the unchecked plants (${fits})`);
 });
 
 // c1r4 U4 + U6 (Chrome T21): a close spelling says how it was read wherever the plant is: on another
