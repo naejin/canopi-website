@@ -16,12 +16,12 @@ import { batch } from '@preact/signals';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
-import type { ClimateZone, JobId, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, periodIds, queryTokens, warns } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import { fitLine, jobIds, jobsOf, periodIds, queryTokens, warns } from '../../../../lib/consortium/index.ts';
 import { namesLine, type FindHit } from '../../data/search.ts';
 import { applyFilters, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
-import { FitLine, JobIcon, holeWords } from '../kit/fit.tsx';
+import { FitLine, JobIcon, holeWords, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
 import { listName, nameOf, nameOrder, num } from '../kit/names.ts';
 import { formatLength } from '../../format.ts';
@@ -37,6 +37,10 @@ const holdsName = HOLDS_PERIOD.replace('-', '–');
 const langName = (code: string): string => {
   try { return new Intl.DisplayNames([pageLang()], { type: 'language' }).of(code) ?? code; } catch { return code; }
 };
+// A group's heading: the verdict words of its level for the page's period (verdict-line.ts fitLine,
+// the one owner of them: "Fits your place today", "Needs a second look", …), never Find's own copy.
+const groupWords = (g: Group, judged: PeriodId): string =>
+  say(fitLine({ id: '', judged, ownYears: false, level: g === 'unchecked' ? 'unknown' : g, limiting: null, factors: [], notes: [] } satisfies PlantVerdict));
 // Why a row matched, unless it is the plant's own name in the page's language.
 function whyWords(h: FindHit): { text: string; lang?: string; kind: string } | null {
   const w = h.why;
@@ -356,7 +360,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
             <>
               {GROUPS.filter(shown).map((g) => (
                 <section key={g} class="ct-find-group" data-find-group={g} aria-labelledby={`ct-find-g-${g}`}>
-                  <h3 id={`ct-find-g-${g}`}>{T(`find.g.${g}`)} <span class="ct-muted">{num(groups[g].length)}</span></h3>
+                  <h3 id={`ct-find-g-${g}`}>{groupWords(g, store.period.value)} <span class="ct-muted">{num(groups[g].length)}</span></h3>
                   <ul class="ct-rows">{groups[g].map(row)}</ul>
                 </section>
               ))}

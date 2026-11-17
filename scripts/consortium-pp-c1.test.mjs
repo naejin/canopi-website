@@ -176,3 +176,7 @@ test('PP-C c1 fix A13: the core is the only route to fold and queryTokens; group
     assert.doesNotMatch(w['consortium.find.holds'], /2041/, `${lang}: no period written in`);
   }
 });
+
+test('PP-C c1 fix A10: Find keeps no copy of the verdict words (its group headings are consortium.line.*, through verdict-line.ts)', () => {
+  for (const [lang, w] of Object.entries(words)) assert.deepEqual(Object.keys(w).filter((k) => k.startsWith('consortium.find.g.')), [], `${lang}: no consortium.find.g.* key`);
+});
