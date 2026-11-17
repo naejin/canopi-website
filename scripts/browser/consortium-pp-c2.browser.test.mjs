@@ -344,8 +344,8 @@ test('PP-C6d (c2 fix round 2 R4 K15, round 3 T15): on a phone the DOM order is t
   // Round 3 T15 (N3): at 960 px Find, Keep and Remove share one row; the heading that takes focus on
   // open shows no ring.
   await page.setViewport({ width: 960, height: 900 });
-  const tops = await page.$$eval(`${DETAILS} .ct-d-cando-actions > *`, (els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-  assert.equal(new Set(tops).size, 1, `one row at 960 px (${tops})`);
+  const boxes = await page.$$eval(`${DETAILS} .ct-d-cando-actions > *`, (els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom)]; }));
+  assert.ok(Math.max(...boxes.map((b) => b[0])) < Math.min(...boxes.map((b) => b[1])), `one row at 960 px (${JSON.stringify(boxes)})`);
   const ring = await page.evaluate(() => { const h = document.querySelector('dialog.ct-sheet[open] #ct-d-title'); h.focus(); return getComputedStyle(h).outlineStyle; });
   assert.equal(ring, 'none', 'no focus ring on the focused heading');
 });

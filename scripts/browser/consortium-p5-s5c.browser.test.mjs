@@ -259,7 +259,7 @@ test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a 
   assert.ok(await has(page, '.ct-details .ct-reasons li', 10_000), 'the Why section lists the source list\'s reasons, not "no source"');
   const note = await text(page, `.ct-details [data-why-borrowed="${picked.from.toLowerCase()}"]`);
   assert.match(note ?? '', new RegExp(`come from the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
-  assert.match(await text(page, '#ct-d-place') ?? '', new RegExp(picked.from), '"Placed for" names the list the placement is from, never claims the visitor\'s climate');
+  assert.match(await text(page, '.ct-details [data-from-list]') ?? '', new RegExp(picked.from), 'the header names the list the placement is from, never claims the visitor\'s climate');
   // A correction made here names both: the list the placement comes from as `climate`, the visitor's
   // own climate as `site_climate`, and that the placement is an estimate (pre-push item B; the payload
   // is tested here, since Correction.tsx builds it inline).
@@ -532,7 +532,7 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
 // matrix cells this test also read went in PP-B 0a' (its "no cell blocked" line went with them; the
 // palette's holes and fillers never read the room answer, core holes.ts); the walnut, once added,
 // is listed in Your plants with the same note, not hidden.
-test('P5-27r (S5c climate ranges, room advisory; PP-C commit 0): in a small garden a walnut pasted by name joins without asking, and Your plants lists it with "grows to … m: prune" @real-data', async () => {
+test('P5-27r (S5c climate ranges, room advisory; PP-C commit 0): in a small garden a walnut pasted by name joins without asking, and Your plants lists it with "grows to … m: too tall for your room" (never "prune", c2 fix round 2 K13) @real-data', async () => {
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     await choose(page, 'Temperate');
@@ -546,7 +546,7 @@ test('P5-27r (S5c climate ranges, room advisory; PP-C commit 0): in a small gard
     await page.evaluate(() => { const { store } = window.__ctTest; store.closeSheet?.(); store.view.value = 'matrix'; });
     const listed = await page.waitForFunction(() => [...document.querySelectorAll('.ct-plants li')].find((li) => li.querySelector('i[lang="la"]')?.textContent === 'Juglans regia')?.querySelector('[data-note="room-tall"]')?.textContent ?? null, { timeout: 8000 }).then((r) => r.jsonValue(), () => null);
     // The row's short form (verdict-line.ts rowLines, c2 fix round 1 A3); Details keeps the full sentence.
-    assert.match(listed ?? '', /^grows to [\d.]+ m: prune/, `${width} px: Your plants lists the walnut with its height note`);
+    assert.match(listed ?? '', /^grows to [\d.]+ m: too tall for your room/, `${width} px: Your plants lists the walnut with its height note`);
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     assert.ok(over <= 0, `${width} px: no sideways scroll`);
     assert.deepEqual(page.thirdParty, []);
