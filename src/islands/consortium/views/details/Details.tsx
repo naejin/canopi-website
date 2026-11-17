@@ -208,7 +208,10 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const invasive = invasiveSoft(t, facts);
   const scoped = invasive.filter((x) => x.scope);
   // The invasive status said once (C9): the per-source lines when the country has them, else the flag's.
-  const warnLines = lines.filter((l) => l.kind !== 'invasive' || !scoped.length);
+  // A conflict is about the other plant: its full words under With your other plants (board DetailsMore,
+  // round 4 V5), its few words in the summary's pill; Warnings holds the plant's own.
+  const conflicts = lines.filter((l) => l.kind === 'conflict' || l.kind === 'soft');
+  const warnLines = lines.filter((l) => l.kind !== 'conflict' && l.kind !== 'soft' && (l.kind !== 'invasive' || !scoped.length));
   const unknownSoft = [
     ...unknownWords(t, scene.site),
     ...invasive.filter((x) => !x.scope).map((x) => x.text),
@@ -218,10 +221,9 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // Whether it holds back neighbours is about its neighbours: said under With your other plants (K17).
   const allelo = t.warnings.allelopathic;
   const notAllChecked = t.warnings.toxicity === null || t.warnings.allelopathic === null || (facts?.invasiveIn ?? t.warnings.invasive_in) === null;
-  const hard = warnLines.filter((l) => l.kind !== 'soft');
   const others = store.memberTaxa.value.filter((o) => o.id !== id);
   const pairs = pairings(t, others, store.flagContext.value.interactions);
-  const conflictCount = warnLines.filter((l) => l.kind === 'conflict').length;
+  const conflictCount = conflicts.filter((l) => l.kind === 'conflict').length;
   const jobs = jobsOf(t);
   const traits = traitsOf(t, labels);
   const sourceLabel = (sid: string) => facts?.sources[sid]?.label ?? sid;
@@ -446,12 +448,13 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             )}
           </More>
           <More k="pairs" title={T('details.secOthers')} hint={conflictCount ? P('details.conflictCount', conflictCount) : T('details.noConflict')}>
+            {conflicts.length > 0 && <ul class="ct-warnlist">{conflicts.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-conflict>{l.text}</li>)}</ul>}
             {pairs.length
               ? <ul class="ct-oklist">{pairs.map((p) => <li>{T('details.pairing', { other: nameOf(p.other) })}</li>)}</ul>
               : <p class="ct-muted">{T('details.noPairing')}</p>}
             <p class={allelo === true ? '' : 'ct-muted'} data-allelo>{allelo === true ? WARN : INFO} {T(allelo === true ? 'd.allelo' : allelo === false ? 'd.alleloNone' : 'd.alleloUnk')}</p>
           </More>
-          <More k="warn" title={T('details.secWarnings')} hint={notAllChecked ? T('details.notAllChecked') : hard.length ? P('details.warnCount', hard.length) : undefined}>
+          <More k="warn" title={T('details.secWarnings')} hint={notAllChecked ? T('details.notAllChecked') : warnLines.length ? P('details.warnCount', warnLines.length) : undefined}>
             <ul class="ct-warnlist">
               {warnLines.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-level={l.level}>{l.text}</li>)}
               {scoped.map((x) => <li class="soft" data-invasive-scope={x.scope}>{x.text}</li>)}

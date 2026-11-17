@@ -286,6 +286,34 @@ test('PP-C6b (c2 boards, fix round 1 C10 C14): Swap at 320 px scrolls nothing si
   assert.ok(await has(page, `${DETAILS} [data-cando] ${aria('button', 'Find one that holds')}`, 1000), 'What you can do');
 });
 
+// Fix round 4 V5 (Chrome N1): a conflict pill in the summary card says it as the board, in a few words
+// ("With Olive: a shared pest or disease (Xylella)"; the long advice stays in With your other plants),
+// and every pill wraps inside the card: nothing sideways at 390 px, no pill past the card on the desk.
+test('PP-C6f (c2 fix round 4 V5): Seville, Almond beside Olive: the summary\'s conflict pill is short and wraps inside the card at 390 and 1280 px', async () => {
+  const page = await suggestedAt('seville', 'Mediterranean');
+  const almond = await page.evaluate(() => {
+    const { store } = window.__ctTest;
+    const by = (n) => store.pool.value.find((t) => t.canonical_name === n)?.id;
+    const ids = [by('Prunus dulcis'), by('Olea europaea')];
+    store.members.value = [...new Set([...store.members.value, ...ids.filter(Boolean)])];
+    return ids[0] ?? null;
+  });
+  assert.ok(almond, 'Prunus dulcis on the Mediterranean list');
+  for (const width of [390, 1280]) {
+    await page.setViewport({ width, height: 900 });
+    await details(page, almond);
+    assert.ok(await has(page, `${DETAILS} [data-summary] [data-chip="conflict"]`, 6000), `${width}: a conflict pill in the summary`);
+    const pills = await page.$$eval(`${DETAILS} [data-summary] .ct-marks > li`, (els) => els.map((e) => { const r = e.getBoundingClientRect(), c = e.closest('[data-summary]').getBoundingClientRect(); return { text: e.textContent.trim(), chip: e.dataset.chip, inside: r.left >= c.left - 0.5 && r.right <= c.right + 0.5 }; }));
+    for (const p of pills) assert.ok(p.inside, `${width}: "${p.text}" inside the card`);
+    const conflict = pills.find((p) => p.chip === 'conflict').text;
+    assert.match(conflict, /^With Olive: (a shared pest or disease|one hosts the other’s pest or disease|one can hold back the other’s growth)( \(.+\))?$/, `${width}: the board's few words ("${conflict}")`);
+    const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
+    assert.equal(sw[0], sw[1], `${width}: nothing sideways`);
+    const long = await page.$eval(`${DETAILS} [data-more="pairs"] [data-conflict]`, (e) => e.textContent.trim()).catch(() => '');
+    assert.ok(long.startsWith('With Olive:') && long.length > conflict.length, `the long words in With your other plants ("${long}")`);
+  }
+});
+
 // ---- fix round 2 (the boards, as the grower reads and does) ----
 
 // K2, K5, K8, K16, R5, round 3 T3 T6: one band per measure, each with its name and its status in words;

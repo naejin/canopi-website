@@ -37,7 +37,10 @@ export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = fal
       let text = T('details.conflict', { other: other ? nameOf(other) : '?', text: note });
       if (f.agent) text += ` ${T('d.agent', { agent: f.agent })}.`;
       if (serious) text += ` (${T('details.serious')})`;
-      out.push({ text, kind: f.severity === 'low' ? 'soft' : 'conflict', chip: T('details.chipConflict', { other: other ? nameOf(other) : '?', text: note }) });
+      // The chip in the board's few words ("With Olive: a shared pest or disease (Xylella)"); the note stays in the text.
+      const name = other ? nameOf(other) : '?', kindWords = f.type ? T(`details.chipType.${f.type}`) : note;
+      const chip = f.agent ? T('details.chipConflictAgent', { other: name, text: kindWords, agent: f.agent }) : T('details.chipConflict', { other: name, text: kindWords });
+      out.push({ text, kind: f.severity === 'low' ? 'soft' : 'conflict', chip });
     } else if (f.kind === 'invasive') {
       out.push({ text: T('d.invHere', { country: countryName(scene.country ?? '') }), kind: 'invasive', chip: T('details.chipInvasive', { country: countryName(scene.country ?? '') }) });
     } else if (f.kind === 'toxicity' && t.warnings.toxicity) {
