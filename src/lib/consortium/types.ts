@@ -175,6 +175,9 @@ export interface ClimateRange {
   low: number | null; median: number | null; high: number | null; count: number | null; basis: RangeBasis;
   blocks: number | null; lowSource: string | null; highSource: string | null; weak: boolean;
 }
+// How much stricter the other source's low is, at least, on a weak row (the export's rule above): where
+// Details' band ends the dashed stretch of a disputed low when the dispute gives no value.
+export const WEAK_BY_C = 4;
 // A plant's observed climate (plant_climate + plant_climate_status), what range, future and native
 // share checks read: coldest-month minimum, warmest-month maximum and the year's mean temperature
 // (the mean of the coldest and warmest months' means) and the warmest month's mean (annuals' summer) in °C, the aridity index (P/PET).

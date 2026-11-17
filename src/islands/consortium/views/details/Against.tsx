@@ -14,7 +14,7 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
 import type { AgainstEntry, Band, Dispute, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
-import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf } from '../../../../lib/consortium/index.ts';
+import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf, WEAK_BY_C } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, say } from '../kit/fit.tsx';
 import { formatNumber, formatTemp } from '../../format.ts';
 import { pageLang } from '../../strings.ts';
@@ -38,7 +38,8 @@ const W = 324, PAD = 6;
 // place at the page's period (a dot, "today 19.0 °C") and in its later period (a ring), the whole band
 // dashed on few records. A disputed low (board DetailsDesk, "−8.2?"): its number carries a question
 // mark, and the stretch from it to the other source's stricter limit is dashed (without that value,
-// the end itself).
+// to the least it is stricter by, WEAK_BY_C). Negative numbers take a true minus sign.
+const minus = (s: string): string => s.replace(/-(?=\d)/g, '\u2212');
 function BandDraw({ b, disputes, period }: { b: Band; disputes: readonly Dispute[]; period: string | null }) {
   const lang = pageLang();
   const field = DISPUTED[b.measure];
@@ -47,12 +48,13 @@ function BandDraw({ b, disputes, period }: { b: Band; disputes: readonly Dispute
   const span = Math.max(...xs) - Math.min(...xs) || 1;
   const lo = Math.min(...xs) - span * 0.12, hi = Math.max(...xs) + span * 0.12;
   const x = (v: number) => PAD + ((v - lo) / (hi - lo)) * (W - 2 * PAD);
-  const end = (v: number) => formatNumber(v, lang, 2); // a limit keeps its two decimals (R5)
-  const at = (v: number) => (b.measure === 'aridity' ? formatNumber(v, lang, 2) : b.measure === 'soilPh' ? `pH ${formatNumber(v, lang, 1)}` : formatTemp(v, lang, 1));
+  const end = (v: number) => minus(formatNumber(v, lang, 2)); // a limit keeps its two decimals (R5)
+  const at = (v: number) => minus(b.measure === 'aridity' ? formatNumber(v, lang, 2) : b.measure === 'soilPh' ? `pH ${formatNumber(v, lang, 1)}` : formatTemp(v, lang, 1));
   const x0 = x(b.low ?? b.recordedLow), x1 = x(b.high ?? b.recordedHigh);
   const disputed = b.disputedLow && b.low !== null;
   // The other source's stricter low, where the solid range starts (the kept, looser stretch dashed).
-  const xs0 = disputed && limit && limit.valueC > b.low! ? x(limit.valueC) : x0;
+  const stricter = disputed ? (limit && limit.valueC > b.low! ? limit.valueC : b.low! + WEAK_BY_C) : null;
+  const xs0 = stricter === null ? x0 : Math.min(x(stricter), x1);
   // Both labels on the same side of both markers, so neither crosses the other's line.
   const marks = [b.place, b.later].filter((v): v is number => v !== null).map(x);
   const right = Math.max(...marks) > W * 0.62;

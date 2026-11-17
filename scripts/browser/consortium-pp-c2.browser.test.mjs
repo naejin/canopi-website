@@ -309,6 +309,11 @@ test('PP-C6f (c2 fix round 4 V5): Seville, Almond beside Olive: the summary\'s c
     assert.match(conflict, /^With Olive: (a shared pest or disease|one hosts the other’s pest or disease|one can hold back the other’s growth)( \(.+\))?$/, `${width}: the board's few words ("${conflict}")`);
     const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
     assert.equal(sw[0], sw[1], `${width}: nothing sideways`);
+    if (width === 1280) {
+      // Its disputed cold limit (TreeGOER stricter): the dashed stretch the board draws, "−8.2?" with a true minus.
+      const cold = await page.$eval(`${DETAILS} [data-measure="tminCold"]`, (e) => ({ dashed: !!e.querySelector('[data-disputed]'), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent) }));
+      assert.ok(cold.dashed && cold.nums.some((n) => /^\u2212\d+(\.\d+)?\?$/.test(n)), `the disputed low as the board (${JSON.stringify(cold)})`);
+    }
     const long = await page.$eval(`${DETAILS} [data-more="pairs"] [data-conflict]`, (e) => e.textContent.trim()).catch(() => '');
     assert.ok(long.startsWith('With Olive:') && long.length > conflict.length, `the long words in With your other plants ("${long}")`);
   }
@@ -334,7 +339,7 @@ test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one ban
     const box = (el) => (el ? el.getBBox() : null);
     const rect = box(e.querySelector('.ct-bd-range')), dashed = box(e.querySelector('[data-disputed]')), dot = box(e.querySelector('.ct-bd-now-dot'));
     const x0 = Math.min(rect.x, dashed ? dashed.x : Infinity);
-    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: rect.x + rect.width, dot: dot ? dot.x + dot.width / 2 : null, range: e.querySelector('[data-band-range]')?.textContent.trim() ?? null };
+    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: rect.x + rect.width, dot: dot ? dot.x + dot.width / 2 : null, dashed: !!dashed, range: e.querySelector('[data-band-range]')?.textContent.trim() ?? null };
   }));
   // The soil card names where its range comes from (the trait's corrected-value source, else the catalogue).
   const soil = bands.find((b) => b.m === 'soilPh');
@@ -351,9 +356,12 @@ test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one ban
   for (const b of bands) {
     assert.ok(b.title && b.status, `band ${b.m}: its name and status in words`);
     assert.ok(b.nums.every((n) => !/[.,]\d{3}/.test(n)), `band ${b.m}: two decimals at most (${b.nums})`);
+    assert.ok(b.nums.every((n) => !n.includes('-')), `band ${b.m}: a true minus sign (${b.nums})`);
     const c = core[b.m];
     if (!c) continue; // the soil card (soilBandOf)
     checked++;
+    // A disputed low (round 4 V6): drawn as a dashed stretch and numbered with a question mark whenever the verdict says so.
+    if (c.disputedLow) assert.ok(b.dashed && b.nums.some((n) => n.endsWith('?')), `band ${b.m}: the disputed low dashed with its "?" (${b.nums})`);
     assert.deepEqual(b.nums.map(num), [c.low, c.high].filter((x) => x !== null).map((x) => Math.round(x * 100) / 100), `band ${b.m}: the ends core gives (${b.nums})`);
     if (b.dot !== null) {
       assert.equal(b.dot < b.x0 - 0.5, c.place < c.recordedLow, `band ${b.m}: the dot left of the drawn range only when the place is below its recorded low (${c.place} vs ${c.recordedLow})`);
