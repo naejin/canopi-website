@@ -406,6 +406,25 @@ test('c2 fix C1 + C3 (fit line): a later fit names the period, never a grouped y
   assert.match(en['consortium.line.pastDrier'], /aridity index/, 'aridity explained in words (C6)');
 });
 
+// Fix round 2 R1 (c2r2-01): only a drier edge names the dry limit. Osaka (aridity index 1.53) is wetter
+// than Glycyrrhiza glabra's recorded 0.14 to 1.34: the headline is a plain fit, never "drier… may need
+// watering", and the line under it says wetter.
+test('c2 fix R1 (wetter edge): Osaka, Glycyrrhiza glabra: the headline never says drier or watering; the wetter line says why', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const r = (low, high) => ({ low, median: null, high, count: 900, basis: 'thinned_cells', weak: false });
+  const slot = (period, scenario) => ({ period, scenario, koppen: 'Cfa', koppenTemperatureMarginC: 0, tminColdC: 2.1, tmaxWarmC: 32.5, tmeanColdC: 6, tmeanWarmC: 28, aridityIndex: 1.53 });
+  const lookup = { lat: 34.69, lon: 135.5, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: [slot('1991-2020', 'historical'), ...core.scenarios.flatMap((s) => [slot('2041-2070', s), slot('2071-2099', s)])] }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
+  const licorice = taxon({ id: 'licorice', canonical_name: 'Glycyrrhiza glabra', phases: null, climate: { source: 'gbif_occurrences', cells: 900, nativeShare: null, tminCold: r(-12, 10), tmaxWarm: r(22, 40), tmeanYear: r(6, 22), tmeanWarm: null, aridity: r(0.14, 1.34) } });
+  const v = verdict(licorice, { place: core.emptyPlace, lookup, period: '1991-2020', scenario: 'ssp245', canopy: null });
+  const all = line.againstLines(v, null, W).map((e) => say(e.line));
+  assert.equal(all[0], 'Fits your place today', `the headline (${all[0]})`);
+  assert.doesNotMatch(all.join(' '), /drier|may need watering/i, 'no drier words for a wetter place');
+  assert.ok(all.some((w) => /^Wetter here than where it is recorded/.test(w) && w.includes('1.53') && w.includes('0.14') && w.includes('1.34')), all.join(' | '));
+  // The drier case keeps its headline (C3), worded the same way.
+  const dry = verdict({ ...licorice, climate: { ...licorice.climate, aridity: r(1.8, 3) } }, { place: core.emptyPlace, lookup, period: '1991-2020', scenario: 'ssp245', canopy: null });
+  assert.equal(say(line.againstLines(dry, null, W)[0].line), 'Fits your place today · drier here than where it is recorded: may need watering');
+});
+
 test('c2 fix C2 (few records): a range on fewer than 300 recorded places notes it with the count; the fit never reads plain', async () => {
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const r = (low, high) => ({ low, median: null, high, count: 26, basis: 'thinned_cells', weak: true });
