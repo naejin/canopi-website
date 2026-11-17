@@ -58,7 +58,12 @@ const plainFind = async () => {
 const expandAll = async (page) => { for (let i = 0; i < 8 && await page.$(`${FIND} [data-find-showall]`); i++) await page.click(`${FIND} [data-find-showall]`); };
 // The start lists no plant (board Find, K3): "Every plant on the list" lists them all, a job chip
 // (the filter column at 960) its plants, as a grower does.
-const everyPlant = async (page) => { await page.click(`${FIND} [data-filter="all"]`); await has(page, `${FIND} [data-find-row]`, 4000); };
+// None judged (c1r5 W2), "Every plant" is already the choice: the start's "Show N plants" lists them.
+const everyPlant = async (page) => {
+  if (!await page.$eval(`${FIND} [data-filter="all"]`, (e) => e.checked)) await page.click(`${FIND} [data-filter="all"]`);
+  else if (await page.$(`${FIND} [data-find-list]`)) await page.click(`${FIND} [data-find-list]`);
+  await has(page, `${FIND} [data-find-row]`, 4000);
+};
 const byJob = async (page, job = 'feeds_you') => { await page.click(`${FIND} [data-filter="job"][data-value="${job}"]`); await has(page, `${FIND} [data-find-row]`, 4000); };
 const visible = (page, sel) => page.$$eval(sel, (els) => els.some((e) => e.checkVisibility()));
 // Find opened from the Next step's hole ("See all N plants"), as a grower opens it.
@@ -793,6 +798,49 @@ test('PP-C54 (c1 r4 U3): a later period without figures: the plain subtitle, no 
   assert.doesNotMatch(sub, /fit/, 'no plant said to fit');
   const fits = await page.$eval(`${FIND} [data-filter="fits"]`, (i) => i.closest('label').textContent);
   assert.match(fits, /\D0 plants/, `"Fits your place" counts none of the unchecked plants (${fits})`);
+  // c1r5 W1: the start's button says no plant fits either: "Show N plants", the subtitle's number.
+  const link = await page.$eval(`${FIND} [data-find-list]`, (b) => b.textContent.trim());
+  assert.equal(link, `Show ${/^\d+/.exec(sub)[0]} plants`, `the start's button, the subtitle's number, no "that fit" (${link})`);
+  // c1r5 W2: none judged, the plants are listed under "Every plant", in their "Not checked" group.
+  assert.equal(await page.$eval(`${FIND} [data-filter="all"]`, (i) => i.checked), true, '"Every plant" is the choice in force');
+  await page.click(`${FIND} [data-find-list]`);
+  assert.ok(await has(page, `${FIND} [data-find-group="unchecked"] [data-find-row]`, 4000), 'the plants listed under "Not checked"');
+  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${/^\d+/.exec(sub)[0]} plants\\.`), 'the count line says the same number');
+});
+
+// c1r5 W2: one rule for "fits". With some plants not checked (no range recorded) among judged ones,
+// "Fits your place" lists only the plants judged to fit or to need a second look, and its label, the
+// subtitle, the start's button and the count line say that number; the unchecked plants are listed
+// under "Every plant", in their "Not checked" group.
+test('PP-C56 (c1 r5 W2): "Fits your place" lists and counts only judged plants; the unchecked ones under "Every plant"', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  // Three plants with no climate range recorded (state no control makes): never judged.
+  const blank = await page.evaluate(() => {
+    const { store } = window.__ctTest, m = new Set(store.members.value);
+    const picked = store.pool.value.filter((t) => !m.has(t.id)).slice(0, 3);
+    for (const t of picked) t.climate = null;
+    store.location.value = { ...store.location.value };
+    return picked.map((t) => t.id);
+  });
+  await page.waitForFunction((ids) => { const v = window.__ctTest.store.poolVerdicts.value; return v && ids.every((id) => !['fits', 'look', 'outside'].includes(v.get(id)?.level)); }, { timeout: 10_000 }, blank);
+  await openFind(page);
+  await hasFind(page);
+  const n = /^Show the (\d+) plants that fit$/.exec(await page.$eval(`${FIND} [data-find-list]`, (b) => b.textContent.trim()))?.[1];
+  assert.ok(n, 'the start says "Show the N plants that fit"');
+  assert.match(await page.$eval(`${FIND} [data-find-fitcount]`, (e) => e.textContent), new RegExp(`^${n} of the`), 'the subtitle says N');
+  assert.match(await page.$eval(`${FIND} [data-filter="fits"]`, (i) => i.closest('label').textContent), new RegExp(`\\D${n} plants`), '"Fits your place" says N');
+  await page.click(`${FIND} [data-find-list]`);
+  assert.ok(await has(page, `${FIND} [data-find-row]`, 4000), 'the plants are listed');
+  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${n} plants\\.`), 'the count line says N');
+  const rows = await rowIds(page);
+  assert.equal(await page.$(`${FIND} [data-find-group="unchecked"]`), null, 'no "Not checked" group under "Fits your place"');
+  assert.ok(blank.every((id) => !rows.includes(id)), 'the unchecked plants are not listed as fitting');
+  assert.equal(rows.length, Number(n), 'the rows are the N plants (the outside ones folded)');
+  await page.click(`${FIND} [data-filter="all"]`);
+  await expandAll(page);
+  const unchecked = await page.$$eval(`${FIND} [data-find-group="unchecked"] [data-find-row]`, (els) => els.map((e) => e.dataset.plantId));
+  assert.deepEqual(unchecked.sort(), [...blank].sort(), 'under "Every plant" they are listed, under "Not checked"');
 });
 
 // c1r5 W3: the roles line leaves out the filtered job only on a row that does it: a palette plant a

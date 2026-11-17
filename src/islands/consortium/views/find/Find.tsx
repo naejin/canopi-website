@@ -191,10 +191,6 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // the verdict rule loaded, not refused. Otherwise neither is offered nor applied, so no plant is ever
   // counted "not recorded" for a rule that did not load.
   const judging = located && !!rule && !store.verdictFailed.value;
-  // The filters in force, the only ones shown, counted and applied (fix round 2, r2-07): without
-  // `judging` the range and holds choices are neither applied nor shown as on.
-  const fit: Fit = !judging && fitChoice === 'inside' ? 'fits' : fitChoice;
-  const filters: FindFilters = { ...chosen, range: fit === 'inside', holds: judging ? chosen.holds : undefined };
   const flagCtx = store.flagContext.value, scene = store.flagScene.value;
   const search = finder.value, names = namesState.value, searchFailed = finderFailed.value;
   const memberTaxa = store.memberTaxa.value;
@@ -208,6 +204,16 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const list = hole && fits && !wide ? (offer ?? []).filter(fits) : pool ?? [];
     return list.filter((t) => !atOpen.has(t.id)).sort(order);
   }, [pool, offer, hole, fits, wide, atOpen, order]);
+  // What fits the place: the plants judged to fit or to need a second look, never an outside or an
+  // unchecked one (c1r4 U3, c1r5 W2); the subtitle, the start's button and "Fits your place" say it.
+  const isFit = (t: Taxon) => { const l = verdicts?.get(t.id)?.level; return l === 'fits' || l === 'look'; };
+  const judged = useMemo(() => base.filter(isFit).length, [base, verdicts]);
+  // The filters in force, the only ones shown, counted and applied (fix round 2, r2-07): without
+  // `judging` the range and holds choices are neither applied nor shown as on.
+  // None judged (no verdicts, or a period without figures: every plant unchecked), "Fits your place"
+  // and "well inside" would list nothing: "Every plant" is in force, not counted as a filter (c1r5 W2).
+  const fit: Fit = !judged ? 'all' : !judging && fitChoice === 'inside' ? 'fits' : fitChoice;
+  const filters: FindFilters = { ...chosen, range: fit === 'inside', holds: judging ? chosen.holds : undefined };
   // A plant with a warning in words (a site misfit, a serious conflict, toxic, invasive here).
   const flagsOf = useMemo(() => {
     const m = new Map<PlantId, ReturnType<typeof store.flagsOfPlant>>();
@@ -261,11 +267,14 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The outside plants fold without a query unless "Every plant" is chosen or "Show N outside" pressed;
   // a search shows them, marked (board FindNone).
   const folds = (v: Fit) => v !== 'all' && !q && !outsideShown;
+  // "Fits your place" lists the judged plants only (c1r5 W2): an unchecked plant is listed under "Every
+  // plant", in its "Not checked" group; a search lists every hit, marked.
+  const drops = (v: Fit) => v === 'fits' && !q;
   // The one count: how many plants the list shows under these filters and this fit choice.
   // (the job card counts the list its "Show these N plants" lists: the whole list, the query gone).
-  const count = (f: FindFilters, v: Fit = fit, list = matched, fold = folds(v)): number => {
+  const count = (f: FindFilters, v: Fit = fit, list = matched, fold = folds(v), drop = drops(v)): number => {
     const rows = applyFilters(list, { ...f, range: v === 'inside' }, ctx).rows;
-    return fold ? rows.filter((t) => !isOutside(t)).length : rows.length;
+    return rows.filter((t) => !(fold && isOutside(t)) && !(drop && !isFit(t) && !isOutside(t))).length;
   };
   const view = useMemo(() => {
     const hitOf = new Map<PlantId, FindHit>();
@@ -319,18 +328,15 @@ export default function Find({ Frame }: { Frame: Frame }) {
 
   // The filters on: each chosen value, and a fit choice other than "Fits your place".
   const lists = (['jobs', 'light', 'stands', 'size', 'life', 'holds'] as const).reduce((n, k) => n + (filters[k]?.length ?? 0), 0);
-  const onCount = lists + (['edible', 'hideNoSize', 'hideRepeats', 'hideToxic', 'hideInvasive'] as const).filter((k) => filters[k]).length + (fit === 'fits' ? 0 : 1);
+  const onCount = lists + (['edible', 'hideNoSize', 'hideRepeats', 'hideToxic', 'hideInvasive'] as const).filter((k) => filters[k]).length + (fit === 'fits' || !judged ? 0 : 1);
   const clearAll = () => batch(() => { setFilters({}); setFit('fits'); setOutsideShown(false); });
   // The one count of what the screen lists as rows (c1r3 T14, c1r4 U2): the list's rows, the palette's
   // plants when listed as rows (a search, or "Show" pressed; folded on a job list they are a line of
   // names) and the other lists' rows; the count line, the status and "Show N plants" all say it.
   const paletteRows = q || paletteOpen ? view.inPalette.length : 0;
   const shownCount = count(filters) + paletteRows + view.others.length;
-  // What fits the place: the plants judged to fit or to need a second look, never an outside or an
-  // unchecked one (a later period without figures, a plant without a range: c1r4 U3); the fit choice's
-  // "Fits your place" and the subtitle say it.
-  const fitsCount = (f: FindFilters, list = matched) => applyFilters(list, { ...f, range: false }, ctx).rows
-    .filter((t) => { const l = verdicts?.get(t.id)?.level; return l === 'fits' || l === 'look'; }).length;
+  // "Fits your place" under these filters: the judged plants only (isFit), as the list it lists.
+  const fitsCount = (f: FindFilters) => applyFilters(matched, { ...f, range: false }, ctx).rows.filter(isFit).length;
 
   const title = hole ? holeWords(hole) : T('find.title');
   // The subtitle (board Find, B4, K3, T14): how many of the plants not yet in the palette fit the place,
@@ -338,8 +344,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // count line says; none judged to fit (nothing checked), the plain count (c1r4 U3). The start lists
   // the jobs as chips; no list until the grower searches, picks a job, sets a filter or asks for it. (The board's "Your palette lacks N holes" needs the holes in a
   // store computed: sheet chunks never import holes.ts; a seam for pf.)
-  const later = store.period.value !== periodIds[0], fitsHere = fitsCount({}, base);
-  const subtitle = !verdicts || !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
+  const later = store.period.value !== periodIds[0], fitsHere = judged;
+  const subtitle = !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
     : hole ? P('find.holeLede', fitsHere, { list: listName(climate) })
       : P(later ? 'find.fitCountLater' : 'find.fitCount', fitsHere, { total: num(base.length), list: listName(climate), period: periodWords(store.period.value) });
   const start = !q && !hole && onCount === 0 && !listed;
@@ -348,7 +354,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const pending = !!q && !search;
   const { groups, unknown, hidden } = view;
   const outsideFolded = folds(fit) && groups.outside.length > 0;
-  const shown = (g: Group) => groups[g].length > 0 && !(g === 'outside' && outsideFolded);
+  const shown = (g: Group) => groups[g].length > 0 && !(g === 'outside' && outsideFolded) && !(g === 'unchecked' && drops(fit));
   // Nothing answers at all: no plant of the release has the name (a hit kept out is counted instead).
   // No hits yet (the names still loading: not searched) is not "nothing" (fix round 2, r2-01).
   const nothing = !!hits && !hits.length;
@@ -435,9 +441,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
       <span class="ct-find-boxcount" data-filter-count="holds">{num(o.count)}</span>
     </label>
   );
+  // None judged, only "Every plant" can be chosen; the others stay, with their 0 (c1r5 W2).
   const fitBox = (v: Fit, id: string, label: string, sub: string) => (
     <label class="ct-check ct-find-check">
-      <input type="radio" name="ct-find-fit" data-filter={id} checked={fit === v} onChange={() => batch(() => { setFit(v); setOutsideShown(false); })} />
+      <input type="radio" name="ct-find-fit" data-filter={id} checked={fit === v} disabled={!judged && v !== 'all'} onChange={() => batch(() => { setFit(v); setOutsideShown(false); })} />
       <span>{label}<span class="ct-find-sub" data-fit-count="">{sub}</span></span>
     </label>
   );
@@ -448,7 +455,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const boxes: [BoxKey, string][] = [['edible', T('find.edible')], ['hideNoSize', T('find.hideNoSize')], ['hideRepeats', T('find.hideRepeats')], ['hideToxic', T('find.hideToxic')], ['hideInvasive', invasiveLabel]];
   const active = [
     ...[...jobOpts, ...lightOpts, ...standOpts, ...holdOpts, ...sizeOpts, ...lifeOpts].filter((c) => c.on).map((c) => ({ key: `${c.label}`, label: c.label, off: c.toggle })),
-    ...(fit === 'fits' ? [] : [{ key: 'fit', label: fit === 'inside' ? T('find.range') : T('find.fitAll'), off: () => setFit('fits') }]),
+    ...(fit === 'fits' || !judged ? [] : [{ key: 'fit', label: fit === 'inside' ? T('find.range') : T('find.fitAll'), off: () => setFit('fits') }]),
     ...boxes.filter(([k]) => filters[k]).map(([k, label]) => ({ key: k, label, off: () => toggleFilter(k) })),
   ];
   const closeFilters = () => batch(() => { setShowFilters(false); setListed(true); });
@@ -532,12 +539,12 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const countLine = pending
     ? <span data-find-searching="">{searchFailed ? T('details.loadFailed') : T('find.searching')}</span>
     : start
-      ? <><button type="button" class="text-link" data-find-list="" onClick={() => setListed(true)}>{P(verdicts ? 'find.showFit' : 'find.showN', count(filters))}</button>{namesNote}</>
+      ? <><button type="button" class="text-link" data-find-list="" onClick={() => setListed(true)}>{P(judged ? 'find.showFit' : 'find.showN', count(filters))}</button>{namesNote}</>
       : q
         ? <>{!nothing && `${P('find.countSay', shownCount)} `}{namesWords(search?.langs ?? [])}{namesNote}</>
         : <>{P('find.countSay', shownCount)}{judging && ` ${T('find.bestFirst')}`}{namesNote}</>;
   const SEARCH = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" /></svg>;
-  const jobCount = job ? count({ ...filters, jobs: [job] }, fit, base, fit !== 'all' && !outsideShown) : 0;
+  const jobCount = job ? count({ ...filters, jobs: [job] }, fit, base, fit !== 'all' && !outsideShown, fit === 'fits') : 0;
   const switchShown = (!q && !start) || select;
 
   return (
