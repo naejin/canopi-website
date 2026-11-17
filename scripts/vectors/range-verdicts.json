@@ -11,9 +11,9 @@
   "applies_to": "real rows"
  },
  "source": {
-  "release_id": "r-415fcc60773473a4",
-  "export_file": "consortium-v3.r-415fcc60773473a4.9bb07657bfd9.sqlite.gz",
-  "export_raw_sha256": "9bb07657bfd9f3a9d0e4b809e1d635a09ec42ea422992ca15fd9a50ca2743192",
+  "release_id": "r-c15a216b9663d2fa",
+  "export_file": "consortium-v3.r-c15a216b9663d2fa.9aa73bdaa65e.sqlite.gz",
+  "export_raw_sha256": "9aa73bdaa65e26508dacd50892ec188658dc06891cb394f2375643cda1007af6",
   "sites_from": "scripts/ranges_scenarios.py SITES + HELD_OUT_SITES",
   "pairs_from": "scripts/ranges_scenarios.py EXPECT, HELD_OUT, WARMTH, HELD_OUT_SUMMER, SHOW",
   "generator": "uv run python scripts/range_vectors.py",

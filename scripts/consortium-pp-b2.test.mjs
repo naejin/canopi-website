@@ -129,9 +129,9 @@ async function kiambuStore() {
 // 109); the boards' 324 came from the mock-up rule. A new export moves it: re-run and re-pin the figure.
 // Re-run on r-b7fb536f9cfd0700 (D9a, 673 plants): the same 305 of 515, since the 158 new plants are on
 // the Arid list only, which Subtropical does not borrow. Re-run on r-415fcc60773473a4 (Q1 data fixes):
-// the same 305 of 515 (196 fit, 109 look).
+// the same 305 of 515 (196 fit, 109 look). Re-run on r-c15a216b9663d2fa (S4, PFAF page values): the same.
 test('PP-B (b1b countFits, real data): Kiambu, 305 of the 515 plants on the nearest lists fit (196) or need a second look (109) today', async () => {
-  assert.equal(index.release_id, 'r-415fcc60773473a4', 'the export the figure was read on');
+  assert.equal(index.release_id, 'r-c15a216b9663d2fa', 'the export the figure was read on');
   const store = await kiambuStore();
   const n = store.countFits.value;
   assert.deepEqual(n, { fits: 196, look: 109, unknown: 0, of: 515 });
