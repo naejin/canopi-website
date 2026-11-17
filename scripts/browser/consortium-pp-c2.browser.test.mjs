@@ -379,6 +379,11 @@ test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one ban
   assert.match(await page.$eval(`${DETAILS} [data-band-key]`, (e) => e.textContent), /where it is recorded growing.*your place today.*not a firm limit/s);
   const sw = await page.$eval(DETAILS, (d) => [d.scrollWidth, d.clientWidth]);
   assert.equal(sw[0], sw[1], 'Details at 320 px: nothing sideways');
+  // Round 4 V9 (board Details): the line under the heading says what the bands draw, near which place;
+  // on a phone the sections' headings are the board's bold sans, not the display serif.
+  assert.match(await page.$eval(`${DETAILS} [data-against-lede]`, (e) => e.textContent.trim()).catch(() => ''), /^Near .+ · where the plant is recorded growing, and your place in it$/);
+  const heads = await page.$$eval(`${DETAILS} details[data-more] summary h3`, (els) => els.map((e) => { const c = getComputedStyle(e); return `${c.fontFamily}|${c.fontWeight}`; }));
+  assert.ok(heads.length && heads.every((h) => /Source Sans/.test(h) && h.endsWith('|600')), `the sections' headings in bold sans (${heads})`);
   // Round 4 V7: on a later page the key names the ring only when one is drawn, and the scenarios line keeps its period.
   for (const p of ['1991-2020', '2071-2099']) {
     await page.evaluate((x) => { window.__ctTest.store.period.value = x; }, p);

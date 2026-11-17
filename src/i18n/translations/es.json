@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "pH del suelo",
   "consortium.line.bandSoilUntested": "Tu suelo sin analizar",
   "consortium.details.keyRange": "donde está registrada; la marca indica lo más frecuente",
+  "consortium.details.againstLede": "Cerca de {place} · donde está registrada la planta, y tu lugar en ese rango",
   "consortium.details.keyLater": "tu lugar en su periodo posterior",
   "consortium.details.keyDashed": "pocos registros o en disputa: no es un límite firme",
   "consortium.details.notRecorded": "Sin registrar",

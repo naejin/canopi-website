@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "토양 pH",
   "consortium.line.bandSoilUntested": "토양 검사 안 함",
   "consortium.details.keyRange": "기록된 범위; 눈금은 가장 흔한 곳",
+  "consortium.details.againstLede": "{place} 근처 · 이 식물이 자라는 것으로 기록된 범위와 그 안의 당신의 장소",
   "consortium.details.keyLater": "이후 기간의 내 장소",
   "consortium.details.keyDashed": "기록이 적거나 이견 있음: 확정된 한계 아님",
   "consortium.details.notRecorded": "기록 없음",

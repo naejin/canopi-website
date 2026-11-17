@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "Bodem-pH",
   "consortium.line.bandSoilUntested": "Uw bodem niet getest",
   "consortium.details.keyRange": "waar ze is vastgelegd; het streepje is waar het vaakst",
+  "consortium.details.againstLede": "Bij {place} · waar de plant groeiend is vastgelegd, en uw plek daarin",
   "consortium.details.keyLater": "uw plek in haar latere periode",
   "consortium.details.keyDashed": "weinig of betwiste gegevens: geen vaste grens",
   "consortium.details.notRecorded": "Niet vastgelegd",

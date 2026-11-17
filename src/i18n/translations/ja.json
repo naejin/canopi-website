@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "土壌 pH",
   "consortium.line.bandSoilUntested": "あなたの土壌は未検査",
   "consortium.details.keyRange": "記録された範囲。目盛りは最も多い所",
+  "consortium.details.againstLede": "{place}付近 · この植物の生育が記録されている範囲と、その中のあなたの場所",
   "consortium.details.keyLater": "後の期間のあなたの場所",
   "consortium.details.keyDashed": "記録が少ない・異論あり：確かな限界ではない",
   "consortium.details.notRecorded": "記録なし",

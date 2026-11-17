@@ -114,7 +114,11 @@ export function Against({ t, disputes = [], traitSources = null }: { t: Taxon; d
   // A failed load is not retried by opening a sheet: the section offers Try again itself.
   useEffect(() => { if (!store.verdictFailed.peek()) store.wantVerdict(); }, []);
   const v = store.verdictOf(t);
-  const head = <h3 id="ct-d-against">{T('details.against')}</h3>;
+  // The line under the heading (board Details): what the bands draw, near which place (its name, else
+  // its coordinates as the location card writes them: location.coords; same format, pf's location.tsx).
+  const loc = store.location.value, lang = pageLang();
+  const where = loc && (loc.label ?? T('location.coords', { lat: formatNumber(Math.abs(loc.lat), lang, 2), lon: formatNumber(Math.abs(loc.lon), lang, 2), ns: T(loc.lat < 0 ? 'location.dir.s' : 'location.dir.n'), ew: T(loc.lon < 0 ? 'location.dir.w' : 'location.dir.e') }));
+  const head = <><h3 id="ct-d-against">{T('details.against')}</h3>{where && <p class="ct-against-lede" data-against-lede>{T('details.againstLede', { place: where })}</p>}</>;
   if (!v) {
     const failed = store.verdictFailed.value;
     return (

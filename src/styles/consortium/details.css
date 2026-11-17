@@ -253,10 +253,13 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-more > summary::-webkit-details-marker { display: none; }
 .ct .ct-more > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); flex: none; }
 .ct .ct-more[open] > summary::after { transform: rotate(-135deg); }
+/* The sections' headings and their subheads in the board's bold sans (DetailsMore, DetailsDesk; round 4 V9). */
+.ct .ct-more > summary h3, .ct .ct-more h4 { font-family: var(--font-sans); font-weight: 600; line-height: 1.3; }
 .ct .ct-more > summary h3 { margin: 0; font-size: 17px; }
 .ct .ct-more > summary h3 .ct-muted { font-weight: 400; font-size: 15px; }
 .ct .ct-more > section { display: grid; gap: 10px; padding-bottom: 16px; }
 .ct .ct-more h4 { font-size: 15px; margin-top: 6px; }
+.ct .ct-against-lede { margin: -4px 0 4px; font-size: 14px; color: var(--text-secondary); }
 .ct .ct-d-more .ct-correct { margin-top: 16px; }
 /* Today's band per factor (aria-hidden; the line under it is its text form). */
 .ct .ct-band { display: block; width: 100%; max-width: 440px; height: auto; margin: 2px 0; overflow: visible; }

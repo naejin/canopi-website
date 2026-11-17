@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "Boden-pH",
   "consortium.line.bandSoilUntested": "Ihr Boden nicht getestet",
   "consortium.details.keyRange": "wo sie erfasst ist; der Strich zeigt, wo am häufigsten",
+  "consortium.details.againstLede": "Nahe {place} · wo die Pflanze wachsend erfasst ist, und Ihr Ort darin",
   "consortium.details.keyLater": "Ihr Ort in ihrem späteren Zeitraum",
   "consortium.details.keyDashed": "wenige oder strittige Daten: keine feste Grenze",
   "consortium.details.notRecorded": "Nicht erfasst",

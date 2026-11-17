@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "pH du sol",
   "consortium.line.bandSoilUntested": "Votre sol non testé",
   "consortium.details.keyRange": "là où elle est recensée ; le trait marque le plus fréquent",
+  "consortium.details.againstLede": "Près de {place} · là où la plante est recensée, et votre lieu dans cette aire",
   "consortium.details.keyLater": "votre lieu dans sa période plus tardive",
   "consortium.details.keyDashed": "peu de relevés ou relevés contestés : pas une limite ferme",
   "consortium.details.notRecorded": "Non renseigné",

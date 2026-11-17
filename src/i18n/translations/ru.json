@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "pH почвы",
   "consortium.line.bandSoilUntested": "Ваша почва не проверена",
   "consortium.details.keyRange": "где оно отмечено; черта — где чаще всего",
+  "consortium.details.againstLede": "Около {place} · где растение отмечено растущим, и ваше место в этом диапазоне",
   "consortium.details.keyLater": "ваше место в его позднем периоде",
   "consortium.details.keyDashed": "мало или спорные данные: не твёрдая граница",
   "consortium.details.notRecorded": "Не указано",

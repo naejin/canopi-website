@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "土壤 pH",
   "consortium.line.bandSoilUntested": "你的土壤未检测",
   "consortium.details.keyRange": "它的记录范围；短线为最常见处",
+  "consortium.details.againstLede": "{place}附近 · 该植物有生长记录的范围，以及你的地点在其中的位置",
   "consortium.details.keyLater": "你所在地在其较晚时期",
   "consortium.details.keyDashed": "记录少或有争议：不是确定的界限",
   "consortium.details.notRecorded": "无记录",

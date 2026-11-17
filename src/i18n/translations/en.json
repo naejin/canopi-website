@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "Soil pH",
   "consortium.line.bandSoilUntested": "Your soil not tested",
   "consortium.details.keyRange": "where it is recorded growing; the tick is where most often",
+  "consortium.details.againstLede": "Near {place} · where the plant is recorded growing, and your place in it",
   "consortium.details.keyLater": "your place in its later period",
   "consortium.details.keyDashed": "few or disputed records: not a firm limit",
   "consortium.details.notRecorded": "Not recorded",

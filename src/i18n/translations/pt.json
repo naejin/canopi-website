@@ -1083,6 +1083,7 @@
   "consortium.line.measureSoilPh": "pH do solo",
   "consortium.line.bandSoilUntested": "Seu solo não testado",
   "consortium.details.keyRange": "onde ela é registrada; o traço marca o mais frequente",
+  "consortium.details.againstLede": "Perto de {place} · onde a planta é registrada crescendo, e seu lugar nessa faixa",
   "consortium.details.keyLater": "seu lugar no período posterior dela",
   "consortium.details.keyDashed": "poucos registros ou contestados: não é um limite firme",
   "consortium.details.notRecorded": "Não registrado",
