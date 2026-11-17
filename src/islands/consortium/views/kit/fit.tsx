@@ -83,7 +83,7 @@ export const jobWord = (job: JobId | null): string => (job ? T(`job.${job}`) : T
 // keeps its capitals, its nouns need them; Chinese, Japanese and Korean have no case). The same rule as
 // c1's roles list (views/find/Find.tsx LOWER, rolesWords): one copy to keep at the PP-C merge.
 const LOWER = new Set(['en', 'fr', 'es', 'pt', 'it', 'nl', 'ru']);
-export function midSentence(s: string): string {
+function midSentence(s: string): string {
   const lang = pageLang();
   return LOWER.has(lang) ? s.charAt(0).toLocaleLowerCase(lang) + s.slice(1) : s;
 }
