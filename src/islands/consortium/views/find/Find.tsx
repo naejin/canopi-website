@@ -17,9 +17,9 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, jobIds, jobsOf, periodIds, queryTokens } from '../../../../lib/consortium/index.ts';
+import { fills, fitLine, holes, jobIds, jobsOf, periodIds, queryTokens } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
-import { addsWithWarning, applyFilters, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
+import { addsWithWarning, applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, type FilterId, type FindFilters, type Group } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
 import { FitLine, JobIcon, holeWords, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
@@ -66,6 +66,9 @@ function askHref(q: string): string {
   return url.origin === location.origin ? `${url.pathname}${url.search}${url.hash}` : url.href;
 }
 
+// A group lists a screenful, the rest behind "Show all N" (board FindResults; no 500-row render).
+const SCREEN = 20;
+
 type Chip = { id: FilterId; value: string; label: string; on: boolean; toggle: () => void; count?: number };
 // The add button's mark (board FindResults: "+ Add", "✓ Added"); the word carries the meaning.
 const PLUS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
@@ -80,7 +83,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const [atOpen] = useState(() => new Set(store.members.peek()));
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<FindFilters>({});
-  const [foldOutside, setFoldOutside] = useState(!!hole);
+  // The plants outside their range wait behind one counted button, in a hole and in plain Find (B3).
+  const [foldOutside, setFoldOutside] = useState(true);
+  const [whole, setWhole] = useState<ReadonlySet<Group>>(new Set()); // the groups shown whole ("Show all N")
   // The hole's preset lifted ("N on your list but outside this hole · Show"): the whole list.
   const [wide, setWide] = useState(false);
   const [select, setSelect] = useState(false);
@@ -122,6 +127,18 @@ export default function Find({ Frame }: { Frame: Frame }) {
     return m;
   }, [base, flagCtx, scene]);
   const warned = useMemo(() => new Set(base.filter((t) => addsWithWarning(flagsOf.get(t.id) ?? [])).map((t) => t.id)), [base, flagsOf]);
+  // The palette's open holes, computed here read-only with the core's holes() from the store's members
+  // as Palette.tsx computes them (fix round 1, B: Find may not edit Palette or the store); pf will move
+  // Palette and Find onto one store computed.
+  const memberTaxa = store.memberTaxa.value, memberVerdicts = store.memberVerdicts.value;
+  const open = useMemo(() => holes({ members: memberTaxa, verdicts: memberVerdicts, pending: false }).filter((h) => h.state === 'open'), [memberTaxa, memberVerdicts]);
+  // Per plant: the open holes it fills, and the later periods it stays in its range through (best first).
+  const filled = useMemo(() => new Map(base.map((t) => [t.id, open.filter((h) => fills(h, t)).length])), [base, open]);
+  const stay = useMemo(() => {
+    const m = new Map<PlantId, number>();
+    if (judging) for (const t of base) { let n = 0; for (const p of periodIds.slice(1)) { if (!rule!.holdsBy(t, vctx, p)) break; n++; } m.set(t.id, n); }
+    return m;
+  }, [base, judging, rule, vctx]);
 
   // The query's hits, best first; those in the list, those in other lists, those already in the palette.
   const hits = useMemo(() => (q && search ? search(q) : null), [q, search]);
@@ -135,7 +152,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const view = useMemo(() => {
     const hitOf = new Map<PlantId, FindHit>(), rank = new Map<PlantId, number>();
     hits?.forEach((h, i) => { hitOf.set(h.id, h); rank.set(h.id, i); });
-    const matched = hits ? base.filter((t) => hitOf.has(t.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!) : base;
+    const matched = hits ? base.filter((t) => hitOf.has(t.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!) : bestFirst(base, filled, stay);
     const { rows, unknown, hidden } = applyFilters(matched, judging ? filters : { ...filters, range: false, holds: false }, ctx);
     const groups = findGroups(rows, verdicts, warned);
     const inList = new Set(base.map((t) => t.id));
@@ -151,7 +168,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const byFilters = hits ? matched.length - rows.length : 0;
     const outsideHole = hits ? hits.filter((h) => own.has(h.id) && !inList.has(h.id) && !atOpen.has(h.id)).length : 0;
     return { hitOf, groups, unknown, hidden, others, inPalette, byFilters, outsideHole, count: rows.length };
-  }, [base, hits, filters, judging, ctx, verdicts, warned, pool, members, climate, atOpen, releasePlants.value]);
+  }, [base, hits, filters, judging, ctx, verdicts, warned, pool, members, climate, atOpen, filled, stay, releasePlants.value]);
 
   if (!climate) return null;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
@@ -191,7 +208,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const jobs = jobsOf(t);
     const on = ticked.includes(t.id), done = added(t.id);
     return (
-      <li key={t.id} data-find-row="" data-plant-id={t.id} class={on ? 'is-on' : undefined}>
+      <li key={t.id} data-find-row="" data-plant-id={t.id} data-fills={filled.get(t.id) ?? 0} class={on ? 'is-on' : undefined}>
         <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
         {select && !done
           ? <label class="ct-tick"><input type="checkbox" checked={on} aria-label={`${nameOf(t)}, ${t.canonical_name}`} onChange={() => tick(t.id)} /></label>
@@ -360,7 +377,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
           {view.outsideHole > 0 && (
             <p class="ct-find-kept" data-find-outside-hole="" data-count={view.outsideHole}>{P('find.outsideHole', view.outsideHole)} · <button type="button" class="text-link" onClick={() => setWide(true)}>{T('find.show')}</button></p>
           )}
-          {!q && <p class="ct-muted ct-small">{P('find.count', view.count)}</p>}
+          {!q && <p class="ct-muted ct-small" data-find-best="">{P('find.count', view.count)} {T('find.bestFirst')}</p>}
           {nothing && job && !view.others.length ? (
             // A job word (board FindJob): the job's card answers; one quiet line for the name.
             <p class="ct-muted ct-small" data-find-none="">{T('find.none', { q })}</p>
@@ -382,7 +399,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
               {GROUPS.filter(shown).map((g) => (
                 <section key={g} class="ct-find-group" data-find-group={g} aria-labelledby={`ct-find-g-${g}`}>
                   <h3 id={`ct-find-g-${g}`}>{groupWords(g, store.period.value)} <span class="ct-muted">{num(groups[g].length)}</span></h3>
-                  <ul class="ct-rows">{groups[g].map(row)}</ul>
+                  <ul class="ct-rows">{(whole.has(g) ? groups[g] : groups[g].slice(0, SCREEN)).map(row)}</ul>
+                  {!whole.has(g) && groups[g].length > SCREEN && (
+                    <p><button type="button" class="text-link" data-find-showall="" onClick={() => setWhole((w) => new Set([...w, g]))}>{P('find.showAll', groups[g].length)}</button></p>
+                  )}
                 </section>
               ))}
               {outsideFolded && (

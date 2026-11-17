@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # sur votre liste mais hors de ce trou | other: # sur votre liste mais hors de ce trou",
   "consortium.find.show": "Afficher",
   "consortium.find.clearShort": "Effacer",
+  "consortium.find.bestFirst": "Les meilleures d’abord : les trous qu’une plante comble, puis combien de temps elle reste dans son aire climatique.",
+  "consortium.find.showAll": "one: Afficher les # | other: Afficher les #",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "other: # 种在你的清单上，但不填补这个空缺",
   "consortium.find.show": "显示",
   "consortium.find.clearShort": "清除",
+  "consortium.find.bestFirst": "最佳优先：先看植物填补的空缺，再看它在气候范围内能保持多久。",
+  "consortium.find.showAll": "other: 显示全部 # 种",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

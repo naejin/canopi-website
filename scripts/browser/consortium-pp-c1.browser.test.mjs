@@ -31,7 +31,8 @@ useHarness();
 const FIND = 'dialog.ct-find[open]';
 const hasFind = async (page, timeout = 4000) => assert.ok(await has(page, FIND, timeout), 'no Find sheet (dialog.ct-find)');
 const on = (page, id) => page.$eval(`${FIND} [data-filter="${id}"]`, (e) => e.getAttribute('aria-pressed') === 'true' || e.checked === true).catch(() => null);
-const rowIds = (page) => page.$$eval(`${FIND} [data-find-row]`, (els) => els.map((e) => e.dataset.plantId).filter(Boolean).sort());
+// The rows of every group shown whole (B2's "Show all N" is display only, never a filter).
+const rowIds = async (page) => { await expandAll(page); return page.$$eval(`${FIND} [data-find-row]`, (els) => els.map((e) => e.dataset.plantId).filter(Boolean).sort()); };
 const toggle = async (page, id) => {
   const before = await rowIds(page);
   await page.click(`${FIND} [data-filter="${id}"]`);
@@ -90,6 +91,7 @@ test('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot judge 
   const n = await page.$eval(`${FIND} [data-filter-unknown="edible"]`, (e) => (e.dataset.count === undefined ? null : Number(e.dataset.count))).catch(() => null);
   assert.ok(Number.isInteger(n) && n >= 0, 'the unknowns are counted');
   // Fix round 1, A3 (review c1-04): a hide filter says how many it hid, beside "not recorded, still shown".
+  if (await page.$(`${FIND} [data-find-outside]`)) await page.click(`${FIND} [data-find-outside]`); // every row shown
   const shown = (await rowIds(page)).length;
   await toggle(page, 'toxic');
   const hid = await page.$eval(`${FIND} [data-filter-hidden="toxic"]`, (e) => Number(e.dataset.count)).catch(() => null);
@@ -189,6 +191,7 @@ test('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside its
   assert.ok(await page.$(`${row} [data-find-add][data-added]`), 'added in one tap');
   // The whole list (c1: Robinia's query holds no plant outside its range).
   await page.$eval(`${FIND} [data-find-search]`, (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); }); // as the field's clear button
+  await page.click(`${FIND} [data-find-outside]`); // plain Find folds them too (fix round 1, B3)
   assert.ok(await has(page, `${FIND} [data-find-group="outside"] [data-find-row]`, 4000), 'a group outside its range');
   await page.click(`${FIND} [data-find-group="outside"] [data-find-row] [data-find-add]`);
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'nothing asks for an outside plant either');
@@ -462,4 +465,24 @@ test('PP-C c1 fix A1 (hits kept out are counted): in the palette, hidden by a fi
   assert.equal(await page.$eval(`${FIND} [data-find-outside-hole]`, (e) => Number(e.dataset.count)).catch(() => null), 1, '"1 on your list but outside this hole"');
   await page.click(`${FIND} [data-find-outside-hole] button`);
   assert.ok(await page.waitForFunction((sel, n) => [...document.querySelectorAll(sel)].some((r) => r.textContent.includes(n)), { timeout: 2000 }, `${FIND} [data-find-row]`, away).then(() => true, () => false), 'Show lists it');
+});
+
+// Fix round 1, B2 and B3 (board FindResults; conformance c1 #2, #3): plain Find folds the plants outside
+// their range behind one counted button too, lists best first (the holes a plant fills, said on the
+// row) with the line saying so, and shows at most a screenful per group behind "Show all N".
+test('PP-C c1 fix B2+B3 (best first, folded outside, Show all): plain Find', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await openFind(page);
+  await hasFind(page);
+  assert.ok(await has(page, `${FIND} [data-find-best]`, 4000), 'the "Best first" line');
+  assert.equal(await page.$(`${FIND} [data-find-group="outside"]`), null, 'the outside plants are folded in plain Find');
+  assert.ok(await page.$(`${FIND} [data-find-outside]`), '"Show N outside their climate range"');
+  const fills = await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.map((e) => Number(e.dataset.fills)));
+  assert.ok(fills.length > 0 && fills.length <= 20, `a screenful at most (${fills.length})`);
+  assert.ok(fills.every((n, i) => i === 0 || n <= fills[i - 1]), `best first: ${fills.join(',')}`);
+  const all = await page.$eval(`${FIND} [data-find-group="fits"] [data-find-showall]`, (b) => Number(/\d+/.exec(b.textContent)?.[0])).catch(() => null);
+  assert.ok(all > 20, '"Show all N"');
+  await page.click(`${FIND} [data-find-group="fits"] [data-find-showall]`);
+  assert.equal(await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.length), all, 'it lists them all');
 });

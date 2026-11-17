@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "other: 목록에는 있지만 이 빈자리 밖: #종",
   "consortium.find.show": "보기",
   "consortium.find.clearShort": "지우기",
+  "consortium.find.bestFirst": "좋은 순서대로: 식물이 채우는 빈자리, 그다음 기후 범위 안에 머무는 기간.",
+  "consortium.find.showAll": "other: #종 모두 보기",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

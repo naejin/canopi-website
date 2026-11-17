@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # auf Ihrer Liste, aber außerhalb dieser Lücke | other: # auf Ihrer Liste, aber außerhalb dieser Lücke",
   "consortium.find.show": "Anzeigen",
   "consortium.find.clearShort": "Zurücksetzen",
+  "consortium.find.bestFirst": "Die besten zuerst: die Lücken, die eine Pflanze füllt, dann wie lange sie in ihrem Klimabereich bleibt.",
+  "consortium.find.showAll": "one: Alle # anzeigen | other: Alle # anzeigen",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # nella tua lista ma fuori da questo vuoto | other: # nella tua lista ma fuori da questo vuoto",
   "consortium.find.show": "Mostra",
   "consortium.find.clearShort": "Cancella",
+  "consortium.find.bestFirst": "Le migliori prima: i vuoti che una pianta colma, poi per quanto resta nel suo intervallo climatico.",
+  "consortium.find.showAll": "one: Mostra tutte le # | other: Mostra tutte le #",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

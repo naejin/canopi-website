@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # op je lijst, maar buiten dit gat | other: # op je lijst, maar buiten dit gat",
   "consortium.find.show": "Tonen",
   "consortium.find.clearShort": "Wissen",
+  "consortium.find.bestFirst": "De beste eerst: de gaten die een plant vult, dan hoe lang hij binnen zijn klimaatbereik blijft.",
+  "consortium.find.showAll": "one: Alle # tonen | other: Alle # tonen",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

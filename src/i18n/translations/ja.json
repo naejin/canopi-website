@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "other: リストにあるが、この空きの外: # 種",
   "consortium.find.show": "表示",
   "consortium.find.clearShort": "クリア",
+  "consortium.find.bestFirst": "良いものから順に：その植物が埋める空き、次に気候範囲内にとどまる期間。",
+  "consortium.find.showAll": "other: # 種をすべて表示",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # on your list but outside this hole | other: # on your list but outside this hole",
   "consortium.find.show": "Show",
   "consortium.find.clearShort": "Clear",
+  "consortium.find.bestFirst": "Best first: the holes a plant fills, then how long it stays in its climate range.",
+  "consortium.find.showAll": "one: Show all # | other: Show all #",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

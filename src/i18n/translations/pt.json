@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # na sua lista, mas fora desta lacuna | other: # na sua lista, mas fora desta lacuna",
   "consortium.find.show": "Mostrar",
   "consortium.find.clearShort": "Limpar",
+  "consortium.find.bestFirst": "As melhores primeiro: as lacunas que uma planta preenche e depois por quanto tempo ela fica dentro da sua faixa climática.",
+  "consortium.find.showAll": "one: Mostrar todas as # | other: Mostrar todas as #",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

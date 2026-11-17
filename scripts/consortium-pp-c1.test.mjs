@@ -215,3 +215,11 @@ test('PP-C c1 fix A3: a hide filter says how many it hid, beside how many it cou
   assert.equal(r.hidden.toxic, 2, '2 hidden as toxic');
   assert.equal(r.unknown.toxic, 1, '1 not recorded, still shown');
 });
+
+test('PP-C c1 fix B2: best first: the open holes a plant fills, then how long it stays in its range, then the order it came in', async () => {
+  const { bestFirst } = await findQuery();
+  const taxa = [plant(1), plant(2), plant(3), plant(4)];
+  const filled = new Map([[id(1), 0], [id(2), 2], [id(3), 0], [id(4), 2]]);
+  const stay = new Map([[id(1), 2], [id(2), 0], [id(3), 0], [id(4), 1]]);
+  assert.deepEqual(bestFirst(taxa, filled, stay).map((t) => t.id), [id(4), id(2), id(1), id(3)]);
+});

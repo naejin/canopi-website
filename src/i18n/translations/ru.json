@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # в вашем списке, но вне этого пробела | few: # в вашем списке, но вне этого пробела | many: # в вашем списке, но вне этого пробела | other: # в вашем списке, но вне этого пробела",
   "consortium.find.show": "Показать",
   "consortium.find.clearShort": "Сбросить",
+  "consortium.find.bestFirst": "Сначала лучшие: пробелы, которые растение заполняет, затем как долго оно остаётся в своём климатическом диапазоне.",
+  "consortium.find.showAll": "one: Показать все # | few: Показать все # | many: Показать все # | other: Показать все #",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

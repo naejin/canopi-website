@@ -29,6 +29,14 @@ export function findGroups(taxa: readonly Taxon[], verdicts: ReadonlyMap<PlantId
   return out;
 }
 
+// Best first (board FindResults "Best first: the holes a plant fills, then how long it stays in its
+// climate range"): by the palette's open holes a plant fills, then the later periods it stays in range
+// through, then the order it came in (stable: the name order).
+export function bestFirst(taxa: readonly Taxon[], filled: ReadonlyMap<PlantId, number>, stay: ReadonlyMap<PlantId, number>): Taxon[] {
+  const f = (t: Taxon) => filled.get(t.id) ?? 0, y = (t: Taxon) => stay.get(t.id) ?? 0;
+  return [...taxa].sort((a, b) => f(b) - f(a) || y(b) - y(a));
+}
+
 // Whether an add says "added with a warning" (with Show): the one rule of every add in Find and Paste
 // (in the list, "Add from {list}", a pasted plant). A plant's flags here (store.flagsOfPlant): a site
 // misfit or a serious conflict (core warns), or recorded as invasive in the country, or toxic (a

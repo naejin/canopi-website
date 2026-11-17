@@ -1000,5 +1000,7 @@
   "consortium.find.outsideHole": "one: # en tu lista pero fuera de este hueco | other: # en tu lista pero fuera de este hueco",
   "consortium.find.show": "Mostrar",
   "consortium.find.clearShort": "Borrar",
+  "consortium.find.bestFirst": "Las mejores primero: los huecos que llena una planta y luego cuánto tiempo sigue dentro de su rango climático.",
+  "consortium.find.showAll": "one: Mostrar las # | other: Mostrar las #",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
