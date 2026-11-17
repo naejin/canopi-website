@@ -18,11 +18,11 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { Alternative, Hole, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf, placementZone } from '../../../lib/consortium/index.ts';
+import { jobsOf } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { doesWords, FitLine, holeWords, sizeWords } from './kit/fit.tsx';
-import { listOf, nameOf, spanWords, zoneName } from './kit/names.ts';
+import { listOf, nameOf, spanWords } from './kit/names.ts';
 import { RowNotes } from './StageBar.tsx';
 import { LoadFailed } from './lazy.tsx';
 import { suggestWaitMs } from '../state/suggest-wait.ts';
@@ -66,8 +66,6 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // Why one might swap it: its warnings in words, else its fit when it is not a plain fit.
   const why = flagLines(t, store.flagsOfPlant(t), scene);
   const own = store.memberVerdicts.value?.get(id) ?? null;
-  const borrowed = !!store.climate.value && !store.curatedClimates.value.includes(store.climate.value);
-  const list = placementZone(t, store.climate.value);
   const row = (a: Alternative, far = false) => {
     const x = byId.get(a.id);
     if (!x) return null;
@@ -106,7 +104,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
     }>
       <div>
         <h2 id="ct-sw-title" tabIndex={-1} data-autofocus>{T('swap.title', { name: nameOf(t) })}</h2>
-        <p class="ct-muted">{borrowed && list ? T('swap.ledeBorrowed', { list: zoneName(list) }) : T('swap.lede')}</p>
+        <p class="ct-muted">{T('swap.lede')}</p>
         <div class="ct-swap-head" data-swap-head>
           {/* Why one might swap it (K12): its warnings, and its fit with the cause when it is not a plain fit. */}
           {why.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.text}</span>)}

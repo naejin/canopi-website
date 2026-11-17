@@ -610,3 +610,13 @@ test('c2 fix T2 (band dot word): "today" for today\'s verdict, the period for a 
   assert.deepEqual([say(later.when.dot), say(later.when.key)], ['2041–2070', 'your place in 2041–2070']);
   for (const k of ['whenToday', 'whenPeriod', 'keyPlaceToday', 'keyPlaceIn']) for (const [lang, w] of Object.entries(words)) assert.ok(w[`consortium.line.${k}`], `${lang}: ${k}`);
 });
+
+// Fix round 3 T4 (c2r3-05): Swap's lede never claims the candidates come from one list (on a borrowed
+// climate they come from several nearest lists, each placed from its own; Details says which).
+test('c2 fix T4 (Swap lede): one lede for every climate, naming no list', () => {
+  for (const [lang, w] of Object.entries(words)) {
+    assert.equal(w['consortium.swap.ledeBorrowed'], undefined, `${lang}: no borrowed lede`);
+    assert.doesNotMatch(w['consortium.swap.lede'], /\{list\}/, `${lang}: the lede names no list`);
+  }
+  assert.doesNotMatch(en['consortium.swap.lede'], /same list/);
+});
