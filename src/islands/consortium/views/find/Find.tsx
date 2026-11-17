@@ -251,7 +251,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const outsideFolded = foldOutside && !q && groups.outside.length > 0 && (groups.fits.length + groups.look.length + groups.unchecked.length) > 0;
   const shown = (g: Group) => groups[g].length > 0 && !(g === 'outside' && outsideFolded);
   // Nothing answers at all: no plant of the release has the name (a hit kept out is counted instead).
-  const nothing = !!q && !hits?.length;
+  // No hits yet (the names still loading: not searched) is not "nothing" (fix round 2, r2-01).
+  const nothing = !!hits && !hits.length;
 
   const row = (t: Taxon) => {
     const h = view.hitOf.get(t.id), why = h ? whyWords(h) : null;
