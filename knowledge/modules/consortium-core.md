@@ -4,7 +4,7 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 schema 3 installer that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:10:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:52:06Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:58Z }
 sources:
@@ -42,7 +42,7 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:b16073ff4a0fa6e0
-    last_modified: 2026-11-17T01:08:39Z
+    last_modified: 2026-11-17T01:10:16Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
@@ -61,8 +61,8 @@ sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
-    digest: sha256:054a6f6be4d35b40
-    last_modified: 2026-11-17T01:05:41Z
+    digest: sha256:c972861b3e5da309
+    last_modified: 2026-11-17T01:33:59Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -141,8 +141,8 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:b9a21f5fc226b4bd
-    last_modified: 2026-11-17T01:08:16Z
+    digest: sha256:3f8fc588117be90c
+    last_modified: 2026-11-17T01:35:59Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -192,7 +192,7 @@ sources:
     resource: ../../src/lib/consortium/nearest.ts
     title: src/lib/consortium/nearest.ts
     digest: sha256:b8ccc5ba13429537
-    last_modified: 2026-11-17T01:08:16Z
+    last_modified: 2026-11-17T01:10:16Z
   - id: consortium-zones-test-mjs
     resource: ../../scripts/consortium-zones.test.mjs
     title: scripts/consortium-zones.test.mjs
@@ -236,8 +236,8 @@ sources:
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
-    digest: sha256:672b357b2ac42b30
-    last_modified: 2026-11-17T01:05:41Z
+    digest: sha256:6b39f0b86ed9bee5
+    last_modified: 2026-11-17T01:34:02Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -347,14 +347,19 @@ What it writes:
 - Staging is in `.cache/consortium-install/`, then a rename, with the `src/data/` files put back on failure.
 - `verifyInstall(dir, index, { log })` re-checks a served folder against the index: the mark, each database by sha256 and gzip magic (over `MAX_GZIP_BYTES` only logged), photos under 25 MiB, every indexed photo present, and nothing else. `check-built-site.mjs` runs it on `dist/client/data/consortium/`.
 
-Installed now: release `r-b7fb536f9cfd0700` (canopi-data D9a, the Arid list), schema 3, `consortium-v3.r-b7fb536f9cfd0700.5e36d6f89487.sqlite.gz`, 757,513 B gzipped (2,809,856 raw), 673 plants, 237 photos (48 new, 1 dropped).
+Installed now: release `r-415fcc60773473a4` (canopi-data Q1, data fixes on base `r-b7fb536f9cfd0700`), schema 3, `consortium-v3.r-415fcc60773473a4.9bb07657bfd9.sqlite.gz`, 757,952 B gzipped (2,813,952 raw), 673 plants, the same 237 photos, the same names per climate (Tropical 200, Arid 226, Mediterranean 200, Temperate 200).
+- What moved (canopi-data Q1): toxicity for 88 plants, about 59 "sources disagree" flags, 7 livestock/pet audience rows; `self_fertile` no longer true from PFAF's "not self-fertile"; salt tolerance no longer from PFAF's wind template; frost-tender tropicals and annuals lose PlantAtlas hardiness zones; pH windows widened; full shade removed from open-ground crops (maize, wheat, clover); mycorrhizal type, leaf habit and habit fixed; 122 curator corrections. `source_credits.tsv` 47 → 49 rows (`canopi-knowledge`, internal; `agroforestree`, used), so `check-built-site` counts 41 credited sources. GBIF's fetch window is unchanged.
+- Expectations moved: Lyon's kept pool 360 → 359 (Tithonia diversifolia is perennial now, curator correction c377, so the annuals' winter-cold exemption no longer keeps it); every other site's pool, Kiambu's 305 of 515 (196 fit, 109 look) and every flags, suggest and browser expectation unchanged. Vectors 170 → 169: the Nairobi Ballota pseudodictamnus case (`annual.is_annual_null`) is gone because its life cycle is now recorded; every branch is still covered.
+- How it was installed: verify ran directly, with no scratch tree: `CANOPI_DATA_DIR` = the canopi-data worktree `canopi-data-wt/schema3-last` (branch `schema3-last`, `c019546`), `CANOPI_DATA_DB` = the main checkout's `data/canopi.db`, then `npm run install:consortium -- <export-dir>`; the installer's own `canopi release verify --db-path …` printed OK (673 of 673 plants compared, 237 photos credited). The same command run by hand beforehand gave the same OK.
+
+Previous install: release `r-b7fb536f9cfd0700` (canopi-data D9a, the Arid list), schema 3, `consortium-v3.r-b7fb536f9cfd0700.5e36d6f89487.sqlite.gz`, 757,513 B gzipped (2,809,856 raw), 673 plants, 237 photos (48 new, 1 dropped).
 - Four curated climates: Tropical 200, Arid 226, Mediterranean 200, Temperate 200. The 158 new plants are on the Arid list only, so Subtropical, Continental and Boreal borrow the same lists as before (Kiambu stays 305 of 515: 196 fit, 109 look).
 - Arid sites read their own list now instead of borrowing 515: kept pools Dakar 270 → 87, Lima 278 → 116, Phoenix 147 → 130; every other site unchanged. Tests that used Arid as the borrowed climate (P5-26e, P5-27b, the s4 BT-1 start case, the s5c zones case and its conflicts() check) use Subtropical; the home note names four climates in all 11 locales; GBIF's fetch window is 2026-11-11 03:18 – 2026-11-15 12:30 UTC.
 - Also in it (D9a review): corrections c161–c175 (toxicity raised for ten plants, `nitrogen_fixer` and `height_max_m` fixes), three interactions.
-- Over the 1,000,000 B budget is a warning only since this install (owner rule "no hard limits", 2026-11-16); 757,513 B is under it.
+- Over the 1,000,000 B budget is a warning only since that install (owner rule "no hard limits", 2026-11-16); 757,513 B is under it.
 - How it was installed: canopi-data's `data/canopi.db` and `data/curated/` had moved on since the release, so `canopi release verify` ran from a scratch tree: `git archive 4e33cb1` (the release commit's `data/curated/`) with the untracked `data/` entries linked in, `CANOPI_DATA_DB` = that tree's link to `data/canopi.db.pre-pfaf-negation` (sha256 `2b4f2a1f…`, the release's database; verify reads `curated/` beside the database path), and `CANOPI_DATA_DIR` = `git archive` of tag `schema3-last` (`e359e7c`; master's checker knows schema 4 only).
 
-Previous install: release `r-fcf4307ffd1549b3` (canopi-data D3 core, its rows equal to D8a's `r-ad27260496be31eb`), schema 3, `consortium-v3.r-fcf4307ffd1549b3.e80bc9aa6589.sqlite.gz`, 621,337 B gzipped, 515 plants, the same 190 photos (10df7bf). Installed with `CANOPI_DATA_DIR` the schema3-last worktree, `CANOPI_DATA_DB` the main checkout's `data/canopi.db`. `canopi release verify` accepts only an export of canopi-data's current release, so an older export cannot be installed once a newer release is built; a release that moves only the id gets no new pin, and the website re-pins at the next release whose values or credits move (decision row "Data pins after D8a and D3", 2026-11-15).
+Earlier install: release `r-fcf4307ffd1549b3` (canopi-data D3 core, its rows equal to D8a's `r-ad27260496be31eb`), schema 3, `consortium-v3.r-fcf4307ffd1549b3.e80bc9aa6589.sqlite.gz`, 621,337 B gzipped, 515 plants, the same 190 photos (10df7bf). Installed with `CANOPI_DATA_DIR` the schema3-last worktree, `CANOPI_DATA_DB` the main checkout's `data/canopi.db`. `canopi release verify` accepts only an export of canopi-data's current release, so an older export cannot be installed once a newer release is built; a release that moves only the id gets no new pin, and the website re-pins at the next release whose values or credits move (decision row "Data pins after D8a and D3", 2026-11-15).
 - Against `r-f3c6dd8b3c4391be` (D2d): only the `layer_values` month rows changed (D8a): each now carries `scope_hemisphere` and `scope_latitude` (the band it was observed in) beside its country; Details (`views/layers.ts` `scopeText`) names the band. The PFAF month-row test checks the UK country and the band, not an exact scope.
 - Kiambu's `countFits` on it: 305 of 515 with Subtropical chosen (196 fit, 109 look; the chosen list only, guests left out since b1b).
 
@@ -394,7 +399,7 @@ This section supersedes the statements above where they disagree.
   - `conflicts.ts` flags every recorded toxicity level but None, Slight too (owner: mild is a warning, Moderate and above danger); toxicity never makes `warns()` true, so nothing asks.
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
-- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-b7fb536f9cfd0700`: `r-b7fb536f9cfd0700.range_verdicts.json` beside the export, sha256 `672b357b…`, regenerated by canopi-data; it names the installed release and export, while the export's own `range_verdicts.json` still names `r-c3b3da5b6f36eed3`). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
+- **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-415fcc60773473a4`: `r-415fcc60773473a4.range_verdicts.json` beside the export, sha256 `6b39f0b8…`, 169 vectors; it names the installed release and export). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
 
 ### Link v5 contract additions (coordinator review of 0a, 2026-11-14)
 

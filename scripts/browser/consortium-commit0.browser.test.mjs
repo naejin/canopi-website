@@ -25,7 +25,7 @@ test('P1: SQLite-WASM opens the real install in headless Chrome on wrangler dev,
   assert.equal(await loadState(page), 'ready');
   const { plants } = await countPlantsInPage(page);
   assert.equal(plants, await realDb((db) => db.prepare('SELECT count(*) n FROM plants').get().n));
-  assert.equal(plants, 673, 'release r-b7fb536f9cfd0700 holds 673 plants (515 before the Arid list, D9a)');
+  assert.equal(plants, 673, 'release r-415fcc60773473a4 holds 673 plants (Q1 fixes, as r-b7fb536f9cfd0700; 515 before the Arid list, D9a)');
 });
 
 test('P2: the wasm is served as application/wasm, and hashed files and the database as immutable @real-data', async () => {

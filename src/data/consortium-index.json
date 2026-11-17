@@ -1,23 +1,23 @@
 {
   "format_version": 4,
   "schema_version": 3,
-  "release_id": "r-b7fb536f9cfd0700",
-  "generated_at": "2026-11-16T18:36:57Z",
-  "canopi_db_sha256": "2b4f2a1fa76c365ac1c819762f86670511e9c7cd11743caf2eaeb960580e86ad",
+  "release_id": "r-415fcc60773473a4",
+  "generated_at": "2026-11-17T01:21:23Z",
+  "canopi_db_sha256": "3c2467c8d24da2403af02cef55e93d0378ab1269436e000752b7b1891e29d5c4",
   "files": [
     {
-      "file": "consortium-v3.r-b7fb536f9cfd0700.5e36d6f89487.sqlite.gz",
-      "url": "/data/consortium/consortium-v3.r-b7fb536f9cfd0700.5e36d6f89487.sqlite.gz",
+      "file": "consortium-v3.r-415fcc60773473a4.9bb07657bfd9.sqlite.gz",
+      "url": "/data/consortium/consortium-v3.r-415fcc60773473a4.9bb07657bfd9.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Arid",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "b47d9bb85919adff0915361154b99a4e5a0ff1b5d1a6187c2d76ba1d21cac9b1",
-      "bytes": 757513,
-      "raw_sha256": "5e36d6f894873a537eae7bb9e056b0b09a8b9b840c6d260b014db86e2b0f3c88",
-      "raw_bytes": 2809856
+      "sha256": "b1641f7b4e7488323824debd044ead36f9b68283b938b678f7048e5b5f084bd1",
+      "bytes": 757952,
+      "raw_sha256": "9bb07657bfd9f3a9d0e4b809e1d635a09ec42ea422992ca15fd9a50ca2743192",
+      "raw_bytes": 2813952
     }
   ],
   "climates": [
@@ -1360,8 +1360,8 @@
     "dataset_ids": 591
   },
   "source_credits": {
-    "sha256": "444f281cdf403a6fe75021384fce401241766233b6239930321c14d45c5fa7da",
-    "rows": 47
+    "sha256": "83fb13b19e7004cfe2a1b996c05077245527f596172db6a0f41f77ebc82790f7",
+    "rows": 49
   },
   "climate_grid_manifest_sha256": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c",
   "ranges_review": "estimate_not_reviewed"

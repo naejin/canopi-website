@@ -361,7 +361,9 @@ const SITES = {
 // r-b7fb536f9cfd0700 (canopi-data D9a: Arid curated, 226 plants, 515 → 673): the three Arid sites read
 // their own list, no longer the 515 borrowed from Mediterranean, Tropical and Temperate (on
 // r-fcf4307ffd1549b3: dakar 270, lima 278, phoenix 147); every other site's count is unchanged.
-const KEPT = { lyon: 360, dakar: 87, lima: 116, hanoi: 289, montreal: 181, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 130, brisbane: 334, yakutsk: 68, chicago: 255 };
+// r-415fcc60773473a4 (canopi-data Q1): Lyon 360 → 359, Tithonia diversifolia is a perennial shrub now
+// (curator correction c377, is_annual false), so the annuals' winter-cold exemption no longer keeps it.
+const KEPT = { lyon: 359, dakar: 87, lima: 116, hanoi: 289, montreal: 181, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 130, brisbane: 334, yakutsk: 68, chicago: 255 };
 
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });

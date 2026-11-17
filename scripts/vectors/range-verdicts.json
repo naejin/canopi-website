@@ -11,9 +11,9 @@
   "applies_to": "real rows"
  },
  "source": {
-  "release_id": "r-b7fb536f9cfd0700",
-  "export_file": "consortium-v3.r-b7fb536f9cfd0700.5e36d6f89487.sqlite.gz",
-  "export_raw_sha256": "5e36d6f894873a537eae7bb9e056b0b09a8b9b840c6d260b014db86e2b0f3c88",
+  "release_id": "r-415fcc60773473a4",
+  "export_file": "consortium-v3.r-415fcc60773473a4.9bb07657bfd9.sqlite.gz",
+  "export_raw_sha256": "9bb07657bfd9f3a9d0e4b809e1d635a09ec42ea422992ca15fd9a50ca2743192",
   "sites_from": "scripts/ranges_scenarios.py SITES + HELD_OUT_SITES",
   "pairs_from": "scripts/ranges_scenarios.py EXPECT, HELD_OUT, WARMTH, HELD_OUT_SUMMER, SHOW",
   "generator": "uv run python scripts/range_vectors.py",
@@ -315,34 +315,6 @@
     "tmin_cold": {
      "low": 9.0,
      "high": 24.2,
-     "weak": false
-    }
-   }
-  },
-  "Ballota pseudodictamnus": {
-   "synthetic": false,
-   "is_annual": null,
-   "grown_as_annual": false,
-   "range_source": "gbif_occurrences",
-   "climate": {
-    "tmax_warm": {
-     "low": 18.8,
-     "high": 35.5,
-     "weak": false
-    },
-    "tmean_warm": {
-     "low": 15.9,
-     "high": 28.0,
-     "weak": false
-    },
-    "tmean_year": {
-     "low": 10.2,
-     "high": 19.1,
-     "weak": false
-    },
-    "tmin_cold": {
-     "low": -1.1,
-     "high": 10.6,
      "weak": false
     }
    }
@@ -4872,27 +4844,6 @@
     "cold": "beyond",
     "mild": "inside",
     "cool": "beyond",
-    "summer": null,
-    "hot": "inside"
-   },
-   "cool_season": false
-  },
-  {
-   "site": "Nairobi",
-   "plant": "Ballota pseudodictamnus",
-   "covers": [
-    "cold.inside",
-    "mild.edge",
-    "annual.is_annual_null",
-    "cool.inside",
-    "hot.perennial_inside",
-    "agg.edge_only"
-   ],
-   "verdict": "edge",
-   "sides": {
-    "cold": "inside",
-    "mild": "edge",
-    "cool": "inside",
     "summer": null,
     "hot": "inside"
    },

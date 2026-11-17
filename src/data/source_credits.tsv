@@ -30,6 +30,7 @@ dentro	dentro	DENTRO	DENTRO table (AgroforesTreeAdvice models/ folder)		permissi
 intercropping	intercropping	Horticulture intercropping experiments	Horticulture intercropping experiments, version 7, Recherche Data Gouv. https://doi.org/10.57745/HV33V1	Etalab 2.0	confirmed	https://doi.org/10.57745/HV33V1	used
 canopi		Canopi catalog			none		internal
 canopi-correction	canopi-correction	Canopi correction			none		internal
+canopi-knowledge		Canopi curator knowledge			none		internal
 canopi_rules	dq-fix;gap-fill;try-autonym	Canopi rules	Values derived by Canopi's rules from the values of the sources above		none		internal
 canopi_strata	human-verified	Canopi curated strata	Strata and succession phases from Canopi's reviewed consortium roles (data/curated/consortium_roles.tsv)		none		internal
 model_output	llm;ai-generated	Model output	Common names and classifications written by a language model		none		internal
@@ -46,3 +47,4 @@ werner_2014		Werner et al. 2014, nitrogen-fixing angiosperms	Werner, G. D. A., C
 ncsu_plant_toolbox		NC State Extension Gardener Plant Toolbox	North Carolina State University Extension, Extension Gardener Plant Toolbox (plants.ces.ncsu.edu)		unconfirmed	https://plants.ces.ncsu.edu/	used
 aspca		ASPCA Animal Poison Control toxic and non-toxic plants list	ASPCA Animal Poison Control Center, Toxic and Non-Toxic Plants list (aspca.org)		unconfirmed	https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants	used
 merck_vet_manual		Merck Veterinary Manual	Merck Veterinary Manual (Merck & Co.), Professional Version (merckvetmanual.com)		unconfirmed	https://www.merckvetmanual.com/	used
+agroforestree		Agroforestree Database	World Agroforestry (ICRAF), Agroforestree Database (worldagroforestry.org)		unconfirmed	https://apps.worldagroforestry.org/treedb/	used
