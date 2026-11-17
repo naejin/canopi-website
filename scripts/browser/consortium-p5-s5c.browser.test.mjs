@@ -56,7 +56,7 @@ test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "not
   // small suggested palette"); the panel's step is the way on.
   assert.equal(await page.$('[data-place-suggest]'), null, 'no usable Suggest when nothing fits');
   await page.click('[data-pool-empty] button');
-  // PP-C commit 0: the step opens Find (store.openFind; the Paste sheet until c1 builds Find). Its rows
+  // PP-C commit 0: the step opens Find (store.openFind). Its rows
   // before a query, every plant marked outside, are c1's case (consortium-pp-c1, PP-C2b).
   assert.equal(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind ?? null, { timeout: 10_000 }).then((r) => r.jsonValue(), () => null), 'find', 'the next step opens Find');
   assert.ok(await has(page, 'dialog.ct-sheet[open]', 10_000), 'a named sheet');
@@ -399,7 +399,7 @@ test('P5-27a (S5c seam review 1; on Place, PP-B b1a): where nothing fits, Place 
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
     assert.match(await text(page, '[data-pool-empty]') ?? '', /−?-?39\.8 °C/, `${width} px: it says why`);
     await page.click('[data-pool-empty] button');
-    // PP-C commit 0: Find (the Paste sheet until c1); its search is c1's case.
+    // PP-C commit 0: the step opens Find; its search is c1's case.
     assert.equal(await page.waitForFunction(() => window.__ctTest.store.sheet.value?.kind ?? null, { timeout: 10_000 }).then((r) => r.jsonValue(), () => null), 'find', `${width} px: the step opens Find`);
   }
 });
@@ -430,15 +430,20 @@ test('P5-27l (S5c seam review round 3, 2; on Place, PP-B b1a): "Start from a sma
   }
 });
 
-// PP-C commit 0: the plant is added through Place's "Add a plant by name", which opens Find (Paste
-// until c1 builds Find), by pasting its name.
-test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the reader opens Add and adds a plant: the list arriving later changes nothing', async () => {
+// PP-C c1 merge: the plant is added through Place's "Add a plant by name", which opens Find: the
+// reader searches its name, adds the row, then Done.
+test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the reader opens Find and adds a plant: the list arriving later changes nothing', async () => {
   const page = await placeGuestHeld(1280);
   await page.click('[data-place-suggest]');
   await page.click('[data-place-add]');
-  assert.ok(await has(page, 'dialog.ct-sheet[open] textarea', 10_000), 'a sheet to add plants by name');
-  await page.type('dialog.ct-sheet[open] textarea', 'Malus domestica');
-  await page.locator(aria('button', 'Add 1 plant')).click();
+  const FIND = 'dialog.ct-find[open]';
+  assert.ok(await has(page, `${FIND} [data-find-search]`, 10_000), 'Find opens to add plants by name');
+  await page.locator(`${FIND} [data-find-search]`).fill('Malus domestica');
+  const apple = await page.evaluate(() => window.__ctTest.store.pools.value.Temperate.find((t) => t.canonical_name === 'Malus domestica')?.id);
+  const row = `${FIND} [data-find-row][data-plant-id="${apple}"]`;
+  assert.ok(apple && await has(page, row, 10_000), 'Find lists the apple');
+  await page.click(`${row} [data-find-add]`);
+  await page.click(`${FIND} ${aria('button', 'Done')}`);
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 1, { timeout: 5000 }).then(() => true, () => false), 'the plant added');
   await page.evaluate(() => window.__guest.release());
   await page.waitForFunction(() => window.__ctTest.store.guestsPending.value.length === 0, { timeout: 5000 });
@@ -528,7 +533,7 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
 });
 
 // Owner request 2026-11-12: the room answer is advisory ("inform, don't block"; "warn, never hide"): a
-// small garden never hides a tall plant in Add; the plant carries a note. PP-B exit (2026-11-16): the
+// small garden never hides a tall plant in Find or Paste; the plant carries a note. PP-B exit (2026-11-16): the
 // matrix cells this test also read went in PP-B 0a' (its "no cell blocked" line went with them; the
 // palette's holes and fillers never read the room answer, core holes.ts); the walnut, once added,
 // is listed in Your plants with the same note, not hidden.
