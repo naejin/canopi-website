@@ -34,7 +34,7 @@ const W = 324, PAD = 6;
 
 // One measure's band, drawn (aria-hidden: the lines under it say it in words): the recorded range,
 // closed and numbered only at the ends the rule checks (an open side runs to the edge), the tick where
-// it is most often recorded, the place today (a dot, "today 19.0 °C") and in its later period (a ring),
+// it is most often recorded, the place at the page's period (a dot, "today 19.0 °C") and in its later period (a ring),
 // the whole band dashed on few records, only the disputed stretch dashed when another source's limit
 // is looser.
 function BandDraw({ b, disputes, period }: { b: Band; disputes: readonly Dispute[]; period: string | null }) {
@@ -69,7 +69,7 @@ function BandDraw({ b, disputes, period }: { b: Band; disputes: readonly Dispute
         {b.low !== null && <text x={x0} y="62" text-anchor="middle">{end(b.low)}</text>}
         {b.high !== null && <text x={x1} y="62" text-anchor="middle">{end(b.high)}</text>}
       </g>
-      {b.place !== null && <><path d={`M${x(b.place)} 4V54`} class="ct-bd-now" /><circle cx={x(b.place)} cy="43" r="4" class="ct-bd-now-dot" />{label(13, `${T('details.bandToday')} ${at(b.place)}`, 'ct-bd-now-text')}</>}
+      {b.place !== null && <><path d={`M${x(b.place)} 4V54`} class="ct-bd-now" /><circle cx={x(b.place)} cy="43" r="4" class="ct-bd-now-dot" />{label(13, `${say(b.when.dot)} ${at(b.place)}`, 'ct-bd-now-text')}</>}
       {b.later !== null && period && <><path d={`M${x(b.later)} 17V54`} class="ct-bd-later" /><circle cx={x(b.later)} cy="43" r="4" class="ct-bd-later-dot" />{label(26, `${period}: ${at(b.later)}`, 'ct-bd-later-text')}</>}
     </svg>
   );
@@ -159,7 +159,7 @@ export function Against({ t, disputes = [] }: { t: Taxon; disputes?: readonly Di
       {bands.length > 0 && (
         <ul class="ct-band-key" data-band-key>
           <li><svg viewBox="0 0 26 12" width="26" height="12" aria-hidden="true"><rect x="1" y="1" width="24" height="10" rx="2" class="ct-bd-range ct-bd-edge" /><path d="M12 0v12" class="ct-bd-tick" /></svg>{T('details.keyRange')}</li>
-          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{T('details.keyToday')}</li>
+          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{say(bands[0].when.key)}</li>
           <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-later-dot" /></svg>{T('details.keyLater')}</li>
           <li><svg viewBox="0 0 22 12" width="22" height="12" aria-hidden="true"><rect x="1" y="1" width="20" height="10" rx="2" class="ct-bd-edge is-dashed" fill="none" /></svg>{T('details.keyDashed')}</li>
         </ul>

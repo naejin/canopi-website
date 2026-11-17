@@ -206,11 +206,17 @@ export const measureLine = (m: Measure): Line => L(MEASURE_KEY[m]);
 // null and runs open; the aridity band keeps both, its line names both), the place today and in the
 // plant's own later period, where it is most often recorded (the row's median: the tick), and which
 // limits are not firm: few records (the whole band) or a disputed low (that end only).
+// `when`: the word beside the place's dot ("today", or the period the verdict is judged at when the
+// page shows a later one) and the key's item for it ("your place today", "your place in 2041–2070").
 export interface Band {
   measure: Measure; title: Line; status: Line; level: Level; factors: Factor[];
   low: number | null; high: number | null; recordedLow: number; recordedHigh: number;
   place: number | null; later: number | null; median: number | null; disputedLow: boolean; few: boolean;
+  when: { dot: Line; key: Line };
 }
+const whenOf = (judged: PeriodId): Band['when'] => (judged === TODAY_PERIOD
+  ? { dot: L('whenToday'), key: L('keyPlaceToday') }
+  : { dot: L('whenPeriod', { period: periodName(judged) }), key: L('keyPlaceIn', { period: periodName(judged) }) });
 const ROW: Record<Exclude<Measure, 'soilPh'>, keyof TaxonClimate> = { tminCold: 'tminCold', tmeanYear: 'tmeanYear', tmeanWarm: 'tmeanWarm', tmaxWarm: 'tmaxWarm', aridity: 'aridity' };
 export function bandsOf(v: PlantVerdict, later: PlantVerdict | null, climate: TaxonClimate | null): Band[] {
   const out = new Map<Measure, Band>();
@@ -218,7 +224,7 @@ export function bandsOf(v: PlantVerdict, later: PlantVerdict | null, climate: Ta
     const m = measureOf(f.factor);
     if (!m || !speaks(f) || f.basis !== 'range' || f.place === null || f.low === null || f.high === null) continue;
     const end = f.factor === 'dry' ? 'both' : SIDE_END[f.factor];
-    const b = out.get(m) ?? { measure: m, title: measureLine(m), status: L('bandFits'), level: 'fits' as Level, factors: [], low: null, high: null, recordedLow: f.low, recordedHigh: f.high, place: f.place, later: null, median: (climate?.[ROW[m as Exclude<Measure, 'soilPh'>]] as ClimateRange | null | undefined)?.median ?? null, disputedLow: false, few: v.records !== undefined };
+    const b = out.get(m) ?? { measure: m, title: measureLine(m), status: L('bandFits'), level: 'fits' as Level, factors: [], low: null, high: null, recordedLow: f.low, recordedHigh: f.high, place: f.place, later: null, median: (climate?.[ROW[m as Exclude<Measure, 'soilPh'>]] as ClimateRange | null | undefined)?.median ?? null, disputedLow: false, few: v.records !== undefined, when: whenOf(v.judged) };
     b.factors.push(f.factor);
     if (end === 'low' || end === 'both') b.low = f.low;
     if (end === 'high' || end === 'both') b.high = f.high;
@@ -239,7 +245,7 @@ export function soilBandOf(t: Taxon, v: PlantVerdict, ph: number | null): Band |
   const f = v.factors.find((x) => x.factor === 'soil-ph');
   const level: Level = ph === null || !f ? 'unknown' : f.level;
   const status = ph === null ? 'bandSoilUntested' : level === 'fits' ? 'bandFits' : level === 'unknown' ? 'bandUnknown' : 'bandOutside';
-  return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false };
+  return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false, when: whenOf(v.judged) };
 }
 
 // A band's status in words (with the level's icon in the view): in range, near the edge, outside;

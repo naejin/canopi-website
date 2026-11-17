@@ -599,3 +599,14 @@ test('c2 fix K19 + T1 (keep it a fair bet): the years to the first later period 
   assert.equal(line.keepLine(now, [vOf({ judged: '2041-2070', level: 'look' }), vOf({ judged: '2071-2099' })], 2026), null, 'it holds then');
   assert.equal(line.keepLine(null, [], 2026), null);
 });
+
+// Fix round 3 T2 (c2r3-03): the place's dot on a band says when it is: "today" on today's verdict, the
+// period on a page showing a later one (never "today 21.2 °C" beside "Fits by 2041–2070"); the key follows.
+test('c2 fix T2 (band dot word): "today" for today\'s verdict, the period for a later one, and the key says the same', () => {
+  const f = { factor: 'cool', level: 'fits', basis: 'range', place: 21.2, low: 8.8, high: 17.6 };
+  const [today] = line.bandsOf(vOf({ factors: [f] }), null, null);
+  assert.deepEqual([say(today.when.dot), say(today.when.key)], ['today', 'your place today']);
+  const [later] = line.bandsOf(vOf({ judged: '2041-2070', factors: [f] }), null, null);
+  assert.deepEqual([say(later.when.dot), say(later.when.key)], ['2041–2070', 'your place in 2041–2070']);
+  for (const k of ['whenToday', 'whenPeriod', 'keyPlaceToday', 'keyPlaceIn']) for (const [lang, w] of Object.entries(words)) assert.ok(w[`consortium.line.${k}`], `${lang}: ${k}`);
+});
