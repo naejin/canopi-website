@@ -332,6 +332,8 @@
   "consortium.dismiss": "Chiudi avviso",
   "consortium.d.alleloUnk": "Non è ancora stato controllato se frena le vicine.",
   "consortium.d.alleloNone": "Non risulta che freni le vicine",
+  "consortium.d.rangeUnavailable": "I controlli dell’areale non sono disponibili: una parte dello strumento non si è caricata, e {climate} ne ha bisogno per scegliere le piante, perché le sue piante vengono dalle liste più vicine.",
+  "consortium.d.checkFailed": "Impossibile confrontarla con il tuo luogo.",
   "hero.proof.free": "Gratuito",
   "hero.proof.open": "Open source",
   "hero.proof.nonprofit": "Senza scopo di lucro",

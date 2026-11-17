@@ -332,6 +332,8 @@
   "consortium.dismiss": "Dispensar",
   "consortium.d.alleloUnk": "Ainda não se verificou se trava as vizinhas.",
   "consortium.d.alleloNone": "Sem registo de travar as vizinhas",
+  "consortium.d.rangeUnavailable": "As verificações de faixa não estão disponíveis: uma parte da ferramenta não carregou, e {climate} precisa delas para escolher plantas, já que as plantas vêm das listas mais próximas.",
+  "consortium.d.checkFailed": "Não foi possível compará-la com o seu lugar.",
   "hero.proof.free": "Gratuito",
   "hero.proof.open": "Código aberto",
   "hero.proof.nonprofit": "Sem fins lucrativos",

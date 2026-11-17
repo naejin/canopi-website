@@ -145,9 +145,10 @@ export const pool = computed<Taxon[] | null>(() => {
 });
 // The range checks come with the verdict rule (its chunk, role `verdict`; PP-C c2 folded the range role
 // into it), asked for once the site location has a climate.
-// rangeFailed: its chunk did not load while a location with a climate asks for range checks: the pool
-// is then read unfiltered (P2), said in place (PoolSlot) and by one toast with Reload.
-export const rangeFailed = computed(() => verdictFailed.value && siteClimate.value);
+// rangeFailed: its chunk failed and has not loaded since, while a location with a climate asks for
+// range checks: the pool is then read unfiltered (P2), said in place (PoolSlot). Sticky until a load
+// succeeds (verdictEverFailed), so a retry in flight never sends the palette back to "loading".
+export const rangeFailed = computed(() => verdictEverFailed.value && !verdictRule.value && siteClimate.value);
 // The suggestion and the Swap list (core suggest.ts, design check A11): their own chunk (core
 // loadSuggest), off the first run, asked for once a database is open (setSource, as the data turns
 // ready) and again by a Suggest press or an opened Swap while it is missing (state/suggest-wait.ts
@@ -205,7 +206,8 @@ export const offerPool = computed<Taxon[] | null>(() => {
 // checked". verdictFailed: its chunk did not load (b2 says it).
 export const verdictRule = signal<VerdictRule | null>(null);
 export const verdictFailed = signal(false);
-let verdictLoad: Promise<void> | null = null;
+const verdictEverFailed = signal(false);
+let verdictLoad: Promise<void> | null = null, verdictTries = 0;
 // Its load always settles, so a pool read waiting for it (withRule) never fails with it.
 // Also called by the palette page once it shows (its fit lines and holes read the rule; without a
 // location every plant is "not checked"), and by main.ts beside the database download on a return
@@ -213,33 +215,32 @@ let verdictLoad: Promise<void> | null = null;
 // A failed load is not kept: the next call tries again (retryVerdict; core verdict-load.ts fetches the
 // chunk again under ?retry=n). verdictFailed says the current load failed: a new load clears it as it
 // starts (b1bg-1: a return visit's fetchAhead refused offline, then start()'s effect asks again once a
-// site climate arrives; meanwhile the count line checks and the waiting Suggest waits).
+// site climate arrives; meanwhile the count line checks and the waiting Suggest waits). Never once only
+// a reload can work (verdictNeedsReload): every caller, the mount-time ones included, then asks nothing.
 export function wantVerdict(): void {
-  if (verdictLoad) return;
+  if (verdictLoad || verdictNeedsReload.peek()) return;
   verdictFailed.value = false;
-  verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; }, (err: unknown) => {
+  const retry = verdictTries++ > 0;
+  verdictLoad = loadVerdictRule().then((rule) => { verdictRule.value = rule; verdictEverFailed.value = false; }, (err: unknown) => {
     console.error(`Consortium: the verdict rule did not load: ${(err as Error).message}`);
     verdictLoad = null;
-    verdictFailed.value = true;
-    if (!verdictNeedsReload.peek() && importBroke()) verdictNeedsReload.value = true;
+    batch(() => {
+      verdictFailed.value = true;
+      verdictEverFailed.value = true;
+      // A retry that fails while the browser says it is online will not load in place (A8).
+      if (retry && globalThis.navigator?.onLine !== false) verdictNeedsReload.value = true;
+    });
   });
 }
 // The palette page's Try again (online) and the browser back online: the verdict chunk asked again,
 // in place, never a page reload (architecture 9).
-export function retryVerdict(): void {
-  if (verdictLoad || verdictRule.peek() || verdictNeedsReload.peek()) return;
-  wantVerdict();
-}
-// Never a retry that cannot work (pre-push fix 4): the verdict chunk statically imports shared chunks
-// (the range checks', the future chunk), and Chromium keeps a failed import of one for the page's life
-// (retry-import.ts), so a retry under a fresh URL can load only a refused verdict file itself. Its file
-// answered and the import still failed: one of those chunks broke, and no retry can load it. Then the
-// online listener asks for nothing, retryVerdict does nothing, and the views offer Reload (load.reload)
-// in place of Try again. (PP-C c2: the range rule's own loader, which told this before, went with the
-// range role. A browser without Resource Timing's responseStatus keeps Try again.)
+export const retryVerdict = (): void => wantVerdict();
+// Never a retry that cannot work (pre-push fix 4): the verdict chunk statically imports shared chunks,
+// and Chromium keeps a failed import of one for the page's life (retry-import.ts), so a retry under a
+// fresh URL may not load. The simple rule (fix round 1 A8): a retry that fails while the browser is
+// online needs a reload; offline, the online listener retries. Then wantVerdict asks for nothing and
+// the views offer Reload (load.reload) in place of Try again.
 export const verdictNeedsReload = signal(false);
-const importBroke = (): boolean => globalThis.performance?.getEntriesByType('resource')
-  .some((e) => /\/verdict\.[\w-]+\.js/.test(e.name) && (e as PerformanceResourceTiming & { responseStatus?: number }).responseStatus === 200) ?? false;
 // What every verdict reads: the palette's place, the location's lookup, the period shown, the
 // scenario, and the members' canopy (shade relief, 3.2).
 // The canopy kept by value: most adds leave it as it was, and a new array would recompute every

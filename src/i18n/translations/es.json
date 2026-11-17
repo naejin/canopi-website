@@ -332,6 +332,8 @@
   "consortium.dismiss": "Cerrar aviso",
   "consortium.d.alleloUnk": "Aún no se ha revisado si frena a sus vecinas.",
   "consortium.d.alleloNone": "No se sabe que frene a sus vecinas",
+  "consortium.d.rangeUnavailable": "Las comprobaciones de rango no están disponibles: una parte de la herramienta no se cargó, y {climate} las necesita para elegir plantas, ya que sus plantas vienen de las listas más cercanas.",
+  "consortium.d.checkFailed": "No se pudo comparar con tu lugar.",
   "hero.proof.free": "Gratis",
   "hero.proof.open": "Código abierto",
   "hero.proof.nonprofit": "Sin ánimo de lucro",

@@ -101,14 +101,18 @@ test('PP-C6 (c2 Swap): Swap lists what each candidate also fills and leaves empt
 
 // ---- failure states (3.1-3.6) ----
 
-test('PP-C13 (c2 verdict chunk failed, 3.1): "Against your place" says "not checked" with Reload keyed on the verdict chunk alone; Swap\'s fit lines say "not checked"', async () => {
+test('PP-C13 (c2 verdict chunk failed, 3.1; fix round 1 A5, A6, A8): "Against your place" says "not checked" with Try again in place; a retry that fails online offers Reload; the palette never goes back to loading; Swap\'s fit lines say "not checked"', async () => {
   // A saved palette (Suggest waits for the verdict rule, so it places nothing with the chunk refused).
   const page = await tool({ block: { verdict: 404 }, hash: await temperateLink() });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the palette\'s plants');
   const id = await firstMember(page);
   await details(page, id);
   await against(page);
-  assert.ok(await has(page, `${DETAILS} [data-against] ${aria('button', 'Reload')}`, 2000), 'Reload in the section');
+  assert.ok(await has(page, `${DETAILS} [data-against] ${aria('button', 'Try again')}`, 2000), 'Try again in the section, first');
+  assert.equal(await page.evaluate(() => document.querySelector('[data-against]').textContent.includes('Reload the page')), false, 'no "reload the page" beside Try again');
+  await page.click(`${DETAILS} [data-against] ${aria('button', 'Try again')}`);
+  assert.ok(await has(page, `${DETAILS} [data-against] ${aria('button', 'Reload')}`, 4000), 'the retry failed online: Reload');
+  assert.ok(await page.evaluate(() => window.__ctTest.store.pool.value !== null), 'the palette kept its plants through the retry');
   await page.keyboard.press('Escape');
   await page.evaluate((pid) => window.__ctTest.openSheet('swap', pid), id);
   assert.ok(await has(page, `${DETAILS} [data-swap-row] [data-conf="not-checked"]`, 6000), 'Swap: "not checked"');

@@ -332,6 +332,8 @@
   "consortium.dismiss": "关闭",
   "consortium.d.alleloUnk": "尚未核实它是否会抑制邻近植物。",
   "consortium.d.alleloNone": "没有抑制邻近植物的记录",
+  "consortium.d.rangeUnavailable": "范围检查不可用：工具的一部分未能加载，而{climate}需要它来挑选植物，因为其植物来自最接近的清单。",
+  "consortium.d.checkFailed": "无法对照你的地方进行检查。",
   "hero.proof.free": "免费",
   "hero.proof.open": "开源",
   "hero.proof.nonprofit": "非营利",

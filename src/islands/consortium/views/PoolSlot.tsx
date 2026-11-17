@@ -6,8 +6,8 @@
 // from the UX audit" (1)). Start then shows the crops, the site questions and Suggest, and the card
 // says Ready. needsSite(zone): a borrowed climate without one; this shell says the climate needs the
 // site's location, with a button to the location step, and no palette is offered. A link or a saved
-// consortium on such a climate still opens with its plants, marked as estimates (range-marks.ts
-// estimate.noSite). Without any list, the panel's "Not covered yet" notice. The panel
+// consortium on such a climate still opens with its plants, marked as estimates (core verdict-line.ts:
+// the estimate term, "give your location to check it"). Without any list, the panel's "Not covered yet" notice. The panel
 // (views/pool/pool.tsx, a P5 feature chunk; decision row "Island JavaScript budget for P5") loads
 // for a climate that borrows its plants once the site has a climate, or when it has no list:
 // which lists are borrowed, the count line (PP-B b1b: "{n} of the {m} plants on the nearest lists fit
@@ -19,7 +19,7 @@
 import { effect, untracked } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { hasPlants } from '../../../lib/consortium/index.ts';
-import { curatedClimates, openSheet, pool, poolVerdicts, rangeFailed, siteClimate } from '../store.ts';
+import { curatedClimates, openSheet, pool, poolVerdicts, rangeFailed, retryVerdict, siteClimate, verdictNeedsReload } from '../store.ts';
 import * as rule from '../rules/suggest-block.ts';
 import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
 import { climateChosen } from '../state/persist.ts';
@@ -104,10 +104,15 @@ export function PoolSlot({ zone, head = false }: { zone: ClimateZone; head?: boo
   if (head) return hasPlants(zone, curated()) ? null : <panel.View zone={zone} />;
   return !hasList(zone) || !curated().includes(zone) || siteClimate.value ? <panel.View zone={zone} /> : null;
 }
+// Try again in place; Reload, with words that say it, only when only a reload can work (A6,
+// architecture 9).
 function RangeUnavailable({ zone }: { zone: ClimateZone }) {
+  const climate = zoneName(zone);
   return (
     <p class="ct-notice" role="status" data-range-unavailable>
-      {T('range.unavailableBorrowed', { climate: zoneName(zone) })} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
+      {verdictNeedsReload.value
+        ? <>{T('range.unavailableBorrowed', { climate })} <button type="button" class="button button-secondary ct-small" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button></>
+        : <>{T('d.rangeUnavailable', { climate })} <button type="button" class="button button-secondary ct-small" onClick={() => retryVerdict()}>{T('details.tryAgain')}</button></>}
     </p>
   );
 }

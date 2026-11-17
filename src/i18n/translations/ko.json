@@ -332,6 +332,8 @@
   "consortium.dismiss": "닫기",
   "consortium.d.alleloUnk": "이웃 식물을 억누르는지는 아직 확인하지 않았습니다.",
   "consortium.d.alleloNone": "이웃 식물을 억누른다고 알려지지 않음",
+  "consortium.d.rangeUnavailable": "범위 확인을 사용할 수 없습니다: 도구 일부가 로드되지 않았고, {climate}의 식물은 가장 가까운 목록에서 오므로 식물을 고르려면 이 확인이 필요합니다.",
+  "consortium.d.checkFailed": "당신의 장소와 비교하지 못했습니다.",
   "hero.proof.free": "무료",
   "hero.proof.open": "오픈 소스",
   "hero.proof.nonprofit": "비영리",

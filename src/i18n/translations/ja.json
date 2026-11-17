@@ -332,6 +332,8 @@
   "consortium.dismiss": "閉じる",
   "consortium.d.alleloUnk": "隣の植物を抑えるかどうかは、まだ確認されていません。",
   "consortium.d.alleloNone": "隣の植物を抑えるとは知られていない",
+  "consortium.d.rangeUnavailable": "範囲チェックを利用できません：ツールの一部が読み込まれませんでした。{climate}の植物は最も近いリストから選ぶため、このチェックが必要です。",
+  "consortium.d.checkFailed": "あなたの場所と照合できませんでした。",
   "hero.proof.free": "無料",
   "hero.proof.open": "オープンソース",
   "hero.proof.nonprofit": "非営利",

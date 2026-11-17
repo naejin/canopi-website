@@ -332,6 +332,8 @@
   "consortium.dismiss": "Скрыть",
   "consortium.d.alleloUnk": "Угнетает ли оно соседей, ещё не проверено.",
   "consortium.d.alleloNone": "Не известно, что угнетает соседей",
+  "consortium.d.rangeUnavailable": "Проверки ареала недоступны: часть инструмента не загрузилась, а {climate} нужны они для выбора растений, так как его растения берутся из ближайших списков.",
+  "consortium.d.checkFailed": "Не удалось сравнить с вашим местом.",
   "hero.proof.free": "Бесплатно",
   "hero.proof.open": "Открытый код",
   "hero.proof.nonprofit": "Некоммерческий проект",

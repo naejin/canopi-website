@@ -332,6 +332,8 @@
   "consortium.dismiss": "Ausblenden",
   "consortium.d.alleloUnk": "Ob sie Nachbarn hemmt, ist noch nicht geprüft.",
   "consortium.d.alleloNone": "Nicht dafür bekannt, Nachbarn zu hemmen",
+  "consortium.d.rangeUnavailable": "Bereichsprüfungen sind nicht verfügbar: Ein Teil des Werkzeugs wurde nicht geladen, und {climate} braucht sie zur Pflanzenwahl, da seine Pflanzen aus den nächstgelegenen Listen stammen.",
+  "consortium.d.checkFailed": "Konnte nicht mit deinem Ort abgeglichen werden.",
   "hero.proof.free": "Kostenlos",
   "hero.proof.open": "Open Source",
   "hero.proof.nonprofit": "Gemeinnützig",

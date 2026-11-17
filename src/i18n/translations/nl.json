@@ -332,6 +332,8 @@
   "consortium.dismiss": "Sluiten",
   "consortium.d.alleloUnk": "Of ze buren remt, is nog niet gecontroleerd.",
   "consortium.d.alleloNone": "Niet bekend dat ze buren remt",
+  "consortium.d.rangeUnavailable": "Bereikcontroles zijn niet beschikbaar: een deel van de tool is niet geladen, en {climate} heeft ze nodig om planten te kiezen, omdat de planten uit de dichtstbijzijnde lijsten komen.",
+  "consortium.d.checkFailed": "Kon niet worden vergeleken met je plek.",
   "hero.proof.free": "Gratis",
   "hero.proof.open": "Open source",
   "hero.proof.nonprofit": "Zonder winstoogmerk",

@@ -453,3 +453,13 @@ test('c2 fix A4 (print invasive): print words each source through invasiveLines;
   assert.match(print, /invasiveLines\(/);
   for (const [lang, w] of Object.entries(words)) assert.doesNotMatch(w['consortium.print.flag.invasive'], /GRIIS/, lang);
 });
+
+test('c2 fix A5 + A8 (verdict failure): rangeFailed is sticky until a load succeeds; a retry that fails online needs a reload; wantVerdict never asks once only a reload works; no Resource Timing', () => {
+  const store = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
+  assert.match(store, /rangeFailed = computed\(\(\) => verdictEverFailed\.value && !verdictRule\.value && siteClimate\.value\)/);
+  assert.match(store, /if \(verdictLoad \|\| verdictNeedsReload\.peek\(\)\) return;/);
+  assert.match(store, /if \(retry && globalThis\.navigator\?\.onLine !== false\) verdictNeedsReload\.value = true;/);
+  assert.doesNotMatch(store, /getEntriesByType|importBroke/);
+  const against = readFileSync(new URL('../src/islands/consortium/views/details/Against.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(against, /verdictNeedsReload\.peek\(\) \? location\.reload\(\)/, 'one button per action (A6)');
+});

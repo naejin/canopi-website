@@ -332,6 +332,8 @@
   "consortium.dismiss": "Fermer",
   "consortium.d.alleloUnk": "On n’a pas encore vérifié si elle freine ses voisines.",
   "consortium.d.alleloNone": "Pas connue pour freiner ses voisines",
+  "consortium.d.rangeUnavailable": "Les vérifications d’aire sont indisponibles : une partie de l’outil ne s’est pas chargée, et {climate} en a besoin pour choisir des plantes, car ses plantes viennent des listes les plus proches.",
+  "consortium.d.checkFailed": "Impossible de la comparer à votre lieu.",
   "hero.proof.free": "Gratuit",
   "hero.proof.open": "Open source",
   "hero.proof.nonprofit": "Sans but lucratif",

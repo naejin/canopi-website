@@ -5,7 +5,8 @@
 // plant's own later period changes; every word from core verdict-line.ts (againstLines). The verdict
 // rule comes from the store (store.verdictRule, its own chunk, role `verdict`): this file never
 // imports verdict.ts, so the details chunk stays off the rule (K3). Until the rule is here the section
-// says it is checking; when its chunk failed, "Not checked" with Reload (3.1).
+// says it is checking; when its chunk failed, "Not checked" with Try again (Reload when only a reload
+// can work, store.verdictNeedsReload; 3.1).
 import { useEffect } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
@@ -38,7 +39,8 @@ function Words({ line, terms }: { line: Line; terms: boolean }) {
 export function Against({ t }: { t: Taxon }) {
   // Details may open before the palette page asked for the rule (a link, a list chosen without a
   // location): ask for it here too (one load, store.wantVerdict).
-  useEffect(() => store.wantVerdict(), []);
+  // A failed load is not retried by opening a sheet: the section offers Try again itself.
+  useEffect(() => { if (!store.verdictFailed.peek()) store.wantVerdict(); }, []);
   const v = verdictOf(t);
   const head = <h3 id="ct-d-against">{T('details.against')}</h3>;
   if (!v) {
@@ -49,8 +51,10 @@ export function Against({ t }: { t: Taxon }) {
         {failed
           ? <>
               <p data-level="unknown" data-conf="not-checked">{say(levelLine('unknown'))}</p>
-              <p class="ct-muted">{T('details.loadFailed')}</p>
-              <p><button type="button" class="button button-secondary" onClick={() => (store.verdictNeedsReload.peek() ? location.reload() : store.retryVerdict())}>{T('details.reload')}</button></p>
+              {/* The words match the action (A6): Try again in place, Reload only when only a reload can work. */}
+              {store.verdictNeedsReload.value
+                ? <><p class="ct-muted">{T('details.loadFailed')}</p><p><button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('details.reload')}</button></p></>
+                : <><p class="ct-muted">{T('d.checkFailed')}</p><p><button type="button" class="button button-secondary" onClick={() => store.retryVerdict()}>{T('details.tryAgain')}</button></p></>}
             </>
           : <p class="ct-muted">{T('details.checking')}</p>}
       </section>

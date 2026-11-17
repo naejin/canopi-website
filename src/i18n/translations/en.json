@@ -332,6 +332,8 @@
   "consortium.dismiss": "Dismiss",
   "consortium.d.alleloUnk": "Whether it holds back neighbours has not been checked yet.",
   "consortium.d.alleloNone": "Not known to hold back neighbours",
+  "consortium.d.rangeUnavailable": "Range checks are unavailable: part of the tool did not load, and {climate} needs them to pick plants, since its plants come from the nearest lists.",
+  "consortium.d.checkFailed": "Could not check it against your place.",
   "hero.proof.free": "Free",
   "hero.proof.open": "Open source",
   "hero.proof.nonprofit": "Non-profit",
