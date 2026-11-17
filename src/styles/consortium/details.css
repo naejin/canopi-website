@@ -148,9 +148,10 @@
 .ct .ct-corr-consent label { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
 .ct .ct-corr-consent input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
 .ct .ct-corr-status:empty { display: none; }
-.ct .ct-corr-status.is-error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--danger); border-radius: 8px; background: var(--surface-alt); color: var(--text); }
-.ct .ct-corr-status.is-error > .ct-glyph { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--danger); }
-.ct .ct-corr-status.is-error strong { color: var(--danger); }
+.ct .ct-corr-status.is-error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--warning-line); border-radius: 8px; background: var(--warning-bg); color: var(--text); }
+.ct .ct-corr-status.is-error > .ct-glyph { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--warning); }
+/* Cancel and Send side by side, equal width (board Correction). */
+.ct .ct-corr > .ct-actions { display: grid; grid-template-columns: 1fr 1fr; }
 .ct .ct-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .ct .ct-paste-text { font-family: inherit; }
 
