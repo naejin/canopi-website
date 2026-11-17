@@ -290,6 +290,11 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-sheet:has(.ct-swap-head) .ct-back-name { overflow-wrap: anywhere; min-width: 0; }
 .ct .ct-sheet:has(.ct-swap-head) .ct-back { max-width: 100%; }
 .ct .ct-swap-foot { justify-content: flex-start; }
+/* A candidate's status (board Swap): its fit and each note as separate pills, aligned, one font size. */
+.ct .ct-swap-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; line-height: 18px; }
+.ct .ct-swap-status > * { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid var(--border); border-radius: 99px; font-size: inherit; max-width: 100%; }
+.ct .ct-swap-status > .ct-fit { font-weight: 600; border-color: currentColor; }
+.ct .ct-swap-status > .ct-fit svg { width: 14px; height: 14px; }
 .ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body { grid-template-columns: minmax(0, 1fr); }
 .ct .ct-sheet:has(.ct-swap-head) .ct-row-why { overflow-wrap: anywhere; }
 .ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body > p > .button { max-width: 100%; white-space: normal; text-align: start; }

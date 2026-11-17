@@ -81,7 +81,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <div class="ct-row-why">
           <span data-swap-does>{doesWords(memberJobs, a.sharedJobs)} · {spanWords(x)}</span>
           <span class="ct-line" data-swap-size>{sizeWords(x)}</span>
-          <span class="ct-line" data-conf={v ? undefined : 'not-checked'}><FitLine v={v} known={far ? 'outside' : undefined} />{v && <RowNotes t={x} v={v} />}</span>
+          <span class="ct-line ct-swap-status" data-conf={v ? undefined : 'not-checked'}><FitLine v={v} known={far ? 'outside' : undefined} />{v && <RowNotes t={x} v={v} />}</span>
           {/* What changes in the palette's gaps, said once (K12): what it fills, what it leaves empty, or that none change. */}
           {a.fills.length > 0 && <span class="ct-line" data-swap-fills><strong>{T('swap.fills', { list: holeList(a.fills) })}</strong></span>}
           {a.leaves.length > 0 && <span class="ct-line" data-swap-leaves><strong>{T('swap.leaves', { list: holeList(a.leaves) })}</strong></span>}
