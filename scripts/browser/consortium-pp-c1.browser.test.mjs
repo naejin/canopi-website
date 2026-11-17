@@ -528,7 +528,8 @@ test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s count
 // wait for a store seam, pf) with the line saying so, and shows at most a screenful per group behind "Show all N".
 test('PP-C42 (c1 fix B2+B3 best first, folded outside, Show all): plain Find', async () => {
   const page = await plainFind();
-  await page.click(`${FIND} [data-filter="light"][data-value="sun"]`); // a list, as a grower asks for one
+  // A list, as a grower asks for one: Part shade and Shade (Lyon's one outside plant, Rubus tricolor, is Shade).
+  for (const v of ['medium', 'low']) await page.click(`${FIND} [data-filter="light"][data-value="${v}"]`);
   assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent).catch(() => ''), /^\d+ plants\. Best first/, 'the count line, then "Best first"');
   assert.equal(await page.$(`${FIND} [data-find-group="outside"]`), null, 'the outside plants are folded in plain Find');
   assert.ok(await page.$(`${FIND} [data-find-outside]`), '"Show N outside their climate range"');

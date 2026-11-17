@@ -77,15 +77,11 @@ function askHref(q: string): string {
 // A group lists a screenful, the rest behind "Show all N" (board FindResults; no 500-row render).
 const SCREEN = 20;
 
-// A row's light, size and years (board FindResults: "needs a lot of light · 18 m wide, 40 m tall"),
-// measures through format.ts, years through verdict-line.ts. The light words name every light the
-// plant takes, so a plant of some shade that also takes full sun says so (K16: never words a sun hole
-// contradicts).
+// A row's light, size and years (board FindResults: "mostly sun · 18 m wide, 40 m tall"), measures
+// through format.ts, years through verdict-line.ts. Light is the plant's stratum (layer is light),
+// the same words as the palette's light rows and holes.
 function lightWords(t: Taxon): string | null {
-  const { sun, semi_shade: some, full_shade: deep } = t.traits;
-  if (sun && deep) return T('find.lightAny');
-  if (sun && some) return T('find.lightSunSome');
-  return deep ? T('find.lightDeep') : some ? T('find.lightSome') : sun ? T('find.lightSun') : null;
+  return t.stratum ? midSentence(T(`stratum.${t.stratum.value}`)) : null;
 }
 function sizeWords(t: Taxon): string {
   const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
@@ -394,7 +390,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const listOptions = <K extends ListKey>(k: K, values: readonly NonNullable<FindFilters[K]>[number][], label: (v: NonNullable<FindFilters[K]>[number]) => string): Option[] =>
     values.map((v) => ({ key: String(v), label: label(v), on: !!(filters[k] as readonly string[] | undefined)?.includes(v as string), toggle: () => toggleIn(k, v), count: count(only(k, v)) }));
   const jobOpts = listOptions('jobs', jobIds, (j) => T(`job.${j}`));
-  const lightOpts = listOptions('light', LIGHTS, (l) => T(`find.light.${l}`));
+  const lightOpts = listOptions('light', LIGHTS, (l) => T(`stratum.${l}`));
   const standOpts = listOptions('stands', Object.keys(STANDS) as Stand[], (s) => { const [from, to] = STANDS[s as Stand]; return say(yearsLine(from, to)); });
   const sizeOpts = listOptions('size', SIZES, (s) => T(`find.size.${s}`, { lo: num(2), len: formatLength(s === 'small' ? 2 : 8, pageLang()) }));
   const lifeOpts = listOptions('life', LIVES, (l) => T(`find.life.${l}`));

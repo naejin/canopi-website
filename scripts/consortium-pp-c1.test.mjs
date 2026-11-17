@@ -55,6 +55,16 @@ test('PP-C-u2 (c1 find-query filters): every filter returns the count of plants 
   assert.equal(unknown.edible, 1, 'the plant with no edibility recorded is counted');
 });
 
+test('PP-C-u2b (pf commit 0, layer is light): the light filter offers the four light levels and matches the plant\'s stratum; a plant with none is left out and counted as not judged', async () => {
+  const { applyFilters, LIGHTS } = await findQuery();
+  assert.deepEqual([...LIGHTS], ['emergent', 'high', 'medium', 'low'], 'Full sun, Mostly sun, Part shade, Shade');
+  const st = (value) => ({ value, sources: [] });
+  const taxa = [plant(1, { stratum: st('high') }), plant(2, { stratum: st('low') }), plant(3, { stratum: null })];
+  const { rows, unknown } = applyFilters(taxa, { light: ['high', 'medium'] }, {});
+  assert.deepEqual(rows.map((t) => t.id), [id(1)], 'Mostly sun matches');
+  assert.equal(unknown.light, 1, 'the plant whose light is not recorded is counted (the filter says so)');
+});
+
 test('PP-C-u3 (c1 find-query jobs): a job word in each of the 11 locales finds its job', async () => {
   const { jobsMatching } = await findQuery();
   for (const [lang, w] of Object.entries(words)) for (const job of jobIds) {

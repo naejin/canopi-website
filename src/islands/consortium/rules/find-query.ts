@@ -8,7 +8,7 @@
 // conflict, a site misfit, toxic, recorded as invasive in the country) that fits otherwise needs a
 // second look; a plant with no verdict is "not checked", never a fit.
 import type { JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, queryTokens, fold, yearsOf } from '../../../lib/consortium/index.ts';
+import { jobIds, jobsOf, queryTokens, fold, strata, yearsOf } from '../../../lib/consortium/index.ts';
 
 export interface FindGroups { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unchecked: Taxon[] }
 export const GROUPS = ['fits', 'look', 'outside', 'unchecked'] as const;
@@ -47,7 +47,8 @@ export const wellInside = (v: PlantVerdict | undefined): boolean => !!v && v.lev
 
 // ---- filters (board FindFilters: each says what it is for) ----
 
-export const LIGHTS = ['sun', 'semi_shade', 'full_shade'] as const;
+// Light is the plant's stratum (owner 2026-11-17, layer is light): Full sun / Mostly sun / Part shade / Shade.
+export const LIGHTS = strata;
 export type Light = (typeof LIGHTS)[number];
 export const SIZES = ['small', 'middle', 'tall'] as const; // under 2 m, 2 to 8 m, over 8 m tall
 export type Size = (typeof SIZES)[number];
@@ -86,10 +87,7 @@ export interface FilterContext {
 // The filters that hide (a plant they cannot judge stays): they say how many they hide.
 const HIDES: ReadonlySet<FilterId> = new Set(['repeats', 'toxic', 'invasive']);
 
-const lightOf = (t: Taxon, l: Light): boolean | null => {
-  const v = l === 'sun' ? t.traits.sun : l === 'semi_shade' ? t.traits.semi_shade : t.traits.full_shade;
-  return v ?? null;
-};
+const lightOf = (t: Taxon, l: Light): boolean | null => (t.stratum ? t.stratum.value === l : null);
 const sizeOf = (t: Taxon): Size | null => {
   const h = t.traits.height_m?.max;
   return h == null ? null : h < 2 ? 'small' : h <= 8 ? 'middle' : 'tall';
