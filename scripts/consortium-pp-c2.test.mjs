@@ -639,7 +639,7 @@ test('c2 fix T5 (soil card range line): the soil pH range sources give, with its
   const t = taxon({ id: 'soil', canonical_name: 'Soilus', traits: { ...taxon({}).traits, soil_ph: { min: 5.1, max: 8.5 } } });
   const b = line.soilBandOf(t, vOf(), null);
   assert.equal(say(b.range), 'The soil pH range sources give for it (catalogue).');
-  assert.equal(say(line.soilBandOf(t, vOf(), null, [{ field: 'soil_ph', source: 'canopi-correction' }]).range), 'The soil pH range sources give for it (Canopi correction).');
+  assert.equal(say(line.soilBandOf(t, vOf(), null, [{ field: 'soil_ph_min', source: 'canopi-correction' }]).range), 'The soil pH range sources give for it (Canopi correction).');
   assert.deepEqual([b.low, b.high], [5.1, 8.5]);
   const [climate] = line.bandsOf(vOf({ factors: [{ factor: 'cool', level: 'fits', basis: 'range', place: 12, low: 8, high: 17 }] }), null, null);
   assert.equal(climate.range, null);

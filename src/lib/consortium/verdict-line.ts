@@ -268,7 +268,7 @@ export function soilBandOf(t: Taxon, v: PlantVerdict, ph: number | null, traitSo
   const f = v.factors.find((x) => x.factor === 'soil-ph');
   const level: Level = ph === null || !f ? 'unknown' : f.level;
   const status = ph === null ? 'bandSoilUntested' : level === 'fits' ? 'bandFits' : level === 'unknown' ? 'bandUnknown' : 'bandOutside';
-  const ts = traitSources?.find((x) => x.field === 'soil_ph');
+  const ts = traitSources?.find((x) => x.field === 'soil_ph_min' || x.field === 'soil_ph_max');
   const source = (ts && sourceLine(ts)) ?? D('sourceCatalogue');
   return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false, when: whenOf(v.judged), range: { key: K('bandSoilRange'), vars: {}, parts: { source } } };
 }
