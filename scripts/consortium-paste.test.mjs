@@ -148,3 +148,15 @@ test('500 unmatched lines read the large lists once, not once per line (work cou
   assert.ok(few < 20 * 6000, `building the two lists' indexes reads each plant a few times (${few} reads)`);
   assert.ok(many - few < 1000, `495 more lines add ${many - few} plant reads (${few} for 5 lines, ${many} for 500): a line must not pass over the list`);
 });
+
+// Fix round 1, A2 (review c1-03): the fold turns a hyphen into a space, so the genus and species are
+// read from the pasted words before folding: a hyphenated or apostrophe epithet stays whole.
+test('binomials keep a hyphenated or apostrophe epithet whole, authors dropped: "Opuntia ficus-indica (L.) Mill." and "Ribes uva-crispa L." are found', () => {
+  assert.equal(binomial('Opuntia ficus-indica (L.) Mill.'), 'opuntia ficus indica');
+  assert.equal(binomial('Ribes uva-crispa L.'), 'ribes uva crispa');
+  assert.equal(binomial("Plantus o'brienii Hort."), 'plantus o brienii');
+  assert.equal(binomial('Malus × domestica'), 'malus domestica');
+  const lists = pasteLists([plant('h1', 'Opuntia ficus-indica', { en: 'Prickly pear' }), plant('h2', 'Ribes uva-crispa', { en: 'Gooseberry' }), plant('h3', 'Opuntia ficus')]);
+  const read = readPaste(pasteNames('Opuntia ficus-indica (L.) Mill.\nRibes uva-crispa L.'), { here: lists.taxa.size ? [...lists.taxa.values()] : [] });
+  assert.deepEqual(read.found.map((f) => f.taxon.id), ['h1', 'h2'], 'each found as its own plant (not "Opuntia ficus")');
+});

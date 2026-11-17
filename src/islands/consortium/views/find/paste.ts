@@ -157,10 +157,17 @@ export function pasteNames(text: string, column = 0): PastedNames {
 // ---- matching ----
 
 const RANK_WORDS = new Set(['subsp', 'ssp', 'var', 'f', 'cv', 'x', '×', 'agg', 'sp', 'spp']);
-// Genus and species without authors or rank words: "Malus domestica Borkh." → "malus domestica".
+// Genus and species without authors or rank words, folded: "Malus domestica Borkh." → "malus
+// domestica". The pasted words are split before folding (the fold makes a hyphen a space), so a
+// hyphenated or apostrophe epithet stays one word: "Opuntia ficus-indica (L.) Mill." → "opuntia ficus
+// indica", the fold of "Opuntia ficus-indica". An author starts with a capital or a bracket, never an
+// epithet's lower-case letter.
+const GENUS = /^[a-z]+$/, EPITHET = /^[a-z]+(?: [a-z]+)*$/;
 export function binomial(name: string): string | null {
-  const words = fold(name).split(' ').filter((w) => w && !RANK_WORDS.has(w));
-  return words.length >= 2 && /^[a-z-]+$/.test(words[0]) && /^[a-z-]+$/.test(words[1]) ? `${words[0]} ${words[1]}` : null;
+  const words = name.trim().split(/\s+/).filter((w) => fold(w) && !RANK_WORDS.has(fold(w)));
+  if (words.length < 2 || !/^\p{Ll}/u.test(words[1])) return null;
+  const genus = fold(words[0]), epithet = fold(words[1]);
+  return GENUS.test(genus) && EPITHET.test(epithet) ? `${genus} ${epithet}` : null;
 }
 
 // The lists a paste is read against: the search (data/search.ts, the one module Find reads too) and
