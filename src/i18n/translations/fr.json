@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "Les détails de cette plante n’ont pas pu se charger.",
   "consortium.details.tryAgain": "Réessayer",
   "consortium.details.sure": "Notre degré de certitude",
+  "consortium.details.swapFillsNone": "Ne comble aucun manque ouvert.",
+  "consortium.details.swapLeavesNone": "Ne laisse aucun manque.",
+  "consortium.details.swapNewLayer": "Occupe une strate qu’aucune de vos plantes n’occupe encore.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

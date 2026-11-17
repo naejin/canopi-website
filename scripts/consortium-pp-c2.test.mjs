@@ -33,7 +33,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { failing } from './expect-fail.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const line = await import('../src/lib/consortium/verdict-line.ts');
@@ -208,8 +207,10 @@ test('PP-C-u14 (c2 misfit parity): the conflict misfit equals the verdict\'s hin
 
 // Swap's gains and losses through the holes (slices c2 row): what the candidate fills and leaves empty
 // is holes(members) against holes(members - out + inn), never the deleted cells; the strata gain kept.
-failing('PP-C-u15 (c2 Swap gains): Swap\'s gains and losses are holes(members) against holes(members - m + c), with the candidates\' verdicts; the strata gain kept', { owner: 'c2', reason: /swapChange is not a function/ }, async () => {
-  const holesMod = await import('../src/lib/consortium/holes.ts');
+test('PP-C-u15 (c2 Swap gains): Swap\'s gains and losses are holes(members) against holes(members - m + c), with the candidates\' verdicts; the strata gain kept', async () => {
+  // swapChange lives with alternatives in suggest.ts (the Swap list's chunk; sheets never import
+  // holes.ts), read against holes.ts holes() itself.
+  const holesMod = { ...(await import('../src/lib/consortium/holes.ts')), ...(await import('../src/lib/consortium/suggest.ts')) };
   const { taxon, placement } = await import('./consortium-p5-fixtures.mjs');
   void placement;
   const t = (n, stratum, start, end, fn) => taxon({ id: `00000000-c2c2-4000-8000-00000000002${n}`, canonical_name: `Plantus ${n}`, stratum: { value: stratum, sources: [] }, phases: { start, end, sources: [] }, functions: fn });
@@ -382,4 +383,14 @@ test('PP-C c2 probe: every old Details mark (range, future, site) has a line in 
   console.log(`PP-C c2 probe: ${all.length} plants, ${runs} verdicts, ${marks} old Details marks (${[...seen].map(([kk, n]) => `${kk} ${n}`).join(', ')}); unmapped kinds: ${table.length ? '\n  ' + table.join('\n  ') : 'none'}`);
   assert.ok(all.length >= 673, `${all.length} plants`);
   assert.deepEqual(table, [], 'every old mark has a line');
+});
+
+// Coordinator 2026-11-17: schema 4.4 adds the dispute kind `source`; a kind the reader does not know is
+// skipped in Details' lines, never worded as another kind.
+test('PP-C-u22 (c2 unknown dispute kind): factLines skips a plant_disputes kind it does not know', async () => {
+  const { factLines } = await import('../src/lib/consortium/verdict-line.ts');
+  const known = { field: 'toxicity', kind: 'queue', value: 'Moderate', unit: null, derived: false, scope: null, source: 'ncsu_plant_toolbox' };
+  const lines = factLines({ disputes: [{ ...known, kind: 'source', source: 'les_alveoles' }, known], traitSources: null, shipped: { toxicity: 'Slight' } });
+  assert.equal(lines.length, 1, 'the unknown kind is skipped');
+  assert.equal(lines[0].vars.source, 'NC State');
 });

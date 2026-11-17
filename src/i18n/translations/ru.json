@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "Не удалось загрузить сведения об этом растении.",
   "consortium.details.tryAgain": "Повторить",
   "consortium.details.sure": "Насколько мы уверены",
+  "consortium.details.swapFillsNone": "Не заполняет ни одного пробела.",
+  "consortium.details.swapLeavesNone": "Не оставляет пробелов.",
+  "consortium.details.swapNewLayer": "Занимает ярус, где пока нет ни одного вашего растения.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

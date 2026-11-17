@@ -15,7 +15,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, frostLine, guestOf, invasiveLines, jobsOf, pairings, phaseOrd, placementZone, restLine, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, pairings, phaseOrd, placementZone, restLine, siteIdOf, spanOf } from '../../../../lib/consortium/index.ts';
 import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
@@ -100,14 +100,6 @@ function invasiveSoft(t: Taxon, facts: PlantFacts | null): Soft[] {
   return here;
 }
 
-// The values a dispute line sits beside (core factLines' shipped): the list's own value of each field.
-function shippedOf(t: Taxon): Partial<Record<string, string | null>> {
-  const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
-  return {
-    'tmin_cold.low': str(t.climate?.tminCold?.low), 'tmean_year.low': str(t.climate?.tmeanYear?.low), toxicity: t.warnings.toxicity?.level ?? null,
-    weed_potential: str(t.warnings.weed_potential), allelopathic: str(t.warnings.allelopathic), plant_invasive: t.warnings.invasive_in ? String(t.warnings.invasive_in.length > 0) : null,
-  };
-}
 // One fact line with the hook of what it is about: a dispute's field, an audience, a corrected trait.
 function FactItem({ l }: { l: Line }) {
   const k = l.key, about = typeof l.vars.field === 'string' ? l.vars.field : undefined;

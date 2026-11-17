@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "Não foi possível carregar os detalhes desta planta.",
   "consortium.details.tryAgain": "Tentar de novo",
   "consortium.details.sure": "O quanto temos certeza",
+  "consortium.details.swapFillsNone": "Não preenche nenhuma lacuna aberta.",
+  "consortium.details.swapLeavesNone": "Não deixa nenhuma lacuna.",
+  "consortium.details.swapNewLayer": "Ocupa um estrato que nenhuma das suas plantas ocupa ainda.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

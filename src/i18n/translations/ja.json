@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "この植物の詳細を読み込めませんでした。",
   "consortium.details.tryAgain": "再試行",
   "consortium.details.sure": "どこまで確かか",
+  "consortium.details.swapFillsNone": "埋まる空きはありません。",
+  "consortium.details.swapLeavesNone": "空きは残りません。",
+  "consortium.details.swapNewLayer": "まだどの植物もいない層を占めます。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

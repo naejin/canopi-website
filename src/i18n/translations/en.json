@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "This plant’s details could not load.",
   "consortium.details.tryAgain": "Try again",
   "consortium.details.sure": "How sure we are",
+  "consortium.details.swapFillsNone": "Fills no open gap.",
+  "consortium.details.swapLeavesNone": "Leaves no gap open.",
+  "consortium.details.swapNewLayer": "Stands in a layer none of your plants fills yet.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { suggestedAt } from './f1a-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
+import { showPalette } from './seams-helpers.mjs';
 
 useHarness();
 
@@ -44,7 +44,7 @@ const details = (page, id) => page.evaluate((pid) => window.__ctTest.openSheet('
 
 // ---- F1a confidence restored (A16) ----
 
-failing('F1a-C4 → PP-C (c2 Nairobi borrowed plant, A16): a borrowed plant near the edge shows the same confidence terms on its row, in Details and in print', { owner: 'c2', reason: /no surface carries a confidence term/ }, async () => {
+test('F1a-C4 → PP-C (c2 Nairobi borrowed plant, A16): a borrowed plant near the edge shows the same confidence terms on its row, in Details and in print', async () => {
   const page = await suggestedAt('nairobi', 'Subtropical');
   assert.equal(await page.evaluate(() => window.__ctTest.store.curatedClimates.value.includes('Subtropical')), false, 'Subtropical is a borrowed list (the premise)');
   assert.ok(await has(page, '#ct-root [data-conf]', 8000), 'no surface carries a confidence term (data-conf) on the page');
@@ -56,10 +56,11 @@ failing('F1a-C4 → PP-C (c2 Nairobi borrowed plant, A16): a borrowed plant near
   assert.deepEqual(await termsIn(page, DETAILS), row, 'Details: the row\'s terms');
   await page.keyboard.press('Escape');
   await page.emulateMediaType('print');
+  await has(page, `[data-print] [data-plant-id="${id}"]`, 4000); // the print sheet mounts on print media (Actions PrintHost)
   assert.deepEqual(await termsIn(page, `[data-print] [data-plant-id="${id}"]`), row, 'print: the row\'s terms');
 });
 
-failing('F1a-C5 → PP-C (c2 Oulu borrowed list, A9 A16): the borrowed list is named once for the palette and every borrowed plant keeps its estimate term', { owner: 'c2', reason: /no estimate term \(data-conf\) on the borrowed plants/ }, async () => {
+test('F1a-C5 → PP-C (c2 Oulu borrowed list, A9 A16): the borrowed list is named once for the palette and every borrowed plant keeps its estimate term', async () => {
   const page = await suggestedAt(OULU, 'Boreal');
   assert.ok(await has(page, '#ct-root [data-conf="estimate"]', 8000), 'no estimate term (data-conf) on the borrowed plants');
   assert.ok(await has(page, '#ct-root [data-borrowed-lists]', 4000), 'one list-level "placed from the … lists" line');
@@ -90,7 +91,7 @@ test('PP-C5 (c2 Mendoza dry edge): a plant at the dry edge shows its band, the p
   assert.match(first.text, /\d/, 'the band and the place\'s value in numbers');
 });
 
-failing('PP-C6 (c2 Swap): Swap lists what each candidate also fills and leaves empty, with its fit line', { owner: 'c2', reason: /Swap: no candidate rows \(data-swap-row\)/ }, async () => {
+test('PP-C6 (c2 Swap): Swap lists what each candidate also fills and leaves empty, with its fit line', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.evaluate((id) => window.__ctTest.openSheet('swap', id), await firstMember(page));
   assert.ok(await has(page, `${DETAILS} [data-swap-row]`, 6000), 'Swap: no candidate rows (data-swap-row)');
@@ -100,7 +101,7 @@ failing('PP-C6 (c2 Swap): Swap lists what each candidate also fills and leaves e
 
 // ---- failure states (3.1-3.6) ----
 
-failing('PP-C13 (c2 verdict chunk failed, 3.1): "Against your place" says "not checked" with Reload keyed on the verdict chunk alone; Swap\'s fit lines say "not checked"', { owner: 'c2', reason: NO_AGAINST }, async () => {
+test('PP-C13 (c2 verdict chunk failed, 3.1): "Against your place" says "not checked" with Reload keyed on the verdict chunk alone; Swap\'s fit lines say "not checked"', async () => {
   // A saved palette (Suggest waits for the verdict rule, so it places nothing with the chunk refused).
   const page = await tool({ block: { verdict: 404 }, hash: await temperateLink() });
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the palette\'s plants');
@@ -186,7 +187,7 @@ const DISPUTED = [
   ['Malus domestica', 'Temperate', '[data-audience="pets"]', /toxic to pets \(ASPCA\), no level given/],
   ['Taxus baccata', 'Temperate', '[data-audience="livestock"]', /livestock/],
 ];
-failing('PP-C17 (c2 disputes on one plant, 3.5): Hedera helix keeps its Slight chip and names NC State\'s Moderate under "Sources disagree"; each disputed plant of the fixture shows its line, in Details and on paper', { owner: 'c2', reason: NO_AGAINST }, async () => {
+test('PP-C17 (c2 disputes on one plant, 3.5): Hedera helix keeps its Slight chip and names NC State\'s Moderate under "Sources disagree"; each disputed plant of the fixture shows its line, in Details and on paper', async () => {
   const page = await tool({ data: 'fixture' });
   for (const [name, zone, hook, words] of DISPUTED) {
     await choose(page, zone);
@@ -204,7 +205,9 @@ failing('PP-C17 (c2 disputes on one plant, 3.5): Hedera helix keeps its Slight c
   // On paper as in Details (ledger "Schema 4" Q3): Hedera in a palette, printed.
   await choose(page, 'Mediterranean');
   await page.evaluate(async () => { const { store } = window.__ctTest; const h = (await store.loadPool('Mediterranean')).find((t) => t.canonical_name === 'Hedera helix'); store.members.value = [...store.members.value, h.id]; });
+  await showPalette(page); // the print sheet belongs to the palette page (Actions)
   await page.emulateMediaType('print');
+  await has(page, '[data-print] [data-dispute="toxicity"]', 4000); // print reads each plant's facts from the details query
   assert.match(await page.$eval('[data-print] [data-dispute="toxicity"]', (e) => e.textContent).catch(() => ''), /Sources disagree.*NC State/s, 'print: the dispute line');
 });
 

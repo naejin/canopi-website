@@ -12,9 +12,11 @@
 // plants, each with why, as Your plants says it (core yourPlants rows; review b3f-2), and the count is
 // the whole palette's. The filter is written out here, not core yourPlants: weigh.ts stays in the
 // palette chunk alone (shared by two lazy chunks it would split into a chunk of its own).
-import type { Flag, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf } from '../../../lib/consortium/index.ts';
-import { climate, country, failedMembers, flagScene, flags, guests, memberTaxa, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
+import { useEffect, useState } from 'preact/hooks';
+import type { Details, Flag, Locale, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import { factLines, jobsOf, placementZone, shippedOf } from '../../../lib/consortium/index.ts';
+import { climate, country, failedMembers, flagScene, flags, guests, memberTaxa, memberVerdicts, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
+import { say, Terms } from './kit/fit.tsx';
 import { P, T, pageLang } from '../strings.ts';
 import { page } from './kit/page.ts';
 import { flagLines } from './kit/flags.ts';
@@ -38,8 +40,29 @@ function flagWords(t: Taxon, f: Flag, names: Map<PlantId, string>, code: string 
   return flagLines(t, [f], flagScene.value)[0]?.text ?? T('print.flag.toxicity');
 }
 
+// Each member's sheet facts (disputes, audiences, corrected-value sources: ledger "Schema 4", on paper
+// as in Details), read once per plant from the details query; a plant whose query fails prints
+// without them.
+function useFacts(members: readonly Taxon[]): ReadonlyMap<PlantId, Details> {
+  const [facts, setFacts] = useState<ReadonlyMap<PlantId, Details>>(new Map());
+  const src = source.value, zone = climate.value, lang = pageLang() as Locale;
+  const key = members.map((t) => t.id).join(',');
+  useEffect(() => {
+    if (!src) return;
+    let live = true;
+    for (const t of members) {
+      const z = placementZone(t, zone);
+      if (facts.has(t.id) || !z) continue;
+      src.details(t.id, z, lang).then((d) => { if (live) setFacts((m) => new Map(m).set(t.id, d)); }, () => {});
+    }
+    return () => { live = false; };
+  }, [src, key, zone]);
+  return facts;
+}
+
 export function PrintSheet() {
   const members = memberTaxa.value;
+  const facts = useFacts(members);
   const lang = pageLang();
   const zone = climate.value;
   const names = new Map(members.map((t) => [t.id, nameOf(t)]));
@@ -56,7 +79,7 @@ export function PrintSheet() {
     for (const id of ids) if (!seen.has(id)) { seen.add(id); gone.push({ id, missing }); }
   }
   return (
-    <section class="ct-print" aria-labelledby="ct-print-h">
+    <section class="ct-print" aria-labelledby="ct-print-h" data-print>
       <h2 id="ct-print-h" class="ct-print-title">{T('print.title')}</h2>
       <p class="ct-print-sub">{zoneName(zone)} · {P('start.count', members.length + gone.length)} · {new Date().toLocaleDateString(lang)}</p>
       <p class="ct-print-basis">{basisLine(site.value)}</p>
@@ -82,13 +105,18 @@ export function PrintSheet() {
           {members.map((t) => {
             const marks = guests.value[t.id] ? [T('print.fromList', { climate: zoneName(guests.value[t.id]!) })] : [];
             const notes = (byPlant.get(t.id) ?? []).map((f) => flagWords(t, f, names, code));
+            const f = facts.get(t.id);
+            const sure = f ? factLines({ disputes: f.disputes, audiences: f.audiences, traitSources: f.traitSources, shipped: shippedOf(t) }) : [];
             return (
-              <tr>
-                <th scope="row"><span class="ct-print-name">{nameOf(t)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}</th>
+              <tr data-plant-id={t.id}>
+                <th scope="row"><span class="ct-print-name">{nameOf(t)}</span> <i class="ct-sci">{t.canonical_name}</i>{marks.length ? <span class="ct-print-marks"> · {marks.join(' · ')}</span> : null}<Terms v={memberVerdicts.value?.get(t.id)} /></th>
                 <td>{t.stratum ? T(`stratum.${t.stratum.value}`) : T('stratum.none')}</td>
                 <td>{phaseWords(t)}</td>
                 <td>{jobsOf(t).map((j) => T(`job.${j}`)).join(', ') || '–'}</td>
-                <td>{notes.length ? notes.join('; ') : '–'}</td>
+                <td>
+                  {notes.length || sure.length ? notes.join('; ') : '–'}
+                  {sure.map((l) => <span class="ct-print-fact" data-dispute={l.key.includes('.dispute') && typeof l.vars.field === 'string' ? l.vars.field : undefined}> {say(l)}</span>)}
+                </td>
               </tr>
             );
           })}

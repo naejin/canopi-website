@@ -3,7 +3,7 @@
 // A leaf, first-run safe. Each key is one segment after `consortium.line.` (the island draws any Line
 // through views/kit/fit.tsx `say`), so Find, Swap, Details, print and the period switch never write
 // their own words for these. Numbers stay numbers: the view formats them for the page language.
-import type { Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, FrostFact, ClimateZone, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
+import type { Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, FrostFact, ClimateZone, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, Taxon, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
 import { invasiveAreaCodes } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 
@@ -170,6 +170,21 @@ function nearness(f: FactorVerdict): number {
   const gap = end === 'low' ? place - low : end === 'high' ? high - place : Math.min(place - low, high - place);
   return Math.abs(gap) / (high - low);
 }
+// The confidence terms "Against your place" says (today's lines only; a later period's hedges are
+// words only), in first-said order, once each: what a row and print carry for the plant, so the three
+// surfaces say the same terms (A16).
+export interface SaidTerm { term: ConfidenceTerm; line: Line }
+export function againstTerms(entries: readonly AgainstEntry[]): SaidTerm[] {
+  const out = new Map<ConfidenceTerm, Line>();
+  const add = (term: ConfidenceTerm | null | undefined, line: Line) => { if (term && !out.has(term)) out.set(term, line); };
+  for (const e of entries) {
+    if (e.later) continue;
+    if (e.conf) add(e.conf, confidenceLine({ term: e.conf }));
+    for (const a of e.line.also ?? []) add(lineTerm(a), a);
+  }
+  return [...out].map(([term, line]) => ({ term, line }));
+}
+
 export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: AgainstWords): AgainstEntry[] {
   const out: AgainstEntry[] = [{ line: fitLine(v), level: v.level }];
   const order = (f: FactorVerdict): number => (f === v.limiting ? -1 : RANK[f.level] * 2 + (f.basis === 'range' ? 0 : 1));
@@ -274,13 +289,23 @@ export function sourceLine(ts: TraitSource): Line | null {
 
 // The dispute and corrected-value lines one plant shows, in one list Details and print both write
 // (ledger "Schema 4" Q3): each dispute beside its shipped value, then each corrected value's source.
+// The values a dispute line sits beside (core factLines' shipped): the list's own value of each field.
+export function shippedOf(t: Taxon): Partial<Record<string, string | null>> {
+  const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
+  return {
+    'tmin_cold.low': str(t.climate?.tminCold?.low), 'tmean_year.low': str(t.climate?.tmeanYear?.low), toxicity: t.warnings.toxicity?.level ?? null,
+    weed_potential: str(t.warnings.weed_potential), allelopathic: str(t.warnings.allelopathic), plant_invasive: t.warnings.invasive_in ? String(t.warnings.invasive_in.length > 0) : null,
+  };
+}
 // Each dispute line carries vars.field (the disputed field), each audience line vars.who, each source
 // line vars.field: a view writes them as data-dispute, data-audience, data-trait-source.
 export interface FactInput { disputes: readonly Dispute[] | null; audiences?: readonly ToxicityAudience[] | null; traitSources: readonly TraitSource[] | null; shipped: Partial<Record<string, string | null>> }
 export function factLines(d: FactInput): Line[] {
   const out: Line[] = [];
   for (const a of d.audiences ?? []) { const l = audienceLine(a); out.push({ ...l, vars: { ...l.vars, who: a.who } }); }
-  for (const x of d.disputes ?? []) { const l = disputeLine(x, d.shipped[x.field] ?? null); out.push({ ...l, vars: { ...l.vars, field: x.field } }); }
+  // A kind this reader does not know (schema 4.4's `source`, a later one) is skipped, never worded as
+  // another kind (the sqlite reader drops it first; this holds for any caller).
+  for (const x of d.disputes ?? []) { if (x.kind !== 'range' && x.kind !== 'queue') continue; const l = disputeLine(x, d.shipped[x.field] ?? null); out.push({ ...l, vars: { ...l.vars, field: x.field } }); }
   for (const t of d.traitSources ?? []) { const l = sourceLine(t); if (l) out.push(l); }
   return out;
 }

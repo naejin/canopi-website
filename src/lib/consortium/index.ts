@@ -12,7 +12,6 @@ export * from './country-zones.ts';
 export * from './retry-import.ts';
 export * from './conflicts.ts';
 export * from './jobs.ts';
-export * from './matrix.ts';
 export * from './state.ts';
 // P5 seams (commit 0), each filled by one stream (.local/consortium/v2/p5-owners.md).
 export * from './range.ts';

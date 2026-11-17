@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "De gegevens van deze plant konden niet laden.",
   "consortium.details.tryAgain": "Opnieuw proberen",
   "consortium.details.sure": "Hoe zeker we zijn",
+  "consortium.details.swapFillsNone": "Vult geen open gat.",
+  "consortium.details.swapLeavesNone": "Laat geen gat open.",
+  "consortium.details.swapNewLayer": "Staat in een laag die nog geen van je planten vult.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -5,7 +5,7 @@
 // formatted for the page language by strings.ts. Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour.
 import type { Hole, JobId, Level, Line, PlantVerdict } from '../../../../lib/consortium/index.ts';
-import { fitLine, holeLine, levelLine } from '../../../../lib/consortium/index.ts';
+import { againstLines, againstTerms, fitLine, holeLine, levelLine, periodName } from '../../../../lib/consortium/index.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { countryName } from './names.ts';
@@ -55,6 +55,14 @@ function LevelIcon({ level }: { level: Level }) {
 export function FitLine({ v, known }: { v: PlantVerdict | null | undefined; known?: Level }) {
   const level: Level = v?.level ?? known ?? 'unknown';
   return <span class="ct-fit" data-level={level}><LevelIcon level={level} />{say(v ? fitLine(v) : levelLine(level))}</span>;
+}
+
+// A plant's confidence terms, the ones its "Against your place" says (core againstTerms): a row, print
+// and Details carry the same terms (A16), each a word with its data-conf hook (never colour alone).
+export function Terms({ v }: { v: PlantVerdict | null | undefined }) {
+  if (!v) return null;
+  const terms = againstTerms(againstLines(v, null, { period: periodName, scenario: '', heightM: null }));
+  return <>{terms.map(({ term, line }) => <> <span class="ct-term" data-conf={term}>{say(line)}</span></>)}</>;
 }
 
 // A hole in words: its lane (a job, a light level) and its years. The Next step, the hole buttons and

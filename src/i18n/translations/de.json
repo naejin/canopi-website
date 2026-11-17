@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "Die Angaben zu dieser Pflanze konnten nicht geladen werden.",
   "consortium.details.tryAgain": "Erneut versuchen",
   "consortium.details.sure": "Wie sicher wir sind",
+  "consortium.details.swapFillsNone": "Füllt keine offene Lücke.",
+  "consortium.details.swapLeavesNone": "Lässt keine Lücke offen.",
+  "consortium.details.swapNewLayer": "Steht in einer Schicht, die noch keine deiner Pflanzen füllt.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

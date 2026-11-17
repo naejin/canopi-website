@@ -75,12 +75,12 @@ async function heightNote(room) {
   }, room);
   await paletteOf(page, [tall]);
   assert.equal(await page.evaluate(() => window.__ctTest.store.site.value.room), room, `the site keeps the ${room} answer`);
-  const note = await has(page, `${PLANTS} [data-plant-id="${tall}"] [data-mark="room"]`, 8000);
+  const note = await has(page, `${PLANTS} [data-plant-id="${tall}"] [data-note="room-tall"]`, 8000);
   await done(page);
   assert.ok(note, `${room}: the tall plant shows no height note on its row`);
 }
 test('PP-B61 (b3 the height note on Your plants, F1a-P4 split, A8): in a small garden a tall plant added shows its height note on its row', () => heightNote('small'));
-// site-marks.ts siteMarks lets pots through as it does small and large (b3 hand-off, applied at the merge).
+// The verdict's room-tall note (core verdict.ts tallerThanRoom) holds for pots as for small and large.
 test('PP-B61b (b3 the height note with "Balcony or pots", F1a-P4 split, A8): with pots a tall plant added shows its height note on its row', () => heightNote('pots'));
 
 // Owner rows: warn, never hide; the grower decides; warnings in words with an icon, never colour alone

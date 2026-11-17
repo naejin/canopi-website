@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "이 식물의 세부 정보를 불러오지 못했습니다.",
   "consortium.details.tryAgain": "다시 시도",
   "consortium.details.sure": "얼마나 확실한가",
+  "consortium.details.swapFillsNone": "채우는 빈자리가 없습니다.",
+  "consortium.details.swapLeavesNone": "남기는 빈자리가 없습니다.",
+  "consortium.details.swapNewLayer": "아직 어떤 식물도 차지하지 않은 층을 채웁니다.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

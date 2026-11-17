@@ -1022,5 +1022,8 @@
   "consortium.details.failed": "无法加载此植物的详情。",
   "consortium.details.tryAgain": "重试",
   "consortium.details.sure": "我们有多确定",
+  "consortium.details.swapFillsNone": "不填补任何空缺。",
+  "consortium.details.swapLeavesNone": "不留下空缺。",
+  "consortium.details.swapNewLayer": "占据你的植物尚未占据的层次。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
