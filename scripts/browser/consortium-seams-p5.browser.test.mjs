@@ -53,8 +53,8 @@ test('Item 8: a sheet\'s late close event never closes the next sheet, opened in
       document.querySelector('dialog.ct-sheet[open]').close();
       all.click();
     });
-    // PP-C commit 0: See all opens Find (the Paste sheet, dialog.ct-paste, until c1 builds Find).
-    assert.ok((await openName(page)) !== null && await page.$('dialog.ct-paste[open]'), 'Details → See all: Find stays open');
+    // See all opens Find, preset to the hole (FillHole).
+    assert.ok((await openName(page)) !== null && await page.$('dialog.ct-find[open]'), 'Details → See all: Find stays open');
     await done(page);
   });
 });

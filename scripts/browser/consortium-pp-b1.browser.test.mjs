@@ -198,16 +198,19 @@ async function temperatePalette(page) {
   assert.ok(await has(page, aria('button', W('place.sheet.open')), 8000), 'no "Change your place" on the palette');
 }
 // "Add a plant by name" on Place, as a grower does: the name given and added; the page has k plants
-// then, and stays on Place. PP-C commit 0: the button opens Find (store.openFind), the Paste sheet until
-// c1 builds Find's search, so the name is pasted.
+// then, and stays on Place. The button opens Find (store.openFind): the name searched, its row's Add,
+// then Done.
 async function addByName(page, name, k) {
   assert.ok(await has(page, '[data-place-add]', 8000), `plant ${k}: "Add a plant by name" on Place`);
   await page.click('[data-place-add]');
   assert.equal(await until(page, () => window.__ctTest.store.sheet.value?.kind === 'find', 10_000), true, 'Find opens');
-  assert.ok(await has(page, 'dialog[open].ct-sheet textarea', 10_000), 'the sheet to add plants by name');
-  await page.locator('dialog[open].ct-sheet textarea').fill(name);
-  await page.locator(aria('button', 'Add 1 plant')).click();
+  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 10_000), 'Find\'s search, to add plants by name');
+  await page.locator('dialog.ct-find[open] [data-find-search]').fill(name);
+  const found = await page.waitForFunction((n) => [...document.querySelectorAll('dialog.ct-find[open] [data-find-row]')].find((r) => r.querySelector('.ct-sci')?.textContent.trim() === n)?.querySelector('[data-find-add]'), { timeout: 8000 }, name).catch(() => null);
+  assert.ok(found, `plant ${k}: ${name} found`);
+  await found.click();
   assert.ok(await until(page, (n) => window.__ctTest.store.members.value.length === n, 8000, k), `plant ${k} added`);
+  await page.locator(`dialog.ct-find[open] ${aria('button', 'Done')}`).click();
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', `plant ${k}: adding a plant left Place`);
 }
 const openPlaceSheet = async (page) => {

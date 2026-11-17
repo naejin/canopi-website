@@ -60,14 +60,15 @@ async function openBy(page, button) {
   await page.locator(aria('button', button)).click();
   assert.ok(await findAx(page, { role: 'dialog' }), `the ${button} sheet`);
 }
-// Add one plant of the list by pasting its name, "Add 1 plant", in Find opened from the palette page
-// (PP-C commit 0 deleted the Add sheet; store.openFind opens the Paste sheet until c1's Find, which
-// brings back a search with its own cases in consortium-pp-c1). The page stays the palette page.
+// Add one plant of the list in Find opened from the palette page: its name searched, its row's Add,
+// then Done (Find's own cases: consortium-pp-c1). The page stays the palette page.
 async function addPlant(page, canonical) {
   await hooked(page, () => window.__ctTest.openFind());
   assert.ok(await findAx(page, { role: 'dialog' }), 'the Find sheet');
-  await page.locator('::-p-aria([role="textbox"])').fill(canonical);
-  await page.locator(aria('button', 'Add 1 plant')).click();
+  await page.locator('dialog.ct-find[open] [data-find-search]').fill(canonical);
+  const add = await page.waitForFunction((n) => [...document.querySelectorAll('dialog.ct-find[open] [data-find-row]')].find((r) => r.querySelector('.ct-sci')?.textContent.trim() === n)?.querySelector('[data-find-add]'), { timeout: 8000 }, canonical);
+  await add.click();
+  await page.locator(`dialog.ct-find[open] ${aria('button', 'Done')}`).click();
   await closed(page);
 }
 // Membership by canonical name, through the store.

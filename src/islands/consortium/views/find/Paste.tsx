@@ -1,7 +1,8 @@
 /** @jsxImportSource preact */
 // Paste a list (stream S3; mockup 01 `paste`, design check A8): one name per line (or a spreadsheet
 // column, picked when the paste has several; comma or semicolon columns read every cell unless one is picked), matched against this climate's list, then the other
-// climates' lists (views/paste.ts on S1's fold and word-prefix search). Each line is found, to choose
+// climates' lists (views/find/paste.ts, through Find's search: data/search.ts, synonyms and the names
+// file's names included). Each line is found, to choose
 // (a genus, a shared name, a word of a name), found in another climate's list, already in, listed
 // twice, or not found. Every warning stays on its row in words. Owner row "Inform, don't block"
 // (2026-11-14, knowledge/decisions/consortium-user-decisions.md): nothing asks first. A row's "Add
@@ -9,18 +10,19 @@
 // found and ticked plants; a plant that warns (a site misfit or a serious conflict) makes the toast say
 // "n added with a warning" with Show. Each added plant is kept. The text is read a moment after typing stops (and at once on "Add all"), at most
 // MAX_LINES lines.
-// Loaded on first use (views/Sheets.tsx).
+// Loaded on first use with Find, one chunk (views/find/index.ts, views/Sheets.tsx).
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import * as store from '../store.ts';
-import { P, T } from '../strings.ts';
-import type { ClimateZone, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { warns } from '../../../lib/consortium/index.ts';
+import * as store from '../../store.ts';
+import { P, T, pageLang } from '../../strings.ts';
+import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
+import { warns } from '../../../../lib/consortium/index.ts';
 import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, readPaste } from './paste.ts';
-import { addMembers, closeSheet, flagsOfPlant } from '../store.ts';
-import { focusAfterAdd } from '../focus.ts';
-import { SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
-import { nameOf, zoneName } from './kit/names.ts';
-const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)
+import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
+import { focusAfterAdd } from '../../focus.ts';
+import { SheetWaiting, WARN, type Frame } from '../kit/sheet.tsx';
+import { flagLines } from '../kit/flags.ts';
+import { nameOf, zoneName } from '../kit/names.ts';
+import { finder, wantNames } from './names.ts';
 
 const MAX_LINES = 500;
 const SETTLE_MS = 200;
@@ -39,6 +41,8 @@ export default function Paste({ Frame }: { Frame: Frame }) {
   const zones = store.curatedClimates.value;
   const others = zones.filter((z) => z !== climate);
   useEffect(() => { for (const z of others) void store.loadPool(z); }, [others.join()]);
+  const source = store.source.value, index = finder.value ?? undefined;
+  useEffect(() => { if (source) wantNames(source, pageLang() as Locale); }, [source]);
   useEffect(() => { const id = setTimeout(() => setSettled(text), SETTLE_MS); return () => clearTimeout(id); }, [text]);
 
   const table = pasteTable(settled);
@@ -47,9 +51,9 @@ export default function Paste({ Frame }: { Frame: Frame }) {
   const read = (src: string) => {
     const all = pasteNames(src, pasteColumn(src, column));
     const names = all.length > MAX_LINES ? Object.assign(all.slice(0, MAX_LINES), { header: all.header, split: all.split }) : all;
-    return { capped: all.length > MAX_LINES, result: pool ? readPaste(names, { here: pool, others: lists, members }) : null };
+    return { capped: all.length > MAX_LINES, result: pool ? readPaste(names, { here: pool, others: lists, members, index }) : null };
   };
-  const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, store.pools.value]);
+  const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, store.pools.value, index]);
   if (!climate) return null;
   if (!pool || !result) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 

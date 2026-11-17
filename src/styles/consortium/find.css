@@ -1,6 +1,89 @@
-/* Find (PP-C c1, owned by c1; slices 3.3): the Find sheet, its results and filters, FillHole, and the
-   ways into it (views/Sheets.tsx FindEntry: "Add plants" beside the palette's title, the phone's
-   bottom bar, "Find plants" on the empty palette). Page-level, imported by ConsortiumPage.astro, so no
-   stylesheet loads with a lazy chunk (A14). The bar sets --ct-bar-room on :root while it shows
-   (details.css reads it for the toast offset, the root padding and scroll-padding-bottom). Empty
-   until c1 (PP-C commit 0). */
+/* Find (PP-C c1; slices 3.3): the Find sheet, its results and filters, FillHole, and the ways into it
+   (views/Sheets.tsx FindEntry: "Add plants" beside the palette's title, the phone's bottom bar, "Find
+   plants" on the empty palette). Page-level, imported by ConsortiumPage.astro, so no stylesheet loads
+   with a lazy chunk (A14). The bar sets --ct-bar-room on :root while it shows (details.css reads it
+   for the toast offset, the root padding and scroll-padding-bottom). Tokens only (base.css); chrome
+   in ochre and ink, colour never alone. */
+
+/* ---- the ways in ---- */
+.ct .ct-palette-page:has(> .ct-find-head) { grid-template-columns: minmax(0, 1fr) auto; }
+.ct .ct-palette-page:has(> .ct-find-head) > * { grid-column: 1 / -1; }
+.ct .ct-palette-page:has(> .ct-find-head) > h2[data-view-heading] { grid-column: 1; align-self: center; }
+.ct .ct-palette-page > .ct-find-head { grid-column: 2; align-self: center; }
+.ct .ct-find-phonebar { display: none; }
+.ct .ct-find-empty { margin: 0; }
+
+@media (max-width: 639px) {
+  .ct .ct-palette-page > .ct-find-head { display: none; }
+  .ct .ct-palette-page:has(> .ct-find-head) > h2[data-view-heading] { grid-column: 1 / -1; }
+  .ct .ct-find-phonebar:not([hidden]) {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; justify-content: flex-end;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-top: 1px solid var(--border-strong);
+  }
+  .ct .ct-find-phonebar .button { min-height: 44px; }
+  :root:has(.ct .ct-find-phonebar:not([hidden])) { --ct-bar-room: 66px; }
+  /* The page's toast sits above the bar (details.css puts it 12px from the bottom on phones). */
+  .ct .ct-toast-page { bottom: calc(12px + var(--ct-bar-room)); }
+}
+
+/* ---- the sheet ---- */
+.ct .ct-find .ct-sheet-body { gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.ct .ct-find-top { display: grid; gap: 4px; }
+.ct .ct-find-searchrow { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
+.ct .ct-find-searchrow .ct-search { flex: 1; min-width: 0; }
+.ct .ct-find-filters-btn { flex: none; }
+.ct .ct-find-names { margin: -8px 0 0; }
+.ct .ct-find-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
+.ct .ct-find-results { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
+.ct .ct-find-modes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0; }
+.ct .ct-find .text-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ct .ct-find a.button { text-decoration: none; }
+.ct .ct-find-results .button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
+.ct .ct-find-group h3 { display: flex; gap: 8px; align-items: baseline; font-family: var(--font-sans); font-size: 16px; font-weight: 600; }
+.ct .ct-find-group .ct-rows > li { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+.ct .ct-find-add { min-width: 96px; justify-content: center; gap: 6px; }
+.ct .ct-find-add.is-added { background: var(--surface-alt); border-color: var(--text); }
+.ct .ct-find-why { color: var(--text); }
+.ct .ct-find-jobs { color: var(--text-secondary); }
+.ct .ct-find-inpalette { margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.ct .ct-find-none { display: grid; gap: 10px; padding: 14px 16px; border-radius: 8px; background: var(--surface-alt); }
+.ct .ct-find-none p { margin: 0; overflow-wrap: anywhere; }
+.ct .ct-find-none .ct-rows { border-top: 0; }
+.ct .ct-find-others { display: grid; gap: 8px; }
+.ct .ct-find-otherlists { display: flex; flex-wrap: wrap; gap: 8px; }
+.ct .ct-find-job { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--accent); border-radius: 8px; }
+.ct .ct-find-job p { margin: 0; display: flex; align-items: center; gap: 8px; }
+.ct .ct-find-job .button { justify-content: center; }
+
+/* ---- the filters (board FindFilters): behind "Filters" on phones and tablets, a column at 960 ---- */
+.ct .ct-find-filters { display: none; gap: 14px; align-content: start; min-width: 0; }
+.ct .ct-find-filters[data-open] { display: grid; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.ct .ct-find-fgroup { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.ct .ct-find-fgroup legend { padding: 0; font-weight: 600; font-size: 15px; }
+.ct .ct-find-fgroup > p { margin: 0; }
+.ct .ct-find-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct .ct-find-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 4px 12px; border-radius: 999px;
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 14.5px; cursor: pointer;
+}
+.ct .ct-find-chip[aria-pressed="true"] { border-color: var(--text); background: var(--surface-alt); box-shadow: inset 0 0 0 1px var(--text); font-weight: 600; }
+.ct .ct-find-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct :where(.ct-sheet) .ct-find-check { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; font-size: 15px; }
+.ct .ct-find-check > input { width: 22px; height: 22px; margin: 0; }
+.ct .ct-find-check > .ct-find-unknown { grid-column: 2; }
+.ct .ct-find-unknown { font-size: 13.5px; color: var(--text-muted); }
+
+@media (min-width: 960px) {
+  .ct .ct-sheet.ct-find { width: min(1040px, 100%); }
+  .ct .ct-find-filters-btn { display: none; }
+  .ct .ct-find-layout { grid-template-columns: 240px minmax(0, 1fr); gap: 24px; }
+  .ct .ct-find-filters { display: grid; padding: 0 16px 0 0; border-right: 1px solid var(--border); border-bottom: 0; }
+}
+
+/* Find's frame: the head and the foot (the toast above the action bar) stay put and the body scrolls
+   between them, so neither the toast nor the bar ever lies over a result (walk-through 2 N1), at any
+   window height. Scoped to Find; the other sheets keep the sticky foot (details.css). */
+.ct .ct-sheet.ct-find { overflow: hidden; }
+.ct .ct-sheet.ct-find .ct-sheet-inner { height: 100%; min-height: 0; }
+.ct .ct-sheet.ct-find .ct-sheet-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.ct .ct-sheet.ct-find .ct-sheet-foot { position: static; }

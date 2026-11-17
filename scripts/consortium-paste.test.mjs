@@ -1,11 +1,11 @@
 // Stream S3's paste helpers (consortium v2, design check §2 port table): reading a pasted list of
-// plant names and matching it against the climate lists (views/paste.ts, ported from v1 scale.js on
+// plant names and matching it against the climate lists (views/find/paste.ts, ported from v1 scale.js on
 // S1's `fold`). The layer values' helpers are tested in consortium-layers.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const paste = await import('../src/islands/consortium/views/paste.ts');
-const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader } = await import('../src/islands/consortium/views/paste.ts');
+const paste = await import('../src/islands/consortium/views/find/paste.ts');
+const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader } = await import('../src/islands/consortium/views/find/paste.ts');
 const { oneOff } = await import('../src/islands/consortium/data/search.ts');
 
 const plant = (id, canonical_name, names = {}) => ({ id, canonical_name, genus: canonical_name.split(' ')[0], names });

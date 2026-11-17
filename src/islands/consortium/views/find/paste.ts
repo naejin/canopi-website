@@ -3,8 +3,8 @@
 // other climates' lists. Names are matched through data/search.ts, the search Find reads (folded by
 // normalization v1, synonyms and names-file names included), never with SQL LIKE (A6).
 // Pure: no DOM, no store, so scripts/consortium-paste.test.mjs tests it.
-import type { ClimateZone, PlantId } from '../../../lib/consortium/types.ts';
-import { fold, releaseIndex, type FindHit, type Finder } from '../data/search.ts';
+import type { ClimateZone, PlantId } from '../../../../lib/consortium/types.ts';
+import { fold, releaseIndex, type FindHit, type Finder } from '../../data/search.ts';
 
 // What matching reads of a plant (a Taxon has all of it).
 export interface Named { id: PlantId; canonical_name: string; genus?: string | null; names: Partial<Record<string, string>> }

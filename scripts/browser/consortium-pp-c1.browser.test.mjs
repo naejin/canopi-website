@@ -1,14 +1,10 @@
 // PP-C stream c1, Find (plant-palette-slices section 3.4, c1 browser rows): one browser test per user
-// scenario and failure state, written failing in PP-C commit 0, each marked expected-fail
-// (scripts/expect-fail.mjs failing(), owner c1 in its title); c1 removes a marker in the commit that
-// makes it pass. Until c1 builds Find, store.openFind opens the Paste sheet (no empty modal), so every
-// case fails at its first look for Find: "no Find sheet (dialog.ct-find)". The F1a filter markers
-// (F1a-F1..F5, from 648baf2:scripts/browser/consortium-f1a-filters.browser.test.mjs) and C6's Find half
-// are restored here (scripts/plan/parked-markers.json), retitled "F1a-Xn → PP-C (c1 …" and rewritten
-// against Find.
+// scenario and failure state, written failing in PP-C commit 0 and unmarked by c1 as Find made each
+// pass. The F1a filter cases (F1a-F1..F5, from 648baf2:scripts/browser/consortium-f1a-filters.browser.test.mjs)
+// and C6's Find half are restored here (scripts/plan/parked-markers.json), retitled "F1a-Xn → PP-C (c1 …"
+// and rewritten against Find.
 //
-// The contract these cases propose (c1 may rename within its chunk, keeping the cases; no layout or
-// wording pinned beyond what the slices row names):
+// The contract (no layout or wording pinned beyond what the slices row names):
 // - Find is one sheet, dialog.ct-find, opened by store.openFind(target?: SheetFor) from every entry;
 //   its search field is [data-find-search] (type search); its rows are [data-find-row] with
 //   data-plant-id, inside [data-find-group="fits|look|outside|unchecked"]; a row's add button is
@@ -25,15 +21,14 @@
 // - the entries: [data-find-entry="head|bar|empty"] (Sheets.tsx FindEntry, mounted by commit 0); the
 //   phone bottom bar is [data-find-entry="bar"]'s container .ct-bar.
 import assert from 'node:assert/strict';
+import { test } from 'node:test';
 import { aria, en, has, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { suggestedAt } from './f1a-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 
 useHarness();
 
 const FIND = 'dialog.ct-find[open]';
-const NO_FIND = /no Find sheet \(dialog\.ct-find\)/;
 const hasFind = async (page, timeout = 4000) => assert.ok(await has(page, FIND, timeout), 'no Find sheet (dialog.ct-find)');
 const on = (page, id) => page.$eval(`${FIND} [data-filter="${id}"]`, (e) => e.getAttribute('aria-pressed') === 'true' || e.checked === true).catch(() => null);
 const rowIds = (page) => page.$$eval(`${FIND} [data-find-row]`, (els) => els.map((e) => e.dataset.plantId).filter(Boolean).sort());
@@ -59,13 +54,13 @@ async function findFromHole(page) {
 
 // ---- F1a filters restored (P5.1) ----
 
-failing('F1a-F1 → PP-C (c1 Lyon food forest, P5.1): Find opened from a hole has "Fits your place" on', { owner: 'c1', reason: NO_FIND }, async () => {
+test('F1a-F1 → PP-C (c1 Lyon food forest, P5.1): Find opened from a hole has "Fits your place" on', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await findFromHole(page);
   assert.equal(await on(page, 'fits'), true, '"Fits your place" is on from a hole');
 });
 
-failing('F1a-F2 → PP-C (c1 Seville dry garden, P5.1 A14): "Holds up in the future climate" changes the plants offered', { owner: 'c1', reason: NO_FIND }, async () => {
+test('F1a-F2 → PP-C (c1 Seville dry garden, P5.1 A14): "Holds up in the future climate" changes the plants offered', async () => {
   const page = await suggestedAt('seville', 'Mediterranean');
   await openFind(page);
   await hasFind(page);
@@ -73,7 +68,7 @@ failing('F1a-F2 → PP-C (c1 Seville dry garden, P5.1 A14): "Holds up in the fut
   assert.notDeepEqual(await rowIds(page), before, '"Holds up" changes the pick at Seville');
 });
 
-failing('F1a-F3 → PP-C (c1 Nairobi smallholding, P5.1 A14): "Has edible parts" (edibility_rating) and a life cycle narrow the plants offered', { owner: 'c1', reason: NO_FIND }, async () => {
+test('F1a-F3 → PP-C (c1 Nairobi smallholding, P5.1 A14): "Has edible parts" (edibility_rating) and a life cycle narrow the plants offered', async () => {
   const page = await suggestedAt('nairobi', 'Subtropical');
   await openFind(page);
   await hasFind(page);
@@ -85,7 +80,7 @@ failing('F1a-F3 → PP-C (c1 Nairobi smallholding, P5.1 A14): "Has edible parts"
   assert.ok(both.length <= edible.length && both.every((id) => edible.includes(id)), 'a life cycle narrows it further');
 });
 
-failing('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot judge some plants says how many, never hides them silently', { owner: 'c1', reason: NO_FIND }, async () => {
+test('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot judge some plants says how many, never hides them silently', async () => {
   const page = await suggestedAt('seville', 'Mediterranean');
   await openFind(page);
   await hasFind(page);
@@ -94,7 +89,7 @@ failing('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot jud
   assert.ok(Number.isInteger(n) && n >= 0, 'the unknowns are counted');
 });
 
-failing('F1a-F5 → PP-C (c1 no location, P5.1): without a location the range and holds filters are not offered, the others are', { owner: 'c1', reason: NO_FIND }, async () => {
+test('F1a-F5 → PP-C (c1 no location, P5.1): without a location the range and holds filters are not offered, the others are', async () => {
   const page = await suggestedAt(null, 'Temperate');
   await openFind(page);
   await hasFind(page);
@@ -103,7 +98,7 @@ failing('F1a-F5 → PP-C (c1 no location, P5.1): without a location the range an
   assert.notEqual(await page.$(`${FIND} [data-filter="fits"]`), null, '"Fits your place" is still offered');
 });
 
-failing('F1a-C6 → PP-C (c1 verdict chunk refused, Find half, A16 §5): with the verdict chunk refused, Find\'s plants say "not checked", never a fit', { owner: 'c1', reason: NO_FIND }, async () => {
+test('F1a-C6 → PP-C (c1 verdict chunk refused, Find half, A16 §5): with the verdict chunk refused, Find\'s plants say "not checked", never a fit', async () => {
   const page = await tool({ block: { verdict: 404 } });
   await atSite(page, 'seville');
   await choose(page, 'Mediterranean');
@@ -115,7 +110,7 @@ failing('F1a-C6 → PP-C (c1 verdict chunk refused, Find half, A16 §5): with th
 
 // ---- scenarios ----
 
-failing('PP-C1 (c1 names file): "Gombo" (French, names file only) on the English page finds okra, labelled French; Lycopersicon esculentum finds the tomato as a synonym', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C1 (c1 names file): "Gombo" (French, names file only) on the English page finds okra, labelled French; Lycopersicon esculentum finds the tomato as a synonym', async () => {
   const page = await tool({ data: 'fixture' });
   await choose(page, 'Tropical');
   await openFind(page);
@@ -130,7 +125,7 @@ failing('PP-C1 (c1 names file): "Gombo" (French, names file only) on the English
   assert.equal(tomato.kind, 'synonym');
 });
 
-failing('PP-C2 (c1 no result): a query with no plant offers close spellings, the other lists and "Ask us to add it", a link to the contact form with the query', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C2 (c1 no result): a query with no plant offers close spellings, the other lists and "Ask us to add it", a link to the contact form with the query', async () => {
   const page = await tool({ data: 'fixture' });
   await choose(page, 'Temperate');
   await openFind(page);
@@ -148,7 +143,7 @@ failing('PP-C2 (c1 no result): a query with no plant offers close spellings, the
   assert.match(decodeURIComponent(ask ?? ''), /Zzyzx plantus/, 'carrying the query');
 });
 
-failing('PP-C3 (c1 Select several): three plants ticked are added with one toast and one Undo', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C3 (c1 Select several): three plants ticked are added with one toast and one Undo', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const before = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await openFind(page);
@@ -164,9 +159,9 @@ failing('PP-C3 (c1 Select several): three plants ticked are added with one toast
   assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n, { timeout: 4000 }, before).then(() => true, () => false), 'one Undo removes the three');
 });
 
-failing('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside its range are each added with one tap, the warning in words, no confirm step', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside its range are each added with one tap, the warning in words, no confirm step', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
-  await page.evaluate(() => { window.__ctTest.store.country.value = 'FR'; });
+  await page.evaluate(() => { window.__ctTest.store.country.value = { code: 'FR', source: 'chosen' }; });
   await openFind(page);
   await hasFind(page);
   await search(page, 'Robinia pseudoacacia');
@@ -175,6 +170,8 @@ failing('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside 
   await page.click(`${row} [data-find-add]`);
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'nothing asks');
   assert.ok(await page.$(`${row} [data-find-add][data-added]`), 'added in one tap');
+  // The whole list (c1: Robinia's query holds no plant outside its range).
+  await page.$eval(`${FIND} [data-find-search]`, (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); }); // as the field's clear button
   assert.ok(await has(page, `${FIND} [data-find-group="outside"] [data-find-row]`, 4000), 'a group outside its range');
   await page.click(`${FIND} [data-find-group="outside"] [data-find-row] [data-find-add]`);
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'nothing asks for an outside plant either');
@@ -183,7 +180,7 @@ failing('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside 
 // BT-6's Add half (consortium-s3, cut with the Add sheet in PP-C commit 0; review c0 1.6): Juglans
 // next to Malus is a high conflict (genus allelopathic harm, the fixture's interaction row), said on
 // its row, and one tap adds it with Undo (inform, don't block; owner 2026-11-14).
-failing('PP-C20 (c1 BT-6 restored, inform, don\'t block): a high conflict adds in one tap with the reason on the row', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C20 (c1 BT-6 restored, inform, don\'t block): a high conflict adds in one tap with the reason on the row', async () => {
   const page = await tool({ data: 'fixture', hook: true });
   await choose(page, 'Temperate');
   await page.locator('[data-place-suggest]').click();
@@ -204,8 +201,9 @@ failing('PP-C20 (c1 BT-6 restored, inform, don\'t block): a high conflict adds i
   assert.ok(await has(page, `${FIND} ${aria('button', en['consortium.undo'])}`, 2000), 'with Undo');
 });
 
-failing('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit first; "+ Add" turns to "Added", a result line with Undo, "Show N outside their climate range", Done; on a dry, shady spot each hole lists what "See all N" counts, the site misfits under "look", never hidden', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit first; "+ Add" turns to "Added", a result line with Undo, "Show N outside their climate range", Done; on a dry, shady spot each hole lists what "See all N" counts, the site misfits under "look", never hidden', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
+  assert.ok(await has(page, '.ct-next-hole', 10_000), 'the Next step names a hole');
   const words = await page.$eval('.ct-next-hole', (e) => e.textContent.trim()).catch(() => null);
   const label = await page.$eval('.ct-next-actions .button', (e) => e.textContent.trim()).catch(() => '');
   await findFromHole(page);
@@ -216,15 +214,19 @@ failing('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit fir
   assert.deepEqual(groups, [...groups].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)), `best fit first (${groups.join(', ')})`);
   // Folded from PP-B34 (review c0 4.4): Find lists exactly the plants "See all N" counts once the
   // outside ones are shown, the site misfits flagged under "look", never hidden.
-  const n = Number(/\d+/.exec(label)?.[0] ?? NaN);
+  const n = Number(/\d+/.exec(label)?.[0] ?? 1); // "See the plant": one
   const showOutside = await page.evaluateHandle((sel) => [...document.querySelectorAll(`${sel} button`)].find((b) => /outside/i.test(b.textContent)) ?? null, FIND);
-  if (await showOutside.evaluate((b) => !!b)) await showOutside.click();
+  const folded = await showOutside.evaluate((b) => (b ? Number(/\d+/.exec(b.textContent)?.[0] ?? NaN) : 0));
+  if (folded) await showOutside.click();
   assert.equal((await rowIds(page)).length, n, `"${label}" counts the plants Find lists`);
+  // "Show N outside their climate range" (c1: the hole's fillers outside their range, folded behind
+  // it; at Lyon's first hole there may be none, so it is checked against the rows it unfolds):
+  // shown exactly when some are outside, N of them.
+  assert.equal(folded, await page.$$eval(`${FIND} [data-find-group="outside"] [data-find-row]`, (els) => els.length), '"Show N outside their climate range" folds exactly the plants outside');
   const first = `${FIND} [data-find-group="fits"] [data-find-row]:first-of-type`;
   await page.click(`${first} [data-find-add]`);
   assert.ok(await page.$(`${first} [data-find-add][data-added]`), '"+ Add" turns to "Added"');
   assert.ok(await has(page, `${FIND} ${aria('button', en['consortium.undo'])}`, 2000), 'a result line with Undo');
-  assert.ok(await showOutside.evaluate((b) => !!b), '"Show N outside their climate range"');
   await page.click(`${FIND} ${aria('button', 'Done')}`);
   assert.equal(await page.$('dialog[open]'), null, 'Done closes Find');
   // PP-B34's dry, shady spot (review c0 round 2, 5a): for up to 6 holes, Find lists exactly what "See
@@ -234,11 +236,13 @@ failing('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit fir
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value && document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
   for (let i = 0; i < 6 && await page.$('.ct-next-actions .button'); i++) {
     const hole = await page.$eval('.ct-next-hole', (e) => e.textContent.trim());
-    const count = Number(/\d+/.exec(await page.$eval('.ct-next-actions .button', (e) => e.textContent.trim()))?.[0] ?? NaN);
+    const count = Number(/\d+/.exec(await page.$eval('.ct-next-actions .button', (e) => e.textContent.trim()))?.[0] ?? 1); // "See the plant": one
     await findFromHole(page);
     const more = await page.evaluateHandle((sel) => [...document.querySelectorAll(`${sel} button`)].find((x) => /outside/i.test(x.textContent)) ?? null, FIND);
-    if (await more.evaluate((x) => !!x)) await more.click();
+    const hidden = await more.evaluate((x) => (x ? Number(/\d+/.exec(x.textContent)?.[0] ?? NaN) : 0));
+    if (hidden) await more.click();
     assert.equal((await rowIds(page)).length, count, `${hole}: Find lists what "See all ${count}" counts`);
+    assert.equal(hidden, await page.$$eval(`${FIND} [data-find-group="outside"] [data-find-row]`, (els) => els.length), `${hole}: "Show N outside" folds exactly the plants outside`);
     const misplaced = await page.$$eval(`${FIND} [data-find-row]`, (els) => {
       const v = window.__ctTest.store.poolVerdicts.value;
       return els.filter((e) => v.get(e.dataset.plantId)?.level === 'look' && !e.closest('[data-find-group="look"]')).map((e) => e.dataset.plantId);
@@ -250,7 +254,7 @@ failing('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit fir
   }
 });
 
-failing('PP-C8 (c1 entries): "Add plants" right of the title at 1280 and in the phone bottom bar at 390, the toast above the bar, the bar hidden while a sheet is open; the empty palette\'s first row "Find plants"', { owner: 'c1', reason: /no "Add plants" beside the title/ }, async () => {
+test('PP-C8 (c1 entries): "Add plants" right of the title at 1280 and in the phone bottom bar at 390, the toast above the bar, the bar hidden while a sheet is open; the empty palette\'s first row "Find plants"', async () => {
   const wide = await suggestedAt('lyon', 'Temperate');
   assert.ok(await has(wide, '[data-find-entry="head"]', 4000), 'no "Add plants" beside the title (data-find-entry="head")');
   await wide.click('[data-find-entry="head"]');
@@ -276,7 +280,7 @@ failing('PP-C8 (c1 entries): "Add plants" right of the title at 1280 and in the 
 
 // ---- the names file failing (4.1-4.6) ----
 
-failing('PP-C9 (c1 names file held, 4.1): search works on plant_names and canonical names with a "still loading" line; on arrival the results refresh keeping focus and text, with one polite announcement', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C9 (c1 names file held, 4.1): search works on plant_names and canonical names with a "still loading" line; on arrival the results refresh keeping focus and text, with one polite announcement', async () => {
   const page = await tool({ names: 'hold' });
   await choose(page, 'Tropical');
   await openFind(page);
@@ -289,12 +293,13 @@ failing('PP-C9 (c1 names file held, 4.1): search works on plant_names and canoni
   // "Gombo" is in the names file only: nothing yet, then okra once the file arrives, with no retyping.
   await search(page, 'Gombo');
   assert.deepEqual(await rowIds(page), [], 'a names-file-only name finds nothing before the file');
-  assert.equal(await page.$$eval(`${FIND} [aria-live="polite"]`, (els) => els.length), 1, 'one polite live region in Find ([data-find-status])');
+  // c1: the open sheet's toast region (views/Toast.tsx, in every sheet's foot) is polite too; Find adds one.
+  assert.equal(await page.$$eval(`${FIND} [aria-live="polite"]:not(.ct-toast-region *)`, (els) => els.length), 1, 'one polite live region of Find\'s own ([data-find-status])');
   await page.evaluate((sel) => {
     window.__said = [];
     const region = document.querySelector(sel);
     new MutationObserver(() => { const t = region.textContent.trim(); if (t && window.__said.at(-1) !== t) window.__said.push(t); }).observe(region, { subtree: true, childList: true, characterData: true });
-  }, `${FIND} [aria-live="polite"]`);
+  }, `${FIND} [data-find-status]`);
   await page.releaseHeld();
   assert.ok(await page.waitForFunction((sel) => !document.querySelector(sel), { timeout: 8000 }, `${FIND} [data-find-names]`).then(() => true, () => false), 'the names file arrived');
   assert.ok(await page.waitForFunction((sel) => [...document.querySelectorAll(sel)].some((r) => /Abelmoschus esculentus/.test(r.textContent)), { timeout: 4000 }, `${FIND} [data-find-row]`).then(() => true, () => false), 'the results refresh: "Gombo" finds okra');
@@ -304,7 +309,7 @@ failing('PP-C9 (c1 names file held, 4.1): search works on plant_names and canoni
   assert.equal((await page.evaluate(() => window.__said)).length, 1, 'one polite announcement on arrival');
 });
 
-failing('PP-C10 (c1 names file 404 or offline, 4.2): one line, and the next focus retries (no cached failed promise)', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C10 (c1 names file 404 or offline, 4.2): one line, and the next focus retries (no cached failed promise)', async () => {
   for (const names of [404, 'offline']) {
     const page = await tool({ names });
     await choose(page, 'Tropical');
@@ -317,7 +322,7 @@ failing('PP-C10 (c1 names file 404 or offline, 4.2): one line, and the next focu
   }
 });
 
-failing('PP-C11 (c1 names file digest mismatch, 4.3): the file is dropped, and not fetched again until a reload', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C11 (c1 names file digest mismatch, 4.3): the file is dropped, and not fetched again until a reload', async () => {
   const page = await tool({ names: 'digest' });
   await choose(page, 'Tropical');
   await openFind(page);
@@ -332,7 +337,7 @@ failing('PP-C11 (c1 names file digest mismatch, 4.3): the file is dropped, and n
   assert.equal(again, 0, 'no retry until reload');
 });
 
-failing('PP-C12 (c1 sheet closed mid-fetch, 4.5; Find from Place, 4.6): reopening uses the one module-level fetch; Find opened from Place before the palette shows starts it', { owner: 'c1', reason: NO_FIND }, async () => {
+test('PP-C12 (c1 sheet closed mid-fetch, 4.5; Find from Place, 4.6): reopening uses the one module-level fetch; Find opened from Place before the palette shows starts it', async () => {
   const page = await tool({ names: 'hold' });
   const asked = [];
   page.on('request', (r) => { if (/names/.test(r.url())) asked.push(r.url()); });

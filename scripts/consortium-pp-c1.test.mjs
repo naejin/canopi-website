@@ -7,27 +7,24 @@
 // The contract these cases propose (c1 may rename within its chunk, keeping the cases):
 //   find-query.ts  findGroups(taxa, verdicts, warned) -> { fits, look, outside, unchecked } (Taxon[] each);
 //                  applyFilters(taxa, filters, ctx) -> { rows, unknown: Record<filterId, number> };
-//                  jobsMatching(query, lang) -> JobId[] (a job word of the page's locale finds its job).
+//                  jobsMatching(query, wordsOf) -> JobId[] (a job word of the page's locale finds its job;
+//                  wordsOf(job): the job's words in that locale, rules importing the core only).
 //   search.ts      releaseIndex({ names, plants, lang }) -> (query) => FindHit[], where a FindHit is
 //                  { id, tier: 'site' | 'scientific' | 'other', why: { kind, text, lang?, match }, shared }
 //                  (match: 'exact' | 'prefix' | 'tokens' | 'alternate', the site tier's order; shared:
 //                  how many other plants use that name), hits in tier order, then match order; namesFor(fileHeader, page) -> boolean
 //                  (false drops the names file: release_id or core_raw_sha256 differs); listsOf(id, lists);
-//                  oneOff(a, b) moved here from views/paste.ts; namesLine(fileLangs) -> Line;
-//   views/paste.ts readPaste(names, { here, others, members, index }) matches through index (a
+//                  oneOff(a, b) moved here from views/paste.ts (now views/find/paste.ts); namesLine(fileLangs) -> Line;
+//   views/find/paste.ts readPaste(names, { here, others, members, index }) matches through index (a
 //                  releaseIndex), so a pasted synonym or names-file name is found as Find finds it.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { failing } from './expect-fail.mjs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
 const { fold, jobIds } = await import('../src/lib/consortium/index.ts');
 const words = Object.fromEntries(readdirSync(new URL('../src/i18n/translations/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(`../src/i18n/translations/${f}`, import.meta.url), 'utf8'))]));
-// The module c1 adds, through a variable so knip does not count a commit-0 import as unresolved.
-const FIND_QUERY = new URL('../src/islands/consortium/rules/find-query.ts', import.meta.url).href;
-const findQuery = () => import(FIND_QUERY);
-const NO_FIND_QUERY = /Cannot find module .*find-query\.ts/;
+const findQuery = () => import('../src/islands/consortium/rules/find-query.ts');
 const search = () => import('../src/islands/consortium/data/search.ts');
 
 const id = (n) => `00000000-c1c1-4000-8000-${String(n).padStart(12, '0')}`;
@@ -39,7 +36,7 @@ test('PP-C c1 unit file (commit 0): the job words it reads exist in all 11 local
   for (const [lang, w] of Object.entries(words)) for (const job of jobIds) assert.ok(w[`consortium.job.${job}`], `${lang}: consortium.job.${job}`);
 });
 
-failing('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (level look, or a toxic or invasive warning), outside its range and not checked', { owner: 'c1', reason: NO_FIND_QUERY }, async () => {
+test('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (level look, or a toxic or invasive warning), outside its range and not checked', async () => {
   const { findGroups } = await findQuery();
   const taxa = [plant(1), plant(2), plant(3), plant(4), plant(5)];
   const verdicts = new Map([[id(1), V('fits')], [id(2), V('look')], [id(3), V('outside')], [id(5), V('fits')]]);
@@ -50,7 +47,7 @@ failing('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (
   assert.deepEqual(g.unchecked.map((t) => t.id), [id(4)], 'no verdict: not checked, never a fit');
 });
 
-failing('PP-C-u2 (c1 find-query filters): every filter returns the count of plants it could not judge, and hides none of them silently', { owner: 'c1', reason: NO_FIND_QUERY }, async () => {
+test('PP-C-u2 (c1 find-query filters): every filter returns the count of plants it could not judge, and hides none of them silently', async () => {
   const { applyFilters } = await findQuery();
   const taxa = [plant(1, { traits: { edibility_rating: 4 } }), plant(2, { traits: { edibility_rating: 0 } }), plant(3, { traits: {} })];
   const { rows, unknown } = applyFilters(taxa, { edible: true }, { climate: 'Temperate' });
@@ -58,11 +55,12 @@ failing('PP-C-u2 (c1 find-query filters): every filter returns the count of plan
   assert.equal(unknown.edible, 1, 'the plant with no edibility recorded is counted');
 });
 
-failing('PP-C-u3 (c1 find-query jobs): a job word in each of the 11 locales finds its job', { owner: 'c1', reason: NO_FIND_QUERY }, async () => {
+test('PP-C-u3 (c1 find-query jobs): a job word in each of the 11 locales finds its job', async () => {
   const { jobsMatching } = await findQuery();
   for (const [lang, w] of Object.entries(words)) for (const job of jobIds) {
     const word = w[`consortium.job.${job}`];
-    assert.ok(jobsMatching(word, lang).includes(job), `${lang}: "${word}" finds ${job}`);
+    // The job's words in the page's language, as Find hands them (rules import the core only).
+    assert.ok(jobsMatching(word, (j) => [w[`consortium.job.${j}`]]).includes(job), `${lang}: "${word}" finds ${job}`);
   }
 });
 
@@ -157,7 +155,7 @@ test('PP-C-u9 (c1 one search module): Paste matches through it, synonyms include
   assert.equal(oneOff('okra', 'kale'), false);
   // Paste reads through the search module: a pasted synonym and a names-file name are found as Find
   // finds them, and Paste keeps no matcher of its own.
-  const paste = await import('../src/islands/consortium/views/paste.ts');
+  const paste = await import('../src/islands/consortium/views/find/paste.ts');
   assert.equal('oneOff' in paste, false, 'oneOff lives in data/search.ts only');
   const index = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' });
   const here = NAMES.map((n) => ({ id: n.id, canonical_name: n.canonical, names: n.names }));
