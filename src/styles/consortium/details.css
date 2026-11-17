@@ -20,8 +20,8 @@
 .ct .ct-sheet-head-main { min-width: 0; font-size: 15px; }
 .ct .ct-sheet-body { display: grid; gap: 22px; padding: 20px 24px 28px; align-content: start; flex: 1; }
 .ct .ct-sheet h2 { font-size: 30px; letter-spacing: -0.015em; }
-.ct .ct-sheet h2:focus { outline: none; }
-.ct .ct-sheet h2:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+/* A heading takes focus on open (tabindex=-1) so readers start there; it is not a control, so no ring. */
+.ct .ct-sheet h2[tabindex="-1"]:focus { outline: none; }
 .ct .ct-sheet h3 { font-size: 19px; margin-bottom: 8px; }
 .ct .ct-sheet section > p, .ct .ct-sheet li { font-size: 16px; line-height: 1.45; }
 .ct .ct-sheet ul { margin: 0; padding: 0; list-style: none; }
@@ -307,7 +307,10 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   .ct .ct-d-body > .ct-against { grid-column: 2; grid-row: 1 / 7; }
   .ct .ct-d-desklines { display: grid; gap: 6px; font-size: 14px; }
   .ct .ct-d-desklines p { margin: 0; }
-  .ct .ct-d-cando-actions { display: flex; }
+  /* Find, Keep and Remove on one row (board DetailsDesk): the buttons narrower, a long word wraps inside. */
+  .ct .ct-d-cando-actions { display: flex; flex-wrap: nowrap; gap: 8px; }
+  .ct .ct-d-cando-actions > .button { flex: 0 1 auto; min-width: 0; padding-inline: 12px; white-space: normal; }
+  .ct .ct-d-cando-actions > .ct-link-button { flex: none; }
   .ct .ct-d-foot-member { display: none; }
   .ct .ct-against [data-measure="soilPh"] { display: none; }
   .ct .ct-d-body .ct-photo { margin: 0; }
