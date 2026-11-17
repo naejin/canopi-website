@@ -4,7 +4,7 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T19:35:30Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:45Z }
 sources:
@@ -56,8 +56,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:d9295d148d5753e0
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:2a3101e2e8ec874d
+    last_modified: 2026-11-17T19:34:58Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -91,8 +91,8 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:9ba62be01727d68e
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:55de1ad8f17e4a2b
+    last_modified: 2026-11-17T19:34:58Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
@@ -126,8 +126,8 @@ sources:
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:036f1bdd9cd3cb01
-    last_modified: 2026-11-17T17:25:21Z
+    digest: sha256:1200315aead0ea8c
+    last_modified: 2026-11-17T19:34:58Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -136,8 +136,8 @@ sources:
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:a05071a0e9ef5ca6
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:2a63fc91d0d7cdb2
+    last_modified: 2026-11-17T19:34:58Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -221,8 +221,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:382e2944ffca7b96
-    last_modified: 2026-11-17T18:34:00Z
+    digest: sha256:78a8659cee4c385f
+    last_modified: 2026-11-17T19:12:17Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -296,8 +296,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:97eb8abd71783b99
-    last_modified: 2026-11-15T10:05:29Z
+    digest: sha256:8cde2d6c1b566293
+    last_modified: 2026-11-17T19:12:16Z
   - id: future-marks-ts
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
@@ -366,13 +366,13 @@ sources:
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
-    digest: sha256:90184f3e6a1390d1
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:9739e7c34ba87d6c
+    last_modified: 2026-11-17T19:34:58Z
   - id: pp-c-owners-json
     resource: ../../scripts/plan/pp-c-owners.json
     title: scripts/plan/pp-c-owners.json
-    digest: sha256:59aeb6576501ce67
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:1bf4207e8be4a260
+    last_modified: 2026-11-17T19:04:22Z
 ---
 
 Pushes of the [Plant palette redesign](/project/consortium-v2-plan.md), in order: **PP-B, PP-C, PP-D, PP-E, PP-F, PP-G** (owner answers of 2026-11-14: no separate push A; later climates, then soil and your spot, then through the year). Module names, shapes and link keys: [Plant palette architecture](/architecture/plant-palette-architecture.md); use them exactly. Boards are named by file in `.local/consortium/v2/f1a/mockups-v3/project/<Name>.dc.html` (main checkout, gitignored); inventory rows are those of `mockups-v3/ux-inventory.md`. Citations are at `f1a/int` 648baf2. Amended 2026-11-14 by the plan recheck and the look-ahead check and by the owner's plan check answers (decision rows "Plant palette plan check answers" and "Plant palette plan amendments"), then by the owner's "Delete first" answer (rows "Delete first" and "Plant palette delete-first amendments": PP-B's commit 0 deletes the old screens before the new page is built). Amended again at the PP-B chunk-2 plan commit (2026-11-16) by the decision rows of 2026-11-14 to 2026-11-16 (scale contract, budgets as a tripwire, process fitted to risk, no export split, things to weigh, frost, search, the b1b review) and by the chunk-2 drift check recorded in `scripts/plan/pp-b-owners.json`.
@@ -584,7 +584,7 @@ Schema 4.3 changed `countries.invasive_checked` to "a source in the release asse
 | Browser | PP-C21 with Spain as the country, Tropaeolum majus's Details (the fixture's Arundo donax pattern) shows `[data-invasive-scope="es_catalogo"]` for the Canary Islands and `[data-invasive-scope="atlas_aloctonas_es"]` for the Balearic Islands and mainland Spain, the atlas never worded as legal |
 | Browser (failure) | 3.1 verdict chunk failed: "Against your place" says "not checked" with Reload keyed on the verdict chunk alone; Swap's fit lines "not checked"; 3.2 plant not in the list (an id the release does not list, failed guest list, removed while open): the frame with "No longer in this list" and Back/Close, never a blank modal (`Details.tsx:146`, `Swap.tsx:71`); 3.3 details query fails: "could not load" with Try again (`Details.tsx:139-140`); 3.4 borrowed or guest plant: "From the {climate} list" header, `estimate` on its lines, "Gives your location to check" without a site climate; 3.5 the disputed rows above on one plant each; 3.6 PP-C18, a plain test c2 keeps green (it holds today): ask Correction on plant a while its chunk is held, close, open plant b's Details, then fail the held chunk (`page.failHeld()`): b's sheet stays (`lazy.tsx`'s LazyView drops a failure once its mount is gone) |
 
-**pf** (`scripts/consortium-pp-pf.test.mjs`, `scripts/browser/consortium-pp-pf.browser.test.mjs`). UI rows are scenario checks of text the grower reads (the screens will be reworked); the lasting rows are the picture and hole models.
+**pf** (`scripts/consortium-pp-pf.test.mjs`; browser rows now in `scripts/browser/consortium-pf-a/-pf-b/-pf-c.browser.test.mjs`, pf commit 0, which deleted `consortium-pp-pf.browser.test.mjs`). UI rows are scenario checks of text the grower reads (the screens will be reworked); the lasting rows are the picture and hole models.
 
 | Kind | Row |
 |---|---|

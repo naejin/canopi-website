@@ -2,20 +2,20 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T19:35:29Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:59Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:39d03deba98c3fc8
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:15b74990f89ca4fb
+    last_modified: 2026-11-17T19:12:16Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:d881634869e11783
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:cb7e165cdbf709c4
+    last_modified: 2026-11-17T19:12:16Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
@@ -24,13 +24,13 @@ sources:
   - id: chart-tsx
     resource: ../../src/islands/consortium/views/kit/chart.tsx
     title: src/islands/consortium/views/kit/chart.tsx
-    digest: sha256:f2cb4885d4d162f0
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:d25c6598c940822f
+    last_modified: 2026-11-17T19:12:16Z
   - id: fit-tsx
     resource: ../../src/islands/consortium/views/kit/fit.tsx
     title: src/islands/consortium/views/kit/fit.tsx
-    digest: sha256:d9e25a0ffdca77a1
-    last_modified: 2026-11-17T18:36:51Z
+    digest: sha256:d5c29637410a8f1d
+    last_modified: 2026-11-17T19:12:17Z
   - id: picture-ts
     resource: ../../src/islands/consortium/rules/picture.ts
     title: src/islands/consortium/rules/picture.ts
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:382e2944ffca7b96
-    last_modified: 2026-11-17T18:34:00Z
+    digest: sha256:78a8659cee4c385f
+    last_modified: 2026-11-17T19:12:17Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -89,8 +89,10 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 - `kit/fit.tsx` reaches the first run through `views/kit/sheet.tsx` `shared` (Add reads `FitLine`; a
   sheet chunk may import first-run modules only, check-built-site K3).
 - Your plants and Things to weigh derive in the views (`useMemo`), never in the store (first run). Vectors:
-  `scripts/vectors/weigh.json`; unit tests `scripts/consortium-pp-b3.test.mjs`; browser
-  `consortium-pp-b3.browser.test.mjs`.
+  `scripts/vectors/weigh.json`; unit tests `scripts/consortium-pp-b3.test.mjs`; browser: the pf
+  board specs `scripts/browser/consortium-pf-b.browser.test.mjs` (pf commit 0 swept
+  `consortium-pp-b3.browser.test.mjs` into them; the board specs of the palette page, Place and the
+  location are `consortium-pf-a/-pf-b/-pf-c.browser.test.mjs`, each head listing the old tests it carries).
 - The toxicity level's colour shows only in Your plants and Details (`kit/flags.ts` `Line.level`,
   `data-level` on the row's flag line and on the Details warning list item; colours in
   `src/styles/consortium/plants.css`); never colour alone. The print sheet prints the level in words
