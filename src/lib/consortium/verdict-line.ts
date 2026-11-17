@@ -95,6 +95,14 @@ export function confidenceLine(c: Confidence): Line {
 // The range sides: the place's value against the plant's band, said one way when the place passes the
 // bound (look, outside) and another when it is within it. Temperatures in °C (`temp…` variables).
 const SIDE_END: Partial<Record<Factor, 'low' | 'high'>> = { cold: 'low', mild: 'high', cool: 'low', summer: 'low', hot: 'high' };
+// The checked end a place sits exactly on (at the two decimals the page shows), else null: a place on
+// its limit is at the edge, never "within" (aridity checks both ends).
+const cents = (n: number): number => Math.round(n * 100);
+function endAt(f: FactorVerdict): 'low' | 'high' | null {
+  if (f.place === null) return null;
+  const ends = f.factor === 'dry' ? (['low', 'high'] as const) : SIDE_END[f.factor] ? [SIDE_END[f.factor]!] : [];
+  return ends.find((e) => f[e] !== null && cents(f[e]!) === cents(f.place!)) ?? null;
+}
 const CAP: Partial<Record<Factor, string>> = { cold: 'Cold', mild: 'Mild', cool: 'Cool', summer: 'Summer', hot: 'Hot' };
 const SOURCE_KEY: Record<string, string> = { treegoer_ranges: 'sourceTreegoer', treegoer: 'sourceTreegoer' };
 
@@ -121,7 +129,8 @@ export function reasonLine(f: FactorVerdict): Line {
   }
   if (f.factor === 'dry') {
     if (f.level === 'unknown' || f.place === null || f.low === null || f.high === null) return L('dryNotChecked', {}, also);
-    const which = f.place < f.low ? 'pastDrier' : f.place > f.high ? 'pastWetter' : 'withinDry';
+    const at = endAt(f);
+    const which = f.place < f.low ? 'pastDrier' : f.place > f.high ? 'pastWetter' : at === 'low' ? 'atDryEnd' : at === 'high' ? 'atWetEnd' : 'withinDry';
     return L(which, { place: f.place, low: f.low, high: f.high }, also);
   }
   // The spot and soil hints: a misfit (look), a fit, or what the catalogue does not record.
@@ -233,10 +242,18 @@ export function bandsOf(v: PlantVerdict, later: PlantVerdict | null, climate: Ta
     if (end === 'low' || end === 'both') b.low = f.low;
     if (end === 'high' || end === 'both') b.high = f.high;
     if (f.disputed) b.disputedLow = true;
-    if (RANK[f.level] < RANK[b.level]) { b.level = f.level; b.status = statusOf(f); }
+    // A place exactly on a checked end is flagged at the edge (a fit still, the verdict unchanged).
+    const level: Level = f.level === 'fits' && endAt(f) ? 'look' : f.level;
+    if (RANK[level] < RANK[b.level]) { b.level = level; b.status = statusOf(f); }
     const then = later?.factors.find((x) => x.factor === f.factor && x.place !== null);
     if (then && then.place !== f.place) b.later = then.place;
     out.set(m, b);
+  }
+  // Every end the later period's lines name (a side it passes then, againstLines) is drawn and numbered
+  // too: "recorded up to 3.5 °C… may lack winter chill" by 2041–2070 has its end on today's band.
+  for (const f of later && later.judged !== v.judged ? later.factors : []) {
+    const m = measureOf(f.factor), end = SIDE_END[f.factor], b = m && out.get(m);
+    if (b && end && f.basis === 'range' && f.level !== 'fits') b[end] = f[end];
   }
   return [...out.values()];
 }
@@ -256,10 +273,12 @@ export function soilBandOf(t: Taxon, v: PlantVerdict, ph: number | null, traitSo
   return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false, when: whenOf(v.judged), range: { key: K('bandSoilRange'), vars: {}, parts: { source } } };
 }
 
-// A band's status in words (with the level's icon in the view): in range, near the edge, outside;
-// the aridity band says drier or wetter (a note, never a level).
+// A band's status in words (with the level's icon in the view): in range, near the edge (a place on a
+// checked end too), outside; the aridity band says drier or wetter, or near its dry or wet edge.
 function statusOf(f: FactorVerdict): Line {
   if (f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null) return L(f.place < f.low ? 'bandDrier' : 'bandWetter');
+  const at = f.level === 'fits' ? endAt(f) : null;
+  if (at) return L(f.factor !== 'dry' ? 'bandEdge' : at === 'low' ? 'bandDryEdge' : 'bandWetEdge');
   return L(f.level === 'outside' ? 'bandOutside' : f.level === 'look' ? 'bandEdge' : f.level === 'unknown' ? 'bandUnknown' : 'bandFits');
 }
 

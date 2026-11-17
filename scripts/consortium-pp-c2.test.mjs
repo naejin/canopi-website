@@ -645,3 +645,29 @@ test('c2 fix T5 (soil card range line): the soil pH range sources give, with its
   assert.equal(climate.range, null);
   for (const [lang, w] of Object.entries(words)) assert.ok(w['consortium.line.bandSoilRange'] && w['consortium.details.sourceCatalogue'], lang);
 });
+
+// Fix round 3 T8 (Chrome K2): every band end the text names is drawn and numbered, the later period's
+// too; a place exactly on a checked end is flagged at the edge, never "within". Real figures (export
+// r-4db8, tiles 0.2.0): Mendoza, Ulmus pumila: coldest nights 3.1 °C today and 4.3 °C by 2041–2070,
+// recorded −25.7 to 3.5 °C; aridity index 0.28 today, recorded 0.28 to 1.72.
+test('c2 fix T8 (band ends the text names): Mendoza, Siberian elm: the 3.5 °C end its later line names is numbered; 0.28 on its dry end is near its dry edge', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const r = (low, high) => ({ low, median: null, high, count: 6197, basis: 'thinned_cells', weak: false });
+  const by = { '1991-2020': { tminColdC: 3.1, tmaxWarmC: 29.3, tmeanColdC: 7.6, tmeanWarmC: 24.3, aridityIndex: 0.28 }, '2041-2070': { tminColdC: 4.3, tmaxWarmC: 30.9, tmeanColdC: 8.8, tmeanWarmC: 25.9, aridityIndex: 0.26 }, '2071-2099': { tminColdC: 4.8, tmaxWarmC: 31.5, tmeanColdC: 9.3, tmeanWarmC: 26.4, aridityIndex: 0.25 } };
+  const periods = [['1991-2020', 'historical'], ...core.scenarios.flatMap((s) => [['2041-2070', s], ['2071-2099', s]])].map(([period, scenario]) => ({ period, scenario, koppen: 'BWk', koppenTemperatureMarginC: 0, ...by[period] }));
+  const lookup = { lat: -32.89, lon: -68.84, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
+  const elm = taxon({ id: 'elm', canonical_name: 'Ulmus pumila', phases: { start: 'placenta_iii', end: 'secondary_ii', sources: [] }, climate: { source: 'gbif_occurrences', cells: 6197, nativeShare: null, tminCold: r(-25.7, 3.5), tmaxWarm: r(22, 36.4), tmeanYear: r(-0.6, 16.9), tmeanWarm: r(18.1, 28.1), aridity: r(0.28, 1.72) } });
+  const ctx = (period) => ({ place: core.emptyPlace, lookup, period, scenario: 'ssp245', canopy: null });
+  const v = verdict(elm, ctx('1991-2020')), later = verdict(elm, ctx('2041-2070'));
+  assert.deepEqual([v.level, later.level, later.limiting?.factor], ['fits', 'look', 'mild']);
+  const text = line.againstLines(v, later, W).map((e) => say(e.line)).join(' | ');
+  assert.match(text, /recorded up to 3\.5.*may lack winter chill/, text);
+  const bands = Object.fromEntries(line.bandsOf(v, later, elm.climate).map((b) => [b.measure, b]));
+  assert.deepEqual([bands.tminCold.low, bands.tminCold.high, bands.tminCold.later], [-25.7, 3.5, 4.3], 'coldest nights: the 3.5 end drawn, the 2041–2070 ring past it');
+  assert.equal(say(bands.aridity.status), 'Near its dry edge');
+  assert.equal(bands.aridity.level, 'look', 'flagged on the band');
+  const dry = line.againstLines(v, later, W).find((e) => e.factor === 'dry');
+  assert.match(say(dry.line), /^Near its dry edge: .*0\.28 here, the dry end of the 0\.28 to 1\.72/);
+  assert.doesNotMatch(say(dry.line), /within/);
+  for (const k of ['atDryEnd', 'atWetEnd', 'bandDryEdge', 'bandWetEdge']) for (const [lang, w] of Object.entries(words)) assert.ok(w[`consortium.line.${k}`], `${lang}: ${k}`);
+});
