@@ -91,6 +91,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const verdicts = store.verdictFailed.value ? null : store.poolVerdicts.value;
   const located = store.siteClimate.value;
   const rule = store.verdictRule.value, vctx = store.verdictContext.value;
+  // The one condition for the range and holds filters (fix round 1, A4): a location with a climate and
+  // the verdict rule loaded, not refused. Otherwise neither is offered nor applied, so no plant is ever
+  // counted "not recorded" for a rule that did not load.
+  const judging = located && !!rule && !store.verdictFailed.value;
   const flagCtx = store.flagContext.value, scene = store.flagScene.value;
   const search = finder.value, names = namesState.value;
   // A query of one letter browses, as an empty one (normalization v1's admission).
@@ -125,15 +129,15 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const job = useMemo(() => (q ? jobsMatching(q, jobWords)[0] ?? null : null), [q]);
   const ctx = useMemo(() => ({
     verdicts,
-    holds: rule && located ? (t: Taxon) => rule.holdsBy(t, vctx, HOLDS_PERIOD) : undefined,
+    holds: judging ? (t: Taxon) => rule!.holdsBy(t, vctx, HOLDS_PERIOD) : undefined,
     toxic: (t: Taxon) => (t.warnings.toxicity ? t.warnings.toxicity.level !== 'None' : null),
     invasive: (t: Taxon) => (flagCtx.countryStatus === 'checked' && flagCtx.country && t.warnings.invasive_in ? t.warnings.invasive_in.some((r) => r.country === flagCtx.country) : null),
-  }), [verdicts, rule, located, vctx, flagCtx]);
+  }), [verdicts, rule, judging, vctx, flagCtx]);
   const view = useMemo(() => {
     const hitOf = new Map<PlantId, FindHit>(), rank = new Map<PlantId, number>();
     hits?.forEach((h, i) => { hitOf.set(h.id, h); rank.set(h.id, i); });
     const matched = hits ? base.filter((t) => hitOf.has(t.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!) : base;
-    const { rows, unknown } = applyFilters(matched, filters, ctx);
+    const { rows, unknown } = applyFilters(matched, judging ? filters : { ...filters, range: false, holds: false }, ctx);
     const groups = findGroups(rows, verdicts, warned);
     const inList = new Set(base.map((t) => t.id));
     const own = new Set(pool?.map((t) => t.id) ?? []);
@@ -144,7 +148,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     }).slice(0, 8);
     const inPalette = (hits ?? []).filter((h) => atOpen.has(h.id)).map((h) => h.id);
     return { hitOf, groups, unknown, others, inPalette, count: rows.length };
-  }, [base, hits, filters, ctx, verdicts, warned, pool, members, climate, atOpen, releasePlants.value]);
+  }, [base, hits, filters, judging, ctx, verdicts, warned, pool, members, climate, atOpen, releasePlants.value]);
 
   if (!climate) return null;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
@@ -203,7 +207,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     );
   };
 
-  // The filters (board FindFilters): each group says what it is for; range and holds need a location.
+  // The filters (board FindFilters): each group says what it is for; range and holds need `judging`.
   const chips = (id: FilterId, list: readonly { value: string; label: string; on: boolean; toggle: () => void }[]): Chip[] => list.map((c) => ({ id, ...c }));
   const jobChips = chips('job', jobIds.map((j) => ({ value: j, label: T(`job.${j}`), on: !!filters.jobs?.includes(j), toggle: () => toggleIn('jobs', j), count: jobCounts.get(j) ?? 0 })));
   const lightChips = chips('light', LIGHTS.map((l) => ({ value: l, label: T(`find.light.${l}`), on: !!filters.light?.includes(l), toggle: () => toggleIn('light', l) })));
@@ -237,9 +241,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
         <legend>{T('find.f.fit')}</legend>
         <p class="ct-muted ct-small">{T('find.f.fitFor')}</p>
         <label class="ct-check ct-find-check"><input type="checkbox" data-filter="fits" checked={foldOutside} onChange={() => setFoldOutside(!foldOutside)} /> {T('find.fits')}</label>
-        {located && check('range', 'range', T('find.range'))}
+        {judging && check('range', 'range', T('find.range'))}
       </fieldset>
-      {located && (
+      {judging && (
         <fieldset class="ct-find-fgroup">
           <legend>{T('find.f.later')}</legend>
           <p class="ct-muted ct-small">{T('find.f.laterFor')}</p>

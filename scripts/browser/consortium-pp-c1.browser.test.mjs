@@ -106,6 +106,11 @@ test('F1a-C6 → PP-C (c1 verdict chunk refused, Find half, A16 §5): with the v
   await hasFind(page);
   assert.ok(await has(page, `${FIND} [data-find-group="unchecked"] [data-find-row]`, 8000), 'the plants are under "Not checked"');
   assert.equal(await page.$(`${FIND} [data-find-group="fits"] [data-find-row]`), null, 'none under "Fits your place"');
+  // Fix round 1, A4 (review c1-05): the range and holds filters need the verdict rule; refused, they
+  // are not offered (never "N not recorded, not shown" blamed on the plants' data).
+  await page.click(`${FIND} .ct-find-filters-btn`).catch(() => {});
+  assert.equal(await page.$(`${FIND} [data-filter="range"]`), null, 'no range filter while the verdict rule is refused');
+  assert.equal(await page.$(`${FIND} [data-filter="holds"]`), null, 'no holds filter while the verdict rule is refused');
 });
 
 // ---- scenarios ----
