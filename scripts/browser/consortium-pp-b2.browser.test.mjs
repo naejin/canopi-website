@@ -391,8 +391,10 @@ test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus 
   await page.evaluate(() => { document.querySelector('.ct-fillers li .button-primary').dataset.raiser = ''; });
   await page.focus('[data-raiser]');
   await page.keyboard.press('Enter');
-  // Focus Undo in the page the frame it appears: the test toast lasts 0.3 s, which a separate
-  // waitForSelector then focus round trip could outlast on CI's slower runner (flake, 2026-11-17).
+  // The Add hands the focus to the Next step's title two frames after the render (focusNextStep); a
+  // focus moved into the toast before that is taken back out, and the 0.3 s test toast then goes (CI
+  // flake, 2026-11-17). Wait for that landing, then focus Undo in the page the frame it is found.
+  await page.waitForFunction(() => document.activeElement?.id === 'ct-next-t', { timeout: 4000, polling: 'raf' });
   await page.waitForFunction((label) => {
     const b = [...document.querySelectorAll('.ct-toast button')].find((e) => e.textContent.trim() === label);
     b?.focus();
