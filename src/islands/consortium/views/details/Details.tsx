@@ -230,8 +230,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const listLine = guest ? T('details.fromList', { climate: zoneName(guest) }) : borrowed ? say(borrowedLine(borrowed)) : T('details.onList', { climate: zoneName(zone) });
   const climateLabel = here && here !== zone ? T('details.climatePlaced', { climate: zoneName(here), list: zoneName(zone) }) : zoneName(zone);
   const alts = member ? store.alternativesFor(id)?.fit.slice(0, 2) ?? [] : [];
-  const ownVerdict = member ? store.memberVerdicts.value?.get(id) ?? null : null;
-  const keep = member ? keepLine(store.laterVerdictOf(t, ownVerdict), new Date().getFullYear()) : null;
+  const [now = null, ...laters] = member ? store.periodVerdictsOf(t) : [];
+  const keep = keepLine(now, laters, new Date().getFullYear());
   // What the summary's chips name: each warning in short words (K17), the toxicity not checked.
   const chips = lines.filter((l) => l.kind !== 'soft');
   const missingNames = locales.length - names.length;

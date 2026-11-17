@@ -343,12 +343,15 @@ export function rowLines(v: PlantVerdict, later: PlantVerdict | null, w: Against
 // nearest list can name: nearest.ts NEAREST_LISTS).
 export const borrowedLine = (zone: ClimateZone): Line => L(`borrowed${zone}`);
 
-// Keeping a member that its own later period puts outside its range (board DetailsDesk, What you can
-// do): "Keeping it is a fair bet for its first 15 years: plant its successor beside it now", the years
-// from `year` (this year) to the start of that period; null when it holds then, or the period has begun.
-export function keepLine(later: PlantVerdict | null, year: number): Line | null {
-  if (!later || later.level !== 'outside') return null;
-  const years = Number(later.judged.slice(0, 4)) - year;
+// Keeping a member that a later period puts outside its range (board DetailsDesk, What you can do):
+// "Keeping it is a fair bet for its first 15 years: plant its successor beside it now". Only for a plant
+// that fits today or asks a second look (outside now, today's lines say it all); the years from `year`
+// (this year) to the start of the first later period, up to its own, where it is outside (`laters`: its
+// verdicts at the periods after today, in order); null when it holds through them or that period has begun.
+export function keepLine(now: PlantVerdict | null, laters: readonly PlantVerdict[], year: number): Line | null {
+  if (now?.level !== 'fits' && now?.level !== 'look') return null;
+  const lost = laters.find((l) => l.level === 'outside');
+  const years = lost ? Number(lost.judged.slice(0, 4)) - year : 0;
   return years > 0 ? { key: K('keepFairBet'), vars: {}, count: years } : null;
 }
 

@@ -292,6 +292,14 @@ export function laterVerdictOf(t: Taxon, v: PlantVerdict | null | undefined): Pl
   if (memberVerdicts.value?.get(t.id) === v) return memberLaterVerdicts.value?.get(t.id) ?? null;
   return laterVerdicts(rule, [t], new Map([[t.id, v]])).get(t.id) ?? null;
 }
+// A plant's verdicts at each period of its own years, today first, in order (the keep line: today's
+// level, and the first later period it is outside); empty until the rule is here.
+export function periodVerdictsOf(t: Taxon): PlantVerdict[] {
+  const rule = verdictRule.value;
+  if (!rule) return [];
+  const own = periodIds.indexOf(rule.judgedPeriod(t, LAST));
+  return periodIds.slice(0, own + 1).map((p) => rule.verdicts([t], { ...verdictContext.value, period: p }).get(t.id)).filter((v): v is PlantVerdict => !!v);
+}
 // The pool's verdicts, guests' lists included once read (b1b's count, Find, the holes' fillers).
 export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value, p = pool.value;

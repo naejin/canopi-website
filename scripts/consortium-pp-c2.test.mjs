@@ -573,13 +573,29 @@ test('c2 fix K2 + K5 + K8 + K16 (bands): Seville chestnut: the year\'s warmth ba
   assert.deepEqual(line.bandsOf(past, null, null).map((b) => [b.low, b.high]), [[-7.2, 9.4]]);
 });
 
-// Fix round 2 K19 (board DetailsDesk): keeping a member its later period puts outside says for how long.
-test('c2 fix K19 (keep it a fair bet): the years until its later period, only when it is outside then', () => {
-  const out = vOf({ judged: '2041-2070', level: 'outside' });
-  assert.equal(line.keepLine(out, 2026).count, 15);
+// Fix round 2 K19 (board DetailsDesk), round 3 T1: keeping a member a later period puts outside says
+// for how long, counted to the first later period it is outside; never for a plant outside now.
+// Real figures (export r-4db8, climate tiles 0.2.0): Lyon, Acrocomia aculeata (coldest nights 0.1 °C,
+// recorded from 12.5 °C) is outside today; Seville, Castanea sativa (hottest days 34.8, 36.6, 37.2 °C,
+// recorded up to 33.7 °C) asks a second look today and is outside from 2041–2070: 15 years, not 45.
+test('c2 fix K19 + T1 (keep it a fair bet): the years to the first later period it is outside, only when it fits or asks a look today', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const r = (low, high) => ({ low, median: null, high, count: 9000, basis: 'thinned_cells', weak: false });
+  const slots = (by) => [['1991-2020', 'historical'], ...core.scenarios.flatMap((s) => [['2041-2070', s], ['2071-2099', s]])].map(([period, scenario]) => ({ period, scenario, koppen: 'Csa', koppenTemperatureMarginC: 0, ...by[period] }));
+  const at = (by) => ({ lat: 0, lon: 0, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: slots(by) }, soil: null, regions: { wgsrpdL3: null, isoA2: null } });
+  const ctx = (lookup, period) => ({ place: core.emptyPlace, lookup, period, scenario: 'ssp245', canopy: null });
+  const periods = (t, lookup) => core.periodIds.map((p) => verdict(t, ctx(lookup, p)));
+  const seville = at({ '1991-2020': { tminColdC: 5.8, tmaxWarmC: 34.8, tmeanColdC: 11, tmeanWarmC: 27.8, aridityIndex: 0.58 }, '2041-2070': { tminColdC: 6.9, tmaxWarmC: 36.6, tmeanColdC: 12.1, tmeanWarmC: 29.6, aridityIndex: 0.47 }, '2071-2099': { tminColdC: 7.3, tmaxWarmC: 37.2, tmeanColdC: 12.5, tmeanWarmC: 30.2, aridityIndex: 0.45 } });
+  const chestnut = taxon({ id: 'chestnut', canonical_name: 'Castanea sativa', phases: { start: 'secondary_i', end: 'climax', sources: [] }, climate: { source: 'gbif_occurrences', cells: 16445, nativeShare: null, tminCold: r(-7.2, 9.4), tmaxWarm: r(17.4, 33.7), tmeanYear: r(8.8, 17.6), tmeanWarm: r(14.5, 25.7), aridity: r(0.67, 2.67) } });
+  const [now, ...laters] = periods(chestnut, seville);
+  assert.deepEqual([now.level, ...laters.map((v) => v.level)], ['look', 'outside', 'outside']);
+  assert.equal(line.keepLine(now, laters, 2026).count, 15, 'to 2041, the first period it is outside, not 2071');
+  const lyon = at({ '1991-2020': { tminColdC: 0.1, tmaxWarmC: 26.6, tmeanColdC: 4.3, tmeanWarmC: 22.4, aridityIndex: 1.1 }, '2041-2070': { tminColdC: 1.3, tmaxWarmC: 28.8, tmeanColdC: 5.5, tmeanWarmC: 24.6, aridityIndex: 0.99 }, '2071-2099': { tminColdC: 1.8, tmaxWarmC: 29.6, tmeanColdC: 6, tmeanWarmC: 25.4, aridityIndex: 0.95 } });
+  const macauba = taxon({ id: 'macauba', canonical_name: 'Acrocomia aculeata', phases: { start: 'secondary_i', end: 'secondary_iii', sources: [] }, climate: { source: 'gbif_occurrences', cells: 1029, nativeShare: null, tminCold: r(12.5, 24.1), tmaxWarm: r(26, 37.6), tmeanYear: r(20.1, 27.5), tmeanWarm: r(22.3, 29.1), aridity: r(0.66, 2.09) } });
+  const [mNow, ...mLater] = periods(macauba, lyon);
+  assert.equal(mNow.level, 'outside');
+  assert.equal(line.keepLine(mNow, mLater, 2026), null, 'outside now: today\'s lines say it, no fair bet');
   assert.match(en['consortium.line.keepFairBet'], /fair bet for its first # years: plant its successor beside it now/);
-  assert.equal(line.keepLine(vOf({ judged: '2041-2070' }), 2026), null, 'it holds then');
-  assert.equal(line.keepLine(null, 2026), null);
+  assert.equal(line.keepLine(now, [vOf({ judged: '2041-2070', level: 'look' }), vOf({ judged: '2071-2099' })], 2026), null, 'it holds then');
+  assert.equal(line.keepLine(null, [], 2026), null);
 });
-
-
