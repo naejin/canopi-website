@@ -165,6 +165,9 @@ test('PP-C16 (c2 borrowed or guest plant, 3.4): Details names the list it comes 
   await details(page, await firstMember(page));
   assert.ok(await has(page, `${DETAILS} [data-from-list]`, 6000), 'no "From the … list" header (data-from-list)');
   assert.ok(await has(page, `${DETAILS} [data-conf="estimate"]`, 1000), '"estimate" on its lines');
+  // The placement's estimate is said once (fix round 3 minor, round 4 V4): in the header, not again in Why it is here or Against.
+  const said = await page.$eval(DETAILS, (d) => (d.textContent.match(/estimate: placed as on the/g) ?? []).length);
+  assert.equal(said, 1, `the placement's estimate said once in Details (${said})`);
   assert.equal(await page.$(`${DETAILS} [data-no-site]`), null, 'with a site climate, no "give your location" line');
   // No location: a borrowed list's plants in the palette (as a shared link brings them; Suggest itself
   // asks for the location first on a borrowed list, PoolSlot NeedsSite); its plant's Details asks for
@@ -292,15 +295,23 @@ test('PP-C6b (c2 boards, fix round 1 C10 C14): Swap at 320 px scrolls nothing si
 test('PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): Details draws one band per measure, each named with its status in words, numbering the ends core gives it, the place outside the drawn range only when past it; the key in words; nothing sideways at 320 px', async () => {
   const page = await suggestedAt('seville', 'Mediterranean');
   await page.setViewport({ width: 320, height: 700 });
-  const id = await firstMember(page);
+  // A member with a soil pH range, so its soil card shows too.
+  const id = await page.evaluate(() => { const { store } = window.__ctTest; return (store.memberTaxa.value.find((t) => t.traits.soil_ph?.min != null) ?? store.memberTaxa.value[0]).id; });
   await details(page, id);
   await against(page);
   assert.ok(await has(page, `${DETAILS} [data-against] [data-measure]`, 6000), 'no band ([data-measure])');
+  // Where each mark is drawn, as the browser lays it out (getBBox): the recorded range (its dashed
+  // disputed stretch included) and the place's dot.
   const bands = await page.$$eval(`${DETAILS} [data-against] [data-measure]`, (els) => els.filter((e) => e.offsetParent).map((e) => {
-    const rect = e.querySelector('.ct-bd-range'), dashed = e.querySelector('[data-disputed]'), dot = e.querySelector('.ct-bd-now-dot');
-    const x0 = Math.min(Number(rect.getAttribute('x')), dashed ? Number(dashed.getAttribute('d').match(/^M([\d.]+)/)[1]) : Infinity);
-    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: Number(rect.getAttribute('x')) + Number(rect.getAttribute('width')), dot: dot ? Number(dot.getAttribute('cx')) : null };
+    const box = (el) => (el ? el.getBBox() : null);
+    const rect = box(e.querySelector('.ct-bd-range')), dashed = box(e.querySelector('[data-disputed]')), dot = box(e.querySelector('.ct-bd-now-dot'));
+    const x0 = Math.min(rect.x, dashed ? dashed.x : Infinity);
+    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: rect.x + rect.width, dot: dot ? dot.x + dot.width / 2 : null, range: e.querySelector('[data-band-range]')?.textContent.trim() ?? null };
   }));
+  // The soil card names where its range comes from (the trait's corrected-value source, else the catalogue).
+  const soil = bands.find((b) => b.m === 'soilPh');
+  assert.ok(soil, 'the soil card of a plant with a soil pH range');
+  assert.match(soil.range, /^The soil pH range sources give for it \(.+\)\.$/, `the soil card's source line ("${soil.range}")`);
   const core = await page.evaluate((pid) => {
     const { store, bandsOf } = window.__ctTest;
     const t = store.taxonOf(pid), v = store.memberVerdicts.value.get(pid);

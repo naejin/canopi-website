@@ -10,7 +10,7 @@ import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
 const core = await import('../src/lib/consortium/index.ts');
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 
-test('the host views mount every stream\'s slot, and Details opens on Against your place', () => {
+test('the host views mount every stream\'s slot', () => {
   // The Place step (views/place/Place.tsx; b1a deletes Start.tsx): until b1a's merge Place.tsx re-exports Start.
   const place = view('place/Place.tsx');
   const start = place.includes("from '../Start.tsx'") ? view('Start.tsx') : place;
@@ -22,8 +22,8 @@ test('the host views mount every stream\'s slot, and Details opens on Against yo
   // In the palette slot, after Share, Print and Download, so they never move when it lands (hand-off branch).
   assert.match(view('Actions.tsx'), /later\(\(\) => laterChunk\(\)\.then\(\(m\) => m\.FutureSlot\), \{ idle: true \}\)/, 'idle: no download before ct:first-view or the data ready');
   assert.match(view('Actions.tsx'), /<ActionsView \/><future\.View \/>/, 'S5d: the panel after the actions (the matrix views above it went in PP-B commit 0a\')');
-  // Details opens on "Against your place" (PP-C c2; PlantMarks went with the mark providers).
-  assert.match(view('details/Details.tsx'), /<Against t=\{t\} disputes=\{facts\?\.disputes \?\? \[\]\} traitSources=\{facts\?\.traitSources \?\? null\} \/>/);
+  // Details opens on "Against your place", its soil card naming the source of its range: read as the
+  // grower reads it, in consortium-pp-c2.browser.test.mjs PP-C6c (c2 fix round 4 V4).
 });
 
 // ---- E6 R2: the one site-fit vocabulary (core verdict-line.ts siteLines since fix round 1 B2, rules/site-fit.ts) ----

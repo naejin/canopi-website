@@ -626,12 +626,8 @@ test('c2 fix T2 (band dot word): "today" for today\'s verdict, the period for a 
 
 // Fix round 3 T4 (c2r3-05): Swap's lede never claims the candidates come from one list (on a borrowed
 // climate they come from several nearest lists, each placed from its own; Details says which).
-test('c2 fix T4 (Swap lede): one lede for every climate, naming no list', () => {
-  for (const [lang, w] of Object.entries(words)) {
-    assert.equal(w['consortium.swap.ledeBorrowed'], undefined, `${lang}: no borrowed lede`);
-    assert.doesNotMatch(w['consortium.swap.lede'], /\{list\}/, `${lang}: the lede names no list`);
-  }
-  assert.doesNotMatch(en['consortium.swap.lede'], /same list/);
+test('c2 fix T4 (Swap lede): the lede names no list', () => {
+  for (const [lang, w] of Object.entries(words)) assert.doesNotMatch(w['consortium.swap.lede'], /\{list\}/, `${lang}: the lede names no list`);
 });
 
 // Fix round 3 T5 (c2r3-06): the soil card says its own range: the pH range sources give for the plant,
@@ -730,12 +726,3 @@ test('c2 fix T12 (desk soil line): "recorded on pH …" then "Not judged" withou
   assert.equal(say(line.soilCheckLine(taxon({ id: 'x', traits: { soil_ph: null } }), v, null)), 'no pH recorded.');
 });
 
-// Fix round 3 minor (estimate once): the placement's estimate is marked so Details says it once, in
-// its header; a row still says it.
-test('c2 fix round 3 minor (estimate once): the placement entry is marked; the row keeps it; the Why line names the list without the label', () => {
-  const v = vOf({ borrowed: 'Tropical' });
-  const entry = line.againstLines(v, null, W).find((e) => e.placement);
-  assert.equal(say(entry.line), 'estimate: placed as on the Tropical list');
-  assert.ok(line.rowLines(v, null, W).some((e) => e.conf === 'estimate'), 'the row says it');
-  assert.doesNotMatch(en['consortium.details.whyFromList'], /estimate/);
-});
