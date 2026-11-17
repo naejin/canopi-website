@@ -47,6 +47,16 @@ export const held = signal(true);
 // The save as this page last wrote it, or read it when it opened (arrival.ts startMemory).
 export const lastSave = signal<string | null>(null);
 
+// The save's last-changed date (pf hand-off; owner answer Q3, board Arrivals "Your palette is back: …,
+// last changed …"): the record's `at` (persist.ts saveRecord), an ISO 8601 time written only when the
+// palette, its place answers or its country source change (persist.ts writeSave: the time alone never
+// rewrites the save; Undo puts the old record back, `at` with it), so it is the date the palette last
+// changed. null: no save, or no readable date.
+export function changedOf(text: string | null): string | null {
+  const at = attempt(() => (text ? (JSON.parse(text) as { at?: unknown } | null)?.at : null));
+  return typeof at === 'string' && !Number.isNaN(Date.parse(at)) ? at : null;
+}
+
 // What an undoable action saw: the save as stored, and the flag.
 export interface SaveMark { text: string | null; held: boolean }
 export const markSave = (): SaveMark => ({ text: memory.read(STORE), held: held.peek() });

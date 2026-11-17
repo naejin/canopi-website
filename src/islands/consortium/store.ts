@@ -13,7 +13,7 @@ import type { TextureId as ReaderTexture } from '../../lib/climate/soil.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
 import { state } from './state/schema.ts';
-import { held, markSave, undoSave } from './state/save.ts';
+import { changedOf, held, lastSave, markSave, undoSave } from './state/save.ts';
 import { focusAfterToast, noteToastOpener } from './focus.ts';
 
 // Where the country came from: the reader chose it, a link carried it, the page guessed it from
@@ -59,6 +59,10 @@ export const opening = signal(false);
 // The holes put off with "Not now" (this page only, never saved).
 export const notNow = signal<ReadonlySet<string>>(new Set());
 export const sheet = signal<Sheet | null>(null);
+// When the save last changed (pf hand-off; owner answer Q3): the save as this page last read or wrote
+// it (state/save.ts lastSave; arrival.ts reads it at opening), its ISO date, or null with no save. The
+// return-visit line reads it ("Your palette is back: 8 plants near Kiambu, last changed …").
+export const lastChanged = computed<string | null>(() => changedOf(lastSave.value));
 // The signals above are the palette on Place and on the palette page alike: Place's answers and plants
 // change it as they are given (owner 2026-11-15), and the save follows it while the page owns it
 // (state/save.ts held).
