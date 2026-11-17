@@ -83,17 +83,36 @@ test('readPaste lists a later line naming a plant already matched as a duplicate
   assert.deepEqual(r.duplicate.map((d) => [d.name, d.taxon.id]), [['Malus domestica', 't1'], ['Pommier', 't1']]);
 });
 
-test('readPaste hides plants matched by another line from the choose groups, and drops a group left empty', () => {
+test('readPaste hides plants matched by another line from the choose groups; a group they leave empty keeps its line', () => {
   const r = readPaste(pasteNames('Rubus\nRaspberry'), { here: temperate, members: [] });
   assert.deepEqual(r.found.map((f) => f.taxon.id), ['t4']);
   assert.deepEqual(r.choose.map((c) => c.taxa.map((t) => t.id)), [['t5']]);
   const gone = readPaste(pasteNames('Rubus\nRaspberry\nBlackberry'), { here: temperate, members: [] });
   assert.deepEqual(gone.choose, []);
+  assert.deepEqual(gone.duplicate.map((d) => [d.at, d.name]), [[0, 'Rubus']], '"Rubus" keeps its line, covered by the next lines');
+});
+
+// Fix round 2, r2-04: a pasted line always keeps its row and is counted ("Malus" then "Malus domestica").
+test('r2-04: "Malus" then "Malus domestica": both lines are read, neither dropped', () => {
+  const r = readPaste(pasteNames('Malus\nMalus domestica'), { here: temperate, members: [] });
+  const lines = [...r.found, ...r.choose, ...r.other, ...r.already, ...r.duplicate, ...r.none].map((x) => x.at).sort();
+  assert.deepEqual(lines, [0, 1], 'two lines, two readings');
+  assert.deepEqual(r.found.map((f) => [f.name, f.taxon.id]), [['Malus', 't1']], 'a genus of one plant is that plant (K11)');
+  assert.deepEqual(r.duplicate.map((d) => [d.name, d.taxon.id]), [['Malus domestica', 't1']]);
+});
+
+// Fix round 2, r2-03: case does not count in a pasted scientific name with authors.
+test('r2-03: "PRUNUS AVIUM L." and "Malus Domestica Borkh." are found; ficus-indica still is', () => {
+  const here = [...temperate, plant('c1', 'Prunus avium', { en: 'Sweet cherry' }), plant('h1', 'Opuntia ficus-indica', { en: 'Prickly pear' }), plant('h3', 'Opuntia ficus')];
+  const r = readPaste(pasteNames('PRUNUS AVIUM L.\nMalus Domestica Borkh.\nOpuntia ficus-indica (L.) Mill.'), { here });
+  assert.deepEqual(r.found.map((f) => f.taxon.id), ['c1', 't1', 'h1']);
 });
 
 test('readPaste falls back to a word-prefix search for a line with no match: "Chestnut" offers European chestnut to choose', () => {
   const r = readPaste(pasteNames('Chestnut\nIce'), { here: temperate, others: [['Tropical', tropical]], members: [] });
-  assert.deepEqual(r.choose.map((c) => [c.name, c.taxa.map((t) => t.id), c.climate]), [['Chestnut', ['t2'], null], ['Ice', ['p1'], 'Tropical']]);
+  assert.deepEqual(r.choose, [], 'a choice of one plant is no question (K11)');
+  assert.deepEqual(r.found.map((f) => [f.name, f.taxon.id]), [['Chestnut', 't2']]);
+  assert.deepEqual(r.other.map((o) => [o.name, o.taxon.id, o.climate]), [['Ice', 'p1', 'Tropical']]);
   assert.equal(r.none.length, 0);
 });
 
@@ -168,4 +187,5 @@ test('B10: every reading keeps its line; "beans" asks which bean', () => {
   const r = readPaste(pasteNames('Hawthorn\nnot a plant\nbeans\nApple'), { here: beans, members: ['t1'] });
   assert.deepEqual([r.found[0].at, r.none[0].at, r.choose[0].at, r.already[0].at], [0, 1, 2, 3]);
   assert.deepEqual(r.choose[0].taxa.map((t) => t.id).sort(), ['b1', 'b2'], '"beans": which bean?');
+  assert.equal(r.choose[0].word, 'bean', 'the question names the singular it matched (K11: "Which bean?")');
 });

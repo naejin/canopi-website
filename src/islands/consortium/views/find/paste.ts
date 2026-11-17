@@ -160,12 +160,12 @@ const RANK_WORDS = new Set(['subsp', 'ssp', 'var', 'f', 'cv', 'x', '×', 'agg', 
 // Genus and species without authors or rank words, folded: "Malus domestica Borkh." → "malus
 // domestica". The pasted words are split before folding (the fold makes a hyphen a space), so a
 // hyphenated or apostrophe epithet stays one word: "Opuntia ficus-indica (L.) Mill." → "opuntia ficus
-// indica", the fold of "Opuntia ficus-indica". An author starts with a capital or a bracket, never an
-// epithet's lower-case letter.
+// indica", the fold of "Opuntia ficus-indica". Case does not count ("PRUNUS AVIUM L."): an author read
+// as the epithet only makes a lookup that finds nothing.
 const GENUS = /^[a-z]+$/, EPITHET = /^[a-z]+(?: [a-z]+)*$/;
 export function binomial(name: string): string | null {
   const words = name.trim().split(/\s+/).filter((w) => fold(w) && !RANK_WORDS.has(fold(w)));
-  if (words.length < 2 || !/^\p{Ll}/u.test(words[1])) return null;
+  if (words.length < 2) return null;
   const genus = fold(words[0]), epithet = fold(words[1]);
   return GENUS.test(genus) && EPITHET.test(epithet) ? `${genus} ${epithet}` : null;
 }
@@ -214,7 +214,7 @@ const PREFIX_LIMIT = 8;
 // `at`: the reading's line in the paste (the sheet lists the paste in its order, board Paste).
 export interface PasteResult<T> {
   found: { at: number; name: string; taxon: T; close: string | null }[];
-  choose: { at: number; name: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null }[];
+  choose: { at: number; name: string; word: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null }[];
   other: { at: number; name: string; climate: ClimateZone; taxon: T; close: string | null }[];
   already: { at: number; name: string; taxon: T; close: string | null; climate: ClimateZone | null }[];
   duplicate: { at: number; name: string; taxon: T }[];
@@ -224,12 +224,14 @@ export interface PasteResult<T> {
 // A whole paste, sorted into the groups the sheet shows, each plant once:
 //   found      one plant of this climate's list (added by "Add the N found")
 //   choose     several plants match (a genus, a shared name, or, for a line no name matched, Find's
-//              search: "Chestnut" → European chestnut); plants another line matched are left out, and
-//              a group left empty is dropped; `climate` names another climate's list when only that
-//              list has them, null for this one
+//              search: "beans" → the beans); `word` is what the question asks about (the line, or its
+//              singular when only that matched: "Which bean?"); plants another line matched are left
+//              out; `climate` names another climate's list when only that list has them, null for this
+//              one. A choice of one plant is no question: that plant is found (or other, already…)
 //   other      only another climate's list has it, one plant: "Add anyway", a guest (A9)
 //   already    in the consortium already
-//   duplicate  a later line naming a plant an earlier line matched
+//   duplicate  a line naming a plant another line matched (a later line; or a choice whose every
+//              plant another line took: "Malus" then "Malus domestica")
 //   none       in no list
 // here: this climate's plants; others: [[climate, plants], …] in the export's order; members: the
 // consortium's ids; index: the page's release-wide search (Find's), else one over these lists.
@@ -245,10 +247,13 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
     else if (climate) out.other.push({ at, name, climate, taxon: t, close });
     else out.found.push({ at, name, taxon: t, close });
   };
-  // A choose group from one list: this climate's plants when it has any, else the first other list's.
-  const group = (name: string, taxa: T[], limit = Infinity) => {
+  // A choose group from one list: this climate's plants when it has any, else the first other list's;
+  // one plant is no question (board Paste: a found line).
+  const group = (name: string, taxa: T[], limit = Infinity, word = name) => {
     const z = taxa.some((t) => lists.climate.get(t.id) === null) ? null : lists.climate.get(taxa[0].id) ?? null;
-    out.choose.push({ at, name, taxa: taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z).slice(0, limit), inside: [], climate: z });
+    const own = taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z).slice(0, limit);
+    if (own.length === 1) one(name, own[0], null);
+    else out.choose.push({ at, name, word, taxa: own, inside: [], climate: z });
   };
   for (const [i, name] of names.entries()) {
     at = i;
@@ -259,13 +264,19 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
     if (names.split?.has(name)) { out.none.push({ at, name }); continue; }
     const search = (q: string) => lists.index(q).filter((h) => lists.taxa.has(h.id)).map((h) => lists.taxa.get(h.id)!);
     // A plural common name ("beans", "pommes"): the plants named by its singular, to choose (B10).
-    let hits = search(name);
-    if (!hits.length && /\p{L}{3}s$/u.test(name.trim())) hits = search(name.trim().slice(0, -1));
-    if (hits.length) group(name, hits, PREFIX_LIMIT); else out.none.push({ at, name });
+    let word = name, hits = search(name);
+    if (!hits.length && /\p{L}{3}s$/u.test(name.trim())) hits = search(word = name.trim().slice(0, -1));
+    if (hits.length) group(name, hits, PREFIX_LIMIT, word); else out.none.push({ at, name });
   }
-  // Plants another line matched leave the choose groups; a group left empty goes.
-  out.choose = out.choose.map((c) => ({ ...c, taxa: c.taxa.filter((t) => !seen.has(t.id)) })).filter((c) => c.taxa.length)
-    .map((c) => ({ ...c, inside: c.taxa.filter((t) => ins.has(t.id)).map((t) => t.id) }));
+  // Plants another line matched leave the choose groups; a group they leave empty keeps its line, as
+  // covered by another line (a duplicate of the plant it named first).
+  const left: PasteResult<T>['choose'] = [];
+  for (const c of out.choose) {
+    const taxa = c.taxa.filter((t) => !seen.has(t.id));
+    if (taxa.length) left.push({ ...c, taxa, inside: taxa.filter((t) => ins.has(t.id)).map((t) => t.id) });
+    else out.duplicate.push({ at: c.at, name: c.name, taxon: c.taxa[0] });
+  }
+  out.choose = left;
   out.header = names.header ?? null;
   return out;
 }
