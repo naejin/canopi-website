@@ -499,9 +499,14 @@ test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s count
   const said = await num(chip);
   await page.click(chip);
   assert.equal(await listed(), said, `the chip said ${said}`);
-  // The count line counts every plant the screen lists, the palette's plants named too (c1r3 T14, T18).
-  const mine = await page.$eval(`${FIND} [data-find-inpalette-line]`, (e) => Number(/\d+/.exec(e.textContent)?.[0] ?? 0)).catch(() => 0);
-  assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${said + mine} plants?\\.`), 'the count line says the same, with the palette\'s plants named');
+  // The count line counts the rows the screen lists (c1r3 T14, c1r4 U2): the palette's plants folded
+  // into a line of names are not rows; once "Show" lists them, they are.
+  const countSays = async () => Number(/^(\d+) plants?\./.exec(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent))?.[1] ?? NaN);
+  assert.equal(await countSays(), said, 'the count line says what the chip said');
+  assert.equal(await page.$eval(`${FIND} [data-find-filters-show]`, (e) => e.textContent.trim()), `Show ${said} plants`, '"Show N plants" says it too');
+  const mine = await page.$eval(`${FIND} [data-find-inpalette-line]`, (e) => Number(/\d+/.exec(e.textContent)?.[0] ?? NaN));
+  await page.click(`${FIND} [data-find-inpalette-line] button`);
+  assert.equal(await countSays(), said + mine, 'with the palette\'s plants listed as rows, the count line counts them');
   const all = await page.$eval(`${FIND} [data-filter="all"]`, (i) => Number(/(\d+) plants?/.exec(i.closest('label').textContent)?.[1]));
   await page.click(`${FIND} [data-filter="all"]`);
   assert.equal(await listed(), all, `"Every plant on the list" said ${all}`);

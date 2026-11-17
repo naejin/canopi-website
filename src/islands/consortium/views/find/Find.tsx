@@ -318,9 +318,11 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const lists = (['jobs', 'light', 'stands', 'size', 'life', 'holds'] as const).reduce((n, k) => n + (filters[k]?.length ?? 0), 0);
   const onCount = lists + (['edible', 'hideNoSize', 'hideRepeats', 'hideToxic', 'hideInvasive'] as const).filter((k) => filters[k]).length + (fit === 'fits' ? 0 : 1);
   const clearAll = () => batch(() => { setFilters({}); setFit('fits'); setOutsideShown(false); });
-  // The one count of what the screen lists (c1r3 T14): the list's rows, the palette's plants named and
-  // the other lists' rows; the count line, the status and "Show N plants" all say it.
-  const shownCount = count(filters) + view.inPalette.length + view.others.length;
+  // The one count of what the screen lists as rows (c1r3 T14, c1r4 U2): the list's rows, the palette's
+  // plants when listed as rows (a search, or "Show" pressed; folded on a job list they are a line of
+  // names) and the other lists' rows; the count line, the status and "Show N plants" all say it.
+  const paletteRows = q || paletteOpen ? view.inPalette.length : 0;
+  const shownCount = count(filters) + paletteRows + view.others.length;
   // What fits the place, the outside plants left out even when a search shows them (T14): the fit
   // choice's "Fits your place" and the subtitle say it.
   const fitsCount = (f: FindFilters, list = matched) => count(f, 'fits', list, true);
