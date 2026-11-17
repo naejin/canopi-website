@@ -415,18 +415,19 @@ test('P5-26d (S5c stale Suggest, fix review 29b709e 1): a Suggest pressed while 
 });
 
 test('P5-26e (S5c borrowed climate, range chunk offline, fix review 29b709e 2): with a location but no range rule, a borrowed list offers no Suggest and says why', async () => {
+  // Subtropical, not Arid: Arid has its own curated list since r-b7fb536f9cfd0700 (canopi-data D9a).
   const page = await tool();
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
   await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
   await atSite(page, 'seville');
-  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Arid'; });
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Subtropical'; });
   assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
-  assert.match(await text(page, '[data-range-unavailable]') ?? '', /Arid needs them to pick plants/);
+  assert.match(await text(page, '[data-range-unavailable]') ?? '', /Subtropical needs them to pick plants/);
   assert.ok(await has(page, '[data-range-unavailable] button'), 'Reload');
   assert.equal(await page.$('.ct-cta'), null, 'no Suggest from the unfiltered borrowed list');
   await suggestReady(page);
-  assert.equal(await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool('Arid'); return store.suggestMembers(); }), false, 'suggestMembers refuses');
+  assert.equal(await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool('Subtropical'); return store.suggestMembers(); }), false, 'suggestMembers refuses');
 });
 
 test('P5-26f (S5c borrowed list without a location, fix review 29b709e 3; on Place, PP-B b1a): its Suggest is the needs-location line, and a location brings it back', async () => {
@@ -467,11 +468,11 @@ test('P5-27b (S5c seam review 1; on Place, PP-B b1a): a borrowed climate whose r
     // modulepreload, so the test passed or failed by timing.
     const page = await tool({ width, block: { range: 404 } });
     await atSite(page, 'seville');
-    await pickCard(page, 'arid');
+    await pickCard(page, 'subtropical'); // not Arid: curated since r-b7fb536f9cfd0700 (D9a)
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
     assert.ok(await has(page, '[data-range-unavailable]', 10_000), `${width} px: the notice`);
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
-    assert.match(await text(page, '[data-range-unavailable]') ?? '', /Arid needs them to pick plants/, `${width} px: it says why`);
+    assert.match(await text(page, '[data-range-unavailable]') ?? '', /Subtropical needs them to pick plants/, `${width} px: it says why`);
     assert.ok(await has(page, '[data-range-unavailable] button'), `${width} px: with Reload`);
     assert.ok(page.blocked.some((u) => h.roles.range.includes(u)), `${width} px: the range chunk was requested and refused by the block`);
   }

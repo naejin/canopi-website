@@ -54,7 +54,7 @@ const stageLink = async () => {
   return encodeLink({ climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: { ...UNSURE_SPOT, light: 'sun' }, soil: null, members: ids.slice(0, 5), removed: [], guests: [] }, { Temperate: ids }, { place: true });
 };
 
-test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, Arid asks', async (t) => {
+test('BT-1 (S4 start): nothing chosen at start, the country line above the climate cards, Subtropical asks', async (t) => {
   await layoutVariants(t, async (v) => {
     const page = await h.open('/palette/', v);
     // Place first (owner drop 10): the cards one link away.
@@ -72,15 +72,16 @@ test('BT-1 (S4 start): nothing chosen at start, the country line above the clima
     await page.locator(aria('radio', 'Temperate')).click();
     // (The crop examples went with the Main crops picker in PP-B commit 0a'.)
     assert.equal(await loadState(page), 'ready');
-    const arid = await h.open('/palette/', v);
-    await openCards(arid);
-    await arid.locator(aria('radio', 'Arid')).click();
+    const borrowed = await h.open('/palette/', v);
+    await openCards(borrowed);
+    await borrowed.locator(aria('radio', 'Subtropical')).click();
     // P5 owner answer 1: an uncovered climate borrows the nearest curated lists (S5c), once a location
-    // filters them (UX audit fix 1); without one, Arid says it needs the site's location, no palette.
-    assert.ok(await has(arid, '[data-needs-site]'), 'Arid needs the site\'s location to pick plants');
-    assert.equal(await arid.$('.ct-cta'), null, 'no Suggest from an unfiltered borrowed list');
-    assert.equal(await arid.$eval('[data-needs-site] a[href]', (a) => a.textContent.trim()).catch(() => null), 'Ask for this climate', 'P2\'s ask link stays (owner answer 1)');
-    await done(page, arid);
+    // filters them (UX audit fix 1); without one, Subtropical says it needs the site's location, no
+    // palette. (Subtropical, not Arid: Arid has its own curated list since r-b7fb536f9cfd0700, D9a.)
+    assert.ok(await has(borrowed, '[data-needs-site]'), 'Subtropical needs the site\'s location to pick plants');
+    assert.equal(await borrowed.$('.ct-cta'), null, 'no Suggest from an unfiltered borrowed list');
+    assert.equal(await borrowed.$eval('[data-needs-site] a[href]', (a) => a.textContent.trim()).catch(() => null), 'Ask for this climate', 'P2\'s ask link stays (owner answer 1)');
+    await done(page, borrowed);
   });
 });
 

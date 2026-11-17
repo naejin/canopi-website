@@ -232,24 +232,24 @@ test('the home section\'s note names exactly the curated climates the installed 
   // home.consortium.note spells the curated climates out in all 11 locales: a climate added to (or dropped
   // from) src/data/consortium-index.json means rewriting the note, and this list, in every locale. Every
   // other climate works through the nearest list checked against a location (P5), so the note says so,
-  // as the tool page's Beta line does (walk-through 2 N7), never that the tool covers three climates only.
-  const described = ['mediterranean', 'temperate', 'tropical'];
+  // as the tool page's Beta line does (walk-through 2 N7), never that the tool covers its curated climates only.
+  const described = ['arid', 'mediterranean', 'temperate', 'tropical']; // Arid curated since r-b7fb536f9cfd0700 (canopi-data D9a)
   const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
   assert.deepEqual(index.climates.map((c) => c.toLowerCase()).sort(), described);
-  // The note itself, in each locale: the number of curated lists, their three climates, and the other
+  // The note itself, in each locale: the number of curated lists, their four climates, and the other
   // climates borrowing the nearest list, checked against the reader's location.
   const words = {
-    en: [/three climates/, /tropical/, /Mediterranean/, /temperate/, /other climates borrow the nearest list, checked against your location/],
-    fr: [/trois climats/, /tropical/, /méditerranéen/, /tempéré/, /autres climats empruntent la liste la plus proche, vérifiée selon votre lieu/],
-    es: [/tres climas/, /tropical/, /mediterráneo/, /templado/, /demás climas toman la lista más cercana, comprobada con tu ubicación/],
-    pt: [/três climas/, /tropical/, /mediterrânico/, /temperado/, /outros climas usam a lista mais próxima, verificada com a sua localização/],
-    it: [/tre climi/, /tropicale/, /mediterraneo/, /temperato/, /altri climi prendono la lista più vicina, verificata sulla tua posizione/],
-    de: [/drei Klimazonen/, /tropisch/, /mediterran/, /gemäßigt/, /anderen Klimazonen leihen sich die nächstgelegene Liste, geprüft an deinem Standort/],
-    nl: [/drie klimaten/, /tropisch/, /mediterraan/, /gematigd/, /andere klimaten lenen de dichtstbijzijnde lijst, getoetst aan je locatie/],
-    ru: [/трёх климатов/, /тропического/, /средиземноморского/, /умеренного/, /другие климаты берут ближайший список с проверкой по вашему месту/],
-    zh: [/三种气候/, /热带/, /地中海/, /温带/, /其他气候借用最接近的清单，并按你的位置核对/],
-    ja: [/3つ/, /熱帯/, /地中海/, /温帯/, /ほかの気候はいちばん近いリストを借り、あなたの場所で確かめます/],
-    ko: [/세 기후/, /열대/, /지중해/, /온대/, /다른 기후는 가장 가까운 목록을 빌려 쓰고, 당신의 위치로 확인합니다/],
+    en: [/four climates/, /tropical/, /arid/, /Mediterranean/, /temperate/, /other climates borrow the nearest list, checked against your location/],
+    fr: [/quatre climats/, /tropical/, /aride/, /méditerranéen/, /tempéré/, /autres climats empruntent la liste la plus proche, vérifiée selon votre lieu/],
+    es: [/cuatro climas/, /tropical/, /árido/, /mediterráneo/, /templado/, /demás climas toman la lista más cercana, comprobada con tu ubicación/],
+    pt: [/quatro climas/, /tropical/, /árido/, /mediterrânico/, /temperado/, /outros climas usam a lista mais próxima, verificada com a sua localização/],
+    it: [/quattro climi/, /tropicale/, /arido/, /mediterraneo/, /temperato/, /altri climi prendono la lista più vicina, verificata sulla tua posizione/],
+    de: [/vier Klimazonen/, /tropisch/, /arid/, /mediterran/, /gemäßigt/, /anderen Klimazonen leihen sich die nächstgelegene Liste, geprüft an deinem Standort/],
+    nl: [/vier klimaten/, /tropisch/, /aride/, /mediterraan/, /gematigd/, /andere klimaten lenen de dichtstbijzijnde lijst, getoetst aan je locatie/],
+    ru: [/четырёх климатов/, /тропического/, /аридного/, /средиземноморского/, /умеренного/, /другие климаты берут ближайший список с проверкой по вашему месту/],
+    zh: [/四种气候/, /热带/, /干旱/, /地中海/, /温带/, /其他气候借用最接近的清单，并按你的位置核对/],
+    ja: [/4つ/, /熱帯/, /乾燥/, /地中海/, /温帯/, /ほかの気候はいちばん近いリストを借り、あなたの場所で確かめます/],
+    ko: [/네 기후/, /열대/, /건조/, /지중해/, /온대/, /다른 기후는 가장 가까운 목록을 빌려 쓰고, 당신의 위치로 확인합니다/],
   };
   for (const [lang, patterns] of Object.entries(words)) {
     const all = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${lang}.json`, import.meta.url), 'utf8'));

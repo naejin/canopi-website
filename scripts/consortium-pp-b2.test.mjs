@@ -127,8 +127,10 @@ async function kiambuStore() {
 // The figure (coordinator, chunk 2 drift check 2026-11-15): the live range rule (P5 decision row of
 // 2026-11-12, cool and chill sides) gives 305 of 515 at Kiambu on r-fcf4307ffd1549b3 (fits 196, look
 // 109); the boards' 324 came from the mock-up rule. A new export moves it: re-run and re-pin the figure.
+// Re-run on r-b7fb536f9cfd0700 (D9a, 673 plants): the same 305 of 515, since the 158 new plants are on
+// the Arid list only, which Subtropical does not borrow.
 test('PP-B (b1b countFits, real data): Kiambu, 305 of the 515 plants on the nearest lists fit (196) or need a second look (109) today', async () => {
-  assert.equal(index.release_id, 'r-fcf4307ffd1549b3', 'the export the figure was read on');
+  assert.equal(index.release_id, 'r-b7fb536f9cfd0700', 'the export the figure was read on');
   const store = await kiambuStore();
   const n = store.countFits.value;
   assert.deepEqual(n, { fits: 196, look: 109, unknown: 0, of: 515 });

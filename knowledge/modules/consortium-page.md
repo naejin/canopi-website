@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T19:25:32Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:04:03Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:36Z }
@@ -70,8 +70,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:25e5ed486de7116b
-    last_modified: 2026-11-16T20:01:26Z
+    digest: sha256:41987a1e7ce55c14
+    last_modified: 2026-11-16T23:43:54Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -85,8 +85,8 @@ sources:
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:75aa91ed85c6c17a
-    last_modified: 2026-11-14T15:16:44Z
+    digest: sha256:70b4bf9134b87a25
+    last_modified: 2026-11-17T00:25:42Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
@@ -135,8 +135,8 @@ sources:
   - id: consortium-s4-browser-test-mjs
     resource: ../../scripts/browser/consortium-s4.browser.test.mjs
     title: scripts/browser/consortium-s4.browser.test.mjs
-    digest: sha256:a23c6e1cd0dbb101
-    last_modified: 2026-11-16T17:14:58Z
+    digest: sha256:be212ec9fb2e69d5
+    last_modified: 2026-11-17T00:46:04Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -417,7 +417,7 @@ The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude
   - `#ct-climate` (ConsortiumPage.astro, [climate-page-data.ts](../../src/data/climate-page-data.ts)): the climate index's `base` and each layer's sorted tile names, the shape `lib/climate` `siteIndex()` reads, read at build through `import.meta.glob` (the index is git-ignored; `node:fs` is not available in the Cloudflare prerender), `null` without an index; the check compares it with the installed index on every locale page, no hashes, ≤ 2 KB gzip (1,288 B on climate 0.2.0).
   - One grid: [consortium-grid-check.mjs](../../scripts/consortium-grid-check.mjs) fails the build unless the consortium index's `climate_grid_manifest_sha256` (missing or empty fails) equals the climate index's grid and its `consortium_grid_check.status` is `matched`.
 - Browser tests, via `npm run test:browser` (capped; never in `npm test`; it runs `npm run build:browser-test` first, so rebuild with `npm run build` before `check-built-site` or a deploy), one file per owner (review C1), enforced by [browser-tests.test.mjs](../../scripts/browser-tests.test.mjs) in `npm test`:
-  - [consortium-commit0.browser.test.mjs](../../scripts/browser/consortium-commit0.browser.test.mjs), no todo: P1 (515 plants counted in the page from the one hashed wasm), P2 (`application/wasm`, immutable headers), P3 (gzip magic, no content-encoding), P6/BT-9 JS-off shell, a mount with no head shift, and the BT-9 load screens with their buttons (DB 404, corrupt, wrong digest, empty body, `user_version` 2, WebAssembly off, loader chunk 404 online and offline) at all four variants;
+  - [consortium-commit0.browser.test.mjs](../../scripts/browser/consortium-commit0.browser.test.mjs), no todo: P1 (673 plants counted in the page from the one hashed wasm, release `r-b7fb536f9cfd0700`), P2 (`application/wasm`, immutable headers), P3 (gzip magic, no content-encoding), P6/BT-9 JS-off shell, a mount with no head shift, and the BT-9 load screens with their buttons (DB 404, corrupt, wrong digest, empty body, `user_version` 2, WebAssembly off, loader chunk 404 online and offline) at all four variants;
   - `consortium-s1…s4.browser.test.mjs`: each stream's §7 tests in full (BT-1 data and start halves, BT-2…BT-8, BT-9 `.canopi` against the vendored app schema, BT-5 offline correction, the exit walk-through); `browser-tests.test.mjs` fails on any todo or skip, and the tests drive real controls wherever one exists: S2 and S3 also use the hook to read the store and to set up a consortium no control makes in one step (a member taken out mid-sheet, deep shade), and the seam tests use it only for the chunk faults;
   - `consortium-seams-p2`, `-layout` and `-p5.browser.test.mjs` (split by owner tag in E1; shared code in [seams-helpers.mjs](../../scripts/browser/seams-helpers.mjs)): the P2 hand-off fixes (the one opener and Add's filters, checked against shade (the room no longer filters, owner request 2026-11-12), Show them anyway on a run with its stage bars, Paste leaving Start, a climate card after Change site not saved (F1), Undo back to Start (F2), focus in an open sheet (F3), the later chunk failing or loading (F4, F5), tap targets at every phone stage, the toast never covering a control (walk-through 2 N1: in the Add sheet, at 320/390/700/960/1280 px and window heights 480–900 px, `elementFromPoint` at the Add button's centre is the button and no sheet control meets the toast; it runs with `prefers-reduced-motion: reduce` and clicks "Add plants" only once its box and the page's scroll held still for two frames, since closing the sheet sends the focus back to that button and a smooth scroll still running moved it between puppeteer's measure and its click, which landed on `.ct-tabs`), every pop-up (map dialog, the layer and stage explanations of the phone matrix and side view, "Add it anyway?" until it went on 2026-11-14) within the 16 px gutter at 320/390 px in en/fr/ja (walk-through 2 N2), font weights, CJK headings, focus after Suggest, Suggest a start, Back to your consortium, Remove and Undo; P5 hand-off branch: UX3 the phone grid below 960 px and the table from 960 px, no sideways scroll or cut name at 700/959/960/1000 px; UX4 the Jobs headline counts jobs covering every stage and each run of missing stages has "Find a … for {stages}" opening Add for the job and those stages in any layer (`SheetFor.cell.stratum` null); Item 7 a filled cell's own "+" (`[data-add-filled]`, "Add a plant: {cell}", last in the cell, 24 px at least, no name cut at 960/1280 px; phone: "+ Add" ending each filled layer of the stage view) whose plant lands in that cell);
   - [consortium-e6.browser.test.mjs](../../scripts/browser/consortium-e6.browser.test.mjs), E6's user paths (design check §4.1 L1–L12), one variant each (1280 px light), written failing with `failing()` and its owner, which removes the marker: E6-1 (K1) Start's crop search finds what Add's finds; E6-2 (B4, passing since the chunk-4 merge) before the data is ready no lazy part (any chunk role, MapLibre included) is modulepreloaded or requested, the data loader is preloaded, and no first-view mark is set; K3's lazy sheets, all passing since the chunk-3 merge: E6-3 Details opened while its chunk is held shows the plant's name and a loading line at once, then its content, one request; E6-3b closed before the chunk arrives writes nothing, and the next open is instant with no second request (L6); E6-3c it stays one open dialog from the loading line to the content; E6-3d Add, search, Paste and Swap opened while the range rule loads show a named sheet with Close or no sheet, never an empty modal; E6-4 a missing Details chunk closes the sheet with the toast and Reload, focus back on the chip, the consortium restored after Reload (L1); E6-4b a Details import that rejects (`failSheets`) does the same (L7); E6-5 offline after the prefetch, Details opens with no toast (L3); E6-5b on Start only, the data ready, the sheets are prefetched without the matrix and Paste opens with its content (L12); E6-5c after the Details chunk's first request failed, opening a plant fetches it again (`retryable`) and shows its content (L4); E6-5d with every non-first-run module the sheet chunks import answered 404 on its first request, a plant still opens (sheet chunks import first-run modules only);

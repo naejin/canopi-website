@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Climate UX
 description: Every page that changes with the climate uses the app's seven zones, one stored choice set from an on-page chip, and one badge, and it reorders and marks content but never hides it.
 tags: [decision, climate, i18n]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:04:02Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-14T12:25:06Z }
 sources:
@@ -45,8 +45,8 @@ sources:
   - id: homepage-test-mjs
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:79212fb4fe86b5e7
-    last_modified: 2026-11-14T12:22:11Z
+    digest: sha256:9b85d7b778cda70d
+    last_modified: 2026-11-17T00:37:14Z
   - id: guides-test-mjs
     resource: ../../scripts/guides.test.mjs
     title: scripts/guides.test.mjs
@@ -91,7 +91,8 @@ coherent way to say which climate a piece of advice is for, everywhere it matter
   choosable and says "Not covered yet", naming the covered ones. The country is a separate, optional
   setting for invasive warnings only (see [Consortium page](/modules/consortium-page.md)). The home
   section's note names the covered climates in every locale (`homepage.test.mjs` ties it to
-  `manifest.climates`).
+  the installed index's `climates`: four since `r-b7fb536f9cfd0700`, tropical, arid, Mediterranean
+  and temperate).
 - **Hemisphere is separate.** Guides say seasons, not months; the climate choice does not imply a hemisphere.
 - **Later:** the app could share the same preference; not done yet.
 

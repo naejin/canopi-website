@@ -4,7 +4,7 @@ title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T22:04:29Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T20:34:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:04:07Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -14,8 +14,8 @@ sources:
   - id: consortium-credits-ts
     resource: ../../src/data/consortium-credits.ts
     title: src/data/consortium-credits.ts
-    digest: sha256:6c6427643957bcb9
-    last_modified: 2026-11-11T19:53:07Z
+    digest: sha256:adb898e5d9da9688
+    last_modified: 2026-11-17T00:37:18Z
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro

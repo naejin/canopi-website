@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-16T18:01:13Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-16T23:20:29Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T01:04:04Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -18,13 +18,13 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:75aa91ed85c6c17a
-    last_modified: 2026-11-14T15:16:44Z
+    digest: sha256:70b4bf9134b87a25
+    last_modified: 2026-11-17T00:25:42Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:b2769cbac8e4e0c4
-    last_modified: 2026-11-16T23:20:08Z
+    digest: sha256:fe507135dba576c8
+    last_modified: 2026-11-17T00:46:04Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -44,7 +44,7 @@ sources:
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:e163330f575c0645
-    last_modified: 2026-11-16T23:20:08Z
+    last_modified: 2026-11-16T23:20:48Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:25e5ed486de7116b
-    last_modified: 2026-11-16T20:01:26Z
+    digest: sha256:41987a1e7ce55c14
+    last_modified: 2026-11-16T23:43:54Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -114,7 +114,7 @@ sources:
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
     digest: sha256:c293be4e4346b4c3
-    last_modified: 2026-11-16T22:46:56Z
+    last_modified: 2026-11-16T23:20:48Z
 ---
 
 # Responsibility

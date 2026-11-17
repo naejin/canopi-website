@@ -358,7 +358,10 @@ const SITES = {
 // The same counts with the summer side limited to heat-demanding annuals (coordinator decision 2026-11-12).
 // r-f3c6dd8b3c4391be (D2d: hardiness, frost-tender and annual flags refreshed) keeps 1–4 fewer at seven
 // sites (r-60ea417b5a15c3aa: dakar 274, lima 282, hanoi 293, montreal 182, phoenix 150, brisbane 336, yakutsk 72).
-const KEPT = { lyon: 360, dakar: 270, lima: 278, hanoi: 289, montreal: 181, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 147, brisbane: 334, yakutsk: 68, chicago: 255 };
+// r-b7fb536f9cfd0700 (canopi-data D9a: Arid curated, 226 plants, 515 → 673): the three Arid sites read
+// their own list, no longer the 515 borrowed from Mediterranean, Tropical and Temperate (on
+// r-fcf4307ffd1549b3: dakar 270, lima 278, phoenix 147); every other site's count is unchanged.
+const KEPT = { lyon: 360, dakar: 87, lima: 116, hanoi: 289, montreal: 181, nairobi: 164, perth: 176, seville: 198, oslo: 236, manaus: 199, phoenix: 130, brisbane: 334, yakutsk: 68, chicago: 255 };
 
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const real = await sourceOf(new URL(`../public${index.files[0].url}`, import.meta.url), { releaseId: index.release_id, climates: index.climates });
@@ -389,7 +392,9 @@ test('PlantSource.interactions: a borrowed climate reads the rows of the curated
   assert.deepEqual([...await zones(fixture, 'Subtropical')].sort(), [null, 'Temperate', 'Tropical'].sort(), 'Subtropical: the general rows and those of Temperate and Tropical');
   assert.deepEqual([...await zones(fixture, 'Continental')].sort(), [null, 'Temperate'].sort(), 'Continental never reads a Tropical row');
   assert.deepEqual([...await zones(fixture, 'Temperate')].sort(), [null, 'Temperate'].sort(), 'a curated climate: its own rows, as in P2');
-  assert.ok((await zones(real, 'Arid')).has('Mediterranean'), 'real export: an Arid pool sees a Mediterranean-specific row');
+  // Arid is curated since r-b7fb536f9cfd0700 (D9a); Subtropical still borrows Mediterranean first.
+  assert.ok((await zones(real, 'Subtropical')).has('Mediterranean'), 'real export: a Subtropical pool sees a Mediterranean-specific row');
+  assert.equal((await zones(real, 'Arid')).has('Mediterranean'), false, 'real export: the curated Arid list reads its own rows, as in P2');
   assert.equal((await zones(real, 'Boreal')).has('Tropical'), false, 'real export: Boreal sees no Tropical row');
 });
 
