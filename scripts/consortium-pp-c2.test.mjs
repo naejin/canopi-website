@@ -537,15 +537,15 @@ test('c2 fix C5 + R6 + K7: Sources names every range source and every source tha
   const w = { list: 'Tropical', estimate: true, listSources: [], disputes: [], release: 'r-1' };
   const lines = line.sureLines(t, w).map(say);
   assert.deepEqual(lines, [
-    'Jobs, layer and years: Canopi’s Tropical list, an estimate for your climate, not reviewed.',
+    'Jobs, light need and years: Canopi’s Tropical list, an estimate for your climate, not reviewed.',
     'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.',
     'Warmth over the year: its sources disagree; the looser limit is kept and drawn dashed.',
     'Data release r-1.',
   ]);
   // Every disputed limit named, the weak row and the dispute row alike (R6: true for both rows).
   const both = line.sureLines(t, { ...w, estimate: false, listSources: ['Canopi sample review'], disputes: [dispute], release: '' }).map(say);
-  assert.deepEqual(both, ['Jobs, layer and years: Canopi’s Tropical list, from Canopi sample review.', 'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.', 'Warmth over the year and Coldest nights: its sources disagree; the looser limit is kept and drawn dashed.']);
-  assert.deepEqual(line.sureLines({ climate: null }, { ...w, estimate: false }).map(say), ['Jobs, layer and years: Canopi’s Tropical list.', 'Climate range: not recorded.', 'Data release r-1.']);
+  assert.deepEqual(both, ['Jobs, light need and years: Canopi’s Tropical list, from Canopi sample review.', 'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.', 'Warmth over the year and Coldest nights: its sources disagree; the looser limit is kept and drawn dashed.']);
+  assert.deepEqual(line.sureLines({ climate: null }, { ...w, estimate: false }).map(say), ['Jobs, light need and years: Canopi’s Tropical list.', 'Climate range: not recorded.', 'Data release r-1.']);
   for (const [lang, wd] of Object.entries(words)) for (const k of ['sureListFrom', 'sureDisputed']) assert.ok(wd[`consortium.details.${k}`]?.includes(k === 'sureDisputed' ? '{limits}' : '{sources}'), `${lang}: ${k}`);
 });
 
@@ -713,7 +713,7 @@ test('c2 fix T10 (disputing source named): a weak low names TreeGOER in Sources 
   const t = { climate: { source: 'gbif_occurrences', tminCold: range({ weak: true }), tmaxWarm: range(), tmeanYear: range({ weak: true }), tmeanWarm: null, aridity: null, cells: 22, nativeShare: null } };
   assert.deepEqual(line.rangeSources(t).map((x) => x.name), ['GBIF', 'TreeGOER']);
   const lines = line.sureLines(t, { list: 'Arid', estimate: true, listSources: [], disputes: [], release: '' }).map(say);
-  assert.equal(lines[0], 'Jobs, layer and years: Canopi’s Arid list, an estimate for your climate, not reviewed.');
+  assert.equal(lines[0], 'Jobs, light need and years: Canopi’s Arid list, an estimate for your climate, not reviewed.');
   assert.equal(lines[1], 'Climate range: records in 22 map squares (GBIF, TreeGOER), an estimate.');
   assert.deepEqual(line.rangeSources({ climate: { ...t.climate, tminCold: range(), tmeanYear: range() } }).map((x) => x.name), ['GBIF'], 'no TreeGOER when nothing is disputed');
 });
