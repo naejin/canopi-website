@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "Dias mais quentes",
   "consortium.line.measureAridity": "Chuva frente à evaporação",
   "consortium.line.bandFits": "Dentro da faixa",
+  "consortium.line.bandWithin": "Dentro do seu limite",
   "consortium.line.bandEdge": "Perto da borda da sua faixa",
   "consortium.line.bandOutside": "Fora da sua faixa",
   "consortium.line.bandUnknown": "Não registrado",

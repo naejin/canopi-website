@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "Jours les plus chauds",
   "consortium.line.measureAridity": "Pluie face à l’évaporation",
   "consortium.line.bandFits": "Dans l’aire",
+  "consortium.line.bandWithin": "Dans sa limite",
   "consortium.line.bandEdge": "Près du bord de son aire",
   "consortium.line.bandOutside": "Hors de son aire",
   "consortium.line.bandUnknown": "Non renseigné",

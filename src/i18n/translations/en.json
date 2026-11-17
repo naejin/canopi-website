@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "Hottest days",
   "consortium.line.measureAridity": "Rain against evaporation",
   "consortium.line.bandFits": "In range",
+  "consortium.line.bandWithin": "Within its limit",
   "consortium.line.bandEdge": "Near the edge of its range",
   "consortium.line.bandOutside": "Outside its range",
   "consortium.line.bandUnknown": "Not recorded",

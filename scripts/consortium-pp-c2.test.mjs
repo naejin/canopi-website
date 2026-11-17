@@ -675,6 +675,18 @@ test('c2 fix T8 (band ends the text names): Mendoza, Siberian elm: the 3.5 °C e
   for (const k of ['atDryEnd', 'atWetEnd', 'bandDryEdge', 'bandWetEdge']) for (const [lang, w] of Object.entries(words)) assert.ok(w[`consortium.line.${k}`], `${lang}: ${k}`);
 });
 
+// Fix round 4 V2 (c2r4-01): a band's status never says "In range" when the place sits outside the drawn
+// recorded range on a side the rule does not check. Real figures (export r-4db8, tiles 0.2.0): Lyon,
+// Amburana cearensis: hottest days 26.6 °C, recorded 27.1 to 36.8 °C (only the heat limit is checked).
+test('c2 fix V2 (band status true outside the recorded range): Lyon, Amburana cearensis hottest days 26.6 vs 27.1–36.8 reads "Within its limit", never "In range"', () => {
+  const hot = { factor: 'hot', level: 'fits', basis: 'range', place: 26.6, low: 27.1, high: 36.8 };
+  const [b] = line.bandsOf(vOf({ factors: [hot] }), null, null);
+  assert.deepEqual([b.level, say(b.status)], ['fits', 'Within its limit']);
+  const [inside] = line.bandsOf(vOf({ factors: [{ ...hot, place: 30 }] }), null, null);
+  assert.equal(say(inside.status), 'In range', 'inside the recorded range it is in range');
+  for (const [lang, w] of Object.entries(words)) assert.ok(w['consortium.line.bandWithin'], `${lang}: bandWithin`);
+});
+
 // Fix round 3 T9 (Chrome K3): within equal shared jobs, the candidate standing in more of the member's
 // years comes first (Lyon, Madre de cacao, years 1 to 60: Autumn olive, years 1–15, above Chicory, to
 // year 3), whatever hole-years each closes.

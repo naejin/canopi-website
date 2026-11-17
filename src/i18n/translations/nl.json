@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "Heetste dagen",
   "consortium.line.measureAridity": "Regen tegenover verdamping",
   "consortium.line.bandFits": "Binnen het bereik",
+  "consortium.line.bandWithin": "Binnen haar grens",
   "consortium.line.bandEdge": "Dicht bij de rand van haar bereik",
   "consortium.line.bandOutside": "Buiten haar bereik",
   "consortium.line.bandUnknown": "Niet vastgelegd",

@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "Heißeste Tage",
   "consortium.line.measureAridity": "Regen gegen Verdunstung",
   "consortium.line.bandFits": "Im Bereich",
+  "consortium.line.bandWithin": "Innerhalb ihrer Grenze",
   "consortium.line.bandEdge": "Nahe am Rand ihres Bereichs",
   "consortium.line.bandOutside": "Außerhalb ihres Bereichs",
   "consortium.line.bandUnknown": "Nicht erfasst",

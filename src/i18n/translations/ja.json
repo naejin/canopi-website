@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "最も暑い日",
   "consortium.line.measureAridity": "降水と蒸発の比",
   "consortium.line.bandFits": "範囲内",
+  "consortium.line.bandWithin": "限界の内側",
   "consortium.line.bandEdge": "範囲の端に近い",
   "consortium.line.bandOutside": "範囲外",
   "consortium.line.bandUnknown": "記録なし",

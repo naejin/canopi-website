@@ -287,11 +287,13 @@ export function soilCheckLine(t: Taxon, v: PlantVerdict | null, ph: number | nul
 }
 
 // A band's status in words (with the level's icon in the view): in range, near the edge (a place on a
-// checked end too), outside; the aridity band says drier or wetter, or near its dry or wet edge.
+// checked end too), outside; the aridity band says drier or wetter, or near its dry or wet edge. A fit
+// past the recorded range on a side the rule does not check is within its limit, not "in range".
 function statusOf(f: FactorVerdict): Line {
   if (f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null) return L(f.place < f.low ? 'bandDrier' : 'bandWetter');
   const at = f.level === 'fits' ? endAt(f) : null;
   if (at) return L(f.factor !== 'dry' ? 'bandEdge' : at === 'low' ? 'bandDryEdge' : 'bandWetEdge');
+  if (f.level === 'fits' && f.place !== null && ((f.low !== null && f.place < f.low) || (f.high !== null && f.place > f.high))) return L('bandWithin');
   return L(f.level === 'outside' ? 'bandOutside' : f.level === 'look' ? 'bandEdge' : f.level === 'unknown' ? 'bandUnknown' : 'bandFits');
 }
 

@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "最热的白天",
   "consortium.line.measureAridity": "降水与蒸发之比",
   "consortium.line.bandFits": "在范围内",
+  "consortium.line.bandWithin": "在其限值内",
   "consortium.line.bandEdge": "接近范围边缘",
   "consortium.line.bandOutside": "超出范围",
   "consortium.line.bandUnknown": "无记录",

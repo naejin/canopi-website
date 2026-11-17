@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "가장 더운 날",
   "consortium.line.measureAridity": "강수 대 증발",
   "consortium.line.bandFits": "범위 안",
+  "consortium.line.bandWithin": "한계 안",
   "consortium.line.bandEdge": "범위의 가장자리 근처",
   "consortium.line.bandOutside": "범위 밖",
   "consortium.line.bandUnknown": "기록 없음",

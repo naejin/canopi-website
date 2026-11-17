@@ -1061,6 +1061,7 @@
   "consortium.line.measureHottestDays": "Самые жаркие дни",
   "consortium.line.measureAridity": "Осадки против испарения",
   "consortium.line.bandFits": "В пределах",
+  "consortium.line.bandWithin": "В пределах своей границы",
   "consortium.line.bandEdge": "У края своего диапазона",
   "consortium.line.bandOutside": "Вне своего диапазона",
   "consortium.line.bandUnknown": "Не отмечено",
