@@ -2,7 +2,7 @@
 type: Module
 title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 3 and schema 4 (4.1 and 4.2) exports: additive-tier checks, optional schema-4 tables (plant_aliases accepted, never read) and the search names file."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:18Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:49Z }
 sources:
@@ -10,42 +10,52 @@ sources:
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
     digest: sha256:dbcbf264981a7904
-    last_modified: 2026-11-17T10:27:46Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:fb28ce7a28c85458
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:5a68cb4f4f79a63e
-    last_modified: 2026-11-17T10:28:40Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:d406e9cf7fe5e4de
-    last_modified: 2026-11-17T10:28:03Z
+    digest: sha256:76adc2791c1ed27f
+    last_modified: 2026-11-17T17:54:47Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
     digest: sha256:a9e179d333edafd9
-    last_modified: 2026-11-17T10:28:40Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:ec1c9c66b312ff82
-    last_modified: 2026-11-17T10:25:24Z
+    digest: sha256:7b32c28f32a0530d
+    last_modified: 2026-11-17T13:23:27Z
   - id: consortium-source-test-mjs
     resource: ../../scripts/consortium-source.test.mjs
     title: scripts/consortium-source.test.mjs
-    digest: sha256:66bde51a59246578
-    last_modified: 2026-11-17T10:30:07Z
+    digest: sha256:8c293450f3b6a119
+    last_modified: 2026-11-17T13:25:33Z
+  - id: names-ts
+    resource: ../../src/islands/consortium/views/find/names.ts
+    title: src/islands/consortium/views/find/names.ts
+    digest: sha256:cf3b844703f6a3e8
+    last_modified: 2026-11-17T16:37:51Z
+  - id: names-file-ts
+    resource: ../../src/islands/consortium/data/names-file.ts
+    title: src/islands/consortium/data/names-file.ts
+    digest: sha256:a6d9f0e270c94cbf
+    last_modified: 2026-11-17T17:52:44Z
 enforced_by:
   - scripts/install-consortium.test.mjs
   - scripts/consortium-source.test.mjs
@@ -61,6 +71,7 @@ enforced_by:
 - Statement text is compared for base statements only.
 - Open vocabularies take base or declared values; any other stored value is refused.
 - The search names file (`names.<release>.<hash>.tsv.gz`) is checked and installed; `src/data/consortium-index.json` names it (`search_names`).
+- The island reads it since PP-C c1: `#ct-data` `names` (a `DbRef`, none before schema 4); `data/names-file.ts` fetches and checks it (digests, the header matched to the page's database, a stalled download aborted), and `views/find/names.ts` loads it once per page for Find and Paste on top of the core's names (`PlantSource.names`), searching while it loads; a digest mismatch or a file bound to another database is dropped until reload, a failed load tried again on the next focus.
 
 ## Reader (`data/sqlite-source.ts`)
 - Each schema-4 table is optional: read only when the database has it (a schema-3 export, a 4.1 export without `plant_toxicity_parts`, a 4.2 one without `plant_invasive_areas`); absent means the Details field is null and the feature is off.

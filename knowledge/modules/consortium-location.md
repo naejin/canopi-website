@@ -2,9 +2,9 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:50Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:49Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:39Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -14,8 +14,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:79c69772bc4dd0e6
-    last_modified: 2026-11-15T06:28:16Z
+    digest: sha256:a95d33626cb4756c
+    last_modified: 2026-11-17T18:36:51Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -29,8 +29,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:ec1c9c66b312ff82
-    last_modified: 2026-11-17T10:20:20Z
+    digest: sha256:7b32c28f32a0530d
+    last_modified: 2026-11-17T13:23:27Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -75,7 +75,7 @@ sources:
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
     digest: sha256:ba70aad3ef34a078
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -95,7 +95,7 @@ sources:
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:13928dffc93f48fc
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css

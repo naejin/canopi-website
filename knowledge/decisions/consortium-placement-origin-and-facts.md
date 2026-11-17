@@ -3,20 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:43Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:d406e9cf7fe5e4de
-    last_modified: 2026-11-17T10:28:03Z
-  - id: site-marks-ts
-    resource: ../../src/lib/consortium/site-marks.ts
-    title: src/lib/consortium/site-marks.ts
-    digest: sha256:eedd824ed60b2ff0
-    last_modified: 2026-11-16T18:00:55Z
+    digest: sha256:76adc2791c1ed27f
+    last_modified: 2026-11-17T17:54:47Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -26,14 +21,12 @@ sources:
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:80fa400bffb295f4
-    last_modified: 2026-11-15T12:09:01Z
-  - id: decisions-consortium-user-decisions
-    resource: /decisions/consortium-user-decisions.md
+    digest: sha256:7c92814537dcc2e7
+    last_modified: 2026-11-17T17:32:21Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -42,13 +35,18 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:15a62311180fe1fa
-    last_modified: 2026-11-17T10:25:24Z
+    digest: sha256:382e2944ffca7b96
+    last_modified: 2026-11-17T18:34:00Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
     digest: sha256:54ebe58c62317d47
     last_modified: 2026-11-13T15:32:49Z
+  - id: verdict-line-ts
+    resource: ../../src/lib/consortium/verdict-line.ts
+    title: src/lib/consortium/verdict-line.ts
+    digest: sha256:76e25e5ee23f1bc9
+    last_modified: 2026-11-17T17:30:09Z
 ---
 
 ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).
@@ -66,7 +64,7 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 - **Which record a view gets** (`store.ts` `taxonOf`, E6 hand-off re-review 1 and review 4): the member, else the guest's record from the list it was added from (`guestTaxa`, from the consortium's guests map once that list is read), else the chosen climate's own list as read in `pools` (never a guest, even while `store.pool` waits for the range rule), else another climate's list already read, through `asGuest`. A guest is therefore never resolved from the first other list that happens to hold it. Tested by `scripts/consortium-taxon-of.test.mjs`.
 - **`factAt`.** `FactAt = (key, taxon, site, period) => FactValues[key] | null`, implemented in core `source.ts` (beside the `PlantSource` that stores the facts) with `TODAY_PERIOD` `periodIds[0]` (`'1991-2020'`). In E6 it returns the stored value whatever the site and period; views read these facts through it instead of `t.traits.*`. Details (water need), the palette's Things to weigh (water need, grouped by `weigh.ts` `waterNeed`) and `site.ts`'s water check (drought tolerance and moisture use, PP-B b3 fix round 2, verdicts unchanged) read it; F2 routes the rest of site fit and range through it and computes per site and period behind the same signature, and E7 reads scoped stored facts (most specific wins).
 - **Its fact list, and only it** (`FactKey`): `water_need` (`drought` and `moisture`, each `string | null`; widened from `drought: string` in R4 so a plant with only a moisture value still answers, and null only when both are unknown). `life_cycle`, `cold_limit` and `heat_limit` were listed until PP-C commit 0 (b3g-5) deleted them: no view read them, and their stored readers cost first-run bytes. Other traits stay direct reads; a fact joins the list with its first reader (F2 for the facts it computes per site and period, E7 for scoped ones).
-- **`SiteFitMessage`** `{ id, about, severity, misfit, key, vars?, state? }` (`misfit` was `asks` until the 2026-11-14 "Inform, don't block" row: a misfit warns in words, never asks): one shape for site-fit lines (light, room, climate) so the views stop composing them. In use since E6 R2: core `site-marks.ts` `siteFitMessages` builds them, `rules/site-fit.ts` and `views/kit/flags.ts` word the flags from them, and `siteMarks` turns the notes (`state` set) into marks.
+- **`SiteFitMessage`** `{ id, about, severity, misfit, key, vars?, state? }` (`misfit` was `asks` until the 2026-11-14 "Inform, don't block" row: a misfit warns in words, never asks): one shape for site-fit lines (light, room, climate) so the views stop composing them. In use from E6 R2 to PP-C c2 (core `site-marks.ts` `siteFitMessages`, read by `rules/site-fit.ts`, `views/kit/flags.ts` and `siteMarks`). PP-C c2 (fix round 1 B2) deleted `site-marks.ts` and the marks: the site answers' words are core `verdict-line.ts` `siteLines` (`SiteLine {about, misfit, note?, line}`), read by the verdict lines, the flags and Details.
 
 ## Consequences
 

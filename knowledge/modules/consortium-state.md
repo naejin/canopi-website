@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:55Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:52Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
 sources:
@@ -15,38 +15,38 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:15a62311180fe1fa
-    last_modified: 2026-11-17T10:13:18Z
+    digest: sha256:382e2944ffca7b96
+    last_modified: 2026-11-17T18:34:00Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
     digest: sha256:3d185b1b32577c26
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:7afb7646305b6cf2
-    last_modified: 2026-11-17T10:20:20Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
     digest: sha256:13928dffc93f48fc
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:3a3beb27521f87d1
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:247825dbbd1ebd15
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:dcb205b39aee2409
-    last_modified: 2026-11-16T20:17:56Z
+    digest: sha256:437155c4bec846fc
+    last_modified: 2026-11-17T15:02:13Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -65,13 +65,13 @@ sources:
   - id: consortium-start-test-mjs
     resource: ../../scripts/consortium-start.test.mjs
     title: scripts/consortium-start.test.mjs
-    digest: sha256:ee273c9b34a6b291
-    last_modified: 2026-11-13T12:48:34Z
+    digest: sha256:2c0701cc1348ad7c
+    last_modified: 2026-11-17T13:47:38Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:877b71a79e071642
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:4408d770ddaa43cf
+    last_modified: 2026-11-17T14:13:26Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -123,7 +123,7 @@ Every waiting Suggest ends, with a suggestion or one toast, always through `drop
 - the suggestion's chunk (`store.suggestRule`) not come and the plant list read (a stalled request): the wait ends with one `details.loadFailed` toast with Reload, and its id is kept (`lateToast`);
 - the chunk not come and the list still being read: checked again after another cap, no toast (the load screen ends a failed list's wait);
 - in every case `waited` is set first: a location lookup no longer holds the wait (Suggest runs without the site; the line says so).
-- **the verdict wait (PP-B b1b, F1a-P7):** with a site climate and range checks on (`store.waitsForVerdicts()` = `siteClimate && !rangeFailed`), `store.suggestMembers` returns false until `poolVerdicts` exist, so the Suggest waits for the verdict chunk too (the gain counts the open holes a plant fills, and a member outside its range fills none). A **refused** verdict chunk ends the wait at once (an effect on `store.verdictFailed`) with the `place.count.suggestStopped` toast and Try again (`load.retry`), which calls `requestSuggest()` again; `requestSuggest` asks for the chunk again in place (`store.retryVerdict()`) when it had failed. A **stalled** verdict chunk at the cap (the list and the suggestion's chunk read, the verdicts still missing) ends the wait with the `details.loadFailed` toast and Reload, since the import is still pending and Try again could not ask again; its id is kept (`lateVerdictToast`) and the toast goes if the chunk then comes, only while it is still the toast shown. Without a site climate, or with range checks off, the suggestion never waits for verdicts.
+- **the verdict wait (PP-B b1b, F1a-P7):** with a site climate (`store.waitsForVerdicts()` = `siteClimate`; the `!rangeFailed` term went when PP-C c2 folded the range checks into the verdict chunk), `store.suggestMembers` returns false until `poolVerdicts` exist, so the Suggest waits for the verdict chunk too (the gain counts the open holes a plant fills, and a member outside its range fills none). A **refused** verdict chunk ends the wait at once (an effect on `store.verdictFailed`) with the `place.count.suggestStopped` toast and Try again (`load.retry`; Reload when `store.verdictNeedsReload`, set when a failed retry's verdict file answers a HEAD), which calls `requestSuggest()` again; `requestSuggest` asks for the chunk again in place (`store.retryVerdict()`) when it had failed. A **stalled** verdict chunk at the cap (the list and the suggestion's chunk read, the verdicts still missing) ends the wait with the `details.loadFailed` toast and Reload, since the import is still pending and Try again could not ask again; its id is kept (`lateVerdictToast`) and the toast goes if the chunk then comes, only while it is still the toast shown. Without a site climate the suggestion never waits for verdicts.
 
 If the chunk then arrives, an effect in `watchSuggest` takes down only that Reload toast, and only while it is still the toast shown (a newer toast stays); the wait stays ended, so no suggestion runs. Browser tests E6-16, E6-16b and E6-18 (`consortium-e6-r4.browser.test.mjs`) cover the three cases.
 

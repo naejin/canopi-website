@@ -3,30 +3,30 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:03Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:49Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:57Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:ddc3af06c1c0d64c
-    last_modified: 2026-11-17T09:22:58Z
+    digest: sha256:e8e4d9c512e074ca
+    last_modified: 2026-11-17T18:39:27Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T09:22:58Z
+    digest: sha256:155926d0301ae183
+    last_modified: 2026-11-17T13:23:27Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:de83b81abefa97df
-    last_modified: 2026-11-17T09:53:05Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:335c1e2f120de60e
-    last_modified: 2026-11-17T09:22:58Z
+    digest: sha256:4bab1793e5e41fae
+    last_modified: 2026-11-17T13:26:50Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -45,8 +45,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:08bd3d1895fcd10e
-    last_modified: 2026-11-16T19:23:47Z
+    digest: sha256:ca29813fffe9f702
+    last_modified: 2026-11-17T13:23:27Z
 enforced_by: [scripts/check-built-site.mjs, scripts/built-modules.test.mjs]
 ---
 
@@ -58,20 +58,18 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 
 ## Decision
 
-- **Per-chunk caps, no total cap.** `ISLAND_BUDGET` and `FEATURES_BUDGET` are gone. Each on-demand part has a role in `ROLE_ENTRIES` (`scripts/built-modules.mjs`, the one list: the P5 features `location`, `markProviders`, `future`, `pool`, `range`, the E6 lazy parts `details`, `sheets`, `later`, `suggest`, PP-B's `palette` and `verdict`, and PP-C's `find`; each entry is `{ entry, chunks }`, the module regex and the chunk count the build must have; PP-C commit 0 dropped the empty `likely` and `native` roles). Its cost is what a first use fetches: the role chunk and its static imports that the page has not already loaded (`onDemandChunks(...).costs`; another role chunk it imports statically is costed on its own).
+- **Per-chunk caps, no total cap.** `ISLAND_BUDGET` and `FEATURES_BUDGET` are gone. Each on-demand part has a role in `ROLE_ENTRIES` (`scripts/built-modules.mjs`, the one list: the P5 features `location`, `future`, `pool` (PP-C c2 removed `markProviders` and `range` with the mark providers: the range checks ride in `verdict`), the E6 lazy parts `details`, `sheets`, `later`, `suggest`, PP-B's `palette` and `verdict`, and PP-C's `find`; each entry is `{ entry, chunks }`, the module regex and the chunk count the build must have; PP-C commit 0 dropped the empty `likely` and `native` roles). Its cost is what a first use fetches: the role chunk and its static imports that the page has not already loaded (`onDemandChunks(...).costs`; another role chunk it imports statically is costed on its own).
 - **Caps** (`ROLE_CAPS` in `check-built-site.mjs`): each role's measured cost plus 0.5 KB, rounded up to 0.1 KB, never above the A14 maximum; an empty role gets its maximum. Set at the E6 B4 build (2026-11-13) and again at the PP-B exit (2026-11-16, slices "Budgets": every cap measured + 0.5 KB), the table's figures. Until the size-optimisation stage a budget is a tripwire (row "Size budgets are a tripwire", 2026-11-16, in [user decisions](/decisions/consortium-user-decisions.md)): a part over its cap is first checked for a structural mistake, else raised by the measured amount in a dated line.
 
 | Role | Cap (gzip) | Measured at the PP-B exit (2026-11-16) | A14 maximum |
 |---|---|---|---|
 | first run (the island entry and its static imports), `FIRST_RUN_BUDGET` | 40 KB since the owner's call of 2026-11-14 (PP-B; 38 KB from the E6 chunk-5 exit; 40 KB from the chunk-3 merge to the chunk-5 exit) | 40,953 B, 7 B under the cap (38,836 B at the E6 hand-off build) | measured rounded up to the next 0.5 KB |
 | `location` | 11.9 KB | 11,603 B | 20 KB (also: the location part with what only it reaches ≤ 20 KB) |
-| `markProviders` | 2.9 KB | 2,382 B (with the chunk it shares with `future`) | 12 KB |
 | `future` | 2.8 KB | 2,282 B | 12 KB |
 | `pool` | 1.6 KB | 1,115 B (Place's count line since b1b) | 12 KB |
-| `range` | 1.6 KB | 1,123 B | 12 KB |
 | `details` | 6.6 KB | 6,220 B | 8 KB |
 | `sheets` (each: Swap, Correction since PP-C commit 0) | 6.3 KB | largest 5,881 B | 8 KB |
-| `find` (each: `views/find/**` and `Paste.tsx`, PP-C commit 0) | 8 KB | 5.7 KB (Paste alone, 2026-11-17) | 8 KB |
+| `find` (each: `views/find/**`, Find and Paste since PP-C c1) | 8 KB | 5.7 KB (Paste alone, 2026-11-17) | 8 KB |
 | `later` | 6.1 KB | 5,667 B | 8 KB |
 | `suggest` | 3.8 KB | 3,280 B | 8 KB |
 | `palette` | 10.6 KB | 10,263 B (the palette page with Your plants) | 12 KB |
@@ -79,10 +77,11 @@ Before B4 the consortium page had a first-run cap (43 KB gzip, 40 KB from the ch
 | MapLibre with its worker and CSS | 330 KB | 298.8 KB | 330 KB |
 
 - A part above its cap is a coordinator row, never a silent raise.
-- Every role has a cap and every cap a role; the chunk count each role must have comes from its `ROLE_ENTRIES` row (`check-built-site.mjs` loops over it since PP-C commit 0): one each for `location` (when its source exists), `markProviders`, `future`, `pool`, `range`, `details`, `later`, `suggest`, `palette` and `verdict`, two for `sheets` (Swap and Correction), at least one for `find`; `built-modules.test.mjs` checks that each role's regex names a file under `src/`. The sheet-like set the K3 import rule covers is `details`, `sheets` and `find`.
+- **Measured at the PP-C c1+c2 merge** (gzip, 2026-11-17, reported, never a failure: owner row "No hard limits", 2026-11-16): first run 47.0 KB (reference 40); find 17.3 KB (8.0); details 10.7 KB (6.6); verdict 3.4 KB with the future and range chunks it shares (2.9); future 2.8 (2.8); pool 1.8 (1.6). The caps above are now references for the size-optimisation stage.
+- Every role has a cap and every cap a role; the chunk count each role must have comes from its `ROLE_ENTRIES` row (`check-built-site.mjs` loops over it since PP-C commit 0): one each for `location` (when its source exists), `future`, `pool`, `details`, `later`, `suggest`, `palette` and `verdict`, two for `sheets` (Swap and Correction), at least one for `find`; `built-modules.test.mjs` checks that each role's regex names a file under `src/`. The sheet-like set the K3 import rule covers is `details`, `sheets` and `find`.
 - **An island chunk with no role fails the build**: every island chunk is first run, the sqlite glue's (and its static imports), a part's cost or MapLibre's.
 - No role chunk is in the first run.
-- **Sheet and Details imports**: a `details`, `sheets` or `find` chunk statically imports only first-run chunks (and the page-wide chunks the first run imports), never another sheet's or the Details chunk (tightened at the E6 hand-off, A): core `retry-import.ts` `retryableImport` mends the part's own chunk only, and Chromium never refetches a failed module, so a failed shared chunk would break every sheet until Reload; `kit/sheet.tsx` `shared` keeps `flags` and `list-query` in the first run, and the correction drafts live in `views/kit/correction.ts` but ship in the Details chunk, their only importer (the correction form gets them as a prop).
+- **Sheet and Details imports**: a `details`, `sheets` or `find` chunk statically imports only first-run chunks (and the page-wide chunks the first run imports), never another sheet's or the Details chunk (tightened at the E6 hand-off, A): core `retry-import.ts` `retryableImport` mends the part's own chunk only, and Chromium never refetches a failed module, so a failed shared chunk would break every sheet until Reload; `kit/sheet.tsx` `shared` keeps `flags` in the first run, and the correction drafts live in `views/kit/correction.ts` but ship in the Details chunk, their only importer (the correction form gets them as a prop).
 - **Finding the island entry**: `islandChunks` takes the one chunk holding the bare `"ct-root"` literal (main.ts's own `getElementById`; an entry module's code is always in its entry chunk). It no longer also requires `"ct-data"`, whose reader (`views/kit/page.ts`) sits in the entry only while Rollup inlines it there (E6 hand-off H).
 - **No late stylesheet**: no island chunk's `__vite__mapDeps` preload list names a CSS file (MapLibre's CSS aside), read from the built output.
 - **Modulepreload (A5, L5)**: consortium pages preload only what the first view awaits (`modulepreloadChunks`: the page script's static imports, the island entry and its static imports, the data loader with the sqlite glue); no part, feature or MapLibre chunk. The check asserts the first run and glue are preloaded and no lazy chunk is (from the graph and roles; the exact list comparison was dropped as circular).

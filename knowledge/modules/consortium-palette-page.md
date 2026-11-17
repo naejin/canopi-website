@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:06Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:52Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:59Z }
 sources:
@@ -10,12 +10,12 @@ sources:
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
     digest: sha256:39d03deba98c3fc8
-    last_modified: 2026-11-17T09:22:58Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
     digest: sha256:d881634869e11783
-    last_modified: 2026-11-17T09:22:58Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
@@ -29,8 +29,8 @@ sources:
   - id: fit-tsx
     resource: ../../src/islands/consortium/views/kit/fit.tsx
     title: src/islands/consortium/views/kit/fit.tsx
-    digest: sha256:66bce56fe9cce736
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:d9e25a0ffdca77a1
+    last_modified: 2026-11-17T18:36:51Z
   - id: picture-ts
     resource: ../../src/islands/consortium/rules/picture.ts
     title: src/islands/consortium/rules/picture.ts
@@ -39,18 +39,18 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:08bd3d1895fcd10e
-    last_modified: 2026-11-16T19:23:47Z
+    digest: sha256:ca29813fffe9f702
+    last_modified: 2026-11-17T13:23:27Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1fa1952975c4ff18
-    last_modified: 2026-11-17T09:22:58Z
+    digest: sha256:cbfcbb83cffaa528
+    last_modified: 2026-11-17T13:23:27Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:15a62311180fe1fa
-    last_modified: 2026-11-17T09:43:32Z
+    digest: sha256:382e2944ffca7b96
+    last_modified: 2026-11-17T18:34:00Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -116,7 +116,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   `.ct-offline` status line in `App.tsx`; `views/lazy.tsx` `LoadFailed` says "Needs a connection" and
   retries when the store's `offline` signal turns false (not a listener of its own, which an effect
   added after paint and so missed a connection back in that window: PP-B16b, PP-B exit); the verdict chunk's notice says "Needs a connection" and `store.start()` retries
-  it on `online`; online, Reload retries a retryable part in place (`?retry=n`). When the range or marks chunk failed too (`store.verdictNeedsReload`: Chromium keeps a failed module's dependency failed in that document), no retry is offered or run on `online`: the notice, the pool's count line and the Suggest toast show Reload (`load.reload`, a page reload) instead (pre-push fix 4).
+  it on `online`; online, Reload retries a retryable part in place (`?retry=n`). When a failed retry's verdict file itself answers a HEAD (`store.verdictNeedsReload`: the file arrived but its import failed, a static dependency Chromium keeps failed in that document; PP-C c2 merge, A8/A14), no retry is offered or run on `online`: the notice, Details' Against your place, the pool's count line and the Suggest toast show Reload (`load.reload`, a page reload) instead; a refused or dropped file keeps Try again (PP-B20, PP-B49).
 - A guest list that fails (`store.failedPools`, `failedMembers`) is named on the page with its plants not
   checked ("The Tropical list could not be read: …": `{lists}` takes the climate names, `zoneName`, since
   every locale's template carries its own "list" word); only the chosen climate's list failing is the

@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:51:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:53Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T17:29:01Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:44Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -18,13 +18,13 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:b8abca84785bbb81
-    last_modified: 2026-11-17T06:50:38Z
+    digest: sha256:c3240ab7c7dc33f1
+    last_modified: 2026-11-17T13:23:27Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:5b7e9d15838db507
-    last_modified: 2026-11-17T17:28:25Z
+    digest: sha256:cb03eb3d9b50508d
+    last_modified: 2026-11-17T18:39:27Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -43,8 +43,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:0182599bf26892d7
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:4780e3571e442b4e
+    last_modified: 2026-11-17T18:39:27Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:155926d0301ae183
+    last_modified: 2026-11-17T13:23:27Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -85,21 +85,6 @@ sources:
     title: sgconfig.yml
     digest: sha256:2c703f0a6786cc90
     last_modified: 2026-11-13T06:47:29Z
-  - id: consortium-palette-test-mjs
-    resource: ../../scripts/consortium-palette.test.mjs
-    title: scripts/consortium-palette.test.mjs
-    digest: sha256:e794c81a66f37dc9
-    last_modified: 2026-11-13T19:32:13Z
-  - id: consortium-balance-test-mjs
-    resource: ../../scripts/consortium-balance.test.mjs
-    title: scripts/consortium-balance.test.mjs
-    digest: sha256:1f0c3404a3d86aea
-    last_modified: 2026-11-13T20:25:47Z
-  - id: consortium-confidence-test-mjs
-    resource: ../../scripts/consortium-confidence.test.mjs
-    title: scripts/consortium-confidence.test.mjs
-    digest: sha256:807eeb2fe9a1172e
-    last_modified: 2026-11-13T19:32:13Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
@@ -108,8 +93,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:604335703ffbcbeb
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:8165023fefa061e6
+    last_modified: 2026-11-17T13:23:27Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs

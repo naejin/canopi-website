@@ -4,9 +4,9 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:39Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:54Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:47Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:45Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -36,8 +36,8 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:29cbaf3dbda18ec2
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:2c462bea8e6fe19d
+    last_modified: 2026-11-17T13:23:27Z
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
@@ -96,18 +96,18 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:ddc3af06c1c0d64c
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:e8e4d9c512e074ca
+    last_modified: 2026-11-17T18:39:27Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:0182599bf26892d7
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:4780e3571e442b4e
+    last_modified: 2026-11-17T18:39:27Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:155926d0301ae183
+    last_modified: 2026-11-17T13:23:27Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -126,8 +126,8 @@ sources:
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:4d1d283c1123981b
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:036f1bdd9cd3cb01
+    last_modified: 2026-11-17T17:25:21Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -151,8 +151,8 @@ sources:
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
-    digest: sha256:174d28aca3493758
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:8dd5eb4c4a85c004
+    last_modified: 2026-11-17T13:23:27Z
   - id: axe-json
     resource: ../../scripts/quality/baselines/axe.json
     title: scripts/quality/baselines/axe.json
@@ -176,8 +176,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:08bd3d1895fcd10e
-    last_modified: 2026-11-16T19:23:47Z
+    digest: sha256:ca29813fffe9f702
+    last_modified: 2026-11-17T13:23:27Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -206,13 +206,13 @@ sources:
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
-    digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:3b03ce1e0f6df7cf
+    last_modified: 2026-11-17T14:13:26Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
-    digest: sha256:97f990e76c242bcb
-    last_modified: 2026-11-15T12:01:20Z
+    digest: sha256:2d0ed7f2ff4ec7b5
+    last_modified: 2026-11-17T13:23:27Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -221,13 +221,13 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:15a62311180fe1fa
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:382e2944ffca7b96
+    last_modified: 2026-11-17T18:34:00Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
-    digest: sha256:d8b5e48bb82a9da3
-    last_modified: 2026-11-13T13:15:04Z
+    digest: sha256:bf8e99431d3f4218
+    last_modified: 2026-11-17T16:00:38Z
   - id: futureslot-tsx
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
@@ -251,8 +251,8 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:c6de651ff7d8e98e
-    last_modified: 2026-11-15T12:09:01Z
+    digest: sha256:3b49320788e1ebe8
+    last_modified: 2026-11-17T17:27:56Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
@@ -306,8 +306,8 @@ sources:
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:877b71a79e071642
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:4408d770ddaa43cf
+    last_modified: 2026-11-17T14:13:26Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -351,8 +351,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:a8284276bae085f2
-    last_modified: 2026-11-16T17:40:54Z
+    digest: sha256:f3b16b69f92bed04
+    last_modified: 2026-11-17T14:14:49Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -361,8 +361,8 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:eae84185062764a2
-    last_modified: 2026-11-16T18:28:21Z
+    digest: sha256:f0ad0258cf2baf78
+    last_modified: 2026-11-17T16:51:42Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json

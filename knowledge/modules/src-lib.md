@@ -5,7 +5,7 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:54Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:47Z }
@@ -13,8 +13,8 @@ sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:66d143fa358a76bf
-    last_modified: 2026-11-17T10:28:03Z
+    digest: sha256:37a599d5d64ea304
+    last_modified: 2026-11-17T18:34:00Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -38,8 +38,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:877b71a79e071642
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:4408d770ddaa43cf
+    last_modified: 2026-11-17T14:13:26Z
 ---
 
 # Responsibility
@@ -54,7 +54,7 @@ Pure ES modules with no Astro or Cloudflare imports, so `node --test` can run th
 - [installer.mjs](../../src/lib/installer.mjs): picks a desktop installer from the user agent.
 - [try-references.js](../../src/lib/try-references.js): `TRY_CITATION`, `TRY_DOI`, `parseTryReferences(source, { rows, dataset_ids }, file?)` and `referenceParts(reference)`, which splits a reference into text and links (trailing punctuation left out of the url; linked only through `safeHref` from `src/lib/safe-href.js`, and never with � in the url). Used by `DataSourcesPage.astro`, `check-built-site.mjs` and `install-consortium.mjs` (so what installs builds); plain JavaScript because both run in plain Node, and Node 22.13 to 22.17 cannot import a `.ts` file without a flag.
 - [safe-href.js](../../src/lib/safe-href.js): `safeHref(url)`, http(s) only (moved from the consortium's `logic.js` at P2 commit 0; used by `DataSourcesPage.astro`, `source-credits.js`, `try-references.js` and `check-built-site.mjs`; `src/scripts/consortium/logic.js` re-exports it for the streams; tested by `safe-href.test.mjs`).
-- [consortium/](../../src/lib/consortium): the consortium v2 core: the frozen seams `types.ts`, `source.ts` (`PlantSource`, load failures), `index.ts`, S1's rules (`site`, `conflicts`, `jobs`, `matrix`, `suggest`, `state`: the `#v=4` share link) and S4's `canopi-file.ts` (the `.canopi` v9 file for the app); see [Consortium core](/modules/consortium-core.md).
+- [consortium/](../../src/lib/consortium): the consortium v2 core: the frozen seams `types.ts`, `source.ts` (`PlantSource`, load failures), `index.ts`, S1's rules (`site`, `conflicts`, `jobs`, `suggest`, `state`: the share link; `matrix` deleted in PP-C c2) and S4's `canopi-file.ts` (the `.canopi` v9 file for the app); see [Consortium core](/modules/consortium-core.md).
 - [climate/](../../src/lib/climate): the canopi-climate tile reader (P5): `lookupSite(lat, lon, source)` over `createTileSource({ index })`, ported from the crate's lookup rules (AGPL header in each file); `model.js` is plain JavaScript for the installer; see [Climate reader](/modules/climate-reader.md).
 - [location/](../../src/lib/location): the consortium location step's helpers (P5 S5b), copied from canopi at b039f14 with the AGPL header and a "copied from canopi" line: the geocoding registry (Nominatim, no email, page language), place search (pacing, cache; plain read-only boxes, no `@preact/signals`, since E6 S2), the fetch transport, geolocation, and the lazy MapLibre loader with `maplibre-entry.ts` (CSS inlined) and `maplibre-worker.ts`; see [Consortium location step](/modules/consortium-location.md).
 - Field Guides (build time only): [guides.ts](../../src/lib/guides.ts) (`publishedGuides(lang)`, `guidesCiting(bookId, lang)`, `slugOf`), [svg.ts](../../src/lib/svg.ts) (seeded `rng`, `grid`, `shuffle`, bean drawing and the other shared seed and leaf shapes — kernel, squash seed, grain, tomato seed, clove, `leafPath`, `lobedLeafPath`, and the soil `crumbPath` and `threadPath` used by the soil hero row and the Soil diagrams — and `wrap` for SVG text lines), [tree-shapes.ts](../../src/lib/tree-shapes.ts) (the tree outlines the carbon farming diagrams share), [rehype-guide-terms.mjs](../../src/lib/rehype-guide-terms.mjs) (places each first `<Term>`'s glossary note and keeps a term with the punctuation touching it), [rehype-guide-checklists.mjs](../../src/lib/rehype-guide-checklists.mjs) (gives each `<Item>` its checklist id; fails on duplicate ids).

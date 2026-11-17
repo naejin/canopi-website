@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:47Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:40Z }
 sources:
@@ -17,8 +17,8 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:29cbaf3dbda18ec2
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:2c462bea8e6fe19d
+    last_modified: 2026-11-17T13:23:27Z
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
@@ -32,8 +32,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:604335703ffbcbeb
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:8165023fefa061e6
+    last_modified: 2026-11-17T13:23:27Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -47,13 +47,13 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:ddc3af06c1c0d64c
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:e8e4d9c512e074ca
+    last_modified: 2026-11-17T18:39:27Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:155926d0301ae183
+    last_modified: 2026-11-17T13:23:27Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -72,13 +72,13 @@ sources:
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
-    digest: sha256:174d28aca3493758
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:8dd5eb4c4a85c004
+    last_modified: 2026-11-17T13:23:27Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
-    digest: sha256:d909d5cc883162f8
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:207ecca44742d6dd
+    last_modified: 2026-11-17T13:23:27Z
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
@@ -92,8 +92,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:08bd3d1895fcd10e
-    last_modified: 2026-11-16T19:23:47Z
+    digest: sha256:ca29813fffe9f702
+    last_modified: 2026-11-17T13:23:27Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -127,13 +127,13 @@ sources:
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
-    digest: sha256:0fada07f7575e635
-    last_modified: 2026-11-14T22:07:45Z
+    digest: sha256:3b03ce1e0f6df7cf
+    last_modified: 2026-11-17T14:13:26Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
-    digest: sha256:97f990e76c242bcb
-    last_modified: 2026-11-15T12:01:20Z
+    digest: sha256:2d0ed7f2ff4ec7b5
+    last_modified: 2026-11-17T13:23:27Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
@@ -167,18 +167,18 @@ sources:
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:dcb205b39aee2409
-    last_modified: 2026-11-16T20:17:56Z
+    digest: sha256:437155c4bec846fc
+    last_modified: 2026-11-17T15:02:13Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:15a62311180fe1fa
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:382e2944ffca7b96
+    last_modified: 2026-11-17T18:34:00Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
-    digest: sha256:988e109b9dc5773d
-    last_modified: 2026-11-13T13:04:08Z
+    digest: sha256:cc2cefe2eeef65d9
+    last_modified: 2026-11-17T13:47:38Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -187,8 +187,8 @@ sources:
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
-    digest: sha256:d8b5e48bb82a9da3
-    last_modified: 2026-11-13T13:15:04Z
+    digest: sha256:bf8e99431d3f4218
+    last_modified: 2026-11-17T16:00:38Z
   - id: futureslot-tsx
     resource: ../../src/islands/consortium/views/FutureSlot.tsx
     title: src/islands/consortium/views/FutureSlot.tsx
@@ -212,8 +212,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:2bff4d1119010d48
-    last_modified: 2026-11-15T12:01:20Z
+    digest: sha256:98503e2c23b4413a
+    last_modified: 2026-11-17T14:07:43Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -222,8 +222,8 @@ sources:
   - id: stagebar-tsx
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
-    digest: sha256:21e328779beac381
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:4f2076886bf0d3a8
+    last_modified: 2026-11-17T15:37:04Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/Start.tsx
     title: src/islands/consortium/views/Start.tsx
@@ -237,13 +237,13 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:c6de651ff7d8e98e
-    last_modified: 2026-11-15T12:09:01Z
+    digest: sha256:3b49320788e1ebe8
+    last_modified: 2026-11-17T17:27:56Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
-    digest: sha256:c88ea78cc766445f
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:d846d17d7663b184
+    last_modified: 2026-11-17T18:36:51Z
   - id: span-ts
     resource: ../../src/islands/consortium/views/kit/span.ts
     title: src/islands/consortium/views/kit/span.ts
@@ -262,13 +262,13 @@ sources:
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:1fa1952975c4ff18
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:cbfcbb83cffaa528
+    last_modified: 2026-11-17T13:23:27Z
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
-    digest: sha256:a427ceebb27333a5
-    last_modified: 2026-11-16T20:17:56Z
+    digest: sha256:26c23568915d9432
+    last_modified: 2026-11-17T13:23:27Z
   - id: side-ts
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
@@ -312,13 +312,13 @@ sources:
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
-    digest: sha256:7052481477ebbf44
-    last_modified: 2026-11-12T11:43:06Z
+    digest: sha256:99cffd59c0da88aa
+    last_modified: 2026-11-17T12:02:03Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:877b71a79e071642
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:4408d770ddaa43cf
+    last_modified: 2026-11-17T14:13:26Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -362,8 +362,8 @@ sources:
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
-    digest: sha256:1d72d2f856fe0d3b
-    last_modified: 2026-11-13T06:56:43Z
+    digest: sha256:c97a43b52da8c3fa
+    last_modified: 2026-11-17T14:14:49Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -382,8 +382,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:a8284276bae085f2
-    last_modified: 2026-11-16T17:40:54Z
+    digest: sha256:f3b16b69f92bed04
+    last_modified: 2026-11-17T14:14:49Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -392,18 +392,18 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:ec1c9c66b312ff82
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:7b32c28f32a0530d
+    last_modified: 2026-11-17T13:23:27Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:eae84185062764a2
-    last_modified: 2026-11-16T18:28:21Z
+    digest: sha256:f0ad0258cf2baf78
+    last_modified: 2026-11-17T16:51:42Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:d406e9cf7fe5e4de
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:76adc2791c1ed27f
+    last_modified: 2026-11-17T17:54:47Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -417,8 +417,8 @@ sources:
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
-    digest: sha256:b664e3442aa10d97
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:eee24d353dff2633
+    last_modified: 2026-11-17T13:23:27Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -432,8 +432,8 @@ sources:
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:6aa5a72a2b74522c
-    last_modified: 2026-11-15T11:37:20Z
+    digest: sha256:d175afa08bcefaac
+    last_modified: 2026-11-17T17:32:21Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
@@ -849,7 +849,7 @@ The privacy text this storage must match is `privacy.tool.device`, owner-approve
 | Offline | page-level line "You are offline. What is loaded still works." from `navigator.onLine` and its events | — | b2 (`store.ts` `offline`, shown by `App.tsx`) |
 | Return visit | the palette page's placeholder, never the Place form (marker P2, inventory P42) | "could not be restored" lines (`state/restore.ts:20-22`) | b2 |
 | Any lazy chunk | one loading line in place | `LoadFailed` with Reload; next use fetches `?retry=n` (`views/lazy.tsx:62-148`); the rest stays usable; offline: "Needs a connection", a retry when the store's `offline` turns false (PP-B exit), never a reload | `views/lazy.tsx` (b2 in PP-B) |
-| `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Retry in place fetches the chunk again under `?retry=n` (core `verdict-load.ts`, the URL read from the error); offline "Needs a connection", asked again on `online`, never a page reload (PP-B20, `block: { verdict: 404 }`) | b2, c2 |
+| `verdict` chunk fails | — | every fit line says "not checked", never "fits" (marker C6); holes computed without verdicts say so; Retry in place fetches the chunk again under `?retry=n` (core `verdict-load.ts`, the URL read from the error); offline "Needs a connection", asked again on `online`, never a page reload (PP-B20, PP-B49, `block: { verdict: 404 }`); Reload in place of Try again only when a failed retry's verdict file answers a HEAD (it arrived but its import failed: `store.verdictNeedsReload`, A8/A14, c2 merge) | b2, c2 |
 | Guest lists | holes `pending`, "Loading the other lists" (inventory L2) | the list is named as missing; its plants "not checked" (PP-B21); a palette of such plants only is never "empty" (PP-B44); removing a failed list's last plant takes it off `failedPools`, so the notice and "not checked" go, and the list is read afresh if a plant of it comes back (PP-B45) | b2 |
 | Location lookup | asking, refused, timed out, unavailable, sea, coast, polar, between two climates (D2, D9) | search offline or failed, map could not load (D4, D6) | b1a |
 | No location | Place leads with "Where is your place?" (skippable); the climate cards sit behind "No location? Choose a climate" (or "Not this climate? Choose another" once a location proposes one), in the DOM with `hidden`, open at once when a climate is chosen and no location is set on the page and no location kept on this device is still being looked up (`restore.ts` `locationAtStart`, cleared when that lookup settles or Forget removes it), and then latched open until Start over (`draft.ts` `cardsLatched`), so a saved location's lookup never closes them and Forget opens them (b1a review rounds 2, 1 and 3, 1); the link says "Not this climate?" and the without-location line goes only once a climate is read from the location (its `lookup`), not for a location object alone; the focus moved to the checked, proposed or first card; "Use it" says "kept on this device" only when the link's cell and place were kept (else `place.usedLinkUnkept`); range factors `unknown`; the period switch and the climate picture say "needs your place" (today `views/FutureSlot.tsx:13` renders nothing) | — | b1a, e1 |

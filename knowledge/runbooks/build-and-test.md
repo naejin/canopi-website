@@ -4,10 +4,10 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:55Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:58Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:43Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -22,8 +22,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:e5575be645ec3f24
-    last_modified: 2026-11-17T09:22:58Z
+    digest: sha256:155926d0301ae183
+    last_modified: 2026-11-17T13:23:27Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -33,12 +33,12 @@ sources:
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
     digest: sha256:765bd5c1dab1b6c2
-    last_modified: 2026-11-17T09:22:58Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: pre-push
     resource: ../../.githooks/pre-push
     title: .githooks/pre-push
     digest: sha256:ff9d7b9815f700a9
-    last_modified: 2026-11-17T09:22:58Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: pre-commit
     resource: ../../.githooks/pre-commit
     title: .githooks/pre-commit
@@ -98,17 +98,17 @@ sources:
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:de83b81abefa97df
-    last_modified: 2026-11-17T09:53:05Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:29cbaf3dbda18ec2
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:2c462bea8e6fe19d
+    last_modified: 2026-11-17T13:23:27Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
     digest: sha256:9ba62be01727d68e
-    last_modified: 2026-11-17T09:22:58Z
+    last_modified: 2026-11-17T10:52:11Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml

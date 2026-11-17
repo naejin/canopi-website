@@ -1,33 +1,28 @@
 ---
 type: Module
 title: Consortium core
-description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future and lazy marks seams; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schemas 3 and 4 that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
+description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schemas 3 and 4 that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:22Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:48Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:d406e9cf7fe5e4de
-    last_modified: 2026-11-17T10:28:03Z
+    digest: sha256:76adc2791c1ed27f
+    last_modified: 2026-11-17T17:54:47Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
     digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:877b71a79e071642
-    last_modified: 2026-11-14T21:28:50Z
-  - id: matrix-ts
-    resource: ../../src/lib/consortium/matrix.ts
-    title: src/lib/consortium/matrix.ts
-    digest: sha256:c948918a08ee50b3
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:4408d770ddaa43cf
+    last_modified: 2026-11-17T14:13:26Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -42,22 +37,22 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:fb28ce7a28c85458
-    last_modified: 2026-11-17T10:13:18Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
     digest: sha256:dbcbf264981a7904
-    last_modified: 2026-11-17T10:27:46Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
     digest: sha256:a9e179d333edafd9
-    last_modified: 2026-11-17T10:28:40Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: readme-md
     resource: ../../scripts/fixtures/consortium-v2/README.md
     title: scripts/fixtures/consortium-v2/README.md
     digest: sha256:a6c181c9da3b3fa4
-    last_modified: 2026-11-17T10:33:18Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
@@ -66,8 +61,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:a8284276bae085f2
-    last_modified: 2026-11-16T17:40:54Z
+    digest: sha256:f3b16b69f92bed04
+    last_modified: 2026-11-17T14:14:49Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
@@ -81,13 +76,13 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:eae84185062764a2
-    last_modified: 2026-11-16T18:28:21Z
+    digest: sha256:f0ad0258cf2baf78
+    last_modified: 2026-11-17T16:51:42Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:ec1c9c66b312ff82
-    last_modified: 2026-11-17T10:25:24Z
+    digest: sha256:7b32c28f32a0530d
+    last_modified: 2026-11-17T13:23:27Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -96,8 +91,8 @@ sources:
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
-    digest: sha256:1d72d2f856fe0d3b
-    last_modified: 2026-11-13T06:56:43Z
+    digest: sha256:c97a43b52da8c3fa
+    last_modified: 2026-11-17T14:14:49Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -106,33 +101,13 @@ sources:
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
-    digest: sha256:7052481477ebbf44
-    last_modified: 2026-11-12T11:43:06Z
-  - id: marks-ts
-    resource: ../../src/lib/consortium/marks.ts
-    title: src/lib/consortium/marks.ts
-    digest: sha256:8a43c201f0c9b5c2
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:99cffd59c0da88aa
+    last_modified: 2026-11-17T12:02:03Z
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:4d1d283c1123981b
-    last_modified: 2026-11-17T10:25:24Z
-  - id: mark-providers-ts
-    resource: ../../src/lib/consortium/mark-providers.ts
-    title: src/lib/consortium/mark-providers.ts
-    digest: sha256:a4f658dd31fb03d3
-    last_modified: 2026-11-12T12:34:53Z
-  - id: range-marks-ts
-    resource: ../../src/lib/consortium/range-marks.ts
-    title: src/lib/consortium/range-marks.ts
-    digest: sha256:3b5dee7987b5cbc0
-    last_modified: 2026-11-17T10:25:24Z
-  - id: future-marks-ts
-    resource: ../../src/lib/consortium/future-marks.ts
-    title: src/lib/consortium/future-marks.ts
-    digest: sha256:dc7162e2c1e66dbb
-    last_modified: 2026-11-12T11:43:06Z
+    digest: sha256:036f1bdd9cd3cb01
+    last_modified: 2026-11-17T17:25:21Z
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
@@ -141,18 +116,18 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:b2112780417fd349
-    last_modified: 2026-11-17T10:25:24Z
+    digest: sha256:58fe422f4b609c65
+    last_modified: 2026-11-17T16:00:38Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
-    digest: sha256:1cca1bb0a2547f15
-    last_modified: 2026-11-12T11:43:06Z
+    digest: sha256:32f722c1b86312b9
+    last_modified: 2026-11-17T14:13:26Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
-    digest: sha256:735dba51041f008b
-    last_modified: 2026-11-14T13:27:54Z
+    digest: sha256:dd63801d8d01ba5c
+    last_modified: 2026-11-17T13:23:27Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -168,21 +143,16 @@ sources:
     title: scripts/fixtures/consortium-future/README.md
     digest: sha256:16982db16208c8af
     last_modified: 2026-11-11T17:32:49Z
-  - id: site-marks-ts
-    resource: ../../src/lib/consortium/site-marks.ts
-    title: src/lib/consortium/site-marks.ts
-    digest: sha256:eedd824ed60b2ff0
-    last_modified: 2026-11-16T18:00:55Z
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:7355b86556efdbf7
-    last_modified: 2026-11-17T10:13:18Z
+    digest: sha256:95a580138a803e83
+    last_modified: 2026-11-17T14:13:26Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
-    digest: sha256:bfbb7316b150433b
-    last_modified: 2026-11-13T03:03:27Z
+    digest: sha256:dae939a445a54069
+    last_modified: 2026-11-17T11:57:14Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -207,32 +177,27 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:5a68cb4f4f79a63e
-    last_modified: 2026-11-17T10:28:40Z
+    last_modified: 2026-11-17T10:34:49Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
     digest: sha256:faefdfc3640d75cc
     last_modified: 2026-11-13T12:43:29Z
-  - id: balance-ts
-    resource: ../../src/lib/consortium/balance.ts
-    title: src/lib/consortium/balance.ts
-    digest: sha256:8fdecbce896d793e
-    last_modified: 2026-11-13T19:47:53Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
-    digest: sha256:b664e3442aa10d97
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:eee24d353dff2633
+    last_modified: 2026-11-17T13:23:27Z
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
     digest: sha256:a2b22c3e45cec9a4
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
     digest: sha256:6331b07a2c0fe89b
-    last_modified: 2026-11-17T10:25:24Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
@@ -246,8 +211,23 @@ sources:
   - id: retry-import-ts
     resource: ../../src/lib/consortium/retry-import.ts
     title: src/lib/consortium/retry-import.ts
-    digest: sha256:ae0ed9a2fe3bc1c3
-    last_modified: 2026-11-16T20:17:56Z
+    digest: sha256:5130e3e8b666330f
+    last_modified: 2026-11-17T18:34:00Z
+  - id: verdict-ts
+    resource: ../../src/lib/consortium/verdict.ts
+    title: src/lib/consortium/verdict.ts
+    digest: sha256:cb04a821ff61eaac
+    last_modified: 2026-11-17T17:22:55Z
+  - id: verdict-line-ts
+    resource: ../../src/lib/consortium/verdict-line.ts
+    title: src/lib/consortium/verdict-line.ts
+    digest: sha256:76e25e5ee23f1bc9
+    last_modified: 2026-11-17T17:30:09Z
+  - id: verdict-load-ts
+    resource: ../../src/lib/consortium/verdict-load.ts
+    title: src/lib/consortium/verdict-load.ts
+    digest: sha256:389435f08162c76b
+    last_modified: 2026-11-17T13:23:27Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
@@ -278,16 +258,16 @@ Since E6 Q3 the same test keeps `src/lib/climate` and `src/lib/location` imports
 | [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSIONS` [3, 4] (PP-C commit 0a; see [schema 4 reader](/modules/consortium-schema-4-reader.md)), `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported; declared in zones.ts since E6 R2 and re-exported here), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `origin?: PlacementOrigin` marks a guest, A9, or a borrowed placement, S5c, since E6 R4), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag`. View shapes for S2–S4 (review C5): `Verdict`, `FitReason` (room: kind `wild_height` is advisory, verdict 'fit' (owner request 2026-11-12), "height not recorded"), `Fit`, `JobId`/`jobIds`, `CellRef`, `Alternative` (`alsoFills`, `leavesEmpty`), `JobGap` (missing phases), `ShareState`, `LinkNotice` (`unknownCount`, `cut`, `long`), `DecodedLink`; `Matrix.unplaced` ("No layer yet"). Schema 2 (P5 commit 0): `Taxon.climate: TaxonClimate | null` (`tminCold`, `tmaxWarm`, `aridity` as `ClimateRange {low, median, high, count, basis}`, `cells`, `nativeShare`; null = "range not recorded"), `Taxon.areasKnown` (WCVP matched; false = native "unknown"), (S5c's `Taxon.placedFrom?`/`estimate?` and the guest's `from?` were replaced by `Taxon.origin` in E6 R4), `Details.koppen: KoppenShare[]` (largest first), `SourceInfo.schemaVersion` 2 with `climateGrid` and `rangesReview`. P5 seams: `SiteLookup`/`SitePeriod` (a structural mirror of the climate reader's lookup; store.ts checks the reader's type stays assignable, since the core may not import `src/lib/climate`), `SiteLocation {lat, lon, source: 'geo'|'search'|'map'|'link', label?, lookup}`, `scenarios`/`Scenario`/`DEFAULT_SCENARIO` ('ssp245'), `markKinds`/`Mark {kind, key, vars?, severity: 'note'|'warning'}` E6 commit 0 adds the ADR-6 types ([placement origin and factAt](/decisions/consortium-placement-origin-and-facts.md)), implemented in E6 R4: `PlacementKind` (`own` \| `guest` \| `borrowed`; `Taxon.origin` is never stamped `own`), `PlacementOrigin {list, kind, guest?}`, `SiteFitMessage` (read since E6 R2: `{id, about, severity, misfit, key, vars?, state?}`; a misfit warns in words, a note carries `state` and becomes a site mark, an unknown neither), `FactKey` (`life_cycle`, `cold_limit`, `heat_limit`, `water_need`), `FactValues` (`water_need: {drought: string \| null, moisture: string \| null}`, null only when both are unknown), `FactAt`. |
 | [fold.ts](../../src/lib/consortium/fold.ts) | `fold(text)`: the one name fold for search (lowercase, ß→ss, œ→oe, æ→ae, combining marks dropped after Latin, Greek and Cyrillic letters only, so kana voicing and Hangul stay); a leaf re-exported by `index.ts`; moved here unchanged from the island's `data/search.ts` in E6 commit 0 so Start's crop search can share it (E6 K1). |
 | [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels` (`cellCounts`, the test oracle, went with the matrix in PP-B commit 0a'). (`nativeIn(l3)`, the plant_areas reader for native here, was removed before the P5 push with the other S5e stubs; P5.2 restores it from `0801024`.) `loadFailures`: `too-old`, `wasm-blocked`, `wasm-fetch` (sqlite3.wasm did not arrive; review L1), `fetch`, `stale`, `damaged`, `schema`, one per §5 screen. `factAt(key, taxon, site, period)` (E6 R4, ADR-6) with `TODAY_PERIOD` `'1991-2020'`: today the stored value whatever the site and period (`life_cycle` from `is_annual`/`grown_as_annual`/`is_perennial`, `cold_limit` from `climate.tminCold.low` and `weak`, `heat_limit` from `climate.tmaxWarm.high`, `water_need` from `drought_tolerance` and `moisture_use`), null when not recorded; F2 and E7 fill the signature. Only Details reads it so far (water need) |
-| [zones.ts](../../src/lib/consortium/zones.ts) (E6 R1) | The one place the climate-zone list is declared (`climateZones` and `ClimateZone`, canopi-data climates.ord; since E6 R2, types.ts re-exports them) with the site-id mapping: `siteIdOf(zone)` ('Temperate' → 'temperate'), `siteIds` (zone order, exact tuple type), `zoneOfSiteId(id)` (any case, trimmed; null when not a zone), type `SiteId`. `src/lib/correction.mjs` derives `CLIMATES` from it and maps posted ids with `zoneOfSiteId`; `src/data/climates.ts` type-checks its ids against `SiteId` but keeps the site's display order (Mediterranean before Arid, pinned by `homepage.test.mjs`); the installer keeps a plain-node copy (`CLIMATE_ZONES`). `scripts/consortium-zones.test.mjs` checks all four agree. state.ts reads it since E6 R2 (`zoneOf` = `zoneOfSiteId`, the link's `c` = `siteIdOf`); `index.ts` exports `siteIdOf` (E6 S3), which the island's `state/draft.ts` uses in place of persist.ts's removed hand-written `siteId`; range-marks.ts (R4) still lower-cases by hand |
+| [zones.ts](../../src/lib/consortium/zones.ts) (E6 R1) | The one place the climate-zone list is declared (`climateZones` and `ClimateZone`, canopi-data climates.ord; since E6 R2, types.ts re-exports them) with the site-id mapping: `siteIdOf(zone)` ('Temperate' → 'temperate'), `siteIds` (zone order, exact tuple type), `zoneOfSiteId(id)` (any case, trimmed; null when not a zone), type `SiteId`. `src/lib/correction.mjs` derives `CLIMATES` from it and maps posted ids with `zoneOfSiteId`; `src/data/climates.ts` type-checks its ids against `SiteId` but keeps the site's display order (Mediterranean before Arid, pinned by `homepage.test.mjs`); the installer keeps a plain-node copy (`CLIMATE_ZONES`). `scripts/consortium-zones.test.mjs` checks all four agree. state.ts reads it since E6 R2 (`zoneOf` = `zoneOfSiteId`, the link's `c` = `siteIdOf`); `index.ts` exports `siteIdOf` (E6 S3), which the island's `state/draft.ts` uses in place of persist.ts's removed hand-written `siteId` |
 | [nearest.ts](../../src/lib/consortium/nearest.ts) (E6 R1) | `NEAREST_LISTS`, the nearest-list table: a leaf (imports only types) read by placed.ts and placement.ts, so placed.ts no longer imports placement.ts (cycle C1); placement.ts re-exports it |
 | [index.ts](../../src/lib/consortium/index.ts) | Re-exports types, source and canopi-file (S4's, exported now so S4 never edits index.ts). Stream S1 adds the rule exports here. |
 | [canopi-file.ts](../../src/lib/consortium/canopi-file.ts) | S4's `.canopi` writer for the app (format v9, canopi `0c425fb07`): `canopiFile(members, { name, description, at })` returns the JSON text of an empty design whose `consortiums` hold one entry per member (`target {kind: 'species', canonical_name}`, its `stratum` or `unassigned`, `start_phase`/`end_phase` 0–6; app default `unassigned` 0–2), deduplicated by canonical name, with `plants: []` (checked at P2 hand-offs: `PlacedPlant` requires a map `position` the tool does not have, and the app's consortium sync (`app/consortium/workflow.ts` at `0c425fb07`) only adds entries for placed plants and never removes these, so the entries survive until the reader places the plants); `canopiFileName(name)` makes a safe `<name>.canopi`. Pure. Checked in `scripts/consortium-canopi-file.test.mjs` and BT-9 against the app's vendored format, [scripts/vendor/canopi-design-format/](../../scripts/vendor/canopi-design-format) (canopi `0c425fb07`, AGPL header, test-only), with its `validate.mjs` |
 | [site-climate.ts](../../src/lib/consortium/site-climate.ts) (P5 S5b) | `siteClimate(lookup)` → `{state: sea \| polar \| borderline \| coast \| ready, today, zone, near, suggested}`, `koppenZone`, `BORDERLINE_C` 0.5; exported through index.ts. state.ts holds the link's `o=` (`encodeLink(…, { origin })`, `linkOrigin`, `cellCentre`); see [Consortium location step](/modules/consortium-location.md) |
 | [country-zones.ts](../../src/lib/consortium/country-zones.ts) (simplify pass 2026-11-14) | `countryZones(code)`: a country's time zones from the runtime's CLDR data, `[]` where there is none (Firefox); one owner for the page's build-time `countries.zones` table (`ConsortiumPage.astro`) and the island's fallback in `guessCountry`; exported through index.ts |
-| [retry-import.ts](../../src/lib/consortium/retry-import.ts) (simplify pass 2026-11-14) | `retryableImport(load, pick)`: a chunk import a failed fetch does not poison (after a failure, the same hashed `/_astro/` file under `?retry=n`, read from the error), one attempt shared by every caller, the picked value kept; the one owner for the views' parts (`lazyPart`, `later`, `later-chunk.ts`, the location step) and the core loaders (`loadVerdictRule`, `loadRangeRule`, `loadMarkProviders`, `loadSuggest`); exported through index.ts |
-| [site.ts](../../src/lib/consortium/site.ts), [conflicts.ts](../../src/lib/consortium/conflicts.ts), [jobs.ts](../../src/lib/consortium/jobs.ts), [matrix.ts](../../src/lib/consortium/matrix.ts), [suggest.ts](../../src/lib/consortium/suggest.ts), [state.ts](../../src/lib/consortium/state.ts) | Stream S1's rules, exported from `index.ts` (all but `suggest.ts` since E6 R4: the barrel no longer re-exports it, and `loadSuggest()` in `index.ts` is the page's only way in, its own chunk, role `suggest`, cached, a failed load cleared so the next call tries again, returning `SuggestRule {suggest, alternatives}` destructured so Rollup keeps only those; node tests import suggest.ts directly): three-valued site fit (the room answer is advisory, owner request 2026-11-12: the matrix layers are relative sun exposure, not heights, so a plant taller than a small (6 m) or large (12 m) garden fits with reason kind `wild_height` and never blocks a cell, flags or hides in Add; only the suggestion leaves it out, `tallerThanRoom`, while light, soil and water still misfit); conflicts and invasive records, and the member flags (`FlagContext`, `flagsFor`, `flagsOf`, `warns` (a site misfit or a serious conflict: the plant comes last in Add, Swap and the alternatives, and Paste's toast says "added with a warning"; never a confirm step, owner 2026-11-14); in conflicts.ts since E6 R1, so the store's flags reach no suggestion code; they call `fits()` directly); the six jobs and their gaps per phase; `cellsOf` and `cellKey` in `matrix.ts` (`buildMatrix` and the Matrix types went in PP-B commit 0a'); the greedy suggestion and Swap list; the `#v=4` share link (`encodeLink`, `decodeLink`, `isLongLink` over 2,000 characters, `readPreset` for guide links); `zoneOf(code)` in `state.ts` (an alias of zones.ts `zoneOfSiteId`) is the one climate-code lookup (the island's state/ modules and main.ts import it) |
-| [range.ts](../../src/lib/consortium/range.ts), [placement.ts](../../src/lib/consortium/placement.ts), [future.ts](../../src/lib/consortium/future.ts), [marks.ts](../../src/lib/consortium/marks.ts), [mark-providers.ts](../../src/lib/consortium/mark-providers.ts) | P5 seams, each filled by one stream (`.local/consortium/v2/p5-owners.md`). S5c (built): `siteToday(site)` (the lookup's historical 1991–2020 period, null without a site climate; its own module `site-today.ts`, re-exported by range.ts); firstPlaced and placeFor live in `placed.ts` (re-exported by placement.ts) so the first run carries only `NEAREST_LISTS` (in the leaf `nearest.ts`, E6 R1) and `hasPlants`; `rangeCheck(taxon, site)` → `{verdict, sides, beyond, aridity, coolSeason}` or null, `rangeFit` → 'inside' \| 'edge' \| 'outside' \| 'unknown' (owner answer 2, schema 3 ranges: coldest-month minimum against the plant's tmin_cold low (cold limit) and high, the year's warmth `yearMeanC` = (tmean_cold + tmean_warm)/2 against tmean_year low (side 'cool', perennials only: Nairobi 19.35 °C is too cool for cacao, low 21.4), a heat-demanding annual's summer, the site's warmest-month mean against tmean_warm low (side 'summer', `applies: needsSummerHeat`: an annual whose tmean_warm low is at or above `HEAT_DEMAND_C`, 18 °C, as the chill rule, coordinator decision 2026-11-12, since one warmest-month value says nothing about the season length in equatorial highlands; taro, ginger, turmeric and sweet potato are "summer too cool" at Rovaniemi, while lettuce, maize, onion, carrot, cabbage, garlic, leek and beet, below 18, never get the side at Quito or Bogotá; perennials ignore the row), warmest-month maximum against tmax_warm high (a heat limit, Q99); a weak row (`ClimateRange.weak`, a disputed limit: TreeGOER stricter by more than 4 °C, the looser bound kept) is compared as any row and never softens a verdict (coordinator decision 2026-11-12: the doubt is only that the bound is too lenient); the bounds are one table, `RANGE_BOUNDS` (side, plant range field, end, site value function, `applies(taxon)`; `slotCheck(taxon, slot)` runs them on one slot; `HOT_BOUND` is its hot row, a plain constant so future.ts reaches it without a module-level call, which would pull the rule into the island's main chunk), and the export variables they read are one list, types.ts `RANGE_VARIABLES` (tmin_cold, tmax_warm, tmean_year, tmean_warm, aridity; sqlite-source.ts builds its query from it); `boundPassed(taxon, bound, slot)` is one bound against one slot; the mild side applies only when `canNeedChill(taxon)`, tmin_cold high below `CHILL_CEILING_C` 18 °C, the export's own rule (canopi-data docs/plant-climate-ranges.md; the Köppen A/C bound), so cacao 24.1 and cassava 24.2 are never "edge" at Manaus or Singapore (decision row "Climate ranges fixed before the P5 push"); passed by up to `RANGE_MARGIN_C` 2 °C 'edge', by more 'outside'; one comparison owns the rule, `passes(value, bound, 'below' | 'above')` → 'inside' \| 'edge' \| 'beyond', in hundredths of a degree, since site values carry one decimal and ranges two, so 9.8 − 7.8 is exactly the margin (future.ts takes the same one for too hot); no range 'unknown', never filtered; aridity 'drier' \| 'wetter' \| 'inside' \| 'not-checked' (site null, ice) \| 'unknown', a mark only); `withinRange(pool, site, keep = [])`: the pool without the outside plants except `keep`, the same array without a site climate. `placeFor(placements, zone, nearestOrder)` → `{zone, placement}`: own placement, else the first of `NEAREST_LISTS` (Subtropical/Arid → Mediterranean, Tropical, Temperate; Continental/Boreal → Temperate, Mediterranean), else null; a returned zone other than the site's is a borrowed placement, which the caller stamps as `Taxon.origin { kind: 'borrowed' }`, the one estimate mark (the derived `estimate` flag of `placeFor` and `firstPlaced` was removed in E6 chunk 5); `firstPlaced` is the shared rule (placeFor and `PlantSource.borrowed` both call it); `hasPlants(zone, curated)`: curated or a nearest list is. `placementZone(t, climate)`: the list a plant's placement, reasons and climate months come from (`Taxon.origin.list`, a borrowed placement's curated list or a guest's list, else the climate). Since E6 R4 placement.ts is the one reader and writer of `Taxon.origin`: `asGuest(t, list)` (a copy stamped `{list, kind: 'guest'}`; a borrowed origin wins and, since the E6 hand-off D, gets `guest: list`), `guestOf(t)` (the guest's list, or a borrowed plant's `origin.guest`, else null), `borrowedFrom(t)` (the borrowed list, else null); Details queries `details()` with it, since only curated lists have `placement_reasons` and climate-scoped `layer_values` (pre-push review 1: on a borrowed climate Details had queried the visitor's climate and always showed no reasons, live since P2; unit test in `consortium-p5-seams-s5c.test.mjs`, browser spec P5-17b). An annual (`isAnnual`: `traits.is_annual`, or `traits.grown_as_annual`, schema 3's flag for crops grown as annuals that is_annual misses, onion, garlic, carrot, cabbage, beet, leek, potato; decision row "Growing months"; the fixture's onion carries it) is never checked against its coldest-month minimum, on either side, nor the year's warmth (the one switch is `checksWinter(taxon)`, which every winter-side bound reads; cool-season annuals skip too until the owner answers whether their coldest month should be checked) (owner, decision row "Annuals skip the winter-cold check"; future.ts checks only heat, so it needs nothing), and its marks off chips (kind 'unknown', state `annual`) claim no season (owner, decision row "Growing months" 2026-11-12: the USDA growth period classes 18 of 77 annuals and calls turnip and rye warm-season; reviewed crop growing bands come in a later release): `range.annualShort` "annual" on rows and in Add (a short tag: the sentence overflowed phone rows, walk-through F1), `range.annual` "An annual, re-sown each year: its winter cold is not checked." in Details. An annual beyond its heat range (past Q95 by more than the margin; `coolSeasonOf`) is not outside: `coolSeason` true, no hot side, and its marks are kind 'season' (state `cool`) `range.coolSeason` in Details ("Too hot in summer here: grow it in the cool season.") and `range.coolSeasonShort` on rows and in Add, instead of the annual note; within the margin it is 'edge' as any plant (decision row "Climate ranges fixed before the P5 push"). Real export `r-b958a4239cc68f73` (the same rows on `r-60ea417b5a15c3aa`) at the design check's 14 sites (withinRange counts, pinned in `consortium-p5-seams-s5c.test.mjs`, the site means passed for the warmth bounds): Lyon 360, Dakar 274, Lima 282, Hanoi 293, Montreal 182, Nairobi 164, Perth 176, Seville 198, Oslo 236, Manaus 199, Phoenix 150, Brisbane 336, Yakutsk 72 (annuals only), Chicago 255 (on `r-01102782139409b5`: 349, 263, 273, 286, 177, 163, 176, 198, 236, 199, 134, 333, 59, 255); 56 weak rows (43 tmin_cold, 13 tmean_year), all compared as firm bounds; the owner's diagnosis expectations (Nairobi cacao and coconut outside with a cool year, Manaus cacao and cassava within, Seville olive, rosemary, almond, fig, pomegranate within and olive not too hot by 2071–2099, Riyadh fig within and jujube, pomegranate, moringa edge, Minneapolis apple within and mango outside, Rovaniemi fig outside and taro and ginger summer too cool, Singapore lowland tropicals never mild, potato and carrot not outside there, onion not outside at Harbin) are the acceptance test in `consortium-p5-ranges.test.mjs`, on sites from `scripts/fixtures/consortium-ranges/sites.json`; the same file holds stream E2's scenario tests, written expectations first and recorded as todo tests naming their known limit, with no rule change (a weak row never softens a verdict; a margin wide enough would gut the cold check): Scots pine at Yakutsk (site pinned in sites.json from the canopi-climate v0.2.1 vectors `scripts/fixtures/climate/lookup.json`, checked against them) is outside today (cold and cool; tmin −39.8 °C against a weak Q05 of −31), and fig, jujube and pomegranate at Riyadh are too hot by 2041–2070 SSP2-4.5 (tmax 44.7 °C against heat bounds 42.6, 41.5, 41.3); a todo that starts passing shows as a passed todo and is removed then; every real site now keeps some plant, so the browser specs show "nothing fits" at a synthetic 46 °C summer. `futureCheck(taxon, site, scenario)` (S5d, filled: see [future.ts](../../src/lib/consortium/future.ts) below); S5e (native here, soil likely) is not in P5: its stubs `native.ts` `nativeHere`, `soil-likely.ts` `likelyFor` and `native-marks.ts` `nativeMarks`, with `MarkContext.source`, were removed at the pre-push review (3); P5.2 restores them from `0801024` (list in `scripts/consortium-p5-seams-s5e.test.mjs`). Marks: `Mark {kind, key, vars, severity, state?}` (`state` is rendered as `data-mark-state`), `markSurfaces` 'chip' \| 'row' \| 'add' \| 'details', `MarkProvider = (taxon, ctx, surface) => Mark[]`, `plantMarks(taxon, ctx, surface, providers = [])` concatenates the loaded providers. `loadRangeRule()` (marks.ts, E6 R2, A10) is the one import of `range.ts` outside the feature chunks that use it statically: cached, a failure not cached, it returns `RangeRule {withinRange, rangeFit}` (destructured so Rollup keeps only those exports); its chunk is role `range` in `ROLE_ENTRIES` (`scripts/built-modules.mjs`; capped per part since E6 B4, [ADR-2](/decisions/consortium-chunk-budgets.md)). The providers live in their own files, [range-marks.ts](../../src/lib/consortium/range-marks.ts) (S5c), [future-marks.ts](../../src/lib/consortium/future-marks.ts) (S5d) and [site-marks.ts](../../src/lib/consortium/site-marks.ts) (since E6 R2 it holds the one site-fit vocabulary, `siteFitMessages(taxon, site, fit?)`, exported from index.ts: each misfit (light, soil with the plant's pH, water), each unknown (`misfit.unk.*`, climber room), and the notes below; the flags (`rules/site-fit.ts`, `views/kit/flags.ts`) and `siteMarks` derive from it, short keys appending `Short`; site answers: on a dry site, drought tolerance Medium, site.ts reason note `dry_months`, kind 'water', `water.dryMonthsShort` on rows and Add, `water.dryMonths` "Needs watering in the dry months." in Details; None and Low stay misfits; in a small or large garden a plant taller than the room, reason kind `wild_height` (`tallerThanRoom`), kind 'room', `room.tallShort` "grows to {m} m: prune" on rows and Add, `room.tall` "Grows to {m} m: keep it pruned, or pick a smaller plant." in Details; the height to a tenth, as catalog heights are converted feet such as 13.716; on the island path, imported by `marks.ts`), the first three imported only by `mark-providers.ts`, the lazy chunk `loadMarkProviders()` imports (once); none is exported from `index.ts`, so the first run never holds them (Rollup puts a module in the main chunk if the main entry reaches it statically, even unused). `needsMarkProviders(ctx, curated)`: true with a site location or a climate the export does not curate; the site answers' marks (`site-marks.ts`, reading `MarkContext.site`) are on the island path instead, appended by `plantMarks` with or without the providers, so a dry site or a sized room alone loads no P5 chunk (coordinator review of the ranges stream, item 7; about 0.2 KB on the first run, 41.8 of 42 KB). `PlantSource.borrowed(zone, order)` ([source.ts](../../src/lib/consortium/source.ts)): an uncurated climate's plants from its nearest lists, marked estimate; `pool(c)` of a climate not in `info().climates` returns `borrowed(c, NEAREST_LISTS[c])`. S5c's body of `borrowed` in `sqlite-source.ts` reads each curated list of the order once (the same cached pools), keeps every plant once, placed as in the first list of the order that has it (`{...taxon, origin: {list, kind: 'borrowed'}}`), sorted by name, cached per climate; an order with no curated list gives `[]` ("Not covered yet"). `store.loadPool` is unchanged. [range-marks.ts](../../src/lib/consortium/range-marks.ts) (S5c, keys written out as literals): with a site climate 'outside' (warning) and 'edge' (note) with short words on chips (`range.outsideShort`, `range.edgeShort`) and, in Details, the cultivation-included / not-reviewed wording plus one `range.side.cold|mild|cool|summer|hot` line per bound passed (after a bound on a weak row, a `range.disputed` line, state `disputed`, "Sources disagree on this limit; TreeGOER puts it stricter.", no number since no TreeGOER value is exported; after a bound whose `lowSource`/`highSource` is `treegoer_ranges`, stricter than the thinned GBIF cells, a `range.source.treegoer` line, state `source`, crediting TreeGOER) with the site and recorded values to the hundredth the verdict compared ("mostly recorded down to / up to", Q05/Q95); 'unknown' (`range.unknown`); 'unknown' on chips `range.unknownShort`; aridity `range.drier`/`range.wetter` as kind 'aridity' (not on chips, never counted as edge) and `range.aridityNotChecked` in Details; 'estimate' on a borrowed plant (`borrowedFrom`, state `siteIdOf(list)`) with or without a location (`estimate.short` on chips, `estimate.fromMediterranean|Tropical|Temperate` elsewhere), and without a site climate a second 'estimate' mark `estimate.noSite` (state `no-site`, not on chips). Each stream's seam tests are its own file, `scripts/consortium-p5-seams-s5b/c/d/e.test.mjs` (shared inputs in `consortium-p5-fixtures.mjs`); `consortium-p5-seams.test.mjs` pins the shared marks pipeline and where the host views mount each slot |
-| [future.ts](../../src/lib/consortium/future.ts), [future-marks.ts](../../src/lib/consortium/future-marks.ts) | S5d, the future climate check (decision row "P5 engineering choices"; projections: constrained CMIP6 ensemble changes, Beck et al. 2023, on the CHELSA v2.1 1981–2010 climate): `futurePeriod(taxon)` is the latest period the phases reach (phase_end ≥ 3 → '2041-2070', climax → '2071-2099', earlier or unplaced → null, "today's climate only"); `futureCheck(taxon, site, scenario)` → `{period, verdict 'inside'\|'edge'\|'outside'\|'already', why, already, agree, of, coolSeason, warmEnough, drier}` or null (no lookup, no slot for the chosen scenario, no range, or no heat bound: aridity alone never makes a loss, so "not checked"). One reason makes a loss: too hot = slot warmest-month maximum > `tmaxWarm.high` + range.ts `RANGE_MARGIN_C` (2 °C), through range.ts `HOT_BOUND` and `boundPassed`; an annual too hot is never a reason (`coolSeason` true, the add/details mark kind 'season' `future.coolSeason`, nothing on chips or rows); aridity is a note, never a reason, as today (walk-through 2 N3: at Seville 29 of 39 "outside by 2041–2070" were so on dryness alone): `drier` when range.ts `aridityFit` (the one owner of the aridity rule, today's `rangeCheck` reads it too) gives 'drier' in the chosen slot and not today, with any verdict; an annual already too hot today gets no `coolSeason` from the future check (today's mark says it once); `warmEnough`: today beyond the year's warmth low (an annual: its summer-warmth low) and the chosen slot beyond no bound (`slotCheck`), said positively, `future.warmEnough` (add/details) and `future.warmEnoughShort` (chip/row), kind 'future', state `warm`; edge = above Q95 within the margin; warm winters never checked. A reason counts only as a change from today (the 'historical' slot): `already` lists the bounds already crossed today, `why` only new ones; no new reason and no new heat edge but some already → verdict 'already' (with heat the only reason, 'already' and a new reason cannot both hold). Agreement: for outside, scenarios outside for at least one of `why`; otherwise scenarios not outside. `futureSummary(taxa, site, scenario)` puts each member in one place: `periods[{period, checked, outside, heat, drier}]` (n of m; `drier` lists the period's plants with the note, any verdict, outside the counts, and the panel skips an n of m with no m), `already{heat}` (verdict 'already'), `todayOnly`, `notChecked`, plus `checks` (each checked plant's FutureCheck, which the panel lines read); `available` false when the site has no future slot. `futureMarks` (lazy provider): with a location and verdict outside a note (ink) `future.mark.heat` on chip/row, `future.long.heat` with scenario and agreement on add/details; edge only on add/details; 'already' gets no outside mark (today's range mark covers it); `drier` adds, with any verdict, `future.drierShort` ("drier by …: may need watering", rows) or `future.drier` (with the scenario, add/details), state `drier`, never on chips (today's aridity mark is not on chips either). Real-export counts (`r-01102782139409b5` and, unchanged, `r-b958a4239cc68f73`, heat limit at Q99), whole lists of 200, SSP2-4.5 ([consortium-p5-seams-s5d.test.mjs](../../scripts/consortium-p5-seams-s5d.test.mjs), sites from `canopi-climate lookup` in `scripts/fixtures/consortium-future/sites.json`): Lyon (Temperate) 0/101 by 2041–2070 (1 drier) and 0/33 by 2071–2099, already 1 hot, 65 short-lived; Manaus (Tropical) 0/110 and 0/31; Seville (Mediterranean) 14/102 and 6/25, all too hot, already 2 hot, with the watering note on 30 and 7 (39/102 and 11/25 while dryness counted, before walk-through 2 N3); Oslo 0/102 and 0/33. No range pre-filter yet: once S5c's range.ts lands the members come from the filtered pool (merge follow-up). |
+| [retry-import.ts](../../src/lib/consortium/retry-import.ts) (simplify pass 2026-11-14) | `retryableImport(load, pick)`: a chunk import a failed fetch does not poison (after a failure, the same hashed `/_astro/` file under `?retry=n`, read from the error), one attempt shared by every caller, the picked value kept; the one owner for the views' parts (`lazyPart`, `later`, `later-chunk.ts`, the location step) and the core loaders (`loadVerdictRule`, `loadSuggest`; PP-C c2 deleted `loadRangeRule` and `loadMarkProviders`); `failedChunk(err)` (the plain `/_astro/` URL a failed import names) is exported too: store.ts HEADs it after a failed verdict retry and offers Reload only when the file answers (c2 merge, A8/A14); exported through index.ts |
+| [site.ts](../../src/lib/consortium/site.ts), [conflicts.ts](../../src/lib/consortium/conflicts.ts), [jobs.ts](../../src/lib/consortium/jobs.ts), [suggest.ts](../../src/lib/consortium/suggest.ts), [state.ts](../../src/lib/consortium/state.ts) | Stream S1's rules, exported from `index.ts` (all but `suggest.ts` since E6 R4: the barrel no longer re-exports it, and `loadSuggest()` in `index.ts` is the page's only way in, its own chunk, role `suggest`, cached, a failed load cleared so the next call tries again, returning `SuggestRule {suggest, alternatives}` destructured so Rollup keeps only those; node tests import suggest.ts directly): three-valued site fit (the room answer is advisory, owner request 2026-11-12: the matrix layers are relative sun exposure, not heights, so a plant taller than a small (6 m) or large (12 m) garden fits with reason kind `wild_height` and never blocks a cell, flags or hides in Add; only the suggestion leaves it out, `tallerThanRoom`, while light, soil and water still misfit); conflicts and invasive records, and the member flags (`FlagContext`, `flagsFor`, `flagsOf`, `warns` (a site misfit or a serious conflict: the plant comes last in Add, Swap and the alternatives, and Paste's toast says "added with a warning"; never a confirm step, owner 2026-11-14); in conflicts.ts since E6 R1, so the store's flags reach no suggestion code; they call `fits()` directly); the six jobs and their gaps per phase; `matrix.ts` is gone (`buildMatrix` and the Matrix types in PP-B commit 0a', `cellsOf`/`cellKey` in PP-C c2: Swap's "Also fills" / "Leaves empty" come from suggest.ts `swapChange` on the holes); the greedy suggestion and Swap list; the `#v=4` share link (`encodeLink`, `decodeLink`, `isLongLink` over 2,000 characters, `readPreset` for guide links); `zoneOf(code)` in `state.ts` (an alias of zones.ts `zoneOfSiteId`) is the one climate-code lookup (the island's state/ modules and main.ts import it) |
+| [range.ts](../../src/lib/consortium/range.ts), [placement.ts](../../src/lib/consortium/placement.ts), [future.ts](../../src/lib/consortium/future.ts) | P5 seams, each filled by one stream (`.local/consortium/v2/p5-owners.md`). S5c (built): `siteToday(site)` (the lookup's historical 1991–2020 period, null without a site climate; its own module `site-today.ts`, re-exported by range.ts); firstPlaced and placeFor live in `placed.ts` (re-exported by placement.ts) so the first run carries only `NEAREST_LISTS` (in the leaf `nearest.ts`, E6 R1) and `hasPlants`; `rangeCheck(taxon, site)` → `{verdict, sides, beyond, aridity, coolSeason}` or null, `rangeFit` → 'inside' \| 'edge' \| 'outside' \| 'unknown' (owner answer 2, schema 3 ranges: coldest-month minimum against the plant's tmin_cold low (cold limit) and high, the year's warmth `yearMeanC` = (tmean_cold + tmean_warm)/2 against tmean_year low (side 'cool', perennials only: Nairobi 19.35 °C is too cool for cacao, low 21.4), a heat-demanding annual's summer, the site's warmest-month mean against tmean_warm low (side 'summer', `applies: needsSummerHeat`: an annual whose tmean_warm low is at or above `HEAT_DEMAND_C`, 18 °C, as the chill rule, coordinator decision 2026-11-12, since one warmest-month value says nothing about the season length in equatorial highlands; taro, ginger, turmeric and sweet potato are "summer too cool" at Rovaniemi, while lettuce, maize, onion, carrot, cabbage, garlic, leek and beet, below 18, never get the side at Quito or Bogotá; perennials ignore the row), warmest-month maximum against tmax_warm high (a heat limit, Q99); a weak row (`ClimateRange.weak`, a disputed limit: TreeGOER stricter by more than 4 °C, the looser bound kept) is compared as any row and never softens a verdict (coordinator decision 2026-11-12: the doubt is only that the bound is too lenient); the bounds are one table, `RANGE_BOUNDS` (side, plant range field, end, site value function, `applies(taxon)`; `slotCheck(taxon, slot)` runs them on one slot; `HOT_BOUND` is its hot row, a plain constant so future.ts reaches it without a module-level call, which would pull the rule into the island's main chunk), and the export variables they read are one list, types.ts `RANGE_VARIABLES` (tmin_cold, tmax_warm, tmean_year, tmean_warm, aridity; sqlite-source.ts builds its query from it); `boundPassed(taxon, bound, slot)` is one bound against one slot; the mild side applies only when `canNeedChill(taxon)`, tmin_cold high below `CHILL_CEILING_C` 18 °C, the export's own rule (canopi-data docs/plant-climate-ranges.md; the Köppen A/C bound), so cacao 24.1 and cassava 24.2 are never "edge" at Manaus or Singapore (decision row "Climate ranges fixed before the P5 push"); passed by up to `RANGE_MARGIN_C` 2 °C 'edge', by more 'outside'; one comparison owns the rule, `passes(value, bound, 'below' | 'above')` → 'inside' \| 'edge' \| 'beyond', in hundredths of a degree, since site values carry one decimal and ranges two, so 9.8 − 7.8 is exactly the margin (future.ts takes the same one for too hot); no range 'unknown', never filtered; aridity 'drier' \| 'wetter' \| 'inside' \| 'not-checked' (site null, ice) \| 'unknown', a mark only); `withinRange(pool, site, keep = [])`: the pool without the outside plants except `keep`, the same array without a site climate. `placeFor(placements, zone, nearestOrder)` → `{zone, placement}`: own placement, else the first of `NEAREST_LISTS` (Subtropical/Arid → Mediterranean, Tropical, Temperate; Continental/Boreal → Temperate, Mediterranean), else null; a returned zone other than the site's is a borrowed placement, which the caller stamps as `Taxon.origin { kind: 'borrowed' }`, the one estimate mark (the derived `estimate` flag of `placeFor` and `firstPlaced` was removed in E6 chunk 5); `firstPlaced` is the shared rule (placeFor and `PlantSource.borrowed` both call it); `hasPlants(zone, curated)`: curated or a nearest list is. `placementZone(t, climate)`: the list a plant's placement, reasons and climate months come from (`Taxon.origin.list`, a borrowed placement's curated list or a guest's list, else the climate). Since E6 R4 placement.ts is the one reader and writer of `Taxon.origin`: `asGuest(t, list)` (a copy stamped `{list, kind: 'guest'}`; a borrowed origin wins and, since the E6 hand-off D, gets `guest: list`), `guestOf(t)` (the guest's list, or a borrowed plant's `origin.guest`, else null), `borrowedFrom(t)` (the borrowed list, else null); Details queries `details()` with it, since only curated lists have `placement_reasons` and climate-scoped `layer_values` (pre-push review 1: on a borrowed climate Details had queried the visitor's climate and always showed no reasons, live since P2; unit test in `consortium-p5-seams-s5c.test.mjs`, browser spec P5-17b). An annual (`isAnnual`: `traits.is_annual`, or `traits.grown_as_annual`, schema 3's flag for crops grown as annuals that is_annual misses, onion, garlic, carrot, cabbage, beet, leek, potato; decision row "Growing months"; the fixture's onion carries it) is never checked against its coldest-month minimum, on either side, nor the year's warmth (the one switch is `checksWinter(taxon)`, which every winter-side bound reads; cool-season annuals skip too until the owner answers whether their coldest month should be checked) (owner, decision row "Annuals skip the winter-cold check"; future.ts checks only heat, so it needs nothing), and its marks off chips (kind 'unknown', state `annual`) claim no season (owner, decision row "Growing months" 2026-11-12: the USDA growth period classes 18 of 77 annuals and calls turnip and rye warm-season; reviewed crop growing bands come in a later release): `range.annualShort` "annual" on rows and in Add (a short tag: the sentence overflowed phone rows, walk-through F1), `range.annual` "An annual, re-sown each year: its winter cold is not checked." in Details. An annual beyond its heat range (past Q95 by more than the margin; `coolSeasonOf`) is not outside: `coolSeason` true, no hot side, and its marks are kind 'season' (state `cool`) `range.coolSeason` in Details ("Too hot in summer here: grow it in the cool season.") and `range.coolSeasonShort` on rows and in Add, instead of the annual note; within the margin it is 'edge' as any plant (decision row "Climate ranges fixed before the P5 push"). Real export `r-b958a4239cc68f73` (the same rows on `r-60ea417b5a15c3aa`) at the design check's 14 sites (withinRange counts, pinned in `consortium-p5-seams-s5c.test.mjs`, the site means passed for the warmth bounds): Lyon 360, Dakar 274, Lima 282, Hanoi 293, Montreal 182, Nairobi 164, Perth 176, Seville 198, Oslo 236, Manaus 199, Phoenix 150, Brisbane 336, Yakutsk 72 (annuals only), Chicago 255 (on `r-01102782139409b5`: 349, 263, 273, 286, 177, 163, 176, 198, 236, 199, 134, 333, 59, 255); 56 weak rows (43 tmin_cold, 13 tmean_year), all compared as firm bounds; the owner's diagnosis expectations (Nairobi cacao and coconut outside with a cool year, Manaus cacao and cassava within, Seville olive, rosemary, almond, fig, pomegranate within and olive not too hot by 2071–2099, Riyadh fig within and jujube, pomegranate, moringa edge, Minneapolis apple within and mango outside, Rovaniemi fig outside and taro and ginger summer too cool, Singapore lowland tropicals never mild, potato and carrot not outside there, onion not outside at Harbin) are the acceptance test in `consortium-p5-ranges.test.mjs`, on sites from `scripts/fixtures/consortium-ranges/sites.json`; the same file holds stream E2's scenario tests, written expectations first and recorded as todo tests naming their known limit, with no rule change (a weak row never softens a verdict; a margin wide enough would gut the cold check): Scots pine at Yakutsk (site pinned in sites.json from the canopi-climate v0.2.1 vectors `scripts/fixtures/climate/lookup.json`, checked against them) is outside today (cold and cool; tmin −39.8 °C against a weak Q05 of −31), and fig, jujube and pomegranate at Riyadh are too hot by 2041–2070 SSP2-4.5 (tmax 44.7 °C against heat bounds 42.6, 41.5, 41.3); a todo that starts passing shows as a passed todo and is removed then; every real site now keeps some plant, so the browser specs show "nothing fits" at a synthetic 46 °C summer. `futureCheck(taxon, site, scenario)` (S5d, filled: see [future.ts](../../src/lib/consortium/future.ts) below); S5e (native here, soil likely) is not in P5: its stubs `native.ts` `nativeHere`, `soil-likely.ts` `likelyFor` and `native-marks.ts` `nativeMarks`, with `MarkContext.source`, were removed at the pre-push review (3); P5.2 restores them from `0801024` (list in `scripts/consortium-p5-seams-s5e.test.mjs`). Marks (PP-C c2): the marks pipeline is deleted (`marks.ts`, `mark-providers.ts`, `range-marks.ts`, `future-marks.ts`, `site-marks.ts`, with `loadRangeRule`, `loadMarkProviders`, `needsMarkProviders` and the chunk roles `range` and `markProviders`); one verdict per plant (`verdict.ts`, role `verdict`, loaded by `verdict-load.ts` `loadVerdictRule`, the range checks inside its chunk) gives the fit, range, future and site lines, and `verdict-line.ts` owns their words (the site answers' words moved there from site.ts `siteFitMessages`, fix round 1 B2; `periodName` is its first-run period name). The rule texts above (range bounds, annuals, cool season, borrowed estimate, TreeGOER and disputed limits) now surface as verdict factors and lines, not marks. `PlantSource.borrowed(zone, order)` ([source.ts](../../src/lib/consortium/source.ts)): an uncurated climate's plants from its nearest lists, marked estimate; `pool(c)` of a climate not in `info().climates` returns `borrowed(c, NEAREST_LISTS[c])`; `sqlite-source.ts` reads each curated list of the order once, keeps every plant once, placed as in the first list of the order that has it (`{...taxon, origin: {list, kind: 'borrowed'}}`), sorted by name, cached per climate; an order with no curated list gives `[]` ("Not covered yet"). Each stream's seam tests are its own file, `scripts/consortium-p5-seams-s5b/c/d/e.test.mjs` (shared inputs in `consortium-p5-fixtures.mjs`); `consortium-p5-seams.test.mjs` pins the shared marks pipeline and where the host views mount each slot |
+| [future.ts](../../src/lib/consortium/future.ts) | S5d, the future climate check (decision row "P5 engineering choices"; projections: constrained CMIP6 ensemble changes, Beck et al. 2023, on the CHELSA v2.1 1981–2010 climate): `futurePeriod(taxon)` is the latest period the phases reach (phase_end ≥ 3 → '2041-2070', climax → '2071-2099', earlier or unplaced → null, "today's climate only"); `futureCheck(taxon, site, scenario)` → `{period, verdict 'inside'\|'edge'\|'outside'\|'already', why, already, agree, of, coolSeason, warmEnough, drier}` or null (no lookup, no slot for the chosen scenario, no range, or no heat bound: aridity alone never makes a loss, so "not checked"). One reason makes a loss: too hot = slot warmest-month maximum > `tmaxWarm.high` + range.ts `RANGE_MARGIN_C` (2 °C), through range.ts `HOT_BOUND` and `boundPassed`; an annual too hot is never a reason (`coolSeason` true, the add/details mark kind 'season' `future.coolSeason`, nothing on chips or rows); aridity is a note, never a reason, as today (walk-through 2 N3: at Seville 29 of 39 "outside by 2041–2070" were so on dryness alone): `drier` when range.ts `aridityFit` (the one owner of the aridity rule, today's `rangeCheck` reads it too) gives 'drier' in the chosen slot and not today, with any verdict; an annual already too hot today gets no `coolSeason` from the future check (today's mark says it once); `warmEnough`: today beyond the year's warmth low (an annual: its summer-warmth low) and the chosen slot beyond no bound (`slotCheck`), said positively, `future.warmEnough` (add/details) and `future.warmEnoughShort` (chip/row), kind 'future', state `warm`; edge = above Q95 within the margin; warm winters never checked. A reason counts only as a change from today (the 'historical' slot): `already` lists the bounds already crossed today, `why` only new ones; no new reason and no new heat edge but some already → verdict 'already' (with heat the only reason, 'already' and a new reason cannot both hold). Agreement: for outside, scenarios outside for at least one of `why`; otherwise scenarios not outside. `futureSummary(taxa, site, scenario)` puts each member in one place: `periods[{period, checked, outside, heat, drier}]` (n of m; `drier` lists the period's plants with the note, any verdict, outside the counts, and the panel skips an n of m with no m), `already{heat}` (verdict 'already'), `todayOnly`, `notChecked`, plus `checks` (each checked plant's FutureCheck, which the panel lines read); `available` false when the site has no future slot. (`futureMarks`, the lazy provider, went with the marks in PP-C c2: the verdict's later-period line says it.) Real-export counts (`r-01102782139409b5` and, unchanged, `r-b958a4239cc68f73`, heat limit at Q99), whole lists of 200, SSP2-4.5 ([consortium-p5-seams-s5d.test.mjs](../../scripts/consortium-p5-seams-s5d.test.mjs), sites from `canopi-climate lookup` in `scripts/fixtures/consortium-future/sites.json`): Lyon (Temperate) 0/101 by 2041–2070 (1 drier) and 0/33 by 2071–2099, already 1 hot, 65 short-lived; Manaus (Tropical) 0/110 and 0/31; Seville (Mediterranean) 14/102 and 6/25, all too hot, already 2 hot, with the watering note on 30 and 7 (39/102 and 11/25 while dryness counted, before walk-through 2 N3); Oslo 0/102 and 0/33. No range pre-filter yet: once S5c's range.ts lands the members come from the filtered pool (merge follow-up). |
 | [install-consortium.mjs](../../scripts/install-consortium.mjs) | The installer, described below |
 | [consortium-schema.mjs](../../scripts/consortium-schema.mjs) | `DDL_3` (and `DDL_4`, `DDL_BY_SCHEMA`, since PP-C commit 0a): schema 3, the export's 37 statements as stored in export `r-b958a4239cc68f73` (plants ends with `grown_as_annual` NOT NULL; plant_climate's variable list holds `tmean_warm`; `consortium-p5-ranges.test.mjs` compares every statement with the installed export) (schema 1's from canopi-data `ab6bfad`, plus `plant_climate_status` with `documented_cells`, `plant_climate` with `tmean_year`, basis `thinned_cells`, `blocks`, `low_source`, `high_source`, `weak`, and `plant_koppen`). `DATA_TABLES`: the 28 counted tables |
 | [make-fixture.mjs](../../scripts/fixtures/consortium-v2/make-fixture.mjs) | The invented fixture, 38 plants, built with `node:sqlite`; schema 3 ranges by rule (tmean_year and tmean_warm included, no weak row; the onion is `grown_as_annual`) from each plant's first placement (`FIXTURE_GRID_SHA256` is the real v0.2.0 grid digest), Phacelia without a range. `buildFixtureDb` and `writeFixtureExport(dir, { edit, userVersion, applicationId, manifest, after })` build the broken variants for tests. The committed `export/` passes canopi-data's `check_export`; coverage is in its README |
@@ -429,7 +409,7 @@ Of two candidates that bring the same gain, the suggestion picks the one that is
 - `SuggestOptions.verdicts` and `AlternativeOptions.verdicts` (`HoleContext['verdicts']`, the store's `poolVerdicts` for the page period) feed the holes: a member outside its range for the period fills nothing, so the holes it leaves stay open, and a **candidate outside its range in the page period scores no hole gain** (holes() would not count it once added). `Gain.cells` became `Gain.holes`. Without verdicts nobody is outside.
 - `store.suggestMembers` passes the verdicts and, with a site climate and range checks on, waits for them; Swap passes the same verdicts to both `alternatives()` calls, so both rank on the same open holes.
 - `holes.ts` is now reached by `suggest.ts` (the `suggest` role) as well as by the palette and verdict code through `index.ts`, so it builds as a chunk they share (commit 1 probed it against check-built-site).
-- `matrix.ts` keeps `cellsOf` and `cellKey` for Swap's "Also fills" until PP-C c2.
+- `matrix.ts` is deleted (PP-C c2): Swap's "Also fills" and "Leaves empty" come from suggest.ts `swapChange`.
 - Tests: the `suggest:` and `alternatives:` cases of `scripts/consortium-core.test.mjs`.
 
 ## PP-B exit: seeds the suggestion cannot read stay (2026-11-16)
