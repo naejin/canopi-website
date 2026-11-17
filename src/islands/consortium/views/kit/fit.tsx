@@ -6,7 +6,7 @@
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
 // plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
 import type { Hole, JobId, Level, Line, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, holeLine, levelLine, sizeLine } from '../../../../lib/consortium/index.ts';
+import { fitLine, headLine, holeLine, levelLine, sizeLine } from '../../../../lib/consortium/index.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { countryName } from './names.ts';
@@ -54,15 +54,16 @@ export const say = (l: Line): string => [words(l), ...(l.also ?? []).map(say)].j
 export const sayAll = (lines: readonly Line[]): string => lines.map(say).join(' ');
 
 const ICON: Record<Level, string> = { fits: 'M3 8.5 6.5 12 13 4.5', look: 'M8 3v6M8 12v1', outside: 'm4 4 8 8M12 4l-8 8', unknown: 'M6 6a2 2 0 1 1 2.5 2c-.5.2-.5.6-.5 1.2M8 12v1' };
-function LevelIcon({ level }: { level: Level }) {
+export function LevelIcon({ level }: { level: Level }) {
   return <svg class="ct-level-icon" data-level={level} viewBox="0 0 16 16" aria-hidden="true"><path d={ICON[level]} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>;
 }
 
 // One plant's fit, icon and words; no verdict (the rule not loaded or refused) says "Not checked", or
-// `known`, a level another check gave (Add's range rule: "Outside its climate range").
-export function FitLine({ v, known }: { v: PlantVerdict | null | undefined; known?: Level }) {
+// `known`, a level another check gave (Add's range rule: "Outside its climate range"). `head`: the
+// headline form, naming the cause of a second look or an outside verdict (Swap's header; K12).
+export function FitLine({ v, known, head = false }: { v: PlantVerdict | null | undefined; known?: Level; head?: boolean }) {
   const level: Level = v?.level ?? known ?? 'unknown';
-  return <span class="ct-fit" data-level={level}><LevelIcon level={level} />{say(v ? fitLine(v) : levelLine(level))}</span>;
+  return <span class="ct-fit" data-level={level}><LevelIcon level={level} />{say(v ? (head ? headLine(v) : fitLine(v)) : levelLine(level))}</span>;
 }
 
 // A hole in words: its lane (a job, a light level) and its years. The Next step, the hole buttons and

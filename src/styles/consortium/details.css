@@ -65,7 +65,7 @@
 /* Against your place (PP-C c2): the fit line, then one line per factor, the limiting one first; the
    level is in the words and the icon, the colour only repeats it (tokens of the fit line). */
 .ct .ct-against { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; }
-.ct .ct-against-fit { margin: 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-alt); font-weight: 600; color: var(--level-fits); }
+.ct .ct-against-fit { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-alt); font-weight: 600; color: var(--level-fits); }
 .ct .ct-against-fit[data-level="look"] { color: var(--level-look); }
 .ct .ct-against-fit[data-level="outside"] { color: var(--level-outside); }
 .ct .ct-against-fit[data-level="unknown"] { color: var(--level-unknown); }
@@ -148,7 +148,9 @@
 .ct .ct-corr-consent label { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
 .ct .ct-corr-consent input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
 .ct .ct-corr-status:empty { display: none; }
-.ct .ct-corr-status.is-error { color: var(--danger); font-weight: 600; }
+.ct .ct-corr-status.is-error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--danger); border-radius: 8px; background: var(--surface-alt); color: var(--text); }
+.ct .ct-corr-status.is-error > .ct-glyph { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--danger); }
+.ct .ct-corr-status.is-error strong { color: var(--danger); }
 .ct .ct-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .ct .ct-paste-text { font-family: inherit; }
 
@@ -193,8 +195,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   .ct .ct-add-bar { padding: 10px 16px; }
   .ct .ct-sheet h2 { font-size: 26px; }
   .ct .ct-place .ct-bar i { width: 28px; }
-  .ct .ct-traits { grid-template-columns: 1fr; gap: 0 0; }
-  .ct .ct-traits dd { margin-bottom: 8px; }
+  .ct .ct-traits { grid-template-columns: minmax(6.5em, max-content) minmax(0, 1fr); gap: 6px 12px; }
   .ct .ct-toast-region { bottom: 12px; }
   :root { --ct-toast-room: 148px; }
 }
@@ -215,19 +216,24 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 
 /* Details (boards Details, DetailsMore, DetailsDesk; fix round 1 C7-C10, B1, B8). Phones: one column,
    the photo a short strip so Against starts on the first screen, the summary card, Against, then the
-   closed sections; the sticky foot adds the plant. From 960px: a wide two-column dialog, the photo,
-   summary and "What you can do" on the left, Against on the right. */
+   closed sections; the sticky foot adds the plant, or holds a member's two actions. From 960px: a wide
+   two-column dialog, the photo, summary, "What you can do", the soil and hardiness lines and the
+   sections on the left, Against on the right; the DOM order is the reading order on both (R4). */
 .ct .ct-d-body { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
-.ct .ct-d-left, .ct .ct-d-right { display: contents; }
-.ct .ct-d-left > .ct-photo { order: 1; }
-.ct .ct-d-summary { order: 2; }
-.ct .ct-d-right > .ct-against { order: 3; }
-.ct .ct-d-cando { order: 4; }
-.ct .ct-d-more { order: 5; display: grid; min-width: 0; }
+.ct .ct-d-more { display: grid; min-width: 0; }
+.ct .ct-d-desklines, .ct .ct-d-cando-actions { display: none; }
 .ct .ct-d-summary, .ct .ct-d-cando { padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
-.ct .ct-d-jobs { display: flex; flex-wrap: wrap; gap: 4px 14px; font-weight: 600; }
-.ct .ct-d-jobs li { display: inline-flex; align-items: center; gap: 6px; }
+.ct .ct-d-main { display: flex; gap: 8px; margin: 0; }
+.ct .ct-d-main-icons { display: flex; gap: 3px; flex: none; padding-top: 1px; }
 .ct .ct-d-summary > p { margin-top: 6px; }
+.ct .ct-marks { list-style: none; padding: 0; }
+.ct .ct-marks .ct-glyph { width: 14px; height: 14px; flex: none; }
+.ct .ct-d-jobtiles { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ct .ct-d-jobtiles li { display: flex; gap: 10px; align-items: flex-start; }
+.ct .ct-d-jobtiles p { margin: 2px 0 0; }
+.ct .ct-d-jobtiles strong span { font-weight: 600; }
+.ct [data-allelo] { display: flex; gap: 6px; align-items: flex-start; }
+.ct [data-allelo] .ct-glyph { width: 16px; height: 16px; flex: none; margin-top: 3px; }
 .ct .ct-d-cando { display: grid; gap: 10px; }
 .ct .ct-d-cando h3 { margin: 0; }
 .ct .ct-more { border-top: 1px solid var(--border); }
@@ -242,17 +248,34 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-more h4 { font-size: 15px; margin-top: 6px; }
 .ct .ct-d-more .ct-correct { margin-top: 16px; }
 /* Today's band per factor (aria-hidden; the line under it is its text form). */
-.ct .ct-band { position: relative; height: 34px; margin: 4px 0 2px; }
-.ct .ct-band::before { content: ""; position: absolute; left: 0; right: 0; top: 11px; border-top: 1px solid var(--border-strong); }
-.ct .ct-band-range { position: absolute; top: 6px; height: 10px; border: 1px solid var(--text-muted); border-radius: 3px; background: var(--border); }
-.ct .ct-band[data-few] .ct-band-range { border-style: dashed; background: transparent; }
-.ct .ct-band-place, .ct .ct-band-later { position: absolute; top: 5px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; }
-.ct .ct-band-place { background: var(--text); }
-.ct .ct-band-later { border: 2px solid var(--accent-ink); background: var(--surface); }
-.ct .ct-band-limit { position: absolute; top: 0; height: 22px; border-left: 2px dashed var(--accent-ink); }
-.ct .ct-band-num { position: absolute; top: 20px; transform: translateX(-50%); font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.ct .ct-band { display: block; width: 100%; max-width: 440px; height: auto; margin: 2px 0; overflow: visible; }
+.ct .ct-bd-axis { stroke: var(--border-strong); stroke-width: 1; }
+.ct .ct-bd-range { fill: var(--text-secondary); fill-opacity: .3; stroke: none; }
+.ct .ct-band[data-few] .ct-bd-range { fill-opacity: .12; }
+.ct .ct-bd-edge, .ct .ct-bd-end { stroke: var(--text-secondary); stroke-width: 1; fill: none; }
+.ct .ct-bd-edge.is-dashed { stroke-dasharray: 3 2; }
+.ct .ct-bd-tick, .ct .ct-bd-now { stroke: var(--text); stroke-width: 2; }
+.ct .ct-bd-now-dot { fill: var(--text); stroke: var(--text); stroke-width: 1.6; }
+.ct .ct-bd-later { stroke: var(--accent-ink); stroke-width: 1.6; stroke-dasharray: 3 2; }
+.ct .ct-bd-later-dot { fill: var(--surface); stroke: var(--accent-ink); stroke-width: 1.6; }
+.ct .ct-bd-num text { fill: var(--text-secondary); font-size: 11px; }
+.ct .ct-bd-now-text { fill: var(--text); font-size: 11.5px; font-weight: 600; }
+.ct .ct-bd-later-text { fill: var(--accent-ink); font-size: 11.5px; font-weight: 600; }
+.ct .ct-bandcard { padding: 8px 0; border-top: 1px solid var(--border); }
+.ct .ct-bandcard-head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: 14px; line-height: 20px; }
+.ct .ct-bandcard-head > b { flex: 1; min-width: 120px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.ct .ct-bandcard-glyph { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ct .ct-bandcard-status { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 99px; font-size: 13px; line-height: 20px; font-weight: 600; border: 1px solid var(--border-strong); background: var(--surface-alt); color: var(--text-secondary); max-width: 100%; }
+.ct .ct-bandcard-status[data-level="look"] { color: var(--level-look); border-color: currentColor; }
+.ct .ct-bandcard-status[data-level="outside"] { color: var(--level-outside); border-color: currentColor; }
+.ct .ct-bandcard .ct-against-lines li { border-left: 0; padding-left: 0; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-band-key { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-band-key svg { display: inline-block; vertical-align: -1px; margin-right: 4px; overflow: visible; }
 /* Swap: the header's reason and jobs; it wraps at 320px (C14). */
-.ct .ct-swap-head { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-swap-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-swap-head .ct-flag { white-space: normal; max-width: 100%; align-items: flex-start; border-radius: 12px; }
+.ct .ct-swap-head .ct-flag svg { margin-top: 2px; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-flag-line { display: flex; gap: 6px; align-items: flex-start; white-space: normal; }
 .ct .ct-sheet:has(.ct-swap-head) .ct-back-name { overflow-wrap: anywhere; min-width: 0; }
 .ct .ct-sheet:has(.ct-swap-head) .ct-back { max-width: 100%; }
 .ct .ct-swap-foot { justify-content: flex-start; }
@@ -263,10 +286,14 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-sheet:has(.ct-swap-head) .ct-row-main .ct-bar { flex-wrap: wrap; max-width: 100%; }
 @media (min-width: 960px) {
   .ct .ct-sheet:has(.ct-d-body) { inset: 40px 0 auto; margin-inline: auto; width: min(960px, calc(100% - 64px)); height: auto; max-height: calc(100% - 80px); border: 1px solid var(--border-strong); border-radius: 8px; }
-  .ct .ct-d-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; align-items: start; }
-  .ct .ct-d-body > .ct-d-left { display: grid; gap: 18px; grid-column: 1; grid-row: 1; min-width: 0; }
-  .ct .ct-d-body > .ct-d-right { display: block; grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
-  .ct .ct-d-body > .ct-d-more { grid-column: 1; grid-row: 2; }
+  .ct .ct-d-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-template-rows: repeat(5, auto) 1fr; gap: 18px 20px; align-items: start; }
+  .ct .ct-d-body > * { grid-column: 1; min-width: 0; }
+  .ct .ct-d-body > .ct-against { grid-column: 2; grid-row: 1 / 7; }
+  .ct .ct-d-desklines { display: grid; gap: 6px; font-size: 14px; }
+  .ct .ct-d-desklines p { margin: 0; }
+  .ct .ct-d-cando-actions { display: flex; }
+  .ct .ct-d-foot-member { display: none; }
+  .ct .ct-against [data-measure="soilPh"] { display: none; }
   .ct .ct-d-body .ct-photo { margin: 0; }
   .ct .ct-d-body .ct-photo figcaption { padding-inline: 0; }
 }

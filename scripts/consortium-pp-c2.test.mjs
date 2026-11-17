@@ -511,16 +511,75 @@ test('c2 fix R3 + K3 + K13 (Swap order): closest in jobs, then years; clean befo
   for (const k of ['noteRoomTall', 'rowRoomTall']) assert.doesNotMatch(en[`consortium.line.${k}`], /prune/i, k);
 });
 
-test('c2 fix C5: Sources names every range source (GBIF, TreeGOER) once; How sure says the list, the records, a disputed limit and the release', () => {
+test('c2 fix C5 + R6 + K7: Sources names every range source and every source that disputes a limit, GBIF once; How sure names every disputed limit, the list and its sources, the records and the release', () => {
   const range = (o = {}) => ({ low: 1, median: 5, high: 10, count: 9, basis: 'gbif', blocks: null, lowSource: null, highSource: null, weak: false, ...o });
-  const t = { climate: { source: 'gbif_occurrences', tminCold: range({ lowSource: 'treegoer_ranges', weak: true }), tmaxWarm: range(), tmeanYear: null, tmeanWarm: null, aridity: null, cells: 872, nativeShare: null } };
-  assert.deepEqual(line.rangeSourceNames(t), ['GBIF', 'TreeGOER']);
-  const keys = (ls) => ls.map((l) => l.key.slice('consortium.details.'.length));
-  const lines = line.sureLines(t, { list: 'Tropical', estimate: true, disputeShown: false, release: 'r-1' });
-  assert.deepEqual(keys(lines), ['sureListEstimate', 'sureRange', 'sureDisputed', 'sureRelease']);
-  assert.equal(say(lines[1]), 'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.');
-  assert.deepEqual(keys(line.sureLines(t, { list: 'Tropical', estimate: false, disputeShown: true, release: '' })), ['sureList', 'sureRange'], 'a dispute row already said: no second line');
-  assert.deepEqual(keys(line.sureLines({ climate: null }, { list: 'Tropical', estimate: false, disputeShown: false, release: 'r' })), ['sureList', 'sureRangeNone', 'sureRelease']);
+  const t = { climate: { source: 'gbif_occurrences', tminCold: range({ lowSource: 'treegoer_ranges' }), tmaxWarm: range(), tmeanYear: range({ weak: true }), tmeanWarm: null, aridity: null, cells: 872, nativeShare: null } };
+  assert.deepEqual(line.rangeSources(t).map((x) => x.name), ['GBIF', 'TreeGOER']);
+  // A dispute row's source is named too (K7), each name once.
+  const dispute = { field: 'tmin_cold.low', kind: 'range', value: '-10', unit: 'C', derived: false, scope: null, source: 'treegoer_ranges' };
+  assert.deepEqual(line.rangeSources({ climate: { ...t.climate, tminCold: range() } }, [dispute]).map((x) => x.name), ['GBIF', 'TreeGOER']);
+  const w = { list: 'Tropical', estimate: true, listSources: [], disputes: [], release: 'r-1' };
+  const lines = line.sureLines(t, w).map(say);
+  assert.deepEqual(lines, [
+    'Jobs, layer and years: Canopi’s Tropical list, an estimate for your climate, not reviewed.',
+    'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.',
+    'Warmth over the year: its sources disagree; the looser limit is kept and drawn dashed.',
+    'Data release r-1.',
+  ]);
+  // Every disputed limit named, the weak row and the dispute row alike (R6: true for both rows).
+  const both = line.sureLines(t, { ...w, estimate: false, listSources: ['Canopi sample review'], disputes: [dispute], release: '' }).map(say);
+  assert.deepEqual(both, ['Jobs, layer and years: Canopi’s Tropical list, from Canopi sample review.', 'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.', 'Warmth over the year and Coldest nights: its sources disagree; the looser limit is kept and drawn dashed.']);
+  assert.deepEqual(line.sureLines({ climate: null }, { ...w, estimate: false }).map(say), ['Jobs, layer and years: Canopi’s Tropical list.', 'Climate range: not recorded.', 'Data release r-1.']);
+  for (const [lang, wd] of Object.entries(words)) for (const k of ['sureListFrom', 'sureDisputed']) assert.ok(wd[`consortium.details.${k}`]?.includes(k === 'sureDisputed' ? '{limits}' : '{sources}'), `${lang}: ${k}`);
+});
+
+// Fix round 2 K6 + K12: the headline of "Against your place" (and Swap's header) names what causes a
+// second look or an outside verdict; rows keep the short fit line.
+test('c2 fix K6 (headline names the cause): "Needs a second look · hotter here than where it is recorded"; a fit reads as before', () => {
+  const hot = { factor: 'hot', level: 'look', basis: 'range', place: 34.8, low: 17.4, high: 33.7, confidence: { term: 'edge' } };
+  const look = vOf({ level: 'look', limiting: hot, factors: [hot] });
+  assert.equal(say(line.againstLines(look, null, W)[0].line), 'Needs a second look · hotter summers here than where it is recorded');
+  assert.equal(say(line.headLine({ ...look, level: 'outside', limiting: { ...hot, level: 'outside' } })), 'Outside its climate range · hotter summers here than where it is recorded');
+  assert.equal(say(line.fitLine(look)), 'Needs a second look', 'the row keeps the short line');
+  assert.equal(say(line.headLine(vOf())), 'Fits your place today');
+  for (const [lang, wd] of Object.entries(words)) for (const c of ['Cold', 'Mild', 'Cool', 'Summer', 'Hot', 'Light', 'Water', 'Soil']) assert.ok(wd[`consortium.line.cause${c}`], `${lang}: cause${c}`);
+});
+
+// Fix round 2 K2 + K5 + K8 + K16 (bands): one band per measure, numbering only the ends the rule
+// checks (the other runs open), the aridity band both; the mild side speaks only when past it (no
+// chill claim); a disputed low and few records said on the band; the tick at the median.
+test('c2 fix K2 + K5 + K8 + K16 (bands): Seville chestnut: the year\'s warmth band numbers only its cool end; one band for the coldest nights; no chill line within it', () => {
+  const f = (factor, level, place, low, high, o = {}) => ({ factor, level, basis: 'range', place, low, high, ...o });
+  const v = vOf({ level: 'look', factors: [f('hot', 'look', 34.8, 17.4, 33.7), f('cold', 'fits', 5.8, -7.2, 9.4, { disputed: true }), f('mild', 'fits', 5.8, -7.2, 9.4), f('cool', 'fits', 19.4, 8.8, 17.6), f('dry', 'look', 0.58, 0.67, 2.67)] });
+  v.limiting = v.factors[0];
+  const climate = { tminCold: { median: 1.2 }, tmeanYear: { median: 12.4 }, tmaxWarm: { median: 27.6 }, aridity: { median: 1.1 }, tmeanWarm: null };
+  const later = vOf({ judged: '2071-2099', factors: [f('cool', 'fits', 21.2, 8.8, 17.6)] });
+  const bands = Object.fromEntries(line.bandsOf(v, later, climate).map((b) => [b.measure, b]));
+  assert.deepEqual(Object.keys(bands).sort(), ['aridity', 'tmaxWarm', 'tmeanYear', 'tminCold'], 'one band per measure (cold and mild share one)');
+  assert.deepEqual([bands.tmeanYear.low, bands.tmeanYear.high], [8.8, null], 'the year\'s warmth: only its cool end, the warm side open (19.4 past 17.6 is no limit)');
+  assert.deepEqual([bands.tmaxWarm.low, bands.tmaxWarm.high], [null, 33.7], 'hottest days: only the heat limit');
+  assert.deepEqual([bands.tminCold.low, bands.tminCold.high], [-7.2, null], 'coldest nights: the cold limit; the mild side within says nothing');
+  assert.deepEqual([bands.aridity.low, bands.aridity.high], [0.67, 2.67], 'aridity: both ends, its line names both');
+  assert.equal(bands.tminCold.disputedLow, true);
+  assert.equal(bands.tmeanYear.later, 21.2, 'the place in the plant\'s own later period');
+  assert.equal(bands.tmaxWarm.median, 27.6, 'the tick: where it is most often recorded');
+  assert.deepEqual([say(bands.tmaxWarm.title), say(bands.tmaxWarm.status)], ['Hottest days', 'Near the edge of its range']);
+  assert.deepEqual([say(bands.aridity.status), say(bands.tminCold.status)], ['Drier than where it is recorded', 'In range']);
+  const all = line.againstLines(v, null, W).map((e) => say(e.line)).join(' | ');
+  assert.doesNotMatch(all, /winter chill|cold enough for it/i, `no chill claim within the mild side (${all})`);
+  // Past the mild side, it speaks (hedged) and the band numbers that end too.
+  const past = vOf({ level: 'look', factors: [f('cold', 'fits', 12, -7.2, 9.4), f('mild', 'look', 12, -7.2, 9.4)] });
+  assert.match(line.againstLines(past, null, W).map((e) => say(e.line)).join(' '), /may lack winter chill/);
+  assert.deepEqual(line.bandsOf(past, null, null).map((b) => [b.low, b.high]), [[-7.2, 9.4]]);
+});
+
+// Fix round 2 K19 (board DetailsDesk): keeping a member its later period puts outside says for how long.
+test('c2 fix K19 (keep it a fair bet): the years until its later period, only when it is outside then', () => {
+  const out = vOf({ judged: '2041-2070', level: 'outside' });
+  assert.equal(line.keepLine(out, 2026).count, 15);
+  assert.match(en['consortium.line.keepFairBet'], /fair bet for its first # years: plant its successor beside it now/);
+  assert.equal(line.keepLine(vOf({ judged: '2041-2070' }), 2026), null, 'it holds then');
+  assert.equal(line.keepLine(null, 2026), null);
 });
 
 

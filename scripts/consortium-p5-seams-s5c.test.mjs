@@ -265,7 +265,7 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   }
   // The sides' words moved to verdict-line (consortium.line.*; PP-C c2), Q05 and Q95 kept.
   assert.match(en['consortium.line.withinCold'], /mostly recorded down to \{tempBound\}/, 'Q05: "mostly recorded down to"');
-  assert.match(en['consortium.line.withinMild'], /mostly recorded up to \{tempBound\}/, 'Q95: "mostly recorded up to"');
+  assert.match(en['consortium.line.pastMild'], /mostly recorded up to \{tempBound\}/, 'Q95: "mostly recorded up to"; within the mild side nothing is said (no chill claim; c2 fix round 2 K5)');
   assert.match(en['consortium.line.pastHot'], /mostly recorded up to \{tempBound\}/);
   assert.match(en['consortium.range.pool.caveat'], /cultivation included/);
   assert.match(en['consortium.range.pool.caveat'], /not been reviewed/);

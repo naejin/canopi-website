@@ -6,42 +6,86 @@
 // rule comes from the store (store.verdictRule, its own chunk, role `verdict`): this file never
 // imports verdict.ts, so the details chunk stays off the rule (K3). Until the rule is here the section
 // says it is checking; when its chunk failed, "Not checked" with Try again (Reload when only a reload
-// can work, store.verdictNeedsReload; 3.1). Each measured factor draws today's band above its line
-// (B1, slices 3.7): where the plant is recorded growing, the place's marker (a dot; a ring for the
-// plant's own later period) and the other source's limit dashed (core limitOf over the details'
-// disputes); the band itself dashed when its records are few. The drawing is aria-hidden: the line
-// under it is its text form.
+// can work, store.verdictNeedsReload; 3.1). Then one band per measure (core bandsOf, soilBandOf; board
+// Details): its glyph, name and status pill, the drawing (aria-hidden: the lines under it are its text
+// form), and the measure's lines; the rest of the lines after, then the band key in four words.
 import { useEffect } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
-import type { Dispute, Factor, FactorVerdict, Line, PlantVerdict, Scenario, Taxon } from '../../../../lib/consortium/index.ts';
-import { againstLines, levelLine, limitOf, lineTerm, periodName, scenarioName } from '../../../../lib/consortium/index.ts';
-import { say } from '../kit/fit.tsx';
+import type { ComponentChildren } from 'preact';
+import type { AgainstEntry, Band, Dispute, Line, Measure, PlantVerdict, Scenario, Taxon } from '../../../../lib/consortium/index.ts';
+import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf } from '../../../../lib/consortium/index.ts';
+import { LevelIcon, say } from '../kit/fit.tsx';
 import { formatNumber, formatTemp } from '../../format.ts';
 import { pageLang } from '../../strings.ts';
 
 // The disputed bound each band can carry (Dispute.field).
-const DISPUTED: Partial<Record<Factor, Dispute['field']>> = { cold: 'tmin_cold.low', cool: 'tmean_year.low' };
-const pct = (x: number, lo: number, hi: number) => `${(((x - lo) / (hi - lo)) * 100).toFixed(1)}%`;
+const DISPUTED: Partial<Record<Measure, Dispute['field']>> = { tminCold: 'tmin_cold.low', tmeanYear: 'tmean_year.low' };
+// Each measure's glyph (board Details: a thermometer, a moon, a sun, a cloud, the soil sprout).
+const GLYPH: Record<Measure, string> = {
+  tminCold: 'M15.5 12.6A6.5 6.5 0 0 1 7.4 4.5a6.5 6.5 0 1 0 8.1 8.1Z',
+  tmeanYear: 'M8 11.5V4a2 2 0 0 1 4 0v7.5a3.5 3.5 0 1 1-4 0ZM10 8v5.5',
+  tmeanWarm: 'M8 11.5V4a2 2 0 0 1 4 0v7.5a3.5 3.5 0 1 1-4 0ZM10 8v5.5',
+  tmaxWarm: 'M10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7ZM10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4',
+  aridity: 'M6 11.5a3.2 3.2 0 1 1 .8-6.3 4 4 0 0 1 7.6 1.1 2.7 2.7 0 0 1-.5 5.2ZM7 14l-1 2.5M10.5 14l-1 2.5M14 14l-1 2.5',
+  soilPh: 'M10 3v7M10 10l-4.5 6M10 10l4.5 6M10 10v7M3 10h14',
+};
+const W = 324, PAD = 6;
 
-// One factor's band (aria-hidden; the line under it says it in words).
-function Band({ f, later, few, disputes }: { f: FactorVerdict; later: FactorVerdict | null; few: boolean; disputes: readonly Dispute[] }) {
-  if (f.place === null || f.low === null || f.high === null || f.basis !== 'range') return null;
-  const field = DISPUTED[f.factor];
-  const limit = field ? disputes.map((d) => (d.field === field ? limitOf(d) : null)).find((x) => x) ?? null : null;
-  const marks = [f.low, f.high, f.place, later?.place ?? f.place, limit?.valueC ?? f.low];
-  const span = Math.max(...marks) - Math.min(...marks) || 1;
-  const lo = Math.min(...marks) - span * 0.08, hi = Math.max(...marks) + span * 0.08;
+// One measure's band, drawn (aria-hidden: the lines under it say it in words): the recorded range,
+// closed and numbered only at the ends the rule checks (an open side runs to the edge), the tick where
+// it is most often recorded, the place today (a dot, "today 19.0 °C") and in its later period (a ring),
+// the whole band dashed on few records, only the disputed stretch dashed when another source's limit
+// is looser.
+function BandDraw({ b, disputes, period }: { b: Band; disputes: readonly Dispute[]; period: string | null }) {
   const lang = pageLang();
-  const num = (x: number) => (f.factor === 'dry' ? formatNumber(x, lang, 2) : formatTemp(x, lang));
+  const field = DISPUTED[b.measure];
+  const limit = field ? disputes.map((d) => (d.field === field ? limitOf(d) : null)).find((x) => x) ?? null : null;
+  const xs = [b.low ?? b.recordedLow, b.high ?? b.recordedHigh, b.place, b.later, b.median, limit?.valueC].filter((x): x is number => x !== null && x !== undefined);
+  const span = Math.max(...xs) - Math.min(...xs) || 1;
+  const lo = Math.min(...xs) - span * 0.12, hi = Math.max(...xs) + span * 0.12;
+  const x = (v: number) => PAD + ((v - lo) / (hi - lo)) * (W - 2 * PAD);
+  const end = (v: number) => formatNumber(v, lang, 2); // a limit keeps its two decimals (R5)
+  const at = (v: number) => (b.measure === 'aridity' ? formatNumber(v, lang, 2) : b.measure === 'soilPh' ? `pH ${formatNumber(v, lang, 1)}` : formatTemp(v, lang, 1));
+  const x0 = b.low !== null ? x(b.low) : 0, x1 = b.high !== null ? x(b.high) : W;
+  // The disputed stretch: from the other source's looser limit to the kept one (dashed); the kept
+  // range stays solid. Without the other value, the kept low end itself is dashed.
+  const dLo = b.disputedLow && b.low !== null ? (limit ? Math.min(x(limit.valueC), x0) : x0) : null;
+  // Both labels on the same side of both markers, so neither crosses the other's line.
+  const marks = [b.place, b.later].filter((v): v is number => v !== null).map(x);
+  const right = Math.max(...marks) > W * 0.62;
+  const label = (y: number, text: string, cls: string) => <text class={cls} x={right ? Math.min(...marks) - 5 : Math.max(...marks) + 5} y={y} text-anchor={right ? 'end' : 'start'}>{text}</text>;
+  const edge = (closed: boolean, xe: number) => (closed ? <path d={`M${xe} 38v10`} class="ct-bd-end" /> : null);
   return (
-    <div class="ct-band" aria-hidden="true" data-few={few || f.disputed ? '' : undefined}>
-      <span class="ct-band-range" style={{ left: pct(f.low, lo, hi), width: pct(f.high - f.low + lo, lo, hi) }} />
-      {limit && <span class="ct-band-limit" style={{ left: pct(limit.valueC, lo, hi) }} />}
-      {later && later.place !== null && later.place !== f.place && <span class="ct-band-later" style={{ left: pct(later.place, lo, hi) }} />}
-      <span class="ct-band-place" style={{ left: pct(f.place, lo, hi) }} />
-      <span class="ct-band-num" style={{ left: pct(f.low, lo, hi) }}>{num(f.low)}</span>
-      <span class="ct-band-num" style={{ left: pct(f.high, lo, hi) }}>{num(f.high)}</span>
+    <svg class="ct-band" data-few={b.few ? '' : undefined} data-open={b.low === null ? 'low' : b.high === null ? 'high' : undefined} viewBox={`0 0 ${W} 66`} width={W} height="66" aria-hidden="true" focusable="false">
+      <path d={`M0 43H${W}`} class="ct-bd-axis" />
+      <rect x={x0} y="38" width={Math.max(1, x1 - x0)} height="10" class="ct-bd-range" />
+      <path d={`M${x0} 38H${x1}M${x0} 48H${x1}`} class={b.few ? 'ct-bd-edge is-dashed' : 'ct-bd-edge'} />
+      {edge(b.low !== null && dLo === null, x0)}
+      {edge(b.high !== null, x1)}
+      {dLo !== null && <path data-disputed d={`M${dLo} 38H${x0}M${dLo} 48H${x0}M${dLo} 38v10M${x0} 38v10`} class="ct-bd-edge is-dashed" />}
+      {b.median !== null && <path d={`M${x(b.median)} 36v14`} class="ct-bd-tick" />}
+      <g class="ct-bd-num">
+        {b.low !== null && <text x={x0} y="62" text-anchor="middle">{end(b.low)}</text>}
+        {b.high !== null && <text x={x1} y="62" text-anchor="middle">{end(b.high)}</text>}
+      </g>
+      {b.place !== null && <><path d={`M${x(b.place)} 4V54`} class="ct-bd-now" /><circle cx={x(b.place)} cy="43" r="4" class="ct-bd-now-dot" />{label(13, `${T('details.bandToday')} ${at(b.place)}`, 'ct-bd-now-text')}</>}
+      {b.later !== null && period && <><path d={`M${x(b.later)} 17V54`} class="ct-bd-later" /><circle cx={x(b.later)} cy="43" r="4" class="ct-bd-later-dot" />{label(26, `${period}: ${at(b.later)}`, 'ct-bd-later-text')}</>}
+    </svg>
+  );
+}
+
+// A band's card: the measure's glyph and name, its status (the level's icon and words: never colour
+// alone), the drawing, and the measure's lines.
+function BandCard({ b, disputes, period, children }: { b: Band; disputes: readonly Dispute[]; period: string | null; children: ComponentChildren }) {
+  return (
+    <div class="ct-bandcard" data-measure={b.measure} data-level={b.level}>
+      <div class="ct-bandcard-head">
+        <b><svg class="ct-bandcard-glyph" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d={GLYPH[b.measure]} /></svg>{say(b.title)}</b>
+        <span class="ct-bandcard-status" data-level={b.level}><LevelIcon level={b.level} />{say(b.status)}</span>
+      </div>
+      <BandDraw b={b} disputes={disputes} period={period} />
+      {children}
     </div>
   );
 }
@@ -95,24 +139,31 @@ export function Against({ t, disputes = [] }: { t: Taxon; disputes?: readonly Di
   const scenario = scenarioName(store.verdictContext.value.scenario as Scenario);
   const later = store.laterVerdictOf(t, v);
   const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null });
-  const few = v.records !== undefined; // core verdict.ts sets records only on few records
-  const factorOf = (x: PlantVerdict | null, k?: Factor) => x?.factors.find((f) => f.factor === k) ?? null;
+  const soil = store.soil.value;
+  const bands = [...bandsOf(v, later, t.climate), soilBandOf(t, v, soil.from === 'own' ? soil.ph : null)].filter((b): b is Band => !!b);
+  const period = later ? periodName(later.judged) : null;
+  // Each measure's lines under its band; the rest (notes, hedges, the later period's lines) after.
+  const inBand = (e: AgainstEntry, b: Band) => !e.later && !e.note && !!e.factor && b.factors.includes(e.factor);
   const [fit, ...rest] = entries;
+  const others = rest.filter((e) => !bands.some((b) => inBand(e, b)));
+  // The bands in the lines' order (the limiting measure first), the soil card last.
+  const firstOf = (b: Band) => { const i = rest.findIndex((e) => inBand(e, b)); return b.measure === 'soilPh' ? Infinity : i < 0 ? rest.length : i; };
+  bands.sort((a, b) => firstOf(a) - firstOf(b));
+  const item = (e: AgainstEntry) => <li data-factor={e.factor} data-level={e.level} data-note={e.note} data-later={e.later ? '' : undefined} data-conf={e.conf} data-no-site={e.noSite ? '' : undefined}><Words line={e.line} terms={!e.later} /></li>;
   return (
     <section class="ct-against" data-against aria-labelledby="ct-d-against">
       {head}
-      <p class="ct-against-fit" data-level={fit.level}><Words line={fit.line} terms /></p>
-      {rest.length > 0 && (
-        <ul class="ct-against-lines">
-          {rest.map((e) => (
-            <li data-factor={e.factor} data-level={e.level} data-note={e.note} data-later={e.later ? "" : undefined} data-conf={e.conf} data-no-site={e.noSite ? "" : undefined}>
-              {!e.later && e.factor && !e.note && factorOf(v, e.factor) && <Band f={factorOf(v, e.factor)!} later={factorOf(later, e.factor)} few={few} disputes={disputes} />}
-              <Words line={e.line} terms={!e.later} />
-            </li>
-          ))}
+      <p class="ct-against-fit" data-level={fit.level}><LevelIcon level={fit.level ?? v.level} /><span><Words line={fit.line} terms /></span></p>
+      {bands.map((b) => <BandCard b={b} disputes={disputes} period={period}><ul class="ct-against-lines">{rest.filter((e) => inBand(e, b)).map(item)}</ul></BandCard>)}
+      {others.length > 0 && <ul class="ct-against-lines">{others.map(item)}</ul>}
+      {bands.length > 0 && (
+        <ul class="ct-band-key" data-band-key>
+          <li><svg viewBox="0 0 26 12" width="26" height="12" aria-hidden="true"><rect x="1" y="1" width="24" height="10" rx="2" class="ct-bd-range ct-bd-edge" /><path d="M12 0v12" class="ct-bd-tick" /></svg>{T('details.keyRange')}</li>
+          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{T('details.keyToday')}</li>
+          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-later-dot" /></svg>{T('details.keyLater')}</li>
+          <li><svg viewBox="0 0 22 12" width="22" height="12" aria-hidden="true"><rect x="1" y="1" width="20" height="10" rx="2" class="ct-bd-edge is-dashed" fill="none" /></svg>{T('details.keyDashed')}</li>
         </ul>
       )}
-      {v.factors.some((f) => f.basis === 'range' && f.place !== null && f.low !== null && f.high !== null) && <p class="ct-muted ct-small" data-band-key>{T('details.bandKey')}</p>}
     </section>
   );
 }
