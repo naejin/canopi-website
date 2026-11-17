@@ -3,9 +3,10 @@
 // fit line with its icon. Every verdict, hole and year word on the page goes through here, from the
 // core's verdict-line.ts (plant-palette-architecture 3.2): no view writes its own. Numbers are
 // formatted for the page language by strings.ts. Unknown is never drawn as a fit: "Not checked"
-// has its own icon and the plain text colour.
-import type { Hole, JobId, Level, Line, PlantVerdict } from '../../../../lib/consortium/index.ts';
-import { fitLine, holeLine, levelLine } from '../../../../lib/consortium/index.ts';
+// has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
+// plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
+import type { Hole, JobId, Level, Line, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import { fitLine, holeLine, levelLine, sizeLine } from '../../../../lib/consortium/index.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { countryName } from './names.ts';
@@ -76,3 +77,17 @@ export function JobIcon({ job }: { job: JobId | null }) {
 }
 // A main job's word (the jobs picture's "No job recorded" for none).
 export const jobWord = (job: JobId | null): string => (job ? T(`job.${job}`) : T('palette.jobsNone'));
+
+// How many of the member's jobs a candidate does, naming the ones it does not (board Swap).
+export function doesWords(memberJobs: readonly string[], shared: readonly string[]): string {
+  const missing = memberJobs.filter((j) => !shared.includes(j)).map((j) => T(`job.${j}`));
+  if (!memberJobs.length || !missing.length) return T('swap.doesAll');
+  if (missing.length === memberJobs.length) return T('swap.doesNone', { missing: listOf(missing) });
+  return T('swap.doesSome', { n: shared.length, m: memberJobs.length, missing: listOf(missing) });
+}
+
+// A plant's size in words, its measures through format.ts (Your plants, Swap, Details).
+export function sizeWords(t: Taxon): string {
+  const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
+  return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, formatLength(Number(v), pageLang())])));
+}

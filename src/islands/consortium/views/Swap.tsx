@@ -21,9 +21,9 @@ import type { Alternative, Hole, PlantId, Taxon } from '../../../lib/consortium/
 import { jobsOf, placementZone } from '../../../lib/consortium/index.ts';
 import { closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, Bar, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
-import { FitLine, holeWords } from './kit/fit.tsx';
+import { doesWords, FitLine, holeWords, sizeWords } from './kit/fit.tsx';
 import { listOf, nameOf, spanWords, zoneName } from './kit/names.ts';
-import { doesWords, RowNotes, sizeWords } from './StageBar.tsx';
+import { RowNotes } from './StageBar.tsx';
 import { LoadFailed } from './lazy.tsx';
 import { suggestWaitMs } from '../state/suggest-wait.ts';
 const { flagLines } = shared; // first-run modules (kit/sheet.tsx shared)

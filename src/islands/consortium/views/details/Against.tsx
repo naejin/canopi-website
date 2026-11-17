@@ -20,8 +20,6 @@ import { say } from '../kit/fit.tsx';
 import { formatNumber, formatTemp } from '../../format.ts';
 import { pageLang } from '../../strings.ts';
 
-// Under this many map squares of records a band is drawn dashed (core verdict.ts few-records).
-const FEW = 300;
 // The disputed bound each band can carry (Dispute.field).
 const DISPUTED: Partial<Record<Factor, Dispute['field']>> = { cold: 'tmin_cold.low', cool: 'tmean_year.low' };
 const pct = (x: number, lo: number, hi: number) => `${(((x - lo) / (hi - lo)) * 100).toFixed(1)}%`;
@@ -97,7 +95,7 @@ export function Against({ t, disputes = [] }: { t: Taxon; disputes?: readonly Di
   const scenario = scenarioName(store.verdictContext.value.scenario as Scenario);
   const later = store.laterVerdictOf(t, v);
   const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null });
-  const few = (v.records ?? Infinity) < FEW;
+  const few = v.records !== undefined; // core verdict.ts sets records only on few records
   const factorOf = (x: PlantVerdict | null, k?: Factor) => x?.factors.find((f) => f.factor === k) ?? null;
   const [fit, ...rest] = entries;
   return (

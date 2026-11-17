@@ -1,19 +1,18 @@
 /** @jsxImportSource preact */
-// The words and marks the kept views share (the future panel's Details opener and plant order,
-// print's side drawing key, a verdict's short row form for Your plants, print and the side view), kept in this leaf module so the views never import each other in a
-// cycle (the shared words and glyphs are in views/kit/names.ts and kit/icons.tsx). The stage bar, the
-// popovers and the matrix views that read the rest went in PP-B commit 0a'; the file goes when its
-// last readers move (the future panel in PP-E, print in b2/d2; Add's job title went with Add in
-// PP-C commit 0).
+// The marks the views share that read the store, kept in this leaf module so the views never import
+// each other in a cycle: the future panel's Details opener (future.tsx), the plant order and print's
+// side drawing key (SideView.tsx Marks, byName), and a verdict's short row form (RowNotes: Your plants,
+// Swap, print and the side view's key, through Marks). Store-free words are in views/kit/ (names.ts,
+// fit.tsx doesWords and sizeWords, icons.tsx). The stage bar, the popovers and the matrix views went in
+// PP-B commit 0a'.
 import { computed } from '@preact/signals';
 import type { PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { guestOf, periodName, rowLines, scenarioName, sizeLine } from '../../../lib/consortium/index.ts';
-import { formatLength } from '../format.ts';
+import { guestOf, periodName, rowLines, scenarioName } from '../../../lib/consortium/index.ts';
 import { flags, laterVerdictOf, memberVerdicts, openSheet, scenario } from '../store.ts';
 import { FitLine, say } from './kit/fit.tsx';
 import { P, T, pageLang } from '../strings.ts';
 import { warningCounts } from './kit/phase.ts';
-import { collatorFor, listName, listOf, nameOf, type Order } from './kit/names.ts';
+import { collatorFor, listName, nameOf, type Order } from './kit/names.ts';
 import { WarnIcon } from './kit/icons.tsx';
 
 // Plants by their shown name, with the page language's one collator (kit/names.ts collatorFor).
@@ -31,20 +30,6 @@ export function RowNotes({ t, v }: { t: Taxon; v: PlantVerdict | null | undefine
   const later = laterVerdictOf(t, v);
   const words = { period: periodName, scenario: scenarioName(scenario.value), heightM: t.traits.height_m?.max ?? null };
   return <>{rowLines(v, later, words).map((e) => <> <span class={e.conf ? 'ct-term' : 'ct-row-note'} data-conf={e.conf} data-note={e.note} data-later={e.later ? '' : undefined}>{say(e.line)}</span></>)}</>;
-}
-
-// How many of the member's jobs a candidate does, naming the ones it does not (board Swap).
-export function doesWords(memberJobs: readonly string[], shared: readonly string[]): string {
-  const missing = memberJobs.filter((j) => !shared.includes(j)).map((j) => T(`job.${j}`));
-  if (!memberJobs.length || !missing.length) return T('swap.doesAll');
-  if (missing.length === memberJobs.length) return T('swap.doesNone', { missing: listOf(missing) });
-  return T('swap.doesSome', { n: shared.length, m: memberJobs.length, missing: listOf(missing) });
-}
-
-// A plant's size in words, its measures through format.ts (Your plants, Swap, Details).
-export function sizeWords(t: Taxon): string {
-  const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
-  return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, formatLength(Number(v), pageLang())])));
 }
 
 // A plant's marks (print's side drawing key): the guest's list, the warning count with its words, and
