@@ -228,9 +228,9 @@ export interface PasteResult<T> {
 //              search guessed (`guess`: "beans" → the beans, "Date" → Date plum); `word` is what the
 //              question asks about (the line, or its singular when only that matched: "Which bean?");
 //              plants another line matched are left out; `climate` names another climate's list when
-//              only that list has them, null for this one. A name that matches one plant (a genus of
-//              one, or one left once the other lines took theirs) is no question: that plant is found
-//              (or other, already…); a guess stays a question even of one plant (never added unasked)
+//              only that list has them, null for this one. A name that matches one plant from the start (a
+//              genus of one) is no question: that plant is found (or other, already…); a guess, or a
+//              group the other lines left with one plant, stays a question (never added unasked)
 //   other      only another climate's list has it, one plant: "Add anyway", a guest (A9)
 //   already    in the consortium already
 //   duplicate  a line naming a plant another line matched (a later line; or a choice whose every
@@ -277,15 +277,14 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
     else out.none.push({ at, name });
   }
   // Plants another line matched leave the choose groups; a group they leave empty keeps its line, as
-  // covered by another line (a duplicate of the plant it named first); a name's group left with one
-  // plant is that plant ("Malus" once "Malus domestica" took the apple: the wild apple).
+  // covered by another line (a duplicate of the plant it named first); a group left with one plant
+  // stays a question ("Which Malus?" with the wild apple once "Malus domestica" took the apple, c1r4
+  // U1): only a name that has one plant from the start is found.
   const groups = out.choose;
   out.choose = [];
   for (const c of groups) {
     const taxa = c.taxa.filter((t) => !seen.has(t.id));
-    at = c.at;
-    if (taxa.length === 1 && !c.guess) one(c.name, taxa[0], null);
-    else if (taxa.length) out.choose.push({ ...c, taxa, inside: taxa.filter((t) => ins.has(t.id)).map((t) => t.id) });
+    if (taxa.length) out.choose.push({ ...c, taxa, inside: taxa.filter((t) => ins.has(t.id)).map((t) => t.id) });
     else out.duplicate.push({ at: c.at, name: c.name, taxon: c.taxa[0] });
   }
   out.header = names.header ?? null;

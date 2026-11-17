@@ -84,8 +84,8 @@ test('readPaste lists a later line naming a plant already matched as a duplicate
 
 test('readPaste hides plants matched by another line from the choose groups; a group they leave empty keeps its line', () => {
   const r = readPaste(pasteNames('Rubus\nRaspberry'), { here: temperate, members: [] });
-  assert.deepEqual(r.found.map((f) => [f.name, f.taxon.id]).sort(), [['Raspberry', 't4'], ['Rubus', 't5']], 'a genus left with one plant is that plant, a found line (c1r3 T12: no "Which Rubus? 1 plant")');
-  assert.deepEqual(r.choose, []);
+  assert.deepEqual(r.found.map((f) => [f.name, f.taxon.id]), [['Raspberry', 't4']]);
+  assert.deepEqual(r.choose.map((c) => [c.name, c.word, c.taxa.map((t) => t.id)]), [['Rubus', 'Rubus', ['t5']]], 'a genus the other lines left with one plant stays a question: "Which Rubus?" with Blackberry, never added unasked (c1r4 U1)');
   const gone = readPaste(pasteNames('Rubus\nRaspberry\nBlackberry'), { here: temperate, members: [] });
   assert.deepEqual(gone.choose, []);
   assert.deepEqual(gone.duplicate.map((d) => [d.at, d.name]), [[0, 'Rubus']], '"Rubus" keeps its line, covered by the next lines');
