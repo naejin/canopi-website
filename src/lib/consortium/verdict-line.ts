@@ -32,7 +32,8 @@ export function fitLine(v: PlantVerdict): Line {
 // The headline of one plant against its place (Details, Swap's header): the fit line, and when the
 // level asks a second look or is outside, what causes it ("Needs a second look · hotter here than where
 // it is recorded"; board Details: the cause in the headline). Rows keep the short fit line.
-const CAUSE: Partial<Record<Factor, string>> = { cold: 'causeCold', mild: 'causeMild', cool: 'causeCool', summer: 'causeSummer', hot: 'causeHot', light: 'causeLight', water: 'causeWater', 'soil-ph': 'causeSoil' };
+// A second look from aridity is always the wet side (verdict.ts: the dry side never sets the level).
+const CAUSE: Partial<Record<Factor, string>> = { cold: 'causeCold', mild: 'causeMild', cool: 'causeCool', summer: 'causeSummer', hot: 'causeHot', dry: 'causeWetter', light: 'causeLight', water: 'causeWater', 'soil-ph': 'causeSoil' };
 export function headLine(v: PlantVerdict): Line {
   const fit = fitLine(v), cause = (v.level === 'look' || v.level === 'outside') && v.limiting ? CAUSE[v.limiting.factor] : undefined;
   if (!cause) return fit;

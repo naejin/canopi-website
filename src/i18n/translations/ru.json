@@ -1048,6 +1048,7 @@
   "consortium.line.causeCool": "здесь в среднем за год прохладнее, чем там, где оно отмечено",
   "consortium.line.causeSummer": "лето здесь прохладнее, чем там, где оно отмечено",
   "consortium.line.causeHot": "лето здесь жарче, чем там, где оно отмечено",
+  "consortium.line.causeWetter": "здесь влажнее, чем там, где оно отмечено",
   "consortium.line.causeLight": "свет здесь не тот, что ему нужен",
   "consortium.line.causeWater": "влага здесь не та, что ему нужна",
   "consortium.line.causeSoil": "pH почвы здесь вне того, что оно переносит",

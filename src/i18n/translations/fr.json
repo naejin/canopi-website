@@ -1048,6 +1048,7 @@
   "consortium.line.causeCool": "plus frais sur l’année ici que là où elle est recensée",
   "consortium.line.causeSummer": "étés plus frais ici que là où elle est recensée",
   "consortium.line.causeHot": "étés plus chauds ici que là où elle est recensée",
+  "consortium.line.causeWetter": "plus humide ici que là où elle est recensée",
   "consortium.line.causeLight": "la lumière ici n’est pas celle qu’il lui faut",
   "consortium.line.causeWater": "l’eau ici n’est pas celle qu’il lui faut",
   "consortium.line.causeSoil": "le pH du sol ici sort de ce qu’elle supporte",

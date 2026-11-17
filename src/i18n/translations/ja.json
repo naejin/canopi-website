@@ -1048,6 +1048,7 @@
   "consortium.line.causeCool": "記録地より年間を通じて涼しい",
   "consortium.line.causeSummer": "記録地より夏が涼しい",
   "consortium.line.causeHot": "記録地より夏が暑い",
+  "consortium.line.causeWetter": "記録地より湿潤",
   "consortium.line.causeLight": "ここの光は必要な条件と合わない",
   "consortium.line.causeWater": "ここの水分は必要な条件と合わない",
   "consortium.line.causeSoil": "ここの土壌 pH は耐えられる範囲の外",

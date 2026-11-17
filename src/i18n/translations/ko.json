@@ -1048,6 +1048,7 @@
   "consortium.line.causeCool": "기록된 곳보다 이곳이 일 년 내내 더 서늘합니다",
   "consortium.line.causeSummer": "기록된 곳보다 이곳 여름이 더 서늘합니다",
   "consortium.line.causeHot": "기록된 곳보다 이곳 여름이 더 덥습니다",
+  "consortium.line.causeWetter": "기록된 곳보다 이곳이 더 습합니다",
   "consortium.line.causeLight": "이곳의 빛이 필요한 조건과 맞지 않습니다",
   "consortium.line.causeWater": "이곳의 물이 필요한 조건과 맞지 않습니다",
   "consortium.line.causeSoil": "이곳 토양 pH가 견딜 수 있는 범위를 벗어납니다",

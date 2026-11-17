@@ -16,9 +16,11 @@
 // - Spot and soil answers are hints: a misfit is 'look' at most; an unknown trait is a factor
 //   'unknown' that never lowers the level. Shade relief: a sun spot's light factor is dropped when a
 //   taller member shades the plant in a phase they share (ctx.canopy, site.ts shadedBy).
-// - Room is a note ('room-tall'), never a level (DEC:97). Aridity is a note ('drier', 'wetter'), never
-//   a level: its factor 'dry' (the place's aridity index against the plant's band; 'look' beyond it,
-//   'unknown' on ice, "not checked") is said with its measure and skipped by worst().
+// - Room is a note ('room-tall'), never a level (DEC:97). Aridity notes 'drier' or 'wetter': its factor
+//   'dry' (the place's aridity index against the plant's band; 'look' beyond it, 'unknown' on ice, "not
+//   checked") is said with its measure. Past the wet end it asks a second look like the hot and cold
+//   edges (owner, decision row "Wetter than recorded is a second look", 2026-11-17: cause "wetter here
+//   than where it is recorded"); past the dry end it stays a note that names the limit (PP-C5).
 //   Drought tolerance Medium on a dry spot: note 'dry-months' ("needs watering in the dry months").
 // - "Higher than the town" or a hollow: note 'cold-air' on a plant within the margin of its cold limit.
 // - The level is the worst factor (outside, then look, then fits); 'unknown' when no climate factor
@@ -111,9 +113,10 @@ function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors
   return { factors, roomTall: tallerThanRoom(fit), dryMonths: fit.reasons.some((r) => r.key === 'water' && r.note === 'dry_months') };
 }
 
-// The aridity factor ('dry') is shown with its measure and never sets the level (header).
+// The aridity factor ('dry') sets the level only past the wet end (header).
+const wetter = (f: FactorVerdict): boolean => f.place !== null && f.high !== null && f.place > f.high;
 const worst = (fs: readonly FactorVerdict[]): FactorVerdict | null =>
-  fs.reduce<FactorVerdict | null>((w, f) => (f.factor !== 'dry' && ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
+  fs.reduce<FactorVerdict | null>((w, f) => ((f.factor !== 'dry' || wetter(f)) && ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
 
 export function verdict(taxon: Taxon, ctx: VerdictContext): PlantVerdict {
   return verdictAt(taxon, ctx, siteFor(ctx.place, ctx.lookup));
@@ -137,7 +140,7 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   const level: Level = worstOne ? worstOne.level : climate ? 'fits' : 'unknown';
   // What limits the plant: the worst measure; when nothing else is past 'fits', a drier edge (the place
   // drier than the band) names it, still without setting the level (Mendoza: the dry edge first). A
-  // wetter place is a note only, never the limit ("may need watering" would be false).
+  // wetter place is worst() itself ("needs a second look · wetter here"), never "may need watering".
   const dryEdge = factors.find((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low) ?? null;
   const limiting = dryEdge && (!worstOne || worstOne.level === 'fits') ? dryEdge : worstOne;
   const range = climate ? 'judged' : climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, judged) ? 'not-recorded' : 'no-climate';

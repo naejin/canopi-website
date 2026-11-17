@@ -1048,6 +1048,7 @@
   "consortium.line.causeCool": "这里全年比它的记录地更凉",
   "consortium.line.causeSummer": "这里的夏季比它的记录地更凉",
   "consortium.line.causeHot": "这里的夏季比它的记录地更热",
+  "consortium.line.causeWetter": "这里比它的记录地更湿",
   "consortium.line.causeLight": "这里的光照不合它的需要",
   "consortium.line.causeWater": "这里的水分不合它的需要",
   "consortium.line.causeSoil": "这里的土壤 pH 超出它能耐受的范围",

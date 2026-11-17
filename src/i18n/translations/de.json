@@ -1048,6 +1048,7 @@
   "consortium.line.causeCool": "übers Jahr kühler hier als dort, wo sie erfasst ist",
   "consortium.line.causeSummer": "kühlere Sommer hier als dort, wo sie erfasst ist",
   "consortium.line.causeHot": "heißere Sommer hier als dort, wo sie erfasst ist",
+  "consortium.line.causeWetter": "hier feuchter als dort, wo sie erfasst ist",
   "consortium.line.causeLight": "das Licht hier ist nicht das, was sie braucht",
   "consortium.line.causeWater": "das Wasser hier ist nicht das, was sie braucht",
   "consortium.line.causeSoil": "der pH-Wert des Bodens hier liegt außerhalb dessen, was sie verträgt",
