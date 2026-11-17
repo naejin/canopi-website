@@ -754,6 +754,24 @@ test('PP-C51 (c1 r3 T2+T12+T13+T16): Paste: Read the list, choices with their sc
   assert.ok(chips.filter((c) => c !== 'None').every((c) => sci.some((s) => c.endsWith(s))), `each choice names its scientific name (${chips.join(' | ')})`);
 });
 
+// c1r4 U5 (Chrome T6, board FindResults): at phone width the "Needs a second look" heading is one line
+// of text that wraps back under its start, its count and why in the regular weight.
+test('PP-C55 (c1 r4 U5): the second-look heading wraps as one line at 390 px, its why in the regular weight', async () => {
+  const page = await suggestedAt('lyon', 'Temperate', { width: 390 });
+  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
+  await openFind(page);
+  await hasFind(page);
+  await page.click(`${FIND} [data-find-list]`);
+  assert.ok(await has(page, `${FIND} [data-find-group="look"] h3`, 4000), 'a second-look group');
+  const h = await page.$eval(`${FIND} [data-find-group="look"] h3`, (e) => {
+    const why = e.querySelector('span'), lines = [...why.getClientRects()], head = e.getBoundingClientRect();
+    return { lines: lines.length, last: lines.at(-1).left - head.left, first: lines[0].left - head.left, weight: getComputedStyle(why).fontWeight };
+  });
+  assert.ok(h.first > 0, 'the why follows the words on their line');
+  assert.ok(h.lines > 1 && h.last < 2, `the why wraps back under the heading's start (${JSON.stringify(h)})`);
+  assert.equal(h.weight, '400', 'regular weight');
+});
+
 // c1r4 U3: a later period with no climate figures for the place leaves every plant unchecked: Find never
 // says they fit ("N of N fit your place in 2071–2099"); its subtitle is the plain count. (As PP-B1: the
 // lookup keeps only an SSP5-8.5 slot, so the page's SSP2-4.5 has none for any period.)

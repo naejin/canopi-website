@@ -39,7 +39,10 @@
 .ct :is(.ct-find, .ct-paste-rows) .text-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .ct .ct-find a.button { text-decoration: none; }
 .ct .ct-find-results .button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
-.ct .ct-find-group h3 { display: flex; gap: 8px; align-items: baseline; font-family: var(--font-sans); font-size: 16px; font-weight: 600; }
+/* A group heading reads as one line that wraps under its start (board FindResults, c1r4 U5): the
+   count and its why in the regular weight. */
+.ct .ct-find-group h3 { font-family: var(--font-sans); font-size: 16px; font-weight: 600; }
+.ct .ct-find-group h3 .ct-muted { font-weight: 400; }
 .ct .ct-find-group .ct-rows > li { content-visibility: auto; contain-intrinsic-size: auto 96px; }
 .ct .ct-find-add { min-width: 96px; justify-content: center; gap: 6px; }
 .ct .ct-find-add.is-added { background: var(--surface-alt); border-color: var(--text); }
