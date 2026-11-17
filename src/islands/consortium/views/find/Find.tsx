@@ -99,7 +99,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // its button turned to "Added".
   const [atOpen] = useState(() => new Set(store.members.peek()));
   const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState<FindFilters>({});
+  const [chosen, setFilters] = useState<FindFilters>({});
   // The plants outside their range wait behind one counted button, in a hole and in plain Find (B3).
   const [foldOutside, setFoldOutside] = useState(true);
   const [whole, setWhole] = useState<ReadonlySet<Group>>(new Set()); // the groups shown whole ("Show all N")
@@ -126,6 +126,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // the verdict rule loaded, not refused. Otherwise neither is offered nor applied, so no plant is ever
   // counted "not recorded" for a rule that did not load.
   const judging = located && !!rule && !store.verdictFailed.value;
+  // The filters in force, the only ones shown, counted and applied (fix round 2, r2-07): without
+  // `judging` the range and holds choices are neither applied nor shown as on.
+  const filters: FindFilters = judging ? chosen : { ...chosen, range: false, holds: false };
   const flagCtx = store.flagContext.value, scene = store.flagScene.value;
   const search = finder.value, names = namesState.value;
   // A query of one letter browses, as an empty one (normalization v1's admission).
@@ -190,7 +193,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const hitOf = new Map<PlantId, FindHit>(), rank = new Map<PlantId, number>();
     hits?.forEach((h, i) => { hitOf.set(h.id, h); rank.set(h.id, i); });
     const matched = hits ? base.filter((t) => hitOf.has(t.id)).sort((a, b) => rank.get(a.id)! - rank.get(b.id)!) : bestFirst(base, filled, stay);
-    const { rows, unknown, hidden } = applyFilters(matched, judging ? filters : { ...filters, range: false, holds: false }, ctx);
+    const { rows, unknown, hidden } = applyFilters(matched, filters, ctx);
     const groups = findGroups(rows, verdicts, warned);
     const inList = new Set(base.map((t) => t.id));
     const own = new Set(pool?.map((t) => t.id) ?? []);
@@ -205,7 +208,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const byFilters = hits ? matched.length - rows.length : 0;
     const outsideHole = hits ? hits.filter((h) => own.has(h.id) && !inList.has(h.id) && !atOpen.has(h.id)).length : 0;
     return { hitOf, groups, unknown, hidden, others, inPalette, byFilters, outsideHole, count: rows.length };
-  }, [base, hits, filters, judging, ctx, verdicts, warned, pool, members, climate, atOpen, filled, stay, releasePlants.value]);
+  }, [base, hits, chosen, judging, ctx, verdicts, warned, pool, members, climate, atOpen, filled, stay, releasePlants.value]);
 
   if (!climate) return null;
   if (pasting) return <Paste Frame={Frame} onBack={() => batch(() => { setPasting(false); setBackFromPaste(true); })} />;
