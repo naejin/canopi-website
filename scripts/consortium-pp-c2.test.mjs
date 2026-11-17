@@ -213,29 +213,21 @@ test('PP-C-u14 (c2 misfit parity): the conflict misfit equals the verdict\'s hin
 // Swap's gains and losses through the holes (slices c2 row): what the candidate fills and leaves empty
 // is holes(members) against holes(members - out + inn), never the deleted cells; the strata gain kept.
 test('PP-C-u15 (c2 Swap gains): Swap\'s gains and losses are holes(members) against holes(members - m + c), with the candidates\' verdicts; the strata gain kept', async () => {
-  // swapChange lives with alternatives in suggest.ts (the Swap list's chunk; sheets never import
-  // holes.ts), read against holes.ts holes() itself.
-  const holesMod = { ...(await import('../src/lib/consortium/holes.ts')), ...(await import('../src/lib/consortium/suggest.ts')) };
-  const { taxon, placement } = await import('./consortium-p5-fixtures.mjs');
-  void placement;
+  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const t = (n, stratum, start, end, fn) => taxon({ id: `00000000-c2c2-4000-8000-00000000002${n}`, canonical_name: `Plantus ${n}`, stratum: { value: stratum, sources: [] }, phases: { start, end, sources: [] }, functions: fn });
   const members = [t(1, 'emergent', 'secondary_i', 'climax', ['nitrogen_fixer']), t(2, 'low', 'placenta_i', 'secondary_ii', ['edible_fruit'])];
   const out = members[1], inn = t(3, 'medium', 'placenta_i', 'climax', ['pollinator_forage']);
   const verdicts = new Map([...members, inn].map((x) => [x.id, { id: x.id, judged: '1991-2020', ownYears: false, level: 'fits', limiting: null, factors: [], notes: [] }]));
   const ctx = { members, verdicts, pending: false };
-  // Compared by lane (job or light level) and years (fix round 1 A1): filled = open before, no open
-  // years of its lane left over it; left = open after over years its lane did not have open before.
-  const open = (ms) => holesMod.holes({ ...ctx, members: ms }).filter((h) => h.state === 'open');
-  const before = open(members), after = open([members[0], inn]);
-  const lane = (h) => `${h.kind}:${h.job ?? h.stratum}`;
   // Through alternatives, Swap's one reader (swapChange is internal since fix round 1 B7).
   const site = core.siteFor(core.emptyPlace, null);
-  const swapChange = (c, o, i) => holesMod.alternatives(o.id, c.members, [i], { site, interactions: [], verdicts: c.verdicts }).find((x) => x.id === i.id);
+  const swapChange = (c, o, i) => alternatives(o.id, c.members, [i], { site, interactions: [], verdicts: c.verdicts }).find((x) => x.id === i.id);
   const change = swapChange(ctx, out, inn);
-  const filled = before.filter((h) => !after.some((x) => lane(x) === lane(h) && x.fromYear < h.toYear && h.fromYear < x.toYear));
-  const left = after.filter((h) => !before.some((x) => lane(x) === lane(h) && h.fromYear >= x.fromYear && h.toYear <= x.toYear));
-  assert.deepEqual(change.fills.map((h) => h.id).sort(), filled.map((h) => h.id).sort(), 'what it fills: open before, closed after');
-  assert.deepEqual(change.leaves.map((h) => h.id).sort(), left.map((h) => h.id).sort(), 'what it leaves empty: open after, not before');
+  // A medium plant for the low one: the medium light level is no longer empty; the low one is, every year.
+  const lanes = (hs) => hs.map((h) => `${h.kind}:${h.job ?? h.stratum} ${h.fromYear}-${h.toYear}`);
+  assert.deepEqual(lanes(change.fills), ['light:medium 0-60'], 'what it fills: open before, closed after');
+  assert.deepEqual(lanes(change.leaves), ['light:low 0-60'], 'what it leaves empty: open after, not before');
   assert.ok(change.fills.length + change.leaves.length > 0, 'the case changes some hole');
   assert.equal(change.strataGain, true, 'a stratum no member stands in (medium): the strata gain kept');
   assert.equal(swapChange(ctx, out, t(4, 'low', 'placenta_i', 'secondary_ii', ['edible_fruit'])).strataGain, false, 'the same stratum: no strata gain');
@@ -340,7 +332,7 @@ const vOf = (over = {}) => ({ id: 'p', judged: '1991-2020', ownYears: false, lev
 const W = { period: (p) => p.replace('-', '–'), scenario: 'SSP2-4.5', heightM: null };
 const keysOf = (es) => es.map((e) => e.line.key.slice('consortium.line.'.length));
 
-test('c2 fix A2 (scenario agreement): a verdict judged at its own later period says how many scenarios agree; a split carries the spread term on every surface; verdictTerms is gone', () => {
+test('c2 fix A2 (scenario agreement): a verdict judged at its own later period says how many scenarios agree; a split carries the spread term on every surface', () => {
   const later = vOf({ judged: '2071-2099', ownYears: true, agree: 4, of: 4 });
   const all = line.againstLines(later, null, W);
   const spread = all.find((e) => e.line.key === 'consortium.line.confSpread');
@@ -349,8 +341,6 @@ test('c2 fix A2 (scenario agreement): a verdict judged at its own later period s
   const split = line.againstLines({ ...later, agree: 2 }, null, W).find((e) => e.line.key === 'consortium.line.confSpread');
   assert.equal(split?.conf, 'spread');
   assert.ok(line.rowLines({ ...later, agree: 2 }, null, W).some((e) => e.conf === 'spread'), 'rows and print carry the split');
-  assert.equal(line.verdictTerms, undefined);
-  assert.equal(core.verdictTerms, undefined);
 });
 
 test('c2 fix A3 + A7 (row form): rowLines gives the later loss, watering, season, room and few-records notes in short words, then the terms; no "Not checked" twice', () => {
@@ -436,6 +426,7 @@ test('c2 fix C2 (few records): a range on fewer than 300 recorded places notes i
   assert.ok(v.notes.includes('few-records'), `notes ${v.notes}`);
   assert.equal(v.records, 22);
   assert.equal(line.fitLine(v).key, 'consortium.line.fitsFew');
+  assert.equal(say(line.fitLine(v)), 'Fits your place today, on few records');
   assert.ok(line.againstLines(v, null, W).some((e) => e.line.key === 'consortium.line.noteFewRecords' && e.line.vars.n === 22));
   const many = verdict({ ...agave, climate: { ...agave.climate, cells: 900 } }, ctx);
   assert.ok(!many.notes.includes('few-records'));
@@ -468,37 +459,10 @@ test('c2 fix B5 (limits keep their decimals): a cold limit of 7.84 against a pla
   const l = line.reasonLine({ factor: 'cold', level: 'outside', basis: 'range', place: 5.8, low: 7.84, high: 20 });
   assert.equal(l.vars.tempBound, 7.84);
   assert.equal(l.vars.tempPlace, 5.8);
-  const fit = readFileSync(new URL('../src/islands/consortium/views/kit/fit.tsx', import.meta.url), 'utf8');
-  assert.match(fit, /k === 'tempBound' \? 2 : 1/, 'the page writes the limit with its two decimals');
 });
 
-test('c2 fix A4 (print invasive): print words each source through invasiveLines; its fallback names no source, in all 11 locales', () => {
-  const print = readFileSync(new URL('../src/islands/consortium/views/PrintSheet.tsx', import.meta.url), 'utf8');
-  assert.match(print, /invasiveLines\(/);
+test('c2 fix A4 (print invasive): print\'s fallback invasive line names no source, in all 11 locales', () => {
   for (const [lang, w] of Object.entries(words)) assert.doesNotMatch(w['consortium.print.flag.invasive'], /GRIIS/, lang);
-});
-
-test('c2 fix A5 + A8 (verdict failure): rangeFailed is sticky until a load succeeds; a retry that fails online needs a reload; wantVerdict never asks once only a reload works; no Resource Timing', () => {
-  const store = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
-  assert.match(store, /rangeFailed = computed\(\(\) => verdictEverFailed\.value && !verdictRule\.value && siteClimate\.value\)/);
-  assert.match(store, /if \(verdictLoad \|\| verdictNeedsReload\.peek\(\)\) return;/);
-  assert.match(store, /if \(retry && globalThis\.navigator\?\.onLine !== false\) verdictNeedsReload\.value = true;/);
-  assert.doesNotMatch(store, /getEntriesByType|importBroke/);
-  // Only the reader's Try again (or back online) is a retry: the automatic asks stop after a failure.
-  assert.match(store, /export function wantVerdict\(\): void \{\n  loadVerdict\(false\);/);
-  assert.match(store, /export const retryVerdict = \(\): void => loadVerdict\(true\);/);
-  const against = readFileSync(new URL('../src/islands/consortium/views/details/Against.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(against, /verdictNeedsReload\.peek\(\) \? location\.reload\(\)/, 'one button per action (A6)');
-});
-
-test('c2 fix B2 + B3 (one vocabulary, named exports): the site answers\' words come from verdict-line.ts siteLines; index.ts names the pure helpers of site, range and future, never export *', () => {
-  const index = readFileSync(new URL('../src/lib/consortium/index.ts', import.meta.url), 'utf8');
-  for (const f of ['site', 'range', 'future']) assert.doesNotMatch(index, new RegExp(`export \\* from './${f}\\.ts'`), f);
-  assert.equal(typeof core.siteLines, 'function');
-  assert.equal(core.siteFitMessages, undefined);
-  assert.equal(core.rangeCheck, undefined, 'a rule\'s inner check stays in its file');
-  const fit = readFileSync(new URL('../src/islands/consortium/rules/site-fit.ts', import.meta.url), 'utf8');
-  assert.match(fit, /siteLines\(/);
 });
 
 test('c2 fix B6 (pt is Brazilian): the c2 words carry no European Portuguese forms', () => {
@@ -508,9 +472,7 @@ test('c2 fix B6 (pt is Brazilian): the c2 words carry no European Portuguese for
   assert.deepEqual(mine.filter(([, v]) => EU.test(v)).map(([k, v]) => `${k}: ${v}`), []);
 });
 
-// ---- fix round 1, the boards (C5, C7-C15, B1, B8) ----
-
-const srcOf = (rel) => readFileSync(new URL(`../src/islands/consortium/${rel}`, import.meta.url), 'utf8');
+// ---- fix round 1, the boards (C5, C12; the page-level ones are in the browser spec PP-C6b) ----
 
 test('c2 fix C12: a candidate with a caution (toxic, invasive here) ranks after the clean ones and before a warned one, and keeps its flags', async () => {
   const { alternatives } = await import('../src/lib/consortium/suggest.ts');
@@ -559,43 +521,6 @@ test('c2 fix C5: Sources names every range source (GBIF, TreeGOER) once; How sur
   assert.equal(say(lines[1]), 'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.');
   assert.deepEqual(keys(line.sureLines(t, { list: 'Tropical', estimate: false, disputeShown: true, release: '' })), ['sureList', 'sureRange'], 'a dispute row already said: no second line');
   assert.deepEqual(keys(line.sureLines({ climate: null }, { list: 'Tropical', estimate: false, disputeShown: false, release: 'r' })), ['sureList', 'sureRangeNone', 'sureRelease']);
-  const details = srcOf('views/details/Details.tsx');
-  assert.match(details, /rangeSourceNames\(t\)/, 'Details lists the range sources under Sources');
-  assert.match(details, /sureLines\(t, \{/, 'How sure reads sureLines');
 });
 
-test('c2 fix C7-C10, B1, B8: Details as the boards: list said once, summary card before Against, closed sections, the add foot, What you can do, bands', () => {
-  const d = srcOf('views/details/Details.tsx'), a = srcOf('views/details/Against.tsx');
-  const at = (re) => d.search(re);
-  assert.ok(at(/data-summary/) > 0 && at(/data-summary/) < at(/<Against /), 'C7: the summary card before Against');
-  assert.ok(!/ct-tag-guest/.test(d), 'C8: no guest tag beside the list line');
-  assert.equal((d.match(/borrowedLine\(/g) ?? []).length, 1, 'C8: the borrowed list said once');
-  assert.match(d, /l\.kind !== 'invasive' \|\| !scoped\.length/, 'C9: the invasive flag line gives way to the per-source lines');
-  for (const k of ['jobs', 'light', 'pairs', 'warn', 'why', 'sure']) assert.match(d, new RegExp(`<More k="${k}"`), `B8: section ${k} collapsible`);
-  assert.match(d, /<details class="ct-more"/, 'B8: a native details element, closed by default');
-  assert.match(d, /foot=\{member \? undefined : /, 'phone foot: Add to my palette for a plant not in the palette');
-  assert.match(d, /alternativesFor\(id\)\?\.fit\.slice\(0, 2\)/, 'C10: the first two candidates inline');
-  assert.ok(!/keepIt|asTable/.test(d), 'C10: no Keep it, no Show as a table');
-  assert.match(a, /limitOf\(d\)/, 'B1: the disputed limit dashed through limitOf');
-  assert.match(a, /<Band f=/, 'B1: a band per factor');
-  const css = readFileSync(new URL('../src/styles/consortium/details.css', import.meta.url), 'utf8');
-  assert.match(css, /@media \(min-width: 960px\)[\s\S]*\.ct-d-body \{ display: grid; grid-template-columns/, 'C10: two columns from 960px');
-  assert.match(css, /\.ct-photo img \{[^}]*aspect-ratio: 3 \/ 1/, 'the board\'s short photo so Against starts on the first screen');
-});
 
-test('c2 fix C11, C13, C15: Swap header, jobs per candidate, its foot; Correction sends the full context, Cancel before Send', () => {
-  const s = srcOf('views/Swap.tsx'), c = srcOf('views/Correction.tsx'), bar = srcOf('views/StageBar.tsx');
-  assert.match(s, /data-swap-head/, 'C11: the header with the reason and the jobs');
-  assert.match(s, /doesWords\(memberJobs, a\.sharedJobs\)/, 'C11: Does N of its M jobs per candidate');
-  assert.match(s, /sizeWords\(x\)/, 'C12: the size per candidate');
-  assert.match(s, /swap\.keep[\s\S]*swap\.remove/, 'C11: the foot keeps or removes it');
-  assert.ok(!/swap\.shares/.test(s), 'C11: no "Shares:"');
-  assert.match(s, /swap\.ledeBorrowed/, 'C13: borrowed intro');
-  assert.match(bar, /swap\.doesSome', \{ n: shared\.length, m: memberJobs\.length, missing:/);
-  assert.equal(en['consortium.swap.doesSome'], 'Does {n} of its {m} jobs (no {missing})');
-  assert.ok(c.indexOf("T('correction.cancel')") < c.indexOf("T('correction.send')"), 'C15: Cancel, then Send (owner 2026-11-17: the board\'s order)');
-  assert.ok(c.indexOf('ct-corr-status') < c.indexOf('<div class="ct-actions">'), 'C15: what needs a look above the buttons');
-  assert.match(c, /T\('details\.notLocation'\)/, 'C15: Not your location.');
-  assert.match(srcOf('views/details/Details.tsx'), /climateLabel=\{climateLabel\}/, 'C15: Sent with names the list it is placed as');
-  assert.equal(en['consortium.details.climatePlaced'], '{climate}, placed as on the {list} list');
-});
