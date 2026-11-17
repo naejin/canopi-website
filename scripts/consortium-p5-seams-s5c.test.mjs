@@ -1,6 +1,6 @@
 // Stream S5c (filtered pool and nearest placements): the range rule (core range.ts, owner answer 2,
 // 2026-11-11), the nearest-list placements (placement.ts and PlantSource.borrowed, owner answer 1),
-// the range and estimate marks (range-marks.ts), the Start slot (views/PoolSlot.tsx and its feature
+// the range and estimate words (since PP-C c2 in verdict-line.ts), the Start slot (views/PoolSlot.tsx and its feature
 // chunk views/pool/pool.tsx), its strings, and the pool sizes the design check measured at 14 sites
 // on the real export (p5-design-check.md §C). S5c owns this file; no other stream edits it.
 import test from 'node:test';
@@ -231,7 +231,7 @@ test('placementZone: the details query reads the list a plant was placed from (b
   assert.ok(d.layerValues.length >= own.layerValues.length);
 });
 
-// ---- marks ----
+// ---- strings ----
 
 test('strings: every S5c key sits in its block, in all 11 locales, with the same placeholders and plural forms', () => {
   const locales = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];

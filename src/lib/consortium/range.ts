@@ -9,7 +9,7 @@
 // warning); beyond it by up to the margin: 'edge' ("near the edge of its observed range"). A weak row
 // (the ClimateRange weak flag, a disputed limit: TreeGOER is stricter by more than 4 °C and the looser bound was
 // kept) is a bound as any other: the doubt is only that it may be too lenient (coordinator decision
-// 2026-11-12), so it never softens a verdict; Details notes it (range-marks.ts). Aridity is a mark only and never changes the verdict. No
+// 2026-11-12), so it never softens a verdict; Details notes it (verdict-line.ts confDisputedLimit). Aridity is a mark only and never changes the verdict. No
 // range: 'unknown' ("range not recorded"), never filtered. No site climate (no location, its lookup
 // loading or failed, open sea): nothing is checked.
 //
@@ -39,7 +39,7 @@ import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
 import { siteToday } from './site-today.ts';
 
 // siteToday lives in its own module so the first run can ask "has the site a climate?" without the
-// rule, which loads with its own chunk (marks.ts loadRangeRule; store.ts rangeRule).
+// rule, which loads with the verdict chunk (verdict-load.ts loadVerdictRule; store.ts verdictRule).
 export { siteToday };
 
 export const rangeVerdicts = ['inside', 'edge', 'outside', 'unknown'] as const;
