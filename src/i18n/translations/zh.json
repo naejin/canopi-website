@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Canopi 策展人的知识",
   "consortium.details.sourceCanopiCorrection": "Canopi 更正",
   "consortium.details.sourceCatalogue": "目录",
+  "consortium.details.whyFromList": "这些理由来自{list}清单。",
   "consortium.details.sourcePfafFrost": "在英国不耐霜（PFAF）：仅供参考，未对照你的地点核查。",
   "consortium.details.frostSpecies": "在 {tempKill} 冻死（{source}）。",
   "consortium.details.frostVarieties": "因品种不同，在 {tempHigh} 至 {tempLow} 之间冻死（{varieties}；{source}）。",

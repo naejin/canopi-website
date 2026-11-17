@@ -139,7 +139,8 @@ export function Against({ t, disputes = [], traitSources = null }: { t: Taxon; d
   }
   const scenario = scenarioName(store.verdictContext.value.scenario as Scenario);
   const later = store.laterVerdictOf(t, v);
-  const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null });
+  // The placement's estimate is said once, in the header (minor, round 3), not again here.
+  const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null }).filter((e) => !e.placement);
   const soil = store.soil.value;
   const bands = [...bandsOf(v, later, t.climate), soilBandOf(t, v, soil.from === 'own' ? soil.ph : null, traitSources)].filter((b): b is Band => !!b);
   const period = later ? periodName(later.judged) : null;

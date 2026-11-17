@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Kennis van de Canopi-curatoren",
   "consortium.details.sourceCanopiCorrection": "Canopi-correctie",
   "consortium.details.sourceCatalogue": "catalogus",
+  "consortium.details.whyFromList": "Deze redenen komen uit de lijst {list}.",
   "consortium.details.sourcePfafFrost": "Vorstgevoelig in Groot-Brittannië (PFAF): alleen ter informatie, niet getoetst aan jouw plek.",
   "consortium.details.frostSpecies": "Vriest dood bij {tempKill} ({source}).",
   "consortium.details.frostVarieties": "Vriest dood tussen {tempHigh} en {tempLow}, per ras ({varieties}; {source}).",

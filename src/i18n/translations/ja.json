@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Canopi キュレーターの知見",
   "consortium.details.sourceCanopiCorrection": "Canopi による訂正",
   "consortium.details.sourceCatalogue": "カタログ",
+  "consortium.details.whyFromList": "これらの理由は{list}リストによるものです。",
   "consortium.details.sourcePfafFrost": "英国では霜に弱い（PFAF）：参考情報で、あなたの場所とは照合していません。",
   "consortium.details.frostSpecies": "{tempKill} で霜により枯死（{source}）。",
   "consortium.details.frostVarieties": "品種により {tempHigh}〜{tempLow} で霜により枯死（{varieties}、{source}）。",

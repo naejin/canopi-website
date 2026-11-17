@@ -170,7 +170,7 @@ export function noteLine(note: VerdictNote, vars: NoteVars = {}): Line | null {
 // recorded or not checked, the scenarios split), so a view writes data-factor, data-level and
 // data-conf; a reason's hedges are its `also` lines (lineTerm). The later lines speak of another
 // period: their hedges are words only, so every surface writes the same terms for the page period.
-export interface AgainstEntry { line: Line; factor?: Factor; level?: Level; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean; noSite?: boolean }
+export interface AgainstEntry { line: Line; factor?: Factor; level?: Level; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean; noSite?: boolean; placement?: boolean }
 interface AgainstWords { period: (p: PeriodId) => string; scenario: string; heightM: number | null }
 const RANK: Record<Level, number> = { outside: 0, look: 1, unknown: 3, fits: 2 };
 // How near a measure is to its limit, as a share of the plant's band (0 at the bound): among factors of
@@ -330,7 +330,8 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
     if (line) out.push({ line, note: n });
   }
   if (v.borrowed) {
-    out.push({ line: borrowedLine(v.borrowed), conf: 'estimate' });
+    // The placement's estimate (a row says it; Details says it once, in its header: placement).
+    out.push({ line: borrowedLine(v.borrowed), conf: 'estimate', placement: true });
     if (v.range === 'no-climate') out.push({ line: L('reasonNoSite'), conf: 'estimate', noSite: true });
   }
   if (then) {

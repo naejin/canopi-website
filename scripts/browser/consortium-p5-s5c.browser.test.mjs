@@ -258,7 +258,7 @@ test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a 
   await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), picked.id);
   assert.ok(await has(page, '.ct-details .ct-reasons li', 10_000), 'the Why section lists the source list\'s reasons, not "no source"');
   const note = await text(page, `.ct-details [data-why-borrowed="${picked.from.toLowerCase()}"]`);
-  assert.match(note ?? '', new RegExp(`placed as on the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
+  assert.match(note ?? '', new RegExp(`come from the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
   assert.match(await text(page, '#ct-d-place') ?? '', new RegExp(picked.from), '"Placed for" names the list the placement is from, never claims the visitor\'s climate');
   // A correction made here names both: the list the placement comes from as `climate`, the visitor's
   // own climate as `site_climate`, and that the placement is an estimate (pre-push item B; the payload

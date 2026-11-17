@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Connaissance des curateurs de Canopi",
   "consortium.details.sourceCanopiCorrection": "Correction de Canopi",
   "consortium.details.sourceCatalogue": "catalogue",
+  "consortium.details.whyFromList": "Ces raisons viennent de la liste {list}.",
   "consortium.details.sourcePfafFrost": "Sensible au gel en Grande-Bretagne (PFAF) : à titre d’information, non vérifié pour votre lieu.",
   "consortium.details.frostSpecies": "Tuée par le gel à {tempKill} ({source}).",
   "consortium.details.frostVarieties": "Tuée par le gel entre {tempHigh} et {tempLow} selon la variété ({varieties} ; {source}).",

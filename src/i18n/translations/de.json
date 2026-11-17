@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Wissen der Canopi-Kuratoren",
   "consortium.details.sourceCanopiCorrection": "Canopi-Korrektur",
   "consortium.details.sourceCatalogue": "Katalog",
+  "consortium.details.whyFromList": "Diese Gründe stammen aus der Liste {list}.",
   "consortium.details.sourcePfafFrost": "In Großbritannien frostempfindlich (PFAF): nur zur Information, nicht mit deinem Ort abgeglichen.",
   "consortium.details.frostSpecies": "Erfriert bei {tempKill} ({source}).",
   "consortium.details.frostVarieties": "Erfriert je nach Sorte zwischen {tempHigh} und {tempLow} ({varieties}; {source}).",

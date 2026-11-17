@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Conocimiento de los curadores de Canopi",
   "consortium.details.sourceCanopiCorrection": "Corrección de Canopi",
   "consortium.details.sourceCatalogue": "catálogo",
+  "consortium.details.whyFromList": "Estas razones vienen de la lista {list}.",
   "consortium.details.sourcePfafFrost": "Sensible a las heladas en Gran Bretaña (PFAF): solo informativo, no comprobado con tu lugar.",
   "consortium.details.frostSpecies": "Muere por helada a {tempKill} ({source}).",
   "consortium.details.frostVarieties": "Muere por helada entre {tempHigh} y {tempLow} según la variedad ({varieties}; {source}).",

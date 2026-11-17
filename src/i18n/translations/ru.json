@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Знания кураторов Canopi",
   "consortium.details.sourceCanopiCorrection": "Исправление Canopi",
   "consortium.details.sourceCatalogue": "каталог",
+  "consortium.details.whyFromList": "Эти причины взяты из списка «{list}».",
   "consortium.details.sourcePfafFrost": "Не переносит заморозков в Великобритании (PFAF): только для сведения, не сверено с вашим местом.",
   "consortium.details.frostSpecies": "Погибает от мороза при {tempKill} ({source}).",
   "consortium.details.frostVarieties": "Погибает от мороза между {tempHigh} и {tempLow}, в зависимости от сорта ({varieties}; {source}).",

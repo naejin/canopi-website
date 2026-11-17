@@ -714,3 +714,13 @@ test('c2 fix T12 (desk soil line): "recorded on pH …" then "Not judged" withou
   assert.equal(say(line.soilCheckLine(t, null, 6)), 'recorded on pH 3.5–7.3. Not judged.');
   assert.equal(say(line.soilCheckLine(taxon({ id: 'x', traits: { soil_ph: null } }), v, null)), 'no pH recorded.');
 });
+
+// Fix round 3 minor (estimate once): the placement's estimate is marked so Details says it once, in
+// its header; a row still says it.
+test('c2 fix round 3 minor (estimate once): the placement entry is marked; the row keeps it; the Why line names the list without the label', () => {
+  const v = vOf({ borrowed: 'Tropical' });
+  const entry = line.againstLines(v, null, W).find((e) => e.placement);
+  assert.equal(say(entry.line), 'estimate: placed as on the Tropical list');
+  assert.ok(line.rowLines(v, null, W).some((e) => e.conf === 'estimate'), 'the row says it');
+  assert.doesNotMatch(en['consortium.details.whyFromList'], /estimate/);
+});

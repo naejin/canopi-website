@@ -988,6 +988,7 @@
   "consortium.details.sourceCanopiKnowledge": "Canopi 큐레이터의 지식",
   "consortium.details.sourceCanopiCorrection": "Canopi 수정",
   "consortium.details.sourceCatalogue": "카탈로그",
+  "consortium.details.whyFromList": "이 이유들은 {list} 목록에서 왔습니다.",
   "consortium.details.sourcePfafFrost": "영국에서 서리에 약함(PFAF): 참고용이며 당신의 장소와 비교하지 않았습니다.",
   "consortium.details.frostSpecies": "{tempKill}에서 서리로 죽음({source}).",
   "consortium.details.frostVarieties": "품종에 따라 {tempHigh}~{tempLow}에서 서리로 죽음({varieties}; {source}).",

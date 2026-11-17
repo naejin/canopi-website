@@ -16,7 +16,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, JobId, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, borrowedLine, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, keepLine, locales, pairings, phaseOrd, placementZone, rangeSources, restLine, siteIdOf, soilCheckLine, sourceTitle, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, datasetLines, factAt, factLines, shippedOf, frostLine, guestOf, invasiveLines, jobsOf, keepLine, locales, pairings, phaseOrd, placementZone, rangeSources, restLine, siteIdOf, soilCheckLine, sourceTitle, spanOf, sureLines, warns } from '../../../../lib/consortium/index.ts';
 import type { Line } from '../../../../lib/consortium/index.ts';
 import { layerRows, type Words } from '../layers.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
@@ -230,7 +230,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // The list it is placed from, said once (C8): a guest's list, a borrowed placement's estimate, else
   // the list of the climate; Correction sends the same ("Subtropical, placed as on the Tropical list").
   const here = store.climate.value;
-  const listLine = guest ? T('details.fromList', { climate: zoneName(guest) }) : borrowed ? say(borrowedLine(borrowed)) : T('details.onList', { climate: zoneName(zone) });
+  const listLine = guest ? T('details.fromList', { climate: zoneName(guest) }) : borrowed ? T(`estimate.from${borrowed}`) : T('details.onList', { climate: zoneName(zone) });
   const climateLabel = here && here !== zone ? T('details.climatePlaced', { climate: zoneName(here), list: zoneName(zone) }) : zoneName(zone);
   const alts = member ? store.alternativesFor(id)?.fit.slice(0, 2) ?? [] : [];
   const [now = null, ...laters] = member ? store.periodVerdictsOf(t) : [];
@@ -265,7 +265,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
 
   const why = (
     <>
-      {borrowed && <p class="ct-muted" data-why-borrowed={siteIdOf(borrowed)}>{T(`estimate.from${borrowed}`)}</p>}
+      {borrowed && <p class="ct-muted" data-why-borrowed={siteIdOf(borrowed)}>{T('details.whyFromList', { list: zoneName(borrowed) })}</p>}
       {!facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>
         : facts.reasons.length ? (
           <ul class="ct-reasons">
