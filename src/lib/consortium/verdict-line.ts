@@ -213,6 +213,9 @@ export interface Band {
   low: number | null; high: number | null; recordedLow: number; recordedHigh: number;
   place: number | null; later: number | null; median: number | null; disputedLow: boolean; few: boolean;
   when: { dot: Line; key: Line };
+  // The soil card's own range line (its range is a stated tolerance, not where it is recorded growing:
+  // the climate bands' key is not its key); null on a climate band.
+  range: Line | null;
 }
 const whenOf = (judged: PeriodId): Band['when'] => (judged === TODAY_PERIOD
   ? { dot: L('whenToday'), key: L('keyPlaceToday') }
@@ -224,7 +227,7 @@ export function bandsOf(v: PlantVerdict, later: PlantVerdict | null, climate: Ta
     const m = measureOf(f.factor);
     if (!m || !speaks(f) || f.basis !== 'range' || f.place === null || f.low === null || f.high === null) continue;
     const end = f.factor === 'dry' ? 'both' : SIDE_END[f.factor];
-    const b = out.get(m) ?? { measure: m, title: measureLine(m), status: L('bandFits'), level: 'fits' as Level, factors: [], low: null, high: null, recordedLow: f.low, recordedHigh: f.high, place: f.place, later: null, median: (climate?.[ROW[m as Exclude<Measure, 'soilPh'>]] as ClimateRange | null | undefined)?.median ?? null, disputedLow: false, few: v.records !== undefined, when: whenOf(v.judged) };
+    const b = out.get(m) ?? { measure: m, title: measureLine(m), status: L('bandFits'), level: 'fits' as Level, factors: [], low: null, high: null, recordedLow: f.low, recordedHigh: f.high, place: f.place, later: null, median: (climate?.[ROW[m as Exclude<Measure, 'soilPh'>]] as ClimateRange | null | undefined)?.median ?? null, disputedLow: false, few: v.records !== undefined, when: whenOf(v.judged), range: null };
     b.factors.push(f.factor);
     if (end === 'low' || end === 'both') b.low = f.low;
     if (end === 'high' || end === 'both') b.high = f.high;
@@ -236,16 +239,20 @@ export function bandsOf(v: PlantVerdict, later: PlantVerdict | null, climate: Ta
   }
   return [...out.values()];
 }
-// The soil pH band (board Details, the soil card): the pH range the plant is recorded on, both ends
+// The soil pH band (board Details, the soil card): the pH range sources give for the plant, both ends
 // (the soil check reads both), and the reader's own test when they gave one (the soil map's value is
-// PP-F's, place.ts resolveSoil); its status from the soil check, "not tested" without a test.
-export function soilBandOf(t: Taxon, v: PlantVerdict, ph: number | null): Band | null {
+// PP-F's, place.ts resolveSoil); its status from the soil check, "not tested" without a test; its own
+// range line naming where the range comes from: the trait's corrected-value source (trait_sources,
+// sourceLine) when the list has one, else the catalogue.
+export function soilBandOf(t: Taxon, v: PlantVerdict, ph: number | null, traitSources: readonly TraitSource[] | null = null): Band | null {
   const r = t.traits.soil_ph;
   if (!r || r.min === null || r.max === null) return null;
   const f = v.factors.find((x) => x.factor === 'soil-ph');
   const level: Level = ph === null || !f ? 'unknown' : f.level;
   const status = ph === null ? 'bandSoilUntested' : level === 'fits' ? 'bandFits' : level === 'unknown' ? 'bandUnknown' : 'bandOutside';
-  return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false, when: whenOf(v.judged) };
+  const ts = traitSources?.find((x) => x.field === 'soil_ph');
+  const source = (ts && sourceLine(ts)) ?? D('sourceCatalogue');
+  return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false, when: whenOf(v.judged), range: { key: K('bandSoilRange'), vars: {}, parts: { source } } };
 }
 
 // A band's status in words (with the level's icon in the view): in range, near the edge, outside;

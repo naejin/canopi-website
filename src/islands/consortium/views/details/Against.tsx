@@ -13,7 +13,7 @@ import { useEffect } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
-import type { AgainstEntry, Band, Dispute, Line, Measure, PlantVerdict, Scenario, Taxon } from '../../../../lib/consortium/index.ts';
+import type { AgainstEntry, Band, Dispute, Line, Measure, PlantVerdict, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
 import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, say } from '../kit/fit.tsx';
 import { formatNumber, formatTemp } from '../../format.ts';
@@ -113,7 +113,7 @@ function Words({ line, terms }: { line: Line; terms: boolean }) {
   );
 }
 
-export function Against({ t, disputes = [] }: { t: Taxon; disputes?: readonly Dispute[] }) {
+export function Against({ t, disputes = [], traitSources = null }: { t: Taxon; disputes?: readonly Dispute[]; traitSources?: readonly TraitSource[] | null }) {
   // Details may open before the palette page asked for the rule (a link, a list chosen without a
   // location): ask for it here too (one load, store.wantVerdict).
   // A failed load is not retried by opening a sheet: the section offers Try again itself.
@@ -141,7 +141,7 @@ export function Against({ t, disputes = [] }: { t: Taxon; disputes?: readonly Di
   const later = store.laterVerdictOf(t, v);
   const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null });
   const soil = store.soil.value;
-  const bands = [...bandsOf(v, later, t.climate), soilBandOf(t, v, soil.from === 'own' ? soil.ph : null)].filter((b): b is Band => !!b);
+  const bands = [...bandsOf(v, later, t.climate), soilBandOf(t, v, soil.from === 'own' ? soil.ph : null, traitSources)].filter((b): b is Band => !!b);
   const period = later ? periodName(later.judged) : null;
   // Each measure's lines under its band; the rest (notes, hedges, the later period's lines) after.
   const inBand = (e: AgainstEntry, b: Band) => !e.later && !e.note && !!e.factor && b.factors.includes(e.factor);
@@ -150,17 +150,19 @@ export function Against({ t, disputes = [] }: { t: Taxon; disputes?: readonly Di
   // The bands in the lines' order (the limiting measure first), the soil card last.
   const firstOf = (b: Band) => { const i = rest.findIndex((e) => inBand(e, b)); return b.measure === 'soilPh' ? Infinity : i < 0 ? rest.length : i; };
   bands.sort((a, b) => firstOf(a) - firstOf(b));
+  const climateBands = bands.filter((b) => !b.range);
   const item = (e: AgainstEntry) => <li data-factor={e.factor} data-level={e.level} data-note={e.note} data-later={e.later ? '' : undefined} data-conf={e.conf} data-no-site={e.noSite ? '' : undefined}><Words line={e.line} terms={!e.later} /></li>;
   return (
     <section class="ct-against" data-against aria-labelledby="ct-d-against">
       {head}
       <p class="ct-against-fit" data-level={fit.level}><LevelIcon level={fit.level ?? v.level} /><span><Words line={fit.line} terms /></span></p>
-      {bands.map((b) => <BandCard b={b} disputes={disputes} period={period}><ul class="ct-against-lines">{rest.filter((e) => inBand(e, b)).map(item)}</ul></BandCard>)}
+      {bands.map((b) => <BandCard b={b} disputes={disputes} period={period}>{b.range && <p class="ct-small ct-muted" data-band-range>{say(b.range)}</p>}<ul class="ct-against-lines">{rest.filter((e) => inBand(e, b)).map(item)}</ul></BandCard>)}
       {others.length > 0 && <ul class="ct-against-lines">{others.map(item)}</ul>}
-      {bands.length > 0 && (
+      {/* The key of the climate bands (the soil card says its own range). */}
+      {climateBands.length > 0 && (
         <ul class="ct-band-key" data-band-key>
           <li><svg viewBox="0 0 26 12" width="26" height="12" aria-hidden="true"><rect x="1" y="1" width="24" height="10" rx="2" class="ct-bd-range ct-bd-edge" /><path d="M12 0v12" class="ct-bd-tick" /></svg>{T('details.keyRange')}</li>
-          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{say(bands[0].when.key)}</li>
+          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{say(climateBands[0].when.key)}</li>
           <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-later-dot" /></svg>{T('details.keyLater')}</li>
           <li><svg viewBox="0 0 22 12" width="22" height="12" aria-hidden="true"><rect x="1" y="1" width="20" height="10" rx="2" class="ct-bd-edge is-dashed" fill="none" /></svg>{T('details.keyDashed')}</li>
         </ul>

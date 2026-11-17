@@ -351,7 +351,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             {t.warnings.toxicity === null && <li class="ct-tag" data-conf="not-checked">{INFO}{T('details.toxUnkChip')}</li>}
           </ul>
         </section>
-        <Against t={t} disputes={facts?.disputes ?? []} />
+        <Against t={t} disputes={facts?.disputes ?? []} traitSources={facts?.traitSources ?? null} />
         {member && (
           <section class="ct-d-cando" aria-labelledby="ct-d-cando" data-cando>
             <h3 id="ct-d-cando">{T('details.canDo')}</h3>

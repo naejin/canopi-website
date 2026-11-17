@@ -620,3 +620,18 @@ test('c2 fix T4 (Swap lede): one lede for every climate, naming no list', () => 
   }
   assert.doesNotMatch(en['consortium.swap.lede'], /same list/);
 });
+
+// Fix round 3 T5 (c2r3-06): the soil card says its own range: the pH range sources give for the plant,
+// naming where it comes from (the trait's corrected-value source, else the catalogue); never the climate
+// bands' "where it is recorded growing" key.
+test('c2 fix T5 (soil card range line): the soil pH range sources give, with its source; climate bands carry none', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const t = taxon({ id: 'soil', canonical_name: 'Soilus', traits: { ...taxon({}).traits, soil_ph: { min: 5.1, max: 8.5 } } });
+  const b = line.soilBandOf(t, vOf(), null);
+  assert.equal(say(b.range), 'The soil pH range sources give for it (catalogue).');
+  assert.equal(say(line.soilBandOf(t, vOf(), null, [{ field: 'soil_ph', source: 'canopi-correction' }]).range), 'The soil pH range sources give for it (Canopi correction).');
+  assert.deepEqual([b.low, b.high], [5.1, 8.5]);
+  const [climate] = line.bandsOf(vOf({ factors: [{ factor: 'cool', level: 'fits', basis: 'range', place: 12, low: 8, high: 17 }] }), null, null);
+  assert.equal(climate.range, null);
+  for (const [lang, w] of Object.entries(words)) assert.ok(w['consortium.line.bandSoilRange'] && w['consortium.details.sourceCatalogue'], lang);
+});
