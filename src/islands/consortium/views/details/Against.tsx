@@ -13,7 +13,7 @@ import { useEffect } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
-import type { AgainstEntry, Band, Dispute, Line, Measure, PlantVerdict, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
+import type { AgainstEntry, Band, Dispute, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
 import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, say } from '../kit/fit.tsx';
 import { formatNumber, formatTemp } from '../../format.ts';
@@ -91,13 +91,6 @@ function BandCard({ b, disputes, period, children }: { b: Band; disputes: readon
   );
 }
 
-// The plant's verdict for the page period, from the store's maps when it is there (members, the pool),
-// else computed for this plant alone (a plant opened from a link or a guest list).
-function verdictOf(t: Taxon): PlantVerdict | null {
-  const rule = store.verdictRule.value;
-  if (!rule) return null;
-  return store.memberVerdicts.value?.get(t.id) ?? store.poolVerdicts.value?.get(t.id) ?? rule.verdicts([t], store.verdictContext.value).get(t.id) ?? null;
-}
 // A line's words, then its hedges each in its own span, data-conf on those that say a confidence term
 // (`terms`: false on a later period's lines, whose hedges are words only).
 function Words({ line, terms }: { line: Line; terms: boolean }) {
@@ -118,7 +111,7 @@ export function Against({ t, disputes = [], traitSources = null }: { t: Taxon; d
   // location): ask for it here too (one load, store.wantVerdict).
   // A failed load is not retried by opening a sheet: the section offers Try again itself.
   useEffect(() => { if (!store.verdictFailed.peek()) store.wantVerdict(); }, []);
-  const v = verdictOf(t);
+  const v = store.verdictOf(t);
   const head = <h3 id="ct-d-against">{T('details.against')}</h3>;
   if (!v) {
     const failed = store.verdictFailed.value;

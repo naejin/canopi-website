@@ -394,7 +394,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
         )}
         {/* The desk's two lines under What you can do (board DetailsDesk); phones read them in the sections. */}
         <div class="ct-d-desklines" data-desk-lines>
-          <p data-soil-line><span aria-hidden="true">✳ </span><strong>{T('details.soilCheck')}</strong> {say(soilCheckLine(t, store.memberVerdicts.value?.get(id) ?? store.poolVerdicts.value?.get(id) ?? null, store.soil.value.from === 'own' ? store.soil.value.ph : null))}</p>
+          <p data-soil-line><span aria-hidden="true">✳ </span><strong>{T('details.soilCheck')}</strong> {say(soilCheckLine(t, store.verdictOf(t), store.soil.value.from === 'own' ? store.soil.value.ph : null))}</p>
           <p><span aria-hidden="true">✳ </span><strong>{T('details.hardinessHead')}</strong> {traits.find((x) => x.field === 'hardiness_zone')!.text}</p>
         </div>
         <div class="ct-d-more">

@@ -305,6 +305,14 @@ export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
   const rule = verdictRule.value, p = pool.value;
   return rule && p ? rule.verdicts([...p, ...guestTaxa.value], verdictContext.value) : null;
 });
+// One plant's verdict for the page period (Details: Against and the desk's soil line read this one
+// lookup): from the members' or the pool's maps when it is there, else computed for this plant alone
+// (a plant opened from a link or a guest list); null until the rule is here.
+export function verdictOf(t: Taxon): PlantVerdict | null {
+  const rule = verdictRule.value;
+  if (!rule) return null;
+  return memberVerdicts.value?.get(t.id) ?? poolVerdicts.value?.get(t.id) ?? rule.verdicts([t], verdictContext.value).get(t.id) ?? null;
+}
 // The chosen climate's list (its own, or the nearest lists it borrows), guests left out: the plants
 // that fit or need a second look for the page's period (levels kept apart so the line can split them
 // later), and those not checked (no climate figures for the period, or no range recorded: 'unknown',
