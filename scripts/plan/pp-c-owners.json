@@ -73,25 +73,85 @@
             "consortium.estimate.noSite"
           ]
         },
-        "pf": {
-          "prefix": "consortium.palette.",
+        "pf-a": {
+          "prefix": "consortium.palette.next.",
           "edits": [
+            "consortium.palette.next*",
+            "consortium.palette.hole*",
+            "consortium.palette.noHoles",
+            "consortium.palette.noFillers",
+            "consortium.palette.noFittingFillers",
+            "consortium.palette.empty",
+            "consortium.palette.showOutside",
+            "consortium.palette.showPutOff",
+            "consortium.palette.add*",
+            "consortium.palette.secondLook",
+            "consortium.palette.seeAll",
+            "consortium.palette.notNow",
+            "consortium.palette.otherHoles",
+            "consortium.palette.find",
+            "consortium.palette.change_*",
+            "consortium.palette.invasiveCountries",
+            "consortium.palette.room*",
             "consortium.line.*",
+            "consortium.find.*"
+          ]
+        },
+        "pf-b": {
+          "prefix": "consortium.palette.chart.",
+          "edits": [
+            "consortium.palette.chart*",
+            "consortium.palette.plants*",
+            "consortium.palette.job*",
+            "consortium.palette.warnings*",
+            "consortium.palette.balance*",
+            "consortium.palette.years*",
+            "consortium.palette.light_*",
+            "consortium.palette.showTable",
+            "consortium.palette.notJudged",
+            "consortium.palette.nobody",
+            "consortium.palette.stepperLabel",
+            "consortium.palette.earlier",
+            "consortium.palette.later",
+            "consortium.palette.stepPrinted",
+            "consortium.palette.toast*",
+            "consortium.plants.*",
+            "consortium.details.removed",
+            "consortium.future.*",
+            "consortium.weigh.*"
+          ]
+        },
+        "pf-c": {
+          "prefix": "consortium.palette.place.",
+          "edits": [
+            "consortium.palette.place*",
+            "consortium.palette.location*",
+            "consortium.palette.country*",
+            "consortium.palette.load*",
+            "consortium.palette.arrive*",
+            "consortium.palette.title",
+            "consortium.palette.stepsLabel",
+            "consortium.palette.stepPlace",
+            "consortium.palette.stepPalette",
+            "consortium.palette.stepPlan",
+            "consortium.palette.opening",
+            "consortium.palette.verdictFailed",
+            "consortium.palette.listFailed",
             "consortium.location.*",
             "consortium.country.*",
             "consortium.place.*",
             "consortium.start.*",
             "consortium.load.*",
-            "consortium.plants.*",
-            "consortium.details.removed",
             "consortium.page.*",
             "consortium.site.*",
-            "consortium.future.*",
-            "consortium.share.*"
+            "consortium.share.*",
+            "consortium.shell.*",
+            "consortium.privacy.*",
+            "privacy.tool.*"
           ]
         }
       },
-      "rule": "the 11 flat locale files (pt in Brazilian Portuguese): main (chunk 0) changes the cross-locale words of report #18 (download note: 'light level and years', 'The palette shows in Canopi'), #28 (one German wording for the second-look mark) and #29 (nav.consortium 'Plant palette'), the invasive lines' 'checked against GRIIS', and deletes the keys only the deleted Add sheet read; c1 adds Find's words; c2 adds the Details, dispute, audience and confidence words (verdict, hole and year words only under consortium.line.) and deletes only the 22 keys read solely by *-marks.ts (its edits list them; the other range.*, estimate.from*, future.mark.* and future.long.* keys stay, PoolSlot, Weigh, future.tsx, pool.tsx and Details read them); pf (chunk 2) adds the palette-page and Place words and rewrites holeLine wording and the toasts; node scripts/plan/owners.mjs check fails any other key change against the chunk base; another key is requested from the main agent"
+      "rule": "the 11 flat locale files (pt in Brazilian Portuguese): main (chunk 0) changes the cross-locale words of report #18 (download note: 'light level and years', 'The palette shows in Canopi'), #28 (one German wording for the second-look mark) and #29 (nav.consortium 'Plant palette'), the invasive lines' 'checked against GRIIS', and deletes the keys only the deleted Add sheet read; c1 adds Find's words; c2 adds the Details, dispute, audience and confidence words (verdict, hole and year words only under consortium.line.) and deletes only the 22 keys read solely by *-marks.ts (its edits list them; the other range.*, estimate.from*, future.mark.* and future.long.* keys stay, PoolSlot, Weigh, future.tsx, pool.tsx and Details read them); pf's hand-off (commit 0 of chunk 2, coordinator) sets the light words (Full sun, Mostly sun, Part shade, Shade: consortium.palette.light_*, consortium.stratum.*, consortium.find.light*, consortium.print.col.layer, correction.fieldLayer), the hole title consortium.palette.holeTitle and the soft chip consortium.palette.invasiveCountries; then pf-a adds the Next step, holes, Find and hole-line words, pf-b the pictures, rows, Jobs, Warnings, Balance and toast words, pf-c the Place, location, country, loading and arrival words, each under its sub-prefixes (consortium.palette.next*/hole* a; chart*/plants*/job*/warnings*/balance* b; place*/location*/country*/load*/arrive* c); node scripts/plan/owners.mjs check fails any other key change against the chunk base; another key is requested from the main agent"
     }
   ],
   "chunks": [
@@ -308,48 +368,91 @@
     {
       "chunk": 2,
       "streams": {
-        "pf": {
+        "pf-a": {
           "needs": [
             "main",
             "c1",
             "c2"
           ],
           "files": [
-            "src/islands/consortium/views/palette/**",
-            "src/islands/consortium/views/place/**",
-            "src/islands/consortium/views/location/**",
-            "src/islands/consortium/views/LocationSlot.tsx",
-            "src/islands/consortium/views/Actions.tsx",
-            "src/islands/consortium/views/FutureSlot.tsx",
-            "src/islands/consortium/views/future/future.tsx",
-            "src/islands/consortium/views/kit/chart.tsx",
-            "src/islands/consortium/views/kit/fit.tsx",
-            "src/islands/consortium/views/PoolSlot.tsx",
-            "src/islands/consortium/rules/picture.ts",
-            "src/islands/consortium/rules/picture-years.ts",
-            "src/islands/consortium/rules/picture-jobs.ts",
-            "src/islands/consortium/rules/change-summary.ts",
-            "src/islands/consortium/store.ts",
-            "src/islands/consortium/App.tsx",
+            "src/islands/consortium/views/palette/NextStep.tsx",
+            "src/islands/consortium/views/palette/FindPanelSlot.tsx",
             "src/lib/consortium/holes.ts",
             "src/lib/consortium/verdict-line.ts",
-            "src/components/consortium/ConsortiumPage.astro",
-            "src/styles/consortium/palette-page.css",
-            "src/styles/consortium/plants.css",
-            "src/styles/consortium/place.css",
-            "src/styles/consortium/shell.css",
-            "scripts/browser/helpers.mjs",
-            "scripts/browser/consortium-pp-b2.browser.test.mjs",
-            "scripts/consortium-pp-b2.test.mjs",
-            "scripts/picture-table.mjs",
+            "src/islands/consortium/rules/change-summary.ts",
+            "src/islands/consortium/views/find/**",
+            "src/islands/consortium/rules/find-query.ts",
+            "src/islands/consortium/views/Sheets.tsx",
+            "src/styles/consortium/find.css",
+            "scripts/consortium-pp-c1.test.mjs",
+            "scripts/browser/consortium-pp-c1.browser.test.mjs",
             "scripts/vectors/holes.json",
             "scripts/consortium-pp-pf.test.mjs",
             "scripts/browser/consortium-pp-pf.browser.test.mjs",
-            "scripts/browser/consortium-pp-b1.browser.test.mjs",
-            "scripts/browser/consortium-seams-layout.browser.test.mjs",
-            "scripts/browser/consortium-seams-p2.browser.test.mjs"
+            "scripts/consortium-pf-a.test.mjs",
+            "scripts/browser/consortium-pf-a.browser.test.mjs"
           ],
-          "duty": "pf Palette page fixes (slices section 3.4 and 3.9), after c1 and c2 merge: the report items routed pf (1, 2, 3, 5 incl. the why sentence and the Balcony card, 6 incl. one button row and one helper line, 7, 8, 9, 10 chips, 11 incl. heading, small Remove and tag icons, 13 and 14 incl. 'place' not 'site', 15, 16, 17 incl. the 'Needs your location' action, 19 links, 20, 21 desktop stepper and the phone's stepPrinted line, 24, 25, 26, 27, U2 spreads line, U3, U5, U7-U10); the Arrivals chart bug (c2 3.7: counts predicate exported from holes.ts and passed to lane(), a picture-table vector with one outside member); the NextStep reason bug (c2 3.8); the settled(page) helper and the PP-B6 test fix; NextStep 'Checking your plants...' until the verdict rule is here or failed; the specs pf's Place and palette-page rework breaks: consortium-pp-b1 browser (Place, location step and count line cases), consortium-seams-p2 (Place saves, Undo of a paste on Place) and consortium-seams-layout (W6 control sizes, W7 toasts, N2 pop-ups and layout stability); consortium.country.unchecked (Place, the country line) reworded for invasive_checked's schema 4.3 meaning, a source in the release assessed invasiveness there (GRIIS, or ES's catálogo and atlas), so it no longer names a missing GRIIS checklist (as in c2's duty)."
+          "duty": "pf-a 'What's missing next' (design check .local/consortium/v2/ppc/pf-design-check.md section 2 W1, owner answers pf-decisions.md): holes to Next step, Other holes card (Find on each row), the hole rows in one form ('Full sun: nobody in the first 3 years', Q1, through consortium.palette.holeTitle), the FillHole result line with Undo, Empty 'Start with the plants you want', the Balcony room card (roomNote), the 320 overflow, one count ('See all N' equal to what the hole opens), ch22 one warned rule (store.warnedPlant; no country: the soft chip, Q2), 'Checking your plants...' on store.verdictsReady; in Find: 'fills N holes' and ranking from store.holeFillCount (wired in the hand-off), 'Your palette lacks N holes', K6 other-list rows (store.failedOther for the failed read), hole rows' light words; DeskStates: Find as a panel beside the chart at 960 px and wider (Q5): Sheets.tsx and views/palette/FindPanelSlot.tsx (the slot Palette.tsx mounts in the palette grid; its grid placement styled from find.css), its focus model and layout tests. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, persist.ts and the core outside holes.ts and verdict-line.ts have no chunk-2 owner after the hand-off: a stream that needs one asks the main agent. Each stream deletes its old screens and their tests in its own branch first, then rebuilds them from the boards (owner rules 'Delete first', 'Board-first builds'); its expected-fail board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs, written in commit 0) turns green."
+        },
+        "pf-b": {
+          "needs": [
+            "main",
+            "c1",
+            "c2"
+          ],
+          "files": [
+            "src/islands/consortium/views/palette/Palette.tsx",
+            "src/islands/consortium/views/palette/Years.tsx",
+            "src/islands/consortium/views/palette/JobsPicture.tsx",
+            "src/islands/consortium/views/palette/YourPlants.tsx",
+            "src/islands/consortium/views/palette/Weigh.tsx",
+            "src/islands/consortium/views/kit/chart.tsx",
+            "src/islands/consortium/views/kit/fit.tsx",
+            "src/islands/consortium/rules/picture.ts",
+            "src/islands/consortium/rules/picture-years.ts",
+            "src/islands/consortium/rules/picture-jobs.ts",
+            "src/islands/consortium/views/Actions.tsx",
+            "src/islands/consortium/views/FutureSlot.tsx",
+            "src/islands/consortium/views/future/future.tsx",
+            "src/styles/consortium/palette-page.css",
+            "src/styles/consortium/plants.css",
+            "src/styles/consortium/details.css",
+            "scripts/picture-table.mjs",
+            "scripts/consortium-pp-b2.test.mjs",
+            "scripts/browser/consortium-pp-b2.browser.test.mjs",
+            "scripts/browser/consortium-seams-layout.browser.test.mjs",
+            "scripts/consortium-pf-b.test.mjs",
+            "scripts/browser/consortium-pf-b.browser.test.mjs"
+          ],
+          "duty": "pf-b 'The pictures and your plants' (design check section 2 W2): members and verdicts to the labelled Through the years chart (names inside or beside bars, LightIcon, light words, stepper chevrons and dots), the Jobs rows with icon, name, count, names, strip and hole button, Your plants (count, 'Plants with a warning come first', light icon and words, span, job tags in role colours, small Remove, 'Show all N plants', rows with missing facts), the MainMore right column (Next step slot, Other holes slot, Warnings card, Balance, saved-on-device foot), 'Further down this page', 'How to read this' with the table kept as the screen-reader text form (Q8), take-aways and the future panel hidden at 0 plants, DarkMain and DarkPalette, German long words, the desktop toast bottom-left at 420 px (Q4, details.css), the Arrivals chart bug (c2 3.7). Palette.tsx is pf-b's: it mounts pf-a's NextStep and FindPanelSlot and pf-c's place line where the boards put them. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, persist.ts and the core outside holes.ts and verdict-line.ts have no chunk-2 owner after the hand-off: a stream that needs one asks the main agent. Each stream deletes its old screens and their tests in its own branch first, then rebuilds them from the boards (owner rules 'Delete first', 'Board-first builds'); its expected-fail board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs, written in commit 0) turns green."
+        },
+        "pf-c": {
+          "needs": [
+            "main",
+            "c1",
+            "c2"
+          ],
+          "files": [
+            "src/islands/consortium/views/place/**",
+            "src/islands/consortium/views/location/**",
+            "src/islands/consortium/views/LocationSlot.tsx",
+            "src/islands/consortium/views/PoolSlot.tsx",
+            "src/islands/consortium/views/pool/**",
+            "src/islands/consortium/views/palette/Placeholder.tsx",
+            "src/islands/consortium/App.tsx",
+            "src/islands/consortium/state/location.ts",
+            "src/islands/consortium/state/save.ts",
+            "src/islands/consortium/state/restore.ts",
+            "src/components/consortium/ConsortiumPage.astro",
+            "src/styles/consortium/place.css",
+            "src/styles/consortium/shell.css",
+            "scripts/browser/helpers.mjs",
+            "scripts/browser/consortium-pp-b1.browser.test.mjs",
+            "scripts/browser/consortium-seams-p2.browser.test.mjs",
+            "scripts/consortium-pf-c.test.mjs",
+            "scripts/browser/consortium-pf-c.browser.test.mjs"
+          ],
+          "duty": "pf-c 'Your place' (design check section 2 W3): the page frame (steps, h1 with Data sources, one place line with Change, body; Placeholder the same frame; the shell head trimmed, lede on Place only), Place (numbered questions, label and Search button, one helper line, 'Nothing is checked until you confirm'), LocSearch, LocStates (Searching with Stop, no place found with Pick on a map and Choose a climate by hand, typed coordinates (Q6, a parser in state/location.ts), geolocation waiting with Stop, climate could not be read with Try again, polar), LocMap and DarkMap (readout, instruction, privacy line, full screen on phone), LocDesk side by side at 1280, SiteKiambu place row, ClimateHand, Country (Why we ask, stays on this device, the soft chip, consortium.country.unchecked reworded for schema 4.3), Arrivals (the return line with the save's last-changed date, store.lastChanged, Q3; the shared link's three choices Look / Add its plants to mine / Stay with mine with Undo, Q7), Loading lines (incl. '0.8 of 1.4 MB', 'You can already give your place'). Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, persist.ts and the core outside holes.ts and verdict-line.ts have no chunk-2 owner after the hand-off: a stream that needs one asks the main agent. Each stream deletes its old screens and their tests in its own branch first, then rebuilds them from the boards (owner rules 'Delete first', 'Board-first builds'); its expected-fail board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs, written in commit 0) turns green."
         }
       }
     },
@@ -360,7 +463,9 @@
           "needs": [
             "c1",
             "c2",
-            "pf"
+            "pf-a",
+            "pf-b",
+            "pf-c"
           ],
           "files": [
             "public/data/consortium/**",
