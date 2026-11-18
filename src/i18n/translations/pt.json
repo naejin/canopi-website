@@ -610,7 +610,6 @@
   "consortium.place.show": "Ver a minha paleta",
   "consortium.place.none": "Nenhuma planta em mente?",
   "consortium.place.suggested": "one: Uma paleta inicial de # planta foi adicionada. | other: Uma paleta inicial de # plantas foi adicionada.",
-  "consortium.place.overDone": "A sua paleta foi esvaziada; o seu lugar continua.",
   "consortium.place.unreadable": "**Não foi possível ler este link.** Nada foi alterado.",
   "consortium.place.period": "Este link cita um período climático que esta versão não conhece, então ele é conferido com o clima de hoje.",
   "consortium.place.guidePlant": "**Guardada a partir do guia: {name}.** {name} é agora uma das suas plantas, na lista {climate} que o guia indicava. Adicione seu lugar para a verificar.",

@@ -23,7 +23,7 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/consortium/index.ts';
-import { type Country, addMembers, climate, country, countFits, curatedClimates, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, pool, removeMember, room, siteEdits, snapshot, toast, updateToast, verdictContext, verdictRule, view } from '../../store.ts';
+import { type Country, addMembers, climate, country, countFits, curatedClimates, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, pool, removeMember, room, siteEdits, snapshot, verdictContext, verdictRule, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { formatLength, formatTemp } from '../../format.ts';
@@ -422,11 +422,8 @@ function OwnPlants() {
 // ---- Start over (Toasts board): "Palette cleared: 8 plants. Your place is kept." with Undo ----
 const welcomeGone = signal(false);
 function startOverNow(): void {
-  const n = members.peek().length;
   welcomeGone.value = true;
   startOver();
-  const t = toast.peek();
-  if (t && n) updateToast(t.id, P('place.cleared', n));
 }
 
 // ---- the arrival lines (board Arrivals) ----

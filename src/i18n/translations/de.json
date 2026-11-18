@@ -610,7 +610,6 @@
   "consortium.place.show": "Meine Palette zeigen",
   "consortium.place.none": "Keine Pflanzen im Kopf?",
   "consortium.place.suggested": "one: Eine Startpalette mit # Pflanze wurde hinzugefügt. | other: Eine Startpalette mit # Pflanzen wurde hinzugefügt.",
-  "consortium.place.overDone": "Deine Palette wurde geleert; dein Ort bleibt.",
   "consortium.place.unreadable": "**Dieser Link konnte nicht gelesen werden.** Nichts wurde geändert.",
   "consortium.place.period": "Dieser Link nennt einen Klimazeitraum, den diese Version nicht kennt; er wird daher mit dem heutigen Klima geprüft.",
   "consortium.place.guidePlant": "**Aus dem Ratgeber übernommen: {name}.** {name} gehört jetzt zu deinen Pflanzen, auf der Liste {climate}, die der Ratgeber nannte. Gib deinen Ort an, um sie zu prüfen.",

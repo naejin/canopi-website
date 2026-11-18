@@ -402,12 +402,6 @@ export function alternativesFor(id: PlantId): { fit: Alternative[]; outside: Alt
   const out = offer.filter((x) => away.has(x.id));
   return { fit: algo.alternatives(id, memberTaxa.value, offer.filter((x) => !away.has(x.id)), opts), outside: out.length ? algo.alternatives(id, memberTaxa.value, out, opts) : [] };
 }
-// A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
-// but store.climate stays unset until the reader confirms.
-export const proposedClimate = signal<ClimateZone | null>(null);
-// Whether that proposal came from the saved site looked up again (not the reader locating): only such
-// a proposal goes when a consortium opens (state/restore.ts restore; seam review round 4, 2).
-export const proposedFromSave = signal(false);
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core conflicts.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];

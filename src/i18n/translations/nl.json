@@ -610,7 +610,6 @@
   "consortium.place.show": "Mijn palet tonen",
   "consortium.place.none": "Geen planten in gedachten?",
   "consortium.place.suggested": "one: Er is een startpalet van # plant toegevoegd. | other: Er is een startpalet van # planten toegevoegd.",
-  "consortium.place.overDone": "Je palet is leeggemaakt; je plek blijft.",
   "consortium.place.unreadable": "**Deze link kon niet worden gelezen.** Er is niets veranderd.",
   "consortium.place.period": "Deze link noemt een klimaatperiode die deze versie niet kent, dus wordt hij getoetst aan het klimaat van nu.",
   "consortium.place.guidePlant": "**Bewaard uit de gids: {name}.** {name} is nu een van je planten, op de lijst {climate} die de gids noemde. Voeg je plek toe om hem te toetsen.",

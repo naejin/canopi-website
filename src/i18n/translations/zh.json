@@ -610,7 +610,6 @@
   "consortium.place.show": "查看我的植物搭配",
   "consortium.place.none": "还没有想好种什么？",
   "consortium.place.suggested": "other: 已添加一个包含 # 种植物的初始搭配。",
-  "consortium.place.overDone": "你的植物搭配已清空；你的地方保留不变。",
   "consortium.place.unreadable": "**无法读取这个链接。**没有做任何更改。",
   "consortium.place.period": "这个链接指定了此版本不认识的气候时期，因此按今天的气候来核对。",
   "consortium.place.guidePlant": "**已从指南保留：{name}。**{name} 现在是你的植物之一，位于指南指定的{climate}列表。添加你的地方以检查它。",

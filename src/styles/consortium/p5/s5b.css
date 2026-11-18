@@ -2,10 +2,6 @@
    the stream edits no shared consortium CSS (base, matrix, details, shell, print). Imported once by
    ConsortiumPage.astro. Use the tokens of base.css; the future mark draws in ink, never green. */
 
-/* A climate card the location suggests (review round 1, 6): proposed, not chosen; a click on it confirms. */
-.ct .ct-card.is-proposed { border-style: dashed; border-color: var(--accent); }
-.ct .ct-card-proposed { font-size: 13px; font-weight: 600; color: var(--accent-ink); }
-
 /* The map dialog: the map under a centre pin, ink cross and ochre point (design check §B). */
 .ct-map-dialog {
   width: min(calc(100vw - 32px), 760px); max-width: none; padding: 1rem; /* the page's 16 px gutter (walk-through 2 N2) */

@@ -610,7 +610,6 @@
   "consortium.place.show": "내 팔레트 보기",
   "consortium.place.none": "떠오르는 식물이 없나요?",
   "consortium.place.suggested": "other: 식물 #종으로 된 시작 팔레트를 넣었습니다.",
-  "consortium.place.overDone": "팔레트를 비웠습니다. 장소는 그대로 남습니다.",
   "consortium.place.unreadable": "**이 링크를 읽을 수 없습니다.** 아무것도 바뀌지 않았습니다.",
   "consortium.place.period": "이 링크는 이 버전이 모르는 기후 기간을 가리키므로, 오늘의 기후로 확인합니다.",
   "consortium.place.guidePlant": "**가이드에서 추가: {name}.** {name}은(는) 이제 내 식물입니다(가이드가 정한 {climate} 목록). 확인하려면 장소를 입력하세요.",

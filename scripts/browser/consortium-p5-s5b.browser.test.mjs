@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, has, suggestReady, useHarness } from './helpers.mjs';
 import { SITES, lookupAt, openCards, pickCard } from './location-fixtures.mjs';
-import { tool, choose, locationControls, locationState, text, checkedCard, savedLocation, ready, storeClimate, confirmAndSuggest, search, slowTiles, releaseTiles, watchFirstMembers, withSavedSite, temperateLink, ownSite, savedOpening, savedFailing, proposal, members } from './p5-helpers.mjs';
+import { tool, choose, locationControls, locationState, text, checkedCard, savedLocation, ready, storeClimate, confirmAndSuggest, search, slowTiles, releaseTiles, watchFirstMembers, withSavedSite, temperateLink, ownSite, savedOpening, savedFailing, climateAsk, members } from './p5-helpers.mjs';
 
 useHarness();
 
@@ -482,11 +482,11 @@ test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the sa
   const first = await savedOpening({ list: 'open' });
   assert.ok(await ownSite(first), 'the saved site is read');
   assert.ok(await first.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
-  assert.deepEqual(await proposal(first), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
+  assert.deepEqual(await climateAsk(first), { climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
   for (const page of [first]) {
     assert.ok(await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
     await new Promise((r) => setTimeout(r, 300));
-    assert.deepEqual(await proposal(page), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'back on Place: no stale proposal');
+    assert.deepEqual(await climateAsk(page), { climate: 'Temperate', seen: false, shown: false }, 'back on Place: no stale proposal');
   }
 });
 

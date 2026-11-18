@@ -48,7 +48,7 @@ import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
 import type { Consortium, ShareInput } from './schema.ts';
-import { attempt, forgets, held, lastSave, memory, STORE } from './save.ts';
+import { attempt, forgets, held, lastSave, memory, SAVE_FRAGMENT_MAX, STORE } from './save.ts';
 
 export { attempt, guarded, memory, STORE, type StorageLike } from './save.ts';
 export const COUNTRY_STORE = 'canopi-country';
@@ -96,7 +96,7 @@ export function readRecord(text: string | null): SavedRecord | null {
   const v = parsed(text);
   if (!v) return null;
   const { fragment, place, at, src, country } = v;
-  if (typeof fragment !== 'string' || !fragment.length || fragment.length >= 20_000 || typeof at !== 'string') return null;
+  if (typeof fragment !== 'string' || !fragment.length || fragment.length >= SAVE_FRAGMENT_MAX || typeof at !== 'string') return null;
   if (linkVersionStatus(versionOf(fragment)) !== 'current') return null;
   const from = fromOf(src);
   const pl = typeof place === 'string' && place.length < 2_000 ? place : '';
@@ -136,15 +136,8 @@ export const pendingClimate = computed(() => (store.climate.value ? null : inFli
 // A share link's climate shown on Start while it opens (not the reader's own save): the reader's saved
 // site then proposes no card over it (location.ts settle; seam review round 2, 2).
 export const pendingLinkClimate = computed(() => (inFlight.value?.from === 'link' ? pendingClimate.value : null));
-// The climate Start shows, from its four sources, one computed (design check §7.1 "Which climate
-// now"): the reader's choice, else a link's still opening, else the card a location proposes
-// (proposed: shown as a suggestion, not chosen). The four signals stay (owner answer 1).
-// climateChosen: its zone when not a proposal (the reader's choice, else the link's), null otherwise.
+// The climate Place shows: the reader's choice, else a link's still opening.
 export const climateChosen = computed(() => store.climate.value ?? pendingClimate.value);
-export const climateShown = computed((): { zone: ClimateZone | null; proposed: boolean } => {
-  const chosen = climateChosen.value;
-  return chosen ? { zone: chosen, proposed: false } : { zone: store.proposedClimate.value, proposed: store.proposedClimate.value !== null };
-});
 
 // The reader acts on Start while a link loads: the climate the link shows becomes the chosen one
 // (that write is the reader acting, so the restore in flight will not apply).

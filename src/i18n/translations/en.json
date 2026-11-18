@@ -610,7 +610,6 @@
   "consortium.place.show": "Show my palette",
   "consortium.place.none": "No plants in mind?",
   "consortium.place.suggested": "one: A starting palette of # plant was added. | other: A starting palette of # plants was added.",
-  "consortium.place.overDone": "Your palette was cleared; your place stays.",
   "consortium.place.unreadable": "**This link could not be read.** Nothing was changed.",
   "consortium.place.period": "This link names a climate period this version does not know, so it is checked against today’s climate.",
   "consortium.place.guidePlant": "**Kept from the guide: {name}.** {name} is one of your plants now, on the {climate} list the guide named. Add your place to check it.",

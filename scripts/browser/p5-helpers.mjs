@@ -214,7 +214,7 @@ export async function savedOpening({ list = null } = {}) {
 
 export const savedFailing = () => savedOpening({ list: 'fail' });
 
-export const proposal = (page) => page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
+export const climateAsk = (page) => page.evaluate(() => ({ climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
 
 export const members = (page) => page.evaluate(() => window.__ctTest.store.members.value.length);
 

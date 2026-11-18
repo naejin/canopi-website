@@ -610,7 +610,6 @@
   "consortium.place.show": "自分のパレットを見る",
   "consortium.place.none": "思い浮かぶ植物がありませんか？",
   "consortium.place.suggested": "other: # 種類の植物でスタート用のパレットを追加しました。",
-  "consortium.place.overDone": "パレットを空にしました。場所はそのまま残ります。",
   "consortium.place.unreadable": "**このリンクを読み取れませんでした。**何も変更していません。",
   "consortium.place.period": "このリンクは、このバージョンが知らない気候期間を指定しているため、現在の気候で確認します。",
   "consortium.place.guidePlant": "**ガイドから追加：{name}。**{name} はあなたの植物になりました（ガイドが示した{climate}リスト）。場所を指定して確認してください。",

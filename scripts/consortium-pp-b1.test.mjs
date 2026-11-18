@@ -653,9 +653,6 @@ test('b1a r3-1: the kept location stops holding the climate cards once its looku
     kept.set(LOCATION_STORE, PARIS);
     locationM.forget();
     assert.equal(restoreM.locationAtStart.peek(), false, 'the kept location still holds the cards after Forget');
-    draft.cardsLatched.value = true;
-    draft.startOver();
-    assert.equal(draft.cardsLatched.peek(), false, 'the cards stay latched open after Start over');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
