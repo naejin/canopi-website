@@ -524,7 +524,8 @@ test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s count
   assert.equal(await countSays(), said, 'the count line says what the chip said');
   assert.equal(await page.$eval(`${FIND} [data-find-filters-show]`, (e) => e.textContent.trim()), `Show ${said} plants`, '"Show N plants" says it too');
   const mine = await page.$eval(`${FIND} [data-find-inpalette-line]`, (e) => Number(/\d+/.exec(e.textContent)?.[0] ?? NaN));
-  await page.click(`${FIND} [data-find-inpalette-line] button`);
+  // A DOM click (M30): a pointer click scrolled the line under the panel's foot bar and pressed the bar.
+  await page.$eval(`${FIND} [data-find-inpalette-line] button`, (e) => e.click());
   // The render the click asked for, then the line (a read straight after the click raced it).
   await page.waitForFunction((sel, n) => new RegExp(`^${n} plants?\\.`).test(document.querySelector(sel)?.textContent ?? ''), { timeout: 4000 }, `${FIND} [data-find-count]`, said + mine).catch(() => {});
   assert.equal(await countSays(), said + mine, 'with the palette\'s plants listed as rows, the count line counts them');
