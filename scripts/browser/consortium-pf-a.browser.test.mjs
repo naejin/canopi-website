@@ -235,6 +235,9 @@ test('PFA4 (pf-a Empty at 390 and 1280): "Start with the plants you want" and it
     assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.sheet.value, { timeout: 10_000 }).then(() => true, () => false), 'board: "Paste a list" opens Paste');
     await page.evaluate(() => window.__ctTest.store.closeSheet());
     // Start from a small palette: added, each "suggested", one Undo (board Arrivals' last line).
+    // The page scrolls smoothly (global.css): bring the row up at once, so the tap is not taken by the
+    // phone's "Add plants" bar while the page still glides under it.
+    await page.locator(aria('button', 'Start from a small palette')).map((b) => b.scrollIntoView({ block: 'center', behavior: 'instant' })).wait();
     await press(page, 'button', 'Start from a small palette');
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'board: the small palette is added');
     assert.match(await toastText(page), /^A starting palette of \d+ plants was added, each marked “suggested”\./, 'board: the toast says each is marked "suggested"');
@@ -1001,6 +1004,16 @@ test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the
   await page.locator('dialog[open] .ct-toast .ct-toast-undo').click();
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 2), 'the toast\'s Undo puts it back');
   await control(page, 'button', `Undo adding ${added[0]}`);
+  await done(page);
+});
+
+test('PFA-E2 (seam E2, board DeskStates): at 1280 px with Find\'s panel open on a palette of 40 plants or fewer, the Next step and the side column (Warnings, Balance) stand one under the other beside the pictures, never on each other', async () => {
+  const page = await deskPanel();
+  await section(page, 'Warnings');
+  const next = await sectionBox(page, 'Next step'), warn = await sectionBox(page, 'Warnings'), chart = await sectionBox(page, 'Through the years');
+  assert.ok(next && warn && chart, 'the Next step, Warnings and the pictures are drawn');
+  assert.ok(warn.y >= next.bottom - 1, `Warnings (top ${Math.round(warn.y)}) starts under the Next step (bottom ${Math.round(next.bottom)})`);
+  assert.ok(warn.x >= chart.right - 1, 'Warnings stays beside the pictures, not over them');
   await done(page);
 });
 
