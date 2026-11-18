@@ -165,8 +165,9 @@ test('PP-C16 (c2 borrowed or guest plant, 3.4): Details names the list it comes 
   await details(page, await firstMember(page));
   assert.ok(await has(page, `${DETAILS} [data-from-list]`, 6000), 'no "From the … list" header (data-from-list)');
   assert.ok(await has(page, `${DETAILS} [data-conf="estimate"]`, 1000), '"estimate" on its lines');
-  // The placement's estimate is said once (fix round 3 minor, round 4 V4): in the header, not again in Why it is here or Against.
-  const said = await page.$eval(DETAILS, (d) => (d.textContent.match(/estimate: placed as on the/g) ?? []).length);
+  // The placement's estimate is said once (fix round 3 minor, round 4 V4): in the header, not again in Against.
+  // pf-f fix round 1 BC5 (board DetailsMore): Why it is here adds its own sentence, "At your place it is an estimate: placed as on the … list, kept because…".
+  const said = await page.$eval(DETAILS, (d) => { const c = d.cloneNode(true); c.querySelectorAll('[data-why-borrowed]').forEach((e) => e.remove()); return (c.textContent.match(/estimate: placed as on the/g) ?? []).length; });
   assert.equal(said, 1, `the placement's estimate said once in Details (${said})`);
   assert.equal(await page.$(`${DETAILS} [data-no-site]`), null, 'with a site climate, no "give your location" line');
   // No location: a borrowed list's plants in the palette (as a shared link brings them; Suggest itself
@@ -191,8 +192,8 @@ const DISPUTED = [
   ['Olea europaea', 'Mediterranean', '[data-dispute="plant_invasive"]', /Sources disagree/],
   ['Rubus idaeus', 'Temperate', '[data-dispute="weed_potential"]', /Sources disagree/],
   ['Sambucus nigra', 'Temperate', '[data-dispute="allelopathic"]', /Sources disagree/],
-  ['Malus domestica', 'Temperate', '[data-audience="pets"]', /toxic to pets \(ASPCA\), no level given/],
-  ['Taxus baccata', 'Temperate', '[data-audience="livestock"]', /livestock/],
+  ['Malus domestica', 'Temperate', '[data-audience="pets"]', /toxic to pets \(ASPCA\), no level given/i], // a table value starts with a capital (pf-f fix round 1 BC5)
+  ['Taxus baccata', 'Temperate', '[data-audience="livestock"]', /livestock/i],
 ];
 test('PP-C17 (c2 disputes on one plant, 3.5): Hedera helix keeps its Slight chip and names NC State\'s Moderate under "Sources disagree"; each disputed plant of the fixture shows its line, in Details and on paper', async () => {
   const page = await tool({ data: 'fixture' });
@@ -247,7 +248,8 @@ test('PP-C18 (c2 newer sheet stays, 3.6): ask Correction on one plant while its 
 // majus carries the note's Arundo donax pattern in ES). The reader's country Spain: one line per source
 // with its areas, [data-invasive-scope="<source>"].
 test('PP-C21 (c2 invasive scope, 3.5 / schema 4.3): with Spain as the country, Tropaeolum majus\'s Details names the catálogo for the Canary Islands and the MITECO atlas for the Balearic Islands and mainland Spain, one line each', async () => {
-  const page = await tool({ data: 'fixture' });
+  // On the phone: the desk leaves the Warnings section out (pf-f fix round 1 BC12, board DetailsDesk).
+  const page = await tool({ data: 'fixture', width: 390 });
   await choose(page, 'Temperate');
   await page.evaluate(() => { window.__ctTest.store.country.value = { code: 'ES', source: 'chosen' }; });
   const id = await page.evaluate(async () => (await window.__ctTest.store.loadPool('Temperate')).find((t) => t.canonical_name === 'Tropaeolum majus')?.id ?? null);

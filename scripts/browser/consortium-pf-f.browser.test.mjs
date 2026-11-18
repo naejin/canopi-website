@@ -127,7 +127,7 @@ test('PFF2 (pf-f DetailsMore): the sections open: the main job, the syntropic li
   const members = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await says(page, new RegExp(`No conflict known with your ${members} plants\\.|With [A-Z]`), { inDialog: true });
   await inDialogOrder(page, ['Toxicity', 'Invasive', 'Spreads']);
-  await inDialogOrder(page, ['Names', 'Sources and how sure we are', 'Jobs, light need and years', 'Climate range', 'How sure we are, in words.']);
+  await inDialogOrder(page, ['Names', 'Sources and how sure we are', 'Jobs, light, time', 'Climate range', 'How sure we are, in words.']);
   assert.ok(await has(page, `${DETAILS} ${aria('button', 'Suggest a correction')}`, 1000), 'board: "Suggest a correction"');
   await done(page);
 });
@@ -263,10 +263,11 @@ test('PFF5 (pf-f Swap 390): Calliandra at Kiambu: the lede, its jobs and years, 
     return { n: fit.filter((a) => { const t = s.pool.value.find((x) => x.id === a.id); return t && rule.holdsBy(t, ctx, '2041-2070'); }).length, m: fit.length };
   }, id);
   await says(page, `Only plants that hold by 2041–2070 ${want.n} of ${want.m}`, { inDialog: true });
-  const rows = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ buttons: [...e.querySelectorAll('button')].map((b) => b.textContent.trim()), fills: !!e.querySelector('[data-swap-fills]'), leaves: !!e.querySelector('[data-swap-leaves]'), same: !!e.querySelector('[data-swap-gaps-same]'), fit: /\S/.test(e.querySelector('[data-conf], .ct-fit')?.textContent ?? '') })));
+  const rows = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ buttons: [...e.querySelectorAll('button')].map((b) => b.textContent.trim()), does: e.querySelector('[data-swap-does]').textContent.trim(), fit: /\S/.test(e.querySelector('[data-conf], .ct-fit, [data-row-band]')?.textContent ?? '') })));
   assert.equal(rows.length, Math.min(want.n, 9), 'the rows are the holding candidates, nine at most');
   assert.ok(rows.every((r) => r.buttons.includes('Swap') && r.buttons.includes('Add beside')), `board: Swap and Add beside on each row (${JSON.stringify(rows.map((r) => r.buttons))})`);
-  assert.ok(rows.every((r) => (r.fills || r.leaves) !== r.same && r.fit), JSON.stringify(rows));
+  // Fix round 1 BC7: one sentence per row, the gap folded in ("…: also fills the hole after year 15"), and its fit or edge words.
+  assert.ok(rows.every((r) => /, (from|in|to) [^:]+(: (also fills|leaves) .+)?$/.test(r.does) && r.fit), JSON.stringify(rows));
   const does = await page.$$eval(`${DETAILS} [data-swap-does]`, (els) => els.map((e) => e.textContent.trim()));
   for (const d of does) assert.match(d, /^Does (all its jobs|none of its jobs \([a-z][^)]*\)|\d of its \d jobs \((no [a-z ]+|[a-z][^)]*)\)), (from|in|to) [a-z\d]/, `a candidate's first line ("${d}")`);
   await says(page, 'The closest in jobs and years first.', { inDialog: true });
@@ -307,3 +308,148 @@ test('PFF7 (pf-f Correction): the name link opens the form on the name; an empty
   assert.deepEqual(buttons, ['Cancel', 'Send suggestion'], 'Cancel, then Send');
   await done(page);
 });
+
+// ---- fix round 1, batch 1 (review findings BC1 to BC12) ----
+
+// Pinto peanut's records and map squares, read from the store's details (the plant's own data).
+const recordsOf = (page, id) => page.evaluate(async (pid) => { const { store } = window.__ctTest; const d = await store.source.value.details(pid, store.climate.value, 'en'); return { records: d.gbifRecords ?? null, cells: store.taxonOf(pid).climate?.cells ?? null }; }, id);
+
+test('PFF9 (pf-f BC1, sections stay open): real clicks open Names and What it does; "Tell us the name you use" keeps them open and the form opens in sight, focus on its field', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await page.evaluate(() => { const { store } = window.__ctTest; return store.members.value.find((m) => Object.values(store.taxonOf(m).names).filter(Boolean).length < 11) ?? null; });
+  await open(page, 'details', id);
+  for (const k of ['jobs', 'names']) {
+    await page.$eval(`${DETAILS} details[data-more="${k}"] > summary`, (e) => e.scrollIntoView({ block: 'center' }));
+    await page.click(`${DETAILS} details[data-more="${k}"] > summary`);
+  }
+  await page.$eval(`${DETAILS} [data-tell-name]`, (e) => e.scrollIntoView({ block: 'center' }));
+  await page.click(`${DETAILS} [data-tell-name]`);
+  await page.waitForSelector(`${DETAILS} #ct-corr-field`, { timeout: 6000 });
+  await frames(page);
+  const open2 = await page.$$eval(`${DETAILS} details[data-more]`, (els) => Object.fromEntries(els.map((e) => [e.dataset.more, e.open])));
+  assert.equal(open2.jobs, true, 'What it does stays open');
+  assert.equal(open2.names, true, 'Names stays open');
+  const f = await page.evaluate(() => { const e = document.getElementById('ct-corr-field'); const r = e.getBoundingClientRect(); return { focused: document.activeElement === e, inView: r.top >= 0 && r.bottom <= innerHeight && r.height > 0 }; });
+  assert.ok(f.focused && f.inView, `the form's first field is focused and in sight (${JSON.stringify(f)})`);
+  await done(page);
+});
+
+test('PFF10 (pf-f BC2, Flowers): Pinto peanut at Kiambu: the months near the place as one span in full names, "estimate" once, the legend as plain text', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Arachis pintoi');
+  await open(page, 'details', id);
+  await says(page, 'Flowers:', { inDialog: true });
+  const row = await page.waitForFunction(() => { const e = document.querySelector('dialog[open] [data-niche-row="flowers"]'); return e && !/no months|not checked/i.test(e.textContent) ? e.textContent.replace(/\s+/g, ' ').trim() : null; }, { timeout: 8000 }).then((h) => h.jsonValue());
+  assert.match(row, /^Flowers: (January|February|March|April|May|June|July|August|September|October|November|December)(–(January|February|March|April|May|June|July|August|September|October|November|December))? estimate$/, `one span, full month names, "estimate" once ("${row}")`);
+  assert.equal(await page.$$eval(`${DETAILS} [data-niche] .ct-est`, (e) => e.length), 1, 'one estimate tag');
+  const legend = await page.$eval(`${DETAILS} [data-est-legend]`, (e) => ({ text: e.textContent, tags: e.querySelectorAll('.ct-est').length }));
+  assert.ok(legend.text.startsWith('Estimate: ') && legend.tags === 0, `the legend in plain text (${JSON.stringify(legend)})`);
+  await done(page);
+});
+
+test('PFF11 (pf-f BC3, BC10, BC11, BC12, DetailsDesk): Almond at Seville: the danger chip in the danger colour, the period-edge chip, the keep years, later lines warned, Find with its glyph, no pairs section', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await open(page, 'details', id);
+  await says(page, 'In your palette.', { inDialog: true });
+  // BC3: Toxic and Very toxic chips in the danger colour.
+  const danger = await page.$$eval(`${DETAILS} [data-summary] .ct-flag[data-level="danger"]`, (els) => els.map((e) => { const p = document.createElement('span'); p.style.color = 'var(--danger)'; e.parentElement.append(p); const want = getComputedStyle(p).color; p.remove(); return { got: getComputedStyle(e).color, want, text: e.textContent.trim() }; }));
+  for (const d of danger) assert.equal(d.got, d.want, `the danger chip "${d.text}" in --danger`);
+  // BC10 + BC11: the engine's later periods for this member, as the chip and the keep line.
+  const want = await page.evaluate((pid) => {
+    const { store } = window.__ctTest;
+    const [, ...laters] = store.periodVerdictsOf(store.taxonOf(pid));
+    const loss = laters.find((l) => l.level === 'outside' || l.level === 'look') ?? null;
+    return loss ? { level: loss.level, period: loss.judged.replace('-', '–'), year: Number(loss.judged.slice(0, 4)) } : null;
+  }, id);
+  if (want) {
+    await says(page, `${want.level === 'outside' ? 'Outside its range' : 'Near the edge of its range'} by ${want.period}`, { inDialog: true });
+    assert.ok(await page.$eval(`${DETAILS} [data-chip="period-edge"]`, (e) => !!e.querySelector('svg')), 'the period-edge chip has its glyph');
+    await says(page, `Keeping it is a fair bet for its first ${want.year - new Date().getFullYear()} years`, { inDialog: true });
+    const warned = await page.$$eval(`${DETAILS} [data-against] li[data-warned]`, (els) => els.map((e) => ({ svg: !!e.querySelector('svg'), color: getComputedStyle(e).color })));
+    assert.ok(warned.length > 0 && warned.every((w) => w.svg), `the later verdict lines warned, with a glyph (${JSON.stringify(warned)})`);
+  }
+  // BC12: Find one that holds carries the search glyph; the desk has no "With your other plants and warnings" section.
+  assert.ok(await page.$eval(`${DETAILS} [data-cando] .ct-d-cando-actions button.button-secondary`, (b) => /Find one that holds/.test(b.textContent) && !!b.querySelector('svg circle')), 'Find one that holds with the search glyph');
+  assert.equal(await page.$(`${DETAILS} details[data-more="pairs"]`), null, 'the desk leaves out "With your other plants and warnings"');
+  // BC4: What you can do: each row holds by 2041–2070 (the engine), "holds in 2041–2070", and how far it is recorded on the member's limiting measure.
+  const cando = await page.evaluate((pid) => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, ctx = s.verdictContext.value;
+    return [...document.querySelectorAll('dialog[open] [data-cando] [data-swap-row]')].map((e) => { const t = s.taxonOf(e.dataset.plantId); return { holds: rule.holdsBy(t, ctx, '2041-2070'), does: e.querySelector('[data-cando-does]').textContent.trim(), band: e.querySelector('[data-row-band]')?.textContent.trim() ?? null, mini: !!e.querySelector('[data-mini-band]') }; });
+  }, id);
+  assert.ok(cando.length > 0, 'What you can do: rows');
+  for (const c of cando) {
+    assert.ok(c.holds, `a row that holds by 2041–2070 (${c.does})`);
+    assert.match(c.does, /; holds in 2041–2070$/, 'the Swap words, then "holds in 2041–2070"');
+    if (c.band) assert.ok(c.mini && /^Recorded (up to|down to|from) /.test(c.band), `the mini band and "Recorded …" (${c.band})`);
+  }
+  await done(page);
+});
+
+test('PFF12 (pf-f BC4, What you can do, limiting heat): the member limited by heat shows "Recorded up to N °C" from its candidates\' own ranges', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await open(page, 'details', id);
+  const want = await page.evaluate((pid) => {
+    const s = window.__ctTest.store, t = s.taxonOf(pid);
+    const [now, ...laters] = s.periodVerdictsOf(t);
+    const v = laters.find((l) => l.level === 'outside' || l.level === 'look') ?? now;
+    return v?.limiting?.factor ?? null;
+  }, id);
+  const bands = await page.$$eval(`${DETAILS} [data-cando] [data-row-band]`, (els) => els.map((e) => e.textContent.trim()));
+  if (want === 'hot') for (const b of bands) assert.match(b, /Recorded up to \d+(\.\d+)?\s°C/);
+  else if (want === 'cold') for (const b of bands) assert.match(b, /Recorded down to [−-]?\d+(\.\d+)?\s°C/);
+  await done(page);
+});
+
+test('PFF13 (pf-f BC5, BC6, DetailsMore names, why and sources): Pinto peanut at Kiambu: the board\'s rows in order, the records line from GBIF, a long date, In other climates', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Arachis pintoi');
+  await open(page, 'details', id);
+  await openAll(page);
+  const r = await recordsOf(page, id);
+  assert.ok(r.records && r.cells, 'Pinto peanut has GBIF records and map squares');
+  const fmt = (n) => n.toLocaleString('en');
+  await says(page, `From ${fmt(r.records)} GBIF records of where it grows, thinned to ${fmt(r.cells)} map squares, cultivation included.`, { inDialog: true });
+  await inDialogOrder(page, ['Sources and how sure we are', 'Jobs, light, time', 'Climate range', `${fmt(r.records)} GBIF records, thinned to ${fmt(r.cells)} map squares · estimate`, 'Life', 'Size', 'How sure we are, in words.']);
+  await says(page, /\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \d{4}/, { inDialog: true });
+  await says(page, /In other climates: on the \w+ (list only|.* lists)\./, { inDialog: true });
+  const text = await dialogText(page);
+  assert.doesNotMatch(text, /These reasons come from|\(\d{4}-\d{2}-\d{2}\)/, 'no "These reasons come from", no raw dates');
+  assert.ok(await page.$eval(`${DETAILS} [data-sure-rows]`, (e) => e.querySelectorAll('dt').length >= 5), 'a label and value table');
+  await done(page);
+});
+
+test('PFF14 (pf-f BC6, Against records, Almond at Seville): "From N GBIF records…" with the plant\'s own counts', async () => {
+  const page = await boardPalette('seville-board', { width: 390 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await open(page, 'details', id);
+  const r = await recordsOf(page, id);
+  assert.ok(r.records && r.cells);
+  await says(page, `From ${r.records.toLocaleString('en')} GBIF records of where it grows, thinned to ${r.cells.toLocaleString('en')} map squares, cultivation included.`, { inDialog: true });
+  await done(page);
+});
+
+test('PFF15 (pf-f BC7, BC8, BC9, Swap): rows as one sentence with the mini band, a filled hole bold with a check, the head chip "Recorded invasive in", the already row with its jobs and years', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Calliandra houstoniana');
+  await open(page, 'swap', id);
+  assert.ok(await has(page, `${DETAILS} [data-swap-row]`, 10_000));
+  const rows = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ fills: e.querySelector('[data-swap-does]').hasAttribute('data-fills'), bold: !!e.querySelector('[data-swap-does] strong svg'), text: e.querySelector('[data-swap-does]').textContent.trim(), mini: !!e.querySelector('[data-mini-band]'), band: e.querySelector('[data-row-band]')?.textContent.trim() ?? null, old: !!e.querySelector('.ct-pill, [data-swap-fills], [data-swap-leaves], [data-swap-gaps-same], [data-swap-newlight]') })));
+  for (const r of rows) {
+    assert.equal(r.old, false, 'no pill, tags or separate gap lines');
+    if (r.fills) assert.ok(r.bold && /: also fills /.test(r.text), `a filled hole: bold with a check (${r.text})`);
+    if (r.band) assert.ok(r.mini && /today/.test(r.band), `the mini band and edge words (${r.band})`);
+  }
+  assert.ok(rows.some((r) => r.band), 'at least one row with its edge words');
+  // BC8: the invasive head chip, when the engine flags it invasive at the page's country.
+  const inv = await page.evaluate((pid) => { const s = window.__ctTest.store; return s.flagsOfPlant(s.taxonOf(pid)).some((f) => f.kind === 'invasive') && !!s.flagContext.value.country; }, id);
+  if (inv) {
+    const chip = await page.$eval(`${DETAILS} [data-swap-head] [data-chip="invasive"]`, (e) => ({ text: e.textContent.trim(), svg: !!e.querySelector('svg') }));
+    assert.ok(chip.svg && /^Recorded invasive in [A-Z]/.test(chip.text), JSON.stringify(chip));
+  }
+  // BC9: a palette plant that does the same jobs: "Already in your palette: does the N jobs to year M".
+  for (const a of await page.$$eval(`${DETAILS} [data-swap-already] .ct-swap-does`, (els) => els.map((e) => e.textContent.trim()))) assert.match(a, /^Already in your palette: does the (\d+ jobs|job) to year \d+$/, a);
+  await done(page);
+});
+

@@ -60,6 +60,8 @@
 .ct :where(.ct-sheet) .ct-tag-guest { border-style: dashed; }
 .ct :where(.ct-sheet) .ct-tag-large { min-height: 44px; font-size: 15px; }
 .ct :where(.ct-sheet) .ct-flag { border-color: var(--warning-line); background: var(--warning-bg); color: var(--warning); }
+/* Toxic and Very toxic: the danger token (Mildly toxic and the rest stay warning; fix round 1 BC3). */
+.ct :where(.ct-sheet) .ct-flag[data-level="danger"] { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--surface)); color: var(--danger); }
 .ct .ct-place { display: grid; gap: 6px; padding: 14px 16px; border-radius: 8px; background: var(--surface-alt); }
 
 /* Against your place (PP-C c2): the fit line, then one line per factor, the limiting one first; the
@@ -74,6 +76,10 @@
 .ct .ct-against-lines li[data-level="look"] { border-left-color: var(--level-look); }
 .ct .ct-against-lines li[data-level="outside"] { border-left-color: var(--level-outside); }
 .ct .ct-against-lines li[data-later] { border-left-style: dashed; }
+/* A later period's second look or loss (board DetailsDesk): the warning mark and colour beside its words. */
+.ct .ct-against-lines li[data-warned] { display: flex; gap: 6px; align-items: flex-start; color: var(--warning); font-weight: 600; }
+.ct .ct-against-lines li[data-warned][data-level="outside"] { color: var(--level-outside); }
+.ct .ct-against-lines li[data-warned] > .ct-glyph { flex: none; margin-top: 3px; }
 
 /* The stage bar: seven segments, the plant's span filled, the cell's stage outlined */
 .ct :where(.ct-sheet) .ct-bar { display: inline-flex; gap: 2px; vertical-align: middle; }
@@ -307,6 +313,19 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-swap-status > * { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid var(--border); border-radius: 99px; font-size: inherit; max-width: 100%; }
 .ct .ct-swap-status > .ct-fit { font-weight: 600; border-color: currentColor; }
 .ct .ct-swap-status > .ct-fit svg { width: 14px; height: 14px; }
+/* A candidate's climate line (boards Swap and DetailsDesk; kit/fit.tsx RowBandLine): the mini band, the
+   measure's glyph and the words, in the level's colour, no pill. */
+.ct .ct-swap-status > .ct-rowband { padding: 0; border: 0; border-radius: 0; }
+.ct .ct-rowband { display: inline-flex; gap: 6px; align-items: flex-start; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--level-fits); }
+.ct .ct-rowband[data-level="look"] { color: var(--level-look); }
+.ct .ct-rowband[data-level="outside"] { color: var(--level-outside); }
+.ct .ct-rowband .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
+.ct .ct-miniband { flex: none; margin-top: 3px; }
+.ct .ct-mb-range { fill: color-mix(in srgb, var(--text-secondary) 30%, transparent); stroke: var(--text-secondary); stroke-width: 1; }
+.ct .ct-mb-now { fill: var(--text); }
+.ct .ct-mb-later { fill: var(--surface); stroke: var(--accent-ink); stroke-width: 1.4; }
+.ct .ct-swap-does[data-fills] strong { display: inline-flex; gap: 5px; align-items: flex-start; }
+.ct .ct-swap-does[data-fills] .ct-glyph { flex: none; margin-top: 2px; color: var(--accent-ink); }
 .ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body { grid-template-columns: minmax(0, 1fr); }
 .ct .ct-sheet:has(.ct-swap-head) .ct-row-why { overflow-wrap: anywhere; }
 .ct .ct-sheet:has(.ct-swap-head) .ct-sheet-body > p > .button { max-width: 100%; white-space: normal; text-align: start; }

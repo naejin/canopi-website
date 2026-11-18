@@ -5,7 +5,7 @@
 // formatted for the page language (words.ts says a Line). Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
 // plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
-import type { Hole, JobId, Level, Line, PlantVerdict, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
+import type { Hole, JobId, Level, Line, Measure, PlantVerdict, RowBand, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, headLine, holeLine, levelLine, sizeLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { formatDepthCm, formatLength } from '../../format.ts';
 import { pageLang, T } from '../../strings.ts';
@@ -117,3 +117,37 @@ export function sizeShort(t: Taxon): string {
 
 // The swap glyph (boards Swap and DetailsDesk: two arrows) on every Swap button.
 export const SWAP = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5h10l-2.5-2.5M13 10.5H3l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>;
+
+// Each climate measure's glyph (boards Details, Swap, DetailsDesk: a moon for the coldest nights, a
+// thermometer for warmth, a sun for the hottest days, a cloud for rain against evaporation, the soil
+// sprout): the bands' heads (details/Against.tsx), the row lines and the period-edge chip.
+export const MEASURE_GLYPH: Record<Measure, string> = {
+  tminCold: 'M15.5 12.6A6.5 6.5 0 0 1 7.4 4.5a6.5 6.5 0 1 0 8.1 8.1Z',
+  tmeanYear: 'M8 11.5V4a2 2 0 0 1 4 0v7.5a3.5 3.5 0 1 1-4 0ZM10 8v5.5',
+  tmeanWarm: 'M8 11.5V4a2 2 0 0 1 4 0v7.5a3.5 3.5 0 1 1-4 0ZM10 8v5.5',
+  tmaxWarm: 'M10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7ZM10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4',
+  aridity: 'M6 11.5a3.2 3.2 0 1 1 .8-6.3 4 4 0 0 1 7.6 1.1 2.7 2.7 0 0 1-.5 5.2ZM7 14l-1 2.5M10.5 14l-1 2.5M14 14l-1 2.5',
+  soilPh: 'M10 3v7M10 10l-4.5 6M10 10l4.5 6M10 10v7M3 10h14',
+};
+export const MeasureGlyph = ({ m, class: cls = 'ct-glyph' }: { m: Measure; class?: string }) => (
+  <svg class={cls} viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d={MEASURE_GLYPH[m]} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+);
+
+// A candidate row's climate line (boards Swap and DetailsDesk; core rowBandOf): the mini band (the
+// recorded range, the place today as a dot and in the later period as a ring; aria-hidden, the words
+// beside it say it), the measure's glyph and the words, in the level's colour (never colour alone).
+export function MiniBand({ b }: { b: RowBand }) {
+  const xs = [b.low, b.high, b.place, ...(b.later !== null ? [b.later] : [])];
+  const min = Math.min(...xs), max = Math.max(...xs), pad = (max - min || 1) * 0.15;
+  const x = (v: number) => 4 + ((v - (min - pad)) / (max - min + 2 * pad)) * 40;
+  return (
+    <svg class="ct-miniband" viewBox="0 0 48 12" width="48" height="12" aria-hidden="true" focusable="false" data-mini-band>
+      <rect class="ct-mb-range" x={x(b.low)} y="2" width={Math.max(1, x(b.high) - x(b.low))} height="8" rx="2" />
+      {b.later !== null && <circle class="ct-mb-later" cx={x(b.later)} cy="6" r="3.2" />}
+      <circle class="ct-mb-now" cx={x(b.place)} cy="6" r="3" />
+    </svg>
+  );
+}
+export function RowBandLine({ b }: { b: RowBand }) {
+  return <span class="ct-rowband" data-level={b.level} data-row-band={b.measure}><MiniBand b={b} /><span><MeasureGlyph m={b.measure} /> {say(b.line)}</span></span>;
+}

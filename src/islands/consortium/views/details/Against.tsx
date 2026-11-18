@@ -15,22 +15,15 @@ import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
 import type { AgainstEntry, Band, Dispute, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
 import { againstLines, bandsOf, datasetLines, levelLine, limitOf, lineTerm, periodName, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
-import { LevelIcon, say } from '../kit/fit.tsx';
+import { LevelIcon, MEASURE_GLYPH, say } from '../kit/fit.tsx';
+import { WARN } from '../kit/icons.tsx';
 import { coords } from '../kit/names.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { pageLang } from '../../strings.ts';
 
 // The disputed bound each band can carry (Dispute.field).
 const DISPUTED: Partial<Record<Measure, Dispute['field']>> = { tminCold: 'tmin_cold.low', tmeanYear: 'tmean_year.low' };
-// Each measure's glyph (board Details: a thermometer, a moon, a sun, a cloud, the soil sprout).
-const GLYPH: Record<Measure, string> = {
-  tminCold: 'M15.5 12.6A6.5 6.5 0 0 1 7.4 4.5a6.5 6.5 0 1 0 8.1 8.1Z',
-  tmeanYear: 'M8 11.5V4a2 2 0 0 1 4 0v7.5a3.5 3.5 0 1 1-4 0ZM10 8v5.5',
-  tmeanWarm: 'M8 11.5V4a2 2 0 0 1 4 0v7.5a3.5 3.5 0 1 1-4 0ZM10 8v5.5',
-  tmaxWarm: 'M10 6.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7ZM10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4',
-  aridity: 'M6 11.5a3.2 3.2 0 1 1 .8-6.3 4 4 0 0 1 7.6 1.1 2.7 2.7 0 0 1-.5 5.2ZM7 14l-1 2.5M10.5 14l-1 2.5M14 14l-1 2.5',
-  soilPh: 'M10 3v7M10 10l-4.5 6M10 10l4.5 6M10 10v7M3 10h14',
-};
+const GLYPH = MEASURE_GLYPH;
 const W = 324, PAD = 6;
 const ORDER: readonly Measure[] = ['tminCold', 'tmeanYear', 'tmeanWarm', 'tmaxWarm', 'aridity'];
 
@@ -113,7 +106,7 @@ function Words({ line, terms }: { line: Line; terms: boolean }) {
   );
 }
 
-export function Against({ t, disputes = [], subject = null }: { t: Taxon; disputes?: readonly Dispute[]; traitSources?: readonly TraitSource[] | null; subject?: string | null }) {
+export function Against({ t, disputes = [], subject = null, gbifRecords = null }: { t: Taxon; disputes?: readonly Dispute[]; traitSources?: readonly TraitSource[] | null; subject?: string | null; gbifRecords?: number | null }) {
   const [table, setTable] = useState(false);
   // Details may open before the palette page asked for the rule (a link, a list chosen without a
   // location): ask for it here too (one load, store.wantVerdict).
@@ -160,7 +153,15 @@ export function Against({ t, disputes = [], subject = null }: { t: Taxon; disput
   const at = (b: Band, x: number | null) => (x === null ? '–' : (b.measure === 'aridity' ? formatNumber(x, lang, 2) : formatTemp(x, lang, 1)).replace(/-(?=\d)/g, '\u2212'));
   const c = t.climate;
   const sources = rangeSources(t, disputes).map((x) => x.name).join(', ');
-  const item = (e: AgainstEntry) => <li data-factor={e.factor} data-level={e.level} data-note={e.note} data-later={e.later ? '' : undefined} data-conf={e.conf} data-no-site={e.noSite ? '' : undefined}><Words line={e.line} terms={!e.later} /></li>;
+  // A later period's line that asks a second look or is outside (board DetailsDesk: "By 2041–2070
+  // (SSP2-4.5): Needs a second look", "Hotter summers here…") carries the warning mark and colour; the
+  // later lines without a level of their own (the scenario spread) take the period's.
+  const laterLevel = later && later.judged !== v.judged ? later.level : null;
+  const item = (e: AgainstEntry) => {
+    const lvl = e.level ?? (e.later ? laterLevel ?? undefined : undefined);
+    const warned = e.later && (lvl === 'look' || lvl === 'outside');
+    return <li data-factor={e.factor} data-level={lvl} data-note={e.note} data-later={e.later ? '' : undefined} data-conf={e.conf} data-no-site={e.noSite ? '' : undefined} data-warned={warned ? '' : undefined}>{warned && WARN}<span><Words line={e.line} terms={!e.later} /></span></li>;
+  };
   return (
     <section class="ct-against" data-against aria-labelledby="ct-d-against">
       {head}
@@ -180,7 +181,11 @@ export function Against({ t, disputes = [], subject = null }: { t: Taxon; disput
       {/* Where the bands come from, and their text form as a table (boards Details, DetailsDesk). */}
       {c && climateBands.length > 0 && (
         <p class="ct-small ct-against-records" data-records>
-          {c.cells !== null ? T('details.recordsFrom', { sources, n: formatNumber(c.cells, lang, 0) }) : T('details.recordsFromSources', { sources })}
+          {/* Board: "From 1,784 GBIF records of where it grows, thinned to 872 map squares…" (fix round 1 BC6:
+              the release's record count; TreeGOER is named where its limit is used, in the band's words). */}
+          {c.cells !== null && gbifRecords !== null && c.source?.startsWith('gbif')
+            ? T('details.recordsFromGbif', { records: formatNumber(gbifRecords, lang, 0), n: formatNumber(c.cells, lang, 0) })
+            : c.cells !== null ? T('details.recordsFrom', { sources, n: formatNumber(c.cells, lang, 0) }) : T('details.recordsFromSources', { sources })}
           {datasetLines(store.source.value?.info() ?? { rangesReview: null }).length > 0 && <> {T('details.recordsNotReviewed')}</>}
           {' '}<button type="button" class="ct-link-button" aria-expanded={table} onClick={() => setTable(!table)}>{T(table ? 'details.hideTable' : 'details.showTable')}</button>
         </p>

@@ -392,6 +392,62 @@ export function bandsOf(v: PlantVerdict, later: PlantVerdict | null, climate: Ta
   }
   return [...out.values()];
 }
+// A candidate row's climate line (boards Swap and DetailsDesk; fix round 1 BC4, BC7): one measure as a
+// mini band (the recorded range, the place today as a dot, in the plant's later period as a ring) with
+// its words. Without `factor`, the measure that limits the plant (the worst level, then the nearest to
+// its bound) and the edge words: "Near its cool edge today; safer as it warms", "On its cool edge today;
+// in range by 2041–2070", "In range today". With `factor` (the measure that limits the member a
+// candidate would replace), that measure and how far the candidate is recorded: "Recorded up to 41 °C".
+// null when the plant has no range to compare on that measure (the view says its fit line instead).
+export interface RowBand { factor: Factor; measure: Measure; level: Level; low: number; high: number; place: number; later: number | null; line: Line }
+const EDGE_SIDE: Partial<Record<Factor, string>> = { cold: 'Cold', cool: 'Cool', summer: 'Cool', mild: 'Mild', hot: 'Hot' };
+const RAISES: Partial<Record<Factor, boolean>> = { cold: true, cool: true, summer: true }; // a warmer period moves the place away from this bound
+const ranged = (f: FactorVerdict | undefined): f is FactorVerdict & { place: number; low: number; high: number } =>
+  !!f && f.basis === 'range' && f.place !== null && f.low !== null && f.high !== null && !!measureOf(f.factor);
+// Where a factor stands: past its bound (setsLevel), at or near it (a second look, or a fit hedged "edge"), or in range.
+const standing = (f: FactorVerdict): 'out' | 'edge' | 'in' => (f.level === 'outside' && setsLevel(f) ? 'out' : (f.level === 'look' && setsLevel(f)) || f.confidence?.term === 'edge' || endAt(f) ? 'edge' : 'in');
+export function rowBandOf(v: PlantVerdict, later: PlantVerdict | null, period: (p: PeriodId) => string, factor: Factor | null = null): RowBand | null {
+  const pool = v.factors.filter(ranged);
+  const f = factor ? pool.find((x) => x.factor === factor) : [...pool].sort((a, b) => (RANK[setsLevel(a) ? a.level : 'fits'] - RANK[setsLevel(b) ? b.level : 'fits']) || nearness(a) - nearness(b))[0];
+  if (!f) return null;
+  const then = later && later.judged !== v.judged ? later.factors.find((x) => x.factor === f.factor && ranged(x)) ?? null : null;
+  const base = { factor: f.factor, measure: measureOf(f.factor)!, level: setsLevel(f) ? f.level : 'fits' as Level, low: f.low, high: f.high, place: f.place, later: then?.place ?? null };
+  if (factor) {
+    const end = f.factor === 'dry' ? null : SIDE_END[f.factor];
+    const line = end === 'high' ? L('recordedUpTo', { temp: f.high }) : end === 'low' ? L('recordedDownTo', { temp: f.low }) : L('recordedAridity', { low: f.low, high: f.high });
+    return { ...base, line };
+  }
+  const now = standing(f);
+  const side = f.factor === 'dry' ? (f.place - f.low <= f.high - f.place ? 'Dry' : 'Wet') : EDGE_SIDE[f.factor] ?? '';
+  const today = now === 'out' ? L('edgeOutside') : now === 'edge' ? L(`edgeNear${side}`) : L('edgeInRange');
+  let next: Line | null = null;
+  if (then) {
+    const at = { period: period(later!.judged) }, after = standing(then);
+    if (after === 'out' && now !== 'out') next = L('rowOutsideBy', at);
+    else if (after === 'in' && now !== 'in') next = L('thenInRange', at);
+    else if (after === 'edge' && now === 'in') next = L('thenNear', at);
+    else if (after === 'edge' && now === 'edge') next = nearness(then) > nearness(f) ? (RAISES[f.factor] ? L('thenSafer') : L('thenSaferBy', at)) : nearness(then) < nearness(f) ? L('thenNearer', at) : null;
+  }
+  return { ...base, line: next ? { key: K('edgeThen'), vars: {}, parts: { today, then: next } } : today };
+}
+
+// What a swap does to the palette's holes, folded into the row's first sentence (board Swap; fix round 1
+// BC7): "also fills the hole after year 15" (bold, with a check), "leaves a hole from year 3 to year 15";
+// with more than one, the count. Nothing when no hole changes (no "no gap" line).
+function gapSpanLine(h: Hole): Line {
+  const { fromYear: from, toYear: to } = h;
+  if (from === 0 && to >= 60) return L('gapSpanAlways');
+  if (from === 0) return { key: K('gapSpanFirst'), vars: {}, count: to };
+  if (from < 1 && to >= 60) return L('gapSpanAfterMonth', { month: monthOf(from) });
+  if (to >= 60) return L('gapSpanAfter', { from });
+  if (from < 1) return L('gapSpanFromMonth', { month: monthOf(from), to });
+  return L('gapSpanBetween', { from, to });
+}
+export function gapLines(fills: readonly Hole[], leaves: readonly Hole[]): { fills: Line | null; leaves: Line | null } {
+  const one = (k: string, hs: readonly Hole[]): Line | null => (!hs.length ? null : hs.length === 1 ? { key: K(`${k}One`), vars: {}, parts: { span: gapSpanLine(hs[0]) } } : { key: K(`${k}Many`), vars: {}, count: hs.length });
+  return { fills: one('gapFills', fills), leaves: one('gapLeaves', leaves) };
+}
+
 // The soil pH band (board Details, the soil card): the pH range sources give for the plant, both ends
 // (the soil check reads both), and the reader's own test when they gave one (the soil map's value is
 // PP-F's, place.ts resolveSoil); its status from the soil check, "not tested" without a test; its own
@@ -526,14 +582,17 @@ export function rowLines(v: PlantVerdict, later: PlantVerdict | null, w: Against
 // nearest list can name: nearest.ts NEAREST_LISTS).
 export const borrowedLine = (zone: ClimateZone): Line => L(`borrowed${zone}`);
 
-// Keeping a member that a later period puts outside its range (board DetailsDesk, What you can do):
-// "Keeping it is a fair bet for its first 15 years: plant its successor beside it now". Only for a plant
-// that fits today or asks a second look (outside now, today's lines say it all); the years from `year`
-// (this year) to the start of the first later period, up to its own, where it is outside (`laters`: its
-// verdicts at the periods after today, in order); null when it holds through them or that period has begun.
+// Keeping a member that a later period puts near the edge of its range or outside it (board
+// DetailsDesk, What you can do; fix round 1 BC11): "Keeping it is a fair bet for its first 15 years:
+// plant its successor beside it now". Only for a plant that fits today or asks a second look (outside
+// now, today's lines say it all); the years from `year` (this year) to the start of the first later
+// period, up to its own, where it needs a second look or is outside (`laters`: its verdicts at the
+// periods after today, in order; the board counts Almond's 2041–2070 second look on heat); null when it
+// fits through them or that period has begun.
+export const laterLossOf = (laters: readonly PlantVerdict[]): PlantVerdict | null => laters.find((l) => l.level === 'outside' || l.level === 'look') ?? null;
 export function keepLine(now: PlantVerdict | null, laters: readonly PlantVerdict[], year: number): Line | null {
   if (now?.level !== 'fits' && now?.level !== 'look') return null;
-  const lost = laters.find((l) => l.level === 'outside');
+  const lost = laterLossOf(laters);
   const years = lost ? Number(lost.judged.slice(0, 4)) - year : 0;
   return years > 0 ? { key: K('keepFairBet'), vars: {}, count: years } : null;
 }
@@ -596,22 +655,91 @@ function disputedMeasures(t: Taxon, disputes: readonly Dispute[]): Measure[] {
   return [...out];
 }
 
-// How sure, per fact (C5, K7; board DetailsMore "Sources and how sure we are"): where the jobs, layer
-// and years come from (the list and its own sources, an estimate when borrowed), the climate range's
-// records and sources (an estimate), every limit whose sources disagree, named, and the data release.
-export function sureLines(t: Taxon, w: { list: string; estimate: boolean; listSources: readonly string[]; disputes: readonly Dispute[]; release: string }): Line[] {
+// How sure, per fact (C5, K7; board DetailsMore "Sources and how sure we are", fix round 1 BC5): label
+// and value rows in the board's order. Jobs, light, time (the list and its own sources, an estimate when
+// borrowed); the climate range ("1,784 GBIF records, thinned to 872 map squares · estimate", with any
+// other source of its limits); every limit whose sources disagree; where each corrected or estimated
+// trait comes from (Found mostly in, Grows in, then Life and Size, a catalogue value when no row says
+// otherwise, then the rest); each dispute and audience beside its field; the frost facts; the invasive
+// checklist of the reader's country; the hardiness zones; the data release.
+// about: what the row is about (a trait field, 'range', 'release'…); dispute: the disputed field; audience: who.
+export interface SureRow { label: Line; value: Line; about?: string; dispute?: Dispute['field']; audience?: ToxicityAudience['who'] }
+interface SureInput {
+  list: string; estimate: boolean; listSources: readonly string[]; disputes: readonly Dispute[]; release: string;
+  gbifRecords?: number | null; traitSources?: readonly TraitSource[] | null; audiences?: readonly ToxicityAudience[] | null;
+  frost?: readonly FrostFact[] | null; invasive?: { country: string; sources: readonly string[] } | null;
+}
+const JOB_LABEL = (job: string): Line => ({ key: `consortium.job.${job}`, vars: {} });
+function traitLabel(field: string): Line {
+  if (field === 'sun_exposure_preferred') return D('sureFoundLabel');
+  if (/^(sun_exposure_|tolerates_)/.test(field)) return D('sureGrowsLabel');
+  if (field === 'lifespan') return D('life');
+  if (/^(height_|width_)/.test(field)) return D('sizeLabel');
+  if (field === 'frost_tender') return D('sureFrostLabel');
+  if (field === 'toxicity') return D('toxicity');
+  if (field === 'allelopathic') return D('sureAlleloLabel');
+  if (field === 'weed_potential') return D('spreads');
+  if (field.startsWith('hardiness_zone')) return D('hardiness');
+  if (field.startsWith('soil_ph')) return measureLine('soilPh');
+  if (field === 'nitrogen_fixer') return JOB_LABEL('feeds_soil');
+  return D('sureOtherLabel');
+}
+const DISPUTE_LABEL: Partial<Record<Dispute['field'], () => Line>> = {
+  'tmin_cold.low': () => measureLine('tminCold'), 'tmean_year.low': () => measureLine('tmeanYear'),
+  toxicity: () => D('toxicity'), plant_invasive: () => D('invasive'), weed_potential: () => D('spreads'), allelopathic: () => D('sureAlleloLabel'),
+};
+const sameLine = (a: Line, b: Line): boolean => a.key === b.key && JSON.stringify({ ...a.vars, field: null }) === JSON.stringify({ ...b.vars, field: null });
+export function sureRows(t: Taxon, w: SureInput): SureRow[] {
   const from = w.listSources.join(', ');
-  const out: Line[] = [D(w.estimate ? 'sureListEstimate' : from ? 'sureListFrom' : 'sureList', { list: w.list, sources: from })];
+  const rows: SureRow[] = [{ label: D('sureJobsLabel'), value: D(w.estimate ? 'sureJobsEstimate' : from ? 'sureJobsFrom' : 'sureJobs', { list: w.list, sources: from }), about: 'list' }];
   const c = t.climate;
-  if (!c) out.push(D('sureRangeNone'));
+  if (!c) rows.push({ label: D('sureRangeLabel'), value: D('notRecorded'), about: 'range' });
   else {
-    const names = rangeSources(t, w.disputes).map((x) => x.name).join(', ');
-    out.push(c.cells === null ? D('sureRangeSources', { sources: names }) : D('sureRange', { n: c.cells, sources: names }));
+    const names = rangeSources(t, w.disputes).map((x) => x.name);
+    const others = names.filter((n) => n !== 'GBIF').join(', ');
+    const records = w.gbifRecords ?? null;
+    const value = records !== null && c.cells !== null && c.source?.startsWith('gbif')
+      ? D(others ? 'sureRangeGbifAlso' : 'sureRangeGbif', { records, n: c.cells, sources: others })
+      : c.cells !== null ? D('sureRangeCells', { n: c.cells, sources: names.join(', ') }) : D('sureRangeSources', { sources: names.join(', ') });
+    rows.push({ label: D('sureRangeLabel'), value, about: 'range' });
   }
   const disputed = disputedMeasures(t, w.disputes);
-  if (disputed.length) out.push(D('sureDisputed', {}, undefined, { limits: disputed.map(measureLine) }));
-  if (w.release) out.push(D('sureRelease', { release: w.release }));
-  return out;
+  if (disputed.length) rows.push({ label: D('sureDisputedLabel', {}, undefined, { limits: disputed.map(measureLine) }), value: D('sureDisputedValue'), about: 'disputed' });
+  // Trait rows: one per label, its values once each (the light span's two ends say the same source).
+  const traits = new Map<string, SureRow>();
+  const addTrait = (label: Line, value: Line, about: string) => {
+    const k = JSON.stringify(label);
+    const row = traits.get(k);
+    if (!row) traits.set(k, { label, value, about });
+    else if (!sameLine(row.value, value) && !(row.value.also ?? []).some((x) => sameLine(x, value))) row.value = { ...row.value, also: [...(row.value.also ?? []), value] };
+  };
+  const ts = w.traitSources ?? [];
+  const order = (f: string) => (f === 'sun_exposure_preferred' ? 0 : /^(sun_exposure_|tolerates_)/.test(f) ? 1 : f === 'lifespan' ? 2 : /^(height_|width_)/.test(f) ? 3 : 4);
+  for (const x of [...ts].sort((a, b) => order(a.field) - order(b.field))) {
+    if (order(x.field) === 3 || x.field === 'lifespan') continue; // Life and Size below, in the board's place
+    const l = sourceLine(x);
+    if (l) addTrait(traitLabel(x.field), l, x.field);
+  }
+  const catalogue = (fields: RegExp): Line => ts.map((x) => (fields.test(x.field) ? sourceLine(x) : null)).find((l): l is Line => !!l) ?? D('sureCatalogue');
+  const life = { label: D('life'), value: catalogue(/^lifespan$/), about: 'lifespan' };
+  const size = { label: D('sizeLabel'), value: catalogue(/^(height_|width_)/), about: 'size' };
+  const traitRows = [...traits.values()];
+  const firstRest = traitRows.findIndex((r) => r.about !== 'sun_exposure_preferred' && !/^(sun_exposure_|tolerates_)/.test(r.about ?? ''));
+  const at = firstRest < 0 ? traitRows.length : firstRest;
+  rows.push(...traitRows.slice(0, at), life, size, ...traitRows.slice(at));
+  for (const a of w.audiences ?? []) rows.push({ label: D('toxicity'), value: audienceLine(a), about: 'audience', audience: a.who });
+  const shipped = w.disputes.length ? shippedOf(t) : {};
+  for (const d of w.disputes) {
+    if (d.kind !== 'range' && d.kind !== 'queue') continue;
+    const label = DISPUTE_LABEL[d.field]?.() ?? D('sureOtherLabel');
+    rows.push({ label, value: disputeLine(d, shipped[d.field] ?? null), about: d.field, dispute: d.field });
+  }
+  for (const l of [frostLine(w.frost ?? null, w.frost !== null && w.frost !== undefined), restLine(w.frost ?? null)]) if (l) rows.push({ label: D('sureFrostLabel'), value: l, about: 'frost' });
+  if (w.invasive && w.invasive.sources.length) rows.push({ label: D('invasive'), value: D('sureInvasive', { sources: w.invasive.sources.map(sourceName).join(', '), country: w.invasive.country }), about: 'invasive' });
+  const z = t.traits?.hardiness_zone;
+  if (z && z.min !== null) rows.push({ label: D('hardiness'), value: D('sureHardiness', { a: z.min, b: z.max ?? z.min }), about: 'hardiness' });
+  if (w.release) rows.push({ label: D('sureReleaseLabel'), value: D('sureRelease', { release: w.release }), about: 'release' });
+  return rows;
 }
 
 // ---- disputes, audiences, corrected values, frost (schema 4; none changes a verdict, a filter or a
@@ -676,8 +804,8 @@ export function sourceLine(ts: TraitSource): Line | null {
 export function shippedOf(t: Taxon): Partial<Record<string, string | null>> {
   const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
   return {
-    'tmin_cold.low': str(t.climate?.tminCold?.low), 'tmean_year.low': str(t.climate?.tmeanYear?.low), toxicity: t.warnings.toxicity?.level ?? null,
-    weed_potential: str(t.warnings.weed_potential), allelopathic: str(t.warnings.allelopathic), plant_invasive: t.warnings.invasive_in ? String(t.warnings.invasive_in.length > 0) : null,
+    'tmin_cold.low': str(t.climate?.tminCold?.low), 'tmean_year.low': str(t.climate?.tmeanYear?.low), toxicity: t.warnings?.toxicity?.level ?? null,
+    weed_potential: str(t.warnings?.weed_potential), allelopathic: str(t.warnings?.allelopathic), plant_invasive: t.warnings?.invasive_in ? String(t.warnings.invasive_in.length > 0) : null,
   };
 }
 // Each dispute line carries vars.field (the disputed field), each audience line vars.who, each source
