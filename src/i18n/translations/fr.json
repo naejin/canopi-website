@@ -1530,5 +1530,6 @@
   "consortium.location.noName": "Aucun nom de lieu n’est enregistré ici.",
   "consortium.location.nameFailed": "La recherche de lieux n’a pas répondu : le lieu reste sans nom. Réessayez plus tard.",
   "consortium.load.progress": "{got} sur {total}.",
+  "consortium.line.rainFrom": "recensée dès {rainMm}",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1530,5 +1530,6 @@
   "consortium.location.noName": "Там не записано никакого названия места.",
   "consortium.location.nameFailed": "Поиск мест не ответил, поэтому у места нет названия. Попробуйте позже.",
   "consortium.load.progress": "{got} из {total}.",
+  "consortium.line.rainFrom": "отмечено от {rainMm}",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

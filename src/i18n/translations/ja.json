@@ -1530,5 +1530,6 @@
   "consortium.location.noName": "そこには地名が記録されていません。",
   "consortium.location.nameFailed": "地名検索が応答しなかったため、この場所には名前がありません。後でもう一度お試しください。",
   "consortium.load.progress": "{total}中{got}。",
+  "consortium.line.rainFrom": "{rainMm} から記録あり",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -408,6 +408,14 @@ export function soilBandOf(t: Taxon, v: PlantVerdict, ph: number | null, traitSo
   return { measure: 'soilPh', title: measureLine('soilPh'), status: L(status), level, factors: f ? ['soil-ph'] : [], low: r.min, high: r.max, recordedLow: r.min, recordedHigh: r.max, place: ph, later: null, median: null, disputedLow: false, few: false, when: whenOf(v.judged), range: { key: K('bandSoilRange'), vars: {}, parts: { source } } };
 }
 
+// The rain a plant is recorded from (M23; boards SiteMendoza and Find: "recorded from 25 mm"): the
+// low end of the annual rain of its observed cells (TaxonClimate.precip, read only: it never changes a
+// verdict). null when the release has no rain range for it (never a guess).
+export function rainFromLine(t: Taxon): Line | null {
+  const low = t.climate?.precip?.low ?? null;
+  return low === null ? null : L('rainFrom', { rainMm: Math.round(low) });
+}
+
 // The desk's soil line (board DetailsDesk, "Soil, to check: recorded on pH 7.0–7.5 … Not judged."):
 // the pH range sources give, then the soil check's status with the reader's own test, else "Not
 // judged" (the soil map's value is PP-F's).

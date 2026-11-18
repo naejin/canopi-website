@@ -1530,5 +1530,6 @@
   "consortium.location.noName": "No place name is recorded there.",
   "consortium.location.nameFailed": "The place search did not answer, so the place has no name. Try again later.",
   "consortium.load.progress": "{got} of {total}.",
+  "consortium.line.rainFrom": "recorded from {rainMm}",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1530,5 +1530,6 @@
   "consortium.location.noName": "那里没有记录地名。",
   "consortium.location.nameFailed": "地点搜索没有回应，所以这个地点没有名称。请稍后再试。",
   "consortium.load.progress": "已载入 {got}，共 {total}。",
+  "consortium.line.rainFrom": "有记录的降雨从 {rainMm}起",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

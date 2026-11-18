@@ -1530,5 +1530,6 @@
   "consortium.location.noName": "그곳에는 기록된 지명이 없습니다.",
   "consortium.location.nameFailed": "장소 검색이 응답하지 않아 이 장소에는 이름이 없습니다. 나중에 다시 시도하세요.",
   "consortium.load.progress": "{total} 중 {got}.",
+  "consortium.line.rainFrom": "{rainMm}부터 기록됨",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
