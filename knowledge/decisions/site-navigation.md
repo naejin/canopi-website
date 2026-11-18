@@ -3,16 +3,16 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:00Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:39Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:19Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:b4b79e7df59ce9a2
-    last_modified: 2026-11-18T06:04:13Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: header-astro
     resource: ../../src/components/Header.astro
     title: src/components/Header.astro
@@ -51,8 +51,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:9cc42a75895cfeaf
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:67699fbb8198b55e
+    last_modified: 2026-11-18T17:40:12Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css

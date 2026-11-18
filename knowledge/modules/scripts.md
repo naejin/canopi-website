@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:34:03Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:05Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:42Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:21Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -18,13 +18,13 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:fedb89affcc38d4a
-    last_modified: 2026-11-18T06:11:33Z
+    digest: sha256:ef938b89c2deeb86
+    last_modified: 2026-11-18T15:51:22Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:add6a0f08a0f0ee4
-    last_modified: 2026-11-18T06:11:33Z
+    digest: sha256:7ad81f2c2dff7d5d
+    last_modified: 2026-11-18T17:56:14Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -93,13 +93,13 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:8165023fefa061e6
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:7d5dc44dd985ee5b
+    last_modified: 2026-11-18T17:37:33Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:46dc6118b24ab573
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:4c7e44b06e385d21
+    last_modified: 2026-11-18T17:05:25Z
 ---
 
 # Responsibility

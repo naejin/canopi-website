@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schema 4.7 (no older schema or minor) that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:01Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:48Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:17Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:ae9f25c93cd4a332
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:608d3c9dafcf322a
+    last_modified: 2026-11-18T17:33:57Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -21,8 +21,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:86627392588fb3f5
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:e393580af2534bc5
+    last_modified: 2026-11-18T17:13:28Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -37,32 +37,32 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:fdcadd208508d5e3
-    last_modified: 2026-11-18T06:05:25Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
     digest: sha256:121d87b32b4dfb4d
-    last_modified: 2026-11-18T06:05:19Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
     digest: sha256:0c684e2ed3d541ad
-    last_modified: 2026-11-18T06:05:58Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: readme-md
     resource: ../../scripts/fixtures/consortium-v2/README.md
     title: scripts/fixtures/consortium-v2/README.md
     digest: sha256:7fc94a49c94578c1
-    last_modified: 2026-11-18T06:06:03Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:b4b79e7df59ce9a2
-    last_modified: 2026-11-18T06:04:13Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:41eb75c13da6830a
-    last_modified: 2026-11-18T04:32:21Z
+    digest: sha256:d17e7425d6f4e31b
+    last_modified: 2026-11-18T17:13:28Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
@@ -76,13 +76,13 @@ sources:
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:f0ad0258cf2baf78
-    last_modified: 2026-11-17T16:51:42Z
+    digest: sha256:15f1a3ec8774ad24
+    last_modified: 2026-11-18T17:13:28Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:e9aaa0527146c2d9
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:163f7a3eecb8a67d
+    last_modified: 2026-11-18T17:29:04Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -111,13 +111,13 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:b09c7431458ad257
-    last_modified: 2026-11-15T06:04:18Z
+    digest: sha256:3d5c66d5344256fc
+    last_modified: 2026-11-18T17:37:33Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:7c3ef0d97e101eb4
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:6f8ba673f18a18b8
+    last_modified: 2026-11-18T15:30:23Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -176,8 +176,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:93485b941ab6a2cc
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:ed64afa32f3f008c
+    last_modified: 2026-11-18T17:30:56Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -196,13 +196,13 @@ sources:
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:04e513850f03dbfe
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:30666970fedbae82
+    last_modified: 2026-11-18T17:29:04Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:9866dcaff6cd42e7
-    last_modified: 2026-11-18T06:04:17Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -221,8 +221,8 @@ sources:
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:a27dd2125990ab47
-    last_modified: 2026-11-18T04:32:21Z
+    digest: sha256:f0a00fd0dd48b252
+    last_modified: 2026-11-18T13:54:27Z
   - id: verdict-load-ts
     resource: ../../src/lib/consortium/verdict-load.ts
     title: src/lib/consortium/verdict-load.ts

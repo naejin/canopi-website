@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:54Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:14Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -32,8 +32,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:8165023fefa061e6
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:7d5dc44dd985ee5b
+    last_modified: 2026-11-18T17:37:33Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -92,13 +92,13 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:ca29813fffe9f702
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:0bc2bf17ed0958f1
+    last_modified: 2026-11-18T17:40:12Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:9dcf900b8bd5e06b
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:75d680dc504c162f
+    last_modified: 2026-11-18T17:40:12Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -107,8 +107,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:93485b941ab6a2cc
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:ed64afa32f3f008c
+    last_modified: 2026-11-18T17:30:56Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -117,13 +117,13 @@ sources:
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
-    digest: sha256:8114cf76e3887bc7
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:348047cc7dabe638
+    last_modified: 2026-11-18T17:40:12Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:6709d3b6c2980998
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:04d212e17c481deb
+    last_modified: 2026-11-18T17:40:12Z
   - id: site-fit-ts
     resource: ../../src/islands/consortium/rules/site-fit.ts
     title: src/islands/consortium/rules/site-fit.ts
@@ -142,23 +142,23 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:0fc0963811ecc7a3
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:d2404d13956492ff
+    last_modified: 2026-11-18T17:05:25Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b706295ccaa71c2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:85c9d5cc1e198756
+    last_modified: 2026-11-18T17:37:33Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:21da84df7c265fca
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:25359ddb9cb0717f
+    last_modified: 2026-11-18T17:29:04Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:05dac65b027489d3
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:461977e8299259fc
+    last_modified: 2026-11-18T17:29:04Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -167,13 +167,13 @@ sources:
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:437155c4bec846fc
-    last_modified: 2026-11-17T15:02:13Z
+    digest: sha256:6ce135ca08973b82
+    last_modified: 2026-11-18T16:40:02Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:25f27fd3c3bc8810
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:140dc86ef849bd85
+    last_modified: 2026-11-18T17:40:12Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -182,8 +182,8 @@ sources:
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:8d7e334e37472b22
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:86352cfe1a52fb56
+    last_modified: 2026-11-18T08:58:55Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -197,8 +197,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:349ff16b9b85cbc7
-    last_modified: 2026-11-13T16:13:32Z
+    digest: sha256:7c18172e53e80875
+    last_modified: 2026-11-18T14:32:45Z
   - id: paste-tsx
     resource: ../../src/islands/consortium/views/Paste.tsx
     title: src/islands/consortium/views/Paste.tsx
@@ -212,8 +212,8 @@ sources:
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:98503e2c23b4413a
-    last_modified: 2026-11-17T14:07:43Z
+    digest: sha256:1f630acabe60c541
+    last_modified: 2026-11-18T09:55:56Z
   - id: sideview-tsx
     resource: ../../src/islands/consortium/views/SideView.tsx
     title: src/islands/consortium/views/SideView.tsx
@@ -232,8 +232,8 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:6fe76c5fde37b54e
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:169e8422114d55ef
+    last_modified: 2026-11-18T15:30:23Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -317,8 +317,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:86627392588fb3f5
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:e393580af2534bc5
+    last_modified: 2026-11-18T17:13:28Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -382,8 +382,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:41eb75c13da6830a
-    last_modified: 2026-11-18T04:32:21Z
+    digest: sha256:d17e7425d6f4e31b
+    last_modified: 2026-11-18T17:13:28Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -392,18 +392,18 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:e9aaa0527146c2d9
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:163f7a3eecb8a67d
+    last_modified: 2026-11-18T17:29:04Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:f0ad0258cf2baf78
-    last_modified: 2026-11-17T16:51:42Z
+    digest: sha256:15f1a3ec8774ad24
+    last_modified: 2026-11-18T17:13:28Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:ae9f25c93cd4a332
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:608d3c9dafcf322a
+    last_modified: 2026-11-18T17:33:57Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -424,11 +424,6 @@ sources:
     title: src/styles/tokens.css
     digest: sha256:76772cb8c5c7cfaa
     last_modified: 2026-11-14T10:56:09Z
-  - id: picture-jobs-ts
-    resource: ../../src/islands/consortium/rules/picture-jobs.ts
-    title: src/islands/consortium/rules/picture-jobs.ts
-    digest: sha256:50dbb55c0096e0be
-    last_modified: 2026-11-14T18:01:21Z
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
@@ -437,18 +432,18 @@ sources:
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:cb7e165cdbf709c4
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:fbc06961be857a7f
+    last_modified: 2026-11-18T17:13:28Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:879a20960c3b9aad
-    last_modified: 2026-11-18T04:57:11Z
+    digest: sha256:e0e9aa3007ede7b9
+    last_modified: 2026-11-18T17:13:28Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
-    digest: sha256:545ea194b80246a0
-    last_modified: 2026-11-17T19:12:17Z
+    digest: sha256:7a5518810d5d8e3a
+    last_modified: 2026-11-18T17:07:24Z
 ---
 
 Target architecture of the [Plant palette redesign](/project/consortium-v2-plan.md) (grower-first design approved by the owner on 2026-11-14). Pushes and streams: [Plant palette slices](/project/plant-palette-slices.md). Layer rules: [ADR-1](/decisions/consortium-island-layers.md); caps: [ADR-2](/decisions/consortium-chunk-budgets.md); owner answers: [user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-14.
@@ -475,7 +470,7 @@ The ADR-1 stack and layers stay: a storage-independent TypeScript core (`src/lib
 | L1 climate | `src/lib/climate/**` | unchanged until a new grid release (canopi-climate asks in the plan) | none of the core |
 | L2 data | `data/sqlite-source.ts` | `PlantSource.layerValues(ids, climate)` (interface in PP-B commit 0, body in PP-G); `cellCounts` (`source.ts:25`, `sqlite-source.ts:346`) deleted with the matrix in PP-B commit 0a' | core types |
 | L3 rules | `rules/picture.ts` and `rules/change-summary.ts` (b2) | the one picture model, `tableOf`, the fold rule, `changeSummary` (section 3.4) | core entry only |
-| L3 rules | `rules/picture-years.ts`, `picture-jobs.ts` (PP-B), `picture-climate.ts` (PP-E), `picture-soil.ts` (PP-F), `picture-plan.ts` (PP-D), `picture-year.ts` and `months.ts` (PP-G) | picture view models built on `rules/picture.ts`: pure functions from core results to rows, bands and fractions (numbers and keys, no markup) | core entry only |
+| L3 rules | `rules/picture-years.ts` (PP-B; the jobs picture reads `holes.ts` laneCounts' counted and outside members, M25), `picture-climate.ts` (PP-E), `picture-soil.ts` (PP-F), `picture-plan.ts` (PP-D), `picture-year.ts` and `months.ts` (PP-G) | picture view models built on `rules/picture.ts`: pure functions from core results to rows, bands and fractions (numbers and keys, no markup) | core entry only |
 | L3 rules | `rules/find-query.ts` (PP-C, replaces `rules/list-query.ts`) | the one filter and grouping rule of Find, Swap and "plants that fill this hole" | core entry |
 | L3 state | `state/schema.ts`, `persist.ts`, `restore.ts`, `arrival.ts`, `draft.ts`, `location.ts`, `suggest-wait.ts` | fields, save record, the `canopi-place` key, arrival | as today |
 | L4 views | `views/place/**`, `views/palette/**`, `views/find/**` (PP-C), `views/plan/**` and `views/take/**` (PP-D), `views/climate/**` (PP-E), `views/soil/**` (PP-F), `views/year/**` (PP-G), `views/details/**` | one folder per chunk | core through `index.ts` only (L4) |
@@ -689,7 +684,7 @@ Store after the change (`store.ts`): `verdictContext`, `verdictRule` (the lazy `
 | Shell, state, arrival, Place form (without the location step), toasts, notices, offline and still-loading lines | L3, `views/place/Place.tsx` | first run | first run | 38 KB today (`check-built-site.mjs:498`); raised as needed (owner, 2026-11-14), each raise a row in the plan's budget log; measured at PP-B commit 0 |
 | Location step | `views/location/**` | first use, prefetched on Place | `location` | 11.8 KB (A14 max 20); `LOCATION_BUDGET` 20 KB, `MAPLIBRE_BUDGET` 330 KB |
 | Verdicts | core `verdict.ts` | after the pool and the lookup; recomputed on place, period, scenario or member change | `verdict` | 12 KB in PP-B, then measured + 0.5 KB at the exit; `range` and `markProviders` fold in only in PP-C; `future` keeps its cap until PP-E |
-| Palette page: Next step, Through the years, Jobs, Your plants, things to weigh | `views/palette/**`, `rules/picture-years.ts`, `picture-jobs.ts`, `holes.ts`, `weigh.ts` | prefetched when `arrival()` (`state/arrival.ts:44`) returns `saved`, `link` or `preset`, else when the Place form is first touched | `palette` | 12 KB (feature max) |
+| Palette page: Next step, Through the years, Jobs, Your plants, things to weigh | `views/palette/**`, `rules/picture-years.ts`, `holes.ts`, `weigh.ts` | prefetched when `arrival()` (`state/arrival.ts:44`) returns `saved`, `link` or `preset`, else when the Place form is first touched | `palette` | 12 KB (feature max) |
 | Matrix (0a only; deleted in PP-B commit 0a') | `views/Matrix.tsx`, `Actions` | through `lazyPart` | `matrix` | 12 KB at 0a, role deleted in 0a' (`Actions` back in the first run until b2) |
 | Find, Swap, Paste, fill a hole | `views/find/**`, `rules/find-query.ts` | on opening; prefetched when the page is idle (with `details` and `take`; each prefetched chunk's cost is a line in the budget log) | `find` | 8 KB |
 | Details, Correction | `views/details/**` | on opening | `details` | 8 KB (6.7 today) |
