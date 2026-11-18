@@ -167,7 +167,7 @@
 .ct .ct-goal-label { white-space: nowrap; }
 /* D1: the intro's "Plants per job: 2" is a link opening the control in place below 960 px; at 960 px
    and wider the control always shows and the phrase is plain words. */
-.ct .ct-goal-link { font: inherit; }
+.ct .ct-goal-link { font: inherit; display: inline-block; padding-block: 10px; } /* 40 px to tap, as a button (W6) */
 @media (min-width: 960px) { .ct .ct-goal-link { display: none; } }
 @media not all and (min-width: 960px) { .ct .ct-goal-say, .ct .ct-jobs-top > .ct-goal[data-folded] { display: none; } }
 .ct .ct-goal-n { min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 0; background: var(--surface); color: var(--text); font: inherit; font-weight: 400; cursor: pointer; }
