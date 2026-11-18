@@ -212,6 +212,8 @@
 .ct dialog.ct-sheet.ct-find-panel { position: static; display: block; margin: 0; padding: 0; width: auto; max-width: none; height: auto; max-height: none; overflow: visible; box-shadow: none; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: inherit; min-width: 0; }
 .ct dialog.ct-sheet.ct-find-panel .ct-sheet-inner { display: flex; flex-direction: column; height: auto; }
 .ct dialog.ct-sheet.ct-find-panel .ct-sheet-body { overflow: visible; }
+/* In the page flow the head does not stick: it would sit over the rows the page scrolls to. */
+.ct dialog.ct-sheet.ct-find-panel .ct-sheet-head { position: static; }
 @media (min-width: 960px) {
   /* Board DeskStates: Find a panel beside the picture (not a modal), wide enough for FindDesk's filter
      column; the pictures keep the left column, where the bottom-left message sits, never over the panel. */

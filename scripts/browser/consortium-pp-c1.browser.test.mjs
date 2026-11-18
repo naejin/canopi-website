@@ -35,8 +35,9 @@ const on = (page, id) => page.$eval(`${FIND} [data-filter="${id}"]`, (e) => e.ge
 const rowIds = async (page) => { await expandAll(page); return page.$$eval(`${FIND} [data-find-row]`, (els) => els.map((e) => e.dataset.plantId).filter(Boolean).sort()); };
 const toggle = async (page, id) => {
   const before = await rowIds(page);
-  await page.click(`${FIND} [data-filter="${id}"]`);
-  await page.waitForFunction((sel, n) => document.querySelectorAll(sel).length !== n, { timeout: 4000 }, `${FIND} [data-find-row]`, before.length).catch(() => {});
+  // A DOM click (pf-a v14: at 1280 Find is a panel in the page, which a pointer click scrolls under load).
+  await page.$eval(`${FIND} [data-filter="${id}"]`, (b) => b.click());
+  await page.waitForFunction((sel, n) => document.querySelectorAll(sel).length !== n, { timeout: 8000 }, `${FIND} [data-find-row]`, before.length).catch(() => {});
   return before;
 };
 const search = async (page, q) => {
