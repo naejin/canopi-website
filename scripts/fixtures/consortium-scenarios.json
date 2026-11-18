@@ -2020,7 +2020,10 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["57903ece-83a5-4519-9ba1-5520e5d99e7e", "9cceee4c-6eee-436e-865d-4dbb56f82fa0"]
         },
-        "hints": {}
+        "hints": {
+          "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
+          "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
+        }
       }
     },
     {
@@ -2238,7 +2241,10 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["57903ece-83a5-4519-9ba1-5520e5d99e7e", "9cceee4c-6eee-436e-865d-4dbb56f82fa0"]
         },
-        "hints": {}
+        "hints": {
+          "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
+          "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
+        }
       }
     },
     {
@@ -2456,7 +2462,10 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["57903ece-83a5-4519-9ba1-5520e5d99e7e", "9cceee4c-6eee-436e-865d-4dbb56f82fa0"]
         },
-        "hints": {}
+        "hints": {
+          "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
+          "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
+        }
       }
     },
     {
@@ -2678,7 +2687,10 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["57903ece-83a5-4519-9ba1-5520e5d99e7e", "9cceee4c-6eee-436e-865d-4dbb56f82fa0"]
         },
-        "hints": {}
+        "hints": {
+          "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
+          "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
+        }
       }
     },
     {
@@ -2900,7 +2912,10 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["57903ece-83a5-4519-9ba1-5520e5d99e7e", "9cceee4c-6eee-436e-865d-4dbb56f82fa0"]
         },
-        "hints": {}
+        "hints": {
+          "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
+          "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
+        }
       }
     },
     {
@@ -3320,7 +3335,11 @@
           "target": "job:mulch:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "76e9ec1d-4470-4886-8a14-0fb96756e7ff"]
         },
-        "hints": {}
+        "hints": {
+          "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"],
+          "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
+          "050e780f-d488-4e40-a27c-70faf9bb1dc6": ["soil-ph"]
+        }
       }
     },
     {
@@ -3875,7 +3894,11 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["16fd7310-dbee-443d-906a-3ad4db7202c2", "a3930c78-137a-4351-a6de-f5a12d18cca8"]
         },
-        "hints": {}
+        "hints": {
+          "06c022a6-2d3c-46ae-b8ea-6f2e7763c11a": ["soil-ph"],
+          "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"],
+          "14b47c36-0ab9-4bd1-8fb8-a6ff3b116981": ["soil-ph"]
+        }
       }
     },
     {
@@ -4071,7 +4094,11 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["16fd7310-dbee-443d-906a-3ad4db7202c2", "a3930c78-137a-4351-a6de-f5a12d18cca8"]
         },
-        "hints": {}
+        "hints": {
+          "06c022a6-2d3c-46ae-b8ea-6f2e7763c11a": ["soil-ph"],
+          "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"],
+          "14b47c36-0ab9-4bd1-8fb8-a6ff3b116981": ["soil-ph"]
+        }
       }
     },
     {
@@ -4270,7 +4297,11 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["16fd7310-dbee-443d-906a-3ad4db7202c2", "a3930c78-137a-4351-a6de-f5a12d18cca8"]
         },
-        "hints": {}
+        "hints": {
+          "06c022a6-2d3c-46ae-b8ea-6f2e7763c11a": ["soil-ph"],
+          "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"],
+          "14b47c36-0ab9-4bd1-8fb8-a6ff3b116981": ["soil-ph"]
+        }
       }
     },
     {
@@ -4491,7 +4522,9 @@
           "target": "light:emergent:1-60",
           "ids": ["b2d0928d-ec0a-42e2-9bff-8adecca6de7c", "ba6f4563-d500-4262-a7fe-4348592eae06"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -4681,7 +4714,9 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -4871,7 +4906,9 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -5281,7 +5318,12 @@
           "target": "job:ground:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "76e9ec1d-4470-4886-8a14-0fb96756e7ff"]
         },
-        "hints": {}
+        "hints": {
+          "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"],
+          "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
+          "050e780f-d488-4e40-a27c-70faf9bb1dc6": ["soil-ph"],
+          "0cc5877b-d0f6-4f78-87a8-c7619d75639a": ["soil-ph"]
+        }
       }
     },
     {
@@ -5481,7 +5523,12 @@
           "target": "job:ground:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "76e9ec1d-4470-4886-8a14-0fb96756e7ff"]
         },
-        "hints": {}
+        "hints": {
+          "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"],
+          "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
+          "050e780f-d488-4e40-a27c-70faf9bb1dc6": ["soil-ph"],
+          "0cc5877b-d0f6-4f78-87a8-c7619d75639a": ["soil-ph"]
+        }
       }
     },
     {
@@ -5681,7 +5728,12 @@
           "target": "job:ground:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "76e9ec1d-4470-4886-8a14-0fb96756e7ff"]
         },
-        "hints": {}
+        "hints": {
+          "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"],
+          "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
+          "050e780f-d488-4e40-a27c-70faf9bb1dc6": ["soil-ph"],
+          "0cc5877b-d0f6-4f78-87a8-c7619d75639a": ["soil-ph"]
+        }
       }
     },
     {
@@ -5881,7 +5933,12 @@
           "target": "job:ground:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "76e9ec1d-4470-4886-8a14-0fb96756e7ff"]
         },
-        "hints": {}
+        "hints": {
+          "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"],
+          "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
+          "050e780f-d488-4e40-a27c-70faf9bb1dc6": ["soil-ph"],
+          "0cc5877b-d0f6-4f78-87a8-c7619d75639a": ["soil-ph"]
+        }
       }
     },
     {
@@ -6463,7 +6520,9 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -6651,7 +6710,9 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -6837,7 +6898,9 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -6853,14 +6916,12 @@
       },
       "output": {
         "fit": {
-          "fits": ["008b128b-c838-4992-a3a9-13050c72e228", "01a9722d-3750-4d09-88b3-2c99e985fa12", "01bc92f9-f319-4fc7-8231-8ca8a1019ae6", "1783a7aa-9a83-42d7-af74-73f0fc446ef5", "0b1a9cca-a421-4621-9d04-64b1f2455647", "03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238", "450cc1d5-eadc-4745-b7f2-6a040d996b08", "0bb55123-127a-4c90-98e4-da34dd9bfb76", "db4dc58b-b6a8-4b00-9788-03e72815451d"],
-          "look": ["08b5e06e-31c0-4d16-93c9-43ad9080f2d5"],
+          "fits": ["008b128b-c838-4992-a3a9-13050c72e228", "01a9722d-3750-4d09-88b3-2c99e985fa12", "01bc92f9-f319-4fc7-8231-8ca8a1019ae6", "1783a7aa-9a83-42d7-af74-73f0fc446ef5", "0b1a9cca-a421-4621-9d04-64b1f2455647", "03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238", "450cc1d5-eadc-4745-b7f2-6a040d996b08", "0bb55123-127a-4c90-98e4-da34dd9bfb76", "08b5e06e-31c0-4d16-93c9-43ad9080f2d5", "db4dc58b-b6a8-4b00-9788-03e72815451d"],
+          "look": [],
           "outside": [],
           "unknown": []
         },
-        "why": {
-          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": "soil-ph"
-        },
+        "why": {},
         "holes": [
           {
             "id": "job:feeds_soil:0-0.25",
@@ -6979,12 +7040,12 @@
           "hole": "job:ground:0-3",
           "fillers": {
             "fits": {
-              "n": 20,
-              "first": ["10d38928-e86d-48d6-9553-ef94995bc605", "a1e8be51-4978-4503-b04f-ae0bed9b90a8", "919ef359-cb59-41a2-b164-ce9fd1ef649f", "21ad2bce-bba0-4377-a45c-386c58989087", "2fa4616a-2c94-4a46-93f3-ca3cb6c6a77a"]
+              "n": 28,
+              "first": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605", "9590b99d-9e21-4c93-8702-017eab98f836", "a1e8be51-4978-4503-b04f-ae0bed9b90a8", "919ef359-cb59-41a2-b164-ce9fd1ef649f"]
             },
             "look": {
-              "n": 8,
-              "first": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "9590b99d-9e21-4c93-8702-017eab98f836", "22713714-63e7-48a6-a7cf-ce18d198e557", "52361eb8-a896-4956-b341-57fdcfe8a898", "829d689a-7898-4f73-9100-853a39b83708"]
+              "n": 0,
+              "first": []
             },
             "outside": {
               "n": 1,
@@ -6996,7 +7057,7 @@
             }
           }
         },
-        "second": ["03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238", "08b5e06e-31c0-4d16-93c9-43ad9080f2d5"],
+        "second": ["03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238"],
         "notes": {},
         "thin": [
           {
@@ -7022,7 +7083,7 @@
         ],
         "best": {
           "target": "job:ground:0-3",
-          "ids": ["10d38928-e86d-48d6-9553-ef94995bc605", "a1e8be51-4978-4503-b04f-ae0bed9b90a8"]
+          "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
@@ -7042,15 +7103,12 @@
       },
       "output": {
         "fit": {
-          "fits": ["008b128b-c838-4992-a3a9-13050c72e228", "01a9722d-3750-4d09-88b3-2c99e985fa12", "01bc92f9-f319-4fc7-8231-8ca8a1019ae6", "1783a7aa-9a83-42d7-af74-73f0fc446ef5", "03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238", "450cc1d5-eadc-4745-b7f2-6a040d996b08", "08b5e06e-31c0-4d16-93c9-43ad9080f2d5", "db4dc58b-b6a8-4b00-9788-03e72815451d"],
-          "look": ["0b1a9cca-a421-4621-9d04-64b1f2455647", "0bb55123-127a-4c90-98e4-da34dd9bfb76"],
+          "fits": ["008b128b-c838-4992-a3a9-13050c72e228", "01a9722d-3750-4d09-88b3-2c99e985fa12", "01bc92f9-f319-4fc7-8231-8ca8a1019ae6", "1783a7aa-9a83-42d7-af74-73f0fc446ef5", "0b1a9cca-a421-4621-9d04-64b1f2455647", "03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238", "450cc1d5-eadc-4745-b7f2-6a040d996b08", "0bb55123-127a-4c90-98e4-da34dd9bfb76", "08b5e06e-31c0-4d16-93c9-43ad9080f2d5", "db4dc58b-b6a8-4b00-9788-03e72815451d"],
+          "look": [],
           "outside": [],
           "unknown": []
         },
-        "why": {
-          "0b1a9cca-a421-4621-9d04-64b1f2455647": "soil-ph",
-          "0bb55123-127a-4c90-98e4-da34dd9bfb76": "soil-ph"
-        },
+        "why": {},
         "holes": [
           {
             "id": "job:feeds_soil:0-0.25",
@@ -7169,12 +7227,12 @@
           "hole": "job:ground:0-3",
           "fillers": {
             "fits": {
-              "n": 22,
-              "first": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "9590b99d-9e21-4c93-8702-017eab98f836", "a1e8be51-4978-4503-b04f-ae0bed9b90a8", "22713714-63e7-48a6-a7cf-ce18d198e557", "21ad2bce-bba0-4377-a45c-386c58989087"]
+              "n": 28,
+              "first": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605", "9590b99d-9e21-4c93-8702-017eab98f836", "a1e8be51-4978-4503-b04f-ae0bed9b90a8", "919ef359-cb59-41a2-b164-ce9fd1ef649f"]
             },
             "look": {
-              "n": 6,
-              "first": ["10d38928-e86d-48d6-9553-ef94995bc605", "919ef359-cb59-41a2-b164-ce9fd1ef649f", "510b794c-5302-4117-861f-399f35a39a5f", "371e9ec4-188f-4b2e-a95a-2868279f3acd", "ae11d733-096d-4e8a-b4d8-40e3c0d14d51"]
+              "n": 0,
+              "first": []
             },
             "outside": {
               "n": 1,
@@ -7186,7 +7244,7 @@
             }
           }
         },
-        "second": ["0b1a9cca-a421-4621-9d04-64b1f2455647", "03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238", "0bb55123-127a-4c90-98e4-da34dd9bfb76"],
+        "second": ["03b0beef-5472-4cda-a45b-aa5f9aaa5a88", "068017c5-821c-4a9a-bd5d-6b55a1926238"],
         "notes": {},
         "thin": [
           {
@@ -7212,7 +7270,7 @@
         ],
         "best": {
           "target": "job:ground:0-3",
-          "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "9590b99d-9e21-4c93-8702-017eab98f836"]
+          "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
         "hints": {
           "0b1a9cca-a421-4621-9d04-64b1f2455647": ["soil-ph"],
@@ -7357,12 +7415,12 @@
           "hole": "job:ground:0-3",
           "fillers": {
             "fits": {
-              "n": 16,
+              "n": 28,
               "first": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605", "9590b99d-9e21-4c93-8702-017eab98f836", "a1e8be51-4978-4503-b04f-ae0bed9b90a8", "919ef359-cb59-41a2-b164-ce9fd1ef649f"]
             },
             "look": {
-              "n": 12,
-              "first": ["22713714-63e7-48a6-a7cf-ce18d198e557", "21ad2bce-bba0-4377-a45c-386c58989087", "2fa4616a-2c94-4a46-93f3-ca3cb6c6a77a", "343ce98e-ac6a-45a2-a0f4-9c4e5317c238", "91288d55-23da-4072-9c45-f0082d3894b3"]
+              "n": 0,
+              "first": []
             },
             "outside": {
               "n": 1,
@@ -7402,7 +7460,13 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {
+          "008b128b-c838-4992-a3a9-13050c72e228": ["drainage"],
+          "01a9722d-3750-4d09-88b3-2c99e985fa12": ["drainage"],
+          "03b0beef-5472-4cda-a45b-aa5f9aaa5a88": ["drainage"],
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"],
+          "db4dc58b-b6a8-4b00-9788-03e72815451d": ["drainage"]
+        }
       }
     },
     {
@@ -7587,7 +7651,9 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -7778,7 +7844,9 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605", "9590b99d-9e21-4c93-8702-017eab98f836"]
         },
-        "hints": {}
+        "hints": {
+          "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        }
       }
     },
     {
@@ -8021,7 +8089,45 @@
           "target": "light:low:0-3",
           "ids": []
         },
-        "hints": {}
+        "hints": {
+          "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
+          "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"],
+          "1325fc16-6c81-462e-a334-f80cfc5bbfbc": ["soil-ph"],
+          "333aa65f-65bd-4e14-b5c0-4d9b0ffec996": ["soil-ph"],
+          "0b1a9cca-a421-4621-9d04-64b1f2455647": ["soil-ph"],
+          "4b5ef3f8-a8b4-435c-8598-b302d5fa83b8": ["soil-ph"],
+          "5f0d9676-daaa-410c-8c1f-de73e3e89aca": ["soil-ph"],
+          "1788b306-c3ef-4832-886b-fbbce38345a8": ["soil-ph"],
+          "93f85262-1e92-4c04-97f5-81f18a7034d2": ["soil-ph"],
+          "b26348ef-ad83-4600-b2a6-24d85e2fb666": ["soil-ph"],
+          "33e1329e-cfde-4238-a7a6-a27ed9d75ce8": ["soil-ph"],
+          "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"],
+          "4c167f26-458c-42cc-a845-b952dbdc7e93": ["soil-ph"],
+          "2bf4f51e-f075-44c3-8aca-426c6f7397da": ["soil-ph"],
+          "62fca4bc-3611-44b6-861e-08f0f9016cba": ["soil-ph"],
+          "31e29efe-f187-4018-889e-49a57bdc7983": ["soil-ph"],
+          "371e9ec4-188f-4b2e-a95a-2868279f3acd": ["soil-ph"],
+          "3d079bf2-87d5-45ac-80d9-52c954841238": ["soil-ph"],
+          "3e9473ca-0f73-4347-acbf-214dc26c9c7e": ["soil-ph"],
+          "77f939f5-f666-421f-9c7c-3028a368ebea": ["soil-ph"],
+          "79289d5d-1448-4207-9d01-857ba92ae184": ["soil-ph"],
+          "794a533d-0bef-4bb9-9b95-a780b6aa7fea": ["soil-ph"],
+          "50d3b377-e217-4909-b0c9-770903b6c5c2": ["soil-ph"],
+          "99f176b4-cb06-4712-9f2c-d77db94487e2": ["soil-ph"],
+          "aafb2187-e7d5-4e33-9b14-0a6054651f3c": ["soil-ph"],
+          "ad18c3f8-8421-4718-a1cc-69a117542992": ["soil-ph"],
+          "afef0114-dc32-4064-a690-f8825160ddee": ["soil-ph"],
+          "bd3c11dc-868d-4e61-bb01-0706ef0c1b46": ["soil-ph"],
+          "8fdc9db4-d070-45a8-b16f-4c98e52b8643": ["soil-ph"],
+          "dec5b74f-2afd-49d5-819e-2cf415c834e8": ["soil-ph"],
+          "8ffdfc3f-f33b-4061-9816-ed9cb055534b": ["soil-ph"],
+          "9f59d11e-eba9-4d35-bfc2-8b4793f29253": ["soil-ph"],
+          "a266963e-d57d-4a2b-9ae3-a25131900c1f": ["soil-ph"],
+          "deaed607-a07b-44b2-879e-2c5c344ae802": ["soil-ph"],
+          "efd8aa4d-72bf-413f-8be2-414c31f3589c": ["soil-ph"],
+          "f51c97d7-801e-4583-8f35-64530b0578ca": ["soil-ph"],
+          "fc345e8f-254b-4857-835c-a6eddaed189a": ["soil-ph"]
+        }
       }
     },
     {
@@ -8395,7 +8501,11 @@
           "target": "light:low:0-60",
           "ids": []
         },
-        "hints": {}
+        "hints": {
+          "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"],
+          "fc345e8f-254b-4857-835c-a6eddaed189a": ["soil-ph"],
+          "f51c97d7-801e-4583-8f35-64530b0578ca": ["soil-ph"]
+        }
       }
     },
     {
@@ -8588,7 +8698,10 @@
           "target": "job:ground:0-60",
           "ids": ["1691bb78-ca29-4bf5-9437-7caa1a16a6d1", "83e711d3-5902-4e83-9f84-6cc53738198c"]
         },
-        "hints": {}
+        "hints": {
+          "deaed607-a07b-44b2-879e-2c5c344ae802": ["soil-ph"],
+          "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"]
+        }
       }
     },
     {
@@ -8781,7 +8894,10 @@
           "target": "job:ground:0-60",
           "ids": ["1691bb78-ca29-4bf5-9437-7caa1a16a6d1", "83e711d3-5902-4e83-9f84-6cc53738198c"]
         },
-        "hints": {}
+        "hints": {
+          "deaed607-a07b-44b2-879e-2c5c344ae802": ["soil-ph"],
+          "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"]
+        }
       }
     },
     {
@@ -8970,7 +9086,10 @@
           "target": "job:ground:0-60",
           "ids": ["1691bb78-ca29-4bf5-9437-7caa1a16a6d1", "83e711d3-5902-4e83-9f84-6cc53738198c"]
         },
-        "hints": {}
+        "hints": {
+          "deaed607-a07b-44b2-879e-2c5c344ae802": ["soil-ph"],
+          "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"]
+        }
       }
     },
     {
@@ -9706,7 +9825,22 @@
           "target": "job:mulch:25-60",
           "ids": []
         },
-        "hints": {}
+        "hints": {
+          "8fff4b5c-f2a2-4421-a636-55730055d056": ["soil-ph"],
+          "050e780f-d488-4e40-a27c-70faf9bb1dc6": ["soil-ph"],
+          "4f7caca5-8be8-477c-b661-3b0887b8c5e9": ["soil-ph"],
+          "2e769487-f022-4a98-9e5c-7ec38fc43cd7": ["soil-ph"],
+          "bd3c11dc-868d-4e61-bb01-0706ef0c1b46": ["soil-ph"],
+          "12d9a889-810f-4a93-849e-461b86d0e099": ["soil-ph"],
+          "8c973795-a99d-43c4-a724-6196fb4ab65b": ["soil-ph"],
+          "a5bc0306-bbab-4d3f-8d66-9327b4d26942": ["soil-ph"],
+          "5005bbdc-c427-4cce-b4d5-3e2bb6664eb2": ["soil-ph"],
+          "79289d5d-1448-4207-9d01-857ba92ae184": ["soil-ph"],
+          "2bf4f51e-f075-44c3-8aca-426c6f7397da": ["soil-ph"],
+          "7f67fde6-f8f0-494a-ba34-78a677d9a4ed": ["soil-ph"],
+          "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"],
+          "6087251b-1d72-4d99-b02e-cc4efb163afc": ["soil-ph"]
+        }
       }
     },
     {
@@ -9906,7 +10040,11 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["98b7fb14-0d56-4a41-adff-93d4d54ac43f", "3c45aa14-5f95-4362-9f25-f928b2cd3c08"]
         },
-        "hints": {}
+        "hints": {
+          "06c022a6-2d3c-46ae-b8ea-6f2e7763c11a": ["soil-ph"],
+          "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"],
+          "14b47c36-0ab9-4bd1-8fb8-a6ff3b116981": ["soil-ph"]
+        }
       }
     },
     {
@@ -10110,7 +10248,9 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["db4dc58b-b6a8-4b00-9788-03e72815451d", "57903ece-83a5-4519-9ba1-5520e5d99e7e"]
         },
-        "hints": {}
+        "hints": {
+          "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
+        }
       }
     },
     {
@@ -10602,7 +10742,6 @@
     "779be8a0-fe79-4da5-af67-624da4f325b5": "Calicotome villosa",
     "98b7fb14-0d56-4a41-adff-93d4d54ac43f": "Calliandra eriophylla",
     "5006ed90-fe3e-4208-a817-4c322aa04c98": "Calliandra houstoniana var. calothyrsus",
-    "510b794c-5302-4117-861f-399f35a39a5f": "Calluna vulgaris",
     "2e769487-f022-4a98-9e5c-7ec38fc43cd7": "Canavalia ensiformis",
     "86125750-9b93-4e4f-ad11-835675819c55": "Canavalia gladiata",
     "7d1dade1-0667-495f-ba29-53fa86b009d2": "Canna indica",
@@ -10743,7 +10882,6 @@
     "182d6072-7855-48dc-a75d-95f0bbd9d2d1": "Lavandula latifolia",
     "a266963e-d57d-4a2b-9ae3-a25131900c1f": "Lavandula stoechas",
     "f2642c68-2bdc-4a42-8db6-4ed7162409c2": "Leucaena leucocephala",
-    "ae11d733-096d-4e8a-b4d8-40e3c0d14d51": "Leucanthemum vulgare",
     "afef0114-dc32-4064-a690-f8825160ddee": "Ligustrum vulgare",
     "d8d8e19c-e732-4db3-b3bc-cdaa24c952fd": "Limnanthes douglasii",
     "d3602a7e-43ff-47b4-a65e-4d89d6803fdb": "Lippia origanoides",

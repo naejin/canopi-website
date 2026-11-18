@@ -415,3 +415,30 @@ test('R2: rain or no answer says drier, first-years the same note in "water it t
   const medium = { ...taxon, traits: { ...taxon.traits, drought_tolerance: 'Medium' } };
   assert.ok(core.fits(medium, { light: 'unsure', soil: 'unsure', water: 'dry', room: 'unsure' }).reasons.every((r) => !('note' in r)), 'no dry-months note');
 });
+
+// ---- 0W-2 R3: soil and drainage are hints ----
+test('R3: setsLevel is false for soil-ph and drainage (and the wet check), dry keeps its wet side; a map pH gives a soil-ph hint that says which way; nearKm for a neighbour fill', () => {
+  const f = (factor, extra = {}) => ({ factor, level: 'look', basis: 'spot', place: null, low: null, high: null, ...extra });
+  assert.equal(core.setsLevel(f('soil-ph', { basis: 'soil-map' })), false);
+  assert.equal(core.setsLevel(f('soil-ph', { basis: 'soil-test' })), false);
+  assert.equal(core.setsLevel(f('drainage')), false);
+  assert.equal(core.setsLevel(f('water')), false, 'the wet check is the drainage answer\'s');
+  assert.equal(core.setsLevel(f('light')), true);
+  assert.equal(core.setsLevel(f('dry', { basis: 'range', place: 3, low: 0.5, high: 2 })), true, 'wetter than recorded still asks');
+  assert.equal(core.setsLevel(f('dry', { basis: 'range', place: 0.2, low: 0.5, high: 2 })), false);
+  const lookup = (soil) => ({ lat: 0, lon: 0, climate: null, soil, regions: { wgsrpdL3: null, isoA2: null } });
+  const measured = core.siteInputsOf({ lookup: lookup({ phH2o: 8.1, texture: 'clay', filled: false, fillDistanceCells: 0, distanceCells: 0 }) });
+  assert.deepEqual(measured.soilPh, { value: 8.1, source: 'map', map: 8.1 });
+  const filled = core.siteInputsOf({ lookup: lookup({ phH2o: 7.2, texture: null, filled: true, fillDistanceCells: 2, distanceCells: 0 }) });
+  assert.deepEqual(filled.soilPh, { value: 7.2, source: 'map', map: 7.2, nearKm: 11 });
+  assert.equal(core.siteOf(measured).water, 'unsure', 'the map texture (clay) gives no hint until the grower answers wet');
+  const plant = { id: 'p', canonical_name: 'P', stratum: null, climate: null, warnings: {}, jobs: [], traits: { soil_ph: { min: 5, max: 6.5 } } };
+  const v = verdict(plant, { inputs: measured, period: '1991-2020', scenario: 'ssp245' });
+  const soil = v.factors.find((x) => x.factor === 'soil-ph');
+  assert.deepEqual([soil.level, soil.basis, soil.place, soil.low, soil.high], ['look', 'soil-map', 8.1, 5, 6.5]);
+  assert.notEqual(v.level, 'look', 'never the level');
+  assert.deepEqual(core.hintLine(soil), { key: 'consortium.line.hintAlkaline', vars: { ph: 6.5 } });
+  assert.deepEqual(core.flagsFor(plant, [], { site: core.siteOf(measured), interactions: [], country: null }), [], 'no misfit flag, no second look');
+  const potted = core.siteInputsOf({ lookup: lookup({ phH2o: 8.1, texture: 'clay', filled: false, fillDistanceCells: 0, distanceCells: 0 }), edits: { pots: true } });
+  assert.equal(verdict(plant, { inputs: potted, period: '1991-2020', scenario: 'ssp245' }).factors.some((x) => x.factor === 'soil-ph' && x.level !== 'unknown'), false, 'pots: no soil hint');
+});

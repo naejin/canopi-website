@@ -44,6 +44,7 @@ import { aridityFit, boundPassed, coolSeasonOf, isAnnual, passes, RANGE_BOUNDS, 
 import { futurePeriod } from './future.ts';
 import { fits, misfitsBeside, shadedBy, tallerThanRoom } from './site.ts';
 import { climateFor, siteOf } from './place.ts';
+import { soilPhOf } from './site-inputs.ts';
 
 const TODAY: PeriodId = periodIds[0];
 const FEW_RECORDS = 300;
@@ -110,8 +111,13 @@ function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors
     if (r.key === 'room') continue;
     if (r.key === 'light' && shaded) continue;
     const level: Level = r.verdict === 'misfit' ? (beside.has(r.key) ? 'look' : 'fits') : r.verdict === 'unknown' ? 'unknown' : 'fits';
-    const factor: Factor = r.key === 'soil' ? 'soil-ph' : r.key;
-    factors.push({ factor, level, basis: r.key === 'soil' ? 'soil-test' : 'spot', place: null, low: null, high: null });
+    if (r.key === 'soil') {
+      // The pH against the plant's recorded range, so the hint says which way (verdict-line.ts hintLine).
+      const ph = taxon.traits.soil_ph;
+      factors.push({ factor: 'soil-ph', level, basis: ctx.inputs.soilPh.source === 'grower' ? 'soil-test' : 'soil-map', place: soilPhOf(ctx.inputs), low: ph?.min ?? null, high: ph?.max ?? null });
+      continue;
+    }
+    factors.push({ factor: r.key as Factor, level, basis: 'spot', place: null, low: null, high: null });
   }
   return { factors, roomTall: tallerThanRoom(fit) };
 }

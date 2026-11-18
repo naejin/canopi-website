@@ -228,13 +228,14 @@ test('emptyPlace: every answer unsure, no plot size, the soil map; frozen', () =
   assert.ok(Object.isFrozen(emptyPlace) && Object.isFrozen(emptyPlace.spot));
 });
 
-test('siteOf: the Site fits() reads comes from the site inputs; a soil test pH gives the word, the soil map checks nothing', () => {
+test('siteOf: the Site fits() reads comes from the site inputs; a soil test pH gives the word, else the soil map\'s (R3), none in pots', () => {
   const inputs = (edits, room) => siteInputsOf({ lookup: { lat: 0, lon: 0, climate: null, soil: { phH2o: 8, texture: null, filled: false, fillDistanceCells: 0, distanceCells: 0 }, regions: { wgsrpdL3: null, isoA2: null } }, room, edits });
   assert.deepEqual(siteOf(NO_INPUTS), { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' });
   assert.deepEqual(siteOf(inputs({ light: 'shade', drainage: 'wet', soilPh: 5 }, 'small')), { light: 'shade', soil: 'acid', water: 'wet', room: 'small' });
   assert.equal(siteOf(inputs({ soilPh: 8.0 })).soil, 'chalky', 'a pH gives the word');
   assert.equal(siteOf(inputs({ soilPh: 6.5 })).soil, 'neutral');
-  assert.equal(siteOf(inputs({})).soil, 'unsure', 'the soil map checks nothing until PP-F');
+  assert.equal(siteOf(inputs({})).soil, 'chalky', 'the soil map\'s pH (a hint: types.ts setsLevel)');
+  assert.equal(siteOf(inputs({ pots: true })).soil, 'unsure', 'pots: none');
 });
 
 test('climateFor: today is the historical slot; another period takes the context\'s scenario', () => {

@@ -49,7 +49,13 @@ test('the file states the rules it shows: watering sets the dryness note only, a
   assert.deepEqual(out('mendoza-board-first-years').notes, out('mendoza-board-rain').notes, 'first years: the same notes (other words)');
   assert.deepEqual(but(out('mendoza-watered-all-year'), 'notes'), but(out('mendoza-rain-only'), 'notes'), 'watering never changes a fit');
   assert.notDeepEqual(out('lyon-2c-colder').fit, out('lyon-today').fit, '2 °C colder changes a verdict');
-  assert.notDeepEqual(out('lyon-soil-test-chalky').fit, out('lyon-today').fit, 'a soil test is read');
+  assert.notDeepEqual(out('lyon-soil-test-chalky').hints, out('lyon-today').hints, 'a soil test is read, as hints (R3)');
+  // Soil and drainage are hints, never a level (R3): a map pH gives hints; pots and no soil give none.
+  for (const c of file.cases) for (const [id, h] of Object.entries(c.output.hints)) assert.ok(!c.output.why[id] || !h.includes(c.output.why[id]), `${c.id}: a hint never limits`);
+  assert.ok(Object.keys(out('soil-map-ph').hints).length > 0, 'a map pH gives hints');
+  assert.deepEqual(out('soil-map-ph-pots').hints, {}, 'pots: none');
+  assert.deepEqual(out('soil-none').hints, {}, 'no soil value: none');
+  assert.deepEqual(out('soil-map-ph-pots').fit, out('soil-map-ph').fit, 'and no fit changes');
   assert.equal(file.cases.find((c) => c.id === 'seville-200-plants').input.members.length, 200, 'a 200-plant palette');
   const thinJobs = (id) => out(id).lanes.filter((l) => l.thin).length;
   assert.ok(out('seville-200-plants').lanes.some((l) => Math.max(...l.counts) > 12), 'no lane is capped at a count');

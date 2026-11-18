@@ -48,14 +48,18 @@ test('a grower shift applies to every slot of every period and scenario', () => 
   assert.equal(i.nights.value, Math.round((i.nights.map - 2) * 10) / 10);
 });
 
-test('a soil test is the one soil value a rule reads; the soil map checks nothing', () => {
+test('soilPhOf (R3): the grower\'s soil test, else the soil map\'s pH, else none; pots give none', () => {
   const map = core.siteInputsOf({ lookup: lookupOf('lyon') });
-  assert.equal(core.testedPh(map), null);
-  assert.equal(core.siteOf(map).soil, 'unsure');
+  assert.equal(core.soilPhOf(map), 6.4);
+  assert.equal(core.siteOf(map).soil, core.soilWordOf(6.4));
   const tested = core.siteInputsOf({ lookup: lookupOf('lyon'), edits: { soilPh: 5.2 } });
   assert.deepEqual(tested.soilPh, { value: 5.2, source: 'grower', map: 6.4 });
-  assert.equal(core.testedPh(tested), 5.2);
+  assert.equal(core.soilPhOf(tested), 5.2);
   assert.equal(core.siteOf(tested).soil, core.soilWordOf(5.2));
+  assert.equal(core.soilPhOf(core.siteInputsOf({ lookup: lookupOf('lyon'), edits: { soilPh: 5.2, pots: true } })), null, 'pots');
+  assert.equal(core.soilPhOf(core.siteInputsOf({ lookup: lookupOf('lyon'), room: 'pots' })), null, 'the room "pots" stands in');
+  assert.equal(core.siteOf(core.siteInputsOf({ lookup: lookupOf('lyon'), room: 'pots' })).soil, 'unsure');
+  assert.equal(core.soilPhOf(core.siteInputsOf({ lookup: null })), null, 'no location');
 });
 
 test('answers: room, light, drainage reach siteOf; unanswered is unsure, never a "no"', () => {

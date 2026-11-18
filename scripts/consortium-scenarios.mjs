@@ -75,7 +75,8 @@ export async function run(input, places) {
     if (v.level !== 'fits' && v.limiting) why[t.id] = v.limiting.factor;
     const dry = v.notes.filter((n) => DRY_NOTES.has(n));
     if (dry.length) notes[t.id] = dry;
-    const hint = v.factors.filter((f) => HINT_FACTORS.has(f.factor) && f.level !== 'fits').map((f) => f.factor);
+    // The wet check (site.ts water 'wet', the drainage answer's only check) is the drainage hint.
+    const hint = v.factors.map((f) => ({ ...f, factor: f.factor === 'water' && f.basis === 'spot' ? 'drainage' : f.factor })).filter((f) => HINT_FACTORS.has(f.factor) && f.level !== 'fits').map((f) => f.factor);
     if (hint.length) hints[t.id] = hint;
   }
   const second = members.filter(secondOf).map((t) => t.id);

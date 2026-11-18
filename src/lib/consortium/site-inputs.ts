@@ -68,10 +68,12 @@ export function siteInputsOf({ lookup, room = 'unsure', edits = NO_EDITS }: Site
   const e = { nights: shiftOf(edits.nightsShiftC), days: shiftOf(edits.daysShiftC), rain: shiftOf(edits.rainShiftMm), dry: shiftOf(edits.dryMonthsShift) };
   const periods = mapPeriods.map((p) => shifted(p, e));
   const mapToday = todayOf(mapPeriods), today = todayOf(periods);
-  const ph = lookup?.soil?.phH2o ?? null;
+  const soil = lookup?.soil ?? null, ph = soil?.phH2o ?? null;
+  const cells = soil ? soil.fillDistanceCells + soil.distanceCells : 0;
+  const near = soil && (soil.filled || soil.distanceCells > 0) ? { nearKm: Math.max(1, Math.round(cells * SOIL_CELL_KM)) } : {};
   const soilPh: SoilPhInput = typeof edits.soilPh === 'number' && Number.isFinite(edits.soilPh)
     ? { value: edits.soilPh, source: 'grower', map: ph }
-    : ph !== null ? { value: ph, source: 'map', map: ph } : { value: null, source: 'none', map: null };
+    : ph !== null ? { value: ph, source: 'map', map: ph, ...near } : { value: null, source: 'none', map: null };
   return {
     nights: climateInput(mapToday?.tminColdC, today?.tminColdC, e.nights),
     days: climateInput(mapToday?.tmaxWarmC, today?.tmaxWarmC, e.days),
@@ -136,9 +138,14 @@ export const sameEdits = (a: SiteEdits, b: SiteEdits): boolean => {
   return ka.length === kb.length && ka.every((k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]);
 };
 
-// A soil test's pH, the one soil value a rule reads today: the soil map's pH checks nothing until PP-F
-// (owner 2026-11-18), as place.ts resolveSoil before this layer.
-export const testedPh = (inputs: SiteInputs | null): number | null => (inputs?.soilPh.source === 'grower' ? inputs.soilPh.value : null);
+// The soil layer's cell, 0.05° (src/lib/climate/model.js LAYERS.soil.cellDeg), in kilometres north to
+// south: SoilPhInput.nearKm's unit.
+const SOIL_CELL_KM = 0.05 * 111.32;
+
+// The pH every soil rule reads (v14 0W-2 R3): the grower's soil test, else the soil map's, else none;
+// in pots or brought-in soil, none (the ground's pH says nothing about the pot's). A hint, never a level
+// (types.ts setsLevel).
+export const soilPhOf = (inputs: SiteInputs | null): number | null => (!inputs || inputs.pots.value === true ? null : inputs.soilPh.value);
 
 // ---- Palette goals: read beside the site inputs, never a site fact ----
 

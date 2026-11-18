@@ -555,7 +555,9 @@ export interface SiteInput<T> { value: T | null; source: InputSource }
 // A climate figure: today's merged value, the map's, and the grower's shift (0: none), applied to
 // every period (site-inputs.ts header).
 export interface ClimateInput extends SiteInput<number> { map: number | null; shift: number }
-export interface SoilPhInput extends SiteInput<number> { map: number | null }
+// nearKm: the map's value is a neighbour's (a built-up, water or ice cell took the nearest measured one,
+// or the point fell between cells), about this far away (R3; the place line says it).
+export interface SoilPhInput extends SiteInput<number> { map: number | null; nearKm?: number }
 // Watering (the Spot board's three answers; read by no rule until F4): rain only, the first years, all year.
 export const waterings = ['rain', 'first-years', 'all-year'] as const;
 export type Watering = (typeof waterings)[number];
@@ -622,8 +624,12 @@ export interface FactorVerdict {
 }
 // Whether a factor's level is the level it gives the verdict (verdict.ts worst; Details' bands read it
 // so a band never asks more than the headline): every factor but aridity, which sets the level only past
-// its wet end (owner row "Wetter than recorded is a second look"); its dry side is a note at 'fits' (PP-C5).
-export const setsLevel = (f: FactorVerdict): boolean => f.factor !== 'dry' || (f.place !== null && f.high !== null && f.place > f.high);
+// its wet end (owner row "Wetter than recorded is a second look"; its dry side is a note at 'fits',
+// PP-C5), and the soil hints, which never set it (v14 0W-2 R3): the pH ('soil-ph') and the ground
+// staying wet ('drainage', and the wet check's 'water' factor, the drainage answer's).
+export const setsLevel = (f: FactorVerdict): boolean =>
+  f.factor === 'dry' ? f.place !== null && f.high !== null && f.place > f.high
+  : f.factor !== 'soil-ph' && f.factor !== 'drainage' && !(f.factor === 'water' && f.basis === 'spot');
 // Notes beside the level, never a level themselves (3.2): the room ('room-tall', with the plant's height),
 // an annual ('annual': its winter cold is not checked), the cool-season advice, the place drier or wetter
 // than where it is recorded at the period judged (the grower's watering decides whether drier is said:

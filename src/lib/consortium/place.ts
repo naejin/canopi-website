@@ -7,7 +7,7 @@
 // The spot and soil answers are dormant until PP-F (owner 2026-11-18): no rule reads Place.spot or
 // Place.soil; the store passes the room to the site inputs, and grower edits come through SiteEdits.
 import type { PeriodId, Place, Site, SiteInputs, SitePeriod, SoilWord } from './types.ts';
-import { testedPh } from './site-inputs.ts';
+import { soilPhOf } from './site-inputs.ts';
 import { ACID_BELOW, CHALKY_ABOVE } from './site.ts';
 import { TODAY_PERIOD } from './source.ts';
 
@@ -24,11 +24,11 @@ export const emptyPlace: Place = Object.freeze({
 export const soilWordOf = (ph: number): SoilWord => (ph < ACID_BELOW ? 'acid' : ph > CHALKY_ABOVE ? 'chalky' : 'neutral');
 
 // The Site site.ts fits() reads, from the merged site inputs (site-inputs.ts), never a stored answer:
-// light as given; the soil word of a soil test's pH (the soil map checks nothing until PP-F); the wet
-// check from drainage 'wet' (the old spot water answer has no input: its dry check waits for watering's
+// light as given; the soil word of soilPhOf (a soil test's pH, else the map's; none in pots: R3); the
+// wet check from drainage 'wet' only (the map's texture gives no hint until the grower answers wet, A8) (the old spot water answer has no input: its dry check waits for watering's
 // rule, F4); the room. Every answer the grower has not given checks nothing ('unsure').
 export function siteOf(inputs: SiteInputs): Site {
-  const ph = testedPh(inputs);
+  const ph = soilPhOf(inputs);
   return {
     light: inputs.light.value ?? 'unsure',
     soil: ph === null ? 'unsure' : soilWordOf(ph),

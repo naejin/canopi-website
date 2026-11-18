@@ -7,7 +7,7 @@
 // yield-gain pairs, for display only: nothing in the suggestion reads them.
 // The flags a member carries (flagsOf, flagsFor; moved here from suggest.ts by E6 R1, so the store's
 // flags never pull the suggestion in) sit at the end.
-import type { AgentNames, CountryStatus, Fit, Flag, Interaction, InteractionType, PlantId, Severity, Site, Taxon, TaxonRef, Text } from './types.ts';
+import type { AgentNames, CountryStatus, Fit, Flag, Interaction, InteractionType, PlantId, Severity, Site, SiteKey, Taxon, TaxonRef, Text } from './types.ts';
 import type { Canopy } from './site.ts';
 import { canopyOf, fits, misfitsBeside } from './site.ts';
 
@@ -126,6 +126,11 @@ export interface FlagContext { site: Site; interactions: Interaction[]; country?
 // v14 fix round 3, 1; spec 0W-2 R1).
 const TOXIC = new Set(['Slight', 'Moderate', 'Severe']);
 
+// The site answers that are hints, never a misfit flag (v14 0W-2 R3, as types.ts setsLevel keeps them
+// from the level: the flags and the verdict stay one rule, PP-C-u14): the soil's pH and the ground
+// staying wet (site.ts water 'wet', the drainage answer's only check).
+const HINT_KEYS: ReadonlySet<SiteKey> = new Set<SiteKey>(['soil', 'water']);
+
 // A conflict found for a plant: the other member and the row (severity, type, agent, note).
 interface Found { other: PlantId; c: Conflict }
 const rank = (s: Flag['severity'] | null | undefined) => (s === 'high' ? 3 : s === 'medium' ? 2 : s === 'low' ? 1 : 0);
@@ -141,7 +146,7 @@ function flagsWith(taxon: Taxon, fit: Fit, canopy: Canopy, found: Found[], ctx: 
     if (c.severity) flag.severity = c.severity;
     out.push(Object.assign(flag, { type: c.type, agent: c.agent, note: c.note }));
   }
-  if (misfitsBeside(taxon, ctx.site, canopy, fit).length) out.push({ id, kind: 'misfit' });
+  if (misfitsBeside(taxon, ctx.site, canopy, fit).some((k) => !HINT_KEYS.has(k))) out.push({ id, kind: 'misfit' });
   if (invasiveIn(taxon, ctx.country, ctx.countryStatus === 'checked') === true) out.push({ id, kind: 'invasive' });
   const tox = taxon.warnings.toxicity?.level;
   if (tox && TOXIC.has(tox)) out.push({ id, kind: 'toxicity', level: tox });
