@@ -3,45 +3,45 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:11Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:52:49Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:c676d7c2ab37a93f
-    last_modified: 2026-11-17T23:49:27Z
+    digest: sha256:055b522d8f0d238e
+    last_modified: 2026-11-18T04:51:36Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:6b68b3a0f3306bd6
-    last_modified: 2026-11-18T00:13:24Z
+    digest: sha256:25f27fd3c3bc8810
+    last_modified: 2026-11-18T04:51:36Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:61c3735e00bbb5f2
-    last_modified: 2026-11-18T00:04:08Z
+    digest: sha256:29b3c2f6251892f4
+    last_modified: 2026-11-18T04:51:36Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:b8c580d9ae59f7c4
-    last_modified: 2026-11-18T00:03:33Z
+    digest: sha256:21da84df7c265fca
+    last_modified: 2026-11-18T04:51:36Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:13928dffc93f48fc
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:05dac65b027489d3
+    last_modified: 2026-11-18T04:51:36Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:3a3beb27521f87d1
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:ba01c67cc05e48f2
+    last_modified: 2026-11-18T04:51:36Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:247825dbbd1ebd15
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:0fc0963811ecc7a3
+    last_modified: 2026-11-18T04:51:36Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -55,8 +55,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:55d7bb694dd3d403
-    last_modified: 2026-11-16T21:53:25Z
+    digest: sha256:6b706295ccaa71c2
+    last_modified: 2026-11-18T04:51:36Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -70,8 +70,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c1c19c1206540419
-    last_modified: 2026-11-17T23:48:31Z
+    digest: sha256:86627392588fb3f5
+    last_modified: 2026-11-18T04:25:38Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -165,7 +165,7 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
   - v1–v4 (the old beta tool) are unreadable since the owner's 2026-11-17 rule "No backward compatibility work": nothing restored, no older-version line (`outdated`) or older-save line (`oldSave`, `oldRecord`, both deleted), the save left untouched until the next change overwrites it; the beta's query links (`?v=3&c=…`) are not read at all.
   - newer and unreadable versions leave the save untouched.
 - No alias handling (owner 2026-11-17): there is no `ShareState.retired`, no merge resolution and no retired/moved notice; an id the release does not list is counted in `unknownCount`.
-- The save record is `{ fragment, place, at, src, country? }`. `place` holds `l w q r h s`. Room and plot travel as the fragment's `m` and `z`. The country is kept for both the `link` and `location` sources.
+- The save record is `{ fragment, place, at, src, country? }`. `place` holds the grower's own values `f b p i d` (since v14 0W-2 R4; the old spot and soil keys `l w q r h s` are gone). Room and plot travel as the fragment's `m` and `z`. The country is kept for both the `link` and `location` sources.
 - `schema.ts` adds the fields `room`, `plot`, `spot`, `soil` and `period`, and marked `kept`, `crops` and `stage` deprecated (not written to v5); PP-B commit 0a' removed `kept` and `crops`, and `stage` is now an unsaved signal for print.
 - `site` stays a derived signal that is not saved.
 - `canopi-place` only seeds a new palette.
@@ -179,13 +179,13 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 - **Back or another link while it waits**: the reader's own spot, soil and country are put back before the next palette applies.
 - **One Undo for Place's moves**: through store.ts `offerUndo`, the same offer as Remove, Swap and Add (Start over: "Your palette was cleared; your place stays."; every suggestion placed, waited or not, from `store.suggestMembers` itself, so no caller can skip it (fix round 4, s-1, s-2); "Show my palette" offers none since fix round 3). Each snapshot is `store.snapshot()`, the schema's plus the save mark, and the Undo goes through `save.ts` `undoSave`. Since the chunk-1 merge draft.ts keeps no Undo of its own; the end of the offer is store.ts's effect, registered by `start()`.
 - **Guide preset over a save**: the preset holds the save (`applyPreset` `holdSave(true)`), so `savedInstead` keeps it one press away ("Open my saved palette instead", `draft.ts openSavedInstead`); `notices.guidePlant` replaces `guideKept`.
-- **Forget** (`state/location.ts forget`) clears `canopi-location`, `canopi-place` and the palette's spot and soil; on a held page `persist.ts` `forgetSavedPlace` scrubs the stored record's place and a location-derived country too (pre-push fix 3), and adopts the scrubbed record as `lastSave` only when the stored one was this page's, so another tab's save stays protected (second-round review 1). The tab counts its Forgets (`save.ts` `forgets`/`noteForget`, sessionStorage `canopi-forget`); `writeAddress` stamps each entry `fg`, and `arrival.ts` `ownOf` keeps only a link's `k` and `o` of an older entry's `pl`, so Back or a reload brings no forgotten answer back (second-round review 2).
+- **Forget** (`state/location.ts forget`) clears `canopi-location`, `canopi-place` and the palette's own values (`store.siteEdits` to `NO_EDITS`); on a held page `persist.ts` `forgetSavedPlace` scrubs the stored record's place and a location-derived country too (pre-push fix 3), and adopts the scrubbed record as `lastSave` only when the stored one was this page's, so another tab's save stays protected (second-round review 1). The tab counts its Forgets (`save.ts` `forgets`/`noteForget`, sessionStorage `canopi-forget`); `writeAddress` stamps each entry `fg`, and `arrival.ts` `ownOf` keeps only a link's `k` and `o` of an older entry's `pl`, so Back or a reload brings no forgotten answer back (second-round review 2).
 
 ## Store seams added by PP-B b2 (chunk 1)
 
 `store.ts` gains, additively: `step` (place or palette), `yearStep`, `notNow`, `slow`, `opening`, `offline`, `failedPools` and `failedMembers` (a guest list that failed), `verdictFailed`, `wantVerdict()` (the palette page asks for the verdict chunk on mount; `store.start()` keeps its three effects; since b1b a new load clears `verdictFailed` as it starts, so `verdictFailed` means the current load failed, and `retryVerdict()` only calls it when no load is pending and no rule is in; back online, `start()`'s `online` listener retries a refused verdict chunk in place, so no view needs a listener of its own), `waitsForVerdicts()` (b1b), `holdToast` and the exported `offerUndo` (Place's moves in `state/draft.ts` and `state/suggest-wait.ts` use it since the chunk-1 merge). The toast timer reads `__ctTimeouts.toast` in the test build.
 
-## Spot and soil answers dormant (2026-11-18)
+## Spot and soil answers removed (v14 pf 0W-2 R4, 2026-11-18)
 
-Until PP-F the spot and soil answers are dormant: `persist.ts` `palette()` spreads empty spot and soil over the saved fields, so the save, the address, links and the `canopi-place` seed (`placeSeed()`, room and plot only) write none; while a link's place waits, the save keeps the reader's own country only. The store reads neither (`store.siteInputs` merges the lookup, the room and `store.siteEdits`, the grower-edit seam the figures panel will write; `NO_EDITS` on every load, unsaved). Place's spot questions are gone. A link brings a place only with its cell (`o`) now.
+The spot and soil schema fields, `emptyPlace` and the spot and soil link keys are deleted. `persist.ts` `palette()` is the saved fields as they are; the save's `place` and the address's `pl` carry the grower's own values (`store.siteEdits`, saved since 0W-1); the `canopi-place` seed (`placeSeed()`) is room and plot only. While a link's place waits, the save keeps the reader's own country and own values (`linkPlace.own`), never the link's. A link brings a place with its cell (`o`) or the grower's values (`f b p i d`); `k` alone does not. A cut link (no `e=1`) is refused as unreadable and restores nothing (restore.ts; the "cut" notice and its strings are gone).
 

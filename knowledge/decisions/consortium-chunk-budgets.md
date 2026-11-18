@@ -5,18 +5,18 @@ description: The consortium page caps each built chunk by role and the first run
 tags: [consortium, performance]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:01Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:e8e4d9c512e074ca
-    last_modified: 2026-11-17T18:39:27Z
+    digest: sha256:e0271e7f9ac0e9b9
+    last_modified: 2026-11-18T04:25:38Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d659829480fc0fac
-    last_modified: 2026-11-18T01:44:03Z
+    digest: sha256:8c88beb694518fa1
+    last_modified: 2026-11-18T04:25:38Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs

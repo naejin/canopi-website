@@ -5,18 +5,18 @@ description: The consortium island's layers L0-L4, the import rules dependency-c
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:05Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:a2ff8e39be099afd
-    last_modified: 2026-11-18T01:44:37Z
+    digest: sha256:1a450c067761f21e
+    last_modified: 2026-11-18T04:51:36Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c1c19c1206540419
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:86627392588fb3f5
+    last_modified: 2026-11-18T04:25:38Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -70,8 +70,8 @@ sources:
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts
-    digest: sha256:d7568fde4ee5f2d8
-    last_modified: 2026-11-17T16:46:30Z
+    digest: sha256:a6ac2af229b4bd1a
+    last_modified: 2026-11-18T04:25:38Z
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs

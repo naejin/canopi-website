@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:10Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:03:58Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:03Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -18,13 +18,13 @@ sources:
   - id: browser-test
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:1e9cf505bcec0e7a
-    last_modified: 2026-11-18T01:57:14Z
+    digest: sha256:e8db586bdfd76084
+    last_modified: 2026-11-18T04:25:38Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:782639ea96593d71
-    last_modified: 2026-11-18T02:02:36Z
+    digest: sha256:c5e9898b1bad4ee2
+    last_modified: 2026-11-18T04:51:36Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -39,12 +39,12 @@ sources:
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:46f57cbfd5234252
-    last_modified: 2026-11-18T01:43:39Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:4780e3571e442b4e
-    last_modified: 2026-11-17T18:39:27Z
+    digest: sha256:38a582b6fc68700c
+    last_modified: 2026-11-18T04:25:38Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -73,8 +73,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d659829480fc0fac
-    last_modified: 2026-11-18T01:44:03Z
+    digest: sha256:8c88beb694518fa1
+    last_modified: 2026-11-18T04:25:38Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
@@ -98,8 +98,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:e78cbf1814034cb7
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:46dc6118b24ab573
+    last_modified: 2026-11-18T04:51:36Z
 ---
 
 # Responsibility

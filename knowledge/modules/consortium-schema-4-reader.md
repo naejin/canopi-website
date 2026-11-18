@@ -4,23 +4,23 @@ title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 4.5 exports and nothing older: additive-tier checks, the required 4.2 to 4.5 additions (plant_aliases accepted, never read), the light span columns and the search names file."
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:09Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:49Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:13Z }
 sources:
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
     digest: sha256:5976eec0a9471c61
-    last_modified: 2026-11-18T01:58:56Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:bac1df5b4ffcd1b5
-    last_modified: 2026-11-18T01:43:39Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:4fcebb2d2ec2adba
-    last_modified: 2026-11-18T01:44:37Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -29,23 +29,23 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:2b3666675741b3cf
-    last_modified: 2026-11-18T01:44:32Z
+    digest: sha256:fd0b37d55fa3180d
+    last_modified: 2026-11-18T04:51:36Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
     digest: sha256:caeec5097cc7810e
-    last_modified: 2026-11-18T01:45:24Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:7b32c28f32a0530d
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:e9aaa0527146c2d9
+    last_modified: 2026-11-18T04:51:36Z
   - id: consortium-source-test-mjs
     resource: ../../scripts/consortium-source.test.mjs
     title: scripts/consortium-source.test.mjs
     digest: sha256:b907598a04e8595e
-    last_modified: 2026-11-18T01:45:11Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/find/names.ts
     title: src/islands/consortium/views/find/names.ts

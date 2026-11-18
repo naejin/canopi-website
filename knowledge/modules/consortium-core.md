@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schema 4.5 (no older schema or minor) that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:52:46Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:48Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:2b3666675741b3cf
-    last_modified: 2026-11-18T01:44:32Z
+    digest: sha256:fd0b37d55fa3180d
+    last_modified: 2026-11-18T04:51:36Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -21,8 +21,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c1c19c1206540419
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:86627392588fb3f5
+    last_modified: 2026-11-18T04:25:38Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -37,37 +37,37 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:bac1df5b4ffcd1b5
-    last_modified: 2026-11-18T01:43:39Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
     digest: sha256:5976eec0a9471c61
-    last_modified: 2026-11-18T01:58:56Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
     digest: sha256:caeec5097cc7810e
-    last_modified: 2026-11-18T01:45:24Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: readme-md
     resource: ../../scripts/fixtures/consortium-v2/README.md
     title: scripts/fixtures/consortium-v2/README.md
     digest: sha256:7cc53b05ccb1f20c
-    last_modified: 2026-11-18T02:02:36Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:3a3c5d258612ced9
-    last_modified: 2026-11-18T01:53:35Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:f3b16b69f92bed04
-    last_modified: 2026-11-17T14:14:49Z
+    digest: sha256:41eb75c13da6830a
+    last_modified: 2026-11-18T04:32:21Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:8cde2d6c1b566293
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:aceaab4e54f45431
+    last_modified: 2026-11-18T04:37:58Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -81,8 +81,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:7b32c28f32a0530d
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:e9aaa0527146c2d9
+    last_modified: 2026-11-18T04:51:36Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -101,13 +101,13 @@ sources:
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
-    digest: sha256:8a0d6587efece546
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:788e3562bea607f1
+    last_modified: 2026-11-18T04:32:21Z
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:1200315aead0ea8c
-    last_modified: 2026-11-17T19:39:43Z
+    digest: sha256:853938d7571921fa
+    last_modified: 2026-11-18T04:32:21Z
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
@@ -117,7 +117,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
     digest: sha256:7c3ef0d97e101eb4
-    last_modified: 2026-11-18T01:57:22Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -132,7 +132,7 @@ sources:
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:46f57cbfd5234252
-    last_modified: 2026-11-18T01:43:39Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -146,8 +146,8 @@ sources:
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:16b48b91ae85e5a3
-    last_modified: 2026-11-18T01:55:07Z
+    digest: sha256:ada2fb6322d9da54
+    last_modified: 2026-11-18T04:32:21Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -177,7 +177,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:4fcebb2d2ec2adba
-    last_modified: 2026-11-18T01:44:37Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -186,23 +186,23 @@ sources:
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
-    digest: sha256:de3d31fb8eed5d71
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:e3764f30b6573f2d
+    last_modified: 2026-11-18T04:51:36Z
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
-    digest: sha256:a2b22c3e45cec9a4
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:d1d18c16964693d2
+    last_modified: 2026-11-18T04:51:36Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:7b38151b55e0b12a
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:04e513850f03dbfe
+    last_modified: 2026-11-18T04:51:36Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:f38e05bbc853f458
-    last_modified: 2026-11-18T01:53:42Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -216,13 +216,13 @@ sources:
   - id: verdict-ts
     resource: ../../src/lib/consortium/verdict.ts
     title: src/lib/consortium/verdict.ts
-    digest: sha256:ede78e6b8c125661
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:d165b25bd99fe1d0
+    last_modified: 2026-11-18T04:37:58Z
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:5097f48e59e0f4b2
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:a27dd2125990ab47
+    last_modified: 2026-11-18T04:32:21Z
   - id: verdict-load-ts
     resource: ../../src/lib/consortium/verdict-load.ts
     title: src/lib/consortium/verdict-load.ts
@@ -255,7 +255,7 @@ Since E6 Q3 the same test keeps `src/lib/climate` and `src/lib/location` imports
 
 | File | Holds |
 |---|---|
-| [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSIONS` [4] (schema 4.5 or later since PP-C 0b; `Taxon.light` the 4.5 light span, see [schema 4 reader](/modules/consortium-schema-4-reader.md)), `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported; declared in zones.ts since E6 R2 and re-exported here), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `origin?: PlacementOrigin` marks a guest, A9, or a borrowed placement, S5c, since E6 R4), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag`. View shapes for S2–S4 (review C5): `Verdict`, `FitReason` (room: kind `wild_height` is advisory, verdict 'fit' (owner request 2026-11-12), "height not recorded"), `Fit`, `JobId`/`jobIds`, `CellRef`, `Alternative` (`alsoFills`, `leavesEmpty`), `JobGap` (missing phases), `ShareState`, `LinkNotice` (`unknownCount`, `cut`, `long`), `DecodedLink`; `Matrix.unplaced` ("No layer yet"). Schema 2 (P5 commit 0): `Taxon.climate: TaxonClimate | null` (`tminCold`, `tmaxWarm`, `aridity` as `ClimateRange {low, median, high, count, basis}`, `cells`, `nativeShare`; null = "range not recorded"), `Taxon.areasKnown` (WCVP matched; false = native "unknown"), (S5c's `Taxon.placedFrom?`/`estimate?` and the guest's `from?` were replaced by `Taxon.origin` in E6 R4), `Details.koppen: KoppenShare[]` (largest first), `SourceInfo.schemaVersion` 2 with `climateGrid` and `rangesReview`. P5 seams: `SiteLookup`/`SitePeriod` (a structural mirror of the climate reader's lookup; store.ts checks the reader's type stays assignable, since the core may not import `src/lib/climate`), `SiteLocation {lat, lon, source: 'geo'|'search'|'map'|'link', label?, lookup}`, `scenarios`/`Scenario`/`DEFAULT_SCENARIO` ('ssp245'), `markKinds`/`Mark {kind, key, vars?, severity: 'note'|'warning'}` E6 commit 0 adds the ADR-6 types ([placement origin and factAt](/decisions/consortium-placement-origin-and-facts.md)), implemented in E6 R4: `PlacementKind` (`own` \| `guest` \| `borrowed`; `Taxon.origin` is never stamped `own`), `PlacementOrigin {list, kind, guest?}`, `SiteFitMessage` (read since E6 R2: `{id, about, severity, misfit, key, vars?, state?}`; a misfit warns in words, a note carries `state` and becomes a site mark, an unknown neither), `FactKey` (`life_cycle`, `cold_limit`, `heat_limit`, `water_need`), `FactValues` (`water_need: {drought: string \| null, moisture: string \| null}`, null only when both are unknown), `FactAt`. |
+| [types.ts](../../src/lib/consortium/types.ts) | `SCHEMA_VERSIONS` [4] (schema 4.5 or later since PP-C 0b; `Taxon.light` the 4.5 light span, see [schema 4 reader](/modules/consortium-schema-4-reader.md)), `APPLICATION_ID` 0x43434F4E. Value lists: `climateZones` (capitalised as exported; declared in zones.ts since E6 R2 and re-exported here), `regions`, `locales`, `phases`, `strata`, `roles`, `functionIds`, `interactionTypes`, `severities`, `toxicityLevels`, `layerFields`, `layerKinds`, `months`. Site answers `lights`/`soils`/`waters`/`rooms`, each with `unsure` (A7). Records: `PlantId` (the plants.id UUID, never the integer `plant`), `Placement`, `Taxon` (one plant in one climate; `origin?: PlacementOrigin` marks a guest, A9, or a borrowed placement, S5c, since E6 R4), `Traits`, `Warnings`, `Interaction`, `Reason`, `LayerValue`, `Details`, `Labels`, `SourceInfo`, `Matrix`/`MatrixCell` (empty: `gap` or `misfit`), `Flag`. View shapes for S2–S4 (review C5): `Verdict`, `FitReason` (room: kind `wild_height` is advisory, verdict 'fit' (owner request 2026-11-12), "height not recorded"), `Fit`, `JobId`/`jobIds`, `CellRef`, `Alternative` (`alsoFills`, `leavesEmpty`), `JobGap` (missing phases), `ShareState`, `LinkNotice` (`unknownCount`, `cut` (since v14 0W-2 R4 only the reason beside `unreadable`), `long`), `DecodedLink`; `Matrix.unplaced` ("No layer yet"). Schema 2 (P5 commit 0): `Taxon.climate: TaxonClimate | null` (`tminCold`, `tmaxWarm`, `aridity` as `ClimateRange {low, median, high, count, basis}`, `cells`, `nativeShare`; null = "range not recorded"), `Taxon.areasKnown` (WCVP matched; false = native "unknown"), (S5c's `Taxon.placedFrom?`/`estimate?` and the guest's `from?` were replaced by `Taxon.origin` in E6 R4), `Details.koppen: KoppenShare[]` (largest first), `SourceInfo.schemaVersion` 2 with `climateGrid` and `rangesReview`. P5 seams: `SiteLookup`/`SitePeriod` (a structural mirror of the climate reader's lookup; store.ts checks the reader's type stays assignable, since the core may not import `src/lib/climate`), `SiteLocation {lat, lon, source: 'geo'|'search'|'map'|'link', label?, lookup}`, `scenarios`/`Scenario`/`DEFAULT_SCENARIO` ('ssp245'), `markKinds`/`Mark {kind, key, vars?, severity: 'note'|'warning'}` E6 commit 0 adds the ADR-6 types ([placement origin and factAt](/decisions/consortium-placement-origin-and-facts.md)), implemented in E6 R4: `PlacementKind` (`own` \| `guest` \| `borrowed`; `Taxon.origin` is never stamped `own`), `PlacementOrigin {list, kind, guest?}`, `SiteFitMessage` (read since E6 R2: `{id, about, severity, misfit, key, vars?, state?}`; a misfit warns in words, a note carries `state` and becomes a site mark, an unknown neither), `FactKey` (`life_cycle`, `cold_limit`, `heat_limit`, `water_need`), `FactValues` (`water_need: {drought: string \| null, moisture: string \| null}`, null only when both are unknown), `FactAt`. |
 | [fold.ts](../../src/lib/consortium/fold.ts) | `fold(text)`: the one name fold for search (lowercase, ß→ss, œ→oe, æ→ae, combining marks dropped after Latin, Greek and Cyrillic letters only, so kana voicing and Hangul stay); a leaf re-exported by `index.ts`; moved here unchanged from the island's `data/search.ts` in E6 commit 0 so Start's crop search can share it (E6 K1). |
 | [source.ts](../../src/lib/consortium/source.ts) | `PlantSource`, as in design check §4: `info`, `countries`, `pool`, `interactions`, `placements`, `names`, `details`, `labels` (`cellCounts`, the test oracle, went with the matrix in PP-B commit 0a'). (`nativeIn(l3)`, the plant_areas reader for native here, was removed before the P5 push with the other S5e stubs; P5.2 restores it from `0801024`.) `loadFailures`: `too-old`, `wasm-blocked`, `wasm-fetch` (sqlite3.wasm did not arrive; review L1), `fetch`, `stale`, `damaged`, `schema`, one per §5 screen. `factAt(key, taxon, site, period)` (E6 R4, ADR-6) with `TODAY_PERIOD` `'1991-2020'`: today the stored value whatever the site and period (`life_cycle` from `is_annual`/`grown_as_annual`/`is_perennial`, `cold_limit` from `climate.tminCold.low` and `weak`, `heat_limit` from `climate.tmaxWarm.high`, `water_need` from `drought_tolerance` and `moisture_use`), null when not recorded; F2 and E7 fill the signature. Only Details reads it so far (water need) |
 | [zones.ts](../../src/lib/consortium/zones.ts) (E6 R1) | The one place the climate-zone list is declared (`climateZones` and `ClimateZone`, canopi-data climates.ord; since E6 R2, types.ts re-exports them) with the site-id mapping: `siteIdOf(zone)` ('Temperate' → 'temperate'), `siteIds` (zone order, exact tuple type), `zoneOfSiteId(id)` (any case, trimmed; null when not a zone), type `SiteId`. `src/lib/correction.mjs` derives `CLIMATES` from it and maps posted ids with `zoneOfSiteId`; `src/data/climates.ts` type-checks its ids against `SiteId` but keeps the site's display order (Mediterranean before Arid, pinned by `homepage.test.mjs`); the installer keeps a plain-node copy (`CLIMATE_ZONES`). `scripts/consortium-zones.test.mjs` checks all four agree. state.ts reads it since E6 R2 (`zoneOf` = `zoneOfSiteId`, the link's `c` = `siteIdOf`); `index.ts` exports `siteIdOf` (E6 S3), which the island's `state/draft.ts` uses in place of persist.ts's removed hand-written `siteId` |
@@ -391,7 +391,7 @@ This section supersedes the statements above where they disagree.
   - `place.ts` has real bodies: `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`), a minimal `resolveSoil` and `climateFor`. (Replaced 2026-11-18 by the [site-inputs layer](/modules/consortium-site-inputs.md): `siteOf(inputs)`, `climateFor({ inputs, scenario })`; `resolveSoil` and `siteFor` deleted.)
   - `verdict.ts`, `verdict-line.ts`, `verdict-load.ts`, `years.ts`, `holes.ts` and `weigh.ts` are seams tagged `@public`. b2 writes their bodies.
   - `weigh.ts` (PP-B b3, 2026-11-15, fix rounds 1 and 2): `weighLines(members, ctx, { pending, unchecked })` with `ctx` the `lookup` and `period` of `climateFor`'s context (ignored inside today); family lines at 3 plants and 25 % of m (owner keeps both), m counting the `unchecked` members; the water line from `factAt('water_need', t, ctx.lookup, ctx.period)` grouped by `waterNeed` (exported; drought tolerance High/Medium/Low-None → dry/medium/regular, else moisture use Low/Medium/High; any other value counts as not recorded), only `waterMix` (members: the `vars.regular` plants needing regular water, then the dry) or `waterFew` (under half recorded), else `missing` when any plant has no water need recorded, no all-clear; `'checking'` while a list is pending; `term: 'estimate'` on a borrowed list. `yourPlants` (warned, then the members not shown, then the rest; rows typed `PlantRow`) and `sizeLine`. Constants stay module-private. `site.ts`'s water check reads drought tolerance and moisture use through `factAt('water_need', t, null, TODAY_PERIOD)` (`well_drained` stays a direct read), with its own dry/wet-site mapping (a different question from Things to weigh's grouping), and like `waterNeed` reads a drought value outside High, Medium, Low, None as not recorded; every site-fit verdict of the 515 real plants over every site was byte-identical before and after (b3 fix round 2). `TODAY_PERIOD` is `periodIds[0]`.
-  - `conflicts.ts` flags every recorded toxicity level but None, Slight too (owner: mild is a warning, Moderate and above danger); toxicity never makes `warns()` true, so nothing asks.
+  - `conflicts.ts` flags every recorded toxicity level but None, Slight too (owner: mild is a warning, Moderate and above danger); toxicity never makes `warns()` true, so nothing asks. Since v14 0W-2 R1 the flag carries its `level`, and a Slight flag alone is no second look (`secondLook`).
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
 - **Range verdict vectors**: `scripts/vectors/range-verdicts.json` is a verbatim copy of canopi-data's range verdicts for the installed release (for `r-4db8a127ab860011`: `r-4db8a127ab860011.range_verdicts.json` beside the export, sha256 `b9e39c07…`, 169 vectors; it names the installed release and export). Its sha, schema and release id are checked against `src/data/consortium-index.json` in `install-consortium.test.mjs`.
@@ -400,7 +400,7 @@ This section supersedes the statements above where they disagree.
 
 - **`o` is always a cell centre.** `snapOrigin` in `state.ts` mirrors the climate grid's cell rule: 0.1° cells, rows counted from the north, columns from 180° W. A point on an edge belongs to the cell south or east of it, and longitudes wrap. `encodeLink` snaps the origin it is given, and `linkOrigin` snaps the `o` it reads, so re-encoding a link never carries a precise point. `consortium-link-v5.test.mjs` checks the snap against `src/lib/climate/grid.ts`.
 - **`k` is exactly two upper-case letters.** Anything else (`fr`, `ZZZ`, empty) reads as no country.
-- **Duplicate keys: the first is read.** `g` is the exception: it is read once per list, and a list given twice marks the link cut.
+- **Duplicate keys: the first is read.** `g` is the exception: it is read once per list, and a list given twice marks the link cut, and since v14 0W-2 R4 a cut link (no `e=1`, a malformed token list, an unknown or repeated `g`) is unreadable: nothing restored, `notice.unreadable` with `cut` as its reason. The old spot and soil keys `l w q r h s` are no keys of v5 (ignored).
 - **Height metres are dropped.** `h=higher.650` reads as `higher` and is re-encoded as `h=higher` until CLIM-4.
 - **Limits are tests, not vectors.** `MAX_LINK_IDS` and `LONG_LINK` are tested in the test file, because a vector at the token cap would be 12,000 characters.
 
@@ -427,4 +427,15 @@ Of two candidates that bring the same gain, the suggestion picks the one that is
 - Hand-off items: `Taxon.light` (4.5 `sunniest`, `shadiest`, `preferred`, read by `sqlite-source.ts` `lightOf`); `Hole.unchecked` with the "nobody known" titles and `uncheckedLine` (unknown is never a hole); `sourceLine` estimate labels (`derived` "estimate, from", `llm` "AI reading of" / "AI estimate, no source").
 - `holes.ts` `laneCounts(ctx, goals)`: each job and light level's plant count per time step, and each job's thin year spans below the palette goal `plantsPerJob` (default 2, `DEFAULT_GOALS` beside the site inputs); a lane is never capped at a count.
 - The golden scenario file `scripts/fixtures/consortium-scenarios.json` (32 cases, run by `scripts/consortium-scenarios.test.mjs`, recorded by `scripts/consortium-scenarios.mjs --record`).
+
+## v14 pf commit 0W (2026-11-18)
+
+0W-1 (behaviour-preserving seams for the pf streams; spec `.local/consortium/v2/ppc/pf/v14-spec-update.md` section 4): `holes.ts` thin-spot and next-target helpers, `verdict-line.ts` lines for them and for site edits, `site-inputs.ts` `siteEditsOf`/`sameEdits`/`plantsPerJobOf` and the pots input, link v5 keys `f b p i d j` and the requires key `u=`, the store's `plantsPerJob`, `suggestedIds`, `removeMembers`, `setSiteEdits`, `openFigure`, and the one list fold `views/kit/more.tsx` (`fold.ts`). Then the four rule commits of 0W-2, each with a unit test in `scripts/consortium-pf-0w.test.mjs` and a re-recorded scenario golden:
+
+| Rule | What changed |
+|---|---|
+| R1 | `conflicts.ts`: the toxicity flag carries `level`; Slight alone is no second look. |
+| R2 | `verdict.ts`/`future.ts`: the grower's watering answer sets the dryness note: rain or no answer "drier", first-years the same note in "water it the first years" words (`*DryFirst`, `pastDrierFirst`), all-year none (`pastDrierWatered`); the fit never moves. The old `dry_months` site path is deleted. |
+| R3 | soil pH and drainage are hints, never a level (`setsLevel` false for `soil-ph`, `drainage` and water/spot); `site-inputs.ts` `soilPhOf` (null in pots) feeds the check from the map or a soil test (basis `soil-map`/`soil-test`); `conflicts.ts` `HINT_KEYS` keep hints out of the misfit flag. |
+| R4 | link v5 drops `l w q r h s` (k and o stay); spot and soil are deleted everywhere; a cut link is unreadable and restores nothing (`cut` only the reason). |
 

@@ -5,7 +5,7 @@ description: Local Arial and Times New Roman (or their metric twins) scaled to S
 tags: [fonts, performance, layout]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:08Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:01Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:08Z }
 sources:
   - id: fonts-css
     resource: ../../src/styles/fonts.css
@@ -26,7 +26,7 @@ sources:
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
     digest: sha256:ed7fb83c8483c8b7
-    last_modified: 2026-11-18T00:12:51Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -35,8 +35,8 @@ sources:
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
-    digest: sha256:745c147106da28e6
-    last_modified: 2026-11-13T06:57:55Z
+    digest: sha256:f18e7ec7f15d8bc7
+    last_modified: 2026-11-18T04:25:38Z
 enforced_by: [scripts/browser/consortium-seams-layout.browser.test.mjs]
 ---
 

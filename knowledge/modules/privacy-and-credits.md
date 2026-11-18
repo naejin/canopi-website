@@ -4,7 +4,7 @@ title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:10Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:03:59Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:04Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -15,7 +15,7 @@ sources:
     resource: ../../src/data/consortium-credits.ts
     title: src/data/consortium-credits.ts
     digest: sha256:dbcfa8aea1d4e496
-    last_modified: 2026-11-18T01:55:18Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: datasourcespage-astro
     resource: ../../src/components/DataSourcesPage.astro
     title: src/components/DataSourcesPage.astro
@@ -59,8 +59,8 @@ sources:
   - id: consortium-state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:7b32c28f32a0530d
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:e9aaa0527146c2d9
+    last_modified: 2026-11-18T04:51:36Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
@@ -71,13 +71,13 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:b8c580d9ae59f7c4
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:21da84df7c265fca
+    last_modified: 2026-11-18T04:51:36Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:55d7bb694dd3d403
-    last_modified: 2026-11-16T21:53:25Z
+    digest: sha256:6b706295ccaa71c2
+    last_modified: 2026-11-18T04:51:36Z
 enforced_by:
   - scripts/consortium-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs

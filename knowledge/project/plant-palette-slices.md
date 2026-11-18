@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T03:47:56Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:02Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:10Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -56,8 +56,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:2a3101e2e8ec874d
-    last_modified: 2026-11-17T19:39:43Z
+    digest: sha256:37a7969f008f084d
+    last_modified: 2026-11-18T04:25:38Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -91,23 +91,23 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:55de1ad8f17e4a2b
-    last_modified: 2026-11-17T19:39:43Z
+    digest: sha256:efe236786eea77dd
+    last_modified: 2026-11-18T04:25:38Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:e8e4d9c512e074ca
-    last_modified: 2026-11-17T18:39:27Z
+    digest: sha256:e0271e7f9ac0e9b9
+    last_modified: 2026-11-18T04:25:38Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:4780e3571e442b4e
-    last_modified: 2026-11-17T18:39:27Z
+    digest: sha256:38a582b6fc68700c
+    last_modified: 2026-11-18T04:25:38Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d659829480fc0fac
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:8c88beb694518fa1
+    last_modified: 2026-11-18T04:25:38Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -126,8 +126,8 @@ sources:
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:1200315aead0ea8c
-    last_modified: 2026-11-17T19:39:43Z
+    digest: sha256:853938d7571921fa
+    last_modified: 2026-11-18T04:32:21Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -136,8 +136,8 @@ sources:
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:2a63fc91d0d7cdb2
-    last_modified: 2026-11-17T19:39:43Z
+    digest: sha256:786c4be5d52ab210
+    last_modified: 2026-11-18T04:25:38Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -216,13 +216,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:55d7bb694dd3d403
-    last_modified: 2026-11-16T21:53:25Z
+    digest: sha256:6b706295ccaa71c2
+    last_modified: 2026-11-18T04:51:36Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:6b68b3a0f3306bd6
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:25f27fd3c3bc8810
+    last_modified: 2026-11-18T04:51:36Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -296,8 +296,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:8cde2d6c1b566293
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:aceaab4e54f45431
+    last_modified: 2026-11-18T04:37:58Z
   - id: future-marks-ts
     resource: ../../src/lib/consortium/future-marks.ts
     title: src/lib/consortium/future-marks.ts
@@ -306,8 +306,8 @@ sources:
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c1c19c1206540419
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:86627392588fb3f5
+    last_modified: 2026-11-18T04:25:38Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -351,8 +351,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:f3b16b69f92bed04
-    last_modified: 2026-11-17T14:14:49Z
+    digest: sha256:41eb75c13da6830a
+    last_modified: 2026-11-18T04:32:21Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -372,7 +372,7 @@ sources:
     resource: ../../scripts/plan/pp-c-owners.json
     title: scripts/plan/pp-c-owners.json
     digest: sha256:7056bec94d62af42
-    last_modified: 2026-11-18T03:47:06Z
+    last_modified: 2026-11-18T03:48:19Z
 ---
 
 Pushes of the [Plant palette redesign](/project/consortium-v2-plan.md), in order: **PP-B, PP-C, PP-D, PP-E, PP-F, PP-G** (owner answers of 2026-11-14: no separate push A; later climates, then soil and your spot, then through the year). Module names, shapes and link keys: [Plant palette architecture](/architecture/plant-palette-architecture.md); use them exactly. Boards are named by file in `.local/consortium/v2/f1a/mockups-v3/project/<Name>.dc.html` (main checkout, gitignored); inventory rows are those of `mockups-v3/ux-inventory.md`. Citations are at `f1a/int` 648baf2. Amended 2026-11-14 by the plan recheck and the look-ahead check and by the owner's plan check answers (decision rows "Plant palette plan check answers" and "Plant palette plan amendments"), then by the owner's "Delete first" answer (rows "Delete first" and "Plant palette delete-first amendments": PP-B's commit 0 deletes the old screens before the new page is built). Amended again at the PP-B chunk-2 plan commit (2026-11-16) by the decision rows of 2026-11-14 to 2026-11-16 (scale contract, budgets as a tripwire, process fitted to risk, no export split, things to weigh, frost, search, the b1b review) and by the chunk-2 drift check recorded in `scripts/plan/pp-b-owners.json`.

@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:06Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:02Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:00Z }
 sources:
@@ -47,13 +47,13 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:e8e4d9c512e074ca
-    last_modified: 2026-11-17T18:39:27Z
+    digest: sha256:e0271e7f9ac0e9b9
+    last_modified: 2026-11-18T04:25:38Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:d659829480fc0fac
-    last_modified: 2026-11-18T01:44:03Z
+    digest: sha256:8c88beb694518fa1
+    last_modified: 2026-11-18T04:25:38Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -98,7 +98,7 @@ sources:
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
     digest: sha256:9dcf900b8bd5e06b
-    last_modified: 2026-11-18T01:44:32Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -108,7 +108,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:4fcebb2d2ec2adba
-    last_modified: 2026-11-18T01:44:37Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -117,8 +117,8 @@ sources:
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
-    digest: sha256:06b8eec382eb0f9a
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:8114cf76e3887bc7
+    last_modified: 2026-11-18T04:25:38Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -137,33 +137,33 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:3a3beb27521f87d1
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:ba01c67cc05e48f2
+    last_modified: 2026-11-18T04:51:36Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:247825dbbd1ebd15
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:0fc0963811ecc7a3
+    last_modified: 2026-11-18T04:51:36Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:55d7bb694dd3d403
-    last_modified: 2026-11-16T21:53:25Z
+    digest: sha256:6b706295ccaa71c2
+    last_modified: 2026-11-18T04:51:36Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:b8c580d9ae59f7c4
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:21da84df7c265fca
+    last_modified: 2026-11-18T04:51:36Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:13928dffc93f48fc
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:05dac65b027489d3
+    last_modified: 2026-11-18T04:51:36Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:c676d7c2ab37a93f
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:055b522d8f0d238e
+    last_modified: 2026-11-18T04:51:36Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -172,8 +172,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:6b68b3a0f3306bd6
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:25f27fd3c3bc8810
+    last_modified: 2026-11-18T04:51:36Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -182,8 +182,8 @@ sources:
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:72ff813b5dca1050
-    last_modified: 2026-11-14T21:28:50Z
+    digest: sha256:8d7e334e37472b22
+    last_modified: 2026-11-18T04:51:36Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -232,8 +232,8 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:94b11768ec22f35a
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:6fe76c5fde37b54e
+    last_modified: 2026-11-18T04:25:38Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -242,8 +242,8 @@ sources:
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
-    digest: sha256:d846d17d7663b184
-    last_modified: 2026-11-17T18:36:51Z
+    digest: sha256:af0063c7b3398eda
+    last_modified: 2026-11-18T04:25:38Z
   - id: span-ts
     resource: ../../src/islands/consortium/views/kit/span.ts
     title: src/islands/consortium/views/kit/span.ts
@@ -297,8 +297,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:8cde2d6c1b566293
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:aceaab4e54f45431
+    last_modified: 2026-11-18T04:37:58Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -312,13 +312,13 @@ sources:
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
-    digest: sha256:8a0d6587efece546
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:788e3562bea607f1
+    last_modified: 2026-11-18T04:32:21Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:c1c19c1206540419
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:86627392588fb3f5
+    last_modified: 2026-11-18T04:25:38Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -382,8 +382,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:f3b16b69f92bed04
-    last_modified: 2026-11-17T14:14:49Z
+    digest: sha256:41eb75c13da6830a
+    last_modified: 2026-11-18T04:32:21Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -392,8 +392,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:7b32c28f32a0530d
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:e9aaa0527146c2d9
+    last_modified: 2026-11-18T04:51:36Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -402,8 +402,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:2b3666675741b3cf
-    last_modified: 2026-11-18T01:44:32Z
+    digest: sha256:fd0b37d55fa3180d
+    last_modified: 2026-11-18T04:51:36Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -417,8 +417,8 @@ sources:
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
-    digest: sha256:de3d31fb8eed5d71
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:e3764f30b6573f2d
+    last_modified: 2026-11-18T04:51:36Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -504,7 +504,7 @@ The core stays flat (no subfolder of `src/lib/consortium/`): whether the boundar
 | Years of a phase | `years.ts` | words in locale files only (`en.json:231-237`) | new table |
 | Words for verdicts, holes and year spans | `verdict-line.ts` (`fitLine`, `holeLine`, `yearsLine`, returning `Line`), keys under `consortium.line.` (b2) | each surface writes its own (`views/kit/flags.ts`, `rules/site-fit.ts`, Matrix) | 3.2; Find, Swap, Details, print and the period switch never write their own keys for these |
 | Colour meaning | the token block in `src/styles/tokens.css` (section 3.5), mapped from level, severity and job only in `views/kit/flags.ts` | role and layer colours in stream CSS | PP-B commit 0 |
-| Warnings (toxic, invasive, conflicts) | `conflicts.ts` `flagsFor` (`:149`); the level → token mapping in `views/kit/flags.ts` | Slight toxicity raised no flag before b3; since b3 (2026-11-15) every recorded level but None warns, Slight too (`conflicts.ts` `TOXIC`), and toxicity never makes `warns()` true | raise it for Slight with its level (done, b3) (owner: mild = warning amber, moderate and above = danger red, words and icon always); a warning is never a verdict level and never asks (DEC:58, DEC:89) |
+| Warnings (toxic, invasive, conflicts) | `conflicts.ts` `flagsFor` (`:149`); the level → token mapping in `views/kit/flags.ts` | Slight toxicity raised no flag before b3; since b3 (2026-11-15) every recorded level but None warns, Slight too (`conflicts.ts` `TOXIC`), and toxicity never makes `warns()` true; since v14 0W-2 R1 the flag carries its level and Slight alone is no second look | raise it for Slight with its level (done, b3) (owner: mild = warning amber, moderate and above = danger red, words and icon always); a warning is never a verdict level and never asks (DEC:58, DEC:89) |
 | Suggested palette | `suggest.ts` through `loadSuggest()` (`index.ts:38-42`) | sizes at `suggest.ts:30`; gain scored on matrix cells | drop crops, and kept becomes the members `seed` (PP-B commit 0a', with Kept and Main crops); gain on "open holes filled" through a predicate `holes.ts` exports and `fillers` shares (b1b, chunk 2; built: 3 per open hole filled, no hole gain for a candidate outside its range in the page period, Swap's `alternatives()` ranks on the same verdicts); invasive tie (markers P12, P13, b1a) |
 | Palette state | `state/schema.ts` `defineState` (`:45-95`) | fields `:106-158` | 3.6 |
 | Link and save | `state.ts` (codec, `linkVersionStatus`), `state/persist.ts` (record, address, `canopi-place`) | v4 (`state.ts:32`) | section 8 |
@@ -770,6 +770,8 @@ One version for the whole redesign, written from PP-B on; the decoder accepts ev
 ```
 #v=5&c=temperate&m=small&a=…&x=…&g=tr…&z=120&y=2041-2070[&k=FR&o=45.75,4.85&l=sun&w=average&q=sheltered&r=drains&h=town&s=own.65.loam]&e=1
 ```
+
+> **Since v14 pf 0W-2 R4 (2026-11-18):** the spot and soil keys `l w q r h s` are gone (ignored when read); the place part is `k`, `o` and the grower's own values `f b p i d` (0W-1, with `j` and `u=`). A link without `e=1` (or with a malformed token list, an unknown or repeated `g`) is unreadable and restores nothing; `cut` survives only as the reason in the decode result.
 
 | Key | Meaning | Written |
 |---|---|---|

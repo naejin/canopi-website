@@ -5,7 +5,7 @@ description: Every JSON vector file of the Plant palette under scripts/vectors/ 
 tags: [consortium, tests, vectors]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:03Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:05Z }
 sources:
   - id: architecture-plant-palette-architecture
     resource: /architecture/plant-palette-architecture.md
@@ -14,18 +14,18 @@ sources:
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
-    digest: sha256:a2b22c3e45cec9a4
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:d1d18c16964693d2
+    last_modified: 2026-11-18T04:51:36Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:f38e05bbc853f458
-    last_modified: 2026-11-18T01:53:42Z
+    last_modified: 2026-11-18T02:34:14Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:7b38151b55e0b12a
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:04e513850f03dbfe
+    last_modified: 2026-11-18T04:51:36Z
 ---
 
 # Palette vector files
