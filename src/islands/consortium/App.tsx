@@ -13,7 +13,7 @@
 import type { ComponentType } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { computed } from '@preact/signals';
-import { load, offline, opening, slow, step } from './store.ts';
+import { load, offline, opening, slow, step, view } from './store.ts';
 import { T } from './strings.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 import { retryableImport } from '../../lib/consortium/index.ts';
@@ -68,13 +68,17 @@ function LoadingLine() {
   const busy = !ready.value;
   const [placed, setPlaced] = useState(false);
   useEffect(() => setPlaced(true), []);
-  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? (slow.value ? T('load.slow') : `${T('load.plants')} ${T('load.canGive')}`) : ''}</p>;
+  // "You can already give your place." only beside the Place form, never while a palette restores (R15).
+  const canGive = view.value === 'start' && !opening.value;
+  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? (slow.value ? T('load.slow') : canGive ? `${T('load.plants')} ${T('load.canGive')}` : T('load.plants')) : ''}</p>;
 }
 function PlaceOrPlaceholder() {
   return restoring.value ? <Placeholder /> : slot(Place);
 }
 
-export function App({ guide, onRetry }: AppProps) {
+// The failure screens say their own words (board Loading), with no added guide sentence (BC22); the
+// guide link stays in the page's noscript.
+export function App({ onRetry }: AppProps) {
   const { status, error } = load.value;
   if (status === 'failed' && error) {
     const screen = screens[error];
@@ -84,7 +88,6 @@ export function App({ guide, onRetry }: AppProps) {
         {screen.action === 'retry' && <p><button type="button" class="button button-primary" onClick={onRetry}>{T('load.retry')}</button></p>}
         {/* Reload keeps the address, so the link state is kept. */}
         {screen.action === 'reload' && <p><button type="button" class="button button-primary" onClick={() => location.reload()}>{T('load.reload')}</button></p>}
-        {guide && <p>{T('load.guides')} <a class="text-link" href={guide.url} hreflang={guide.lang}>{T('noscript.link')}</a></p>}
       </div>
     );
   }

@@ -49,3 +49,51 @@ export const searchStub = ({ several = SEVERAL, hold = false } = {}) => (pg) => 
 // How many plants each curated list holds in the installed release (the index's names), for the
 // climate cards' "its own list, N plants" (board ClimateHand: re-derived, never the board's figure).
 export const listSize = (climate) => index.names[climate]?.length ?? 0;
+
+// ---- fix round 1: how a control and a notice are drawn, read from the page as a grower sees them ----
+
+// A control's rank as the boards draw it: 'primary' (filled with the accent), 'secondary' (outlined),
+// 'quiet' (a link: no fill, no border); null when no visible control has that name.
+export const rankOf = (page, name) => page.evaluate((n) => {
+  const label = (e) => (e.getAttribute('aria-label') ?? e.textContent).replace(/\s+/g, ' ').trim();
+  const e = [...document.querySelectorAll('button, a')].find((x) => label(x) === n && x.getClientRects().length > 0);
+  if (!e) return null;
+  const probe = document.createElement('span');
+  probe.style.color = 'var(--accent)';
+  e.parentElement.appendChild(probe);
+  const accent = getComputedStyle(probe).color;
+  probe.remove();
+  const s = getComputedStyle(e);
+  if (s.backgroundColor === accent) return 'primary';
+  const border = parseFloat(s.borderTopWidth) > 0 && s.borderTopStyle !== 'none' && !/rgba\(0, 0, 0, 0\)|transparent/.test(s.borderTopColor);
+  return border ? 'secondary' : 'quiet';
+}, name);
+
+// A box's tone, from its border colour: 'warning' (--warning-line), 'danger' (--danger), else 'neutral'.
+export const toneOf = (page, selector) => page.evaluate((sel) => {
+  const e = document.querySelector(sel);
+  if (!e) return null;
+  const tok = (v) => { const p = document.createElement('span'); p.style.color = `var(${v})`; e.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; };
+  const c = getComputedStyle(e).borderTopColor;
+  return c === tok('--warning-line') ? 'warning' : c === tok('--danger') ? 'danger' : 'neutral';
+}, selector);
+
+// A notice as the Arrivals board draws it: its icon, its bold lead, and whether its actions stand on a
+// row of their own (below the sentence, never inline in it).
+export const noticeOf = (page, selector) => page.evaluate((sel) => {
+  const e = document.querySelector(sel);
+  if (!e) return null;
+  const lead = e.querySelector('b, strong')?.textContent.replace(/\s+/g, ' ').trim() ?? '';
+  const icon = !!e.querySelector('svg[aria-hidden="true"]');
+  const acts = [...e.querySelectorAll('button, a')].filter((b) => b.getClientRects().length);
+  // The bottom of the words (text outside the controls), then every control below it.
+  let bottom = 0;
+  const walk = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (!n.textContent.trim() || n.parentElement.closest('button, a')) continue;
+    const r = document.createRange(); r.selectNodeContents(n);
+    for (const rect of r.getClientRects()) bottom = Math.max(bottom, rect.bottom);
+  }
+  const ownRow = acts.every((b) => b.getBoundingClientRect().top >= bottom - 1);
+  return { lead, icon, ownRow, acts: acts.length };
+}, selector);

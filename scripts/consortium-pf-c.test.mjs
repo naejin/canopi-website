@@ -44,3 +44,32 @@ test('pf-c readCoords: what looks like coordinates but cannot be read is "bad", 
 test('pf-c readCoords: words are names to look up', () => {
   for (const name of ['Kiambu', 'Sevilla', 'Lyon 69000', 'Saint-Étienne', 'East London', 'N', 'São Paulo', '名古屋', '']) assert.equal(readCoords(name), null, name);
 });
+
+// ---- fix round 1 ----
+import { readFileSync } from 'node:fs';
+import { meansKoppen } from '../src/lib/consortium/site-climate.ts';
+import { koppenWordsKey } from '../src/islands/consortium/views/location/koppen-words.ts';
+
+const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+const words = Object.fromEntries(LOCALES.map((l) => [l, JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'))]));
+
+test('pf-c readCoords (R12): a single number, a postcode or an outward code is a name, never "could not read as coordinates"', () => {
+  for (const name of ['69001', 'W1', '75', 'SW1A 1AA', '1010', 'N1']) assert.equal(readCoords(name), null, name);
+  assert.equal(readCoords('1.17 36'), 'bad', 'two bare numbers still say so');
+});
+
+test('pf-c "We read" (R11): every class the site climate can give has its words in every locale', () => {
+  const stored = ['Af', 'Am', 'Aw', 'As', 'BWh', 'BWk', 'BSh', 'BSk', 'Csa', 'Csb', 'Csc', 'Cwa', 'Cwb', 'Cwc', 'Cfa', 'Cfb', 'Cfc', 'Dsa', 'Dsb', 'Dsc', 'Dsd', 'Dwa', 'Dwb', 'Dwc', 'Dwd', 'Dfa', 'Dfb', 'Dfc', 'Dfd', 'ET', 'EF'];
+  const classes = new Set();
+  for (const koppen of stored) for (const tmeanColdC of [-20, -1, 1, 10, 17, 19, 25]) for (const tmeanWarmC of [12, 20, 23, 30]) classes.add(meansKoppen({ koppen, tmeanColdC, tmeanWarmC }));
+  for (const k of classes) for (const l of LOCALES) assert.ok(words[l][`consortium.location.k.${koppenWordsKey(k)}`], `${l}: consortium.location.k.${koppenWordsKey(k)} (class ${k})`);
+});
+
+test('pf-c words (C16, C2, C17, C1): "your place", never "site", in the privacy line; the newer-link and duplicate borderline keys are gone', () => {
+  assert.match(words.en['privacy.tool.device'], /your place's climate/);
+  assert.doesNotMatch(words.en['privacy.tool.device'], /site/);
+  for (const l of LOCALES) {
+    for (const gone of ['consortium.share.pasted.newer', 'consortium.location.state.borderline']) assert.equal(words[l][gone], undefined, `${l}: ${gone}`);
+  }
+  assert.equal(words.en['consortium.share.pasted.unreadable'], 'This link could not be read. Nothing was changed.');
+});

@@ -19,7 +19,7 @@
 //   carries PP-B3 (pp-b1; F1a-P9 restored: every live region on the page before its message) -> PFC21
 //   carries PP-B2 no location (pp-b1; "Where is your place?" first, the climates behind "No location? Choose a climate") -> PFC1
 //   carries PP-B2 with a location (pp-b1; the climates hidden until "Not this climate? Choose another") -> PFC3
-//   carries PP-B2 a climate already chosen, r2-1 (pp-b1; a kept climate leaves the climates open) -> PFC10
+//   carries PP-B2 a climate already chosen, r2-1 (pp-b1; replaced in fix round 1, BC15: a kept climate opens Place on it, the cards one link away) -> PFC10
 //   carries PP-B2 r2-3 (pp-b1; ClimateHand: what a grower without a location loses, in words) -> PFC10
 //   carries PP-B2 r3-1 (pp-b1; Forget on the place row) -> PFC12
 //   carries PP-B2 conformance-2 (pp-b1; plants added on Place show under "What grows there already") -> PFC2
@@ -48,7 +48,7 @@ import { atSite, tool } from './p5-helpers.mjs';
 import { SITES } from './location-fixtures.mjs';
 import { failing } from '../expect-fail.mjs';
 import { BOARD, boxOf, control, dialogText, done, focused, frames, idsOf, inOrder, linkOf, names, palette, pastEdge, press, savedPalette, says as saysOn, saysNot, setSiteEdits, toastText, withStorage } from './pf-helpers.mjs';
-import { FIELD, listSize, searchFor, searchStub } from './pf-c-helpers.mjs';
+import { FIELD, listSize, noticeOf, rankOf, searchFor, searchStub, toneOf } from './pf-c-helpers.mjs';
 
 useHarness();
 
@@ -109,7 +109,7 @@ test('PFC2 (pf-c Place, questions 2 and 3, PlaceDesk at 1280): with a climate re
 });
 
 test('PFC3 (pf-c the climate read, LocStates "read and used at once", Place, PlaceDesk): a found place gives the row "Near Kiambu, Kenya 1.17° S, 36.83° E" with "Not this place? Search again · Adjust on the map" (LocStates "One answer"), then "We read: <climate> (…)." with the list sentence and "Not this climate? Choose another", used at once (no "Use" button); "We use this climate from now on; you can change it at any time. Your place in figures: Köppen class C…; nights in the coldest month average N °C. Every figure the checks use is there, and you can change each one."; the link opens the figures; "Not this climate? Choose another" opens the climates', async () => {
-  const page = await tool({ nominatim: 'fixture' });
+  const page = await tool({ width: 390, nominatim: 'fixture' });
   await searchFor(page, 'Kiambu');
   await says(page, /Near Kiambu, Kenya 1\.17° S, 36\.8\d° E/, { timeout: 10_000 });
   await hasAll(page, ['Not this place? Search again', 'Adjust on the map']);
@@ -176,12 +176,12 @@ failing('PFC5 (pf-c LocStates, typed coordinates, owner Q6): "-1.17, 36.83", "1�
   await done(page);
 });
 
-test('PFC6 (pf-c LocStates, Use my location): waiting, "Waiting for your device to give its position. Your browser may ask for permission." with "Stop"; refused, "Your location is blocked for this site. Search for a town or pick on a map instead; or allow it in your browser’s site settings."; not found, "Your device did not find its position in 10 seconds. Try again outdoors, or search for a town." with "Try again" and "Pick on a map"; no location service or no WebGL: the button that cannot work is not shown, Search stays', async () => {
+test('PFC6 (pf-c LocStates, Use my location): waiting, "Waiting for your device to give its position. Your browser may ask for permission." with "Stop"; refused, "Your location is blocked for this site. Search for a town or pick on a map instead; or allow it in your browser’s site settings."; not found, "Your device did not find its position in N seconds." (the wait the code uses) Try again outdoors, or search for a town." with "Try again" and "Pick on a map"; no location service or no WebGL: the button that cannot work is not shown, Search stays', async () => {
   const wait = await tool({ geolocation: 'timeout', geoTimeoutMs: 3000 });
   await press(wait, 'button', 'Use my location');
   await says(wait, 'Waiting for your device to give its position. Your browser may ask for permission.');
   await control(wait, 'button', 'Stop');
-  await says(wait, 'Your device did not find its position in 10 seconds. Try again outdoors, or search for a town.', { timeout: 15_000 });
+  await says(wait, /Your device did not find its position in (15|45) seconds\. Try again outdoors, or search for a town\./, { timeout: 15_000 });
   await hasAll(wait, ['Try again', 'Pick on a map']);
   await done(wait);
   const denied = await tool({ geolocation: 'denied' });
@@ -269,7 +269,7 @@ test('PFC9 (pf-c LocDesk at 1280): "Pick on a map" opens "Where is your place?" 
   await done(page);
 });
 
-test('PFC10 (pf-c ClimateHand, carried from PP-B2 r2-1, r2-3 and b1a2-2): "No location? Choose a climate" opens "Choose a climate", "Without a location you still get a palette. You do not get: …", each climate with its state and its list ("Ready … its own list, N plants" from the installed release, "Needs your location … nearest lists: …"), "Polar and high mountain No list yet Not covered yet. Ask for this climate", and "Choose a ready climate, or give a location, to go on."; a kept climate leaves them open', async () => {
+test('PFC10 (pf-c ClimateHand, carried from PP-B2 r2-1, r2-3 and b1a2-2): "No location? Choose a climate" opens "Choose a climate", "Without a location you still get a palette. You do not get: …", each climate with its state and its list ("Ready … its own list, N plants" from the installed release, "Needs your location … nearest lists: …"), "Polar and high mountain No list yet Not covered yet. Ask for this climate", and "Choose a ready climate, or give a location, to go on."; a kept climate opens Place on it, its card chosen', async () => {
   const page = await tool({ width: 390 });
   await press(page, 'button', 'No location? Choose a climate');
   await says(page, 'Choose a climate');
@@ -280,8 +280,12 @@ test('PFC10 (pf-c ClimateHand, carried from PP-B2 r2-1, r2-3 and b1a2-2): "No lo
   await says(page, 'Polar and high mountain No list yet Not covered yet. Ask for this climate');
   await says(page, 'Choose a ready climate, or give a location, to go on.');
   await done(page);
+  // A kept climate opens Place on it (fix round 1 BC15: the r2-1 row "a kept climate leaves the climates
+  // open" no longer matches v14); the cards are one link away, the kept one chosen.
   const kept = await withStorage({ 'canopi-climate': 'temperate' });
-  await says(kept, /Temperate Ready/);
+  await says(kept, 'Temperate list', { timeout: 10_000 });
+  await press(kept, 'button', 'Not this climate? Choose another');
+  assert.ok(await kept.evaluate(() => [...document.querySelectorAll('#ct-climates input')].find((x) => x.checked)?.closest('label').textContent.startsWith('Temperate')), 'the kept climate is the chosen card');
   await done(kept);
 });
 
@@ -359,10 +363,10 @@ test('PFC14 (pf-c Oulu, the place banner): a palette whose climate is colder tha
   await done(page);
 });
 
-test('F1a-P2 → PP-C (pf-c Arrivals, the return, owner Q3; PFC15): a palette saved here opens with "Opening your palette…", then the palette with "Welcome back. Your palette, last changed 9 November: 8 plants near Kiambu, Kenya. Kept on this device only." and "Start over"; the Place form never shows', async () => {
+test('F1a-P2 → PP-C (pf-c Arrivals, the return, owner Q3; PFC15): a palette saved here opens with "Opening your palette…", then the palette with "Welcome back. Your palette, last changed 9 November: 8 plants near Kiambu. Kept on this device only." and "Start over"; the Place form never shows', async () => {
   const save = await savedPalette('Temperate', 8, '2026-11-09T10:00:00.000Z');
   const page = await withStorage({ 'canopi-consortium': save, 'canopi-location': JSON.stringify({ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'search', label: 'Kiambu, Kenya' }) });
-  await says(page, 'Welcome back. Your palette, last changed 9 November: 8 plants near Kiambu, Kenya. Kept on this device only.', { timeout: 10_000 });
+  await says(page, 'Welcome back. Your palette, last changed 9 November: 8 plants near Kiambu. Kept on this device only.', { timeout: 10_000 });
   await control(page, 'button', 'Start over');
   await saysNot(page, '1 Where is your place?', 'a return visit never shows the Place form');
   assert.equal(await store(page, () => window.__ctTest.store.members.value.length), 8, 'the saved plants');
@@ -474,5 +478,299 @@ test('PFC21 (pf-c status regions, F1a-P9\'s row, carried from PP-B3): from Place
   await searchFor(page, 'Kiambu');
   await says(page, /We read: /, { timeout: 10_000 });
   assert.deepEqual(await page.evaluate(() => window.__late), [], 'board: every live region there before its message');
+  await done(page);
+});
+
+// ---- fix round 1 (review of 7fc9e431: board check BC*, code review R*, conformance C*) ----
+
+test('PFC22 (pf-c fix round 1 BC1, R16, C14: the steps): at 390 and 1280, once a plant is added on Place the steps still read "1 Your place", "2 Your palette", "3 Planting plan", step 2 a button that opens the palette; a returning visit marks the head as the palette step before the island runs', async () => {
+  for (const width of [390, 1280]) {
+    const page = await tool({ width, nominatim: 'fixture' });
+    await searchFor(page, 'Kiambu');
+    await says(page, /We read: /, { timeout: 10_000 });
+    const ids = await idsOf(await store(page, () => window.__ctTest.store.climate.value), 1);
+    await page.evaluate((x) => window.__ctTest.store.addMembers(x), ids);
+    await frames(page);
+    const steps = await page.evaluate(() => [...document.querySelectorAll('#ct-steps > li')].filter((li) => li.getClientRects().length).map((li) => li.innerText.replace(/\s+/g, ' ').trim()));
+    assert.deepEqual(steps, ['1 Your place', '2 Your palette', '3 Planting plan'], `board Place/PlaceDesk at ${width}: the three steps after an add`);
+    await press(page, 'button', '2 Your palette');
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value !== 'start', { timeout: 4000 }).then(() => true, () => false), 'board: step 2 opens the palette');
+    await done(page);
+  }
+  const save = await savedPalette('Temperate', 8);
+  const back = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((v) => { localStorage.setItem('canopi-consortium', v); document.addEventListener('DOMContentLoaded', () => { window.__stepAtLoad = document.getElementById('ct-head')?.dataset.step ?? ''; }); }, save) });
+  await back.waitForFunction(() => window.__stepAtLoad !== undefined, { timeout: 10_000 });
+  assert.equal(await back.evaluate(() => window.__stepAtLoad), 'palette', 'R16: a return visit paints the palette head first (no shift)');
+  await done(back);
+});
+
+test('PFC23 (pf-c fix round 1 BC3, BC4, BC23, R13, C8: the arrival notices as Arrivals draws them): each with its icon, its bold lead and its actions on their own row; ranks as drawn; warning and danger tones; "near Kiambu" (the short place)', async () => {
+  const kiambu = JSON.stringify({ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'search', label: 'Kiambu, Kenya' });
+  const save = await savedPalette('Temperate', 8, '2026-11-09T10:00:00.000Z');
+  const back = await withStorage({ 'canopi-consortium': save, 'canopi-location': kiambu });
+  await says(back, 'Welcome back. Your palette, last changed 9 November: 8 plants near Kiambu. Kept on this device only.', { timeout: 15_000 });
+  assert.deepEqual(await noticeOf(back, '[data-place-notice="welcome"]'), { lead: 'Welcome back.', icon: true, ownRow: true, acts: 1 }, 'board: welcome back');
+  assert.equal(await rankOf(back, 'Start over'), 'quiet', 'board: Start over is a link');
+  assert.equal(await toneOf(back, '[data-place-notice="welcome"]'), 'neutral');
+  await done(back);
+  const hash = await linkOf('Mediterranean', 13);
+  const over = await withStorage({ 'canopi-consortium': save, 'canopi-location': kiambu }, `/palette/${hash}`);
+  await says(over, '13 plants from the Mediterranean list. Your own palette (8 plants near Kiambu) stays on this device, untouched.', { timeout: 15_000 });
+  assert.deepEqual([await rankOf(over, 'Look at the shared palette'), await rankOf(over, 'Add its plants to mine'), await rankOf(over, 'Stay with mine')], ['primary', 'secondary', 'quiet'], 'board: the shared notice ranks');
+  await press(over, 'button', 'Look at the shared palette');
+  assert.deepEqual(await noticeOf(over, '[data-place-notice="looking"]'), { lead: 'You are looking at a shared palette.', icon: true, ownRow: true, acts: 2 }, 'board: looking');
+  assert.deepEqual([await rankOf(over, 'Keep it as mine'), await rankOf(over, 'Back to mine')], ['secondary', 'quiet']);
+  await done(over);
+  const bare = await tool({ hash: await linkOf('Mediterranean', 5) });
+  await says(bare, /This palette came without a place\./, { timeout: 10_000 });
+  assert.deepEqual(await noticeOf(bare, '[data-place-notice="noPlace"]'), { lead: 'This palette came without a place.', icon: true, ownRow: true, acts: 2 }, 'board: no place');
+  assert.equal(await toneOf(bare, '[data-place-notice="noPlace"]'), 'warning', 'board: without a place, and you have none: amber');
+  assert.deepEqual([await rankOf(bare, 'Give my place'), await rankOf(bare, 'Later')], ['primary', 'quiet']);
+  await done(bare);
+  const bad = await withStorage({ 'canopi-consortium': save }, '/palette/#v=99&c=temperate&a=abcdef&e=1');
+  await says(bad, 'This link could not be read. Nothing was changed.', { timeout: 10_000 });
+  assert.deepEqual(await noticeOf(bad, '[data-place-notice="unreadable"]'), { lead: 'This link could not be read.', icon: true, ownRow: true, acts: 2 }, 'board: a link that cannot be read');
+  assert.equal(await toneOf(bad, '[data-place-notice="unreadable"]'), 'danger');
+  assert.deepEqual([await rankOf(bad, 'Start a new palette'), await rankOf(bad, 'Back to mine')], ['secondary', 'quiet']);
+  await done(bad);
+  const missing = await withStorage({}, '/palette/?plant=Nothingus%20fakeus&climate=temperate');
+  await says(missing, /could not be kept/, { timeout: 10_000 });
+  assert.equal(await toneOf(missing, '[data-place-notice="guideMissing"]'), 'warning', 'board: the guide\'s plant is not in that list: amber');
+  assert.equal(await rankOf(missing, 'Find a plant'), 'secondary');
+  await done(missing);
+  const guide = await withStorage({ 'canopi-consortium': await savedPalette('Temperate', 4), 'canopi-location': kiambu }, '/palette/?plant=Malus%20domestica&climate=temperate');
+  await says(guide, /Your saved palette \(4 plants near Kiambu\) is kept\./, { timeout: 15_000 });
+  assert.equal(await rankOf(guide, 'Open my saved palette instead'), 'quiet');
+  await done(guide);
+});
+
+test('PFC24 (pf-c fix round 1 BC5, BC14, BC15: ClimateHand): "No location? Choose a climate" opens its own screen: "‹ Your place", the title "Choose a climate", one column of rows in the board order with a chip at the right ("Needs your location" amber), and the bar "Choose a ready climate, or give a location, to go on." at the bottom; a choice closes it; a kept climate reads "Temperate list" with "Not this climate? Choose another"', async () => {
+  const page = await tool({ width: 390 });
+  await press(page, 'button', 'No location? Choose a climate');
+  await control(page, 'button', 'Your place');
+  await control(page, 'heading', 'Choose a climate');
+  await saysNot(page, '1 Where is your place?', 'board ClimateHand: its own screen');
+  const rows = await page.evaluate(() => [...document.querySelectorAll('#ct-climates label, #ct-climates [data-climate-polar]')].map((r) => { const b = r.getBoundingClientRect(); const chip = r.querySelector('[data-chip]')?.getBoundingClientRect(); return { name: r.querySelector('[data-name]')?.textContent.trim(), x: b.x, w: b.width, chipRight: chip ? b.right - chip.right : null }; }));
+  assert.deepEqual(rows.map((r) => r.name), ['Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal', 'Polar and high mountain'], 'board: the order');
+  assert.ok(rows.every((r) => r.x === rows[0].x && r.w > 300), `board: one column of full-width rows (${JSON.stringify(rows)})`);
+  assert.ok(rows.every((r) => r.chipRight !== null && r.chipRight < 20), 'board: each chip at the right of its row');
+  assert.equal(await toneOf(page, '#ct-climates label:nth-of-type(2) [data-chip]'), 'warning', 'board: Needs your location on the warning tokens');
+  const bar = await page.evaluate(() => { const p = [...document.querySelectorAll('p')].find((x) => x.textContent.trim() === 'Choose a ready climate, or give a location, to go on.'); const b = p?.getBoundingClientRect(); return b ? { bottom: Math.round(b.bottom), vh: innerHeight } : null; });
+  assert.ok(bar && Math.abs(bar.vh - bar.bottom) < 24, `board: the closing line is a bar at the bottom (${JSON.stringify(bar)})`);
+  await page.click('#ct-climates label:nth-of-type(5)');
+  await frames(page);
+  await saysNot(page, 'Choose a ready climate', 'board: a choice closes the cards');
+  await says(page, '1 Where is your place?');
+  await says(page, 'Temperate list');
+  await hasAll(page, ['Not this climate? Choose another']);
+  assert.ok(!(await page.evaluate(() => [...document.querySelectorAll('p')].some((p) => /·\s*$/.test(p.textContent.trim())))), 'BC14: no separator left at the end of a line');
+  await press(page, 'button', 'Not this climate? Choose another');
+  await press(page, 'button', 'Your place');
+  await says(page, '1 Where is your place?');
+  await done(page);
+  const read = await tool({ width: 390, nominatim: 'fixture' });
+  await searchFor(read, 'Kiambu');
+  await says(read, /We read: /, { timeout: 10_000 });
+  await press(read, 'button', 'Not this climate? Choose another');
+  await read.click('#ct-climates label:nth-of-type(1)');
+  await says(read, /We read: Tropical|Tropical list/, { timeout: 5000 });
+  await saysNot(read, 'Choose a ready climate');
+  await hasAll(read, ['Not this climate? Choose another']);
+  await done(read);
+  const kept = await withStorage({ 'canopi-climate': 'temperate' });
+  await says(kept, 'Temperate list', { timeout: 10_000 });
+  await saysNot(kept, 'Choose a ready climate', 'a kept climate opens Place, not the cards (replaces r2-1)');
+  await done(kept);
+});
+
+test('PFC25 (pf-c fix round 1 BC6, BC7, BC8, BC18: question 1 once a place is read): at 1280 "Use my location" and "Pick on a map" as labelled buttons, no "No location? Choose a climate", the row "Adjust on the map · Search again · Forget", PlaceDesk\'s "We read" card; at 390 the LocStates row; the field holds the place found', async () => {
+  const desk = await tool({ width: 1280, nominatim: 'fixture' });
+  await searchFor(desk, 'Kiambu');
+  await says(desk, /We read: /, { timeout: 10_000 });
+  const labelled = await desk.evaluate(() => ['Use my location', 'Pick on a map'].map((n) => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === n && b.getClientRects().length)?.getBoundingClientRect().top ?? null));
+  assert.ok(labelled.every((t) => t !== null) && Math.abs(labelled[0] - labelled[1]) < 4, `board PlaceDesk: two labelled buttons on one row (${labelled})`);
+  assert.ok(!(await buttons(desk)).includes('No location? Choose a climate'), 'board PlaceDesk: no "No location?" once a place is read');
+  await hasAll(desk, ['Adjust on the map', 'Search again', 'Forget']);
+  assert.ok(!(await buttons(desk)).includes('Not this place? Search again'), 'board PlaceDesk: the settled row');
+  const zone = await store(desk, () => window.__ctTest.store.climate.value);
+  await says(desk, new RegExp(`We read: ${zone}\\. Köppen class C\\w\\w \\([^)]+\\); nights in the coldest month average −?[\\d.]+\\s?°C\\.`));
+  await saysNot(desk, 'Your place in figures: Köppen');
+  assert.equal(await desk.evaluate(() => document.querySelector('[data-location-search]').value), 'Kiambu, Kenya', 'board: the field holds the place');
+  await done(desk);
+  const phone = await tool({ width: 390, nominatim: 'fixture' });
+  await searchFor(phone, 'Kiambu');
+  await says(phone, /We read: \w+ \(/, { timeout: 10_000 });
+  await hasAll(phone, ['Not this place? Search again', 'Adjust on the map']);
+  assert.equal(await phone.evaluate(() => document.querySelector('[data-location-search]').value), 'Kiambu, Kenya', 'board Place: the field holds the place');
+  await done(phone);
+});
+
+test('PFC26 (pf-c fix round 1 BC12, BC13, BC16, BC17, BC19: the country line, room, question 3 and the frame foot): the country line one sentence with its icon, after Room on the phone and full width at the end on the laptop; "Use Kenya" filled; "Not sure" across the row at 390; no "Paste a list" at 390 and the suggestion on one line; the frame foot one row, "Start over" a link left of "Back to my palette"', async () => {
+  const phone = await tool({ width: 390, nominatim: 'fixture' });
+  await searchFor(phone, 'Kiambu');
+  await says(phone, 'Invasive warnings for Kenya · from your location · Change', { timeout: 10_000 });
+  await inOrder(phone, ['2 How much room do you have?', 'Invasive warnings for Kenya', '3 What grows there already']);
+  const line = await phone.evaluate(() => { const p = [...document.querySelectorAll('p')].find((x) => x.textContent.startsWith('Invasive warnings for')); return { icon: !!p?.querySelector('svg'), lines: Math.round(p.getBoundingClientRect().height / parseFloat(getComputedStyle(p).lineHeight || '22')) }; });
+  assert.ok(line.icon, 'board Country: the invasive icon');
+  const unsure = await phone.evaluate(() => { const ls = [...document.querySelectorAll('.ct-room label, [name="ct-site-room"]')].map((x) => x.closest('label')).filter(Boolean); const a = ls[0].getBoundingClientRect(), u = ls.at(-1).getBoundingClientRect(); return { first: a.width, unsure: u.width }; });
+  assert.ok(unsure.unsure > unsure.first * 1.8, `board Place: "Not sure" across the row (${JSON.stringify(unsure)})`);
+  assert.ok(!(await buttons(phone)).includes('Paste a list'), 'board Place: no Paste a list on the phone');
+  const sug = await phone.evaluate(() => { const p = [...document.querySelectorAll('p')].find((x) => x.textContent.startsWith('No plants in mind?')); const lh = parseFloat(getComputedStyle(p).lineHeight); return { h: p.getBoundingClientRect().height, lh }; });
+  assert.ok(sug.h < sug.lh * 1.9 + 12, `board Place: the suggestion on one line (${JSON.stringify(sug)})`);
+  await done(phone);
+  const desk = await tool({ width: 1280, nominatim: 'fixture' });
+  await searchFor(desk, 'Kiambu');
+  await says(desk, 'Invasive warnings for Kenya · from your location · Change', { timeout: 10_000 });
+  await inOrder(desk, ['3 What grows there already', 'Show my palette', 'Invasive warnings for Kenya']);
+  const w = await desk.evaluate(() => [...document.querySelectorAll('p')].find((x) => x.textContent.startsWith('Invasive warnings for')).closest('[data-ct="country"]').getBoundingClientRect().width);
+  assert.ok(w > 900, `board PlaceDesk: the country line full width at the end (${w})`);
+  await done(desk);
+  const guess = await tool({ width: 390, setup: async (pg) => { await pg.emulateTimezone('Africa/Nairobi'); await pg.evaluateOnNewDocument(() => { Object.defineProperty(navigator, 'languages', { get: () => ['en-KE', 'en'] }); }); } });
+  await press(guess, 'button', 'No location? Choose a climate');
+  assert.equal(await rankOf(guess, 'Use Kenya'), 'primary', 'board Country: Use Kenya filled');
+  await done(guess);
+  const frame = await palette({ climate: 'Temperate', site: 'kiambu', n: 8, width: 390 });
+  await press(frame, 'button', 'Change');
+  await control(frame, 'button', 'Back to my palette');
+  const foot = await frame.evaluate(() => ['Start over', 'Back to my palette'].map((n) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === n && x.getClientRects().length).getBoundingClientRect(); return { x: b.x, y: Math.round(b.top + b.height / 2) }; }));
+  assert.ok(Math.abs(foot[0].y - foot[1].y) < 4 && foot[0].x < foot[1].x, `board SiteKiambu: one bar (${JSON.stringify(foot)})`);
+  assert.deepEqual([await rankOf(frame, 'Start over'), await rankOf(frame, 'Back to my palette')], ['quiet', 'primary']);
+  await done(frame);
+});
+
+test('PFC27 (pf-c fix round 1 BC20, R7, R17: the map dialog): LocDesk\'s × close, a filled Search, answers as rows with "Choose" and a pin; "pick on a map." with no space; "Use this point" with its check mark; the dialog outside every live region and its point line not live; LocMap\'s foot at the bottom of the screen; "Centre on my location" says a refusal', async () => {
+  const desk = await tool({ width: 1280, nominatim: 'fixture', setup: searchStub() });
+  await press(desk, 'button', 'Pick on a map');
+  await control(desk, 'dialog', /./);
+  await control(desk, 'button', 'Close');
+  assert.equal(await desk.evaluate(() => [...document.querySelectorAll('dialog[open] button')].find((b) => b.getAttribute('aria-label') === 'Close')?.textContent.trim()), '', 'board LocDesk: an × icon, no word');
+  assert.equal(await rankOf(desk, 'Search'), 'primary', 'board LocDesk: Search filled');
+  assert.ok(await desk.evaluate(() => !!document.querySelector('dialog[open] [data-location-use-centre] svg')), 'board: Use this point with its check mark');
+  const live = await desk.evaluate(() => { const d = document.querySelector('dialog[open]'); return { inLive: !!d.parentElement.closest('[role="status"], [aria-live]'), liveInside: [...d.querySelectorAll('[aria-live]')].map((x) => x.getAttribute('aria-live')).filter((v) => v !== 'off') }; });
+  assert.deepEqual(live, { inLive: false, liveInside: [] }, 'R7: the dialog is no status message, its point line not live');
+  await done(desk);
+  const several = await tool({ width: 390, nominatim: 'fixture', setup: searchStub() });
+  await searchFor(several, 'Kiambu');
+  await says(several, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
+  await says(several, 'None of these? Try the nearest town, or pick on a map. Place names');
+  assert.ok(await several.evaluate(() => !document.querySelector('[data-location-choices]').closest('[role="status"]')), 'R7: the answers and their buttons are outside the live region');
+  await done(several);
+  const phone = await tool({ width: 390, geolocation: 'denied' });
+  await press(phone, 'button', 'Pick on a map');
+  await phone.waitForSelector('dialog[open] [data-location-use-centre]', { timeout: 10_000 });
+  const foot = await phone.evaluate(() => { const d = document.querySelector('dialog[open]').getBoundingClientRect(); const b = document.querySelector('dialog[open] [data-location-use-centre]').getBoundingClientRect(); return { gap: Math.round(d.bottom - b.bottom) }; });
+  assert.ok(foot.gap < 40, `board LocMap: the foot at the bottom (${foot.gap} px below)`);
+  await press(phone, 'button', 'Centre on my location');
+  await says(phone, 'Your location is blocked for this site.', { inDialog: true, timeout: 5000 });
+  await done(phone);
+});
+
+test('PFC28 (pf-c fix round 1 R2, R12, C9: names and coordinates): a postcode or a single number is looked up as a name; text the field refused as coordinates never places the grower at a guessed point', async () => {
+  const page = await tool({ width: 390, nominatim: 'fixture' });
+  for (const [q, n] of [['69001', 1], ['W1', 2]]) {
+    await searchFor(page, q);
+    for (let i = 0; i < 50 && page.nominatim.length < n; i++) await new Promise((r) => setTimeout(r, 100));
+    assert.equal(page.nominatim.length, n, `R12: "${q}" goes to the place search`);
+    await saysNot(page, 'as coordinates', `R12: "${q}" is no coordinates`);
+  }
+  await searchFor(page, '1.17 36');
+  await says(page, 'We could not read “1.17 36” as coordinates.');
+  await press(page, 'button', 'Search');
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(await store(page, () => window.__ctTest.store.location.value), null, 'R2: never a guessed point');
+  await done(page);
+});
+
+test('PFC29 (pf-c fix round 1 R5: a climate chosen by hand stays): after "Use <other>" or "Not this climate? Choose another", a new point in the same cell keeps it; another cell takes its own', async () => {
+  const page = await tool({ width: 390, nominatim: 'fixture' });
+  await searchFor(page, 'Kiambu');
+  await says(page, /We read: /, { timeout: 10_000 });
+  const read = await store(page, () => window.__ctTest.store.climate.value);
+  const other = read === 'Tropical' ? 'Temperate' : 'Tropical';
+  await press(page, 'button', 'Not this climate? Choose another');
+  const nth = await page.evaluate((z) => [...document.querySelectorAll('#ct-climates label')].findIndex((l) => l.textContent.startsWith(z)) + 1, other);
+  await page.click(`#ct-climates label:nth-of-type(${nth})`);
+  await frames(page);
+  assert.equal(await store(page, () => window.__ctTest.store.climate.value), other);
+  // Adjust on the map, the cross moved a few hundred metres inside the same cell, Use this point.
+  const at = async (lat, lon) => {
+    await press(page, 'button', 'Adjust on the map');
+    await page.waitForFunction(() => typeof window.__ctTest.mapCentre === 'function', { timeout: 10_000 });
+    await page.evaluate(([a, b]) => window.__ctTest.mapCentre({ lat: a, lon: b }), [lat, lon]);
+    await press(page, 'button', 'Use this point');
+    await page.waitForFunction((a) => Math.abs((window.__ctTest.store.location.value?.lat ?? 99) - a) < 0.01 && !!window.__ctTest.store.location.value?.lookup, { timeout: 10_000 }, lat);
+  };
+  await at(SITES.kiambu[0] - 0.002, SITES.kiambu[1] + 0.002);
+  assert.equal(await store(page, () => window.__ctTest.store.climate.value), other, 'R5: the same cell keeps the grower\'s climate');
+  await at(SITES.seville[0], SITES.seville[1]);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Mediterranean', { timeout: 10_000 }).then(() => true, () => false), 'R5: another cell takes its own climate');
+  await done(page);
+});
+
+test('PFC30 (pf-c fix round 1 R3, R4, R9, C11: the shared palette over yours): "Keep it as mine" makes it the save, with Undo; "Add its plants to mine" keeps every plant\'s list and the reader\'s place and values; the welcome line goes at the first change', async () => {
+  const kiambu = JSON.stringify({ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'search', label: 'Kiambu, Kenya' });
+  const save = await savedPalette('Temperate', 8);
+  const hash = await linkOf('Mediterranean', 13);
+  const keep = await withStorage({ 'canopi-consortium': save }, `/palette/${hash}`);
+  await press(keep, 'button', 'Look at the shared palette', 10_000);
+  await press(keep, 'button', 'Keep it as mine');
+  assert.ok(await keep.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('canopi-consortium')).fragment.includes('c=mediterranean') || !JSON.parse(localStorage.getItem('canopi-consortium')).fragment.includes('temperate'); } catch { return false; } }, { timeout: 4000 }).then(() => true, () => false), 'R3: the shared palette is the save now');
+  await saysNot(keep, 'Open my saved palette', 'R3: no offer to go back to what was replaced, but Undo');
+  await press(keep, 'button', 'Undo');
+  assert.ok(await keep.waitForFunction((s) => localStorage.getItem('canopi-consortium') === s, { timeout: 4000 }, save).then(() => true, () => false), 'R3: Undo puts the old save back');
+  await done(keep);
+  const add = await withStorage({ 'canopi-consortium': save, 'canopi-location': kiambu }, `/palette/${hash}`);
+  await add.waitForFunction(() => !!window.__ctTest?.store?.location.value?.lookup, { timeout: 15_000 });
+  await setSiteEdits(add, { watering: 'rain' });
+  await press(add, 'button', 'Add its plants to mine', 10_000);
+  assert.ok(await add.waitForFunction(() => window.__ctTest.store.members.value.length > 8, { timeout: 8000 }).then(() => true, () => false), 'its plants join mine');
+  await add.waitForFunction(() => window.__ctTest.store.memberTaxa.value.length === window.__ctTest.store.members.value.length, { timeout: 15_000 }).catch(() => {});
+  const homes = await add.evaluate(() => { const s = window.__ctTest.store; return { members: s.members.value.length, drawn: s.memberTaxa.value.length, edits: s.siteEdits.value, place: s.location.value?.label }; });
+  assert.equal(homes.drawn, homes.members, `R4: every plant keeps its list (${JSON.stringify(homes)})`);
+  assert.deepEqual([homes.edits, homes.place], [{ watering: 'rain' }, 'Kiambu, Kenya'], 'C11: the reader\'s place and values stay');
+  await done(add);
+  const back = await withStorage({ 'canopi-consortium': save });
+  await says(back, /Welcome back\./, { timeout: 15_000 });
+  const ids = await idsOf('Temperate', 1, 20);
+  await back.evaluate((x) => window.__ctTest.store.addMembers(x), ids);
+  await saysNot(back, 'Welcome back.', 'R9: a one-time arrival line');
+  await done(back);
+});
+
+test('PFC31 (pf-c fix round 1 R10, R14/C6, R15, BC22, C1: words that must be true): the timeout names the wait the code uses; "checked against yours" says "with your own values" only when there are some; "You can already give your place." only beside the Place form; the failed load has no added guide sentence; a bad link pasted into the open tab reads as the board says', async () => {
+  const wait = await tool({ geolocation: 'timeout', geoTimeoutMs: 1000 });
+  await press(wait, 'button', 'Use my location');
+  await says(wait, /Your device did not find its position in (15|45) seconds\./, { timeout: 15_000 });
+  await done(wait);
+  const mine = await withStorage({ 'canopi-location': JSON.stringify({ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'search', label: 'Kiambu, Kenya' }) }, `/palette/${await linkOf('Mediterranean', 5)}`);
+  await says(mine, 'This palette came without a place, so it is checked against yours: near Kiambu, Kenya. The sender’s place and own values were not sent.', { timeout: 15_000 });
+  await done(mine);
+  const slow = await h.open(`/palette/${await linkOf('Mediterranean', 5)}`, { hook: true, mapTiles: 'stub', database: 'hold' });
+  await says(slow, 'Loading the plant list…', { timeout: 8000 });
+  await saysNot(slow, 'You can already give your place.', 'R15: no place form on screen');
+  await slow.releaseHeld();
+  await done(slow);
+  const lost = await h.open('/palette/', { hook: true, mapTiles: 'stub', database: 'stall', timeouts: { stall: 500 } });
+  await says(lost, 'The plant list did not load. Check your connection.', { timeout: 10_000 });
+  await saysNot(lost, 'Meanwhile, the Field Guides', 'BC22: the board has no guide sentence here');
+  await done(lost);
+  const open = await palette({ n: 3 });
+  await open.evaluate(() => { location.hash = '#v=99&c=temperate&a=abcdef&e=1'; });
+  await says(open, 'This link could not be read. Nothing was changed.', { timeout: 8000 });
+  await saysNot(open, 'The pasted link could not be read');
+  await done(open);
+});
+
+test('PFC32 (pf-c fix round 1 BC10, BC11, C7: the palette head at a borrowed climate): the place line with its pin and the place in bold, small; the Oulu banner neutral, with the two bold spans and the 2041–2070 count from the engine', async () => {
+  const page = await palette({ climate: 'Temperate', site: 'yakutsk', n: 5 });
+  await page.evaluate(async () => { const s = window.__ctTest.store; s.climate.value = 'Boreal'; await s.loadPool('Boreal'); });
+  await says(page, /Colder than any list we have made\./, { timeout: 15_000 });
+  await says(page, /whose climate range includes your place, \d+ by 2041–2070\. Each is an estimate\./, { timeout: 15_000 });
+  const banner = await page.evaluate(() => [...document.querySelectorAll('[data-place-banner] b, [data-place-banner] strong')].map((b) => b.textContent.trim()));
+  assert.deepEqual(banner, ['Colder than any list we have made.', 'Each is an estimate.'], 'board Oulu: the two bold spans');
+  assert.equal(await toneOf(page, '[data-place-banner]'), 'neutral', 'board Oulu: information, not a warning');
+  const head = await page.evaluate(() => { const p = document.querySelector('[data-place-line]'); return { pin: !!p.querySelector('svg'), bold: p.querySelector('b, strong')?.textContent.trim(), size: parseFloat(getComputedStyle(p).fontSize) }; });
+  assert.deepEqual([head.pin, head.bold], [true, 'Near yakutsk'], 'board: pin and the place in bold');
+  assert.ok(head.size <= 14, `board: the line in small text (${head.size})`);
   await done(page);
 });

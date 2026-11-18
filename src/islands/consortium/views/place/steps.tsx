@@ -1,37 +1,27 @@
 /** @jsxImportSource preact */
 // The three steps above the page title (v14 boards Place, PlaceDesk, SiteKiambu; pf-c): "1 Your place",
-// "2 Your palette", "3 Planting plan", in the page head (ConsortiumPage.astro #ct-steps, static so they
-// show before the island). On Place, step 1 is current and step 2 goes to the palette once it has
-// plants; the plan is PP-D's and stays words. On the palette step the head carries data-step="palette":
-// the steps and the lede give way to the palette's own head (shell.css).
-import { render } from 'preact';
+// "2 Your palette", "3 Planting plan", in the page head (ConsortiumPage.astro #ct-steps), static so they
+// show before the island, and never rendered again here (BC1, C14: no second render root over static
+// markup). On Place, step 2's button stands in place of its words once the palette has plants; the
+// plan is PP-D's and stays words. The head carries data-step ("palette" on the palette step: the steps
+// and the lede give way to the palette's own head, shell.css); the page's inline script sets it first
+// (R16).
 import { useEffect } from 'preact/hooks';
 import { members, view } from '../../store.ts';
-import { T } from '../../strings.ts';
 import { showPalette } from '../../state/draft.ts';
 
-function List({ toPalette }: { toPalette: boolean }) {
-  return (
-    <>
-      <li aria-current="step"><span class="ct-steps-n">1</span> {T('palette.stepPlace')}</li>
-      <li>{toPalette
-        ? <button type="button" class="link-button ct-link" onClick={showPalette}><span class="ct-steps-n">2</span> {T('palette.stepPalette')}</button>
-        : <><span class="ct-steps-n">2</span> {T('palette.stepPalette')}</>}</li>
-      <li><span class="ct-steps-n">3</span> {T('palette.stepPlan')}</li>
-    </>
-  );
-}
-
+let bound = false;
 export function Steps() {
   const onPalette = view.value !== 'start';
   const toPalette = members.value.length > 0;
   useEffect(() => {
-    const head = document.getElementById('ct-head'), box = document.getElementById('ct-steps');
+    const head = document.getElementById('ct-head');
     if (head) head.dataset.step = onPalette ? 'palette' : 'place';
-    if (!box || onPalette) return;
-    // The static items go once; render then owns the list.
-    if (!box.dataset.live) { box.replaceChildren(); box.dataset.live = ''; }
-    render(<List toPalette={toPalette} />, box);
+    const words = head?.querySelector<HTMLElement>('[data-step-words]'), button = head?.querySelector<HTMLButtonElement>('[data-step-palette]');
+    if (!words || !button) return;
+    if (!bound) { button.addEventListener('click', showPalette); bound = true; }
+    button.hidden = !toPalette;
+    words.hidden = toPalette;
   }, [onPalette, toPalette]);
   return null;
 }

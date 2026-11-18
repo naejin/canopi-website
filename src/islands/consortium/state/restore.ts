@@ -16,10 +16,11 @@ import { lookingThrough } from './lookups.ts';
 // The notices a link (or the save) left for the reader (Place shows them).
 // newer, unreadable and period (link v5, plant-palette-architecture 8.2) are set here.
 // guidePlant: the plant a guide preset put in the palette (8.3; not "kept").
-// pasted: a link pasted while a consortium was shown that changed nothing (older or newer version,
-// unreadable (cut, or no climate), its plant list not loaded); failed: a link or the save whose plant
-// list did not load.
-type PastedProblem = 'newer' | 'unreadable' | 'failed';
+// pasted: a link pasted while a consortium was shown that changed nothing (unreadable: cut, damaged,
+// no climate or another version, one message as v14 Arrivals gives it; or its plant list not loaded);
+// failed: a link or the save whose plant list did not load. `newer` stays false: the core's LinkNotice
+// still carries it, but restore() refuses every other version as unreadable (C2).
+type PastedProblem = 'unreadable' | 'failed';
 export interface Notices extends LinkNotice { guideMissing: string | null; guidePlant: PlantId | null; pasted: PastedProblem | null; failed: boolean }
 export const NO_NOTICES: Notices = { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false, guideMissing: null, guidePlant: null, pasted: null, failed: false };
 export const notices = signal<Notices>({ ...NO_NOTICES });
@@ -222,11 +223,7 @@ export async function restore(fragment: string, { from, src = null, keep = false
       // it; opening the save owns it (state/save.ts). In the batch, so the save sees the palette applied.
       holdSave(from === 'link' || hold);
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings, from === 'saved' && !!place && new URLSearchParams(place).get(SUGGESTED_KEY) === '1');
-      // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
-      // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays
-      // (round 4, 2).
-      if (store.proposedFromSave.peek()) { store.proposedClimate.value = null; store.proposedFromSave.value = false; }
-      notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: false, newer: d.notice.newer, period: d.notice.period, unreadable: false, pasted: null, failed: false };
+      notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: false, newer: false, period: d.notice.period, unreadable: false, pasted: null, failed: false };
       linkPlace.value = asks ? { own: mine } : null;
       if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no

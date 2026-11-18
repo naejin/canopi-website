@@ -37,9 +37,8 @@
 .ct .ct-icon-button:hover, .ct-map-dialog .ct-icon-button:hover { border-color: var(--text); }
 
 /* What we read, the place row, the answers: quiet panels. */
-.ct .ct-location-live { display: grid; gap: 8px; }
-.ct .ct-location-live > [data-location-state] { display: grid; gap: 8px; }
-.ct .ct-location-live > [data-location-state] > p { margin: 0; }
+.ct .ct-location-body { display: grid; gap: 8px; }
+.ct .ct-location-body > p { margin: 0; }
 .ct .ct-location-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; }
 .ct .ct-read { display: grid; gap: 6px; padding: 9px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-alt); font-size: 15px; line-height: 21px; }
 .ct .ct-read p { margin: 0; }
@@ -68,8 +67,6 @@
 .ct #ct-climates { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .ct #ct-climates[hidden] { display: none; }
 .ct #ct-climates > legend { margin-bottom: 4px; }
-.ct .ct-card.is-off { cursor: default; border-style: dashed; background: var(--surface-alt); }
-.ct .ct-place .ct-card-places { display: block; }
 
 /* How much room: each answer shows its height limit under its name. */
 .ct .ct-room { margin: 0; padding: 0; border: 0; min-width: 0; }
@@ -152,7 +149,6 @@
 @media (max-width: 639px) {
   .ct .ct-place-field { font-size: 16px; }
   .ct-map-dialog:not(.is-desk) { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
-  .ct .ct-frame-foot .button { flex: 1 1 100%; }
 }
 
 /* "Show my palette" (boards Place, PlaceDesk): its chevron; on a phone it stays at the bottom of the screen. */
@@ -160,3 +156,102 @@
 @media (max-width: 639px) {
   .ct .ct-place .ct-cta { position: sticky; bottom: 0; z-index: 1; padding: 10px 0; border-top: 1px solid var(--border); background: var(--bg); justify-content: center; text-align: center; }
 }
+
+/* ---- fix round 1 (pf-c): boards Arrivals, ClimateHand, Place, PlaceDesk, LocDesk, LocMap, SiteKiambu, Oulu ---- */
+/* The arrival notices: icon, bold lead, actions on their own row; tone by border and ground, said in words too. */
+.ct .ct-arrival { display: grid; gap: 10px; margin: 0; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-alt); overflow-wrap: anywhere; }
+.ct .ct-arrival p { margin: 0; }
+.ct .ct-arrival.is-warning { border-color: var(--warning-line); background: var(--warning-bg); }
+.ct .ct-arrival.is-danger { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
+.ct .ct-arrival-card { background: var(--surface); }
+.ct .ct-arrival-text { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
+.ct .ct-arrival-text strong, .ct .ct-arrival-title { font-weight: 600; }
+.ct .ct-arrival-title { display: flex; gap: 10px; align-items: center; margin: 0; font-size: 17px; }
+.ct .ct-arrival-icon, .ct .ct-hand-back svg, .ct .ct-chip svg, .ct .ct-country-icon, .ct .ct-ico { flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ct .ct-arrival-icon { margin-top: 2px; }
+.ct .ct-arrival.is-warning .ct-arrival-icon { color: var(--warning); }
+.ct .ct-arrival.is-danger .ct-arrival-icon { color: var(--danger); }
+.ct .ct-arrival-acts { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.ct .ct-arrival-acts .ct-link { min-height: 32px; font-size: inherit; }
+.ct .ct-arrival-stack .button-primary { flex: 1 1 100%; }
+
+/* ClimateHand: its own screen. */
+.ct .ct-hand { display: grid; gap: 12px; padding-bottom: 64px; }
+.ct .ct-hand-back { justify-self: start; gap: 4px; min-height: 32px; }
+.ct .ct-hand-title { margin: 0; font-family: var(--font-display, Literata, serif); font-size: 26px; font-weight: 400; line-height: 1.2; }
+.ct .ct-hand #ct-climates { gap: 8px; }
+.ct .ct-hand-row { position: relative; display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); cursor: pointer; }
+.ct .ct-hand-row input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.ct .ct-hand-row:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-hand-row.is-chosen { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.ct .ct-hand-row.is-off { cursor: default; border-style: dashed; background: var(--surface-alt); }
+.ct .ct-hand-row.is-off a { position: relative; }
+.ct .ct-hand-head { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.ct .ct-hand-name { font-weight: 600; font-size: 17px; }
+.ct .ct-hand-desc { font-size: 13px; color: var(--text-secondary); }
+.ct .ct-chip { display: inline-flex; gap: 4px; align-items: center; flex: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--text-secondary); background: var(--surface-alt); }
+.ct .ct-chip.is-warning { border-color: var(--warning-line); background: var(--warning-bg); color: var(--text); }
+.ct .ct-hand-bar { position: fixed; inset: auto 0 0 0; z-index: 5; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); text-align: center; }
+.ct .ct-hand-bar p { margin: 0; font-size: 14px; }
+.ct .ct-kept { margin: 0; }
+.ct .ct-kept .ct-link { min-height: 32px; font-size: inherit; }
+
+/* "We read": the card, its icon; "We use…" outside it. */
+.ct .ct-read-wrap { display: grid; gap: 6px; }
+.ct .ct-read-wrap > .ct-read { display: flex; gap: 10px; align-items: flex-start; }
+.ct .ct-read-wrap > .ct-read .ct-arrival-icon { color: var(--accent-ink); }
+.ct .ct-read-use { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.ct .ct-read-use .ct-link { min-height: 28px; font-size: inherit; }
+
+/* PlaceDesk: the labelled ways under the field. */
+.ct .ct-q-ways { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.ct .ct-q-ways .button { gap: 6px; }
+
+/* The place row (LocStates, PlaceDesk, SiteKiambu). */
+.ct .ct-place-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; align-items: start; }
+.ct .ct-place-row > p { margin: 0; grid-column: 2; }
+.ct .ct-place-row > svg { grid-row: 1 / span 2; margin-top: 2px; }
+.ct .ct-place-row-text { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+
+/* LocDesk: answers as whole buttons; privacy lines with a lock. */
+.ct-answers .ct-answer { display: block; padding: 0; }
+.ct-answer-row { display: flex; gap: 10px; align-items: center; width: 100%; min-height: 52px; padding: 10px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ct-answer-row:hover { background: var(--surface-alt); }
+.ct-answer-row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.ct-answer-text { display: grid; flex: 1 1 auto; min-width: 0; }
+.ct-answer-go { display: inline-flex; gap: 2px; align-items: center; flex: none; color: var(--accent-ink); font-weight: 600; }
+.ct-privacy { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 13px; color: var(--text-secondary); }
+.ct-map-foot { border-top: 1px solid var(--border); padding-top: 12px; }
+.ct-map-foot .button { gap: 6px; }
+.ct-map-said:empty { display: none; }
+.ct-map-dialog .ct-icon-button[aria-busy="true"] { opacity: 0.6; }
+
+/* SiteKiambu: one foot row, Start over a link at the left. */
+.ct .ct-frame-foot { align-items: center; }
+.ct .ct-frame-over { flex: 1 1 auto; justify-content: flex-start; min-height: 44px; font-size: inherit; }
+
+/* Country: one sentence with its icon. */
+.ct .ct-country-icon { align-self: center; color: var(--text-secondary); }
+
+/* Oulu: the place banner on the neutral card; the place line's pin and bold place. */
+.ct .ct-place-banner.is-neutral { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-alt); }
+.ct .ct-place-banner strong { font-weight: 600; }
+.ct .ct-place-line { font-size: 14px; }
+.ct .ct-place-line .ct-ico { vertical-align: -3px; margin-right: 4px; }
+
+@media (max-width: 639px) {
+  .ct .ct-room-row label:last-child { grid-column: 1 / -1; }
+  .ct-map-dialog:not(.is-desk)[open] { display: flex; flex-direction: column; }
+  .ct-map-dialog:not(.is-desk)[open] .ct-map-foot { margin-top: auto; }
+}
+@media (min-width: 960px) {
+  .ct .ct-hand-bar { position: static; border: 0; padding: 4px 0 0; text-align: start; }
+  .ct .ct-hand { padding-bottom: 0; }
+}
+/* Place: the suggestion under "Show my palette", centred and small (board Place 390). */
+.ct .ct-place-suggest { font-size: 14px; text-align: center; }
+.ct .ct-place-suggest .ct-link { font-size: inherit; }
+.ct .ct-place-main { display: contents; }
+.ct .ct-place-main[hidden], .ct .ct-hand[hidden] { display: none; }
+.ct-answers .ct-inline-link { display: inline; min-height: 0; padding: 0; font-size: inherit; }
+.ct-map-titles { display: grid; gap: 2px; flex: 1 1 auto; min-width: 0; }

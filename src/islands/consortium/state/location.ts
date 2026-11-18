@@ -30,7 +30,7 @@ import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLooku
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../lib/location/registry.ts';
 import { geocodingTransport } from '../../../lib/location/transport.ts';
-import { currentPosition, queryGeolocationPermission } from '../../../lib/location/geolocation.ts';
+import { currentPosition, queryGeolocationPermission, PROMPT_CAP_MS, SITE_POSITION_OPTIONS } from '../../../lib/location/geolocation.ts';
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import { pageLang } from '../strings.ts';
@@ -51,6 +51,10 @@ export const choices = signal<Choices | null>(null);
 export const badCoords = signal<string | null>(null);
 // The site in use came from typed coordinates: "Read on this device. Nothing was sent, so the place has no name."
 export const typed = signal(false);
+// How long "Use my location" waited before it gave up, in seconds, as the read used it (R10): the
+// browser's own timeout once the permission was granted, else the one cap over the prompt and the fix
+// (lib/location/geolocation.ts currentPosition).
+export const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
 // The last ask, for "Try again" (offline search, device timeout, a climate that did not load).
 let lastAsk: (() => Promise<void>) | null = null;
 export const tryAgain = (): Promise<void> => (lastAsk ? lastAsk() : Promise.resolve());
@@ -150,23 +154,26 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   if (!lookup) {
     // A link's location not read yet drives nothing: it goes, as before; a site read stays.
     const keep = !!store.location.peek()?.lookup;
-    batch(() => { if (!keep) { store.location.value = null; store.proposedClimate.value = null; } unread.value = false; line.value = { state: 'failed', ...extra }; });
+    batch(() => { if (!keep) store.location.value = null; unread.value = false; line.value = { state: 'failed', ...extra }; });
     return;
   }
   const sc = siteClimate(lookup);
   if (sc.state === 'sea') { line.value = { state: 'sea', ...extra }; return; }
   const loc: SiteLocation = { lat, lon, source, ...(label ? { label } : {}), lookup };
+  // What the place before this one read (R5): a climate the grower chose by hand ("Use <other>", "Not
+  // this climate? Choose another") stays while the new point reads the same climate.
+  const before = store.location.peek()?.lookup;
+  const readBefore = before ? siteClimate(before).suggested : null;
   siteFound(() => {
     // Another climate cell clears the grower's own values (A7: store.placeAt).
     store.placeAt(loc);
-    store.proposedClimate.value = null;
-    store.proposedFromSave.value = false;
     typed.value = fromTyped;
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
   // The climate read is used at once (v13 Place; borderline: its own class's, the other one tap away;
-  // polar: none). A link's location never changes the link's climate.
-  if (sc.suggested && source !== 'link') chooseClimate(sc.suggested);
+  // polar: none), suggested once: never over a climate the grower chose, unless the new point reads
+  // another climate than the last one did (R5). A link's location never changes the link's climate.
+  if (sc.suggested && source !== 'link' && (!store.climate.peek() || sc.suggested !== readBefore)) chooseClimate(sc.suggested);
   keepLocation(loc);
 }
 
@@ -208,6 +215,7 @@ export async function useMyLocation(): Promise<void> {
   batch(() => { clearStep(); asking.value = 'geo'; line.value = { state: 'loading' }; });
   const permission = await unlessReplaced(queryGeolocationPermission());
   if (!liveLookup(id) || permission === undefined) return;
+  waited.value = Math.round((permission?.state === 'granted' ? SITE_POSITION_OPTIONS.timeout ?? 15_000 : PROMPT_CAP_MS) / 1000);
   if (permission?.state === 'denied') { batch(() => { asking.value = null; line.value = { state: 'denied' }; }); return; }
   const at = await unlessReplaced(currentPosition(undefined, permission));
   if (!liveLookup(id) || !at) return;
@@ -242,7 +250,9 @@ export async function searchRead(q: string, read: CoordsRead): Promise<void> {
   if (!liveLookup(id)) return;
   const search = searcher();
   asking.value = null;
-  const status = search.status.value, results = search.results.value, attribution = search.attribution.value;
+  // The name path never takes the controller's own coordinate reading (R2): text the field refused as
+  // coordinates ("1.17 36") is never turned into a guessed point; it reads as no place found.
+  const status = search.status.value, results = search.results.value.filter((r) => r.source !== 'coordinates'), attribution = search.attribution.value;
   if (status === 'error') { line.value = { state: 'offline', query }; return; }
   if (!results.length) { line.value = { state: 'no-result', query, attribution }; return; }
   if (results.length > 1) { batch(() => { line.value = null; choices.value = { query, results, attribution }; }); return; }
@@ -266,7 +276,7 @@ export function forget(): void {
   unread.value = false;
   const own = store.location.peek()?.source !== 'link';
   batch(() => {
-    store.location.value = null; store.proposedClimate.value = null; line.value = null; typed.value = false;
+    store.location.value = null; line.value = null; typed.value = false;
     clearStep();
     if (own) locationCountry(null, true);
     // The grower's own values are of that place: they go with it, as the save's place does.

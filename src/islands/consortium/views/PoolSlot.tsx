@@ -19,11 +19,13 @@
 import { effect, untracked } from '@preact/signals';
 import type { ClimateZone } from '../../../lib/consortium/index.ts';
 import { hasPlants } from '../../../lib/consortium/index.ts';
-import { curatedClimates, openSheet, pool, poolVerdicts, rangeFailed, retryVerdict, siteClimate, verdictNeedsReload } from '../store.ts';
+import { curatedClimates, pool, poolVerdicts, rangeFailed, retryVerdict, siteClimate, verdictNeedsReload } from '../store.ts';
 import * as rule from '../rules/suggest-block.ts';
 import type { SuggestBlock, SuggestScene } from '../rules/suggest-block.ts';
 import { climateChosen } from '../state/persist.ts';
 import { dropSuggest, pendingSuggest } from '../state/suggest-wait.ts';
+import { backToPlace } from '../state/draft.ts';
+import { cardsAsked, focusField } from './location/shared.ts';
 import { T } from '../strings.ts';
 import { lazyPart } from './lazy.tsx';
 import { retryableImport } from '../../../lib/consortium/index.ts';
@@ -53,13 +55,14 @@ const needsSite = (z: ClimateZone): boolean => rule.needsSite(z, scene);
 const needsRule = (z: ClimateZone): boolean => rule.needsRule(z, scene);
 export const hasList = (z: ClimateZone): boolean => rule.hasList(z, scene);
 // The card's pill (hand-off H-S5c-5: Start.tsx Climates reads it): Ready, Needs your location, or Not covered yet.
-export const cardPill = (z: ClimateZone): { label: string; ready: boolean } =>
-  hasList(z) ? { label: T('start.climate.ready'), ready: true } : { label: needsSite(z) ? T('range.needsSite.pill') : T('start.climate.notYet'), ready: false };
+export const cardPill = (z: ClimateZone): { label: string; ready: boolean; site: boolean } =>
+  hasList(z) ? { label: T('start.climate.ready'), ready: true, site: false } : needsSite(z) ? { label: T('range.needsSite.pill'), ready: false, site: true } : { label: T('start.climate.notYet'), ready: false, site: false };
 // The location step (S5b, LocationSlot): its first control, else its heading.
-// On the palette page (no location step there): the "Your place" sheet, which holds it.
+// From the palette page or the climate cards (no location step on screen): back to Place, then its
+// field (C3; the "Your place" sheet went with v13).
 const toLocation = () => {
   const heading = document.getElementById('ct-loc-h');
-  if (!heading) { openSheet('place'); return; }
+  if (!heading) { cardsAsked.value = false; backToPlace(); requestAnimationFrame(() => requestAnimationFrame(focusField)); return; }
   let target = heading.closest('section')?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])') ?? null;
   if (!target) { heading.tabIndex = -1; target = heading; }
   target.scrollIntoView({ block: 'center' });

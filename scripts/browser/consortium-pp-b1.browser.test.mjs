@@ -86,10 +86,13 @@ async function addByName(page, name, k) {
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', `plant ${k}: adding a plant left Place`);
 }
 // The place is changed on Place (pf-c: the "Your place" sheet is gone): the place line's Change, then
-// the climate cards a chosen climate keeps open.
+// "Not this climate? Choose another" opens the climate cards (pf-c fix round 1, BC15: ClimateHand is
+// one link away, never open by itself).
 const openPlaceSheet = async (page) => {
   await page.click('[data-place-line] button');
-  assert.ok(await has(page, '#ct-climates input[name="ct-climate"]', 6000), 'Change opens Place with its climate cards');
+  assert.ok(await has(page, '[data-place-climates]', 6000), 'Change opens Place with "Not this climate? Choose another"');
+  await page.click('[data-place-climates]');
+  assert.ok(await has(page, '#ct-climates input[name="ct-climate"]', 6000), 'its climate cards');
 };
 
 // Fix round 2, C (8.3): each history entry carries what Back needs: `pp`, and its start `st` (new on
@@ -186,7 +189,9 @@ test('PP-B2 (b1a UI hand-off, failed-chunk notice): a sheet whose chunk fails sa
     const page = await tool({ width, data: 'fixture', block: { find: 404 } }); // Paste is in the find role (PP-C commit 0)
     await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
-    await page.locator(aria('button', 'Paste a list')).click();
+    // "Add a plant" opens Find (the find role, as Paste): on every width (pf-c fix round 1: the phone's
+    // Place has no "Paste a list", board Place 390).
+    await page.click('[data-place-add]');
     assert.ok(await has(page, '.ct-toast', 6000), `${width}: the notice`);
     const seen = await page.evaluate(() => {
       const card = document.querySelector('.ct-toast');

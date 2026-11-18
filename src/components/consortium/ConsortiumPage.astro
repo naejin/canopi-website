@@ -118,12 +118,13 @@ const betaNote = P('betaNote', index.climates.length);
   <main id="main" class="ct">
     <div class="wrap ct-wrap">
       <div class="tool-head" id="ct-head">
-        {/* The three steps (v14 boards Place, SiteKiambu): static here, so they show before the island;
-            views/place/steps.tsx renders them again on Place (step 1 current, step 2 a link once there is
-            a palette). The palette step's own head hides them and the lede (shell.css, #ct-head[data-step]). */}
+        {/* The three steps (v14 boards Place, SiteKiambu): static here, so they show before the island,
+            and the island never renders them again (BC1): views/place/steps.tsx only shows step 2's
+            button in place of its words once there is a palette, and marks the step. The palette step's
+            own head hides them and the lede (shell.css, #ct-head[data-step]). */}
         <ol class="ct-steps" id="ct-steps" aria-label={tr('palette.stepsLabel')}>
           <li aria-current="step"><span class="ct-steps-n">1</span> {tr('palette.stepPlace')}</li>
-          <li><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</li>
+          <li><span data-step-words><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</span><button type="button" class="link-button ct-link" data-step-palette hidden><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</button></li>
           <li><span class="ct-steps-n">3</span> {tr('palette.stepPlan')}</li>
         </ol>
         <div class="tool-head-row">
@@ -138,15 +139,21 @@ const betaNote = P('betaNote', index.climates.length);
       {/* How the page opens, set before the first paint so nothing jumps when the island mounts:
           "link" for a share link (any fragment with v or a; one this tool cannot read says so on Place),
           "preset" for a guide's ?plant=&climate= (design check A5), else "start". The island reads the
-          address itself; this only marks the head. */}
+          address itself; this only marks the head, and its step (R16): "palette" for a link, a guide or
+          a palette saved on this device, so a return paints the palette head first. */}
       <script is:inline>(function () { try {
         var h = document.getElementById('ct-head');
         var hp = new URLSearchParams((location.hash || '').replace(/^#/, '')), q = new URLSearchParams(location.search);
         var opens = hp.has('v') || hp.has('a') ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
         h.dataset.opens = opens;
+        var saved = null;
+        try { saved = JSON.parse(localStorage.getItem('canopi-consortium') || 'null'); } catch (e) {}
+        h.dataset.step = opens !== 'start' || (saved && saved.fragment) ? 'palette' : 'place';
       } catch (e) {} })();</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
-      <p class="tool-release">{betaNote} {tr('release').replace('{id}', index.release_id)}</p>
+      {/* The beta note and the release line apart (R1): one paragraph each. */}
+      <p class="tool-release tool-beta">{betaNote}</p>
+      <p class="tool-release">{tr('release').replace('{id}', index.release_id)}</p>
     </div>
   </main>
   <Footer lang={lang} />
