@@ -192,6 +192,9 @@
 .ct .ct-job-body { display: grid; gap: 6px; min-width: 0; }
 .ct .ct-job-names { margin: 0; font-size: 14px; line-height: 20px; }
 .ct .ct-job-thin { margin: 0; font-size: 13px; line-height: 19px; }
+/* A job's members outside their climate range, apart from its names (c2 R1). */
+.ct .ct-job-outside { font-size: 13px; line-height: 19px; color: var(--text-secondary); }
+.ct .ct-job-outside p { margin: 0; }
 .ct .ct-job-holes { display: grid; gap: 6px; justify-items: end; }
 .ct .ct-job-holes .ct-hole-button { display: flex; align-items: center; gap: 12px; max-width: 270px; }
 /* A strip: the seven time spans, decorative (its words are the thin lines and the hole buttons). */
@@ -281,7 +284,7 @@
   .ct .ct-jobs[data-mode="strips"] .ct-job-body { display: contents; }
   .ct .ct-jobs[data-mode="strips"] .ct-strip { grid-column: 2; grid-row: 1; align-self: center; }
   .ct .ct-jobs[data-mode="strips"] .ct-strip-cell { width: 12px; }
-  .ct .ct-jobs[data-mode="strips"] :is(.ct-job-names, .ct-job-thin, .ct-job-holes) { grid-column: 1 / -1; }
+  .ct .ct-jobs[data-mode="strips"] :is(.ct-job-names, .ct-job-outside, .ct-job-thin, .ct-job-holes) { grid-column: 1 / -1; }
   .ct .ct-jobs[data-mode="strips"] .ct-job-names { font-size: 13px; color: var(--text-secondary); }
   .ct .ct-job-holes { justify-items: stretch; }
   .ct .ct-job-holes .ct-hole-button { max-width: none; }
@@ -296,6 +299,14 @@
 .ct .ct-tox { flex: none; width: 14px; height: 14px; color: var(--danger); }
 .ct .ct-tox[data-tox="slight"] { color: var(--warning); }
 .ct .ct-grid-bars .ct-bar:not([data-short]) .ct-tox { color: var(--surface); }
+/* c2 H1: the triangle is the same for the three levels, so its level word stands beside it where there
+   is room: on every chip, and on a grid bar whose inside is 15rem or more (a container query on the bar;
+   a bar one time span long writes its name past its colour, so it has room when its row does). In the
+   text colour of its bar or chip (the contrast of its name). */
+.ct .ct-tox-word { flex: none; white-space: nowrap; font-weight: 400; }
+.ct .ct-grid-bars .ct-bar { container-type: inline-size; }
+.ct .ct-grid-bars .ct-tox-word { display: none; }
+@container (min-width: 15rem) { .ct .ct-grid-bars .ct-tox-word { display: inline; } }
 .ct .ct-bar .ct-level-icon, .ct .ct-chip .ct-level-icon { width: 14px; height: 14px; }
 .ct .ct-grid-bars .ct-bar:not([data-short]) .ct-level-icon { color: var(--surface); }
 .ct .ct-warn-group h4 { display: inline-flex; align-items: center; gap: 4px; }

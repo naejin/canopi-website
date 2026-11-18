@@ -1306,6 +1306,8 @@
   "consortium.palette.jobsFoot": "一种植物承担几项任务，就计入几项任务。",
   "consortium.palette.jobsUnchecked": "other: 任务尚未核实：# 种植物，除“养活你”外不计入任何任务。",
   "consortium.palette.jobsNoJob": "other: 另有 # 种没有记录任务，但只在第一年在场或超出其气候范围，因此不计入任何空缺。",
+  "consortium.palette.jobOutside": "other: 另有 # 种也做这件事，但超出其气候范围（{names}）：此处不计。",
+  "consortium.palette.jobOutsideMany": "other: 另有 # 种也做这件事，但超出其气候范围：此处不计：",
   "consortium.palette.warningsTitle": "警示",
   "consortium.palette.warningsLeave": "other: 到 {period}，有 # 种超出其气候范围",
   "consortium.palette.warningsEdgeThen": "届时接近其范围边缘：{names}。",

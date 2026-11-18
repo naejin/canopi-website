@@ -1306,6 +1306,8 @@
   "consortium.palette.jobsFoot": "Una pianta conta sotto ogni compito che svolge.",
   "consortium.palette.jobsUnchecked": "one: Compiti non ancora verificati: # pianta, contata solo sotto «Ti nutre». | other: Compiti non ancora verificati: # piante, contate solo sotto «Ti nutre».",
   "consortium.palette.jobsNoJob": "one: Altre # non ha compiti registrati ma c’è solo il primo anno o è fuori dal suo areale climatico: non conta per nessun buco. | other: Altre # non hanno compiti registrati ma ci sono solo il primo anno o sono fuori dal loro areale climatico: non contano per nessun buco.",
+  "consortium.palette.jobOutside": "one: # in più lo fa, ma è fuori dal suo areale climatico ({names}): non contata qui. | other: # in più lo fanno, ma sono fuori dal loro areale climatico ({names}): non contate qui.",
+  "consortium.palette.jobOutsideMany": "one: # in più lo fa, ma è fuori dal suo areale climatico: non contata qui: | other: # in più lo fanno, ma sono fuori dal loro areale climatico: non contate qui:",
   "consortium.palette.warningsTitle": "Avvertenze",
   "consortium.palette.warningsLeave": "one: # esce dal suo areale climatico entro il {period} | other: # escono dal loro areale climatico entro il {period}",
   "consortium.palette.warningsEdgeThen": "Vicino al limite del loro areale allora: {names}.",

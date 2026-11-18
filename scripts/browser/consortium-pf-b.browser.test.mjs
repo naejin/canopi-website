@@ -36,8 +36,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { aria, has } from './helpers.mjs';
 import { useHarness } from './helpers.mjs';
-import { JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
-import { boardPalette, figures, fitOf, inSection, jobCounts, laneOf, standing, uncheckedOf } from './pf-b-helpers.mjs';
+import { failing } from '../expect-fail.mjs';
+import { BOARD, JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { boardPalette, figures, fitOf, inSection, jobCounts, laneOf, scenario, standing, uncheckedOf } from './pf-b-helpers.mjs';
 
 useHarness();
 
@@ -50,8 +51,9 @@ const plants = (n) => `${n} plant${n === 1 ? '' : 's'}`;
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const ofStratum = (f, s) => f.ids.filter((id) => f.stratum[id] === s);
 const buttons = async (page) => [...(await names(page, 'button'))];
-// A list of names as the page writes it (kit/chart.tsx Names: the page language's conjunction list).
-const listEn = (xs) => new Intl.ListFormat('en', { type: 'conjunction' }).format(xs);
+// A list of names as the boards write it (kit/chart.tsx Names: commas only, "Olive, Almond, Fig"; c2
+// C1); "and" only inside a sentence ("Silk oak and Napier grass sit between").
+const listEn = (xs) => new Intl.ListFormat('en', { type: 'unit', style: 'short' }).format(xs);
 const TOX = { Slight: 'Mildly toxic', Moderate: 'Toxic', Severe: 'Very toxic' };
 
 // Each text element whose contrast with what is behind it falls under 4.5:1 (the first few).
@@ -163,6 +165,16 @@ test('PFB3 (pf-b Many at 390 and ManyDesk at 1280, A14): past 40 plants Through 
       assert.ok((await buttons(page)).includes('Show fewer'), 'board: "Show fewer" once open');
     }
     assert.ok(chart.includes('The others are sown or planted in another time span: annual crops stand in the first year only, long-lived trees go in from year 3.'), 'board: the others sentence');
+    // c2 C2: the members outside their range standing then, a handful named inline in the board's
+    // sentence, in the paragraph of the others sentence (Cashew on the board).
+    const { spans } = await import('../../src/lib/consortium/years.ts');
+    const taxa = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.map((t) => ({ id: t.id, phases: t.phases, stratum: t.stratum })));
+    const then = taxa.filter((t) => t.stratum && f.levels[t.id] === 'outside' && spans(t, 2)).map((t) => f.names[t.id]);
+    if (then.length && then.length <= 3) {
+      const sentence = `${then.length} more plant${then.length === 1 ? ' would stand then but is outside its' : 's would stand then but are outside their'} climate range (${listEn(then)}): not counted here, listed under “Warnings and fit”.`;
+      const para = await inSection(page, 'Through the years', (sec, w) => [...sec.querySelectorAll('p')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()).find((x) => x.startsWith(w)) ?? null, 'The others are sown');
+      assert.ok(para && para.includes(sentence), `C2: "${sentence}" in the others paragraph ("${para}")`);
+    }
     assert.deepEqual(await pastEdge(page), [], `board: nothing past the edge at ${width} px`);
     await done(page);
   }
@@ -524,20 +536,25 @@ test('PFB18 (pf-b the climate check notice, carried from old PFB9): refused, the
   await done(off);
 });
 
-test('PFB19 (pf-b fix round 1, BC1, C5): every toxic plant carries its toxicity mark with its words, an img labelled "Toxic", "Mildly toxic" or "Very toxic", and the level word in its button\'s name: on the bars at 1280 (seville-board) and the chips at 390 (kiambu-8)', async () => {
+test('PFB19 (pf-b fix round 1, BC1, C5; c2 H1): every toxic plant carries its toxicity mark with its words, an img labelled and titled "Toxic", "Mildly toxic" or "Very toxic", the level word in its button\'s name, and the word seen beside the triangle where there is room (never the colour alone): on the bars at 1280 (seville-board) and the chips at 390 (kiambu-8)', async () => {
   for (const [id, width] of [['seville-board', 1280], ['kiambu-8', 390]]) {
     const page = await boardPalette(id, { width });
     const f = await figures(page);
     await section(page, 'Through the years');
-    const marks = await page.$$eval('#ct-years button[data-plant-id]', (bs) => bs.map((b) => ({ id: b.dataset.plantId, label: b.getAttribute('aria-label'), img: b.querySelector('svg[role="img"]')?.getAttribute('aria-label') ?? null })));
+    const marks = await page.$$eval('#ct-years button[data-plant-id]', (bs) => bs.map((b) => ({ id: b.dataset.plantId, label: b.getAttribute('aria-label'), img: b.querySelector('svg[role="img"]')?.getAttribute('aria-label') ?? null, title: b.querySelector('svg[role="img"] title')?.textContent ?? null, text: b.innerText.replace(/\s+/g, ' ').trim(), width: b.getBoundingClientRect().width })));
     assert.ok(marks.length > 0, `the plant buttons at ${width} px`);
     for (const m of marks) {
       const level = f.tox[m.id];
       if (level) {
         assert.equal(m.img, TOX[level], `${f.names[m.id]}: the "${TOX[level]}" mark`);
+        assert.equal(m.title, TOX[level], `${f.names[m.id]}: the mark's title "${TOX[level]}" (c2 H1)`);
         assert.ok(m.label.includes(TOX[level]), `${f.names[m.id]}: "${TOX[level]}" in its name ("${m.label}")`);
+        // c2 H1: never the colour alone: the level word shown beside the triangle where there is room,
+        // on every chip of the phone's time span and on a bar of 16rem or more.
+        if (width === 390 || m.width >= 256) assert.ok(m.text.includes(TOX[level]), `H1: "${TOX[level]}" seen on ${f.names[m.id]} ("${m.text}", ${Math.round(m.width)} px)`);
       } else assert.equal(m.img, null, `${f.names[m.id]}: no toxicity mark`);
     }
+    if (width === 1280) assert.ok(marks.some((m) => f.tox[m.id] && m.width >= 256), 'H1: seville-board has a long toxic bar');
     assert.ok(marks.some((m) => f.tox[m.id]), `${id}: a toxic member shown`);
     // BC21: the header steps on one line, the done step a check, "›" between them.
     const steps = await page.$$eval('nav[aria-label="Steps"] li', (ls) => ls.map((l) => ({ top: Math.round(l.getBoundingClientRect().top), text: l.innerText.replace(/\s+/g, ' ').trim() })));
@@ -625,12 +642,17 @@ test('PFB22 (pf-b fix round 1, BC3, R2, BC12): past 40 plants no paragraph of Ba
   await done(page);
 });
 
-test('PFB23 (pf-b round 2 R1, C1): Balance offers no action that does not do what it says. "Find a soil feeder of another family", when offered, opens Find listing only plants that feed the soil and are not of that family; until Find takes a job without a hole (hand-off to the main agent) the line offers no such button', async () => {
+// Expected-fail (c2 C3): the board's action waits for a Find entry that takes a job and a predicate
+// without a hole (Find.tsx and store.ts are not pf-b's: hand-off to the main agent). Listed as a known
+// board difference of MainMore in the board check until then; the marker goes when the action is back.
+failing('PFB23 (pf-b round 2 R1, C1; c2 C3): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find listing only plants that feed the soil and are not of that family (never an unfiltered list)', { owner: 'pf-b', reason: BOARD }, async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   const b = await section(page, 'Balance');
   const fam = /One family: \d+ of your \d+ are legumes/.test(b) ? 'Fabaceae' : null;
   assert.ok(fam, `seville-board: the legume line (${b.slice(0, 80)})`);
-  if (!(await buttons(page)).includes('Find a soil feeder of another family')) { await done(page); return; }
+  const offered = (await buttons(page)).includes('Find a soil feeder of another family');
+  if (!offered) await done(page);
+  assert.ok(offered, 'board: "Find a soil feeder of another family" under the legume line (MainMore; held: hand-off to the main agent for a Find entry taking a job and a predicate)');
   await press(page, 'button', 'Find a soil feeder of another family');
   assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] li[data-plant-id]').length > 0, { timeout: 15_000 }).then(() => true, () => false), 'Find lists plants');
   const listed = await page.evaluate(() => {
@@ -638,5 +660,88 @@ test('PFB23 (pf-b round 2 R1, C1): Balance offers no action that does not do wha
     return [...document.querySelectorAll('dialog[open] li[data-plant-id]')].map((li) => { const t = byId.get(li.dataset.plantId); return { name: t?.names?.en || t?.canonical_name, family: t?.family, fixer: !!t?.functions?.some((x) => x.function === 'nitrogen_fixer') }; });
   });
   for (const t of listed) assert.ok(t.fixer && t.family !== fam, `R1: ${t.name} feeds the soil and is not a legume (${t.family})`);
+  await done(page);
+});
+
+// The members doing a job, through the engine's jobsOf on the page's taxa (palette order).
+const doers = async (page, job) => {
+  const { jobsOf } = await import('../../src/lib/consortium/jobs.ts');
+  const taxa = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.map((t) => ({ id: t.id, role: t.role, functions: t.functions })));
+  return taxa.filter((t) => jobsOf(t).includes(job)).map((t) => t.id);
+};
+
+test('PFB24 (pf-b c2 R1, C1): a Jobs row counts and names the plants its strip counts; those outside their climate range are named apart ("2 more do this but are outside their climate range (Cashew, Coconut): not counted here."), past 40 plants (the row button\'s figure, the open row) and at 40 or fewer (the names in the board\'s plain list)', async () => {
+  const page = await boardPalette('kiambu-200', { width: 1280 });
+  const f = await figures(page);
+  const out = (lv) => (id) => lv[id] === 'outside';
+  const doing = await jobCounts(page);
+  // Past 40: each row button's figure is the job's plants in range (the plants its lane counts).
+  const bs = await buttons(page);
+  for (const j of JOB_IDS) {
+    const n = doing[j] ?? 0;
+    assert.ok(bs.some((x) => new RegExp(`^${esc(JOB[j])} ?${n} plants?(?: · a hole)?$`).test(x)), `R1: "${JOB[j]} ${plants(n)}", in range only (${bs.filter((x) => x.startsWith(JOB[j])).join(' | ')})`);
+  }
+  const outFood = (await doers(page, 'feeds_you')).filter(out(f.levels));
+  assert.ok(outFood.length >= 2, 'kiambu-200: plants that feed you outside their range');
+  await press(page, 'button', bs.find((x) => x.startsWith('Feeds you')));
+  await says(page, `${outFood.length} more do this but are outside their climate range`);
+  // 40 or fewer: kiambu-8 and two of those; Feeds you counts and names the others, the two apart.
+  const two = outFood.slice(0, 2);
+  await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, [...scenario('kiambu-8').input.members, ...two]);
+  assert.ok(await verdictsSettled(page, 40_000), 'the verdicts');
+  await frames(page);
+  const g = await figures(page);
+  const mine = (await doers(page, 'feeds_you')).filter((id) => !out(g.levels)(id)).map((id) => g.names[id]);
+  const small = await jobCounts(page);
+  assert.equal(mine.length, small.feeds_you ?? 0, 'the engine\'s figure');
+  const jobs = await section(page, 'Jobs');
+  assert.ok(jobs.includes(`Feeds you ${plants(mine.length)}`), `R1: "Feeds you ${plants(mine.length)}" (${jobs.slice(0, 400)})`);
+  assert.ok(jobs.includes(listEn(mine)), `C1: the names in the board's plain list ("${listEn(mine)}")`);
+  const outNames = two.map((id) => g.names[id]);
+  assert.ok(jobs.includes(`2 more do this but are outside their climate range (${listEn(outNames)}): not counted here.`), `R1: the plants outside their range named apart (${jobs.slice(0, 700)})`);
+  await done(page);
+});
+
+test('PFB25 (pf-b c2 R2): at 1280 "How to read this" lies over the page, so it closes when the focus leaves it (Tab to "Plants per job" leaves the focused button seen, not under the panel) and on a click outside; one open at a time; Escape closes the panel holding the focus, the focus back on its button; an Escape elsewhere moves no focus', async () => {
+  const page = await boardPalette('seville-board', { width: 1280 });
+  await section(page, 'Jobs');
+  const reads = [];
+  for (const t of await page.$$('#ct-root button[aria-controls]')) if ((await t.evaluate((e) => e.textContent.trim())) === 'How to read this') reads.push(t);
+  assert.equal(reads.length, 2, 'two "How to read this"');
+  const [years, jobs] = reads;
+  const expanded = (h) => h.evaluate((e) => e.getAttribute('aria-expanded'));
+  // (1) Jobs open, Tab: the panel closes; the focused control is seen.
+  await jobs.click();
+  assert.equal(await expanded(jobs), 'true');
+  await page.keyboard.press('Tab');
+  await frames(page);
+  assert.equal(await expanded(jobs), 'false', 'R2: Tab out of the panel closes it');
+  const seen = await page.evaluate(() => { const a = document.activeElement, r = a.getBoundingClientRect(); const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { name: a.textContent.trim(), seen: !!at && (at === a || a.contains(at)) }; });
+  assert.ok(seen.seen, `R2: "${seen.name}" is not under the panel`);
+  // A click on its words keeps it open; a click outside closes it.
+  await jobs.click();
+  const body = await jobs.evaluate((e) => e.getAttribute('aria-controls'));
+  await page.click(`[id="${body}"] p`);
+  await frames(page);
+  assert.equal(await expanded(jobs), 'true', 'a click on its words keeps it open');
+  await page.mouse.click(5, 300);
+  await frames(page);
+  assert.equal(await expanded(jobs), 'false', 'R2: a click outside closes it');
+  // (2) Years open, then Jobs: one open at a time; Escape closes it, the focus on its button.
+  await years.click();
+  await jobs.click();
+  await frames(page);
+  assert.equal(await expanded(years), 'false', 'R2: opening the other panel closes the first');
+  await page.keyboard.press('Escape');
+  await frames(page);
+  assert.equal(await expanded(jobs), 'false', 'Escape closes the panel');
+  assert.equal(await page.evaluate((e) => document.activeElement === e, jobs), true, 'the focus back on its button');
+  // Years open, the focus moved into the grid: the panel closed; an Escape there moves no focus.
+  await years.click();
+  await page.evaluate(() => document.querySelector('#ct-years button[data-plant-id]').focus());
+  await frames(page);
+  assert.equal(await expanded(years), 'false', 'R2: the focus left the panel, so it closed');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(() => !!document.activeElement?.matches('#ct-years button[data-plant-id]')), true, 'R2: the focus stays where the grower is');
   await done(page);
 });

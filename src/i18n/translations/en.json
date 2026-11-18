@@ -1306,6 +1306,8 @@
   "consortium.palette.jobsFoot": "A plant counts under every job it does.",
   "consortium.palette.jobsUnchecked": "one: Jobs not checked yet: # plant, counted under no job but “Feeds you”. | other: Jobs not checked yet: # plants, counted under no job but “Feeds you”.",
   "consortium.palette.jobsNoJob": "one: # more has no jobs recorded but stands only in the first year or is outside its climate range, so it counts for no hole. | other: # more have no jobs recorded but stand only in the first year or are outside their climate range, so they count for no hole.",
+  "consortium.palette.jobOutside": "one: # more does this but is outside its climate range ({names}): not counted here. | other: # more do this but are outside their climate range ({names}): not counted here.",
+  "consortium.palette.jobOutsideMany": "one: # more does this but is outside its climate range: not counted here: | other: # more do this but are outside their climate range: not counted here:",
   "consortium.palette.warningsTitle": "Warnings",
   "consortium.palette.warningsLeave": "one: # leaves its climate range by {period} | other: # leave their climate range by {period}",
   "consortium.palette.warningsEdgeThen": "Near the edge of their range then: {names}.",

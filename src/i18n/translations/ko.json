@@ -1306,6 +1306,8 @@
   "consortium.palette.jobsFoot": "식물은 맡는 모든 역할에 셉니다.",
   "consortium.palette.jobsUnchecked": "other: 역할 미확인: #종, \"사람을 먹임\" 외에는 어떤 역할에도 세지 않습니다.",
   "consortium.palette.jobsNoJob": "other: 그 밖에 #종은 기록된 역할이 없지만 첫해에만 있거나 기후 범위 밖이라 어떤 빈자리에도 세지 않습니다.",
+  "consortium.palette.jobOutside": "other: #종이 더 이 일을 하지만 기후 범위 밖입니다({names}): 여기서는 세지 않습니다.",
+  "consortium.palette.jobOutsideMany": "other: #종이 더 이 일을 하지만 기후 범위 밖입니다: 여기서는 세지 않습니다:",
   "consortium.palette.warningsTitle": "주의",
   "consortium.palette.warningsLeave": "other: {period}까지 #종이 기후 범위를 벗어납니다",
   "consortium.palette.warningsEdgeThen": "그때 범위 가장자리에 가까움: {names}.",

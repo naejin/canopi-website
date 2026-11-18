@@ -14,6 +14,7 @@ const core = await import('../src/lib/consortium/index.ts');
 const weigh = await import('../src/lib/consortium/weigh.ts');
 const picture = await import('../src/islands/consortium/rules/picture.ts');
 const { yearsPicture } = await import('../src/islands/consortium/rules/picture-years.ts');
+const { jobMembers } = await import('../src/islands/consortium/rules/picture-jobs.ts');
 
 // ---- fitGroups: the second look's reasons from the limiting factor (review R3) ----
 
@@ -123,7 +124,6 @@ test('the water line on seville-board (Csa, a dry summer): "Water needs" in one 
   if (key === 'waterMix') {
     const { regular, dry, medium } = water.line.vars;
     assert.equal(water.members.length, regular + dry + medium + missing, 'the mixed form: regular, dry, between, not recorded');
-    assert.equal(water.line.count, undefined, 'round 2 C8: no Line.count only a test reads; the view pluralises on vars.regular');
   }
 });
 
@@ -195,20 +195,44 @@ test('stripStates (R1, R9, BC9, round 2 R4): a span inside an open job hole is a
   for (const c of [0, 1, 6]) if (food.counts[c] > 0) assert.equal(sf[c], 'full', `Feeds you span ${c}: full`);
 });
 
-test('mildExamples (round 2 C9): the Mildly toxic line names the first three Mildly toxic members in name order (board ManyDesk\'s rule), and says "many are common foods" only when more than half of them feed you', async () => {
+test('mildExamples (round 2 C9; c2 C5): the Mildly toxic line names the first three Mildly toxic members in name order (board ManyDesk\'s rule), and says "many are common foods" only when more than half of them feed you', async () => {
+  const order = new Intl.Collator('en');
+  const plantOf = (id, food) => taxon({ id, canonical_name: id, role: food ? 'crop' : 'support' });
+  const slight = (ts) => weigh.fitGroups(ts, null, ts.map((t) => ({ id: t.id, kind: 'toxicity', level: 'Slight' })));
+  // Two foods of three: "many are common foods"; one food of three: the plain lead.
+  const two = [plantOf('c', true), plantOf('a', true), plantOf('b', false)];
+  assert.deepEqual(weigh.mildExamples(slight(two), two, (id) => id, order.compare), { ids: ['a', 'b', 'c'], foods: true }, 'two foods of three');
+  const one = [plantOf('a', true), plantOf('b', false), plantOf('c', false)];
+  assert.equal(weigh.mildExamples(slight(one), one, (id) => id, order.compare).foods, false, 'one food of three');
+  // kiambu-200 (board ManyDesk): "many are common foods (…)", its three first by name.
   await boardCase('kiambu-200');
   const ms = store.memberTaxa.value, g = weigh.fitGroups(ms, store.memberVerdicts.value, store.flags.value);
-  const byId = new Map(ms.map((t) => [t.id, t])), name = (id) => nameOf(byId.get(id)), order = new Intl.Collator('en');
+  const byId = new Map(ms.map((t) => [t.id, t])), name = (id) => nameOf(byId.get(id));
   const ex = weigh.mildExamples(g, ms, name, order.compare);
-  assert.deepEqual(ex.ids, [...g.mild].sort((a, b) => order.compare(name(a), name(b))).slice(0, 3), 'the first three by name');
-  const foods = g.mild.filter((id) => core.jobsOf(byId.get(id)).includes('feeds_you')).length;
-  assert.equal(ex.foods, foods * 2 > g.mild.length, `"many are common foods" when ${foods} of ${g.mild.length} feed you is more than half`);
-  // One Mildly toxic food among three: never "many are common foods".
-  const three = ['a', 'b', 'c'].map((id) => taxon({ id, canonical_name: id, role: id === 'a' ? 'crop' : 'support' }));
-  const g3 = weigh.fitGroups(three, null, three.map((t) => ({ id: t.id, kind: 'toxicity', level: 'Slight' })));
-  const ex3 = weigh.mildExamples(g3, three, (id) => id, order.compare);
-  assert.deepEqual(ex3.ids, ['a', 'b', 'c']);
-  assert.equal(ex3.foods, false, 'one food of three: the plain lead');
+  assert.equal(ex.foods, true, 'board ManyDesk: "many are common foods"');
+  assert.equal(ex.ids.length, 3);
+  assert.deepEqual(ex.ids.map(name), ex.ids.map(name).sort(order.compare), 'in name order');
+  for (const id of g.mild.filter((x) => !ex.ids.includes(x))) assert.ok(order.compare(name(id), name(ex.ids[2])) >= 0, `${name(id)} comes after the three`);
+});
+
+test('jobMembers (c2 R1): Plants per job 2, Feeds you held by Mango, Avocado and Fig, the first two outside their climate range: the row counts Fig alone and names Mango and Avocado apart, as the strip and "Thin: 1 plant only…" count them', () => {
+  const fruit = (id) => taxon({ id, canonical_name: id, role: 'crop' });
+  const ms = ['mango', 'avocado', 'fig'].map(fruit);
+  const level = { mango: 'outside', avocado: 'outside', fig: 'fits' };
+  const food = jobMembers(ms, (t) => level[t.id] !== 'outside').find((r) => r.job === 'feeds_you');
+  assert.deepEqual(food, { job: 'feeds_you', counted: ['fig'], outside: ['mango', 'avocado'] });
+});
+
+test('jobMembers on kiambu-200 (c2 R1): each job\'s counted members are the ones its lane counts (holes.ts laneCounts: in every time span, the lane\'s figure is its counted members standing then); the members outside their range are named apart, never counted', async () => {
+  await boardCase('kiambu-200');
+  const vs = store.memberVerdicts.value, ms = store.memberTaxa.value, byId = new Map(ms.map((t) => [t.id, t]));
+  const rows = jobMembers(ms, (t) => vs.get(t.id)?.level !== 'outside');
+  for (const r of rows) {
+    const lane = store.lanes.value.find((l) => l.kind === 'job' && l.job === r.job);
+    core.PHASE_YEARS.forEach((_, c) => assert.equal(r.counted.filter((id) => core.spans(byId.get(id), c)).length, lane.counts[c], `${r.job} span ${c}: the strip's figure`));
+    for (const id of r.outside) assert.equal(vs.get(id).level, 'outside', `${r.job}: ${id} outside`);
+  }
+  assert.ok(rows.some((r) => r.outside.length > 0), 'kiambu-200 has a job member outside its range (Cashew)');
 });
 
 // ---- policies ----

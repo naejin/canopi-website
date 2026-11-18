@@ -24,7 +24,10 @@ import { CountCells, HowToRead, JobKey, Names, SIZE_PALETTE, SrTable, StepLevels
 import { say, sayAll } from '../kit/fit.tsx';
 
 const PHONE = '(max-width: 639px)';
-export function usePhone(): boolean {
+// Past 40 plants, the plants outside their range standing then are named in the sentence up to three
+// (as "Cashew, outside its climate range, is toxic too"), else the count cell.
+const FEW_OUTSIDE = 3;
+function usePhone(): boolean {
   const [phone, setPhone] = useState(() => typeof matchMedia === 'function' && matchMedia(PHONE).matches);
   useEffect(() => {
     if (typeof matchMedia !== 'function') return;
@@ -39,7 +42,7 @@ export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[
 
 // Moves the focus to a section of the page by its id (a link of "Further down this page"; the page's
 // address holds the palette, so no hash is written).
-export const toSection = (id: string) => (e: Event) => {
+const toSection = (id: string) => (e: Event) => {
   e.preventDefault();
   const el = document.getElementById(id);
   if (!el) return;
@@ -83,6 +86,7 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
   const standing = (r: PictureRow): PlantId[] => countingIds(r, r.cells[at]);
   const stand = big ? picture.rows.reduce((n, r) => n + standing(r).length, 0) : 0;
   const outsideThen = big ? picture.rows.flatMap((r) => r.cells[at].ids.filter((id) => r.outside.includes(id))) : [];
+  const outsideLine = <Names ids={outsideThen} name={(id) => { const t = byId.get(id); return t ? nameOf(t) : id; }} size={members.length} few={FEW_OUTSIDE} text={(names) => P('palette.chart.othersOutside', outsideThen.length, { names })} lead={<p>{P('palette.chart.othersOutsideMany', outsideThen.length)}</p>} />;
   const stepper = (
     <div class="ct-stepper">
       <button type="button" class="button button-secondary ct-step-btn" data-dir="back" aria-disabled={at === 0 ? 'true' : undefined} onClick={() => go(at - 1)}><span class="visually-hidden">{T('palette.earlier')}</span></button>
@@ -103,8 +107,11 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
         <>
           {stepper}
           <CountCells p={picture} column={at} size={members.length} standing={standing} b={b} />
-          <p class="ct-chart-note">{T('palette.chart.others')}</p>
-          {outsideThen.length > 0 && <div class="ct-chart-note"><Names ids={outsideThen} name={(id) => { const t = byId.get(id); return t ? nameOf(t) : id; }} size={members.length} text={(names) => P('palette.chart.othersOutside', outsideThen.length, { names })} lead={<p>{P('palette.chart.othersOutsideMany', outsideThen.length)}</p>} /></div>}
+          {/* Those outside their range standing then: a handful named in the others paragraph, in the
+              board's sentence (c2 C2: "1 more plant … (Cashew): not counted here…"); more, the count cell. */}
+          {outsideThen.length <= FEW_OUTSIDE
+            ? <p class="ct-chart-note">{T('palette.chart.others')}{outsideThen.length > 0 && <> {outsideLine}</>}</p>
+            : <><p class="ct-chart-note">{T('palette.chart.others')}</p><div class="ct-chart-note">{outsideLine}</div></>}
         </>
       ) : phone ? (
         <>

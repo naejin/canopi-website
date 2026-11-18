@@ -14,7 +14,7 @@
 // icon and word, a level its icon and words (colour never alone).
 import type { ComponentChildren } from 'preact';
 import { memo } from 'preact/compat';
-import { useEffect, useId, useRef, useState } from 'preact/hooks';
+import { useId, useRef, useState } from 'preact/hooks';
 import type { Flag, JobId, PlantId, PlantVerdict, Stratum } from '../../../../lib/consortium/index.ts';
 import { fitLine, jobIds, phaseOfYear, strata } from '../../../../lib/consortium/index.ts';
 import { countingIds, tableOf, type Picture, type PictureRow } from '../../rules/picture.ts';
@@ -29,24 +29,27 @@ import { MoreList } from './more.tsx';
 // Every name while the palette has 40 plants or fewer and the group 12 or fewer; else the count cell
 // (views/kit/more.tsx MoreList: its first names, "+ N more", then 10, then all, "Show fewer").
 export const SIZE_PALETTE = 40;
-export const SIZE_GROUP = 12;
-export const inlineNames = (n: number, size: number): boolean => size <= SIZE_PALETTE && n <= SIZE_GROUP;
+export const inlineNames = (n: number, size: number): boolean => size <= SIZE_PALETTE && n <= 12;
+
+// The boards' plain list of names ("Olive, Almond, Fig": Intl.ListFormat unit, the page's language).
+const plainList = (items: string[]): string => new Intl.ListFormat(pageLang(), { type: 'unit', style: 'short' }).format(items);
 
 // Member plants named in words (review R2, C1): every list of member names in the pictures, Warnings
-// and Balance goes through here. Inline, one sentence's list in the page's language ("Olive, Almond and
-// Fig", Intl.ListFormat conjunction: one list form in every language, BC18, BC20), in palette order,
-// or wrapped by `text` (a sentence holding the names); folded, `lead` then the count cell, its names
-// sorted by display name (locale collation, BC12). `closed`: the names a closed count cell shows.
-// `few`: a sentence naming a handful whatever the palette's size (board ManyDesk: "Cashew, outside its
-// climate range, is toxic too"), inline up to that many names.
-export function Names({ ids, name, size, closed = 3, few = 0, text, lead, render }: {
-  ids: readonly PlantId[]; name: (id: PlantId) => string; size: number; closed?: number; few?: number;
+// and Balance goes through here. Inline, the boards' plain list ("Olive, Almond, Fig"; c2 C1), in
+// palette order, or wrapped by `text` (a sentence holding the names); `and`: the names sit inside a
+// sentence ("Silk oak and Napier grass sit between"), a conjunction list in the page's language.
+// Folded, `lead` then the count cell, its names sorted by display name (locale collation, BC12).
+// `closed`: the names a closed count cell shows. `few`: a sentence naming a handful whatever the
+// palette's size (board ManyDesk: "Cashew, outside its climate range, is toxic too"), inline up to that
+// many names.
+export function Names({ ids, name, size, closed = 3, few = 0, and = false, text, lead, render }: {
+  ids: readonly PlantId[]; name: (id: PlantId) => string; size: number; closed?: number; few?: number; and?: boolean;
   text?: (names: string) => ComponentChildren; lead?: ComponentChildren; render?: (id: PlantId) => ComponentChildren;
 }) {
   if (!ids.length) return null;
   if (inlineNames(ids.length, size) || ids.length <= few) {
     if (render) return <span class="ct-names-inline">{ids.map((id) => <span key={id}>{render(id)}</span>)}</span>;
-    const words = listOf(ids.map(name));
+    const words = (and ? listOf : plainList)(ids.map(name));
     return <>{text ? text(words) : words}</>;
   }
   const order = collatorFor(pageLang());
@@ -68,18 +71,25 @@ export interface PlantButtons {
 
 // A plant's toxicity in words and mark (boards Main, Palette: a triangle labelled "Toxic", "Mildly
 // toxic", "Very toxic"; the warning colour for Mildly toxic, the danger colour for the others).
-const TOX: Record<string, 'slight' | 'moderate' | 'severe'> = { Slight: 'slight', Moderate: 'moderate', Severe: 'severe' };
-export const toxOf = (flags: readonly Flag[] | undefined): 'slight' | 'moderate' | 'severe' | null => {
+type Tox = 'slight' | 'moderate' | 'severe';
+const TOX: Record<string, Tox> = { Slight: 'slight', Moderate: 'moderate', Severe: 'severe' };
+const toxOf = (flags: readonly Flag[] | undefined): Tox | null => {
   const l = flags?.find((f) => f.kind === 'toxicity')?.level;
   return l ? TOX[l] ?? null : null;
 };
-// `decorative`: beside its words already (a Warnings chip), hidden from assistive technology.
-export function ToxMark({ tox, decorative = false }: { tox: 'slight' | 'moderate' | 'severe'; decorative?: boolean }) {
-  const word = T(`palette.warningsTox_${tox}`);
+// The triangle is the same for the three levels, so its level is said in words, never by its colour
+// alone (c2 H1): its accessible name and title; `word`, the level word seen beside it where the bar or
+// chip has room (palette-page.css: every chip, a grid bar of about 16rem or more). `decorative`: beside its
+// words already (a Warnings head), hidden from assistive technology.
+export function ToxMark({ tox, decorative = false, word = false }: { tox: Tox; decorative?: boolean; word?: boolean }) {
+  const says = T(`palette.warningsTox_${tox}`);
   return (
-    <svg class="ct-tox" data-tox={tox} viewBox="0 0 20 20" aria-hidden={decorative ? 'true' : undefined} role={decorative ? undefined : 'img'} aria-label={decorative ? undefined : word} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      {!decorative && <title>{word}</title>}<path d="M10 3.2l7.3 12.8H2.7Z" /><path d="M10 8v3.6M10 14v.2" />
-    </svg>
+    <>
+      <svg class="ct-tox" data-tox={tox} viewBox="0 0 20 20" aria-hidden={decorative ? 'true' : undefined} role={decorative ? undefined : 'img'} aria-label={decorative ? undefined : says} fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        {!decorative && <title>{says}</title>}<path d="M10 3.2l7.3 12.8H2.7Z" /><path d="M10 8v3.6M10 14v.2" />
+      </svg>
+      {word && <span class="ct-tox-word" data-tox={tox} aria-hidden="true">{says}</span>}
+    </>
   );
 }
 
@@ -89,7 +99,7 @@ type Span = [number, number];
 const spanAttrs = (s?: Span) => (s ? { 'data-from': s[0], 'data-to': s[1] } : {});
 const isStratum = (k: string): k is Stratum => (strata as readonly string[]).includes(k);
 const isJob = (k: string): k is JobId => (jobIds as readonly string[]).includes(k);
-export const LaneHead = ({ r }: { r: Pick<PictureRow, 'key' | 'head'> }) => (
+const LaneHead = ({ r }: { r: Pick<PictureRow, 'key' | 'head'> }) => (
   <>{isJob(r.key) ? <JobIcon job={r.key} /> : isStratum(r.key) ? <LightIcon stratum={r.key} /> : <span class="ct-light-swatch" aria-hidden="true" />}{say(r.head)}</>
 );
 
@@ -106,11 +116,11 @@ function plantWords(id: PlantId, p: Picture, b: PlantButtons) {
 // when it warns, its verdict's icon; its name read as one phrase (plantWords). A grid bar one time span
 // long draws its colour behind the icon only and its name after it, in the text colour (board Main:
 // "Crimson clover"), so no name is cut.
-export function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Picture; b: PlantButtons; cls?: string; span?: Span }) {
+function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Picture; b: PlantButtons; cls?: string; span?: Span }) {
   const { v, job, warn, tox, label } = plantWords(id, p, b);
   return (
     <button type="button" class={cls} {...spanAttrs(span)} data-short={span && span[0] === span[1] ? '' : undefined} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} data-tox={tox ?? undefined} aria-label={label} onClick={() => b.onPlant(id)}>
-      <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <ToxMark tox={tox} />}{warn && <LevelIcon level={v!.level} />}
+      <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <ToxMark tox={tox} word />}{warn && <LevelIcon level={v!.level} />}
     </button>
   );
 }
@@ -230,22 +240,30 @@ export function JobKey({ p }: { p: Picture }) {
 }
 
 // "How to read this" (Toasts and DeskStates boards, A18): a closed disclosure under each picture's
-// title; at 960 px and wider a small panel under its button (palette-page.css), closed by Escape with
-// the focus back on the button.
+// title. Escape inside it closes it, the focus back on its button; an Escape elsewhere is not its own
+// (c2 R2). At 960 px and wider it is a small panel lying over the page (palette-page.css), so it also
+// closes when the focus leaves it (a Tab past it, a click outside, the other panel opened): it never
+// covers the control the focus moves to. Its words take the focus on a click (tabindex -1), so reading
+// or selecting them keeps it open. On a phone it opens in the flow and stays open until closed.
+const OVERLAY = '(min-width: 960px)';
 export function HowToRead({ children }: { children: ComponentChildren }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); button.current?.focus(); } };
-    document.addEventListener('keydown', key);
-    return () => document.removeEventListener('keydown', key);
-  }, [open]);
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape' || !open) return;
+    e.stopPropagation();
+    setOpen(false);
+    button.current?.focus();
+  };
+  const onFocusOut = (e: FocusEvent) => {
+    const to = e.relatedTarget as Node | null, wrap = e.currentTarget as HTMLElement;
+    if (open && !(to && wrap.contains(to)) && typeof matchMedia === 'function' && matchMedia(OVERLAY).matches) setOpen(false);
+  };
   return (
-    <div class="ct-read">
+    <div class="ct-read" onKeyDown={onKeyDown} onFocusOut={onFocusOut}>
       <button ref={button} type="button" class="ct-read-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>{T('palette.readTitle')}</button>
-      <div id={id} class="ct-read-body" hidden={!open}>{children}</div>
+      <div id={id} class="ct-read-body" tabIndex={-1} hidden={!open}>{children}</div>
     </div>
   );
 }

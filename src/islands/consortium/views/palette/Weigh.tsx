@@ -12,7 +12,9 @@
 // - Balance (MainMore): one family, the water line ("Water needs" where the summer is dry), the soil pH
 //   hints (R3). Elsewhere the water line is its own card, "Water use" (Kumasi).
 // Every list of names goes through kit/chart.tsx Names (the size rule A14: every name at 40 plants or
-// fewer and 12 or fewer, else the count cell; review R2, C1).
+// fewer and 12 or fewer, else the count cell; review R2, C1): the boards' plain list ("Toxic: Almond,
+// Licorice"), "and" only where the names sit inside a sentence (`and`: "Olive and Almond share
+// Xylella", "Silk oak and Napier grass sit between", the outside-and-toxic sentence; c2 C1).
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
@@ -69,7 +71,7 @@ export function warningGroups(members: readonly Taxon[], flags: readonly Flag[],
     if (f.other && ids.has(f.other)) s.add(f.other);
     agents.set(a, s);
   }
-  if (agents.size) out.push({ key: 'shared', head: T('palette.warningsShared'), body: [...agents].map(([a, s]) => <span key={a} class="ct-warn-line"><Names ids={[...s]} name={name} size={size} text={(w) => (a ? T('palette.warningsSharedAgent', { names: w, agent: a }) : T('palette.warningsSharedNone', { names: w }))} lead={a ? <strong>{a}: </strong> : null} /> </span>) });
+  if (agents.size) out.push({ key: 'shared', head: T('palette.warningsShared'), body: [...agents].map(([a, s]) => <span key={a} class="ct-warn-line"><Names ids={[...s]} name={name} size={size} and text={(w) => (a ? T('palette.warningsSharedAgent', { names: w, agent: a }) : T('palette.warningsSharedNone', { names: w }))} lead={a ? <strong>{a}: </strong> : null} /> </span>) });
   return out;
 }
 
@@ -139,7 +141,7 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
                   {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}>{list(r[k])}</Line_>)}
                 </ul>
                 {g.several > 0 && <p class="ct-chart-note">{P('palette.warningsReasons', g.reasonCount, { plants: P('palette.warningsReasonsPlants', g.look.length), carry: P('palette.warningsReasonsCarry', g.several) })}</p>}
-                {g.outsideToxic.length > 0 && <div class="ct-chart-note"><Names ids={g.outsideToxic} name={name} size={size} few={3} text={(w) => P('palette.warningsOutsideToxic', g.outsideToxic.length, { names: w })} lead={<p>{P('palette.warningsOutsideToxicMany', g.outsideToxic.length)}</p>} /></div>}
+                {g.outsideToxic.length > 0 && <div class="ct-chart-note"><Names ids={g.outsideToxic} name={name} size={size} few={3} and text={(w) => P('palette.warningsOutsideToxic', g.outsideToxic.length, { names: w })} lead={<p>{P('palette.warningsOutsideToxicMany', g.outsideToxic.length)}</p>} /></div>}
               </>
             ) : list(ids)}
           </Line_>
@@ -182,8 +184,9 @@ function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: numb
   const l = w.line, said = K(l), v = vars(l);
   if (w.kind === 'family') {
     // The board's "Find a soil feeder of another family" waits for a Find entry that takes a job and a
-    // predicate without a hole (Find.tsx, not this stream's; round 2 R1, C1): no action that opens an
-    // unfiltered list (hand-off: the entry brings back the action and its words in the 11 locales).
+    // predicate without a hole (Find.tsx and store.ts, not this stream's; round 2 R1, C1): no action that
+    // opens an unfiltered list. A known board difference (MainMore) until then, kept visible by the
+    // expected-fail PFB23 (owner pf-b; hand-off to the main agent, c2 C3).
     const fam = String(l.vars.family), words = `palette.balance.familyWords.${fam}`, hint = `palette.balance.familyHint.${fam}`;
     const hintText = has(hint) ? T(hint) : T('plants.weigh.familyHint');
     return (
@@ -223,8 +226,8 @@ function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: numb
     return (
       <li data-weigh="water">
         <strong>{P('palette.balance.waterMix', re, v)}</strong><Est l={l} />
-        <p>{T('palette.balance.waterMixFor', v)}{small && <> <Names ids={reg} name={name} size={size} text={(hi) => <Names ids={dry} name={name} size={size} text={(lo) => (mid.length
-          ? <Names ids={mid} name={name} size={size} text={(between) => sentence(hi, lo, between)} />
+        <p>{T('palette.balance.waterMixFor', v)}{small && <> <Names ids={reg} name={name} size={size} and text={(hi) => <Names ids={dry} name={name} size={size} and text={(lo) => (mid.length
+          ? <Names ids={mid} name={name} size={size} and text={(between) => sentence(hi, lo, between)} />
           : sentence(hi, lo, null))} />} /></>}</p>
         {!small && <><Group label={T('palette.balance.useHigh')} ids={reg} name={name} size={size} /><Group label={T('palette.balance.useLow')} ids={dry} name={name} size={size} /><Group label={T('palette.balance.useMedium')} ids={mid} name={name} size={size} /></>}
         <NotRecorded ids={none} name={name} size={size} />

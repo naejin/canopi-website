@@ -39,7 +39,7 @@ const FAMILY_SHARE = 0.25;
 // not recorded). The v14 boards (approved 2026-11-18, later than the owner's 2026-11-15 "Needs regular
 // water") name the 'regular' plants "thirsty" in the mixed form ("Water needs: one thirsty plant among 9
 // recorded", PaletteMore); the board wins.
-export type WaterNeed = 'dry' | 'medium' | 'regular';
+type WaterNeed = 'dry' | 'medium' | 'regular';
 const BY_DROUGHT: Record<string, WaterNeed> = { High: 'dry', Medium: 'medium', Low: 'regular', None: 'regular' };
 const BY_MOISTURE: Record<string, WaterNeed> = { Low: 'dry', Medium: 'medium', High: 'regular' };
 export const waterNeed = (w: FactValues['water_need'] | null): WaterNeed | null =>
@@ -129,7 +129,7 @@ function waterLines(members: readonly Taxon[], ctx: WeighContext, m: number, unc
 
 // The climate factors: a second look from one of these is "Near the edge of their climate range" (the
 // one set: views/palette/Weigh.tsx reads it through leaveGroups).
-export const CLIMATE_FACTORS: ReadonlySet<Factor> = new Set<Factor>(['cold', 'mild', 'cool', 'summer', 'hot', 'dry']);
+const CLIMATE_FACTORS: ReadonlySet<Factor> = new Set<Factor>(['cold', 'mild', 'cool', 'summer', 'hot', 'dry']);
 // The second look's reasons (a member may carry several): the board's near the edge, toxic or very
 // toxic, recorded invasive in the chosen country (word-map "Needs a second look"), and the flags'
 // misfit (the room or plot) and serious clash.

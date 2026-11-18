@@ -1306,6 +1306,8 @@
   "consortium.palette.jobsFoot": "植物は担うすべての役割に数えます。",
   "consortium.palette.jobsUnchecked": "other: 役割が未確認：#種。「人を養う」以外の役割には数えません。",
   "consortium.palette.jobsNoJob": "other: ほかに#種は役割の記録がありませんが、1年目だけか気候の範囲外なので、どの穴にも数えません。",
+  "consortium.palette.jobOutside": "other: ほかに#種がこの役目をしますが、気候の範囲外です（{names}）：ここでは数えません。",
+  "consortium.palette.jobOutsideMany": "other: ほかに#種がこの役目をしますが、気候の範囲外です：ここでは数えません：",
   "consortium.palette.warningsTitle": "注意",
   "consortium.palette.warningsLeave": "other: {period}までに#種が気候の範囲を出ます",
   "consortium.palette.warningsEdgeThen": "その頃に範囲の端に近い：{names}。",

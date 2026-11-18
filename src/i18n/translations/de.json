@@ -1306,6 +1306,8 @@
   "consortium.palette.jobsFoot": "Eine Pflanze zählt unter jeder Aufgabe, die sie tut.",
   "consortium.palette.jobsUnchecked": "one: Aufgaben noch nicht geprüft: # Pflanze, unter keiner Aufgabe gezählt außer „Ernährt dich“. | other: Aufgaben noch nicht geprüft: # Pflanzen, unter keiner Aufgabe gezählt außer „Ernährt dich“.",
   "consortium.palette.jobsNoJob": "one: # weitere hat keine Aufgaben erfasst, steht aber nur im ersten Jahr oder liegt außerhalb ihres Klimabereichs: Sie zählt für keine Lücke. | other: # weitere haben keine Aufgaben erfasst, stehen aber nur im ersten Jahr oder liegen außerhalb ihres Klimabereichs: Sie zählen für keine Lücke.",
+  "consortium.palette.jobOutside": "one: # weitere tut das, liegt aber außerhalb ihres Klimabereichs ({names}): hier nicht gezählt. | other: # weitere tun das, liegen aber außerhalb ihres Klimabereichs ({names}): hier nicht gezählt.",
+  "consortium.palette.jobOutsideMany": "one: # weitere tut das, liegt aber außerhalb ihres Klimabereichs: hier nicht gezählt: | other: # weitere tun das, liegen aber außerhalb ihres Klimabereichs: hier nicht gezählt:",
   "consortium.palette.warningsTitle": "Warnungen",
   "consortium.palette.warningsLeave": "one: # verlässt ihren Klimabereich bis {period} | other: # verlassen ihren Klimabereich bis {period}",
   "consortium.palette.warningsEdgeThen": "Dann nahe am Rand ihres Bereichs: {names}.",
