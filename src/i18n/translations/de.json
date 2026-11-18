@@ -745,7 +745,7 @@
   "consortium.country.noneWhy": "jede Pflanze zeigt dann ihre weltweite Zahl",
   "consortium.country.noMatch": "Kein Land mit diesem Namen.",
   "consortium.country.found": "one: # Land | other: # Länder",
-  "consortium.country.foundMore": "one: # Land: die ersten {shown} sind aufgeführt; tippen Sie mehr vom Namen | other: # Länder: die ersten {shown} sind aufgeführt; tippen Sie mehr vom Namen",
+  "consortium.country.foundMore": "one: # Land: die ersten {shown} sind aufgeführt; tippe mehr vom Namen ein | other: # Länder: die ersten {shown} sind aufgeführt; tippe mehr vom Namen ein",
   "consortium.share.button": "Teilen",
   "consortium.share.title": "Diese Palette teilen",
   "consortium.share.field": "Link zu dieser Palette",

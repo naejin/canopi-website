@@ -745,7 +745,7 @@
   "consortium.country.noneWhy": "cada planta muestra entonces su cifra mundial",
   "consortium.country.noMatch": "Ningún país con ese nombre.",
   "consortium.country.found": "one: # país | other: # países",
-  "consortium.country.foundMore": "one: # país: se listan los {shown} primeros; escriba más del nombre | other: # países: se listan los {shown} primeros; escriba más del nombre",
+  "consortium.country.foundMore": "one: # país: se listan los {shown} primeros; escribe más del nombre | other: # países: se listan los {shown} primeros; escribe más del nombre",
   "consortium.share.button": "Compartir",
   "consortium.share.title": "Compartir esta paleta",
   "consortium.share.field": "Enlace a esta paleta",

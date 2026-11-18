@@ -90,10 +90,9 @@
 .ct .ct-place .button { white-space: normal; max-width: 100%; min-width: 0; text-align: center; }
 .ct .ct-place-suggest { margin: 0; }
 
-/* The country line (Country board). */
-.ct .ct-country { display: grid; gap: 8px; background: var(--surface); }
+/* The country line (Country board): its card is shell.css's one .ct .ct-country rule. */
 /* "Changing it" (board Country): radio rows, each its own radio over the whole row and the board's
-   circle (ochre ring when checked, name bold); "Another country" opens the field "Your country" with
+   circle (ochre ring when checked, name bold); under "Another country" the field "Your country" with
    its search icon and the countries it matches (final1 N2). */
 .ct .ct-country-choices { display: grid; margin: 0; padding: 0; border: 0; min-width: 0; }
 .ct .ct-country-row { position: relative; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 4px 0; border-top: 1px solid var(--border); font-size: 15px; line-height: 20px; cursor: pointer; }
@@ -105,7 +104,7 @@
 .ct .ct-country-row-name { display: block; }
 .ct .ct-country-row:has(input:checked) .ct-country-row-name { font-weight: 600; }
 .ct .ct-country-row-why { display: block; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
-.ct .ct-country-other { display: grid; gap: 6px; padding: 0 0 8px 30px; }
+.ct .ct-country-other { position: relative; display: grid; gap: 6px; padding: 0 0 8px 30px; }
 .ct .ct-country-search { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text-secondary); }
 .ct .ct-country-search svg { flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
 .ct .ct-country-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--text); }
@@ -113,9 +112,11 @@
 .ct .ct-country-search input:focus { outline: none; }
 .ct .ct-country-results { display: grid; margin: 0; padding: 0; list-style: none; max-height: 16rem; overflow-y: auto; }
 .ct .ct-country-results .ct-link { display: block; width: 100%; min-height: 40px; text-align: start; font-weight: 400; }
-.ct .ct-country-other [role="status"]:empty { display: none; }
+/* The field's polite status line, empty until the first letter: out of the layout but never
+   display:none, so it stays in the accessibility tree and its first words are read (review S3). */
+.ct .ct-country-other [role="status"]:empty { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* Board Country's note box: "Why we ask." in bold after the invasive mark. */
-.ct .ct-country-why { display: flex; gap: 8px; flex-basis: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-alt); font-size: 14px; line-height: 20px; color: var(--text); }
+.ct .ct-country-why { display: flex; gap: 8px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-alt); font-size: 14px; line-height: 20px; color: var(--text); }
 .ct .ct-country-why .ct-country-icon { align-self: flex-start; margin-top: 2px; }
 .ct .ct-country-why p { margin: 0; flex: 1; min-width: 0; }
 .ct .ct-country-why strong { font-weight: 600; }

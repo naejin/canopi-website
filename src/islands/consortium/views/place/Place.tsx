@@ -23,7 +23,7 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/consortium/index.ts';
-import { addMembers, climate, country, countFits, curatedClimates, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, pool, removeMember, room, siteEdits, snapshot, toast, updateToast, verdictContext, verdictRule, view } from '../../store.ts';
+import { type Country, addMembers, climate, country, countFits, curatedClimates, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, pool, removeMember, room, siteEdits, snapshot, toast, updateToast, verdictContext, verdictRule, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { formatLength, formatTemp } from '../../format.ts';
@@ -43,7 +43,7 @@ import { countryName, nameOf, num, zoneName } from '../kit/names.ts';
 import { cardsAsked, closeClimates, desk, focusField, openClimates, placeWords, shortPlace } from '../location/shared.ts';
 import { koppenWordsKey } from '../location/koppen-words.ts';
 import { Steps } from './steps.tsx';
-import { findCountries, foldName } from './country-search.ts';
+import { enterCountry, findCountries } from './country-search.ts';
 
 const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
 
@@ -58,30 +58,46 @@ const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
 //   ClimateHand's climates do: "<country> · from your location" puts the location's country back
 //   (source 'location', never "chosen by you"), "No country" clears it, "Another country" reveals the
 //   field "Your country". So the checked row is always the country in use, whatever moved it (a tap,
-//   the arrows, Space, a screen reader). A tap or Enter on a row also closes the choices.
-// - The field: what is typed filters the countries (by the page-language name, the English name or the
-//   ISO code; Latin accents aside, as a grower types them, never kana voicing) into a short list of
-//   buttons; one polite status line says how many match, or that none does.
+//   the arrows, Space, a screen reader). A tap or Enter on a row also closes the choices. The country
+//   in use when the choices opened is kept: "Another country" checked again with nothing picked puts
+//   it back, with its source and what the device held (review S1: an arrow past "No country" is
+//   undone by the arrow back).
+// - The field (always under "Another country", as the board draws it): typing checks that row; what is
+//   typed filters the countries (by the page-language name, the English name or the ISO code; Latin
+//   accents aside, as a grower types them, never kana voicing) into a short list of buttons; one
+//   polite status line, always in the accessibility tree, says how many match, or that none does.
+//   Enter takes an exact name or the one match (country-search.ts enterCountry), else goes to the list.
 // - "Why we ask." is the board's note box, under the rows and under "Why we ask" with no country.
 type Row = 'here' | 'other' | 'none';
 let english: Intl.DisplayNames | null = null;
 const englishName = (c: string): string => { try { english ??= new Intl.DisplayNames(['en'], { type: 'region' }); return english.of(c) ?? c; } catch { return c; } };
+// The country's state as the line moves it, beside chooseCountry (state/draft.ts; hand-off: these two
+// belong there, next to it, as state/location.ts is the lazy location chunk the line never loads).
 // The location's country put back: from the location again, so it follows the place (the stored
 // choice goes; state/arrival.ts reads the location's country when none is stored).
-function followLocation(code: string): void {
+function followLocationCountry(code: string): void {
   country.value = { code, source: 'location' };
   memory.remove(COUNTRY_STORE);
 }
+// The country in use and what the device holds, and both put back as they were.
+interface CountryAt { country: Country; stored: string | null }
+const countryAt = (): CountryAt => ({ country: country.peek(), stored: memory.read(COUNTRY_STORE) });
+function putCountryBack(at: CountryAt): void {
+  country.value = at.country;
+  if (at.stored === null) memory.remove(COUNTRY_STORE); else memory.write(COUNTRY_STORE, at.stored);
+}
 // Board Country's invasive mark (the spreading arrows), leading the line and the note.
-const invasiveMark = (cls: string) => <svg aria-hidden="true" class={cls} width="16" height="16" viewBox="0 0 20 20"><path d="M10 10L4.5 4.5M10 10l5.5-5.5M10 10l-5.5 5.5M10 10l5.5 5.5M4.5 8V4.5H8M12 4.5h3.5V8M4.5 12v3.5H8M12 15.5h3.5V12" /></svg>;
-// "Why we ask." in bold, then the rest of the sentence (the key holds both: its first sentence is the lead).
-function WhyNote() {
-  const text = T('country.why');
+const invasiveMark = (cls: string) => <svg aria-hidden="true" class={cls} width="18" height="18" viewBox="0 0 20 20"><path d="M10 10L4.5 4.5M10 10l5.5-5.5M10 10l-5.5 5.5M10 10l5.5 5.5M4.5 8V4.5H8M12 4.5h3.5V8M4.5 12v3.5H8M12 15.5h3.5V12" /></svg>;
+// A sentence-led text ("Why we ask. …", "No country. …"): its first sentence in bold, then the rest.
+function Lead({ text }: { text: string }) {
   const m = /^(.+?[.。])\s*([\s\S]*)$/.exec(text);
+  return m ? <><strong>{m[1]}</strong>{m[1].endsWith('.') ? ' ' : ''}{m[2]}</> : <>{text}</>;
+}
+function WhyNote() {
   return (
     <div class="ct-country-why">
       {invasiveMark('ct-country-icon')}
-      <p>{m ? <><strong>{m[1]}</strong>{m[1].endsWith('.') ? ' ' : ''}{m[2]}</> : text}</p>
+      <p><Lead text={T('country.why')} /></p>
     </div>
   );
 }
@@ -96,6 +112,8 @@ function CountryLine() {
   const [why, setWhy] = useState(false);
   // "Another country" checked before a country is picked from the field.
   const [another, setAnother] = useState(false);
+  // The country in use when the choices opened (review S1).
+  const opened = useRef<CountryAt | null>(null);
   const [query, setQuery] = useState('');
   const trigger = useRef<HTMLButtonElement>(null);
   const pick = useRef<HTMLDivElement>(null);
@@ -114,19 +132,26 @@ function CountryLine() {
   const name = code ? countryName(code) : '';
   const here = siteLocation.value?.source !== 'link' ? siteLocation.value?.lookup?.regions.isoA2 ?? null : null;
   const row: Row = another || (code && code !== here) ? 'other' : code ? 'here' : 'none';
-  const found = row === 'other' ? findCountries(query, known.keys(), countryName, englishName, pageLang()) : { count: 0, list: [] };
+  const found = findCountries(query, known.keys(), countryName, englishName, pageLang());
   const typed = query.trim() !== '';
   const close = () => { setOpen(false); setAnother(false); setQuery(''); focusTo.current = 'trigger'; };
-  const toggle = () => { if (open) close(); else { setOpen(true); setAnother(false); setQuery(''); setWhy(false); focusTo.current = 'checked'; } };
-  // A row checked (a tap, the arrows, Space): the country follows at once.
+  const toggle = () => { if (open) close(); else { opened.current = countryAt(); setOpen(true); setAnother(false); setQuery(''); setWhy(false); focusTo.current = 'checked'; } };
+  // A row checked (a tap, the arrows, Space, typing in the field): the country follows at once.
+  // "Another country" with nothing picked: the country of another place it opened on comes back.
   const commit = (r: Row) => {
-    if (r === 'other') { setAnother(true); return; }
+    if (r === 'other') {
+      setAnother(true);
+      const was = opened.current?.country.code;
+      if (was && was !== here) putCountryBack(opened.current!);
+      return;
+    }
     setAnother(false);
-    if (r === 'here' && here) followLocation(here);
+    if (r === 'here' && here) followLocationCountry(here);
     else if (r === 'none') chooseCountry(null);
   };
-  // A tap or Enter on a row: done (the field instead for "Another country").
-  const finish = (r: Row) => { if (r === 'other') focusTo.current = 'field'; else close(); };
+  // A tap or Enter on a row: done (the field instead for "Another country"; it is on the page already,
+  // so the focus moves now: a row the arrows checked first changes no state, so no render follows).
+  const finish = (r: Row) => { if (r !== 'other') close(); else if (field.current) field.current.focus(); else focusTo.current = 'field'; };
   const choose = (c: string) => { chooseCountry(c); close(); };
   const triggerProps = { ref: trigger, 'aria-expanded': open ? 'true' : 'false', 'aria-controls': pickId, onClick: toggle } as const;
   const travel = <p class="ct-muted ct-small-text">{T('country.travel')}</p>;
@@ -140,15 +165,14 @@ function CountryLine() {
       <span class="ct-country-row-text"><span class="ct-country-row-name">{label}</span>{' '}<span class="ct-country-row-why">{sub}</span></span>
     </label>
   );
-  // The field's keys: Enter takes the one match (or an exact name or code), else goes to the list; the
-  // arrows walk the list and back up to the field.
+  // The field's keys: Enter takes an exact name or the one match, else goes to the list; the arrows walk
+  // the list and back up to the field.
   const fieldKeys = (e: KeyboardEvent) => {
     if (e.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter') {
       e.preventDefault();
-      const q = foldName(query.trim(), pageLang());
-      const exact = found.list.find(([c, n]) => c.toLowerCase() === q || foldName(n, pageLang()) === q);
-      if (exact || found.count === 1) choose((exact ?? found.list[0])[0]);
+      const c = enterCountry(query, known.keys(), countryName, englishName, pageLang());
+      if (c) choose(c);
       else list.current?.querySelector('button')?.focus();
     } else if (e.key === 'ArrowDown' && found.list.length) { e.preventDefault(); list.current?.querySelector('button')?.focus(); }
   };
@@ -168,7 +192,7 @@ function CountryLine() {
           {from !== 'guess' && <>{sep}<button type="button" class="link-button ct-link" {...triggerProps}>{T('country.change')}</button></>}
         </p>
       ) : (
-        <p class="ct-country-text">{invasiveMark('ct-country-icon')}{T('country.noneLine')}</p>
+        <p class="ct-country-text">{invasiveMark('ct-country-icon')}<span><Lead text={T('country.noneLine')} /></span></p>
       )}
       {code && status === 'unchecked' && <p class="ct-muted ct-small-text ct-country-note">{T('country.unchecked', { country: name })}</p>}
       {(from === 'guess' || !code) && (
@@ -186,22 +210,20 @@ function CountryLine() {
             <legend class="ct-sr">{T('country.line')}</legend>
             {here && radio('here', countryName(here), T('country.fromLocation'))}
             {radio('other', T('country.another'), T('country.anotherWhy'))}
-            {row === 'other' && (
-              <div class="ct-country-other">
-                <label class="ct-country-search">
-                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5" /><path d="M12.3 12.3l4.2 4.2" /></svg>
-                  <input type="text" ref={field} value={query} aria-label={T('country.pick')} placeholder={T('country.pick')} autoComplete="off"
-                    aria-controls={found.list.length ? listId : undefined} aria-describedby={statusId}
-                    onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)} onKeyDown={fieldKeys} />
-                </label>
-                {found.list.length > 0 && (
-                  <ul class="ct-country-results" id={listId} ref={list} onKeyDown={listKeys}>
-                    {found.list.map(([c, n]) => <li><button type="button" class="link-button ct-link" onClick={() => choose(c)}>{n}</button></li>)}
-                  </ul>
-                )}
-                <p class="ct-muted ct-small-text" id={statusId} role="status">{!typed ? '' : !found.count ? T('country.noMatch') : found.count > found.list.length ? P('country.foundMore', found.count, { shown: found.list.length }) : P('country.found', found.count)}</p>
-              </div>
-            )}
+            <div class="ct-country-other">
+              <label class="ct-country-search">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5" /><path d="M12.3 12.3l4.2 4.2" /></svg>
+                <input type="text" ref={field} value={query} aria-label={T('country.pick')} placeholder={T('country.pick')} autoComplete="off"
+                  aria-controls={found.list.length ? listId : undefined} aria-describedby={statusId}
+                  onInput={(e) => { const v = (e.currentTarget as HTMLInputElement).value; setQuery(v); if (v.trim() && row !== 'other') commit('other'); }} onKeyDown={fieldKeys} />
+              </label>
+              {found.list.length > 0 && (
+                <ul class="ct-country-results" id={listId} ref={list} onKeyDown={listKeys}>
+                  {found.list.map(([c, n]) => <li><button type="button" class="link-button ct-link" onClick={() => choose(c)}>{n}</button></li>)}
+                </ul>
+              )}
+              <p class="ct-muted ct-small-text" id={statusId} role="status">{!typed ? '' : !found.count ? T('country.noMatch') : found.count > found.list.length ? P('country.foundMore', found.count, { shown: found.list.length }) : P('country.found', found.count)}</p>
+            </div>
             {radio('none', T('country.none'), T('country.noneWhy'))}
           </fieldset>
           <WhyNote />

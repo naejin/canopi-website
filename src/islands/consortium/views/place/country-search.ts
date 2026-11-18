@@ -20,3 +20,15 @@ export function findCountries(query: string, codes: Iterable<string>, nameOf: (c
   found.sort((x, y) => x[2] - y[2] || x[1].localeCompare(y[1], lang));
   return { count: found.length, list: found.slice(0, cap).map(([c, n]) => [c, n]) };
 }
+// What Enter in the field takes: an exact full name (page language or English; accents and case
+// aside), else the one match, else nothing (the focus goes to the list). Never the ISO code ahead of
+// the list: many two-letter starts of names are codes ("ch" is Switzerland's, Chile starts with it).
+export function enterCountry(query: string, codes: Iterable<string>, nameOf: (c: string) => string, englishOf: (c: string) => string, lang: string): string | null {
+  const q = foldName(query.trim(), lang);
+  if (!q) return null;
+  const all = [...codes];
+  const exact = all.find((c) => foldName(nameOf(c), lang) === q || foldName(englishOf(c), 'en') === q);
+  if (exact) return exact;
+  const found = findCountries(query, all, nameOf, englishOf, lang, 1);
+  return found.count === 1 ? found.list[0][0] : null;
+}

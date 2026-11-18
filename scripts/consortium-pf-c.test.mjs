@@ -92,7 +92,7 @@ test('pf-c final1 N5 (the head painted before the island): the inline script tak
 });
 
 // ---- step back: the country field (board Country "Your country") ----
-import { findCountries, foldName } from '../src/islands/consortium/views/place/country-search.ts';
+import { enterCountry, findCountries, foldName } from '../src/islands/consortium/views/place/country-search.ts';
 
 const CODES = ['KE', 'TZ', 'RE', 'FR', 'DE', 'GH', 'CV', 'GY', 'KZ', 'QA', 'CA', 'PK', 'BH', 'HT', 'PE', 'MR', 'AF'];
 const namesIn = (lang) => { const d = new Intl.DisplayNames([lang], { type: 'region' }); return (c) => d.of(c); };
@@ -124,4 +124,20 @@ test('pf-c country field: names that start with the words first, a short list wi
   const tan = findCountries('tan', CODES, english, english, 'en');
   assert.equal(codesOf(tan)[0], 'TZ', `Tanzania first (${codesOf(tan).join(', ')})`);
   assert.ok(codesOf(tan).includes('PK') && codesOf(tan).includes('AF'), 'names holding it follow');
+});
+
+// Review S2 (2026-11-18): Enter in the field takes the one match or an exact full name, never a two-letter
+// ISO code that is also the start of other names ("ch" is Switzerland's code, Chad, Chile and China start with it).
+test('pf-c country field: Enter takes the one match or an exact name (page language or English), never an ISO code ahead of the list', () => {
+  const codes = ['CH', 'CL', 'CN', 'TD', 'DE', 'DK', 'MA', 'MG', 'ML', 'NE', 'NG', 'NI', 'PE', 'IR', 'IQ', 'IE', 'IN', 'ID', 'TZ', 'KE'];
+  const at = (q, lang = 'en') => enterCountry(q, codes, namesIn(lang), english, lang);
+  for (const q of ['ch', 'de', 'ma', 'ne', 'Ir', 'Ni', 'In', 'CH']) assert.equal(at(q), null, `"${q}" goes to the list`);
+  assert.equal(at('ch', 'fr'), null, 'fr "ch" goes to the list (never Suisse)');
+  assert.equal(at('Ma', 'fr'), null, 'fr "Ma" goes to the list (never Maroc)');
+  assert.equal(at('Niger'), 'NE', 'an exact name, though Nigeria also matches');
+  assert.equal(at('niger'), 'NE', 'case aside');
+  assert.equal(at('Tanz'), 'TZ', 'the one match');
+  assert.equal(at('germany', 'fr'), 'DE', 'the exact English name in fr');
+  assert.equal(at('Kenia', 'es'), 'KE', 'the exact page-language name');
+  assert.equal(at('zqx'), null, 'no match');
 });

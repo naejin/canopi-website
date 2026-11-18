@@ -1090,6 +1090,11 @@ test('PFC42 (pf-c board Country "Changing it": radio rows that commit on change,
   assert.ok(await has(page, aria('textbox', 'Your country'), 2000), 'board: "Another country" shows the field "Your country"');
   assert.equal(await page.$eval(aria('textbox', 'Your country'), (e) => e.placeholder), 'Your country', 'board: its placeholder');
   assert.equal(await page.$('select'), null, 'board: no list box');
+  // Review S1 (2026-11-18): Enter on "Another country" after the arrow checked it puts the focus in the field.
+  await page.keyboard.press('Enter');
+  await frames(page);
+  assert.equal((await focused(page)).name, 'Your country', 'Enter on "Another country" checked by an arrow: the focus in "Your country"');
+  await page.focus(aria('radio', OTHER));
   await page.keyboard.press('ArrowDown');
   await frames(page);
   assert.equal(await checkedRow(page), NONE, '"No country" checked');
@@ -1131,10 +1136,11 @@ test('PFC46 (pf-c board Country "Your country": the field): typing filters the c
     const f = document.querySelector('[data-ct="country"] input[type="text"]');
     const said = document.getElementById(f.getAttribute('aria-describedby'));
     const list = f.getAttribute('aria-controls');
-    return { said: said?.textContent ?? null, live: said?.getAttribute('role'), controls: list, listed: list ? [...document.getElementById(list).querySelectorAll('button')].map((b) => b.textContent) : [] };
+    return { said: said?.textContent ?? null, live: said?.getAttribute('role'), inTree: !!said && getComputedStyle(said).display !== 'none' && getComputedStyle(said).visibility !== 'hidden', controls: list, listed: list ? [...document.getElementById(list).querySelectorAll('button')].map((b) => b.textContent) : [] };
   }, field);
   let s = await state();
   assert.deepEqual([s.said, s.live, s.controls], ['', 'status', null], `empty: a status line, no list (${JSON.stringify(s)})`);
+  assert.equal(s.inTree, true, 'review S3: the empty status line stays in the accessibility tree (never display:none), so its first words are read');
   await page.keyboard.type('Tan');
   await frames(page);
   s = await state();
@@ -1145,6 +1151,15 @@ test('PFC46 (pf-c board Country "Your country": the field): typing filters the c
   await frames(page);
   s = await state();
   assert.deepEqual([s.said, s.controls], ['No country by that name.', null], `no match said, no list (${JSON.stringify(s)})`);
+  // Review S2: Enter on two letters that start several names goes to the list, never the country with that ISO code.
+  await page.locator(field).fill('ch');
+  await frames(page);
+  await page.focus(field);
+  await page.keyboard.press('Enter');
+  await frames(page);
+  assert.deepEqual(await countryNow(page), ['KE', 'location'], '"ch" then Enter chooses nothing (never Switzerland)');
+  s = await state();
+  assert.equal((await focused(page)).name, s.listed[0], `"ch" then Enter: the focus on the list's first country (${s.listed.join(', ')})`);
   await page.locator(field).fill('Tanz');
   await frames(page);
   await page.focus(field);
@@ -1170,6 +1185,64 @@ test('PFC46 (pf-c board Country "Your country": the field): typing filters the c
   const jaList = await ja.$$eval('[data-ct="country"] .ct-country-results button', (bs) => bs.map((b) => b.textContent));
   assert.deepEqual(jaList, ['ケニア'], `ja: a Latin spelling finds Kenya (${jaList.join(', ')})`);
   await done(ja);
+});
+
+test('PFC49 (pf-c review S1: an arrow past "No country" is undone by the arrow back): with no location, a chosen France, then "Change", Down ("No country" saved), Up: "Another country" checked and France chosen again, on the device too; a guessed Kenya comes back as a guess, nothing stored', async () => {
+  const stored = (pg) => pg.evaluate(() => localStorage.getItem('canopi-country'));
+  const page = await withStorage({ 'canopi-country': 'FR' });
+  await says(page, 'Invasive warnings for France · chosen by you · Change', { timeout: 10_000 });
+  await focusCountry(page, 'Change');
+  await page.keyboard.press('Enter');
+  await frames(page);
+  assert.equal(await checkedRow(page), OTHER, 'a chosen country with no location: "Another country" checked');
+  await page.keyboard.press('ArrowDown');
+  await frames(page);
+  assert.deepEqual([await countryNow(page), await stored(page)], [[null, 'chosen'], '-'], 'the arrow saved "No country"');
+  await page.keyboard.press('ArrowUp');
+  await frames(page);
+  assert.equal(await checkedRow(page), OTHER, '"Another country" checked again');
+  assert.deepEqual([await countryNow(page), await stored(page)], [['FR', 'chosen'], 'FR'], 'France back, chosen by you, on the device too');
+  await page.keyboard.press('Escape');
+  await says(page, 'Invasive warnings for France · chosen by you · Change');
+  await done(page);
+  const guess = await guessedKenya(390);
+  await says(guess, 'Invasive warnings for Kenya · guessed from your browser', { timeout: 10_000 });
+  await focusCountry(guess, 'Change');
+  await guess.keyboard.press('Enter');
+  await frames(guess);
+  await guess.keyboard.press('ArrowDown');
+  await frames(guess);
+  assert.deepEqual(await countryNow(guess), [null, 'chosen'], 'the arrow saved "No country"');
+  await guess.keyboard.press('ArrowUp');
+  await frames(guess);
+  assert.deepEqual([await countryNow(guess), await stored(guess)], [['KE', 'guess'], null], 'the guess back as a guess, nothing stored');
+  await done(guess);
+});
+
+test('PFC50 (pf-c review S6, S7: board Country): "No country." in bold leads the no-country line, the invasive mark at 18 px, the line on the surface ground; in "Changing it" the field "Your country" shows under "Another country" while "Kenya from your location" is checked, and typing in it checks "Another country", the country unchanged until one is picked', async () => {
+  const none = await withStorage({ 'canopi-country': '-' });
+  await says(none, /No country\. Each plant says/, { timeout: 10_000 });
+  const line = await none.evaluate(() => {
+    const l = document.querySelector('[data-ct="country"]');
+    const t = l.querySelector('p');
+    const tok = (v) => { const p = document.createElement('span'); p.style.color = `var(${v})`; l.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; };
+    const b = t.querySelector('strong, b');
+    return { lead: b?.textContent, weight: b ? getComputedStyle(b).fontWeight : null, mark: Math.round(t.querySelector('svg').getBoundingClientRect().width), ground: getComputedStyle(l).backgroundColor === tok('--surface') };
+  });
+  assert.deepEqual(line, { lead: 'No country.', weight: '600', mark: 18, ground: true }, 'board Country: the no-country line');
+  await done(none);
+  const page = await atKiambu();
+  await press(page, 'button', 'Change');
+  await frames(page);
+  assert.equal(await checkedRow(page), HERE, 'the location\'s row checked');
+  assert.ok(await has(page, aria('textbox', 'Your country'), 2000), 'board "Changing it": the field under "Another country" while Kenya is checked');
+  await page.focus(aria('textbox', 'Your country'));
+  assert.equal(await checkedRow(page), HERE, 'focusing the field checks nothing');
+  await page.keyboard.type('Tan');
+  await frames(page);
+  assert.equal(await checkedRow(page), OTHER, 'typing in the field checks "Another country"');
+  assert.deepEqual(await countryNow(page), ['KE', 'location'], 'the country unchanged until one is picked');
+  await done(page);
 });
 
 test('PFC47 (pf-c one country line at a time, its state its own): on the climate screen with a guessed country, "Change" opens one set of choices, its aria-controls naming them on screen, no id twice; a climate chosen there closes the screen and Place shows its line closed, never a picker it did not open', async () => {
