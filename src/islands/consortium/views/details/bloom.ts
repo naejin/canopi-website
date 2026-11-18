@@ -1,8 +1,9 @@
 // The Niche block's Flowers row (boards Details, DetailsDesk; fix round 1 BC2): the bloom months that
 // hold near the place, merged into one span. A bloom row is scoped (a climate, a country, a hemisphere
 // and a latitude band): only the rows whose scope holds the place count, so months recorded in one
-// hemisphere are never shown for the other. With no place (no latitude), only rows scoped to no
-// hemisphere or band count. None: null (the view says "no months recorded near your place").
+// hemisphere are never shown for the other. Three states (fix round 2 R4): 'found' (the months), 'none'
+// (a place is set and no row holds it: "no months recorded near your place"), 'no-place' (no latitude
+// and no row that holds everywhere: "set a place to see when it flowers here", never a claim of none).
 // Pure: no DOM, no store (scripts/consortium-pf-f.test.mjs tests it).
 import type { ClimateZone, LayerValue, Month } from '../../../../lib/consortium/types.ts';
 import { months as MONTHS } from '../../../../lib/consortium/types.ts';
@@ -11,7 +12,7 @@ import { monthRuns } from '../layers.ts';
 export interface BloomPlace { lat: number | null; country: string | null; zone: ClimateZone | null }
 
 // Whether a bloom row's scope holds the place.
-export function holdsPlace(v: Pick<LayerValue, 'climate' | 'scope'>, at: BloomPlace): boolean {
+function holdsPlace(v: Pick<LayerValue, 'climate' | 'scope'>, at: BloomPlace): boolean {
   if (v.climate !== null && at.zone !== null && v.climate !== at.zone) return false;
   const s = v.scope;
   if (!s) return true;
@@ -33,11 +34,12 @@ export function holdsPlace(v: Pick<LayerValue, 'climate' | 'scope'>, at: BloomPl
 }
 
 // The bloom months near the place, merged (in calendar order), and whether any of them is an estimate.
-export function bloomNear(values: readonly LayerValue[], at: BloomPlace): { months: Month[]; estimate: boolean } | null {
+export type Bloom = { state: 'found'; months: Month[]; estimate: boolean } | { state: 'none' } | { state: 'no-place' };
+export function bloomNear(values: readonly LayerValue[], at: BloomPlace): Bloom {
   const rows = values.filter((v) => v.field === 'bloom_months' && v.months?.length && holdsPlace(v, at));
-  if (!rows.length) return null;
+  if (!rows.length) return { state: at.lat === null ? 'no-place' : 'none' };
   const on = new Set(rows.flatMap((r) => r.months!));
-  return { months: MONTHS.filter((m) => on.has(m)), estimate: rows.some((r) => r.kind !== 'recorded') };
+  return { state: 'found', months: MONTHS.filter((m) => on.has(m)), estimate: rows.some((r) => r.kind !== 'recorded') };
 }
 
 // Months in full names as one span or a few ("October–June", "December–March"; all twelve: allYear).

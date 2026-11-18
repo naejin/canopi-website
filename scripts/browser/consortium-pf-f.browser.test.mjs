@@ -26,7 +26,9 @@ import { LIGHT, dialogText, done, frames, says, setSiteEdits } from './pf-helper
 useHarness();
 
 const core = await import('../../src/lib/consortium/holes.ts');
-const { jobsOf, yearsOf } = await import('../../src/lib/consortium/index.ts');
+const { jobsOf, laterLossOf, yearsOf } = await import('../../src/lib/consortium/index.ts');
+// A member's verdicts today and at each later period (store periodVerdictsOf), for core's laterLossOf.
+const periodVerdicts = (page, id) => page.evaluate((pid) => { const s = window.__ctTest.store; return s.periodVerdictsOf(s.taxonOf(pid)); }, id);
 const DETAILS = 'dialog.ct-sheet[open]';
 const BANDS = ['Coldest nights', 'Warmth over the year', 'Hottest days', 'Rain against evaporation'];
 const idOf = (page, sci) => page.evaluate((n) => window.__ctTest.store.pool.value.find((t) => t.canonical_name === n || t.canonical_name.startsWith(`${n} `))?.id ?? null, sci);
@@ -391,7 +393,7 @@ test('PFF10 (pf-f BC2, Flowers): Pinto peanut at Kiambu: the months near the pla
   await done(page);
 });
 
-test('PFF11 (pf-f BC3, BC10, BC11, BC12, DetailsDesk): Almond at Seville: the danger chip in the danger colour, the period-edge chip, the keep years, later lines warned, Find with its glyph, no pairs section', async () => {
+test('PFF11 (pf-f BC3, BC10, BC11, round 2 R1 R2 C5, DetailsDesk): Almond at Seville: the danger chip in the danger colour, the period-edge chip with the thermometer, the keep years, later lines warned, Find with its glyph, the warnings section kept on the desk', async () => {
   const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
   const id = await idOf(page, 'Prunus dulcis');
   await open(page, 'details', id);
@@ -400,22 +402,32 @@ test('PFF11 (pf-f BC3, BC10, BC11, BC12, DetailsDesk): Almond at Seville: the da
   const danger = await page.$$eval(`${DETAILS} [data-summary] .ct-flag[data-level="danger"]`, (els) => els.map((e) => { const p = document.createElement('span'); p.style.color = 'var(--danger)'; e.parentElement.append(p); const want = getComputedStyle(p).color; p.remove(); return { got: getComputedStyle(e).color, want, text: e.textContent.trim() }; }));
   for (const d of danger) assert.equal(d.got, d.want, `the danger chip "${d.text}" in --danger`);
   // BC10 + BC11: the engine's later periods for this member, as the chip and the keep line.
-  const want = await page.evaluate((pid) => {
-    const { store } = window.__ctTest;
-    const [, ...laters] = store.periodVerdictsOf(store.taxonOf(pid));
-    const loss = laters.find((l) => l.level === 'outside' || l.level === 'look') ?? null;
-    return loss ? { level: loss.level, period: loss.judged.replace('-', '–'), year: Number(loss.judged.slice(0, 4)) } : null;
-  }, id);
+  // R1 (round 2): the loss is core's laterLossOf (a later climate worse than today's, never light or wind).
+  const [now, ...laters] = await periodVerdicts(page, id);
+  const loss = laterLossOf(now, laters);
+  const want = loss ? { level: loss.level, period: loss.verdict.judged.replace('-', '–'), year: Number(loss.verdict.judged.slice(0, 4)) } : null;
+  assert.ok(want, 'board DetailsDesk: Almond at Seville loses its range by a later period (engine)');
   if (want) {
     await says(page, `${want.level === 'outside' ? 'Outside its range' : 'Near the edge of its range'} by ${want.period}`, { inDialog: true });
-    assert.ok(await page.$eval(`${DETAILS} [data-chip="period-edge"]`, (e) => !!e.querySelector('svg')), 'the period-edge chip has its glyph');
+    // C5: the board's range-edge mark, the thermometer of "Warmth over the year", whatever the limiting measure.
+    const glyph = await page.evaluate(() => ({ chip: document.querySelector('dialog[open] [data-chip="period-edge"] svg path')?.getAttribute('d') ?? null, thermo: document.querySelector('dialog[open] [data-against] [data-measure="tmeanYear"] .ct-bandcard-glyph path')?.getAttribute('d') ?? null }));
+    assert.ok(glyph.chip && glyph.thermo, `the chip and the year-warmth band both draw a glyph (${JSON.stringify(glyph)})`);
+    assert.equal(glyph.chip, glyph.thermo, 'the period-edge chip draws the thermometer');
     await says(page, `Keeping it is a fair bet for its first ${want.year - new Date().getFullYear()} years`, { inDialog: true });
     const warned = await page.$$eval(`${DETAILS} [data-against] li[data-warned]`, (els) => els.map((e) => ({ svg: !!e.querySelector('svg'), color: getComputedStyle(e).color })));
     assert.ok(warned.length > 0 && warned.every((w) => w.svg), `the later verdict lines warned, with a glyph (${JSON.stringify(warned)})`);
   }
-  // BC12: Find one that holds carries the search glyph; the desk has no "With your other plants and warnings" section.
+  // BC12: Find one that holds carries the search glyph.
   assert.ok(await page.$eval(`${DETAILS} [data-cando] .ct-d-cando-actions button.button-secondary`, (b) => /Find one that holds/.test(b.textContent) && !!b.querySelector('svg circle')), 'Find one that holds with the search glyph');
-  assert.equal(await page.$(`${DETAILS} details[data-more="pairs"]`), null, 'the desk leaves out "With your other plants and warnings"');
+  // R2 (round 2): the desk keeps "With your other plants and warnings" (toxicity, allelopathy, the
+  // liability notice), as the phone does; only the conflict list the summary chip repeats goes.
+  assert.ok(await has(page, `${DETAILS} details[data-more="pairs"]`, 2000), 'the desk keeps "With your other plants and warnings"');
+  await openAll(page);
+  await says(page, 'Check with a local expert', { inDialog: true });
+  assert.ok(await has(page, `${DETAILS} [data-allelo]`, 1000), 'the allelopathy line on the desk');
+  assert.ok(await has(page, `${DETAILS} [data-warnings] [data-row="toxicity"]`, 1000), 'the toxicity row on the desk');
+  const hard = await page.evaluate((pid) => { const s = window.__ctTest.store; return s.flagsOfPlant(s.taxonOf(pid)).length; }, id);
+  if (hard) assert.equal(await page.$$eval(`${DETAILS} [data-conflict]:not(.soft)`, (e) => e.length), 0, 'no hard conflict list beside its chip');
   // BC4: What you can do: each row holds by 2041–2070 (the engine), "holds in 2041–2070", and how far it is recorded on the member's limiting measure.
   const cando = await page.evaluate((pid) => {
     const s = window.__ctTest.store, rule = s.verdictRule.value, ctx = s.verdictContext.value;
@@ -443,12 +455,8 @@ test('PFF12 (pf-f BC4, What you can do, limiting heat): the member limited by he
   const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
   const id = await idOf(page, 'Prunus dulcis');
   await open(page, 'details', id);
-  const want = await page.evaluate((pid) => {
-    const s = window.__ctTest.store, t = s.taxonOf(pid);
-    const [now, ...laters] = s.periodVerdictsOf(t);
-    const v = laters.find((l) => l.level === 'outside' || l.level === 'look') ?? now;
-    return v?.limiting?.factor ?? null;
-  }, id);
+  const [now, ...laters] = await periodVerdicts(page, id);
+  const want = laterLossOf(now, laters)?.factor ?? now?.limiting?.factor ?? null;
   const bands = await page.$$eval(`${DETAILS} [data-cando] [data-row-band]`, (els) => els.map((e) => e.textContent.trim()));
   if (want === 'hot') for (const b of bands) assert.match(b, /Recorded up to \d+(\.\d+)?\s°C/);
   else if (want === 'cold') for (const b of bands) assert.match(b, /Recorded down to [−-]?\d+(\.\d+)?\s°C/);
@@ -659,7 +667,7 @@ test('PFF21 (pf-f R3, DetailsDesk soil): with a soil test the Niche row names th
   await done(page);
 });
 
-test('PFF22 (pf-f R4, M23): Almond against Mendoza says how dry it is recorded, in en and es', async () => {
+test('PFF22 (pf-f round 2 C3, M23): Almond against Mendoza: the aridity line ends as the boards end it, no rain sentence, in en and es', async () => {
   for (const lang of ['en', 'es']) {
     const page = await boardPalette('mendoza-board-rain', { width: 390, lang });
     const id = await idOf(page, 'Prunus dulcis');
@@ -667,7 +675,10 @@ test('PFF22 (pf-f R4, M23): Almond against Mendoza says how dry it is recorded, 
     const low = await page.evaluate((pid) => window.__ctTest.store.taxonOf(pid).climate?.precip?.low ?? null, id);
     assert.ok(low !== null, 'Almond has a recorded rain range (engine)');
     const mm = `${Math.round(low).toLocaleString(lang)} mm`;
-    await says(page, lang === 'en' ? `recorded from ${mm}` : `registros desde ${mm}`, { inDialog: true }); // C11: one form for either gender
+    // C3 (round 2): no v14 board puts the rain words in Against; they belong to the candidate rows.
+    const against = await page.$eval(`${DETAILS} [data-against]`, (e) => e.textContent);
+    assert.ok(!against.includes(mm), `Against says no "${mm}" (${lang})`);
+    assert.ok(await has(page, `${DETAILS} [data-against] [data-measure="aridity"]`, 1000), `the aridity band (${lang})`);
     await done(page);
   }
 });
@@ -795,5 +806,25 @@ test('PFF25 (pf-f C12, bands at 320 px): Almond at Seville: the band geometry, n
   }
   assert.match(await page.$eval(`${DETAILS} [data-band-key]`, (e) => e.textContent), /where it is recorded growing.*your place today.*not a firm limit/s, 'the key in words');
   assert.equal(await sideways(page), 0, 'Details at 320 px: nothing sideways');
+  await done(page);
+});
+
+test('PFF30 (pf-f round 2 R3 R4, no place): a member on the desk before a location is set: What you can do says the hold is not checked and still lists the closest; Flowers asks for a place', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
+  await frames(page);
+  await open(page, 'details', id);
+  await says(page, 'In your palette.', { inDialog: true });
+  // R3: nothing can be judged by 2041–2070 without a place: never a silent empty section.
+  const fit = await page.evaluate((pid) => (window.__ctTest.store.alternativesFor(pid)?.fit ?? []).length, id);
+  const cando = await page.$eval(`${DETAILS} [data-cando]`, (e) => ({ text: e.textContent, rows: e.querySelectorAll('[data-swap-row]').length }));
+  assert.match(cando.text, /Not checked for 2041–2070/, `What you can do says why no row holds (${cando.text.slice(0, 200)})`);
+  if (fit > 0) assert.equal(cando.rows, Math.min(fit, 2), 'the closest rows, without "holds in"');
+  assert.doesNotMatch(cando.text, /holds in 2041–2070/, 'never "holds in" when nothing was compared');
+  // R4: the Flowers row asks for a place instead of claiming none near it.
+  const flowers = await page.$eval(`${DETAILS} [data-niche-row="flowers"]`, (e) => e.textContent);
+  assert.doesNotMatch(flowers, /near your place/, flowers);
+  assert.match(flowers, /set a place to see when it flowers here|[A-Z][a-z]+–/, flowers);
   await done(page);
 });

@@ -137,7 +137,7 @@ export const MeasureGlyph = ({ m, class: cls = 'ct-glyph' }: { m: Measure; class
 // A candidate row's climate line (boards Swap and DetailsDesk; core rowBandOf): the mini band (the
 // recorded range, the place today as a dot and in the later period as a ring; aria-hidden, the words
 // beside it say it), the measure's glyph and the words, in the level's colour (never colour alone).
-export function MiniBand({ b }: { b: RowBand }) {
+function MiniBand({ b }: { b: RowBand }) {
   const xs = [b.low, b.high, b.place, ...(b.later !== null ? [b.later] : [])];
   const min = Math.min(...xs), max = Math.max(...xs), pad = (max - min || 1) * 0.15;
   const x = (v: number) => 4 + ((v - (min - pad)) / (max - min + 2 * pad)) * 40;

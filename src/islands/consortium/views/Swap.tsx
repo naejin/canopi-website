@@ -24,8 +24,8 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
-import type { Alternative, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { gapLines, jobsOf, periodIds, periodName, rowBandOf, swapYearsLine, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
+import type { Alternative, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import { gapLines, holdStatesOf, jobsOf, periodIds, periodName, rowBandOf, swapYearsLine, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
 import { addMembers, closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { AltRow, doesWords, FitLine, jobList, lightWords, RowBandLine, say, sizeShort, SWAP, yearsWords } from './kit/fit.tsx';
@@ -66,17 +66,12 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // None from a borrowed list not fitted to a place (store.offerPool; the palette's head says why).
   const offer = useMemo(() => store.alternativesFor(id), [algo, id, store.offerPool.value, store.memberTaxa.value, store.flagContext.value, store.removed.value, verdicts]);
   const alts = offer?.fit ?? [], outsideAlts = offer?.outside ?? [];
-  // Each candidate at the hold period (one verdicts call): 'holds', 'not' (judged outside then), or
-  // 'unknown' (nothing to compare: no place, no projection, no range recorded).
+  // Each candidate at the hold period: 'holds', 'not' (judged outside then), or 'unknown' (nothing to
+  // compare: no place, no projection, no range recorded); core holdStatesOf, which Details reads too.
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
   const holdOf = useMemo(() => {
-    const out = new Map<PlantId, 'holds' | 'not' | 'unknown'>();
     const p = store.pool.peek();
-    if (!rule || !p) return out;
-    const taxa = alts.map((a) => p.find((x) => x.id === a.id)).filter((x): x is Taxon => !!x);
-    const then: Map<PlantId, PlantVerdict> = rule.verdicts(taxa, { ...ctx, period: HOLD_PERIOD });
-    for (const x of taxa) out.set(x.id, then.get(x.id)?.range !== 'judged' ? 'unknown' : rule.holdsBy(x, ctx, HOLD_PERIOD) ? 'holds' : 'not');
-    return out;
+    return holdStatesOf(rule, p ? alts.map((a) => p.find((x) => x.id === a.id)).filter((x): x is Taxon => !!x) : [], ctx, HOLD_PERIOD);
   }, [rule, ctx, alts]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;

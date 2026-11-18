@@ -21,7 +21,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, JobId, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, candoLine, drainageLine, factAt, fills, guestOf, invasiveLines, jobsOf, keepLine, laterLossOf, locales, measureOf, pairings, periodIds, periodName, placementZone, rowBandOf, siteIdOf, sourceTitle, spanOf, sureRows, warns, yearsLine, whenLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, candoLine, drainageLine, factAt, fills, guestOf, holdStatesOf, invasiveLines, jobsOf, keepLine, laterLossOf, locales, measureOf, pairings, periodIds, periodName, placementZone, rowBandOf, siteIdOf, sourceTitle, spanOf, sureRows, warns, yearsLine, whenLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import type { Factor, PlantVerdict, SureRow } from '../../../../lib/consortium/index.ts';
 import { bloomNear, monthsLong } from './bloom.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
@@ -230,7 +230,8 @@ function Syntropic({ role, text }: { role: string; text: (role: string) => strin
 
 // The Niche block (v13/v14 boards): Light live (the span, today the single level, and "found mostly in"
 // once the release has it); Soil pH's recorded range live with "best pH" after release; Moisture and
-// Root depth after release; Flowers from the bloom months near the place, or "no months recorded".
+// Root depth after release; Flowers from the bloom months near the place, "no months recorded near your
+// place", or, with no place set, "set a place to see when it flowers here" (fix round 2 R4).
 function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; zone: ClimateZone; desk: boolean }) {
   const after = <span class="ct-after" data-after-release>{T('details.afterRelease')}</span>;
   const r = t.traits.soil_ph;
@@ -252,10 +253,10 @@ function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; z
           {desk && <> · <button type="button" class="ct-link-button" data-set-ph onClick={() => store.openFigure('soilPh')}>{T('details.setOwnPh')}</button></>}</li>
         <li data-niche-row="moisture"><strong>{T('details.nicheMoisture')}</strong> {after}</li>
         <li data-niche-row="root"><strong>{T('details.nicheRoot')}</strong> {after}</li>
-        <li data-niche-row="flowers"><strong>{T('details.nicheFlowers')}</strong> {bloom ? monthsLong(bloom.months, lang(), T('t.allYear')) : T('details.flowersNone')}{bloom?.estimate && <> <span class="ct-est">{T('est.word')}</span></>}</li>
+        <li data-niche-row="flowers"><strong>{T('details.nicheFlowers')}</strong> {bloom.state === 'found' ? monthsLong(bloom.months, lang(), T('t.allYear')) : T(bloom.state === 'none' ? 'details.flowersNone' : 'details.flowersNoPlace')}{bloom.state === 'found' && bloom.estimate && <> <span class="ct-est">{T('est.word')}</span></>}</li>
       </ul>
       {/* Months worked out by a rule (dated photos, a text): the row's one "estimate" tag, and its legend in words. */}
-      {bloom?.estimate && <p class="ct-muted ct-small" data-est-legend>{capital(T('est.word'))}: {T('est.legend')}</p>}
+      {bloom.state === 'found' && bloom.estimate && <p class="ct-muted ct-small" data-est-legend>{capital(T('est.word'))}: {T('est.legend')}</p>}
     </div>
   );
 }
@@ -328,6 +329,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const others = store.memberTaxa.value.filter((o) => o.id !== id);
   const pairs = pairings(t, others, store.flagContext.value.interactions);
   const conflictCount = conflicts.filter((l) => l.kind === 'conflict').length;
+  // The desk's summary chip names each hard conflict (chips below): its list says only the soft ones.
+  const listed = desk ? conflicts.filter((l) => l.kind === 'soft') : conflicts;
   const allelo = t.warnings.allelopathic;
   const notAllChecked = t.warnings.toxicity === null || t.warnings.allelopathic === null || (facts?.invasiveIn ?? t.warnings.invasive_in) === null;
   const jobs = jobsOf(t);
@@ -349,19 +352,28 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
     : T('details.onList', { climate: zoneName(zone) });
   const climateLabel = here && here !== zone ? T('details.climatePlaced', { climate: zoneName(here), list: zoneName(zone) }) : zoneName(zone);
   // A member's later periods (core keepLine, the period-edge chip, What you can do): the first later
-  // period it needs a second look or is outside (laterLossOf), and the measure that limits it then.
+  // period whose climate is worse than today's (core laterLossOf: climate factors only, fix round 2 R1),
+  // and the climate measure that limits it then, else today's when it is a climate one.
   const [now = null, ...laters] = member ? store.periodVerdictsOf(t) : [];
-  const loss = laterLossOf(laters);
-  const lossFactor: Factor | null = (loss ?? now)?.limiting?.factor ?? null;
-  const lossMeasure = lossFactor ? measureOf(lossFactor) : null;
+  const loss = laterLossOf(now, laters);
+  const nowFactor = now?.limiting?.factor ?? null;
+  const lossFactor: Factor | null = loss?.factor ?? (nowFactor && measureOf(nowFactor) ? nowFactor : null);
   const keep = keepLine(now, laters, new Date().getFullYear());
-  // What you can do (board DetailsDesk; fix round 1 BC4, C9): the two closest alternatives that hold by the
-  // later period (the verdict rule's holdsBy, as Swap's hold filter), each in the board's words (core
-  // candoLine: same years, what it does not do, what it adds, "holds in 2041–2070") in Swap's row frame
-  // (kit/fit.tsx AltRow), and how far it is recorded on the measure that limits this member.
+  // What you can do (board DetailsDesk; fix round 1 BC4, C9; round 2 R3): the two closest alternatives
+  // that hold by the later period, read from core holdStatesOf as Swap's hold filter reads it, each in the
+  // board's words (core candoLine: same years, what it does not do, what it adds, "holds in 2041–2070")
+  // in Swap's row frame (kit/fit.tsx AltRow), and how far it is recorded on the measure that limits this
+  // member. When none can be judged then (no place, no projection, no range recorded), the two closest
+  // without "holds in" and "Not checked for 2041–2070"; when every judged one fails, how many fail.
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
   const holdPeriod = periodIds[1];
-  const alts = member && rule ? (store.alternativesFor(id)?.fit ?? []).filter((a) => { const x = taxonOf(a.id); return !!x && rule.holdsBy(x, ctx, holdPeriod); }).slice(0, 2) : [];
+  const fitAlts = member ? (store.alternativesFor(id)?.fit ?? []) : [];
+  const holdStates = holdStatesOf(rule, fitAlts.map((a) => taxonOf(a.id)).filter((x): x is Taxon => !!x), ctx, holdPeriod);
+  const stateOf = (pid: PlantId) => holdStates.get(pid) ?? 'unknown';
+  const holding = fitAlts.filter((a) => stateOf(a.id) === 'holds');
+  const unjudged = fitAlts.filter((a) => stateOf(a.id) === 'unknown');
+  const alts = (holding.length ? holding : unjudged).slice(0, 2);
+  const altsHold = holding.length > 0;
   const bandOf = (x: Taxon) => {
     const v: PlantVerdict | null = store.poolVerdicts.value?.get(x.id) ?? store.verdictOf(x);
     return v ? rowBandOf(v, store.laterVerdictOf(x, v), periodName, lossFactor) : null;
@@ -417,8 +429,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             : <>{standsWords ? T('details.stands', { span: standsWords }) : T('timingUnknown')} · {sizeText}</>}</p>
           {!member && niche}
           <ul class="ct-marks">
-            {/* A member near the edge of its range, or outside it, in a later period (board DetailsDesk; fix round 1 BC10). */}
-            {loss && <li class="ct-flag" data-level="warning" data-chip="period-edge">{lossMeasure ? <MeasureGlyph m={lossMeasure} /> : WARN}{T(loss.level === 'outside' ? 'details.chipOutsideBy' : 'details.chipEdgeBy', { period: periodName(loss.judged) })}</li>}
+            {/* A member whose climate a later period puts near the edge of its range, or outside it (board DetailsDesk; fix round 1 BC10, round 2 R1); the board's range-edge mark, the thermometer (C5). */}
+            {loss && <li class="ct-flag" data-level="warning" data-chip="period-edge"><MeasureGlyph m="tmeanYear" />{T(loss.level === 'outside' ? 'details.chipOutsideBy' : 'details.chipEdgeBy', { period: periodName(loss.verdict.judged) })}</li>}
             {chips.map((l) => <li class="ct-flag" data-level={l.level ?? 'warning'} data-chip={l.kind}>{WARN}{l.chip ?? l.text}</li>)}
             {toxUnk && <li class="ct-tag" data-conf="not-checked">{INFO}{T('details.toxUnkChip')}</li>}
             {(borrowed || guest) && <li class="ct-tag" data-conf="estimate" data-estimate-chip>{WAVE}{T('details.estimateChip', { list: T(`list.${(guest ?? borrowed)!.toLowerCase()}`) })}</li>}
@@ -440,7 +452,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
                   const warn = flagLines(x, a.flags, scene);
                   const band = bandOf(x);
                   // Board DetailsDesk: "Feeds you in the same years, brings no helpers; holds in 2041–2070" (core candoLine).
-                  const does = capital(say(candoLine(jobs, y, jobsOf(x), yearsOf(x), periodName(holdPeriod))));
+                  const does = capital(say(candoLine(jobs, y, jobsOf(x), yearsOf(x), altsHold ? periodName(holdPeriod) : null)));
                   return (
                     <AltRow key={a.id} t={x} name={nameOf(x)} flagged={a.flags.length > 0} does={<span class="ct-d-cando-does">{CHECK} {does}</span>}
                       actions={<button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => { closeSheet(); store.swapMember(id, x.id); }}>{SWAP}{T('details.swap')}</button>}>
@@ -451,6 +463,9 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
                 })}
               </ul>
             )}
+            {/* Unknown is never a hole (R3): nothing judged by the period says so; every judged one failing says how many. */}
+            {!altsHold && unjudged.length > 0 && <p class="ct-muted ct-small" data-conf="not-checked" data-hold-unknown>{INFO} {T('swap.holdUnknown', { period: periodName(holdPeriod) })}</p>}
+            {!altsHold && !unjudged.length && fitAlts.length > 0 && <p class="ct-muted ct-small" data-hold-none>{P('swap.noneHold', fitAlts.length, { period: periodName(holdPeriod) })}</p>}
             <div class="ct-actions ct-d-cando-actions">
               <button type="button" class="button button-secondary" onClick={findOne}>{SEARCH}{T('details.findHolds')}</button>
               <button type="button" class="ct-link-button" onClick={remove}>{T('details.remove')}</button>
@@ -486,24 +501,23 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
               <Row k={T('details.rootPartners')}>{labelOf(labels, 'mycorrhizal_type', t.traits.mycorrhizal_type)}</Row>
             </dl>
           </More>
-          {/* The desk leaves this section out (board DetailsDesk; fix round 1 BC12): the summary's chips carry the conflict and the toxicity there. */}
-          {!desk && (
-            <More k="pairs" title={T('details.secOthersWarn')} hint={[conflictCount ? P('details.conflictCount', conflictCount) : T('details.noConflict'), ...(notAllChecked ? [T('details.notAllChecked')] : [])].join(' · ')}>
-              {conflicts.length > 0 && <ul class="ct-warnlist">{conflicts.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-conflict>{l.text}</li>)}</ul>}
-              {!conflicts.length && !pairs.length && <p class="ct-d-ok">{CHECK} {P('details.noConflictWith', others.length)}</p>}
-              {pairs.length > 0 && <ul class="ct-oklist">{pairs.map((p) => <li>{T('details.pairing', { other: nameOf(p.other) })}</li>)}</ul>}
-              {conflicts.length > 0 && !pairs.length && <p class="ct-muted">{T('details.noPairing')}</p>}
-              <p class={allelo === true ? '' : 'ct-muted'} data-allelo>{allelo === true ? WARN : INFO} {T(allelo === true ? 'd.allelo' : allelo === false ? 'd.alleloNone' : 'd.alleloUnk')}</p>
-              <h4>{T('details.secWarnings')}{notAllChecked && <span class="ct-muted"> {T('details.notAllChecked')}</span>}</h4>
-              <dl class="ct-traits" data-warnings>
-                <Row k={T('details.toxicity')} hook="toxicity">{toxUnk ? T('d.toxUnk') : warnLines.filter((l) => l.kind === 'toxicity').map((l) => l.text).join(' ') || T('details.toxNone')}</Row>
-                <Row k={T('details.invasive')} hook="invasive">{invasive.map((x) => <span class="ct-line" data-invasive-scope={x.scope}>{x.text}</span>)}</Row>
-                <Row k={T('details.spreads')} hook="spreads">{spreads === true ? T('d.spreads') : T('details.notRecorded')}</Row>
-                {warnLines.filter((l) => l.kind !== 'toxicity').map((l) => <Row k={T('details.secWarnings')} hook={l.kind}><span data-level={l.level}>{l.text}</span></Row>)}
-              </dl>
-              <p class="ct-muted ct-small">{T('d.liab')}</p>
-            </More>
-          )}
+          {/* One Warnings section in both layouts (fix round 2 R2: never different safety facts on phone and
+              desk); only the conflict list the summary's chip repeats goes on the desk (BC12), soft ones stay. */}
+          <More k="pairs" title={T('details.secOthersWarn')} hint={[conflictCount ? P('details.conflictCount', conflictCount) : T('details.noConflict'), ...(notAllChecked ? [T('details.notAllChecked')] : [])].join(' · ')}>
+            {listed.length > 0 && <ul class="ct-warnlist">{listed.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-conflict>{l.text}</li>)}</ul>}
+            {!conflicts.length && !pairs.length && <p class="ct-d-ok">{CHECK} {P('details.noConflictWith', others.length)}</p>}
+            {pairs.length > 0 && <ul class="ct-oklist">{pairs.map((p) => <li>{T('details.pairing', { other: nameOf(p.other) })}</li>)}</ul>}
+            {conflicts.length > 0 && !pairs.length && <p class="ct-muted">{T('details.noPairing')}</p>}
+            <p class={allelo === true ? '' : 'ct-muted'} data-allelo>{allelo === true ? WARN : INFO} {T(allelo === true ? 'd.allelo' : allelo === false ? 'd.alleloNone' : 'd.alleloUnk')}</p>
+            <h4>{T('details.secWarnings')}{notAllChecked && <span class="ct-muted"> {T('details.notAllChecked')}</span>}</h4>
+            <dl class="ct-traits" data-warnings>
+              <Row k={T('details.toxicity')} hook="toxicity">{toxUnk ? T('d.toxUnk') : warnLines.filter((l) => l.kind === 'toxicity').map((l) => l.text).join(' ') || T('details.toxNone')}</Row>
+              <Row k={T('details.invasive')} hook="invasive">{invasive.map((x) => <span class="ct-line" data-invasive-scope={x.scope}>{x.text}</span>)}</Row>
+              <Row k={T('details.spreads')} hook="spreads">{spreads === true ? T('d.spreads') : T('details.notRecorded')}</Row>
+              {warnLines.filter((l) => l.kind !== 'toxicity').map((l) => <Row k={T('details.secWarnings')} hook={l.kind}><span data-level={l.level}>{l.text}</span></Row>)}
+            </dl>
+            <p class="ct-muted ct-small">{T('d.liab')}</p>
+          </More>
           <More k="names" title={T('details.secNamesWhy')} hint={names.length ? P('details.secNamesCount', names.length) : undefined}>
             <dl class="ct-traits">
               {names.map(([l, n]) => <><dt lang={l}>{ownName(l)}</dt><dd lang={l}>{n}</dd></>)}

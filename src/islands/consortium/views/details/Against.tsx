@@ -14,7 +14,7 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
 import type { AgainstEntry, Band, Dispute, Level, Line, Measure, Scenario, Taxon } from '../../../../lib/consortium/index.ts';
-import { againstLines, bandsOf, datasetLines, drainageLine, levelLine, limitOf, lineTerm, periodName, rainFromLine, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
+import { againstLines, bandsOf, datasetLines, drainageLine, levelLine, limitOf, lineTerm, periodName, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, MEASURE_GLYPH, midSentence, say } from '../kit/fit.tsx';
 import { WARN } from '../kit/icons.tsx';
 import { coords } from '../kit/names.ts';
@@ -23,7 +23,6 @@ import { pageLang } from '../../strings.ts';
 
 // The disputed bound each band can carry (Dispute.field).
 const DISPUTED: Partial<Record<Measure, Dispute['field']>> = { tminCold: 'tmin_cold.low', tmeanYear: 'tmean_year.low' };
-const GLYPH = MEASURE_GLYPH;
 const W = 324, PAD = 6;
 // The boards' four bands, in their one order (Coldest nights, Warmth over the year, Hottest days, Rain
 // against evaporation). A measure core draws beyond them (the summer warmth a plant needs, tmeanWarm) has
@@ -85,7 +84,7 @@ function BandCard({ b, disputes, period, children }: { b: Band; disputes: readon
   return (
     <div class="ct-bandcard" data-measure={b.measure} data-level={b.level}>
       <div class="ct-bandcard-head">
-        <b><svg class="ct-bandcard-glyph" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d={GLYPH[b.measure]} /></svg>{say(b.title)}</b>
+        <b><svg class="ct-bandcard-glyph" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d={MEASURE_GLYPH[b.measure]} /></svg>{say(b.title)}</b>
         <span class="ct-bandcard-status" data-level={b.level}><LevelIcon level={b.level} />{say(b.status)}</span>
       </div>
       <BandDraw b={b} disputes={disputes} period={period} />
@@ -141,7 +140,7 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
   const scenario = scenarioName(store.verdictContext.value.scenario as Scenario);
   const later = store.laterVerdictOf(t, v);
   // The placement's estimate is said once, in the header (minor, round 3), not again here.
-  const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null, rainFrom: rainFromLine(t) }).filter((e) => !e.placement);
+  const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null }).filter((e) => !e.placement);
   // The four climate bands in the boards' one order (ORDER), no other; the soil is its own card under the
   // section (SoilCard).
   const bands = bandsOf(v, later, t.climate).filter((b): b is Band => !!b && ORDER.includes(b.measure)).sort((a, b) => ORDER.indexOf(a.measure) - ORDER.indexOf(b.measure));
@@ -264,7 +263,7 @@ export function SoilCard({ t }: { t: Taxon }) {
   return (
     <section class="ct-soilcard" data-soil-card data-level={level} aria-labelledby="ct-d-soil">
       <div class="ct-bandcard-head">
-        <b id="ct-d-soil"><svg class="ct-bandcard-glyph" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d={GLYPH.soilPh} /></svg>{T('details.soilTitle')}</b>
+        <b id="ct-d-soil"><svg class="ct-bandcard-glyph" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d={MEASURE_GLYPH.soilPh} /></svg>{T('details.soilTitle')}</b>
         {ranged && <span class="ct-bandcard-status" data-level={level}><LevelIcon level={level} />{soil.status}</span>}
       </div>
       {ranged && (

@@ -614,9 +614,13 @@ test('c2 fix K19 + T1 (keep it a fair bet): the years to the first later period 
   assert.equal(mNow.level, 'outside');
   assert.equal(line.keepLine(mNow, mLater, 2026), null, 'outside now: today\'s lines say it, no fair bet');
   assert.match(en['consortium.line.keepFairBet'], /fair bet for its first # years: plant its successor beside it now/);
-  // pf-f fix round 1 BC11 (board DetailsDesk, Almond at Seville): a later second look counts too.
-  assert.equal(line.keepLine(now, [vOf({ judged: '2041-2070', level: 'look' }), vOf({ judged: '2071-2099' })], 2026).count, 15, 'a second look by 2041–2070: 15 years');
-  assert.equal(line.keepLine(now, [vOf({ judged: '2041-2070' }), vOf({ judged: '2071-2099' })], 2026), null, 'it fits then');
+  // pf-f fix round 1 BC11 (board DetailsDesk, Almond at Seville): a later second look counts too, when
+  // its climate fits today (round 2 R1: a later climate worse than today's; chestnut's look stays a look).
+  const hot = { factor: 'hot', basis: 'range', level: 'fits', place: 36.2, low: 20, high: 38 };
+  const fitsNow = vOf({ factors: [hot] });
+  assert.equal(line.keepLine(fitsNow, [vOf({ judged: '2041-2070', level: 'look', factors: [{ ...hot, level: 'look', place: 38.4 }] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026).count, 15, 'a second look by 2041–2070: 15 years');
+  assert.equal(line.keepLine(fitsNow, [vOf({ judged: '2041-2070', factors: [hot] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026), null, 'it fits then');
+  assert.equal(line.keepLine(now, [{ ...laters[0], level: 'look', factors: now.factors }], 2026), null, 'a look today that stays the same look: no fair bet');
   assert.equal(line.keepLine(null, [], 2026), null);
 });
 
