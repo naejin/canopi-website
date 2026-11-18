@@ -303,7 +303,8 @@ export function noteLine(note: VerdictNote, vars: NoteVars = {}): Line | null {
 // data-conf; a reason's hedges are its `also` lines (lineTerm). The later lines speak of another
 // period: their hedges are words only, so every surface writes the same terms for the page period.
 export interface AgainstEntry { line: Line; factor?: Factor; level?: Level; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean; noSite?: boolean; placement?: boolean }
-interface AgainstWords { period: (p: PeriodId) => string; scenario: string; heightM: number | null }
+// rainFrom: the plant's rainFromLine (M23), said after the aridity band's line as a sentence of its own.
+interface AgainstWords { period: (p: PeriodId) => string; scenario: string; heightM: number | null; rainFrom?: Line | null }
 const RANK: Record<Level, number> = { outside: 0, look: 1, unknown: 3, fits: 2 };
 // How near a measure is to its limit, as a share of the plant's band (0 at the bound): among factors of
 // one level, the nearest comes first, so the measure that limits the plant leads (boards Details,
@@ -497,7 +498,10 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
   const order = (f: FactorVerdict): number => (f === v.limiting ? -1 : RANK[f.level] * 2 + (f.basis === 'range' ? 0 : 1));
   const byOrder = (a: FactorVerdict, b: FactorVerdict): number => order(a) - order(b) || nearness(a) - nearness(b);
   for (const f of [...v.factors].filter(speaks).sort(byOrder)) {
-    out.push({ line: reasonLine(f, v.watered), factor: f.factor, level: f.level });
+    const line = reasonLine(f, v.watered);
+    // M23 (boards SiteMendoza, Find): how dry it is known to grow, under Rain against evaporation.
+    const rain = f.factor === 'dry' && w.rainFrom ? L('rainFromNote', w.rainFrom.vars) : null;
+    out.push({ line: rain ? { ...line, also: [...(line.also ?? []), rain] } : line, factor: f.factor, level: f.level });
   }
   if (v.range !== 'judged') {
     const term: ConfidenceTerm = v.range === 'not-recorded' ? 'not-recorded' : 'not-checked';

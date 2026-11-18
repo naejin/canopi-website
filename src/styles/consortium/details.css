@@ -67,7 +67,9 @@
 /* Against your place (PP-C c2): the fit line, then one line per factor, the limiting one first; the
    level is in the words and the icon, the colour only repeats it (tokens of the fit line). */
 .ct .ct-against { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; }
-.ct .ct-against-fit { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-alt); font-weight: 600; color: var(--level-fits); }
+.ct .ct-against-fit { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 9px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-alt); font-weight: 600; color: var(--level-fits); }
+/* Board Details: "Against your place" in the display face at 600 (fix round 1 BC18). */
+.ct .ct-against > h3 { font-weight: 600; font-size: 18px; line-height: 24px; }
 .ct .ct-against-fit[data-level="look"] { color: var(--level-look); }
 .ct .ct-against-fit[data-level="outside"] { color: var(--level-outside); }
 .ct .ct-against-fit[data-level="unknown"] { color: var(--level-unknown); }
@@ -269,7 +271,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct details.ct-more[open] > summary::after { transform: rotate(-135deg); }
 /* The sections' headings and their subheads in the board's bold sans (DetailsMore, DetailsDesk; round 4 V9). */
 .ct details.ct-more > summary h3, .ct details.ct-more h4 { font-family: var(--font-sans); font-weight: 600; line-height: 1.3; }
-.ct details.ct-more > summary h3 { margin: 0; font-size: 17px; }
+.ct details.ct-more > summary h3 { flex: 1; margin: 0; font-size: 17px; text-wrap: wrap; } /* the hint follows the title inline and wraps with it (BC18) */
 .ct details.ct-more > summary h3 .ct-muted { font-weight: 400; font-size: 15px; }
 .ct details.ct-more > section { display: grid; gap: 10px; padding-bottom: 16px; }
 .ct details.ct-more h4 { font-size: 15px; margin-top: 6px; }
@@ -341,7 +343,6 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   .ct .ct-d-cando-actions > .button { flex: 0 1 auto; min-width: 0; padding-inline: 12px; white-space: normal; }
   .ct .ct-d-cando-actions > .ct-link-button { flex: none; }
   .ct .ct-d-foot-member { display: none; }
-  .ct .ct-d-body > .ct-soilcard { display: none; } /* board DetailsDesk: the map's say is on the Niche row */
   .ct .ct-d-body .ct-photo { margin: 0; }
   .ct .ct-d-body .ct-photo figcaption { padding-inline: 0; }
 }
@@ -374,8 +375,12 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-band-table :is(th, td) { padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: start; }
 .ct .ct-band-table thead th { color: var(--text-secondary); font-weight: 600; }
 .ct .ct-d-ok { display: flex; gap: 6px; align-items: flex-start; }
-.ct .ct-d-endlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-top: 8px; }
-.ct .ct-d-endlinks .button { flex: 1 1 auto; justify-content: center; }
+.ct .ct-d-endlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 8px; }
+/* The correction and the guide link on one row (board DetailsMore; fix round 1 BC17): a long title wraps inside its own box. */
+.ct .ct-d-endlinks .button { flex: 0 0 auto; justify-content: center; min-height: 40px; padding-inline: 14px; }
+.ct .ct-d-endlinks a { flex: 1 1 8em; min-width: 0; padding-inline: 4px; font-weight: 600; }
+.ct .ct-d-unknown { display: grid; gap: 2px; margin: 8px 0 0; padding: 0; list-style: none; }
+.ct .ct-d-unknown .ct-glyph { width: 14px; height: 14px; vertical-align: -2px; }
 .ct .ct-d-cando-does { display: inline-flex; gap: 4px; align-items: flex-start; color: var(--text); font-weight: 600; }
 .ct .ct-d-foot .button-primary { justify-content: center; }
 .ct .ct-swap-hold { justify-content: space-between; width: 100%; }

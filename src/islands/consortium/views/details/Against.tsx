@@ -13,12 +13,12 @@ import { useEffect, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
-import type { AgainstEntry, Band, Dispute, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
-import { againstLines, bandsOf, datasetLines, levelLine, limitOf, lineTerm, periodName, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
+import type { AgainstEntry, Band, Dispute, Level, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
+import { againstLines, bandsOf, datasetLines, levelLine, limitOf, lineTerm, periodName, rainFromLine, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, MEASURE_GLYPH, say } from '../kit/fit.tsx';
 import { WARN } from '../kit/icons.tsx';
 import { coords } from '../kit/names.ts';
-import { formatLength, formatNumber, formatTemp } from '../../format.ts';
+import { formatNumber, formatTemp } from '../../format.ts';
 import { pageLang } from '../../strings.ts';
 
 // The disputed bound each band can carry (Dispute.field).
@@ -138,7 +138,7 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
   const scenario = scenarioName(store.verdictContext.value.scenario as Scenario);
   const later = store.laterVerdictOf(t, v);
   // The placement's estimate is said once, in the header (minor, round 3), not again here.
-  const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null }).filter((e) => !e.placement);
+  const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null, rainFrom: rainFromLine(t) }).filter((e) => !e.placement);
   // The four climate bands in the boards' one order (Coldest nights, Warmth over the year, Hottest days,
   // Rain against evaporation); the soil is its own card under the section (SoilCard).
   const bands = bandsOf(v, later, t.climate).filter((b): b is Band => !!b).sort((a, b) => ORDER.indexOf(a.measure) - ORDER.indexOf(b.measure));
@@ -200,39 +200,68 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
   );
 }
 
-// The soil card (boards Details, DarkDetails, SiteMendoza; R3: soil pH is a hint that never sets the
-// level): the plant's recorded pH range against the soil map's value (a ring, "soil map: pH 6.3") and
-// the grower's own test (a dot), its status in words, the lines in words, the drainage need, and
-// "Set my own soil pH" (store.openFigure: the figures panel's soil line). Without a map value, "not
-// checked on soil pH" (F10); from a neighbouring square, "a weaker guess". The desk shows the map's say
-// on the Niche row instead (board DetailsDesk; details.css).
-export function SoilCard({ t, traitSources = null }: { t: Taxon; traitSources?: readonly TraitSource[] | null }) {
+// What Details says about soil, one source for both layouts (fix round 1 R3): the soil card on a phone,
+// the Niche row on the desk. The level is the core's soil band (soilBandOf) on the value the engine
+// judges (soilPhOf: the grower's test, else the map; none in pots), and every sentence names that value:
+// "your test", "the soil map" (with its texture word when the map has one), or pots. A map value from a
+// neighbouring square says how far, in kilometres: "a weaker guess" (F10).
+export interface SoilSay { ranged: boolean; level: Level; status: string; line: string; near: string | null; niche: string | null; map: number | null; own: number | null }
+// Kilometres, whole (format.ts has no kilometre unit yet): the number in the page's language, then "km".
+const km = (n: number, lang: string): string => `${formatNumber(n, lang, 0)}\u00a0km`;
+export function soilSayOf(t: Taxon, traitSources: readonly TraitSource[] | null = null): SoilSay {
   const lang = pageLang();
-  const input = store.siteInputs.value?.soilPh ?? null;
-  const map = input?.map ?? null, own = input?.source === 'grower' ? input.value : null;
-  const near = input?.nearKm ?? null;
-  const ph = soilPhOf(store.siteInputs.value);
+  const inputs = store.siteInputs.value;
+  const input = inputs?.soilPh ?? null;
+  const pots = inputs?.pots.value === true;
+  const map = pots ? null : input?.map ?? null, own = pots || input?.source !== 'grower' ? null : input.value;
+  const ph = soilPhOf(inputs);
   const v = store.verdictOf(t);
   const r = t.traits.soil_ph;
   const ranged = !!r && r.min !== null && r.max !== null;
-  const b = v && ranged ? soilBandOf(t, v, ph, traitSources) : null;
-  const level = b?.level ?? 'unknown';
+  const level: Level = (v && ranged ? soilBandOf(t, v, ph, traitSources)?.level : null) ?? 'unknown';
+  const n = (x: number) => formatNumber(x, lang, 1);
   const status = ph === null || level === 'unknown' ? T('details.soilNotChecked')
     : own !== null ? T(level === 'fits' ? 'details.soilFitsYours' : 'details.soilOffYours') : T(level === 'fits' ? 'details.soilFitsLikely' : 'details.soilOffLikely');
+  const texture = store.location.value?.lookup?.soil?.texture ?? null;
+  const range = ranged ? { min: n(r!.min!), max: n(r!.max!) } : { min: '', max: '' };
+  const line = !ranged ? T('details.soilNoRange')
+    : pots ? T('details.soilPots', range)
+    : own !== null ? T(input?.map != null ? 'details.soilLineYours' : 'details.soilLineYoursNoMap', { ...range, ph: n(own), map: input?.map != null ? n(input.map) : '' })
+    : map !== null ? (texture ? T('details.soilLineMapTexture', { ...range, ph: n(map), texture: T(`details.texture.${texture}`) }) : T('details.soilLineMap', { ...range, ph: n(map) }))
+    : T('details.soilLineNone', range);
+  const nearKm = input?.nearKm ?? null;
+  const near = nearKm !== null && own === null && map !== null ? T('details.soilNear', { dist: km(Math.round(nearKm), lang) }) : null;
+  const fit = T(level === 'fits' ? 'details.phFits' : level === 'unknown' ? 'details.phNotChecked' : 'details.phOff');
+  const niche = !ranged ? null : pots ? T('details.phPots') : own !== null ? T('details.phTestSays', { ph: n(own), fit }) : map !== null ? T('details.phMapSays', { ph: n(map), fit }) : null;
+  return { ranged, level, status, line, near, niche, map, own };
+}
+
+// The soil card (boards Details, DarkDetails, SiteMendoza; R3: soil pH is a hint that never sets the
+// level): the plant's recorded pH range against the soil map's value (a ring, "soil map: pH 6.3") and
+// the grower's own test (a dot), its status and lines in words (soilSayOf), the drainage need, and
+// "Set my own soil pH" (store.openFigure: the figures panel's soil line). Without a map value, "not
+// checked on soil pH" (F10); from a neighbouring square, "a weaker guess". The desk shows the same say on
+// the Niche row instead (board DetailsDesk; Details renders no card there).
+export function SoilCard({ t, traitSources = null }: { t: Taxon; traitSources?: readonly TraitSource[] | null }) {
+  const lang = pageLang();
+  const soil = soilSayOf(t, traitSources);
+  const { ranged, level, map, own } = soil;
+  const r = t.traits.soil_ph;
   const n = (x: number) => formatNumber(x, lang, 1);
   const lo = ranged ? Math.min(r!.min!, ...(map !== null ? [map] : []), ...(own !== null ? [own] : [])) : 0;
   const hi = ranged ? Math.max(r!.max!, ...(map !== null ? [map] : []), ...(own !== null ? [own] : [])) : 1;
   const span = hi - lo || 1;
   const x = (val: number) => PAD + ((val - (lo - span * 0.25)) / (span * 1.5)) * (W - 2 * PAD);
-  const line = !ranged ? T('details.soilNoRange')
-    : own !== null ? T(map !== null ? 'details.soilLineYours' : 'details.soilLineYoursNoMap', { min: n(r!.min!), max: n(r!.max!), ph: n(own), map: map !== null ? n(map) : '' })
-    : map !== null ? T('details.soilLineMap', { min: n(r!.min!), max: n(r!.max!), ph: n(map) })
-    : T('details.soilLineNone', { min: n(r!.min!), max: n(r!.max!) });
+  // A marker's label beside it, on the side with room (fix round 1 R7): past the middle, to its left.
+  const label = (val: number, y: number, text: string, cls: string) => {
+    const left = x(val) > W / 2;
+    return <text class={cls} x={left ? x(val) - 5 : x(val) + 5} y={y} text-anchor={left ? 'end' : 'start'}>{text}</text>;
+  };
   return (
     <section class="ct-soilcard" data-soil-card data-level={level} aria-labelledby="ct-d-soil">
       <div class="ct-bandcard-head">
         <b id="ct-d-soil"><svg class="ct-bandcard-glyph" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d={GLYPH.soilPh} /></svg>{T('details.soilTitle')}</b>
-        {ranged && <span class="ct-bandcard-status" data-level={level}><LevelIcon level={level} />{status}</span>}
+        {ranged && <span class="ct-bandcard-status" data-level={level}><LevelIcon level={level} />{soil.status}</span>}
       </div>
       {ranged && (
         <svg class="ct-band" viewBox={`0 0 ${W} 60`} width={W} height="60" aria-hidden="true" focusable="false">
@@ -240,11 +269,11 @@ export function SoilCard({ t, traitSources = null }: { t: Taxon; traitSources?: 
           <rect x={x(r!.min!)} y="32" width={Math.max(1, x(r!.max!) - x(r!.min!))} height="10" class="ct-bd-range" />
           <path d={`M${x(r!.min!)} 32H${x(r!.max!)}M${x(r!.min!)} 42H${x(r!.max!)}M${x(r!.min!)} 32v10M${x(r!.max!)} 32v10`} class="ct-bd-edge" />
           <g class="ct-bd-num"><text x={x(r!.min!)} y="56" text-anchor="middle">{n(r!.min!)}</text><text x={x(r!.max!)} y="56" text-anchor="middle">{n(r!.max!)}</text></g>
-          {map !== null && <><path d={`M${x(map)} 8V46`} class="ct-bd-later" /><circle cx={x(map)} cy="37" r="4" class="ct-bd-later-dot" /><text class="ct-bd-later-text" x={x(map) + 5} y="16">{T('details.soilMapLabel', { ph: n(map) })}</text></>}
-          {own !== null && <><path d={`M${x(own)} 20V48`} class="ct-bd-now" /><circle cx={x(own)} cy="37" r="4" class="ct-bd-now-dot" /><text class="ct-bd-now-text" x={x(own) + 5} y="28">{T('details.soilOwnLabel', { ph: n(own) })}</text></>}
+          {map !== null && <><path d={`M${x(map)} 8V46`} class="ct-bd-later" /><circle cx={x(map)} cy="37" r="4" class="ct-bd-later-dot" />{label(map, 16, T('details.soilMapLabel', { ph: n(map) }), 'ct-bd-later-text')}</>}
+          {own !== null && <><path d={`M${x(own)} 20V48`} class="ct-bd-now" /><circle cx={x(own)} cy="37" r="4" class="ct-bd-now-dot" />{label(own, 28, T('details.soilOwnLabel', { ph: n(own) }), 'ct-bd-now-text')}</>}
         </svg>
       )}
-      <p class="ct-small" data-soil-line>{line}{near !== null && own === null && map !== null && <> {T('details.soilNear', { dist: formatLength(Math.round(near) * 1000, lang, 0) })}</>} <span data-drainage>{T('details.drainageNone')}</span></p>
+      <p class="ct-small" data-soil-line>{soil.line}{soil.near && <> {soil.near}</>} <span data-drainage>{T('details.drainageNone')}</span></p>
       <p class="ct-small"><button type="button" class="ct-link-button" data-set-ph onClick={() => store.openFigure('soilPh')}>{T('details.setOwnPh')}</button> · {T('details.soilNotProjected')}</p>
     </section>
   );

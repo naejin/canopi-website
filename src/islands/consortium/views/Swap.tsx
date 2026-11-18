@@ -7,8 +7,11 @@
 // palette's holes in the same sentence ("…, and stands to year 25: also fills the hole after year 15",
 // bold with a check; core gapLines), its light and size, and its climate as the board's mini band with
 // the edge words ("Near its cool edge today; safer as it warms"; core rowBandOf; fix round 1 BC7). Each row swaps (Swap takes the member
-// out) or adds beside (both kept; v14 board Swap); "Only plants that hold by 2041–2070" keeps the
-// candidates the engine says still hold then (verdict rule holdsBy), with its count. The foot removes the
+// out) or adds beside (both kept; v14 board Swap); "Only plants that hold by 2041–2070" leaves out the
+// candidates the engine judges outside their range then (verdict rule holdsBy), with its count. It shows
+// only when the page can judge (a place with that period's climate: fix round 1 R2); a candidate it
+// cannot judge (no range recorded) stays listed and says "Not checked for 2041–2070", counted apart
+// (unknown is never a hole), and a filter that leaves none says so with See all, never "no plant". The foot removes the
 // member; no Keep (Back keeps it). Inform, don't block (owner decision 2026-11-14): one tap swaps any plant. Alternatives outside
 // their climate range at the site are offered too, behind "Show N outside their climate range", each
 // saying so in words (review r1 bugs-4). Loaded on first use (views/Sheets.tsx). The list comes from
@@ -21,7 +24,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
-import type { Alternative, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import type { Alternative, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
 import { gapLines, jobsOf, periodIds, periodName, rowBandOf, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
 import { addMembers, closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
@@ -63,15 +66,30 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // None from a borrowed list not fitted to a place (store.offerPool; the palette's head says why).
   const offer = useMemo(() => store.alternativesFor(id), [algo, id, store.offerPool.value, store.memberTaxa.value, store.flagContext.value, store.removed.value, verdicts]);
   const alts = offer?.fit ?? [], outsideAlts = offer?.outside ?? [];
+  // Each candidate at the hold period (one verdicts call): 'holds', 'not' (judged outside then), or
+  // 'unknown' (nothing to compare: no place, no projection, no range recorded).
+  const rule = store.verdictRule.value, ctx = store.verdictContext.value;
+  const holdOf = useMemo(() => {
+    const out = new Map<PlantId, 'holds' | 'not' | 'unknown'>();
+    const p = store.pool.peek();
+    if (!rule || !p) return out;
+    const taxa = alts.map((a) => p.find((x) => x.id === a.id)).filter((x): x is Taxon => !!x);
+    const then: Map<PlantId, PlantVerdict> = rule.verdicts(taxa, { ...ctx, period: HOLD_PERIOD });
+    for (const x of taxa) out.set(x.id, then.get(x.id)?.range !== 'judged' ? 'unknown' : rule.holdsBy(x, ctx, HOLD_PERIOD) ? 'holds' : 'not');
+    return out;
+  }, [rule, ctx, alts]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
   if (!t) return null;
   const byId = new Map(pool.map((x) => [x.id, x]));
-  // The hold filter (engine: the verdict rule's holdsBy at the period it names, on the page's context).
-  const rule = store.verdictRule.value, ctx = store.verdictContext.value;
-  const holds = (a: Alternative) => { const x = byId.get(a.id); return !!(x && rule && rule.holdsBy(x, ctx, HOLD_PERIOD)); };
-  const holding = rule ? alts.filter(holds) : alts;
-  const filtered = holdOnly && rule ? holding : alts;
+  // The hold filter (engine: the verdict rule's holdsBy at the period it names, on the page's context),
+  // offered only when at least one candidate can be judged then.
+  const stateOf = (a: Alternative) => holdOf.get(a.id) ?? 'unknown';
+  const canJudge = alts.some((a) => stateOf(a) !== 'unknown');
+  const holding = alts.filter((a) => stateOf(a) === 'holds');
+  const unjudged = canJudge ? alts.filter((a) => stateOf(a) === 'unknown').length : 0;
+  const filterOn = holdOnly && canJudge;
+  const filtered = filterOn ? alts.filter((a) => stateOf(a) !== 'not') : alts;
   // Core's order as it is (closest first, warned ones after; nothing asks).
   const shown = all ? filtered : filtered.slice(0, SHOWN);
   // Plants already in the palette that do every job of this one (board Swap: "Already in your palette").
@@ -107,6 +125,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <div class="ct-row-why">
           <span class="ct-line" data-swap-size>{lightWords(x).growsIn} · {sizeShort(x)}</span>
           <span class="ct-line ct-swap-status" data-conf={v ? undefined : 'not-checked'}>{band ? <RowBandLine b={band} /> : <FitLine v={v} known={far ? 'outside' : undefined} />}</span>
+          {!far && canJudge && stateOf(a) === 'unknown' && <span class="ct-line ct-muted" data-conf="not-checked" data-hold-unknown>{T('swap.holdUnknown', { period: periodName(HOLD_PERIOD) })}</span>}
           {lines.length > 0 && <span class="ct-line ct-swap-flags">{lines.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.chip ?? l.text}</span>)}</span>}
         </div>
       </li>
@@ -135,11 +154,11 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
         </div>
         <NotChecked ctx={store.flagContext.value} />
       </div>
-      {algo && rule && alts.length > 0 && (
+      {algo && canJudge && (
         <label class="ct-check ct-swap-hold">
           <input type="checkbox" checked={holdOnly} onChange={(e) => setHoldOnly((e.target as HTMLInputElement).checked)} />
           <span>{T('swap.holdsOnly', { period: periodName(HOLD_PERIOD) })}</span>
-          <span class="ct-muted ct-swap-hold-count">{T('swap.holdsCount', { n: holding.length, m: alts.length })}</span>
+          <span class="ct-muted ct-swap-hold-count">{T('swap.holdsCount', { n: holding.length, m: alts.length })}{unjudged > 0 && <> · {P('swap.holdsUnknownCount', unjudged)}</>}</span>
         </label>
       )}
       {!algo ? <LoadFailed /> : shown.length || already.length ? (
@@ -147,11 +166,11 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
           {shown.map((a) => row(a))}
           {already.map((m) => <li data-swap-already data-plant-id={m.id}><div class="ct-swap-text"><div class="ct-row-main"><strong>{nameOf(m)}</strong> <i class="ct-sci">{m.canonical_name}</i></div><p class="ct-swap-does">{yearsOf(m)?.to != null ? P('swap.alreadyTo', memberJobs.length, { to: yearsOf(m)!.to! }) : T('swap.already', { span: yearsWords(m) })}</p></div></li>)}
         </ul>
-      ) : <p class="ct-muted">{T('swap.none')}</p>}
+      ) : <p class="ct-muted" data-swap-none>{filterOn && alts.length ? P('swap.noneHold', alts.length, { period: periodName(HOLD_PERIOD) }) : T('swap.none')}</p>}
       {algo && (
         <p class="ct-small ct-swap-more">
           {T('swap.closestFirst')}
-          {filtered.length > shown.length || (holdOnly && holding.length < alts.length) ? <> <button type="button" class="ct-link-button" onClick={() => { setAll(true); setHoldOnly(false); }}>{P('swap.seeAll', alts.length)}</button></> : null}
+          {filtered.length > shown.length || (filterOn && filtered.length < alts.length) ? <> <button type="button" class="ct-link-button" onClick={() => { setAll(true); setHoldOnly(false); }}>{P('swap.seeAll', alts.length)}</button></> : null}
           {outsideAlts.length > 0 && !showOutside && <> · <button type="button" class="ct-link-button" onClick={() => setShowOutside(true)}>{T('swap.everyList')}</button></>}
         </p>
       )}

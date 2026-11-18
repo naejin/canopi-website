@@ -118,3 +118,20 @@ test('BC11 (pf-f keep line): a later second look counts, as the board\'s 15 year
   assert.equal(said(line.keepLine(now, [look, fits], 2026), 'en'), 'Keeping it is a fair bet for its first 15 years: plant its successor beside it now.');
   assert.equal(line.keepLine(now, [pv({ judged: '2041-2070' }), fits], 2026), null, 'fits through: no line');
 });
+
+// ---- fix round 1, batch 2 ----
+
+test('R4 (pf-f M23 in Against): the aridity band\'s line says "recorded from N mm" when the plant has a rain range; the row says it too', () => {
+  const W = { period, scenario: 'SSP2-4.5', heightM: null };
+  const dry = fv({ factor: 'dry', level: 'fits', place: 0.28, low: 0.27, high: 1.87 });
+  const v = pv({ factors: [dry], range: 'judged' });
+  const t = { climate: { precip: { low: 24.6, median: null, high: null, count: null, basis: 'cells', blocks: null, lowSource: null, highSource: null, weak: false } } };
+  const entry = line.againstLines(v, null, { ...W, rainFrom: line.rainFromLine(t) }).find((e) => e.factor === 'dry');
+  const all = (l, lang) => [said({ ...l, also: undefined }, lang), ...(l.also ?? []).map((a) => said(a, lang))].join(' ');
+  assert.match(all(entry.line, 'en'), /recorded from 25 mm/);
+  assert.match(all(entry.line, 'es'), /registrada desde 25 mm/);
+  for (const lang of Object.keys(words)) assert.match(all(entry.line, lang), /25/, `${lang} names the rain in the aridity line`);
+  // No rain range: the line as before, nothing guessed.
+  const bare = line.againstLines(v, null, { ...W, rainFrom: null }).find((e) => e.factor === 'dry');
+  assert.doesNotMatch(all(bare.line, 'en'), /mm/);
+});

@@ -25,8 +25,8 @@ import { TODAY_PERIOD, borrowedFrom, factAt, fills, guestOf, invasiveLines, jobs
 import type { Factor, PlantVerdict, SureRow } from '../../../../lib/consortium/index.ts';
 import { bloomNear, monthsLong } from './bloom.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
-import { consortiumGuides } from '../../../../data/consortium-guides.ts';
-import { Against, SoilCard } from './Against.tsx';
+import { consortiumGuides, jobGuides } from '../../../../data/consortium-guides.ts';
+import { Against, SoilCard, soilSayOf } from './Against.tsx';
 import { doesWords, FitLine, JobIcon, jobList, MeasureGlyph, midSentence, nicheLight, RowBandLine, say, sizeShort, SWAP } from '../kit/fit.tsx';
 import { shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phaseTerm, spanWords, zoneName } from '../kit/names.ts';
@@ -53,7 +53,11 @@ const correction = later(retryableImport(() => import('../Correction.tsx'), (m) 
 
 const lang = () => pageLang();
 // A language's own name ("Español", "中文"), for the names section.
-const ownName = (code: string) => { try { return new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code; } catch { return code; } };
+const ownName = (code: string) => {
+  let name = code;
+  try { name = new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code; } catch { /* the code itself */ }
+  return name.charAt(0).toLocaleUpperCase(code) + name.slice(1);
+};
 // A layer's name for a plant ("No layer yet" without one).
 const layerOf = (t: Taxon): string => (t.stratum ? layerName(t.stratum.value) : T('stratum.none'));
 // A text from the data in the page language, else in English (marked).
@@ -126,9 +130,12 @@ function guideTitleOf(slug: string): { title: string; lang: string | null } {
   const own = pageData()?.guideTitles?.[slug];
   return own ? { title: own, lang: lang() === 'fr' ? 'fr' : 'en' } : { title: slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()), lang: 'en' };
 }
-function guideLinks(t: Taxon): { url: string; title: string; titleLang: string | null; hreflang: string | null }[] {
+function guideLinks(t: Taxon, main: JobId | null): { url: string; title: string; titleLang: string | null; hreflang: string | null }[] {
   const own = lang() === 'fr' ? 'fr' : 'en';
-  return (consortiumGuides[t.canonical_name] ?? []).map((slug) => {
+  const slugs = consortiumGuides[t.canonical_name] ?? [];
+  // No guide of its own: the guides on its main job, named by the job (fix round 1 BC17).
+  if (!slugs.length && main) return [{ url: own === 'fr' ? `/fr/guides/${jobGuides[main]}/` : `/guides/${jobGuides[main]}/`, title: T(`details.jobGuide.${main}`), titleLang: null, hreflang: own !== lang() ? own : null }];
+  return slugs.map((slug) => {
     const { title, lang: titleLang } = guideTitleOf(slug);
     return { url: own === 'fr' ? `/fr/guides/${slug}/` : `/guides/${slug}/`, title, titleLang: titleLang !== lang() ? titleLang : null, hreflang: own !== lang() ? own : null };
   });
@@ -153,6 +160,14 @@ function SourceItem({ id, facts }: { id: string; facts: PlantFacts | null }) {
 // palette names its main job here (the job of the first hole it fills, else its first job), the light
 // level when it fills a light hole too, and how many holes it fills (core holes.ts fills on the
 // palette's open holes); then its other jobs. A member says its jobs and years, then "In your palette.".
+// Its main job here, one source for the summary and What it does (fix round 1 BC14): a member's first
+// job; a candidate's the job of the first open hole it fills, else its first job.
+function mainJobOf(t: Taxon, jobs: readonly JobId[], member: boolean): JobId | null {
+  if (!jobs.length) return null;
+  if (member) return jobs[0];
+  const hole = store.openHoles.value.find((h) => h.kind === 'job' && h.job && fills(h, t));
+  return (hole?.job as JobId | undefined) ?? jobs[0];
+}
 function SummaryLine({ t, jobs, member }: { t: Taxon; jobs: JobId[]; member: boolean }) {
   if (!jobs.length) return <p class="ct-muted">{T('d.jobsUnk')}</p>;
   const tiles = (list: readonly JobId[]) => <span class="ct-d-main-icons">{list.map((j) => <JobTile job={j} />)}</span>;
@@ -165,8 +180,7 @@ function SummaryLine({ t, jobs, member }: { t: Taxon; jobs: JobId[]; member: boo
     );
   }
   const filled = store.openHoles.value.filter((h) => fills(h, t));
-  const jobHole = filled.find((h) => h.kind === 'job' && h.job);
-  const main: JobId = (jobHole?.job as JobId | undefined) ?? jobs[0];
+  const main: JobId = mainJobOf(t, jobs, false) ?? jobs[0];
   const rest = jobs.filter((j) => j !== main);
   const lightHole = filled.find((h) => h.kind === 'light');
   // Board Details: the tiles of the jobs whose holes it fills, its main job first (its main job alone when it fills none).
@@ -202,15 +216,27 @@ function More({ k, title, hint, children }: { k: string; title: string; hint?: s
   );
 }
 
+// The syntropic line (board DetailsMore) and "What these words mean", which shows how the palette's
+// words map to syntropic farming's (the palette's own explanation, palette.readSyntropic).
+function Syntropic({ role, text }: { role: string; text: (role: string) => string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <p class="ct-small" data-syntropic>{text(role)} <button type="button" class="ct-link-button" aria-expanded={open} onClick={() => setOpen(!open)}>{T('details.syntropicMeans')}</button></p>
+      {open && <p class="ct-small ct-muted" data-syntropic-means>{T('palette.readSyntropic')}</p>}
+    </>
+  );
+}
+
 // The Niche block (v13/v14 boards): Light live (the span, today the single level, and "found mostly in"
 // once the release has it); Soil pH's recorded range live with "best pH" after release; Moisture and
 // Root depth after release; Flowers from the bloom months near the place, or "no months recorded".
 function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; zone: ClimateZone; desk: boolean }) {
   const after = <span class="ct-after" data-after-release>{T('details.afterRelease')}</span>;
   const r = t.traits.soil_ph;
-  const map = store.siteInputs.value?.soilPh.map ?? null;
-  const v = store.verdictOf(t);
-  const phFit = v?.factors.find((f) => f.factor === 'soil-ph')?.level ?? null;
+  // The desk's say on soil (fix round 1 R3): the soil card's own judgement (soilSayOf: the value it
+  // judged, your test or the map, or pots), placed here because the desk shows no soil card.
+  const soil = desk ? soilSayOf(t, facts?.traitSources ?? null) : null;
   // The bloom rows whose scope holds the place, as one span (fix round 1 BC2: never another hemisphere's months).
   const loc = store.location.value;
   const bloom = bloomNear(facts?.layerValues ?? [], { lat: loc?.lat ?? null, country: store.flagContext.value.country ?? null, zone });
@@ -221,8 +247,9 @@ function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; z
       <ul>
         <li data-niche-row="light"><strong>{T('details.nicheLight')}</strong> {nicheLight(t)}</li>
         <li data-niche-row="ph"><strong>{T('details.nichePh')}</strong> {r && r.min !== null && r.max !== null
-          ? <>{T('details.phGrows', { min: num(r.min), max: num(r.max) })}{desk && map !== null && <> {T('details.phMapSays', { ph: num(map), fit: T(phFit === 'fits' ? 'details.phFits' : phFit === 'unknown' || phFit === null ? 'details.phNotChecked' : 'details.phOff') })}</>} · {T('details.bestPh')} {after}</>
-          : T('details.notCheckedYet')}</li>
+          ? <>{T('details.phGrows', { min: num(r.min), max: num(r.max) })}{soil?.niche && <> {soil.niche}</>} · {T('details.bestPh')} {after}{soil?.near && <> <span class="ct-muted">{soil.near}</span></>}</>
+          : T('details.notCheckedYet')}
+          {desk && <> · <button type="button" class="ct-link-button" data-set-ph onClick={() => store.openFigure('soilPh')}>{T('details.setOwnPh')}</button></>}</li>
         <li data-niche-row="moisture"><strong>{T('details.nicheMoisture')}</strong> {after}</li>
         <li data-niche-row="root"><strong>{T('details.nicheRoot')}</strong> {after}</li>
         <li data-niche-row="flowers"><strong>{T('details.nicheFlowers')}</strong> {bloom ? monthsLong(bloom.months, lang(), T('t.allYear')) : T('details.flowersNone')}{bloom?.estimate && <> <span class="ct-est">{T('est.word')}</span></>}</li>
@@ -304,8 +331,11 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const allelo = t.warnings.allelopathic;
   const notAllChecked = t.warnings.toxicity === null || t.warnings.allelopathic === null || (facts?.invasiveIn ?? t.warnings.invasive_in) === null;
   const jobs = jobsOf(t);
+  // Its main job first in What it does, as the summary names it (fix round 1 BC14).
+  const main = mainJobOf(t, jobs, member);
+  const jobsMainFirst = main ? [main, ...jobs.filter((j) => j !== main)] : jobs;
   const placedIn = facts ? (Object.entries(facts.placements) as [ClimateZone, unknown][]).filter(([, p]) => p).map(([z]) => z) : [];
-  const guides = guideLinks(t);
+  const guides = guideLinks(t, main);
   const image = facts?.image ?? t.image;
   const photoHref = image ? safeHref(image.source_page_url) : null;
   const release = store.source.value?.info().releaseId ?? '';
@@ -354,6 +384,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const standsWords = y ? midSentence(say(yearsLine(y.from, y.to))) : null;
   const niche = <Niche t={t} facts={facts} zone={zone} desk={desk} />;
   const toxUnk = t.warnings.toxicity === null;
+  const siteUnknown = unknownWords(t, scene.site);
   const spreads = t.warnings.weed_potential;
 
   return (
@@ -389,11 +420,14 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             {loss && <li class="ct-flag" data-level="warning" data-chip="period-edge">{lossMeasure ? <MeasureGlyph m={lossMeasure} /> : WARN}{T(loss.level === 'outside' ? 'details.chipOutsideBy' : 'details.chipEdgeBy', { period: periodName(loss.judged) })}</li>}
             {chips.map((l) => <li class="ct-flag" data-level={l.level ?? 'warning'} data-chip={l.kind}>{WARN}{l.chip ?? l.text}</li>)}
             {toxUnk && <li class="ct-tag" data-conf="not-checked">{INFO}{T('details.toxUnkChip')}</li>}
-            {(borrowed || guest) && <li class="ct-tag" data-conf="estimate" data-estimate-chip>{WAVE}{guest ? T('details.estimateChip', { list: T(`list.${guest.toLowerCase()}`) }) : T(`estimate.from${borrowed}`)}</li>}
+            {(borrowed || guest) && <li class="ct-tag" data-conf="estimate" data-estimate-chip>{WAVE}{T('details.estimateChip', { list: T(`list.${(guest ?? borrowed)!.toLowerCase()}`) })}</li>}
           </ul>
+          {/* What the site check could not decide (room, light, soil, water), said once and in both layouts (fix round 1 R5: never a silent fit). */}
+          {siteUnknown.length > 0 && <ul class="ct-d-unknown" data-site-unknown>{siteUnknown.map((w) => <li class="ct-muted ct-small">{INFO} {w}</li>)}</ul>}
         </section>
         <Against t={t} disputes={facts?.disputes ?? []} traitSources={facts?.traitSources ?? null} subject={member ? nameOf(t) : null} gbifRecords={facts?.gbifRecords ?? null} />
-        <SoilCard t={t} traitSources={facts?.traitSources ?? null} />
+        {/* The desk says the soil on the Niche row (board DetailsDesk; R3: one judgement, soilSayOf). */}
+        {!desk && <SoilCard t={t} traitSources={facts?.traitSources ?? null} />}
         {member && (
           <section class="ct-d-cando" aria-labelledby="ct-d-cando" data-cando>
             <h3 id="ct-d-cando">{T('details.canDo')}</h3>
@@ -437,9 +471,10 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           )}
           <More k="jobs" title={T('details.secJobs')} hint={jobs.length ? P('details.secJobsCount', jobs.length) : undefined}>
             {jobs.length
-              ? <ul class="ct-d-jobtiles">{jobs.map((j, i) => <li data-job-tile={j}><JobTile job={j} /><div><strong>{T(`job.${j}`)}{i === 0 && jobs.length > 1 && <span> · {T('details.mainHere')}</span>}</strong><p>{T(`details.jobDesc.${j}`)}</p></div></li>)}</ul>
+              ? <ul class="ct-d-jobtiles">{jobsMainFirst.map((j) => <li data-job-tile={j}><JobTile job={j} /><div><strong>{T(`job.${j}`)}{j === main && jobs.length > 1 && <span> · {T('details.mainHere')}</span>}</strong><p>{T(`details.jobDesc.${j}`)}</p></div></li>)}</ul>
               : <p class="ct-muted">{T('d.jobsUnk')}</p>}
-            {t.stratum && s && <p class="ct-small">{T('details.syntropic', { stratum: midSentence(layerOf(t)), from: phaseTerm(s.from), to: phaseTerm(s.to) })}</p>}
+            {/* Board DetailsMore: its syntropic role (a crop when it feeds you, else a support plant), stratum and stages, and what the words mean. */}
+            {t.stratum && s && <Syntropic role={T(jobs.includes('feeds_you') ? 'details.syntropicCrop' : 'details.syntropicSupport')} text={(role) => T('details.syntropic', { role, stratum: midSentence(layerOf(t)), from: phaseTerm(s.from), to: phaseTerm(s.to) })} />}
             <h4>{T('details.timeSize')}</h4>
             <dl class="ct-traits" aria-label={T('traits')}>
               <Row k={T('details.plantedInLabel')}>{t.stratum ? T(`palette.light_${t.stratum.value}`) : T('palette.light_none')}</Row>
@@ -509,7 +544,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             <p class="ct-small" data-other-climates>{INFO} <strong>{T('details.otherClimates')}:</strong> {placedIn.length === 1 ? T('details.otherOnly', { list: zoneName(placedIn[0]) }) : T('details.otherLists', { lists: listOf(placedIn.map(zoneName)) })} {T('details.otherNoList')}</p>
           )}
           <div class="ct-d-endlinks">
-            {release && !correcting && <button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{INFO}{T('correction.open')}</button>}
+            {release && !correcting && <button type="button" class="button button-secondary" ref={openButton} aria-expanded="false" onClick={() => { byReader.current = true; setCorrecting(true); }}>{T('correction.open')}</button>}
             {guides.map((g) => <a class="text-link" href={g.url} hreflang={g.hreflang ?? undefined} lang={g.titleLang ?? undefined}>{g.title}</a>)}
           </div>
           {release && correcting && (

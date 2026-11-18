@@ -167,7 +167,8 @@ test('PP-C16 (c2 borrowed or guest plant, 3.4): Details names the list it comes 
   assert.ok(await has(page, `${DETAILS} [data-conf="estimate"]`, 1000), '"estimate" on its lines');
   // The placement's estimate is said once (fix round 3 minor, round 4 V4): in the header, not again in Against.
   // pf-f fix round 1 BC5 (board DetailsMore): Why it is here adds its own sentence, "At your place it is an estimate: placed as on the … list, kept because…".
-  const said = await page.$eval(DETAILS, (d) => { const c = d.cloneNode(true); c.querySelectorAll('[data-why-borrowed]').forEach((e) => e.remove()); return (c.textContent.match(/estimate: placed as on the/g) ?? []).length; });
+  // pf-f fix round 1 BC15: the summary's chip in the board's words, "Placed as on the … list: an estimate".
+  const said = await page.$eval(DETAILS, (d) => { const c = d.cloneNode(true); c.querySelectorAll('[data-why-borrowed]').forEach((e) => e.remove()); return (c.textContent.match(/Placed as on the \w+ list: an estimate/g) ?? []).length; });
   assert.equal(said, 1, `the placement's estimate said once in Details (${said})`);
   assert.equal(await page.$(`${DETAILS} [data-no-site]`), null, 'with a site climate, no "give your location" line');
   // No location: a borrowed list's plants in the palette (as a shared link brings them; Suggest itself

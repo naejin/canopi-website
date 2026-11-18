@@ -82,6 +82,10 @@ async function firmStartsOnData(page, id) {
   return bands.length;
 }
 
+// The en words of the place's soil texture (the soil map's reading), or null.
+const TEXTURE_EN = { sand: 'sand', loamy_sand: 'loamy sand', sandy_loam: 'sandy loam', loam: 'loam', silt_loam: 'silt loam', silt: 'silt', sandy_clay_loam: 'sandy clay loam', clay_loam: 'clay loam', silty_clay_loam: 'silty clay loam', sandy_clay: 'sandy clay', silty_clay: 'silty clay', clay: 'clay' };
+const soilOf = (page) => page.evaluate(() => { const s = window.__ctTest.store; return { texture: s.location.value?.lookup?.soil?.texture ?? null, nearKm: s.siteInputs.value.soilPh.nearKm ?? null, map: s.siteInputs.value.soilPh.map }; });
+
 // ---- Details (boards Details 390, DarkDetails, DetailsMore) ----
 
 test('PFF1 (pf-f Details at 390): Pinto peanut at Kiambu, a candidate: name line, summary with the engine\'s holes, Niche, chips, the four bands in one order, scenarios, records, table, the three sections, Add from the foot', async () => {
@@ -163,7 +167,9 @@ test('PFF6 (pf-f soil card, F10): the map\'s pH as a ring, the grower\'s test as
   assert.ok(f.map !== null && f.ph?.min != null, 'Kiambu has a soil map value and Pinto peanut a pH range');
   const num = (x) => x.toLocaleString('en', { maximumFractionDigits: 1 });
   await says(page, `soil map: pH ${num(f.map)}`, { inDialog: true });
-  await says(page, `Recorded on pH ${num(f.ph.min)} to ${num(f.ph.max)}; the soil map says ${num(f.map)} here.`, { inDialog: true });
+  // The map's texture word when the reading has one (fix round 1 BC16; board SiteMendoza "8.0, sandy loam").
+  const tex = (await soilOf(page)).texture;
+  await says(page, `Recorded on pH ${num(f.ph.min)} to ${num(f.ph.max)}; the soil map says ${num(f.map)}${tex ? `, ${TEXTURE_EN[tex]}.` : ' here.'}`, { inDialog: true });
   await says(page, f.soilLevel === 'fits' ? 'Fits the likely soil' : 'Outside the likely soil’s pH', { inDialog: true });
   await says(page, 'Drainage: no need recorded.', { inDialog: true });
   await says(page, 'Soil is not projected: the same in every period. A hint, never a reason to hide a plant.', { inDialog: true });
@@ -184,7 +190,7 @@ test('PFF6 (pf-f soil card, F10): the map\'s pH as a ring, the grower\'s test as
   const sev = await boardPalette('seville-board', { width: 390 });
   const almond = await idOf(sev, 'Prunus dulcis');
   await open(sev, 'details', almond);
-  await says(sev, /Soil map, nearest square [\d,]+ m away: a weaker guess\./, { inDialog: true });
+  await says(sev, /Soil map, nearest square [\d,]+ km away: a weaker guess\./, { inDialog: true });
   await done(page, sev);
 });
 
@@ -260,11 +266,13 @@ test('PFF5 (pf-f Swap 390): Calliandra at Kiambu: the lede, its jobs and years, 
   const want = await page.evaluate((pid) => {
     const s = window.__ctTest.store, rule = s.verdictRule.value, ctx = s.verdictContext.value;
     const fit = s.alternativesFor(pid)?.fit ?? [];
-    return { n: fit.filter((a) => { const t = s.pool.value.find((x) => x.id === a.id); return t && rule.holdsBy(t, ctx, '2041-2070'); }).length, m: fit.length };
+    const taxa = fit.map((a) => s.pool.value.find((x) => x.id === a.id)).filter(Boolean);
+    const then = rule.verdicts(taxa, { ...ctx, period: '2041-2070' });
+    return { n: taxa.filter((t) => rule.holdsBy(t, ctx, '2041-2070')).length, unknown: taxa.filter((t) => then.get(t.id)?.range !== 'judged').length, m: fit.length };
   }, id);
-  await says(page, `Only plants that hold by 2041–2070 ${want.n} of ${want.m}`, { inDialog: true });
+  await says(page, `Only plants that hold by 2041–2070 ${want.n} of ${want.m}${want.unknown ? ` · ${want.unknown} not checked` : ''}`, { inDialog: true });
   const rows = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ buttons: [...e.querySelectorAll('button')].map((b) => b.textContent.trim()), does: e.querySelector('[data-swap-does]').textContent.trim(), fit: /\S/.test(e.querySelector('[data-conf], .ct-fit, [data-row-band]')?.textContent ?? '') })));
-  assert.equal(rows.length, Math.min(want.n, 9), 'the rows are the holding candidates, nine at most');
+  assert.equal(rows.length, Math.min(want.n + want.unknown, 9), 'the rows are the holding candidates and the unjudged ones (fix round 1 R2), nine at most');
   assert.ok(rows.every((r) => r.buttons.includes('Swap') && r.buttons.includes('Add beside')), `board: Swap and Add beside on each row (${JSON.stringify(rows.map((r) => r.buttons))})`);
   // Fix round 1 BC7: one sentence per row, the gap folded in ("…: also fills the hole after year 15"), and its fit or edge words.
   assert.ok(rows.every((r) => /, (from|in|to) [^:]+(: (also fills|leaves) .+)?$/.test(r.does) && r.fit), JSON.stringify(rows));
@@ -453,3 +461,166 @@ test('PFF15 (pf-f BC7, BC8, BC9, Swap): rows as one sentence with the mini band,
   await done(page);
 });
 
+
+// ---- fix round 1, batch 2 (review findings BC14 to BC18, R1 to R7) ----
+
+test('PFF16 (pf-f BC14, BC15, BC17, DetailsMore): Pinto peanut at Kiambu: the summary\'s main job leads What it does, the syntropic role with its link, the estimate chip in the board\'s words, the invasive line with its source, capitalised language names, the correction beside the guide link', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Arachis pintoi');
+  await open(page, 'details', id);
+  await openAll(page);
+  // BC14: the main job is the job of the first open hole it fills (the engine), as the summary says.
+  const main = await page.evaluate((pid) => { const s = window.__ctTest.store; return { holes: s.openHoles.value, t: s.taxonOf(pid) }; }, id)
+    .then(({ holes, t }) => holes.find((h) => h.kind === 'job' && h.job && core.fills(h, t))?.job ?? null);
+  const summary = await page.$eval(`${DETAILS} [data-summary-main] strong`, (e) => e.textContent.trim());
+  const first = await page.$eval(`${DETAILS} [data-job-tile] strong`, (e) => e.textContent.trim());
+  const mainWord = first.split(' · ')[0];
+  assert.match(first, / · its main job here$/, `the first job carries "its main job here" (${first})`);
+  assert.ok(summary.startsWith(mainWord), `the summary and What it does name one main job ("${summary}" / "${first}")`);
+  if (main) assert.equal(mainWord, en[`consortium.job.${main}`]);
+  await says(page, /In syntropic words: a (support plant|crop) of the [a-z ]+ stratum, from .+ to .+\. What these words mean/, { inDialog: true });
+  // BC15: the borrowed list's chip.
+  await says(page, /Placed as on the \w+ list: an estimate/, { inDialog: true });
+  assert.match(await page.$eval(`${DETAILS} [data-estimate-chip]`, (e) => e.textContent.trim()), /^Placed as on the \w+ list: an estimate$/, 'the chip in the board\'s words, not "estimate: placed as on"');
+  // BC17: invasive at Kenya, with its source, when the engine records none there.
+  const inv = await page.evaluate((pid) => { const s = window.__ctTest.store, t = s.taxonOf(pid); return { here: (t.warnings.invasive_in ?? []).some((r) => r.country === 'KE'), checked: s.flagContext.value.countryStatus === 'checked', known: t.warnings.invasive_in !== null }; }, id);
+  if (inv.known && inv.checked && !inv.here) await says(page, 'Not recorded invasive in Kenya (GRIIS).', { inDialog: true });
+  const langs = await page.$$eval(`${DETAILS} details[data-more="names"] dt[lang]`, (els) => els.map((e) => e.textContent.trim()));
+  for (const l of langs) assert.equal(l.charAt(0), l.charAt(0).toLocaleUpperCase(), `the language name starts with a capital (${l})`);
+  // The correction and the guide link on one row.
+  const row = await page.evaluate(() => { const d = document.querySelector('dialog[open] .ct-d-endlinks'); const b = d.querySelector('button'), a = d.querySelector('a'); if (!b || !a) return null; const rb = b.getBoundingClientRect(), ra = a.getBoundingClientRect(); return { b: b.textContent.trim(), a: a.textContent.trim(), same: ra.top < rb.bottom && ra.bottom > rb.top }; });
+  assert.ok(row && row.b.includes('Suggest a correction') && row.same, `board: "Suggest a correction" and the guide link on one row (${JSON.stringify(row)})`);
+  await done(page);
+});
+
+test('PFF17 (pf-f BC16, R6, R7, soil card): the neighbour fill in kilometres, the map\'s texture word, labels inside the drawing', async () => {
+  const sev = await boardPalette('seville-board', { width: 390 });
+  const almond = await idOf(sev, 'Prunus dulcis');
+  await open(sev, 'details', almond);
+  const s = await soilOf(sev);
+  assert.ok(s.nearKm !== null, 'Seville\'s soil reading is a neighbour fill (engine)');
+  await says(sev, `Soil map, nearest square ${Math.round(s.nearKm).toLocaleString('en')} km away: a weaker guess.`, { inDialog: true });
+  if (s.texture) await says(sev, `the soil map says ${s.map.toLocaleString('en', { maximumFractionDigits: 1 })}, ${TEXTURE_EN[s.texture]}.`, { inDialog: true });
+  // R7: a value at the top of the scale keeps its label inside the drawing, in a long language too.
+  await setSiteEdits(sev, { soilPh: 9.5 });
+  await says(sev, 'your test: pH 9.5', { inDialog: true });
+  const inside = await sev.$$eval(`${DETAILS} [data-soil-card] svg.ct-band text`, (els) => els.map((e) => { const b = e.getBBox(); return { t: e.textContent, ok: b.x >= -0.5 && b.x + b.width <= 324.5 }; }));
+  assert.ok(inside.every((x) => x.ok), `every label inside the 324-wide drawing (${JSON.stringify(inside)})`);
+  await done(sev);
+});
+
+test('PFF18 (pf-f BC18, Details at 390, light and dark): "Against your place" at 600, the fit box with its line, the section hint inline after its title', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Arachis pintoi');
+  await open(page, 'details', id);
+  await says(page, 'Fits your place today', { inDialog: true });
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
+    await frames(page);
+    const st = await page.evaluate(() => {
+      const d = document.querySelector('dialog[open]');
+      const h = d.querySelector('[data-against] h3'), fit = d.querySelector('.ct-against-fit');
+      const hint = d.querySelector('details[data-more="pairs"] > summary h3 > .ct-muted');
+      const title = hint?.parentElement.firstChild;
+      const r = document.createRange(); if (title) r.selectNodeContents(title);
+      const lines = title ? [...r.getClientRects()] : [];
+      const hr = hint ? hint.getClientRects()[0] : null;
+      return { weight: getComputedStyle(h).fontWeight, border: getComputedStyle(fit).borderTopWidth, inline: !!hr && lines.length > 0 && Math.abs(hr.top - lines[lines.length - 1].top) < 4 };
+    });
+    assert.equal(st.weight, '600', `${theme}: "Against your place" at 600`);
+    assert.equal(st.border, '1px', `${theme}: the fit box has its 1px line`);
+    assert.ok(st.inline, `${theme}: the hint follows the title on its line`);
+  }
+  await done(page);
+});
+
+test('PFF19 (pf-f R1, real clicks): "Suggest a correction" opens the form in sight with focus; Cancel gives focus back; a draft comes back visible on reopen', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await page.evaluate(() => window.__ctTest.store.members.value[0]);
+  await open(page, 'details', id);
+  await page.click(`${DETAILS} .ct-d-endlinks button`);
+  await page.waitForSelector(`${DETAILS} #ct-corr-field`, { visible: true, timeout: 6000 });
+  await frames(page);
+  assert.ok(await page.evaluate(() => document.activeElement?.id === 'ct-corr-field'), 'the form\'s first field has the focus');
+  await page.click(`${DETAILS} .ct-corr .ct-actions button:not([type="submit"])`);
+  await frames(page);
+  const back = await page.evaluate(() => { const a = document.activeElement; return { text: a?.textContent.trim() ?? '', visible: !!a && a.offsetParent !== null }; });
+  assert.ok(/Suggest a correction/.test(back.text) && back.visible, `Cancel gives focus back to a visible button (${JSON.stringify(back)})`);
+  // A draft: written, the dialog closed, then opened again: the form and its text are in sight.
+  await page.click(`${DETAILS} .ct-d-endlinks button`);
+  await page.waitForSelector(`${DETAILS} .ct-corr textarea`, { visible: true, timeout: 6000 });
+  await page.type(`${DETAILS} .ct-corr textarea`, 'Grows taller here');
+  await page.keyboard.press('Escape');
+  await frames(page);
+  await open(page, 'details', id);
+  await page.waitForSelector(`${DETAILS} .ct-corr textarea`, { visible: true, timeout: 6000 });
+  assert.match(await page.$eval(`${DETAILS} .ct-corr textarea`, (e) => e.value), /Grows taller here/);
+  await done(page);
+});
+
+test('PFF20 (pf-f R2, Swap without a place): no hold filter, every candidate listed, never "No other plant"; with a place, unjudged candidates stay listed and say so', async () => {
+  const page = await boardPalette('seville-board', { width: 390 });
+  const id = await idOf(page, 'Olea europaea');
+  assert.ok(id, 'Olive in the Seville palette');
+  // With a place: the rows are the holding candidates and the unjudged ones (engine), the count names both.
+  await open(page, 'swap', id);
+  assert.ok(await has(page, `${DETAILS} [data-swap-row]`, 10_000));
+  const want = await page.evaluate((pid) => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, ctx = s.verdictContext.value;
+    const fit = (s.alternativesFor(pid)?.fit ?? []).map((a) => s.pool.value.find((x) => x.id === a.id)).filter(Boolean);
+    const then = rule.verdicts(fit, { ...ctx, period: '2041-2070' });
+    const unknown = fit.filter((t) => then.get(t.id)?.range !== 'judged').length;
+    return { n: fit.filter((t) => rule.holdsBy(t, ctx, '2041-2070')).length, unknown, m: fit.length };
+  }, id);
+  const rows = await page.$$eval(`${DETAILS} [data-swap-row]:not([data-outside] *)`, (els) => els.length);
+  assert.equal(rows, Math.min(want.n + want.unknown, 9), `the rows: ${want.n} that hold and ${want.unknown} not checked`);
+  // Without a place: nothing can be judged by 2041–2070.
+  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
+  await frames(page);
+  await open(page, 'swap', id);
+  assert.ok(await has(page, `${DETAILS} [data-swap-row]`, 10_000), 'rows without a place');
+  assert.equal(await page.$(`${DETAILS} .ct-swap-hold input`), null, 'no hold filter without a place');
+  assert.doesNotMatch(await dialogText(page), /No other plant in this list can take its place/);
+  await done(page);
+});
+
+test('PFF21 (pf-f R3, DetailsDesk soil): with a soil test the Niche row names the test and judges it; "Set my own soil pH" on the desk; in pots it says so', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await setSiteEdits(page, { soilPh: 9.4 });
+  await open(page, 'details', id);
+  const lvl = await page.evaluate((pid) => { const s = window.__ctTest.store, t = s.taxonOf(pid); return s.verdictOf(t)?.factors.find((f) => f.factor === 'soil-ph')?.level ?? null; }, id);
+  await says(page, `(your test says 9.4: ${lvl === 'fits' ? 'fits' : lvl === 'unknown' || lvl === null ? 'not checked' : 'outside its range'})`, { inDialog: true });
+  assert.doesNotMatch(await dialogText(page), /the soil map says [\d.]+ here: /, 'never the map value beside a fit judged on the test');
+  await page.click(`${DETAILS} [data-niche] [data-set-ph]`);
+  assert.equal(await page.evaluate(() => window.__ctTest.store.figureLine.value), 'soilPh', 'the desk: "Set my own soil pH" opens the figures at the soil line');
+  await setSiteEdits(page, { pots: true });
+  await open(page, 'details', id);
+  await says(page, '(in pots: not checked)', { inDialog: true });
+  await done(page);
+});
+
+test('PFF22 (pf-f R4, M23): Almond against Mendoza says how dry it is recorded, in en and es', async () => {
+  for (const lang of ['en', 'es']) {
+    const page = await boardPalette('mendoza-board-rain', { width: 390, lang });
+    const id = await idOf(page, 'Prunus dulcis');
+    await open(page, 'details', id);
+    const low = await page.evaluate((pid) => window.__ctTest.store.taxonOf(pid).climate?.precip?.low ?? null, id);
+    assert.ok(low !== null, 'Almond has a recorded rain range (engine)');
+    const mm = `${Math.round(low).toLocaleString(lang)} mm`;
+    await says(page, lang === 'en' ? `recorded from ${mm}` : `registrada desde ${mm}`, { inDialog: true });
+    await done(page);
+  }
+});
+
+test('PFF23 (pf-f R5, site-check unknowns): a balcony grower sees what the site check could not decide, in both layouts', async () => {
+  for (const width of [390, 1280]) {
+    const page = await boardPalette('kiambu-8', { width, height: 1000 });
+    await page.evaluate(() => { window.__ctTest.store.room.value = 'pots'; });
+    const id = await page.evaluate(() => window.__ctTest.store.pool.value.find((t) => t.traits.height_m?.max == null && t.traits.habit !== 'Climber')?.id ?? null);
+    assert.ok(id, 'a plant on the list with no height recorded');
+    await open(page, 'details', id);
+    await says(page, 'Height in the wild not recorded, so not checked against your space.', { inDialog: true });
+    await done(page);
+  }
+});
