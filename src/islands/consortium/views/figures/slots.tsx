@@ -7,14 +7,16 @@
 // shells: their content is views/figures/Figures.tsx, its own lazy chunk (role `figures`,
 // scripts/built-modules.mjs), which pf-d fills in chunk 3. Keep this file a shell.
 import { lazyPart } from '../lazy.tsx';
+import { load } from '../../store.ts';
 import { retryableImport } from '../../../../lib/consortium/index.ts';
 
 const figures = () => import('./Figures.tsx');
 const place = lazyPart(retryableImport(figures, (m) => m.PlaceFigures), { quiet: true });
 const limits = lazyPart(retryableImport(figures, (m) => m.PaletteLimits), { quiet: true });
 
+// Asked for only once the data is ready: nothing lazy is fetched before it (L5, E6-2).
 export function PlaceFigures() {
-  return <place.View />;
+  return load.value.status === 'ready' ? <place.View /> : null;
 }
 export function PaletteLimits() {
   return <limits.View />;

@@ -203,7 +203,13 @@ test('PP-C3 (c1 Select several): three plants ticked are added with one toast an
 
 test('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside its range are each added with one tap, the warning in words, no confirm step', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
-  await page.evaluate(() => { window.__ctTest.store.country.value = { code: 'FR', source: 'chosen' }; });
+  // Not a member (since R3 Lyon's map pH is a known soil answer, which can bring Robinia into the suggestion).
+  await page.evaluate(() => {
+    const { store } = window.__ctTest;
+    const rob = store.pools.value.Temperate.find((t) => t.canonical_name === 'Robinia pseudoacacia').id;
+    store.members.value = store.members.value.filter((x) => x !== rob);
+    store.country.value = { code: 'FR', source: 'chosen' };
+  });
   await openFind(page);
   await hasFind(page);
   await search(page, 'Robinia pseudoacacia');
