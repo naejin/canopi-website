@@ -25,7 +25,7 @@ import * as store from '../../store.ts';
 import type { AddResult } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fillReasonLine, fills, fitLine, jobIds, jobsOf, periodIds, periodName, queryTokens, secondLook, thinTitleLine, uncheckedLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fillReasonLine, fills, fitLine, jobIds, jobsOf, periodIds, periodName, laneLine, queryTokens, secondLook, thinTitleLine, uncheckedLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, type Frame } from '../kit/sheet.tsx';
@@ -311,8 +311,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // One tap a row (AddMany state 3, F20): the sheet stays open; one toast counts up ("2 added this
   // visit. Last: Tahitian lime."), replaced in place, its Undo taking back the last add only.
   // The first add says what it changed (board FillHole: "Pineapple added. Covers the ground: nobody after year 15.").
+  // BC6: the first add names the change to the hole the sheet is for only, never the other holes it narrowed.
   const said = (t: Taxon) => (visit.length ? P('toast.burst', visit.length + 1, { name: nameOf(t) })
-    : (r: AddResult) => addedWords([nameOf(t)], r.holeChange, r.thinChange, hole?.thin ? hole.job ?? null : null));
+    : (r: AddResult) => addedWords([nameOf(t)], r.holeChange, r.thinChange, hole?.thin ? hole.job ?? null : null, false, hole ?? null));
   const addOne = (t: Taxon, from?: ClimateZone) => {
     if (added(t.id)) return;
     frozenFilled.current ??= filled;
@@ -340,14 +341,23 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const fitsCount = (f: FindFilters) => applyFilters(matched, { ...f, range: false }, ctx).rows.filter(isFit).length;
 
   const title = hole?.thin ? say(thinTitleLine(hole)) : hole ? holeWords(hole) : T('find.title');
+  // The hole's sheet (boards FillHole, HoleOpen; BC9): the intro, the rows that fit, "Needs a second
+  // look (n)", then the outside link and Done in the foot; no search, filters or count line (a thin
+  // job's sheet is the Add sheet, AddMany state 3, with its search and its filter on).
+  const holeSheet = !!hole && !hole.thin;
   // The subtitle (board Find, B4, K3, T14): how many of the plants not yet in the palette fit the place,
   // the number the fit choice says with no filter; in a hole, how many fill it and fit, the number its
   // count line says; none judged to fit (nothing checked), the plain count (c1r4 U3). The start lists
   // the jobs as chips; no list until the grower searches, picks a job, sets a filter or asks for it. (The board's "Your palette lacks N holes" needs the holes in a
   // store computed: sheet chunks never import holes.ts; a seam for pf.)
   const later = store.period.value !== periodIds[0], fitsHere = judged;
+  // BC8: a hole's intro counts the plants that fit (no second look), then says the order (board FillHole:
+  // "7 plants … fit your place. Best fit first: …"); none fits: the Next step's no-fit words.
+  const holeFits = hole ? base.filter((t) => fits?.(t) && verdicts?.get(t.id)?.level === 'fits' && !store.warnedPlant(t)).length : 0;
+  const holeLede = holeFits ? `${P('find.holeLede', holeFits, { list: listName(climate) })}.` : T('palette.next.noFit');
+  const holeUnchecked = hole ? uncheckedLine(hole) : null;
   const subtitle = !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
-    : hole ? P('find.holeLede', base.filter((t) => fits?.(t) && verdicts?.get(t.id)?.level === 'fits' && !store.warnedPlant(t)).length, { list: listName(climate) })
+    : hole ? [holeUnchecked && `${say(holeUnchecked)}.`, holeLede, judging && T('find.bestFirst', { period: periodName(periodIds[periodIds.length - 1]) })].filter(Boolean).join(' ')
       : P(later ? 'find.fitCountLater' : 'find.fitCount', fitsHere, { total: num(base.length), list: listName(climate), period: periodName(store.period.value) });
   const start = !q && !hole && onCount === 0 && !listed;
   // A query before the search index is in (T4): "Searching…", no rows; the core's names failed, the
@@ -385,9 +395,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
           {reasonOf && <span class="ct-find-fills" data-find-fills="">{TICK} {reasonOf}</span>}
           {why && <span class="ct-find-why" data-find-why="" data-lang={why.lang} data-kind={why.kind}>{why.text}</span>}
           <span class="ct-find-meta" data-find-meta="">{metaWords(t, hole?.kind === 'job' ? hole.job ?? null : filters.jobs?.length === 1 ? filters.jobs[0] : null, v?.level === 'fits' && after.length && n === after.length ? after[n - 1].split('-')[1] : null, !reasonOf)}</span>
-          <FitLine v={shownV} />
+          {/* BC11: a plant near the edge of its range says so as its chip, not "Needs a second look". */}
+          {v?.level !== 'look' && <FitLine v={shownV} />}
           {later && <span class="ct-line" data-find-inrange="">{T('find.inRangeBy', { period: later })}</span>}
-          <Marks t={t} lines={lines} country={scene.country} />
+          <Marks t={t} lines={lines} country={scene.country} edge={v?.level === 'look'} />
         </div>
       </li>
     );
@@ -541,19 +552,21 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const jobCount = job ? count({ ...filters, jobs: [job] }, fit, base, fit !== 'all' && !outsideShown, fit === 'fits') : 0;
 
   return (
-    <Frame titleId="ct-find-title" class="ct-find" head={null} foot={
+    // BC7: the title sits in the sheet's head, beside its close button (boards Find, FillHole).
+    <Frame titleId="ct-find-title" class={`ct-find${holeSheet ? ' ct-find-hole' : ''}`} head={<h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2>} foot={
       <div class="ct-add-bar">
-        <span data-find-visit={visit.length ? '' : undefined}>{visit.length ? `${P('find.visit', visit.length)} · ${P('find.visitPalette', members.length)}` : P('find.inPalette', members.length)}</span>
+        {holeSheet
+          ? (outsideFolded ? <button type="button" class="text-link" data-find-outside="" onClick={() => setOutsideShown(true)}>{P('palette.showOutside', groups.outside.length)}</button> : <span />)
+          : <span data-find-visit={visit.length ? '' : undefined}>{visit.length ? `${P('find.visit', visit.length)} · ${P('find.visitPalette', members.length)}` : P('find.inPalette', members.length)}</span>}
         <button type="button" class="button button-primary" onClick={() => store.closeSheet()}>{T('find.done')}</button>
       </div>
     }>
       <div class="ct-find-top">
-        <h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2>
         <p class="ct-muted" data-find-fitcount="">{subtitle}</p>
-        {hole?.thin && <p class="ct-muted ct-small" data-find-sorted="">{T('find.sortedFills')}</p>}
+        {hole?.thin && <p class="ct-muted ct-small" data-find-sorted="">{T('find.sortedFillsFrom', { lane: say(laneLine(hole)), from: hole.fromYear, to: hole.toYear })}</p>}
         <NotChecked ctx={flagCtx} />
       </div>
-      <div class="ct-find-searchrow">
+      {!holeSheet && <div class="ct-find-searchrow">
         <div class="ct-search">
           {SEARCH}
           <input ref={field} type="search" data-find-search="" aria-label={T('find.search')} placeholder={T('find.searchShort')} value={query}
@@ -565,8 +578,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
         <button ref={filtersBtn} type="button" class="button button-secondary ct-find-filters-btn" aria-expanded={showFilters} aria-controls="ct-find-filters" onClick={() => setShowFilters(!showFilters)}>
           {onCount ? T('find.filtersOn', { n: onCount }) : T('find.filters')}
         </button>
-      </div>
-      {active.length > 0 && (
+      </div>}
+      {!holeSheet && active.length > 0 && (
         <p class="ct-find-active" data-find-active="">
           {active.map((c) => (
             <button key={c.key} type="button" class="ct-find-chip" data-active-chip="" aria-label={T('find.removeFilter', { name: c.label })} onClick={c.off}>
@@ -576,10 +589,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
           <button type="button" class="text-link" onClick={clearAll}>{T('find.clearShort')}</button>
         </p>
       )}
-      {!noneBox && <p class="ct-muted ct-small ct-find-names" data-find-count="">{countLine}</p>}
+      {!noneBox && !holeSheet && <p class="ct-muted ct-small ct-find-names" data-find-count="">{countLine}</p>}
       <p class="visually-hidden" data-find-status="" aria-live="polite">{status}</p>
       <div class="ct-find-layout">
-        {panel}
+        {!holeSheet && panel}
         <div class="ct-find-results">
           {job && (
             <div class="ct-find-job" data-job={job}>
@@ -659,8 +672,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
           ) : (
             <>
               {GROUPS.filter(shown).map((g) => (
-                <section key={g} class="ct-find-group" data-find-group={g} aria-labelledby={`ct-find-g-${g}`}>
-                  <h3 id={`ct-find-g-${g}`}>{groupWords(g, store.period.value)} <span class="ct-muted">{g === 'look' ? T('find.lookWhy', { n: num(groups[g].length) }) : num(groups[g].length)}</span></h3>
+                <section key={g} class="ct-find-group" data-find-group={g} aria-labelledby={holeSheet && g === 'fits' ? 'ct-find-title' : `ct-find-g-${g}`}>
+                  {/* BC9: in a hole's sheet the plants that fit come first with no heading, then "Needs a second look (15)". */}
+                  {holeSheet ? g !== 'fits' && <h3 id={`ct-find-g-${g}`}>{g === 'look' ? T('palette.secondLook', { n: num(groups[g].length) }) : <>{groupWords(g, store.period.value)} <span class="ct-muted">{num(groups[g].length)}</span></>}</h3>
+                    : <h3 id={`ct-find-g-${g}`}>{groupWords(g, store.period.value)} <span class="ct-muted">{g === 'look' ? T('find.lookWhy', { n: num(groups[g].length) }) : num(groups[g].length)}</span></h3>}
                   {g === 'outside' && <p class="ct-muted ct-small" data-find-anyway="">{T('find.anywayNote')}</p>}
                   <ul class="ct-rows">{(whole.has(g) ? groups[g] : groups[g].slice(0, SCREEN)).map(row)}</ul>
                   {!whole.has(g) && groups[g].length > SCREEN && (
@@ -668,13 +683,13 @@ export default function Find({ Frame }: { Frame: Frame }) {
                   )}
                 </section>
               ))}
-              {outsideFolded && (
+              {outsideFolded && !holeSheet && (
                 <p><button type="button" class="button button-secondary" data-find-outside="" onClick={() => setOutsideShown(true)}>{P('palette.showOutside', groups.outside.length)}</button></p>
               )}
               {others}
             </>
           )}
-          {!q && (
+          {!q && !holeSheet && (
             // Paste a list (board Find: at the foot of the start and of a list, hidden while typing, K10, K19).
             <p class="ct-find-pastelink"><button ref={pasteBtn} type="button" class="text-link" data-find-paste="" onClick={() => setPasting(true)}>{T('find.paste')}</button></p>
           )}

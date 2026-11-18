@@ -232,3 +232,23 @@
 .ct .ct-next-way-label { font-weight: 600; color: var(--accent-strong, var(--accent)); }
 .ct .ct-next-way-sub { font-size: 14px; color: var(--text-secondary); }
 .ct .ct-next-room { margin: 0; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-muted, var(--surface)); border: 1px solid var(--border); font-size: 14px; }
+
+/* Find's title sits in the sheet's head, beside the close button (BC7; boards Find, FillHole). */
+.ct .ct-find .ct-sheet-head h2 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }
+/* On the phone Find is a bottom sheet over the dimmed page (boards Find, FillHole): a strip of the page
+   left above it, rounded top corners; still the native modal dialog (focus, Escape, inert page). */
+@media (max-width: 639px) {
+  .ct dialog.ct-sheet.ct-find:not(.ct-find-panel) { inset: auto 0 0 0; height: calc(100% - 32px); max-height: calc(100% - 32px); border-top: 1px solid var(--border-strong); border-radius: 14px 14px 0 0; }
+  .ct dialog.ct-sheet.ct-find:not(.ct-find-panel) .ct-sheet-head { border-radius: 14px 14px 0 0; }
+}
+/* A hole's sheet (BC9; boards FillHole, HoleOpen) is one column: its rows, no filter column. */
+.ct .ct-find-hole .ct-find-layout { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 960px) {
+  .ct .ct-sheet.ct-find.ct-find-hole:not(.ct-find-panel) { width: min(560px, 100%); }
+  .ct .ct-find-hole .ct-find-layout { grid-template-columns: minmax(0, 1fr); }
+}
+.ct .ct-find-hole .ct-add-bar { justify-content: space-between; }
+/* The Next step's not-checked line and, past 40 plants, the other holes as one paragraph (BC2, BC5). */
+.ct .ct-next-unchecked { margin: 0; font-size: 14px; color: var(--text); }
+.ct .ct-next-others { margin: 0; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-next-others .text-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

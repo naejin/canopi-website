@@ -101,6 +101,13 @@ test('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("Nex
   if (e.fits.length) for (const w of bulkWords(e)) await control(page, 'button', w);
   if (e.fits.length && e.fits.length <= e.best.length) assert.ok(!(await names(page, 'button')).some((n) => /^Add all /.test(n)), 'C13: no second bulk button that adds what the first does');
   if (e.fits.length) assert.match(card, reasonRe(e.lead.target), `BC1: a candidate's fit reason in the target's terms ("${card.slice(0, 400)}")`);
+  // BC1 (board SiteMendoza): the reason, then what else it does and its size, then the fit word.
+  if (e.fits.length) assert.match(card, new RegExp(`${e.fits[0]}\\s*${reasonRe(e.lead.target).source}[^]*?(?:Also|wide|tall|no size)[^]*?Fits your place`), `BC1: "${e.fits[0]}": reason, meta, then the fit word ("${card.slice(0, 500)}")`);
+  // BC12 (word map row 103): marks are chips in few words ("Mildly toxic", "Toxic"), never the Details sentence.
+  assert.doesNotMatch(card, /in the toxicity records\. Check before eating/, 'BC12: a toxicity mark reads as its chip ("Mildly toxic"), not the long warning');
+  // BC11: a second look for its range edge says so as its chip; "Needs a second look" is the group's heading only.
+  if (e.lookEdge.length) assert.ok(card.includes('Near the edge of its range'), `BC11: "${e.lookEdge[0]}" carries "Near the edge of its range"`);
+  if (e.look.length) assert.equal((card.match(/Needs a second look/g) ?? []).length, 1, 'BC11: "Needs a second look" only as the group heading');
   // BC2, C2: the why sentence counts the plants that do it then, by fit.
   assert.match(card, new RegExp(`${e.all} plants? on your lists (?:does|do) this then: `), `BC2: "${e.all} plants on your lists do this then: …" (the engine's counts)`);
   if (e.fits.length) assert.match(card, new RegExp(`\\b${e.fits.length} fits? your place`), 'BC2: the count that fits');
@@ -281,6 +288,9 @@ test('PFA8 (pf-a FillHole, HoleOpen): Find opened from a hole says "Best fit fir
   await control(page, 'button', `Undo adding ${name}`);
   assert.ok(await has(page, 'dialog[open]'), 'board: the sheet stays open');
   assert.match(await toastText(page), new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} added\\.(?: No new hole\\.| [A-Z][^:]+: (?:nobody|nothing)[^.]*\\.)`), `board: "Pineapple added. Covers the ground: nobody after year 15." ("${await toastText(page)}")`);
+  // BC6: only the sheet's hole as it is now (it may have split in two), never the other holes the plant narrowed.
+  const said = await toastText(page), lane = (await page.evaluate(() => document.querySelector('dialog[open] h2')?.textContent ?? '')).split(':')[0].trim();
+  for (const hole of said.match(/[A-Z][^.:]*(?=: (?:nobody|nothing))/g) ?? []) assert.equal(hole, lane, `BC6: the toast names the sheet's hole "${lane}" only ("${said}")`);
   await done(page);
 });
 
@@ -428,20 +438,34 @@ test('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the eng
   assert.ok(e.lead, 'the engine names a lead at 200 plants');
   const card = await nextText(page);
   assert.ok(card.includes(position(e)), `board: "${position(e)}" ("${card.slice(0, 90)}")`);
-  // R3, BC4: the no-fit state only when nothing fits, needs a second look or is unchecked; then how many do it outside their range.
-  if (!e.fits.length && !e.look.length && !e.unknown.length) {
+  // BC2 (board Many): the members not checked, counted and named while few ("7 plants not checked … Garapa, …").
+  const unchecked = e.lead.target.unchecked?.length ?? 0;
+  if (unchecked) assert.match(card, new RegExp(`${unchecked} plants? not checked`), `BC2: "${unchecked} plants not checked" under the title ("${card.slice(0, 300)}")`);
+  // BC4 (board Many, word map row 151): the no-fit state when no plant fits and none is unchecked (R3);
+  // the sentence, how many do it outside their range, "See the N outside their range", "Not now"; no "See all".
+  if (!e.fits.length && !e.unknown.length) {
     assert.ok(card.includes('No plant on your lists fits your place and does this then.'), 'board: the no-fit sentence');
     if (e.outside.length) assert.ok(card.includes(`${e.outside.length} ${e.outside.length === 1 ? 'does it but is outside its' : 'do it but are outside their'} climate range here.`), 'board Many: "5 do it but are outside their climate range here."');
     if (e.outside.length) await control(page, 'button', `See the ${e.outside.length} outside ${e.outside.length === 1 ? 'its' : 'their'} range`);
     await control(page, 'button', 'Not now');
     assert.ok(!(await names(page, 'button')).some((n) => /^Add (?:the|all) /.test(n)), 'board: no bulk button when none fits');
+    assert.ok(!(await names(page, 'button')).some((n) => /^See (?:all \d+ plants|the plant)$/.test(n)), 'BC4: no "See all N plants" in the no-fit state');
   } else {
-    assert.ok(!card.includes('No plant on your lists fits your place and does this then.'), 'R3: no no-fit sentence while plants need a second look or are unchecked');
+    assert.ok(!card.includes('No plant on your lists fits your place and does this then.'), 'R3: no no-fit sentence while plants fit or are unchecked');
     await control(page, 'button', e.seeAll === 1 ? 'See the plant' : `See all ${e.seeAll} plants`);
     if (!e.fits.length) assert.ok(!(await names(page, 'button')).some((n) => /^Add (?:the|all) /.test(n)), 'A1: no bulk button while none fits (second looks are added one by one)');
     else for (const w of bulkWords(e)) await control(page, 'button', w);
     if (e.fits.length > 12) assert.match(card, new RegExp(`\\+ ${e.fits.length - 3} more`), `board: the ${e.fits.length} that fit as a count cell ("+ ${e.fits.length - 3} more")`);
   }
+  // BC5 (boards Many, ManyDesk): past 40 plants the other holes are one sentence, then the thin spots or
+  // "No thin spot: every job that is done has the 2 plants you want, from year 1 to year 60." and "Change the 2".
+  const others = e.open.length - 1;
+  if (others === 1) assert.match(card, /The other hole: [A-Z][^:]+: nobody/, 'BC5: "The other hole: Covers the ground: nobody known after year 25 …"');
+  if (others > 1) assert.ok(card.includes(`The other ${others} holes: `), `BC5: "The other ${others} holes: …"`);
+  assert.ok(!/Other holes \d/.test(card), 'BC5: no "Other holes" card at 200 plants');
+  if (e.thins.length && !e.untouched) assert.ok(card.includes(`Then ${plural(e.thins.length, 'thin spot')}, with fewer than the ${e.goal} plants you want: `), 'BC5: the thin spots listed');
+  if (!e.thins.length) assert.ok(card.includes(`No thin spot: every job that is done has the ${e.goal} plants you want, from year 1 to year 60.`), 'BC5: "No thin spot: every job that is done has the 2 plants you want, from year 1 to year 60."');
+  await control(page, 'button', `Change the ${e.goal}`);
   await done(page);
 });
 
@@ -475,9 +499,16 @@ test('PFA18 (pf-a AddMany, "Find a backup"): Find opened from a thin job reads "
   const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
   await says(page, OTHER_HOLES);
   await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
+  const e = await engineLead(page);
+  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
   await press(page, 'button', 'Find a backup');
   assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens');
   await says(page, 'Sorted: fills this first.');
+  // BC10 (board AddMany state 3): where it was opened from, and each row a backup, never "fills this hole".
+  const t = e.lead.target;
+  await says(page, `Opened from “${JOB_NAME[t.job]}, years ${t.fromYear} to ${t.toYear}”; the filter “Fills a hole or a thin job” is on.`, { inDialog: true });
+  await says(page, new RegExp(`${JOB_NAME[t.job]} (?:from|in) [^:]+: a backup`), { inDialog: true });
+  assert.ok(!(await dialogText(page)).includes('fills this hole'), 'BC10: no row says "fills this hole" on a thin job');
   await control(page, 'button', 'Filters · 1');
   await done(page);
 });
@@ -531,3 +562,38 @@ test('PFA21 (pf-a Recife, the Portuguese words): on the Portuguese page the Next
   await done(page);
 });
 
+
+test('PFA22 (pf-a FillHole at 390, BC7-BC9, BC11): a hole\'s sheet is a bottom sheet over the dimmed page, rounded at the top, its title beside the close button; its intro counts the plants that fit (no second look) then says "Best fit first: …"; no search field, Filters or "Fits your place today" heading: the rows that fit, then "Needs a second look (n)" with each row\'s reason as a chip ("Near the edge of its range"); the foot holds "Show N outside their climate range" and Done', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  const e = await engineLead(page);
+  assert.ok(e.lead && e.lead.kind !== 'thin', 'the engine names a lead hole');
+  await press(page, 'button', e.seeAll === 1 ? 'See the plant' : `See all ${e.seeAll} plants`);
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'the hole\'s sheet opens');
+  await says(page, 'Best fit first: plants that fit before those that need a second look', { inDialog: true });
+  const t = await dialogText(page);
+  // BC8: the count of the plants that fit, never with the second looks.
+  if (e.fits.length) assert.match(t, new RegExp(`\\b${e.fits.length} plants? on [^.]+ fills? it and fits? your place\\. Best fit first: `), `BC8: "${e.fits.length} plants … fit your place. Best fit first: …" ("${t.slice(0, 260)}")`);
+  // BC9: rows only, no search, filters or fit heading.
+  const roles = await page.evaluate(() => ({ search: !!document.querySelector('dialog[open] input[type=search]'), heads: [...document.querySelectorAll('dialog[open] h3')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()) }));
+  assert.ok(!roles.search, 'BC9: no search field in a hole\'s sheet');
+  assert.ok(!(await names(page, 'button')).some((n) => /^Filters\b/.test(n)), 'BC9: no Filters in a hole\'s sheet');
+  assert.ok(!roles.heads.some((h) => /^Fits your place/.test(h)), `BC9: no "Fits your place today N" heading (${roles.heads.join(' | ')})`);
+  if (e.look.length) assert.ok(roles.heads.includes(`Needs a second look (${e.look.length})`), `BC9: "Needs a second look (${e.look.length})" (${roles.heads.join(' | ')})`);
+  if (e.outside.length) await control(page, 'button', `Show ${e.outside.length} outside ${e.outside.length === 1 ? 'its' : 'their'} climate range`);
+  await control(page, 'button', 'Done');
+  // BC11: a range-edge second look carries its chip.
+  // (textContent: rows off screen skip their rendering, content-visibility, so innerText leaves them out)
+  const all = await page.evaluate(() => document.querySelector('dialog[open]').textContent.replace(/\s+/g, ' '));
+  if (e.lookEdge.length) assert.match(all, new RegExp(`${e.lookEdge[0]}[^]*?Near the edge of its range`), `BC11: "Near the edge of its range" on ${e.lookEdge[0]}`);
+  // BC7: a bottom sheet with a strip of the page above, rounded top; the title beside the close button.
+  const frame = await page.evaluate(() => {
+    const d = document.querySelector('dialog[open]'), r = d.getBoundingClientRect(), cs = getComputedStyle(d);
+    const title = d.querySelector('h2')?.getBoundingClientRect(), close = [...d.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Close')?.getBoundingClientRect();
+    return { top: r.top, radius: parseFloat(cs.borderTopLeftRadius), title: title && { top: title.top, bottom: title.bottom }, close: close && { top: close.top, bottom: close.bottom } };
+  });
+  assert.ok(frame.top >= 16, `BC7: the sheet leaves the dimmed page above it (top ${frame.top})`);
+  assert.ok(frame.radius >= 8, `BC7: rounded top corners (${frame.radius})`);
+  assert.ok(frame.title && frame.close && frame.close.top < frame.title.bottom && frame.title.top < frame.close.bottom, `BC7: the title and the close button share the head row (${JSON.stringify(frame)})`);
+  await done(page);
+});

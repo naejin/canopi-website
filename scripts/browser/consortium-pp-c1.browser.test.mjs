@@ -30,7 +30,6 @@ useHarness();
 
 const FIND = 'dialog.ct-find[open]';
 const hasFind = async (page, timeout = 4000) => assert.ok(await has(page, FIND, timeout), 'no Find sheet (dialog.ct-find)');
-const on = (page, id) => page.$eval(`${FIND} [data-filter="${id}"]`, (e) => e.getAttribute('aria-pressed') === 'true' || e.checked === true).catch(() => null);
 // The rows of every group shown whole (B2's "Show all N" is display only, never a filter).
 const rowIds = async (page) => { await expandAll(page); return page.$$eval(`${FIND} [data-find-row]`, (els) => els.map((e) => e.dataset.plantId).filter(Boolean).sort()); };
 const toggle = async (page, id) => {
@@ -77,10 +76,16 @@ async function findFromHole(page) {
 
 // ---- F1a filters restored (P5.1) ----
 
-test('F1a-F1 → PP-C (c1 Lyon food forest, P5.1): Find opened from a hole has "Fits your place" on', async () => {
+// pf-a BC9 (boards FillHole, HoleOpen): a hole's sheet has no filters; it lists the plants that fill the
+// hole and fit or need a second look, the outside ones behind "Show N outside their climate range".
+test('F1a-F1 → PP-C (c1 Lyon food forest, P5.1): Find opened from a hole lists what fits, the outside plants behind their link', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await findFromHole(page);
-  assert.equal(await on(page, 'fits'), true, '"Fits your place" is on from a hole');
+  const shown = await rowIds(page);
+  const levels = await page.evaluate((ids) => { const v = window.__ctTest.store.poolVerdicts.value; return ids.map((id) => v?.get(id)?.level ?? 'unknown'); }, shown);
+  assert.ok(shown.length > 0, 'the hole\'s plants are listed');
+  assert.ok(!levels.includes('outside'), `no plant outside its range before "Show N outside" (${levels.join(', ')})`);
+  assert.equal(await page.$(`${FIND} [data-filter]`), null, 'no filter in a hole\'s sheet');
 });
 
 test('F1a-F2 → PP-C (c1 Seville dry garden, P5.1 A14): "Holds up in the future climate" changes the plants offered', async () => {
@@ -455,7 +460,7 @@ test('PP-C40 (c1 fix A8 Paste, one index): Paste loads no other list on opening;
 // Fix round 1, A1 (review c1-02): "No plant answers" only when nothing answers at all; a hit the
 // filters, the hole or the palette keeps out is counted on one line with its way out, and the release
 // never gets "Ask us to add" for a plant it holds.
-test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a filter, outside the hole: each said with its way out, never "No plant answers"', async () => {
+test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a filter, outside a thin job\'s plants: each said with its way out, never "No plant answers"', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const pick = await page.evaluate(() => {
     const { store } = window.__ctTest, m = new Set(store.members.value);
@@ -478,8 +483,11 @@ test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a 
   assert.ok(await has(page, `${FIND} [data-find-row]`, 2000), 'Clear shows it');
   await page.evaluate(() => window.__ctTest.store.closeSheet());
   await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-  // A hole: a plant of the list that does not fill it.
+  // A thin job's sheet (the Add sheet, with its search; a hole's sheet has none, BC9): a plant of the list
+  // that does not do the job then.
   await findFromHole(page);
+  await page.evaluate(() => { const { store } = window.__ctTest, t = store.sheetTarget.value; store.closeSheet(); store.openFind({ ...t, hole: { ...t.hole, thin: { have: 1 } } }); });
+  await page.waitForFunction(() => !!document.querySelector('dialog[open] [data-find-search]'), { timeout: 8000 });
   const away = await page.evaluate(() => {
     const { store } = window.__ctTest, { fits } = store.sheetTarget.value, m = new Set(store.members.value);
     return store.pool.value.find((t) => !m.has(t.id) && !fits(t))?.canonical_name ?? null;

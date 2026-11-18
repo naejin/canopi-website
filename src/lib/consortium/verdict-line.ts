@@ -171,6 +171,10 @@ export function fillReasonLine(target: Pick<Hole, 'kind' | 'job' | 'stratum' | '
   return holes > 1 ? { key: K('reasonFills'), vars: {}, count: holes, parts: { reason } } : reason;
 }
 
+// The chip of a plant that needs a second look for its range edge (its verdict's level 'look'): "Near
+// the edge of its range" (boards FillHole, Main; BC11), on the candidate rows of the Next step and Find.
+export const edgeChipLine = (): Line => ({ key: K('bandEdge'), vars: {} });
+
 // "+ {n} more" on a folded lane of a picture (ux-inventory E6; plant-palette-architecture 3.4).
 export const moreLine = (n: number): Line => ({ key: K('more'), vars: { n }, count: n });
 

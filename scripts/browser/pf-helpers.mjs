@@ -244,6 +244,8 @@ export async function engineLead(page) {
     all: f.fits.length + f.look.length + f.outside.length + f.unknown.length,
     // BC3: "See all N plants" counts what Find lists first: the fits, the second looks, the unchecked.
     seeAll: f.fits.length + f.look.length + f.unknown.length,
+    // BC11: the second looks the verdict puts near the edge of their range (their chip "Near the edge of its range").
+    lookEdge: sci(f.look.filter((t) => pv.get(t.id)?.level === 'look')),
   };
 }
 // The text of the Next step's card, one line (its heading "Next step" opens it), or ''.
