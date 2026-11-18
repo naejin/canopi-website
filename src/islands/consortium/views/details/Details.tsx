@@ -236,7 +236,7 @@ function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; z
   const r = t.traits.soil_ph;
   // The desk's say on soil (fix round 1 R3): the soil card's own judgement (soilSayOf: the value it
   // judged, your test or the map, or pots), placed here because the desk shows no soil card.
-  const soil = desk ? soilSayOf(t, facts?.traitSources ?? null) : null;
+  const soil = desk ? soilSayOf(t) : null;
   // The bloom rows whose scope holds the place, as one span (fix round 1 BC2: never another hemisphere's months).
   const loc = store.location.value;
   const bloom = bloomNear(facts?.layerValues ?? [], { lat: loc?.lat ?? null, country: store.flagContext.value.country ?? null, zone });
@@ -426,9 +426,9 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           {/* What the site check could not decide (room, light, soil, water), said once and in both layouts (fix round 1 R5: never a silent fit). */}
           {siteUnknown.length > 0 && <ul class="ct-d-unknown" data-site-unknown>{siteUnknown.map((w) => <li class="ct-muted ct-small">{INFO} {w}</li>)}</ul>}
         </section>
-        <Against t={t} disputes={facts?.disputes ?? []} traitSources={facts?.traitSources ?? null} subject={member ? nameOf(t) : null} gbifRecords={facts?.gbifRecords ?? null} />
+        <Against t={t} disputes={facts?.disputes ?? []} subject={member ? nameOf(t) : null} gbifRecords={facts?.gbifRecords ?? null} />
         {/* The desk says the soil on the Niche row (board DetailsDesk; R3: one judgement, soilSayOf). */}
-        {!desk && <SoilCard t={t} traitSources={facts?.traitSources ?? null} />}
+        {!desk && <SoilCard t={t} />}
         {member && (
           <section class="ct-d-cando" aria-labelledby="ct-d-cando" data-cando>
             <h3 id="ct-d-cando">{T('details.canDo')}</h3>

@@ -13,7 +13,7 @@ import { useEffect, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
-import type { AgainstEntry, Band, Dispute, Level, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
+import type { AgainstEntry, Band, Dispute, Level, Line, Measure, Scenario, Taxon } from '../../../../lib/consortium/index.ts';
 import { againstLines, bandsOf, datasetLines, drainageLine, levelLine, limitOf, lineTerm, periodName, rainFromLine, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, MEASURE_GLYPH, midSentence, say } from '../kit/fit.tsx';
 import { WARN } from '../kit/icons.tsx';
@@ -109,7 +109,7 @@ function Words({ line, terms }: { line: Line; terms: boolean }) {
   );
 }
 
-export function Against({ t, disputes = [], subject = null, gbifRecords = null }: { t: Taxon; disputes?: readonly Dispute[]; traitSources?: readonly TraitSource[] | null; subject?: string | null; gbifRecords?: number | null }) {
+export function Against({ t, disputes = [], subject = null, gbifRecords = null }: { t: Taxon; disputes?: readonly Dispute[]; subject?: string | null; gbifRecords?: number | null }) {
   const [table, setTable] = useState(false);
   // Details may open before the palette page asked for the rule (a link, a list chosen without a
   // location): ask for it here too (one load, store.wantVerdict).
@@ -151,7 +151,6 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
   const [fit, ...rest] = entries;
   // The soil's line is the soil card's (SoilCard), never repeated here.
   const others = rest.filter((e) => e.factor !== 'soil-ph' && !bands.some((b) => inBand(e, b)));
-  const climateBands = bands;
   const lang = pageLang();
   const at = (b: Band, x: number | null) => (x === null ? '–' : (b.measure === 'aridity' ? formatNumber(x, lang, 2) : formatTemp(x, lang, 1)).replace(/-(?=\d)/g, '\u2212'));
   const c = t.climate;
@@ -172,17 +171,17 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
       {bands.map((b) => <BandCard b={b} disputes={disputes} period={period}><ul class="ct-against-lines">{rest.filter((e) => inBand(e, b)).map(item)}</ul></BandCard>)}
       {others.length > 0 && <ul class="ct-against-lines">{others.map(item)}</ul>}
       {/* The key of the climate bands (the soil card says its own range). */}
-      {climateBands.length > 0 && (
+      {bands.length > 0 && (
         <ul class="ct-band-key" data-band-key>
           <li><svg viewBox="0 0 26 12" width="26" height="12" aria-hidden="true"><rect x="1" y="1" width="24" height="10" rx="2" class="ct-bd-range ct-bd-edge" /><path d="M12 0v12" class="ct-bd-tick" /></svg>{T('details.keyRange')}</li>
-          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{say(climateBands[0].when.key)}</li>
+          <li><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-now-dot" /></svg>{say(bands[0].when.key)}</li>
           {/* The ring's entry only when a ring is drawn (round 4 V7: a later page draws none). */}
-          {period && climateBands.some((b) => b.later !== null) && <li data-key-later><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-later-dot" /></svg>{T('details.keyLater')}</li>}
+          {period && bands.some((b) => b.later !== null) && <li data-key-later><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4" class="ct-bd-later-dot" /></svg>{T('details.keyLater')}</li>}
           <li><svg viewBox="0 0 22 12" width="22" height="12" aria-hidden="true"><rect x="1" y="1" width="20" height="10" rx="2" class="ct-bd-edge is-dashed" fill="none" /></svg>{T('details.keyDashed')}</li>
         </ul>
       )}
       {/* Where the bands come from, and their text form as a table (boards Details, DetailsDesk). */}
-      {c && climateBands.length > 0 && (
+      {c && bands.length > 0 && (
         <p class="ct-small ct-against-records" data-records>
           {/* Board: "From 1,784 GBIF records of where it grows, thinned to 872 map squares…" (fix round 1 BC6:
               the release's record count; TreeGOER is named where its limit is used, in the band's words). */}
@@ -195,8 +194,8 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
       )}
       {table && (
         <table class="ct-band-table" data-band-table>
-          <thead><tr><th scope="col">{T('details.tMeasure')}</th><th scope="col">{say(climateBands[0].when.key)}</th>{period && <th scope="col">{period}</th>}<th scope="col">{T('details.tRecorded')}</th></tr></thead>
-          <tbody>{climateBands.map((b) => <tr><th scope="row">{say(b.title)}</th><td>{at(b, b.place)}</td>{period && <td>{at(b, b.later)}</td>}<td>{at(b, b.recordedLow)} – {at(b, b.recordedHigh)}</td></tr>)}</tbody>
+          <thead><tr><th scope="col">{T('details.tMeasure')}</th><th scope="col">{say(bands[0].when.key)}</th>{period && <th scope="col">{period}</th>}<th scope="col">{T('details.tRecorded')}</th></tr></thead>
+          <tbody>{bands.map((b) => <tr><th scope="row">{say(b.title)}</th><td>{at(b, b.place)}</td>{period && <td>{at(b, b.later)}</td>}<td>{at(b, b.recordedLow)} – {at(b, b.recordedHigh)}</td></tr>)}</tbody>
         </table>
       )}
     </section>
@@ -204,14 +203,14 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
 }
 
 // What Details says about soil, one source for both layouts (fix round 1 R3): the soil card on a phone,
-// the Niche row on the desk. The level is the core's soil band (soilBandOf) on the value the engine
+// the Niche row on the desk. The level is the core's soil band (soilBandOf, its level only: its range line is not shown) on the value the engine
 // judges (soilPhOf: the grower's test, else the map; none in pots), and every sentence names that value:
 // "your test", "the soil map" (with its texture word when the map has one), or pots. A map value from a
 // neighbouring square says how far, in kilometres: "a weaker guess" (F10).
 export interface SoilSay { ranged: boolean; level: Level; status: string; line: string; near: string | null; niche: string | null; map: number | null; own: number | null }
 // Kilometres, whole (format.ts has no kilometre unit yet): the number in the page's language, then "km".
 const km = (n: number, lang: string): string => `${formatNumber(n, lang, 0)}\u00a0km`;
-export function soilSayOf(t: Taxon, traitSources: readonly TraitSource[] | null = null): SoilSay {
+export function soilSayOf(t: Taxon): SoilSay {
   const lang = pageLang();
   const inputs = store.siteInputs.value;
   const input = inputs?.soilPh ?? null;
@@ -221,7 +220,7 @@ export function soilSayOf(t: Taxon, traitSources: readonly TraitSource[] | null 
   const v = store.verdictOf(t);
   const r = t.traits.soil_ph;
   const ranged = !!r && r.min !== null && r.max !== null;
-  const level: Level = (v && ranged ? soilBandOf(t, v, ph, traitSources)?.level : null) ?? 'unknown';
+  const level: Level = (v && ranged ? soilBandOf(t, v, ph)?.level : null) ?? 'unknown';
   const n = (x: number) => formatNumber(x, lang, 1);
   const status = ph === null || level === 'unknown' ? T('details.soilNotChecked')
     : own !== null ? T(level === 'fits' ? 'details.soilFitsYours' : 'details.soilOffYours') : T(level === 'fits' ? 'details.soilFitsLikely' : 'details.soilOffLikely');
@@ -247,9 +246,9 @@ export function soilSayOf(t: Taxon, traitSources: readonly TraitSource[] | null 
 // "Set my own soil pH" (store.openFigure: the figures panel's soil line). Without a map value, "not
 // checked on soil pH" (F10); from a neighbouring square, "a weaker guess". The desk shows the same say on
 // the Niche row instead (board DetailsDesk; Details renders no card there).
-export function SoilCard({ t, traitSources = null }: { t: Taxon; traitSources?: readonly TraitSource[] | null }) {
+export function SoilCard({ t }: { t: Taxon }) {
   const lang = pageLang();
-  const soil = soilSayOf(t, traitSources);
+  const soil = soilSayOf(t);
   const { ranged, level, map, own } = soil;
   const r = t.traits.soil_ph;
   const n = (x: number) => formatNumber(x, lang, 1);

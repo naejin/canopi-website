@@ -1,7 +1,7 @@
 // pf stream f, "One plant" (chunk 3): the words pf-f owns in the core's verdict-line vocabulary,
 // said in the locale files as the boards say them.
 // - F2 (chunk 2 hand-off triage): the German thin spot reads "Dünn besetzt: nur 1 Pflanze von Jahr 1
-//   bis Jahr 15." (board German), with no "Reserve finden" (A20: thin rows carry no button), then the
+//   bis Jahr 15." (board German), with no row button words (A20: thin rows carry no button), then the
 //   word map's backup prompt "Eine Reserve dazunehmen." (C5: every language asks for a backup).
 // - M23 (chunk 2 hand-off triage; boards SiteMendoza and Find): a plant's rain line "recorded from
 //   25 mm", read from the low end of TaxonClimate.precip, never a guess. C11: board SiteMendoza mixes
@@ -32,10 +32,25 @@ function said(l, lang) {
   return text.replace(/\{(\w+)\}/g, (_, k) => (k in parts ? parts[k] : k.endsWith('Mm') ? formatMm(l.vars[k], lang) : k.startsWith('temp') ? `${l.vars[k]} °C` : String(l.vars[k])));
 }
 
-test('F2 (pf-f): the German thin spot opens as board German, with no "Reserve finden" (A20; C5 adds the backup prompt)', () => {
+test('F2 (pf-f): the German thin spot opens as board German, then the backup prompt (A20; C5; C13 the full value)', () => {
   const one = line.thinLine({ have: 1, fromYear: 1, toYear: 15 });
   assert.match(said(one, 'de'), /^Dünn besetzt: nur 1 Pflanze von Jahr 1 bis Jahr 15\./);
-  assert.doesNotMatch(words.de['consortium.line.thin'], /Reserve finden/);
+  // The full German value (C13): board German, then the word map's backup prompt; no row button words.
+  assert.equal(words.de['consortium.line.thin'], 'one: Dünn besetzt: nur # Pflanze von Jahr {from} bis Jahr {to}. Eine Reserve dazunehmen. | other: Dünn besetzt: nur # Pflanzen von Jahr {from} bis Jahr {to}. Eine Reserve dazunehmen.');
+  assert.equal(said(line.thinLine({ have: 2, fromYear: 1, toYear: 15 }), 'de'), 'Dünn besetzt: nur 2 Pflanzen von Jahr 1 bis Jahr 15. Eine Reserve dazunehmen.');
+});
+
+// C13 (fix round 1, batch 4): a reader of Details sees the soil card's level and its own words, never a
+// range-source line; the props say only what each view reads, so no reader of the code thinks the trait
+// pH's source reaches Against or the soil card (it reaches neither: soilSayOf reads only the band's level).
+test('C13 (pf-f): Against and the soil card take no traitSources; no alias of the bands', () => {
+  const src = readFileSync(new URL('../src/islands/consortium/views/details/Against.tsx', import.meta.url), 'utf8');
+  const details = readFileSync(new URL('../src/islands/consortium/views/details/Details.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /traitSources/, 'Against.tsx reads no trait source');
+  assert.doesNotMatch(src, /climateBands/, 'no alias of the bands');
+  assert.doesNotMatch(details, /<Against[^>]*traitSources/, 'Details passes none to Against');
+  assert.doesNotMatch(details, /<SoilCard[^>]*traitSources/, 'Details passes none to the soil card');
+  assert.doesNotMatch(details, /soilSayOf\([^)]*traitSources/, 'the desk\'s soil say takes none');
 });
 
 test('M23 (pf-f): "recorded from N mm" from the low end of the plant\'s recorded rain; none without a rain range', () => {
