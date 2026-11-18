@@ -31,7 +31,9 @@ export function wasmMissing(): boolean {
 
 // The whole body of url (bytes null when the status is not ok). Throws when it did not arrive: a
 // network error or a stall.
-async function download(url: string): Promise<{ status: number; bytes: Uint8Array | null }> {
+// onBytes: the bytes received so far, after each part (M28: "0.8 of 1.4 MB").
+/** @testonly exported for the progress unit test; the page reaches it through openDatabase. */
+export async function download(url: string, onBytes?: (got: number) => void): Promise<{ status: number; bytes: Uint8Array | null }> {
   const ctrl = new AbortController();
   let why = '';
   let stall: ReturnType<typeof setTimeout> | undefined;
@@ -53,6 +55,7 @@ async function download(url: string): Promise<{ status: number; bytes: Uint8Arra
       if (done) break;
       parts.push(value);
       size += value.length;
+      onBytes?.(size);
     }
     const bytes = new Uint8Array(size);
     let at = 0;
@@ -65,10 +68,10 @@ async function download(url: string): Promise<{ status: number; bytes: Uint8Arra
   }
 }
 
-async function fetchBytes(ref: DbRef): Promise<Uint8Array> {
+async function fetchBytes(ref: DbRef, progress?: (got: number, total: number) => void): Promise<Uint8Array> {
   let got: { status: number; bytes: Uint8Array | null };
   try {
-    got = await download(ref.url);
+    got = await download(ref.url, progress && ((n) => progress(n, ref.bytes)));
   } catch (err) {
     throw new LoadError('fetch', `the database did not arrive: ${(err as Error).message}`);
   }
@@ -130,14 +133,15 @@ async function initSqlite(wasmUrl?: string): Promise<Sqlite3> {
 const SLOW_MS = 5_000;
 
 // Fetches, opens and checks the database; throws a LoadError naming its §5 screen. `slow` runs once
-// if it is still under way after SLOW_MS.
-export async function openDatabase(ref: DbRef, expected: Expected, wasmUrl?: string, slow?: () => void): Promise<Opened> {
+// if it is still under way after SLOW_MS; `progress` gets the bytes received and the file's size (the
+// index's, so a compressed answer without Content-Length still has a total; M28).
+export async function openDatabase(ref: DbRef, expected: Expected, wasmUrl?: string, slow?: () => void, progress?: (got: number, total: number) => void): Promise<Opened> {
   if (tooOld()) throw new LoadError('too-old', 'no DecompressionStream');
   if (wasmMissing()) throw new LoadError('wasm-blocked', 'no WebAssembly');
   const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { slow?: number } }).__ctTimeouts?.slow) || SLOW_MS : SLOW_MS;
   const timer = slow ? setTimeout(slow, ms) : undefined;
   try {
-    const [bytes, sqlite3] = await Promise.all([fetchBytes(ref), initSqlite(wasmUrl)]);
+    const [bytes, sqlite3] = await Promise.all([fetchBytes(ref, progress), initSqlite(wasmUrl)]);
     return openWith(sqlite3, bytes, expected);
   } finally {
     clearTimeout(timer);

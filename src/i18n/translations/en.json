@@ -1528,5 +1528,6 @@
   "consortium.location.lookUpName": "Look up its name",
   "consortium.location.noName": "No place name is recorded there.",
   "consortium.location.nameFailed": "The place search did not answer, so the place has no name. Try again later.",
+  "consortium.load.progress": "{got} of {total}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

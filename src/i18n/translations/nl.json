@@ -1528,5 +1528,6 @@
   "consortium.location.lookUpName": "De naam opzoeken",
   "consortium.location.noName": "Daar staat geen plaatsnaam geregistreerd.",
   "consortium.location.nameFailed": "Het zoeken naar plaatsen gaf geen antwoord, dus de plek heeft geen naam. Probeer het later nog eens.",
+  "consortium.load.progress": "{got} van {total}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

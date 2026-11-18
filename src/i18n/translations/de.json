@@ -1528,5 +1528,6 @@
   "consortium.location.lookUpName": "Seinen Namen nachschlagen",
   "consortium.location.noName": "Dort ist kein Ortsname verzeichnet.",
   "consortium.location.nameFailed": "Die Ortssuche hat nicht geantwortet, der Ort bleibt ohne Namen. Versuche es später noch einmal.",
+  "consortium.load.progress": "{got} von {total}.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

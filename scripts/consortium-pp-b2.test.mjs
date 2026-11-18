@@ -415,3 +415,20 @@ test('PP-B (b2 scale fixture, review r1 perf-11): the 10-plant palette is the 20
   assert.deepEqual(small.guests, big.guests);
   assert.deepEqual(Object.keys(small.pools).sort(), Object.keys(big.pools).sort());
 });
+
+// M28 (board Loading "Still loading… 0.8 of 1.4 MB."): the download reports the bytes received after
+// each part, so the slow line can say how far it is.
+test('M28: the database download reports the bytes received after each part', async () => {
+  const { download } = await import('../src/islands/consortium/data/load.ts');
+  const parts = [new Uint8Array(300_000), new Uint8Array(500_000), new Uint8Array(600_000)];
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => new Response(new ReadableStream({ start(c) { for (const p of parts) c.enqueue(p); c.close(); } }), { status: 200 });
+  try {
+    const seen = [];
+    const got = await download('https://example.invalid/db.gz', (n) => seen.push(n));
+    assert.deepEqual(seen, [300_000, 800_000, 1_400_000]);
+    assert.equal(got.bytes.length, 1_400_000);
+  } finally {
+    globalThis.fetch = real;
+  }
+});

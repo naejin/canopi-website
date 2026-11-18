@@ -58,6 +58,9 @@ export const yearStep = signal<PhaseOrd>(2);
 // from data/load.ts's slow callback), and a return visit restoring (main.ts; App shows the palette
 // placeholder, never the Place form, P2).
 export const slow = signal(false);
+// The database's bytes received and its size while it loads (M28: board Loading "0.8 of 1.4 MB"), in
+// tenths of a MB steps, so the line changes at most once per step; null before the first byte.
+export const loadProgress = signal<{ got: number; total: number } | null>(null);
 export const opening = signal(false);
 // The holes put off with "Not now" (this page only, never saved).
 export const notNow = signal<ReadonlySet<string>>(new Set());

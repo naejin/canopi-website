@@ -11,7 +11,7 @@ import { h, render } from 'preact';
 import wasmUrl from '@sqlite.org/sqlite-wasm/sqlite3.wasm?url';
 import { App, PalettePage } from './App.tsx';
 import { effect } from '@preact/signals';
-import { adoptEntry, arrivalOpensPalette, forgetEntries, historyMoved, load, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
+import { adoptEntry, arrivalOpensPalette, forgetEntries, historyMoved, load, loadProgress, pushWaiting, opening, setPageClimates, setPageCountries, setSource, slow, start, view, wantVerdict, watchPools, watchSteps } from './store.ts';
 import { openingArrival, startMemory } from './state/arrival.ts';
 import { backToPlace } from './state/draft.ts';
 import { currentFragment, lastWritten, writeAddress } from './state/persist.ts';
@@ -36,12 +36,16 @@ let testHook: Promise<unknown> | null = null;
 async function open(data: PageData): Promise<void> {
   load.value = { status: 'loading', error: null };
   slow.value = false;
+  loadProgress.value = null;
   setSource(null);
   let LoadError: Loader['LoadError'] | null = null;
   try {
     const mod = await getLoader();
     LoadError = mod.LoadError;
-    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) }, wasmUrl, () => { slow.value = true; });
+    const opened = await mod.openDatabase(data.db, { releaseId: data.releaseId, climates: data.climates.map((c) => zoneOf(c) ?? c) }, wasmUrl, () => { slow.value = true; }, (got, total) => {
+      const step = (n: number) => Math.floor(n / 100_000);
+      if (step(got) !== step(loadProgress.peek()?.got ?? -100_000)) loadProgress.value = { got, total };
+    });
     let source;
     try {
       source = mod.createSqliteSource(opened.db, { images: data.images });
