@@ -13,7 +13,7 @@
 import type { ComponentType } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { computed } from '@preact/signals';
-import { load, offline, opening, slow, step } from './store.ts';
+import { load, offline, opening, slow, step, view } from './store.ts';
 import { T } from './strings.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 import { retryableImport } from '../../lib/consortium/index.ts';
@@ -32,15 +32,17 @@ export const PalettePage = lazyPart(retryableImport(() => import('./views/palett
 import './views/StageBar.tsx';
 
 export interface AppProps {
-  // The noscript guide link, reused under the failure screens.
+  // The page's guide (the noscript link's address), linked as "Read the guides" on the screens where
+  // the tool cannot run in this browser (board Loading: Old browser, WebAssembly blocked).
   guide: { url: string; lang: string } | null;
   onRetry: () => void;
 }
 
-// The §5 screen of each failure: its text key and its button (none: only the guide link helps).
-const screens: Record<LoadFailure, { text: string; action: 'retry' | 'reload' | null }> = {
-  'too-old': { text: 'load.tooOld', action: null },
-  'wasm-blocked': { text: 'load.wasmBlocked', action: null },
+// The §5 screen of each failure (board Loading): its text key, its button, and whether it links the
+// guides (the tool cannot run in this browser, the guides can).
+const screens: Record<LoadFailure, { text: string; action: 'retry' | 'reload' | null; guides?: true }> = {
+  'too-old': { text: 'load.tooOld', action: null, guides: true },
+  'wasm-blocked': { text: 'load.wasmBlocked', action: 'retry', guides: true },
   'wasm-fetch': { text: 'load.toolFailed', action: 'reload' },
   fetch: { text: 'load.fetch', action: 'retry' },
   damaged: { text: 'load.damaged', action: 'retry' },
@@ -59,7 +61,8 @@ function OfflineLine() {
   return <p class="ct-offline" role="status">{offline.value ? T('load.offline') : ''}</p>;
 }
 // The database still loading: one status line on the page from the start, its words switching to
-// "Still loading" after the threshold, so the change is announced (bugs-12). The line goes on the page
+// "Still loading" after the threshold, so the change is announced (bugs-12). Board Loading (pf-c): the
+// Place step works meanwhile, and the line says so ("You can already give your place."). The line goes on the page
 // empty and takes its words after the first paint (an effect), so a screen reader hears them: the
 // first render comes before the plants are read (PP-B3, A25; the test build hid it while its render
 // waited for the hook and the database was often ready by then, PP-B exit).
@@ -67,26 +70,41 @@ function LoadingLine() {
   const busy = !ready.value;
   const [placed, setPlaced] = useState(false);
   useEffect(() => setPlaced(true), []);
-  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? T(slow.value ? 'load.slow' : 'load.plants') : ''}</p>;
+  // "You can already give your place." only beside the Place form, never while a palette restores (R15).
+  const canGive = view.value === 'start' && !opening.value;
+  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? (slow.value ? T('load.slow') : canGive ? `${T('load.plants')} ${T('load.canGive')}` : T('load.plants')) : ''}</p>;
 }
 function PlaceOrPlaceholder() {
   return restoring.value ? <Placeholder /> : slot(Place);
 }
 
+// The failure screens say their own words (board Loading), with no added guide sentence (BC22), and
+// "Read the guides" where the board draws it (C2). "Try again" is a secondary button, as Loading draws
+// it on every screen; "Reload" after an update stays the primary one. A failure ends the page's opening: the head the
+// inline script marked as the palette step before the island ran goes back to the Place step, with its
+// steps and lede (R6: the pre-paint hint is confirmed or undone on every outcome).
+function Failed({ error, guide, onRetry }: AppProps & { error: LoadFailure }) {
+  const screen = screens[error];
+  useEffect(() => { const head = document.getElementById('ct-head'); if (head) head.dataset.step = 'place'; }, []);
+  return (
+    <div class="callout ct-load-failed" role="alert" data-load-error={error}>
+      <p>{T(screen.text)}</p>
+      {(screen.action || (screen.guides && guide)) && (
+        <p class="ct-load-acts">
+          {screen.action === 'retry' && <button type="button" class="button button-secondary" onClick={onRetry}>{T('load.retry')}</button>}
+          {/* Reload keeps the address, so the link state is kept. */}
+          {screen.action === 'reload' && <button type="button" class="button button-primary" onClick={() => location.reload()}>{T('load.reload')}</button>}
+          {/* Alone, a secondary button; beside "Try again", a text link (board Loading, C2 of fix round 3). */}
+          {screen.guides && guide && <a class={screen.action ? 'text-link' : 'button button-secondary'} href={guide.url} hreflang={guide.lang !== document.documentElement.lang ? guide.lang : undefined}>{T('palette.place.readGuides')}</a>}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function App({ guide, onRetry }: AppProps) {
   const { status, error } = load.value;
-  if (status === 'failed' && error) {
-    const screen = screens[error];
-    return (
-      <div class="callout ct-load-failed" role="alert" data-load-error={error}>
-        <p>{T(screen.text)}</p>
-        {screen.action === 'retry' && <p><button type="button" class="button button-primary" onClick={onRetry}>{T('load.retry')}</button></p>}
-        {/* Reload keeps the address, so the link state is kept. */}
-        {screen.action === 'reload' && <p><button type="button" class="button button-primary" onClick={() => location.reload()}>{T('load.reload')}</button></p>}
-        {guide && <p>{T('load.guides')} <a class="text-link" href={guide.url} hreflang={guide.lang}>{T('noscript.link')}</a></p>}
-      </div>
-    );
-  }
+  if (status === 'failed' && error) return <Failed error={error} guide={guide} onRetry={onRetry} />;
   // A return visit restoring shows the palette's placeholder, never the Place form (P2), and so does
   // the palette page until the plants are read and its chunk is in.
   const onPalette = step.value === 'palette';

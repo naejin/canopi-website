@@ -21,6 +21,8 @@ import { countryZones } from '../../lib/consortium/country-zones.ts';
 import index from '../../data/consortium-index.json';
 import { climatePageData } from '../../data/climate-page-data';
 import { P, setStrings } from '../../islands/consortium/strings.ts';
+import { END_KEY, LINK_VERSION } from '../../lib/consortium/state.ts';
+import { STORE } from '../../islands/consortium/state/save.ts';
 import '../../styles/consortium/base.css';
 import '../../styles/consortium/details.css';
 import '../../styles/consortium/shell.css';
@@ -90,7 +92,9 @@ const data = {
   // places (site-wide climate.* keys), the contact address for "Ask for this climate", and the
   // site's own URL for the print foot. Read by views/Start.tsx; nothing here is chosen.
   start: {
-    zones: climates.map((id) => ({ id, label: t(`climate.${id}`, lang), places: t(`climate.${id}.places`, lang) })),
+    // size: the plants on the climate's own list in the installed release (ClimateHand "its own list, N
+    // plants"; 0: none of its own).
+    zones: climates.map((id) => ({ id, label: t(`climate.${id}`, lang), places: t(`climate.${id}.places`, lang), size: ((index as { names?: Record<string, unknown[]> }).names?.[id[0].toUpperCase() + id.slice(1)] ?? []).length })),
     contact,
     site: new URL(consortiumPath(lang), 'https://projectcanopi.com').href,
   },
@@ -102,8 +106,9 @@ const data = {
 // script, so the strings stay apart.
 const climateIndex = Object.values(import.meta.glob('../../data/climate-index.json', { eager: true, import: 'default' }))[0] ?? null;
 const climate = climatePageData(climateIndex as Parameters<typeof climatePageData>[0]);
-// copy-m2: the number of climates is the installed index's, read at build time.
 setStrings(strings, lang);
+// copy-m2: the number of climates is the installed index's, read at build time. The Beta line sits in
+// the foot (pf-c): the v14 head carries the steps, the title and the lede only.
 const betaNote = P('betaNote', index.climates.length);
 ---
 <Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path={consortiumPath(defaultLocale)}>
@@ -115,9 +120,20 @@ const betaNote = P('betaNote', index.climates.length);
   <main id="main" class="ct">
     <div class="wrap ct-wrap">
       <div class="tool-head" id="ct-head">
-        <div class="tool-head-row"><h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span></div>
-        <p class="tool-lede">{t('home.consortium.lede', lang)}</p>
-        <p class="tool-meta">{betaNote} <a class="text-link" href={contact}>{tr('feedback')}</a> <a class="text-link" href={localizedUrl('/data-sources/', lang)}>{t('dataSources.title', lang)}</a></p>
+        {/* The three steps (v14 boards Place, SiteKiambu): static here, so they show before the island,
+            and the island never renders them again (BC1): views/place/steps.tsx only shows step 2's
+            button in place of its words once there is a palette, and marks the step. The palette step's
+            own head hides them and the lede (shell.css, #ct-head[data-step]). */}
+        <ol class="ct-steps" id="ct-steps" aria-label={tr('palette.stepsLabel')}>
+          <li aria-current="step"><span class="ct-steps-n">1</span> {tr('palette.stepPlace')}</li>
+          <li><span data-step-words><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</span><button type="button" class="link-button ct-link" data-step-palette hidden><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</button></li>
+          <li><span class="ct-steps-n">3</span> {tr('palette.stepPlan')}</li>
+        </ol>
+        <div class="tool-head-row">
+          <h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span>
+          <span class="tool-head-links"><a class="text-link" href={contact}>{tr('feedback')}</a> <a class="text-link" href={localizedUrl('/data-sources/', lang)}>{t('dataSources.title', lang)}</a></span>
+        </div>
+        <p class="tool-lede">{tr('place.lede')}</p>
       </div>
       <noscript>
         <div class="callout"><p>{tr('noscript')}</p>{guide && <p><a class="text-link" href={guide.url} hreflang={guide.lang !== lang ? guide.lang : undefined}>{tr('noscript.link')}</a></p>}</div>
@@ -125,15 +141,30 @@ const betaNote = P('betaNote', index.climates.length);
       {/* How the page opens, set before the first paint so nothing jumps when the island mounts:
           "link" for a share link (any fragment with v or a; one this tool cannot read says so on Place),
           "preset" for a guide's ?plant=&climate= (design check A5), else "start". The island reads the
-          address itself; this only marks the head. */}
-      <script is:inline>(function () { try {
+          address itself; this only marks the head, and its step (R16): "palette" for what the island
+          will open as a palette: a link or a save this version reads (its v, a climate, the end mark
+          e=1; a save also as persist.ts readRecord takes it), or a guide's plant. A cut, damaged,
+          newer or old link or save lands on Place, so its head paints as Place (C4); the island
+          confirms or undoes the mark on every outcome (Steps on Place, App on a failure: R6). The link
+          version, its end key and the save's store name come from the code that writes them (final1
+          N5); the save's size cap is still a copy of persist.ts readRecord's until persist.ts exports it. */}
+      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION), endKey: END_KEY, saveStore: STORE }}>try {
         var h = document.getElementById('ct-head');
         var hp = new URLSearchParams((location.hash || '').replace(/^#/, '')), q = new URLSearchParams(location.search);
         var opens = hp.has('v') || hp.has('a') ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
         h.dataset.opens = opens;
-      } catch (e) {} })();</script>
+        var readable = function (f) { var p = new URLSearchParams(f); return p.get('v') === linkVersion && !!p.get('c') && p.get(endKey) === '1'; };
+        var saved = null;
+        try { saved = JSON.parse(localStorage.getItem(saveStore) || 'null'); } catch (e) {}
+        var save = !!saved && typeof saved.fragment === 'string' && saved.fragment.length < 20000 && typeof saved.at === 'string' && readable(saved.fragment);
+        h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
+      } catch (e) {}</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
+      {/* The release line and the beta note apart (R1): one paragraph each, in one type (C6 of fix
+          round 3: one rule, base.css .tool-release); the release line first, the one tests and
+          check-built-site read. */}
       <p class="tool-release">{tr('release').replace('{id}', index.release_id)}</p>
+      <p class="tool-release">{betaNote}</p>
     </div>
   </main>
   <Footer lang={lang} />

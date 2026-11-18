@@ -5,29 +5,32 @@
 // (views/LocationSlot.tsx) or for a link's `o=` or the saved location (restore.ts). What the first run
 // needs of it (the lookups in flight, their line and ownership) is in lookups.ts.
 //
-// It turns a position into a site:
-// - Use my location: one read of the device's position (low accuracy), denied / timeout / unavailable
-//   said in words;
-// - search a town: Nominatim on Enter only, 1.1 s apart, 5 answers, cached, in the page language,
-//   never with an email (src/lib/location); the first answer is used, the others offered;
+// It turns a position into a site (v14 boards Place, LocStates, LocMap, LocDesk; pf-c):
+// - Use my location: one read of the device's position (low accuracy), "waiting" while the device
+//   answers (asking 'geo', with Stop), denied / timeout / unavailable said in words;
+// - the place field: coordinates typed or a pasted map link are read on this device and sent nowhere
+//   (the view reads them, views/location/coords.ts readCoords, and hands the result to searchRead: state
+//   imports no view; 'bad' says so, and a second Search sends the words as a name);
+//   words go to Nominatim on Search only, 1.1 s apart, 5 answers, cached, in the page language, never
+//   with an email (src/lib/location): one answer is taken directly, several are offered (choices);
 // - pick on a map (the dialog is the view's): its centre is looked up like any position.
 // Then the climate reader (src/lib/climate) reads the site's tiles and core site-climate.ts says what it
-// means: the location SUGGESTS a climate card (store.proposedClimate) and says why, and the reader
-// confirms it (confirmProposed); borderline, polar, sea, coast and a failed read each have their own
-// line. store.location holds the site; a country from it is "from your location" (locationCountry).
+// means: the climate read is USED AT ONCE (draft.ts chooseClimate; v13: no "Use" button), borderline
+// offers both climates, polar chooses none; sea, coast and a failed read each have their own line.
+// store.location holds the site; a country from it is "from your location" (locationCountry).
 // A link's location is labelled "from the shared link, approximate" and never changes the link's
 // climate, answers or country; it lives for the page only: never saved over the reader's own location,
 // never a country (review round 1, 1). A lookup's writes are not reader actions (the click was): the
 // country goes through persist's quiet write, so a link pasted while tiles load still restores
 // (review round 1, 4).
-import { batch } from '@preact/signals';
-import type { ClimateZone, LocationSource, SiteLocation } from '../../../lib/consortium/index.ts';
+import { batch, computed, signal } from '@preact/signals';
+import type { LocationSource, SiteLocation } from '../../../lib/consortium/index.ts';
 import { NO_EDITS, siteClimate } from '../../../lib/consortium/index.ts';
 import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../lib/climate/index.ts';
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../lib/location/registry.ts';
 import { geocodingTransport } from '../../../lib/location/transport.ts';
-import { currentPosition, queryGeolocationPermission } from '../../../lib/location/geolocation.ts';
+import { currentPosition, queryGeolocationPermission, PROMPT_CAP_MS, SITE_POSITION_OPTIONS } from '../../../lib/location/geolocation.ts';
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import { pageLang } from '../strings.ts';
@@ -36,6 +39,37 @@ import { chooseClimate } from './draft.ts';
 import { locationAtStart } from './restore.ts';
 import { noteForget } from './save.ts';
 import { line, liveLookup, looking, nextLookup, unlessReplaced, unread, type Line } from './lookups.ts';
+
+// ---- the step's own state (pf-c) ----
+// What the step is asking, while line is 'loading': the device ('geo', "Waiting for your device…"),
+// the place search ('search', "Looking for “q”…"), or nothing (the climate read, "Reading the climate…").
+export const asking = signal<'geo' | 'search' | null>(null);
+// Several answers to a search: the grower chooses one (board LocStates "3 places answer …").
+export interface Choices { query: string; results: readonly PlaceSearchResult[]; attribution: string | null }
+export const choices = signal<Choices | null>(null);
+// Text that looks like coordinates but could not be read (board: "We could not read “1.17 36” …").
+export const badCoords = signal<string | null>(null);
+// The grower's own acts on the place (locate, Forget, "Use it" on a link's place), counted: the place
+// field (views/LocationSlot.tsx) follows these and leaves the grower's typing to anything else the
+// page does (a restore, a link, a re-read).
+export const acts = signal(0);
+// A place read from typed coordinates carries the mark itself (final1 N2): "Read on this device.
+// Nothing was sent, so the place has no name." holds for that very place and no other, whichever path
+// replaces it (a link's place, one adopted from a link, the saved one read again).
+export type Place = SiteLocation & { typed?: true };
+export const typed = computed(() => !!(store.location.value as Place | null)?.typed);
+// How long "Use my location" waited before it gave up, in seconds, as the read used it (R10;
+// devicePosition).
+export const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
+// The last ask, for "Try again" (offline search, device timeout, a climate that did not load).
+let lastAsk: (() => Promise<void>) | null = null;
+export const tryAgain = (): Promise<void> => (lastAsk ? lastAsk() : Promise.resolve());
+const clearStep = () => batch(() => { asking.value = null; choices.value = null; badCoords.value = null; });
+// Stop: the ask in flight goes (its late answer is dropped), and so does its line.
+export function stop(): void {
+  nextLookup();
+  batch(() => { clearStep(); line.value = null; });
+}
 
 // ---- the site location kept on this device, and the country from it ----
 
@@ -110,34 +144,48 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   } finally { clearTimeout(timer); }
 }
 
+// The climate cell a lookup read (its centre), the unit a hand-chosen climate and the grower's own
+// values belong to (store.placeAt's rule).
+const cellOf = (l: { climate: { cellLat: number; cellLon: number } | null }): string | null => (l.climate ? `${l.climate.cellLat.toFixed(2)},${l.climate.cellLon.toFixed(2)}` : null);
+
 // A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
 // country, in one batch. A failed read or a point at sea changes nothing (seam review 2, 3): a site
 // already read stays in use on the page, in storage and as the country's source, and the line names it
 // ("still using …"); with none, the manual climate cards, with the line.
 // Counted in lookups.ts `lookups` (Suggest waits for it), whichever way it started (the map centre too).
-export const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> =>
-  looking(() => locateNow(lat, lon, source, label, extra));
-async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}): Promise<void> {
+export const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}, fromTyped = false): Promise<void> =>
+  looking(() => locateNow(lat, lon, source, label, extra, fromTyped));
+async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}, fromTyped = false): Promise<void> {
   const id = nextLookup();
-  line.value = { state: 'loading', ...extra };
+  lastAsk = () => locate(lat, lon, source, label, extra, fromTyped);
+  batch(() => { clearStep(); line.value = { state: 'loading', ...extra }; });
   const lookup = await unlessReplaced(read(lat, lon));
   if (!liveLookup(id) || lookup === undefined) return;
   if (!lookup) {
     // A link's location not read yet drives nothing: it goes, as before; a site read stays.
     const keep = !!store.location.peek()?.lookup;
-    batch(() => { if (!keep) { store.location.value = null; store.proposedClimate.value = null; } unread.value = false; line.value = { state: 'failed', ...extra }; });
+    batch(() => { if (!keep) store.location.value = null; unread.value = false; line.value = { state: 'failed', ...extra }; });
     return;
   }
   const sc = siteClimate(lookup);
   if (sc.state === 'sea') { line.value = { state: 'sea', ...extra }; return; }
-  const loc: SiteLocation = { lat, lon, source, ...(label ? { label } : {}), lookup };
+  const loc: Place = { lat, lon, source, ...(label ? { label } : {}), ...(fromTyped ? { typed: true as const } : {}), lookup };
+  // A climate the grower chose by hand ("Use <other>", "Not this climate? Choose another") overrides
+  // the read of one cell (R5, R3, C7): it stays while the new point is in the same climate cell as the
+  // grower's own place before it ("Adjust on the map" within the cell), and goes with any other cell,
+  // even one that reads the same climate. A shared link's place is never the grower's own "before".
+  const was = store.location.peek();
+  const sameCell = !!was?.lookup && was.source !== 'link' && cellOf(was.lookup) === cellOf(lookup);
   siteFound(() => {
     // Another climate cell clears the grower's own values (A7: store.placeAt).
     store.placeAt(loc);
-    store.proposedClimate.value = sc.suggested;
-    store.proposedFromSave.value = false;
+    acts.value++;
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
+  // The climate read is used at once (v13 Place; borderline: its own class's, the other one tap away;
+  // polar: none), never over a climate kept for this same cell. A link's location never changes the
+  // link's climate.
+  if (sc.suggested && source !== 'link' && (!store.climate.peek() || !sameCell)) chooseClimate(sc.suggested);
   keepLocation(loc);
 }
 
@@ -165,46 +213,75 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
     // Not under a share link's climate still opening either (seam review 5: a link without o= keeps the
     // saved site); a saved consortium opening still gets it, so a save that fails to open leaves the
     // card proposed (round 2, 2).
-    if (how === 'saved' && !store.climate.peek() && !pendingLinkClimate.peek()) { store.proposedClimate.value = sc.suggested; store.proposedFromSave.value = true; }
     line.value = { state: sc.state };
   }, how === 'saved' ? lookup.regions.isoA2 : undefined);
+  // The saved place's climate is used at once while none is chosen (not under a link's climate still
+  // opening: seam review 5); quiet, as its country: the page brought it, the reader did not act.
+  if (how === 'saved' && sc.suggested && !store.climate.peek() && !pendingLinkClimate.peek()) { const z = sc.suggested; quietly(() => chooseClimate(z)); }
 }
 
 // ---- the three ways ----
+// One read of the device's position with the wait it ran (R10; R7, C6 of fix round 2): the browser's
+// own timeout once the permission is granted, else the one cap over the prompt and the fix
+// (lib/location/geolocation.ts currentPosition). "Use my location" and the map's "Centre on my
+// location" both read through it, so the seconds a timeout names are the ones it waited.
+type Read = Awaited<ReturnType<typeof currentPosition>>;
+export async function devicePosition(): Promise<{ at: Read; seconds: number }> {
+  const permission = await queryGeolocationPermission();
+  const seconds = Math.round((permission?.state === 'granted' ? SITE_POSITION_OPTIONS.timeout ?? 15_000 : PROMPT_CAP_MS) / 1000);
+  if (permission?.state === 'denied') return { at: { code: 1 }, seconds };
+  return { at: await currentPosition(undefined, permission), seconds };
+}
 export async function useMyLocation(): Promise<void> {
   const id = nextLookup();
-  line.value = { state: 'loading' };
-  const permission = await unlessReplaced(queryGeolocationPermission());
-  if (!liveLookup(id) || permission === undefined) return;
-  if (permission?.state === 'denied') { line.value = { state: 'denied' }; return; }
-  const at = await unlessReplaced(currentPosition(undefined, permission));
-  if (!liveLookup(id) || !at) return;
+  lastAsk = useMyLocation;
+  batch(() => { clearStep(); asking.value = 'geo'; line.value = { state: 'loading' }; });
+  const read = await unlessReplaced(devicePosition());
+  if (!liveLookup(id) || !read) return;
+  const { at, seconds } = read;
+  waited.value = seconds;
+  asking.value = null;
   if ('code' in at) { line.value = { state: at.code === 1 ? 'denied' : at.code === 3 ? 'timeout' : 'unavailable' }; return; }
   await locate(at.lat, at.lon, 'geo', undefined);
 }
 
 let search: PlaceSearchController | null = null;
+const searcher = (): PlaceSearchController => (search ??= createPlaceSearchController({ transport: geocodingTransport, config: { ...defaultGeocoderConfig(), language: pageLang() }, limit: 5 }));
+// The map dialog's own search (board LocDesk): its answers move the map, nothing is located.
+export async function findPlaces(q: string): Promise<{ failed: boolean; results: readonly PlaceSearchResult[]; attribution: string | null }> {
+  const s = searcher();
+  await s.search(q.trim());
+  return { failed: s.status.value === 'error', results: s.results.value, attribution: s.attribution.value };
+}
 // A search answer's name: its own, then the last part of its locality (the country).
 export const placeName = (r: PlaceSearchResult) => (r.detail ? `${r.label}, ${r.detail.split(', ').at(-1)}` : r.label);
-export async function searchPlace(q: string): Promise<void> {
+// The place field's Search (or Enter), with what the view read of it (views/location/location.tsx
+// searchPlace): coordinates are taken here and sent nowhere; 'bad' (looks like coordinates but is not
+// understood) says so, and the same text searched again comes back as a name (read null).
+export type CoordsRead = { lat: number; lon: number } | 'bad' | null;
+export async function searchRead(q: string, read: CoordsRead): Promise<void> {
   const query = q.trim();
   if (!query) return;
-  search ??= createPlaceSearchController({ transport: geocodingTransport, config: { ...defaultGeocoderConfig(), language: pageLang() }, limit: 5 });
+  if (read === 'bad') { nextLookup(); batch(() => { clearStep(); line.value = null; badCoords.value = query; }); return; }
+  if (read) { await locate(read.lat, read.lon, 'map', undefined, {}, true); return; }
   const id = nextLookup();
-  line.value = { state: 'loading', query };
-  await unlessReplaced(search.search(query));
+  lastAsk = () => searchRead(query, null);
+  batch(() => { clearStep(); asking.value = 'search'; line.value = { state: 'loading', query }; });
+  await unlessReplaced(searcher().search(query));
   if (!liveLookup(id)) return;
-  const status = search.status.value, [first, ...others] = search.results.value, attribution = search.attribution.value;
+  const search = searcher();
+  asking.value = null;
+  // The name path never takes the controller's own coordinate reading (R2): text the field refused as
+  // coordinates ("1.17 36") is never turned into a guessed point; it reads as no place found.
+  const status = search.status.value, results = search.results.value.filter((r) => r.source !== 'coordinates'), attribution = search.attribution.value;
   if (status === 'error') { line.value = { state: 'offline', query }; return; }
-  if (!first) { line.value = { state: 'no-result', query, attribution }; return; }
-  await locate(first.lat, first.lon, 'search', first.source === 'geocoder' ? placeName(first) : undefined, { query, others, attribution });
+  if (!results.length) { line.value = { state: 'no-result', query, attribution }; return; }
+  if (results.length > 1) { batch(() => { line.value = null; choices.value = { query, results, attribution }; }); return; }
+  await choose(results[0], { query, attribution });
 }
-
-// The reader confirms the card the location proposed: chosen as any card is (draft.ts chooseClimate).
-export function confirmProposed(z: ClimateZone): void {
-  chooseClimate(z);
-  store.proposedClimate.value = null;
-}
+// One answer taken (the only one, or the grower's choice among several).
+export const choose = (r: PlaceSearchResult, extra: Partial<Line> = {}): Promise<void> =>
+  locate(r.lat, r.lon, 'search', r.source === 'geocoder' ? placeName(r) : undefined, extra);
 
 // "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
 // location goes alone: the reader's own saved location is not the link's to remove.
@@ -220,7 +297,8 @@ export function forget(): void {
   unread.value = false;
   const own = store.location.peek()?.source !== 'link';
   batch(() => {
-    store.location.value = null; store.proposedClimate.value = null; line.value = null;
+    store.location.value = null; line.value = null; acts.value++;
+    clearStep();
     if (own) locationCountry(null, true);
     // The grower's own values are of that place: they go with it, as the save's place does.
     store.siteEdits.value = NO_EDITS;
@@ -236,7 +314,9 @@ export function forget(): void {
 export function adoptLinkLocation(): boolean {
   const l = store.location.peek();
   if (l?.source !== 'link') return false;
-  const mine: SiteLocation = { ...l, source: 'map' };
+  const { typed: _, ...rest } = l as Place;
+  const mine: SiteLocation = { ...rest, source: 'map' };
   quietly(() => { store.location.value = mine; });
+  acts.value++;
   return keepLocation(mine);
 }

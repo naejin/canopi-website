@@ -88,10 +88,13 @@ test('F2: Undo after a list pasted from "Start over" and shown goes back to Star
   const names = plants.slice(0, 3).map((p) => p.name);
   await behaviour(t, async (v) => {
     const page = await suggested(v);
+    await toPlace(page);
     await page.locator(aria('button', 'Start over')).click();
     await page.locator(aria('button', 'Paste a list')).click();
     await page.locator('#ct-paste-text').fill(names.join('\n'));
     await page.locator(aria('button', 'Add 3 plants')).click();
+    // The paste stays on Place (b1a conformance-2): its "Show my palette" once the sheet has closed.
+    await page.waitForFunction(() => !document.querySelector('dialog[open]') && !!document.querySelector('[data-place-show]'), { timeout: 8000 });
     await showPalette(page);
     await page.locator(aria('button', 'Undo')).click();
     assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000), 'Undo goes back to Start');
@@ -106,57 +109,11 @@ test('F2: Undo after a list pasted from "Start over" and shown goes back to Star
   });
 });
 
-// b1a conformance-2 and -4: a climate changed on Place keeps every plant, and a paste stays on Place
-// until "Show my palette". Owner 2026-11-15: Place's answers and plants are saved at once (the card
-// included, decision 1), each plant kept and drawn (fix round 1, b1a2-1: a plant the new climate's list
-// lacks is a guest of the climate it was in); the paste's Undo takes the plant out again, the card kept.
-test('R2-1: a list pasted on Place under another climate is saved at once, every plant kept; its Undo takes the plant out, the card kept, saved; shown, it is that climate\'s palette, every plant drawn', async (t) => {
-  const [inga] = await tropicalOnly();
-  assert.ok(inga, 'a Tropical-only plant in the fixture');
-  await behaviour(t, async (v) => {
-    const page = await suggested(v);
-    const before = await linkOf(page);
-    const members = (await memberIds(page)).length;
-    const paste = async () => {
-      await page.locator(aria('button', 'Paste a list')).click();
-      await page.locator('#ct-paste-text').fill(inga);
-      const add = await findAx(page, { role: 'button', name: /^Add 1 plant$/ });
-      assert.ok(add, `${inga} is found in the Tropical list`);
-      await page.locator(aria('button', add.name)).click();
-    };
-    await placeTo(page, 'Tropical');
-    const card = await savedFragment(page);
-    assert.equal(param(card, 'c'), 'tropical', 'the card is saved before the paste');
-    await paste();
-    assert.ok(await page.waitForFunction((a) => new URLSearchParams(JSON.parse(localStorage.getItem('canopi-consortium') ?? '{}').fragment ?? '').get('a') !== a, { timeout: 4000 }, param(card, 'a')).then(() => true, () => false), 'the paste on Place is saved at once');
-    await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, '[data-place-show]', 4000), 'Undo stays on Place');
-    assert.equal(await page.$eval('input[name="ct-climate"]:checked', (el) => el.value), 'tropical', 'the picked card stays picked');
-    assert.ok(await page.waitForFunction((c) => `#${JSON.parse(localStorage.getItem('canopi-consortium') ?? '{}').fragment}` === c, { timeout: 4000 }, card).then(() => true, () => false), 'Undo: the save is the palette under Tropical as before the paste');
-    assert.equal(param(card, 'a'), param(before, 'a'), 'no plant lost under the new card');
-    await page.reload();
-    assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000), 'a reload restores it');
-    assert.equal(await linkOf(page), card, 'the palette under Tropical, whole');
-    // Pasted again and shown: Tropical's palette with every plant drawn, and a reload keeps it.
-    await placeTo(page, 'Tropical');
-    await paste();
-    await showPalette(page);
-    assert.match(await linkOf(page), /[#&]c=tropical/, 'under Tropical');
-    await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root .ct-chart [data-plant-id]')].map((e) => e.dataset.plantId)).size === n, { timeout: 8000 }, members + 1).catch(() => {});
-    assert.equal((await memberIds(page)).length, members + 1, 'the pasted plant with every plant kept, each drawn');
-    await page.reload();
-    assert.equal(await loadState(page), 'ready');
-    await page.waitForFunction((n) => new Set([...document.querySelectorAll('#ct-root .ct-chart [data-plant-id]')].map((e) => e.dataset.plantId)).size === n, { timeout: 8000 }, members + 1).catch(() => {});
-    assert.equal((await memberIds(page)).length, members + 1, 'a reload keeps every plant');
-    await done(page);
-  });
-});
-
 test('R2-2: Undo back to an empty Start leaves alone a save another tab wrote meanwhile', async (t) => {
   const names = (await temperate()).slice(0, 2).map((p) => p.name);
   await behaviour(t, async (v) => {
     const page = await suggested(v);
+    await toPlace(page);
     await page.locator(aria('button', 'Start over')).click();
     await page.locator(aria('button', 'Paste a list')).click();
     await page.locator('#ct-paste-text').fill(names.join('\n'));
@@ -190,30 +147,6 @@ test('R2-3: Undo of a paste on a guide link\'s Start puts back the save of an ea
     await done(page);
   });
 });
-
-test('T2 (R3-3): Undo of a paste on Place under another card leaves the save as it was before the paste, under that card', async (t) => {
-  // A Tropical-only plant (Start's crop chips, which this picked from, went in PP-B commit 0a').
-  const [name] = await tropicalOnly();
-  await behaviour(t, async (v) => {
-    const page = await suggested(v);
-    await placeTo(page, 'Tropical');
-    const card = await savedFragment(page);
-    assert.equal(param(card, 'c'), 'tropical', 'the card is saved at once (owner 2026-11-15)');
-    await page.locator(aria('button', 'Paste a list')).click();
-    await page.locator('#ct-paste-text').fill(name);
-    await page.locator(aria('button', 'Add 1 plant')).click();
-    assert.ok(await has(page, aria('button', 'Undo'), 4000), 'the paste offers Undo');
-    await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await has(page, '[data-place-show]', 4000), 'Undo stays on Place');
-    assert.ok(await page.waitForFunction((c) => `#${JSON.parse(localStorage.getItem('canopi-consortium') ?? '{}').fragment}` === c, { timeout: 4000 }, card).then(() => true, () => false), 'Undo: the save is the palette as before the paste');
-    await page.reload();
-    assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000));
-    assert.equal(await linkOf(page), card, 'a reload: the palette as before the paste, no Tropical plant');
-    await done(page);
-  });
-});
-
 test('T3 (R3-1): a consortium the reader emptied stays empty, saved, back on Place', async (t) => {
   await behaviour(t, async (v) => {
     const page = await hookedPage(v);
@@ -248,7 +181,6 @@ test('T4 (R3-1): a palette shown under another card is the consortium, every pla
     const shown = await savedFragment(page);
     assert.deepEqual({ c: param(shown, 'c'), a: param(shown, 'a') }, { c: 'tropical', a: param(before, 'a') });
     await toPlace(page);
-    assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await savedFragment(page), shown, 'the palette as shown, under Tropical');
     await done(page);
   });
@@ -290,6 +222,7 @@ test('M3 (R4-2): Start over leaves alone a save another tab wrote since', async 
   await behaviour(t, async (v) => {
     const page = await suggested(v);
     await otherTabSaves(page);
+    await toPlace(page);
     await page.locator(aria('button', 'Start over')).click();
     assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await saved(page), OTHER_TAB);
