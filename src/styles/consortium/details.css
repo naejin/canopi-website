@@ -162,6 +162,9 @@
    and only the card itself takes clicks. */
 .ct .ct-toast-region { position: fixed; left: 12px; right: 12px; bottom: calc(20px + var(--ct-bar-room)); z-index: 50; pointer-events: none; }
 @media (min-width: 960px) { .ct .ct-toast-region { left: 24px; right: auto; width: 420px; max-width: calc(100% - 48px); } }
+/* Find as a panel (board DeskStates): the message stays in the pictures' column, never over the panel
+   (the column is 1 of the 2.6 fractions of the page, find.css). */
+@media (min-width: 960px) { .ct:has(dialog.ct-find-panel[open]) .ct-toast-region { width: min(420px, calc((100% - 48px) / 2.6 - 12px)); } }
 .ct .ct-toast-region .ct-toast { pointer-events: auto; }
 /* A notice (a part that could not load, with Reload; views/Toast.tsx): in the flow at the end of the
    tool, so it covers nothing at any width (b1a UI hand-off), and no toast room is kept for it. */
