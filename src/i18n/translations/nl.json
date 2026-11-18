@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "Zoek een bodemvoeder uit een andere familie",
   "consortium.palette.goalLink": "Planten per taak: {n}",
   "consortium.find.fitsInPalette": "one: # al in je palet | other: # al in je palet",
+  "consortium.location.type.city": "Stad",
+  "consortium.location.type.town": "Plaats",
+  "consortium.location.type.village": "Dorp",
+  "consortium.location.type.suburb": "Wijk",
+  "consortium.location.type.county": "District",
+  "consortium.location.type.state": "Staat/provincie",
+  "consortium.location.type.region": "Regio",
+  "consortium.location.type.country": "Land",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "Trova una pianta che nutre il suolo, di un’altra famiglia",
   "consortium.palette.goalLink": "Piante per compito: {n}",
   "consortium.find.fitsInPalette": "one: # già nella tua palette | other: # già nella tua palette",
+  "consortium.location.type.city": "Città",
+  "consortium.location.type.town": "Cittadina",
+  "consortium.location.type.village": "Paese",
+  "consortium.location.type.suburb": "Quartiere",
+  "consortium.location.type.county": "Contea",
+  "consortium.location.type.state": "Stato",
+  "consortium.location.type.region": "Regione",
+  "consortium.location.type.country": "Nazione",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

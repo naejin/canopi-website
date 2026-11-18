@@ -35,6 +35,8 @@ export interface GeocodeMatch {
   readonly displayName: string
   /** The provider's own confidence scale, or null when it reports none. */
   readonly score: number | null
+  /** The provider's English place type (Nominatim `addresstype`: "city", "town"…), or null. */
+  readonly kind: string | null
 }
 
 /** Pure request building and response normalizing; the transport does the fetch. */
@@ -56,6 +58,7 @@ interface NominatimForwardResult {
   readonly lon: string
   readonly display_name?: string
   readonly importance?: number | string
+  readonly addresstype?: string
 }
 
 function coerceScore(value: number | string | undefined | null): number | null {
@@ -82,7 +85,7 @@ function nominatimForwardResultToMatch(result: NominatimForwardResult): GeocodeM
   const lat = Number(result.lat)
   const lon = Number(result.lon)
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
-  return { lat, lon, displayName: result.display_name ?? '', score: coerceScore(result.importance) }
+  return { lat, lon, displayName: result.display_name ?? '', score: coerceScore(result.importance), kind: typeof result.addresstype === 'string' ? result.addresstype : null }
 }
 
 const nominatimProvider: GeocodingProvider = {

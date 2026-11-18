@@ -28,7 +28,14 @@ export interface PlaceSearchResult {
   readonly lat: number
   readonly lon: number
   readonly source: 'coordinates' | 'geocoder'
+  /** The kind of place, for the eight kinds the page names (website change, D7); null for any other. */
+  readonly placeType: PlaceType | null
 }
+
+/** The place kinds an answer row names (pf-decisions D7: "City · Andalusia, Spain"); any other kind gets no word. */
+export const PLACE_TYPES = ['city', 'town', 'village', 'suburb', 'county', 'state', 'region', 'country'] as const
+export type PlaceType = (typeof PLACE_TYPES)[number]
+const placeTypeOf = (kind: string | null): PlaceType | null => ((PLACE_TYPES as readonly string[]).includes(kind ?? '') ? (kind as PlaceType) : null)
 
 export type PlaceSearchStatus = 'idle' | 'searching' | 'results' | 'no-results' | 'error'
 
@@ -171,6 +178,7 @@ export function createPlaceSearchController(options: PlaceSearchOptions): PlaceS
           detail: null,
           ...coordinates,
           source: 'coordinates',
+          placeType: null,
         }]
         status.value = 'results'
         attribution.value = null
@@ -206,6 +214,7 @@ export function createPlaceSearchController(options: PlaceSearchOptions): PlaceS
             lat: match.lat,
             lon: match.lon,
             source: 'geocoder',
+            placeType: placeTypeOf(match.kind),
           }))
         cache.set(trimmed, list)
         show(list)

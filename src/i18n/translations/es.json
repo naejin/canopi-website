@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "Buscar una planta que alimente el suelo, de otra familia",
   "consortium.palette.goalLink": "Plantas por tarea: {n}",
   "consortium.find.fitsInPalette": "one: # ya en tu paleta | other: # ya en tu paleta",
+  "consortium.location.type.city": "Ciudad",
+  "consortium.location.type.town": "Localidad",
+  "consortium.location.type.village": "Pueblo",
+  "consortium.location.type.suburb": "Barrio",
+  "consortium.location.type.county": "Condado",
+  "consortium.location.type.state": "Estado",
+  "consortium.location.type.region": "Región",
+  "consortium.location.type.country": "País",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

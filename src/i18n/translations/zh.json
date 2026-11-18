@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "找一种其他科的养土植物",
   "consortium.palette.goalLink": "每项任务的植物数：{n}",
   "consortium.find.fitsInPalette": "other: 已有 # 种在你的搭配中",
+  "consortium.location.type.city": "城市",
+  "consortium.location.type.town": "镇",
+  "consortium.location.type.village": "村",
+  "consortium.location.type.suburb": "街区",
+  "consortium.location.type.county": "县",
+  "consortium.location.type.state": "州/省",
+  "consortium.location.type.region": "地区",
+  "consortium.location.type.country": "国家",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

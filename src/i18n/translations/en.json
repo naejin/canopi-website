@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "Find a soil feeder of another family",
   "consortium.palette.goalLink": "Plants per job: {n}",
   "consortium.find.fitsInPalette": "one: # already in your palette | other: # already in your palette",
+  "consortium.location.type.city": "City",
+  "consortium.location.type.town": "Town",
+  "consortium.location.type.village": "Village",
+  "consortium.location.type.suburb": "Suburb",
+  "consortium.location.type.county": "County",
+  "consortium.location.type.state": "State",
+  "consortium.location.type.region": "Region",
+  "consortium.location.type.country": "Country",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

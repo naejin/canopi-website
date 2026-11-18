@@ -72,7 +72,7 @@ export function Answers({ query, results, attribution, pick }: { query: string; 
           <li class="ct-answer">
             <button type="button" class="ct-answer-row" aria-label={T('location.chooseName', { name: placeName(r) })} onClick={() => pick(r)}>
               {pin()}
-              <span class="ct-answer-text"><span class="ct-answer-name">{r.label}</span>{r.detail && <span class="ct-answer-detail">{r.detail}</span>}</span>
+              <span class="ct-answer-text"><span class="ct-answer-name">{r.label}</span>{(r.placeType || r.detail) && <span class="ct-answer-detail">{[r.placeType && T(`location.type.${r.placeType}`), r.detail].filter(Boolean).join(' · ')}</span>}</span>
               <span class="ct-answer-go" aria-hidden="true">{T('location.choose')}{chevron}</span>
             </button>
           </li>

@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "Найти растение, питающее почву, из другого семейства",
   "consortium.palette.goalLink": "Растений на задачу: {n}",
   "consortium.find.fitsInPalette": "one: # уже в вашей палитре | few: # уже в вашей палитре | many: # уже в вашей палитре | other: # уже в вашей палитре",
+  "consortium.location.type.city": "Город",
+  "consortium.location.type.town": "Городок",
+  "consortium.location.type.village": "Деревня",
+  "consortium.location.type.suburb": "Район города",
+  "consortium.location.type.county": "Округ",
+  "consortium.location.type.state": "Штат/область",
+  "consortium.location.type.region": "Регион",
+  "consortium.location.type.country": "Страна",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "別の科の土を肥やす植物を探す",
   "consortium.palette.goalLink": "役割ごとの植物の数：{n}",
   "consortium.find.fitsInPalette": "other: うち # 種類はパレットに入っています",
+  "consortium.location.type.city": "市",
+  "consortium.location.type.town": "町",
+  "consortium.location.type.village": "村",
+  "consortium.location.type.suburb": "地区",
+  "consortium.location.type.county": "郡",
+  "consortium.location.type.state": "州・県",
+  "consortium.location.type.region": "地方",
+  "consortium.location.type.country": "国",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

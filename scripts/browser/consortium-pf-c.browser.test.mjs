@@ -140,6 +140,8 @@ test('PFC4 (pf-c LocStates, the place search): while it looks "Looking for “Ki
   await says(several, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
   await inOrder(several, ['Kiambu', 'Kiambu County', 'Kiambu Road', 'None of these? Try the nearest town, or pick on a map. Place names © OpenStreetMap contributors.',
     'Your search words go to OpenStreetMap’s place search (Nominatim) only when you press Search; nothing is sent as you type. Coordinates are read on this device and sent nowhere.']);
+  // D7 (board LocDesk "City · Andalusia, Spain"): a row names its kind for the eight kinds the page knows, none for the rest (a road).
+  assert.deepEqual(await several.$$eval('[data-location-choices] .ct-answer-detail', (es) => es.map((e) => e.textContent.trim())), ['Town · Kiambu County, Kenya', 'County · Kenya', 'Nairobi, Kenya'], 'D7: the kind of place before its locality');
   const chooses = (await names(several, 'button')).filter((n) => /^Choose/.test(n));
   assert.equal(chooses.length, 3, 'board: a "Choose" for each place');
   await control(several, 'link', 'Privacy');

@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "Einen Bodennährer aus einer anderen Familie finden",
   "consortium.palette.goalLink": "Pflanzen je Aufgabe: {n}",
   "consortium.find.fitsInPalette": "one: # schon in Ihrer Palette | other: # schon in Ihrer Palette",
+  "consortium.location.type.city": "Stadt",
+  "consortium.location.type.town": "Kleinstadt",
+  "consortium.location.type.village": "Dorf",
+  "consortium.location.type.suburb": "Stadtteil",
+  "consortium.location.type.county": "Kreis",
+  "consortium.location.type.state": "Bundesland/Staat",
+  "consortium.location.type.region": "Region",
+  "consortium.location.type.country": "Land",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

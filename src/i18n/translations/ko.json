@@ -1515,5 +1515,13 @@
   "consortium.palette.balance.familyFind.Fabaceae": "다른 과의 흙을 기르는 식물 찾기",
   "consortium.palette.goalLink": "역할당 식물 수: {n}",
   "consortium.find.fitsInPalette": "other: #종은 이미 팔레트에 있습니다",
+  "consortium.location.type.city": "도시",
+  "consortium.location.type.town": "읍",
+  "consortium.location.type.village": "마을",
+  "consortium.location.type.suburb": "동네",
+  "consortium.location.type.county": "군",
+  "consortium.location.type.state": "주/도",
+  "consortium.location.type.region": "지역",
+  "consortium.location.type.country": "나라",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
