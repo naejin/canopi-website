@@ -159,7 +159,7 @@ test('PFC4 (pf-c LocStates, the place search): while it looks "Looking for “Ki
   await done(off);
 });
 
-failing('PFC5 (pf-c LocStates, typed coordinates, owner Q6): "-1.17, 36.83", "1°10′S 36°50′E" and a pasted map link each read "1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name." with "Adjust on the map" and "Look up its name", and send nothing; "1.17 36" says "We could not read “1.17 36” as coordinates. Write latitude, then longitude: −1.17, 36.83. Or press Search to look it up as a name." and sends nothing; Search again looks it up as a name', { owner: 'pf-c', reason: BOARD }, async () => {
+failing('PFC5 (pf-c LocStates, typed coordinates, owner Q6; main h2): "-1.17, 36.83", "1°10′S 36°50′E" and a pasted map link each read "1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name." with "Adjust on the map" and "Look up its name", and send nothing; "1.17 36" says "We could not read “1.17 36” as coordinates. Write latitude, then longitude: −1.17, 36.83. Or press Search to look it up as a name." and sends nothing; Search again looks it up as a name', { owner: 'main h2', reason: BOARD }, async () => {
   const page = await tool({ width: 390, nominatim: 'fixture' });
   for (const typed of ['-1.17, 36.83', '1°10′S 36°50′E', 'https://www.openstreetmap.org/#map=12/-1.17/36.83']) {
     await searchFor(page, typed);

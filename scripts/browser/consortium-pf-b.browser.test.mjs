@@ -8,7 +8,7 @@
 // plants or fewer and the group 12 or fewer, else the count cell). Every figure is re-derived through the
 // engine at the board's inputs (pf-b-helpers.mjs: the 0W scenario cases), never a board number. Written
 // expected-fail under pf-b in commit 0 (scripts/expect-fail.mjs failing()); every pf-b marker is gone since
-// the pictures were built. One marker is left, PFB23 (held for the main agent's chunk-4 Find entry, which removes it).
+// the pictures were built. One marker is left, PFB23 (re-owned to main h2, which removes it).
 // Parked, neither ported nor tested: Through the year and the cooler months (PP-G), the period tabs and
 // "See 2041–2070" (PP-E), Soil and its links (PP-F), Plan, Print and Share boards (PP-D).
 //
@@ -689,7 +689,7 @@ test('PFB22 (pf-b fix round 1, BC3, R2, BC12): past 40 plants no paragraph of Ba
 // browser-tests.test.mjs requires of a pf spec. Listed as a known board difference of MainMore in the
 // board check until then. The reason matches the held action only: a lost legume line is a plain
 // failure (asserted before the held part, its message without that phrase).
-failing('PFB23 (pf-b round 2 R1, C1; c2 C3; held for main, chunk 4): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find listing only plants that feed the soil and are not of that family (never an unfiltered list)', { owner: 'pf-b', reason: /^MainMore held: "Find a soil feeder of another family"/ }, async () => {
+failing('PFB23 (pf-b round 2 R1, C1; c2 C3; held for main h2): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find listing only plants that feed the soil and are not of that family (never an unfiltered list)', { owner: 'main h2', reason: /^MainMore held: "Find a soil feeder of another family"/ }, async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   const b = await section(page, 'Balance');
   const fam = /One family: \d+ of your \d+ are legumes/.test(b) ? 'Fabaceae' : null;

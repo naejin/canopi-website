@@ -380,7 +380,10 @@ test('pf specs: each test names the stream its file is for, which the owners fil
     for (const { title, marked: isMarked } of tests) {
       const owner = title.match(/^(?:PF[A-F]\d+[a-z]?|F1a-[A-Z]\d+ → PP-C) \((pf-[a-f])\b/)?.[1];
       assert.equal(owner, stream, `${file}: "${title}" names ${stream}: PF<X><n> (${stream} …)`);
-      if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
+      // A merged stream can no longer remove its markers: they are re-owned to main ("main h2", named
+      // in the title too), which lands them (triage M32).
+      const merged = !CHUNK_3_OPEN.has(stream);
+      if (isMarked) assert.ok(marked.some((m) => m.title === title && (m.owner === owner || (merged && /^main\b/.test(m.owner)))), `"${title}": its marker names ${owner}${merged ? ' or main' : ''}`);
     }
     const head = text.slice(0, text.search(/^import /m));
     assert.match(head, /carries /, `${file}: the ledger of the old tests it carries is in its head`);

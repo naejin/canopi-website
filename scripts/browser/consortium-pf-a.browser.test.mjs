@@ -174,7 +174,7 @@ test('PFA3 (pf-a Next step waits for the verdicts, F18): while the fit check loa
   await done(page);
 });
 
-failing('PFA4 (pf-a Empty at 390 and 1280): "Start with the plants you want" and its line, three rows (Find plants, Paste a list, Start from a small palette) each with its sub-line, then "The pictures (through the years, through the year, jobs) appear with your first plant." and "N of the M plants on … fit near <place> today."; no picture; the rows open Find and Paste, and the small palette is added with a "suggested" toast and one Undo', { owner: 'pf-a', reason: BOARD }, async () => {
+failing('PFA4 (pf-a Empty at 390 and 1280; main h2): "Start with the plants you want" and its line, three rows (Find plants, Paste a list, Start from a small palette) each with its sub-line, then "The pictures (through the years, through the year, jobs) appear with your first plant." and "N of the M plants on … fit near <place> today."; no picture; the rows open Find and Paste, and the small palette is added with a "suggested" toast and one Undo', { owner: 'main h2', reason: BOARD }, async () => {
   for (const width of [390, 1280]) {
     const page = await emptyPalette({ width });
     await says(page, 'Start with the plants you want');
@@ -319,7 +319,7 @@ test('PFA9 (pf-a Find, C8): Find opened from "Add plants" says "Your palette has
   await done(empty);
 });
 
-failing('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP-B45): the list is named as missing with Try again, its plants are not checked, the Next step says the holes wait for it and names none, the tool stays; a palette of only those plants is never "Start with the plants you want"; once the grower removes them the line goes and a hole is named', { owner: 'pf-a', reason: BOARD }, async () => {
+failing('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP-B45; main h2 after pf-e): the list is named as missing with Try again, its plants are not checked, the Next step says the holes wait for it and names none, the tool stays; a palette of only those plants is never "Start with the plants you want"; once the grower removes them the line goes and a hole is named', { owner: 'main h2', reason: BOARD }, async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   const own = await idsOf('Temperate', 2);
