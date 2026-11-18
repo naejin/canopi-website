@@ -39,6 +39,18 @@ test('fitGroups (R3, round 2 C2): a second look gives the reason of its limiting
   assert.deepEqual(Object.keys(g.reasons).sort(), ['clash', 'edge', 'invasive', 'misfit', 'moderate', 'severe'], 'no soil or water reason');
 });
 
+test('fitGroups (E7, pf-decisions 2026-11-18): a warned plant with no range recorded is a second look, as holes.ts fillerGroup puts it in the Next step and Find; an unwarned one stays not checked', () => {
+  const flags = [{ id: 'w', kind: 'toxicity', level: 'Severe' }, { id: 'i', kind: 'invasive' }];
+  for (const verdicts of [new Map([['w', v('w', 'unknown')], ['i', v('i', 'unknown')], ['u', v('u', 'unknown')]]), null]) {
+    const g = weigh.fitGroups(['w', 'i', 'u'].map(plant), verdicts, flags);
+    assert.deepEqual(g.look, ['w', 'i'], `${verdicts ? 'unknown' : 'no verdicts'}: the warned plants are a second look`);
+    assert.deepEqual(g.unknown, ['u'], 'the unwarned one is not checked');
+    assert.deepEqual(g.reasons.severe, ['w']);
+    assert.deepEqual(g.reasons.invasive, ['i']);
+    for (const id of ['w', 'i', 'u']) assert.equal(g.look.includes(id) ? 'look' : 'unknown', core.fillerGroup(verdicts?.get(id)?.level, id !== 'u'), `${id}: the same group as fillerGroup`);
+  }
+});
+
 test('fitGroups: toxic outside its range is on the outside line and listed as outsideToxic; Mildly toxic is never a second look (R1) and counts in mildFits only when it fits', () => {
   const flags = [{ id: 'o', kind: 'toxicity', level: 'Moderate' }, { id: 'm', kind: 'toxicity', level: 'Slight' }, { id: 's', kind: 'toxicity', level: 'Severe' }];
   const g = weigh.fitGroups(['o', 'm', 's'].map(plant), new Map([['o', v('o', 'outside', 'cold')], ['m', v('m', 'fits')], ['s', v('s', 'fits')]]), flags);

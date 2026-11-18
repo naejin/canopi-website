@@ -21,6 +21,7 @@ import { jobsOf } from './jobs.ts';
 import type { FactValues } from './types.ts';
 import { factAt } from './source.ts';
 import { secondLook } from './conflicts.ts';
+import { fillerGroup } from './holes.ts';
 
 const K = (k: string): string => `consortium.plants.${k}`;
 // The v14 Balance lines (boards MainMore, Kumasi): their words live under consortium.palette.balance.
@@ -172,14 +173,17 @@ export function fitGroups(members: readonly Taxon[], verdicts: ReadonlyMap<Plant
     seen.add(t.id);
     const v = verdicts?.get(t.id), fl = byId.get(t.id) ?? [];
     const tox = toxLevel(fl);
-    if (!v || v.level === 'unknown') g.unknown.push(t.id);
-    else if (v.level === 'outside') {
+    // holes.ts fillerGroup, the one ordered rule the Next step and Find use (E7): a warned plant with no
+    // range recorded is a second look here too (warn, never hide), never "not checked".
+    const grp = fillerGroup(v?.level, secondLook(fl));
+    if (grp === 'unknown') g.unknown.push(t.id);
+    else if (grp === 'outside') {
       g.outside.push(t.id);
       if (tox === 'Severe' || tox === 'Moderate') g.outsideToxic.push(t.id);
-    } else if (v.level === 'look' || secondLook(fl)) {
+    } else if (grp === 'look') {
       g.look.push(t.id);
       const why = new Set<WarnReason>();
-      if (v.level === 'look') why.add((v.limiting && LOOK_REASON[v.limiting.factor]) || 'edge');
+      if (v?.level === 'look') why.add((v.limiting && LOOK_REASON[v.limiting.factor]) || 'edge');
       if (tox === 'Severe') why.add('severe');
       if (tox === 'Moderate') why.add('moderate');
       if (fl.some((f) => f.kind === 'invasive')) why.add('invasive');
