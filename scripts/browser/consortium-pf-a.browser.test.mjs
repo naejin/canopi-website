@@ -1007,7 +1007,7 @@ test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the
   await done(page);
 });
 
-test('PFA-E2 (seam E2, board DeskStates): at 1280 px with Find\'s panel open on a palette of 40 plants or fewer, the Next step and the side column (Warnings, Balance) stand one under the other beside the pictures, never on each other', async () => {
+test('PFA50 (pf-a seam E2, board DeskStates): at 1280 px with Find\'s panel open on a palette of 40 plants or fewer, the Next step and the side column (Warnings, Balance) stand one under the other beside the pictures, never on each other', async () => {
   const page = await deskPanel();
   await section(page, 'Warnings');
   const next = await sectionBox(page, 'Next step'), warn = await sectionBox(page, 'Warnings'), chart = await sectionBox(page, 'Through the years');
@@ -1017,7 +1017,7 @@ test('PFA-E2 (seam E2, board DeskStates): at 1280 px with Find\'s panel open on 
   await done(page);
 });
 
-test('PFA-D5 (pf-decisions D5, board Find): the subtitle counts the whole list, palette included ("N of the M plants … fit"); "Fits your place" counts the plants not yet in the palette and adds "· K already in your palette", so with no filter the two add up', async () => {
+test('PFA51 (pf-a ruling D5, board Find): the subtitle counts the whole list, palette included ("N of the M plants … fit"); "Fits your place" counts the plants not yet in the palette and adds "· K already in your palette", so with no filter the two add up', async () => {
   const page = await deskPanel();
   const sub = await page.$eval('dialog[open] [data-find-fitcount]', (e) => e.textContent.replace(/\s+/g, ' ').trim());
   const whole = Number(/(\d+) of the \d+ plants/.exec(sub)?.[1] ?? NaN);
