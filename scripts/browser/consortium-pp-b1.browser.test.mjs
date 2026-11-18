@@ -263,8 +263,8 @@ test('PP-B10 (b1a share): with "Include my place" off the link holds none of k o
   await choose(page, 'Temperate');
   await suggestReady(page);
   await page.evaluate(() => { const s = window.__ctTest.store; s.suggestMembers(); s.view.value = 'matrix'; s.country.value = { code: 'FR', source: 'chosen' }; });
-  assert.ok(await has(page, aria('button', W('share.button')), 8000), 'Share');
-  await page.locator(aria('button', W('share.button'))).click();
+  assert.ok(await has(page, aria('button', W('palette.chart.copyLink')), 8000), 'Share');
+  await page.locator(aria('button', W('palette.chart.copyLink'))).click();
   assert.ok(await has(page, 'input[data-share-location]', 4000), 'no "Include my place" tick');
   assert.equal(await page.$eval('input[data-share-location]', (e) => e.checked), false, 'off by default');
   const link = () => page.$eval('#ct-share-field', (e) => new URL(e.value).hash);
