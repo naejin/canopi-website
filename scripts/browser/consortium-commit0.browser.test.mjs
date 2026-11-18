@@ -88,7 +88,7 @@ const SCREENS = [
   ['a digest that does not match', { database: 'digest' }, 'damaged', 'retry'],
   ['an empty body', { database: 'empty' }, 'damaged', 'retry'],
   ['wrong user_version', { database: 'user-version' }, 'schema', 'reload'],
-  ['WebAssembly disabled', { data: 'fixture', wasm: false }, 'wasm-blocked', null],
+  ['WebAssembly disabled', { data: 'fixture', wasm: false }, 'wasm-blocked', 'retry'], // board Loading draws Try again (M7)
   ['sqlite3.wasm refused (403; review L1)', { data: 'fixture', wasmFile: 403 }, 'wasm-fetch', 'reload'],
   ['sqlite3.wasm unreachable offline (review L1)', { data: 'fixture', wasmFile: 'offline' }, 'wasm-fetch', 'reload'],
   ['the loader chunk gone after a deploy (online)', { data: 'fixture', loader: 404 }, 'stale', 'reload'],
