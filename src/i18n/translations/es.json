@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "one: # planta según la luz que necesita, a lo largo de los años. | other: # plantas según la luz que necesitan, a lo largo de los años.",
   "consortium.palette.yearsHoles": "one: # hueco en los niveles de luz. | other: # huecos en los niveles de luz.",
   "consortium.palette.jobsTitle": "Tareas",
-  "consortium.palette.jobsIntro": "one: Lo que tus plantas hacen por la parcela, y durante cuánto tiempo. Quieres # planta por tarea (Plantas por tarea: #): | other: Lo que tus plantas hacen por la parcela, y durante cuánto tiempo. Quieres # plantas por tarea (Plantas por tarea: #):",
+  "consortium.palette.jobsIntro": "one: Lo que tus plantas hacen por la parcela, y durante cuánto tiempo. Quieres # planta por tarea ({goal}): | other: Lo que tus plantas hacen por la parcela, y durante cuánto tiempo. Quieres # plantas por tarea ({goal}):",
   "consortium.palette.jobsNone": "Sin tarea registrada",
   "consortium.palette.jobKey": "El color y el icono muestran la función principal de cada planta:",
   "consortium.palette.light_emergent": "Pleno sol",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "one: Sus plantas vienen de las listas más cercanas ({lists}): conservamos la # de sus {of} plantas cuyo rango climático incluye tu lugar, {later} para {period}. | other: Sus plantas vienen de las listas más cercanas ({lists}): conservamos las # de sus {of} plantas cuyo rango climático incluye tu lugar, {later} para {period}.",
   "consortium.find.tookBack": "{name} quitada de nuevo.",
   "consortium.palette.balance.familyFind.Fabaceae": "Buscar una planta que alimente el suelo, de otra familia",
+  "consortium.palette.goalLink": "Plantas por tarea: {n}",
+  "consortium.find.fitsInPalette": "one: # ya en tu paleta | other: # ya en tu paleta",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

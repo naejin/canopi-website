@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "one: # Pflanze nach dem Licht, das sie braucht, im Lauf der Jahre. | other: # Pflanzen nach dem Licht, das sie brauchen, im Lauf der Jahre.",
   "consortium.palette.yearsHoles": "one: # Lücke in den Lichtstufen. | other: # Lücken in den Lichtstufen.",
   "consortium.palette.jobsTitle": "Aufgaben",
-  "consortium.palette.jobsIntro": "one: Was deine Pflanzen für die Fläche tun, und wie lange. Du willst # Pflanze je Aufgabe (Pflanzen je Aufgabe: #): | other: Was deine Pflanzen für die Fläche tun, und wie lange. Du willst # Pflanzen je Aufgabe (Pflanzen je Aufgabe: #):",
+  "consortium.palette.jobsIntro": "one: Was deine Pflanzen für die Fläche tun, und wie lange. Du willst # Pflanze je Aufgabe ({goal}): | other: Was deine Pflanzen für die Fläche tun, und wie lange. Du willst # Pflanzen je Aufgabe ({goal}):",
   "consortium.palette.jobsNone": "Keine Aufgabe erfasst",
   "consortium.palette.jobKey": "Farbe und Symbol zeigen die Hauptaufgabe jeder Pflanze:",
   "consortium.palette.light_emergent": "Volle Sonne",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "one: Seine Pflanzen kommen aus den nächsten Listen ({lists}): wir behalten # ihrer {of} Pflanzen, deren Klimabereich deinen Ort einschließt, {later} bis {period}. | other: Seine Pflanzen kommen aus den nächsten Listen ({lists}): wir behalten die # ihrer {of} Pflanzen, deren Klimabereich deinen Ort einschließt, {later} bis {period}.",
   "consortium.find.tookBack": "{name} wieder herausgenommen.",
   "consortium.palette.balance.familyFind.Fabaceae": "Einen Bodennährer aus einer anderen Familie finden",
+  "consortium.palette.goalLink": "Pflanzen je Aufgabe: {n}",
+  "consortium.find.fitsInPalette": "one: # schon in Ihrer Palette | other: # schon in Ihrer Palette",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

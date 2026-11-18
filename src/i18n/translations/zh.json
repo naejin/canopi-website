@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "other: # 种植物，按所需光照逐年显示。",
   "consortium.palette.yearsHoles": "other: 光照层级中有 # 个空缺。",
   "consortium.palette.jobsTitle": "作用",
-  "consortium.palette.jobsIntro": "other: 你的植物为地块做什么，做多久。你希望每项任务有 # 种植物（每项任务的植物数：#）：",
+  "consortium.palette.jobsIntro": "other: 你的植物为地块做什么，做多久。你希望每项任务有 # 种植物（{goal}）：",
   "consortium.palette.jobsNone": "没有记录作用",
   "consortium.palette.jobKey": "颜色和图标表示每种植物的主要作用：",
   "consortium.palette.light_emergent": "全日照",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "other: 它的植物来自最近的列表（{lists}）：在它们的 {of} 种植物中，我们保留气候范围包含你的地方的 # 种；到 {period} 为 {later} 种。",
   "consortium.find.tookBack": "已重新移出{name}。",
   "consortium.palette.balance.familyFind.Fabaceae": "找一种其他科的养土植物",
+  "consortium.palette.goalLink": "每项任务的植物数：{n}",
+  "consortium.find.fitsInPalette": "other: 已有 # 种在你的搭配中",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

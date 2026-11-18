@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "other: 식물 #종을 필요한 빛에 따라 해마다 보여 줍니다.",
   "consortium.palette.yearsHoles": "other: 빛 단계의 빈틈 #개.",
   "consortium.palette.jobsTitle": "역할",
-  "consortium.palette.jobsIntro": "other: 식물이 밭을 위해 무엇을, 얼마나 오래 하는지. 역할마다 #종을 원합니다(역할당 식물 수: #):",
+  "consortium.palette.jobsIntro": "other: 식물이 밭을 위해 무엇을, 얼마나 오래 하는지. 역할마다 #종을 원합니다({goal}):",
   "consortium.palette.jobsNone": "기록된 역할 없음",
   "consortium.palette.jobKey": "색과 아이콘은 각 식물의 주된 역할을 나타냅니다:",
   "consortium.palette.light_emergent": "양지",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "other: 식물은 가장 가까운 목록({lists})에서 가져옵니다. 그 {of}종 가운데 기후 범위에 내 장소가 들어가는 #종을 남깁니다. {period}에는 {later}종.",
   "consortium.find.tookBack": "{name}을(를) 다시 뺐습니다.",
   "consortium.palette.balance.familyFind.Fabaceae": "다른 과의 흙을 기르는 식물 찾기",
+  "consortium.palette.goalLink": "역할당 식물 수: {n}",
+  "consortium.find.fitsInPalette": "other: #종은 이미 팔레트에 있습니다",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

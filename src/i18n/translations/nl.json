@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "one: # plant naar het licht dat ze nodig heeft, door de jaren heen. | other: # planten naar het licht dat ze nodig hebben, door de jaren heen.",
   "consortium.palette.yearsHoles": "one: # gat in de lichtniveaus. | other: # gaten in de lichtniveaus.",
   "consortium.palette.jobsTitle": "Taken",
-  "consortium.palette.jobsIntro": "one: Wat je planten voor het perceel doen, en hoe lang. Je wilt # plant per taak (Planten per taak: #): | other: Wat je planten voor het perceel doen, en hoe lang. Je wilt # planten per taak (Planten per taak: #):",
+  "consortium.palette.jobsIntro": "one: Wat je planten voor het perceel doen, en hoe lang. Je wilt # plant per taak ({goal}): | other: Wat je planten voor het perceel doen, en hoe lang. Je wilt # planten per taak ({goal}):",
   "consortium.palette.jobsNone": "Geen taak vastgelegd",
   "consortium.palette.jobKey": "Kleur en pictogram tonen de hoofdtaak van elke plant:",
   "consortium.palette.light_emergent": "Volle zon",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "one: De planten komen uit de dichtstbijzijnde lijsten ({lists}): we houden de # van hun {of} planten waarvan het klimaatbereik je plek omvat, {later} tegen {period}. | other: De planten komen uit de dichtstbijzijnde lijsten ({lists}): we houden de # van hun {of} planten waarvan het klimaatbereik je plek omvat, {later} tegen {period}.",
   "consortium.find.tookBack": "{name} weer weggehaald.",
   "consortium.palette.balance.familyFind.Fabaceae": "Zoek een bodemvoeder uit een andere familie",
+  "consortium.palette.goalLink": "Planten per taak: {n}",
+  "consortium.find.fitsInPalette": "one: # al in je palet | other: # al in je palet",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

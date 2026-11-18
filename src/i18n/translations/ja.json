@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "other: #種を必要な光ごとに、年ごとに示します。",
   "consortium.palette.yearsHoles": "other: 光のレベルのすき間 #。",
   "consortium.palette.jobsTitle": "役割",
-  "consortium.palette.jobsIntro": "other: 植物が区画のために何を、どれだけの間するか。役割ごとに#種ほしい（役割ごとの植物の数：#）：",
+  "consortium.palette.jobsIntro": "other: 植物が区画のために何を、どれだけの間するか。役割ごとに#種ほしい（{goal}）：",
   "consortium.palette.jobsNone": "役割の記録なし",
   "consortium.palette.jobKey": "色とアイコンは各植物の主な役割を示します：",
   "consortium.palette.light_emergent": "日なた",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "other: 植物は最も近いリスト（{lists}）から取ります。その {of} 種のうち、気候範囲にあなたの場所が含まれる # 種を残します。{period} には {later} 種。",
   "consortium.find.tookBack": "{name}を取り出しました。",
   "consortium.palette.balance.familyFind.Fabaceae": "別の科の土を肥やす植物を探す",
+  "consortium.palette.goalLink": "役割ごとの植物の数：{n}",
+  "consortium.find.fitsInPalette": "other: うち # 種類はパレットに入っています",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

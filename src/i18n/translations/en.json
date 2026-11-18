@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "one: # plant by the light it needs, over the years. | other: # plants by the light they need, over the years.",
   "consortium.palette.yearsHoles": "one: # hole in the light levels. | other: # holes in the light levels.",
   "consortium.palette.jobsTitle": "Jobs",
-  "consortium.palette.jobsIntro": "one: What your plants do for the plot, and for how long. You want # plant for each job (Plants per job: #): | other: What your plants do for the plot, and for how long. You want # plants for each job (Plants per job: #):",
+  "consortium.palette.jobsIntro": "one: What your plants do for the plot, and for how long. You want # plant for each job ({goal}): | other: What your plants do for the plot, and for how long. You want # plants for each job ({goal}):",
   "consortium.palette.jobsNone": "No job recorded",
   "consortium.palette.jobKey": "Colour and icon show each plant’s main job:",
   "consortium.palette.light_emergent": "Full sun",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "one: Its plants come from the nearest lists ({lists}): we keep the # of their {of} plants whose climate range includes your place, {later} by {period}. | other: Its plants come from the nearest lists ({lists}): we keep the # of their {of} plants whose climate range includes your place, {later} by {period}.",
   "consortium.find.tookBack": "{name} taken back out.",
   "consortium.palette.balance.familyFind.Fabaceae": "Find a soil feeder of another family",
+  "consortium.palette.goalLink": "Plants per job: {n}",
+  "consortium.find.fitsInPalette": "one: # already in your palette | other: # already in your palette",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

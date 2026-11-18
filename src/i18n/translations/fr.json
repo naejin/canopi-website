@@ -465,7 +465,7 @@
   "consortium.palette.yearsSummary": "one: # plante selon la lumière dont elle a besoin, au fil des années. | other: # plantes selon la lumière dont elles ont besoin, au fil des années.",
   "consortium.palette.yearsHoles": "one: # trou dans les niveaux de lumière. | other: # trous dans les niveaux de lumière.",
   "consortium.palette.jobsTitle": "Tâches",
-  "consortium.palette.jobsIntro": "one: Ce que vos plantes font pour la parcelle, et pendant combien de temps. Vous voulez # plante par tâche (Plantes par tâche : #) : | other: Ce que vos plantes font pour la parcelle, et pendant combien de temps. Vous voulez # plantes par tâche (Plantes par tâche : #) :",
+  "consortium.palette.jobsIntro": "one: Ce que vos plantes font pour la parcelle, et pendant combien de temps. Vous voulez # plante par tâche ({goal}) : | other: Ce que vos plantes font pour la parcelle, et pendant combien de temps. Vous voulez # plantes par tâche ({goal}) :",
   "consortium.palette.jobsNone": "Aucune tâche enregistrée",
   "consortium.palette.jobKey": "La couleur et l’icône montrent le rôle principal de chaque plante :",
   "consortium.palette.light_emergent": "Plein soleil",
@@ -1514,5 +1514,7 @@
   "consortium.place.banner.keptLater": "one: Ses plantes viennent des listes les plus proches ({lists}) : nous gardons la # de leurs {of} plantes dont l’aire climatique comprend votre lieu, {later} d’ici {period}. | other: Ses plantes viennent des listes les plus proches ({lists}) : nous gardons les # de leurs {of} plantes dont l’aire climatique comprend votre lieu, {later} d’ici {period}.",
   "consortium.find.tookBack": "{name} retirée à nouveau.",
   "consortium.palette.balance.familyFind.Fabaceae": "Trouver une plante qui nourrit le sol, d’une autre famille",
+  "consortium.palette.goalLink": "Plantes par tâche : {n}",
+  "consortium.find.fitsInPalette": "one: # déjà dans votre palette | other: # déjà dans votre palette",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

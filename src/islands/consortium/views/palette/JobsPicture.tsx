@@ -29,10 +29,13 @@ const cap = (s: string): string => s.charAt(0).toLocaleUpperCase() + s.slice(1);
 
 // The goal's buttons: the core's choices (site-inputs.ts PLANTS_PER_JOB), one row of four 44 px
 // buttons, the label above them on a narrow phone (BC2).
-function Goal() {
+// D1 (pf-decisions 2026-11-18): at 960 px and wider the 1/2/3/5 control always shows (board ManyDesk);
+// below, the intro's "Plants per job: 2" is a link (board MainMore) that opens it in place (`folded`).
+const GOAL_ID = 'ct-goal';
+function Goal({ folded }: { folded: boolean }) {
   const goal = store.plantsPerJob.value;
   return (
-    <div class="ct-goal" role="group" aria-label={T('palette.goalLabel')}>
+    <div class="ct-goal" id={GOAL_ID} role="group" aria-label={T('palette.goalLabel')} data-folded={folded ? '' : undefined}>
       <span class="ct-goal-label" aria-hidden="true">{T('palette.goalLabel')}</span>
       <span class="ct-goal-ns">{PLANTS_PER_JOB.map((n) => <button key={n} type="button" class="ct-goal-n" aria-pressed={n === goal} onClick={() => store.setPlantsPerJob(n)}>{n}</button>)}</span>
     </div>
@@ -136,16 +139,21 @@ export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdic
   const unchecked = new Set(lanes.filter((l) => l.kind === 'job').flatMap((l) => l.unchecked ?? []));
   const noJob = members.filter((t) => !jobsOf(t).length && !unchecked.has(t.id)).length;
   const held = goal === 2 ? P('palette.chart.plants', 1) : T('palette.goalFewer', { n: goal });
+  const [goalOpen, setGoalOpen] = useState(false);
+  const linked = !big && !pending;
+  // The intro around its goal phrase: plain words at 960 px and wider, the link below (D1; CSS shows one).
+  const goalWords = T('palette.goalLink', { n: goal });
+  const [before, after = ''] = P('palette.jobsIntro', goal, { goal: '\u0000' }).split('\u0000');
   const intro = big ? T('palette.jobsIntroMany')
     : pending ? T('palette.holesPending')
-    : <>{P('palette.jobsIntro', goal)} {P('palette.goalHoles', open.length)}{goal > 1 && thin > 0 ? P('palette.goalThin', thin, { held }) : '.'}</>;
+    : <>{before}<span class="ct-goal-say">{goalWords}</span><button type="button" class="text-link ct-goal-link" aria-expanded={goalOpen} aria-controls={GOAL_ID} onClick={() => setGoalOpen(!goalOpen)}>{goalWords}</button>{after} {P('palette.goalHoles', open.length)}{goal > 1 && thin > 0 ? P('palette.goalThin', thin, { held }) : '.'}</>;
   return (
     <section class="ct-chart ct-jobs" id="ct-jobs" aria-labelledby="ct-jobs-h" data-mode={big ? 'rows' : 'strips'}>
       <div class="ct-jobs-top">
         <h3 id="ct-jobs-h">{T('palette.jobsTitle')}</h3>
         <ReadPictures />
         <p class="ct-chart-intro">{intro}</p>
-        <Goal />
+        <Goal folded={linked && !goalOpen} />
         {big ? <p class="ct-jobs-legend">{T('palette.goalExplain', { n: goal })}</p> : <Legend goal={goal} />}
       </div>
       <ul class="ct-jobs-list">

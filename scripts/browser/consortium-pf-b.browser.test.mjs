@@ -217,6 +217,7 @@ test('PFB4 (pf-b MainMore Jobs at 1280 and PaletteMore at 390, carried from PP-B
     assert.ok(jobs.includes(`What your plants do for the plot, and for how long. You want 2 plants for each job (Plants per job: 2): ${holes} hole${holes === 1 ? '' : 's'} come${holes === 1 ? 's' : ''} first${tail}`), `board: the goal sentence (${holes} holes, ${thin} thin; ${width} px): "${jobs.slice(0, 220)}"`);
     if (!f.openThin) assert.ok(!jobs.includes('then 0 thin spots'), 'R6: never "then 0 thin spots"');
     assert.ok(jobs.includes('2 or more plants · 1 plant between year 1 and year 60: thin · nobody: a hole'), 'board: the legend');
+    if (width < 960) await openGoal(page);
     await control(page, 'group', 'Plants per job');
     for (const n of ['1', '2', '3', '5']) {
       const b = await boxAt(page, 'button', n);
@@ -512,10 +513,19 @@ test('PFB16 (pf-b Focus): every control of the pictures, Jobs, Warnings, Balance
   await done(page);
 });
 
-test('PFB17 (pf-b section 6 neighbours, the goal control): at 1280 px "Plants per job" sits right of the Jobs title, on its line; at 320 px under the intro, nothing past the edge; the legend under the control', async () => {
+// D1 (pf-decisions 2026-11-18, board MainMore): below 960 px the control is folded behind the intro's
+// link "Plants per job: 2", which opens it in place; at 960 px and wider it always shows.
+async function openGoal(page) {
+  assert.equal(await page.$('#ct-root [role="group"][aria-label="Plants per job"]').then((g) => g?.isVisible() ?? false), false, 'D1: the control is folded under 960 px');
+  await press(page, 'button', 'Plants per job: 2');
+  assert.equal(await page.$eval('#ct-root button[aria-controls="ct-goal"]', (b) => b.getAttribute('aria-expanded')), 'true', 'D1: the link says it opened the control');
+}
+test('PFB17 (pf-b section 6 neighbours, the goal control; D1): at 1280 px "Plants per job" sits right of the Jobs title, on its line, with no link; at 320 px the intro\'s link "Plants per job: 2" opens it under the intro, nothing past the edge; the legend under the control', async () => {
   for (const width of [1280, 320]) {
     const page = await boardPalette('seville-board', { width });
     await section(page, 'Jobs');
+    if (width < 960) await openGoal(page);
+    else assert.ok(!(await buttons(page)).includes('Plants per job: 2'), 'D1: no link at 960 px and wider');
     const pos = await page.evaluate(() => {
       const h = [...document.querySelectorAll('#ct-root h2, #ct-root h3')].find((e) => e.textContent.trim().startsWith('Jobs'));
       const g = document.querySelector('#ct-root [role="group"][aria-label="Plants per job"]');
