@@ -2,9 +2,9 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T19:35:29Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:10Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:59Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:04Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
@@ -29,8 +29,8 @@ sources:
   - id: fit-tsx
     resource: ../../src/islands/consortium/views/kit/fit.tsx
     title: src/islands/consortium/views/kit/fit.tsx
-    digest: sha256:d5c29637410a8f1d
-    last_modified: 2026-11-17T19:12:17Z
+    digest: sha256:3e63b98aa4fedfe3
+    last_modified: 2026-11-17T23:52:29Z
   - id: picture-ts
     resource: ../../src/islands/consortium/rules/picture.ts
     title: src/islands/consortium/rules/picture.ts
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:78a8659cee4c385f
-    last_modified: 2026-11-17T19:12:17Z
+    digest: sha256:6b68b3a0f3306bd6
+    last_modified: 2026-11-18T00:13:24Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs

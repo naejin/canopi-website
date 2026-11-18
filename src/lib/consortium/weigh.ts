@@ -38,7 +38,7 @@ const BY_MOISTURE: Record<string, WaterNeed> = { Low: 'dry', Medium: 'medium', H
 export const waterNeed = (w: FactValues['water_need'] | null): WaterNeed | null =>
   (w?.drought ? BY_DROUGHT[w.drought] : undefined) ?? (w?.moisture ? BY_MOISTURE[w.moisture] : undefined) ?? null;
 
-type WeighContext = Pick<VerdictContext, 'lookup' | 'period'>;
+type WeighContext = Pick<VerdictContext, 'inputs' | 'period'>;
 interface WeighOptions {
   pending?: boolean; // a list is still being read: 'checking'
   unchecked?: number; // members of the palette not checked (a list unread, on no list of this climate)
@@ -60,7 +60,7 @@ export function weighLines(members: readonly Taxon[], ctx: WeighContext, { pendi
   const regular: PlantId[] = [], dry: PlantId[] = [];
   let n = 0;
   for (const t of members) {
-    const need = waterNeed(factAt('water_need', t, ctx.lookup, ctx.period));
+    const need = waterNeed(factAt('water_need', t, ctx.inputs, ctx.period));
     if (!need) continue;
     n++;
     if (need === 'regular') regular.push(t.id);

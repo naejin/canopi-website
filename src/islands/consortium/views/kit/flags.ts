@@ -8,7 +8,7 @@
 // what the words read (site, members, country, the other plant of a conflict) from store.ts flagScene.
 import type { Flag, Locale, SiteLine, Site, Taxon } from '../../../../lib/consortium/index.ts';
 import { misfitsOf, siteFit, unknownsOf, type FlagScene } from '../../rules/site-fit.ts';
-import { T, pageLang } from '../../strings.ts';
+import { P, T, pageLang } from '../../strings.ts';
 import { countryName, nameOf, num } from './names.ts';
 
 // A site line in words (core verdict-line.ts siteLines; numbers to a tenth in the page's language, '?'
@@ -49,4 +49,17 @@ export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = fal
     }
   }
   return out;
+}
+
+// The invasive chip (v13 hand-off item 4; owner Q2 and ambiguity A3): a country chosen and the plant
+// recorded there: "Recorded invasive in Kenya", warning tone (a second look); no country: "Recorded
+// invasive in N countries", soft (ink), never a second look; a country chosen but not recorded there:
+// "Recorded invasive in N other countries", soft. null: recorded nowhere (or GRIIS not read).
+export interface InvasiveChip { text: string; tone: 'warning' | 'soft' }
+export function invasiveChip(t: Taxon, country: string | null): InvasiveChip | null {
+  const where = t.warnings.invasive_in ?? [];
+  if (!where.length) return null;
+  if (country && where.some((r) => r.country === country)) return { text: T('chip.invasiveIn', { country: countryName(country) }), tone: 'warning' };
+  if (country) return { text: P('chip.invasiveOther', where.length), tone: 'soft' };
+  return { text: P('palette.invasiveCountries', where.length), tone: 'soft' };
 }

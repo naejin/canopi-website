@@ -1,4 +1,4 @@
-# Invented consortium fixture (format 4, schema 4.3; schema-3 variant)
+# Invented consortium fixture (format 4, schema 4.5; schema-3 variant)
 
 Plausible but **invented** plant values for testing consortium v2 without the real export. Never shipped:
 `canopi_db_sha256` is all zeros, which a real install refuses, and the directory sits outside `public/`.
@@ -13,7 +13,11 @@ Plausible but **invented** plant values for testing consortium v2 without the re
 - **Schema 4 (PP-C commit 0):** the default build is schema 4 (`scripts/consortium-schema.mjs` `DDL_4`, copied from
   the staging export `r-c15a216b9663d2fa`) plus 4.2's declared `plant_toxicity_parts` (`TOXICITY_PARTS_DDL`,
   canopi-data `docs/website-handoff/2026-11-17-toxicity-parts.md`) and 4.3's declared `plant_invasive_areas`
-  (`INVASIVE_AREAS_DDL`, `docs/website-handoff/2026-11-17-invasive-scope.md`), `schema_minor` 3, with the names file
+  (`INVASIVE_AREAS_DDL`, `docs/website-handoff/2026-11-17-invasive-scope.md`) and 4.5's declared light span
+  columns `plants.sun_exposure_sunniest`, `sun_exposure_shadiest`, `sun_exposure_preferred` with their
+  `trait_sources` fields (`LIGHT_SPAN_DDL`, since 5: Malus domestica emergent to high, found mostly in high, PFAF
+  and Ellenberg derived; Sambucus nigra found mostly in medium only, an `llm-knowledge` AI estimate),
+  `schema_minor` 5 (the fixture writes no 4.4 addition), with the names file
   `names.<release>.<12 hex>.tsv.gz`. `writeFixtureExport(dir, { schema: 3 })` writes the schema-3 export the reader
   still accepts until PP-C 0b.
 - **Contract:** canopi-data `docs/consortium-export-v2.md`, `docs/website-handoff/2026-11-14-schema4-format.md`.

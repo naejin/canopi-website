@@ -16,7 +16,10 @@ const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await im
 const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
 // Four sites as `canopi-climate lookup` answers them on the v0.2.0 grid (all 9 slots; see the README).
 const SITES = JSON.parse(readFileSync(new URL('fixtures/consortium-future/sites.json', import.meta.url), 'utf8'));
-const at = (name, lookup = SITES[name]) => ({ lat: lookup.lat, lon: lookup.lon, source: 'search', label: name, lookup: { ...lookup, soil: null, regions: { wgsrpdL3: null, isoA2: null } } });
+// As the rules read a site: its inputs (site-inputs.ts, no grower edit).
+const inputsOf = (lookup) => core.siteInputsOf({ lookup });
+const at = (name, lookup = SITES[name]) => inputsOf({ ...lookup, soil: null, regions: { wgsrpdL3: null, isoA2: null } });
+const LYON = inputsOf(lyon.lookup);
 
 // A site with one value per slot: today, then 2041–2070 and 2071–2099 for each scenario.
 const slot = (period, scenario, tmaxWarmC, aridityIndex = 1, tminColdC = 0) => ({ period, scenario, koppen: 'Cfb', koppenTemperatureMarginC: 0, tminColdC, tmaxWarmC, tmeanColdC: 3, tmeanWarmC: 18, aridityIndex });
@@ -24,7 +27,7 @@ function site(mid, late = mid, { arid = [1, 1, 1, 1], tmin = 0, today = { tmax: 
   const periods = today ? [slot('1991-2020', 'historical', today.tmax, today.arid)] : [];
   core.scenarios.forEach((s, i) => periods.push(slot('2041-2070', s, mid[i], arid[i], tmin)));
   core.scenarios.forEach((s, i) => periods.push(slot('2071-2099', s, late[i], arid[i], tmin)));
-  return { ...lyon, lookup: { ...lyon.lookup, climate: { ...lyon.lookup.climate, periods } } };
+  return inputsOf({ ...lyon.lookup, climate: { ...lyon.lookup.climate, periods } });
 }
 // The fixture plant: Q95 of the warmest-month maximum 30 °C, so too hot beyond 32 °C; no aridity range.
 const ends = (end) => taxon({ phases: { start: 'placenta_i', end, sources: [] } });
@@ -80,9 +83,9 @@ test('futureCheck: a reason must be a change from today; a plant already beyond 
 test('futureCheck: null ("not checked") without a site, without projections, without a range, or with nothing to compare', () => {
   const t = ends('climax');
   assert.equal(core.futureCheck(t, null, 'ssp245'), null);
-  assert.equal(core.futureCheck(t, { ...lyon, lookup: null }, 'ssp245'), null, 'the lookup still loading or failed');
-  assert.equal(core.futureCheck(t, { ...lyon, lookup: { ...lyon.lookup, climate: null } }, 'ssp245'), null, 'open sea');
-  assert.equal(core.futureCheck(t, lyon, 'ssp245'), null, 'today only: no future slot');
+  assert.equal(core.futureCheck(t, core.NO_INPUTS, 'ssp245'), null, 'the lookup still loading or failed');
+  assert.equal(core.futureCheck(t, inputsOf({ ...lyon.lookup, climate: null }), 'ssp245'), null, 'open sea');
+  assert.equal(core.futureCheck(t, LYON, 'ssp245'), null, 'today only: no future slot');
   assert.equal(core.futureCheck(taxon({ climate: null }), site([40, 40, 40, 40]), 'ssp245'), null, 'range not recorded');
   assert.equal(core.futureCheck(ends('placenta_iii'), site([40, 40, 40, 40]), 'ssp245'), null, 'short-lived: today\'s climate only');
   const noHeat = taxon({ climate: { ...taxon().climate, tmaxWarm: null, aridity: { low: 0.5, median: 1, high: 2, count: 9, basis: 'thinned_cells' } } });
@@ -90,7 +93,7 @@ test('futureCheck: null ("not checked") without a site, without projections, wit
   assert.equal(core.futureCheck(noHeat, site([40, 40, 40, 40], undefined, { arid: [0.4, 0.6, 0.6, 0.6] }), 'ssp245'), null, 'aridity alone cannot make a loss: not checked, as today\'s "range not recorded"');
   // A missing slot drops out of the agreement; the chosen scenario's own slot missing is "not checked".
   const three = site([33, 33, 33, 33]);
-  three.lookup.climate.periods = three.lookup.climate.periods.filter((p) => p.scenario !== 'ssp585');
+  three.periods = three.periods.filter((p) => p.scenario !== 'ssp585');
   assert.deepEqual(core.futureCheck(t, three, 'ssp245'), check('2071-2099', 'outside', ['heat'], [], 3, 3));
   assert.equal(core.futureCheck(t, three, 'ssp585'), null);
   assert.equal(core.scenarioName('ssp245'), 'SSP2-4.5');
@@ -118,7 +121,7 @@ test('futureSummary: one entry per member; per period n of m by reason; already 
   assert.deepEqual(Object.keys(sum.checks).sort(), ['a', 'b', 'c', 'f']);
   assert.equal(sum.checks.f.verdict, 'inside');
   assert.equal(sum.checks.b.drier, true);
-  const none = core.futureSummary([a, b], lyon, 'ssp245');
+  const none = core.futureSummary([a, b], LYON, 'ssp245');
   assert.equal(none.available, false);
   assert.deepEqual(none.periods, []);
   assert.deepEqual(none.notChecked, ['a', 'b']);

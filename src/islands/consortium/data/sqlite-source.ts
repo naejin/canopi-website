@@ -11,10 +11,10 @@
 // plant_invasive_areas), else its Details field is null,
 // the feature off. Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
 import type {
-  ClimateRange, ClimateZone, Details, Dispute, DisputeField, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LayerValue, Locale, Month, Placement,
+  ClimateRange, ClimateZone, Details, Dispute, DisputeField, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
   PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
 } from '../../../lib/consortium/index.ts';
-import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
+import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -29,6 +29,13 @@ const num = (v: unknown): number | null => (v === null || v === undefined ? null
 const bool = (v: unknown): boolean | null => (v === null || v === undefined ? null : Number(v) === 1);
 const range = (min: unknown, max: unknown) => (min === null && max === null ? null : { min: num(min), max: num(max) });
 const oneOf = <T extends string>(list: readonly T[], v: unknown): T | null => (list as readonly unknown[]).includes(v) ? (v as T) : null;
+// Schema 4.5's light niche (canopi-data docs/website-handoff/2026-11-17-light-span.md): both ends or
+// neither (a half span reads as none), and the preferred level.
+function lightOf(r: Row): LightNiche {
+  const sunniest = oneOf(strata, r.sun_exposure_sunniest), shadiest = oneOf(strata, r.sun_exposure_shadiest);
+  const span = sunniest !== null && shadiest !== null;
+  return { sunniest: span ? sunniest : null, shadiest: span ? shadiest : null, preferred: oneOf(strata, r.sun_exposure_preferred) };
+}
 
 // Schema 4's known values (format note; 4.2 toxicity-parts note). A later value is declared by the
 // export and skipped here until the reader knows it.
@@ -241,6 +248,9 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         },
         climate: climates.get(plant) ?? null,
         areasKnown: r.wcvp_match !== null && r.wcvp_match !== undefined,
+        // Schema 4.5 (light span; a column absent before it, so `light` is absent): each end and the
+        // preferred level, null when unknown (never "no light needs").
+        ...('sun_exposure_sunniest' in r ? { light: lightOf(r) } : {}),
       };
     });
   }

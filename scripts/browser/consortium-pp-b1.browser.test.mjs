@@ -215,19 +215,18 @@ test('PP-B3 (b1a suggested palette): "Start from a small suggested palette" adds
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', 'back on Place');
 });
 
-test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while the address holds none of k o l w q r h s', async () => {
+test('PP-B5 (b1a reloads): three reloads keep the room answer while the address holds none of k o l w q r h s (spot answers dormant until PP-F)', async () => {
   const page = await tool();
   await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
   assert.ok(await has(page, '[data-place-plants]', 8000), 'no own-plants step on Place');
   await page.click('input[name="ct-site-room"][value="large"]');
-  await page.click('input[name="ct-site-light"][value="shade"]');
-  const answers = () => page.evaluate(() => { const s = window.__ctTest.store; return [s.room.value, s.spot.value.light]; });
+  const answers = () => page.evaluate(() => [window.__ctTest.store.room.value]);
   const reload = async (label) => {
     await page.reload();
     assert.ok(await until(page, () => window.__ctTest?.store?.source.value), `${label}: the tool loads`);
     await page.waitForFunction(() => window.__ctTest.store.room.value !== 'unsure', { timeout: 5000 }).catch(() => {});
-    assert.deepEqual(await answers(), ['large', 'shade'], `${label}: lost the room or spot answer`);
+    assert.deepEqual(await answers(), ['large'], `${label}: lost the room answer`);
     assert.deepEqual(placeKeysIn(await page.evaluate(() => location.hash)), [], `${label}: the address holds no place answer`);
   };
   await reload('before any plant');
@@ -240,25 +239,23 @@ test('PP-B5 (b1a reloads): three reloads keep the room and spot answers while th
   await reload('after Start over');
 });
 
-test('PP-B5 (b1a shade answer): a "shade" answer moves a sun-only plant to "needs a second look", and it stays after reload', async () => {
+test('PP-B5 (b1a shade answer): a "shade" light input moves a sun-only plant to "needs a second look" (a grower edit of the site inputs; the figures panel and PP-F write it, unsaved until then)', async () => {
   const page = await tool();
   await atSite(page, 'lyon');
   await choose(page, 'Temperate');
   const sunOnly = await page.evaluate(() => window.__ctTest.store.pool.value.find((t) => t.traits.light?.length === 1 && t.traits.light[0] === 'full')?.id ?? window.__ctTest.store.pool.value[0].id);
-  await page.evaluate((id) => { const s = window.__ctTest.store; s.addMembers([id]); s.spot.value = { ...s.spot.value, light: 'shade' }; }, sunOnly);
+  await page.evaluate((id) => { const s = window.__ctTest.store; s.addMembers([id]); s.siteEdits.value = { light: 'shade' }; }, sunOnly);
   // A plant added on Place stays there (conformance-2): "Show my palette" makes it the palette, saved.
   await page.click('[data-place-show]');
   assert.ok(await until(page, (id) => !!window.__ctTest.store.memberVerdicts.value?.get(id), 8000, sunOnly), 'no verdict for the sun-only plant');
   assert.equal(await page.evaluate((id) => window.__ctTest.store.memberVerdicts.value.get(id).level, sunOnly), 'look', 'no "needs a second look" verdict for a sun-only plant in shade');
-  await page.reload();
-  assert.ok(await until(page, (id) => window.__ctTest?.store?.memberVerdicts.value?.get(id)?.level === 'look', 15_000, sunOnly), 'still "needs a second look" after reload');
 });
 
-test('PP-B10 (b1a share): with "Include my place" off the link holds none of k o l w q r h s; on, it holds them and the sheet says so in words', async () => {
+test('PP-B10 (b1a share): with "Include my place" off the link holds none of k o l w q r h s; on, it holds the country, never a spot answer (dormant until PP-F), and the sheet says so in words', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   await suggestReady(page);
-  await page.evaluate(() => { const s = window.__ctTest.store; s.suggestMembers(); s.view.value = 'matrix'; s.spot.value = { ...s.spot.value, light: 'sun' }; s.country.value = { code: 'FR', source: 'chosen' }; });
+  await page.evaluate(() => { const s = window.__ctTest.store; s.suggestMembers(); s.view.value = 'matrix'; s.country.value = { code: 'FR', source: 'chosen' }; });
   assert.ok(await has(page, aria('button', W('share.button')), 8000), 'Share');
   await page.locator(aria('button', W('share.button'))).click();
   assert.ok(await has(page, 'input[data-share-location]', 4000), 'no "Include my place" tick');
@@ -267,8 +264,8 @@ test('PP-B10 (b1a share): with "Include my place" off the link holds none of k o
   assert.deepEqual(placeKeysIn(await link()), [], 'unticked: none of k o l w q r h s');
   assert.match(await words(page, '.ct-share'), new RegExp(W('share.location')));
   await page.click('input[data-share-location]');
-  assert.ok(await until(page, () => /[#&]l=sun/.test(document.querySelector('#ct-share-field').value), 4000), 'ticked: the spot answer travels');
-  assert.ok(placeKeysIn(await link()).includes('k'), 'ticked: the chosen country travels');
+  assert.ok(await until(page, () => /[#&]k=/i.test(document.querySelector('#ct-share-field').value), 4000), 'ticked: the chosen country travels');
+  assert.ok(!placeKeysIn(await link()).includes('l'), 'ticked: no spot answer travels (dormant until PP-F)');
   assert.match(await words(page, '.ct-share'), /spot answers/, 'the sheet says what travels, in words');
 });
 

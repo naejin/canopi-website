@@ -95,7 +95,7 @@ export function defineState<F extends Fields>(fields: F) {
 
 // ---- the consortium's fields ----
 
-// The Site the old site questions read (site.ts fits()), every answer "unsure" (design check A7). Not
+// stored since PP-B commit 0: store.ts derives `site` from the site inputs (place.ts siteOf, site-inputs.ts).
 // stored since PP-B commit 0: store.ts derives `site` from room, spot and soil (place.ts siteFor).
 export const DEFAULT_SITE: Site = { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' };
 

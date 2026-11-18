@@ -30,6 +30,9 @@ export * from './nearest.ts';
 // the verdict words and loader (never verdict.ts itself: its own chunk, through loadVerdictRule),
 // holes and the things to weigh (used by lazy chunks only).
 export * from './place.ts';
+// The site-inputs layer (owner 2026-11-18): every site input the engine reads, merged from the map and
+// the grower's edits.
+export * from './site-inputs.ts';
 export * from './years.ts';
 export * from './verdict-line.ts';
 export * from './verdict-load.ts';

@@ -2,13 +2,13 @@
 // live in scripts/vectors/link-v5.json (convention palette-vectors: plain JSON in the link's own
 // words, no TypeScript names), so the app's Rust code can run them; the adapter from those words to
 // the core's ShareState is here. Beside the vectors: the save record and the arrival on each version,
-// the country gate of the schema, the shape check of the vector file, emptyPlace and siteFor.
+// the country gate of the schema, the shape check of the vector file, emptyPlace and siteOf.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, emptyPlace, siteFor, resolveSoil, climateFor, LINK_VERSION } = core;
+const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, emptyPlace, siteOf, siteInputsOf, NO_INPUTS, climateFor, LINK_VERSION } = core;
 const grid = await import('../src/lib/climate/grid.ts');
 const persist = await import('../src/islands/consortium/state/persist.ts');
 const { saveRecord, readRecord } = persist;
@@ -228,23 +228,20 @@ test('emptyPlace: every answer unsure, no plot size, the soil map; frozen', () =
   assert.ok(Object.isFrozen(emptyPlace) && Object.isFrozen(emptyPlace.spot));
 });
 
-test('siteFor: today\'s light, soil and water answers in the Site fits() reads', () => {
-  assert.deepEqual(siteFor(emptyPlace, null), { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' });
-  const p = (spot, soil, room = 'small') => ({ ...emptyPlace, room, spot: { ...emptyPlace.spot, ...spot }, soil });
-  assert.deepEqual(siteFor(p({ light: 'shade', water: 'wet' }, { from: 'own', ph: null, word: 'acid', texture: null }), null), { light: 'shade', soil: 'acid', water: 'wet', room: 'small' });
-  assert.equal(siteFor(p({ light: 'varies' }, { from: 'map' }), null).light, 'unsure', 'varies checks nothing');
-  assert.equal(siteFor(p({}, { from: 'own', ph: 8.0, word: null, texture: null }), null).soil, 'chalky', 'a pH gives the word');
-  assert.equal(siteFor(p({}, { from: 'own', ph: 6.5, word: null, texture: 'loam' }), null).soil, 'neutral');
-  assert.equal(siteFor(p({}, { from: 'pots' }, 'pots'), null).soil, 'unsure', 'pots check no soil today');
-  assert.equal(resolveSoil({ from: 'pots' }, null).basis, 'pots');
-  assert.equal(resolveSoil({ from: 'map' }, null).basis, 'none');
+test('siteOf: the Site fits() reads comes from the site inputs; a soil test pH gives the word, the soil map checks nothing', () => {
+  const inputs = (edits, room) => siteInputsOf({ lookup: { lat: 0, lon: 0, climate: null, soil: { phH2o: 8, texture: null, filled: false, fillDistanceCells: 0, distanceCells: 0 }, regions: { wgsrpdL3: null, isoA2: null } }, room, edits });
+  assert.deepEqual(siteOf(NO_INPUTS), { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' });
+  assert.deepEqual(siteOf(inputs({ light: 'shade', drainage: 'wet', soilPh: 5 }, 'small')), { light: 'shade', soil: 'acid', water: 'wet', room: 'small' });
+  assert.equal(siteOf(inputs({ soilPh: 8.0 })).soil, 'chalky', 'a pH gives the word');
+  assert.equal(siteOf(inputs({ soilPh: 6.5 })).soil, 'neutral');
+  assert.equal(siteOf(inputs({})).soil, 'unsure', 'the soil map checks nothing until PP-F');
 });
 
 test('climateFor: today is the historical slot; another period takes the context\'s scenario', () => {
   const slot = (period, scenario) => ({ period, scenario });
-  const lookup = { climate: { periods: [slot('1991-2020', 'historical'), slot('2041-2070', 'ssp245'), slot('2041-2070', 'ssp585')] } };
-  assert.deepEqual(climateFor({ lookup, scenario: 'ssp245' }, '1991-2020'), slot('1991-2020', 'historical'));
-  assert.deepEqual(climateFor({ lookup, scenario: 'ssp585' }, '2041-2070'), slot('2041-2070', 'ssp585'));
-  assert.equal(climateFor({ lookup, scenario: 'ssp245' }, '2071-2099'), null);
-  assert.equal(climateFor({ lookup: null, scenario: 'ssp245' }, '1991-2020'), null);
+  const inputs = siteInputsOf({ lookup: { climate: { periods: [slot('1991-2020', 'historical'), slot('2041-2070', 'ssp245'), slot('2041-2070', 'ssp585')] } } });
+  assert.deepEqual(climateFor({ inputs, scenario: 'ssp245' }, '1991-2020'), slot('1991-2020', 'historical'));
+  assert.deepEqual(climateFor({ inputs, scenario: 'ssp585' }, '2041-2070'), slot('2041-2070', 'ssp585'));
+  assert.equal(climateFor({ inputs, scenario: 'ssp245' }, '2071-2099'), null);
+  assert.equal(climateFor({ inputs: NO_INPUTS, scenario: 'ssp245' }, '1991-2020'), null);
 });

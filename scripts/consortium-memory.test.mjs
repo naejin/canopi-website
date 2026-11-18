@@ -22,7 +22,7 @@ const { guarded, saveRecord, readRecord, arrival, hashAction, countryAtStart, sh
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'save', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
-const { decodeLink, encodeLink, zoneOf } = await import('../src/lib/consortium/index.ts');
+const { decodeLink, emptyPlace, encodeLink, zoneOf } = await import('../src/lib/consortium/index.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 
@@ -332,7 +332,7 @@ test('restore: an edit during restore A, superseded by a newer restore B that fa
   assert.equal(m.restoring.peek(), false);
 });
 
-for (const [what, act] of [['a site answer', () => { store.site.value = { ...store.site.peek(), light: 'full' }; }], ['a country choice', () => m.chooseCountry('DE')]]) {
+for (const [what, act] of [['a room answer', () => { store.room.value = 'large'; }], ['a country choice', () => m.chooseCountry('DE')]]) {
   test(`restore: ${what} during a first-visit restore keeps the link's climate shown (redesign review, 1)`, async () => {
     await shown();
     store.view.value = 'start';
@@ -487,7 +487,6 @@ async function blankShown() {
   store.stage.value = 0;
   return pool;
 }
-const SITE = { light: 'part', soil: 'acid', water: 'wet', room: 'large' };
 const PART_WET = { light: 'part', water: 'wet', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 const ACID = { from: 'own', ph: null, word: 'acid', texture: null };
 // Per saved field (link v5, PP-B commit 0a): the change and the value it reads back. A save restores
@@ -501,14 +500,16 @@ const CASES = {
   // A location's country is kept beside the save's fragment and read at start (countryAtStart); in a
   // link only with the tick, and applied only with a place (k alone keeps the reader's country, 8.3).
   country: {
-    change: () => { store.country.value = { code: 'DE', source: 'location' }; store.spot.value = { ...PART_WET }; }, want: { code: 'DE', source: 'location' },
+    // The place a link brings is its location cell (`o`) now: spot and soil answers are dormant until PP-F.
+    change: () => { store.country.value = { code: 'DE', source: 'location' }; }, want: { code: 'DE', source: 'location' }, origin: { lat: 52.52, lon: 13.4 },
     fromSave: (rec) => countryAtStart({ link: null, pref: null, saved: rec.country ?? null, savedFrom: rec.src, guess: () => null }),
     place: true, link: { code: 'DE', source: 'link' },
   },
   room: { change: () => { store.room.value = 'large'; }, want: 'large' },
   plot: { change: () => { store.plot.value = 300; }, want: 300 },
-  spot: { change: () => { store.spot.value = { ...PART_WET }; }, want: PART_WET, place: true },
-  soil: { change: () => { store.soil.value = { ...ACID }; }, want: ACID, place: true },
+  // Dormant until PP-F (owner 2026-11-18): a save and a link write them empty, so a change is never read back.
+  spot: { change: () => { store.spot.value = { ...PART_WET }; }, want: PART_WET, place: true, saved: emptyPlace.spot, link: emptyPlace.spot },
+  soil: { change: () => { store.soil.value = { ...ACID }; }, want: ACID, place: true, saved: emptyPlace.soil, link: emptyPlace.soil },
   period: { change: () => { store.period.value = '2041-2070'; }, want: '2041-2070' },
   members: { change: (p) => { store.members.value = p.slice(10, 14).map((t) => t.id); }, want: (p) => p.slice(10, 14).map((t) => t.id) },
   removed: { change: (p) => { store.removed.value = [p[30].id]; }, want: (p) => [p[30].id] },
@@ -538,7 +539,7 @@ for (const [k, c] of Object.entries(CASES)) {
     const pool = await blankShown();
     await c.change(pool);
     assert.equal(m.shownFragment.value, m.currentFragment(), 'Share shows the same link');
-    const link = m.currentFragment({ place: !!c.place });
+    const link = m.currentFragment(c.origin ? { origin: c.origin } : { place: !!c.place });
     const want = await valueOf('link' in c ? c.link : c.want, pool);
     await blankShown();
     await c.before?.(pool);

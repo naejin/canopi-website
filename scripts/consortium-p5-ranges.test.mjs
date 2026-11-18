@@ -23,7 +23,8 @@ const lookupAt = (period, regions = lyon.lookup.regions) => ({
   ...lyon.lookup, regions,
   climate: { ...lyon.lookup.climate, periods: [{ period: '1991-2020', scenario: 'historical', koppenTemperatureMarginC: 0, aridityIndex: 1, ...period }] },
 });
-const siteAt = (period) => ({ lat: 0, lon: 0, source: 'map', lookup: lookupAt(period, { wgsrpdL3: null, isoA2: null }) });
+// As the rules read a site: its inputs (site-inputs.ts, no grower edit).
+const siteAt = (period) => core.siteInputsOf({ lookup: lookupAt(period, { wgsrpdL3: null, isoA2: null }) });
 
 // The diagnosis' cells (historical slot, cell centre).
 const NAIROBI = { koppen: 'Aw', koppenTemperatureMarginC: 0.4, tminColdC: 12.3, tmaxWarmC: 26.5, tmeanColdC: 17.6, tmeanWarmC: 21.1, aridityIndex: 1.02 };
@@ -102,7 +103,7 @@ test('rangeCheck: a plant that can need winter chill keeps the mild-winter side 
 
 // A site whose future slots are all hot (today 25 °C).
 const slot = (period, scenario, tmaxWarmC) => ({ period, scenario, koppen: 'Cfb', koppenTemperatureMarginC: 0, tminColdC: 0, tmaxWarmC, tmeanColdC: 3, tmeanWarmC: 18, aridityIndex: 1 });
-const hotFuture = { ...lyon, lookup: { ...lyon.lookup, climate: { ...lyon.lookup.climate, periods: [slot('1991-2020', 'historical', 25), ...core.scenarios.map((s) => slot('2041-2070', s, 36)), ...core.scenarios.map((s) => slot('2071-2099', s, 38))] } } };
+const hotFuture = core.siteInputsOf({ lookup: { ...lyon.lookup, climate: { ...lyon.lookup.climate, periods: [slot('1991-2020', 'historical', 25), ...core.scenarios.map((s) => slot('2041-2070', s, 36)), ...core.scenarios.map((s) => slot('2071-2099', s, 38))] } } });
 
 // ---- 4. drought tolerance Medium on a dry site ----
 
@@ -131,7 +132,7 @@ test('range variables: the export variables the source reads and the bounds the 
 
 // The diagnosis sites (canopi-climate 0.2.0 lookups, all 9 slots; Seville from the future fixture).
 const SITES = JSON.parse(readFileSync(new URL('./fixtures/consortium-ranges/sites.json', import.meta.url), 'utf8'));
-const at = (name) => { const s = SITES[name]; return { lat: s.lat, lon: s.lon, source: 'map', lookup: { lat: s.lat, lon: s.lon, climate: s.climate, soil: null, regions: { wgsrpdL3: null, isoA2: null } } }; };
+const at = (name) => { const s = SITES[name]; return core.siteInputsOf({ lookup: { lat: s.lat, lon: s.lon, climate: s.climate, soil: null, regions: { wgsrpdL3: null, isoA2: null } } }); };
 const verdict = (name, site) => core.rangeCheck(plant(name), at(site));
 
 // Written on r-60ea417b5a15c3aa (the rows of r-b958a4239cc68f73); it holds on every later schema-3

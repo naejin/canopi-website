@@ -57,18 +57,11 @@ test('PP-B exit: a seeded plant the suggestion cannot read stays in the palette'
 // storage double; Node has no location or history, so the address is left alone. ----
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { emptyPlace, siteFor, encodeLink, encodePlace, linkOrigin, decodeLink } from '../src/lib/consortium/index.ts';
+import { emptyPlace, encodeLink, encodePlace, linkOrigin, decodeLink } from '../src/lib/consortium/index.ts';
 
-test('b1a siteFor: today\'s three answers and the room reach fits(); varies and the soil map check nothing', () => {
+test('b1a emptyPlace: the dormant place a save and a link write (spot and soil answers wait for PP-F)', () => {
   assert.equal(Object.isFrozen(emptyPlace), true);
   assert.deepEqual(emptyPlace, { room: 'unsure', plotM2: null, spot: { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: { from: 'map' } });
-  assert.deepEqual(siteFor(emptyPlace, null), { light: 'unsure', soil: 'unsure', water: 'unsure', room: 'unsure' });
-  const place = { room: 'pots', plotM2: 12, spot: { ...emptyPlace.spot, light: 'shade', water: 'dry' }, soil: { from: 'own', ph: null, word: 'acid', texture: null } };
-  assert.deepEqual(siteFor(place, null), { light: 'shade', soil: 'acid', water: 'dry', room: 'pots' });
-  assert.equal(siteFor({ ...place, spot: { ...place.spot, light: 'varies' } }, null).light, 'unsure', 'varies checks nothing');
-  assert.equal(siteFor({ ...place, soil: { from: 'own', ph: 8.1, word: null, texture: null } }, null).soil, 'chalky', 'a pH gives its word');
-  assert.equal(siteFor({ ...place, soil: { from: 'map' } }, null).soil, 'unsure', 'the map checks nothing yet');
-  assert.equal(siteFor({ ...place, soil: { from: 'pots' } }, null).soil, 'unsure', 'pots check no ground soil');
 });
 
 const persist = await import('../src/islands/consortium/state/persist.ts');
@@ -118,6 +111,9 @@ store.start();
 persist.watchStore();
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const SUN = { ...emptyPlace.spot, light: 'sun' };
+// The save's private place: spot and soil answers are dormant until PP-F (owner 2026-11-18), so the
+// save writes none of them; the reader's own place is their country and location.
+const OWN_PLACE = '';
 // A Temperate palette of n plants on screen with the reader's own place (full sun), saved.
 async function mine(n = 5) {
   kept.clear();
@@ -168,7 +164,7 @@ test('b1a Start over then one Undo: members, removed and guests come back, the p
   assert.deepEqual(store.guests.peek(), before.guests);
   assert.deepEqual(store.spot.peek(), SUN);
   await wait(0);
-  assert.equal(saved()?.place, 'l=sun', 'the save comes back with its place');
+  assert.equal(saved()?.place, OWN_PLACE, 'the save comes back with its place');
   // A new plant after Start over ends the offer: Undo never puts back a palette over new work.
   draft.startOver();
   store.members.value = [pool[60].id];
@@ -191,7 +187,7 @@ test('b1a a guide preset gives members == [id] and writes no save until the read
 async function arriveWithPlace() {
   await mine(5);
   await wait(0);
-  assert.equal(saved()?.place, 'l=sun');
+  assert.equal(saved()?.place, OWN_PLACE);
   const link = await linkWith('Mediterranean', 4, { country: 'ES', spot: { ...emptyPlace.spot, light: 'shade' } }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
   const before = restoreM.provideLocationStep(async () => ({ settle: async () => {}, adopt: locationM.adoptLinkLocation }));
   assert.equal(await restoreM.restore(link, { from: 'link' }), true);
@@ -204,7 +200,7 @@ test('b1a link place (a): a palette edit while the notice shows keeps the reader
     assert.equal(store.spot.peek().light, 'shade', 'the page is judged with the link\'s place');
     store.removeMember(store.members.peek()[0]);
     await wait(0);
-    assert.equal(saved()?.place, 'l=sun', 'the save keeps its own place until the reader chooses');
+    assert.equal(saved()?.place, OWN_PLACE, 'the save keeps its own place until the reader chooses');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 test('b1a link place (c): "Use my own place" gives back the reader\'s own answers', async () => {
@@ -217,7 +213,7 @@ test('b1a link place (c): "Use my own place" gives back the reader\'s own answer
     assert.deepEqual(store.spot.peek(), SUN);
     assert.deepEqual(store.country.peek(), { code: 'FR', source: 'chosen' });
     assert.notEqual(store.location.peek()?.source, 'link', 'the link\'s location goes');
-    assert.equal(saved()?.place, 'l=sun');
+    assert.equal(saved()?.place, OWN_PLACE);
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
@@ -228,7 +224,6 @@ test('b1a link place (d): Back to the reader\'s own palette while the notice sho
     const own = saved();
     assert.equal(await restoreM.restore(own.fragment, { from: 'saved', src: own.src, place: own.place }), true);
     assert.equal(restoreM.linkPlace.peek(), null, 'the notice goes');
-    assert.deepEqual(store.spot.peek(), SUN);
     assert.deepEqual(store.country.peek(), { code: 'FR', source: 'chosen' }, 'never the link\'s country');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
@@ -408,23 +403,18 @@ test('b1a bugs-4: a room or plot change while the notice waits seeds canopi-plac
     await wait(0);
     assert.match(kept.get(PLACE_STORE) ?? '', /m=large/, 'the room answer is the reader\'s');
     assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=shade/, 'the link\'s spot answers seeded canopi-place (room)');
-    assert.match(kept.get(PLACE_STORE) ?? '', /l=sun/, 'the reader\'s own spot stays in the seed');
     store.plot.value = 120;
     await wait(0);
     assert.match(kept.get(PLACE_STORE) ?? '', /z=120/);
     assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=shade/, 'the link\'s spot answers seeded canopi-place (plot)');
     assert.ok(restoreM.linkPlace.peek(), 'a room change is no answer to the notice');
-    // A spot answer the reader gives makes the shown place theirs: then it seeds.
-    store.spot.value = { ...store.spot.peek(), water: 'dry' };
-    await wait(0);
-    assert.match(kept.get(PLACE_STORE) ?? '', /l=shade/, 'a spot answer the reader gives seeds the place shown');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
 test('b1a bugs-5: Forget on Place (back from the palette) also clears the set-aside palette\'s place', async () => {
   await mine(5);
   await wait(0);
-  assert.equal(saved()?.place, 'l=sun');
+  assert.equal(saved()?.place, OWN_PLACE);
   draft.backToPlace();
   locationM.forget();
   await wait(0);
@@ -545,8 +535,7 @@ test('b1a bugs-10: "Use my own place" pressed while "Use it" is still working ch
     const chosen = kept.get(COUNTRY_STORE) ?? null;
     assert.equal(chosen === null || chosen === store.country.peek().code, true, `half-way: the page shows ${store.country.peek().code} but the device keeps ${chosen}`);
     const seed = kept.get(PLACE_STORE) ?? '';
-    const light = store.spot.peek().light;
-    assert.ok(seed === '' || seed.includes(`l=${light}`), `half-way: the page shows l=${light} but canopi-place holds ${seed}`);
+    assert.doesNotMatch(seed, /l=/, 'spot answers are dormant: canopi-place holds none');
   } finally { restoreM.provideLocationStep(slow); restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
@@ -932,10 +921,10 @@ test('save model link place (b): "Use it" keeps the save R; the link\'s place l=
     assert.ok(loc && Math.abs(loc.lat - 37.35) < 0.051 && Math.abs(loc.lon - -5.95) < 0.051, `the link's cell in canopi-location (${kept.get(LOCATION_STORE)})`);
     assert.notEqual(loc.source, 'link', 'kept as the reader\'s own');
     assert.equal(kept.get(COUNTRY_STORE), 'ES', 'the link\'s country kept');
-    assert.match(kept.get(PLACE_STORE) ?? '', /l=shade/, 'and it seeds the next palette');
+    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=/, 'spot answers are dormant: never seeded');
     store.removeMember(store.members.peek()[0]);
     await wait(0);
-    assert.equal(saved()?.place, 'l=shade', 'the plant change saves the link\'s place');
+    assert.equal(saved()?.place, OWN_PLACE, 'the link\'s spot answers never reach the save (dormant until PP-F)');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 test('save model: "Show my palette" on a guide preset leaves R and its offer', async () => {
@@ -1183,36 +1172,6 @@ test('second-round review 1: Forget never makes another tab\'s save look like th
   saveM.putSave(p1); // an Undo of A's earlier action
   assert.equal(readRecord(kept.get(STORE))?.fragment, readRecord(sb).fragment, 'B\'s palette is never written over');
   persist.holdSave(false);
-});
-// Second-round review 2: after Forget, no history entry brings the forgotten spot or soil back into
-// storage: Back (or a reload) onto an entry written before the Forget restores its history.state pl.
-test('second-round review 2: Back to an entry written before Forget brings no forgotten answers back into the save', async () => {
-  const restoreAddress = fakeAddress();
-  try {
-    await mine(5);
-    await wait(0);
-    const e1 = { hash: location.hash, state: history.state };
-    assert.match(e1.state.pl, /l=sun/, 'E1 carries the reader\'s answers');
-    assert.equal(await restoreM.restore(await linkWith('Temperate', 3), { from: 'link' }), true);
-    await wait(0);
-    locationM.forget();
-    await wait(0);
-    assert.equal(saved()?.place, '', 'Forget scrubbed the save');
-    // Back to E1, and a reload of E1 (its history.state as written before the Forget).
-    const back = arrivalM.hashAction(e1.hash, e1.state, null, false);
-    assert.equal(back.kind, 'saved');
-    assert.doesNotMatch(back.place, /l=/, 'Back brings no forgotten answer');
-    assert.doesNotMatch(arrivalM.arrival({ hash: e1.hash, search: '' }, saved(), null, e1.state).place, /l=/, 'a reload brings none');
-    assert.equal(await restoreM.restore(back.fragment, { from: 'saved', src: back.src, place: back.place, hold: back.hold }), true);
-    await wait(0);
-    assert.doesNotMatch(saved()?.place ?? '', /l=/, 'the save keeps no forgotten answer');
-    assert.deepEqual(store.spot.peek(), emptyPlace.spot);
-    // An entry written after the Forget keeps its own new answers.
-    store.spot.value = SUN;
-    await wait(0);
-    const e3 = { hash: location.hash, state: history.state };
-    assert.match(arrivalM.hashAction(e3.hash, e3.state, null, false).place ?? '', /l=sun/, 'answers given after the Forget come back');
-  } finally { restoreAddress(); store.location.value = null; }
 });
 // Second-round review 3: with no usable storage there is no other tab's save to protect: a reload of
 // the page's own address opens owned (its climate and answers lived only in the address), while

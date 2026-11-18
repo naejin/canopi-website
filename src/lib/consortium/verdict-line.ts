@@ -47,13 +47,22 @@ export function holeLine(h: Hole): Line {
   if (h.state === 'pending') return { key: K('holePending'), vars: {} };
   if (h.state === 'not-judged') return { key: K('holeNotJudged'), vars: {} };
   const { fromYear: from, toYear: to } = h;
-  if (from === 0 && to >= 60) return { key: K('holeAlways'), vars: {} };
-  if (from === 0) return { key: K('holeFirst'), vars: {}, count: to };
+  // Unknown is never a hole (v13 hand-off item 3): with members not checked, "nobody known".
+  const k = (name: string) => K(h.unchecked?.length ? `${name}Known` : name);
+  if (from === 0 && to >= 60) return { key: k('holeAlways'), vars: {} };
+  if (from === 0) return { key: k('holeFirst'), vars: {}, count: to };
   // From under a year to 60: every judged year, said as "after month n", never "after year 0.25".
-  if (from < 1 && to >= 60) return { key: K('holeAfterMonth'), vars: { month: monthOf(from) } };
-  if (to >= 60) return { key: K('holeAfter'), vars: { from } };
-  if (from < 1) return { key: K('holeFromMonth'), vars: { month: monthOf(from), to } };
-  return { key: K('holeBetween'), vars: { from, to } };
+  if (from < 1 && to >= 60) return { key: k('holeAfterMonth'), vars: { month: monthOf(from) } };
+  if (to >= 60) return { key: k('holeAfter'), vars: { from } };
+  if (from < 1) return { key: k('holeFromMonth'), vars: { month: monthOf(from), to } };
+  return { key: k('holeBetween'), vars: { from, to } };
+}
+// A hole's count line when members are not checked: "1 plant not checked"; for a light level with
+// members that fit it, "1 plant fits, 2 unknown" (fits: those standing in the level). null: none unchecked.
+export function uncheckedLine(h: Hole, fits = 0): Line | null {
+  const n = h.unchecked?.length ?? 0;
+  if (!n) return null;
+  return h.kind === 'light' && fits > 0 ? { key: K('levelUnknown'), vars: { fits }, count: n } : { key: K('notChecked'), vars: {}, count: n };
 }
 
 // A span of years after planting (to null: it lasts past 60 years).
@@ -417,7 +426,7 @@ export function datasetLines(info: { rangesReview: string | null }): Line[] {
 // label).
 const SOURCE_NAMES: Record<string, string> = {
   pfaf: 'PFAF', griis: 'GRIIS', gbif_occurrences: 'GBIF', gbif: 'GBIF', aspca: 'ASPCA', ncsu_plant_toolbox: 'NC State', treegoer_ranges: 'TreeGOER', treegoer: 'TreeGOER',
-  merck_vet_manual: 'Merck Veterinary Manual', ecocrop: 'EcoCrop', es_catalogo: 'catálogo', atlas_aloctonas_es: 'MITECO Atlas 2004', wikidata: 'Wikidata',
+  merck_vet_manual: 'Merck Veterinary Manual', ecocrop: 'EcoCrop', es_catalogo: 'catálogo', atlas_aloctonas_es: 'MITECO Atlas 2004', wikidata: 'Wikidata', ellenberg: 'Ellenberg',
 };
 const sourceName = (id: string): string => SOURCE_NAMES[id] ?? id;
 
@@ -526,7 +535,12 @@ function audienceLine(a: ToxicityAudience): Line {
 // Where a shipped value comes from when the list corrected it (trait_sources): "Canopi curator
 // knowledge", "Canopi correction"; PFAF's frost_tender, a British record, "in Britain (PFAF)", never a
 // verdict. Any other source is the catalogue's own value: no line. vars.field: the trait it is about.
-function sourceLine(ts: TraitSource): Line | null {
+// Estimates (v13 hand-off item 5; canopi-data light-span note): an AI estimate with no source
+// ('llm-knowledge'), an AI reading of a cited work (kind llm), Canopi's rule over a work's values (kind
+// derived, not a correction's source): "estimate, from <work>".
+export function sourceLine(ts: TraitSource): Line | null {
+  if (ts.kind === 'llm') return ts.source === 'llm-knowledge' ? D('sourceAiEstimate', { field: ts.field }) : D('sourceAiReading', { field: ts.field, work: sourceName(ts.source) });
+  if (ts.kind === 'derived' && ts.source !== 'canopi-knowledge' && ts.source !== 'canopi-correction') return D('sourceEstimate', { field: ts.field, work: sourceName(ts.source) });
   if (ts.source === 'canopi-knowledge') return D('sourceCanopiKnowledge', { field: ts.field });
   if (ts.source === 'canopi-correction') return D('sourceCanopiCorrection', { field: ts.field });
   if (ts.field === 'frost_tender' && ts.source === 'pfaf') return D('sourcePfafFrost', { field: ts.field });

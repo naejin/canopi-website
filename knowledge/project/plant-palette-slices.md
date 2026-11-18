@@ -4,7 +4,7 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T19:35:30Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:12Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:45Z }
 sources:
@@ -57,7 +57,7 @@ sources:
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:2a3101e2e8ec874d
-    last_modified: 2026-11-17T19:34:58Z
+    last_modified: 2026-11-17T19:39:43Z
   - id: consortium-f1a-a11y-browser-test-mjs
     resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
     title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
@@ -92,7 +92,7 @@ sources:
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
     digest: sha256:55de1ad8f17e4a2b
-    last_modified: 2026-11-17T19:34:58Z
+    last_modified: 2026-11-17T19:39:43Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
@@ -127,7 +127,7 @@ sources:
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:1200315aead0ea8c
-    last_modified: 2026-11-17T19:34:58Z
+    last_modified: 2026-11-17T19:39:43Z
   - id: consortium-palette-test-mjs
     resource: ../../scripts/consortium-palette.test.mjs
     title: scripts/consortium-palette.test.mjs
@@ -137,7 +137,7 @@ sources:
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
     digest: sha256:2a63fc91d0d7cdb2
-    last_modified: 2026-11-17T19:34:58Z
+    last_modified: 2026-11-17T19:39:43Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -191,8 +191,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:5a68cb4f4f79a63e
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:76403c6b7eef8bf5
+    last_modified: 2026-11-17T23:54:43Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -221,8 +221,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:78a8659cee4c385f
-    last_modified: 2026-11-17T19:12:17Z
+    digest: sha256:6b68b3a0f3306bd6
+    last_modified: 2026-11-18T00:13:24Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -251,8 +251,8 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:3b49320788e1ebe8
-    last_modified: 2026-11-17T17:27:56Z
+    digest: sha256:b951f3a6ffed4d20
+    last_modified: 2026-11-17T23:52:29Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
@@ -306,8 +306,8 @@ sources:
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:4408d770ddaa43cf
-    last_modified: 2026-11-17T14:13:26Z
+    digest: sha256:c1c19c1206540419
+    last_modified: 2026-11-17T23:48:31Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -346,8 +346,8 @@ sources:
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
-    digest: sha256:e74cb144936b5335
-    last_modified: 2026-11-11T19:27:07Z
+    digest: sha256:979384ee60637bd0
+    last_modified: 2026-11-17T23:48:18Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -367,12 +367,12 @@ sources:
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
     digest: sha256:9739e7c34ba87d6c
-    last_modified: 2026-11-17T19:34:58Z
+    last_modified: 2026-11-17T19:39:43Z
   - id: pp-c-owners-json
     resource: ../../scripts/plan/pp-c-owners.json
     title: scripts/plan/pp-c-owners.json
-    digest: sha256:1bf4207e8be4a260
-    last_modified: 2026-11-17T19:04:22Z
+    digest: sha256:4f55320076bd6602
+    last_modified: 2026-11-17T23:53:41Z
 ---
 
 Pushes of the [Plant palette redesign](/project/consortium-v2-plan.md), in order: **PP-B, PP-C, PP-D, PP-E, PP-F, PP-G** (owner answers of 2026-11-14: no separate push A; later climates, then soil and your spot, then through the year). Module names, shapes and link keys: [Plant palette architecture](/architecture/plant-palette-architecture.md); use them exactly. Boards are named by file in `.local/consortium/v2/f1a/mockups-v3/project/<Name>.dc.html` (main checkout, gitignored); inventory rows are those of `mockups-v3/ux-inventory.md`. Citations are at `f1a/int` 648baf2. Amended 2026-11-14 by the plan recheck and the look-ahead check and by the owner's plan check answers (decision rows "Plant palette plan check answers" and "Plant palette plan amendments"), then by the owner's "Delete first" answer (rows "Delete first" and "Plant palette delete-first amendments": PP-B's commit 0 deletes the old screens before the new page is built). Amended again at the PP-B chunk-2 plan commit (2026-11-16) by the decision rows of 2026-11-14 to 2026-11-16 (scale contract, budgets as a tripwire, process fitted to risk, no export split, things to weigh, frost, search, the b1b review) and by the chunk-2 drift check recorded in `scripts/plan/pp-b-owners.json`.
@@ -497,6 +497,7 @@ Rewritten 2026-11-17 at the PP-C amendment from the design checks of c1 and c2, 
 
 **Outcome.** One search finds plants by name in any language the names file holds (20 today), by scientific name or synonym, or by a job word, grouped by how they fit the place, and each result says why it matched; a hole opens the same Find, preset to it; Details opens on "Against your place" with disputed values and their sources; Swap says what is gained and lost as holes. The palette page and Place take the conformance fixes (stream pf).
 **Boards:** c1 `Find`, `FindResults`, `FindType`, `FindJob`, `FindNone`, `FindFilters`, `Paste`, `FindMulti`, `FindDesk`, `FillHole`, `HoleOpen`, `DarkFind`, `AddAnyway` (compared without its ask); c2 `Details`, `DetailsMore`, `DetailsDesk` (without "Keep it" and "Show as a table"), `Swap` (without "Swap anyway?"), `Correction`, `DarkDetails`; pf `Main`, `Palette`, `PaletteMore`, `Empty`, `Balcony`, `Place`, `LocSearch`, `LocStates`, `SiteKiambu`, `ClimateHand`, `Country`, `DarkMap`, `Arrivals`, `Toasts`, `Loading`. `Share` goes to PP-D, `ChangePlace` to PP-F.
+**Boards from chunk 2 on (v13, owner-approved 2026-11-18):** the pf streams port from `.local/consortium/v2/f1a/mockups-v13/project/` (51 boards; `word-map.md` is the one vocabulary, `report.md` what changed). v13 removed `DarkPalette`, `DarkFind`, `DarkMap`, `LocSearch` (now a `LocStates` state), `FindJob` (now a `FindNone` state), `AddAnyway`, `FindMulti`, `ChangePlace` ("Change" opens the Place page, `SiteKiambu`), `RangeDesk` (one climate view, PP-E), `PlanRoom`, `Take` and `Mendoza`. pf-a: `Main`/`Palette` Next step and Other holes, `Empty`, `Balcony` (room card), `Toasts` result lines, the Find boards, `FillHole`, `HoleOpen`, `Paste`, `DeskStates` panel; pf-b: the pictures, `MainMore`, `PaletteMore`, `DarkMain`, `German`, `Toasts` "How to read this", and (pending the coordinator's grant) the v13 deltas of `Details`, `DarkDetails`, `DetailsMore`, `DetailsDesk`, `Swap`; pf-c: `Place`, `PlaceDesk` (without its figures, PP-E), `LocStates`, `LocMap`, `LocDesk`, `SiteKiambu` (without soil and spot, PP-F), `ClimateHand`, `Country`, `Arrivals`, `Loading`. PP-F (spot and soil) moved to after the first release (owner 2026-11-18): nothing in PP-C asks for or reads a spot or soil answer.
 **Inventory rows:** C8, E5, E15, E16, E19, F1–F18, F20, F21, G1, G2, H1–H7, I1, L3, P14 (today's period), P16, P33, P34 (with "Holds by" from PP-B), P38, P40.
 **Sizes:** every size and timing here is a reported reference figure, never a failure (owner, 2026-11-16, "No hard limits"): `find` about 8 KB, `details` about 8 KB, the names file 216,287 B gz (reference 300,000 B), the schema-4 staging core of `r-c15a216b9663d2fa` 726,893 B gz (`consortium-v4.r-c15a216b9663d2fa.71f263550cd5.sqlite.gz`, measured 2026-11-17; the installed schema-3 core of the same release is 757,953 B), the first run 40,953 B; the scale spec is re-run with Find and Details and its timings reported.
 
@@ -589,12 +590,12 @@ Schema 4.3 changed `countries.invasive_checked` to "a source in the release asse
 | Kind | Row |
 |---|---|
 | Unit | 3.7 a `picture-table` vector with one member outside its range: drawn as a marked "outside its range" band, hole cells from counting members only (the `counts` predicate exported from `holes.ts` and passed to `lane()`), so the chart and the hole line agree |
-| Unit | 3.8 a toxic-but-fitting filler under "Needs a second look" states the warning that put it there (the `Filler` reason and `warns` read one source); U5 hole titles as one statement ("Nobody in full sun in the first 3 years"); U2 a "spreads" line from `weed_potential` on fillers; #24 toasts through `change-summary` ("Its holes are open again."; added: the result when known) |
+| Unit | 3.8 a toxic-but-fitting filler under "Needs a second look" states the warning that put it there (the `Filler` reason and `warns` read one source); U5 hole titles in the one form ("Full sun: nobody in the first 3 years"); U2 a "spreads" line from `weed_potential` on fillers; #24 toasts through `change-summary` (the result names the hole that is left: "Sweet potato added. Covers the ground: nobody after year 1.") |
+| Unit (v13) | unknown is never a hole: a member with no recorded jobs (or no light level) standing inside a hole's span turns "nobody" into "nobody known" with "N plant(s) not checked", and a light level reads "1 plant fits, 2 unknown"; one standing outside the span changes nothing |
+| Unit (v13) | ranking: a `cool` food hole with at least one fitting candidate ranks first, ahead of HOLE_ORDER; without a fitting candidate it keeps its HOLE_ORDER rank (fixture holes: today's release produces no cool or flowering hole) |
+| Unit (v13) | light words from today's single level and from the 4.5 fields on a fixture: "Grows in: Part shade" (span of one, or today's level), "Grows in: Full sun – Part shade" (4.5 span), "best in Mostly sun" only when `sun_exposure_preferred` is set, nothing when it is NULL; "Planted in: <level>" for a member |
 | Browser | PP-B6 fixed with `settled(page)` and a locator click (design check c2 section 6); NextStep shows "Checking your plants…" until the verdict rule is here or failed, so no hole is named and then flipped |
-| Browser | PF1 Kiambu return visit at 390: steps first, one place line with Change, Next step on the first screen; chips icon-only with the words as accessible name, the reason on rows; "· Find a plant" on holes, "Other holes" a list; candidates with size, span and the room note ("taller than your room" on a balcony), the "why" sentence under the hole title, the Balcony info card (every plant stays in every list); outlined "+ Add"; "Your N plants. Plants with a warning come first.", rows with light need, span and job tags, climate tags with the warning icon and one capital style, a small Remove on the name line; the phone no longer shows "Print shows the side view at this time step" (#21) |
-| Browser | PF2 at 1280: "Through the years" bars carry the plant name and job icon, row heads the light level in words with its icon, no chip block, no stepper; phone keeps stepper and chips; Jobs one strip per row with counts |
-| Browser | PF3 Place: labelled full-width field with a Search button, "Use my location" and "Pick on a map" on one row, the helper sentences merged into one line; "place", never "site", in the offline card and the map dialog; a climate that "Needs your location" says what to do ("Search for my place", "Pick on a map"); "We read: Temperate" then "Your climate: Subtropical (your choice; the map reads Temperate)"; offline card with Try again and "Choose a climate by hand"; the map dialog's coordinate readout, instruction, privacy line, "Use this point" and "Cancel"; country "Why we ask" and "stays on this device"; cities on climate cards at 390; "Ready, from the nearest lists" |
-| Browser | PF4 empty palette: no take-away buttons or future panel, "N of M plants fit your place"; loading "You can already give your place."; a shared palette says "This is a shared palette: n plants. Yours is kept on this device."; step 1 done mark and "3 Planting plan · coming later" |
+| Browser | PF1-PF4 (amended 2026-11-18 for board canvas v13, owner-approved that day): the board specs `consortium-pf-a/-pf-b/-pf-c.browser.test.mjs` are rewritten from the v13 boards in each stream's commit 0. Their scope, and every v12 word they drop ("Your palette lacks N holes", "Use Subtropical", "Nothing is checked until you confirm", plot size and "Your spot" on Place, "Your palette is back", DarkPalette, DarkMap, LocSearch), are listed per stream in `.local/consortium/v2/ppc/pf/v13-spec-update.md` (gitignored, main checkout) and in each stream's duty in `scripts/plan/pp-c-owners.json` |
 
 ### 3.5 Probes (first commit of each stream; report the figure, stop on a structural failure)
 

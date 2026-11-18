@@ -43,7 +43,7 @@
 // store watcher (watchStore) keeps.
 import { computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, LinkOrigin, PlantId, ShareState, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
-import { encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
+import { emptyPlace, encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
@@ -161,10 +161,14 @@ export function adoptPending(): void {
 // The page's palette (null: no climate yet). A guest the chosen climate's list holds, once read, is
 // left out: it is one of the list's own (a card clicked before its list was read marks each member
 // of the list it left a guest; r3-3).
+// Spot and soil as the save and links write them until PP-F: empty.
+const DORMANT = Object.freeze({ spot: { ...emptyPlace.spot }, soil: { from: 'map' } as SoilAnswer });
 export function palette(): Consortium | null {
   const climate = store.climate.peek();
   if (!climate) return null;
-  const now = schema.peek(schema.lists.saved) as Consortium;
+  // The spot and soil answers are dormant until PP-F (owner 2026-11-18; spec update point 6): the save,
+  // the address and links write them empty, whatever the store holds.
+  const now = { ...(schema.peek(schema.lists.saved) as Consortium), ...DORMANT };
   const list = store.pools.peek()[climate];
   const own = list && Object.keys(now.guests).filter((id) => list.some((t) => t.id === id));
   if (!own?.length) return now;
@@ -218,10 +222,10 @@ function addressPlace(): string {
   return encodePlace({ ...shareState(now, { place: true }), country: now.country.source === 'link' ? now.country.code : null }, o);
 }
 // The canopi-place seed: room, plot size, spot and soil (`m z l w q r h s`), without the country.
-// answers: the spot and soil to seed in place of the store's (the reader's own while a link's place waits).
-export function placeSeed(answers: { spot: Spot; soil: SoilAnswer } | null = null): string {
-  const s = schema.peek(['room', 'plot', 'spot', 'soil']);
-  const { spot, soil } = answers ?? s;
+// The spot and soil are dormant until PP-F: the seed writes them empty.
+export function placeSeed(): string {
+  const s = schema.peek(['room', 'plot']);
+  const { spot, soil } = DORMANT;
   const pairs = [`m=${s.room}`, ...(s.plot !== null ? [`z=${s.plot}`] : []), encodePlace({ country: null, spot, soil })].filter(Boolean);
   return pairs.join('&');
 }
@@ -311,7 +315,7 @@ function persist(): void {
   const now = held.peek() ? null : palette();
   if (!now) return;
   const pending = linkPlace.peek()?.own;
-  const kept = pending ? { ...now, spot: pending.spot, soil: pending.soil, country: pending.country } : now;
+  const kept = pending ? { ...now, country: pending.country } : now; // spot and soil stay dormant (palette())
   writeSave(saveRecord(currentFragment() ?? '', new Date().toISOString(), countryFrom(kept.country), kept.country.code, currentPlace(kept)));
 }
 
@@ -366,19 +370,14 @@ export function watchStore(): void {
     void held.value;
     untracked(persist);
   });
-  // canopi-place follows the place the reader gives (a restore applying a link's or a save's place is
-  // not the reader: it seeds nothing). While a link's place waits on the reader's choice, a room or
-  // plot change seeds the reader's own spot and soil with it, never the link's (8.3: the link's place
-  // is for this page only); a spot or soil answer the reader gives makes the place shown theirs.
-  // (Below: that answer ends the notice, and the save takes that place.)
-  let firstPlace = true, lastAnswers = '';
+  // canopi-place follows the room and plot the reader gives (a restore applying a link's or a save's
+  // place is not the reader: it seeds nothing). Spot and soil are dormant until PP-F (seeded empty).
+  let firstPlace = true;
   effect(() => {
-    const now = schema.track(['room', 'plot', 'spot', 'soil']);
-    const answers = JSON.stringify([now.spot, now.soil]), answered = answers !== lastAnswers;
-    lastAnswers = answers;
+    void schema.track(['room', 'plot']);
     if (firstPlace) { firstPlace = false; return; }
     if (quiet) return;
-    untracked(() => { const waiting = linkPlace.peek(); memory.write(PLACE_STORE, placeSeed(waiting && !answered ? waiting.own : null)); });
+    untracked(() => memory.write(PLACE_STORE, placeSeed()));
   });
   let firstSpot = true;
   effect(() => {

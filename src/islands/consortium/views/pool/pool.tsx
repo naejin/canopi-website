@@ -75,8 +75,7 @@ export function PoolPanel({ zone }: { zone: ClimateZone }) {
       <p><a class="button button-primary ct-small" href={page().start.contact}>{T('start.uncovered.ask')}</a></p>
     </div>
   );
-  const loc = store.location.value;
-  const today = siteToday(loc);
+  const today = siteToday(store.siteInputs.value);
   const temps = today ? { cold: num(today.tminColdC), hot: num(today.tmaxWarmC) } : null;
   // Nothing fits: the chosen climate's list read, its verdicts in, and every plant judged outside.
   const empty = !!temps && nothingFits(store.pool.value, store.poolVerdicts.value);

@@ -1,12 +1,13 @@
 // The palette's place and its projections (PP-B commit 0; plant-palette-architecture 3.1): the place
-// answers (room, plot size, spot, soil) a palette is judged against, and the one translation of each
-// into what a rule reads. 0a holds real bodies for emptyPlace, siteFor and a minimal resolveSoil, and
-// climateFor passing the slot through; b1a extends siteFor, f1 (PP-F) completes resolveSoil.
+// answers (room, plot size, spot, soil) a palette keeps, and the translation of the merged site inputs
+// (site-inputs.ts, owner 2026-11-18) into what a rule reads: siteOf for site.ts fits(), climateFor for
+// a period's slot. resolveSoil (the old stored-answer soil reader) went with the site-inputs layer; PP-F
+// reads the soil map through site-inputs.ts.
 //
-// PP-B keeps today's three questions (owner, 2026-11-14, keep rows C1–C3): light goes to spot.light,
-// water to spot.water, a soil word to { from: 'own', ph: null, word, texture: null }, "not sure" to
-// { from: 'map' }; siteFor passes them to site.ts fits() in the old Site shape.
-import type { PeriodId, Place, ResolvedSoil, Site, SitePeriod, SiteLookup, SoilAnswer, SoilWord, VerdictContext } from './types.ts';
+// The spot and soil answers are dormant until PP-F (owner 2026-11-18): no rule reads Place.spot or
+// Place.soil; the store passes the room to the site inputs, and grower edits come through SiteEdits.
+import type { PeriodId, Place, Site, SiteInputs, SitePeriod, SoilWord } from './types.ts';
+import { testedPh } from './site-inputs.ts';
 import { ACID_BELOW, CHALKY_ABOVE } from './site.ts';
 import { TODAY_PERIOD } from './source.ts';
 
@@ -22,33 +23,26 @@ export const emptyPlace: Place = Object.freeze({
 // A measured pH in words, on site.ts's thresholds (acid below 6, chalky above 7.5).
 export const soilWordOf = (ph: number): SoilWord => (ph < ACID_BELOW ? 'acid' : ph > CHALKY_ABOVE ? 'chalky' : 'neutral');
 
-// The soil a rule reads. Minimal in 0a: the soil map is not read yet (basis 'none', nothing known),
-// pots have no ground soil (basis 'pots'), an own answer is a test (its pH gives the word when no word
-// was chosen). f1 reads the map from lookup.soil (filled, fill distance, depth).
-export function resolveSoil(answer: SoilAnswer, lookup: SiteLookup | null): ResolvedSoil {
-  void lookup;
-  if (answer.from === 'own') {
-    const word = answer.word ?? (answer.ph !== null ? soilWordOf(answer.ph) : null);
-    return { ph: answer.ph, word, texture: answer.texture, basis: 'test', depth: null, filled: false, fillKm: null };
-  }
-  return { ph: null, word: null, texture: null, basis: answer.from === 'pots' ? 'pots' : 'none', depth: null, filled: false, fillKm: null };
-}
-
-// The Site site.ts fits() reads: light and water as answered ('varies' checks nothing, as 'unsure'),
-// the soil word of an own answer (or of its pH), else 'unsure' (the map and pots check nothing today),
-// and the room.
-export function siteFor(place: Place, lookup: SiteLookup | null): Site {
-  const { light, water } = place.spot;
-  const soil = resolveSoil(place.soil, lookup).word ?? 'unsure';
-  return { light: light === 'varies' ? 'unsure' : light, soil, water, room: place.room };
+// The Site site.ts fits() reads, from the merged site inputs (site-inputs.ts), never a stored answer:
+// light as given; the soil word of a soil test's pH (the soil map checks nothing until PP-F); the wet
+// check from drainage 'wet' (the old spot water answer has no input: its dry check waits for watering's
+// rule, F4); the room. Every answer the grower has not given checks nothing ('unsure').
+export function siteOf(inputs: SiteInputs): Site {
+  const ph = testedPh(inputs);
+  return {
+    light: inputs.light.value ?? 'unsure',
+    soil: ph === null ? 'unsure' : soilWordOf(ph),
+    water: inputs.drainage.value === 'wet' ? 'wet' : 'unsure',
+    room: inputs.room.value ?? 'unsure',
+  };
 }
 
 // The climate slot every rule reads for a period: today's historical slot, or the period's slot under
 // the context's scenario; null with no location, no projection or an unknown period. The one reader
-// of lookup.periods for rules (the arch-rules grep line): F4's adjusted site, F2's cautious switch and
-// CLIM-4's height correction land here, so every rule reads the same climate.
-export function climateFor(ctx: Pick<VerdictContext, 'lookup' | 'scenario'>, period: PeriodId): SitePeriod | null {
-  const periods = ctx.lookup?.climate?.periods ?? [];
+// of the merged slots for rules (the arch-rules grep line): F4's adjusted site, F2's cautious switch and
+// CLIM-4's height correction land in site-inputs.ts, so every rule reads the same climate.
+export function climateFor(ctx: { inputs: SiteInputs | null; scenario: string }, period: PeriodId): SitePeriod | null {
+  const periods = ctx.inputs?.periods ?? [];
   const scenario = period === TODAY_PERIOD ? 'historical' : ctx.scenario;
   return periods.find((p) => p.period === period && p.scenario === scenario) ?? null;
 }

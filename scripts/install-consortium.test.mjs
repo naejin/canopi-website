@@ -91,7 +91,7 @@ test('the fixture installs with --fixture --no-images --out: the database byte f
   assert.equal(index.ranges_review, 'estimate_not_reviewed');
   // Schema 4: the additive tier's state and the names file the page fetches after first paint.
   assert.equal(index.schema_version, 4);
-  assert.equal(index.schema_minor, 3);
+  assert.equal(index.schema_minor, 5);
   assert.deepEqual(index.schema_additions, FIXTURE_ADDITIONS);
   const n = manifest.names;
   assert.deepEqual(index.search_names, { file: n.file, url: `/data/consortium/${n.file}`, sha256: n.sha256, bytes: n.bytes, raw_sha256: n.raw_sha256, raw_bytes: n.raw_bytes });
@@ -353,19 +353,22 @@ test('schema 3: the variant installs as before, named v3, with no names file and
 });
 
 // The additive tier (canopi-data format note, installer rules 1-5).
+// An older minor's database lacks 4.5's light span columns.
+const NO_LIGHT_SPAN = ['sunniest', 'shadiest', 'preferred'].map((c) => `ALTER TABLE plants DROP COLUMN sun_exposure_${c};`).join(' ')
+  + " DELETE FROM trait_sources WHERE field LIKE 'sun_exposure_%'; UPDATE meta SET value = (SELECT COUNT(*) FROM trait_sources) WHERE key = 'count.trait_sources';";
 test('schema 4, the additive tier: declared extras install, undeclared ones and missing declared ones are refused', async (t) => {
   const w = workspace(t);
   // 2: a declared trailing column installs.
   await install({ ...w, src: await variant(w, 'declared', DECLARED_COLUMN), out: join(w.root, 'out-declared') });
   // 4.1 (no plant_toxicity_parts nor plant_invasive_areas, their declarations gone) installs: the tables are optional.
   const v41 = await variant(w, 'v41', {
-    edit: (db) => db.exec("DROP TABLE plant_toxicity_parts; DROP TABLE plant_invasive_areas; DELETE FROM meta WHERE key IN ('count.plant_toxicity_parts', 'count.plant_invasive_areas')"),
+    edit: (db) => db.exec(`DROP TABLE plant_toxicity_parts; DROP TABLE plant_invasive_areas; DELETE FROM meta WHERE key IN ('count.plant_toxicity_parts', 'count.plant_invasive_areas'); ${NO_LIGHT_SPAN}`),
     manifest: (m) => { m.schema_minor = 1; m.schema_additions = m.schema_additions.filter((a) => a.since === 1); delete m.files[0].counts.plant_toxicity_parts; delete m.files[0].counts.plant_invasive_areas; },
   });
   await install({ ...w, src: v41, out: join(w.root, 'out-41') });
   // 4.2 (no plant_invasive_areas, its two declarations gone) installs: the table is optional.
   const v42 = await variant(w, 'v42', {
-    edit: (db) => db.exec("DROP TABLE plant_invasive_areas; DELETE FROM meta WHERE key = 'count.plant_invasive_areas'"),
+    edit: (db) => db.exec(`DROP TABLE plant_invasive_areas; DELETE FROM meta WHERE key = 'count.plant_invasive_areas'; ${NO_LIGHT_SPAN}`),
     manifest: (m) => { m.schema_minor = 2; m.schema_additions = m.schema_additions.filter((a) => a.since <= 2); delete m.files[0].counts.plant_invasive_areas; },
   });
   await install({ ...w, src: v42, out: join(w.root, 'out-42') });
@@ -375,9 +378,9 @@ test('schema 4, the additive tier: declared extras install, undeclared ones and 
     [{ edit: (db) => db.exec('CREATE INDEX plants_by_genus_x ON plants (genus)') }, /indexes outside the schema and schema_additions: plants_by_genus_x/],
     [{ edit: DECLARED_COLUMN.edit }, /table plants has columns outside the schema and schema_additions: flammability/],
     // 4: a declared addition the database lacks.
-    [{ manifest: (m) => { m.schema_minor = 4; m.schema_additions.push({ table: 'plant_spacing', since: 4 }); } }, /schema_additions declares the table plant_spacing, which the database lacks/],
+    [{ manifest: (m) => { m.schema_minor = 6; m.schema_additions.push({ table: 'plant_spacing', since: 6 }); } }, /schema_additions declares the table plant_spacing, which the database lacks/],
     // 4.3's table undeclared (a 4.2 manifest beside it).
-    [{ manifest: (m) => { m.schema_minor = 2; m.schema_additions = m.schema_additions.filter((a) => a.since <= 2); delete m.files[0].counts.plant_invasive_areas; } }, /tables outside the schema and schema_additions: plant_invasive_areas/],
+    [{ edit: (db) => db.exec(NO_LIGHT_SPAN), manifest: (m) => { m.schema_minor = 2; m.schema_additions = m.schema_additions.filter((a) => a.since <= 2); delete m.files[0].counts.plant_invasive_areas; } }, /tables outside the schema and schema_additions: plant_invasive_areas/],
     [{ manifest: DECLARED_COLUMN.manifest }, /schema_additions declares the column plants\.flammability, which the database lacks/],
     // 1 and 5: a base table or index missing or changed.
     [{ edit: (db) => db.exec('DROP TABLE plant_frost') }, /table plant_frost is missing/],
@@ -388,7 +391,7 @@ test('schema 4, the additive tier: declared extras install, undeclared ones and 
     [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.value !== 'toxicity'); } }, /trait_sources\.field holds values outside schema 4 and schema_additions: toxicity/],
     // The manifest's own keys.
     [{ manifest: (m) => { delete m.schema_minor; } }, /schema_minor is undefined/],
-    [{ manifest: (m) => { m.schema_additions[0].since = 9; } }, /since is not from 1 to schema_minor 3/],
+    [{ manifest: (m) => { m.schema_additions[0].since = 9; } }, /since is not from 1 to schema_minor 5/],
     [{ manifest: (m) => { delete m.names; } }, /has no names entry \(required at schema 4\)/],
     [{ manifest: (m) => { m.names.core_raw_sha256 = 'c'.repeat(64); } }, /core_raw_sha256 is not the core file's raw_sha256/],
   ];

@@ -1,7 +1,7 @@
 {
   "format_version": 4,
   "schema_version": 4,
-  "schema_minor": 3,
+  "schema_minor": 5,
   "schema_additions": [
     {
       "table": "trait_sources",
@@ -33,6 +33,39 @@
     {
       "table": "plant_invasive_areas",
       "since": 3
+    },
+    {
+      "table": "plants",
+      "column": "sun_exposure_preferred",
+      "since": 5
+    },
+    {
+      "table": "plants",
+      "column": "sun_exposure_shadiest",
+      "since": 5
+    },
+    {
+      "table": "plants",
+      "column": "sun_exposure_sunniest",
+      "since": 5
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "sun_exposure_preferred",
+      "since": 5
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "sun_exposure_shadiest",
+      "since": 5
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "sun_exposure_sunniest",
+      "since": 5
     }
   ],
   "generated_at": "2026-11-11T00:00:00Z",
@@ -42,22 +75,22 @@
   "max_gzip_bytes": 10000000,
   "files": [
     {
-      "file": "consortium-v4.r-000000000000f1c7.309de0f912a7.sqlite.gz",
+      "file": "consortium-v4.r-000000000000f1c7.21eeebd9a487.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "578e4cc1a8b221aaad95b7298f09b58070ed9a19d9e60805ff64424d16dfd73b",
-      "bytes": 35700,
-      "raw_sha256": "309de0f912a79eac48cf942c6813878d9b72f4ccd12bb217bf243edd3be99a80",
+      "sha256": "0762ade72ece29daa9cb953429b0e566fa91894d75b412767ef9f5c641981b2b",
+      "bytes": 35534,
+      "raw_sha256": "21eeebd9a487f7781e698d2d78f7b4333b93b92164b73e443819110437e8691e",
       "raw_bytes": 307200,
       "counts": {
         "climates": 3,
         "climate_regions": 4,
         "strata": 4,
         "phases": 7,
-        "sources": 22,
+        "sources": 24,
         "countries": 14,
         "areas": 12,
         "labels": 14,
@@ -83,7 +116,7 @@
         "plant_koppen": 277,
         "plant_disputes": 8,
         "plant_aliases": 2,
-        "trait_sources": 43,
+        "trait_sources": 47,
         "plant_frost": 1,
         "plant_toxicity_audience": 2,
         "plant_toxicity_parts": 8,
@@ -162,12 +195,12 @@
     "rows": 5
   },
   "names": {
-    "file": "names.r-000000000000f1c7.d10a2fa34525.tsv.gz",
-    "sha256": "8002b41f2f666540be9870f315dc3c91b3f13ee6992c5a98e98eb228dd3721a4",
-    "bytes": 344,
-    "raw_sha256": "d10a2fa34525a1655f278864a660735637cc3921c763da6e9e94224e333f833b",
+    "file": "names.r-000000000000f1c7.a49d23df6f93.tsv.gz",
+    "sha256": "f9c7e9f8cda1954e9eaa226312845cca0380e3ce8943d478c3c5fcf8e5d732c7",
+    "bytes": 343,
+    "raw_sha256": "a49d23df6f93faf7b1e636e51682f5bf3b4906347c43c897caf68c476d1c2af1",
     "raw_bytes": 478,
     "rows": 11,
-    "core_raw_sha256": "309de0f912a79eac48cf942c6813878d9b72f4ccd12bb217bf243edd3be99a80"
+    "core_raw_sha256": "21eeebd9a487f7781e698d2d78f7b4333b93b92164b73e443819110437e8691e"
   }
 }

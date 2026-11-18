@@ -75,8 +75,8 @@ export const waters = ['dry', 'average', 'wet', 'unsure'] as const;
 // since PP-B commit 0; Place offers every value (b1a).
 export const roomValues = ['pots', 'small', 'large', 'field', 'unsure'] as const;
 export type Room = (typeof roomValues)[number];
-// The derived input of site.ts fits() (no longer stored since PP-B commit 0: place.ts siteFor builds it
-// from the palette's Place; plant-palette-architecture 3.1), removed in PP-C with its last readers.
+// The derived input of site.ts fits(): place.ts siteOf builds it from the merged site inputs
+// (site-inputs.ts, owner 2026-11-18), never from a stored answer.
 export interface Site {
   light: (typeof lights)[number];
   soil: (typeof soils)[number];
@@ -231,7 +231,12 @@ export interface Taxon {
   // borrowed it from (placement.ts placeFor, the nearest-list table; the "estimate" label). Absent for
   // the climate's own plants: they are never stamped.
   origin?: PlacementOrigin;
+  // Schema 4.5 (canopi-data light span, additive; v13 hand-off item 1): the light levels the plant grows
+  // in (sunniest to shadiest end, both or neither) and the level it is found mostly in (preferred).
+  // Absent: the release has no such columns; each null: unknown (the plant shows its single level).
+  light?: LightNiche;
 }
+export interface LightNiche { sunniest: Stratum | null; shadiest: Stratum | null; preferred: Stratum | null }
 
 export interface TaxonRef { name: string; rank: Rank }
 export interface AgentNames { names: Partial<Record<Locale, string>>; sources: string[] }
@@ -315,6 +320,8 @@ export const traitFields = [
   'mycorrhizal_type', 'nitrogen_fixer', 'edibility_rating', 'self_fertile', 'sexual_system', 'pollinators',
   'vegetative_spread_rate', 'clonal_growth_form', 'is_annual', 'grown_as_annual', 'is_perennial', 'habit',
   'toxicity', 'allelopathic', 'weed_potential',
+  // Schema 4.5: each end of the light span and the preferred level (their trait_sources rows).
+  'sun_exposure_sunniest', 'sun_exposure_shadiest', 'sun_exposure_preferred',
 ] as const;
 export type TraitField = (typeof traitFields)[number];
 export interface TraitSource { field: TraitField; source: string; scope: string | null; kind: LayerKind }
@@ -485,7 +492,7 @@ export interface FactValues {
 // A fact as a period sees it (SitePeriod.period: '1991-2020', '2041-2070', '2071-2099'), null when not
 // recorded. source.ts factAt returns the stored value (E6 R4); F2 computes per site and period behind
 // the same signature; E7 reads scoped stored facts (most specific wins).
-export type FactAt = <K extends FactKey>(key: K, taxon: Taxon, site: SiteLookup | null, period: string) => FactValues[K] | null;
+export type FactAt = <K extends FactKey>(key: K, taxon: Taxon, site: SiteInputs | null, period: string) => FactValues[K] | null;
 
 // ---- F1a seams (commit 0; plan F1a, design check .local/consortium/v2/f1a/design-check.md A3, A6, A15, A22) ----
 
@@ -532,14 +539,58 @@ export type SoilAnswer =
   | { from: 'own'; ph: number | null; word: SoilWord | null; texture: TextureId | null }
   | { from: 'pots' };
 export interface Place { room: Room; plotM2: number | null; spot: Spot; soil: SoilAnswer }
-export interface ResolvedSoil {
-  ph: number | null;
-  word: SoilWord | null;
-  texture: TextureId | null;
-  basis: 'map' | 'test' | 'pots' | 'none';
-  depth: string | null;
-  filled: boolean;
-  fillKm: number | null;
+
+// ---- Site inputs (owner decision 2026-11-18; bodies in site-inputs.ts) ----
+// Every site input the engine reads, each with where its value comes from: 'map' (the climate grid,
+// the soil map), 'grower' (an edit), 'none' (not known or not asked: never a "no").
+export const inputSources = ['map', 'grower', 'none'] as const;
+export type InputSource = (typeof inputSources)[number];
+export interface SiteInput<T> { value: T | null; source: InputSource }
+// A climate figure: today's merged value, the map's, and the grower's shift (0: none), applied to
+// every period (site-inputs.ts header).
+export interface ClimateInput extends SiteInput<number> { map: number | null; shift: number }
+export interface SoilPhInput extends SiteInput<number> { map: number | null }
+// Watering (the Spot board's three answers; read by no rule until F4): rain only, the first years, all year.
+export const waterings = ['rain', 'first-years', 'all-year'] as const;
+export type Watering = (typeof waterings)[number];
+export const drainages = ['drains', 'wet'] as const; // the ground after heavy rain
+export type Drainage = (typeof drainages)[number];
+export const inputLights = ['sun', 'part', 'shade'] as const; // light on the spot today
+export type InputLight = (typeof inputLights)[number];
+export const inputWinds = ['sheltered', 'windy', 'sea'] as const;
+export type InputWind = (typeof inputWinds)[number];
+export const coldAirs = ['town', 'higher', 'lower', 'hollow'] as const; // height and cold air
+export type ColdAir = (typeof coldAirs)[number];
+// The grower's edits: climate figures as shifts from the map, the rest as values. Plain JSON (the
+// scenario file holds them). No control writes one yet: each is an unreachable source until the
+// figures panel (v14) and the spot questions (PP-F).
+export interface SiteEdits {
+  nightsShiftC?: number;
+  daysShiftC?: number;
+  rainShiftMm?: number;
+  dryMonthsShift?: number;
+  soilPh?: number;
+  drainage?: Drainage;
+  watering?: Watering;
+  light?: InputLight;
+  wind?: InputWind;
+  coldAir?: ColdAir;
+}
+export interface SiteInputs {
+  nights: ClimateInput; // °C, coldest-month mean daily minimum, today
+  days: ClimateInput; // °C, warmest-month mean daily maximum, today
+  rain: ClimateInput; // mm a year, today
+  dryMonths: ClimateInput; // 0..12, today
+  soilPh: SoilPhInput;
+  drainage: SiteInput<Drainage>;
+  watering: SiteInput<Watering>;
+  light: SiteInput<InputLight>;
+  wind: SiteInput<InputWind>;
+  coldAir: SiteInput<ColdAir>;
+  room: SiteInput<Room>;
+  // Every climate slot (today, then each later period × scenario) with the shifts applied: the one
+  // climate the rules read (place.ts climateFor, range.ts, future.ts).
+  periods: readonly SitePeriod[];
 }
 
 // The verdict engine's shapes (3.2; bodies in verdict.ts, b2).
@@ -586,13 +637,13 @@ export interface PlantVerdict {
   borrowed?: ClimateZone; // placed from a nearest list (Taxon.origin borrowed): its lines carry "estimate"
   records?: number; // with 'few-records': the recorded places (TaxonClimate.cells) its ranges rest on
 }
+// What every verdict reads (site-inputs layer, owner 2026-11-18): the merged site inputs (never the
+// lookup or a stored answer), the period shown, the scenario, and the members' canopy.
 export interface VerdictContext {
-  place: Place;
-  lookup: SiteLookup | null;
+  inputs: SiteInputs;
   period: PeriodId;
   scenario: string;
-  soil?: ResolvedSoil;
-  canopy?: readonly number[]; // site.ts Canopy, from canopyOf(members) (the store builds it)
+  canopy?: readonly number[] | null; // site.ts Canopy, from canopyOf(members) (the store builds it)
 }
 // One line of words: an i18n key, its variables and the count P() reads (verdict-line.ts, b2); `also`:
 // sentences said after it (a reason's confidence, its bound's source), each a Line of its own. A
@@ -605,6 +656,23 @@ export interface Line { key: string; vars: Record<string, string | number>; coun
 // Holes (3.3; bodies in holes.ts, b2).
 export type HoleKind = 'job' | 'light' | 'flowering' | 'cool' | 'soil';
 export type HoleRank = 1 | 2 | 3 | 4 | 5 | 6;
+// A palette goal (owner 2026-11-18; not a site fact, read beside the site inputs): the redundancy
+// target, "backups per job": how many plants each job wants in each judged year (default 2, a plant
+// and its backup; S1). A job done by fewer, but not by nobody, is thin (holes.ts laneCounts); nobody is
+// a hole. No upper bound: growers add as many plants as they want, nothing caps a lane at a count.
+export interface PaletteGoals { plantsPerJob: number }
+// Plant counts of one lane (a job or a light level) per time step (years.ts PHASE_YEARS, the climax
+// step last); thin: the judged year spans a job is done by at least one plant and fewer than the
+// target (light levels: never thin); unchecked: members standing in the lane's years whose jobs or
+// light level are not recorded (unknown is never a hole, nor a thin lane's "no").
+export interface LaneCount {
+  kind: 'job' | 'light';
+  job?: JobId;
+  stratum?: Stratum;
+  counts: number[];
+  thin: { fromYear: number; toYear: number }[];
+  unchecked?: PlantId[];
+}
 export interface Hole {
   id: string; // `${kind}:${job ?? stratum ?? ''}:${fromYear}-${toYear}` + `:m${mask}` when months are set
   kind: HoleKind;
@@ -615,6 +683,10 @@ export interface Hole {
   fromYear: number;
   toYear: number;
   state: 'open' | 'pending' | 'not-judged' | 'to-check';
+  // Unknown is never a hole (v13 hand-off item 3): the members standing in its years whose jobs (a job
+  // hole) or light level (a light hole) are not recorded; absent when none. Its title then says "nobody
+  // known" and its count line "N plants not checked" (verdict-line.ts holeLine, uncheckedLine).
+  unchecked?: PlantId[];
 }
 // What Find opens for a hole is store.ts SheetFor (job, hole, fits), built by NextStep (PP-C commit 0
 // deleted AddPreset and Hole.preset with the Add sheet).

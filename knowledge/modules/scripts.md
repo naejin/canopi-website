@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:11Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:44Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:04Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:cb03eb3d9b50508d
-    last_modified: 2026-11-17T18:39:27Z
+    digest: sha256:b35f1e43ffa5e20b
+    last_modified: 2026-11-18T00:13:44Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -88,8 +88,8 @@ sources:
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
-    digest: sha256:90184f3e6a1390d1
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:9739e7c34ba87d6c
+    last_modified: 2026-11-17T19:39:43Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
@@ -98,8 +98,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:a948fe5c4c08ecbe
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:e78cbf1814034cb7
+    last_modified: 2026-11-18T00:03:56Z
 ---
 
 # Responsibility

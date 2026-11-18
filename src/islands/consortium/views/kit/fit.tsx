@@ -5,7 +5,7 @@
 // formatted for the page language by strings.ts. Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
 // plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
-import type { Hole, JobId, Level, Line, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import type { Hole, JobId, Level, Line, PlantVerdict, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, headLine, holeLine, levelLine, sizeLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { formatLength, formatNumber, formatTemp } from '../../format.ts';
 import { P, pageLang, T } from '../../strings.ts';
@@ -67,10 +67,27 @@ export function FitLine({ v, known, head = false }: { v: PlantVerdict | null | u
 }
 
 // A hole in words, one form everywhere (owner answer Q1, 2026-11-17): its lane (a job, a light level:
-// "Full sun") and its years ("nobody in the first 3 years"), through consortium.palette.holeTitle so
+// "Full sun") and its years ("nobody in the first 3 years"; "nobody known, at any time" when members are
+// not checked, v13 hand-off item 3: holeLine), through consortium.palette.holeTitle so
 // each language sets its own punctuation: "Full sun: nobody in the first 3 years". The Next step, the
 // hole buttons, the rows and Find's title (opened for a hole) all say it so.
 export const holeWords = (h: Hole): string => T('palette.holeTitle', { lane: T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`), span: say(holeLine(h)) });
+
+// A plant's light in words (v13 hand-off item 2; brief: "Grows in:" for a plant's span, "Planted in:"
+// for its place in the palette). growsIn: the span's two labels, one when the ends match or there is
+// no span (today's release: the plant's single level, its placement); plantedIn: the placement's level;
+// foundIn: the 4.5 preferred level ("found mostly in", owner 2026-11-18, replacing the boards' "best
+// in"), '' when unknown. A plant with no level at all: "Light need not recorded" (never a guess).
+const levelWord = (s: Stratum): string => T(`palette.light_${s}`);
+export function lightWords(t: Taxon): { growsIn: string; plantedIn: string; foundIn: string } {
+  const own = t.stratum?.value ?? null;
+  const a = t.light?.sunniest ?? null, b = t.light?.shadiest ?? null;
+  const growsIn = a && b && a !== b ? T('palette.growsIn', { a: levelWord(a), b: levelWord(b) })
+    : (a ?? own) ? T('palette.growsInOne', { level: levelWord((a ?? own)!) }) : T('palette.light_none');
+  const plantedIn = own ? T('palette.plantedIn', { level: levelWord(own) }) : T('palette.light_none');
+  const foundIn = t.light?.preferred ? T('palette.foundMostlyIn', { level: levelWord(t.light.preferred) }) : '';
+  return { growsIn, plantedIn, foundIn };
+}
 
 // A plant's main job as an icon in the job's colour (palette-page.css [data-job]: one element, the
 // job's mark drawn as a mask, so 200 plants' chips stay light; 200-plant scale), always beside its word

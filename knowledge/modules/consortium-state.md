@@ -3,30 +3,30 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:189ba70475cc78d4
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:c676d7c2ab37a93f
+    last_modified: 2026-11-17T23:49:27Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:382e2944ffca7b96
-    last_modified: 2026-11-17T18:34:00Z
+    digest: sha256:6b68b3a0f3306bd6
+    last_modified: 2026-11-18T00:13:24Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:3d185b1b32577c26
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:61c3735e00bbb5f2
+    last_modified: 2026-11-18T00:04:08Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:7afb7646305b6cf2
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:b8c580d9ae59f7c4
+    last_modified: 2026-11-18T00:03:33Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -70,13 +70,13 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:4408d770ddaa43cf
-    last_modified: 2026-11-17T14:13:26Z
+    digest: sha256:c1c19c1206540419
+    last_modified: 2026-11-17T23:48:31Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
-    digest: sha256:84b25dca6b17666c
-    last_modified: 2026-11-16T21:53:25Z
+    digest: sha256:545ea194b80246a0
+    last_modified: 2026-11-17T19:12:17Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs
@@ -184,3 +184,8 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 ## Store seams added by PP-B b2 (chunk 1)
 
 `store.ts` gains, additively: `step` (place or palette), `yearStep`, `notNow`, `slow`, `opening`, `offline`, `failedPools` and `failedMembers` (a guest list that failed), `verdictFailed`, `wantVerdict()` (the palette page asks for the verdict chunk on mount; `store.start()` keeps its three effects; since b1b a new load clears `verdictFailed` as it starts, so `verdictFailed` means the current load failed, and `retryVerdict()` only calls it when no load is pending and no rule is in; back online, `start()`'s `online` listener retries a refused verdict chunk in place, so no view needs a listener of its own), `waitsForVerdicts()` (b1b), `holdToast` and the exported `offerUndo` (Place's moves in `state/draft.ts` and `state/suggest-wait.ts` use it since the chunk-1 merge). The toast timer reads `__ctTimeouts.toast` in the test build.
+
+## Spot and soil answers dormant (2026-11-18)
+
+Until PP-F the spot and soil answers are dormant: `persist.ts` `palette()` spreads empty spot and soil over the saved fields, so the save, the address, links and the `canopi-place` seed (`placeSeed()`, room and plot only) write none; while a link's place waits, the save keeps the reader's own country only. The store reads neither (`store.siteInputs` merges the lookup, the room and `store.siteEdits`, the grower-edit seam the figures panel will write; `NO_EDITS` on every load, unsaved). Place's spot questions are gone. A link brings a place only with its cell (`o`) now.
+

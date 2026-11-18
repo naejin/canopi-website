@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:08Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:43Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:76adc2791c1ed27f
-    last_modified: 2026-11-17T17:54:47Z
+    digest: sha256:130be072c506a3b0
+    last_modified: 2026-11-18T00:10:23Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -25,8 +25,8 @@ sources:
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:7c92814537dcc2e7
-    last_modified: 2026-11-17T17:32:21Z
+    digest: sha256:d6e0c4c9735c7307
+    last_modified: 2026-11-17T23:48:53Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -35,8 +35,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:382e2944ffca7b96
-    last_modified: 2026-11-17T18:34:00Z
+    digest: sha256:6b68b3a0f3306bd6
+    last_modified: 2026-11-18T00:13:24Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
@@ -45,8 +45,8 @@ sources:
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:76e25e5ee23f1bc9
-    last_modified: 2026-11-17T17:30:09Z
+    digest: sha256:5097f48e59e0f4b2
+    last_modified: 2026-11-17T23:52:07Z
 ---
 
 ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).
@@ -72,3 +72,5 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 - `placed.ts` `placeFor` and `firstPlaced` return `{zone, placement}` / `{zone, value}` with no `estimate` flag since E6 chunk 5: the origin is the one place the estimate lives.
 - Views test the origin through the helpers (`guestOf` for the guest tag and `is-guest` class, `borrowedFrom` for the estimate mark and the Why line), and the correction's `placement_estimate` is `origin.kind === 'borrowed'`.
 - `factAt` returning `null` means unknown, never a misfit.
+
+- **Since 2026-11-18:** `FactAt`'s site argument is `SiteInputs | null` from [the site-inputs layer](/modules/consortium-site-inputs.md), never the climate lookup.

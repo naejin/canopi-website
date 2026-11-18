@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:07Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:40Z }
 sources:
@@ -107,8 +107,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:5a68cb4f4f79a63e
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:76403c6b7eef8bf5
+    last_modified: 2026-11-17T23:54:43Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -152,8 +152,8 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:7afb7646305b6cf2
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:b8c580d9ae59f7c4
+    last_modified: 2026-11-18T00:03:33Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -162,8 +162,8 @@ sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:189ba70475cc78d4
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:c676d7c2ab37a93f
+    last_modified: 2026-11-17T23:49:27Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -172,8 +172,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:382e2944ffca7b96
-    last_modified: 2026-11-17T18:34:00Z
+    digest: sha256:6b68b3a0f3306bd6
+    last_modified: 2026-11-18T00:13:24Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -237,8 +237,8 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:3b49320788e1ebe8
-    last_modified: 2026-11-17T17:27:56Z
+    digest: sha256:b951f3a6ffed4d20
+    last_modified: 2026-11-17T23:52:29Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
@@ -267,8 +267,8 @@ sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
-    digest: sha256:26c23568915d9432
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:5e6e8f91c970fca9
+    last_modified: 2026-11-17T23:48:48Z
   - id: side-ts
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
@@ -297,8 +297,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:97eb8abd71783b99
-    last_modified: 2026-11-15T10:05:29Z
+    digest: sha256:8cde2d6c1b566293
+    last_modified: 2026-11-17T19:12:16Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -312,13 +312,13 @@ sources:
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
-    digest: sha256:99cffd59c0da88aa
-    last_modified: 2026-11-17T12:02:03Z
+    digest: sha256:8a0d6587efece546
+    last_modified: 2026-11-17T23:48:11Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:4408d770ddaa43cf
-    last_modified: 2026-11-17T14:13:26Z
+    digest: sha256:c1c19c1206540419
+    last_modified: 2026-11-17T23:48:31Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -362,8 +362,8 @@ sources:
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
-    digest: sha256:c97a43b52da8c3fa
-    last_modified: 2026-11-17T14:14:49Z
+    digest: sha256:87afdfe9588901b8
+    last_modified: 2026-11-17T23:48:11Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -377,8 +377,8 @@ sources:
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
-    digest: sha256:e74cb144936b5335
-    last_modified: 2026-11-11T19:27:07Z
+    digest: sha256:979384ee60637bd0
+    last_modified: 2026-11-17T23:48:18Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -402,8 +402,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:76adc2791c1ed27f
-    last_modified: 2026-11-17T17:54:47Z
+    digest: sha256:130be072c506a3b0
+    last_modified: 2026-11-18T00:10:23Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -417,8 +417,8 @@ sources:
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
-    digest: sha256:eee24d353dff2633
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:de3d31fb8eed5d71
+    last_modified: 2026-11-17T23:47:52Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -437,18 +437,18 @@ sources:
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:d881634869e11783
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:cb7e165cdbf709c4
+    last_modified: 2026-11-17T19:12:16Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:39d03deba98c3fc8
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:15b74990f89ca4fb
+    last_modified: 2026-11-17T19:12:16Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
-    digest: sha256:84b25dca6b17666c
-    last_modified: 2026-11-16T21:53:25Z
+    digest: sha256:545ea194b80246a0
+    last_modified: 2026-11-17T19:12:17Z
 ---
 
 Target architecture of the [Plant palette redesign](/project/consortium-v2-plan.md) (grower-first design approved by the owner on 2026-11-14). Pushes and streams: [Plant palette slices](/project/plant-palette-slices.md). Layer rules: [ADR-1](/decisions/consortium-island-layers.md); caps: [ADR-2](/decisions/consortium-chunk-budgets.md); owner answers: [user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-14.
@@ -539,6 +539,9 @@ export function siteFor(place: Place, lookup: SiteLookup | null): Site;         
 export function climateFor(ctx: VerdictContext, period: PeriodId): SitePeriod | null;        // the one climate reader for rules
 ```
 
+> **Since the site-inputs layer (owner 2026-11-18):** `resolveSoil`, `ResolvedSoil` and `siteFor` are gone. The rules read one merged input, [the site inputs](/modules/consortium-site-inputs.md): `siteOf(inputs)` builds the `Site` (`testedPh` gives the soil word only from a soil test) and `climateFor({ inputs, scenario }, period)` reads `inputs.periods`. Spot and soil answers are dormant until PP-F.
+
+
 - **`climateFor`** (0a): in PP-B it passes the slot for the period (and the context's scenario) through unchanged. It is the hook where F4's adjusted site, F2's cautious switch and CLIM-4's height correction land, so every rule reads the same climate: `verdict.ts`, `hotterZone(climate)` (PP-E), `season.ts`, `weigh.ts` (water) and the `factAt` site input take its result and never read `lookup.periods` themselves (arch-rules grep line, `warn`, section 2). `scenario: string` and any `adjusted` marker are left for later.
 - **PP-B keeps today's three questions** (owner, 2026-11-14, keep rows C1–C3): until f2 and f1 replace them in PP-F, Place asks light, soil and water as today (`Start.tsx:31`, `:189-212`): light goes to `spot.light`, water to `spot.water`, a soil word to `{from:'own', ph: null, word, texture: null}`, "not sure" to `{from:'map'}`; 0a's `siteFor` passes them to `fits()`.
 
@@ -575,6 +578,9 @@ export function yearsLine(from: number, to: number | null): Line;
 // verdict-load.ts (core, first-run safe):
 export function loadVerdictRule(): Promise<VerdictRule>;   // import('./verdict.ts'); a failed load is never cached
 ```
+
+> **Since 2026-11-18:** `VerdictContext` is `{ inputs: SiteInputs; period; scenario; canopy? }` (no `place`, `lookup` or `soil`); grower edits are shifts applied to every period ([site inputs](/modules/consortium-site-inputs.md)); the scenario file `scripts/fixtures/consortium-scenarios.json` is the engine's contract for a later Rust port.
+
 
 Rules, each already decided:
 - Mapping from `SlotCheck` (`slotCheck`, `range.ts:134`; `RANGE_MARGIN_C = 2`, `CHILL_CEILING_C = 18`, `HEAT_DEMAND_C = 18`, `range.ts:57-61`): beyond → `outside`, a side within the margin → `look`, else `fits`, no slot → `unknown`. `verdict.ts` picks the slot for the judged period and scenario.

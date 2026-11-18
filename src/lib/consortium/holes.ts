@@ -9,10 +9,11 @@
 // - The judged window is year 1 to year 60 (owner): a gap that ends by year 1 is 'not-judged' (a thin
 //   line, never a hole); nothing after year 60 is raised; a gap ending at 60 runs "after year n".
 // - While a guest list loads (ctx.pending), every hole is 'pending', never a false hole (marker P11).
-import type { Fillers, Hole, HoleKind, HoleRank, JobGap, JobId, PhaseOrd, PlantId, PlantVerdict, Stratum, Taxon } from './types.ts';
+import type { Fillers, Hole, HoleKind, HoleRank, JobGap, JobId, LaneCount, PaletteGoals, PhaseOrd, PlantId, PlantVerdict, Stratum, Taxon } from './types.ts';
 import { jobIds, strata } from './types.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PHASE_YEARS, yearsOf } from './years.ts';
+import { DEFAULT_GOALS } from './site-inputs.ts';
 
 // Rank (concept.md "Rules"), one row per kind and extent, in order: 1 a whole job nobody does, 2 a
 // whole light level nobody fills, 3 flowering (two months or more), 4 a job or light level empty for
@@ -68,7 +69,13 @@ function gaps(covered: ReadonlySet<number>): { from: number; to: number }[] {
 
 const counts = (ctx: HoleContext, t: Taxon): boolean => ctx.verdicts?.get(t.id)?.level !== 'outside';
 
-function holesOf(kind: 'job' | 'light', what: JobId | Stratum, doers: readonly Taxon[], pending: boolean): Hole[] {
+// Unknown is never a hole (owner, v13 hand-off item 3): the members whose data could fill it is not
+// recorded (unknowns), standing in the years of a gap, are its `unchecked`: the title says "nobody known".
+const standsIn = (t: Taxon, from: number, to: number): boolean => {
+  const y = yearsOf(t);
+  return !!y && y.from < to && (y.to === null || y.to > Math.max(from, JUDGED_FROM_YEAR));
+};
+function holesOf(kind: 'job' | 'light', what: JobId | Stratum, doers: readonly Taxon[], pending: boolean, unknowns: readonly Taxon[] = []): Hole[] {
   const covered = new Set<number>(doers.flatMap((t) => phaseSpan(t)));
   return gaps(covered).map(({ from, to }) => {
     const notJudged = to <= JUDGED_FROM_YEAR;
@@ -81,6 +88,8 @@ function holesOf(kind: 'job' | 'light', what: JobId | Stratum, doers: readonly T
       state: notJudged ? 'not-judged' : pending ? 'pending' : 'open',
     };
     if (kind === 'job') hole.job = what as JobId; else hole.stratum = what as Stratum;
+    const unchecked = unknowns.filter((t) => standsIn(t, from, to)).map((t) => t.id);
+    if (unchecked.length) hole.unchecked = unchecked;
     return hole;
   });
 }
@@ -91,9 +100,39 @@ function holesOf(kind: 'job' | 'light', what: JobId | Stratum, doers: readonly T
 export function holes(ctx: HoleContext): Hole[] {
   const doing = ctx.members.filter((t) => counts(ctx, t));
   const out: Hole[] = [];
-  for (const job of jobIds) out.push(...holesOf('job', job, doing.filter((t) => jobsOf(t).includes(job)), ctx.pending));
-  for (const s of strata) out.push(...holesOf('light', s, doing.filter((t) => t.stratum?.value === s), ctx.pending));
+  // Jobs not curated (functions null) leave every function job unknown; feeds_you comes from the role.
+  const jobsUnknown = doing.filter((t) => t.functions === null);
+  const lightUnknown = doing.filter((t) => !t.stratum);
+  for (const job of jobIds) out.push(...holesOf('job', job, doing.filter((t) => jobsOf(t).includes(job)), ctx.pending, job === 'feeds_you' ? [] : jobsUnknown));
+  for (const s of strata) out.push(...holesOf('light', s, doing.filter((t) => t.stratum?.value === s), ctx.pending, lightUnknown));
   return out.sort((a, b) => a.rank - b.rank || a.fromYear - b.fromYear); // stable: generation order breaks ties
+}
+
+// Every lane's plant count per time step, jobs then light levels (jobIds, strata order), and each
+// job's thin years against the palette goal (redundancy: a job below its target is thin, distinct from
+// a hole at 0). Counts every member that stands there (a member outside its range counts for nothing,
+// as in holes()); no lane is capped at a count: 200 plants in one lane count 200.
+export function laneCounts(ctx: HoleContext, goals: PaletteGoals = DEFAULT_GOALS): LaneCount[] {
+  const doing = ctx.members.filter((t) => counts(ctx, t));
+  const spans = new Map(doing.map((t) => [t.id, new Set<number>(phaseSpan(t))]));
+  const jobsUnknown = doing.filter((t) => t.functions === null), lightUnknown = doing.filter((t) => !t.stratum);
+  const judged = (p: number) => p < JUDGED_PHASES && (PHASE_YEARS[p][1] as number) > JUDGED_FROM_YEAR;
+  const lane = (kind: 'job' | 'light', doers: readonly Taxon[], unknowns: readonly Taxon[], target: number): Omit<LaneCount, 'job' | 'stratum'> => {
+    const n = PHASE_YEARS.map((_, p) => doers.filter((t) => spans.get(t.id)!.has(p)).length);
+    const thin: LaneCount['thin'] = [];
+    let start: number | null = null;
+    for (let p = 0; p <= JUDGED_PHASES; p++) {
+      const low = p < JUDGED_PHASES && judged(p) && n[p] > 0 && n[p] < target;
+      if (low && start === null) start = p;
+      if (!low && start !== null) { thin.push({ fromYear: Math.max(PHASE_YEARS[start][0], JUDGED_FROM_YEAR), toYear: PHASE_YEARS[p - 1][1] as number }); start = null; }
+    }
+    const unchecked = unknowns.filter((t) => standsIn(t, JUDGED_FROM_YEAR, JUDGED_TO_YEAR)).map((t) => t.id);
+    return { kind, counts: n, thin, ...(unchecked.length ? { unchecked } : {}) };
+  };
+  return [
+    ...jobIds.map((job) => ({ ...lane('job', doing.filter((t) => jobsOf(t).includes(job)), job === 'feeds_you' ? [] : jobsUnknown, goals.plantsPerJob), job })),
+    ...strata.map((s) => ({ ...lane('light', doing.filter((t) => t.stratum?.value === s), lightUnknown, 0), stratum: s })),
+  ];
 }
 
 // The next hole to fill: the first open one in rank order, skipping those the grower put off ("Not

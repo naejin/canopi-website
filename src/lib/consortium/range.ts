@@ -1,5 +1,5 @@
 // Stream S5c: whether a plant's observed climate range holds the site (owner answer 2, 2026-11-11).
-// The site's today values (the climate reader's historical period) against the plant's observed
+// The site's today values (the historical slot of the merged site inputs, site-inputs.ts) against the plant's observed
 // range (Taxon.climate, GBIF cells thinned per climate cell, cultivation included; schema 3, canopi-data
 // docs/plant-climate-ranges.md), through the bounds of RANGE_BOUNDS: the coldest-month minimum on the
 // cold side (a cold limit), and on the mild side for a plant that can need winter chill; the year's
@@ -35,7 +35,7 @@
 //   nothing about the season length in equatorial highlands: lettuce (16.3), maize (16.8), onion (15.2)
 //   would be "summer too cool" at Quito (14.1) and Bogotá (14.3), where they are staples; taro (19.9),
 //   ginger (23.7), turmeric (21.2), sweet potato (19.5) and okra (23) keep the side.
-import type { PlantId, SiteLocation, SitePeriod, Taxon } from './types.ts';
+import type { PlantId, SiteInputs, SitePeriod, Taxon } from './types.ts';
 import { siteToday } from './site-today.ts';
 
 // siteToday lives in its own module so the first run can ask "has the site a climate?" without the
@@ -155,8 +155,8 @@ export function aridityFit(taxon: Taxon, slot: SitePeriod): AridityFit {
 }
 
 // null: nothing to check against (no site climate).
-export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck | null {
-  const today = siteToday(site);
+export function rangeCheck(taxon: Taxon, inputs: SiteInputs | null): RangeCheck | null {
+  const today = siteToday(inputs);
   if (!today) return null;
   const c = taxon.climate;
   const aridity = aridityFit(taxon, today);
@@ -165,15 +165,15 @@ export function rangeCheck(taxon: Taxon, site: SiteLocation | null): RangeCheck 
   return { verdict: beyond.length ? 'outside' : sides.length ? 'edge' : 'inside', sides, beyond, aridity, coolSeason };
 }
 
-export function rangeFit(taxon: Taxon, site: SiteLocation | null): RangeVerdict {
-  return rangeCheck(taxon, site)?.verdict ?? 'unknown';
+export function rangeFit(taxon: Taxon, inputs: SiteInputs | null): RangeVerdict {
+  return rangeCheck(taxon, inputs)?.verdict ?? 'unknown';
 }
 
 // What suggestions and lists draw from: the pool without the plants outside their observed range,
 // except those in keep (plants the reader kept or added anyway stay theirs). The same array when
 // nothing is checked (no site climate), so caches keyed on it hold.
-export function withinRange(pool: Taxon[], site: SiteLocation | null, keep: readonly PlantId[] = []): Taxon[] {
-  if (!siteToday(site)) return pool;
+export function withinRange(pool: Taxon[], inputs: SiteInputs | null, keep: readonly PlantId[] = []): Taxon[] {
+  if (!siteToday(inputs)) return pool;
   const kept = new Set(keep);
-  return pool.filter((t) => kept.has(t.id) || rangeFit(t, site) !== 'outside');
+  return pool.filter((t) => kept.has(t.id) || rangeFit(t, inputs) !== 'outside');
 }

@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:10Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T17:28:56Z }
@@ -10,8 +10,8 @@ sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
-    digest: sha256:26c23568915d9432
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:5e6e8f91c970fca9
+    last_modified: 2026-11-17T23:48:48Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
@@ -25,8 +25,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:382e2944ffca7b96
-    last_modified: 2026-11-17T18:34:00Z
+    digest: sha256:6b68b3a0f3306bd6
+    last_modified: 2026-11-18T00:13:24Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -90,8 +90,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:d9295d148d5753e0
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:2a3101e2e8ec874d
+    last_modified: 2026-11-17T19:39:43Z
   - id: bytes-ts
     resource: ../../src/islands/consortium/data/bytes.ts
     title: src/islands/consortium/data/bytes.ts
@@ -105,8 +105,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:ba70aad3ef34a078
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:82dbb214c7ec5a7d
+    last_modified: 2026-11-17T23:48:48Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -115,8 +115,8 @@ sources:
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
-    digest: sha256:16ef54594e8517ad
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:9a3a60c2c9849050
+    last_modified: 2026-11-17T23:48:48Z
   - id: printsheet-tsx
     resource: ../../src/islands/consortium/views/PrintSheet.tsx
     title: src/islands/consortium/views/PrintSheet.tsx
@@ -135,8 +135,8 @@ sources:
   - id: consortium-s4-browser-test-mjs
     resource: ../../scripts/browser/consortium-s4.browser.test.mjs
     title: scripts/browser/consortium-s4.browser.test.mjs
-    digest: sha256:4970856ba9e3c39f
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:65beff4be6d94ad6
+    last_modified: 2026-11-17T19:39:43Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -145,8 +145,8 @@ sources:
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:3d185b1b32577c26
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:61c3735e00bbb5f2
+    last_modified: 2026-11-18T00:04:08Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
@@ -200,8 +200,8 @@ sources:
   - id: future-panel-tsx
     resource: ../../src/islands/consortium/views/future/future.tsx
     title: src/islands/consortium/views/future/future.tsx
-    digest: sha256:1238fe78fac42e55
-    last_modified: 2026-11-13T13:02:30Z
+    digest: sha256:4042f2a30f7734aa
+    last_modified: 2026-11-17T23:48:48Z
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
@@ -230,8 +230,8 @@ sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
-    digest: sha256:189ba70475cc78d4
-    last_modified: 2026-11-15T08:15:08Z
+    digest: sha256:c676d7c2ab37a93f
+    last_modified: 2026-11-17T23:49:27Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
@@ -255,13 +255,13 @@ sources:
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:3b49320788e1ebe8
-    last_modified: 2026-11-17T17:27:56Z
+    digest: sha256:b951f3a6ffed4d20
+    last_modified: 2026-11-17T23:52:29Z
   - id: icons-tsx
     resource: ../../src/islands/consortium/views/kit/icons.tsx
     title: src/islands/consortium/views/kit/icons.tsx
-    digest: sha256:f3f87ec7491272c2
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:4fd9622905d48b21
+    last_modified: 2026-11-17T19:12:16Z
   - id: correction-ts
     resource: ../../src/islands/consortium/views/kit/correction.ts
     title: src/islands/consortium/views/kit/correction.ts
@@ -270,8 +270,8 @@ sources:
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
-    digest: sha256:b38e86fa2801f059
-    last_modified: 2026-11-17T15:57:17Z
+    digest: sha256:ed7fb83c8483c8b7
+    last_modified: 2026-11-18T00:12:51Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -290,8 +290,8 @@ sources:
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:7c92814537dcc2e7
-    last_modified: 2026-11-17T17:32:21Z
+    digest: sha256:d6e0c4c9735c7307
+    last_modified: 2026-11-17T23:48:53Z
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
@@ -325,8 +325,8 @@ sources:
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx
-    digest: sha256:411b8bae376e40ca
-    last_modified: 2026-11-17T18:36:51Z
+    digest: sha256:1008dce6d378d893
+    last_modified: 2026-11-17T19:39:04Z
   - id: names-ts-2
     resource: ../../src/islands/consortium/views/find/names.ts
     title: src/islands/consortium/views/find/names.ts
@@ -490,3 +490,6 @@ The pool panel's count is now Place's count line, in [views/pool/pool.tsx](../..
 - **Verdict failure** (`store.ts`): `verdictFailed` for the current load, `verdictEverFailed` sticky until a success (the palette never returns to loading); Try again retries in place (`?retry=n`), offline the `online` event retries; `verdictNeedsReload` (Reload in place of Try again) only when a failed retry's verdict file itself answers a HEAD (c2 merge: A8's HEAD option, A14), so a refused or dropped file keeps Try again.
 - **Shared words, one owner each** (first-run, K3): `kit/fit.tsx` `midSentence` (Find's roles list reads it), core `verdict-line.ts` `periodName`, `kit/names.ts` `coords` (the location card and Against's line).
 
+## Site inputs (PP-C chunk-2 hand-off, 2026-11-18)
+
+Place no longer asks the spot questions (light, soil, water; dormant until PP-F, their 18 `consortium.site.*` keys deleted, the room question stays). The store hands the rules `store.siteInputs` ([site inputs](/modules/consortium-site-inputs.md)); `store.siteEdits` is the grower-edit seam browser tests set through `window.__ctTest`. `fit.tsx` adds the light words ("Grows in", "Planted in", "found mostly in") and `flags.ts` the invasive chip.

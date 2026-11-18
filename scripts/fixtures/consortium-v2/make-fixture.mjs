@@ -46,6 +46,9 @@ const SOURCES = [
   ['pfaf', 'Plants For A Future', 'https://pfaf.org/', null, 'Plants For A Future (pfaf.org)'],
   ['try', 'TRY Plant Trait Database', 'https://www.try-db.org/', null, null],
   ['canopi-correction', 'Canopi reader correction', null, null, null],
+  // Schema 4.5 (light span): the Ellenberg tables (a preferred level) and the AI estimate with no source.
+  ['ellenberg', 'Ellenberg indicator values', null, null, null],
+  ['llm-knowledge', 'AI estimate, no source', null, null, null],
   ['griis', 'Global Register of Introduced and Invasive Species', 'https://griis.org/', 'CC BY 4.0', null],
   // Schema 4.3's two Spanish sources, labelled as the staging export r-0dfc15e7cfe22e19 labels them.
   ['es_catalogo', 'Catálogo Español de Especies Exóticas Invasoras (RD 630/2013)', null, null, null],
@@ -214,8 +217,26 @@ export const FIXTURE_AUDIENCE = [
 const TRAIT_SOURCE = { 'Zingiber officinale': 'canopi-knowledge', 'Mangifera indica': 'canopi-correction' };
 // Schema 4.2 adds plant_toxicity_parts (since 2: TOXICITY_PARTS_ADDITIONS) and 4.3 plant_invasive_areas
 // (since 3: INVASIVE_AREAS_ADDITIONS), so the fixture is 4.3.
-export const FIXTURE_ADDITIONS = [{ table: 'trait_sources', column: 'field', value: 'toxicity', since: 1 }, ...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS];
-export const FIXTURE_SCHEMA_MINOR = 3;
+// Schema 4.5 (canopi-data docs/website-handoff/2026-11-17-light-span.md): three plants columns and their
+// trait_sources field values, since 5 (no 4.4 entry: flammability stays a test variant, DECLARED_COLUMN).
+export const LIGHT_SPAN_ADDITIONS = [
+  { table: 'plants', column: 'sun_exposure_preferred', since: 5 },
+  { table: 'plants', column: 'sun_exposure_shadiest', since: 5 },
+  { table: 'plants', column: 'sun_exposure_sunniest', since: 5 },
+  { table: 'trait_sources', column: 'field', value: 'sun_exposure_preferred', since: 5 },
+  { table: 'trait_sources', column: 'field', value: 'sun_exposure_shadiest', since: 5 },
+  { table: 'trait_sources', column: 'field', value: 'sun_exposure_sunniest', since: 5 },
+];
+const LIGHT_SPAN_DDL = 'ALTER TABLE plants ADD COLUMN sun_exposure_sunniest TEXT REFERENCES strata (id); ALTER TABLE plants ADD COLUMN sun_exposure_shadiest TEXT REFERENCES strata (id); ALTER TABLE plants ADD COLUMN sun_exposure_preferred TEXT REFERENCES strata (id);';
+// The 4.5 values: one span (Malus domestica, Full sun to Mostly sun, both ends PFAF-derived) with a
+// preferred level inside it (Ellenberg); one preferred level with no span (Sambucus nigra, Part shade),
+// an AI estimate with no source ([canonical, sunniest, shadiest, preferred, [field, source, kind]...]).
+export const FIXTURE_LIGHT = [
+  ['Malus domestica', 'emergent', 'high', 'high', [['sun_exposure_sunniest', 'pfaf', 'derived'], ['sun_exposure_shadiest', 'pfaf', 'derived'], ['sun_exposure_preferred', 'ellenberg', 'derived']]],
+  ['Sambucus nigra', null, null, 'medium', [['sun_exposure_preferred', 'llm-knowledge', 'llm']]],
+];
+export const FIXTURE_ADDITIONS = [{ table: 'trait_sources', column: 'field', value: 'toxicity', since: 1 }, ...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS, ...LIGHT_SPAN_ADDITIONS];
+export const FIXTURE_SCHEMA_MINOR = 5;
 // 4.3 (canopi-data docs/website-handoff/2026-11-17-invasive-scope.md): the ES plant_invasive rows, one per
 // plant ([canonical, source]: the widest scope), and their plant_invasive_areas ([canonical, source, area]).
 // The cases are the note's, put on fixture plants (invented for these plants; only Psidium guajava's is
@@ -293,7 +314,7 @@ export function fixtureNamesLines(coreRawSha) {
 export const UNDECLARED_EXTRA = (db) => db.exec('CREATE TABLE plant_spacing (plant INTEGER NOT NULL REFERENCES plants (plant), spacing_m REAL)');
 export const DECLARED_COLUMN = {
   edit: (db) => db.exec('ALTER TABLE plants ADD COLUMN flammability TEXT'),
-  manifest: (m) => { m.schema_minor = 4; m.schema_additions = [...m.schema_additions, { table: 'plants', column: 'flammability', since: 4 }]; },
+  manifest: (m) => { m.schema_minor = FIXTURE_SCHEMA_MINOR + 1; m.schema_additions = [...m.schema_additions, { table: 'plants', column: 'flammability', since: FIXTURE_SCHEMA_MINOR + 1 }]; },
 };
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
@@ -303,7 +324,7 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
   const db = new DatabaseSync(path);
   db.exec('PRAGMA page_size = 4096; PRAGMA foreign_keys = ON;');
   db.exec(DDL_BY_SCHEMA[schema]);
-  if (schema >= 4) db.exec(TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL);
+  if (schema >= 4) db.exec(TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + LIGHT_SPAN_DDL);
   const DATA_TABLES = DATA_TABLES_BY_SCHEMA[schema];
   const run = (sql, ...rows) => { const st = db.prepare(sql); for (const r of rows) st.run(...r); };
   db.exec('BEGIN');
@@ -388,6 +409,10 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
       run('INSERT INTO trait_sources VALUES (?, ?, ?, ?, ?)', [i + 1, 'frost_tender', source, source === 'pfaf' ? 'GB' : null, 'recorded']);
     });
     run('INSERT INTO trait_sources VALUES (?, ?, ?, ?, ?)', [plantOf('Hedera helix'), 'toxicity', 'canopi-correction', null, 'recorded']);
+    for (const [name, sunniest, shadiest, preferred, rows] of FIXTURE_LIGHT) {
+      run('UPDATE plants SET sun_exposure_sunniest = ?, sun_exposure_shadiest = ?, sun_exposure_preferred = ? WHERE plant = ?', [sunniest, shadiest, preferred, plantOf(name)]);
+      for (const [field, source, kind] of rows) run('INSERT INTO trait_sources VALUES (?, ?, ?, ?, ?)', [plantOf(name), field, source, null, kind]);
+    }
     for (const [name, ...rest] of FIXTURE_FROST) run('INSERT INTO plant_frost VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [plantOf(name), ...rest]);
     run('INSERT INTO plant_aliases VALUES (?, ?, ?)', ...FIXTURE_ALIASES);
     for (const [name, ...rest] of FIXTURE_TOXICITY_PARTS) run('INSERT INTO plant_toxicity_parts VALUES (?, ?, ?, ?, ?, ?)', [plantOf(name), ...rest]);

@@ -62,32 +62,6 @@ test('X3: a list pasted on Start and shown is the consortium with Share, saved: 
   });
 });
 
-// Review R4-3 changed this seam: a site answer given back on Place (the palette's step 1; "Change
-// site" until b1a conformance-4) is the draft's, and a commit (a paste of a plant not in the
-// consortium here, then "Show my palette") saves it; D1 covers the draft.
-test('X3: a site answer made back on Place is saved with the commit, and a reload keeps it', async (t) => {
-  const plants = await temperate();
-  await behaviour(t, async (v) => {
-    const page = await suggested(v);
-    const ids = new Set(await memberIds(page));
-    const other = plants.find((p) => !ids.has(p.id));
-    assert.ok(other, 'a Temperate plant not in the consortium');
-    await toPlace(page);
-    await openCards(page);
-    await page.locator(aria('radio', 'Shade')).click();
-    await pasteOne(page, other.name);
-    const after = await savedFragment(page);
-    assert.equal(param(await savedPlace(page), 'l'), 'shade', `the draft's answer is saved with the commit (place ${await savedPlace(page)})`);
-    assert.equal(await linkOf(page), after, 'and in the address');
-    await page.reload();
-    assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000), 'the consortium is restored');
-    assert.equal(await linkOf(page), after, 'the same palette');
-    assert.equal(param(await savedPlace(page), 'l'), 'shade', 'with the answer (link v5 keeps it in the save\'s place, never the address)');
-    await done(page);
-  });
-});
-
 // Owner 2026-11-15 (decision 1; save model, fix round 3): back on Place, an answer is saved at once,
 // as in the "Your place" sheet; the old card gives the old palette back.
 test('F1: back on Place, another climate is saved at once, every plant kept, and a reload keeps it', async (t) => {
@@ -319,23 +293,6 @@ test('M3 (R4-2): Start over leaves alone a save another tab wrote since', async 
     await page.locator(aria('button', 'Start over')).click();
     assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000));
     assert.equal(await saved(page), OTHER_TAB);
-    await done(page);
-  });
-});
-
-test('D1 (R4-3; owner 2026-11-15): a site answer given back on Place is saved at once; Suggest takes the answer', async (t) => {
-  await behaviour(t, async (v) => {
-    const page = await suggested(v);
-    await placeTo(page, 'Tropical');
-    await page.locator('input[name="ct-site-water"]:not(:checked)').click();
-    let water = await page.$eval('input[name="ct-site-water"]:checked', (el) => el.value);
-    assert.ok(await page.waitForFunction((w) => new URLSearchParams(JSON.parse(localStorage.getItem('canopi-consortium') ?? '{}').place ?? '').get('w') === w, { timeout: 4000 }, water).then(() => true, () => false), `the answer is saved at once (place ${await savedPlace(page)})`);
-    await page.locator(aria('radio', 'Temperate')).click();
-    await page.locator('input[name="ct-site-water"]:not(:checked)').click();
-    water = await page.$eval('input[name="ct-site-water"]:checked', (el) => el.value);
-    await page.locator(aria('button', en['consortium.start.suggest'])).click();
-    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
-    assert.equal(param(await savedPlace(page), 'w'), water, `Suggest keeps the answer (place ${await savedPlace(page)})`);
     await done(page);
   });
 });

@@ -31,8 +31,8 @@
 // which change the palette's own place in place, every plant kept (state/draft.ts chooseClimate).
 import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { ClimateZone, Room, Site } from '../../../../lib/consortium/index.ts';
-import { countryStatus, lights, roomValues, ROOM_LIMIT_M, soils, waters, zoneOf } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
+import { countryStatus, roomValues, ROOM_LIMIT_M, zoneOf } from '../../../../lib/consortium/index.ts';
 import { climate, closeSheet, country, location as siteLocation, proposedClimate, knownCountries, memberTaxa, members, openSheet, plot, pool, removeMember, room, site, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { formatArea, formatLength, parsePlotSize } from '../../format.ts';
@@ -260,33 +260,8 @@ function OwnPlants() {
   );
 }
 
-// ---- Your spot (today's three questions, until PP-F) ----
-const SPOT_QUESTIONS = { light: lights, soil: soils, water: waters } as const;
-function SpotQuestions() {
-  const s = site.value;
-  const set = (k: keyof typeof SPOT_QUESTIONS, v: string) => { site.value = { ...site.value, [k]: v } as Site; };
-  return (
-    <section class="ct-step ct-panel" aria-labelledby="ct-site-h">
-      <h2 class="ct-step-title" id="ct-site-h">{T('site.title')}</h2>
-      <p class="ct-muted ct-step-lede">{T('site.intro')}</p>
-      <div class="ct-site-grid">
-        {(Object.keys(SPOT_QUESTIONS) as (keyof typeof SPOT_QUESTIONS)[]).map((k) => (
-          <fieldset class="ct-seg">
-            <legend>{T(`site.q.${k}`)}</legend>
-            <div class="ct-seg-row">
-              {SPOT_QUESTIONS[k].map((v) => (
-                <label class={s[k] === v ? 'is-on' : ''}>
-                  <input type="radio" name={`ct-site-${k}`} value={v} checked={s[k] === v} onChange={() => set(k, v)} />
-                  <span>{T(`site.a.${k}.${v}`)}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        ))}
-      </div>
-    </section>
-  );
-}
+// ---- Your spot: gone with the site-inputs layer (spot and soil answers dormant until PP-F, owner
+// 2026-11-18; spec update point 6). The spot questions come back with PP-F's Spot board.
 
 // ---- the arrival lines (Arrivals board) ----
 // In one live region that stays on the page, so a line is never inserted with its region (A25).
@@ -371,7 +346,6 @@ function PlaceForm() {
         <>
           <RoomStep />
           <OwnPlants />
-          <SpotQuestions />
           <div class="ct-cta">
             <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}</button>
           </div>
@@ -414,7 +388,6 @@ export function PlaceSheet({ Frame }: { Frame: Frame }) {
         <Climates />
         {z && <PoolSlot zone={z} />}
         <RoomStep />
-        <SpotQuestions />
       </div>
     </Frame>
   );

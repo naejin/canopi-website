@@ -12,14 +12,14 @@
 // for land), nothing shows.
 import type { FutureCheck, FutureSummary, Taxon } from '../../../../lib/consortium/index.ts';
 import { futureSummary, periodName, scenarioName, scenarios } from '../../../../lib/consortium/index.ts';
-import { location, memberTaxa, scenario } from '../../store.ts';
+import { memberTaxa, scenario, siteClimate, siteInputs } from '../../store.ts';
 import { P, T } from '../../strings.ts';
 import { openDetails } from '../StageBar.tsx';
 import { listOf, nameOf } from '../kit/names.ts';
 
 export function FuturePanel() {
-  const site = location.value;
-  if (!site?.lookup?.climate) return null;
+  if (!siteClimate.value) return null;
+  const site = siteInputs.value;
   const taxa = memberTaxa.value;
   const chosen = scenario.value;
   const sum = futureSummary(taxa, site, chosen);

@@ -207,13 +207,13 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
       const bad = [];
       // Start drawn first (the test build renders after its hook's chunk arrives).
       assert.ok(await has(page, 'input[name="ct-climate"][value="temperate"]', 20_000), `${at}: Start is drawn`);
-      // The climate first, and the site questions awaited: they show once the database is open and
+      // The climate first, and the room question awaited: it shows once the database is open and
       // the list read. Until then Start moves: the open database refines the guessed country from the
       // time zone ("Use United States" becomes "Use France" here), and the line's new height shifts
       // every control below it (46 px at en 320 and ja 390), so a click aimed before the shift misses
       // the map button. The radio is clicked in the page, which no shift can miss.
       await page.$eval('input[name="ct-climate"][value="temperate"]', (el) => el.click());
-      assert.ok(await has(page, 'input[name="ct-site-light"][value="shade"]', 20_000), `${at}: the site questions (the list is read)`);
+      assert.ok(await has(page, 'input[name="ct-site-room"][value="large"]', 20_000), `${at}: the room question (the list is read)`);
       assert.equal(await loadState(page), 'ready');
       // The map dialog (start step).
       if (await has(page, '[data-location-action="map"]', 4000)) {
@@ -224,8 +224,8 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
       } else bad.push('no map button');
-      await settled(page, 'input[name="ct-site-light"][value="shade"]');
-      await page.click('input[name="ct-site-light"][value="shade"]');
+      await settled(page, 'input[name="ct-site-room"][value="large"]');
+      await page.click('input[name="ct-site-room"][value="large"]');
       await page.locator(aria('button', S('start.suggest'))).click();
       // The palette page (the matrix's and the side view's explanations went in PP-B commit 0a'): it
       // and the plant dialog stay within the gutter, nothing wider than the window.

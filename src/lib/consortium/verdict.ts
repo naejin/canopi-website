@@ -2,14 +2,14 @@
 // period and one scenario. Reached only through verdict-load.ts loadVerdictRule (its own chunk, role
 // `verdict`): no first-run module imports this file. Built on the rule files (rule L10): range.ts for
 // the climate sides (slotCheck's bounds, one owner of the margin and the chill and summer rules),
-// future.ts for the period a plant is judged at and the scenarios that agree, site.ts for the spot
-// answers asked today (light, water, a soil word), the room note and the shade of taller members.
+// future.ts for the period a plant is judged at and the scenarios that agree, site.ts for the grower's
+// site inputs (place.ts siteOf; none reachable until PP-F): light, drainage, a tested soil pH, the room note and the shade of taller members.
 //
 // Rules (each decided, 3.2):
 // - The period judged is the page period, never later than the plant's own years (judgedPeriod:
 //   future.ts futurePeriod; a short-lived plant is judged on today).
-// - Each climate side of RANGE_BOUNDS against the judged period's slot (place.ts climateFor, the one
-//   climate reader): inside → fits, within the margin → look, beyond → outside. An annual beyond its
+// - Each climate side of RANGE_BOUNDS against the judged period's slot (place.ts climateFor over the
+//   merged site inputs, site-inputs.ts: the one climate reader): inside → fits, within the margin → look, beyond → outside. An annual beyond its
 //   heat range is advised to the cool season (note 'cool-season'), its hot side fits.
 // - No slot (no location, a period with no projection) or no range recorded: no climate factor, the
 //   level 'unknown' ("not checked"), never 'fits'.
@@ -40,7 +40,7 @@ import { borrowedFrom } from './placement.ts';
 import { aridityFit, boundPassed, coolSeasonOf, isAnnual, passes, RANGE_BOUNDS, RANGE_MARGIN_C, slotCheck } from './range.ts';
 import { futurePeriod } from './future.ts';
 import { fits, misfitsBeside, shadedBy, tallerThanRoom } from './site.ts';
-import { climateFor, siteFor } from './place.ts';
+import { climateFor, siteOf } from './place.ts';
 
 const TODAY: PeriodId = periodIds[0];
 const FEW_RECORDS = 300;
@@ -61,7 +61,7 @@ const hasRange = (t: Taxon): boolean => {
 // The climate factors at one period and scenario, with the notes they give; null when nothing could
 // be compared (no slot, no range recorded).
 function climateFactors(taxon: Taxon, ctx: VerdictContext, period: PeriodId, scenario: string): { factors: FactorVerdict[]; notes: VerdictNote[] } | null {
-  const slot = climateFor({ lookup: ctx.lookup, scenario }, period);
+  const slot = climateFor({ inputs: ctx.inputs, scenario }, period);
   if (!slot || !hasRange(taxon)) return null;
   const factors: FactorVerdict[] = [], notes: VerdictNote[] = [];
   for (const b of RANGE_BOUNDS) {
@@ -82,7 +82,7 @@ function climateFactors(taxon: Taxon, ctx: VerdictContext, period: PeriodId, sce
   if (arid === 'drier' || arid === 'wetter') notes.push(arid);
   if (arid === 'not-checked') factors.push({ factor: 'dry', level: 'unknown', basis: 'range', place: null, low: null, high: null });
   else if (arid !== 'unknown') factors.push({ factor: 'dry', level: arid === 'inside' ? 'fits' : 'look', basis: 'range', place: slot.aridityIndex, low: band?.low ?? null, high: band?.high ?? null });
-  const height = ctx.place.spot.height;
+  const height = ctx.inputs.coldAir.value;
   if ((height === 'higher' || height === 'hollow') && taxon.climate?.tminCold?.low != null && isColdLimited(taxon, slot.tminColdC)) notes.push('cold-air');
   return { factors, notes };
 }
@@ -94,8 +94,8 @@ function isColdLimited(taxon: Taxon, tmin: number): boolean {
 }
 
 // The spot and soil hints asked today (light, water, a soil word), each at most 'look'.
-// site: siteFor(ctx.place, ctx.lookup), read once per verdicts() call (resolveSoil runs in it).
-type SiteOf = ReturnType<typeof siteFor>;
+// site: siteOf(ctx.inputs), read once per verdicts() call.
+type SiteOf = ReturnType<typeof siteOf>;
 function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors: FactorVerdict[]; roomTall: boolean; dryMonths: boolean } {
   const fit = fits(taxon, site);
   const shaded = !!ctx.canopy && shadedBy(taxon, site, ctx.canopy);
@@ -118,7 +118,7 @@ const worst = (fs: readonly FactorVerdict[]): FactorVerdict | null =>
   fs.reduce<FactorVerdict | null>((w, f) => (setsLevel(f) && ORDER[f.level] > (w ? ORDER[w.level] : 0) ? f : w), null);
 
 export function verdict(taxon: Taxon, ctx: VerdictContext): PlantVerdict {
-  return verdictAt(taxon, ctx, siteFor(ctx.place, ctx.lookup));
+  return verdictAt(taxon, ctx, siteOf(ctx.inputs));
 }
 function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdict {
   const judged = judgedPeriod(taxon, ctx.period);
@@ -142,7 +142,7 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   // wetter place is worst() itself ("needs a second look · wetter here"), never "may need watering".
   const dryEdge = factors.find((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low) ?? null;
   const limiting = dryEdge && (!worstOne || worstOne.level === 'fits') ? dryEdge : worstOne;
-  const range = climate ? 'judged' : climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, judged) ? 'not-recorded' : 'no-climate';
+  const range = climate ? 'judged' : climateFor({ inputs: ctx.inputs, scenario: ctx.scenario }, judged) ? 'not-recorded' : 'no-climate';
   const out: PlantVerdict = { id: taxon.id, judged, ownYears: judged !== ctx.period, level, limiting, factors, notes, range };
   const from = borrowedFrom(taxon);
   if (from) out.borrowed = from;
@@ -167,8 +167,8 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
 // of the context.
 function laterNotes(taxon: Taxon, ctx: VerdictContext): VerdictNote[] {
   const own = futurePeriod(taxon);
-  const later = own && climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, own);
-  const today = climateFor({ lookup: ctx.lookup, scenario: ctx.scenario }, TODAY);
+  const later = own && climateFor({ inputs: ctx.inputs, scenario: ctx.scenario }, own);
+  const today = climateFor({ inputs: ctx.inputs, scenario: ctx.scenario }, TODAY);
   if (!later || !today) return [];
   const out: VerdictNote[] = [];
   if (slotCheck(taxon, today).beyond.some((s) => s === 'cool' || s === 'summer') && slotCheck(taxon, later).beyond.length === 0) out.push('warm-enough-later');
@@ -177,7 +177,7 @@ function laterNotes(taxon: Taxon, ctx: VerdictContext): VerdictNote[] {
 }
 
 export function verdicts(taxa: readonly Taxon[], ctx: VerdictContext): Map<PlantId, PlantVerdict> {
-  const site = siteFor(ctx.place, ctx.lookup);
+  const site = siteOf(ctx.inputs);
   return new Map(taxa.map((t) => [t.id, verdictAt(t, ctx, site)]));
 }
 

@@ -120,27 +120,35 @@ test('P5-14c (S5c → PP-B b1b count line): at Seville the line counts the 198 o
   assert.ok(await page.waitForFunction(() => !document.querySelector('[data-pool-count]'), { timeout: 5000 }).then(() => true, () => false), 'the line goes with the location');
 });
 
+// The chunk that holds the range checks (core range.ts): Rollup names it after one of its modules
+// ("range" until the site-inputs layer, "future" since range.ts and future.ts share their importers),
+// so it is found by its RANGE_BOUNDS table, never by its name.
+const ASTRO = () => join(ROOT, h.dir, 'client', '_astro');
+function rangeChunk() {
+  const files = readdirSync(ASTRO()).filter((f) => f.endsWith('.js') && readFileSync(join(ASTRO(), f), 'utf8').includes('range:"tminCold"'));
+  assert.equal(files.length, 1, `one chunk holds the range checks (${files.join(', ')})`);
+  return files[0];
+}
 // The build's chunks that name the range chunk's file (the entry's import() included): its importers,
 // each of which may request it once.
-function rangeImporters() {
-  const dir = join(ROOT, h.dir, 'client', '_astro'), files = readdirSync(dir);
-  const range = files.find((f) => /^range\.[\w-]+\.js$/.test(f));
-  assert.ok(range, 'the range chunk is in the build');
-  return files.filter((f) => f.endsWith('.js') && f !== range && readFileSync(join(dir, f), 'utf8').includes(range)).length;
+function rangeImporters(range) {
+  return readdirSync(ASTRO()).filter((f) => f.endsWith('.js') && f !== range && readFileSync(join(ASTRO(), f), 'utf8').includes(range)).length;
 }
 
-test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; PP-C c2: one verdict failure state): a curated list says in place that part of the tool did not load (its panel, which imports the range checks, fails as one), no toast, no request again for a new location, and the line goes with the location', async () => {
-  const page = await tool();
+test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; PP-C c2: one verdict failure state): a curated list says in place that part of the tool did not load (its count line: could not check, with Retry), no toast, no request again for a new location, and the line goes with the location', async () => {
+  const page = await tool(), range = rangeChunk();
   const cdp = await page.createCDPSession();
   const urls = new Map(), failed = [];
   cdp.on('Network.requestWillBeSent', (e) => urls.set(e.requestId, e.request.url));
-  cdp.on('Network.loadingFailed', (e) => { if (/\/_astro\/range\./.test(urls.get(e.requestId) ?? '')) failed.push(e.blockedReason); });
+  cdp.on('Network.loadingFailed', (e) => { if ((urls.get(e.requestId) ?? '').endsWith(`/_astro/${range}`)) failed.push(e.blockedReason); });
   await cdp.send('Network.enable');
-  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
+  await cdp.send('Network.setBlockedURLs', { urls: [`*/_astro/${range}`] });
   await page.evaluate(() => { window.__toasts = new Set(); window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.add(t.id); }); });
   await choose(page, 'Mediterranean');
   await atSite(page, 'seville');
-  const FAILED = '#ct-root .ct-notice[role="alert"]';
+  // The panel no longer imports the range checks (the site-inputs layer moved siteToday to the first
+  // run): it loads, and its count line says the check failed, with Retry.
+  const FAILED = '#ct-root [data-pool-count="failed"]';
   assert.ok(await has(page, FAILED, 10_000), 'the failed line, in place');
   assert.equal(await page.$('[data-range-unavailable]'), null, 'a curated list keeps its panel');
   await new Promise((r) => setTimeout(r, 1000));
@@ -149,7 +157,7 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; PP-C c2: one ve
   // parts, later). Chrome shares one request between imports in flight together, and reuses a failure
   // for later ones locally, but the CI runner's Chrome sent four (run 43971791616). So the bound is
   // read from the build, one request per importer at most, and none more after a new location.
-  const before = failed.length, importers = rangeImporters();
+  const before = failed.length, importers = rangeImporters(range);
   assert.ok(before >= 1 && before <= importers, `the chunk was requested at Seville (${before} of at most ${importers})`);
   await atSite(page, 'lyon');
   await new Promise((r) => setTimeout(r, 1000));
@@ -157,7 +165,7 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; PP-C c2: one ve
   assert.equal(await page.evaluate(() => window.__toasts.size), 0, 'said in place, never by a toast');
   assert.ok(await has(page, FAILED), 'the line stays');
   await page.evaluate(() => { window.__ctTest.store.location.value = null; });
-  assert.ok(await page.waitForFunction(() => !document.querySelector('#ct-root .ct-notice[role="alert"]') && !window.__ctTest.store.rangeFailed.value, { timeout: 5_000 }).then(() => true, () => false), 'location cleared: plain P2, no failed line');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('#ct-root [data-pool-count="failed"]') && !window.__ctTest.store.rangeFailed.value, { timeout: 5_000 }).then(() => true, () => false), 'location cleared: plain P2, no failed line');
 });
 
 test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Place with the nothing-fits state', async () => {
@@ -360,7 +368,7 @@ test('P5-26e (S5c borrowed climate, range chunk offline, fix review 29b709e 2): 
   const page = await tool();
   const cdp = await page.createCDPSession();
   await cdp.send('Network.enable');
-  await cdp.send('Network.setBlockedURLs', { urls: ['*/_astro/range.*'] });
+  await cdp.send('Network.setBlockedURLs', { urls: [`*/_astro/${rangeChunk()}`] });
   await atSite(page, 'seville');
   await page.evaluate(() => { window.__ctTest.store.climate.value = 'Subtropical'; });
   assert.ok(await has(page, '[data-range-unavailable]', 10_000), 'the notice');
@@ -491,7 +499,7 @@ test('P5-27o (S5c seam review round 4, 1): a waiting Suggest whose guest list ne
 
 // Decision row "Climate ranges fixed before the P5 push" (2026-11-12): the zone from the cell's own means,
 // annuals beyond their heat range advised to the cool season, drought tolerance Medium on a dry site.
-test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Siberian purslane (a recorded annual) is a cool-season crop in Details; a dry site marks drought tolerance Medium; nothing scrolls sideways @real-data', async () => {
+test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; at Seville Siberian purslane (a recorded annual) is a cool-season crop in Details; nothing scrolls sideways @real-data', async () => {
   const [lat, lon] = SITES.nairobi;
   for (const width of [320, 390, 1280]) {
     const page = await tool({ width, geolocation: { lat, lon } });
@@ -520,16 +528,9 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
       marks: [...document.querySelectorAll('#ct-root .ct-tag, #ct-root .ct-flag, dialog .ct-tag, dialog .ct-flag')].filter((e) => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((e) => e.textContent) }));
     // doc ≤ 0: with the dialog open on desktop the page's scrollbar is hidden (scrollWidth < clientWidth).
     assert.deepEqual({ doc: Math.max(0, over.doc), marks: over.marks }, { doc: 0, marks: [] }, `${width} px: no sideways scroll, no mark past the edge`);
+    assert.deepEqual(page.thirdParty, []);
   }
-  // A dry site, no location: drought tolerance Medium (lemon) says to water in the dry months.
-  const page = await tool({ width: 390 });
-  await choose(page, 'Mediterranean');
-  const lemon = await page.evaluate(() => window.__ctTest.store.pools.value.Mediterranean.find((t) => t.canonical_name === 'Citrus limon')?.id);
-  assert.ok(lemon, 'lemon is on the Mediterranean list');
-  await page.evaluate((id) => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, water: 'dry' }; store.openSheet('details', id); }, lemon);
-  assert.ok(await has(page, '[data-against] [data-note="dry-months"]', 10_000), 'Details: the watering line');
-  assert.equal(await text(page, '[data-against] [data-note="dry-months"]'), 'Needs watering in the dry months.');
-  assert.deepEqual(page.thirdParty, []);
+  // (A dry site's watering line waits for the watering input's rule, F4: no site input says "dry" yet.)
 });
 
 // Owner request 2026-11-12: the room answer is advisory ("inform, don't block"; "warn, never hide"): a
@@ -541,7 +542,7 @@ test('P5-27r (S5c climate ranges, room advisory; PP-C commit 0): in a small gard
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     await choose(page, 'Temperate');
-    await page.evaluate(() => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, room: 'small' }; store.openSheet('paste'); });
+    await page.evaluate(() => { const { store } = window.__ctTest; store.room.value = 'small'; store.openSheet('paste'); });
     assert.ok(await has(page, 'dialog.ct-sheet[open] textarea', 10_000), 'the Paste sheet');
     await page.type('dialog.ct-sheet[open] textarea', 'Juglans regia');
     await settled(page, 'dialog.ct-sheet[open] .ct-add-bar .button-primary'); // the sheet slides in (details.css ct-sheet-in)

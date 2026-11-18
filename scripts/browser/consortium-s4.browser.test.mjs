@@ -44,11 +44,11 @@ const done = async (...pages) => { for (const p of pages) await p.browserContext
 const countryText = (page) => page.$eval('[data-ct="country"]', (el) => el.textContent);
 const fixtureTemperate = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
 const UNSURE_SPOT = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
-// A #v=5 link of the first five fixture Temperate plants that brings a place: a country and a sun
-// answer (the stage and Keep went in PP-B commit 0a').
+// A #v=5 link of the first five fixture Temperate plants that brings a place: a country and a cell in
+// Lyon (spot answers are dormant until PP-F; the stage and Keep went in PP-B commit 0a').
 const stageLink = async () => {
   const ids = await fixtureTemperate();
-  return encodeLink({ climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: { ...UNSURE_SPOT, light: 'sun' }, soil: null, members: ids.slice(0, 5), removed: [], guests: [] }, { Temperate: ids }, { place: true });
+  return encodeLink({ climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: UNSURE_SPOT, soil: null, members: ids.slice(0, 5), removed: [], guests: [] }, { Temperate: ids }, { origin: { lat: 45.75, lon: 4.85 } });
 };
 
 test('BT-7 (S4 share): a copied link opened as a new document restores the same palette; an unknown token and an old beta link (read as unreadable) give their notices; a reload restores the last palette', async (t) => {
@@ -86,14 +86,18 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.equal(hashOf(await shareLink(page)), hashOf(link), 'the last palette is restored');
     await done(page);
 
-    // A link that brings a place (a country and a spot answer) round-trips with "Include my place"
+    // A link that brings a place (a country and a cell) round-trips with "Include my place"
     // ticked; a reload of it keeps the country "from the shared link". "Use it" makes the country the
     // reader's; the save takes it with the first plant change (owner 2026-11-15, decision 2: only a
     // plant change replaces the reader's save on a link's page).
     const staged = await stageLink();
     const shared = await h.open(`/palette/?run=${Date.now()}#${staged}`, { ...v, data: 'fixture' });
     assert.equal(await loadState(shared), 'ready');
-    assert.equal(hashOf(await shareLink(shared, { place: true })), `#${staged}`, 'room, members, country and spot round-trip');
+    // The cell travels as the page's cell centre, so it is compared apart.
+    const noCell = (h) => h.replace(/&o=[^&]+/, '');
+    const back = hashOf(await shareLink(shared, { place: true }));
+    assert.equal(noCell(back), noCell(`#${staged}`), 'room, members and country round-trip');
+    assert.match(back, /[#&]o=-?[\d.]+,-?[\d.]+/, 'with the cell');
     assert.match(await countryText(shared), /from the shared link/);
     await shared.reload();
     assert.equal(await loadState(shared), 'ready');

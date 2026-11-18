@@ -45,10 +45,13 @@ const slotOf = (r) => ({
   tminColdC: r.tmin_cold_c, tmaxWarmC: r.tmax_warm_c, tmeanColdC: r.tmean_cold_c, tmeanWarmC: r.tmean_warm_c, aridityIndex: r.aridity_index ?? null,
 });
 const lookupOf = (rows) => (rows ? { lat: 0, lon: 0, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: rows.map(slotOf) }, soil: null, regions: { wgsrpdL3: null, isoA2: null } } : null);
-const placeOf = (words = {}, room) => ({ ...core.emptyPlace, room: room ?? core.emptyPlace.room, spot: { ...core.emptyPlace.spot, light: words.l ?? 'unsure', height: words.h ?? 'unsure', water: words.w ?? 'unsure' } });
+// A vector place's words as grower edits of the site inputs (site-inputs.ts): l the light, h the cold air
+// (height), w 'wet' the drainage; the page reaches none of them until the figures panel and PP-F.
+const editsOf = (words = {}) => ({ ...(words.l ? { light: words.l } : {}), ...(words.h ? { coldAir: words.h } : {}), ...(words.w === 'wet' ? { drainage: 'wet' } : {}) });
+const inputsOf = (lookup, words, room) => core.siteInputsOf({ lookup, room, edits: editsOf(words) });
 const vPlant = (k) => plantOf(k, V.plants[k]);
 const vCtx = (input, period = V.thresholds.today_period) => ({
-  place: placeOf(V.places[input.place], input.room), lookup: lookupOf(input.climate ? V.climates[input.climate] : null),
+  inputs: inputsOf(lookupOf(input.climate ? V.climates[input.climate] : null), V.places[input.place], input.room),
   period, scenario: V.thresholds.scenario, canopy: core.canopyOf((input.members ?? []).map(vPlant)),
 });
 
@@ -89,7 +92,7 @@ test('PP-B (b2 verdict engine, DATA-1): every range-verdict vector of the instal
     if (!p || !s) continue; // a plant absent from the export (source.absent_plants)
     const rows = s.no_climate ? null : [s.period === '1991-2020' ? s : { ...s, period: '1991-2020', scenario: 'historical' }, ...(s.period === '1991-2020' ? [] : [s])];
     const t = plantOf(x.plant, { ...p, phase_start: 'secondary_i', phase_end: 'climax' });
-    const v = verdict(t, { place: core.emptyPlace, lookup: lookupOf(rows), period: s.period ?? '1991-2020', scenario: s.scenario === 'historical' ? 'ssp245' : s.scenario });
+    const v = verdict(t, { inputs: inputsOf(lookupOf(rows)), period: s.period ?? '1991-2020', scenario: s.scenario === 'historical' ? 'ssp245' : s.scenario });
     const name = `${x.site} / ${x.plant}`;
     assert.equal(v.level, LEVEL_OF[x.verdict], `${name}: level (verdict stub returns unknown)`);
     for (const [side, want] of Object.entries(x.sides)) {
@@ -149,7 +152,7 @@ test('PP-B (b1b countFits, real data): guests in the palette are left out of the
   const real = createSqliteSource(opened.db, { images: {} });
   const temperate = await real.pool('Temperate'), tropical = await real.pool('Tropical');
   const own = new Set(temperate.map((t) => t.id));
-  const guest = tropical.find((x) => !own.has(x.id) && ['inside', 'edge'].includes(core.rangeFit(x, KIAMBU)));
+  const guest = tropical.find((x) => !own.has(x.id) && ['inside', 'edge'].includes(core.rangeFit(x, inputsOf(KIAMBU.lookup))));
   assert.ok(guest, 'a Tropical plant, not on the Temperate list, that fits Kiambu');
   try {
     state.signals.climate.value = 'Temperate';
@@ -169,7 +172,7 @@ test('PP-B (b1b countFits, real data): guests in the palette are left out of the
 test('PP-B (b2 countFits, real data): Kiambu, countFits counts what the pool panel\'s range rule keeps (inside or near the edge)', async () => {
   const store = await kiambuStore();
   const n = store.countFits.value;
-  const kept = store.pools.value.Subtropical.filter((t) => ['inside', 'edge'].includes(core.rangeFit(t, KIAMBU))).length;
+  const kept = store.pools.value.Subtropical.filter((t) => ['inside', 'edge'].includes(core.rangeFit(t, inputsOf(KIAMBU.lookup)))).length;
   assert.equal(n.of, 515);
   assert.equal(n.fits + n.look, kept, `countFits ${n.fits + n.look}, the range rule keeps ${kept} (verdict stub counts none)`);
 });
@@ -303,7 +306,7 @@ test('PP-B (b2 lines, 3.2): fitLine, holeLine and yearsLine give one key under c
 test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export are timed and reported', async (t) => {
   const store = await kiambuStore();
   const members = store.pools.value.Subtropical.slice(0, 200);
-  const ctx = { place: core.emptyPlace, lookup: KIAMBU.lookup, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
+  const ctx = { inputs: inputsOf(KIAMBU.lookup), period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
   const t0 = performance.now();
   const v = verdicts(members, ctx);
   core.nextStep(core.holes({ members, verdicts: v, pending: false }));
@@ -406,7 +409,7 @@ test('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added 
 // (scripts/palette-200.mjs: real export ids, mixed light levels and roles, 6 guests; b3 reuses it.)
 const p200 = await import('./palette-200.mjs');
 const derive = (P, members) => {
-  const ctx = { place: core.emptyPlace, lookup: p200.KIAMBU.lookup, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
+  const ctx = { inputs: inputsOf(p200.KIAMBU.lookup), period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
   const v = verdicts(members, ctx);
   const holes = core.holes({ members, verdicts: v, pending: false });
   core.nextStep(holes);
@@ -418,7 +421,7 @@ test('PP-B (b2 scale, 200 plants): every picture folds and its table lists all 2
   assert.equal(members.length, 200);
   derive(P, members.slice(0, 20)); // warm the modules' code paths once
   const t0 = performance.now();
-  const ctx = { place: core.emptyPlace, lookup: p200.KIAMBU.lookup, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
+  const ctx = { inputs: inputsOf(p200.KIAMBU.lookup), period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
   const v = verdicts(members, ctx);
   core.nextStep(core.holes({ members, verdicts: v, pending: false }));
   const probe = performance.now() - t0;

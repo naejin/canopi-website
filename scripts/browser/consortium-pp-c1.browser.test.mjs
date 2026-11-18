@@ -272,10 +272,10 @@ test('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit first;
   assert.ok(await has(page, `${FIND} ${aria('button', en['consortium.undo'])}`, 2000), 'a result line with Undo');
   await page.click(`${FIND} ${aria('button', 'Done')}`);
   assert.equal(await page.$('dialog[open]'), null, 'Done closes Find');
-  // PP-B34's dry, shady spot (review c0 round 2, 5a): for up to 6 holes, Find lists exactly what "See
+  // PP-B34's shady spot (review c0 round 2, 5a; a dry site waits for watering's rule, F4): for up to 6 holes, Find lists exactly what "See
   // all N" counts once the outside ones are shown, and every site misfit (verdict level 'look') sits
   // in [data-find-group="look"], listed, never hidden.
-  await page.evaluate(() => { const { store } = window.__ctTest; store.spot.value = { ...store.spot.value, light: 'shade', water: 'dry' }; store.hideToast(); });
+  await page.evaluate(() => { const { store } = window.__ctTest; store.siteEdits.value = { light: 'shade' }; store.hideToast(); });
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value && document.querySelector('.ct-next')?.dataset.hole, { timeout: 10_000 });
   for (let i = 0; i < 6 && await page.$('.ct-next-actions .button'); i++) {
     const hole = await page.$eval('.ct-next-hole', (e) => e.textContent.trim());

@@ -46,8 +46,8 @@ function Item({ w, byId }: { w: WeighLine; byId: Map<PlantId, Taxon> }) {
 }
 
 export function Weigh({ members, pending, unchecked }: { members: readonly Taxon[]; pending: boolean; unchecked: number }) {
-  const { lookup, period } = store.verdictContext.value;
-  const out = useMemo(() => weighLines(members, { lookup, period }, { pending, unchecked }), [members, pending, unchecked, lookup, period]);
+  const { inputs, period } = store.verdictContext.value;
+  const out = useMemo(() => weighLines(members, { inputs, period }, { pending, unchecked }), [members, pending, unchecked, inputs, period]);
   const byId = useMemo(() => new Map(members.map((t) => [t.id, t])), [members]);
   // Nothing to weigh and every plant checked: no section (no all-clear line, owner 2026-11-15). Plants
   // not checked are said even with no line, as the check did not cover the whole palette.

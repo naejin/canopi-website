@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { cellCentre, isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
-import { country, location as site, soil, spot } from '../store.ts';
+import { country, location as site } from '../store.ts';
 import { currentFragment, shareUrl, shownFragment, storageWorks } from '../state/persist.ts';
 
 export function Share({ onClose }: { onClose: () => void }) {
@@ -20,7 +20,8 @@ export function Share({ onClose }: { onClose: () => void }) {
   const [withPlace, setWithPlace] = useState(false);
   const origin = cellCentre(site.value?.lookup ?? null);
   const c = country.value;
-  const hasPlace = origin !== null || Object.values(spot.value).some((v) => v !== 'unsure') || soil.value.from !== 'map' || (c.code !== null && c.source !== 'guess');
+  // The spot and soil answers are dormant until PP-F (links carry none): the place is the cell and the country.
+  const hasPlace = origin !== null || (c.code !== null && c.source !== 'guess');
   const fragment = withPlace && hasPlace ? currentFragment({ origin, place: true }) ?? shown : shown;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);

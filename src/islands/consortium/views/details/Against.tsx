@@ -14,7 +14,7 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
 import type { AgainstEntry, Band, Dispute, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
-import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf } from '../../../../lib/consortium/index.ts';
+import { againstLines, bandsOf, levelLine, limitOf, lineTerm, periodName, scenarioName, soilBandOf, testedPh } from '../../../../lib/consortium/index.ts';
 import { LevelIcon, say } from '../kit/fit.tsx';
 import { coords } from '../kit/names.ts';
 import { formatNumber, formatTemp } from '../../format.ts';
@@ -144,8 +144,7 @@ export function Against({ t, disputes = [], traitSources = null }: { t: Taxon; d
   const later = store.laterVerdictOf(t, v);
   // The placement's estimate is said once, in the header (minor, round 3), not again here.
   const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null }).filter((e) => !e.placement);
-  const soil = store.soil.value;
-  const bands = [...bandsOf(v, later, t.climate), soilBandOf(t, v, soil.from === 'own' ? soil.ph : null, traitSources)].filter((b): b is Band => !!b);
+  const bands = [...bandsOf(v, later, t.climate), soilBandOf(t, v, testedPh(store.siteInputs.value), traitSources)].filter((b): b is Band => !!b);
   const period = later ? periodName(later.judged) : null;
   // Each measure's lines under its band; the rest (notes, hedges, the later period's lines) after.
   const inBand = (e: AgainstEntry, b: Band) => !e.later && !e.note && !!e.factor && b.factors.includes(e.factor);

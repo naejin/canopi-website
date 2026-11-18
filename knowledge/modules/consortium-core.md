@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schemas 3 and 4 that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:22Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:48Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:76adc2791c1ed27f
-    last_modified: 2026-11-17T17:54:47Z
+    digest: sha256:130be072c506a3b0
+    last_modified: 2026-11-18T00:10:23Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -21,8 +21,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:4408d770ddaa43cf
-    last_modified: 2026-11-17T14:13:26Z
+    digest: sha256:c1c19c1206540419
+    last_modified: 2026-11-17T23:48:31Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -46,13 +46,13 @@ sources:
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
-    digest: sha256:a9e179d333edafd9
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:b0a47f7ef91900b2
+    last_modified: 2026-11-18T00:06:43Z
   - id: readme-md
     resource: ../../scripts/fixtures/consortium-v2/README.md
     title: scripts/fixtures/consortium-v2/README.md
-    digest: sha256:a6c181c9da3b3fa4
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:36f6c051025b00a6
+    last_modified: 2026-11-18T00:12:32Z
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
@@ -66,8 +66,8 @@ sources:
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
-    digest: sha256:97eb8abd71783b99
-    last_modified: 2026-11-15T10:05:29Z
+    digest: sha256:8cde2d6c1b566293
+    last_modified: 2026-11-17T19:12:16Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -91,8 +91,8 @@ sources:
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
-    digest: sha256:c97a43b52da8c3fa
-    last_modified: 2026-11-17T14:14:49Z
+    digest: sha256:87afdfe9588901b8
+    last_modified: 2026-11-17T23:48:11Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -101,13 +101,13 @@ sources:
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
-    digest: sha256:99cffd59c0da88aa
-    last_modified: 2026-11-17T12:02:03Z
+    digest: sha256:8a0d6587efece546
+    last_modified: 2026-11-17T23:48:11Z
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:036f1bdd9cd3cb01
-    last_modified: 2026-11-17T17:25:21Z
+    digest: sha256:1200315aead0ea8c
+    last_modified: 2026-11-17T19:39:43Z
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
@@ -116,13 +116,13 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:58fe422f4b609c65
-    last_modified: 2026-11-17T16:00:38Z
+    digest: sha256:8fc9a03cc7d0e535
+    last_modified: 2026-11-17T23:59:25Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
-    digest: sha256:32f722c1b86312b9
-    last_modified: 2026-11-17T14:13:26Z
+    digest: sha256:4f2f51953a49a06c
+    last_modified: 2026-11-17T23:59:37Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
@@ -146,8 +146,8 @@ sources:
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:95a580138a803e83
-    last_modified: 2026-11-17T14:13:26Z
+    digest: sha256:6a6d6438d5ebef30
+    last_modified: 2026-11-17T23:59:48Z
   - id: fold-ts
     resource: ../../src/lib/consortium/fold.ts
     title: src/lib/consortium/fold.ts
@@ -176,8 +176,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:5a68cb4f4f79a63e
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:76403c6b7eef8bf5
+    last_modified: 2026-11-17T23:54:43Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -186,8 +186,8 @@ sources:
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
-    digest: sha256:eee24d353dff2633
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:de3d31fb8eed5d71
+    last_modified: 2026-11-17T23:47:52Z
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
@@ -196,8 +196,8 @@ sources:
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:6331b07a2c0fe89b
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:7b38151b55e0b12a
+    last_modified: 2026-11-18T00:00:13Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
@@ -211,18 +211,18 @@ sources:
   - id: retry-import-ts
     resource: ../../src/lib/consortium/retry-import.ts
     title: src/lib/consortium/retry-import.ts
-    digest: sha256:5130e3e8b666330f
-    last_modified: 2026-11-17T18:34:00Z
+    digest: sha256:ae0ed9a2fe3bc1c3
+    last_modified: 2026-11-17T18:58:13Z
   - id: verdict-ts
     resource: ../../src/lib/consortium/verdict.ts
     title: src/lib/consortium/verdict.ts
-    digest: sha256:cb04a821ff61eaac
-    last_modified: 2026-11-17T17:22:55Z
+    digest: sha256:ede78e6b8c125661
+    last_modified: 2026-11-17T23:47:57Z
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:76e25e5ee23f1bc9
-    last_modified: 2026-11-17T17:30:09Z
+    digest: sha256:5097f48e59e0f4b2
+    last_modified: 2026-11-17T23:52:07Z
   - id: verdict-load-ts
     resource: ../../src/lib/consortium/verdict-load.ts
     title: src/lib/consortium/verdict-load.ts
@@ -383,7 +383,7 @@ This section supersedes the statements above where they disagree.
 - **Link v5** in `state.ts`: `encodeLink` writes `#v=5`. The place keys `k o l w q r h s` are written only with `place: true`, and an `origin` implies the place tick. `linkVersionStatus(v)` returns `current`, `newer`, `unreadable` (versions below 5 included since the owner's 2026-11-17 "No backward compatibility work": there is no `older`) or `absent`. Unknown keys are ignored, and a key with an unreadable value falls back on its own. The decoder reads `m=` through `roomValues`, so `pots` is accepted. `kept`, `crops` and `stage` are not written (PP-B commit 0a' removed them from `ShareState`; Suggest's `seed` option, the current members, replaced `kept` and `crops`). Contract: `scripts/vectors/link-v5.json` (schema `canopi-palette-link/5`) and `scripts/consortium-link-v5.test.mjs`.
 - **types.ts**: `rooms` still leaves `pots` out because Start's form is unchanged until b1a. `roomValues` (with `pots`) is the `Room` type and what the codec reads.
 - **New modules:**
-  - `place.ts` has real bodies: `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`), a minimal `resolveSoil` and `climateFor`.
+  - `place.ts` has real bodies: `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`), a minimal `resolveSoil` and `climateFor`. (Replaced 2026-11-18 by the [site-inputs layer](/modules/consortium-site-inputs.md): `siteOf(inputs)`, `climateFor({ inputs, scenario })`; `resolveSoil` and `siteFor` deleted.)
   - `verdict.ts`, `verdict-line.ts`, `verdict-load.ts`, `years.ts`, `holes.ts` and `weigh.ts` are seams tagged `@public`. b2 writes their bodies.
   - `weigh.ts` (PP-B b3, 2026-11-15, fix rounds 1 and 2): `weighLines(members, ctx, { pending, unchecked })` with `ctx` the `lookup` and `period` of `climateFor`'s context (ignored inside today); family lines at 3 plants and 25 % of m (owner keeps both), m counting the `unchecked` members; the water line from `factAt('water_need', t, ctx.lookup, ctx.period)` grouped by `waterNeed` (exported; drought tolerance High/Medium/Low-None → dry/medium/regular, else moisture use Low/Medium/High; any other value counts as not recorded), only `waterMix` (members: the `vars.regular` plants needing regular water, then the dry) or `waterFew` (under half recorded), else `missing` when any plant has no water need recorded, no all-clear; `'checking'` while a list is pending; `term: 'estimate'` on a borrowed list. `yourPlants` (warned, then the members not shown, then the rest; rows typed `PlantRow`) and `sizeLine`. Constants stay module-private. `site.ts`'s water check reads drought tolerance and moisture use through `factAt('water_need', t, null, TODAY_PERIOD)` (`well_drained` stays a direct read), with its own dry/wet-site mapping (a different question from Things to weigh's grouping), and like `waterNeed` reads a drought value outside High, Medium, Low, None as not recorded; every site-fit verdict of the 515 real plants over every site was byte-identical before and after (b3 fix round 2). `TODAY_PERIOD` is `periodIds[0]`.
   - `conflicts.ts` flags every recorded toxicity level but None, Slight too (owner: mild is a warning, Moderate and above danger); toxicity never makes `warns()` true, so nothing asks.
@@ -415,3 +415,11 @@ Of two candidates that bring the same gain, the suggestion picks the one that is
 ## PP-B exit: seeds the suggestion cannot read stay (2026-11-16)
 
 `suggest()` returns every seeded plant: the seeds the pool or the guests hold in tie order, then any seed neither holds (a guest whose list failed, PP-B21, or a plant on no list at hand), in seed order, so a press of Suggest never removes a grower's plant. Before, only the seeds it found came back, and a member of a failed guest list vanished silently (found by the P5-27n rewrite). Unit test "PP-B exit: a seeded plant the suggestion cannot read stays in the palette" in `scripts/consortium-pp-b1.test.mjs`.
+
+## Site-inputs layer and palette goals (PP-C chunk-2 hand-off, 2026-11-18)
+
+- Every rule (range, future, verdict, site fit through `siteOf`, weigh, holes) reads `SiteInputs` from [site-inputs.ts](/modules/consortium-site-inputs.md), never the climate lookup or a stored answer; `VerdictContext` is `{ inputs, period, scenario, canopy }`, `FactAt`'s site is `SiteInputs | null`, and `rangeCheck`, `rangeFit`, `withinRange`, `futureCheck`, `futureSummary` and `siteToday` take inputs.
+- Hand-off items: `Taxon.light` (4.5 `sunniest`, `shadiest`, `preferred`, read by `sqlite-source.ts` `lightOf`); `Hole.unchecked` with the "nobody known" titles and `uncheckedLine` (unknown is never a hole); `sourceLine` estimate labels (`derived` "estimate, from", `llm` "AI reading of" / "AI estimate, no source").
+- `holes.ts` `laneCounts(ctx, goals)`: each job and light level's plant count per time step, and each job's thin year spans below the palette goal `plantsPerJob` (default 2, `DEFAULT_GOALS` beside the site inputs); a lane is never capped at a count.
+- The golden scenario file `scripts/fixtures/consortium-scenarios.json` (32 cases, run by `scripts/consortium-scenarios.test.mjs`, recorded by `scripts/consortium-scenarios.mjs --record`).
+

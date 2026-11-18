@@ -15,17 +15,16 @@ const { suggest } = await import('../src/lib/consortium/suggest.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 
-// A site whose today values are given (the climate reader's historical period first, a future one after).
-const at = (tminColdC, tmaxWarmC, aridityIndex = 1, tmeanColdC = 0, tmeanWarmC = 0) => ({
-  lat: 0, lon: 0, source: 'map',
-  lookup: {
-    lat: 0, lon: 0, soil: null, regions: { wgsrpdL3: null, isoA2: null },
-    climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: [
-      { period: '1991-2020', scenario: 'historical', koppen: 'Cfb', koppenTemperatureMarginC: 0, tminColdC, tmaxWarmC, tmeanColdC, tmeanWarmC, aridityIndex },
-      { period: '2071-2099', scenario: 'ssp585', koppen: 'BWh', koppenTemperatureMarginC: 0, tminColdC: tminColdC + 6, tmaxWarmC: tmaxWarmC + 8, tmeanColdC: 0, tmeanWarmC: 0, aridityIndex: 0.1 },
-    ] },
-  },
+// A site whose today values are given (the climate reader's historical period first, a future one
+// after), as the rules read it: the site inputs of a lookup (site-inputs.ts, no grower edit).
+const lookupAt = (tminColdC, tmaxWarmC, aridityIndex = 1, tmeanColdC = 0, tmeanWarmC = 0) => ({
+  lat: 0, lon: 0, soil: null, regions: { wgsrpdL3: null, isoA2: null },
+  climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: [
+    { period: '1991-2020', scenario: 'historical', koppen: 'Cfb', koppenTemperatureMarginC: 0, tminColdC, tmaxWarmC, tmeanColdC, tmeanWarmC, aridityIndex },
+    { period: '2071-2099', scenario: 'ssp585', koppen: 'BWh', koppenTemperatureMarginC: 0, tminColdC: tminColdC + 6, tmaxWarmC: tmaxWarmC + 8, tmeanColdC: 0, tmeanWarmC: 0, aridityIndex: 0.1 },
+  ] },
 });
+const at = (...a) => core.siteInputsOf({ lookup: lookupAt(...a) });
 
 // ---- the range rule: the fixture plant is recorded with coldest month -15…2.5 °C, warmest month 18…30 °C ----
 
@@ -56,14 +55,15 @@ test('passes: the one comparison of the range rule (range.ts), in hundredths of 
   assert.equal('rangeSides' in core, false, 'the sides are a type, not a value export');
   // future.ts takes the same rule: a slot 2 °C above Q95 in decimal terms (32.02 > 30.02 + 2 in floats) is the edge, not outside.
   const t = taxon({ climate: { ...taxon().climate, tmaxWarm: { low: 18, median: 25, high: 30.02, count: 9, basis: 'thinned_cells' } }, phases: { start: 'secondary_i', end: 'secondary_ii' } });
-  const site = at(0, 30);
-  site.lookup.climate.periods = [site.lookup.climate.periods[0], ...['ssp126', 'ssp245', 'ssp370', 'ssp585'].flatMap((scenario) => ['2041-2070', '2071-2099'].map((period) => ({ ...site.lookup.climate.periods[0], period, scenario, tmaxWarmC: 32.02 })))];
-  assert.equal(core.futureCheck(t, site, 'ssp245')?.verdict, 'edge');
+  const l = lookupAt(0, 30);
+  l.climate.periods = [l.climate.periods[0], ...['ssp126', 'ssp245', 'ssp370', 'ssp585'].flatMap((scenario) => ['2041-2070', '2071-2099'].map((period) => ({ ...l.climate.periods[0], period, scenario, tmaxWarmC: 32.02 })))];
+  assert.equal(core.futureCheck(t, core.siteInputsOf({ lookup: l }), 'ssp245')?.verdict, 'edge');
 });
 
 test('rangeFit: today\'s period only (the 1991-2020 historical slot), never a future one', () => {
-  const s = at(0, 25);
-  s.lookup.climate.periods.reverse();
+  const l = lookupAt(0, 25);
+  l.climate.periods.reverse();
+  const s = core.siteInputsOf({ lookup: l });
   assert.equal(core.siteToday(s).scenario, 'historical');
   assert.equal(core.rangeFit(taxon(), s), 'inside');
 });
@@ -73,8 +73,8 @@ test('rangeFit: no range is "unknown", never filtered; no site climate checks no
   assert.equal(core.rangeFit(taxon({ climate: { ...taxon().climate, tminCold: null, tmaxWarm: null } }), at(-40, 45)), 'unknown');
   assert.equal(core.rangeFit(taxon(), null), 'unknown');
   assert.equal(core.rangeCheck(taxon(), null), null);
-  assert.equal(core.rangeCheck(taxon(), { ...lyon, lookup: null }), null, 'lookup loading or failed');
-  assert.equal(core.rangeCheck(taxon(), { ...lyon, lookup: { ...lyon.lookup, climate: null } }), null, 'open sea');
+  assert.equal(core.rangeCheck(taxon(), core.NO_INPUTS), null, 'lookup loading or failed');
+  assert.equal(core.rangeCheck(taxon(), core.siteInputsOf({ lookup: { ...lyon.lookup, climate: null } })), null, 'open sea');
   assert.deepEqual(core.rangeVerdicts, ['inside', 'edge', 'outside', 'unknown']);
 });
 
@@ -91,7 +91,7 @@ test('rangeCheck: aridity is a mark only (drier, wetter, not checked on ice), ne
 test('withinRange: leaves out only the plants outside, never a kept one; the same list when nothing is checked', () => {
   const pool = [taxon({ id: 'a' }), taxon({ id: 'b', climate: null }), taxon({ id: 'c', climate: { ...taxon().climate, tminCold: { low: 5, median: 9, high: 15, count: 9, basis: 'thinned_cells' } } })];
   assert.equal(core.withinRange(pool, null), pool);
-  assert.equal(core.withinRange(pool, { ...lyon, lookup: null }), pool);
+  assert.equal(core.withinRange(pool, core.NO_INPUTS), pool);
   assert.deepEqual(core.withinRange(pool, at(0, 25)).map((t) => t.id), ['a', 'b']);
   assert.deepEqual(core.withinRange(pool, at(0, 25), ['c']).map((t) => t.id), ['a', 'b', 'c'], 'a kept plant stays, outside or not');
 });
@@ -119,7 +119,7 @@ test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that ord
   // nothingFits: a list with plants, every one judged outside (the page period's verdicts, as
   // store.poolVerdicts), once the rule is in.
   const pool = [taxon({ id: 'a' }), taxon({ id: 'c', climate: { ...taxon().climate, tminCold: { low: 5, median: 9, high: 15, count: 9, basis: 'thinned_cells' } } })];
-  const judged = (site, list = pool) => rule.verdicts(list, { place: core.emptyPlace, lookup: site?.lookup ?? null, period: '1991-2020', scenario: 'ssp245' });
+  const judged = (site, list = pool) => rule.verdicts(list, { inputs: site ?? core.NO_INPUTS, period: '1991-2020', scenario: 'ssp245' });
   assert.equal(rules.nothingFits(pool, judged(at(-30, 25))), true, 'colder than every plant');
   assert.equal(rules.nothingFits(pool, null), false, 'not before the verdicts arrive');
   assert.equal(rules.nothingFits(pool, judged(at(0, 25))), false);
@@ -324,7 +324,7 @@ test('real export: the pool each site keeps, and a suggestion from it never hold
   const got = {};
   for (const [name, [koppen, zone, tmin, tmax, ai, tcold, twarm]] of Object.entries(SITES)) {
     const site = at(tmin, tmax, ai, tcold, twarm);
-    site.lookup.climate.periods[0].koppen = koppen;
+    site.periods[0].koppen = koppen;
     const pool = await real.pool(zone);
     assert.equal(pool.length > 0, true, `${name}: ${zone} has plants`);
     assert.equal(pool.every((t) => (t.origin?.kind === 'borrowed') === !index.climates.includes(zone)), true, `${name}: borrowed plants are estimates, own ones not`);

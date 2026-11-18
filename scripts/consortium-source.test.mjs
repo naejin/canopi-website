@@ -308,7 +308,7 @@ function reset() {
   store.members.value = [];
   store.removed.value = [];
   store.country.value = { code: null, source: null };
-  store.site.value = { ...DEFAULT_SITE };
+  store.room.value = 'unsure';
   store.load.value = { status: 'ready', error: null };
 }
 const quiet = async (fn) => { const e = console.error; console.error = () => {}; try { return await fn(); } finally { console.error = e; } };

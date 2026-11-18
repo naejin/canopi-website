@@ -1,4 +1,4 @@
-// The future climate check (stream S5d; decision row "P5 engineering choices", 2026-11-11): each plant
+// The future climate check (site: the merged site inputs, site-inputs.ts; stream S5d; decision row "P5 engineering choices", 2026-11-11): each plant
 // is compared with the site's projected climate, the canopi-climate period × scenario slots (the
 // changes of a constrained CMIP6 model ensemble, Beck et al. 2023, applied to the CHELSA v2.1
 // 1981–2010 climate), for the latest period its phases reach: a plant that lasts into the secondary
@@ -20,7 +20,7 @@
 // has the plant beyond its tmean_year low (an annual: tmean_warm low) and the projected slot passes no bound beyond the margin,
 // the verdict changes and it is said, positively (warmEnough: "Warm enough here by …"); otherwise
 // only losses are listed. The heat check is today's bound (margin included).
-import type { PlantId, Scenario, SitePeriod, SiteLocation, Taxon } from './types.ts';
+import type { PlantId, Scenario, SiteInputs, SitePeriod, Taxon } from './types.ts';
 import { phases, scenarios } from './types.ts';
 import { aridityFit, boundPassed, coolSeasonOf, HOT_BOUND as HOT, slotCheck } from './range.ts';
 
@@ -51,16 +51,16 @@ export function futurePeriod(taxon: Taxon): FuturePeriod | null {
   return end >= CLIMAX ? '2071-2099' : end >= SECONDARY ? '2041-2070' : null;
 }
 
-const slotOf = (site: SiteLocation | null, period: FuturePeriod, scenario: Scenario): SitePeriod | null =>
-  site?.lookup?.climate?.periods.find((p) => p.period === period && p.scenario === scenario) ?? null;
+const slotOf = (site: SiteInputs | null, period: FuturePeriod, scenario: Scenario): SitePeriod | null =>
+  site?.periods.find((p) => p.period === period && p.scenario === scenario) ?? null;
 
 // Whether the site has any projection (the reader gives all 8 future slots, or none).
-function hasFutureData(site: SiteLocation | null): boolean {
+function hasFutureData(site: SiteInputs | null): boolean {
   return futurePeriods.some((period) => scenarios.some((s) => slotOf(site, period, s)));
 }
 
-const todayOf = (site: SiteLocation | null): SitePeriod | null =>
-  site?.lookup?.climate?.periods.find((p) => p.scenario === 'historical') ?? null;
+const todayOf = (site: SiteInputs | null): SitePeriod | null =>
+  site?.periods.find((p) => p.scenario === 'historical') ?? null;
 
 // The reasons a slot is beyond the plant's bounds, or null when nothing can be compared (no heat bound:
 // aridity alone never makes a loss).
@@ -71,7 +71,7 @@ function beyond(taxon: Taxon, slot: SitePeriod): { reasons: FutureReason[]; edge
   return { reasons: heat === 'beyond' && !coolSeason ? ['heat'] : [], edge: heat === 'edge', coolSeason };
 }
 
-export function futureCheck(taxon: Taxon, site: SiteLocation | null, scenario: Scenario): FutureCheck | null {
+export function futureCheck(taxon: Taxon, site: SiteInputs | null, scenario: Scenario): FutureCheck | null {
   const period = futurePeriod(taxon);
   if (!period || !taxon.climate) return null;
   const own = slotOf(site, period, scenario);
@@ -108,7 +108,7 @@ export interface FutureSummary {
   todayOnly: PlantId[]; notChecked: PlantId[]; checks: Record<PlantId, FutureCheck>;
 }
 
-export function futureSummary(taxa: readonly Taxon[], site: SiteLocation | null, scenario: Scenario): FutureSummary {
+export function futureSummary(taxa: readonly Taxon[], site: SiteInputs | null, scenario: Scenario): FutureSummary {
   const available = hasFutureData(site);
   const byPeriod = new Map<FuturePeriod, FuturePeriodSummary>();
   const already: Record<FutureReason, PlantId[]> = { heat: [] };

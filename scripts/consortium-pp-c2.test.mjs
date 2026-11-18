@@ -163,7 +163,7 @@ test('PP-C-u12 (c2 corrected values and frost): a corrected value names "Canopi 
   assert.equal(line.restLine([frost('ktmp', -5)]), null);
   // PFAF's frost_tender (a trait_sources row, scope GB): Britain information only, never a verdict.
   assert.match(say(src1(ts('frost_tender', 'pfaf', 'GB'))), /Britain \(PFAF\)/);
-  const ctx = { place: core.emptyPlace, lookup: null, period: '1991-2020', scenario: 'ssp245' };
+  const ctx = { inputs: core.NO_INPUTS, period: '1991-2020', scenario: 'ssp245' };
   const plant = { id: '00000000-c2c2-4000-8000-000000000001', canonical_name: 'Plantus', genus: 'Plantus', family: null, names: {}, image: null, role: 'crop', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'placenta_ii', sources: [] }, functions: null, warnings: { toxicity: null, invasive_in: [], allelopathic: null, weed_potential: null }, climate: null, areasKnown: true };
   assert.deepEqual(verdict({ ...plant, traits: { frost_tender: true } }, ctx), verdict({ ...plant, traits: { frost_tender: false } }, ctx), 'frost_tender never changes a verdict');
 });
@@ -192,11 +192,12 @@ test('PP-C-u14 (c2 misfit parity): the conflict misfit equals the verdict\'s hin
     plant(1, 'emergent', 'secondary_i', 'climax', { sun: true, drought_tolerance: 'High' }), // the canopy
     plant(2, 'medium', 'secondary_i', 'climax', { sun: false, drought_tolerance: 'High' }), // shaded by 1: no light misfit
     plant(3, 'low', 'placenta_i', 'placenta_ii', { sun: false, drought_tolerance: 'High' }), // before the canopy: a light misfit
-    plant(4, 'high', 'secondary_i', 'climax', { sun: true, drought_tolerance: 'Low' }), // a water misfit
+    plant(4, 'high', 'secondary_i', 'climax', { sun: true, drought_tolerance: 'Low' }), // no dry-site input until watering's rule (F4): no water misfit
   ];
-  const place = { ...core.emptyPlace, spot: { ...core.emptyPlace.spot, light: 'sun', water: 'dry' } };
-  const site = core.siteFor(place, null);
-  const ctx = { place, lookup: null, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
+  // The light answer as a grower edit of the site inputs (the page reaches it with PP-F's spot questions).
+  const inputs = core.siteInputsOf({ lookup: null, edits: { light: 'sun' } });
+  const site = core.siteOf(inputs);
+  const ctx = { inputs, period: '1991-2020', scenario: 'ssp245', canopy: core.canopyOf(members) };
   const KEY = { 'soil-ph': 'soil' };
   const seen = [];
   for (const t of members) {
@@ -207,7 +208,7 @@ test('PP-C-u14 (c2 misfit parity): the conflict misfit equals the verdict\'s hin
     assert.equal(core.flagsFor(t, members, { site, interactions: [] }).some((f) => f.kind === 'misfit'), misfit.length > 0, `${t.canonical_name}: the misfit flag`);
     seen.push(misfit.join('+') || '-');
   }
-  assert.deepEqual(seen, ['-', '-', 'light', 'water'], 'the cases the palette names');
+  assert.deepEqual(seen, ['-', '-', 'light', '-'], 'the cases the palette names');
 });
 
 // Swap's gains and losses through the holes (slices c2 row): what the candidate fills and leaves empty
@@ -221,7 +222,7 @@ test('PP-C-u15 (c2 Swap gains): Swap\'s gains and losses are holes(members) agai
   const verdicts = new Map([...members, inn].map((x) => [x.id, { id: x.id, judged: '1991-2020', ownYears: false, level: 'fits', limiting: null, factors: [], notes: [] }]));
   const ctx = { members, verdicts, pending: false };
   // Through alternatives, Swap's one reader (swapChange is internal since fix round 1 B7).
-  const site = core.siteFor(core.emptyPlace, null);
+  const site = core.siteOf(core.NO_INPUTS);
   const swapChange = (c, o, i) => alternatives(o.id, c.members, [i], { site, interactions: [], verdicts: c.verdicts }).find((x) => x.id === i.id);
   const change = swapChange(ctx, out, inn);
   // A medium plant for the low one: the medium light level is no longer empty; the low one is, every year.
@@ -300,7 +301,7 @@ test('PP-C-u23 (c2 cool season): an annual past its heat range reads the cool-se
 // would do, so a candidate that starts late leaves its early years empty (never "leaves no gap").
 test('c2 fix A1 + C13 (Swap by lane and years): a shrunk hole is in neither list; a grown one is left; narrowing ranks higher; an outside member\'s gaps count from its years', async () => {
   const { alternatives } = await import('../src/lib/consortium/suggest.ts');
-  const site0 = core.siteFor(core.emptyPlace, null);
+  const site0 = core.siteOf(core.NO_INPUTS);
   const swapChange = (c, o, i) => alternatives(o.id, c.members, [i], { site: site0, interactions: [], verdicts: c.verdicts }).find((x) => x.id === i.id);
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const crop = (n, start, end) => taxon({ id: `00000000-c2c2-4000-8000-00000000003${n}`, canonical_name: `Cropus ${n}`, role: 'crop', stratum: { value: 'low', sources: [] }, phases: { start, end, sources: [] }, functions: null, climate: null });
@@ -317,7 +318,7 @@ test('c2 fix A1 + C13 (Swap by lane and years): a shrunk hole is in neither list
   const shrink = swapChange(ctx, a, shorter);
   assert.deepEqual(lanes(shrink.leaves), ['job:feeds_you', 'light:low'], 'a hole that grows is left more empty');
   assert.deepEqual(lanes(shrink.fills), []);
-  const site = core.siteFor(core.emptyPlace, null);
+  const site = core.siteOf(core.NO_INPUTS);
   const order = alternatives(a.id, [a], [shorter, longer, a], { site, interactions: [], verdicts: ctx.verdicts }).map((x) => x.id);
   assert.deepEqual(order, [longer.id, shorter.id], 'the candidate that narrows the holes first');
   // An outside member fills nothing today, but its replacement is judged against what it would do.
@@ -408,7 +409,7 @@ test('c2 fix R1 + T7 (wetter edge): Osaka, Murphey agave and Glycyrrhiza glabra 
   const r = (low, high) => ({ low, median: null, high, count: 900, basis: 'thinned_cells', weak: false });
   const slot = (period, scenario) => ({ period, scenario, koppen: 'Cfa', koppenTemperatureMarginC: 0, tminColdC: 2.1, tmaxWarmC: 32.5, tmeanColdC: 6, tmeanWarmC: 28, aridityIndex: 1.53 });
   const lookup = { lat: 34.69, lon: 135.5, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: [slot('1991-2020', 'historical'), ...core.scenarios.flatMap((s) => [slot('2041-2070', s), slot('2071-2099', s)])] }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
-  const ctx = { place: core.emptyPlace, lookup, period: '1991-2020', scenario: 'ssp245', canopy: null };
+  const ctx = { inputs: core.siteInputsOf({ lookup }), period: '1991-2020', scenario: 'ssp245', canopy: null };
   const agave = taxon({ id: 'agave', canonical_name: 'Agave murpheyi', phases: null, climate: { source: 'gbif_occurrences', cells: 900, nativeShare: null, tminCold: r(-2, 10), tmaxWarm: r(20, 42), tmeanYear: r(10, 24), tmeanWarm: null, aridity: r(0.17, 0.88) } });
   const va = verdict(agave, ctx);
   assert.equal(va.level, 'look', 'a second look: the palette groups and counts it so');
@@ -437,7 +438,7 @@ test('c2 fix C2 (few records): a range on fewer than 300 recorded places notes i
   const slot = (period, scenario, over = {}) => ({ period, scenario, koppen: 'BWh', koppenTemperatureMarginC: 0, tminColdC: 4, tmaxWarmC: 34, tmeanColdC: 12, tmeanWarmC: 28, aridityIndex: 0.3, ...over });
   const lookup = { lat: 0, lon: 0, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: [slot('1991-2020', 'historical')] }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
   const agave = taxon({ id: 'agave', canonical_name: 'Agave murpheyi', phases: null, climate: { source: 'gbif_occurrences', cells: 22, nativeShare: null, tminCold: r(-2, 10), tmaxWarm: r(20, 42), tmeanYear: null, tmeanWarm: null, aridity: r(0.1, 0.6) } });
-  const ctx = { place: core.emptyPlace, lookup, period: '1991-2020', scenario: 'ssp245', canopy: null };
+  const ctx = { inputs: core.siteInputsOf({ lookup }), period: '1991-2020', scenario: 'ssp245', canopy: null };
   const v = verdict(agave, ctx);
   assert.ok(v.notes.includes('few-records'), `notes ${v.notes}`);
   assert.equal(v.records, 22);
@@ -466,7 +467,7 @@ test('c2 fix C4 + B5 (later notes): warm enough later is worded from the later v
   const periods = [slot('1991-2020', 'historical'), ...core.scenarios.flatMap((s) => [slot('2041-2070', s, { tmeanWarmC: 21, aridityIndex: 0.4 }), slot('2071-2099', s, { tmeanWarmC: 23, aridityIndex: 0.3 })])];
   const lookup = { lat: 0, lon: 0, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
   const tree = taxon({ id: 'tree', canonical_name: 'Arbor', phases: { start: 'secondary_i', end: 'climax', sources: [] }, climate: { source: 'gbif_occurrences', cells: 900, nativeShare: null, tminCold: r(-5, 12), tmaxWarm: r(22, 40), tmeanYear: r(14, 25), tmeanWarm: null, aridity: r(0.6, 3) } });
-  const v = verdict(tree, { place: core.emptyPlace, lookup, period: '1991-2020', scenario: 'ssp245', canopy: null });
+  const v = verdict(tree, { inputs: core.siteInputsOf({ lookup }), period: '1991-2020', scenario: 'ssp245', canopy: null });
   assert.ok(v.notes.includes('warm-enough-later'), `notes ${v.notes}`);
   assert.ok(v.notes.includes('drier-later'), `notes ${v.notes}`);
 });
@@ -495,7 +496,7 @@ test('c2 fix C12: a candidate with a caution (toxic, invasive here) ranks after 
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const t = (n, warnings = {}) => taxon({ id: `00000000-c2c2-4000-8000-0000000003${n}`, canonical_name: `Plantus ${n}`, stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'secondary_ii', sources: [] }, functions: ['edible_fruit'], ...(Object.keys(warnings).length && { warnings: { ...taxon({}).warnings, ...warnings } }) });
   const member = t(10), toxic = t(11, { toxicity: { level: 'Severe', sources: [] } }), clean = t(12);
-  const site = core.siteFor(core.emptyPlace, null);
+  const site = core.siteOf(core.NO_INPUTS);
   const alts = alternatives(member.id, [member], [toxic, clean], { site, interactions: [] });
   assert.deepEqual(alts.map((a) => a.id), [clean.id, toxic.id], 'the clean candidate first');
   assert.ok(alts[1].flags.some((f) => f.kind === 'toxicity'), 'the toxic one says why');
@@ -515,12 +516,12 @@ test('c2 fix R3 + K3 + K13 (Swap order): closest in jobs, then years; clean befo
   const bitterbrush = t(12, { canonical_name: 'Purshia tridentata', stratum: { value: 'low', sources: [] }, functions: fn('nitrogen_fixer', 'ground_cover', 'wildlife_habitat') });
   const longer = t(13, { canonical_name: 'Cydonia longa', role: 'crop', functions: fn('pollinator_forage'), phases: { start: 'placenta_iii', end: 'climax', sources: [] } });
   const toxic = t(14, { canonical_name: 'Toxicus', role: 'crop', functions: fn('pollinator_forage'), warnings: { ...taxon({}).warnings, toxicity: { level: 'Severe', sources: [] } } });
-  const site = core.siteFor(core.emptyPlace, null);
+  const site = core.siteOf(core.NO_INPUTS);
   const ids = (alts) => alts.map((a) => a.id);
   const order = alternatives(agave.id, [agave], [bitterbrush, toxic, quince, longer], { site, interactions: [] });
   assert.deepEqual(ids(order), [longer.id, quince.id, bitterbrush.id, toxic.id], 'jobs, then years among the clean ones; a warned one after them (warnings after, board Swap)');
   // Pots: a plant taller than the room is offered last, whatever it does.
-  const pots = core.siteFor({ ...core.emptyPlace, room: 'pots' }, null);
+  const pots = core.siteOf(core.siteInputsOf({ lookup: null, room: 'pots' }));
   const tall = { ...longer, traits: { height_m: { min: null, max: 58 } } };
   assert.deepEqual(ids(alternatives(agave.id, [agave], [tall, bitterbrush, quince], { site: pots, interactions: [] })), [quince.id, bitterbrush.id, tall.id]);
   // Its row says its size against the room in words, never "keep it pruned".
@@ -599,7 +600,7 @@ test('c2 fix K19 + T1 (keep it a fair bet): the years to the first later period 
   const r = (low, high) => ({ low, median: null, high, count: 9000, basis: 'thinned_cells', weak: false });
   const slots = (by) => [['1991-2020', 'historical'], ...core.scenarios.flatMap((s) => [['2041-2070', s], ['2071-2099', s]])].map(([period, scenario]) => ({ period, scenario, koppen: 'Csa', koppenTemperatureMarginC: 0, ...by[period] }));
   const at = (by) => ({ lat: 0, lon: 0, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: slots(by) }, soil: null, regions: { wgsrpdL3: null, isoA2: null } });
-  const ctx = (lookup, period) => ({ place: core.emptyPlace, lookup, period, scenario: 'ssp245', canopy: null });
+  const ctx = (lookup, period) => ({ inputs: core.siteInputsOf({ lookup }), period, scenario: 'ssp245', canopy: null });
   const periods = (t, lookup) => core.periodIds.map((p) => verdict(t, ctx(lookup, p)));
   const seville = at({ '1991-2020': { tminColdC: 5.8, tmaxWarmC: 34.8, tmeanColdC: 11, tmeanWarmC: 27.8, aridityIndex: 0.58 }, '2041-2070': { tminColdC: 6.9, tmaxWarmC: 36.6, tmeanColdC: 12.1, tmeanWarmC: 29.6, aridityIndex: 0.47 }, '2071-2099': { tminColdC: 7.3, tmaxWarmC: 37.2, tmeanColdC: 12.5, tmeanWarmC: 30.2, aridityIndex: 0.45 } });
   const chestnut = taxon({ id: 'chestnut', canonical_name: 'Castanea sativa', phases: { start: 'secondary_i', end: 'climax', sources: [] }, climate: { source: 'gbif_occurrences', cells: 16445, nativeShare: null, tminCold: r(-7.2, 9.4), tmaxWarm: r(17.4, 33.7), tmeanYear: r(8.8, 17.6), tmeanWarm: r(14.5, 25.7), aridity: r(0.67, 2.67) } });
@@ -659,7 +660,7 @@ test('c2 fix T8 (band ends the text names): Mendoza, Siberian elm: the 3.5 °C e
   const periods = [['1991-2020', 'historical'], ...core.scenarios.flatMap((s) => [['2041-2070', s], ['2071-2099', s]])].map(([period, scenario]) => ({ period, scenario, koppen: 'BWk', koppenTemperatureMarginC: 0, ...by[period] }));
   const lookup = { lat: -32.89, lon: -68.84, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods }, soil: null, regions: { wgsrpdL3: null, isoA2: null } };
   const elm = taxon({ id: 'elm', canonical_name: 'Ulmus pumila', phases: { start: 'placenta_iii', end: 'secondary_ii', sources: [] }, climate: { source: 'gbif_occurrences', cells: 6197, nativeShare: null, tminCold: r(-25.7, 3.5), tmaxWarm: r(22, 36.4), tmeanYear: r(-0.6, 16.9), tmeanWarm: r(18.1, 28.1), aridity: r(0.28, 1.72) } });
-  const ctx = (period) => ({ place: core.emptyPlace, lookup, period, scenario: 'ssp245', canopy: null });
+  const ctx = (period) => ({ inputs: core.siteInputsOf({ lookup }), period, scenario: 'ssp245', canopy: null });
   const v = verdict(elm, ctx('1991-2020')), later = verdict(elm, ctx('2041-2070'));
   assert.deepEqual([v.level, later.level, later.limiting?.factor], ['fits', 'look', 'mild']);
   const text = line.againstLines(v, later, W).map((e) => say(e.line)).join(' | ');
@@ -700,7 +701,7 @@ test('c2 fix T9 (Swap order): within equal shared jobs, more of the member\'s ye
   // Another member holds the jobs from year 3 on, so both close the same hole-years (1 to 3) and the
   // name would put Chicory first.
   const keeper = t(13, 'secondary_i', 'climax', { functions: fn('nitrogen_fixer', 'wildlife_habitat', 'windbreak') });
-  const site = core.siteFor(core.emptyPlace, null);
+  const site = core.siteOf(core.NO_INPUTS);
   const order = alternatives(madre.id, [madre, keeper], [chicory, olive], { site, interactions: [] }).map((a) => a.id);
   assert.deepEqual(order, [olive.id, chicory.id], 'Autumn olive (years 1–15) above Chicory (to year 3)');
 });
@@ -723,7 +724,7 @@ test('c2 fix T10 (disputing source named): a weak low names TreeGOER in Sources 
 test('c2 fix T12 (desk soil line): "recorded on pH …" then "Not judged" without a test', async () => {
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const t = taxon({ id: 'chestnut', canonical_name: 'Castanea sativa', traits: { soil_ph: { min: 3.5, max: 7.3 } } });
-  const v = verdict(t, { place: core.emptyPlace, lookup: null, period: '1991-2020', scenario: 'ssp245', canopy: null });
+  const v = verdict(t, { inputs: core.NO_INPUTS, period: '1991-2020', scenario: 'ssp245', canopy: null });
   assert.equal(say(line.soilCheckLine(t, v, null)), 'recorded on pH 3.5–7.3. Not judged.');
   assert.equal(say(line.soilCheckLine(t, null, 6)), 'recorded on pH 3.5–7.3. Not judged.');
   assert.equal(say(line.soilCheckLine(taxon({ id: 'x', traits: { soil_ph: null } }), v, null)), 'no pH recorded.');

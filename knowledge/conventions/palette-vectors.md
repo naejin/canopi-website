@@ -3,9 +3,9 @@ type: Convention
 title: Palette vector files
 description: Every JSON vector file of the Plant palette under scripts/vectors/ uses one envelope, modelled on canopi-data's range-verdict vectors, so the app's Rust code and canopi-data can run the same cases.
 tags: [consortium, tests, vectors]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:55:02Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:08Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:36:14Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:03Z }
 sources:
   - id: architecture-plant-palette-architecture
     resource: /architecture/plant-palette-architecture.md
@@ -15,7 +15,7 @@ sources:
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
     digest: sha256:a2b22c3e45cec9a4
-    last_modified: 2026-11-17T09:53:35Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
@@ -24,8 +24,8 @@ sources:
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:6331b07a2c0fe89b
-    last_modified: 2026-11-17T09:49:38Z
+    digest: sha256:7b38151b55e0b12a
+    last_modified: 2026-11-18T00:00:13Z
 ---
 
 # Palette vector files

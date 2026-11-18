@@ -4,8 +4,8 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { Alternative, ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, holes, loadSuggest, loadVerdictRule, periodIds, secondLook, siteFor, zoneOf } from '../../lib/consortium/index.ts';
+import type { Alternative, ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteEdits, SiteInputs, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, hasClimate, holes, loadSuggest, loadVerdictRule, NO_EDITS, periodIds, secondLook, siteInputsOf, siteOf, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -81,24 +81,19 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const texturesAgree: Same<CoreTexture, ReaderTexture> = true;
 void texturesAgree;
 
-// The old site answers (site.ts fits()'s Site), derived from the place (place.ts siteFor), never
-// stored: its readers (Add, the flags, rules/site-fit.ts) read `site.value`; Start's
-// three questions write it, each answer into the place (light → spot.light, water → spot.water, a
-// soil word → an own answer, "not sure" → the soil map, room → room). Removed in PP-C with its readers.
-const siteNow = computed<Site>(() => siteFor({ room: room.value, plotM2: plot.value, spot: spot.value, soil: soil.value }, location.value?.lookup ?? null));
-function writeSite(next: Site): void {
-  batch(() => {
-    room.value = next.room;
-    spot.value = { ...spot.peek(), light: next.light, water: next.water };
-    const now = soil.peek(), word = now.from === 'own' && now.ph === null && now.texture === null ? now.word : null;
-    if (next.soil !== (word ?? 'unsure')) soil.value = next.soil === 'unsure' ? { from: 'map' } : { from: 'own', ph: null, word: next.soil, texture: null };
-  });
-}
-export const site = {
-  get value(): Site { return siteNow.value; },
-  set value(next: Site) { writeSite(next); },
-  peek: (): Site => siteNow.peek(),
-};
+// The site inputs (core site-inputs.ts, owner 2026-11-18): every site input the engine reads, merged
+// from the location's lookup (the climate grid, the soil map) and the grower's edits, with the room.
+// The one place the store hands site data to the rules: verdictContext, the flags and the views read
+// this, never the lookup or a stored answer. siteEdits: the grower's edits (shifts, a soil test,
+// answers), the seam the figures panel (v14) writes; no control writes it yet and it is not saved
+// (NO_EDITS on every load; browser tests set it through the test hook). The spot and soil answers are
+// dormant until PP-F: never read here, never written by the store (spec update 2026-11-18 point 6),
+// and the save and links keep them empty (state/persist.ts palette).
+export const siteEdits = signal<SiteEdits>(NO_EDITS);
+export const siteInputs = computed<SiteInputs>(() => siteInputsOf({ lookup: location.value?.lookup ?? null, room: room.value, edits: siteEdits.value }));
+// site.ts fits()'s Site, from the inputs (core place.ts siteOf): the flags, print's basis line and the
+// site-fit words read it.
+export const site = computed<Site>(() => siteOf(siteInputs.value));
 
 // ---- data (set once the database is open; S1's load fills them) ----
 export const source = signal<PlantSource | null>(null);
@@ -186,8 +181,8 @@ const withRule = <T>(p: Promise<T>): Promise<T> => {
   if (!verdictRule.peek() && verdictLoad) waits.push(verdictLoad);
   return waits.length ? Promise.all([p, ...waits]).then(([x]) => x as T) : p;
 };
-// Whether the location gave a climate (core siteToday is non-null; inlined to keep the rule off the first run).
-export const siteClimate = computed(() => !!location.value?.lookup?.climate?.periods.length);
+// Whether the site inputs hold a climate (a location gave one).
+export const siteClimate = computed(() => hasClimate(siteInputs.value));
 // (Its load starts in start(), at the end of this file, once the location has a climate.)
 // What suggestions and lists draw from (P5 S5c, owner answer 2): the pool without the plants judged
 // outside for the page period (poolVerdicts, rules/suggest-block.ts notOutside); the pool itself without
@@ -255,8 +250,8 @@ export const retryVerdict = (): void => loadVerdict(true);
 // online needs a reload; offline, the online listener retries. Then wantVerdict asks for nothing and
 // the views offer Reload (load.reload) in place of Try again.
 export const verdictNeedsReload = signal(false);
-// What every verdict reads: the palette's place, the location's lookup, the period shown, the
-// scenario, and the members' canopy (shade relief, 3.2).
+// What every verdict reads: the site inputs, the period shown, the scenario, and the members' canopy
+// (shade relief, 3.2).
 // The canopy kept by value: most adds leave it as it was, and a new array would recompute every
 // verdict and everything keyed on them (holes, fillers, both pictures) on each add.
 let lastCanopy: ReturnType<typeof canopyOf> | null = null;
@@ -266,8 +261,7 @@ const canopy = computed(() => {
   return (lastCanopy = next);
 });
 export const verdictContext = computed<VerdictContext>(() => ({
-  place: { room: room.value, plotM2: plot.value, spot: spot.value, soil: soil.value },
-  lookup: location.value?.lookup ?? null,
+  inputs: siteInputs.value,
   period: period.value,
   scenario: scenario.value,
   canopy: canopy.value,

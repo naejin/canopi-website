@@ -277,7 +277,7 @@ test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its wa
   // its row says in words that it is another climate's plant (fix round 1, A8: its list, and so its
   // misfit, is read only when it is added), one tap on "Add anyway" adds it, and the toast names the
   // warning.
-  await setStore(page, () => { const { store } = window.__ctTest; store.site.value = { ...store.site.value, light: 'shade' }; });
+  await setStore(page, () => { const { store } = window.__ctTest; store.siteEdits.value = { light: 'shade' }; });
   await openBy(page, 'Paste a list');
   await page.locator('::-p-aria([role="textbox"])').fill('Inga edulis');
   assert.ok(await page.waitForFunction(() => /Tropical/.test(document.querySelector('dialog[open] [data-paste-row][data-status="other"]')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the guest row says in words it is from the Tropical list');

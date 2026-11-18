@@ -2,7 +2,7 @@
 type: Module
 title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 3 and schema 4 (4.1 and 4.2) exports: additive-tier checks, optional schema-4 tables (plant_aliases accepted, never read) and the search names file."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:49Z }
 sources:
@@ -19,8 +19,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:5a68cb4f4f79a63e
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:76403c6b7eef8bf5
+    last_modified: 2026-11-17T23:54:43Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -29,13 +29,13 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:76adc2791c1ed27f
-    last_modified: 2026-11-17T17:54:47Z
+    digest: sha256:130be072c506a3b0
+    last_modified: 2026-11-18T00:10:23Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
-    digest: sha256:a9e179d333edafd9
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:b0a47f7ef91900b2
+    last_modified: 2026-11-18T00:06:43Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
@@ -44,8 +44,8 @@ sources:
   - id: consortium-source-test-mjs
     resource: ../../scripts/consortium-source.test.mjs
     title: scripts/consortium-source.test.mjs
-    digest: sha256:8c293450f3b6a119
-    last_modified: 2026-11-17T13:25:33Z
+    digest: sha256:740d5a58a5007898
+    last_modified: 2026-11-18T00:05:27Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/find/names.ts
     title: src/islands/consortium/views/find/names.ts
@@ -85,6 +85,6 @@ enforced_by:
 - Ranges: the website reads them only from the export's tables (`plant_climate_status`, `plant_climate`, `plant_koppen`; `CLIMATE_ROWS` in `sqlite-source.ts`) in schema 3 and 4 alike, never from canopi-data's range TSVs; `consortium-source.test.mjs` reads them from the schema-4 fixture. So the slices duty "ranges read from the export when it is schema 4" needs no website change: canopi-data may drop its range TSVs once its own schema-3 reinstall path no longer needs them (review c0 1.4).
 
 ## Fixture
-- `make-fixture.mjs` builds schema 4.3 by default (the schema-3 variant is kept), with disputes, audiences, trait sources, frost, toxicity parts, the 4.3 ES invasive areas (the note's cases on Tropaeolum, Robinia, Psidium and Elaeagnus), alias rows (kept to show a filled `plant_aliases` is accepted) and a names file.
+- `make-fixture.mjs` builds schema 4.5 by default (since the PP-C chunk-2 hand-off: 4.5's declared light span columns `plants.sun_exposure_sunniest`, `sun_exposure_shadiest`, `sun_exposure_preferred` and their `trait_sources` fields, since 5, read by `sqlite-source.ts` into `Taxon.light`; `schema_minor` 5; formerly 4.3) (the schema-3 variant is kept), with disputes, audiences, trait sources, frost, toxicity parts, the 4.3 ES invasive areas (the note's cases on Tropaeolum, Robinia, Psidium and Elaeagnus), alias rows (kept to show a filled `plant_aliases` is accepted) and a names file.
 
 Related: [consortium core](/modules/consortium-core.md), [slices](/project/plant-palette-slices.md).
