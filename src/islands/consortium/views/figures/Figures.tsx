@@ -120,10 +120,20 @@ const membersDry = computed(() => {
   return first;
 });
 const located = computed(() => !!store.location.value?.lookup);
+// store.openFigure's target for the panel as a whole (no line named).
+const PANEL = 'panel';
 
 // ---- an edit, and its summary ----
-interface LastChange { line: LineId; change: SiteChange; of: number }
+// The edit whose summary is on the toast: its line, its toast's id, and (once counted) what it changed.
+// It is said (under the panel head, under its row) only while that toast shows: Undo, a new place
+// (placeAt clears the edits, which ends the offer), another toast or the toast running out end it, the
+// same lifetime as the Undo it offers (R6, R7, C2).
+interface LastChange { line: LineId; toast: number; change: SiteChange | null; of: number }
 const lastChange = signal<LastChange | null>(null);
+const liveChange = computed<LastChange | null>(() => {
+  const c = lastChange.value, t = store.toast.value;
+  return c && t && t.id === c.toast ? c : null;
+});
 // The line open on the phone: null, the main limit; 'none', none (the grower closed it).
 const openLine = signal<LineId | 'none' | null>(null);
 const editing = signal<LineId | null>(null);
@@ -136,13 +146,15 @@ function commit(line: LineId, next: SiteEdits): void {
   const was = store.siteEdits.peek(), wasInputs = store.siteInputs.peek();
   editing.value = null;
   store.setSiteEdits(next, ({ ready, failed }) => {
+    // The toast this summary speaks on (setSiteEdits shows it before it asks for the words).
+    const toast = store.toast.peek()?.id ?? -1;
     const members = store.memberTaxa.peek();
     const names = new Map(members.map((t) => [t.id, nameOf(t)]));
     const words = (change: SiteChange) => ({ text: sayAll(siteChangeLines(change, store.siteEdits.peek(), { was, inputs: store.siteInputs.peek(), size: members.length, nameOf: (id) => names.get(id) ?? id, temp: TEMPS, texture: texture.peek() })) });
     // No location climate: the verdicts are not asked for (store start()), so nothing is counted; the
     // summary says what was set and that the plants are kept, at once.
-    if (!store.siteClimate.peek()) { lastChange.value = null; return words(NO_SITE_CHANGE); }
-    if (!ready || failed || !store.verdictRule.peek() || !store.pool.peek()) return 'pending';
+    if (!store.siteClimate.peek()) { lastChange.value = { line, toast, change: null, of: 0 }; return words(NO_SITE_CHANGE); }
+    if (!ready || failed || !store.verdictRule.peek() || !store.pool.peek()) { lastChange.value = { line, toast, change: null, of: 0 }; return 'pending'; }
     const taxa = allTaxa.peek(), lst = list.peek();
     const snap = (inputs: SiteInputs) => {
       const b = judge(inputs, taxa)!;
@@ -151,7 +163,7 @@ function commit(line: LineId, next: SiteEdits): void {
     };
     const now = store.siteInputs.peek();
     const change = siteChange(snap(wasInputs), snap(now));
-    lastChange.value = { line, change, of: lst.length };
+    lastChange.value = { line, toast, change, of: lst.length };
     return words(change);
   });
 }
@@ -191,7 +203,11 @@ const CHECK = 'M4.5 10.5l3.5 3.5 7.5-8';
 const Pin = () => <Icon d="M10 17.5s5.5-5.2 5.5-9.3a5.5 5.5 0 0 0-11 0c0 4.1 5.5 9.3 5.5 9.3Z" circle={[10, 8.2, 1.9]} />;
 const Question = () => <Icon d="M7.8 8a2.3 2.3 0 1 1 3.4 2c-.8.5-1.2 1-1.2 1.8M10 14.3v.2" circle={[10, 10, 7]} />;
 // A source from a map, with its pin ("(pin) From the climate map").
-const MapSource = ({ text }: { text: string }) => <span class="fg-map"><Pin />{text}</span>;
+// The pin stays with the first word; the rest wraps (a long source never widens its column).
+const MapSource = ({ text }: { text: string }) => {
+  const at = text.search(/\s/u);
+  return <span class="fg-map"><span class="fg-map-pin"><Pin />{at < 0 ? text : text.slice(0, at)}</span>{at < 0 ? '' : text.slice(at)}</span>;
+};
 // "Day length: set by your latitude…": the words before the first colon in bold (board PlaceDesk).
 function Lead({ text }: { text: string }) {
   const m = /^(.+?)(\s?[:：])/.exec(text);
@@ -360,11 +376,29 @@ function effect(line: LineId, i: SiteInputs, main: boolean, panel = true): strin
 }
 
 // ---- the editors ----
-const parseNumber = (s: string): number | null => {
-  const t = s.trim().replace(/\s/g, '').replace(',', '.').replace('−', '-');
+// A number the grower types, read with the page language's separators (R9): its group mark only where
+// it groups ("1,200" in English, "1.200" in German, "1 200" in French), its decimal mark, and a comma
+// as a decimal mark in every language ("12,5", F1); spaces of any width and a true minus are fine.
+const separators = (): { group: string; decimal: string } => {
+  const s = formatNumber(1234567.8, lang(), 1);
+  return { group: /1(\D+)234/u.exec(s)?.[1] ?? '', decimal: /(\D)8$/u.exec(s)?.[1] ?? '.' };
+};
+const escRe = (x: string): string => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function parseNumber(s: string): number | null {
+  const { group, decimal } = separators();
+  let t = s.trim().replace(/\s/g, '').replace(/^[−–]/, '-');
+  if (group && !/\s/.test(group) && new RegExp(`^[-+]?\\d{1,3}(${escRe(group)}\\d{3})+(${escRe(decimal)}\\d+)?$`).test(t)) t = t.split(group).join('');
+  t = t.replace(decimal, '.').replace(',', '.');
   if (!/^[-+]?\d+(\.\d+)?$/.test(t)) return null;
   return Number(t);
-};
+}
+// A number as the field shows it for editing: the decimal mark of the page language, never a group
+// mark, so the field reads back what it shows (R9).
+const editable = (n: number): string => String(n).replace('.', separators().decimal);
+// The inputs with these edits (core siteInputsOf, its clamps: dry months 0..12, rain never below 0),
+// and the map's own figures (no edits): the preview and the "map …" values read them (R14).
+const inputsWith = (edits: SiteEdits): SiteInputs => siteInputsOf({ lookup: store.location.value?.lookup ?? null, room: store.room.value, edits });
+const mapInputs = computed<SiteInputs>(() => inputsWith(NO_EDITS));
 interface ShiftConfig { step: number; max: number; less: string; more: string; unit: string; lead: string; pair: string }
 const SHIFT: Record<ClimateLine, () => ShiftConfig> = {
   nights: () => ({ step: 0.1, max: EDIT_LIMITS.shiftC, less: 'colder', more: 'warmer', unit: 'unitC', lead: 'plotAbout', pair: 'segColder' }),
@@ -376,7 +410,7 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const cfg = SHIFT[line]();
   const inp = i[INPUT[line]];
   const map = inp.map ?? 0;
-  const [text, setText] = useState(inp.shift ? n1(Math.abs(inp.shift)) : '');
+  const [text, setText] = useState(inp.shift ? editable(Math.abs(inp.shift)) : '');
   const [down, setDown] = useState(inp.shift ? inp.shift < 0 : true);
   const [figure, setFigure] = useState(false);
   const [both, setBoth] = useState(true);
@@ -392,13 +426,24 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
     : figure ? (raw < range.min || raw > range.max ? null : step(raw - map))
     : raw <= 0 || raw > range.max ? null : step(down ? -raw : raw);
   const rangeWords = F('invalidRange', { min: n1(range.min), max: n1(range.max) });
+  // The tick says the way the shift goes: its sign once there is one (in figure mode the colder/warmer
+  // pair is hidden, so the figure decides, R8); before, the pair's choice.
+  const tickColder = shift !== null && shift !== 0 ? shift < 0 : figure ? true : down;
   const use = () => {
     if (shift === null || shift === 0) { setError(rangeWords); field.current?.focus(); return; }
-    const next: SiteEdits = { ...store.siteEdits.peek(), [FIELD[line]]: shift };
-    if (line === 'nights' && both) next.daysShiftC = shift;
-    commit(line, next);
+    commit(line, edited(shift));
   };
-  const periodsAt = (l: ClimateLine, s: number) => periodIds.map((p) => climateFor({ inputs: i, scenario: store.scenario.value }, p)).map((p) => (p ? valueOf(l, SLOT[l](p) - i[INPUT[l]].shift + s) : '—'));
+  // The edits "Use my value" would write (the tick: the hottest days too).
+  const edited = (s: number): SiteEdits => {
+    const next: SiteEdits = { ...store.siteEdits.peek(), [FIELD[line]]: s };
+    if (line === 'nights' && both) next.daysShiftC = s;
+    return next;
+  };
+  // The preview: the figures the checks would read with these edits, through the engine's own inputs.
+  const periodsAt = (l: ClimateLine, s: number) => {
+    const at = inputsWith(edited(s));
+    return periodIds.map((p) => climateFor({ inputs: at, scenario: store.scenario.value }, p)).map((p) => (p ? valueOf(l, SLOT[l](p)) : '—'));
+  };
   // "With your value: nights 10.0 °C today, … 12.0 °C by 2071–2099; hottest days 24 °C, 25 °C, 26 °C. The
   // same 2 °C in every period: …" (board SiteKiambu), its two leads in bold.
   const preview = shift !== null && shift !== 0 ? (() => {
@@ -434,7 +479,7 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
       {line === 'nights' && <>
         <p class="fg-help">{F('heightHelp')}</p>
         <label class="fg-tick"><input type="checkbox" checked={both} onChange={(e) => setBoth((e.currentTarget as HTMLInputElement).checked)} />
-          <span>{F(down || shift === null ? 'alsoDaysColder' : 'alsoDaysWarmer', { shift: tempShift(Math.abs(shift ?? (raw ?? 2))) })}<span class="fg-muted">{F('alsoDaysWhy')}</span></span></label>
+          <span>{F(tickColder ? 'alsoDaysColder' : 'alsoDaysWarmer', { shift: tempShift(Math.abs(shift ?? (figure ? 2 : raw ?? 2))) })}<span class="fg-muted">{F('alsoDaysWhy')}</span></span></label>
       </>}
       <div class="fg-preview" aria-live="polite">{preview && <Bold text={preview} runs={[F('previewLead'), leadOf(F(shift !== null && shift < 0 ? 'previewSameColder' : 'previewSameWarmer', { shift: tempShift(Math.abs(shift ?? 0)) }))]} />}</div>
       <div class="fg-actions">
@@ -577,8 +622,9 @@ function Row({ line, i, always, main, card = false }: { line: LineId; i: SiteInp
   );
   // What the grower's own value changed, said under the row while the row holds it (board SiteKiambu
   // "The rows with your value"); after Reset only the toast says it; nothing moved, nothing said.
-  const detail = lastChange.value?.line === line && open && grower ? lastChange.value : null;
-  const detailLines = detail ? changeDetailLines(detail.change, detail.of, { size: store.memberTaxa.value.length, nameOf: (id) => { const t = store.memberTaxa.value.find((x) => x.id === id); return t ? nameOf(t) : id; } }) : [];
+  const live = liveChange.value;
+  const detail = live?.change && live.line === line && open && grower ? live : null;
+  const detailLines = detail?.change ? changeDetailLines(detail.change, detail.of, { size: store.memberTaxa.value.length, nameOf: (id) => { const t = store.memberTaxa.value.find((x) => x.id === id); return t ? nameOf(t) : id; } }) : [];
   const said = effect(line, i, main, !card);
   return (
     <div role="group" aria-label={name} class={open ? 'fg-line fg-line-open' : 'fg-line'} data-fg-line={line}>
@@ -614,12 +660,12 @@ function Cells({ line, i }: { line: ClimateLine; i: SiteInputs }) {
       {periodIds.map((p) => {
         const slot = climateFor({ inputs: i, scenario: store.scenario.value }, p);
         if (!slot) return null;
-        const v = SLOT[line](slot);
+        const v = SLOT[line](slot), was = climateFor({ inputs: mapInputs.value, scenario: store.scenario.value }, p);
         return (
           <div key={p} class={p === TODAY ? 'fg-cell fg-cell-today' : 'fg-cell'}>
             <span class="fg-cell-p">{p === TODAY ? F('today') : periodName(p)}</span>
             <span class="fg-cell-v">{valueOf(line, v)}</span>
-            {inp.shift !== 0 && <span class="fg-cell-map">{F('mapWas', { v: bare(valueOf(line, v - inp.shift)) })}</span>}
+            {inp.shift !== 0 && was && <span class="fg-cell-map">{F('mapWas', { v: bare(valueOf(line, SLOT[line](was))) })}</span>}
           </div>
         );
       })}
@@ -650,7 +696,11 @@ function seeLater(): void {
 }
 function Meaning({ i }: { i: SiteInputs }) {
   const ps = counts.value?.periods;
-  if (!ps || ps.length < 3 || i.nights.value === null) return <>{F('meaningNone')}</>;
+  // Said from the real state (R12): no location; a location with no climate data; the checks could
+  // not run; the checks still counting. Only then the counts.
+  if (!located.value) return <>{F('meaningNone')}</>;
+  if (i.nights.value === null) return <>{F('meaningNoData')}</>;
+  if (!ps || ps.length < 3) return <>{sayAll([checks.value === 'failed' ? checksFailedLine() : countingLine()])}</>;
   // Each limiting line's own meaning (core LIMIT_LINES): heat links to the palette in 2041–2070; rain
   // and warmth say what decides; the nights (and warmth) say how the list moves as it warms.
   const top = topLimit.value, key = top ? LIMIT_LINES[top].meaning : 'meaningFree';
@@ -687,7 +737,7 @@ function Fold({ label, labelClosed, start, children }: { label: string; labelClo
 // dark bar with its own Undo, which is the toast's (one undo, two places to reach it).
 function HeadSummary() {
   const t = store.toast.value;
-  if (!t || !lastChange.value || !t.undo) return null;
+  if (!t || !liveChange.value || !t.undo) return null;
   const undo = () => { const u = t.undo; store.hideToast(); u?.(); };
   return (
     <div role="status" class="fg-summary">
@@ -708,20 +758,25 @@ export function PlaceFigures() {
   const wide = desk.value;
   const main = mainLimit.value;
   const root = useRef<HTMLElement>(null);
-  // store.openFigure(line): the panel opens at that line.
+  // store.openFigure(line): the panel opens at that line; store.openFigure(PANEL) (the palette's
+  // "Your place in figures" link): the panel itself, its heading in view and focused (R11).
   useEffect(() => {
-    const line = store.figureLine.value as LineId | null;
+    const line = store.figureLine.value as LineId | typeof PANEL | null;
     if (!line) return;
-    openLine.value = line;
     store.figureLine.value = null;
-    requestAnimationFrame(() => root.current?.querySelector(`[data-fg-line="${line}"]`)?.scrollIntoView({ block: 'start' }));
+    if (line !== PANEL) openLine.value = line;
+    requestAnimationFrame(() => {
+      const el = line === PANEL ? root.current?.querySelector<HTMLElement>('h2') : root.current?.querySelector<HTMLElement>(`[data-fg-line="${line}"]`);
+      el?.scrollIntoView({ block: 'start' });
+      if (line === PANEL) el?.focus({ preventScroll: true });
+    });
   }, [store.figureLine.value]);
   // "What it means for your choice": before the folds on the laptop (PlaceDesk), after them on the phone (SiteKiambu).
   const meaningP = <p class="fg-meaning"><Icon d={CHECK} /><span><strong>{F('meaningHead')}</strong> <Meaning i={i} /></span></p>;
   const row = (line: LineId) => <Row key={line} line={line} i={i} always={wide} main={line === main} />;
   return (
     <section class="fg-panel" aria-label={F('title')} ref={root}>
-      <h2 class="fg-h2">{F('title')}</h2>
+      <h2 class="fg-h2" tabIndex={-1}>{F('title')}</h2>
       <p class="fg-lede">{F(wide ? 'ledeDesk' : 'lede')}{wide && countsOf() ? ` ${countsOf()}` : ''}</p>
       <HeadSummary />
       <div class="fg-cols">
@@ -804,7 +859,10 @@ function WaterCard({ i }: { i: SiteInputs }) {
   const item = (t: Taxon) => dry.get(t.id) === TODAY
     ? <>{chip(F(first ? 'waterNowFirst' : 'waterNow'))} {F('waterNowWhy', { name: nameOf(t) })}</>
     : <>{chip(F('waterLater', { period: periodName(dry.get(t.id)!) }))} {F(first ? 'waterLaterWhyFirst' : 'waterLaterWhy', { name: nameOf(t) })}</>;
-  const lead = FP(first ? 'waterLeadFirst' : 'waterLead', today.length, { size: n0(size), later: n0(later.length), period: periodName(MID) });
+  // The later members by the first period they are drier in (R13): "1 more by 2041–2070, 2 more by 2071–2099".
+  const perPeriod = [MID, LAST].map((p) => [p, later.filter((t) => dry.get(t.id) === p).length] as const).filter(([, n]) => n);
+  const laterWords = listOf((perPeriod.length ? perPeriod : [[MID, 0] as const]).map(([p, n]) => FP('membersDryLaterMany', n, { period: periodName(p) }).replace(/[.。]$/u, '')));
+  const lead = FP(first ? 'waterLeadFirst' : 'waterLead', today.length, { size: n0(size), later: laterWords });
   const restWords = !rest.length ? '' : named(rest.length, size) ? FP('waterRest', rest.length, { names: listOf(rest.map(nameOf)) }) : FP('membersDryOther', rest.length);
   return (
     <section class="fg-panel fg-water" aria-labelledby="fg-water-h">
@@ -820,11 +878,17 @@ export function PaletteLimits() {
   const i = store.siteInputs.value;
   if (!located.value || i.nights.value === null) return null;
   const status = checks.value;
-  // The main limit only (board SiteMendoza: the rain, with the dry months it reads with); the other
-  // climate lines are said in one sentence, "Not a limit here: …", built only from the counts: while
-  // the checks are counting or could not run, the card says that instead (no claim from the climate alone).
+  // Every line that limits (A5; core limitsOf, most first; warmth over the year is said in the Hottest
+  // days row, core LIMIT_LINES), the rain with the dry months it reads with (board SiteMendoza); the
+  // night and heat lines that limit nothing are said in one sentence, "Not a limit here: …", built only
+  // from the counts: while the checks are counting or could not run, the card says that instead.
   const main = mainLimit.value;
-  const lines: ClimateLine[] = status !== 'ready' ? [] : main === 'rain' ? ['rain', 'dry'] : main ? [main] : [];
+  const lines: ClimateLine[] = [];
+  if (status === 'ready') for (const l of limits.value) {
+    const row = LIMIT_LINES[l.line].row;
+    if (!lines.includes(row)) lines.push(row);
+    if (row === 'rain' && !lines.includes('dry')) lines.push('dry');
+  }
   const today = climateFor({ inputs: i, scenario: store.scenario.value }, TODAY), last = climateFor({ inputs: i, scenario: store.scenario.value }, LAST);
   const not: string[] = [];
   if (status === 'ready' && today && last) {
@@ -852,7 +916,7 @@ export function PaletteLimits() {
           {membersDry.value && store.memberTaxa.value.length ? <MembersDry i={i} /> : <p class="fg-effect">{F('waterEffect')}</p>}
           <ChoiceOptions line="watering" i={i} />
         </div>
-        <p class="fg-foot">{F('footPath')} <button type="button" class="ct-link-button fg-link" onClick={() => store.openFigure(null)}>{`${F('everyFigure')} ${F('title')}`}</button></p>
+        <p class="fg-foot">{F('footPath')} <button type="button" class="ct-link-button fg-link" onClick={() => store.openFigure(PANEL)}>{`${F('everyFigure')} ${F('title')}`}</button></p>
       </section>
       <WaterCard i={i} />
     </>

@@ -16,7 +16,8 @@
 .ct .fg-summary-text { flex: 1 1 auto; min-width: 0; }
 .ct .fg-summary-undo { flex: none; min-height: 44px; padding: 0 12px; border: 1px solid currentColor; border-radius: var(--radius); background: transparent; color: inherit; font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer; }
 /* A map source with its pin ("(pin) From the climate map"). */
-.ct .fg-map { display: inline; white-space: nowrap; }
+.ct .fg-map { display: inline; }
+.ct .fg-map-pin { white-space: nowrap; }
 .ct .fg-map svg { display: inline-block; width: 14px; height: 14px; margin-inline-end: 4px; vertical-align: -2px; }
 .ct .fg-chip-none svg { width: 13px; height: 13px; }
 /* Reset and the editor's links: the ochre underlined link. */
@@ -43,7 +44,7 @@
 .ct button.fg-name:hover { text-decoration: underline; }
 .ct .fg-sub, .ct .fg-short { font-size: 14px; line-height: 19px; color: var(--text-secondary); }
 .ct .fg-buttons { display: flex; gap: 6px; flex: none; }
-.ct .fg-change { min-height: 40px; padding: 0 14px; font-size: 15px; }
+.ct .fg-change { min-height: 44px; padding: 0 14px; font-size: 15px; }
 .ct .fg-cells { display: flex; gap: 6px; min-width: 0; }
 .ct .fg-cell { display: grid; gap: 2px; flex: 1 1 0; min-width: 0; padding: 6px 8px; border-radius: 8px; font-size: 13px; line-height: 17px; }
 .ct .fg-cell-today { background: var(--surface-alt); }

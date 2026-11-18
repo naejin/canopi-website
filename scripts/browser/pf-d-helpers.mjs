@@ -148,3 +148,11 @@ export async function atBoardPlace(page, name) {
   await page.waitForFunction(() => !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 });
   return lookup;
 }
+// The grower's own new location at a place of the scenario file, through the store's placeAt (a new
+// climate cell clears the grower's values, A7), as state/location.ts locate does.
+export async function movedTo(page, name) {
+  const { lat, lon } = FILE.places[name];
+  const lookup = await lookupAt(lat, lon);
+  await page.evaluate((loc) => { window.__ctTest.store.placeAt(loc); }, { lat, lon, source: 'map', label: name, lookup });
+  return lookup;
+}

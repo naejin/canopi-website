@@ -1,7 +1,7 @@
 // pf stream d, "Your place in figures" (chunk 3; v14 spec section 2 'pf-d', section 3): the boards
 // SiteKiambu, PlaceDesk and SiteMendoza (the panel, "What limits plants here", the Watering line, the
-// "Water" card) and the change-summary toasts, as tests, with the failure rows F1, F2, F5, F6, F9 and
-// F10 of section 5. Each case was opened marked expected-fail under pf-d (scripts/expect-fail.mjs
+// "Water" card) and the change-summary toasts, as tests, with the failure rows F1-F7, F9-F11 and F28
+// (reported only) of section 5 and the section 6 neighbours at 320, 390, 960 and 1280 (PFD31). Each case was opened marked expected-fail under pf-d (scripts/expect-fail.mjs
 // failing(), its reason the board's first missing word, pf-helpers.mjs BOARD) in pf-d's commit 0 and
 // lost its marker in the commit that made it pass (pf-d commit 1: all eight). Board figures come from the engine on the
 // installed release (pf-d-helpers.mjs engineCounts, the store's own inputs), never a board number.
@@ -10,10 +10,11 @@
 //   carries none: the panel is new (spec: "Delete: nothing; the 'Soil, likely' card and 'Tell us about
 //   your spot' were never built").
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { useHarness, aria, has } from './helpers.mjs';
-import { control, done, focused, inOrder, pastEdge, press, says, section, sectionText, toastText } from './pf-helpers.mjs';
-import { atBoardPlace, atPlace, edits, engineCounts, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
+import { control, done, focused, inOrder, pastEdge, press, says, saysNot, section, sectionText, toastText, withStorage } from './pf-helpers.mjs';
+import { atBoardPlace, atPlace, edits, movedTo, engineCounts, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
 
 useHarness();
 
@@ -151,8 +152,15 @@ test('PFD5 (pf-d SiteMendoza at 390): "What limits plants here" with only the li
   const page = await mendoza({ width: 390 });
   const text = await section(page, 'What limits plants here', 20_000);
   const c = await engineCounts(page);
-  for (const w of ['Rain a year', 'Counts are of the Arid list', 'The main limit here.', `${c[0].drier} of the ${c[0].fit} plants that fit your climate are recorded only where it is wetter than here`, 'Not a limit here:', 'Watering']) assert.ok(text.includes(w), `board: "What limits plants here" says "${w}"`);
-  assert.ok(!text.includes('Hottest days Today'), 'board: a line that does not limit is not shown as a line');
+  for (const w of ['Rain a year', 'Counts are of the Arid list', 'The main limit here.', `${c[0].drier} of the ${c[0].fit} plants that fit your climate are recorded only where it is wetter than here`, 'Watering']) assert.ok(text.includes(w), `board: "What limits plants here" says "${w}"`);
+  // Which other lines limit comes from the engine (A5: every line that limits is shown, the others said
+  // as "Not a limit here"); the board's Mendoza slots had the rain alone.
+  const e = await engineSides(page), most = (f) => Math.max(...e.sides.map(f));
+  const nights = most((x) => x.cold.outside + x.mild.outside), heat = most((x) => x.hot.outside) + most((x) => x.cool.outside);
+  const shown = await sectionBy(page, 'What limits plants here', (s) => [...s.querySelectorAll('[role="group"][aria-label]')].map((g) => g.getAttribute('aria-label')));
+  assert.equal(shown.includes('Coldest nights'), nights > 0, `A5: the nights line shown only when it limits (${nights} outside; lines ${JSON.stringify(shown)})`);
+  assert.equal(shown.includes('Hottest days'), heat > 0, `A5: the hottest days line shown only when it limits (${heat} outside; lines ${JSON.stringify(shown)})`);
+  assert.equal(text.includes('Not a limit here:'), !nights || !heat, 'A5: "Not a limit here" for the lines that do not limit');
   await control(page, 'button', 'Change rain a year');
   await says(page, `Rain only · ${c[0].drier} plants: “may need watering”`);
   await says(page, /\d of your 8 plants may need watering today: /);
@@ -490,3 +498,340 @@ test('PFD19 (pf-d R1): where too little warmth over the year is the main limit (
   assert.ok(limits.includes('The main limit here: ') && !limits.includes('Not a limit for this list'), `board: the palette's limiting row ("${limits.slice(0, 400)}")`);
   await done(page);
 });
+
+// ---- fix round 1, batch 3 (review findings R6-R9, R11-R14, C1-C4; failure rows F3, F4, F7, F11, F28; section 6) ----
+
+// A control pressed as the grower does once they scrolled it to the middle of the screen (a toast at the
+// foot of the phone screen covers what stands under it; the grower scrolls, a test presses there).
+const centre = (page, sel, name) => page.evaluate((q, n) => {
+  const el = [...document.querySelectorAll(q)].find((x) => (n === null ? true : ((x.getAttribute('aria-label') ?? x.textContent).replace(/\s+/g, ' ').trim() === n)) && x.getClientRects().length);
+  el?.scrollIntoView({ block: 'center' });
+}, sel, name);
+const tap = async (page, name) => { await centre(page, 'main button', name); await press(page, 'button', name); };
+const typeAt = async (page, value) => { await centre(page, 'main fieldset input[type="text"]', null); await typeIn(page, value); };
+const colder = async (page, n = '2') => { await tap(page, 'Change coldest nights'); await typeAt(page, n); await tap(page, 'Use my value'); await summary(page); };
+
+const de = JSON.parse(readFileSync(new URL('../../src/i18n/translations/de.json', import.meta.url), 'utf8'));
+// The panel's status bar under its head (the change summary with its Undo), its text or null.
+const headSummary = (page) => page.evaluate(() => {
+  const panel = document.querySelector('main section[aria-label="Your place in figures"]');
+  const el = panel && [...panel.querySelectorAll('[role="status"]')].find((x) => [...x.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Undo'));
+  return el ? el.innerText.replace(/\s+/g, ' ').trim() : null;
+});
+// The toast's Undo, pressed as the grower does (the store's toast line holds it).
+const undoToast = (page) => page.evaluate(() => { const t = window.__ctTest.store.toast.value; window.__ctTest.store.hideToast(); t?.undo?.(); });
+// The text of "What it means for your choice", from its bold head to the end of its paragraph.
+const meaningText = (page) => page.evaluate(() => [...document.querySelectorAll('main p')].find((p) => p.innerText.includes('What it means for your choice.'))?.innerText.replace(/\s+/g, ' ').trim() ?? null);
+// Waits for the summary of a newer toast than `id` (not "Counting…").
+const nextSummary = (page, id) => page.waitForFunction((k) => { const t = window.__ctTest.store.toast.value; return t && t.id !== k && !t.text.includes('Counting') ? t.text.replace(/\s+/g, ' ') : null; }, { timeout: 20_000 }, id).then((h) => h.jsonValue());
+const toastId = (page) => page.evaluate(() => window.__ctTest.store.toast.value?.id ?? null);
+
+test('PFD20 (pf-d F3, R6, R7, C2): Undo puts the edits and the counts back and ends the line\'s detail and the summary under the head; a second edit takes the Undo; another toast with Undo is never shown as the change summary; a new place ends the detail', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  const before = await lineText(page, 'Coldest nights');
+  await colder(page);
+  assert.ok((await paraIn(page, 'Coldest nights', 'Today:')), 'board: the row says what changed');
+  assert.ok(await headSummary(page), 'board: the summary under the head');
+  await undoToast(page);
+  assert.deepEqual(await edits(page), {}, 'F3: the edits are as before');
+  assert.ok(await page.waitForFunction((b) => (document.querySelector('main [role="group"][aria-label="Coldest nights"]')?.innerText ?? '').replace(/\s+/g, ' ').trim() === b, { timeout: 6000 }, before).then(() => true, () => false),
+    `F3: the line and its counts are back ("${await lineText(page, 'Coldest nights')}" against "${before}")`);
+  assert.equal(await paraIn(page, 'Coldest nights', 'Today:'), null, 'R6: no detail after Undo');
+  assert.equal(await headSummary(page), null, 'C2: no summary under the head after Undo');
+  // The offer ends on another edit: the second edit's Undo puts back only the second.
+  await colder(page);
+  const first = await toastId(page);
+  await tap(page, 'Change watering');
+  await tapOption(page, 'Watering', 'Watered all year');
+  await nextSummary(page, first);
+  await undoToast(page);
+  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2 }, 'F3: Undo takes back the second edit only');
+  // R7: another toast with Undo (a plant removed) is never the change summary.
+  await tap(page, 'Change the ground after heavy rain');
+  await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
+  await summary(page);
+  await page.evaluate(() => { const s = window.__ctTest.store; s.removeMember(s.members.value[0]); });
+  assert.ok(await page.waitForFunction(() => /removed/i.test(window.__ctTest.store.toast.value?.text ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the removal toast');
+  assert.equal(await headSummary(page), null, `R7: the removal toast is not the change summary ("${await headSummary(page)}")`);
+  // A new place clears the edits (A7): no detail stays.
+  await colder(page, '3');
+  assert.ok(await paraIn(page, 'Coldest nights', 'Today:'), 'board: the detail');
+  await movedTo(page, 'mendoza');
+  assert.ok(await page.waitForFunction(() => Object.keys(window.__ctTest.store.siteEdits.value).length === 0, { timeout: 6000 }).then(() => true, () => false), 'A7: the new place cleared the edits');
+  assert.equal(await paraIn(page, 'Coldest nights', 'Today:'), null, 'R6: no detail after a new place');
+  assert.equal(await headSummary(page), null, 'R6: no summary under the head after a new place');
+  await done(page);
+});
+
+test('PFD21 (pf-d R8): in "I know my plot’s figure" the tick follows the figure: a figure warmer than the map says "warmer", and Use sets the days warmer', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  const i = await inputs(page);
+  await tap(page, 'Change coldest nights');
+  await tap(page, 'I know my plot’s figure');
+  await typeAt(page, (i.nights.map + 3).toFixed(1));
+  await says(page, 'Make the hottest days 3 °C warmer too');
+  await saysNot(page, 'Make the hottest days 3 °C colder too', 'R8: never "colder" for a warmer figure');
+  await tap(page, 'Use my value');
+  assert.deepEqual(await edits(page), { nightsShiftC: 3, daysShiftC: 3 }, 'R8: the days warmer, as the tick says');
+  await done(page);
+});
+
+test('PFD22 (pf-d R9, F1): a rain shift of 1,200 mm reopens as a number the field reads back; "1,200" in English and "1.200" in German are 1200', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await tap(page, 'Change rain a year');
+  await typeAt(page, '1,200');
+  await tap(page, 'more');
+  await tap(page, 'Use my value');
+  assert.equal((await edits(page)).rainShiftMm, 1200, 'R9: "1,200" is 1200 in English');
+  await summary(page);
+  await tap(page, 'Change rain a year');
+  const shown = await page.evaluate(() => document.querySelector('main fieldset input[type="text"]')?.value ?? null);
+  assert.ok(shown && !shown.includes(','), `R9: the field shows the shift without a group mark ("${shown}")`);
+  await tap(page, 'Use my value');
+  const st = await fieldState(page);
+  assert.ok(!st?.invalid, `R9: the prefilled value is read back (${JSON.stringify(st)})`);
+  assert.equal((await edits(page)).rainShiftMm, 1200, 'R9: still 1200');
+  await done(page);
+  const g = await placeStep('kiambu-8', { width: 390, lang: 'de' });
+  await section(g, de['consortium.figures.title'], 20_000);
+  await tap(g, de['consortium.figures.changeRain']);
+  await typeAt(g, '1.200');
+  await tap(g, de['consortium.figures.more']);
+  await tap(g, de['consortium.figures.use']);
+  assert.equal((await edits(g)).rainShiftMm, 1200, 'R9: "1.200" is 1200 in German');
+  await done(g);
+});
+
+test('PFD23 (pf-d R11): the palette\'s "Every figure, and yours: Your place in figures" brings the panel into view with its heading focused', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  await tap(page, 'Every figure, and yours: Your place in figures');
+  await section(page, 'Your place in figures', 20_000);
+  const ok = await page.waitForFunction(() => {
+    const a = document.activeElement;
+    if (!a || a.tagName !== 'H2' || a.textContent.trim() !== 'Your place in figures') return false;
+    const r = a.getBoundingClientRect();
+    return r.top >= -1 && r.top < innerHeight / 2;
+  }, { timeout: 6000 }).then(() => true, () => false);
+  assert.ok(ok, `R11: the panel's heading is in view and focused (focus on "${(await focused(page)).name}")`);
+  await done(page);
+});
+
+test('PFD24 (pf-d R12): "What it means for your choice" says the real state: checks that could not run, counting, no climate data here; "no location yet" only without a location', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await page.evaluate(() => { const s = window.__ctTest.store; window.__rule = s.verdictRule.value; s.verdictRule.value = null; s.verdictFailed.value = true; });
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('main p')].some((p) => p.innerText.includes('What it means for your choice.') && p.innerText.includes('Checks could not run')), { timeout: 6000 }).then(() => true, () => false), `R12: the checks could not run ("${await meaningText(page)}")`);
+  assert.ok(!(await meaningText(page)).includes('no location'), 'R12: never "no location" at a located place');
+  await page.evaluate(() => { window.__ctTest.store.verdictFailed.value = false; });
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('main p')].some((p) => p.innerText.includes('What it means for your choice.') && p.innerText.includes('Counting')), { timeout: 6000 }).then(() => true, () => false), `R12: counting ("${await meaningText(page)}")`);
+  await page.evaluate(() => { const s = window.__ctTest.store, l = s.location.value; s.location.value = { ...l, lookup: { ...l.lookup, climate: null } }; });
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('main p')].some((p) => p.innerText.includes('What it means for your choice.') && p.innerText.includes('no climate data at this place')), { timeout: 6000 }).then(() => true, () => false), `R12: no climate data here ("${await meaningText(page)}")`);
+  await done(page);
+  const none = await placeStep('kiambu-8', { site: null, width: 390 });
+  await section(none, 'Your place in figures', 20_000);
+  assert.ok((await meaningText(none)).includes('With no location yet'), 'R12: "no location yet" without a location');
+  await done(none);
+});
+
+test('PFD25 (pf-d R13): the Water card\'s lead counts the later members by the period they are first drier in', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  // From the engine: list plants by the first period they are drier than their band in (never a board figure).
+  const firsts = await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, list = s.pool.value ?? [];
+    const periods = ['1991-2020', '2041-2070', '2071-2099'];
+    const drier = (v) => !!v && (v.level === 'fits' || v.level === 'look') && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
+    const vs = periods.map((p) => rule.verdicts(list, { ...s.verdictContext.value, period: p }));
+    const out = {};
+    for (const t of list) { const k = vs.findIndex((m) => drier(m.get(t.id))); if (k >= 0) (out[periods[k]] ??= []).push(t.id); }
+    return out;
+  });
+  const lastOnly = firsts['2071-2099'] ?? [];
+  if (!lastOnly.length) { await done(page); return; }
+  const mid = (firsts['2041-2070'] ?? []).slice(0, 1), today = (firsts['1991-2020'] ?? []).slice(0, 1);
+  await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, [...today, ...mid, lastOnly[0]]);
+  assert.ok(await page.waitForFunction((n) => window.__ctTest.store.memberTaxa.value.length === n && !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 }, today.length + mid.length + 1).then(() => true, () => false), 'the members');
+  const lead = await sectionBy(page, 'Water', (s) => [...s.querySelectorAll('p')].map((p) => p.innerText.replace(/\s+/g, ' ').trim()).find((t) => t.startsWith('With rain only')) ?? null);
+  assert.ok(lead, 'board: the Water card\'s lead');
+  assert.ok(lead.includes('1 more by 2071–2099'), `R13: the member first drier by 2071–2099 is counted then ("${lead}")`);
+  if (mid.length) assert.ok(lead.includes('1 more by 2041–2070'), `R13: and the one by 2041–2070 ("${lead}")`);
+  else assert.ok(!lead.includes('2041–2070'), `R13: no 2041–2070 when no member is first drier then ("${lead}")`);
+  await done(page);
+});
+
+test('PFD26 (pf-d R14): the preview and the "map" values are the engine\'s: dry months never past 12, rain never below 0, the map figure as the map says', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  const i = await inputs(page);
+  await tap(page, 'Dry months in a row');
+  await tap(page, 'Change dry months in a row');
+  await typeAt(page, '12');
+  await tap(page, 'longer');
+  const prev = await page.evaluate(() => document.querySelector('main fieldset [aria-live="polite"]')?.innerText.replace(/\s+/g, ' ').trim() ?? '');
+  const nums = [...prev.matchAll(/(\d+) (?:today|by)/g)].map((m) => Number(m[1]));
+  assert.ok(nums.length === 3 && nums.every((n) => n <= 12), `R14: the preview stays within 12 months ("${prev}")`);
+  await tap(page, 'Use my value');
+  await summary(page);
+  const row = await lineText(page, 'Dry months in a row');
+  assert.ok(row.includes(`Today 12 map ${i.dryMonths.map}`), `R14: today 12 over the map's ${i.dryMonths.map} ("${row}")`);
+  await tap(page, 'Change rain a year');
+  await typeAt(page, String(Math.floor(i.rain.map)));
+  await tap(page, 'less');
+  const rain = await page.evaluate(() => document.querySelector('main fieldset [aria-live="polite"]')?.innerText.replace(/\s+/g, ' ').trim() ?? '');
+  assert.ok(rain && !/[−-]\d/.test(rain), `R14: never a negative rainfall ("${rain}")`);
+  await done(page);
+});
+
+test('PFD27 (pf-d C1, A5): where two lines limit, "What limits plants here" shows each with its Change, and "Not a limit here" never names a line that limits', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  // Nights 15 °C colder (the hottest days kept): the cold puts plants outside on top of the rain line.
+  await page.evaluate(() => window.__ctTest.store.setSiteEdits({ nightsShiftC: -15 }, 'Edits set'));
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.siteInputs.value.nights.shift === -15 && !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 }).then(() => true, () => false), 'the edit');
+  const e = await engineSides(page);
+  const c = await engineCounts(page);
+  const nights = Math.max(...e.sides.map((s) => s.cold.outside + s.mild.outside)), rain = Math.max(...c.map((p) => p.drier));
+  assert.ok(nights > 0 && rain > 0, `engine: both the nights (${nights}) and the rain (${rain}) limit here`);
+  const text = await section(page, 'What limits plants here', 20_000);
+  await control(page, 'button', 'Change coldest nights');
+  await control(page, 'button', 'Change rain a year');
+  assert.ok(!/Not a limit here:[^.]*winter cold/.test(text), `C1: winter cold is not called "not a limit" ("${text.slice(0, 600)}")`);
+  await done(page);
+});
+
+test('PFD28 (pf-d C4, A14, F28): a 200-plant palette at Mendoza: the members line and the Water card count past the size rule (three names, "+ N more"); a site edit at 4× CPU is timed and reported', { timeout: 180_000 }, async (t) => {
+  const page = await mendoza({ width: 390 });
+  await page.evaluate(() => { const s = window.__ctTest.store; s.members.value = [...new Set([...s.members.value, ...(s.pool.value ?? []).map((x) => x.id)])].slice(0, 200); });
+  assert.ok(await page.waitForFunction(() => { const s = window.__ctTest.store; return s.memberTaxa.value.length === 200 && !!s.memberVerdicts.value; }, { timeout: 30_000 }).then(() => true, () => false), 'the 200 plants');
+  await section(page, 'What limits plants here', 20_000);
+  const names = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.map((x) => x.names?.en || x.canonical_name));
+  const w = await lineText(page, 'Watering');
+  assert.ok(w.includes('of your 200 plants'), `board: the members sentence ("${w.slice(0, 200)}")`);
+  assert.ok(names.filter((n) => w.includes(n)).length <= 3, `A14: at most three names in the Watering line ("${w.slice(0, 400)}")`);
+  const water = await sectionBy(page, 'Water', (s) => ({ items: s.querySelectorAll('li').length, more: [...s.querySelectorAll('button')].some((b) => /^\+ \d+ more/.test(b.textContent.trim())), text: s.innerText.replace(/\s+/g, ' ') }));
+  if (water) {
+    assert.ok(water.items <= 3 && (water.more || water.items < 3), `A14: the Water card shows three and "+ N more" (${JSON.stringify({ items: water.items, more: water.more })})`);
+    assert.ok(names.filter((n) => water.text.includes(n)).length <= 3, 'A14: no run of names in the Water card');
+  }
+  // F28: one site edit (six verdict passes over the list and the members) at 4× CPU, reported only.
+  await page.evaluate(() => window.__ctTest.store.openFigure('watering'));
+  await section(page, 'Your place in figures', 20_000);
+  const cdp = await page.createCDPSession();
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  await page.evaluate(() => { window.__long = []; new PerformanceObserver((l) => { for (const x of l.getEntries()) window.__long.push(Math.round(x.duration)); }).observe({ type: 'longtask' }); window.__t0 = performance.now(); });
+  const id = await toastId(page);
+  await tap(page, 'Change the ground after heavy rain');
+  await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
+  await nextSummary(page, id);
+  const ms = await page.evaluate(() => Math.round(performance.now() - window.__t0));
+  const long = await page.evaluate(() => window.__long);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  t.diagnostic(`F28 (reported, never a failure): a drainage edit on 200 plants at 4× CPU: summary in ${ms} ms; longest task ${long.length ? Math.max(...long) : 0} ms; tasks over 200 ms: ${long.filter((x) => x > 200).join(', ') || 'none'} (cause: the six verdict passes of the summary and the panel's counts)`);
+  await done(page);
+});
+
+test('PFD29 (pf-d F4, F7): while the checks are counting the toast reads "Counting…" with Undo; a second edit before the summary gives one summary, against the state before the second edit', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await page.evaluate(() => { const s = window.__ctTest.store; window.__rule = s.verdictRule.value; s.verdictRule.value = null; s.verdictFailed.value = false; });
+  await tap(page, 'Change watering');
+  await tapOption(page, 'Watering', 'Watered all year');
+  assert.ok(await page.waitForFunction(() => { const t = window.__ctTest.store.toast.value; return t && t.text.includes('Counting') && typeof t.undo === 'function'; }, { timeout: 4000 }).then(() => true, () => false), `F7: "Counting…" with Undo ("${await toastText(page)}")`);
+  await tap(page, 'Change coldest nights');
+  await typeAt(page, '2');
+  await tap(page, 'Use my value');
+  const pending = await toastId(page);
+  assert.ok((await toastText(page)).includes('Counting'), 'F7: the second edit counts too');
+  await page.evaluate(() => { window.__ctTest.store.verdictRule.value = window.__rule; });
+  const got = await summary(page);
+  assert.equal(await toastId(page), pending, 'F7: the summary arrives on the same toast');
+  assert.ok(await page.evaluate(() => typeof window.__ctTest.store.toast.value?.undo === 'function'), 'F7: Undo kept');
+  assert.match(got, /^Coldest nights and hottest days set 2 °C colder\./, `F4: one summary, of the second edit ("${got}")`);
+  assert.ok(!/Watering/.test(got), `F4: the first edit is not in it ("${got}")`);
+  // The same second edit made from the state before it, with the checks settled, says the same.
+  await undoToast(page);
+  assert.deepEqual(await edits(page), { watering: 'all-year' }, 'F4: Undo goes back to the state before the second edit');
+  const id = await toastId(page);
+  await tap(page, 'Change coldest nights');
+  await typeAt(page, '2');
+  await tap(page, 'Use my value');
+  assert.equal(await nextSummary(page, id), got, 'F4: the summary is diffed against the state before the second edit');
+  await done(page);
+});
+
+test('PFD30 (pf-d F11): a save with grower values comes back after a reload, marked "Your value"; a value it cannot read is dropped and the rest kept', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  // The palette made the reader's own (a plant change lets go of the page the hook opened, which holds the save).
+  await page.evaluate(() => { const s = window.__ctTest.store; s.removeMember(s.members.value[0]); s.hideToast(); });
+  await colder(page);
+  await tap(page, 'Change soil pH');
+  await typeAt(page, '6.5');
+  await tap(page, 'Use my value');
+  await summary(page);
+  assert.ok(await page.waitForFunction(() => (localStorage.getItem('canopi-consortium') ?? '').includes('b=65'), { timeout: 6000 }).then(() => true, () => false), 'the save holds the values');
+  await page.reload();
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest?.store, { timeout: 20_000 }).then(() => true, () => false), 'the reloaded page');
+  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2, soilPh: 6.5 }, 'F11: the values come back');
+  // The test's place came through the hook (no saved location): set it again; the values stay (same cell).
+  await atPlace(page, 'kiambu');
+  await page.evaluate(() => { window.__ctTest.store.view.value = 'start'; });
+  await section(page, 'Your place in figures', 20_000);
+  await says(page, '2 °C colder than the map');
+  assert.ok((await lineText(page, 'Soil pH')).includes('6.5'), 'F11: the pH comes back');
+  // The same save with a pH it cannot read and an unknown drainage answer, opened on a new visit.
+  const bad = await page.evaluate(() => { const r = JSON.parse(localStorage.getItem('canopi-consortium')); r.place = `${r.place.replace('b=65', 'b=999')}&d=soggy`; return JSON.stringify(r); });
+  await done(page);
+  const again = await withStorage({ 'canopi-consortium': bad });
+  assert.ok(await again.waitForFunction(() => (window.__ctTest?.store?.members.value.length ?? 0) > 0, { timeout: 20_000 }).then(() => true, () => false), 'the saved palette opens');
+  assert.deepEqual(await edits(again), { nightsShiftC: -2, daysShiftC: -2 }, 'F11: the bad pH and the unknown answer dropped, the shifts kept');
+  await done(again);
+});
+
+// Section 6: the panel line, the temperature editor and the choice options at each width.
+const layoutAt = (page) => page.evaluate(() => {
+  const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, right: r.right, bottom: r.bottom, h: r.height }; };
+  const line = document.querySelector('main [role="group"][aria-label="Hottest days"]');
+  const change = [...document.querySelectorAll('main button')].find((b) => b.getAttribute('aria-label') === 'Change hottest days');
+  const name = line && [...line.querySelectorAll('*')].find((e) => e.children.length === 0 && e.textContent.trim() === 'Hottest days');
+  const heads = [...document.querySelectorAll('main section[aria-label="Your place in figures"] h3')].map((h) => ({ t: h.textContent.trim(), ...box(h) }));
+  const groupW = (g) => document.querySelector(`main [role="group"][aria-label="${g}"] [role="group"]`)?.getBoundingClientRect().width ?? 0;
+  const opts = (g) => [...(document.querySelector(`main [role="group"][aria-label="${g}"] [role="group"]`) ?? document.querySelector(`main [role="group"][aria-label="${g}"]`))?.querySelectorAll('button[aria-pressed]') ?? []].map(box);
+  return { line: line && box(line), change: change && box(change), name: name && box(name), heads, watering: opts('Watering'), drainage: opts('The ground after heavy rain'), drainageW: groupW('The ground after heavy rain') };
+});
+for (const width of [320, 390, 960, 1280]) {
+  test(`PFD31 (pf-d section 6 at ${width}): the panel line with Change (44 px, at the right of its name), ${width >= 960 ? 'two columns' : 'one column'}; the temperature editor ${width >= 960 ? 'with "Use my value" and "Cancel" on one row' : 'stacked'}; the options 44 px, ${width >= 960 ? 'the two drainage answers in one row' : 'the watering answers stacked'}`, async () => {
+    const page = await placeStep('kiambu-8', { width });
+    await section(page, 'Your place in figures', 20_000);
+    if (width < 960) await tap(page, 'Watering');
+    const l = await layoutAt(page);
+    assert.ok(l.change && l.change.h >= 44, `section 6: Change is 44 px (${JSON.stringify(l.change)})`);
+    assert.ok(l.name && l.change.x > l.name.right && Math.abs(l.change.right - l.line.right) < 4, `section 6: Change at the right of the line (${JSON.stringify({ name: l.name, change: l.change, line: l.line })})`);
+    const climate = l.heads.find((h) => h.t.startsWith('CLIMATE') || h.t.startsWith('Climate')), soil = l.heads.find((h) => h.t.startsWith('SOIL') || h.t.startsWith('Soil'));
+    assert.ok(climate && soil, `the group heads (${JSON.stringify(l.heads.map((h) => h.t))})`);
+    if (width >= 960) assert.ok(soil.x > climate.right && Math.abs(soil.y - climate.y) < 4, `section 6: two columns from 960 px (${JSON.stringify({ climate, soil })})`);
+    else assert.ok(soil.y > climate.y && Math.abs(soil.x - climate.x) < 2, 'section 6: one column on the phone');
+    for (const o of [...l.watering, ...l.drainage]) assert.ok(o.h >= 44, `section 6: each option 44 px (${JSON.stringify(o)})`);
+    // From 960 px the answers stand in one row when they fit (their widths and the 6 px gap within the column).
+    const fits = l.drainage.length === 2 && l.drainage[0].right - l.drainage[0].x + l.drainage[1].right - l.drainage[1].x + 6 <= l.drainageW + 1;
+    if (width >= 960 && fits) assert.ok(Math.abs(l.drainage[0].y - l.drainage[1].y) < 2, `section 6: the drainage answers in one row (${JSON.stringify(l.drainage)})`);
+    if (width >= 1280) assert.ok(fits, `section 6: the two drainage answers fit one row at ${width} (${JSON.stringify(l.drainage)}, ${l.drainageW})`);
+    else assert.ok(l.watering.length === 3 && l.watering[1].y >= l.watering[0].bottom - 1 && l.watering[2].y >= l.watering[1].bottom - 1, `section 6: the watering answers stacked (${JSON.stringify(l.watering)})`);
+    await tap(page, 'Change coldest nights');
+    const ed = await page.evaluate(() => {
+      const f = document.querySelector('main section[aria-label="Your place in figures"] fieldset');
+      const b = (t) => [...f.querySelectorAll('button')].find((x) => x.textContent.trim() === t)?.getBoundingClientRect();
+      const use = b('Use my value'), cancel = b('Cancel'), field = f.querySelector('input[type="text"]').getBoundingClientRect();
+      return { use: use && { y: use.top, h: use.height, bottom: use.bottom }, cancel: cancel && { y: cancel.top, h: cancel.height }, field: { bottom: field.bottom } };
+    });
+    assert.ok(ed.use && ed.cancel && ed.use.h >= 44 && ed.cancel.h >= 44, `section 6: the editor's buttons are 44 px (${JSON.stringify(ed)})`);
+    assert.ok(ed.use.y > ed.field.bottom, 'section 6: the buttons under the field');
+    if (width >= 960) assert.ok(Math.abs(ed.use.y - ed.cancel.y) < 2, `section 6: "Use my value" and "Cancel" on one row (${JSON.stringify(ed)})`);
+    assert.deepEqual(await pastEdge(page), [], `section 6: nothing passes the right edge at ${width}`);
+    await done(page);
+  });
+}
