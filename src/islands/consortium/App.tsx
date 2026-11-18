@@ -32,7 +32,7 @@ export const PalettePage = lazyPart(retryableImport(() => import('./views/palett
 // fold Find and the palette share are kept here too (astro.config.mjs FIRST_RUN_KIT builds them
 // untreeshaken, since they have no side effect of their own).
 import './views/StageBar.tsx';
-import './views/kit/rows.tsx';
+import './views/rows.tsx';
 import './views/kit/more.tsx';
 
 export interface AppProps {

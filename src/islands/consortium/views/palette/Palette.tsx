@@ -26,7 +26,7 @@ import { JobsPicture } from './JobsPicture.tsx';
 import { FindEntry } from '../Sheets.tsx';
 import { FindPanelSlot } from './FindPanelSlot.tsx';
 import { NextStep } from './NextStep.tsx';
-import { openFillers } from '../kit/rows.tsx';
+import { openFillers } from '../rows.tsx';
 import { Balance, Warnings, WarningsAndFit, warningGroups } from './Weigh.tsx';
 import { Years } from './Years.tsx';
 import { SIZE_PALETTE } from '../kit/chart.tsx';

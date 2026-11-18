@@ -1,17 +1,18 @@
 /** @jsxImportSource preact */
 // The rows the Next step and Find share (one owner, K3): a plant's marks, a row's roles, size and years,
-// a hole's fillers and its row, and an add's toast words. A kit module the first run imports (App.tsx),
-// so the lazy Find chunk and the lazy palette chunk both reach it without importing each other.
-import type { Fillers, Hole, JobId, Line, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { fillers, fills, holeChangeLines, periodIds, yearsLine, yearsOf, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
-import * as store from '../../store.ts';
-import { formatLength } from '../../format.ts';
-import { P, pageLang, T } from '../../strings.ts';
-import { listOf } from '../../words.ts';
-import { holeWords, midSentence, say } from './fit.tsx';
-import type { Line as FlagLine } from './flags.ts';
-import { WARN } from './icons.tsx';
-import { countryName } from './names.ts';
+// a hole's fillers and its row, and an add's toast words. They read the store, so they sit beside
+// StageBar.tsx rather than in views/kit/ (L5: the kit is a leaf). The first run imports this module
+// (App.tsx), so the lazy Find chunk and the lazy palette chunk both reach it without importing each other.
+import type { Fillers, Hole, JobId, Line, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import { fillers, fills, holeChangeLines, periodIds, yearsLine, yearsOf, type HoleChange, type ThinChange } from '../../../lib/consortium/index.ts';
+import * as store from '../store.ts';
+import { formatLength } from '../format.ts';
+import { P, pageLang, T } from '../strings.ts';
+import { listOf } from '../words.ts';
+import { holeWords, midSentence, say } from './kit/fit.tsx';
+import type { Line as FlagLine } from './kit/flags.ts';
+import { WARN } from './kit/icons.tsx';
+import { countryName } from './kit/names.ts';
 
 const NONE: readonly Taxon[] = [];
 

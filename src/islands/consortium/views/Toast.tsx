@@ -19,7 +19,7 @@ import { focusPlant } from '../focus.ts';
 // At 960 px and wider Find is a panel beside the chart, not a modal sheet (board DeskStates, Q5): the
 // page stays usable, so its lines show in the page's region, bottom left (Q4), never in the panel.
 const wideQuery = typeof matchMedia === 'function' ? matchMedia('(min-width: 960px)') : null;
-export const wide = signal(!!wideQuery?.matches);
+const wide = signal(!!wideQuery?.matches);
 wideQuery?.addEventListener('change', (e) => { wide.value = e.matches; });
 export const deskFind = computed(() => wide.value && store.sheet.value?.kind === 'find' && store.step.value === 'palette');
 

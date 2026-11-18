@@ -40,11 +40,49 @@ import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import test from 'node:test';
 import { failing } from '../expect-fail.mjs';
-import { BOARD, HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { BOARD, HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, holeCounts, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
 
 useHarness();
 
 const OTHER_HOLES = /Other holes (\d+)/;
+// Kiambu 8 with every hole put off: the engine leads with a thin spot (AddMany state 2).
+async function thinLead(opts) {
+  const page = await loadCase('kiambu-8-nights-2c-colder', opts);
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
+  const e = await engineLead(page);
+  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  return { page, e };
+}
+// The Add sheet at 390 px on Kiambu 8, filtered to "Feeds you", then `n` rows added with one tap each
+// (AddMany state 3): the page, the palette's size before and the names added.
+async function feedsAdds(n) {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => window.__ctTest.store.openFind());
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
+  await page.click('dialog[open] [data-job-chip="feeds_you"]');
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  const before = await members(page);
+  const added = [];
+  for (let i = 0; i < n; i++) {
+    const add = (await findAdds(page))[0];
+    assert.ok(add, 'board: a row\'s Add');
+    await addInFind(page, add);
+    added.push(add.replace(/^Add /, ''));
+    assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
+  }
+  return { page, before, added };
+}
+// The palette at 1280 px with its verdicts, Find opened as the desk panel (DeskStates).
+async function deskPanel() {
+  const page = await palette();
+  assert.ok(await verdictsSettled(page), 'the verdicts');
+  await says(page, OTHER_HOLES);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel');
+  return page;
+}
 // The Next step's card, its text in one line (the section its "Next step" heading opens).
 const nextStep = (page) => section(page, 'Next step');
 // The hole the Next step names: its title, the heading after "Next step" that reads like a hole.
@@ -400,11 +438,7 @@ test('PFA13 (pf-a DeskStates, Q4, section 6): at 1280 px "Add plants" opens Find
 });
 
 test('PFA14 (pf-a AddMany state 2, a thin job): once no hole is left to show (each put off), the card reads "thin spot 1 of M · you want 2 · Change" with the engine\'s M, the title "Feeds you: 1 plant in years 15 to 60: add a backup", "Find a backup", and the bulk row counting what the goal still lacks ("Add the 1 that fits best", "Add all N that do this job then"); its toast says the job is still thin ("Feeds you: still 1 plant in years 25 to 60.") or ends it', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder');
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.ok(e.lead?.kind === 'thin', 'the engine gives a thin spot once the holes are put off (Kiambu 8, goal 2)');
+  const { page, e } = await thinLead();
   const card = await nextText(page);
   assert.ok(card.includes(`thin spot ${e.lead.index} of ${e.lead.of} · you want ${e.goal} · Change`), `board: "thin spot 1 of ${e.lead.of} · you want ${e.goal} · Change" ("${card.slice(0, 90)}")`);
   assert.match(card, /: \d+ plants? in years \d+ to \d+: add a backup/, 'board: "Feeds you: 1 plant in years 15 to 60: add a backup"');
@@ -480,21 +514,7 @@ test('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the eng
 });
 
 test('PFA17 (pf-a AddMany state 3, F20, Toasts "one-tap adds in a row"): in the Add sheet each Add is one tap and the sheet stays open; the head reads "N added this visit · your palette: M plants" with Done; each added row says "Added" with its Undo; one toast counts up ("2 added this visit. Last: Tahitian lime."), never a stack, and its Undo takes back the last add only', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => window.__ctTest.store.openFind());
-  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
-  await page.click('dialog[open] [data-job-chip="feeds_you"]');
-  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
-  const before = await members(page);
-  const added = [];
-  for (let i = 0; i < 3; i++) {
-    const add = (await findAdds(page))[0];
-    assert.ok(add, 'board: a row\'s Add');
-    await addInFind(page, add);
-    added.push(add.replace(/^Add /, ''));
-    assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
-  }
+  const { page, before, added } = await feedsAdds(3);
   assert.ok(await has(page, 'dialog[open]'), 'board: the sheet stays open');
   await says(page, `3 added this visit · your palette: ${before + 3} plants`, { inDialog: true });
   for (const n of added) await control(page, 'button', `Undo adding ${n}`);
@@ -506,11 +526,7 @@ test('PFA17 (pf-a AddMany state 3, F20, Toasts "one-tap adds in a row"): in the 
 });
 
 test('PFA18 (pf-a AddMany, "Find a backup"): Find opened from a thin job reads "Sorted: fills this first." with the filter "Fills a hole or a thin job" on ("Filters · 1"), and lists the plants that do that job then', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  const { page, e } = await thinLead({ width: 390 });
   await press(page, 'button', 'Find a backup');
   assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens');
   await says(page, 'Sorted: fills this first.');
@@ -614,24 +630,6 @@ test('PFA22 (pf-a FillHole at 390, BC7-BC9, BC11): a hole\'s sheet is a bottom s
 });
 
 // ---- Board check b2 (BC13-BC25): the card's layout and words, Other holes, the Find start, the desk panel.
-const core = await import('../../src/lib/consortium/holes.ts');
-const { periodIds } = await import('../../src/lib/consortium/types.ts');
-// Per open hole, what the engine's fillers() puts in each group (core holes.ts, the installed release):
-// the count every hole row says (the Next step's, Other holes', Find's), BC25.
-async function holeCounts(page) {
-  const s = await page.evaluate((last) => {
-    const st = window.__ctTest.store;
-    const members = st.memberTaxa.value, ids = new Set(members.map((t) => t.id));
-    const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
-    const rule = st.verdictRule.value, ctx = st.verdictContext.value;
-    return { holes: st.paletteHoles.value, members, pool, pv: [...(st.poolVerdicts.value ?? new Map())], holds: rule ? pool.map((t) => [t.id, rule.holdsBy(t, ctx, last)]) : [], warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id) };
-  }, periodIds[periodIds.length - 1]);
-  const open = s.holes.filter((h) => h.state === 'open');
-  return open.map((h) => {
-    const f = core.fillers(h, s.pool.filter((t) => core.fills(h, t)), new Map(s.pv), new Map(s.holds), new Set(s.warned), s.members, open);
-    return { id: h.id, fits: f.fits.length, look: f.look.length, unknown: f.unknown.length };
-  });
-}
 // A colour token as the page computes it (rgb()).
 const token = (page, name) => page.evaluate((n) => { const e = document.createElement('span'); e.style.color = `var(${n})`; document.querySelector('.ct').append(e); const c = getComputedStyle(e).color; e.remove(); return c; }, name);
 const style = (page, sel, props) => page.$eval(sel, (e, p) => { const s = getComputedStyle(e), r = e.getBoundingClientRect(); return { ...Object.fromEntries(p.map((k) => [k, s.getPropertyValue(k)])), x: r.left, y: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height }; }, props);
@@ -801,11 +799,7 @@ const boxByName = (page, name) => page.evaluate((n) => {
 }, name);
 
 test('PFA29 (pf-a R1, AddMany "Find a backup"): with "Fills a hole or a thin job" on, the grower adds the plant that closes the thin spot; its row stays, "Added" with its Undo, and every other row for that job stays listed', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  const { page, e } = await thinLead({ width: 390 });
   assert.equal(e.lead.target.thin.want - e.lead.target.thin.have, 1, 'one add closes it (have 1, want 2)');
   await press(page, 'button', 'Find a backup');
   await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 10_000 });
@@ -829,11 +823,7 @@ test('PFA29 (pf-a R1, AddMany "Find a backup"): with "Fills a hole or a thin job
 });
 
 test('PFA30 (pf-a R2, DeskStates): at 1280 px with Find open beside the chart, a page action while the focus sits outside the panel keeps the focus where it is', async () => {
-  const page = await palette();
-  assert.ok(await verdictsSettled(page), 'the verdicts');
-  await says(page, OTHER_HOLES);
-  await press(page, 'button', 'Add plants');
-  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel');
+  const page = await deskPanel();
   await frames(page);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-find-title', 'the panel takes the focus when it opens');
   await page.evaluate(() => {
@@ -959,11 +949,7 @@ test('PFA36 (pf-a Empty at 390, BC33): the three ways are bordered buttons, each
 // ---- Fix batch b4 (review R4-R9, C1-C4): the grower's scenarios, each a case.
 
 test('PFA37 (pf-a R5, C1, AddMany state 2): "Change" on the thin-spot card opens "Plants per job 1 2 3 5" in the card, the focus on the pressed goal; a choice sets the goal and the card follows the engine', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder');
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  const { page, e } = await thinLead();
   // The card's own Change (the place line has its own "Change").
   await page.$eval('[aria-labelledby="ct-next-t"] [data-next-change]', (b) => b.click());
   await frames(page);
@@ -997,20 +983,7 @@ test('PFA38 (pf-a R6, FindFilters): "Fills a hole or a thin job" counts the plan
 });
 
 test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the toast\'s Undo takes the last add out of "N added this visit" and the next toast\'s count; a row\'s Undo taken back keeps the row\'s Undo', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => window.__ctTest.store.openFind());
-  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
-  await page.click('dialog[open] [data-job-chip="feeds_you"]');
-  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
-  const before = await members(page);
-  const added = [];
-  for (let i = 0; i < 2; i++) {
-    const add = (await findAdds(page))[0];
-    await addInFind(page, add);
-    added.push(add.replace(/^Add /, ''));
-    assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
-  }
+  const { page, before, added } = await feedsAdds(2);
   await says(page, `2 added this visit · your palette: ${before + 2} plants`, { inDialog: true });
   await page.locator('dialog[open] .ct-toast .ct-toast-undo').click();
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 1), 'the toast\'s Undo takes back the last add');
@@ -1029,11 +1002,7 @@ test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the
 });
 
 test('PFA40 (pf-a R9, DeskStates): crossing 960 px with Find open keeps its search, its filters, the visit\'s count and each added row\'s Undo', async () => {
-  const page = await palette();
-  assert.ok(await verdictsSettled(page), 'the verdicts');
-  await says(page, OTHER_HOLES);
-  await press(page, 'button', 'Add plants');
-  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel at 1280 px');
+  const page = await deskPanel();
   await page.$eval('dialog[open] [data-job-chip="feeds_you"]', (b) => b.click());
   await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
   const add = (await findAdds(page))[0];

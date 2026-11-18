@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, placement, taxon } from './consortium-p5-fixtures.mjs';
+import { locale, LOCALES } from './consortium-pf-env.mjs';
 
 // The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
 const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
@@ -397,8 +398,6 @@ test('PlantSource.interactions: a borrowed climate keeps one row per (subject, o
 
 // ---- PP-B b1b fix round 1: the count line's words and states ----
 
-const locale = (l) => JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
-const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
 
 test('PP-B b1b count line states (b1br-1): never "0 of m": none fit is "none", none known to fit with some not checked is "unchecked"', async () => {
   const { countKind } = await import('../src/islands/consortium/rules/suggest-block.ts');

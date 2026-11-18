@@ -26,7 +26,7 @@ import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
 import { flagLines } from '../kit/flags.ts';
-import { Marks, PLUS } from '../kit/rows.tsx';
+import { Marks, PLUS } from '../rows.tsx';
 import { FitLine } from '../kit/fit.tsx';
 import { nameOf, zoneName } from '../kit/names.ts';
 import { finder, releasePlants, wantNames } from './names.ts';

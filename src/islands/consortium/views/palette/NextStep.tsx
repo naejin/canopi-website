@@ -26,7 +26,7 @@ import { WARN } from '../kit/icons.tsx';
 import { MoreList } from '../kit/more.tsx';
 import { coords, listName, num } from '../kit/names.ts';
 import { countKind } from '../../rules/suggest-block.ts';
-import { addedWords, HoleRow, holeFillerParts, holeFillers, Marks, openFillers, PLUS, rowRoles, rowSize, sentenceCase } from '../kit/rows.tsx';
+import { addedWords, HoleRow, holeFillerParts, holeFillers, Marks, openFillers, PLUS, rowRoles, rowSize, sentenceCase } from '../rows.tsx';
 
 // The double tap (F19): a second tap within the window adds nothing, whatever the card shows by then.
 const TAP_MS = 800;

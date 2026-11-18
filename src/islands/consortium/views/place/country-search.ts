@@ -7,7 +7,7 @@ export const foldName = (s: string, lang: string): string => s.normalize('NFD').
 // The countries a query finds among `codes`, each [code, name]: a name (page language or English) that
 // holds the query, or the ISO code itself; names that start with it first, then by name. At most
 // `cap` are listed; `count` is how many match.
-export const COUNTRY_RESULTS = 8;
+const COUNTRY_RESULTS = 8;
 export function findCountries(query: string, codes: Iterable<string>, nameOf: (c: string) => string, englishOf: (c: string) => string, lang: string, cap = COUNTRY_RESULTS): { count: number; list: [string, string][] } {
   const q = foldName(query.trim(), lang);
   if (!q) return { count: 0, list: [] };

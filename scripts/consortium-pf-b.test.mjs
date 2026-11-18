@@ -7,7 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { gunzipSync } from 'node:zlib';
+import { installedRelease } from './consortium-pf-env.mjs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
@@ -62,14 +62,7 @@ test('leaveGroups: the members outside their range later and not today, and thos
 
 // ---- the store on the installed release, at the boards' inputs ----
 
-const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
-const scenarios = JSON.parse(readFileSync(new URL('./fixtures/consortium-scenarios.json', import.meta.url), 'utf8'));
-const [{ openBytes }, { createSqliteSource }, store, { state }] = await Promise.all([
-  import('../src/islands/consortium/data/load.ts'), import('../src/islands/consortium/data/sqlite-source.ts'),
-  import('../src/islands/consortium/store.ts'), import('../src/islands/consortium/state/schema.ts'),
-]);
-const exportBytes = new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url))));
-const real = createSqliteSource((await openBytes(exportBytes, { releaseId: index.release_id, climates: index.climates })).db, { images: {} });
+const { index, scenarios, store, state, real } = await installedRelease();
 const COUNTRY = { kiambu: 'KE', kumasi: 'GH', 'seville-board': 'ES' };
 store.start();
 async function boardCase(id) {

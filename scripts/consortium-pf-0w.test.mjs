@@ -11,15 +11,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { gunzipSync } from 'node:zlib';
+import { english, installedRelease } from './consortium-pf-env.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const words = await import('../src/islands/consortium/words.ts');
-// The page's English words, as ConsortiumPage.astro writes them into #ct-data (consortium.* without the prefix).
-const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
-(await import('../src/islands/consortium/strings.ts')).setStrings(Object.fromEntries(Object.entries(en).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice(11), v])), 'en');
+const { en, say } = await english();
 const { foldOf } = await import('../src/islands/consortium/views/kit/fold.ts');
-const say = (l) => words.say(l);
 
 // ---- holes.ts ----
 const lane = (job, thin, counts = [2, 2, 2, 2, 2, 2, 2]) => ({ kind: 'job', job, counts, thin });
@@ -215,14 +212,7 @@ test('site-change: typed stubs exported from the core index (pf-d writes them)',
 });
 
 // ---- the store, on the installed export (a Kiambu palette of the Subtropical list) ----
-const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
-const scenarios = JSON.parse(readFileSync(new URL('./fixtures/consortium-scenarios.json', import.meta.url), 'utf8'));
-const [{ openBytes }, { createSqliteSource }, store, { state }] = await Promise.all([
-  import('../src/islands/consortium/data/load.ts'), import('../src/islands/consortium/data/sqlite-source.ts'),
-  import('../src/islands/consortium/store.ts'), import('../src/islands/consortium/state/schema.ts'),
-]);
-const exportBytes = new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url))));
-const real = createSqliteSource((await openBytes(exportBytes, { releaseId: index.release_id, climates: index.climates })).db, { images: {} });
+const { index, scenarios, store, state, real } = await installedRelease();
 const placeOf = (name, lat, lon) => {
   const p = scenarios.places[name];
   return { lat: lat ?? p.lat, lon: lon ?? p.lon, source: 'search', label: name, lookup: { lat: p.lat, lon: p.lon, soil: p.soil, regions: { wgsrpdL3: null, isoA2: null }, climate: { cellLat: lat ?? p.lat, cellLon: lon ?? p.lon, distanceCells: 0, periods: p.periods } } };

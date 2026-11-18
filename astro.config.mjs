@@ -23,7 +23,7 @@ const CONSORTIUM_TSX = /\/src\/islands\/consortium\/.*\.tsx$/;
 // chunks share. App.tsx imports them for their place in the first run only, and they declare no side
 // effect, so Rollup would drop that import and give the two lazy chunks a third, shared lazy chunk
 // (a failed request for it would break Find until Reload). Built untreeshaken, they stay in the first run.
-const FIRST_RUN_KIT = /\/src\/islands\/consortium\/views\/kit\/(?:rows|more)\.tsx$/;
+const FIRST_RUN_KIT = /\/src\/islands\/consortium\/views\/(?:rows|kit\/more)\.tsx$/;
 /** @type {import('vite').Plugin} */
 const consortiumJsx = {
   name: 'canopi:consortium-jsx',

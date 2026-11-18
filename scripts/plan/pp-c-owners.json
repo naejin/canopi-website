@@ -431,7 +431,7 @@
             "scripts/browser/pf-helpers.mjs",
             "src/islands/consortium/views/find/Find.tsx",
             "src/islands/consortium/views/find/index.ts",
-            "src/islands/consortium/views/kit/rows.tsx",
+            "src/islands/consortium/views/rows.tsx",
             "src/islands/consortium/views/find/names.ts",
             "src/islands/consortium/views/Toast.tsx",
             "src/styles/consortium/details.css"
