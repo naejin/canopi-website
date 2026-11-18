@@ -25,9 +25,9 @@ import { FindEntry } from '../Sheets.tsx';
 // job.
 export const openFillers = (h: Hole): void => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
 
-const OUTSIDE_FIRST = 8, BEST = 3;
-// "Show N outside" and "Show all N" leave as they show the plants: the first plant they show takes the
-// focus (its Add), else the Next step's title (pre-push fix 6, D; focus.ts's net covers the rest).
+const BEST = 3;
+// "Show N outside" leaves as it shows the plants: the first plant it shows takes the focus (its Add),
+// else the Next step's title (pre-push fix 6, D; focus.ts's net covers the rest).
 const focusShown = (i: number): void => focusSoon(() => document.querySelectorAll<HTMLElement>('.ct-next [data-outside] li button')[i] ?? document.getElementById('ct-next-t'));
 const NONE: readonly Taxon[] = [];
 
@@ -45,7 +45,6 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   // Nothing from a borrowed list not fitted to a place (store.offerPool; the head says why).
   const pool = store.offerPool.value ?? NONE;
   const [showOutside, setShowOutside] = useState(false);
-  const [allOutside, setAllOutside] = useState(false);
   const pv = store.poolVerdicts.value;
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
   // The one warned rule (store.warnedPlant, as in Find): a site misfit, a serious conflict, invasive in
@@ -111,11 +110,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
       {!best.length && !look.length && <p>{T(found.outside.length ? 'palette.noFittingFillers' : 'palette.noFillers')}</p>}
       {found.outside.length > 0 && (showOutside ? (
         <>
-          {/* Folded like the pictures (200-plant directive): the first OUTSIDE_FIRST, then "Show all N". */}
-          <ul class="ct-fillers" data-outside="">
-            {(allOutside ? found.outside : found.outside.slice(0, OUTSIDE_FIRST)).map(filler)}
-          </ul>
-          {!allOutside && found.outside.length > OUTSIDE_FIRST && <p><button type="button" class="button button-secondary" onClick={() => { setAllOutside(true); focusShown(OUTSIDE_FIRST); }}>{P('add.showAll', found.outside.length)}</button></p>}
+          <ul class="ct-fillers" data-outside="">{found.outside.map(filler)}</ul>
         </>
       ) : <p><button type="button" class="button button-secondary" onClick={() => { setShowOutside(true); focusShown(0); }}>{P('palette.showOutside', found.outside.length)}</button></p>)}
       <p class="ct-next-actions">

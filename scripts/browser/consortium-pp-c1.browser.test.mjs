@@ -90,17 +90,19 @@ test('F1a-F2 → PP-C (c1 Seville dry garden, P5.1 A14): "Holds up in the future
   assert.notDeepEqual(await rowIds(page), before, '"Holds up" changes the pick at Seville');
 });
 
-test('F1a-F3 → PP-C (c1 Nairobi smallholding, P5.1 A14): "Has edible parts" (edibility_rating) and a life cycle narrow the plants offered', async () => {
+// pf-a commit 0: "Has edible parts" and Life went with v13 (v14 spec section 2 pf-a, Delete); the
+// Nairobi scenario keeps its row through the size and "When it stands" filters.
+test('F1a-F3 → PP-C (c1 Nairobi smallholding, P5.1 A14): a size and a time span narrow the plants offered', async () => {
   const page = await suggestedAt('nairobi', 'Subtropical');
   await openFind(page);
   await hasFind(page);
   await everyPlant(page);
-  const all = await toggle(page, 'edible');
-  const edible = await rowIds(page);
-  assert.ok(edible.length && edible.length < all.length, `"Has edible parts" narrows the list (${edible.length} of ${all.length})`);
-  await toggle(page, 'life-cycle');
+  const all = await toggle(page, 'size');
+  const small = await rowIds(page);
+  assert.ok(small.length && small.length < all.length, `a size narrows the list (${small.length} of ${all.length})`);
+  await toggle(page, 'stands');
   const both = await rowIds(page);
-  assert.ok(both.length <= edible.length && both.every((id) => edible.includes(id)), 'a life cycle narrows it further');
+  assert.ok(both.length <= small.length && both.every((id) => small.includes(id)), 'a time span narrows it further');
 });
 
 test('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot judge some plants says how many, never hides them silently', async () => {
@@ -108,8 +110,8 @@ test('F1a-F4 → PP-C (c1 unknowns as counts, P5.1): a filter that cannot judge 
   await openFind(page);
   await hasFind(page);
   await everyPlant(page); // every row shown
-  await toggle(page, 'edible');
-  const n = await page.$eval(`${FIND} [data-filter-unknown="edible"]`, (e) => /\d+ not recorded/.test(e.textContent)).catch(() => false);
+  await toggle(page, 'size'); // its first chip, "Under 2 m tall" (pf-a commit 0: "Has edible parts" went with v13)
+  const n = await page.$eval(`${FIND} [data-filter-unknown="size"]`, (e) => /\d+ not recorded/.test(e.textContent)).catch(() => false);
   assert.ok(n, 'the unknowns are counted ("N not recorded")');
   // Fix round 1, A3 (review c1-04): a hide filter says how many it hides (its count on the right),
   // beside "not recorded, still shown".
@@ -184,22 +186,8 @@ test('PP-C2 (c1 no result): a query with no plant offers close spellings, the ot
   assert.match(decodeURIComponent(ask ?? ''), /Zzyzx plantus/, 'carrying the query');
 });
 
-test('PP-C3 (c1 Select several): three plants ticked are added with one toast and one Undo', async () => {
-  const page = await suggestedAt('lyon', 'Temperate');
-  const before = await page.evaluate(() => window.__ctTest.store.members.value.length);
-  await openFind(page);
-  await hasFind(page);
-  await byJob(page);
-  await page.click(`${FIND} [data-find-select]`);
-  const boxes = await page.$$(`${FIND} [data-find-row] input[type="checkbox"]`);
-  assert.ok(boxes.length >= 3, 'three plants to tick');
-  for (const b of boxes.slice(0, 3)) await b.click();
-  await page.locator(aria('button', 'Add 3 plants')).click();
-  assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 3, { timeout: 4000 }, before).then(() => true, () => false), 'three added');
-  assert.equal(await page.$$eval('.ct-toast', (t) => t.length), 1, 'one toast');
-  await page.click(aria('button', en['consortium.undo']));
-  assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n, { timeout: 4000 }, before).then(() => true, () => false), 'one Undo removes the three');
-});
+// PP-C3 (Select several) dropped in pf-a commit 0: the v14 review removed "Select several" from the Add
+// sheet (one-tap add, the sheet stays open); PFA rows in consortium-pf-a.browser.test.mjs carry the burst.
 
 test('PP-C4 (c1 inform, don\'t block): an invasive plant and a plant outside its range are each added with one tap, the warning in words, no confirm step', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
@@ -464,10 +452,10 @@ test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a 
   const pick = await page.evaluate(() => {
     const { store } = window.__ctTest, m = new Set(store.members.value);
     const member = store.memberTaxa.value[0]?.canonical_name;
-    const plain = store.pool.value.find((t) => !m.has(t.id) && t.traits.edibility_rating === 0)?.canonical_name;
+    const plain = store.pool.value.find((t) => !m.has(t.id) && (t.traits.height_m?.max ?? 0) > 2)?.canonical_name;
     return { member, plain };
   });
-  assert.ok(pick.member && pick.plain, 'a member and a plant with no edible part');
+  assert.ok(pick.member && pick.plain, 'a member and a plant taller than 2 m');
   await openFind(page);
   await hasFind(page);
   await search(page, pick.member);
@@ -475,7 +463,7 @@ test('PP-C41 (c1 fix A1 hits kept out are counted): in the palette, hidden by a 
   assert.ok(await page.$(`${FIND} [data-find-inpalette] [data-find-row] [data-find-add][data-added]`), 'the member is a row marked Added, in the palette');
   assert.equal(await page.$(`${FIND} a[data-find-ask]`), null, 'no "Ask us to add" for a plant the release holds');
   await search(page, pick.plain);
-  await toggle(page, 'edible');
+  await toggle(page, 'size'); // "Under 2 m tall" (pf-a commit 0: "Has edible parts" went with v13)
   assert.equal(await page.$(`${FIND} [data-find-none]`), null, 'hidden by a filter is no "No plant answers"');
   assert.match(await page.$eval(`${FIND} [data-find-hidden-filters]`, (e) => e.textContent).catch(() => ''), /^1 hidden by your filters/, '"1 hidden by your filters"');
   await page.click(`${FIND} [data-find-hidden-filters] button`);
@@ -567,7 +555,7 @@ test('PP-C43 (c1 fix B1+B5+B13 row content): fills, light, size, years; Add anyw
   const out = `${FIND} [data-find-group="outside"] [data-find-row]`;
   assert.ok(await has(page, out, 4000), 'an outside row');
   assert.match(await page.$eval(`${out} [data-find-add]`, (b) => b.textContent), /Add anyway/, '"Add anyway"');
-  assert.match(await page.$eval(`${FIND} [data-find-group="outside"]`, (e) => e.textContent), /your call/, 'the warning stays: your call');
+  assert.match(await page.$eval(`${FIND} [data-find-group="outside"]`, (e) => e.textContent), /your ground and your call/, 'the warning stays: your call (FindNone board words)');
   const tox = await page.evaluate(() => window.__ctTest.store.pool.value.find((t) => t.warnings.toxicity && t.warnings.toxicity.level !== 'None' && !window.__ctTest.store.members.value.includes(t.id))?.canonical_name);
   assert.ok(tox, 'a toxic plant');
   await search(page, tox);
@@ -658,14 +646,10 @@ test('PP-C45 (c1 fix B7+B8+B15+B16 filters and field): chips, phone filters view
 
 // Fix round 1, B9, B14 (boards FindMulti, FindNone; conformance c1 #7, #12): a "One by
 // one / Select several" switch with its line; a typing slip (one letter missing, extra or swapped) gives the close names as rows with Add.
-test('PP-C46 (c1 fix B9+B14 switch, typo rows)', async () => {
+test('PP-C46 (c1 fix B14 typo rows; the B9 switch went with "Select several", pf-a commit 0)', async () => {
   const page = await plainFind();
   await byJob(page);
-  const modes = await page.$$eval(`${FIND} [data-find-mode]`, (els) => els.map((e) => [e.dataset.findMode, e.getAttribute('aria-pressed')]));
-  assert.deepEqual(modes, [['one', 'true'], ['several', 'false']], 'One by one / Select several, its state shown');
-  await page.click(`${FIND} [data-find-mode="several"]`);
-  assert.match(await page.$eval(`${FIND} [data-find-ticks]`, (e) => e.textContent).catch(() => ''), /ticks stay/, 'the ticks stay line');
-  await page.click(`${FIND} [data-find-mode="one"]`);
+  assert.equal(await page.$(`${FIND} [data-find-mode]`), null, 'no "Select several" switch');
   const slip = await page.evaluate(() => {
     const { store } = window.__ctTest, m = new Set(store.members.value);
     const t = store.pool.value.find((x) => !m.has(x.id) && /^[a-z]{6,}$/i.test(x.names.en ?? ''));

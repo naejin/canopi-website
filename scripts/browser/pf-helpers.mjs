@@ -186,3 +186,60 @@ export const done = async (...pages) => { for (const p of pages) await p.browser
 export const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
 export const focused = (page) => page.evaluate(() => { const a = document.activeElement; return { body: !a || a === document.body, inTool: !!a?.closest('#ct-root, dialog[open]'), name: (a?.getAttribute('aria-label') ?? a?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) }; });
 export { norm };
+
+// ---- pf-a (chunk 2): a scenario case's palette, and the Next step's figures from the engine ----
+
+const SCENARIOS = JSON.parse(readFileSync(new URL('../fixtures/consortium-scenarios.json', import.meta.url), 'utf8')).cases;
+// A scenario case's palette (its list and members) at a SITES place, through the hook as loadPalette200
+// does (Kiambu borrows the Subtropical list: the place proposes Temperate, the case says Subtropical).
+export async function loadCase(id, { site = 'kiambu', goal = null, ...opts } = {}) {
+  const c = SCENARIOS.find((x) => x.id === id);
+  assert.ok(c, `scenario case ${id}`);
+  const page = await tool(opts);
+  if (site) await atSite(page, site);
+  await page.evaluate(async (list, ids, g) => {
+    const { store } = window.__ctTest;
+    store.climate.value = list;
+    await store.loadPool(list);
+    store.members.value = ids;
+    if (g) store.setPlantsPerJob(g);
+    store.view.value = 'matrix';
+  }, c.input.list, c.input.members, goal ?? c.input.goals?.plantsPerJob ?? null);
+  assert.ok(await page.waitForFunction((k) => window.__ctTest?.store?.members.value.length === k, { timeout: 20_000 }, c.input.members.length).then(() => true, () => false), `the case's ${c.input.members.length} plants`);
+  assert.ok(await verdictsSettled(page, 30_000), 'the verdicts');
+  return page;
+}
+
+// The Next step's figures, computed through the engine (core holes.ts nextTarget, fillers, bestToAdd;
+// the board-figures rule: never a board number) on the page's own state: the palette's holes and thin
+// spots, the plants on its lists with their verdicts, holding to 2071–2099 and warned (store.warnedPlant).
+// untouched: an untouched suggestion shows no thin-spot card (A19), so thin spots are no target then.
+const core = await import('../../src/lib/consortium/holes.ts');
+const { periodIds } = await import('../../src/lib/consortium/types.ts');
+export async function engineLead(page) {
+  const s = await page.evaluate((last) => {
+    const st = window.__ctTest.store;
+    const members = st.memberTaxa.value, ids = new Set(members.map((t) => t.id));
+    const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
+    const rule = st.verdictRule.value, ctx = st.verdictContext.value;
+    return {
+      holes: st.paletteHoles.value, thins: st.thinSpots.value, putOff: [...st.notNow.value], members, pool,
+      pv: [...(st.poolVerdicts.value ?? new Map())], holds: rule ? pool.map((t) => [t.id, rule.holdsBy(t, ctx, last)]) : [],
+      warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id), goal: st.plantsPerJob.value, untouched: st.untouchedSuggestion.value,
+    };
+  }, periodIds[periodIds.length - 1]);
+  const open = s.holes.filter((h) => h.state === 'open'), thins = s.thins.filter((h) => h.state === 'open');
+  const lead = core.nextTarget(s.holes, s.untouched ? [] : s.thins, new Set(s.putOff));
+  if (!lead) return { lead: null, open, thins, untouched: s.untouched };
+  const f = core.fillers(lead.target, s.pool, new Map(s.pv), new Map(s.holds), new Set(s.warned), s.members, open);
+  const sci = (list) => list.map((t) => t.canonical_name);
+  const best = core.bestToAdd(lead.target, f, { plantsPerJob: s.goal });
+  return {
+    lead, open, thins, untouched: s.untouched, goal: s.goal,
+    fits: sci(f.fits), look: sci(f.look), outside: sci(f.outside), unknown: sci(f.unknown),
+    best: best.map((id) => f.fits.find((t) => t.id === id).canonical_name),
+    all: f.fits.length + f.look.length + f.outside.length + f.unknown.length,
+  };
+}
+// The text of the Next step's card, one line (its heading "Next step" opens it), or ''.
+export const nextText = async (page) => (await sectionText(page, 'Next step')) ?? '';

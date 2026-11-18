@@ -26,7 +26,7 @@ import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, jobIds, jobsOf, periodIds, periodName, queryTokens, secondLook, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
-import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, LIVES, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
+import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, type Frame } from '../kit/sheet.tsx';
 import { FitLine, JobIcon, holeWords, midSentence, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
@@ -65,7 +65,7 @@ function namesWords(langs: readonly string[]): string {
   const line = namesLine(langs);
   return line.count === undefined ? T('find.namesCore') : P('find.namesFile', line.count);
 }
-// A job's words in the page's language (board FindJob): its label and the other words it answers to.
+// A job's words in the page's language (board FindNone): its label and the other words it answers to.
 const jobWords = (job: JobId): string[] => [T(`job.${job}`), ...T(`find.jobWords.${job}`).split(',').map((w) => w.trim()).filter(Boolean)];
 // The contact form, carrying the query (PP-C2; the form reads `plant`, a hand-off to Contact.astro).
 function askHref(q: string): string {
@@ -113,6 +113,8 @@ const CROSS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path
 const CHEVRON = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 
 type Fit = 'fits' | 'inside' | 'all';
+type BoxKey = 'hideNoSize' | 'hideToxic' | 'hideInvasive';
+const BOXES: readonly BoxKey[] = ['hideNoSize', 'hideToxic', 'hideInvasive'];
 type Option = { key: string; label: string; on: boolean; toggle: () => void; count: number };
 
 export default function Find({ Frame }: { Frame: Frame }) {
@@ -138,8 +140,6 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const [listed, setListed] = useState(false);
   // The palette's plants a filtered list matches, shown on "Show" (board FindResults, T18).
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [select, setSelect] = useState(false);
-  const [ticked, setTicked] = useState<PlantId[]>([]);
   // Below 960 px the filters open in place over the results (board FindFilters, fix round 2, r2-02):
   // the focus moves to their heading, "Show N plants" or Escape returns to the results and the focus
   // to "Filters"; the query and filters stay. At 960 they are a column beside the results.
@@ -241,11 +241,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const hits = useMemo(() => (q && search ? search(q) : null), [q, search]);
   const job = useMemo(() => (q ? jobsMatching(q, jobWords)[0] ?? null : null), [q]);
   const ctx = useMemo(() => {
-    const have = new Set(memberTaxa.flatMap((t) => jobsOf(t)));
     return {
       verdicts,
       holds: judging ? (t: Taxon, p: PeriodId) => rule!.holdsBy(t, vctx, p) : undefined,
-      repeats: (t: Taxon) => { const j = jobsOf(t); return j.length ? j.every((x) => have.has(x)) : null; },
       toxic: (t: Taxon) => (t.warnings.toxicity ? t.warnings.toxicity.level !== 'None' : null),
       invasive: (t: Taxon) => (flagCtx.countryStatus === 'checked' && flagCtx.country && t.warnings.invasive_in ? t.warnings.invasive_in.some((r) => r.country === flagCtx.country) : null),
     };
@@ -280,7 +278,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
       const p = releasePlants.value.get(h.id);
       const lists = p ? p.lists.filter((z) => z !== climate) : [];
       return p && lists.length ? [{ hit: h, plant: p, lists }] : [];
-    }).slice(0, 8);
+    });
     // The hits kept out, each counted once with its way out (fix round 1, A1): in the palette (rows
     // marked Added), hidden by the filters (Clear), on the list but outside the hole (Show).
     // A job list (no query, T18): the palette's plants the filters keep, named on one line with "Show".
@@ -296,8 +294,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
   if (pasting) return <Paste Frame={Frame} onBack={(name?: string) => batch(() => { setPasting(false); setBackFromPaste(true); if (name) ask(name); })} />;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
-  const toggleFilter = (k: 'edible' | 'hideNoSize' | 'hideRepeats' | 'hideToxic' | 'hideInvasive') => setFilters((f) => ({ ...f, [k]: !f[k] }));
-  type ListKey = 'jobs' | 'light' | 'size' | 'life' | 'stands' | 'holds';
+  const toggleFilter = (k: BoxKey) => setFilters((f) => ({ ...f, [k]: !f[k] }));
+  type ListKey = 'jobs' | 'light' | 'size' | 'stands' | 'holds';
   const toggleIn = <K extends ListKey>(k: K, v: NonNullable<FindFilters[K]>[number]) => setFilters((f) => {
     const now = (f[k] ?? []) as readonly string[];
     return { ...f, [k]: now.includes(v) ? now.filter((x) => x !== v) : [...now, v] };
@@ -312,16 +310,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const t = list?.find((x) => x.id === id);
     if (t) store.addMembers([id], { [id]: z }, { warned: store.warnedPlant(t) ? [id] : [], text: T('find.addedOne', { name: nameOf(t) }) });
   };
-  const addTicked = () => {
-    const ids = ticked.filter((id) => !added(id));
-    if (!ids.length) return;
-    batch(() => { store.closeSheet(); store.addMembers(ids, {}, { warned: ids.filter((id) => warned.has(id)) }); });
-  };
-  const tick = (id: PlantId) => setTicked((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   // The filters on: each chosen value, and a fit choice other than "Fits your place".
-  const lists = (['jobs', 'light', 'stands', 'size', 'life', 'holds'] as const).reduce((n, k) => n + (filters[k]?.length ?? 0), 0);
-  const onCount = lists + (['edible', 'hideNoSize', 'hideRepeats', 'hideToxic', 'hideInvasive'] as const).filter((k) => filters[k]).length + (fit === 'fits' || !judged ? 0 : 1);
+  const lists = (['jobs', 'light', 'stands', 'size', 'holds'] as const).reduce((n, k) => n + (filters[k]?.length ?? 0), 0);
+  const onCount = lists + BOXES.filter((k) => filters[k]).length + (fit === 'fits' || !judged ? 0 : 1);
   const clearAll = () => batch(() => { setFilters({}); setFit('fits'); setOutsideShown(false); });
   // The one count of what the screen lists as rows (c1r3 T14, c1r4 U2): the list's rows, the palette's
   // plants when listed as rows (a search, or "Show" pressed; folded on a job list they are a line of
@@ -357,22 +349,18 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const row = (t: Taxon) => {
     const h = view.hitOf.get(t.id), why = h ? whyWords(h) : null;
     const lines = flagLines(t, flagsOf.get(t.id) ?? [], scene);
-    const on = ticked.includes(t.id), done = added(t.id);
+    const done = added(t.id);
     const v = verdicts?.get(t.id), outside = v?.level === 'outside', y = yearsOf(t);
     const later = outside ? inRangeBy(t) : null;
     // "Fits your place to 2099" (K1): the last later period it stays in range through.
     const n = stay.get(t.id) ?? 0, shownV = v && v.level === 'fits' && n > 0 ? { ...v, judged: after[n - 1] } : v;
     return (
-      <li key={t.id} data-find-row="" data-plant-id={t.id} class={on ? 'is-on' : undefined}>
+      <li key={t.id} data-find-row="" data-plant-id={t.id}>
         <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
-        {select && !done && !outside
-          ? <label class="ct-tick"><input type="checkbox" checked={on} aria-label={`${nameOf(t)}, ${t.canonical_name}`} onChange={() => tick(t.id)} /></label>
-          : (
-            <button type="button" class={`button button-secondary ct-find-add${done ? ' is-added' : ''}`} data-find-add="" data-added={done ? '' : undefined}
+        <button type="button" class={`button button-secondary ct-find-add${done ? ' is-added' : ''}`} data-find-add="" data-added={done ? '' : undefined}
               aria-disabled={done ? 'true' : undefined} aria-label={done ? T('find.addedName', { name: nameOf(t) }) : T('find.addName', { name: nameOf(t) })} onClick={() => addOne(t)}>
               {done ? TICK : PLUS} {done ? T('find.added') : outside ? T('addAnyway') : T('find.add')}
             </button>
-          )}
         <div class="ct-row-why">
           {hole && fits?.(t) && y && <span class="ct-find-fills" data-find-fills="">{TICK} {T('find.fillsThis', { what: laneWords(hole), years: say(yearsLine(y.from, y.to)) })}</span>}
           {why && <span class="ct-find-why" data-find-why="" data-lang={why.lang} data-kind={why.kind}>{why.text}</span>}
@@ -393,7 +381,6 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const lightOpts = listOptions('light', LIGHTS, (l) => T(`stratum.${l}`));
   const standOpts = listOptions('stands', Object.keys(STANDS) as Stand[], (s) => { const [from, to] = STANDS[s as Stand]; return say(yearsLine(from, to)); });
   const sizeOpts = listOptions('size', SIZES, (s) => T(`find.size.${s}`, { lo: num(2), len: formatLength(s === 'small' ? 2 : 8, pageLang()) }));
-  const lifeOpts = listOptions('life', LIVES, (l) => T(`find.life.${l}`));
   const holdOpts = listOptions('holds', LATER, (p) => T('find.holds', { period: periodName(p as PeriodId) }));
   const unknownLine = (id: FilterId, kept = false) => unknown[id] !== undefined && (
     <span class="ct-find-unknown" data-filter-unknown={id}>{P(kept ? 'find.unknownKept' : 'find.unknown', unknown[id]!)}</span>
@@ -415,10 +402,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
   );
   // A box with its count on the right (board FindFilters): a hide box counts the plants it hides, a
   // keep box (edible, holds) the plants it keeps, both with the other filters in force.
-  type BoxKey = 'edible' | 'hideNoSize' | 'hideRepeats' | 'hideToxic' | 'hideInvasive';
   const box = (id: FilterId, k: BoxKey, label: string, sub?: string, kept = false) => {
-    const hides = k !== 'edible';
-    const n = hides ? count({ ...filters, [k]: false }) - count({ ...filters, [k]: true }) : count({ ...filters, [k]: true });
+    const n = count({ ...filters, [k]: false }) - count({ ...filters, [k]: true });
     return (
       <label class="ct-check ct-find-check">
         <input type="checkbox" data-filter={id} checked={!!filters[k]} onChange={() => toggleFilter(k)} />
@@ -445,9 +430,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const invasiveLabel = countryName ? T('find.hideInvasive', { country: countryName }) : '';
   const outsideAll = applyFilters(matched, { ...filters, range: false }, ctx).rows.filter(isOutside).length;
   // The active filters as removable chips under the search (board FindResults, B7).
-  const boxes: [BoxKey, string][] = [['edible', T('find.edible')], ['hideNoSize', T('find.hideNoSize')], ['hideRepeats', T('find.hideRepeats')], ['hideToxic', T('find.hideToxic')], ['hideInvasive', invasiveLabel]];
+  const boxes: [BoxKey, string][] = [['hideNoSize', T('find.hideNoSize')], ['hideToxic', T('find.hideToxic')], ['hideInvasive', invasiveLabel]];
   const active = [
-    ...[...jobOpts, ...lightOpts, ...standOpts, ...holdOpts, ...sizeOpts, ...lifeOpts].filter((c) => c.on).map((c) => ({ key: `${c.label}`, label: c.label, off: c.toggle })),
+    ...[...jobOpts, ...lightOpts, ...standOpts, ...holdOpts, ...sizeOpts].filter((c) => c.on).map((c) => ({ key: `${c.label}`, label: c.label, off: c.toggle })),
     ...(fit === 'fits' || !judged ? [] : [{ key: 'fit', label: fit === 'inside' ? T('find.range') : T('find.fitAll'), off: () => setFit('fits') }]),
     ...boxes.filter(([k]) => filters[k]).map(([k, label]) => ({ key: k, label, off: () => toggleFilter(k) })),
   ];
@@ -479,12 +464,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
         </fieldset>
       )}
       {chipGroup('size', 'size', sizeOpts, box('no-size', 'hideNoSize', T('find.hideNoSize')))}
-      {chipGroup('life-cycle', 'life', lifeOpts)}
       <fieldset class="ct-find-fgroup">
         <legend>{T('find.f.more')}</legend>
         <p class="ct-muted ct-small">{T('find.f.moreFor')}</p>
-        {box('repeats', 'hideRepeats', T('find.hideRepeats'), undefined, true)}
-        {box('edible', 'edible', T('find.edible'))}
         {box('toxic', 'hideToxic', T('find.hideToxic'), T('find.hideToxicSub'), true)}
         {flagCtx.countryStatus === 'checked' && flagCtx.country && box('invasive', 'hideInvasive', invasiveLabel, undefined, true)}
       </fieldset>
@@ -538,21 +520,13 @@ export default function Find({ Frame }: { Frame: Frame }) {
         : <>{P('find.countSay', shownCount)}{judging && ` ${T('find.bestFirst')}`}{namesNote}</>;
   const SEARCH = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" /></svg>;
   const jobCount = job ? count({ ...filters, jobs: [job] }, fit, base, fit !== 'all' && !outsideShown, fit === 'fits') : 0;
-  const switchShown = (!q && !start) || select;
 
   return (
     <Frame titleId="ct-find-title" class="ct-find" head={hole ? <span class="ct-muted">{T('find.title')}</span> : null} foot={
-      select ? (
-        <div class="ct-add-bar" data-find-bar="">
-          <span>{P('find.selected', ticked.length)}</span>
-          <button type="button" class="button button-primary" disabled={!ticked.length} onClick={addTicked}>{PLUS} {P('find.addSel', ticked.length)}</button>
-        </div>
-      ) : (
-        <div class="ct-add-bar">
-          <span>{P('find.inPalette', members.length)}</span>
-          <button type="button" class="button button-primary" onClick={() => store.closeSheet()}>{T('find.done')}</button>
-        </div>
-      )
+      <div class="ct-add-bar">
+        <span>{P('find.inPalette', members.length)}</span>
+        <button type="button" class="button button-primary" onClick={() => store.closeSheet()}>{T('find.done')}</button>
+      </div>
     }>
       <div class="ct-find-top">
         <h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2>
@@ -587,14 +561,6 @@ export default function Find({ Frame }: { Frame: Frame }) {
       <div class="ct-find-layout">
         {panel}
         <div class="ct-find-results">
-          {switchShown && (
-            // One by one / Select several (board FindMulti, B9): a switch, its state shown.
-            <div class="ct-find-switch" role="group">
-              <button type="button" data-find-mode="one" aria-pressed={select ? 'false' : 'true'} onClick={() => { setSelect(false); setTicked([]); }}>{T('find.oneByOne')}</button>
-              <button type="button" data-find-mode="several" data-find-select="" aria-pressed={select ? 'true' : 'false'} onClick={() => setSelect(true)}>{T('find.select')}</button>
-            </div>
-          )}
-          {select && <p class="ct-muted ct-small" data-find-ticks="">{T('find.ticksStay')}</p>}
           {job && (
             <div class="ct-find-job" data-job={job}>
               <span class="ct-find-jobtile"><JobIcon job={job} /></span>
@@ -610,7 +576,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
           )}
           {job && nothing && <p class="ct-small" data-find-none="">{T('find.notNamed', { q })}</p>}
           {job && (
-            <p class="ct-muted ct-small" data-find-jobwords="">{T('find.jobWordsAll', { words: jobIds.map((j) => jobWords(j)[1] ?? jobWords(j)[0]).join(', ') })} {T('find.jobWordsWait')}</p>
+            <p class="ct-muted ct-small" data-find-jobwords="">{T('find.jobWordsAll', { words: jobIds.map((j) => jobWords(j)[1] ?? jobWords(j)[0]).join(', ') })}</p>
           )}
           {start && (
             <section class="ct-find-byjob" data-find-byjob="" aria-labelledby="ct-find-byjob">
@@ -673,7 +639,6 @@ export default function Find({ Frame }: { Frame: Frame }) {
                 <p><button type="button" class="button button-secondary" data-find-outside="" onClick={() => setOutsideShown(true)}>{P('palette.showOutside', groups.outside.length)}</button></p>
               )}
               {others}
-              {select && <p class="ct-muted ct-small" data-find-multinote="">{T('find.multiNote')}</p>}
             </>
           )}
           {!q && (

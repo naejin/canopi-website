@@ -49,10 +49,11 @@ test('PP-C-u1 (c1 find-query groups): Find groups fits, needs a second look (lev
 
 test('PP-C-u2 (c1 find-query filters): every filter returns the count of plants it could not judge, and hides none of them silently', async () => {
   const { applyFilters } = await findQuery();
-  const taxa = [plant(1, { traits: { edibility_rating: 4 } }), plant(2, { traits: { edibility_rating: 0 } }), plant(3, { traits: {} })];
-  const { rows, unknown } = applyFilters(taxa, { edible: true }, {});
+  // (pf-a commit 0: "Has edible parts" went with v13; the size filter carries the row.)
+  const taxa = [plant(1, { traits: { height_m: { max: 1 } } }), plant(2, { traits: { height_m: { max: 12 } } }), plant(3, { traits: {} })];
+  const { rows, unknown } = applyFilters(taxa, { size: ['small'] }, {});
   assert.deepEqual(rows.map((t) => t.id), [id(1)]);
-  assert.equal(unknown.edible, 1, 'the plant with no edibility recorded is counted');
+  assert.equal(unknown.size, 1, 'the plant with no height recorded is counted');
 });
 
 test('PP-C-u2b (pf commit 0, layer is light): the light filter offers the four light levels and matches the plant\'s stratum; a plant with none is left out and counted as not judged', async () => {
@@ -287,7 +288,7 @@ test('PP-C c1 fix round 2 K9: "When it stands" keeps the plants standing in thos
   assert.equal(r(['first']).unknown.stands, 1, 'no placement: not recorded');
 });
 
-test('PP-C c1 fix round 2 K9: "Holds by" each period ticked; repeats, no size and toxic hide only what is recorded', async () => {
+test('PP-C c1 fix round 2 K9: "Holds by" each period ticked; no size and toxic hide only what is recorded', async () => {
   const { applyFilters } = await findQuery();
   const taxa = [plant(1), plant(2), plant(3)];
   const holds = (t, p) => (t.id === id(3) ? null : t.id === id(1) || p === '2041-2070');
@@ -295,8 +296,8 @@ test('PP-C c1 fix round 2 K9: "Holds by" each period ticked; repeats, no size an
   assert.deepEqual(keep({ holds: ['2041-2070'] }, { holds }), [id(1), id(2)]);
   assert.deepEqual(keep({ holds: ['2041-2070', '2071-2099'] }, { holds }), [id(1)], 'every period ticked');
   assert.equal(applyFilters(taxa, { holds: ['2041-2070'] }, { holds }).unknown.holds, 1);
-  const repeats = (t) => (t.id === id(1) ? true : t.id === id(2) ? false : null);
-  assert.deepEqual(keep({ hideRepeats: true }, { repeats }), [id(2), id(3)], 'a plant with no job recorded stays');
+  const toxic = (t) => (t.id === id(1) ? true : t.id === id(2) ? false : null);
+  assert.deepEqual(keep({ hideToxic: true }, { toxic }), [id(2), id(3)], 'a plant with no toxicity recorded stays');
   const sized = [plant(1, { traits: { height_m: { max: 3 } } }), plant(2)];
   assert.deepEqual(applyFilters(sized, { hideNoSize: true }, {}).rows.map((t) => t.id), [id(1)]);
 });
