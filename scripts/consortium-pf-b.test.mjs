@@ -14,7 +14,6 @@ const core = await import('../src/lib/consortium/index.ts');
 const weigh = await import('../src/lib/consortium/weigh.ts');
 const picture = await import('../src/islands/consortium/rules/picture.ts');
 const { yearsPicture } = await import('../src/islands/consortium/rules/picture-years.ts');
-const { jobMembers } = await import('../src/islands/consortium/rules/picture-jobs.ts');
 
 // ---- fitGroups: the second look's reasons from the limiting factor (review R3) ----
 
@@ -220,24 +219,24 @@ test('mildExamples (round 2 C9; c2 C5): the Mildly toxic line names the first th
   for (const id of g.mild.filter((x) => !ex.ids.includes(x))) assert.ok(order.compare(name(id), name(ex.ids[2])) >= 0, `${name(id)} comes after the three`);
 });
 
-test('jobMembers (c2 R1): Plants per job 2, Feeds you held by Mango, Avocado and Fig, the first two outside their climate range: the row counts Fig alone and names Mango and Avocado apart, as the strip and "Thin: 1 plant only…" count them', () => {
+test('laneCounts (c2 R1, M25): Plants per job 2, Feeds you held by Mango, Avocado and Fig, the first two outside their climate range: the lane counts Fig alone and names Mango and Avocado apart, as the strip and "Thin: 1 plant only…" count them', () => {
   const fruit = (id) => taxon({ id, canonical_name: id, role: 'crop' });
   const ms = ['mango', 'avocado', 'fig'].map(fruit);
-  const level = { mango: 'outside', avocado: 'outside', fig: 'fits' };
-  const food = jobMembers(ms, (t) => level[t.id] !== 'outside').find((r) => r.job === 'feeds_you');
-  assert.deepEqual(food, { job: 'feeds_you', counted: ['fig'], outside: ['mango', 'avocado'] });
+  const verdicts = new Map([['mango', { level: 'outside' }], ['avocado', { level: 'outside' }], ['fig', { level: 'fits' }]]);
+  const food = core.laneCounts({ members: ms, verdicts, pending: false }).find((l) => l.kind === 'job' && l.job === 'feeds_you');
+  assert.deepEqual([food.counted, food.outside], [['fig'], ['mango', 'avocado']]);
 });
 
-test('jobMembers on kiambu-200 (c2 R1): each job\'s counted members are the ones its lane counts (holes.ts laneCounts: in every time span, the lane\'s figure is its counted members standing then); the members outside their range are named apart, never counted', async () => {
+test('laneCounts on kiambu-200 (c2 R1, M25): each job lane\'s counted members are the ones its figures count (in every time span, the figure is its counted members standing then); the members outside their range are named apart, never counted', async () => {
   await boardCase('kiambu-200');
   const vs = store.memberVerdicts.value, ms = store.memberTaxa.value, byId = new Map(ms.map((t) => [t.id, t]));
-  const rows = jobMembers(ms, (t) => vs.get(t.id)?.level !== 'outside');
-  for (const r of rows) {
-    const lane = store.lanes.value.find((l) => l.kind === 'job' && l.job === r.job);
-    core.PHASE_YEARS.forEach((_, c) => assert.equal(r.counted.filter((id) => core.spans(byId.get(id), c)).length, lane.counts[c], `${r.job} span ${c}: the strip's figure`));
-    for (const id of r.outside) assert.equal(vs.get(id).level, 'outside', `${r.job}: ${id} outside`);
+  const lanes = store.lanes.value.filter((l) => l.kind === 'job');
+  for (const lane of lanes) {
+    core.PHASE_YEARS.forEach((_, c) => assert.equal(lane.counted.filter((id) => core.spans(byId.get(id), c)).length, lane.counts[c], `${lane.job} span ${c}: the strip's figure`));
+    for (const id of lane.outside) assert.equal(vs.get(id).level, 'outside', `${lane.job}: ${id} outside`);
+    for (const id of lane.counted) assert.notEqual(vs.get(id)?.level, 'outside', `${lane.job}: ${id} counts`);
   }
-  assert.ok(rows.some((r) => r.outside.length > 0), 'kiambu-200 has a job member outside its range (Cashew)');
+  assert.ok(lanes.some((l) => l.outside.length > 0), 'kiambu-200 has a job member outside its range (Cashew)');
 });
 
 test('plainList (c2 B1): the boards\' plain list of names keeps three names apart in every locale, with no conjunction: a Chinese reader\'s Feeds you row reads "橄榄、杏仁、无花果", never "橄榄杏仁无花果"; a Russian one "Красный клевер, Розмарин, Инжир"', () => {

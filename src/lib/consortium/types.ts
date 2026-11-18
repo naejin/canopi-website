@@ -689,6 +689,10 @@ export interface LaneCount {
   counts: number[];
   thin: { fromYear: number; toYear: number; have: number; want: number }[];
   unchecked?: PlantId[];
+  /** The members doing this job or at this light level that count (not outside their range), palette order (M25). */
+  counted: PlantId[];
+  /** Those doing it outside their climate range: named apart, counted nowhere. */
+  outside: PlantId[];
 }
 export interface Hole {
   id: string; // `${kind}:${job ?? stratum ?? ''}:${fromYear}-${toYear}` + `:m${mask}` when months are set

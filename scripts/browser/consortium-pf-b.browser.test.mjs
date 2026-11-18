@@ -278,6 +278,10 @@ test('PFB6 (pf-b Many and ManyDesk Jobs at 200): "How many of your plants do eac
     await press(page, 'button', b);
     assert.equal(await page.$eval(aria('button', b), (e) => e.getAttribute('aria-expanded')), 'true', 'board: the row opens');
     await says(page, new RegExp(`Nobody (?:known )?.*: a hole, number \\d+ of ${f.holes.length}`));
+    // M25 (board Many): the hole line goes on with what the lists hold for it: "…; no plant on your lists fits here and does this then; 5 do it but are outside their climate range."
+    const lines = await page.$$eval('.ct-job-open:not([hidden]) .ct-job-thin', (ps) => ps.map((p) => p.textContent.replace(/\s+/g, ' ').trim()));
+    assert.ok(lines.length > 0, 'the open row says its holes');
+    for (const l of lines) assert.match(l, /: a hole, number \d+ of \d+( · [^;]+?)?(([;·] )(no plant on your lists fits here and does this then|\d+ do(es)? it but (is|are) outside (its|their) climate range)(; \d+ do(es)? it but (is|are) outside (its|their) climate range)?\.)?$/, `M25: the hole line's clauses (${l})`);
   }
   const n = uncheckedOf(f).size;
   if (n) assert.ok(jobs.includes(`A plant counts under every job it does. Jobs not checked yet: ${plants(n)}, counted under no job but “Feeds you”`), `board: "Jobs not checked yet: ${plants(n)}"`);

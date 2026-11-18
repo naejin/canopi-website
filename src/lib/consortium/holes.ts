@@ -111,13 +111,14 @@ export function holes(ctx: HoleContext): Hole[] {
 // Every lane's plant count per time step, jobs then light levels (jobIds, strata order), and each
 // job's thin years against the palette goal (redundancy: a job below its target is thin, distinct from
 // a hole at 0). Counts every member that stands there (a member outside its range counts for nothing,
-// as in holes()); no lane is capped at a count: 200 plants in one lane count 200.
+// as in holes()); no lane is capped at a count: 200 plants in one lane count 200. Each lane also names its
+// counted members and those outside their range (M25: the jobs picture reads these, the one rule).
 export function laneCounts(ctx: HoleContext, goals: PaletteGoals = DEFAULT_GOALS): LaneCount[] {
   const doing = ctx.members.filter((t) => counts(ctx, t));
   const spans = new Map(doing.map((t) => [t.id, new Set<number>(phaseSpan(t))]));
   const jobsUnknown = doing.filter((t) => t.functions === null), lightUnknown = doing.filter((t) => !t.stratum);
   const judged = (p: number) => p < JUDGED_PHASES && (PHASE_YEARS[p][1] as number) > JUDGED_FROM_YEAR;
-  const lane = (kind: 'job' | 'light', doers: readonly Taxon[], unknowns: readonly Taxon[], target: number): Omit<LaneCount, 'job' | 'stratum'> => {
+  const lane = (kind: 'job' | 'light', doers: readonly Taxon[], unknowns: readonly Taxon[], target: number, outside: readonly Taxon[]): Omit<LaneCount, 'job' | 'stratum'> => {
     const n = PHASE_YEARS.map((_, p) => doers.filter((t) => spans.get(t.id)!.has(p)).length);
     const thin: LaneCount['thin'] = [];
     let start: number | null = null;
@@ -127,11 +128,12 @@ export function laneCounts(ctx: HoleContext, goals: PaletteGoals = DEFAULT_GOALS
       if (!low && start !== null) { thin.push({ fromYear: Math.max(PHASE_YEARS[start][0], JUDGED_FROM_YEAR), toYear: PHASE_YEARS[p - 1][1] as number, have: Math.min(...n.slice(start, p)), want: target }); start = null; }
     }
     const unchecked = unknowns.filter((t) => standsIn(t, JUDGED_FROM_YEAR, JUDGED_TO_YEAR)).map((t) => t.id);
-    return { kind, counts: n, thin, ...(unchecked.length ? { unchecked } : {}) };
+    return { kind, counts: n, thin, ...(unchecked.length ? { unchecked } : {}), counted: doers.map((t) => t.id), outside: outside.map((t) => t.id) };
   };
+  const out = ctx.members.filter((t) => !counts(ctx, t));
   return [
-    ...jobIds.map((job) => ({ ...lane('job', doing.filter((t) => jobsOf(t).includes(job)), job === 'feeds_you' ? [] : jobsUnknown, goals.plantsPerJob), job })),
-    ...strata.map((s) => ({ ...lane('light', doing.filter((t) => t.stratum?.value === s), lightUnknown, 0), stratum: s })),
+    ...jobIds.map((job) => ({ ...lane('job', doing.filter((t) => jobsOf(t).includes(job)), job === 'feeds_you' ? [] : jobsUnknown, goals.plantsPerJob, out.filter((t) => jobsOf(t).includes(job))), job })),
+    ...strata.map((s) => ({ ...lane('light', doing.filter((t) => t.stratum?.value === s), lightUnknown, 0, out.filter((t) => t.stratum?.value === s)), stratum: s })),
   ];
 }
 

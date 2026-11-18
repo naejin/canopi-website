@@ -1523,5 +1523,7 @@
   "consortium.location.type.state": "State",
   "consortium.location.type.region": "Region",
   "consortium.location.type.country": "Country",
+  "consortium.palette.jobHoleNoFit": "no plant on your lists fits here and does this then",
+  "consortium.palette.jobHoleOutside": "one: # does it but is outside its climate range | other: # do it but are outside their climate range",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

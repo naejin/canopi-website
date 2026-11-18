@@ -453,7 +453,6 @@
             "src/islands/consortium/views/kit/fit.tsx",
             "src/islands/consortium/rules/picture.ts",
             "src/islands/consortium/rules/picture-years.ts",
-            "src/islands/consortium/rules/picture-jobs.ts",
             "src/islands/consortium/views/Actions.tsx",
             "src/islands/consortium/views/FutureSlot.tsx",
             "src/islands/consortium/views/future/future.tsx",

@@ -1523,5 +1523,7 @@
   "consortium.location.type.state": "州・県",
   "consortium.location.type.region": "地方",
   "consortium.location.type.country": "国",
+  "consortium.palette.jobHoleNoFit": "リストにここに合い、その時期にこれを果たす植物はありません",
+  "consortium.palette.jobHoleOutside": "other: #種がこの役目をしますが、気候の範囲外です",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

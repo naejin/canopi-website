@@ -12,13 +12,13 @@
 //   checked (the union of the job lanes' unchecked) and those with no job that count for no hole.
 // The figures are the light and job lanes of holes.ts laneCounts (store.lanes): the strips and the
 // thin lines read the same counts as the Next step's thin spots. Each row's figure and names are its
-// members that count (rules/picture-jobs.ts jobMembers, the lanes' rule: not outside their climate
-// range); those outside their range are named apart, never counted (c2 R1).
+// members that count (the lane's own `counted`, M25: one rule, not outside their climate range);
+// those outside their range (the lane's `outside`) are named apart, never counted (c2 R1).
 import { useMemo, useState } from 'preact/hooks';
 import type { Hole, JobId, LaneCount, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
 import { holeLine, jobIds, jobsOf, PHASE_YEARS, PLANTS_PER_JOB, targetPosition, thinLine, uncheckedLine } from '../../../../lib/consortium/index.ts';
 import { stripStates, type StripState } from '../../rules/picture.ts';
-import { jobMembers, type JobMembers } from '../../rules/picture-jobs.ts';
+import { holeFillers } from '../rows.tsx';
 import * as store from '../../store.ts';
 import { nameOf, P, T } from '../../strings.ts';
 import { HoleButton, HoleTitle, Names, SIZE_PALETTE, type PlantButtons } from '../kit/chart.tsx';
@@ -79,7 +79,7 @@ const Outside = ({ ids, counted, name, size }: { ids: readonly PlantId[]; counte
 // A thin line, its lead in bold ("**Thin:** 1 plant only from year 15 to year 60. Add a backup."; BC24).
 const ThinLine = ({ words }: { words: string }) => <p class="ct-job-thin"><HoleTitle words={words} /></p>;
 
-function JobRow({ j, lane, mine, name, size, holes, states, showThin, b }: { j: JobId; lane: LaneCount; mine: JobMembers; name: NameOf; size: number; holes: Hole[]; states: StripState[] | null; showThin: boolean; b: PlantButtons }) {
+function JobRow({ j, lane, mine, name, size, holes, states, showThin, b }: { j: JobId; lane: LaneCount; mine: LaneCount; name: NameOf; size: number; holes: Hole[]; states: StripState[] | null; showThin: boolean; b: PlantButtons }) {
   const n = mine.counted.length;
   return (
     <li class="ct-job" data-job={j}>
@@ -97,7 +97,7 @@ function JobRow({ j, lane, mine, name, size, holes, states, showThin, b }: { j: 
 
 // Past 40 plants: a row button opening the job's names (the count cell, 10 first, alphabetical) and its
 // holes in words, each numbered as the Next step numbers it (holes.ts targetPosition; C8).
-function BigRow({ j, mine, name, holes, all, thins, size }: { j: JobId; mine: JobMembers; name: NameOf; holes: Hole[]; all: readonly Hole[]; thins: readonly Hole[]; size: number }) {
+function BigRow({ j, mine, name, holes, all, thins, size, members }: { j: JobId; mine: LaneCount; members: readonly Taxon[]; name: NameOf; holes: Hole[]; all: readonly Hole[]; thins: readonly Hole[]; size: number }) {
   const [open, setOpen] = useState(false);
   const id = `ct-job-${j}`;
   // No figure when no plant counts (as JobRow; BC24 never "0 plants"): "Covers the ground · a hole".
@@ -112,7 +112,10 @@ function BigRow({ j, mine, name, holes, all, thins, size }: { j: JobId; mine: Jo
         {open && <Outside ids={mine.outside} counted={n} name={name} size={size} />}
         {open && holes.map((h) => {
           const un = uncheckedLine(h), at = targetPosition(all, thins, h);
-          return <p key={h.id} class="ct-job-thin"><HoleTitle words={T('palette.jobHoleNumber', { span: cap(say(holeLine(h))), i: at.index, n: at.of })} />{un && <> · {say(un)}</>}</p>;
+          // Board Many: "… · 7 plants not checked; no plant on your lists fits here and does this then; 5 do it but are outside their climate range." (holeFillers, the one count source).
+          const f = holeFillers(h, members, all.filter((x) => x.state === 'open'));
+          const tail = [f.fits.length ? '' : T('palette.jobHoleNoFit'), f.outside.length ? P('palette.jobHoleOutside', f.outside.length) : ''].filter(Boolean);
+          return <p key={h.id} class="ct-job-thin"><HoleTitle words={T('palette.jobHoleNumber', { span: cap(say(holeLine(h))), i: at.index, n: at.of })} />{un && <> · {say(un)}</>}{tail.length > 0 && <>{un ? '; ' : ' · '}{tail.join('; ')}.</>}</p>;
         })}
       </div>
     </li>
@@ -120,7 +123,6 @@ function BigRow({ j, mine, name, holes, all, thins, size }: { j: JobId; mine: Jo
 }
 
 export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdictOf, flagsOf, invasiveWord }: PictureProps) {
-  const rows = useMemo(() => jobMembers(members, (t) => verdictOf?.(t.id)?.level !== 'outside'), [members, verdictOf]);
   const name = useMemo(() => byName(members), [members]);
   const goal = store.plantsPerJob.value;
   const lanes = store.lanes.value;
@@ -132,8 +134,7 @@ export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdic
   // Thin spots in words only once the palette is the grower's own (A19, C2) and every list is read (R1).
   const showThin = !pending && !store.untouchedSuggestion.value;
   const b = { holeWords, onHole, onPlant, verdictOf, flagsOf, invasiveWord };
-  const laneOf = (j: JobId): LaneCount => lanes.find((l) => l.kind === 'job' && l.job === j) ?? { kind: 'job' as const, job: j, counts: PHASE_YEARS.map(() => 0), thin: [] };
-  const rowOf = (j: JobId): JobMembers => rows.find((r) => r.job === j)!;
+  const laneOf = (j: JobId): LaneCount => lanes.find((l) => l.kind === 'job' && l.job === j) ?? { kind: 'job' as const, job: j, counts: PHASE_YEARS.map(() => 0), thin: [], counted: [], outside: [] };
   const jobHoles = (j: JobId) => open.filter((h) => h.kind === 'job' && h.job === j);
   // The plants whose jobs are not checked (the job lanes' unchecked), and the others with no job.
   const unchecked = new Set(lanes.filter((l) => l.kind === 'job').flatMap((l) => l.unchecked ?? []));
@@ -158,8 +159,8 @@ export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdic
       </div>
       <ul class="ct-jobs-list">
         {jobIds.map((j) => (big
-          ? <BigRow key={j} j={j} mine={rowOf(j)} name={name} holes={jobHoles(j)} all={holes} thins={thins} size={members.length} />
-          : <JobRow key={j} j={j} lane={laneOf(j)} mine={rowOf(j)} name={name} size={members.length} holes={jobHoles(j)} states={pending ? null : stripStates(laneOf(j), holes, thins)} showThin={showThin} b={b} />))}
+          ? <BigRow key={j} j={j} mine={laneOf(j)} members={members} name={name} holes={jobHoles(j)} all={holes} thins={thins} size={members.length} />
+          : <JobRow key={j} j={j} lane={laneOf(j)} mine={laneOf(j)} name={name} size={members.length} holes={jobHoles(j)} states={pending ? null : stripStates(laneOf(j), holes, thins)} showThin={showThin} b={b} />))}
       </ul>
       {big && (
         <p class="ct-chart-note">{T('palette.jobsFoot')}{unchecked.size > 0 && <> <HoleTitle words={P('palette.jobsUnchecked', unchecked.size)} /></>}{noJob > 0 && <> {P('palette.jobsNoJob', noJob)}</>}</p>

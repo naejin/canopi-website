@@ -1523,5 +1523,7 @@
   "consortium.location.type.state": "州/省",
   "consortium.location.type.region": "地区",
   "consortium.location.type.country": "国家",
+  "consortium.palette.jobHoleNoFit": "你的清单中没有适合这里并在那时承担它的植物",
+  "consortium.palette.jobHoleOutside": "other: # 种做这件事，但超出其气候范围",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
