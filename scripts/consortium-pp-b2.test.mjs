@@ -351,8 +351,7 @@ test('PP-B (b2 pictures, review r1 conformance-6): Through the years names every
   const P = await pictures();
   const p = pictureOf(P, 'yearsPicture', palette);
   assert.deepEqual(p.jobs, Object.fromEntries(palette.map((t) => [t.id, P.mainJob(t)])), 'yearsPicture: the main job of every plant');
-  const years = pictureOf(P, 'yearsPicture', palette);
-  for (const r of years.rows) for (const m of r.marks) assert.equal(m.job, years.jobs[m.id], `yearsPicture ${r.key}: ${m.id}'s band and its job agree`);
+  for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, p.jobs[m.id], `yearsPicture ${r.key}: ${m.id}'s band and its job agree`);
 });
 
 test('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added says the plants and the holes that changed; another time step says its years first', async () => {

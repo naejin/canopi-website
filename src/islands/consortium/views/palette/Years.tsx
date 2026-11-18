@@ -13,20 +13,19 @@
 // focusable (aria-disabled), so the focus never falls to the page (review r1 bugs-7). The table form
 // stays as the screen-reader form, visually hidden (Q8).
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { Hole, PhaseOrd, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import type { Flag, Hole, PhaseOrd, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
 import { PHASE_YEARS, spans } from '../../../../lib/consortium/index.ts';
 import { changeSummary } from '../../rules/change-summary.ts';
 import { columnOf, type PictureRow } from '../../rules/picture.ts';
 import { yearsPicture } from '../../rules/picture-years.ts';
 import * as store from '../../store.ts';
 import { nameOf, P, T } from '../../strings.ts';
-import { CountCells, HowToRead, JobKey, SrTable, StepLevels, YearsGrid } from '../kit/chart.tsx';
+import { CountCells, HowToRead, JobKey, Names, SIZE_PALETTE, SrTable, StepLevels, YearsGrid } from '../kit/chart.tsx';
 import { say, sayAll } from '../kit/fit.tsx';
-import { listOf } from '../kit/names.ts';
 
 const PHONE = '(max-width: 639px)';
-// The size rule's palette threshold (A14): past it, the count cells.
-export const SIZE_PALETTE = 40;
+// The size rule's palette threshold (A14), kit/chart.tsx's: past it, the count cells.
+export { SIZE_PALETTE };
 export function usePhone(): boolean {
   const [phone, setPhone] = useState(() => typeof matchMedia === 'function' && matchMedia(PHONE).matches);
   useEffect(() => {
@@ -38,7 +37,7 @@ export function usePhone(): boolean {
   return phone;
 }
 
-export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[]; holeWords: (id: string) => string; onHole: (id: string) => void; onPlant: (id: PlantId) => void; announce: (text: string) => void; verdictOf?: (id: PlantId) => PlantVerdict | undefined }
+export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[]; holeWords: (id: string) => string; onHole: (id: string) => void; onPlant: (id: PlantId) => void; announce: (text: string) => void; verdictOf?: (id: PlantId) => PlantVerdict | undefined; flagsOf?: (id: PlantId) => readonly Flag[]; invasiveWord?: string }
 
 // Moves the focus to a section of the page by its id (a link of "Further down this page"; the page's
 // address holds the palette, so no hash is written).
@@ -51,21 +50,26 @@ export const toSection = (id: string) => (e: Event) => {
   if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
 };
 
-// "How to read this" (Toasts board): the light levels, the time spans, the dashed hole; the figures.
-export const ReadYears = () => (
+// "How to read this" (Toasts board, C4, BC19): its five paragraphs, the light levels and time spans,
+// the Jobs strip, the unknowns and the toxicity mark, the figures, the syntropic strata; the same panel
+// under each picture's title.
+export const ReadPictures = () => (
   <HowToRead>
     <p>{T('palette.readYears')}</p>
+    <p>{T('palette.readJobs')}</p>
+    <p>{T('palette.readUnknown')}</p>
     <p>{T('palette.readFigures')}</p>
+    <p>{T('palette.readSyntropic')}</p>
   </HowToRead>
 );
 
-export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, warnings }: PictureProps & { warnings?: number }) {
+export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, flagsOf, invasiveWord, warnings }: PictureProps & { warnings?: number }) {
   const phone = usePhone();
   const big = members.length > SIZE_PALETTE;
   const at = store.yearStep.value;
   const counts = (t: Taxon) => verdictOf?.(t.id)?.level !== 'outside';
   const picture = useMemo(() => yearsPicture({ members, holes, nameOf, counts }), [members, holes, verdictOf]);
-  const b = { holeWords, onHole, onPlant, verdictOf };
+  const b = { holeWords, onHole, onPlant, verdictOf, flagsOf, invasiveWord };
   const last = PHASE_YEARS.length - 1;
   const was = useRef(at);
   const go = (to: number) => {
@@ -94,22 +98,23 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
   return (
     <section class="ct-chart ct-years" id="ct-years" aria-labelledby="ct-years-h" data-mode={big ? 'cells' : phone ? 'step' : 'grid'}>
       <h3 id="ct-years-h">{T('palette.yearsTitle')}</h3>
-      <ReadYears />
+      <ReadPictures />
       <p class="ct-chart-intro">{T(big ? 'palette.yearsIntroMany' : phone ? 'palette.yearsIntroPhone' : 'palette.yearsIntro')}</p>
       {big ? (
         <>
           {stepper}
           <CountCells p={picture} column={at} size={members.length} standing={standing} b={b} />
-          <p class="ct-chart-note">{T('palette.chart.others')}{outsideThen.length > 0 && <> {P('palette.chart.othersOutside', outsideThen.length, { names: listOf(outsideThen.map(nameOf)) })}</>}</p>
+          <p class="ct-chart-note">{T('palette.chart.others')}</p>
+          {outsideThen.length > 0 && <div class="ct-chart-note"><Names ids={outsideThen.map((t) => t.id)} name={(id) => { const t = byId.get(id); return t ? nameOf(t) : id; }} size={members.length} text={(names) => P('palette.chart.othersOutside', outsideThen.length, { names })} lead={<p>{P('palette.chart.othersOutsideMany', outsideThen.length)}</p>} /></div>}
         </>
       ) : phone ? (
         <>
           {stepper}
-          <StepLevels p={picture} column={at} b={b} />
+          <StepLevels p={picture} column={at} b={b} size={members.length} />
         </>
       ) : (
         <>
-          <YearsGrid p={picture} b={b} />
+          <YearsGrid p={picture} b={b} size={members.length} />
           <JobKey p={picture} />
           <p class="ct-further">{T('palette.chart.further')} <a href="#ct-jobs" onClick={toSection('ct-jobs')}>{T('palette.jobsTitle')}</a>{warnings ? <> · <a href="#ct-warnings" onClick={toSection('ct-warnings')}>{T('palette.chart.warningsLink', { n: warnings })}</a></> : null}</p>
         </>

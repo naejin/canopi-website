@@ -11,51 +11,54 @@
 //   No "Tick these" (pf-e's, A15).
 // - Balance (MainMore): one family, the water line ("Water needs" where the summer is dry), the soil pH
 //   hints (R3). Elsewhere the water line is its own card, "Water use" (Kumasi).
-// Lists follow the size rule (A14): every name at 40 plants or fewer and 12 or fewer, else MoreList.
+// Every list of names goes through kit/chart.tsx Names (the size rule A14: every name at 40 plants or
+// fewer and 12 or fewer, else the count cell; review R2, C1).
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
-import { fitGroups, weighLines } from '../../../../lib/consortium/index.ts';
+import { fitGroups, jobsOf, leaveGroups, weighLines } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { nameOf, P, T } from '../../strings.ts';
-import { countryName, listOf, num } from '../kit/names.ts';
-import { commaList } from '../kit/chart.tsx';
-import { MoreList } from '../kit/more.tsx';
-import { SIZE_PALETTE } from './Years.tsx';
+import { nameOf, P, pageLang, T } from '../../strings.ts';
+import { collatorFor, countryName, num } from '../kit/names.ts';
+import { inlineNames, Names, ToxMark, wordList } from '../kit/chart.tsx';
 
-const LATER = '2041-2070';
-const CLIMATE = new Set(['cold', 'mild', 'cool', 'summer', 'hot', 'dry']);
 const has = (key: string): boolean => T(key) !== key;
-const names = (ids: readonly PlantId[], byId: Map<PlantId, Taxon>): string[] => ids.flatMap((id) => { const t = byId.get(id); return t ? [nameOf(t)] : []; });
-const named = (ids: readonly PlantId[], byId: Map<PlantId, Taxon>): string => commaList(ids.flatMap((id) => { const t = byId.get(id); return t ? [nameOf(t)] : []; }));
-
-// Names under the size rule: all as a sentence, or the count cell (a block: never inside a <p>).
-const inline = (ids: readonly PlantId[], size: number): boolean => size <= SIZE_PALETTE && ids.length <= 12;
-function Names({ ids, byId, size, closed = 3 }: { ids: readonly PlantId[]; byId: Map<PlantId, Taxon>; size: number; closed?: number }) {
-  if (inline(ids, size)) return <>{named(ids, byId)}</>;
-  return <MoreList items={ids} keyOf={(id) => id} paletteSize={size} closed={closed} class="ct-cell-names" render={(id) => { const t = byId.get(id); return t ? nameOf(t) : id; }} />;
-}
+type NameOf = (id: PlantId) => string;
+const nameIn = (byId: Map<PlantId, Taxon>): NameOf => (id) => { const t = byId.get(id); return t ? nameOf(t) : id; };
 
 // ---- Warnings, 40 plants or fewer ----
+
+// A chip's icon (board MainMore, BC15): the thermometer on the range line, the triangle on toxicity, the
+// link on a shared pest or disease; decorative, the chip's words beside it.
+const ICONS: Record<string, ComponentChildren> = {
+  leave: <><path d="M8.5 12V4a1.5 1.5 0 0 1 3 0v8" /><circle cx="10" cy="14.5" r="2.8" /></>,
+  shared: <><path d="M8.5 11.5l3-3" /><path d="M9 6.5l1.5-1.5a2.8 2.8 0 0 1 4 4L13 10.5M11 13.5l-1.5 1.5a2.8 2.8 0 0 1-4-4L7 9.5" /></>,
+};
+const ChipIcon = ({ k }: { k: string }) => k === 'severe' || k === 'moderate' || k === 'slight'
+  ? <ToxMark tox={k} decorative />
+  : ICONS[k] ? <svg class="ct-chip-icon" data-warn={k} viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{ICONS[k]}</svg> : null;
 
 export interface WarningGroup { key: string; head: string; body: ComponentChildren }
 // The groups of the small Warnings card (also counted by "Further down this page: Warnings (N)").
 export function warningGroups(members: readonly Taxon[], flags: readonly Flag[], now: ReadonlyMap<PlantId, PlantVerdict> | null, later: ReadonlyMap<PlantId, PlantVerdict> | null, country: string | null): WarningGroup[] {
-  const byId = new Map(members.map((t) => [t.id, t]));
+  const byId = new Map(members.map((t) => [t.id, t])), name = nameIn(byId), size = members.length;
   const ids = new Set(members.map((t) => t.id));
   const out: WarningGroup[] = [];
-  if (later && now) {
-    const leave = members.filter((t) => later.get(t.id)?.level === 'outside' && now.get(t.id)?.level !== 'outside').map((t) => t.id);
-    const edge = members.filter((t) => { const v = later.get(t.id); return v?.level === 'look' && !!v.limiting && CLIMATE.has(v.limiting.factor); }).map((t) => t.id);
-    if (leave.length) out.push({ key: 'leave', head: P('palette.warningsLeave', leave.length, { period: '2041–2070' }), body: <>{named(leave, byId)}.{edge.length > 0 && <> {T('palette.warningsEdgeThen', { names: named(edge, byId) })}</>}</> });
+  const names = (list: readonly PlantId[]) => <Names ids={list} name={name} size={size} />;
+  const { leave, edge } = leaveGroups(members, now, later);
+  if (leave.length) {
+    out.push({ key: 'leave', head: P('palette.warningsLeave', leave.length, { period: '2041–2070' }), body: <>
+      <Names ids={leave} name={name} size={size} text={(w) => `${w}.`} />
+      {edge.length > 0 && <> <Names ids={edge} name={name} size={size} text={(w) => T('palette.warningsEdgeThen', { names: w })} lead={<strong>{T('palette.warningsEdge')}</strong>} /></>}
+    </> });
   }
   const tox = (level: string) => members.filter((t) => flags.some((f) => f.id === t.id && f.kind === 'toxicity' && f.level === level)).map((t) => t.id);
   for (const [k, level] of [['severe', 'Severe'], ['moderate', 'Moderate'], ['slight', 'Slight']] as const) {
     const list = tox(level);
-    if (list.length) out.push({ key: k, head: T(`palette.warningsTox_${k}`), body: named(list, byId) });
+    if (list.length) out.push({ key: k, head: T(`palette.warningsTox_${k}`), body: names(list) });
   }
   const inv = members.filter((t) => flags.some((f) => f.id === t.id && f.kind === 'invasive')).map((t) => t.id);
-  if (inv.length) out.push({ key: 'invasive', head: T('palette.warningsInvasive', { country: countryName(country ?? '') }), body: named(inv, byId) });
+  if (inv.length) out.push({ key: 'invasive', head: T('palette.warningsInvasive', { country: countryName(country ?? '') }), body: names(inv) });
   // A shared pest or disease between members, by agent (conflicts.ts: shared_pest, alternate_host).
   const agents = new Map<string, Set<PlantId>>();
   for (const f of flags) {
@@ -66,19 +69,19 @@ export function warningGroups(members: readonly Taxon[], flags: readonly Flag[],
     if (f.other && ids.has(f.other)) s.add(f.other);
     agents.set(a, s);
   }
-  if (agents.size) out.push({ key: 'shared', head: T('palette.warningsShared'), body: [...agents].map(([a, s]) => <span key={a} class="ct-warn-line">{a ? T('palette.warningsSharedAgent', { names: listOf(names([...s], byId)), agent: a }) : T('palette.warningsSharedNone', { names: listOf(names([...s], byId)) })} </span>) });
+  if (agents.size) out.push({ key: 'shared', head: T('palette.warningsShared'), body: [...agents].map(([a, s]) => <span key={a} class="ct-warn-line"><Names ids={[...s]} name={name} size={size} text={(w) => (a ? T('palette.warningsSharedAgent', { names: w, agent: a }) : T('palette.warningsSharedNone', { names: w }))} lead={a ? <strong>{a}: </strong> : null} /> </span>) });
   return out;
 }
 
 export function Warnings({ groups }: { groups: WarningGroup[] }) {
   if (!groups.length) return null;
   return (
-    <section class="ct-chart ct-warnings" id="ct-warnings" aria-labelledby="ct-warnings-h">
+    <section class="ct-chart ct-warnings ct-side-card" id="ct-warnings" aria-labelledby="ct-warnings-h">
       <h3 id="ct-warnings-h">{T('palette.warningsTitle')} <span class="ct-next-count">{num(groups.length)}</span></h3>
       {groups.map((g) => (
         <div key={g.key} class="ct-warn-group" data-warn={g.key}>
-          <h4>{g.head}</h4>
-          <p>{g.body}</p>
+          <h4><ChipIcon k={g.key} />{g.head}</h4>
+          <div class="ct-warn-body">{g.body}</div>
         </div>
       ))}
     </section>
@@ -87,24 +90,33 @@ export function Warnings({ groups }: { groups: WarningGroup[] }) {
 
 // ---- Warnings and fit, past 40 plants ----
 
-// A closed line: its words and count as a button, opening to `children`.
-function Line_({ head, n, children, cls = '' }: { head: string; n: number; children: ComponentChildren; cls?: string }) {
+// A closed line: its words and count as a button, opening to `children`; `note` stays under it closed.
+function Line_({ head, n, children, note, cls = '' }: { head: string; n: number; children: ComponentChildren; note?: ComponentChildren; cls?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <li class={`ct-fit-line ${cls}`}>
       <button type="button" class="ct-job-row" aria-expanded={open} onClick={() => setOpen(!open)}><strong>{head}</strong> <span class="ct-grid-count">{num(n)}</span></button>
+      {note}
       {open && <div class="ct-job-open">{children}</div>}
     </li>
   );
 }
 
+// The second look's reasons, each its words (R3: the verdict's limiting factor, weigh.ts LOOK_REASON).
+const REASON_WORDS = [['edge', 'palette.warningsEdge'], ['soil', 'palette.warningsSoil'], ['water', 'palette.warningsWater'], ['misfit', 'palette.warningsMisfit'], ['clash', 'palette.warningsClash']] as const;
+const OPEN_NAMES = 10; // an open list's names before "+ N more" (BC4)
+
 export function WarningsAndFit({ members, verdicts, flags, country }: { members: readonly Taxon[]; verdicts: ReadonlyMap<PlantId, PlantVerdict> | null; flags: readonly Flag[]; country: string | null }) {
   const g = useMemo(() => fitGroups(members, verdicts, flags), [members, verdicts, flags]);
   const byId = useMemo(() => new Map(members.map((t) => [t.id, t])), [members]);
-  const size = members.length;
+  const name = nameIn(byId), size = members.length;
   const lines = ([['palette.warningsFits', g.fits], ['palette.warningsLook', g.look], ['palette.warningsOutside', g.outside], ['palette.warningsUnknown', g.unknown]] as const).filter(([, ids]) => ids.length);
   const r = g.reasons;
-  const tox = [...r.severe, ...r.moderate];
+  const tox = r.severe.length + r.moderate.length;
+  const list = (ids: readonly PlantId[], closed = OPEN_NAMES) => <Names ids={ids} name={name} size={size} closed={closed} />;
+  // Mildly toxic: many are common foods, three named, alphabetically (BC14).
+  const order = collatorFor(pageLang());
+  const foods = g.mild.filter((id) => { const t = byId.get(id); return !!t && jobsOf(t).includes('feeds_you'); }).map(name).sort(order.compare).slice(0, 3);
   return (
     <section class="ct-chart ct-warnings" id="ct-warnings" aria-labelledby="ct-warnings-h">
       <h3 id="ct-warnings-h">{T('palette.warningsFitTitle')}</h3>
@@ -115,26 +127,25 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
             {key === 'palette.warningsLook' ? (
               <>
                 <ul class="ct-jobs-list">
-                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}><Names ids={r.edge} byId={byId} size={size} closed={10} /></Line_>}
-                  {tox.length > 0 && (
-                    <Line_ head={T('palette.warningsToxic')} n={tox.length}>
-                      {r.severe.length > 0 && <p>{T('palette.warningsVery', { n: num(r.severe.length) })} {named(r.severe, byId)}.</p>}
-                      {r.moderate.length > 0 && <div>{T('palette.warningsTox', { n: num(r.moderate.length) })} <Names ids={r.moderate} byId={byId} size={size} closed={10} /></div>}
+                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}>{list(r.edge)}</Line_>}
+                  {tox > 0 && (
+                    <Line_ head={T('palette.warningsToxic')} n={tox}>
+                      {r.severe.length > 0 && <div><strong>{T('palette.warningsVery', { n: num(r.severe.length) })}</strong> {list(r.severe, Math.min(OPEN_NAMES, r.severe.length))}</div>}
+                      {r.moderate.length > 0 && <div><strong>{T('palette.warningsTox', { n: num(r.moderate.length) })}</strong> {list(r.moderate, OPEN_NAMES - Math.min(OPEN_NAMES - 1, r.severe.length))}</div>}
                     </Line_>
                   )}
-                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}><Names ids={r.invasive} byId={byId} size={size} closed={10} /></Line_>}
-                  {r.misfit.length > 0 && <Line_ head={T('palette.warningsMisfit')} n={r.misfit.length}><Names ids={r.misfit} byId={byId} size={size} closed={10} /></Line_>}
-                  {r.clash.length > 0 && <Line_ head={T('palette.warningsClash')} n={r.clash.length}><Names ids={r.clash} byId={byId} size={size} closed={10} /></Line_>}
+                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}>{list(r.invasive)}</Line_>}
+                  {REASON_WORDS.filter(([k]) => k !== 'edge' && r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}>{list(r[k])}</Line_>)}
                 </ul>
-                <p class="ct-chart-note">{P('palette.warningsReasons', g.several, { r: num(g.reasonCount), l: num(g.look.length) })}</p>
+                {g.several > 0 && <p class="ct-chart-note">{P('palette.warningsReasons', g.reasonCount, { plants: P('palette.warningsReasonsPlants', g.look.length), carry: P('palette.warningsReasonsCarry', g.several) })}</p>}
+                {g.outsideToxic.length > 0 && <div class="ct-chart-note"><Names ids={g.outsideToxic} name={name} size={size} few={3} text={(w) => P('palette.warningsOutsideToxic', g.outsideToxic.length, { names: w })} lead={<p>{P('palette.warningsOutsideToxicMany', g.outsideToxic.length)}</p>} /></div>}
               </>
-            ) : <Names ids={ids} byId={byId} size={size} closed={10} />}
+            ) : list(ids)}
           </Line_>
         ))}
         {g.mild.length > 0 && (
-          <Line_ head={T('palette.warningsTox_slight')} n={g.mild.length} cls="ct-fit-mild">
-            <p>{P('palette.warningsMild', g.mildFits, { n: num(g.mild.length) })}</p>
-            <Names ids={g.mild} byId={byId} size={size} closed={10} />
+          <Line_ head={T('palette.warningsTox_slight')} n={g.mild.length} cls="ct-fit-mild" note={<p class="ct-fit-note">{foods.length ? T('palette.warningsMildFoods', { names: wordList(foods) }) : T('palette.warningsMildLead')} {P('palette.warningsMild', g.mildFits, { n: num(g.mild.length) })}</p>}>
+            {list(g.mild)}
           </Line_>
         )}
       </ul>
@@ -146,57 +157,98 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
 
 const K = (l: Line): string => l.key.split('.').pop() ?? '';
 const vars = (l: Line) => Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, typeof v === 'number' ? num(v) : v]));
+// One card head for every Balance line and the Water use card: its words and, on a borrowed list, the
+// estimate mark (R10).
+const Est = ({ l }: { l: Line }) => (l.vars.term === 'estimate' ? <span class="ct-weigh-est">{T('estimate.short')}</span> : null);
 
-function BalanceItem({ w, byId, size }: { w: WeighLine; byId: Map<PlantId, Taxon>; size: number }) {
+// The plants with no water need recorded, named (BC17): "1 not recorded (Myrtle): that is not a pass.",
+// or past the size rule "86 not recorded:", the count cell, "That is not a pass.".
+function NotRecorded({ ids, name, size }: { ids: readonly PlantId[]; name: NameOf; size: number }) {
+  if (!ids.length) return null;
+  return inlineNames(ids.length, size)
+    ? <p><Names ids={ids} name={name} size={size} text={(w) => P('palette.balance.notRecordedNamed', ids.length, { names: w })} /></p>
+    : <div><strong>{P('palette.balance.useMissing', ids.length)}</strong><Names ids={ids} name={name} size={size} /><p>{T('palette.balance.notAPass')}</p></div>;
+}
+// A labelled group of names: "**A medium amount:** Silk oak, Napiergrass and Fig." or its count cell.
+function Group({ label, ids, name, size }: { label: string; ids: readonly PlantId[]; name: NameOf; size: number }) {
+  if (!ids.length) return null;
+  return inlineNames(ids.length, size)
+    ? <p><strong>{label}</strong> <Names ids={ids} name={name} size={size} text={(w) => `${w}.`} /></p>
+    : <div><strong>{label}</strong><Names ids={ids} name={name} size={size} /></div>;
+}
+
+function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: number }) {
   const l = w.line, said = K(l), v = vars(l);
-  const est = l.vars.term === 'estimate' && <span class="ct-weigh-est">{T('estimate.short')}</span>;
   if (w.kind === 'family') {
-    const fam = String(l.vars.family), words = `palette.balance.familyWords.${fam}`, hint = `palette.balance.familyHint.${fam}`;
+    const fam = String(l.vars.family), words = `palette.balance.familyWords.${fam}`, hint = `palette.balance.familyHint.${fam}`, find = `palette.balance.familyFind.${fam}`;
+    const hintText = has(hint) ? T(hint) : T('plants.weigh.familyHint');
     return (
       <li data-weigh="family" data-family={fam}>
-        <strong>{has(words) ? T('palette.balance.family', { ...v, words: T(words) }) : T('plants.weigh.family', v)}</strong>{est}
-        {inline(w.members, size)
-          ? <p><Names ids={w.members} byId={byId} size={size} />. {has(hint) ? T(hint) : T('plants.weigh.familyHint')}</p>
-          : <><Names ids={w.members} byId={byId} size={size} /><p>{has(hint) ? T(hint) : T('plants.weigh.familyHint')}</p></>}
+        <strong>{has(words) ? T('palette.balance.family', { ...v, words: T(words) }) : T('plants.weigh.family', v)}</strong><Est l={l} />
+        {inlineNames(w.members.length, size)
+          ? <p><Names ids={w.members} name={name} size={size} text={(n) => `${n}. ${hintText}`} /></p>
+          : <><Names ids={w.members} name={name} size={size} /><p>{hintText}</p></>}
+        {has(find) && <button type="button" class="ct-link-button" onClick={() => store.openFind({ job: 'feeds_soil', hole: null, fits: (t: Taxon) => t.family !== fam })}>{T(find)}</button>}
       </li>
     );
   }
   if (w.kind === 'soil') {
-    return <li data-weigh="soil"><strong>{P('palette.balance.soilHints', Number(l.vars.n))}</strong>{est}{inline(w.members, size) ? <p><Names ids={w.members} byId={byId} size={size} /></p> : <Names ids={w.members} byId={byId} size={size} />}</li>;
+    return <li data-weigh="soil"><strong>{P('palette.balance.soilHints', Number(l.vars.n))}</strong><Est l={l} /><div><Names ids={w.members} name={name} size={size} /></div></li>;
   }
   const missing = Number(l.vars.missing ?? 0);
+  const none = w.members.slice(w.members.length - missing);
   if (said === 'waterDrySummer') {
     return (
       <li data-weigh="water">
-        <strong>{T('palette.balance.waterDrySummer', v)}</strong>{est}
-        <p>{T('palette.balance.waterRecorded', v)}{missing > 0 && <> {P('palette.balance.notRecordedNamed', missing, { names: named(w.members, byId) })}</>}</p>
+        <strong>{T('palette.balance.waterDrySummer', v)}</strong><Est l={l} />
+        <p>{T('palette.balance.waterRecorded', v)}</p>
+        <NotRecorded ids={none} name={name} size={size} />
       </li>
     );
   }
-  const cut = said === 'waterMix' ? Number(l.vars.regular) : 0;
+  if (said === 'waterMix') {
+    // Board PaletteMore: "Water needs: one thirsty plant among 9 recorded", then who needs what.
+    const n = (k: string) => Number(l.vars[k] ?? 0);
+    const [re, dr, me] = [n('regular'), n('dry'), n('medium')];
+    const reg = w.members.slice(0, re), dry = w.members.slice(re, re + dr), mid = w.members.slice(re + dr, re + dr + me);
+    const small = [reg, dry, mid].every((g) => inlineNames(g.length, size));
+    return (
+      <li data-weigh="water">
+        <strong>{P('palette.balance.waterMix', re, v)}</strong><Est l={l} />
+        <p>{T('palette.balance.waterMixFor', v)}{small && <> <Names ids={reg} name={name} size={size} text={(hi) => <Names ids={dry} name={name} size={size} text={(lo) => T('palette.balance.waterMixSentence', {
+          high: P('palette.balance.waterMixHigh', re, { names: hi }), low: T('palette.balance.waterMixLow', { names: lo }),
+          mid: mid.length ? P('palette.balance.waterMixMid', mid.length, { names: wordList(mid.map(name)) }) : '',
+        })} />} /></>}</p>
+        {!small && <><Group label={T('palette.balance.useHigh')} ids={reg} name={name} size={size} /><Group label={T('palette.balance.useLow')} ids={dry} name={name} size={size} /><Group label={T('palette.balance.useMedium')} ids={mid} name={name} size={size} /></>}
+        <NotRecorded ids={none} name={name} size={size} />
+      </li>
+    );
+  }
+  if (said === 'notRecordedNamed') return <li data-weigh="water"><NotRecorded ids={none} name={name} size={size} /></li>;
+  // Too few recorded to judge ("Water needs: recorded for 2 of 12, not enough to judge").
   return (
     <li data-weigh="water">
-      <strong>{said === 'missing' ? P('plants.weigh.missing', missing) : T(`plants.weigh.${said}`, v)}</strong>{est}
-      {cut > 0 && <p>{T('plants.weigh.regular', { names: named(w.members.slice(0, cut), byId) })} {T('plants.weigh.dryLoving', { names: named(w.members.slice(cut), byId) })} {T('plants.weigh.waterMixHint')}</p>}
-      {said === 'waterMix' && missing > 0 && <p class="ct-muted">{P('plants.weigh.missing', missing)}</p>}
+      <strong>{T('plants.weigh.waterFew', v)}</strong><Est l={l} />
+      <NotRecorded ids={none} name={name} size={size} />
     </li>
   );
 }
 
-// "Water use" (Kumasi): the recorded use, high, medium, low, then the plants not recorded.
-function WaterUse({ w, byId }: { w: WeighLine; byId: Map<PlantId, Taxon> }) {
+// "Water use" (Kumasi): the recorded use, high, medium, low, then the plants not recorded; each label
+// bold, the names under the size rule (BC3, BC18), the estimate mark on a borrowed list (R10).
+function WaterUse({ w, name, size }: { w: WeighLine; name: NameOf; size: number }) {
   const n = (k: string) => Number(w.line.vars[k] ?? 0);
   const [hi, me, lo, mi] = [n('high'), n('medium'), n('low'), n('missing')];
   const cuts = [0, hi, hi + me, hi + me + lo, hi + me + lo + mi];
-  const part = (i: number) => named(w.members.slice(cuts[i], cuts[i + 1]), byId);
+  const part = (i: number) => w.members.slice(cuts[i], cuts[i + 1]);
   return (
-    <section class="ct-chart ct-balance" aria-labelledby="ct-water-h">
-      <h3 id="ct-water-h">{T('palette.balance.waterUseTitle')}</h3>
-      <p class="ct-chart-intro">{T('palette.balance.waterUseLead')}</p>
-      {hi > 0 && <p>{T('palette.balance.useHigh', { names: part(0) })}</p>}
-      {me > 0 && <p>{T('palette.balance.useMedium', { names: part(1) })}</p>}
-      {lo > 0 && <p>{T('palette.balance.useLow', { names: part(2) })}</p>}
-      {mi > 0 && <p>{P('palette.balance.useMissing', mi, { names: part(3) })}</p>}
+    <section class="ct-chart ct-balance ct-side-card" aria-labelledby="ct-water-h">
+      <h3 id="ct-water-h">{T('palette.balance.waterUseTitle')}<Est l={w.line} /></h3>
+      <p class="ct-chart-intro ct-water-lead">{T('palette.balance.waterUseLead')}</p>
+      <Group label={T('palette.balance.useHigh')} ids={part(0)} name={name} size={size} />
+      <Group label={T('palette.balance.useMedium')} ids={part(1)} name={name} size={size} />
+      <Group label={T('palette.balance.useLow')} ids={part(2)} name={name} size={size} />
+      {mi > 0 && <div><strong>{P('palette.balance.useMissing', mi)}</strong> <Names ids={part(3)} name={name} size={size} text={(x) => `${x}.`} /> <span>{T('palette.balance.notAPass')}</span></div>}
     </section>
   );
 }
@@ -206,23 +258,24 @@ export function Balance({ members, pending, unchecked }: { members: readonly Tax
   const verdicts = store.memberVerdicts.value;
   const out = useMemo(() => weighLines(members, { inputs, period }, { pending, unchecked, verdicts }), [members, pending, unchecked, inputs, period, verdicts]);
   const byId = useMemo(() => new Map(members.map((t) => [t.id, t])), [members]);
+  const name = nameIn(byId), size = members.length;
   if (out !== 'checking' && !out.length && !unchecked) return null;
-  const use = out === 'checking' ? null : out.find((w) => K(w.line) === 'waterUse') ?? null;
+  const use = out === 'checking' ? null : out.find((w) => K(w.line) === 'waterUseTitle') ?? null;
   const rest = out === 'checking' ? [] : out.filter((w) => w !== use);
   return (
     <>
       {(out === 'checking' || rest.length > 0 || unchecked > 0) && (
-        <section class="ct-chart ct-balance" id="ct-balance" aria-labelledby="ct-balance-h">
+        <section class="ct-chart ct-balance ct-side-card" id="ct-balance" aria-labelledby="ct-balance-h">
           <h3 id="ct-balance-h">{T('palette.balance.title')} <span class="ct-balance-sub">{T('palette.balance.lead')}</span></h3>
           {out === 'checking' ? <p>{T('plants.weigh.checking')}</p> : (
             <>
               {unchecked > 0 && <p>{P('plants.weigh.unchecked', unchecked)}</p>}
-              {rest.length > 0 && <ul class="ct-balance-lines">{rest.map((w) => <BalanceItem key={`${w.kind}:${w.kind === 'family' ? w.line.vars.family : K(w.line)}`} w={w} byId={byId} size={members.length} />)}</ul>}
+              {rest.length > 0 && <ul class="ct-balance-lines">{rest.map((w) => <BalanceItem key={`${w.kind}:${w.kind === 'family' ? w.line.vars.family : K(w.line)}`} w={w} name={name} size={size} />)}</ul>}
             </>
           )}
         </section>
       )}
-      {use && <WaterUse w={use} byId={byId} />}
+      {use && <WaterUse w={use} name={name} size={size} />}
     </>
   );
 }

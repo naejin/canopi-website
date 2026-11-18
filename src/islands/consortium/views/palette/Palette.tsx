@@ -13,7 +13,7 @@
 // none of this climate's lists, counted as not checked from Your plants' rows), and Your plants.
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
-import type { PlantId } from '../../../../lib/consortium/index.ts';
+import type { Flag, PlantId } from '../../../../lib/consortium/index.ts';
 import { yourPlants } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { backToPlace } from '../../state/draft.ts';
@@ -21,7 +21,7 @@ import { P, T } from '../../strings.ts';
 import { markFirstView } from '../kit/start-mark.ts';
 import { prefetchLater } from '../lazy.tsx';
 import { holeWords } from '../kit/fit.tsx';
-import { listOf, zoneName } from '../kit/names.ts';
+import { countryName, listOf, zoneName } from '../kit/names.ts';
 import { JobsPicture } from './JobsPicture.tsx';
 import { FindEntry } from '../Sheets.tsx';
 import { FindPanelSlot } from './FindPanelSlot.tsx';
@@ -79,6 +79,8 @@ export function Palette() {
   const unchecked = rows.filter((r) => 'missing' in r).length;
   useEffect(() => { store.wantVerdict(); }, []);
   // Stable while the holes and verdicts are: the pictures (memoised) redraw only when they change.
+  const country = store.country.value?.code ?? null;
+  const flagsById = useMemo(() => { const m = new Map<PlantId, Flag[]>(); for (const f of flags) { const l = m.get(f.id); if (l) l.push(f); else m.set(f.id, [f]); } return m; }, [flags]);
   const pic = useMemo(() => {
     const byId = new Map(holes.map((h) => [h.id, h]));
     return {
@@ -87,11 +89,13 @@ export function Palette() {
       onHole: (id: string) => { const h = byId.get(id); if (h) openFillers(h); },
       onPlant: (id: PlantId) => store.openSheet('details', id),
       verdictOf: (id: PlantId) => verdicts?.get(id),
+      flagsOf: (id: PlantId) => flagsById.get(id) ?? [],
+      invasiveWord: country ? T('chip.invasiveIn', { country: countryName(country) }) : undefined,
     };
-  }, [members, holes, verdicts]);
+  }, [members, holes, verdicts, flagsById, country]);
   // The small Warnings card's groups (also "Warnings (N)" under Through the years): today's verdicts and
   // those of 2041–2070 at a place with projections (the leave-their-range line).
-  const rule = store.verdictRule.value, ctx = store.verdictContext.value, country = store.country.value?.code ?? null;
+  const rule = store.verdictRule.value, ctx = store.verdictContext.value;
   const big = members.length > SIZE_PALETTE;
   const later = useMemo(() => (!big && rule && ctx.inputs?.periods.some((x) => x.period === '2041-2070') ? rule.verdicts(members, { ...ctx, period: '2041-2070' }) : null), [big, rule, members, ctx]);
   const groups = useMemo(() => (big ? [] : warningGroups(members, flags, verdicts, later, country)), [big, members, flags, verdicts, later, country]);
@@ -104,7 +108,7 @@ export function Palette() {
     <div class="ct-palette-page">
       <nav class="ct-steps" aria-label={T('palette.stepsLabel')}>
         <ol>
-          <li><button type="button" class="ct-step" onClick={toPlace}><span class="ct-step-n">1</span> {T('palette.stepPlace')}</button></li>
+          <li><button type="button" class="ct-step ct-step-done" onClick={toPlace}><span class="ct-step-n" aria-hidden="true">{'\u2713'}</span> {T('palette.stepPlace')}</button></li>
           <li aria-current="step"><span class="ct-step"><span class="ct-step-n">2</span> {T('palette.stepPalette')}</span></li>
           <li><span class="ct-step ct-step-later"><span class="ct-step-n">3</span> {T('palette.stepPlan')}</span></li>
         </ol>

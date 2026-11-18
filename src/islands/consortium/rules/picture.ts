@@ -8,12 +8,14 @@
 // - No fold in the model (v14 A14, the size rule): every plant is in its cells; the view decides
 //   between every name and the count cell (views/kit/more.tsx MoreList). Order: plants that fill a
 //   hole first, then the main job (jobIds order), then name. `hidden` stays empty (the cell shape the
-//   table form and its vector read).
+//   table form and its vector read; main's consortium-pp-pf.test.mjs still reads it).
 // - `counts` (opts): whether a plant counts toward the holes (not outside its climate range): a cell
-//   whose plants all fail it is still the open hole, and their bands are marked 'outside'.
+//   whose plants all fail it is still the open hole, and their bands are marked 'outside'. A row's
+//   `count` is its plants that count, `outside` those that do not (review R8: the grid's "Full sun 3
+//   plants" and the count cells read the same rule, never a count beside a hole of nobody).
 // - A row with no data is counted, never dropped (state 'not-recorded'); a column outside the judged
 //   window is 'not-judged' (a thin line, never a hole). Models carry full plant names.
-import type { Hole, JobId, Line, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import type { Hole, JobId, LaneCount, Line, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { JUDGED_FROM_YEAR, PHASE_YEARS, jobIds, jobsOf } from '../../../lib/consortium/index.ts';
 
 export interface Mark { id: PlantId; name: string; job: JobId | null; from: number; to: number | null; marked?: 'outside' }
@@ -23,6 +25,8 @@ export interface PictureRow {
   head: Line;
   cells: Cell[];
   marks: Mark[]; // the lane's drawn plants (bands in years: from, to; to null past 60)
+  count: number; // the lane's plants standing in some time span that count toward the holes
+  outside: number; // the lane's plants standing in some time span outside their climate range
   state: 'data' | 'not-recorded' | 'not-judged';
 }
 // names: each plant's full name; jobs: each plant's main job (the chip's icon and accessible name read
@@ -56,25 +60,27 @@ export function laneOrder(plants: readonly Taxon[], nameOf: (t: Taxon) => string
 export function lane(key: string, head: Line, plants: readonly Taxon[], columns: number, opts: {
   nameOf: (t: Taxon) => string; at: (t: Taxon, column: number) => boolean; judged: (column: number) => boolean;
   holeAt: (column: number) => string | null; years: (t: Taxon) => { from: number; to: number | null } | null; first?: ReadonlySet<PlantId>; state?: PictureRow['state'];
-  markJob?: JobId | null; // every band's job (the jobs picture: its row's); else each plant's main job
   counts?: (t: Taxon) => boolean; // counts toward the holes (default: every plant)
 }): PictureRow {
   const sorted = laneOrder(plants, opts.nameOf, opts.first);
   const counts = opts.counts ?? (() => true);
   const cells: Cell[] = [];
+  const standing = new Set<Taxon>();
   for (let c = 0; c < columns; c++) {
     const here = sorted.filter((t) => opts.at(t, c));
+    for (const t of here) standing.add(t);
     const judged = opts.judged(c);
     cells.push({ ids: here.map((t) => t.id), hidden: [], hole: here.some(counts) || !judged ? null : opts.holeAt(c), judged });
   }
   const marks = sorted.flatMap((t) => {
     const y = opts.years(t);
     if (!y) return [];
-    const m: Mark = { id: t.id, name: opts.nameOf(t), job: opts.markJob === undefined ? mainJob(t) : opts.markJob, from: y.from, to: y.to };
+    const m: Mark = { id: t.id, name: opts.nameOf(t), job: mainJob(t), from: y.from, to: y.to };
     if (!counts(t)) m.marked = 'outside';
     return [m];
   });
-  return { key, head, cells, marks, state: opts.state ?? 'data' };
+  const count = [...standing].filter(counts).length;
+  return { key, head, cells, marks, count, outside: standing.size - count, state: opts.state ?? 'data' };
 }
 
 // A time step is judged when it ends after year 1 and before 60 (owner: shorter gaps and after 60
@@ -84,6 +90,27 @@ export const judgedColumn = (c: number): boolean => { const [, to] = PHASE_YEARS
 export function holeAt(holes: readonly Hole[], mine: (h: Hole) => boolean, c: number): string | null {
   const [from, to] = PHASE_YEARS[c];
   return holes.find((h) => h.state === 'open' && mine(h) && h.fromYear <= from && to !== null && h.toYear >= to)?.id ?? null;
+}
+
+// A job's strip over the time spans (boards MainMore, PaletteMore; the legend "2 or more plants · 1 plant
+// between year 1 and year 60: thin · nobody: a hole"), read from the engine's targets, never from the
+// counts again (reviews R1, R9, BC9): a time span inside an open hole of the job is 'hole', inside one of
+// its open thin spots (store.thinSpots) 'thin' (an outline with one mark), any other span with a plant
+// 'full', an empty one 'line'. A span not judged (the first year, after year 60) is never a hole nor
+// thin. While a member's list loads (pending: the holes and thin spots are pending), every span is
+// 'pending', drawn neutral: never a false hole or thin spot (PP-B21).
+export type StripState = 'full' | 'thin' | 'hole' | 'line' | 'pending';
+export function stripStates(l: LaneCount, holes: readonly Hole[], thins: readonly Hole[], pending: boolean): StripState[] {
+  const mine = (h: Hole) => h.kind === 'job' && h.job === l.job && h.state === 'open';
+  return PHASE_YEARS.map(([from, to], c): StripState => {
+    if (pending) return 'pending';
+    const n = l.counts[c] ?? 0;
+    if (!judgedColumn(c)) return n > 0 ? 'full' : 'line';
+    if (holeAt(holes, mine, c)) return 'hole';
+    const end = to ?? Infinity;
+    if (thins.some((t) => mine(t) && t.fromYear < end && from < t.toYear)) return 'thin';
+    return n > 0 ? 'full' : 'line';
+  });
 }
 
 // The table form (the pictures' screen-reader form, Q8): the same rows and columns, every plant listed.

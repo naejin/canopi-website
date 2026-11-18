@@ -59,6 +59,8 @@ export const figures = (page) => page.evaluate(() => {
     thin: s.thinSpots.value.length,
     goal: s.plantsPerJob.value,
     levels: Object.fromEntries([...(s.memberVerdicts.value ?? new Map())].map(([id, v]) => [id, v.level])),
+    tox: Object.fromEntries(s.flags.value.filter((x) => x.kind === 'toxicity').map((x) => [x.id, x.level])),
+    openThin: s.thinSpots.value.filter((h) => h.state === 'open').length,
   };
 });
 

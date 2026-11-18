@@ -100,7 +100,7 @@ test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 pl
     await openCards(small);
     await small.locator(aria('radio', 'Temperate')).click();
     await small.locator(aria('button', en['consortium.start.suggest'])).click();
-    assert.ok(await has(small, aria('button', 'Share'), 8000), 'the result and its actions');
+    assert.ok(await has(small, aria('button', 'Copy link'), 8000), 'the result and its actions');
     await h.pdf(small);
     await small.waitForSelector('.ct-print', { timeout: 8000 }); // mounted for print (review r1 perf-4)
     const drawing = await small.$eval('.ct-print', (el) => {

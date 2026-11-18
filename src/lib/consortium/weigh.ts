@@ -36,7 +36,7 @@ const FAMILY_SHARE = 0.25;
 // A plant's water need, from its water_need fact: drought tolerance when recorded (the direct answer to
 // "takes a dry summer"), else moisture use; null when neither is (a value outside these lists counts as
 // not recorded). 'regular' reads "Needs regular water" (owner 2026-11-15, never "thirsty").
-type WaterNeed = 'dry' | 'medium' | 'regular';
+export type WaterNeed = 'dry' | 'medium' | 'regular';
 const BY_DROUGHT: Record<string, WaterNeed> = { High: 'dry', Medium: 'medium', Low: 'regular', None: 'regular' };
 const BY_MOISTURE: Record<string, WaterNeed> = { Low: 'dry', Medium: 'medium', High: 'regular' };
 export const waterNeed = (w: FactValues['water_need'] | null): WaterNeed | null =>
@@ -91,87 +91,111 @@ export function weighLines(members: readonly Taxon[], ctx: WeighContext, { pendi
 }
 
 // The one water line. With no place read (ctx.inputs absent) or at a place with a dry summer, "Water
-// needs" from each plant's drought tolerance (else its moisture use): too few recorded, mixed needs, all
+// needs" from each plant's drought tolerance (else its moisture use): too few recorded, mixed needs
+// (board PaletteMore: "one thirsty plant among N recorded"; members the plants needing regular water,
+// the dry-loving ones, those between, then those not recorded: vars regular, dry, medium, missing), all
 // recorded take a dry summer (only where the summer is dry), or the plants not recorded on their own.
-// Elsewhere (a place read, no dry summer: board Kumasi), "Water use": the recorded use, high, medium
-// and low, then the plants not recorded; members in that order (vars high, medium, low, missing).
+// Every form names the plants not recorded (the last vars.missing members). Elsewhere (a place read, no
+// dry summer: board Kumasi), "Water use": the recorded use, high, medium and low, then the plants not
+// recorded; members in that order (vars high, medium, low, missing).
 function waterLines(members: readonly Taxon[], ctx: WeighContext, m: number, unchecked: number, term: Line['vars']): WeighLine[] {
   const facts = members.map((t) => ({ t, w: factAt('water_need', t, ctx.inputs, ctx.period) }));
   if (ctx.inputs && !drySummer(ctx.inputs)) {
     const by: Record<WaterUse, PlantId[]> = { high: [], medium: [], low: [] }, none: PlantId[] = [];
     for (const { t, w } of facts) { const u = waterUseOf(w); (u ? by[u] : none).push(t.id); }
     const n = members.length - none.length;
-    return [{ kind: 'water', line: { key: B('waterUse'), vars: { n, m, high: by.high.length, medium: by.medium.length, low: by.low.length, missing: none.length, unchecked, ...term } }, members: [...by.high, ...by.medium, ...by.low, ...none] }];
+    return [{ kind: 'water', line: { key: B('waterUseTitle'), vars: { n, m, high: by.high.length, medium: by.medium.length, low: by.low.length, missing: none.length, unchecked, ...term } }, members: [...by.high, ...by.medium, ...by.low, ...none] }];
   }
-  const regular: PlantId[] = [], dry: PlantId[] = [], none: PlantId[] = [];
-  let n = 0;
-  for (const { t, w } of facts) {
-    const need = waterNeed(w);
-    if (!need) { none.push(t.id); continue; }
-    n++;
-    if (need === 'regular') regular.push(t.id);
-    if (need === 'dry') dry.push(t.id);
+  const by: Record<WaterNeed, PlantId[]> = { regular: [], dry: [], medium: [] }, none: PlantId[] = [];
+  for (const { t, w } of facts) { const need = waterNeed(w); (need ? by[need] : none).push(t.id); }
+  const n = members.length - none.length;
+  const vars: Line['vars'] = { n, m, missing: none.length, unchecked, ...term };
+  if (n < WATER_JUDGE_SHARE * m) return [{ kind: 'water', line: { key: K('weigh.waterFew'), vars }, members: none }];
+  if (by.regular.length && by.dry.length) {
+    return [{ kind: 'water', line: { key: B('waterMix'), vars: { ...vars, regular: by.regular.length, dry: by.dry.length, medium: by.medium.length }, count: by.regular.length }, members: [...by.regular, ...by.dry, ...by.medium, ...none] }];
   }
-  const vars: Line['vars'] = { n, m, missing: members.length - n, unchecked, ...term };
-  if (n < WATER_JUDGE_SHARE * m) return [{ kind: 'water', line: { key: K('weigh.waterFew'), vars }, members: [] }];
-  // members: the plants needing regular water, then the dry-loving ones (vars.regular of them first).
-  if (regular.length && dry.length) return [{ kind: 'water', line: { key: K('weigh.waterMix'), vars: { ...vars, regular: regular.length, dry: dry.length } }, members: [...regular, ...dry] }];
   // At a place with a dry summer, none needing regular water: "all 12 recorded take a dry summer"; the
   // members are the plants not recorded (vars.missing of them), named on the line.
-  if (drySummer(ctx.inputs) && !regular.length) return [{ kind: 'water', line: { key: B('waterDrySummer'), vars }, members: none }];
-  // No water line to show: the plants with no water need recorded, said on their own (review b3f-4).
-  if (n < members.length) return [{ kind: 'water', line: { key: K('weigh.missing'), vars }, members: [] }];
+  if (drySummer(ctx.inputs) && !by.regular.length) return [{ kind: 'water', line: { key: B('waterDrySummer'), vars }, members: none }];
+  // No water line to show: the plants with no water need recorded, named on their own (review b3f-4).
+  if (none.length) return [{ kind: 'water', line: { key: B('notRecordedNamed'), vars, count: none.length }, members: none }];
   return [];
 }
 
 // ---- Warnings and fit (boards Many, ManyDesk, MainMore; v14 spec A13, R1) ----
 
-// The climate factors: a second look from one of these is "Near the edge of their climate range".
-const CLIMATE: ReadonlySet<Factor> = new Set<Factor>(['cold', 'mild', 'cool', 'summer', 'hot', 'dry']);
+// The climate factors: a second look from one of these is "Near the edge of their climate range" (the
+// one set: views/palette/Weigh.tsx reads it through leaveGroups).
+export const CLIMATE_FACTORS: ReadonlySet<Factor> = new Set<Factor>(['cold', 'mild', 'cool', 'summer', 'hot', 'dry']);
+// The second look's reasons (a member may carry several).
+export type WarnReason = 'edge' | 'severe' | 'moderate' | 'invasive' | 'soil' | 'water' | 'misfit' | 'clash';
+// The reason a 'look' verdict gives, from its limiting factor: one row per Factor, so a new factor fails
+// the type check instead of falling into a wrong reason (review R3): the climate factors are the edge of
+// the range, the soil pH its own reason, water and drainage theirs, light and wind the room or plot.
+export const LOOK_REASON: Readonly<Record<Factor, WarnReason>> = {
+  cold: 'edge', mild: 'edge', cool: 'edge', summer: 'edge', hot: 'edge', dry: 'edge',
+  'soil-ph': 'soil', water: 'water', drainage: 'water', light: 'misfit', wind: 'misfit',
+};
 // The palette in lines that add up (each member on one): fits, needs a second look, outside its
 // climate range, not checked. A member outside its range is on that line whatever else it carries; a
 // second look is the verdict's ('look') or the flags' (conflicts.ts secondLook: a serious clash, a
 // misfit, recorded invasive in the chosen country, toxic or very toxic; Mildly toxic never, R1). The
-// second look's reasons (a member may carry several): near the edge of its climate range, toxic or
-// very toxic (by level), recorded invasive in the country, a misfit to the room or spot, a serious
-// clash with another member. Mildly toxic is a mark on its own line (`mild`), with how many of them
-// fit. Every list in palette order; no verdicts (the rule not loaded or refused): every member not checked.
+// second look's reasons: the verdict's limiting factor (LOOK_REASON), toxic or very toxic (by level),
+// recorded invasive in the country, a misfit flag (the room or plot), a serious clash with another
+// member. Mildly toxic is a mark on its own line (`mild`), with how many of them fit. `outsideToxic`: the
+// members outside their range that are toxic or very toxic (said under the second look's reasons, as
+// they are counted on the outside line). Every list in palette order; no verdicts (the rule not loaded
+// or refused): every member not checked.
 export interface FitGroups {
   fits: PlantId[]; look: PlantId[]; outside: PlantId[]; unknown: PlantId[];
-  reasons: { edge: PlantId[]; severe: PlantId[]; moderate: PlantId[]; invasive: PlantId[]; misfit: PlantId[]; clash: PlantId[] };
+  reasons: Record<WarnReason, PlantId[]>;
   mild: PlantId[]; mildFits: number;
+  outsideToxic: PlantId[];
   reasonCount: number; // the reasons on the second-look line, summed
   several: number; // second-look members carrying two or more reasons
 }
+const toxLevel = (fl: readonly Flag[]): string | null => fl.find((f) => f.kind === 'toxicity')?.level ?? null;
 export function fitGroups(members: readonly Taxon[], verdicts: ReadonlyMap<PlantId, PlantVerdict> | null, flags: readonly Flag[]): FitGroups {
   const byId = new Map<PlantId, Flag[]>();
   for (const f of flags) { const l = byId.get(f.id); if (l) l.push(f); else byId.set(f.id, [f]); }
-  const g: FitGroups = { fits: [], look: [], outside: [], unknown: [], reasons: { edge: [], severe: [], moderate: [], invasive: [], misfit: [], clash: [] }, mild: [], mildFits: 0, reasonCount: 0, several: 0 };
+  const reasons: Record<WarnReason, PlantId[]> = { edge: [], severe: [], moderate: [], invasive: [], soil: [], water: [], misfit: [], clash: [] };
+  const g: FitGroups = { fits: [], look: [], outside: [], unknown: [], reasons, mild: [], mildFits: 0, outsideToxic: [], reasonCount: 0, several: 0 };
   const seen = new Set<PlantId>();
   for (const t of members) {
     if (seen.has(t.id)) continue;
     seen.add(t.id);
     const v = verdicts?.get(t.id), fl = byId.get(t.id) ?? [];
-    const tox = fl.find((f) => f.kind === 'toxicity')?.level ?? null;
-    const isMild = tox === 'Slight';
+    const tox = toxLevel(fl);
     if (!v || v.level === 'unknown') g.unknown.push(t.id);
-    else if (v.level === 'outside') g.outside.push(t.id);
-    else if (v.level === 'look' || secondLook(fl)) {
+    else if (v.level === 'outside') {
+      g.outside.push(t.id);
+      if (tox === 'Severe' || tox === 'Moderate') g.outsideToxic.push(t.id);
+    } else if (v.level === 'look' || secondLook(fl)) {
       g.look.push(t.id);
-      const why: (keyof FitGroups['reasons'])[] = [];
-      if (v.level === 'look') why.push(v.limiting && !CLIMATE.has(v.limiting.factor) ? 'misfit' : 'edge');
-      if (tox === 'Severe') why.push('severe');
-      if (tox === 'Moderate') why.push('moderate');
-      if (fl.some((f) => f.kind === 'invasive')) why.push('invasive');
-      if (fl.some((f) => f.kind === 'misfit') && !why.includes('misfit')) why.push('misfit');
-      if (fl.some((f) => f.kind === 'conflict' && f.severity === 'high')) why.push('clash');
-      for (const w of why) g.reasons[w].push(t.id);
-      g.reasonCount += why.length;
-      if (why.length > 1) g.several++;
+      const why = new Set<WarnReason>();
+      if (v.level === 'look') why.add(v.limiting ? LOOK_REASON[v.limiting.factor] : 'edge');
+      if (tox === 'Severe') why.add('severe');
+      if (tox === 'Moderate') why.add('moderate');
+      if (fl.some((f) => f.kind === 'invasive')) why.add('invasive');
+      if (fl.some((f) => f.kind === 'misfit')) why.add('misfit');
+      if (fl.some((f) => f.kind === 'conflict' && f.severity === 'high')) why.add('clash');
+      for (const w of why) reasons[w].push(t.id);
+      g.reasonCount += why.size;
+      if (why.size > 1) g.several++;
     } else g.fits.push(t.id);
-    if (isMild) { g.mild.push(t.id); if (v && v.level === 'fits' && !secondLook(fl)) g.mildFits++; }
+    if (tox === 'Slight') { g.mild.push(t.id); if (v && v.level === 'fits' && !secondLook(fl)) g.mildFits++; }
   }
   return g;
+}
+
+// The small Warnings card's range line (board MainMore): the members that leave their climate range by
+// a later period (outside then, not outside today), and those near its edge then (a 'look' from a
+// climate factor). Either list empty when the later verdicts are not there.
+export function leaveGroups(members: readonly Taxon[], now: ReadonlyMap<PlantId, PlantVerdict> | null, later: ReadonlyMap<PlantId, PlantVerdict> | null): { leave: PlantId[]; edge: PlantId[] } {
+  if (!now || !later) return { leave: [], edge: [] };
+  const leave = members.filter((t) => later.get(t.id)?.level === 'outside' && now.get(t.id)?.level !== 'outside').map((t) => t.id);
+  const edge = members.filter((t) => { const v = later.get(t.id); return v?.level === 'look' && !!v.limiting && CLIMATE_FACTORS.has(v.limiting.factor); }).map((t) => t.id);
+  return { leave, edge };
 }
 
 // A flag that puts a plant first in Your plants: every flag a row shows in words (a low conflict is
