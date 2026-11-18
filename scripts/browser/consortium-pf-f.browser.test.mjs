@@ -21,8 +21,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { aria, en, has, useHarness } from './helpers.mjs';
 import { boardPalette } from './pf-b-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
-import { BOARD, LIGHT, dialogText, done, frames, says, setSiteEdits } from './pf-helpers.mjs';
+import { LIGHT, dialogText, done, frames, says, setSiteEdits } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -85,7 +84,7 @@ async function firmStartsOnData(page, id) {
 
 // ---- Details (boards Details 390, DarkDetails, DetailsMore) ----
 
-failing('PFF1 (pf-f Details at 390): Pinto peanut at Kiambu, a candidate: name line, summary with the engine\'s holes, Niche, chips, the four bands in one order, scenarios, records, table, the three sections, Add from the foot', { owner: 'pf-f', reason: BOARD }, async () => {
+test('PFF1 (pf-f Details at 390): Pinto peanut at Kiambu, a candidate: name line, summary with the engine\'s holes, Niche, chips, the four bands in one order, scenarios, records, table, the three sections, Add from the foot', async () => {
   const page = await boardPalette('kiambu-8', { width: 390 });
   const id = await idOf(page, 'Arachis pintoi');
   assert.ok(id, 'Pinto peanut on the Subtropical lists');
@@ -118,7 +117,7 @@ failing('PFF1 (pf-f Details at 390): Pinto peanut at Kiambu, a candidate: name l
   await done(page);
 });
 
-failing('PFF2 (pf-f DetailsMore): the sections open: the main job, the syntropic line, Time and size, no conflict with the palette\'s plants, Warnings, Names and Sources, Suggest a correction', { owner: 'pf-f', reason: BOARD }, async () => {
+test('PFF2 (pf-f DetailsMore): the sections open: the main job, the syntropic line, Time and size, no conflict with the palette\'s plants, Warnings, Names and Sources, Suggest a correction', async () => {
   const page = await boardPalette('kiambu-8', { width: 390 });
   const id = await idOf(page, 'Arachis pintoi');
   await open(page, 'details', id);
@@ -133,7 +132,7 @@ failing('PFF2 (pf-f DetailsMore): the sections open: the main job, the syntropic
   await done(page);
 });
 
-failing('PFF4 (pf-f DarkDetails): the dark sheet says what the light one says, and the soil card\'s status keeps 4.5:1 against its card', { owner: 'pf-f', reason: BOARD }, async () => {
+test('PFF4 (pf-f DarkDetails): the dark sheet says what the light one says, and the soil card\'s status keeps 4.5:1 against its card', async () => {
   const page = await boardPalette('kiambu-8', { width: 390 });
   const id = await idOf(page, 'Arachis pintoi');
   await open(page, 'details', id);
@@ -156,7 +155,7 @@ failing('PFF4 (pf-f DarkDetails): the dark sheet says what the light one says, a
 
 // ---- the soil card (boards Details, SiteMendoza; R3; failure row F10) ----
 
-failing('PFF6 (pf-f soil card, F10): the map\'s pH as a ring, the grower\'s test as a dot, a neighbour fill a weaker guess, no value "not checked on soil pH"; Set my own soil pH opens the figures', { owner: 'pf-f', reason: BOARD }, async () => {
+test('PFF6 (pf-f soil card, F10): the map\'s pH as a ring, the grower\'s test as a dot, a neighbour fill a weaker guess, no value "not checked on soil pH"; Set my own soil pH opens the figures', async () => {
   const page = await boardPalette('kiambu-8', { width: 390 });
   const id = await idOf(page, 'Arachis pintoi');
   await open(page, 'details', id);
@@ -189,7 +188,7 @@ failing('PFF6 (pf-f soil card, F10): the map\'s pH as a ring, the grower\'s test
   await done(page, sev);
 });
 
-failing('PFF8 (pf-f SiteMendoza): Almond against Mendoza: the bands, the soil card, and the dryness note by watering', { owner: 'pf-f', reason: BOARD }, async () => {
+test('PFF8 (pf-f SiteMendoza): Almond against Mendoza: the bands, the soil card, and the dryness note by watering', async () => {
   const page = await boardPalette('mendoza-board-rain', { width: 390 });
   await setSiteEdits(page, { watering: 'rain' });
   const id = await idOf(page, 'Prunus dulcis');
@@ -202,7 +201,7 @@ failing('PFF8 (pf-f SiteMendoza): Almond against Mendoza: the bands, the soil ca
 
 // ---- Details on the desk (board DetailsDesk), carrying PP-C6b, PP-C6d and PP-C6f ----
 
-failing('PFF3 (pf-f DetailsDesk 1280): Almond, a member at Seville: two columns, "In your palette.", Planted in, the soil map\'s say on the Niche row and no soil card, What you can do with Swap rows, Find one that holds and Remove', { owner: 'pf-f', reason: BOARD }, async () => {
+test('PFF3 (pf-f DetailsDesk 1280): Almond, a member at Seville: two columns, "In your palette.", Planted in, the soil map\'s say on the Niche row and no soil card, What you can do with Swap rows, Find one that holds and Remove', async () => {
   const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
   const id = await idOf(page, 'Prunus dulcis');
   await open(page, 'details', id);
@@ -247,7 +246,7 @@ failing('PFF3 (pf-f DetailsDesk 1280): Almond, a member at Seville: two columns,
 
 // ---- Swap (board Swap), carrying PP-C6 and PP-C6b ----
 
-failing('PFF5 (pf-f Swap 390): Calliandra at Kiambu: the lede, its jobs and years, "Only plants that hold by 2041–2070" with the engine\'s count, Swap and Add beside on each row, the closest first, only Remove in the foot', { owner: 'pf-f', reason: BOARD }, async () => {
+test('PFF5 (pf-f Swap 390): Calliandra at Kiambu: the lede, its jobs and years, "Only plants that hold by 2041–2070" with the engine\'s count, Swap and Add beside on each row, the closest first, only Remove in the foot', async () => {
   const page = await boardPalette('kiambu-8', { width: 390 });
   const id = await idOf(page, 'Calliandra houstoniana');
   assert.ok(id, 'Calliandra in kiambu-8');

@@ -230,7 +230,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
    sections on the left, Against on the right; the DOM order is the reading order on both (R4). */
 .ct .ct-d-body { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
 .ct .ct-d-more { display: grid; min-width: 0; }
-.ct .ct-d-desklines, .ct .ct-d-cando-actions { display: none; }
+.ct .ct-d-cando-actions { display: none; }
 .ct .ct-d-summary, .ct .ct-d-cando { padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
 .ct .ct-d-main { display: flex; gap: 8px; margin: 0; }
 .ct .ct-d-main-icons { display: flex; gap: 3px; flex: none; padding-top: 1px; }
@@ -314,17 +314,15 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-sheet:has(.ct-swap-head) .ct-row-main .ct-bar { flex-wrap: wrap; max-width: 100%; }
 @media (min-width: 960px) {
   .ct .ct-sheet:has(.ct-d-body) { inset: 40px 0 auto; margin-inline: auto; width: min(960px, calc(100% - 64px)); height: auto; max-height: calc(100% - 80px); border: 1px solid var(--border-strong); border-radius: 8px; }
-  .ct .ct-d-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-template-rows: repeat(5, auto) 1fr; gap: 18px 20px; align-items: start; }
+  .ct .ct-d-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-auto-rows: auto; gap: 18px 20px; align-items: start; }
   .ct .ct-d-body > * { grid-column: 1; min-width: 0; }
-  .ct .ct-d-body > .ct-against { grid-column: 2; grid-row: 1 / 7; }
-  .ct .ct-d-desklines { display: grid; gap: 6px; font-size: 14px; }
-  .ct .ct-d-desklines p { margin: 0; }
-  /* Find, Keep and Remove on one row (board DetailsDesk): the buttons narrower, a long word wraps inside. */
+  .ct .ct-d-body > .ct-against { grid-column: 2; grid-row: 1 / span 12; }
+  /* Find and Remove on one row (board DetailsDesk): the buttons narrower, a long word wraps inside. */
   .ct .ct-d-cando-actions { display: flex; flex-wrap: nowrap; gap: 8px; }
   .ct .ct-d-cando-actions > .button { flex: 0 1 auto; min-width: 0; padding-inline: 12px; white-space: normal; }
   .ct .ct-d-cando-actions > .ct-link-button { flex: none; }
   .ct .ct-d-foot-member { display: none; }
-  .ct .ct-against [data-measure="soilPh"] { display: none; }
+  .ct .ct-d-body > .ct-soilcard { display: none; } /* board DetailsDesk: the map's say is on the Niche row */
   .ct .ct-d-body .ct-photo { margin: 0; }
   .ct .ct-d-body .ct-photo figcaption { padding-inline: 0; }
 }
@@ -332,3 +330,72 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   .ct .ct-d-summary, .ct .ct-d-cando, .ct .ct-against { padding: 12px; }
   .ct .ct-d-foot .button { flex: 1; justify-content: center; }
 }
+
+/* pf-f (v14 boards Details, DarkDetails, DetailsMore, DetailsDesk, Swap): the name line, the photo
+   stand-in, the summary's second line, the Niche block with its "after release" tags, the soil card,
+   the records line and its table, the sections' end links, and Swap's two actions and hold filter. */
+.ct .ct-d-name p { font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-photo-none { display: flex; align-items: center; justify-content: center; gap: 4px; height: 110px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text-muted); font-size: 13px; }
+.ct .ct-d-summary { background: var(--surface); border-radius: 11px; }
+.ct .ct-d-main { font-size: 15px; line-height: 21px; }
+.ct .ct-d-sub { font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-d-light { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; border-radius: 50%; border: 1.5px solid var(--text); background: linear-gradient(90deg, var(--text) 50%, transparent 50%); }
+.ct .ct-niche { display: grid; gap: 2px; padding-top: 8px; }
+.ct .ct-niche h4 { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+.ct .ct-niche ul { display: grid; gap: 2px; margin-top: 4px; }
+.ct .ct-niche li { font-size: 14px; line-height: 20px; }
+.ct .ct-niche li strong { font-weight: 600; }
+.ct :where(.ct-sheet) .ct-after { display: inline-block; padding: 0 5px; border: 1px dashed var(--border-strong); border-radius: 4px; font-size: 12px; line-height: 16px; color: var(--text-secondary); }
+.ct .ct-marks { margin-top: 8px; }
+.ct .ct-soilcard { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 11px; }
+.ct .ct-soilcard p { margin: 0; color: var(--text-secondary); }
+.ct .ct-soilcard[data-level="fits"] .ct-bandcard-status { color: var(--level-fits); border-color: currentColor; }
+.ct .ct-against-records { margin: 0; color: var(--text-secondary); }
+.ct .ct-band-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ct .ct-band-table :is(th, td) { padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: start; }
+.ct .ct-band-table thead th { color: var(--text-secondary); font-weight: 600; }
+.ct .ct-d-ok { display: flex; gap: 6px; align-items: flex-start; }
+.ct .ct-d-endlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-top: 8px; }
+.ct .ct-d-endlinks .button { flex: 1 1 auto; justify-content: center; }
+.ct .ct-d-cando-does { display: inline-flex; gap: 4px; align-items: flex-start; color: var(--text); font-weight: 600; }
+.ct .ct-d-foot .button-primary { justify-content: center; }
+.ct .ct-swap-hold { justify-content: space-between; width: 100%; }
+.ct .ct-swap-hold > span:first-of-type { flex: 1; }
+.ct .ct-swap-hold-count { font-size: 13px; }
+.ct .ct-sheet:has(.ct-swap-head) .ct-rows > li { align-items: start; }
+.ct .ct-swap-text { display: grid; gap: 2px; min-width: 0; }
+.ct .ct-swap-does { margin: 0; font-size: 14.5px; line-height: 20px; }
+.ct .ct-swap-acts { display: grid; justify-items: center; gap: 4px; }
+.ct .ct-swap-flags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ct .ct-swap-more { margin: 0; }
+.ct .ct-swap-foot { justify-content: flex-start; }
+.ct .ct-facts .ct-sure-row { display: grid; gap: 0; }
+.ct .ct-facts .ct-sure-row strong { font-weight: 600; }
+.ct .ct-sheet .ct-d-name h2 { font-size: 20px; line-height: 26px; letter-spacing: 0; }
+.ct .ct-d-main-icons .ct-job-tile { width: 20px; height: 20px; }
+.ct .ct-d-main-icons .ct-job-tile > .ct-job-icon[data-job] { width: 13px; height: 13px; }
+/* The sheet's base text (.ct .ct-sheet section > p, li: 16px) is the boards' body; these lines are the
+   boards' smaller ones (Details 390: the summary's second line 14px, the chips 13px, the Niche rows and
+   the soil card 14px, the key and the records 13px). */
+.ct .ct-sheet :is(.ct-d-sub, .ct-niche li, .ct-soilcard p, .ct-swap-does) { font-size: 14px; line-height: 20px; }
+.ct .ct-sheet :is(.ct-marks li, .ct-band-key li, .ct-against-records) { font-size: 13px; line-height: 18px; }
+.ct .ct-sheet .ct-against > .ct-against-lines li { font-size: 14px; line-height: 20px; padding-left: 0; border-left: 0; }
+.ct .ct-sheet .ct-d-main { font-size: 15px; line-height: 21px; }
+.ct .ct-sheet .ct-d-name h2 { font-weight: 600; }
+.ct .ct-sheet .ct-against-lede { font-size: 14px; line-height: 20px; }
+/* Board DetailsDesk: the bands are drawn wider (440 px for the 324-unit drawing) with the phone's text
+   size, so their words are set smaller in drawing units by the same ratio. */
+@media (min-width: 960px) {
+  .ct .ct-bd-num text { font-size: 8px; }
+  .ct :is(.ct-bd-now-text, .ct-bd-later-text) { font-size: 8.5px; }
+}
+/* A plant's years bar inside a sheet stays the sheet's small bar (palette-page.css's job bar is the
+   palette's), and Swap's row shows it as the board's mini bar before the fit line. */
+.ct .ct-sheet .ct-bar { padding: 0; min-height: 0; background: none; border-radius: 0; display: inline-flex; gap: 2px; vertical-align: middle; }
+.ct .ct-sheet .ct-swap-status .ct-bar { margin-right: 6px; }
+.ct .ct-sheet .ct-swap-status .ct-bar i { width: 5px; height: 8px; border-radius: 1px; }
+/* Board Swap: the title and lede at the sheet's head, the head box and rows in the smaller body. */
+.ct .ct-sheet:has(.ct-swap-head) h2 { font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: 0; }
+.ct .ct-sheet:has(.ct-swap-head) h2 + p { margin: 2px 0 0; font-size: 14px; line-height: 20px; }
+.ct .ct-sheet .ct-swap-head { font-size: 14px; line-height: 20px; }
+.ct .ct-sheet .ct-swap-more { font-size: 13px; line-height: 18px; }

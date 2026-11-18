@@ -416,16 +416,6 @@ export function rainFromLine(t: Taxon): Line | null {
   return low === null ? null : L('rainFrom', { rainMm: Math.round(low) });
 }
 
-// The desk's soil line (board DetailsDesk, "Soil, to check: recorded on pH 7.0–7.5 … Not judged."):
-// the pH range sources give, then the soil check's status with the reader's own test, else "Not
-// judged" (the soil map's value is PP-F's).
-export function soilCheckLine(t: Taxon, v: PlantVerdict | null, ph: number | null): Line {
-  const r = t.traits.soil_ph;
-  if (!r || r.min === null || r.max === null) return L('soilDeskNone');
-  const b = v && ph !== null ? soilBandOf(t, v, ph) : null;
-  return L('soilDesk', { min: r.min, max: r.max }, [b && b.level !== 'unknown' ? b.status : L('soilNotJudged')]);
-}
-
 // A band's status in words (with the level's icon in the view): in range, near the edge (a place on a
 // checked end too), outside; the aridity band says drier or wetter, or near its dry or wet edge. A fit
 // past the recorded range on a side the rule does not check is within its limit, not "in range".

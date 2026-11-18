@@ -7,7 +7,7 @@
 // plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
 import type { Hole, JobId, Level, Line, PlantVerdict, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, headLine, holeLine, levelLine, sizeLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
-import { formatLength } from '../../format.ts';
+import { formatDepthCm, formatLength } from '../../format.ts';
 import { pageLang, T } from '../../strings.ts';
 import { listOf, say } from '../../words.ts';
 
@@ -77,12 +77,14 @@ export function yearsWords(t: Taxon): string {
   return y ? midSentence(say(yearsLine(y.from, y.to))) : T('timingUnknown');
 }
 
-// How many of the member's jobs a candidate does, naming the ones it does not (board Swap).
+// How many of the member's jobs a candidate does (board Swap): all; "Does 3 of its 4 jobs (no mulch)"
+// when one is missing; else the ones it does ("Does 2 of its 4 jobs (feeds the soil, shelters)").
 export function doesWords(memberJobs: readonly string[], shared: readonly string[]): string {
-  const missing = memberJobs.filter((j) => !shared.includes(j)).map((j) => midSentence(T(`job.${j}`)));
+  const missing = memberJobs.filter((j) => !shared.includes(j));
   if (!memberJobs.length || !missing.length) return T('swap.doesAll');
-  if (missing.length === memberJobs.length) return T('swap.doesNone', { missing: listOf(missing) });
-  return T('swap.doesSome', { n: shared.length, m: memberJobs.length, missing: listOf(missing) });
+  if (missing.length === memberJobs.length) return T('swap.doesNone', { missing: listOf(missing.map((j) => midSentence(T(`job.${j}`)))) });
+  if (missing.length === 1) return T('swap.doesAllBut', { n: shared.length, m: memberJobs.length, missing: T(`swap.no.${missing[0]}`) });
+  return T('swap.doesSome', { n: shared.length, m: memberJobs.length, jobs: listOf(memberJobs.filter((j) => shared.includes(j)).map((j) => midSentence(T(`job.${j}`)))) });
 }
 
 // A plant's size in words, its measures through format.ts (Your plants, Swap, Details).
@@ -90,3 +92,28 @@ export function sizeWords(t: Taxon): string {
   const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
   return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, formatLength(Number(v), pageLang())])));
 }
+
+// A plant's light on the Niche row (boards Details, DetailsDesk), lower case after its label: "grows in
+// Part shade – Shade · found mostly in Part shade"; today's release has no span, so the plant's single
+// level, and "found mostly in" only when the release says it (4.5), never a guess.
+export function nicheLight(t: Taxon): string {
+  const own = t.stratum?.value ?? null;
+  const a = t.light?.sunniest ?? null, b = t.light?.shadiest ?? null;
+  const grows = a && b && a !== b ? T('details.growsIn', { a: levelWord(a), b: levelWord(b) })
+    : (a ?? own) ? T('details.growsInOne', { level: levelWord((a ?? own)!) }) : T('palette.light_none');
+  return t.light?.preferred ? `${grows} · ${T('palette.foundMostlyIn', { level: levelWord(t.light.preferred) })}` : grows;
+}
+
+// A plant's size in the boards' short form ("30 cm wide, 30 cm tall"; "18 m wide, 40 m tall"): under a
+// metre in centimetres (Details, Swap's rows).
+const lengthWords = (m: number): string => (m < 1 ? formatDepthCm(Math.round(m * 100), pageLang()) : formatLength(m, pageLang()));
+export function sizeShort(t: Taxon): string {
+  const h = t.traits.height_m?.max ?? null, w = t.traits.width_max_m ?? null;
+  if (h !== null && w !== null) return T('details.size', { width: lengthWords(w), height: lengthWords(h) });
+  if (h !== null) return T('details.sizeTall', { height: lengthWords(h) });
+  if (w !== null) return T('details.sizeWide', { width: lengthWords(w) });
+  return T('plants.sizeNone');
+}
+
+// The swap glyph (boards Swap and DetailsDesk: two arrows) on every Swap button.
+export const SWAP = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5h10l-2.5-2.5M13 10.5H3l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>;

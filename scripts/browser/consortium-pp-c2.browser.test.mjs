@@ -83,14 +83,19 @@ test('F1a-C6 → PP-C (c2 verdict chunk refused, Details half, A16 §5): with th
 
 // ---- scenarios ----
 
-test('PP-C5 (c2 Mendoza dry edge): a plant at the dry edge shows its band, the place\'s value and the limiting measure first', async () => {
+// pf-f (v14 boards Details, SiteMendoza): the bands keep one order (Coldest nights, Warmth over the
+// year, Hottest days, Rain against evaporation); the limiting measure is the band whose status is not
+// in range in words (R2: by watering, a dryness note, not a level), its line in numbers, no longer the first line.
+test('PP-C5 (c2 Mendoza dry edge; pf-f fixed band order): a plant at the dry edge shows its band, the place\'s value, and the dry band says the limit', async () => {
   const page = await suggestedAt(MENDOZA, 'Arid');
-  const id = await page.evaluate(() => [...window.__ctTest.store.memberVerdicts.value.values()].find((v) => v.limiting?.factor === 'dry')?.id ?? window.__ctTest.store.members.value[0]);
+  const id = await page.evaluate(() => [...window.__ctTest.store.memberVerdicts.value.values()].find((v) => v.limiting?.factor === 'dry')?.id ?? null);
+  assert.ok(id, 'a member limited by dryness at Mendoza (engine)');
   await details(page, id);
   await against(page);
-  const first = await page.$eval(`${DETAILS} [data-against] [data-factor]`, (e) => ({ factor: e.dataset.factor, text: e.textContent })).catch(() => null);
-  assert.equal(first?.factor, 'dry', 'the limiting measure first');
-  assert.match(first.text, /\d/, 'the band and the place\'s value in numbers');
+  const dry = await page.$eval(`${DETAILS} [data-against] [data-measure="aridity"]`, (e) => ({ status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), text: e.textContent, factor: !!e.querySelector('[data-factor="dry"]') })).catch(() => null);
+  assert.ok(dry, 'the Rain against evaporation band');
+  assert.ok(dry.factor && dry.status && dry.status !== 'In range', `the dry band says the limit in words (${JSON.stringify(dry)})`);
+  assert.match(dry.text, /\d/, 'the band and the place\'s value in numbers');
 });
 
 
@@ -222,6 +227,8 @@ test('PP-C18 (c2 newer sheet stays, 3.6): ask Correction on one plant while its 
   const [a, b] = await page.evaluate(() => window.__ctTest.store.members.value.slice(0, 2));
   await details(page, a);
   assert.ok(await has(page, DETAILS, 6000), 'Details of the first plant');
+  // pf-f (board DetailsMore): Suggest a correction ends the Names section.
+  await page.evaluate(() => { const d = document.querySelector('dialog.ct-sheet[open] details[data-more="names"]'); if (d) d.open = true; });
   const asked = await page.locator(aria('button', 'Suggest a correction')).click().then(() => true, () => false);
   assert.ok(asked, 'Suggest a correction pressed');
   // The form is a part of the Details sheet (Details.tsx `correction`, role sheets), not a sheet kind:
