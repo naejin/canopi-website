@@ -1333,7 +1333,7 @@ const holdReverse = (pg) => pg.evaluateOnNewDocument(() => {
   };
 });
 
-test('PFC53 (main h2 R2): an ask that ended without a place leaves nothing behind: "Use my location" refused, a climate chosen by hand, then typed coordinates for Seville use the climate read there', async () => {
+test('PFC53 (pf-c, main h2 R2): an ask that ended without a place leaves nothing behind: "Use my location" refused, a climate chosen by hand, then typed coordinates for Seville use the climate read there', async () => {
   const page = await tool({ geolocation: 'denied' });
   await press(page, 'button', 'Use my location');
   await says(page, 'Your location is blocked for this site. Search for a town or pick on a map instead; or allow it in your browser’s site settings.');
@@ -1345,7 +1345,7 @@ test('PFC53 (main h2 R2): an ask that ended without a place leaves nothing behin
   await done(page);
 });
 
-test('PFC54 (main h2 R3, R9): "Look up its name" sends the centre of the typed point\'s climate-grid square, never the point; a second press while it asks sends nothing more; neither a second press nor a place search started meanwhile says it failed', async () => {
+test('PFC54 (pf-c, main h2 R3, R9): "Look up its name" sends the centre of the typed point\'s climate-grid square, never the point; a second press while it asks sends nothing more; neither a second press nor a place search started meanwhile says it failed', async () => {
   const page = await tool({ width: 390, nominatim: 'fixture', setup: holdReverse });
   await searchFor(page, '-1.171234, 36.834567');
   await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 10_000 });
@@ -1353,7 +1353,7 @@ test('PFC54 (main h2 R3, R9): "Look up its name" sends the centre of the typed p
   const asks = () => page.evaluate(() => window.__reverseAsks);
   for (let i = 0; i < 50 && !(await asks()).length; i++) await new Promise((r) => setTimeout(r, 100));
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Look up its name')?.click());
-  await new Promise((r) => setTimeout(r, 1500));
+  await new Promise((r) => setTimeout(r, 1000));
   assert.equal((await asks()).length, 1, 'one lookup for two presses');
   const u = new URL((await asks())[0]);
   assert.deepEqual([u.searchParams.get('lat'), u.searchParams.get('lon')], ['-1.15', '36.85'], 'the cell centre (0.1° grid), never -1.171234, 36.834567');
@@ -1371,7 +1371,7 @@ test('PFC54 (main h2 R3, R9): "Look up its name" sends the centre of the typed p
   await done(page);
 });
 
-test('PFC55 (main h2 R4): a place search answer names a town-level place only for the D7 kinds; a road\'s name is shown on the page but never marked to travel in a link', async () => {
+test('PFC55 (pf-c, main h2 R4): a place search answer names a town-level place only for the D7 kinds; a road\'s name is shown on the page but never marked to travel in a link', async () => {
   const page = await tool({ width: 390, nominatim: 'fixture', setup: searchStub() });
   await searchFor(page, 'Kiambu');
   await says(page, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
