@@ -75,3 +75,14 @@
   .ct .callout { padding: 20px 16px; }
   .ct .text-link { padding-block: 8px; } /* at least 36 px to tap (W6) */
 }
+
+/* The list fold (views/kit/more.tsx MoreList, v14 pf commit 0W): its count, its items and its two
+   buttons, each a 44 px target. Streams style their lists' items; this holds the fold itself. */
+.ct .ct-more-items { list-style: none; margin: 0; padding: 0; }
+.ct .ct-more-items > li:focus { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 2px; }
+.ct .ct-more-count { font-weight: 600; margin-right: 0.5ch; }
+.ct .ct-more-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; }
+.ct .ct-more-open, .ct .ct-more-fewer {
+  min-height: 44px; min-width: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 6px;
+  background: transparent; color: var(--text); font: inherit; cursor: pointer;
+}

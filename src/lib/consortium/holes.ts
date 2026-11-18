@@ -9,7 +9,7 @@
 // - The judged window is year 1 to year 60 (owner): a gap that ends by year 1 is 'not-judged' (a thin
 //   line, never a hole); nothing after year 60 is raised; a gap ending at 60 runs "after year n".
 // - While a guest list loads (ctx.pending), every hole is 'pending', never a false hole (marker P11).
-import type { Fillers, Hole, HoleKind, HoleRank, JobGap, JobId, LaneCount, PaletteGoals, PhaseOrd, PlantId, PlantVerdict, Stratum, Taxon } from './types.ts';
+import type { Fillers, Hole, HoleChange, HoleKind, HoleRank, JobGap, JobId, LaneCount, PaletteGoals, PhaseOrd, PlantId, PlantVerdict, Stratum, TargetPosition, Taxon, ThinChange } from './types.ts';
 import { jobIds, strata } from './types.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PHASE_YEARS, yearsOf } from './years.ts';
@@ -124,7 +124,7 @@ export function laneCounts(ctx: HoleContext, goals: PaletteGoals = DEFAULT_GOALS
     for (let p = 0; p <= JUDGED_PHASES; p++) {
       const low = p < JUDGED_PHASES && judged(p) && n[p] > 0 && n[p] < target;
       if (low && start === null) start = p;
-      if (!low && start !== null) { thin.push({ fromYear: Math.max(PHASE_YEARS[start][0], JUDGED_FROM_YEAR), toYear: PHASE_YEARS[p - 1][1] as number }); start = null; }
+      if (!low && start !== null) { thin.push({ fromYear: Math.max(PHASE_YEARS[start][0], JUDGED_FROM_YEAR), toYear: PHASE_YEARS[p - 1][1] as number, have: Math.min(...n.slice(start, p)), want: target }); start = null; }
     }
     const unchecked = unknowns.filter((t) => standsIn(t, JUDGED_FROM_YEAR, JUDGED_TO_YEAR)).map((t) => t.id);
     return { kind, counts: n, thin, ...(unchecked.length ? { unchecked } : {}) };
@@ -133,6 +133,83 @@ export function laneCounts(ctx: HoleContext, goals: PaletteGoals = DEFAULT_GOALS
     ...jobIds.map((job) => ({ ...lane('job', doing.filter((t) => jobsOf(t).includes(job)), job === 'feeds_you' ? [] : jobsUnknown, goals.plantsPerJob), job })),
     ...strata.map((s) => ({ ...lane('light', doing.filter((t) => t.stratum?.value === s), lightUnknown, 0), stratum: s })),
   ];
+}
+
+// ---- Thin spots and the next target (v14 spec 0W-1 items 1, 2) ----
+
+// A thin spot ranks after every hole (HoleRank 7); a put-off thin spot is keyed by its job, so it stays
+// put off after a recount (a goal change, an add) as long as that job is still thin.
+export const THIN_RANK: HoleRank = 7;
+export const thinKey = (job: JobId): string => `thin:${job}`;
+// One Hole-shaped target per thin stretch of a job, in job order then years: fills() and fillers()
+// read it unchanged. pending: a member's list is still loading (every thin spot pending, never a
+// false one).
+export function thinTargets(lanes: readonly LaneCount[], pending = false): Hole[] {
+  const out: Hole[] = [];
+  for (const l of lanes) {
+    if (l.kind !== 'job' || !l.job) continue;
+    for (const t of l.thin) {
+      out.push({ id: `${thinKey(l.job)}:${t.fromYear}-${t.toYear}`, kind: 'job', rank: THIN_RANK, job: l.job, fromYear: t.fromYear, toYear: t.toYear, state: pending ? 'pending' : 'open', thin: { have: t.have, want: t.want } });
+    }
+  }
+  return out;
+}
+
+// Where a target stands: a hole among the open holes ("hole 1 of 7 · then 5 thin spots"), or a thin
+// spot among the thin spots ("thin spot 1 of 5"). index is 1-based; thinCount the open thin spots.
+const isOpen = (h: Hole): boolean => h.state === 'open';
+const putOffOf = (h: Hole, putOff: ReadonlySet<string>): boolean => putOff.has(h.thin && h.job ? thinKey(h.job) : h.id);
+export function targetPosition(holeList: readonly Hole[], thins: readonly Hole[], target: Hole): TargetPosition {
+  const open = holeList.filter(isOpen), openThins = thins.filter(isOpen);
+  const list = target.thin ? openThins : open;
+  return { kind: target.thin ? 'thin' : 'hole', index: list.findIndex((h) => h.id === target.id) + 1, of: list.length, thinCount: openThins.length };
+}
+// The next target: the first open hole not put off, else the first open thin spot whose job is not put
+// off. putOff holds hole ids and thin keys (thinKey).
+export function nextTarget(holeList: readonly Hole[], thins: readonly Hole[], putOff: ReadonlySet<string> = new Set()): (TargetPosition & { target: Hole }) | null {
+  const target = holeList.find((h) => isOpen(h) && !putOffOf(h, putOff)) ?? thins.find((h) => isOpen(h) && !putOffOf(h, putOff));
+  return target ? { target, ...targetPosition(holeList, thins, target) } : null;
+}
+
+// The plants a bulk add takes for a target: fits only, in fillers order (best fit first); a hole wants
+// the goal, a thin spot want − have; never more than fit (none: []).
+export function bestToAdd(target: Hole, fillers: Fillers, goals: PaletteGoals = DEFAULT_GOALS): PlantId[] {
+  const n = target.thin ? Math.max(0, target.thin.want - target.thin.have) : goals.plantsPerJob;
+  return fillers.fits.slice(0, n).map((t) => t.id);
+}
+
+// What a change did to the open holes, paired by kind and lane (job or light level) and overlapping
+// years: added (a new hole, or one that grew), closed, narrowed (the same lane's hole, shorter), open
+// (the open holes after). Holes not open (pending, not judged) are left out on both sides.
+const laneOf = (h: Hole): string => `${h.kind}:${h.job ?? h.stratum ?? ''}:${h.months?.join(',') ?? ''}`;
+const overlaps = (a: Hole, b: Hole): boolean => a.fromYear < b.toYear && b.fromYear < a.toYear;
+export function holeChange(before: readonly Hole[], after: readonly Hole[]): HoleChange {
+  const was = before.filter(isOpen), now = after.filter(isOpen);
+  const out: HoleChange = { added: [], closed: [], narrowed: [], open: now };
+  const matched = new Set<Hole>();
+  for (const h of now) {
+    const pair = was.find((b) => laneOf(b) === laneOf(h) && overlaps(b, h));
+    if (!pair) { out.added.push(h); continue; }
+    matched.add(pair);
+    if (pair.fromYear === h.fromYear && pair.toYear === h.toYear) continue;
+    if (h.fromYear >= pair.fromYear && h.toYear <= pair.toYear) out.narrowed.push({ before: pair, after: h });
+    else out.added.push(h);
+  }
+  for (const b of was) if (!matched.has(b) && !now.some((h) => laneOf(b) === laneOf(h) && overlaps(b, h))) out.closed.push(b);
+  return out;
+}
+
+// What a change did to the thin spots, paired by job and overlapping years: ended (thin before, not
+// now), still (thin before and now: the counts after), added (a job newly thin).
+export function thinChange(beforeThins: readonly Hole[], afterThins: readonly Hole[]): ThinChange {
+  const out: ThinChange = { ended: [], still: [], added: [] };
+  const sameJob = (a: Hole, b: Hole) => a.job === b.job && overlaps(a, b);
+  for (const h of afterThins) {
+    if (beforeThins.some((b) => sameJob(b, h))) out.still.push({ job: h.job!, have: h.thin?.have ?? 0, want: h.thin?.want ?? 0, fromYear: h.fromYear, toYear: h.toYear });
+    else out.added.push(h);
+  }
+  for (const b of beforeThins) if (!afterThins.some((h) => sameJob(b, h))) out.ended.push(b);
+  return out;
 }
 
 // The next hole to fill: the first open one in rank order, skipping those the grower put off ("Not

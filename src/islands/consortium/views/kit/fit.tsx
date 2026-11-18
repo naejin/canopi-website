@@ -2,56 +2,17 @@
 // Lines in words (the core's Line: an i18n key, its variables, a count for plurals), and one plant's
 // fit line with its icon. Every verdict, hole and year word on the page goes through here, from the
 // core's verdict-line.ts (plant-palette-architecture 3.2): no view writes its own. Numbers are
-// formatted for the page language by strings.ts. Unknown is never drawn as a fit: "Not checked"
+// formatted for the page language (words.ts says a Line). Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
 // plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
 import type { Hole, JobId, Level, Line, PlantVerdict, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, headLine, holeLine, levelLine, sizeLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
-import { formatLength, formatNumber, formatTemp } from '../../format.ts';
-import { P, pageLang, T } from '../../strings.ts';
-import { countryName } from './names.ts';
+import { formatLength } from '../../format.ts';
+import { pageLang, T } from '../../strings.ts';
+import { listOf, say } from '../../words.ts';
 
-// A Line's variables for the page language: temp… in °C and len… in metres with their unit
-// (format.ts), country an ISO code as the country's name, a year in plain digits (never "2,099"),
-// every other number in the page's digits; each part (a Line, or Lines said as a list) in words. A
-// plant's limit (tempBound) keeps its two decimals: 7.84 against a place's 5.8 is past the 2 °C
-// margin and never reads as a rounded 7.8 within it.
-function numberOf(k: string, v: number, lang: string): string {
-  if (k.startsWith('temp')) return formatTemp(v, lang, k === 'tempBound' ? 2 : 1);
-  if (k.startsWith('len')) return formatLength(v, lang);
-  if (k === 'year' || k.endsWith('Year')) return String(Math.round(v));
-  return formatNumber(v, lang, 2);
-}
-function varsOf(l: Line): Record<string, string> {
-  const lang = pageLang(), out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(l.vars)) {
-    out[k] = typeof v === 'number' ? numberOf(k, v, lang) : k === 'country' && /^[A-Z]{2}$/.test(v) ? countryName(v) : v;
-  }
-  for (const [k, p] of Object.entries(l.parts ?? {})) out[k] = Array.isArray(p) ? listOf(p.map(words)) : words(p);
-  return out;
-}
-const listOf = (items: string[]): string => {
-  try { return new Intl.ListFormat(pageLang(), { type: 'conjunction' }).format(items); } catch { return items.join(', '); }
-};
-
-// One Line's own words (no `also`). Keys come whole (consortium.<group>.<name>); strings.ts takes them
-// without the "consortium." prefix. The line, palette and details groups are written as templates here
-// (one segment after the group; the invasive areas two), so the unused-key check sees their keys.
-function words(l: Line): string {
-  const k = l.key.slice('consortium.'.length);
-  const [group, ...rest] = k.split('.'), name = rest.join('.');
-  const n = l.count, vars = varsOf(l);
-  if (group === 'line') return n === undefined ? T(`line.${name}`, vars) : P(`line.${name}`, n, vars);
-  if (group === 'palette') return n === undefined ? T(`palette.${name}`, vars) : P(`palette.${name}`, n, vars);
-  if (group === 'details' && rest[0] === 'invArea') return T(`details.invArea.${rest[1]}`);
-  if (group === 'details') return T(`details.${name}`, vars);
-  return n === undefined ? T(k, vars) : P(k, n, vars);
-}
-// A Line in words, then the sentences it carries (`also`: its confidence, its bound's source).
-export const say = (l: Line): string => [words(l), ...(l.also ?? []).map(say)].join(' ');
-
-// Sentences, one after the other.
-export const sayAll = (lines: readonly Line[]): string => lines.map(say).join(' ');
+// Lines in words live in words.ts (the store says them too); re-exported for the views.
+export { say, sayAll } from '../../words.ts';
 
 const ICON: Record<Level, string> = { fits: 'M3 8.5 6.5 12 13 4.5', look: 'M8 3v6M8 12v1', outside: 'm4 4 8 8M12 4l-8 8', unknown: 'M6 6a2 2 0 1 1 2.5 2c-.5.2-.5.6-.5 1.2M8 12v1' };
 export function LevelIcon({ level }: { level: Level }) {

@@ -212,7 +212,7 @@
     {
       "name": "a required key this decoder does not know gives the newer notice with the plants restored",
       "covers": "8.1 rule 3, 8.2",
-      "input": { "link": "v=5&c=temperate&m=small&a=obLD1O&u=i&i=dry&e=1", "lists": ["temperate"] },
+      "input": { "link": "v=5&c=temperate&m=small&a=obLD1O&u=t&t=dry&e=1", "lists": ["temperate"] },
       "expect": { "notice": { "unknown_count": 0, "cut": false, "newer": true, "unreadable": false, "period": false }, "state": { "members": ["apple"] } }
     },
     {

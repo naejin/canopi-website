@@ -85,7 +85,9 @@ test('the engine reads the merged inputs only: no rule file names the lookup, a 
   assert.ok(readdirSync(dir).includes('site-inputs.ts'));
   const store = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
   assert.match(store, /siteInputsOf\(\{ lookup: location\.value\?\.lookup \?\? null, room: room\.value, edits: siteEdits\.value \}\)/, 'the store merges the lookup, the room and the edits');
-  assert.match(store, /export const siteEdits = signal<SiteEdits>\(NO_EDITS\)/, 'no edit on load: no control writes one yet');
+  // v14 pf commit 0W: the edits are a saved state field (state/schema.ts), NO_EDITS until the grower or a link sets one.
+  const schema = readFileSync(new URL('../src/islands/consortium/state/schema.ts', import.meta.url), 'utf8');
+  assert.match(schema, /siteEdits: \{\s*initial: \(\): SiteEdits => NO_EDITS/, 'no edit on load: NO_EDITS until the grower or a link writes one');
 });
 
 // Palette goals (owner 2026-11-18): the redundancy target sits beside the site inputs, a palette goal,

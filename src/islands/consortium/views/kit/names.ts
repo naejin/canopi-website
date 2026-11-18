@@ -45,16 +45,8 @@ export const zoneName = (z: ClimateZone | null): string => (z ? T(`climate.${z.t
 // A climate's plant list ("Temperate list").
 export const listName = (c: ClimateZone): string => T(`list.${c.toLowerCase()}`);
 
-// A country's name in the page language (English where the browser has none for it), else its code.
-const regionNames = new Map<string, Intl.DisplayNames>();
-export function countryName(code: string): string {
-  try {
-    const lang = pageLang();
-    let names = regionNames.get(lang);
-    if (!names) { names = new Intl.DisplayNames([lang, 'en'], { type: 'region' }); regionNames.set(lang, names); }
-    return names.of(code) ?? code;
-  } catch { return code; }
-}
+// A country's name in the page language: words.ts (the store's words read it too).
+export { countryName } from '../../words.ts';
 
 // ---- stage and layer words ----
 export const phasePlain = (p: number): string => T(`phase.${phases[p]}.plain`);

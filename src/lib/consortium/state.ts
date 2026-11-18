@@ -4,18 +4,25 @@
 // rule (coordinator row "Plant palette plan amendments", 2026-11-14), so a tab on PP-B code reads a link
 // a later push writes.
 //
-//   #v=5&c=temperate&m=small&a=…&x=…&g=tr…&z=120&y=2041-2070[&k=FR&o=45.75,4.85&l=sun&w=average&q=sheltered&r=drains&h=town&s=own.65.loam]&e=1
+//   #v=5&c=temperate&m=small&a=…&x=…&g=tr…&z=120&y=2041-2070&j=3[&k=FR&o=45.75,4.85&l=sun&w=average&q=sheltered&r=drains&h=town&s=own.65.loam&f=-20..-200.1&b=65&p=1&i=rain&d=wet&u=f,b,p,i,d]&e=1
 //
 //   v link version (LINK_VERSION); c climate (lowercase); m room (pots, small, large, field, unsure;
 //   always written); a the members in order; x removed plants; g plants added from another climate's
 //   list, one `g` per list: its two-letter code (GUEST_CODES) then its tokens (each is also in `a`);
 //   z the plot size in whole m² (1 to MAX_PLOT_M2, when set); y the period shown, a PeriodId span
-//   string (absent: today). Only with "Include my place" (encodePlace, the bracketed part): k country
+//   string (absent: today); j plants per job (1, 2, 3 or 5; absent when 2, any other value read as 2:
+//   the palette's goal, outside "Include my place", v14 A10). Only with "Include my place" (encodePlace,
+//   the bracketed part): k country
 //   (ISO alpha-2, from a chosen, location or link source, never a guess), o the site's climate cell
 //   centre "lat,lon" (never the precise position), l w q r h the spot answers (light, water, wind,
 //   ground after rain, height; only when answered), s the soil (`pots`, or
-//   `own.<pH × 10 | acid | neutral | chalky | ->.<texture id | ->`; absent: the soil map). e=1 the end,
-//   always last: a link a mail or chat client cut short lacks it.
+//   `own.<pH × 10 | acid | neutral | chalky | ->.<texture id | ->`; absent: the soil map); the grower's
+//   own values (SiteEdits, v14 0W-1 item 5), each only when set: f the climate shifts
+//   `<nights tenths of °C>.<days tenths of °C>.<rain mm>.<dry months>` (integers, an empty segment 0,
+//   trailing empty segments left out), b the soil pH × 10, p=1 pots or brought-in soil (apart from b,
+//   so neither answer loses the other), i watering (rain, first, all), d the ground after heavy rain
+//   (drains, wet); then u, the requires key, listing those of f b p i d present. e=1 the end, always
+//   last: a link a mail or chat client cut short lacks it.
 //
 // Extension rule (8.1): 1. a key this decoder does not know is ignored wherever it appears; 2. a value
 // it cannot read falls back for that key alone (m → unsure, an unknown climate dropped, a spot value
@@ -35,8 +42,9 @@
 // members stay near 1,200 characters. Decoding reads at most MAX_LINK_IDS tokens per key (every `g`
 // together), so a hostile link cannot block the page; the rest are counted as unknown. Decoding never
 // throws: a token list that stops mid-token is read up to there and reported as cut.
-import type { ClimateZone, DecodedLink, LinkNotice, PeriodId, PlantId, ShareState, SiteLookup, SoilAnswer, Spot } from './types.ts';
+import type { ClimateZone, DecodedLink, LinkNotice, PeriodId, PlantId, ShareState, SiteEdits, SiteLookup, SoilAnswer, Spot, Watering } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
+import { DEFAULT_GOALS, NO_EDITS, plantsPerJobOf, siteEditsOf } from './site-inputs.ts';
 import { periodIds, roomValues, soilWords, spotGrounds, spotHeights, spotLights, spotWaters, spotWinds, textureIds } from './types.ts';
 import { climateZones, siteIdOf, zoneOfSiteId } from './zones.ts';
 
@@ -49,10 +57,13 @@ export const GUEST_CODES: Record<ClimateZone, string> = { Tropical: 'tr', Subtro
 // The plot size a link and the save accept, whole square metres (8.1 `z`).
 export const MAX_PLOT_M2 = 1_000_000;
 // The keys this decoder knows (a key listed in `u=` and not here gives the "newer" notice); any other
-// key (n, p and t included) is ignored.
-export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'o', 'l', 'w', 'q', 'r', 'h', 's', 'u', END_KEY] as const;
+// key (n and t included) is ignored.
+export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'j', 'o', 'l', 'w', 'q', 'r', 'h', 's', 'f', 'b', 'p', 'i', 'd', 'u', END_KEY] as const;
 // The private keys, written only with "Include my place" (encodePlace), in this order.
-export const PLACE_KEYS = ['k', 'o', 'l', 'w', 'q', 'r', 'h', 's'] as const;
+export const PLACE_KEYS = ['k', 'o', 'l', 'w', 'q', 'r', 'h', 's', 'f', 'b', 'p', 'i', 'd'] as const;
+// The grower's own values' keys: each changes a verdict or a note, so a link lists those it holds in `u=`.
+export const EDIT_KEYS = ['f', 'b', 'p', 'i', 'd'] as const;
+const WATERING_CODE: Record<Watering, string> = { rain: 'rain', 'first-years': 'first', 'all-year': 'all' };
 // Spot answers by link key.
 const SPOT_KEYS = { l: ['light', spotLights], w: ['water', spotWaters], q: ['wind', spotWinds], r: ['ground', spotGrounds], h: ['height', spotHeights] } as const;
 const UNSURE_SPOT: Spot = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
@@ -160,11 +171,50 @@ function soilText(soil: SoilAnswer | null): string | null {
   return `own.${ph}.${soil.texture ?? '-'}`;
 }
 
-// The private part of a link alone, without "&" around it: "k=…&o=…&l=…&w=…&q=…&r=…&h=…&s=…" (8.1).
-// k: state.country (the caller passes it only from a chosen, location or link source, never a guess);
-// o: the site's cell centre, when given; a spot answer only when answered; s only when not the map.
-// Also the save's `place` (without k and o: persist.ts) and the canopi-place seed.
-export function encodePlace(state: Pick<ShareState, 'country' | 'spot' | 'soil'>, origin: LinkOrigin | null = null): string {
+// The grower's own values as their link pairs (made safe first: siteEditsOf), in EDIT_KEYS order.
+function editPairs(raw: SiteEdits | null | undefined): string[] {
+  const e = siteEditsOf(raw), out: string[] = [];
+  const seg = (n: number | undefined, scale: number): string => (n ? String(Math.round(n * scale)) : '');
+  const f = [seg(e.nightsShiftC, 10), seg(e.daysShiftC, 10), seg(e.rainShiftMm, 1), seg(e.dryMonthsShift, 1)].join('.').replace(/\.+$/, '');
+  if (f) out.push(`f=${f}`);
+  if (e.soilPh !== undefined) out.push(`b=${Math.round(e.soilPh * 10)}`);
+  if (e.pots) out.push('p=1');
+  if (e.watering) out.push(`i=${WATERING_CODE[e.watering]}`);
+  if (e.drainage) out.push(`d=${e.drainage}`);
+  return out;
+}
+// The grower's own values a link (or a save's place) holds, null for none. A value it cannot read is
+// dropped for its key alone (extension rule 2): f whole when a segment is not an integer; each value
+// out of range by siteEditsOf.
+const INT = /^-?\d{1,6}$/;
+function readEdits(q: URLSearchParams): SiteEdits | null {
+  const raw: Record<string, unknown> = {};
+  const f = q.get('f');
+  if (f !== null) {
+    const segs = f.split('.');
+    if (segs.length <= 4 && segs.every((x) => x === '' || INT.test(x))) {
+      const [n = '', d = '', r = '', m = ''] = segs.map((x) => (x === '' ? 0 : Number(x)));
+      Object.assign(raw, { nightsShiftC: Number(n) / 10, daysShiftC: Number(d) / 10, rainShiftMm: Number(r), dryMonthsShift: Number(m) });
+    }
+  }
+  const b = q.get('b');
+  if (b !== null && /^\d{2,3}$/.test(b)) raw.soilPh = Number(b) / 10;
+  if (q.get('p') === '1') raw.pots = true;
+  const i = q.get('i');
+  const watering = (Object.keys(WATERING_CODE) as Watering[]).find((w) => WATERING_CODE[w] === i);
+  if (watering) raw.watering = watering;
+  const d = q.get('d');
+  if (d !== null) raw.drainage = d;
+  const e = siteEditsOf(raw);
+  return e === NO_EDITS ? null : e;
+}
+
+// The private part of a link alone, without "&" around it: "k=…&o=…&l=…&w=…&q=…&r=…&h=…&s=…&f=…&b=…&p=1&i=…&d=…"
+// (8.1). k: state.country (the caller passes it only from a chosen, location or link source, never a
+// guess); o: the site's cell centre, when given; a spot answer only when answered; s only when not the
+// map; the grower's own values only when set. Also the save's `place` (without k and o: persist.ts) and
+// the canopi-place seed.
+export function encodePlace(state: Pick<ShareState, 'country' | 'spot' | 'soil' | 'siteEdits'>, origin: LinkOrigin | null = null): string {
   const out: string[] = [];
   const k = state.country && COUNTRY.test(state.country.toUpperCase()) ? state.country.toUpperCase() : null;
   if (k) out.push(`k=${k}`);
@@ -176,6 +226,7 @@ export function encodePlace(state: Pick<ShareState, 'country' | 'spot' | 'soil'>
   }
   const s = soilText(state.soil);
   if (s) out.push(`s=${s}`);
+  out.push(...editPairs(state.siteEdits));
   return out.join('&');
 }
 
@@ -205,8 +256,13 @@ export function encodeLink(state: ShareState, known: KnownIds, { origin = null, 
   const plot = plotOf(state.plot);
   if (plot !== null) pairs.push(['z', String(plot)]);
   if (state.period !== TODAY_PERIOD) pairs.push(['y', state.period]);
+  const j = plantsPerJobOf(state.plantsPerJob);
+  if (j !== DEFAULT_GOALS.plantsPerJob) pairs.push(['j', String(j)]);
   const priv = place ? encodePlace(state, origin) : '';
-  return `${new URLSearchParams(pairs).toString()}${priv ? `&${priv}` : ''}&${END_KEY}=1`;
+  // `u=`: the grower's values this link holds, which a decoder must know (rule 3); a literal comma.
+  const needs = place ? EDIT_KEYS.filter((k) => priv.split('&').some((p) => p.startsWith(`${k}=`))) : [];
+  const u = needs.length ? `&u=${needs.join(',')}` : '';
+  return `${new URLSearchParams(pairs).toString()}${priv ? `&${priv}` : ''}${u}&${END_KEY}=1`;
 }
 
 // A plot size as the link holds it: a whole number of m², 1 to MAX_PLOT_M2, else null.
@@ -280,7 +336,7 @@ function readSoil(v: string | null): SoilAnswer | null {
 }
 
 // A state that restores nothing: no climate, no plants, every answer as it starts.
-const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD, spot: null, soil: null, members: [], removed: [], guests: [] });
+const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD, spot: null, soil: null, members: [], removed: [], guests: [], siteEdits: null, plantsPerJob: DEFAULT_GOALS.plantsPerJob });
 const noNotice = (): LinkNotice => ({ unknownCount: 0, cut: false, newer: false, unreadable: false, period: false });
 
 // Reads a link (with or without its "#") against the ids at hand (see linkClimates). Never throws.
@@ -323,6 +379,8 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   // No answer other than 'unsure': the link brings no spot (8.3 "A link without a place").
   state.spot = Object.values(spot).some((v) => v !== 'unsure') ? spot : null;
   state.soil = readSoil(q.get('s'));
+  state.siteEdits = readEdits(q);
+  state.plantsPerJob = plantsPerJobOf(q.get('j'));
 
   // The ids of the climates the link names, by 36-bit prefix and by whole id.
   const zones = linkClimates(text);
@@ -389,11 +447,11 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   return { state, notice };
 }
 
-// Whether a decoded link brings a place (8.3): its cell (`o`), or a spot or soil answer other than
-// 'unsure' and the soil map. `m` and `z` never count (they belong to the palette), nor does `k` alone:
-// the reader's country is then kept.
+// Whether a decoded link brings a place (8.3): its cell (`o`), a spot or soil answer other than
+// 'unsure' and the soil map, or the grower's own values. `m`, `z` and `j` never count (they belong to
+// the palette), nor does `k` alone: the reader's country is then kept.
 export function bringsPlace(link: string, decoded: DecodedLink): boolean {
-  return linkOrigin(link) !== null || decoded.state.spot !== null || decoded.state.soil !== null;
+  return linkOrigin(link) !== null || decoded.state.spot !== null || decoded.state.soil !== null || !!decoded.state.siteEdits;
 }
 
 // A Field Guide opens the tool with ?plant=<canonical name>&climate=<id> (design check A5; not a

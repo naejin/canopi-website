@@ -137,6 +137,7 @@ export function useOwnPlace(): void {
   batch(() => {
     store.spot.value = pending.own.spot;
     store.soil.value = pending.own.soil;
+    store.siteEdits.value = pending.own.siteEdits;
     store.country.value = pending.own.country;
     dropLinkLocation();
     linkPlace.value = null;

@@ -29,6 +29,8 @@ function unitFormat(lang: string, unit: string, max: number, signed = false): In
 }
 /** @public A length in metres ("2.5 m"); b3's size line is its first reader. */
 export const formatLength = (m: number, lang: string, max = 1): string => unitFormat(lang, 'meter', max).format(m);
+/** @public Rain in millimetres ("540 mm"); the grower's rain values (0W siteEditLines) are its first reader. */
+export const formatMm = (mm: number, lang: string): string => unitFormat(lang, 'millimeter', 0).format(mm);
 /** @public A soil depth in centimetres ("30 cm"); PP-F's soil lines are its first reader. */
 export const formatDepthCm = (cm: number, lang: string): string => unitFormat(lang, 'centimeter', 0).format(cm);
 /** @public A temperature in degrees Celsius ("−3.5 °C"). */

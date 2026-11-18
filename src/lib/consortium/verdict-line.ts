@@ -3,7 +3,7 @@
 // A leaf, first-run safe. Each key is one segment after `consortium.line.` (the island draws any Line
 // through views/kit/fit.tsx `say`), so Find, Swap, Details, print and the period switch never write
 // their own words for these. Numbers stay numbers: the view formats them for the page language.
-import type { ClimateRange, Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, Fit, FrostFact, ClimateZone, Hole, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, Site, SiteKey, Taxon, TaxonClimate, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
+import type { ClimateRange, Confidence, ConfidenceTerm, Dispute, Factor, FactorVerdict, Fit, FrostFact, ClimateZone, Hole, HoleChange, InvasiveRecord, InvasiveScope, Level, Line, PeriodId, PlantVerdict, Room, Scenario, Site, SiteEdits, SiteKey, Taxon, TaxonClimate, ThinChange, ToxicityAudience, TraitSource, VerdictNote } from './types.ts';
 import { invasiveAreaCodes, setsLevel } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 
@@ -64,6 +64,70 @@ export function uncheckedLine(h: Hole, fits = 0): Line | null {
   if (!n) return null;
   return h.kind === 'light' && fits > 0 ? { key: K('levelUnknown'), vars: { fits }, count: n } : { key: K('notChecked'), vars: {}, count: n };
 }
+
+// ---- Thin spots and what a change did to the holes (v14 spec 0W-1 item 3) ----
+
+// A lane's name as a Line (a job, or a light level: "Full sun"), and a hole's title, one form
+// everywhere: "Full sun: nobody in the first 3 years" (consortium.palette.holeTitle).
+export const laneLine = (h: Pick<Hole, 'kind' | 'job' | 'stratum'>): Line => ({ key: h.kind === 'job' ? `consortium.job.${h.job}` : `consortium.palette.light_${h.stratum}`, vars: {} });
+export const holeTitleLine = (h: Hole): Line => ({ key: 'consortium.palette.holeTitle', vars: {}, parts: { lane: laneLine(h), span: holeLine(h) } });
+// A thin spot on its strip: "Thin: 1 plant only from year 1 to year 15. Add a backup."
+export const thinLine = (t: { have: number; fromYear: number; toYear: number }): Line => ({ key: K('thin'), vars: { from: t.fromYear, to: t.toYear }, count: t.have });
+// A thin spot as the Next step's title: "Feeds you: 1 plant in years 15 to 60: add a backup".
+export const thinTitleLine = (h: Hole): Line => ({ key: K('thinTitle'), vars: { from: h.fromYear, to: h.toYear }, count: h.thin?.have ?? 0, parts: { lane: laneLine(h) } });
+// What an add, a remove or an edit did to the holes, as the toasts say it: the new holes ("No new
+// hole." / "1 new hole: Shade: nobody after year 25."), each narrowed hole as it is now ("Covers the
+// ground: nobody after year 25."), then how many are left ("7 holes left."); `thins`: the thin spots
+// still thin after it ("Feeds you: still 1 plant in years 25 to 60."), of `jobs` only when given.
+export function holeChangeLines(c: HoleChange, { left = true, thins = null, jobs = null }: { left?: boolean; thins?: ThinChange | null; jobs?: readonly string[] | null } = {}): Line[] {
+  const out: Line[] = [];
+  out.push(c.added.length ? { key: K('holesNew'), vars: {}, count: c.added.length, parts: { holes: c.added.map(holeTitleLine) } } : { key: K('holesNoNew'), vars: {} });
+  for (const n of c.narrowed) out.push({ key: K('holeNow'), vars: {}, parts: { hole: holeTitleLine(n.after) } });
+  if (left && (c.added.length || c.closed.length || c.narrowed.length)) out.push(c.open.length ? { key: K('holesLeft'), vars: {}, count: c.open.length } : { key: K('holesNoneLeft'), vars: {} });
+  for (const t of thins?.still ?? []) {
+    if (jobs && !jobs.includes(t.job)) continue;
+    out.push({ key: K('thinStill'), vars: { from: t.fromYear, to: t.toYear }, count: t.have, parts: { lane: laneLine({ kind: 'job', job: t.job }) } });
+  }
+  return out;
+}
+
+// The summary toast's two states while its checks are not here (store.ts setSiteEdits): counting, and
+// the checks refused (with Retry).
+export const countingLine = (): Line => ({ key: K('counting'), vars: {} });
+export const checksFailedLine = (): Line => ({ key: K('checksFailed'), vars: {} });
+
+// The grower's own values in words, one Line each, in the panel's order ("coldest nights 2 °C colder",
+// "watering, rain only"): the place line and the arrivals read them (pf-c).
+export function siteEditLines(e: SiteEdits): Line[] {
+  const out: Line[] = [];
+  const shift = (n: number | undefined, less: string, more: string, key: string) => { if (n) out.push({ key: K(n < 0 ? less : more), vars: { [key]: Math.abs(n) } }); };
+  shift(e.nightsShiftC, 'editNightsColder', 'editNightsWarmer', 'tempShift');
+  shift(e.daysShiftC, 'editDaysColder', 'editDaysWarmer', 'tempShift');
+  shift(e.rainShiftMm, 'editRainLess', 'editRainMore', 'rainMm');
+  if (e.dryMonthsShift) out.push({ key: K(e.dryMonthsShift < 0 ? 'editDryFewer' : 'editDryMore'), vars: {}, count: Math.abs(e.dryMonthsShift) });
+  if (e.watering) out.push({ key: K(e.watering === 'rain' ? 'editWateringRain' : e.watering === 'first-years' ? 'editWateringFirst' : 'editWateringAll'), vars: {} });
+  if (e.soilPh !== undefined) out.push({ key: K('editPh'), vars: { ph: e.soilPh } });
+  if (e.drainage) out.push({ key: K(e.drainage === 'wet' ? 'editWet' : 'editDrains'), vars: {} });
+  if (e.pots !== undefined) out.push({ key: K(e.pots ? 'editPots' : 'editGround'), vars: {} });
+  return out;
+}
+
+// A soil hint on one plant (never a level, R3): its pH against the site's ("More alkaline than it is
+// recorded on (to pH 6.9)"; "More acid than it is recorded on (from pH 5.5)"), or the ground staying
+// wet for a plant that wants free-draining soil. null: the factor gives no hint.
+export function hintLine(f: FactorVerdict): Line | null {
+  if (f.level === 'fits' || f.level === 'unknown') return null;
+  if (f.factor === 'soil-ph') {
+    if (f.place !== null && f.high !== null && f.place > f.high) return { key: K('hintAlkaline'), vars: { ph: f.high } };
+    if (f.place !== null && f.low !== null && f.place < f.low) return { key: K('hintAcid'), vars: { ph: f.low } };
+    return null;
+  }
+  return f.factor === 'drainage' || (f.factor === 'water' && f.basis === 'spot') ? { key: K('hintDrainage'), vars: {} } : null;
+}
+
+// Several plants removed at once: "3 plants removed." and the palette after it: "197 plants."
+export const removedManyLine = (n: number): Line => ({ key: K('removedMany'), vars: {}, count: n });
+export const paletteSizeLine = (n: number): Line => ({ key: K('paletteSize'), vars: {}, count: n });
 
 // A span of years after planting (to null: it lasts past 60 years).
 export function yearsLine(from: number, to: number | null): Line {

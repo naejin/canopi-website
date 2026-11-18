@@ -4,14 +4,15 @@
 // Renaming or removing a signal is a seam change for the coordinator; streams may add actions and,
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
-import type { Alternative, ClimateZone, Hole, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteEdits, SiteInputs, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, hasClimate, holes, loadSuggest, loadVerdictRule, NO_EDITS, periodIds, secondLook, siteInputsOf, siteOf, zoneOf } from '../../lib/consortium/index.ts';
+import type { Alternative, ClimateZone, Hole, HoleChange, LaneCount, Line, PaletteGoals, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteEdits, SiteInputs, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, ThinChange, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, checksFailedLine, countingLine, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, hasClimate, holeChange, holeChangeLines, holes, laneCounts, loadSuggest, loadVerdictRule, NO_EDITS, paletteGoalsOf, paletteSizeLine, periodIds, plantsPerJobOf, removedManyLine, secondLook, siteEditsOf, siteInputsOf, siteOf, snapOrigin, thinChange, thinTargets, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
 import type { TextureId as ReaderTexture } from '../../lib/climate/soil.ts';
 import type { LoadFailure, PlantSource } from '../../lib/consortium/source.ts';
 import { P, T, nameOf } from './strings.ts';
+import { say, sayAll } from './words.ts';
 import { state } from './state/schema.ts';
 import { changedOf, held, lastSave, markSave, undoSave } from './state/save.ts';
 import { focusAfterToast, noteToastOpener } from './focus.ts';
@@ -46,7 +47,9 @@ export interface Load { status: LoadStatus; error: LoadFailure | null }
 // soil and the period shown; the plant lists members (in the order added; a new suggestion is built
 // around them), removed (taken out: a new suggestion leaves them out) and guests (from another
 // climate's list, A9); the view; the stage print draws (unsaved, until PP-B18).
-export const { climate, country, room, plot, spot, soil, period, members, removed, guests, view, stage } = state.signals;
+// siteEdits, plantsPerJob (v14 pf commit 0W): the grower's own values and the palette's goal, saved;
+// suggestedIds: the plants the last "Suggest plants" placed, until any plant or goal change.
+export const { climate, country, room, plot, spot, soil, period, members, removed, guests, siteEdits, plantsPerJob, suggestedIds, view, stage } = state.signals;
 export const step = computed<Step>(() => (view.value === 'start' ? 'place' : 'palette'));
 // The time step Through the years shows (PhaseOrd; unsaved, not in Undo): the phone's stepper and
 // print's side drawing read it (PP-B18; replaces the deprecated `stage`). Opens on years 1-3.
@@ -84,12 +87,11 @@ void texturesAgree;
 // The site inputs (core site-inputs.ts, owner 2026-11-18): every site input the engine reads, merged
 // from the location's lookup (the climate grid, the soil map) and the grower's edits, with the room.
 // The one place the store hands site data to the rules: verdictContext, the flags and the views read
-// this, never the lookup or a stored answer. siteEdits: the grower's edits (shifts, a soil test,
-// answers), the seam the figures panel (v14) writes; no control writes it yet and it is not saved
-// (NO_EDITS on every load; browser tests set it through the test hook). The spot and soil answers are
-// dormant until PP-F: never read here, never written by the store (spec update 2026-11-18 point 6),
-// and the save and links keep them empty (state/persist.ts palette).
-export const siteEdits = signal<SiteEdits>(NO_EDITS);
+// this, never the lookup or a stored answer. siteEdits (a field of state/schema.ts): the grower's edits
+// (shifts, a soil test, answers), written by the figures panel (pf-d) through setSiteEdits below,
+// saved in the save's private place and in a link only with "Include my place". The spot and soil
+// answers are dormant until PP-F: never read here, never written by the store (spec update 2026-11-18
+// point 6), and the save and links keep them empty (state/persist.ts palette).
 export const siteInputs = computed<SiteInputs>(() => siteInputsOf({ lookup: location.value?.lookup ?? null, room: room.value, edits: siteEdits.value }));
 // site.ts fits()'s Site, from the inputs (core place.ts siteOf): the flags, print's basis line and the
 // site-fit words read it.
@@ -442,6 +444,24 @@ export const holesPending = computed(() => guestsPending.value.length > 0 || mis
 export const paletteHoles = computed<Hole[]>(() => holes({ members: memberTaxa.value, verdicts: memberVerdicts.value, pending: holesPending.value }));
 // The holes open now, in rank order (not judged and pending ones left out).
 export const openHoles = computed<Hole[]>(() => paletteHoles.value.filter((h) => h.state === 'open'));
+// ---- the palette goal and thin spots (v14 pf commit 0W-1 items 1, 4) ----
+// The goal the Jobs control sets ("Plants per job 1 2 3 5"; saved, link `j`, not in Undo).
+export const paletteGoals = computed<PaletteGoals>(() => paletteGoalsOf({ plantsPerJob: plantsPerJob.value }));
+// Every lane's plant counts per time step and its thin stretches against the goal (core laneCounts),
+// and the thin spots as Hole-shaped targets (core thinTargets: pending while a member's list loads).
+export const lanes = computed<LaneCount[]>(() => laneCounts({ members: memberTaxa.value, verdicts: memberVerdicts.value, pending: holesPending.value }, paletteGoals.value));
+export const thinSpots = computed<Hole[]>(() => thinTargets(lanes.value, holesPending.value));
+// The goal changed: thin spots are recounted at once (computed); an untouched suggestion is touched.
+export function setPlantsPerJob(n: number): void {
+  batch(() => { plantsPerJob.value = plantsPerJobOf(n); suggestedIds.value = []; });
+}
+// The members are exactly the last suggestion's plants, untouched since (A19: a small suggested
+// palette is never nagged beyond the thin-spot count). Any add, remove, swap or goal change ends it.
+export const untouchedSuggestion = computed(() => {
+  const s = suggestedIds.value, m = members.value;
+  return s.length > 0 && s.length === m.length && s.every((id) => m.includes(id));
+});
+
 // How many open holes a plant fills (core holes.ts fills): Find's best first and its "fills N holes".
 export function holeFillCount(t: Taxon): number {
   let n = 0;
@@ -570,7 +590,7 @@ export function suggestMembers(): boolean {
   // s-2: every caller gets it, and no effect can drop it). A wait ends on any plant change, so this is
   // the palette the press saw, with only the place answers given during the wait kept.
   const before = snapshot();
-  batch(() => { members.value = s.members; held.value = false; });
+  batch(() => { members.value = s.members; suggestedIds.value = [...s.members]; held.value = false; });
   offerUndo(P('place.suggested', s.members.length), before);
   return true;
 }
@@ -722,7 +742,8 @@ export const closeSheet = (): void => {
 
 // ---- the toast (one short line under the tool, with Undo when the change can be taken back) ----
 
-export interface ToastAction { label: string; run: () => void }
+// keep: the action leaves the toast up (a summary's Retry keeps its Undo, v14 F6).
+export interface ToastAction { label: string; run: () => void; keep?: boolean }
 export type ToastWhere = 'page' | 'sheet';
 // focus: the plants Undo brings back; the first one's control takes the focus after Undo (W4), in
 // `from`, the region of the control that raised the toast, when it is still there (focus.ts focusPlant).
@@ -730,6 +751,7 @@ export interface ToastLine { id: number; text: string; undo: (() => void) | null
 export const toast = signal<ToastLine | null>(null);
 const TOAST_MS = 12_000; // long enough to reach Undo with a keyboard or a screen reader
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
+let toastHeld = false;
 let toastSeq = 1;
 export function showToast(text: string, undo: (() => void) | null = null, action: ToastAction | null = null, focus: PlantId[] = []): void {
   const from = noteToastOpener();
@@ -748,13 +770,25 @@ function armToast(id: number): void {
 export function holdToast(held: boolean): void {
   const line = toast.peek();
   if (!line) return;
+  toastHeld = held;
   if (held) { if (toastTimer) clearTimeout(toastTimer); toastTimer = null; } else armToast(line.id);
+}
+// A later text on the same toast (v14 0W, chk #2): the change summary arrives after "Counting…", or
+// the checks fail with Retry; its Undo and its place stay, and it runs its full time again (unless the
+// pointer or the focus holds it). false: that toast is gone (replaced, dismissed, timed out).
+export function updateToast(id: number, text: string, action: ToastAction | null = null): boolean {
+  const line = toast.peek();
+  if (!line || line.id !== id) return false;
+  toast.value = { ...line, text, action };
+  if (!toastHeld) armToast(id);
+  return true;
 }
 // Every path that takes the toast away (Dismiss, Undo, its action, the timer above) tells focus.ts
 // first, while the toast is still on the page (F1a commit 0 seam, A25; stream 6 implements it).
 export function hideToast(): void {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = null;
+  toastHeld = false;
   focusAfterToast();
   toast.value = null;
 }
@@ -807,6 +841,7 @@ export function removeMember(id: PlantId): void {
   const before = snapshot(), name = nameById(id);
   batch(() => {
     held.value = false;
+    suggestedIds.value = [];
     members.value = without(before.members, [id]);
     removed.value = [...without(before.removed, [id]), id];
     if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
@@ -819,6 +854,7 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
   const before = snapshot(), a = nameById(oldId), b = nameById(newId);
   batch(() => {
     held.value = false;
+    suggestedIds.value = [];
     members.value = before.members.map((x) => (x === oldId ? newId : x)).filter((x, i, all) => all.indexOf(x) === i);
     removed.value = [...without(before.removed, [newId, oldId]), oldId];
     if (before.guests[oldId]) { const g = { ...before.guests }; delete g[oldId]; guests.value = g; }
@@ -831,14 +867,18 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
 // with a warning" with Show (the first one's details).
 // On Place, an add (search or paste) leaves the view alone and is saved at once (owner 2026-11-15).
 // Each of the three is a plant change: the page owns the save from here (state/save.ts).
-// text: the toast's own words (the Next step names the plant it added), else paste.added's count;
-// the warned count follows either.
-export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string } = {}): void {
+// text: the toast's own words (the Next step names the plant it added), or a function of what the add
+// did, called after the state changed (v14 0W-1 item 6: the bulk add's "2 plants added: … Covers the
+// ground: nobody after year 25. 7 holes left."), else paste.added's count; the warned count follows.
+export interface AddResult { added: PlantId[]; size: number; holeChange: HoleChange; thinChange: ThinChange }
+export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string | ((r: AddResult) => string) } = {}): void {
   const before = snapshot();
   const fresh = ids.filter((id, i) => ids.indexOf(id) === i && !before.members.includes(id));
   if (!fresh.length) return;
+  const was = typeof said === 'function' ? { holes: paletteHoles.peek(), thins: thinSpots.peek() } : null;
   batch(() => {
     held.value = false;
+    suggestedIds.value = [];
     members.value = [...before.members, ...fresh];
     removed.value = without(before.removed, fresh);
     // The guests change only when a guest joins (a new object would rebuild every guest's record).
@@ -851,8 +891,98 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
     }
   });
   const flagged = warned.filter((id) => fresh.includes(id));
-  const text = (said ?? P('paste.added', fresh.length)) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
+  const own = typeof said === 'function' && was
+    ? said({ added: fresh, size: members.peek().length, holeChange: holeChange(was.holes, paletteHoles.peek()), thinChange: thinChange(was.thins, thinSpots.peek()) })
+    : said;
+  const text = (own ?? P('paste.added', fresh.length)) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
   offerUndo(text, before, flagged.length ? { label: T('paste.show'), run: () => openSheet('details', flagged[0]) } : null);
+}
+
+// Several plants removed at once (v14 0W-1 item 6; pf-e's ticks): one snapshot and one Undo, which puts
+// them back in their order; the toast says how many, the palette after it and what it did to the holes
+// ("3 plants removed. 197 plants. No new hole."). Ids not in the palette are left out; none: nothing.
+export function removeMembers(ids: readonly PlantId[]): void {
+  const before = snapshot();
+  const gone = before.members.filter((id) => ids.includes(id));
+  if (!gone.length) return;
+  const was = paletteHoles.peek();
+  batch(() => {
+    held.value = false;
+    suggestedIds.value = [];
+    members.value = without(before.members, gone);
+    removed.value = [...without(before.removed, gone), ...gone];
+    if (gone.some((id) => before.guests[id])) { const g = { ...before.guests }; for (const id of gone) delete g[id]; guests.value = g; }
+  });
+  const lines: Line[] = [removedManyLine(gone.length), paletteSizeLine(members.peek().length), ...holeChangeLines(holeChange(was, paletteHoles.peek()), { left: false })];
+  offerUndo(sayAll(lines), before, null, gone);
+}
+
+// ---- the grower's own values (v14 0W-1 item 5; the figures panel, pf-d, writes them) ----
+
+// What a summary function sees: whether the verdicts are settled, and whether their chunk failed.
+export interface SummaryState { ready: boolean; failed: boolean }
+export type EditSummary = string | ((s: SummaryState) => { text: string; action?: ToastAction | null } | 'pending');
+let summaryWatch: (() => void) | null = null;
+// Writes the edits (made safe: core siteEditsOf) and shows the summary with Undo, never a question.
+// summary: the toast's words, or a function called now and again each time the verdicts settle or
+// fail: 'pending' reads "Counting…" (or, the checks refused, "Checks could not run" with Retry), then
+// its text arrives on the same toast (updateToast), Undo kept throughout. A newer edit, Undo or any
+// other toast ends the watch. Undo puts back the edits as they were (the edits are in the snapshot).
+export function setSiteEdits(next: SiteEdits, summary: EditSummary): void {
+  const before = snapshot();
+  summaryWatch?.();
+  summaryWatch = null;
+  siteEdits.value = siteEditsOf(next);
+  if (typeof summary === 'string') { offerUndo(summary, before); return; }
+  offerUndo(say(countingLine()), before);
+  const id = toast.peek()?.id;
+  if (id === undefined) return;
+  let done = false;
+  const stop = effect(() => {
+    const ready = verdictsReady.value, failed = verdictFailed.value;
+    untracked(() => {
+      if (done) return;
+      if (toast.peek()?.id !== id) { done = true; return; }
+      const got = summary({ ready, failed });
+      if (got !== 'pending') { done = true; updateToast(id, got.text, got.action ?? null); return; }
+      updateToast(id, say(failed ? checksFailedLine() : countingLine()), failed ? { label: T('load.retry'), run: retryVerdict, keep: true } : null);
+    });
+    if (done) queueMicrotask(() => { stop(); if (summaryWatch === stop) summaryWatch = null; });
+  });
+  summaryWatch = stop;
+}
+// The cell a location stands in (its lookup's climate cell, else its point snapped to one).
+const cellOf = (l: SiteLocation | null): string | null => {
+  if (!l) return null;
+  const c = l.lookup?.climate;
+  const at = c ? { lat: c.cellLat, lon: c.cellLon } : snapOrigin({ lat: l.lat, lon: l.lon });
+  return at ? `${at.lat.toFixed(2)},${at.lon.toFixed(2)}` : null;
+};
+// The grower's values were cleared by a new place (pf-c says it once in the place line; A7).
+export const editsCleared = signal(false);
+// The reader's own new location (state/location.ts locate): another climate cell clears every edit (a
+// shift is relative to the old place, A7); the same cell ("Adjust on the map") keeps them. A first
+// location (none before) keeps them: they were set with no place to differ from.
+export function placeAt(loc: SiteLocation): void {
+  const was = cellOf(location.peek()), now = cellOf(loc);
+  batch(() => {
+    const cleared = was !== null && now !== was && siteEdits.peek() !== NO_EDITS;
+    if (cleared) siteEdits.value = NO_EDITS;
+    editsCleared.value = cleared;
+    location.value = loc;
+  });
+}
+
+// ---- the figures panel (v14 0W-1 item 8, chk #39) ----
+// The line the panel opens at ('nights', 'soilPh', …; null: none): store.openFigure goes to the Place
+// step with it open (pf-d's panel reads it; until then the Place step only).
+export const figureLine = signal<string | null>(null);
+export function openFigure(line: string | null): void {
+  batch(() => {
+    figureLine.value = line;
+    if (sheet.peek()) closeSheet();
+    view.value = 'start';
+  });
 }
 
 // ---- start (E6 S3): nothing runs because this module was imported ----

@@ -22,7 +22,7 @@
 // (review round 1, 4).
 import { batch } from '@preact/signals';
 import type { ClimateZone, LocationSource, SiteLocation } from '../../../lib/consortium/index.ts';
-import { emptyPlace, siteClimate } from '../../../lib/consortium/index.ts';
+import { NO_EDITS, emptyPlace, siteClimate } from '../../../lib/consortium/index.ts';
 import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../lib/climate/index.ts';
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../lib/location/registry.ts';
@@ -132,7 +132,8 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   if (sc.state === 'sea') { line.value = { state: 'sea', ...extra }; return; }
   const loc: SiteLocation = { lat, lon, source, ...(label ? { label } : {}), lookup };
   siteFound(() => {
-    store.location.value = loc;
+    // Another climate cell clears the grower's own values (A7: store.placeAt).
+    store.placeAt(loc);
     store.proposedClimate.value = sc.suggested;
     store.proposedFromSave.value = false;
     line.value = { state: sc.state, ...extra };
@@ -223,6 +224,8 @@ export function forget(): void {
     if (own) locationCountry(null, true);
     store.spot.value = { ...emptyPlace.spot };
     store.soil.value = { from: 'map' };
+    // The grower's own values are of that place: they go with it, as the save's place does.
+    store.siteEdits.value = NO_EDITS;
   });
   if (own) { keepLocation(null); locationAtStart.value = false; }
   memory.remove(PLACE_STORE);

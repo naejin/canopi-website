@@ -420,6 +420,11 @@ export interface ShareState {
   members: PlantId[];
   removed: PlantId[];
   guests: { id: PlantId; from: ClimateZone }[];
+  // The grower's own values (v14 0W-1 item 5): in a link only with "Include my place" (keys f b p i d,
+  // each listed in `u=`), in the save's private place; null or absent: none. Decoded links always set it.
+  siteEdits?: SiteEdits | null;
+  // Plants per job (`j`, outside "Include my place": the palette's, A10); absent or 2: the default.
+  plantsPerJob?: number;
 }
 // unknownCount: plants of the link no longer in the list ("2 plants from this link…"); cut: the link
 // lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not a notice of a
@@ -544,7 +549,9 @@ export interface Place { room: Room; plotM2: number | null; spot: Spot; soil: So
 // ---- Site inputs (owner decision 2026-11-18; bodies in site-inputs.ts) ----
 // Every site input the engine reads, each with where its value comes from: 'map' (the climate grid,
 // the soil map), 'grower' (an edit), 'none' (not known or not asked: never a "no").
-export const inputSources = ['map', 'grower', 'none'] as const;
+// 'room': the palette's room answer stands in for a line not answered (the Pots line on the room
+// "Pots or a balcony", v14 A3: "From your room", no Reset).
+export const inputSources = ['map', 'grower', 'room', 'none'] as const;
 export type InputSource = (typeof inputSources)[number];
 export interface SiteInput<T> { value: T | null; source: InputSource }
 // A climate figure: today's merged value, the map's, and the grower's shift (0: none), applied to
@@ -563,8 +570,11 @@ export type InputWind = (typeof inputWinds)[number];
 export const coldAirs = ['town', 'higher', 'lower', 'hollow'] as const; // height and cold air
 export type ColdAir = (typeof coldAirs)[number];
 // The grower's edits: climate figures as shifts from the map, the rest as values. Plain JSON (the
-// scenario file holds them). No control writes one yet: each is an unreachable source until the
-// figures panel (v14) and the spot questions (PP-F).
+// scenario file holds them). Units and ranges (v14 spec 3.1, 7; site-inputs.ts siteEditsOf makes any
+// source safe): temperature shifts in °C, one decimal, -15..+15; rain in whole mm a year; dry months in
+// whole months; pH 3.0..10.0, one decimal; pots: pots, raised beds or brought-in soil (soil not
+// checked). The figures panel (pf-d) writes them through store.setSiteEdits; light, wind and coldAir
+// stay in the type for PP-F (siteEditsOf drops them from saves and links until then).
 export interface SiteEdits {
   nightsShiftC?: number;
   daysShiftC?: number;
@@ -576,6 +586,7 @@ export interface SiteEdits {
   light?: InputLight;
   wind?: InputWind;
   coldAir?: ColdAir;
+  pots?: boolean;
 }
 export interface SiteInputs {
   nights: ClimateInput; // °C, coldest-month mean daily minimum, today
@@ -588,6 +599,9 @@ export interface SiteInputs {
   light: SiteInput<InputLight>;
   wind: SiteInput<InputWind>;
   coldAir: SiteInput<ColdAir>;
+  // Pots, raised beds or brought-in soil: the grower's answer, else 'room' (true) on the room "Pots or a
+  // balcony", else none (taken as in the ground).
+  pots: SiteInput<boolean>;
   room: SiteInput<Room>;
   // Every climate slot (today, then each later period × scenario) with the shifts applied: the one
   // climate the rules read (place.ts climateFor, range.ts, future.ts).
@@ -649,14 +663,15 @@ export interface VerdictContext {
 // One line of words: an i18n key, its variables and the count P() reads (verdict-line.ts, b2); `also`:
 // sentences said after it (a reason's confidence, its bound's source), each a Line of its own. A
 // variable named temp… is a temperature in °C, len… a length in metres: the view formats it with its
-// unit (format.ts); every other number is a plain number.
+// unit (format.ts), …Mm rain in millimetres; every other number is a plain number.
 // `parts`: variables that are words themselves, a Line or a list of Lines said as a list ("the Balearic
 // Islands and mainland Spain"), filled into the key's {name} like a variable.
 export interface Line { key: string; vars: Record<string, string | number>; count?: number; also?: Line[]; parts?: Record<string, Line | Line[]> }
 
 // Holes (3.3; bodies in holes.ts, b2).
 export type HoleKind = 'job' | 'light' | 'flowering' | 'cool' | 'soil';
-export type HoleRank = 1 | 2 | 3 | 4 | 5 | 6;
+// 7: a thin spot (holes.ts thinTargets), ranked after every hole.
+export type HoleRank = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 // A palette goal (owner 2026-11-18; not a site fact, read beside the site inputs): the redundancy
 // target, "backups per job": how many plants each job wants in each judged year (default 2, a plant
 // and its backup; S1). A job done by fewer, but not by nobody, is thin (holes.ts laneCounts); nobody is
@@ -664,14 +679,15 @@ export type HoleRank = 1 | 2 | 3 | 4 | 5 | 6;
 export interface PaletteGoals { plantsPerJob: number }
 // Plant counts of one lane (a job or a light level) per time step (years.ts PHASE_YEARS, the climax
 // step last); thin: the judged year spans a job is done by at least one plant and fewer than the
-// target (light levels: never thin); unchecked: members standing in the lane's years whose jobs or
+// target (light levels: never thin), with have (the fewest plants over the stretch) and want (the
+// goal); unchecked: members standing in the lane's years whose jobs or
 // light level are not recorded (unknown is never a hole, nor a thin lane's "no").
 export interface LaneCount {
   kind: 'job' | 'light';
   job?: JobId;
   stratum?: Stratum;
   counts: number[];
-  thin: { fromYear: number; toYear: number }[];
+  thin: { fromYear: number; toYear: number; have: number; want: number }[];
   unchecked?: PlantId[];
 }
 export interface Hole {
@@ -688,7 +704,17 @@ export interface Hole {
   // hole) or light level (a light hole) are not recorded; absent when none. Its title then says "nobody
   // known" and its count line "N plants not checked" (verdict-line.ts holeLine, uncheckedLine).
   unchecked?: PlantId[];
+  // A thin spot (holes.ts thinTargets: id `thin:<job>:<from>-<to>`, kind 'job', rank 7): the fewest
+  // plants doing the job over the stretch and the goal. Absent on a hole.
+  thin?: { have: number; want: number };
 }
+// Where a target stands (holes.ts targetPosition): a hole among the open holes ("hole 1 of 7 · then 5
+// thin spots"), or a thin spot among the thin spots ("thin spot 1 of 5"); index 1-based.
+export interface TargetPosition { kind: 'hole' | 'thin'; index: number; of: number; thinCount: number }
+// What a change did to the open holes (holes.ts holeChange) and to the thin spots (thinChange).
+export interface HoleChange { added: Hole[]; closed: Hole[]; narrowed: { before: Hole; after: Hole }[]; open: Hole[] }
+export interface ThinStill { job: JobId; have: number; want: number; fromYear: number; toYear: number }
+export interface ThinChange { ended: Hole[]; still: ThinStill[]; added: Hole[] }
 // What Find opens for a hole is store.ts SheetFor (job, hole, fits), built by NextStep (PP-C commit 0
 // deleted AddPreset and Hole.preset with the Add sheet).
 export interface Fillers { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unknown: Taxon[] }

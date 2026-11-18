@@ -18,11 +18,12 @@
 // - dry months: dryMonths, clamped to 0..12.
 // The Köppen class stays the map's: the climate card is the location step's (site-climate.ts).
 //
-// What the page reaches today (store.ts siteInputs): the lookup and the room, with NO_EDITS. Every
-// grower source is reachable from tests and the scenario file (scripts/fixtures/consortium-scenarios.json)
-// only, until the figures panel (v14) writes edits. Spot and soil answers are dormant until PP-F
-// (owner 2026-11-18): this layer never reads store.spot or store.soil.
+// What the page reaches (store.ts siteInputs): the lookup, the room and store.siteEdits, a saved field
+// (state/schema.ts) the figures panel (pf-d) writes through store.setSiteEdits; every edit from the
+// panel, the save or a link is made safe once by siteEditsOf. Spot and soil answers are dormant until
+// PP-F (owner 2026-11-18): this layer never reads store.spot or store.soil.
 import type { ClimateInput, PaletteGoals, Room, SiteEdits, SiteInput, SiteInputs, SiteLookup, SitePeriod, SoilPhInput } from './types.ts';
+import { drainages, waterings } from './types.ts';
 import { todayOf } from './site-today.ts';
 
 // No grower edit: the map as it is (the page today).
@@ -82,6 +83,8 @@ export function siteInputsOf({ lookup, room = 'unsure', edits = NO_EDITS }: Site
     light: answer(edits.light),
     wind: answer(edits.wind),
     coldAir: answer(edits.coldAir),
+    // The room "Pots or a balcony" stands in for the Pots line while it is not answered (v14 A3).
+    pots: typeof edits.pots === 'boolean' ? { value: edits.pots, source: 'grower' } : room === 'pots' ? { value: true, source: 'room' } : none<boolean>(),
     room: answer(room === 'unsure' ? null : room),
     periods,
   };
@@ -93,6 +96,46 @@ export const NO_INPUTS: SiteInputs = Object.freeze(siteInputsOf({ lookup: null }
 // Whether the inputs hold a climate (a location gave one).
 export const hasClimate = (inputs: SiteInputs | null): boolean => !!inputs && inputs.periods.length > 0;
 
+// ---- The grower's edits, made safe once (v14 spec 3.1, 7) ----
+
+// The ranges every source is held to (the panel, the save, a link): temperature shifts in °C, one
+// decimal, -15..+15; rain in whole mm a year (rain itself never below 0: shifted()); dry months in
+// whole months, -12..+12 (the result clamped to 0..12); pH 3.0..10.0, one decimal.
+export const EDIT_LIMITS = Object.freeze({ shiftC: 15, rainMm: 10_000, dryMonths: 12, phMin: 3, phMax: 10 });
+const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+function within(v: unknown, lo: number, hi: number, step: number): number | null {
+  const n = num(v);
+  if (n === null || n < lo || n > hi) return null;
+  const q = Math.round(n / step) * step;
+  return (step < 1 ? Math.round(q * 10) / 10 : Math.round(q)) || 0; // || 0: never -0
+}
+// Any value as edits: each key kept only when it is in range and of its kind, every other key dropped
+// (an unknown key, a wrong type, out of range), so a damaged save or a hand-edited link never crashes
+// and the rest is kept. A zero shift is no edit. light, wind and coldAir (PP-F) are dropped: no save or
+// link holds them until their questions exist (chk #25). Nothing kept: NO_EDITS itself.
+export function siteEditsOf(raw: unknown): SiteEdits {
+  if (!raw || typeof raw !== 'object') return NO_EDITS;
+  const r = raw as Record<string, unknown>, out: SiteEdits = {};
+  const L = EDIT_LIMITS;
+  const nights = within(r.nightsShiftC, -L.shiftC, L.shiftC, 0.1), days = within(r.daysShiftC, -L.shiftC, L.shiftC, 0.1);
+  if (nights) out.nightsShiftC = nights;
+  if (days) out.daysShiftC = days;
+  const rain = within(r.rainShiftMm, -L.rainMm, L.rainMm, 1), dry = within(r.dryMonthsShift, -L.dryMonths, L.dryMonths, 1);
+  if (rain) out.rainShiftMm = rain;
+  if (dry) out.dryMonthsShift = dry;
+  const ph = within(r.soilPh, L.phMin, L.phMax, 0.1);
+  if (ph !== null) out.soilPh = ph;
+  if ((drainages as readonly unknown[]).includes(r.drainage)) out.drainage = r.drainage as SiteEdits['drainage'];
+  if ((waterings as readonly unknown[]).includes(r.watering)) out.watering = r.watering as SiteEdits['watering'];
+  if (typeof r.pots === 'boolean') out.pots = r.pots;
+  return Object.keys(out).length ? out : NO_EDITS;
+}
+// Whether two edits are the same (key by key; both made safe).
+export const sameEdits = (a: SiteEdits, b: SiteEdits): boolean => {
+  const ka = Object.keys(a), kb = Object.keys(b);
+  return ka.length === kb.length && ka.every((k) => (a as Record<string, unknown>)[k] === (b as Record<string, unknown>)[k]);
+};
+
 // A soil test's pH, the one soil value a rule reads today: the soil map's pH checks nothing until PP-F
 // (owner 2026-11-18), as place.ts resolveSoil before this layer.
 export const testedPh = (inputs: SiteInputs | null): number | null => (inputs?.soilPh.source === 'grower' ? inputs.soilPh.value : null);
@@ -102,6 +145,13 @@ export const testedPh = (inputs: SiteInputs | null): number | null => (inputs?.s
 // The redundancy target the engine reads today: 2 plants per job (a plant and its backup). The page
 // passes it as is until a control lets the grower change it (store.ts paletteGoals).
 export const DEFAULT_GOALS: PaletteGoals = Object.freeze({ plantsPerJob: 2 });
+// The choices the Jobs control offers ("Plants per job 1 2 3 5"); a link's or a save's `j` other than
+// these reads as the default (v14 F15).
+export const PLANTS_PER_JOB = Object.freeze([1, 2, 3, 5] as const);
+export function plantsPerJobOf(v: unknown): number {
+  const n = typeof v === 'string' && /^\d$/.test(v) ? Number(v) : v;
+  return (PLANTS_PER_JOB as readonly unknown[]).includes(n) ? (n as number) : DEFAULT_GOALS.plantsPerJob;
+}
 // A grower's goals, made safe: a whole number of plants per job, at least 1, with no upper bound.
 export function paletteGoalsOf(goals: Partial<PaletteGoals> = {}): PaletteGoals {
   const n = goals.plantsPerJob;

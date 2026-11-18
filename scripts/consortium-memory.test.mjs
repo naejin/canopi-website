@@ -22,7 +22,7 @@ const { guarded, saveRecord, readRecord, arrival, hashAction, countryAtStart, sh
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'save', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
-const { decodeLink, emptyPlace, encodeLink, zoneOf } = await import('../src/lib/consortium/index.ts');
+const { decodeLink, emptyPlace, encodeLink, NO_EDITS, zoneOf } = await import('../src/lib/consortium/index.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 
@@ -410,14 +410,15 @@ const sorted = (list) => [...list].sort();
 
 test('schema: each field declares its part once (snapshot, Undo, saved, link, watched, plant list)', () => {
   const L = schema.lists;
-  assert.deepEqual(sorted(L.snapshot), sorted(['members', 'removed', 'guests', 'view']), 'Undo puts these back');
-  assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'removed', 'guests']), 'a change to these ends the Undo offer');
+  assert.deepEqual(sorted(L.snapshot), sorted(['members', 'removed', 'guests', 'siteEdits', 'suggestedIds', 'view']), 'Undo puts these back');
+  assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'removed', 'guests', 'siteEdits']), 'a change to these ends the Undo offer');
   // PP-B commit 0a: the place (room, plot, spot, soil) and the period replace the site answers; site is
   // derived from them (store.ts), not saved. Commit 0a' removed kept and crops; stage is unsaved (print).
-  const saved = ['climate', 'country', 'room', 'plot', 'spot', 'soil', 'period', 'members', 'removed', 'guests'];
+  // v14 pf commit 0W: the grower's site edits and the plants per job are saved too.
+  const saved = ['climate', 'country', 'room', 'plot', 'spot', 'soil', 'period', 'members', 'removed', 'guests', 'siteEdits', 'plantsPerJob'];
   assert.deepEqual(sorted(L.saved), sorted(saved), 'the Consortium the save keeps');
   assert.deepEqual(sorted(Object.keys(CONSORTIUM_FIELDS)), sorted(saved), 'CONSORTIUM_FIELDS (the Consortium type) holds the saved fields');
-  assert.deepEqual(sorted(L.reader), sorted([...saved, 'view']), 'a write to these is the reader acting, and the save and the address follow them');
+  assert.deepEqual(sorted(L.reader), sorted([...saved, 'suggestedIds', 'view']), 'a write to these is the reader acting, and the save and the address follow them');
   assert.equal(L.save, undefined, 'one watched list (the save model, fix round 3)');
   assert.deepEqual(sorted(L.plants), sorted(['members', 'removed', 'guests']));
   for (const k of Object.keys(STATE_FIELDS)) assert.equal(store[k], schema.signals[k], `store.${k} is the schema's signal`);
@@ -485,10 +486,13 @@ async function blankShown() {
   store.removed.value = [];
   store.guests.value = {};
   store.stage.value = 0;
+  store.siteEdits.value = NO_EDITS;
+  store.plantsPerJob.value = 2;
   return pool;
 }
 const PART_WET = { light: 'part', water: 'wet', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 const ACID = { from: 'own', ph: null, word: 'acid', texture: null };
+const EDITS = { nightsShiftC: -2, rainShiftMm: -100, watering: 'first-years', soilPh: 6.5, drainage: 'wet', pots: true };
 // Per saved field (link v5, PP-B commit 0a): the change and the value it reads back. A save restores
 // with its private place (the record's `place`); a link is written with "Include my place" when the
 // field is a place answer (`place`), and a link's spot or soil applies only when it brings a place.
@@ -514,6 +518,9 @@ const CASES = {
   members: { change: (p) => { store.members.value = p.slice(10, 14).map((t) => t.id); }, want: (p) => p.slice(10, 14).map((t) => t.id) },
   removed: { change: (p) => { store.removed.value = [p[30].id]; }, want: (p) => [p[30].id] },
   guests: { change: async () => { const g = (await store.loadPool('Tropical'))[5].id; store.members.value = [...store.members.peek(), g]; store.guests.value = { [g]: 'Tropical' }; }, want: async () => ({ [(await store.loadPool('Tropical'))[5].id]: 'Tropical' }) },
+  // v14 pf commit 0W: the edits are part of the place (in a link only with "Include my place"); the goal is the palette's.
+  siteEdits: { change: () => { store.siteEdits.value = EDITS; }, want: EDITS, place: true },
+  plantsPerJob: { change: () => { store.plantsPerJob.value = 3; }, want: 3 },
 };
 const valueOf = async (w, p) => (typeof w === 'function' ? w(p) : w);
 
@@ -576,6 +583,7 @@ test('a change to any field that ends Undo hides the Undo toast', async () => {
     members: (p) => { store.members.value = [p[40].id]; },
     removed: (p) => { store.removed.value = [p[42].id]; },
     guests: (p) => { store.guests.value = { [p[44].id]: 'Tropical' }; },
+    siteEdits: () => { store.siteEdits.value = { nightsShiftC: -1 }; },
   };
   assert.deepEqual(sorted(Object.keys(changes)), sorted(schema.lists.endsUndo));
   for (const [k, change] of Object.entries(changes)) {

@@ -42,7 +42,7 @@
 // in flight (what Start shows while a link opens) and the count of the reader's actions, which the
 // store watcher (watchStore) keeps.
 import { computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, LinkOrigin, PlantId, ShareState, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, LinkOrigin, PlantId, ShareState, SiteEdits, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
 import { emptyPlace, encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
@@ -202,12 +202,18 @@ export function currentFragment({ origin = null, place = origin !== null }: { or
   if (!now) return null;
   return encodeLink(shareState(now, { place }), knownOf(now), { origin, place });
 }
-// A palette's private place answers, as the save's `place` and history.state.pl keep them: the spot
-// and the soil, without the country and the cell (core encodePlace).
+// Beside the place answers, never in a link: whether the palette is the last suggestion untouched
+// (store.untouchedSuggestion, v14 A19), so a reload keeps not nagging it (restore.ts reads it back).
+export const SUGGESTED_KEY = 'sg';
+const suggestedPart = (): string => (store.untouchedSuggestion.peek() ? `${SUGGESTED_KEY}=1` : '');
+const joined = (...parts: string[]): string => parts.filter(Boolean).join('&');
+// A palette's private place answers, as the save's `place` and history.state.pl keep them: the spot,
+// the soil and the grower's own values, without the country and the cell (core encodePlace), then the
+// untouched-suggestion mark.
 export function currentPlace(of: Consortium | null = null): string {
   const now = of ?? palette();
   if (!now) return '';
-  return encodePlace({ ...shareState(now, { place: true }), country: null });
+  return joined(encodePlace({ ...shareState(now, { place: true }), country: null }), suggestedPart());
 }
 // history.state.pl: the tab's place, with a link's country (`k`) too, so a reload of a link's page keeps
 // the country "from the shared link" (the address holds none of `k o l w q r h s`; the reader's own
@@ -219,7 +225,7 @@ function addressPlace(): string {
   if (!now) return '';
   const at = store.location.peek();
   const o = linkPlace.peek() && at?.source === 'link' ? { lat: at.lat, lon: at.lon } : null;
-  return encodePlace({ ...shareState(now, { place: true }), country: now.country.source === 'link' ? now.country.code : null }, o);
+  return joined(encodePlace({ ...shareState(now, { place: true }), country: now.country.source === 'link' ? now.country.code : null }, o), suggestedPart());
 }
 // The canopi-place seed: room, plot size, spot and soil (`m z l w q r h s`), without the country.
 // The spot and soil are dormant until PP-F: the seed writes them empty.
@@ -236,7 +242,7 @@ export function placeSeed(): string {
 // place" (restore.ts sets it; draft.ts useLinkPlace / useOwnPlace end it). own: the reader's place,
 // country and site cell (location: their own, never a link's) just before the link applied; the save
 // keeps them until the reader chooses.
-export interface OwnPlace { spot: Spot; soil: SoilAnswer; country: Country; location: LinkOrigin | null }
+export interface OwnPlace { spot: Spot; soil: SoilAnswer; siteEdits: SiteEdits; country: Country; location: LinkOrigin | null }
 export const linkPlace = signal<{ own: OwnPlace } | null>(null);
 // What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
 // notice's button leaves the page with its line, so the focus moves on and this says what happened:

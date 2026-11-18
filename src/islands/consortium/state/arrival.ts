@@ -5,7 +5,7 @@
 // countryAtStart, guessCountry, ported from v1 logic.js and memory.js; arrivalPlan) run in Node
 // (scripts/consortium-memory.test.mjs, scripts/consortium-pp-b1.test.mjs).
 import type { ClimateZone, LinkOrigin } from '../../../lib/consortium/index.ts';
-import { bringsPlace, countryZones, decodeLink, linkOrigin, readPreset, zoneOf } from '../../../lib/consortium/index.ts';
+import { bringsPlace, countryZones, decodeLink, linkOrigin, NO_EDITS, readPreset, zoneOf } from '../../../lib/consortium/index.ts';
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import {
@@ -186,7 +186,8 @@ export function arrivalPlan(how: Arrival, { saved, pref, guess, seed, cell }: Ar
   const linkCell = how.kind === 'link' ? linkOrigin(how.fragment) : how.kind === 'saved' && how.ask ? linkOrigin(how.place) : null;
   if (how.kind !== 'saved' || !how.ask) return { country, own, linkCell };
   const mine = placeOfSeed(saved?.place || seed);
-  return { country, own, linkCell, ask: { spot: mine?.spot ?? schema.valuesOf(['spot']).spot, soil: mine?.soil ?? { from: 'map' }, country, location: cell() } };
+  const kept = saved?.place && saved.place.length <= 2_000 ? decodeLink(`v=5&${saved.place}&e=1`, {}).state.siteEdits : null;
+  return { country, own, linkCell, ask: { spot: mine?.spot ?? schema.valuesOf(['spot']).spot, soil: mine?.soil ?? { from: 'map' }, siteEdits: kept ?? NO_EDITS, country, location: cell() } };
 }
 
 // ---- the wiring ----

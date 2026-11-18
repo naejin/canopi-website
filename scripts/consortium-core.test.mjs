@@ -349,7 +349,7 @@ test('alternatives: the closest in years first, members and removed plants left 
 const V5_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 const shareV5 = (over = {}) => ({
   climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: V5_SPOT, soil: null,
-  members: [], removed: [], guests: [], ...over,
+  members: [], removed: [], guests: [], siteEdits: null, plantsPerJob: 2, ...over,
 });
 const NO_NOTICE = { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false };
 

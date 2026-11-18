@@ -57,7 +57,7 @@ test('PP-B exit: a seeded plant the suggestion cannot read stays in the palette'
 // storage double; Node has no location or history, so the address is left alone. ----
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { emptyPlace, encodeLink, encodePlace, linkOrigin, decodeLink } from '../src/lib/consortium/index.ts';
+import { emptyPlace, encodeLink, encodePlace, linkOrigin, decodeLink, NO_EDITS } from '../src/lib/consortium/index.ts';
 
 test('b1a emptyPlace: the dormant place a save and a link write (spot and soil answers wait for PP-F)', () => {
   assert.equal(Object.isFrozen(emptyPlace), true);
@@ -607,7 +607,7 @@ test('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country bef
   assert.deepEqual(r.linkCell, linkOrigin(pl));
   assert.ok(r.linkCell, 'the link\'s cell from the tab\'s place');
   assert.equal(reads, 1, 'the reader\'s own cell read once for the ask');
-  assert.deepEqual(r.ask, { spot: { ...emptyPlace.spot, light: 'sun' }, soil: { from: 'map' }, country: { code: 'KE', source: 'chosen' }, location: PARIS });
+  assert.deepEqual(r.ask, { spot: { ...emptyPlace.spot, light: 'sun' }, soil: { from: 'map' }, siteEdits: NO_EDITS, country: { code: 'KE', source: 'chosen' }, location: PARIS });
   // No save: the seed stands for the reader's own place.
   const n = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { pref: 'KE', seed: 'w=dry' });
   assert.equal(n.ask.spot.water, 'dry');

@@ -34,6 +34,7 @@ const SPEC_FILES = [
   'consortium-e6-r4.browser.test.mjs', 'consortium-e6.browser.test.mjs',
   'consortium-p5-s5b.browser.test.mjs', 'consortium-p5-s5c.browser.test.mjs', 'consortium-p5-s5f.browser.test.mjs',
   'consortium-pf-a.browser.test.mjs', 'consortium-pf-b.browser.test.mjs', 'consortium-pf-c.browser.test.mjs',
+  'consortium-pf-d.browser.test.mjs', 'consortium-pf-e.browser.test.mjs', 'consortium-pf-f.browser.test.mjs',
   'consortium-pp-b1.browser.test.mjs', 'consortium-pp-b2.browser.test.mjs',
   'consortium-pp-c1.browser.test.mjs', 'consortium-pp-c2.browser.test.mjs',
   'consortium-s1.browser.test.mjs', 'consortium-s3.browser.test.mjs', 'consortium-s4.browser.test.mjs',
@@ -55,7 +56,9 @@ test('every browser test runs: no todo, no skip, in any file but a P5 stream\'s 
     // with the markers commit 0 moved into it (pp-b1 holds one) and grows with its stream; seams-p5 kept
     // one case when PP-B commit 0a' deleted UX4 with Jobs (consortium-s2 went whole).
     // pf commit 0 (2026-11-17) moved s4's start case (BT-1) to the pf-c spec, so s4 keeps 4.
-    assert.ok(testsOf(text).length >= (/-(pp-b\d|pp-(c1|c2)|pf-[abc]|seams-p5)\./.test(file) ? 1 : /-(s1|s3|s4|e6-r4)\./.test(file) ? 2 : 5), file);
+    // v14 pf commit 0W (2026-11-18) opened pf-d, -e and -f with one board case each; their stream's
+    // commit 0 brings them to 5 or more (the pf-specs test below), as pf-a, -b and -c have.
+    assert.ok(testsOf(text).length >= (/-(pp-b\d|pp-(c1|c2)|pf-[a-f]|seams-p5)\./.test(file) ? 1 : /-(s1|s3|s4|e6-r4)\./.test(file) ? 2 : 5), file);
     assert.doesNotMatch(text, /\btodo\s*:|\bskip\s*:|\.todo\(|\.skip\(/, file);
   }
 });
@@ -351,26 +354,31 @@ test('PP-C specs: each test names the stream its file is for, which the owners f
   }
 });
 
+// v14 pf commit 0W (2026-11-18): consortium-pf-d, -pf-e and -pf-f, the chunk-3 streams ("Your place in
+// figures", "Many plants", "One plant"), each open with one board case; a file needs 1 case until its
+// stream's commit 0 (CHUNK_3_OPEN lists the streams still before it) and 5 after.
 // pf commit 0 (2026-11-17): consortium-pf-a, -pf-b and -pf-c hold the boards of pf stream a ("What's
 // missing next"), b ("The pictures and your plants") and c ("Your place") as tests. Each case names
 // its file's stream ("PFA3 (pf-a …)", or "F1a-P2 → PP-C (pf-c …)" for a moved F1a marker) and is
 // marked expected-fail under it until the stream makes it pass; the file's head comment carries the
 // sweep's ledger, one line per old test it carries ("carries <old id>").
-const PF_FILES = files.filter((f) => /^consortium-pf-[abc]\./.test(f));
+const PF_FILES = files.filter((f) => /^consortium-pf-[a-f]\./.test(f));
+// The pf streams whose commit 0 has not landed: each removes itself here in its commit 0.
+const CHUNK_3_OPEN = new Set(['pf-d', 'pf-e', 'pf-f']);
 test('pf specs: each test names the stream its file is for, which the owners file gives it; each marker names it; the head lists the old tests it carries', async () => {
   const { markers } = await import('./expect-fail.mjs');
   const owners = JSON.parse(readFileSync(new URL('./plan/pp-c-owners.json', import.meta.url), 'utf8'));
   const { matches } = await import('./plan/owners.mjs');
-  assert.deepEqual(PF_FILES, ['consortium-pf-a.browser.test.mjs', 'consortium-pf-b.browser.test.mjs', 'consortium-pf-c.browser.test.mjs']);
-  const marked = markers().filter((m) => /^browser\/consortium-pf-[abc]\./.test(m.file));
+  assert.deepEqual(PF_FILES, ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => `consortium-pf-${x}.browser.test.mjs`));
+  const marked = markers().filter((m) => /^browser\/consortium-pf-[a-f]\./.test(m.file));
   for (const file of PF_FILES) {
-    const stream = `pf-${file.match(/^consortium-pf-([abc])\./)[1]}`;
+    const stream = `pf-${file.match(/^consortium-pf-([a-f])\./)[1]}`;
     const text = read(file);
     assert.ok(owners.chunks.some((c) => c.streams[stream]?.files.some((p) => matches(p, `scripts/browser/${file}`))), `the owners file gives ${file} to ${stream}`);
     const tests = testsOf(text);
-    assert.ok(tests.length >= 5, `${file} has its board cases`);
+    assert.ok(tests.length >= (CHUNK_3_OPEN.has(stream) ? 1 : 5), `${file} has its board cases`);
     for (const { title, marked: isMarked } of tests) {
-      const owner = title.match(/^(?:PF[ABC]\d+[a-z]?|F1a-[A-Z]\d+ → PP-C) \((pf-[abc])\b/)?.[1];
+      const owner = title.match(/^(?:PF[A-F]\d+[a-z]?|F1a-[A-Z]\d+ → PP-C) \((pf-[a-f])\b/)?.[1];
       assert.equal(owner, stream, `${file}: "${title}" names ${stream}: PF<X><n> (${stream} …)`);
       if (isMarked) assert.ok(marked.some((m) => m.title === title && m.owner === owner), `"${title}": its marker names ${owner}`);
     }

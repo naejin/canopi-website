@@ -167,6 +167,7 @@ test('P5-0a (commit 0 fixtures): the reader on the built tiles answers each site
     if (want.distanceCells !== undefined) assert.equal(l.climate?.distanceCells, want.distanceCells, name);
     if ('soil' in want) assert.equal(l.soil, want.soil, name);
     if (want.ph !== undefined) assert.equal(l.soil?.phH2o, want.ph, name);
+    if (want.fillDistanceCells !== undefined) assert.deepEqual([l.soil?.filled, l.soil?.fillDistanceCells], [true, want.fillDistanceCells], `${name}: a neighbour fill`);
     assert.equal(l.regions.wgsrpdL3, want.l3, `${name} level 3`);
     assert.equal(l.regions.isoA2, want.iso, `${name} country`);
   }
@@ -246,6 +247,35 @@ async function runFixture(name, timeoutMs) {
     child.on('close', (code) => done({ code, out }));
   });
 }
+
+// v14 pf commit 0W (item 7): the list fold every stream folds its long lists with (views/kit/more.tsx
+// MoreList, mounted through the hook before any stream does): at 320 px nothing passes the edge, each
+// button is a 44 px target, and the focus lands on the first row newly shown.
+test('0W-1 (commit 0W MoreList at 320 px): closed "Plants 50", 3 rows and "+ 47 more"; then 10 rows with "+ 40 more" and "Show fewer", the focus on row 4; then all 50, the focus on row 11; Show fewer gives back 3 and the focus to "+ 47 more"; a short list in a small palette shows whole', async () => {
+  const page = await tool({ width: 320 });
+  const rows = () => page.$$eval('#ct-more-test li', (ls) => ls.map((l) => l.textContent.trim()));
+  const buttons = () => page.$$eval('#ct-more-test button', (bs) => bs.map((b) => ({ name: b.textContent.trim(), w: b.getBoundingClientRect().width, h: b.getBoundingClientRect().height })));
+  const focus = () => page.evaluate(() => document.activeElement?.textContent.trim() ?? '');
+  const click = async (name) => { await page.evaluate((n) => [...document.querySelectorAll('#ct-more-test button')].find((b) => b.textContent.trim() === n).click(), name); await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); };
+  await page.evaluate(() => window.__ctTest.mountMoreList(50, 200));
+  assert.match(await page.$eval('#ct-more-test', (e) => e.innerText.replace(/\s+/g, ' ')), /^Plants 50 Plant 1 Plant 2 Plant 3 \+ 47 more$/);
+  for (const b of await buttons()) assert.ok(b.w >= 44 && b.h >= 44, `"${b.name}" is a 44 px target (${b.w}×${b.h})`);
+  assert.deepEqual(await page.evaluate(() => { const vw = document.documentElement.clientWidth; return [...document.querySelectorAll('#ct-more-test *')].filter((e) => e.getBoundingClientRect().right > vw + 0.5).length; }), 0, 'nothing passes 320 px');
+  await click('+ 47 more');
+  assert.equal((await rows()).length, 10);
+  assert.deepEqual((await buttons()).map((b) => b.name), ['+ 40 more', 'Show fewer']);
+  assert.equal(await focus(), 'Plant 4', 'the first row newly shown takes the focus');
+  await click('+ 40 more');
+  assert.equal((await rows()).length, 50, 'no other cap');
+  assert.deepEqual((await buttons()).map((b) => b.name), ['Show fewer']);
+  assert.equal(await focus(), 'Plant 11');
+  await click('Show fewer');
+  assert.equal((await rows()).length, 3);
+  assert.equal(await focus(), '+ 47 more', 'the focus back on "+ N more"');
+  await page.evaluate(() => window.__ctTest.mountMoreList(5, 20));
+  assert.deepEqual([await rows(), await buttons()], [['Plant 1', 'Plant 2', 'Plant 3', 'Plant 4', 'Plant 5'], []], 'whole within the size rule');
+  await page.browserContext().close();
+});
 
 test('E1 forced hang: a test that hangs fails at its timeout by name and leaves console, network and a screenshot', { timeout: 120_000 }, async () => {
   const dir = join(ROOT, 'test-results', 'browser', 'hang.spec', 'forced-hang-a-page-that-never-shows-what-the-test-waits-for');

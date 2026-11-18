@@ -6,11 +6,11 @@
 // has to be cleared on the way out for saving to work again.
 import { batch, effect, signal } from '@preact/signals';
 import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { bringsPlace, decodeLink, emptyPlace, linkClimates, linkOrigin, linkVersionStatus, snapOrigin, zoneOf } from '../../../lib/consortium/index.ts';
+import { bringsPlace, decodeLink, emptyPlace, linkClimates, linkOrigin, linkVersionStatus, NO_EDITS, sameEdits, snapOrigin, zoneOf } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
-import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, writeAddress, LOCATION_STORE, type CountryFrom, type OwnPlace } from './persist.ts';
+import { actionCount, attempt, holdSave, inFlight, linkPlace, memory, placeSaid, quietly, savedInstead, writeAddress, LOCATION_STORE, SUGGESTED_KEY, type CountryFrom, type OwnPlace } from './persist.ts';
 import { lookingThrough } from './lookups.ts';
 
 // The notices a link (or the save) left for the reader (Place shows them).
@@ -100,9 +100,11 @@ export function ownLocation(text?: string | null): void {
 
 // Applies a decoded link or save to the store, in one batch, and opens the result. place: whether it
 // brings a place (core bringsPlace): its country, spot and soil apply only then.
-function applyDecoded(d: DecodedLink, countryFrom: Extract<CountrySource, 'link' | 'chosen'>, place: boolean): void {
+// suggested: the save marks its palette as the last suggestion untouched (persist.ts SUGGESTED_KEY).
+function applyDecoded(d: DecodedLink, countryFrom: Extract<CountrySource, 'link' | 'chosen'>, place: boolean, suggested = false): void {
   batch(() => {
     schema.apply(d.state, { countryFrom, bringsPlace: place });
+    store.suggestedIds.value = suggested ? [...d.state.members] : [];
     store.view.value = 'matrix';
     // A sheet left open would show a plant of the consortium replaced (X8).
     store.closeSheet();
@@ -207,18 +209,18 @@ export async function restore(fragment: string, { from, src = null, keep = false
     // The reader's own cell is read only when a place could wait on the reader (it is kept with it):
     // a link without a place leaves canopi-location read once, as on a plain open (P5-27j).
     const mayAsk = (from === 'link' || !!ask) && brings;
-    const mine: OwnPlace = ask ?? waiting?.own ?? { spot: store.spot.peek(), soil: store.soil.peek(), country: country ?? store.country.peek(), location: mayAsk ? ownCell() : null };
+    const mine: OwnPlace = ask ?? waiting?.own ?? { spot: store.spot.peek(), soil: store.soil.peek(), siteEdits: store.siteEdits.peek(), country: country ?? store.country.peek(), location: mayAsk ? ownCell() : null };
     const asks = mayAsk && !samePlace(mine, d, origin);
     // One batch; the watcher then saves it and writes the address (plants no longer in the list are
     // left out of the address, §5).
     // A link's place still waiting when another palette opens (Back to the reader's own, another link):
     // the reader's own place and country come back first, so nothing of the earlier link stays.
     quietly(() => batch(() => {
-      if (waiting && !ask) { store.spot.value = waiting.own.spot; store.soil.value = waiting.own.soil; store.country.value = waiting.own.country; }
+      if (waiting && !ask) { store.spot.value = waiting.own.spot; store.soil.value = waiting.own.soil; store.siteEdits.value = waiting.own.siteEdits; store.country.value = waiting.own.country; }
       // Arriving by a link holds the save until a plant change, as does a reload or Back/Forward of
       // it; opening the save owns it (state/save.ts). In the batch, so the save sees the palette applied.
       holdSave(from === 'link' || hold);
-      applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings);
+      applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings, from === 'saved' && !!place && new URLSearchParams(place).get(SUGGESTED_KEY) === '1');
       // A climate is chosen now: a card the saved site proposed while this opened goes (seam review
       // round 3, 1); only a restore that fails leaves it. One the reader's own locating proposed stays
       // (round 4, 2).
@@ -246,7 +248,7 @@ function samePlace(mine: OwnPlace, d: DecodedLink, origin: LinkOrigin | null): b
   const s = d.state;
   const cell = mine.location && snapOrigin(mine.location);
   const sameCell = !origin || (!!cell && cell.lat === origin.lat && cell.lon === origin.lon);
-  return sameCell && json(s.spot ?? emptyPlace.spot) === json(mine.spot) && json(s.soil ?? { from: 'map' }) === json(mine.soil) && (!s.country || s.country === mine.country.code);
+  return sameCell && json(s.spot ?? emptyPlace.spot) === json(mine.spot) && json(s.soil ?? { from: 'map' }) === json(mine.soil) && sameEdits(s.siteEdits ?? NO_EDITS, mine.siteEdits) && (!s.country || s.country === mine.country.code);
 }
 
 // A guide preset: the climate for this consortium only (never the shared site climate), and the

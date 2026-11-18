@@ -18,6 +18,7 @@ export const SITES = {
   seville: [37.3891, -5.9845], // Csa: Mediterranean, a curated climate, not borderline; SPA
   manaus: [-3.119, -60.0217], // Af: Tropical; BZN; pH 4.3 (filled from 2 cells): likely acid
   nairobi: [-1.2864, 36.8172], // stored Aw, but its coldest-month mean is 17.6 °C: Cwb by its means, Subtropical, borderline with Tropical
+  marseille: [43.296, 5.37], // Csa; FRA; soil pH 7.2 filled from a neighbour 2 squares away (v14 pf commit 0W: "soil map, nearest square N km away: a weaker guess")
   kiambu: [-1.1714, 36.8356], // Cfb (a cell other than Nairobi's): proposes Temperate, the reader's honest answer; the "Not this climate? Choose another" case, overridden to Subtropical (borrows the nearest lists): 305 of 515 (concept P1; PP-B b1b, coordinator 2026-11-15)
 };
 
@@ -59,7 +60,12 @@ export const EXPECTED = {
   manaus: { koppen: 'Af', l3: 'BZN', iso: 'BR', ph: 4.3 },
   nairobi: { koppen: 'Aw', l3: 'KEN', iso: 'KE' },
   kiambu: { koppen: 'Cfb', l3: 'KEN', iso: 'KE' },
+  marseille: { koppen: 'Csa', l3: 'FRA', iso: 'FR', ph: 7.2, fillDistanceCells: 2 },
 };
+// A place with a climate and no soil value (v14 pf commit 0W, item 11): every land square of the soil
+// map answers, so a spec takes a real place's lookup with its soil left out (p5-helpers atSite(page,
+// name, NO_SOIL)); the sea point `coast` has none too, from a neighbouring climate cell.
+export const NO_SOIL = { soil: null };
 
 // Place's climate cards sit one link away (PP-B b1a, owner drop 10): "No location? Choose a climate",
 // or "Not this climate? Choose another" once a location gives one. Pressed as a grower would when the

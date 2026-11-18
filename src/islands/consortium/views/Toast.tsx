@@ -28,7 +28,7 @@ export function Toast({ where = 'page' }: { where?: Where }) {
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0], line.from); }}>{T('undo')}</button>
           )}
           {line.action && (
-            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const run = line.action!.run; hideToast(); run(); }}>{line.action.label}</button>
+            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const { run, keep } = line.action!; if (!keep) hideToast(); run(); }}>{line.action.label}</button>
           )}
           <button type="button" class="ct-icon-button" aria-label={T('dismiss')} onClick={hideToast}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13" stroke="currentColor" stroke-width="1.8" /></svg>

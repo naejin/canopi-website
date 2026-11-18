@@ -1,4 +1,4 @@
-// Shared by the pf board specs (consortium-pf-a/-pf-b/-pf-c.browser.test.mjs; pf commit 0, 2026-11-17):
+// Shared by the pf board specs (consortium-pf-a to -pf-f.browser.test.mjs; pf commit 0, 2026-11-17; d, e, f from 0W, 2026-11-18):
 // the boards (.local/consortium/v2/f1a/mockups-v3/project/*.dc.html, owner-approved v12) read as tests.
 // They check what the grower reads and does: the words on the page (the site's <main>, the tool's own
 // head included), their order, the roles and names of the controls, and the state behind them through
@@ -8,6 +8,7 @@
 // expected-fail marker's reason is /board: / and a harness error (a timeout, a closed page) is never
 // taken for the stated failure.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { aria, axNodes, has, realDb } from './helpers.mjs';
 import { atSite, tool } from './p5-helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
@@ -156,6 +157,30 @@ export async function emptyPalette(opts = {}) {
 }
 // Waits for the verdicts of the page's members (a fit checked, or the check failed).
 export const verdictsSettled = (page, timeout = 15_000) => page.waitForFunction(() => { const s = window.__ctTest.store; return !!s.memberVerdicts.value || s.verdictFailed.value; }, { timeout }).then(() => true, () => false);
+
+// ---- v14 pf commit 0W (item 11): the grower's values, the goal, the 200-plant palette ----
+
+// The grower's own values, as the figures panel writes them (store.setSiteEdits; `summary` the toast's words).
+export const setSiteEdits = (page, edits, summary = 'Edits set') => page.evaluate((e, s) => { window.__ctTest.store.setSiteEdits(e, s); }, edits, summary);
+// The palette goal, as the Jobs control sets it ("Plants per job 1 2 3 5").
+export const setPlantsPerJob = (page, n) => page.evaluate((k) => { window.__ctTest.store.setPlantsPerJob(k); }, n);
+// The 200-plant Kiambu palette of the Subtropical list (scenario case kiambu-200: the board tools'
+// pal.mjs rule, as ids), at Kiambu, through the hook (no control makes 200 plants in one step).
+export const PALETTE_200 = JSON.parse(readFileSync(new URL('../fixtures/consortium-scenarios.json', import.meta.url), 'utf8')).cases.find((c) => c.id === 'kiambu-200').input.members;
+export async function loadPalette200(opts = {}) {
+  const page = await tool(opts);
+  await atSite(page, 'kiambu');
+  await page.evaluate(async (ids) => {
+    const { store } = window.__ctTest;
+    store.climate.value = 'Subtropical';
+    await store.loadPool('Subtropical');
+    store.members.value = ids;
+    store.view.value = 'matrix';
+  }, PALETTE_200);
+  assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.members.value.length === 200, { timeout: 20_000 }).then(() => true, () => false), 'the 200 plants');
+  assert.ok(await verdictsSettled(page, 30_000), 'the 200 plants\' verdicts');
+  return page;
+}
 
 export const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
 export const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));

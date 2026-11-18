@@ -20,8 +20,8 @@
 // state with one more field and sees it round-trip through the schema.
 import { batch, signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
-import type { ClimateZone, PeriodId, PhaseOrd, PlantId, Room, ShareState, Site, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
-import { emptyPlace, periodIds } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, PeriodId, PhaseOrd, PlantId, Room, ShareState, Site, SiteEdits, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
+import { DEFAULT_GOALS, emptyPlace, NO_EDITS, periodIds, plantsPerJobOf, siteEditsOf } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource, View } from '../store.ts';
 
 // What the link's put and take may read: the reader's "Include my place" tick (share: place), where a
@@ -137,6 +137,20 @@ export const CONSORTIUM_FIELDS = {
       take: (s: ShareState, now: SoilAnswer, o: LinkOptions): SoilAnswer => s.soil ?? (o.bringsPlace ? { from: 'map' } : now),
     },
   } satisfies Field<SoilAnswer>,
+  // The grower's own values (v14 pf commit 0W-1 item 5; SiteEdits, made safe by siteEditsOf from every
+  // source): in a link only with "Include my place" (f b p i d), in the save's private place; Undo puts
+  // them back and a change ends the plant Undo offer. A link that brings a place gives its own (none:
+  // none); one that brings none leaves the open palette's.
+  siteEdits: {
+    initial: (): SiteEdits => NO_EDITS, undo: true, endsUndo: true, saved: true,
+    link: {
+      put: (v: SiteEdits, o: LinkOptions) => (o.place ? v : null),
+      take: (s: ShareState, now: SiteEdits, o: LinkOptions): SiteEdits => (s.siteEdits ? siteEditsOf(s.siteEdits) : o.bringsPlace ? NO_EDITS : now),
+    },
+  } satisfies Field<SiteEdits>,
+  // Plants per job (`j`: the palette's goal, outside "Include my place", A10; saved, not in Undo); a
+  // link's wins (absent or not 1, 2, 3, 5: 2).
+  plantsPerJob: { initial: (): number => DEFAULT_GOALS.plantsPerJob, saved: true, link: { take: (s: ShareState) => plantsPerJobOf(s.plantsPerJob) } } satisfies Field<number>,
   // The period the page is shown for (`y`; saved and shared, not in Undo); a link's wins (absent: today).
   period: { initial: (): PeriodId => TODAY, saved: true, link: { take: (s: ShareState) => s.period } } satisfies Field<PeriodId>,
   // The consortium, in the order added.
@@ -172,6 +186,11 @@ export const STATE_FIELDS = {
   // the stepper went in PP-B commit 0a'): b2 points print at the year step of Through the years (PP-B18)
   // and removes it.
   stage: { initial: (): PhaseOrd => 0 } satisfies Field<PhaseOrd>,
+  // The plants the last "Suggest plants" placed (v14 0W-1 item 4, A19), cleared by any later plant or
+  // goal change (store.ts): store.untouchedSuggestion reads it. Never in a link; the save keeps only
+  // whether the palette is that suggestion untouched (persist.ts SUGGESTED_KEY in its private place).
+  // Undo puts it back with the plants.
+  suggestedIds: { initial: (): PlantId[] => [], undo: true, watched: 'reader' } satisfies Field<PlantId[]>,
 };
 
 export const state = defineState(STATE_FIELDS);
