@@ -2,20 +2,20 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:52:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T16:58:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:02Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:349ff16b9b85cbc7
-    last_modified: 2026-11-13T16:13:32Z
+    digest: sha256:7c18172e53e80875
+    last_modified: 2026-11-18T14:32:45Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:a95d33626cb4756c
-    last_modified: 2026-11-17T18:36:51Z
+    digest: sha256:be0009488af3723d
+    last_modified: 2026-11-18T14:32:45Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -74,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:61c0fde1b6c5951f
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:19d29876539f68a7
+    last_modified: 2026-11-18T14:52:44Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b706295ccaa71c2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:121e7a19a49914f6
+    last_modified: 2026-11-18T16:40:02Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:05dac65b027489d3
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:5f1824e5dabf28a7
+    last_modified: 2026-11-18T09:55:56Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -128,13 +128,13 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 ## Rules
 
 - **Nothing third-party before a click.** Geolocation on the button only (low accuracy, 10 min cache, 15 s timeout); Nominatim on Enter only (limit 5, `accept-language` = page language, no email, 1.1 s pacing, an in-memory cache per query, attribution shown); MapLibre and OpenFreeMap (positron or dark by theme) when the map opens. Climate tiles are the site's own (`#ct-climate` names them).
-- **Suggest, never set.** A `ready`, `coast` or `borderline` site writes `store.proposedClimate`; Start shows that card as proposed (`.is-proposed`, `[data-proposed]`, "Suggested for your site"), never as a checked radio. It is set by `[data-location-confirm]` or by a click on the proposed card. Polar suggests nothing. Borderline proposes the class's own climate and the line says "Between {a} and {b}; we picked {a}. Check it." (`location.between`; with no zone across, `location.picked`) only while {a} is the proposed card Start shows (no climate chosen or shown from a link); otherwise "Between {a} and {b}: check that your climate is right." (`location.betweenCheck`; review round 4, 2), the Köppen code kept (UX audit fix 2, decision row "P5 fixes from the UX audit"; P5-10).
+- **Used at once (v13/v14 boards; the v12 proposal and its `[data-location-confirm]` are gone).** A `ready`, `coast` or `borderline` site's climate is chosen at once (`locate` → `chooseClimate`); borderline takes the class's own climate, the other one tap away; polar chooses none. Never over a climate kept for the same cell, never by a link's location, and never over a climate chosen while the read ran: `useMyLocation` and the place search note the climate when the reader's ask began (with its lookup id), and a climate chosen since, by hand or by a link's palette pasted meanwhile, stands (P5-1c). `store.proposedClimate`, `proposedFromSave` and `persist.ts climateShown` are dead (triage M9).
 - **Borderline** (`BORDERLINE_C` 0.5 °C): the class disagrees with its means (`koppenTemperatureMarginC` > 0), or a monthly mean lies within 0.5 °C of a bound that changes the zone: coldest month 18 °C (A/C) or 0 °C (C/D), warmest 22 °C only where it changes the zone (Cfa Subtropical / Cfb Temperate; Da/Db), warmest 10 °C (tundra). `near` names the zone across; from an A class it is the C class it would be (Aw → Cw, As → Cs, Af/Am → Cf, summer letter a if the warmest month ≥ 22 °C, else b: a highland Af is Cfb, Temperate). B classes are rainfall-set: never borderline on temperature. Lyon (Cfa, warmest 22.4 °C) is borderline with Temperate. **Class from the means** (decision row "Climate ranges fixed before the P5 push"): when `koppenTemperatureMarginC` > 0 and `meansKoppen(today)` (main group A/C/D from the coldest-month mean, 18 °C and > 0 °C; C/D summer letter from the warmest, 22 °C; dry letter kept; B and E unchanged) gives another zone, `siteClimate` proposes that zone (`koppen` = the means class, `mapKoppen` = the stored one); within `MEANS_MARGIN_C` 2 °C (the margin itself) it is borderline with the stored class's zone, further out a plain suggestion. The line names the means class in `location.why`, adds `location.means` ("The climate map gives {map} here, but this area’s own average temperatures give {koppen}.") and, borderline, `location.meansNear` ({margin}) instead of `location.state.borderline`. Nairobi's cell (stored Aw, margin 0.4, coldest-month mean 17.6 °C) proposes Subtropical (Cwb), between Subtropical and Tropical. A disagreement that changes no zone keeps the old rule (borderline, nothing across).
 - **Sea** (no climate cell): "pick a point on land"; the store is left alone, and with a site already read the line names it: "… Still using {place}." (`location.state.seaKept`). **Coast** (a climate but no country): the nearest cell's climate, no country or soil. **Tiles failed**: a site already read stays in use everywhere (store, `canopi-location`, its location country) and the line says so (`location.state.failedKept`, "… Still using {place}."), so a reload agrees with the page; with none, or a link's location not read yet, location and proposal cleared, manual cards with a note (`location.state.failed`). Invariant (seam review 2, 3): whenever a site drives the pool, marks and future, the panel names it; `stateText` in views/location/location.tsx writes these lines, in the result line and the map dialog.
 - **Country from the location**: `locationCountry` (state/location.ts) sets `{code, source: 'location'}` over a guess, none or an earlier location country, never over `chosen` or `link`. A lookup's writes are quiet (the click was the reader's action), so a link pasted while tiles load still restores; only Forget is a reader write. The country goes through `siteFound`, after the batch: `quietly()` is synchronous and a batch flushes after it resets, so a write inside a batch is counted as the reader acting (review round 2, 1).
 - **Device only**: `localStorage['canopi-location']` `{lat, lon, source, label?}`; looked up again after the plant list opens (`ownLocation` in state/restore.ts) unless the link opened carries `o=`. One rule for a fresh open and a link pasted into the open tab (seam review 5; coordinator decision row to record): a link without `o=` leaves the reader's own saved site in place (their checks are about their site; the link's plants are unchanged); only a link's `o=` stands in for it, for that page. `ownLocation` runs one lookup at a time (a fresh link without `o=` asks at startup and again when it opens: seam review round 2, 3; P5-27j). A saved site read while a share link's climate is still opening proposes no card (`pendingLinkClimate`); under a saved consortium opening it still does, and the restore's batch clears it when the save opens (only a proposal from that lookup, `store.proposedFromSave`; one the reader's own locating made stays: round 4, 2, P5-27p), so only a save that fails to open leaves the card proposed (round 2, 2; round 3, 1; P5-27i, P5-27k). The line's "Use …" never shows over a climate still opening (`pendingClimate`).
 - **Links**: `o=<lat>,<lon>` (the climate cell centre, ≤ 3 decimals, literal comma, just before `e=1`) and the location country only when the reader ticks Share's `input[data-share-location]`. A link with `o=` sets `store.location` (source `link`, labelled "from the shared link, approximate") in the restore batch; the link's climate, answers and country win. It lives for that page only (coordinator decision, review round 1): never saved over the reader's `canopi-location`, never a country, and Forget leaves the reader's own saved location. A link without `o=` (hashchange) clears a link-sourced location and its line and looks the reader's own saved site up again (`ownLocation`), and so do Change site (the palette's step 1 back to Place), Start over and Start empty (`dropLinkLocation` → `letGo(true)`: the link's lookup is dropped too, so no loading line stays, no later "failed" is written and Suggest is not held; review rounds 2, 4 and 3, 2; P5-13c, 13d). Those three, Forget and a failed read also clear the "not read" note; a later plain visit restores the reader's own saved site.
-- **Suggest waits for a lookup**: `requestSuggest` (state/suggest-wait.ts) with `lookups` > 0 sets `pendingSuggest` and runs once they settle, so the suggestion's range filter (S5c) sees the site; the result line meanwhile reads "Reading the climate of your site…" (review round 1 addendum, spec P5-1d). A saved or link location holds one lookup from the chunk load through its settle (`lookingThrough`, no gap). The wait is capped at 10 s per press (`waited`, its timer cleared by the next press or when Suggest runs; review round 3, 1): Suggest then runs without the site and `[data-location-unread]` says the climate was not read (P5-1f).
+- **Suggest waits for a lookup**: `requestSuggest` (state/suggest-wait.ts) with `lookups` > 0 sets `pendingSuggest` and runs once they settle, so the suggestion's range filter (S5c) sees the site; the result line meanwhile reads "Reading the climate of your site…" (review round 1 addendum, spec P5-1d). A saved or link location holds one lookup from the chunk load through its settle (`lookingThrough`, no gap). The wait is capped at 10 s per press (`waited`, its timer cleared by the next press or when Suggest runs; review round 3, 1): Suggest then runs without the site: the palette page shows board Loading's message "Plants were suggested without your place’s climate…" (a toast, `location.unread`), and Place keeps `[data-location-unread]` until the read fails or is let go (P5-1f).
 - **No soil read** (pre-push review 3): state/location.ts's `read` calls `lookupSite(…, DEFAULT_RADIUS, { soil: false })`, so a lookup fetches climate and regions tiles only (P5-1 checks it); P5.2's soil likely restores the soil read.
 - **Timeouts** (review round 2, 3): a tile read unanswered in 15 s (`READ_TIMEOUT_MS`, a race in state/location.ts's `read`; the climate reader takes no signal) fails like a failed read; a geocoder request is aborted after 15 s (`GEOCODER_TIMEOUT_MS`, transport.ts) and thrown as an error, not an AbortError, so the search shows "offline"; `currentPosition(options, permission)`: the browser's own timeout does not run while its permission prompt waits, so a permission granted before the press gets the browser's 15 s plus a 5 s backstop, and anything else one 45 s cap (`PROMPT_CAP_MS`) over prompt and fix, since a one-time Allow fires no `change` event in some browsers (review round 4, 3).
 - **Keyboard on the cards** (views/place/Place.tsx, formerly Start.tsx; review round 2, 5): with a card proposed and none checked, only the proposed radio is in the tab order; arrows move the focus without checking; Space, Enter or a click confirms (P5-10b).
