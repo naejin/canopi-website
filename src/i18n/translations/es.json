@@ -1364,6 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "one: ; {names} queda en medio | other: ; {names} quedan en medio",
   "consortium.palette.readJobs": "En Tareas, la franja son los siete periodos. Un hueco de menos de un año, y el tiempo después del año 60, no se juzgan: una línea fina, nunca un hueco.",
   "consortium.palette.readUnknown": "Una fila sin marca de toxicidad no se ha comprobado, o no hay nada registrado. Lo desconocido nunca se muestra como un hueco, un «no» o un nivel lleno: cuando las tareas o la luz de una planta aún no están comprobadas, la línea lo dice, como en «Cubre el suelo: nadie conocido después del año 25 · 2 plantas sin comprobar» o «Sombra: 1 planta encaja, 2 desconocidas».",
+  "consortium.palette.chart.readTox": "En una barra demasiado estrecha para sus palabras, las marcas tras el triángulo dicen el nivel de toxicidad: ! {slight}, !! {moderate}, !!! {severe}. Abre la planta para leerlo entero.",
   "consortium.palette.readSyntropic": "Si conoces la agricultura sintrópica: los cuatro niveles de luz son los estratos, y los periodos son las etapas de la sucesión.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

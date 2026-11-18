@@ -1364,6 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "one: ; {names} sits between | other: ; {names} sit between",
   "consortium.palette.readJobs": "In Jobs, the strip is the seven time spans. A gap shorter than a year, and the time after year 60, are not judged: a thin line, never a hole.",
   "consortium.palette.readUnknown": "A row with no toxicity mark has not been checked, or nothing was recorded. An unknown is never shown as a hole, a “no” or a filled level: where a plant’s jobs or light are not checked yet, the line says so, as in “Covers the ground: nobody known after year 25 · 2 plants not checked” or “Shade: 1 plant fits, 2 unknown”.",
+  "consortium.palette.chart.readTox": "On a bar too narrow for its words, the marks after the triangle say the toxicity level: ! {slight}, !! {moderate}, !!! {severe}. Open the plant to read it in full.",
   "consortium.palette.readSyntropic": "If you know syntropic farming: the four light levels are the strata, and the time spans are the stages of succession.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

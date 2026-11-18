@@ -41,7 +41,6 @@ export interface PictureRow {
 // the years (with its key), the row's job in a job lane.
 export interface Picture { title: string; summary: Line[]; columns: Line[]; rows: PictureRow[]; names: Record<PlantId, string>; jobs: Record<PlantId, JobId | null> }
 
-// A plant's main job: its first in jobIds order, or null.
 // The boards' plain list of names ("Olive, Almond, Fig"; c2 C1, B1): the names joined by the page
 // language's own list separator, never a conjunction. The separator is the literal between the first two
 // items of the language's conjunction list (CLDR: "、" in zh and ja, ", " in the others), so a Chinese
@@ -57,6 +56,7 @@ export function plainList(items: readonly string[], lang: string): string {
   return items.join(sep);
 }
 
+// A plant's main job: its first in jobIds order, or null.
 export const mainJob = (t: Taxon): JobId | null => jobsOf(t)[0] ?? null;
 
 // The names and main jobs of a picture's plants (both pictures build them the same way).

@@ -316,6 +316,12 @@
 .ct .ct-grid-bars .ct-bar { container-type: inline-size; }
 .ct .ct-grid-bars .ct-tox-word { display: none; }
 @container (min-width: 15rem) { .ct .ct-grid-bars .ct-tox-word { display: inline; } }
+/* c2 B1: a grid bar without room for the word shows its level's marks instead ("!" Mildly toxic, "!!"
+   Toxic, "!!!" Very toxic; the key in "How to read this"), so the level never rests on colour alone,
+   at any width; never on a chip, which writes the word. */
+.ct .ct-tox-short { display: none; flex: none; font-weight: 600; letter-spacing: 0.5px; }
+.ct .ct-grid-bars .ct-tox-short { display: inline; }
+@container (min-width: 15rem) { .ct .ct-grid-bars .ct-tox-short { display: none; } }
 .ct .ct-bar .ct-level-icon, .ct .ct-chip .ct-level-icon { width: 14px; height: 14px; }
 .ct .ct-grid-bars .ct-bar:not([data-short]) .ct-level-icon { color: var(--surface); }
 .ct .ct-warn-group h4 { display: inline-flex; align-items: center; gap: 4px; }

@@ -97,14 +97,16 @@ function JobRow({ j, lane, mine, name, size, holes, states, showThin, b }: { j: 
 function BigRow({ j, mine, name, holes, all, thins, size }: { j: JobId; mine: JobMembers; name: NameOf; holes: Hole[]; all: readonly Hole[]; thins: readonly Hole[]; size: number }) {
   const [open, setOpen] = useState(false);
   const id = `ct-job-${j}`;
+  // No figure when no plant counts (as JobRow; BC24 never "0 plants"): "Covers the ground · a hole".
+  const n = mine.counted.length;
   return (
     <li class="ct-job" data-job={j}>
       <button type="button" class="ct-job-row" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
-        <JobIcon job={j} /><strong>{T(`job.${j}`)}</strong> <span class="ct-grid-count">{P('palette.chart.plants', mine.counted.length)}{holes.length > 0 && <> · {T('palette.jobHoleMark')}</>}</span>
+        <JobIcon job={j} /><strong>{T(`job.${j}`)}</strong>{(n > 0 || holes.length > 0) && <> <span class="ct-grid-count">{n > 0 && P('palette.chart.plants', n)}{holes.length > 0 && <>{n > 0 ? ' · ' : '· '}{T('palette.jobHoleMark')}</>}</span></>}
       </button>
       <div id={id} class="ct-job-open" hidden={!open}>
         {open && <Names ids={mine.counted} name={name} size={size} closed={10} />}
-        {open && <Outside ids={mine.outside} counted={mine.counted.length} name={name} size={size} />}
+        {open && <Outside ids={mine.outside} counted={n} name={name} size={size} />}
         {open && holes.map((h) => {
           const un = uncheckedLine(h), at = targetPosition(all, thins, h);
           return <p key={h.id} class="ct-job-thin"><HoleTitle words={T('palette.jobHoleNumber', { span: cap(say(holeLine(h))), i: at.index, n: at.of })} />{un && <> · {say(un)}</>}</p>;

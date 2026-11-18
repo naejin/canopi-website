@@ -1364,6 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "one: ; {names} zit ertussenin | other: ; {names} zitten ertussenin",
   "consortium.palette.readJobs": "Bij Taken is de strook de zeven perioden. Een gat korter dan een jaar, en de tijd na jaar 60, worden niet beoordeeld: een dunne lijn, nooit een gat.",
   "consortium.palette.readUnknown": "Een regel zonder giftigheidskenmerk is niet gecontroleerd, of er is niets vastgelegd. Iets onbekends wordt nooit getoond als een gat, een ‘nee’ of een gevuld niveau: waar de taken of het licht van een plant nog niet gecontroleerd zijn, zegt de regel dat, zoals in ‘Bedekt de grond: niemand bekend na jaar 25 · 2 planten niet gecontroleerd’ of ‘Schaduw: 1 plant past, 2 onbekend’.",
+  "consortium.palette.chart.readTox": "Op een balk die te smal is voor de woorden, zeggen de tekens na de driehoek het giftigheidsniveau: ! {slight}, !! {moderate}, !!! {severe}. Open de plant om het voluit te lezen.",
   "consortium.palette.readSyntropic": "Als je syntropische landbouw kent: de vier lichtniveaus zijn de etages, en de perioden zijn de stadia van de successie.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

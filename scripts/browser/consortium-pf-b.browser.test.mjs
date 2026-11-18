@@ -7,8 +7,8 @@
 // never alone; text at 4.5:1 in both themes; the size rule (A14: every name while the palette has 40
 // plants or fewer and the group 12 or fewer, else the count cell). Every figure is re-derived through the
 // engine at the board's inputs (pf-b-helpers.mjs: the 0W scenario cases), never a board number. Written
-// expected-fail under pf-b in commit 0 (scripts/expect-fail.mjs failing()); every marker is gone since the
-// pictures were built.
+// expected-fail under pf-b in commit 0 (scripts/expect-fail.mjs failing()); every pf-b marker is gone since
+// the pictures were built. One marker is left, PFB23 (held for the main agent's chunk-4 Find entry, which removes it).
 // Parked, neither ported nor tested: Through the year and the cooler months (PP-G), the period tabs and
 // "See 2041–2070" (PP-E), Soil and its links (PP-F), Plan, Print and Share boards (PP-D).
 //
@@ -37,7 +37,7 @@ import { readFileSync } from 'node:fs';
 import { aria, has } from './helpers.mjs';
 import { useHarness } from './helpers.mjs';
 import { failing } from '../expect-fail.mjs';
-import { BOARD, JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { boardPalette, figures, fitOf, inSection, jobDoers, laneOf, scenario, standing, uncheckedOf } from './pf-b-helpers.mjs';
 
 useHarness();
@@ -55,6 +55,7 @@ const buttons = async (page) => [...(await names(page, 'button'))];
 // C1); "and" only inside a sentence ("Silk oak and Napier grass sit between").
 const listEn = (xs) => xs.join(', ');
 const TOX = { Slight: 'Mildly toxic', Moderate: 'Toxic', Severe: 'Very toxic' };
+const TOX_MARKS = { Slight: '!', Moderate: '!!', Severe: '!!!' };
 
 // A Jobs row as read at 40 plants or fewer (its lines): the head's figure, the names it counts (the
 // plain list under the head) and the figure of its sentence on the plants outside their range.
@@ -567,7 +568,7 @@ test('PFB19 (pf-b fix round 1, BC1, C5; c2 H1): every toxic plant carries its to
     const page = await boardPalette(id, { width });
     const f = await figures(page);
     await section(page, 'Through the years');
-    const marks = await page.$$eval('#ct-years button[data-plant-id]', (bs) => bs.map((b) => ({ id: b.dataset.plantId, label: b.getAttribute('aria-label'), img: b.querySelector('svg[role="img"]')?.getAttribute('aria-label') ?? null, title: b.querySelector('svg[role="img"] title')?.textContent ?? null, text: b.innerText.replace(/\s+/g, ' ').trim(), width: b.getBoundingClientRect().width })));
+    const marks = await page.$$eval('#ct-years button[data-plant-id]', (bs) => bs.map((b) => ({ id: b.dataset.plantId, label: b.getAttribute('aria-label'), img: b.querySelector('svg[role="img"]')?.getAttribute('aria-label') ?? null, title: b.querySelector('svg[role="img"] title')?.textContent ?? null, barTitle: b.getAttribute('title'), text: b.innerText.replace(/\s+/g, ' ').trim(), width: b.getBoundingClientRect().width })));
     assert.ok(marks.length > 0, `the plant buttons at ${width} px`);
     for (const m of marks) {
       const level = f.tox[m.id];
@@ -578,9 +579,22 @@ test('PFB19 (pf-b fix round 1, BC1, C5; c2 H1): every toxic plant carries its to
         // c2 H1: never the colour alone: the level word shown beside the triangle where there is room,
         // on every chip of the phone's time span and on a bar of 16rem or more.
         if (width === 390 || m.width >= 256) assert.ok(m.text.includes(TOX[level]), `H1: "${TOX[level]}" seen on ${f.names[m.id]} ("${m.text}", ${Math.round(m.width)} px)`);
+        // c2 B1: a bar too narrow for the word shows its level's marks, seen without hovering ("!" Mildly
+        // toxic, "!!" Toxic, "!!!" Very toxic), and its title says the level in words.
+        if (width === 1280) {
+          const seen = m.text.includes(TOX[level]) ? TOX[level] : (/(!+)$/.exec(m.text)?.[1] ?? '');
+          assert.ok(seen === TOX[level] || seen === TOX_MARKS[level], `B1: the level of ${f.names[m.id]} seen on its ${Math.round(m.width)} px bar ("${m.text}"; ${TOX[level]}: "${TOX_MARKS[level]}")`);
+          assert.ok(m.barTitle?.includes(TOX[level]), `B1: the bar's title says "${TOX[level]}" ("${m.barTitle}")`);
+        }
       } else assert.equal(m.img, null, `${f.names[m.id]}: no toxicity mark`);
     }
-    if (width === 1280) assert.ok(marks.some((m) => f.tox[m.id] && m.width >= 256), 'H1: seville-board has a long toxic bar');
+    if (width === 1280) {
+      assert.ok(marks.some((m) => f.tox[m.id] && m.width >= 256), 'H1: seville-board has a long toxic bar');
+      assert.ok(marks.some((m) => f.tox[m.id] && m.width < 256), 'B1: seville-board has a toxic bar too narrow for the word (1 to 2 spans)');
+      await press(page, 'button', 'How to read this');
+      await says(page, 'the marks after the triangle say the toxicity level: ! Mildly toxic, !! Toxic, !!! Very toxic.');
+      await page.keyboard.press('Escape');
+    }
     assert.ok(marks.some((m) => f.tox[m.id]), `${id}: a toxic member shown`);
     // BC21: the header steps on one line, the done step a check, "›" between them.
     const steps = await page.$$eval('nav[aria-label="Steps"] li', (ls) => ls.map((l) => ({ top: Math.round(l.getBoundingClientRect().top), text: l.innerText.replace(/\s+/g, ' ').trim() })));
@@ -669,16 +683,19 @@ test('PFB22 (pf-b fix round 1, BC3, R2, BC12): past 40 plants no paragraph of Ba
 });
 
 // Expected-fail (c2 C3): the board's action waits for a Find entry that takes a job and a predicate
-// without a hole (Find.tsx and store.ts are not pf-b's: hand-off to the main agent). Listed as a known
-// board difference of MainMore in the board check until then; the marker goes when the action is back.
-failing('PFB23 (pf-b round 2 R1, C1; c2 C3): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find listing only plants that feed the soil and are not of that family (never an unfiltered list)', { owner: 'pf-b', reason: BOARD }, async () => {
+// without a hole (Find.tsx and store.ts are the main agent's: a chunk-4 hand-off; the main agent removes
+// this marker in the commit that brings the action back). The marker names pf-b, the file's stream, as
+// browser-tests.test.mjs requires of a pf spec. Listed as a known board difference of MainMore in the
+// board check until then. The reason matches the held action only: a lost legume line is a plain
+// failure (asserted before the held part, its message without that phrase).
+failing('PFB23 (pf-b round 2 R1, C1; c2 C3; held for main, chunk 4): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find listing only plants that feed the soil and are not of that family (never an unfiltered list)', { owner: 'pf-b', reason: /^MainMore held: "Find a soil feeder of another family"/ }, async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   const b = await section(page, 'Balance');
   const fam = /One family: \d+ of your \d+ are legumes/.test(b) ? 'Fabaceae' : null;
-  assert.ok(fam, `seville-board: the legume line (${b.slice(0, 80)})`);
+  assert.ok(fam, `seville-board has the legume line (${b.slice(0, 80)})`);
   const offered = (await buttons(page)).includes('Find a soil feeder of another family');
   if (!offered) await done(page);
-  assert.ok(offered, 'board: "Find a soil feeder of another family" under the legume line (MainMore; held: hand-off to the main agent for a Find entry taking a job and a predicate)');
+  assert.ok(offered, 'MainMore held: "Find a soil feeder of another family" under the legume line (hand-off to the main agent for a Find entry taking a job and a predicate)');
   await press(page, 'button', 'Find a soil feeder of another family');
   assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] li[data-plant-id]').length > 0, { timeout: 15_000 }).then(() => true, () => false), 'Find lists plants');
   const listed = await page.evaluate(() => {
@@ -688,13 +705,6 @@ failing('PFB23 (pf-b round 2 R1, C1; c2 C3): board MainMore\'s Balance offers "F
   for (const t of listed) assert.ok(t.fixer && t.family !== fam, `R1: ${t.name} feeds the soil and is not a legume (${t.family})`);
   await done(page);
 });
-
-// The members doing a job, through the engine's jobsOf on the page's taxa (palette order).
-const doers = async (page, job) => {
-  const { jobsOf } = await import('../../src/lib/consortium/jobs.ts');
-  const taxa = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.map((t) => ({ id: t.id, role: t.role, functions: t.functions })));
-  return taxa.filter((t) => jobsOf(t).includes(job)).map((t) => t.id);
-};
 
 test('PFB24 (pf-b c2 R1, C1, D1): a Jobs row counts and names the plants its strip counts (the lane\'s figures, span by span); those outside their climate range are named apart ("2 more do this but are outside their climate range (Cashew, Coconut): not counted here."), past 40 plants (the row button\'s figure, the open row) and at 40 or fewer (the names in the board\'s plain list)', async () => {
   const page = await boardPalette('kiambu-200', { width: 1280 });
@@ -755,6 +765,25 @@ test('PFB26 (pf-b c2 B3): a job held only by plants outside their climate range:
   assert.ok(jobs.includes(`1 plant does this but is outside its climate range (${g.names[one]}): not counted here.`), `B3: no "more" beside no figure (${row.lines.join(' / ')})`);
   assert.ok(!/\bmore does this\b/.test(jobs.slice(jobs.indexOf('Feeds you'), jobs.indexOf('Feeds the soil'))), 'B3: never "more" in a row with no counted plant');
   assert.ok((await buttons(page)).some((b) => b.startsWith('Feeds you: nobody')), 'the job\'s hole button beside it');
+  // Past 40 (F2): kiambu-200 without its food plants in range. The row button reads "Feeds you · a hole"
+  // (never "0 plants"), and the open row names the plants outside their range without "more".
+  await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, scenario('kiambu-200').input.members);
+  assert.ok(await verdictsSettled(page, 40_000), 'the verdicts');
+  const lv = (await figures(page)).levels;
+  const inRange = (await jobDoers(page)).feeds_you.map((d) => d.id).filter((id) => lv[id] !== 'outside');
+  await page.evaluate((ids) => { const s = window.__ctTest.store; s.members.value = s.members.value.filter((id) => !ids.includes(id)); }, inRange);
+  assert.ok(await verdictsSettled(page, 40_000), 'the verdicts');
+  await frames(page);
+  const big = await figures(page);
+  const outside = (await jobDoers(page)).feeds_you.map((d) => d.id);
+  assert.ok(Object.keys(big.levels).length > 40 && outside.length > 0, `past 40, plants that feed you outside their range (${outside.length})`);
+  const label = (await buttons(page)).find((x) => x.startsWith('Feeds you') && !x.startsWith('Feeds you:'));
+  assert.equal(label, 'Feeds you · a hole', 'F2: past 40 the row button has no figure when no plant counts');
+  await press(page, 'button', label);
+  const open = (await section(page, 'Jobs'));
+  const n = outside.length;
+  assert.ok(open.includes(`${n === 1 ? '1 plant does this but is outside its' : `${n} plants do this but are outside their`} climate range`), `F2: the open row names them apart (${open.slice(open.indexOf('Feeds you'), open.indexOf('Feeds you') + 300)})`);
+  assert.ok(!/\bmore (does|do) this\b/.test(open.slice(open.indexOf('Feeds you'), open.indexOf('Feeds the soil'))), 'F2: never "more" past 40 either');
   await done(page);
 });
 

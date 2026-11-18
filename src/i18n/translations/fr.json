@@ -1364,6 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "one: ; {names} se situe entre les deux | other: ; {names} se situent entre les deux",
   "consortium.palette.readJobs": "Dans Tâches, la bande montre les sept périodes. Un vide de moins d’un an, et le temps après l’année 60, ne sont pas jugés : un trait fin, jamais un trou.",
   "consortium.palette.readUnknown": "Une ligne sans marque de toxicité n’a pas été vérifiée, ou rien n’a été enregistré. Une inconnue n’est jamais montrée comme un trou, un « non » ou un niveau rempli : quand les tâches ou la lumière d’une plante ne sont pas encore vérifiées, la ligne le dit, comme dans « Couvre le sol : personne de connu après l’année 25 · 2 plantes non vérifiées » ou « Ombre : 1 plante convient, 2 inconnues ».",
+  "consortium.palette.chart.readTox": "Sur une barre trop étroite pour ses mots, les marques après le triangle disent le niveau de toxicité : ! {slight}, !! {moderate}, !!! {severe}. Ouvrez la plante pour le lire en entier.",
   "consortium.palette.readSyntropic": "Si vous connaissez l’agriculture syntropique : les quatre niveaux de lumière sont les strates, et les périodes sont les étapes de la succession.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

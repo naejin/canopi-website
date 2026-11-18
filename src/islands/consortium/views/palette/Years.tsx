@@ -59,6 +59,7 @@ export const ReadPictures = () => (
     <p>{T('palette.readYears')}</p>
     <p>{T('palette.readJobs')}</p>
     <p>{T('palette.readUnknown')}</p>
+    <p>{T('palette.chart.readTox', { slight: T('palette.warningsTox_slight'), moderate: T('palette.warningsTox_moderate'), severe: T('palette.warningsTox_severe') })}</p>
     <p>{T('palette.readFigures')}</p>
     <p>{T('palette.readSyntropic')}</p>
   </HowToRead>

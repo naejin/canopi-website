@@ -1364,6 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "one: ; {names} liegt dazwischen | other: ; {names} liegen dazwischen",
   "consortium.palette.readJobs": "Bei den Aufgaben zeigt der Streifen die sieben Zeitspannen. Eine Lücke unter einem Jahr und die Zeit nach Jahr 60 werden nicht beurteilt: eine dünne Linie, nie eine Lücke.",
   "consortium.palette.readUnknown": "Eine Zeile ohne Giftigkeitsmarkierung ist nicht geprüft, oder es ist nichts erfasst. Unbekanntes erscheint nie als Lücke, als „nein“ oder als gefüllte Stufe: Wo die Aufgaben oder das Licht einer Pflanze noch nicht geprüft sind, sagt die Zeile das, etwa „Bedeckt den Boden: niemand bekannt nach Jahr 25 · 2 Pflanzen nicht geprüft“ oder „Schatten: 1 Pflanze passt, 2 unbekannt“.",
+  "consortium.palette.chart.readTox": "Auf einem Balken, der für die Wörter zu schmal ist, sagen die Zeichen nach dem Dreieck die Giftigkeitsstufe: ! {slight}, !! {moderate}, !!! {severe}. Öffnen Sie die Pflanze, um sie ausgeschrieben zu lesen.",
   "consortium.palette.readSyntropic": "Wenn du syntropische Landwirtschaft kennst: Die vier Lichtstufen sind die Stockwerke, und die Zeitspannen sind die Stadien der Sukzession.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -78,9 +78,12 @@ const toxOf = (flags: readonly Flag[] | undefined): Tox | null => {
   return l ? TOX[l] ?? null : null;
 };
 // The triangle is the same for the three levels, so its level is said in words, never by its colour
-// alone (c2 H1): its accessible name and title; `word`, the level word seen beside it where the bar or
-// chip has room (palette-page.css: every chip, a grid bar of about 16rem or more). `decorative`: beside its
-// words already (a Warnings head), hidden from assistive technology.
+// alone (c2 H1, B1): its accessible name and title always; `word`, the level word seen beside it where
+// the bar or chip has room (palette-page.css: every chip, a grid bar of about 16rem or more), and on a
+// bar without that room its level's marks, "!" Mildly toxic, "!!" Toxic, "!!!" Very toxic (the key in
+// "How to read this"; the opened plant says the level in words). `decorative`: beside its words already
+// (a Warnings head), hidden from assistive technology.
+const TOX_MARKS: Record<Tox, string> = { slight: '!', moderate: '!!', severe: '!!!' };
 export function ToxMark({ tox, decorative = false, word = false }: { tox: Tox; decorative?: boolean; word?: boolean }) {
   const says = T(`palette.warningsTox_${tox}`);
   return (
@@ -89,6 +92,7 @@ export function ToxMark({ tox, decorative = false, word = false }: { tox: Tox; d
         {!decorative && <title>{says}</title>}<path d="M10 3.2l7.3 12.8H2.7Z" /><path d="M10 8v3.6M10 14v.2" />
       </svg>
       {word && <span class="ct-tox-word" data-tox={tox} aria-hidden="true">{says}</span>}
+      {word && <span class="ct-tox-short" data-tox={tox} aria-hidden="true">{TOX_MARKS[tox]}</span>}
     </>
   );
 }
@@ -119,7 +123,7 @@ function plantWords(id: PlantId, p: Picture, b: PlantButtons) {
 function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Picture; b: PlantButtons; cls?: string; span?: Span }) {
   const { v, job, warn, tox, label } = plantWords(id, p, b);
   return (
-    <button type="button" class={cls} {...spanAttrs(span)} data-short={span && span[0] === span[1] ? '' : undefined} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} data-tox={tox ?? undefined} aria-label={label} onClick={() => b.onPlant(id)}>
+    <button type="button" class={cls} {...spanAttrs(span)} data-short={span && span[0] === span[1] ? '' : undefined} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} data-tox={tox ?? undefined} aria-label={label} title={span ? label : undefined} onClick={() => b.onPlant(id)}>
       <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <ToxMark tox={tox} word />}{warn && <LevelIcon level={v!.level} />}
     </button>
   );

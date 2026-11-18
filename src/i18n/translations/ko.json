@@ -1364,6 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "other: ; {names}은(는) 그 중간",
   "consortium.palette.readJobs": "\"역할\"에서 띠는 일곱 기간입니다. 1년보다 짧은 빈틈과 60년 이후는 판단하지 않습니다: 가는 선이며, 빈자리가 아닙니다.",
   "consortium.palette.readUnknown": "독성 표시가 없는 줄은 확인되지 않았거나 기록된 것이 없습니다. 모르는 것은 빈자리, \"아니요\", 채워진 단계로 보여 주지 않습니다: 식물의 역할이나 빛이 아직 확인되지 않았으면 \"땅을 덮음: 25년 이후 알려진 식물 없음 · 2종 미확인\"이나 \"그늘: 1종 맞음, 2종 모름\"처럼 줄이 그렇게 말합니다.",
+  "consortium.palette.chart.readTox": "글자가 들어가지 않는 좁은 막대에서는 삼각형 뒤의 표시가 독성 정도를 나타냅니다: ! {slight}, !! {moderate}, !!! {severe}. 식물을 열면 글로 읽을 수 있습니다.",
   "consortium.palette.readSyntropic": "신트로픽 농법을 안다면: 네 빛 단계는 층이고, 기간은 천이의 단계입니다.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
