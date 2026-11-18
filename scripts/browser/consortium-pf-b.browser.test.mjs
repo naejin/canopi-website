@@ -8,7 +8,7 @@
 // plants or fewer and the group 12 or fewer, else the count cell). Every figure is re-derived through the
 // engine at the board's inputs (pf-b-helpers.mjs: the 0W scenario cases), never a board number. Written
 // expected-fail under pf-b in commit 0 (scripts/expect-fail.mjs failing()); every pf-b marker is gone since
-// the pictures were built. One marker is left, PFB23 (held for the main agent's chunk-4 Find entry, which removes it).
+// the pictures were built; the last, PFB23, went with M24 (Find takes a job and a predicate).
 // Parked, neither ported nor tested: Through the year and the cooler months (PP-G), the period tabs and
 // "See 2041–2070" (PP-E), Soil and its links (PP-F), Plan, Print and Share boards (PP-D).
 //
@@ -36,7 +36,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { aria, has } from './helpers.mjs';
 import { useHarness } from './helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 import { JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { boardPalette, figures, fitOf, inSection, jobDoers, laneOf, scenario, standing, uncheckedOf } from './pf-b-helpers.mjs';
 
@@ -218,6 +217,7 @@ test('PFB4 (pf-b MainMore Jobs at 1280 and PaletteMore at 390, carried from PP-B
     assert.ok(jobs.includes(`What your plants do for the plot, and for how long. You want 2 plants for each job (Plants per job: 2): ${holes} hole${holes === 1 ? '' : 's'} come${holes === 1 ? 's' : ''} first${tail}`), `board: the goal sentence (${holes} holes, ${thin} thin; ${width} px): "${jobs.slice(0, 220)}"`);
     if (!f.openThin) assert.ok(!jobs.includes('then 0 thin spots'), 'R6: never "then 0 thin spots"');
     assert.ok(jobs.includes('2 or more plants · 1 plant between year 1 and year 60: thin · nobody: a hole'), 'board: the legend');
+    if (width < 960) await openGoal(page);
     await control(page, 'group', 'Plants per job');
     for (const n of ['1', '2', '3', '5']) {
       const b = await boxAt(page, 'button', n);
@@ -278,6 +278,17 @@ test('PFB6 (pf-b Many and ManyDesk Jobs at 200): "How many of your plants do eac
     await press(page, 'button', b);
     assert.equal(await page.$eval(aria('button', b), (e) => e.getAttribute('aria-expanded')), 'true', 'board: the row opens');
     await says(page, new RegExp(`Nobody (?:known )?.*: a hole, number \\d+ of ${f.holes.length}`));
+    // M25 (board Many): the hole line goes on with what the lists hold for it: "…; no plant on your lists fits here and does this then; 5 do it but are outside their climate range."
+    const lines = await page.$$eval('.ct-job-open:not([hidden]) .ct-job-thin', (ps) => ps.map((p) => p.textContent.replace(/\s+/g, ' ').trim()));
+    assert.ok(lines.length > 0, 'the open row says its holes');
+    // h2 R5: with no fit, the Next step's clause order: "no plant … fits" only when none is still to be
+    // checked (unknown is never a "no"), then "N need a second look", "N on your lists not checked",
+    // then the outside ones.
+    const CLAUSE = '(?:no plant on your lists fits here and does this then|\\d+ needs? a second look|\\d+ on your lists not checked|\\d+ do(?:es)? it but (?:is|are) outside (?:its|their) climate range)';
+    for (const l of lines) {
+      assert.match(l, new RegExp(`: a hole, number \\d+ of \\d+( · [^;]+?)?([;·] ${CLAUSE}(; ${CLAUSE})*\\.)?$`), `M25: the hole line's clauses (${l})`);
+      if (/on your lists not checked/.test(l)) assert.doesNotMatch(l, /no plant on your lists fits here/, `h2 R5: plants still to be checked are never said as "no plant fits" (${l})`);
+    }
   }
   const n = uncheckedOf(f).size;
   if (n) assert.ok(jobs.includes(`A plant counts under every job it does. Jobs not checked yet: ${plants(n)}, counted under no job but “Feeds you”`), `board: "Jobs not checked yet: ${plants(n)}"`);
@@ -513,10 +524,19 @@ test('PFB16 (pf-b Focus): every control of the pictures, Jobs, Warnings, Balance
   await done(page);
 });
 
-test('PFB17 (pf-b section 6 neighbours, the goal control): at 1280 px "Plants per job" sits right of the Jobs title, on its line; at 320 px under the intro, nothing past the edge; the legend under the control', async () => {
+// D1 (pf-decisions 2026-11-18, board MainMore): below 960 px the control is folded behind the intro's
+// link "Plants per job: 2", which opens it in place; at 960 px and wider it always shows.
+async function openGoal(page) {
+  assert.equal(await page.$('#ct-root [role="group"][aria-label="Plants per job"]').then((g) => g?.isVisible() ?? false), false, 'D1: the control is folded under 960 px');
+  await press(page, 'button', 'Plants per job: 2');
+  assert.equal(await page.$eval('#ct-root button[aria-controls="ct-goal"]', (b) => b.getAttribute('aria-expanded')), 'true', 'D1: the link says it opened the control');
+}
+test('PFB17 (pf-b section 6 neighbours, the goal control; D1): at 1280 px "Plants per job" sits right of the Jobs title, on its line, with no link; at 320 px the intro\'s link "Plants per job: 2" opens it under the intro, nothing past the edge; the legend under the control', async () => {
   for (const width of [1280, 320]) {
     const page = await boardPalette('seville-board', { width });
     await section(page, 'Jobs');
+    if (width < 960) await openGoal(page);
+    else assert.ok(!(await buttons(page)).includes('Plants per job: 2'), 'D1: no link at 960 px and wider');
     const pos = await page.evaluate(() => {
       const h = [...document.querySelectorAll('#ct-root h2, #ct-root h3')].find((e) => e.textContent.trim().startsWith('Jobs'));
       const g = document.querySelector('#ct-root [role="group"][aria-label="Plants per job"]');
@@ -683,27 +703,33 @@ test('PFB22 (pf-b fix round 1, BC3, R2, BC12): past 40 plants no paragraph of Ba
   await done(page);
 });
 
-// Expected-fail (c2 C3): the board's action waits for a Find entry that takes a job and a predicate
-// without a hole (Find.tsx and store.ts are the main agent's: a chunk-4 hand-off; the main agent removes
-// this marker in the commit that brings the action back). The marker names pf-b, the file's stream, as
-// browser-tests.test.mjs requires of a pf spec. Listed as a known board difference of MainMore in the
-// board check until then. The reason matches the held action only: a lost legume line is a plain
-// failure (asserted before the held part, its message without that phrase).
-failing('PFB23 (pf-b round 2 R1, C1; c2 C3; held for main, chunk 4): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find listing only plants that feed the soil and are not of that family (never an unfiltered list)', { owner: 'pf-b', reason: /^MainMore held: "Find a soil feeder of another family"/ }, async () => {
+// M24: Find takes a job and a predicate without a hole (store.ts SheetFor fits + title).
+test('PFB23 (pf-b round 2 R1, C1; c2 C3; M24): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find under that title listing only plants that feed the soil and are not of that family (never an unfiltered list)', async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   const b = await section(page, 'Balance');
   const fam = /One family: \d+ of your \d+ are legumes/.test(b) ? 'Fabaceae' : null;
   assert.ok(fam, `seville-board has the legume line (${b.slice(0, 80)})`);
-  const offered = (await buttons(page)).includes('Find a soil feeder of another family');
-  if (!offered) await done(page);
-  assert.ok(offered, 'MainMore held: "Find a soil feeder of another family" under the legume line (hand-off to the main agent for a Find entry taking a job and a predicate)');
+  assert.ok((await buttons(page)).includes('Find a soil feeder of another family'), 'board: "Find a soil feeder of another family" under the legume line');
   await press(page, 'button', 'Find a soil feeder of another family');
-  assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] li[data-plant-id]').length > 0, { timeout: 15_000 }).then(() => true, () => false), 'Find lists plants');
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] [data-find-row][data-plant-id]').length > 0, { timeout: 15_000 }).then(() => true, () => false), 'Find lists plants');
+  assert.equal(await page.evaluate(() => document.querySelector('dialog[open] h2')?.textContent.trim()), 'Find a soil feeder of another family', 'Find says what it lists');
   const listed = await page.evaluate(() => {
     const s = window.__ctTest.store, byId = new Map((s.pool.value ?? []).map((t) => [t.id, t]));
-    return [...document.querySelectorAll('dialog[open] li[data-plant-id]')].map((li) => { const t = byId.get(li.dataset.plantId); return { name: t?.names?.en || t?.canonical_name, family: t?.family, fixer: !!t?.functions?.some((x) => x.function === 'nitrogen_fixer') }; });
+    return [...document.querySelectorAll('dialog[open] [data-find-row][data-plant-id]')].map((li) => { const t = byId.get(li.dataset.plantId); return { name: t?.names?.en || t?.canonical_name, family: t?.family, fixer: !!t?.functions?.some((x) => x.function === 'nitrogen_fixer') }; });
   });
   for (const t of listed) assert.ok(t.fixer && t.family !== fam, `R1: ${t.name} feeds the soil and is not a legume (${t.family})`);
+  // h2 R6: the subtitle counts what this sheet lists, never the whole list's line; "already in your
+  // palette" counts the palette's soil feeders of another family that fit, never every fitting member.
+  const sub = await page.$eval('dialog[open] [data-find-fitcount]', (e) => e.textContent.replace(/\s+/g, ' ').trim());
+  assert.match(sub, /^\d+ plants? on the .+ not yet in your palette/, `h2 R6: the sheet's own count ("${sub}")`);
+  assert.doesNotMatch(sub, /of the \d+ plants/, 'h2 R6: not the whole list\'s line');
+  const mine = await page.evaluate((f) => {
+    const s = window.__ctTest.store, v = s.poolVerdicts.value;
+    return s.memberTaxa.value.filter((t) => t.family !== f && t.functions?.some((x) => x.function === 'nitrogen_fixer') && ['fits', 'look'].includes(v?.get(t.id)?.level)).length;
+  }, fam);
+  const choice = await page.$eval('dialog[open] [data-filter="fits"]', (i) => i.closest('label').textContent.replace(/\s+/g, ' ').trim());
+  const said = Number(/ · (\d+) already in your palette/.exec(choice)?.[1] ?? 0);
+  assert.equal(said, mine, `h2 R6: "already in your palette" counts the sheet's own plants ("${choice}")`);
   await done(page);
 });
 

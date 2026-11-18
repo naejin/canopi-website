@@ -31,12 +31,17 @@ function unitFormat(lang: string, unit: string, max: number, signed = false): In
 export const formatLength = (m: number, lang: string, max = 1): string => unitFormat(lang, 'meter', max).format(m);
 /** @public Rain in millimetres ("540 mm"); the grower's rain values (0W siteEditLines) are its first reader. */
 export const formatMm = (mm: number, lang: string): string => unitFormat(lang, 'millimeter', 0).format(mm);
+/** A file size in megabytes ("1.4 MB"); the loading line's progress (M28) is its reader. */
+export const formatMegabytes = (mb: number, lang: string): string => unitFormat(lang, 'megabyte', 1).format(mb);
 /** @public A soil depth in centimetres ("30 cm"); PP-F's soil lines are its first reader. */
 export const formatDepthCm = (cm: number, lang: string): string => unitFormat(lang, 'centimeter', 0).format(cm);
+// The boards' temperature form: a true minus sign (U+2212) and a narrow no-break space before the degree
+// sign where Intl puts no space ("−3.5 °C"; fr keeps its own U+202F, de its space).
+const boardTemp = (s: string): string => s.replace(/-/g, '\u2212').replace(/(\d)°/, '$1\u202f°');
 /** @public A temperature in degrees Celsius ("−3.5 °C"). */
-export const formatTemp = (c: number, lang: string, max = 1): string => unitFormat(lang, 'celsius', max).format(c);
+export const formatTemp = (c: number, lang: string, max = 1): string => boardTemp(unitFormat(lang, 'celsius', max).format(c));
 /** @public A temperature difference, signed ("+2 °C"): a difference converts without the +32 offset. */
-export const formatTempDiff = (dc: number, lang: string, max = 1): string => unitFormat(lang, 'celsius', max, true).format(dc);
+export const formatTempDiff = (dc: number, lang: string, max = 1): string => boardTemp(unitFormat(lang, 'celsius', max, true).format(dc));
 /** @public An area in square metres: Intl has no square-metre unit, so the number and " m²". */
 export const formatArea = (m2: number, lang: string, max = 0): string => `${formatNumber(m2, lang, max)} m²`;
 

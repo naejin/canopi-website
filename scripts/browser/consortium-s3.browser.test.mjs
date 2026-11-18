@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { fixture, loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, behaviour, en, englishName, findAx, fixtureDb, has } from './helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
+import { toPlace } from './seams-helpers.mjs';
 
 let h;
 before(async () => { h = await startHarness(); });
@@ -54,9 +55,15 @@ async function start(page, climate = 'Temperate') {
   await page.locator(aria('button', en['consortium.start.suggest'])).click();
   assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
 }
-// Opens a sheet by its button: "Paste a list" on Place (the palette's "Your place" step).
+// Opens a sheet by its button. "Paste a list" from the palette page is Find's "Paste a list of plants"
+// (board Find: at the foot of its start); Place's desk button is there only before a palette exists.
 async function openBy(page, button) {
-  if (button === 'Paste a list' && !(await has(page, aria('button', button), 300))) await page.locator('button.ct-step').click();
+  if (button === 'Paste a list' && !(await has(page, aria('button', button), 300))) {
+    await hooked(page, () => window.__ctTest.openFind());
+    await page.locator('dialog.ct-find[open] [data-find-paste]').click();
+    assert.ok(await has(page, 'dialog[open] #ct-paste-text', 4000), 'the paste list in Find');
+    return;
+  }
   await page.locator(aria('button', button)).click();
   assert.ok(await findAx(page, { role: 'dialog' }), `the ${button} sheet`);
 }
@@ -182,9 +189,15 @@ test('BT-6 (S3 adjust; PP-C c2 merge): Swap ("Find one that holds") shows "Also 
     // Robinia: an invasive warning is shown and adds in one tap too (France: recorded invasive).
     if (await sheetOpen(page)) await page.locator('dialog[open] ' + aria('button', 'Close')).click();
     await closed(page);
-    // The country line is in the palette's head (b1a conformance-4: no Change site and Back).
+    // The country line is Place's (v14: the palette page has none): "Your place", the board's picker
+    // ("Change", "France" typed into "Your country", Enter), then back to the palette.
+    await toPlace(page);
     await page.locator('[data-ct="country"] button[aria-expanded]').click();
-    await page.select('#ct-country-select', 'FR');
+    await page.locator(aria('textbox', 'Your country')).fill('France');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => /France/.test(document.querySelector('[data-ct="country"]')?.textContent ?? '') && /chosen by you/.test(document.querySelector('[data-ct="country"]')?.textContent ?? ''), { timeout: 4000 });
+    await page.locator(aria('button', 'Back to my palette')).click();
+    assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'back on the palette page');
     await addPlant(page, 'Robinia pseudoacacia');
     assert.equal(await findAx(page, { role: 'alertdialog' }, 800), null, 'an invasive warning does not ask');
     assert.ok(await isMember(page, 'Robinia pseudoacacia'), 'Robinia is added');
@@ -194,9 +207,11 @@ test('BT-6 (S3 adjust; PP-C c2 merge): Swap ("Find one that holds") shows "Also 
     await page.locator(aria('button', chip.name)).click();
     await page.locator(aria('button', 'Remove')).click();
     await page.waitForFunction(() => !document.querySelector('dialog[open]'));
-    assert.equal(await chipOf(page, names['Malus domestica']), undefined);
+    // (A button named Apple may stay: the Next step can offer it again for the hole its removal opens.)
+    assert.equal(await isMember(page, 'Malus domestica'), false, 'Remove takes the plant out');
     await page.locator(aria('button', 'Undo')).click();
-    assert.ok(await chipOf(page, names['Malus domestica']), 'Undo restores the plant');
+    assert.ok(await isMember(page, 'Malus domestica'), 'Undo restores the plant');
+    assert.ok(await chipOf(page, names['Malus domestica']), 'and its chip');
 
     // A Tropical-only plant from Temperate, through Find (PP-C c1): searched by name, it is offered
     // "Add from the Tropical list"; once added, a chip labelled with its list. (The Paste sheet's
@@ -219,6 +234,8 @@ const sheetOpen = (page) => page.evaluate(() => !!document.querySelector('dialog
 // Closed means the app took the sheet down (the element is gone), not only the <dialog> closing (BT-5's note).
 const closed = (page) => page.waitForFunction(() => !document.querySelector('dialog[open], dialog.ct-sheet'));
 const setStore = (page, fn, ...args) => hooked(page, fn, ...args);
+// The paste list's "Add N plants" done: back to Find (board Find; the paste is a step of Find).
+const pasteDone = (page) => page.waitForFunction(() => !document.querySelector('dialog[open] #ct-paste-text') && !!document.querySelector('dialog.ct-find[open] [data-find-search]'), { timeout: 4000 });
 
 test('BT-5 (S3 review): the correction draft survives closing; a drag released on the backdrop does not close; focus moves into and out of the form', async () => {
   const page = await open({ width: 1280, data: 'fixture', correction: 'offline' });
@@ -292,7 +309,7 @@ test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its wa
   if (await isMember(page, 'Pyrus communis')) await dropMember(page, 'Pyrus communis');
   await page.locator('::-p-aria([role="textbox"])').fill('Pyrus communis');
   await page.locator(aria('button', 'Add 1 plant')).click();
-  await closed(page);
+  await pasteDone(page);
   assert.ok(await findAx(page, { name: /1 added with a warning/ }), '"added with a warning"');
   await page.locator(aria('button', 'Show')).click();
   assert.ok(await findAx(page, { role: 'dialog' }), 'Show opens the plant');
@@ -339,7 +356,8 @@ test('BT-5 (S3 review 2): after a send no draft is kept, even with the email fil
 });
 
 test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "Add all" reads the text as it is when clicked', async () => {
-  const page = await open({ width: 1280, data: 'fixture' });
+  // A phone: Find is a modal sheet there (at 960 px and wider a panel, its toast stays in the page).
+  const page = await open({ width: 390, data: 'fixture' });
   await start(page);
   const chip = await chipOf(page, names['Castanea sativa']);
   await page.locator(aria('button', chip.name)).click();
@@ -354,7 +372,7 @@ test('BT-6 (S3 review 2): a toast moving into a sheet is not announced again; "A
   await page.locator('::-p-aria([role="textbox"])').fill('Malus domestica');
   await page.waitForFunction(() => /Add 1/.test(document.querySelector('dialog[open] .ct-add-bar .button-primary')?.textContent ?? ''));
   await page.$eval('dialog[open] textarea', (el) => { el.value = 'Malus domestica\nCastanea sativa'; el.dispatchEvent(new Event('input', { bubbles: true })); el.closest('dialog').querySelector('.ct-add-bar .button-primary').click(); });
-  await closed(page);
+  await pasteDone(page);
   assert.ok(await isMember(page, 'Malus domestica') && await isMember(page, 'Castanea sativa'), 'both lines are added');
   await page.close();
 });

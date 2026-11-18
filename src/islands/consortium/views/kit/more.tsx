@@ -25,10 +25,11 @@ export interface MoreListProps<I> {
   closed?: number; // items shown closed (3)
   step?: number; // items shown once opened (10)
   label?: string; // the list's name, before its count and as the list's aria-label
+  group?: string; // the list's name for "+ N more" alone (several on one page must not sound alike), never drawn
   class?: string;
 }
 
-export function MoreList<I>({ items, keyOf, render, paletteSize = 0, maxPalette = 40, maxGroup = 12, closed = 3, step = 10, label, class: cls }: MoreListProps<I>) {
+export function MoreList<I>({ items, keyOf, render, paletteSize = 0, maxPalette = 40, maxGroup = 12, closed = 3, step = 10, label, group, class: cls }: MoreListProps<I>) {
   const [stage, setStage] = useState<FoldStage>(0);
   const firstNew = useRef<HTMLLIElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
@@ -52,7 +53,7 @@ export function MoreList<I>({ items, keyOf, render, paletteSize = 0, maxPalette 
       </ul>
       {(f.next !== null || f.fewer) && (
         <p class="ct-more-actions">
-          {f.next !== null && <button type="button" class="ct-more-open" ref={opener} aria-expanded={stage > 0} onClick={open}>{say(moreLine(f.rest))}</button>}
+          {f.next !== null && <button type="button" class="ct-more-open" ref={opener} aria-expanded={stage > 0} aria-label={(label ?? group) ? `${say(moreLine(f.rest))}: ${label ?? group}` : undefined} onClick={open}>{say(moreLine(f.rest))}</button>}
           {f.fewer && <button type="button" class="ct-more-fewer" onClick={fewer}>{T('kit.showFewer')}</button>}
         </p>
       )}

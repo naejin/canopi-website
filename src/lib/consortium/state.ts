@@ -14,7 +14,8 @@
 //   the palette's goal, outside "Include my place", v14 A10). Only with "Include my place" (encodePlace,
 //   the bracketed part): k country
 //   (ISO alpha-2, from a chosen, location or link source, never a guess), o the site's climate cell
-//   centre "lat,lon" (never the precise position); the grower's own values (SiteEdits, v14 0W-1 item 5), each only when set: f the climate shifts
+//   centre "lat,lon" (never the precise position), n the sender's place name beside it ("Kiambu, Kenya",
+//   pf-decisions D6: the reader sees the name, no lookup on open); the grower's own values (SiteEdits, v14 0W-1 item 5), each only when set: f the climate shifts
 //   `<nights tenths of °C>.<days tenths of °C>.<rain mm>.<dry months>` (integers, an empty segment 0,
 //   trailing empty segments left out), b the soil pH × 10, p=1 pots or brought-in soil (apart from b,
 //   so neither answer loses the other), i watering (rain, first, all), d the ground after heavy rain
@@ -56,10 +57,10 @@ export const GUEST_CODES: Record<ClimateZone, string> = { Tropical: 'tr', Subtro
 // The plot size a link and the save accept, whole square metres (8.1 `z`).
 export const MAX_PLOT_M2 = 1_000_000;
 // The keys this decoder knows (a key listed in `u=` and not here gives the "newer" notice); any other
-// key (n and t included) is ignored.
-export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'j', 'o', 'f', 'b', 'p', 'i', 'd', 'u', END_KEY] as const;
+// key (t included) is ignored.
+export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'j', 'o', 'n', 'f', 'b', 'p', 'i', 'd', 'u', END_KEY] as const;
 // The private keys, written only with "Include my place" (encodePlace), in this order.
-export const PLACE_KEYS = ['k', 'o', 'f', 'b', 'p', 'i', 'd'] as const;
+export const PLACE_KEYS = ['k', 'o', 'n', 'f', 'b', 'p', 'i', 'd'] as const;
 // The grower's own values' keys: each changes a verdict or a note, so a link lists those it holds in `u=`.
 export const EDIT_KEYS = ['f', 'b', 'p', 'i', 'd'] as const;
 const WATERING_CODE: Record<Watering, string> = { rain: 'rain', 'first-years': 'first', 'all-year': 'all' };
@@ -202,12 +203,14 @@ function readEdits(q: URLSearchParams): SiteEdits | null {
 // k: state.country (the caller passes it only from a chosen, location or link source, never a guess);
 // o: the site's cell centre, when given; the grower's own values only when set. Also the save's
 // `place` (without k and o: persist.ts).
-export function encodePlace(state: Pick<ShareState, 'country' | 'siteEdits'>, origin: LinkOrigin | null = null): string {
+export function encodePlace(state: Pick<ShareState, 'country' | 'siteEdits'>, origin: LinkOrigin | null = null, name: string | null = null): string {
   const out: string[] = [];
   const k = state.country && COUNTRY.test(state.country.toUpperCase()) ? state.country.toUpperCase() : null;
   if (k) out.push(`k=${k}`);
   const o = origin && originText(origin);
   if (o) out.push(`o=${o}`);
+  const n = o ? placeNameOf(name) : null;
+  if (n) out.push(`n=${encodeURIComponent(n)}`);
   out.push(...editPairs(state.siteEdits));
   return out.join('&');
 }
@@ -216,7 +219,8 @@ export function encodePlace(state: Pick<ShareState, 'country' | 'siteEdits'>, or
 // adds encodePlace's part (k, o when origin is given, the grower's own values; an origin given
 // implies the tick unless place is false, as persist.ts currentFragment); without it the link holds
 // the palette only (the address bar and the save's fragment are always this public form).
-export function encodeLink(state: ShareState, known: KnownIds, { origin = null, place = origin !== null }: { origin?: LinkOrigin | null; place?: boolean } = {}): string {
+// name: the site's place name ("Kiambu, Kenya"), written as `n` beside `o` only (D6).
+export function encodeLink(state: ShareState, known: KnownIds, { origin = null, place = origin !== null, name = null }: { origin?: LinkOrigin | null; place?: boolean; name?: string | null } = {}): string {
   const tok = tokens(Object.values(known).flatMap((ids) => [...(ids ?? [])]));
   const list = (ids: Iterable<PlantId>) => [...new Set([...ids].map(tok))].sort().join('');
   const pairs: [string, string][] = [['v', String(LINK_VERSION)]];
@@ -240,7 +244,7 @@ export function encodeLink(state: ShareState, known: KnownIds, { origin = null, 
   if (state.period !== TODAY_PERIOD) pairs.push(['y', state.period]);
   const j = plantsPerJobOf(state.plantsPerJob);
   if (j !== DEFAULT_GOALS.plantsPerJob) pairs.push(['j', String(j)]);
-  const priv = place ? encodePlace(state, origin) : '';
+  const priv = place ? encodePlace(state, origin, name) : '';
   // `u=`: the grower's values this link holds, which a decoder must know (rule 3); a literal comma.
   const needs = place ? EDIT_KEYS.filter((k) => priv.split('&').some((p) => p.startsWith(`${k}=`))) : [];
   const u = needs.length ? `&u=${needs.join(',')}` : '';
@@ -260,6 +264,18 @@ export function linkOrigin(link: string): LinkOrigin | null {
   if (!m) return null;
   const lat = Number(m[1]), lon = Number(m[2]);
   return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? snapOrigin({ lat, lon }) : null;
+}
+
+// A place name as a link holds it (D6): trimmed, one line, at most PLACE_NAME_MAX characters, else null.
+const PLACE_NAME_MAX = 80;
+const placeNameOf = (v: string | null | undefined): string | null => {
+  const t = (v ?? '').replace(/\s+/g, ' ').trim();
+  return t && t.length <= PLACE_NAME_MAX ? t : null;
+};
+
+// The sender's place name a link carries (`n`, D6), only beside a readable `o`; else null.
+export function linkPlaceName(link: string): string | null {
+  return linkOrigin(link) ? placeNameOf(params(link).get('n')) : null;
 }
 
 // The long-link check, on the whole URL the reader is about to share (never on a link being read).

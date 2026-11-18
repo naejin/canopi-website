@@ -12,7 +12,7 @@ import { siteIdOf } from '../../../lib/consortium/index.ts';
 import * as store from '../store.ts';
 import { focusAfterStartOver, focusView } from '../focus.ts';
 import { state as schema } from './schema.ts';
-import { T } from '../strings.ts';
+import { P, T } from '../strings.ts';
 import { adoptPending, attempt, holdSave, linkPlace, memory, placeSaid, placeSeed, COUNTRY_STORE, NO_COUNTRY, PLACE_STORE, SITE_CLIMATE } from './persist.ts';
 import { held, lastSave, putSave, STORE } from './save.ts';
 import { adoptLinkLocation, notices, ownLocation, restore, savedInstead, NO_NOTICES } from './restore.ts';
@@ -77,12 +77,6 @@ export function backToPlace(): void {
   });
 }
 
-// Place's climate cards opened by the page (a climate chosen and no location): latched, so a location
-// that comes later (the saved location's lookup, about a second after load) never closes cards already
-// open under the grower's thumb (review round 2, 1). Place writes it; Start over lets the page decide
-// the cards afresh (review round 3, 1).
-export const cardsLatched = signal(false);
-
 // Start over: the consortium goes, from the store, the save and the address; the climate, the
 // palette's place and the country stay. The page holds again: a save it owned is removed (unless
 // another tab wrote since), one it held (a link's or a guide's page over the reader's save) stays. One
@@ -90,7 +84,6 @@ export const cardsLatched = signal(false);
 export function startOver(): void {
   const before = store.snapshot();
   placeSaid.value = '';
-  cardsLatched.value = false;
   if (!held.peek()) putSave(null);
   batch(() => {
     holdSave(true);
@@ -100,7 +93,9 @@ export function startOver(): void {
     dropLinkLocation();
     notices.value = { ...NO_NOTICES };
   });
-  if (before.members.length || before.removed.length || Object.keys(before.guests).length) store.offerUndo(T('place.overDone'), before);
+  // Board Toasts "Palette cleared: 8 plants. Your place is kept." with its Undo, for a palette with
+  // plants; none left (each removed already), nothing to count and no toast (h2 R7: never "0 plants").
+  if (before.members.length) store.offerUndo(P('place.cleared', before.members.length), before);
   // Its button leaves with the palette: the toast's Undo, else Place's heading (pre-push fix 6, B).
   focusAfterStartOver();
 }

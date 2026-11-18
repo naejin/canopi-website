@@ -13,8 +13,9 @@
 import type { ComponentType } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { computed } from '@preact/signals';
-import { load, offline, opening, slow, step, view } from './store.ts';
-import { T } from './strings.ts';
+import { load, loadProgress, offline, opening, slow, step, view } from './store.ts';
+import { pageLang, T } from './strings.ts';
+import { formatMegabytes, formatNumber } from './format.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 import { retryableImport } from '../../lib/consortium/index.ts';
 import { Place } from './views/place/Place.tsx';
@@ -28,8 +29,12 @@ import { Placeholder } from './views/palette/Placeholder.tsx';
 export const PalettePage = lazyPart(retryableImport(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
 // Kept in the first run: modules the sheets, the later views and the future panel share, which no
 // first-run module imports since the matrix went (PP-B commit 0a'), so no part pays for them on first
-// use and no sheet imports a lazy chunk statically (check-built-site's K3 rule).
+// use and no sheet imports a lazy chunk statically (check-built-site's K3 rule). The rows and the list
+// fold Find and the palette share are kept here too (astro.config.mjs FIRST_RUN_KIT builds them
+// untreeshaken, since they have no side effect of their own).
 import './views/StageBar.tsx';
+import './views/rows.tsx';
+import './views/kit/more.tsx';
 
 export interface AppProps {
   // The page's guide (the noscript link's address), linked as "Read the guides" on the screens where
@@ -72,7 +77,10 @@ function LoadingLine() {
   useEffect(() => setPlaced(true), []);
   // "You can already give your place." only beside the Place form, never while a palette restores (R15).
   const canGive = view.value === 'start' && !opening.value;
-  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? (slow.value ? T('load.slow') : canGive ? `${T('load.plants')} ${T('load.canGive')}` : T('load.plants')) : ''}</p>;
+  const p = loadProgress.value;
+  // Board Loading: "Still loading: the connection is slow. Keep going; your answers are kept. 0.8 of 1.4 MB."
+  const bytes = p && p.total > 0 ? ` ${T('load.progress', { got: formatNumber(Math.min(p.got, p.total) / 1e6, pageLang(), 1), total: formatMegabytes(p.total / 1e6, pageLang()) })}` : '';
+  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? (slow.value ? `${T('load.slow')}${bytes}` : canGive ? `${T('load.plants')} ${T('load.canGive')}` : T('load.plants')) : ''}</p>;
 }
 function PlaceOrPlaceholder() {
   return restoring.value ? <Placeholder /> : slot(Place);

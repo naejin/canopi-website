@@ -163,6 +163,41 @@ test('b1a Start over then one Undo: members, removed and guests come back, the p
   assert.equal(store.toast.peek()?.undo ?? null, null, 'a change ends the Undo offer');
 });
 
+test('h2 R7: Start over with no plant left (every one removed) says no "Palette cleared: 0 plants"', async () => {
+  await mine(5);
+  for (const id of store.members.peek()) store.removeMember(id);
+  assert.equal(store.members.peek().length, 0);
+  assert.ok(store.removed.peek().length > 0, 'the removed list holds them');
+  store.hideToast();
+  draft.startOver();
+  assert.equal(store.toast.peek(), null, 'nothing to count: no "Palette cleared: 0 plants" toast');
+  // With plants, the count and its Undo (board Toasts "Palette cleared: 8 plants. Your place is kept.").
+  await mine(5);
+  draft.startOver();
+  assert.ok(store.toast.peek()?.undo, 'with plants: the count toast and its Undo');
+});
+
+test('h2 R8: "Try again" on a missing guest list re-reads it ("busy" meanwhile); failing again, the notice offers Reload ("failed"); a read that answers clears it', async () => {
+  const pool = await mine(3);
+  const guest = (await realSource.pool('Mediterranean')).find((t) => !pool.some((p) => p.id === t.id));
+  let broken = true;
+  const src = { ...realSource, pool: (c) => (c === 'Mediterranean' && broken ? Promise.reject(new Error('test: list unreadable')) : realSource.pool(c)), info: () => realSource.info() };
+  store.source.value = src;
+  try {
+    store.guests.value = { [guest.id]: 'Mediterranean' };
+    store.members.value = [...store.members.peek(), guest.id];
+    await store.loadPool('Mediterranean');
+    assert.deepEqual(store.failedPools.peek(), ['Mediterranean'], 'the guest list is missing');
+    const run = store.retryFailedLists();
+    assert.equal(store.listRetry.peek(), 'busy', 'busy while it re-reads');
+    await run;
+    assert.equal(store.listRetry.peek(), 'failed', 'failed again: the notice offers Reload');
+    broken = false;
+    await store.retryFailedLists();
+    assert.deepEqual([store.listRetry.peek(), store.failedPools.peek()], ['idle', []], 'a read that answers clears it');
+  } finally { store.source.value = realSource; store.failedPools.value = []; store.listRetry.value = 'idle'; }
+});
+
 test('b1a a guide preset gives members == [id] and writes no save until the reader acts', async () => {
   const pool = await mine(5);
   persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; });
@@ -653,9 +688,6 @@ test('b1a r3-1: the kept location stops holding the climate cards once its looku
     kept.set(LOCATION_STORE, PARIS);
     locationM.forget();
     assert.equal(restoreM.locationAtStart.peek(), false, 'the kept location still holds the cards after Forget');
-    draft.cardsLatched.value = true;
-    draft.startOver();
-    assert.equal(draft.cardsLatched.peek(), false, 'the cards stay latched open after Start over');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 

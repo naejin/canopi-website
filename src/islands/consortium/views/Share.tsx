@@ -6,13 +6,13 @@
 // not keep your palette; your link does."). Rendered by views/Actions.tsx.
 // "Include my place" (PP-B b1a; plant-palette-architecture 8.3; Share board), off by default and shown
 // when there is a place to include (a location, a country the reader gave): ticked, the link also
-// carries the climate-grid square's centre (`o=`, never the precise position), the country (`k=`) and
-// the grower's own values (`f b p i d`); unticked, none of `k o f b p i d`. The sheet says both in words.
+// carries the climate-grid square's centre (`o=`, never the precise position), its town-level name
+// (`n=`, persist.ts linkName), the country (`k=`) and the grower's own values (`f b p i d`); unticked, none of `k o f b p i d`. The sheet says both in words.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { cellCentre, isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
 import { country, location as site } from '../store.ts';
-import { currentFragment, shareUrl, shownFragment, storageWorks } from '../state/persist.ts';
+import { currentFragment, linkName, shareUrl, shownFragment, storageWorks } from '../state/persist.ts';
 
 export function Share({ onClose }: { onClose: () => void }) {
   const shown = shownFragment.value;
@@ -20,7 +20,7 @@ export function Share({ onClose }: { onClose: () => void }) {
   const origin = cellCentre(site.value?.lookup ?? null);
   const c = country.value;
   const hasPlace = origin !== null || (c.code !== null && c.source !== 'guess');
-  const fragment = withPlace && hasPlace ? currentFragment({ origin, place: true }) ?? shown : shown;
+  const fragment = withPlace && hasPlace ? currentFragment({ origin, place: true, name: linkName(site.value) }) ?? shown : shown;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
   const field = useRef<HTMLInputElement>(null);

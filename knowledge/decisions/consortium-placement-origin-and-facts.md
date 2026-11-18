@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:14:59Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:40Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:31Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:ae9f25c93cd4a332
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:91d21007fa090bfc
+    last_modified: 2026-11-18T18:43:00Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -35,8 +35,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:25f27fd3c3bc8810
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
@@ -45,8 +45,8 @@ sources:
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:a27dd2125990ab47
-    last_modified: 2026-11-18T04:32:21Z
+    digest: sha256:f0a00fd0dd48b252
+    last_modified: 2026-11-18T13:54:27Z
 ---
 
 ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).

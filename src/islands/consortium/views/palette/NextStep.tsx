@@ -13,85 +13,20 @@
 // never dropped (inform, don't block; owner 2026-11-14).
 import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { Fillers, Hole, JobId, Line, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { addGoal, bestToAdd, dryIntroLine, fillReasonLine, fillers, fills, holeChangeLines, jobsOf, lookChipLine, nextTarget, noneFits, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PLANTS_PER_JOB, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
+import type { Hole, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import { addGoal, bestToAdd, dryIntroLine, fillReasonLine, fills, jobsOf, lookChipLine, nextTarget, noneFits, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PLANTS_PER_JOB } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusNextStep, focusSoon } from '../../focus.ts';
-import { formatLength } from '../../format.ts';
 import { requestSuggest } from '../../state/suggest-wait.ts';
-import { nameOf, P, pageLang, T } from '../../strings.ts';
+import { nameOf, P, T } from '../../strings.ts';
 import { listOf } from '../../words.ts';
 import { FitLine, holeWords, midSentence, say } from '../kit/fit.tsx';
-import { flagLines, invasiveChip, type Line as FlagLine } from '../kit/flags.ts';
+import { flagLines, invasiveChip } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
 import { MoreList } from '../kit/more.tsx';
-import { coords, countryName, listName, num } from '../kit/names.ts';
+import { coords, listName, num } from '../kit/names.ts';
 import { countKind } from '../../rules/suggest-block.ts';
-
-// A plant's short marks as chips (boards Main, Palette, FillHole, FindResults; word map rows 89, 103):
-// the warning icon and a few words ("Mildly toxic", "Recorded invasive in Kenya", "Near the edge of
-// its range") in the warning or danger token, never colour alone; the full sentence stays in Details.
-// The Next step's rows, Find's rows and Paste's rows all draw them here (views/find/marks.tsx passes it
-// on), so a mark reads the same everywhere. A site misfit or a conflict keeps its sentence: it names
-// its reason. `look`: why the plant needs a second look (core lookChipLine, PFA-B1): "Near the edge of
-// its range" for a range edge only (BC11), else the cause itself ("Wetter here than where it is
-// recorded"), the group heading already saying "Needs a second look".
-const markWords = (t: Taxon, l: FlagLine, country: string | null): string =>
-  l.kind === 'toxicity' && t.warnings.toxicity ? T(`tox.${t.warnings.toxicity.level}`)
-    : l.kind === 'invasive' && country ? T('find.invasiveShort', { country: countryName(country) })
-      : l.text;
-const sentenceCase = (s: string): string => s.charAt(0).toLocaleUpperCase(pageLang()) + s.slice(1);
-export function Marks({ t, lines, country, look = null }: { t: Taxon; lines: readonly FlagLine[]; country: string | null; look?: Line | null }) {
-  if (!lines.length && !look) return null;
-  return (
-    <span class="ct-find-marks">
-      {look && <span class="ct-find-mark" data-kind={look.key.endsWith('.bandEdge') ? 'edge' : 'look'} data-level="warning">{WARN} {sentenceCase(say(look))}</span>}
-      {lines.map((l) => (
-        <span class="ct-find-mark" data-kind={l.kind} data-level={l.level ?? (l.kind === 'invasive' ? 'danger' : 'warning')}>
-          {WARN} {markWords(t, l, country)}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-// What Find opens for (board FillHole): the hole or thin spot itself (its plants, its words as the
-// title) and its job.
-export const openFillers = (h: Hole): void => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
-
-// A row's words, shared with Find's rows (one owner): its jobs, "Also …" after the job it is listed
-// for (board FillHole, T15), and its size ("1 m wide, 2.5 m tall").
-export function rowRoles(jobs: readonly JobId[], also: boolean): string {
-  const list = jobs.map((j, i) => (i > 0 || also ? midSentence(T(`job.${j}`)) : T(`job.${j}`))).join(', ');
-  return also && list ? T('find.also', { jobs: list }) : list;
-}
-export function rowSize(t: Taxon): string {
-  const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
-  const W = w === null ? '' : formatLength(w, lang), H = h === null ? '' : formatLength(h, lang);
-  return w !== null && h !== null ? T('find.sizeBoth', { w: W, h: H }) : h !== null ? T('find.sizeTall', { h: H }) : w !== null ? T('find.sizeWide', { w: W }) : T('find.sizeNone');
-}
-
-// A row's years in the boards' words ("first year", "month 3 to year 3", "year 1 to year 25", "from
-// year 15 on"): core yearsLine for the first years and months, the row's own form after.
-export function rowSpan(t: Taxon): string | null {
-  const y = yearsOf(t);
-  if (!y) return null;
-  if (y.from >= 1 && y.to === null) return T('palette.next.spanFrom', { from: y.from });
-  if (y.from >= 1 && y.to !== null) return T('palette.next.spanBetween', { from: y.from, to: y.to });
-  return midSentence(say(yearsLine(y.from, y.to)));
-}
-
-// The toast of an add from the Next step: what joined, then what it did to the hole it was added for
-// (BC6: that hole only, as it is now; the others it narrowed are not listed) and, on a thin spot, to
-// its job (holeChangeLines; an add opens no hole, so "No new hole." is left out). A row's Add:
-// "Pineapple added. Covers the ground: nobody after year 15."; the bulk row (many): "2 plants added: Pinto
-// peanut, Pineapple. Covers the ground: nobody after year 25. 7 holes left." (board AddMany). With no
-// target (plain Find, PFA-B7): the name only ("Pinto peanut added.", board Toasts), no narrowed hole.
-export function addedWords(names: readonly string[], c: HoleChange, thins: ThinChange, job: JobId | null, many = names.length > 1, target: Hole | null = null): string {
-  const head = many ? P('palette.next.addedMany', names.length, { names: names.join(', ') }) : T('palette.added', { name: names[0] });
-  const lines = holeChangeLines(c, { left: many, thins, jobs: job ? [job] : [], target: !target ? 'none' : target.thin ? null : target }).filter((l) => !l.key.endsWith('.holesNoNew'));
-  return [head, ...lines.map(say)].join(' ');
-}
+import { addedWords, HoleRow, holeFillerParts, holeFillers, Marks, openFillers, PLUS, rowRoles, rowSize, sentenceCase } from '../rows.tsx';
 
 // The double tap (F19): a second tap within the window adds nothing, whatever the card shows by then.
 const TAP_MS = 800;
@@ -132,7 +67,6 @@ const Title = ({ count }: { count?: ComponentChildren }) => (
 );
 const Part = ({ children }: { children: ComponentChildren }) => <span class="ct-next-part">{children}</span>;
 // The add mark (boards Main, FindResults: "+ Add"); the word carries the meaning.
-export const PLUS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 const TICK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 
 // The Empty board's marks (search, page, leaf, info) and the ways' chevron; the words carry the meaning.
@@ -166,48 +100,6 @@ function EmptyCount() {
   return <> {text}</>;
 }
 
-// The plants on the lists that fill a hole (core fillers), with the inputs the Next step reads: the
-// offer list less the palette, the verdicts, holding to the last period, the store's one second-look
-// rule. The one count source (BC25): the Next step's card, its other holes and Find's hole rows all
-// read it, so a hole's "N plants" is the same number everywhere.
-export function holeFillers(h: Hole, members: readonly Taxon[], open: readonly Hole[]): Fillers & { warned: ReadonlySet<PlantId>; holds: ReadonlyMap<PlantId, boolean>; judged: boolean } {
-  const ids = new Set(members.map((t) => t.id));
-  const cands = (store.offerPool.value ?? NONE).filter((t) => !ids.has(t.id) && fills(h, t));
-  const rule = store.verdictRule.value, ctx = store.verdictContext.value;
-  const last = periodIds[periodIds.length - 1];
-  const holds = new Map<PlantId, boolean>(rule ? cands.map((t) => [t.id, rule.holdsBy(t, ctx, last)]) : []);
-  const warned = new Set(cands.filter((t) => store.warnedPlant(t)).map((t) => t.id));
-  return { ...fillers(h, cands, store.poolVerdicts.value ?? new Map(), holds, warned, members, open), warned, holds, judged: !!rule };
-}
-
-// What fills a hole, said one way (PFA-R3, R4): Find's hole rows and the 200-plant sentence read this
-// one ordered rule. The plants that fit, else in the card's group order those that need a second look,
-// then those on the lists not checked ("3 on your lists not checked", apart from the palette's own
-// "N plants not checked"); none of them, no plant fits.
-export function holeFillerParts(f: Pick<Fillers, 'look' | 'unknown'>): string[] {
-  return [
-    f.look.length ? P('palette.next.countLook', f.look.length) : '',
-    f.unknown.length ? P('palette.next.countUncheckedLists', f.unknown.length) : '',
-  ].filter(Boolean);
-}
-export function holeEndWords(f: Fillers): string {
-  const parts = holeFillerParts(f);
-  return f.fits.length ? P('find.holePlants', f.fits.length) : parts.length ? listOf(parts) : T('palette.next.holeNoneFits');
-}
-
-// A hole as a row (boards Main "Other holes", Find "Your palette has 7 holes"; BC21, BC23): a dashed
-// box with the add mark, the hole's lane in bold ("Covers the ground:"), the rest of its title, and at
-// the right what it opens, in ochre ("Find", "7 plants").
-export function HoleRow({ h, end, onClick, extra, attrs = {} }: { h: Hole; end: string; onClick: () => void; extra?: string | null; attrs?: Record<string, string> }) {
-  const words = holeWords(h), at = words.search(/[:：]/);
-  return (
-    <button type="button" class="ct-hole-row" onClick={onClick} {...attrs}>
-      {PLUS}
-      <span class="ct-hole-row-text">{at > 0 ? <><b>{words.slice(0, at + 1)}</b>{words.slice(at + 1)}</> : words}{extra && ` · ${extra}`}</span>
-      <b class="ct-hole-row-end">{end}</b>
-    </button>
-  );
-}
 
 export function NextStep({ holes, members }: { holes: readonly Hole[]; members: readonly Taxon[] }) {
   const skip = store.notNow.value;
@@ -253,7 +145,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
           <ul class="ct-next-ways">
             {way('find', SEARCH_MARK, T('find.findPlants'), T('palette.next.emptyFindSub'), () => store.openFind(), 'empty', true)}
             {way('paste', PAGE_MARK, T('start.paste'), T('palette.next.emptyPasteSub'), () => store.openSheet('paste'))}
-            {way('small', LEAF_MARK, T('palette.next.emptySmall'), T('palette.next.emptySmallSub'), () => requestSuggest())}
+            {way('small', LEAF_MARK, T('palette.next.emptySmall'), P('palette.next.emptySmallSub', store.suggestionSize.value), () => requestSuggest())}
           </ul>
         </section>
         <p class="ct-next-emptynote" data-next-emptynote="">{INFO_MARK} {T('palette.next.emptyPictures')}<EmptyCount /></p>
@@ -380,7 +272,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const otherHoles = !sentence && others.length > 0 && (
     <section class="ct-other-holes" aria-labelledby="ct-other-holes-t">
       <h3 id="ct-other-holes-t">{T('palette.next.otherHoles')} <span class="ct-next-count">{others.length}</span></h3>
-      <MoreList items={others} keyOf={(h) => h.id} paletteSize={size} render={(h) => <OtherHole h={h} members={members} open={open} />} />
+      <MoreList items={others} keyOf={(h) => h.id} paletteSize={size} group={T('palette.next.otherHoles')} render={(h) => <OtherHole h={h} members={members} open={open} />} />
     </section>
   );
   // The card's foot (board Main; BC17): its links, "See all N plants" (or "Find a backup", or the
@@ -393,22 +285,22 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
       <h4 class="ct-next-hole" data-next-title="">{thin ? say(thinTitleLine(next)) : holeWords(next)}</h4>
       {uncheckedText && <p class="ct-next-unchecked" data-next-unchecked="">{uncheckedText}</p>}
       {whySentence && <p class="ct-next-why" data-next-why="">{whySentence}</p>}
-      {found.fits.length > 0 && <MoreList items={found.fits} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" />}
+      {found.fits.length > 0 && <MoreList items={found.fits} keyOf={(t) => t.id} render={filler} paletteSize={size} group={thin ? say(thinTitleLine(next)) : holeWords(next)} class="ct-fillers" />}
       {noFit && <p data-next-nofit="">{T('palette.next.noFit')}{found.outside.length > 0 && <> {P('palette.next.noFitOutside', found.outside.length)}</>}</p>}
       {found.look.length > 0 && (
         <>
           <h4 class="ct-fillers-head">{WARN} {T('palette.secondLook', { n: found.look.length })}</h4>
-          <MoreList items={found.look} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} class="ct-fillers" />
+          <MoreList items={found.look} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} group={T('palette.secondLook', { n: found.look.length })} class="ct-fillers" />
         </>
       )}
       {/* R3: plants not checked were never judged, so they are not listed as fitting: their own group. */}
       {found.unknown.length > 0 && (
         <>
           <h4 class="ct-fillers-head" data-next-unchecked-head="">{T('palette.next.notCheckedHead', { n: num(found.unknown.length) })}</h4>
-          <MoreList items={found.unknown} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} class="ct-fillers" />
+          <MoreList items={found.unknown} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} group={T('palette.next.notCheckedHead', { n: num(found.unknown.length) })} class="ct-fillers" />
         </>
       )}
-      {found.outside.length > 0 && outsideOpen && <div data-outside=""><MoreList items={found.outside} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" /></div>}
+      {found.outside.length > 0 && outsideOpen && <div data-outside=""><MoreList items={found.outside} keyOf={(t) => t.id} render={filler} paletteSize={size} group={P('palette.next.noFitOutside', found.outside.length)} class="ct-fillers" /></div>}
       {found.fits.length > 0 && (
         <>
           <p class="ct-next-bulk" data-next-bulk="">

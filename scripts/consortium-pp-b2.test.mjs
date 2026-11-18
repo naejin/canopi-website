@@ -415,3 +415,23 @@ test('PP-B (b2 scale fixture, review r1 perf-11): the 10-plant palette is the 20
   assert.deepEqual(small.guests, big.guests);
   assert.deepEqual(Object.keys(small.pools).sort(), Object.keys(big.pools).sort());
 });
+
+// M28 (board Loading "Still loading… 0.8 of 1.4 MB."): opening the database reports the bytes received
+// after each part, against the size the page was built with, so the slow line can say how far it is
+// (through openDatabase, the page's own seam; the bytes here are no database, so the open then fails).
+test('M28: opening the database reports the bytes received after each part', async () => {
+  const { openDatabase } = await import('../src/islands/consortium/data/load.ts');
+  const parts = [new Uint8Array(300_000), new Uint8Array(500_000), new Uint8Array(600_000)];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (input, init) => (String(input?.url ?? input).endsWith('/db.gz')
+    ? new Response(new ReadableStream({ start(c) { for (const p of parts) c.enqueue(p); c.close(); } }), { status: 200 })
+    : real(input, init));
+  try {
+    const seen = [];
+    const ref = { url: 'https://example.invalid/db.gz', sha256: '0'.repeat(64), bytes: 1_400_000, rawSha256: '0'.repeat(64), rawBytes: 1 };
+    await assert.rejects(openDatabase(ref, { releaseId: 'r-test', climates: [] }, undefined, undefined, (got, total) => seen.push([got, total])));
+    assert.deepEqual(seen, [[300_000, 1_400_000], [800_000, 1_400_000], [1_400_000, 1_400_000]]);
+  } finally {
+    globalThis.fetch = real;
+  }
+});

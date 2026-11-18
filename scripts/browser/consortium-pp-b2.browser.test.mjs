@@ -142,7 +142,7 @@ const fillersPalette = async () => {
   const page = await tool({ timeouts: { toast: 300 } });
   await choose(page, 'Temperate');
   await ownPalette(page, 2);
-  await page.waitForSelector('.ct-fillers li .button-primary', { timeout: 8000 });
+  await page.waitForSelector('.ct-fillers li .ct-filler-add', { timeout: 8000 });
   await page.evaluate(() => window.__ctTest.store.hideToast());
   return page;
 };
@@ -228,7 +228,7 @@ test('PP-B16b (b2 offline, PP-B exit): back online the moment "Needs a connectio
 
 test('PP-B17 (b2 toast): a toast stays while the focus is in it, then the focus returns to the control that raised it', async () => {
   const page = await fillersPalette();
-  await page.evaluate(() => { document.querySelector('.ct-fillers li .button-primary').dataset.raiser = ''; });
+  await page.evaluate(() => { document.querySelector('.ct-fillers li .ct-filler-add').dataset.raiser = ''; });
   await page.focus('[data-raiser]');
   await page.keyboard.press('Enter');
   // The Add hands the focus to the Next step's title two frames after the render (focusNextStep); a
@@ -256,34 +256,33 @@ const entry = (page) => page.evaluate(() => navigation.currentEntry.index);
 const back = (page) => page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.back(); }));
 const forward = (page) => page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.forward(); }));
 const sheetKind = (page) => page.evaluate(() => window.__ctTest.store.sheet.value?.kind ?? null);
-// Find from the Next step's See all, in "Select several" (c1's contract: consortium-pp-c1.browser.test.mjs).
-const findTicks = async (page) => {
-  await page.click('.ct-next-actions .button');
+// Find from the Next step's "See all" (board Find; c1's contract: consortium-pp-c1.browser.test.mjs).
+const seeAll = async (page) => {
+  await page.click('[data-next-seeall]');
   assert.ok(await page.waitForSelector('dialog.ct-find[open]', { timeout: 10_000 }).then(() => true, () => false), 'no Find sheet (dialog.ct-find)');
-  await page.click('dialog.ct-find[open] [data-find-select]');
-  await page.waitForSelector('dialog.ct-find[open] [data-find-row] input[type="checkbox"]', { timeout: 4000 });
+  await page.waitForSelector('dialog.ct-find[open] [data-find-row] button[data-find-add]', { timeout: 4000 });
 };
 
 // Coordinator row 2026-11-14 "Sheets and browser history" (inventory K7): a full-screen sheet pushes
 // one history entry; the phone's Back closes it and keeps every edit made in it; a second Back leaves
 // the page; Forward never reopens a stale sheet.
-// PP-C commit 0: the Add sheet's ticks went with it; written against Find's "Select several" (c1).
+// PP-C commit 0: the Add sheet's ticks went with it; v14 Find adds from each row (board AddMany), Done closes.
 test('PP-B31 (b2 sheets and Back, K7; review r1 bugs-1; owner c1 \'Find ticks\'): Back closes Find keeping the plants added in it, the address keeps them, a second Back leaves the page, Forward never reopens it', async () => {
   const page = await tool({ width: 390, hash: await temperateLink() });
   assert.ok(await onPage(page), 'the palette page');
-  await page.waitForSelector('.ct-next-actions .button', { timeout: 10_000 });
+  await page.waitForSelector('[data-next-seeall]', { timeout: 10_000 });
   const arrived = await entry(page), before = await page.evaluate(() => window.__ctTest.store.members.value.length);
-  await findTicks(page);
+  await seeAll(page);
   assert.equal(await entry(page), arrived + 1, 'the sheet took one history entry');
-  const ticks = await page.$$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]');
-  await ticks[0].click();
-  await ticks[1].click();
-  await page.locator(aria('button', 'Add 2 plants')).click();
-  assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 2 && !window.__ctTest.store.sheet.value, { timeout: 4000 }, before).then(() => true, () => false), '"Add 2 plants": both in, the sheet closed');
+  // Two rows' own Add (board AddMany: each adds at once, Find stays), then Done.
+  for (let i = 0; i < 2; i++) await page.click('dialog.ct-find[open] [data-find-row] button[data-find-add]');
+  assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 2, { timeout: 4000 }, before).then(() => true, () => false), "two rows' Add: both in");
+  await page.locator(`dialog.ct-find[open] ${aria('button', 'Done')}`).click();
+  assert.ok(await page.waitForFunction(() => !window.__ctTest.store.sheet.value, { timeout: 4000 }).then(() => true, () => false), 'Done closes Find');
   await page.waitForFunction((a) => navigation.currentEntry.index === a, { timeout: 4000 }, arrived);
   // Open it again and press the phone's Back.
   await page.evaluate(() => window.__ctTest.store.hideToast());
-  await findTicks(page);
+  await seeAll(page);
   await back(page);
   assert.equal(await sheetKind(page), null, 'Back closes the sheet');
   assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), before + 2, 'the plants added stay');

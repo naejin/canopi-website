@@ -8,8 +8,8 @@
 // Board figures come from the engine (owner 2026-11-18): every count, name and order a case checks is
 // computed through core holes.ts (pf-helpers engineLead) on the installed release at the board's
 // inputs (scenario cases kiambu-8-*, kiambu-200), never a board number; the words and the layout come
-// from the boards. Cases still failing carry an expected-fail marker (scripts/expect-fail.mjs failing(),
-// owner pf-a, reason /board: /); pf-a removes a marker in the commit that makes the case pass.
+// from the boards. No expected-fail marker is left (the last two, PFA4 and PFA10, went with main h2's
+// M2 and E6).
 // Not here: SiteMendoza's rows (its dryness note is the row's fit line, kit/fit.tsx, 0W R2; no Mendoza
 // place in the browser fixtures), the parked parts (Balcony's light question, "Before you plant",
 // Through the year and the cooler months: PP-F, PP-G), Start over (pf-c) and the removal and swap words
@@ -39,12 +39,49 @@ import assert from 'node:assert/strict';
 import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import test from 'node:test';
-import { failing } from '../expect-fail.mjs';
-import { BOARD, HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, holeCounts, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
 
 useHarness();
 
 const OTHER_HOLES = /Other holes (\d+)/;
+// Kiambu 8 with every hole put off: the engine leads with a thin spot (AddMany state 2).
+async function thinLead(opts) {
+  const page = await loadCase('kiambu-8-nights-2c-colder', opts);
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
+  const e = await engineLead(page);
+  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  return { page, e };
+}
+// The Add sheet at 390 px on Kiambu 8, filtered to "Feeds you", then `n` rows added with one tap each
+// (AddMany state 3): the page, the palette's size before and the names added.
+async function feedsAdds(n) {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => window.__ctTest.store.openFind());
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
+  await page.click('dialog[open] [data-job-chip="feeds_you"]');
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  const before = await members(page);
+  const added = [];
+  for (let i = 0; i < n; i++) {
+    const add = (await findAdds(page))[0];
+    assert.ok(add, 'board: a row\'s Add');
+    await addInFind(page, add);
+    added.push(add.replace(/^Add /, ''));
+    assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
+  }
+  return { page, before, added };
+}
+// The palette at 1280 px with its verdicts, Find opened as the desk panel (DeskStates).
+async function deskPanel() {
+  const page = await palette();
+  assert.ok(await verdictsSettled(page), 'the verdicts');
+  await says(page, OTHER_HOLES);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel');
+  return page;
+}
 // The Next step's card, its text in one line (the section its "Next step" heading opens).
 const nextStep = (page) => section(page, 'Next step');
 // The hole the Next step names: its title, the heading after "Next step" that reads like a hole.
@@ -174,7 +211,7 @@ test('PFA3 (pf-a Next step waits for the verdicts, F18): while the fit check loa
   await done(page);
 });
 
-failing('PFA4 (pf-a Empty at 390 and 1280): "Start with the plants you want" and its line, three rows (Find plants, Paste a list, Start from a small palette) each with its sub-line, then "The pictures (through the years, through the year, jobs) appear with your first plant." and "N of the M plants on … fit near <place> today."; no picture; the rows open Find and Paste, and the small palette is added with a "suggested" toast and one Undo', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA4 (pf-a Empty at 390 and 1280): "Start with the plants you want" and its line, three rows (Find plants, Paste a list, Start from a small palette) each with its sub-line, then "The pictures (through the years, through the year, jobs) appear with your first plant." and "N of the M plants on … fit near <place> today."; no picture; the rows open Find and Paste, and the small palette is added with a "suggested" toast and one Undo', async () => {
   for (const width of [390, 1280]) {
     const page = await emptyPalette({ width });
     await says(page, 'Start with the plants you want');
@@ -198,6 +235,9 @@ failing('PFA4 (pf-a Empty at 390 and 1280): "Start with the plants you want" and
     assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.sheet.value, { timeout: 10_000 }).then(() => true, () => false), 'board: "Paste a list" opens Paste');
     await page.evaluate(() => window.__ctTest.store.closeSheet());
     // Start from a small palette: added, each "suggested", one Undo (board Arrivals' last line).
+    // The page scrolls smoothly (global.css): bring the row up at once, so the tap is not taken by the
+    // phone's "Add plants" bar while the page still glides under it.
+    await page.locator(aria('button', 'Start from a small palette')).map((b) => b.scrollIntoView({ block: 'center', behavior: 'instant' })).wait();
     await press(page, 'button', 'Start from a small palette');
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'board: the small palette is added');
     assert.match(await toastText(page), /^A starting palette of \d+ plants was added, each marked “suggested”\./, 'board: the toast says each is marked "suggested"');
@@ -319,7 +359,7 @@ test('PFA9 (pf-a Find, C8): Find opened from "Add plants" says "Your palette has
   await done(empty);
 });
 
-failing('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP-B45): the list is named as missing with Try again, its plants are not checked, the Next step says the holes wait for it and names none, the tool stays; a palette of only those plants is never "Start with the plants you want"; once the grower removes them the line goes and a hole is named', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP-B45): the list is named as missing with Try again, its plants are not checked, the Next step says the holes wait for it and names none, the tool stays; a palette of only those plants is never "Start with the plants you want"; once the grower removes them the line goes and a hole is named', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   const own = await idsOf('Temperate', 2);
@@ -333,6 +373,9 @@ failing('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP
   }, String(guest), own);
   await says(page, /Mediterranean list/);
   assert.ok((await names(page, 'button')).includes('Try again'), 'board: the missing list\'s line offers Try again');
+  // h2 R8: the list is read from the opened database, so a retry that fails again is damage: Reload.
+  await press(page, 'button', 'Try again');
+  assert.ok(await until(page, () => [...document.querySelectorAll('[role="alert"] button')].some((b) => b.textContent.trim() === 'Reload')), 'h2 R8: failing again, the line offers Reload');
   assert.equal(await page.evaluate(() => window.__ctTest.store.load.value.status), 'ready', 'the tool stays');
   assert.deepEqual(await holeTitles(page), [], 'board: no hole named while a list is missing');
   await saysNot(page, 'Start with the plants you want', 'a palette with plants is never empty');
@@ -400,11 +443,7 @@ test('PFA13 (pf-a DeskStates, Q4, section 6): at 1280 px "Add plants" opens Find
 });
 
 test('PFA14 (pf-a AddMany state 2, a thin job): once no hole is left to show (each put off), the card reads "thin spot 1 of M · you want 2 · Change" with the engine\'s M, the title "Feeds you: 1 plant in years 15 to 60: add a backup", "Find a backup", and the bulk row counting what the goal still lacks ("Add the 1 that fits best", "Add all N that do this job then"); its toast says the job is still thin ("Feeds you: still 1 plant in years 25 to 60.") or ends it', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder');
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.ok(e.lead?.kind === 'thin', 'the engine gives a thin spot once the holes are put off (Kiambu 8, goal 2)');
+  const { page, e } = await thinLead();
   const card = await nextText(page);
   assert.ok(card.includes(`thin spot ${e.lead.index} of ${e.lead.of} · you want ${e.goal} · Change`), `board: "thin spot 1 of ${e.lead.of} · you want ${e.goal} · Change" ("${card.slice(0, 90)}")`);
   assert.match(card, /: \d+ plants? in years \d+ to \d+: add a backup/, 'board: "Feeds you: 1 plant in years 15 to 60: add a backup"');
@@ -480,21 +519,7 @@ test('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the eng
 });
 
 test('PFA17 (pf-a AddMany state 3, F20, Toasts "one-tap adds in a row"): in the Add sheet each Add is one tap and the sheet stays open; the head reads "N added this visit · your palette: M plants" with Done; each added row says "Added" with its Undo; one toast counts up ("2 added this visit. Last: Tahitian lime."), never a stack, and its Undo takes back the last add only', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => window.__ctTest.store.openFind());
-  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
-  await page.click('dialog[open] [data-job-chip="feeds_you"]');
-  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
-  const before = await members(page);
-  const added = [];
-  for (let i = 0; i < 3; i++) {
-    const add = (await findAdds(page))[0];
-    assert.ok(add, 'board: a row\'s Add');
-    await addInFind(page, add);
-    added.push(add.replace(/^Add /, ''));
-    assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
-  }
+  const { page, before, added } = await feedsAdds(3);
   assert.ok(await has(page, 'dialog[open]'), 'board: the sheet stays open');
   await says(page, `3 added this visit · your palette: ${before + 3} plants`, { inDialog: true });
   for (const n of added) await control(page, 'button', `Undo adding ${n}`);
@@ -506,11 +531,7 @@ test('PFA17 (pf-a AddMany state 3, F20, Toasts "one-tap adds in a row"): in the 
 });
 
 test('PFA18 (pf-a AddMany, "Find a backup"): Find opened from a thin job reads "Sorted: fills this first." with the filter "Fills a hole or a thin job" on ("Filters · 1"), and lists the plants that do that job then', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  const { page, e } = await thinLead({ width: 390 });
   await press(page, 'button', 'Find a backup');
   assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens');
   await says(page, 'Sorted: fills this first.');
@@ -614,24 +635,6 @@ test('PFA22 (pf-a FillHole at 390, BC7-BC9, BC11): a hole\'s sheet is a bottom s
 });
 
 // ---- Board check b2 (BC13-BC25): the card's layout and words, Other holes, the Find start, the desk panel.
-const core = await import('../../src/lib/consortium/holes.ts');
-const { periodIds } = await import('../../src/lib/consortium/types.ts');
-// Per open hole, what the engine's fillers() puts in each group (core holes.ts, the installed release):
-// the count every hole row says (the Next step's, Other holes', Find's), BC25.
-async function holeCounts(page) {
-  const s = await page.evaluate((last) => {
-    const st = window.__ctTest.store;
-    const members = st.memberTaxa.value, ids = new Set(members.map((t) => t.id));
-    const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
-    const rule = st.verdictRule.value, ctx = st.verdictContext.value;
-    return { holes: st.paletteHoles.value, members, pool, pv: [...(st.poolVerdicts.value ?? new Map())], holds: rule ? pool.map((t) => [t.id, rule.holdsBy(t, ctx, last)]) : [], warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id) };
-  }, periodIds[periodIds.length - 1]);
-  const open = s.holes.filter((h) => h.state === 'open');
-  return open.map((h) => {
-    const f = core.fillers(h, s.pool.filter((t) => core.fills(h, t)), new Map(s.pv), new Map(s.holds), new Set(s.warned), s.members, open);
-    return { id: h.id, fits: f.fits.length, look: f.look.length, unknown: f.unknown.length };
-  });
-}
 // A colour token as the page computes it (rgb()).
 const token = (page, name) => page.evaluate((n) => { const e = document.createElement('span'); e.style.color = `var(${n})`; document.querySelector('.ct').append(e); const c = getComputedStyle(e).color; e.remove(); return c; }, name);
 const style = (page, sel, props) => page.$eval(sel, (e, p) => { const s = getComputedStyle(e), r = e.getBoundingClientRect(); return { ...Object.fromEntries(p.map((k) => [k, s.getPropertyValue(k)])), x: r.left, y: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height }; }, props);
@@ -801,11 +804,7 @@ const boxByName = (page, name) => page.evaluate((n) => {
 }, name);
 
 test('PFA29 (pf-a R1, AddMany "Find a backup"): with "Fills a hole or a thin job" on, the grower adds the plant that closes the thin spot; its row stays, "Added" with its Undo, and every other row for that job stays listed', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  const { page, e } = await thinLead({ width: 390 });
   assert.equal(e.lead.target.thin.want - e.lead.target.thin.have, 1, 'one add closes it (have 1, want 2)');
   await press(page, 'button', 'Find a backup');
   await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 10_000 });
@@ -829,11 +828,7 @@ test('PFA29 (pf-a R1, AddMany "Find a backup"): with "Fills a hole or a thin job
 });
 
 test('PFA30 (pf-a R2, DeskStates): at 1280 px with Find open beside the chart, a page action while the focus sits outside the panel keeps the focus where it is', async () => {
-  const page = await palette();
-  assert.ok(await verdictsSettled(page), 'the verdicts');
-  await says(page, OTHER_HOLES);
-  await press(page, 'button', 'Add plants');
-  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel');
+  const page = await deskPanel();
   await frames(page);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-find-title', 'the panel takes the focus when it opens');
   await page.evaluate(() => {
@@ -959,11 +954,7 @@ test('PFA36 (pf-a Empty at 390, BC33): the three ways are bordered buttons, each
 // ---- Fix batch b4 (review R4-R9, C1-C4): the grower's scenarios, each a case.
 
 test('PFA37 (pf-a R5, C1, AddMany state 2): "Change" on the thin-spot card opens "Plants per job 1 2 3 5" in the card, the focus on the pressed goal; a choice sets the goal and the card follows the engine', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder');
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
-  const e = await engineLead(page);
-  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  const { page, e } = await thinLead();
   // The card's own Change (the place line has its own "Change").
   await page.$eval('[aria-labelledby="ct-next-t"] [data-next-change]', (b) => b.click());
   await frames(page);
@@ -997,20 +988,7 @@ test('PFA38 (pf-a R6, FindFilters): "Fills a hole or a thin job" counts the plan
 });
 
 test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the toast\'s Undo takes the last add out of "N added this visit" and the next toast\'s count; a row\'s Undo taken back keeps the row\'s Undo', async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  await says(page, OTHER_HOLES);
-  await page.evaluate(() => window.__ctTest.store.openFind());
-  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
-  await page.click('dialog[open] [data-job-chip="feeds_you"]');
-  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
-  const before = await members(page);
-  const added = [];
-  for (let i = 0; i < 2; i++) {
-    const add = (await findAdds(page))[0];
-    await addInFind(page, add);
-    added.push(add.replace(/^Add /, ''));
-    assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
-  }
+  const { page, before, added } = await feedsAdds(2);
   await says(page, `2 added this visit · your palette: ${before + 2} plants`, { inDialog: true });
   await page.locator('dialog[open] .ct-toast .ct-toast-undo').click();
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 1), 'the toast\'s Undo takes back the last add');
@@ -1020,20 +998,51 @@ test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 2), 'the next add');
   assert.equal(await toastText(page), `2 added this visit. Last: ${add.replace(/^Add /, '')}.`, 'R7: the next toast counts what this visit still holds');
   // A row's Undo, then the toast's Undo that puts the plant back: the row keeps "Added" with its Undo.
+  const leftOut = await page.evaluate(() => window.__ctTest.store.removed.value.length);
   await press(page, 'button', `Undo adding ${added[0]}`);
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 1), 'the row\'s Undo takes it out');
+  // M22: taking an add back is not a removal: the toast says so, and the plant is not left out of the next suggestion.
+  assert.equal(await toastText(page), `${added[0]} taken back out.`, 'M22: the row\'s Undo says the add was taken back, never "removed"');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.removed.value.length), leftOut, 'M22: nothing is left out of the next suggestion');
   await page.locator('dialog[open] .ct-toast .ct-toast-undo').click();
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 2), 'the toast\'s Undo puts it back');
   await control(page, 'button', `Undo adding ${added[0]}`);
   await done(page);
 });
 
+test('PFA50 (pf-a seam E2, board DeskStates): at 1280 px with Find\'s panel open on a palette of 40 plants or fewer, the Next step and the side column (Warnings, Balance) stand one under the other beside the pictures, never on each other', async () => {
+  const page = await deskPanel();
+  await section(page, 'Warnings');
+  const next = await sectionBox(page, 'Next step'), warn = await sectionBox(page, 'Warnings'), chart = await sectionBox(page, 'Through the years');
+  assert.ok(next && warn && chart, 'the Next step, Warnings and the pictures are drawn');
+  assert.ok(warn.y >= next.bottom - 1, `Warnings (top ${Math.round(warn.y)}) starts under the Next step (bottom ${Math.round(next.bottom)})`);
+  assert.ok(warn.x >= chart.right - 1, 'Warnings stays beside the pictures, not over them');
+  await done(page);
+});
+
+test('PFA51 (pf-a ruling D5, board Find): the subtitle counts the whole list, palette included ("N of the M plants … fit"); "Fits your place" counts the plants not yet in the palette and adds "· K already in your palette", so with no filter the two add up', async () => {
+  const page = await deskPanel();
+  const sub = await page.$eval('dialog[open] [data-find-fitcount]', (e) => e.textContent.replace(/\s+/g, ' ').trim());
+  const whole = Number(/(\d+) of the \d+ plants/.exec(sub)?.[1] ?? NaN);
+  const choice = await page.$eval('dialog[open] [data-filter="fits"]', (i) => i.closest('label').textContent.replace(/\s+/g, ' ').trim());
+  const m = /Fits your place\D*?(\d+) plants?;.*? · (\d+) already in your palette/.exec(choice);
+  assert.ok(m, `D5: the choice says the palette's share ("${choice}")`);
+  assert.equal(Number(m[1]) + Number(m[2]), whole, `D5: ${m[1]} + ${m[2]} make the subtitle's ${whole} ("${sub}")`);
+  // h2 R6: under a filter, "already in your palette" follows it, as the figure beside it does: the
+  // palette's plants that feed you and fit, never every fitting member.
+  await page.$eval('dialog[open] [data-job-chip="feeds_you"]', (b) => b.click());
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  const filtered = await page.$eval('dialog[open] [data-filter="fits"]', (i) => i.closest('label').textContent.replace(/\s+/g, ' ').trim());
+  const k = Number(/ · (\d+) already in your palette/.exec(filtered)?.[1] ?? 0);
+  // The palette's plants that feed you, outside ones left out (the Jobs lane's counted plants): the
+  // fitting ones among them are at most that many.
+  const doers = await page.evaluate(() => window.__ctTest.store.lanes.value.find((l) => l.kind === 'job' && l.job === 'feeds_you')?.counted.length ?? 0);
+  assert.ok(k <= Math.min(Number(m[2]), doers), `h2 R6: the filter narrows the palette's share (${k}; ${m[2]} unfiltered, ${doers} feed you; "${filtered}")`);
+  await done(page);
+});
+
 test('PFA40 (pf-a R9, DeskStates): crossing 960 px with Find open keeps its search, its filters, the visit\'s count and each added row\'s Undo', async () => {
-  const page = await palette();
-  assert.ok(await verdictsSettled(page), 'the verdicts');
-  await says(page, OTHER_HOLES);
-  await press(page, 'button', 'Add plants');
-  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel at 1280 px');
+  const page = await deskPanel();
   await page.$eval('dialog[open] [data-job-chip="feeds_you"]', (b) => b.click());
   await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
   const add = (await findAdds(page))[0];
@@ -1281,9 +1290,11 @@ test('PFA48 (pf-a N4, size rule A14): Find\'s groups are count cells past 12 row
   const rows = () => page.$$eval('dialog[open] [data-find-group="fits"] [data-find-row]', (r) => r.length);
   assert.equal(await rows(), 3, 'N4: closed, three rows');
   assert.ok(!(await names(page, 'button')).some((n) => /^Show all \d+/.test(n)), 'N4: no "Show all N" cap');
-  await press(page, 'button', `+ ${total - 3} more`);
+  // The opener names its group after the count ("+ 71 more: Fits your place", MoreList group).
+  const more = async (n) => (await names(page, 'button')).find((x) => x === `+ ${n} more` || x.startsWith(`+ ${n} more: `));
+  await press(page, 'button', await more(total - 3));
   assert.equal(await rows(), Math.min(10, total), 'N4: opened, ten rows');
-  if (total > 10) await press(page, 'button', `+ ${total - 10} more`);
+  if (total > 10) await press(page, 'button', await more(total - 10));
   assert.equal(await rows(), total, 'N4: then all');
   await control(page, 'button', 'Show fewer');
   await done(page);

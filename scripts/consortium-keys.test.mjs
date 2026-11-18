@@ -79,19 +79,18 @@ test('every key the island asks for by name is in all 11 locale files', () => {
 
 // Walk-through 2, N7: words that state a rule say the rule the code has. The room sizes Suggest
 // (suggest.ts SIZE_LIMIT: 6, 9, 12 plants) and never leaves a plant out (taller ones get a note), so
-// the hint names the sizes in every locale and no longer says "never how many". The Beta line counts
-// the curated lists and says the other climates borrow the nearest one, checked against a location.
-test('the room hint and the Beta line say what the tool does, in all 11 locales', async () => {
+// the hint names the sizes in every locale and no longer says "never how many". The long Beta line went
+// (D8): the head's beta badge says it.
+test('the room hint says what the tool does, in all 11 locales; the long Beta line is gone', async () => {
   const { SIZE_LIMIT } = await import('../src/lib/consortium/suggest.ts');
   const sizes = [...new Set(Object.values(SIZE_LIMIT))].sort((a, b) => a - b);
   assert.deepEqual(sizes, [6, 9, 12]);
   for (const [lang, w] of Object.entries(words)) {
     const hint = w['consortium.site.roomHint'];
     for (const n of sizes) assert.match(hint, new RegExp(`(^|\\D)${n}(\\D|$)`), `${lang}: the room hint names ${n}`);
-    for (const form of w['consortium.betaNote'].split(' | ')) assert.ok(form.includes('#'), `${lang}: every Beta form counts the lists`);
+    assert.equal(w['consortium.betaNote'], undefined, `${lang}: the long Beta line went (D8)`);
   }
   assert.doesNotMatch(words.en['consortium.site.roomHint'], /never how many/);
-  assert.match(words.en['consortium.betaNote'], /nearest list/);
 });
 
 // ---- measures (PP-B commit 0; plant-palette-architecture 3 "Names and numbers") ----
@@ -120,10 +119,15 @@ test('format.ts measures: the unit in the language\'s own form; a difference is 
   assert.equal(f.formatLength(2.5, 'en'), '2.5 m');
   assert.equal(sp(f.formatLength(2.5, 'fr')), '2,5 m');
   assert.equal(f.formatDepthCm(30.4, 'en'), '30 cm');
-  assert.equal(sp(f.formatTemp(-3.5, 'fr')), '-3,5 °C');
-  assert.match(f.formatTemp(-3.5, 'en'), /^-3\.5 ?°C$/);
-  assert.match(f.formatTempDiff(2, 'en'), /^\+2 ?°C$/, 'a difference is signed');
-  assert.match(f.formatTempDiff(0, 'en'), /^0 ?°C$/, 'no sign on zero');
+  // The boards' form (M21): a true minus sign and a narrow no-break space before °C where Intl puts none.
+  assert.equal(f.formatTemp(-3.5, 'en'), '\u22123.5\u202f°C', 'en: −3.5 °C');
+  assert.equal(f.formatTemp(-3.5, 'fr'), '\u22123,5\u202f°C', 'fr: −3,5 °C');
+  assert.equal(f.formatTemp(-3.5, 'de'), '\u22123,5 °C', 'de: −3,5 °C, its own space');
+  assert.equal(f.formatTemp(-3.5, 'ja'), '\u22123.5\u202f°C', 'ja: −3.5 °C');
+  assert.equal(f.formatTemp(12, 'en'), '12\u202f°C', 'no sign on a warm figure');
+  assert.equal(f.formatTempDiff(2, 'en'), '+2\u202f°C', 'a difference is signed');
+  assert.equal(f.formatTempDiff(-1.5, 'fr'), '\u22121,5\u202f°C', 'a negative difference takes the minus sign');
+  assert.equal(f.formatTempDiff(0, 'en'), '0\u202f°C', 'no sign on zero');
   assert.equal(f.formatArea(1200, 'en'), '1,200 m²');
   assert.equal(sp(f.formatArea(1200, 'fr')), '1 200 m²');
 });

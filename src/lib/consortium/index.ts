@@ -8,7 +8,7 @@ export * from './source.ts';
 // Stream S4's file, exported here so S4 never edits this one.
 export * from './canopi-file.ts';
 // The pure helpers the views and the island read (fix round 1 B3: named, never the whole rule file).
-export { canopyOf, fits, misfitsBeside, ROOM_LIMIT_M, UNSURE_SITE, type Canopy } from './site.ts';
+export { canopyOf, fits, misfitsBeside, ROOM_LIMIT_M, SIZE_LIMIT, UNSURE_SITE, type Canopy } from './site.ts';
 export * from './country-zones.ts';
 export * from './retry-import.ts';
 export * from './conflicts.ts';

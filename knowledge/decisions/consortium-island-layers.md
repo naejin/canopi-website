@@ -3,20 +3,20 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:14:58Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:41Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:36Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:591c4c6836f18cb9
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:7167212cdac6fb15
+    last_modified: 2026-11-18T18:43:00Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:86627392588fb3f5
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:e393580af2534bc5
+    last_modified: 2026-11-18T17:13:28Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -50,8 +50,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:23faca32f3f115d2
-    last_modified: 2026-11-17T12:58:14Z
+    digest: sha256:ff8a93245b7a3669
+    last_modified: 2026-11-18T13:15:44Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx

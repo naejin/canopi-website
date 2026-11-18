@@ -95,6 +95,17 @@ test('state/persist.ts and state/location.ts: a location country goes into a lin
   assert.deepEqual(keep.readLocation(rec), { lat: 37.3891, lon: -5.9845, source: 'geo' });
   assert.deepEqual(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Lyon, France' })).label, 'Lyon, France');
   for (const bad of [null, '', '{', '{"lat":1}', '{"lat":95,"lon":0,"source":"geo"}', '{"lat":1,"lon":2,"source":"gps"}']) assert.equal(keep.readLocation(bad), null, String(bad));
+  // h2 R4: whether the label is town-level is kept with it, so a reload still knows what may travel.
+  assert.equal(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Lyon, France', placeLevel: true })).placeLevel, true);
+  assert.equal(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Chemin des Vignes, France' })).placeLevel, undefined);
+});
+
+test('h2 R4: a share link carries the place\'s name only when it is town-level (persist.ts linkName), never a road\'s or a farm\'s', async () => {
+  const m = await import('../src/islands/consortium/state/persist.ts');
+  assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'search', label: 'Chemin des Vignes, France', lookup: null }), null, 'a road\'s label stays on the page');
+  assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'search', label: 'Saint-Rémy-de-Provence, France', placeLevel: true, lookup: null }), 'Saint-Rémy-de-Provence, France');
+  assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'map', lookup: null }), null, 'no label, no name');
+  assert.equal(m.linkName(null), null);
 });
 
 test('state/location.ts locationCountry: replaces a guess or none, never a chosen or linked country; none offshore clears only its own', async () => {
@@ -145,6 +156,27 @@ test('registry and place search (copied from canopi): Nominatim on request only,
   const failing = ps.createPlaceSearchController({ transport: async () => { throw new TypeError('Failed to fetch'); }, sleep: async () => {} });
   await failing.search('Lyon');
   assert.equal(failing.status.value, 'error');
+});
+
+test('M26, D7: "1.17 36" searched as a name goes to the geocoder; "Look up its name" is one /reverse request; an answer row names its kind for the eight kinds', async () => {
+  const ps = await import('../src/lib/location/place-search.ts');
+  ps.resetPlaceSearchPacingForTests();
+  const sent = [];
+  const transport = async (u) => {
+    sent.push(u);
+    if (u.includes('/reverse')) return u.includes('lat=0&') ? { error: 'Unable to geocode' } : { lat: '-1.17', lon: '36.83', display_name: 'Kiambu, Kiambu County, Kenya', addresstype: 'town' };
+    return [{ lat: '-1.17', lon: '36.83', display_name: 'Kiambu, Kenya', addresstype: 'town' }, { lat: '-1.2', lon: '36.8', display_name: 'Kiambu Road, Kenya', addresstype: 'road' }];
+  };
+  const ctl = ps.createPlaceSearchController({ transport, sleep: async () => {} });
+  await ctl.search('1.17 36');
+  assert.deepEqual([ctl.results.value[0].source, sent.length], ['coordinates', 0], 'without asName, read on this device');
+  await ctl.search('1.17 36', { asName: true });
+  assert.equal(sent.length, 1, 'asName: sent as a name');
+  assert.deepEqual(ctl.results.value.map((r) => r.placeType), ['town', null], 'D7: a town named, a road not');
+  const named = await ctl.nameOf(-1.17, 36.83);
+  assert.match(sent.at(-1), /^https:\/\/nominatim\.openstreetmap\.org\/reverse\?lat=-1\.17&lon=36\.83&/);
+  assert.deepEqual([named.label, named.detail, named.placeType], ['Kiambu', 'Kiambu County, Kenya', 'town']);
+  assert.equal(await ctl.nameOf(0, 0), null, 'no place there');
 });
 
 test('the location step stays off the first run: the shell imports its chunk only through import()', () => {

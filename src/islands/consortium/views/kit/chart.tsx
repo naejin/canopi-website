@@ -41,9 +41,9 @@ const plainNames = (items: string[]): string => plainList(items, pageLang());
 // Folded, `lead` then the count cell, its names sorted by display name (locale collation, BC12).
 // `closed`: the names a closed count cell shows. `few`: a sentence naming a handful whatever the
 // palette's size (board ManyDesk: "Cashew, outside its climate range, is toxic too"), inline up to that
-// many names.
-export function Names({ ids, name, size, closed = 3, few = 0, and = false, text, lead, render }: {
-  ids: readonly PlantId[]; name: (id: PlantId) => string; size: number; closed?: number; few?: number; and?: boolean;
+// many names. `group`: the list's name for its "+ N more" (MoreList group).
+export function Names({ ids, name, size, closed = 3, few = 0, and = false, text, lead, render, group }: {
+  ids: readonly PlantId[]; name: (id: PlantId) => string; size: number; closed?: number; few?: number; and?: boolean; group?: string;
   text?: (names: string) => ComponentChildren; lead?: ComponentChildren; render?: (id: PlantId) => ComponentChildren;
 }) {
   if (!ids.length) return null;
@@ -54,7 +54,7 @@ export function Names({ ids, name, size, closed = 3, few = 0, and = false, text,
   }
   const order = collatorFor(pageLang());
   const sorted = [...ids].sort((a, b) => order.compare(name(a), name(b)));
-  return <>{lead}<MoreList items={sorted} keyOf={(id) => id} paletteSize={size} closed={Math.max(1, closed)} class="ct-cell-names" render={render ?? name} /></>;
+  return <>{lead}<MoreList items={sorted} keyOf={(id) => id} paletteSize={size} closed={Math.max(1, closed)} class="ct-cell-names" render={render ?? name} group={group} /></>;
 }
 
 export interface PlantButtons {
@@ -108,13 +108,16 @@ const LaneHead = ({ r }: { r: Pick<PictureRow, 'key' | 'head'> }) => (
   <>{isJob(r.key) ? <JobIcon job={r.key} /> : isStratum(r.key) ? <LightIcon stratum={r.key} /> : <span class="ct-light-swatch" aria-hidden="true" />}{say(r.head)}</>
 );
 
-// A plant's accessible name, one phrase: the plant, its main job, its toxicity, recorded invasive, its
+// A plant's accessible name, one phrase: the plant, its toxicity, its main job, recorded invasive, its
 // fit when it warns (outside its range, needs a second look). Every plant button of the pictures reads
 // it, a bar, a chip or a name in a count cell (round 2 R2: a folded name keeps its words).
 function plantWords(id: PlantId, p: Picture, b: PlantButtons) {
   const v = b.verdictOf?.(id), job = p.jobs[id] ?? null, warn = !!v && (v.level === 'outside' || v.level === 'look');
   const flags = b.flagsOf?.(id), tox = toxOf(flags), invasive = !!flags?.some((f) => f.kind === 'invasive');
-  const label = [p.names[id] ?? id, jobWord(job), ...(tox ? [T(`palette.warningsTox_${tox}`)] : []), ...(invasive && b.invasiveWord ? [b.invasiveWord] : []), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
+  // The words seen on the button come first, in its order (its name, a space, its toxicity word), so
+  // the accessible name holds the visible text (WCAG 2.5.3, axe label-content-name-mismatch); the flex
+  // button draws no space.
+  const label = [p.names[id] ?? id, ...(tox ? [T(`palette.warningsTox_${tox}`)] : []), jobWord(job), ...(invasive && b.invasiveWord ? [b.invasiveWord] : []), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
   return { v, job, warn, tox, label };
 }
 // One plant as a button: its main job's icon, its name, its toxicity mark (role img, its words) and,
@@ -125,7 +128,7 @@ function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Pict
   const { v, job, warn, tox, label } = plantWords(id, p, b);
   return (
     <button type="button" class={cls} {...spanAttrs(span)} data-short={span && span[0] === span[1] ? '' : undefined} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} data-tox={tox ?? undefined} aria-label={label} onClick={() => b.onPlant(id)}>
-      <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <ToxMark tox={tox} word />}{warn && <LevelIcon level={v!.level} />}
+      <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <>{' '}<ToxMark tox={tox} word /></>}{warn && <LevelIcon level={v!.level} />}
     </button>
   );
 }

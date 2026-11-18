@@ -216,8 +216,9 @@ export async function loadCase(id, { site = 'kiambu', goal = null, ...opts } = {
 // untouched: an untouched suggestion shows no thin-spot card (A19), so thin spots are no target then.
 const core = await import('../../src/lib/consortium/holes.ts');
 const { periodIds } = await import('../../src/lib/consortium/types.ts');
-export async function engineLead(page) {
-  const s = await page.evaluate((last) => {
+// The engine's inputs read off the page's own state (shared by engineLead and holeCounts).
+async function engineInputs(page) {
+  return page.evaluate((last) => {
     const st = window.__ctTest.store;
     const members = st.memberTaxa.value, ids = new Set(members.map((t) => t.id));
     const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
@@ -228,6 +229,19 @@ export async function engineLead(page) {
       warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id), goal: st.plantsPerJob.value, untouched: st.untouchedSuggestion.value,
     };
   }, periodIds[periodIds.length - 1]);
+}
+// Per open hole, what the engine's fillers() puts in each group (core holes.ts, the installed release):
+// the count every hole row says (the Next step's, Other holes', Find's), BC25.
+export async function holeCounts(page) {
+  const s = await engineInputs(page);
+  const open = s.holes.filter((h) => h.state === 'open');
+  return open.map((h) => {
+    const f = core.fillers(h, s.pool.filter((t) => core.fills(h, t)), new Map(s.pv), new Map(s.holds), new Set(s.warned), s.members, open);
+    return { id: h.id, fits: f.fits.length, look: f.look.length, unknown: f.unknown.length };
+  });
+}
+export async function engineLead(page) {
+  const s = await engineInputs(page);
   const open = s.holes.filter((h) => h.state === 'open'), thins = s.thins.filter((h) => h.state === 'open');
   // C5: the Next step's ranking reads whether plants that fit fill a hole (a cooler-months food hole leads then).
   const pv = new Map(s.pv);

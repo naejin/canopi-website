@@ -26,14 +26,13 @@ import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
 import { flagLines } from '../kit/flags.ts';
-import { Marks } from './marks.tsx';
+import { Marks, PLUS } from '../rows.tsx';
 import { FitLine } from '../kit/fit.tsx';
 import { nameOf, zoneName } from '../kit/names.ts';
 import { finder, releasePlants, wantNames } from './names.ts';
 
 const MAX_LINES = 200;
 const SETTLE_MS = 200;
-const PLUS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 const INFO = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 7v4.5M8 4.6v.8" stroke="currentColor" stroke-width="1.6" /></svg>;
 const OK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 

@@ -11,6 +11,8 @@
 import { batch, signal } from '@preact/signals';
 
 export const STORE = 'canopi-consortium';
+// The longest save fragment read back (persist.ts readRecord; ConsortiumPage.astro's head script reads the same cap).
+export const SAVE_FRAGMENT_MAX = 20_000;
 
 // ---- storage, guarded ----
 

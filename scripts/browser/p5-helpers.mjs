@@ -6,8 +6,7 @@
 // - S5b: [data-location-action="geo" | "search" | "map"] controls, input[data-location-search], the
 //   result line [data-location-state] ("ready", "denied", "timeout", "unavailable", "no-result",
 //   "offline", "sea", "coast", "polar", "borderline", "failed"), [data-location-privacy] beside each
-//   control (in the same parent), the suggested climate card checked through store.proposedClimate and
-//   committed by [data-location-confirm] (owner answer 1), the map dialog [data-location-map] with [data-location-use-centre] (the test hook gains
+//   control (in the same parent), the climate read used at once (v14 board Place; no confirm step), the map dialog [data-location-map] with [data-location-use-centre] (the test hook gains
 //   mapCentre({ lat, lon }) to move it), the share tick input[data-share-location], and
 //   store.country.value.source 'location' (never in a link without the tick: owner answer 5);
 // - S5c: the confidence terms [data-conf] (rows, Details, print; PP-C c2 replaced the marks), the empty
@@ -19,7 +18,7 @@
 // - S5f: /privacy/ in every locale, the footer link to it, the /data-sources/ credits [data-credit].
 import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
-import { h, has, realDb, suggestReady } from './helpers.mjs';
+import { aria, h, has, realDb, suggestReady } from './helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 
@@ -68,7 +67,6 @@ export const text = (page, sel) => page.$eval(sel, (e) => e.textContent.replace(
 export const checkedCard = (page) => page.$eval('input[name="ct-climate"]:checked', (e) => e.value).catch(() => null);
 
 // The card a location suggests: shown as proposed (review round 1, 6), never as a checked radio.
-export const proposedCard = (page) => page.$eval('[data-proposed] input[name="ct-climate"]', (e) => e.value).catch(() => null);
 
 export const savedLocation = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('canopi-location') ?? 'null'));
 
@@ -83,18 +81,14 @@ export const ready = async (page) => {
 
 export const storeClimate = (page) => page.evaluate(() => window.__ctTest.store.climate.value);
 
-// The result line ready, the suggested card confirmed (owner answer 1), then a consortium in the matrix
-// and its Share panel open (S5b: the panel opens on its button; the specs read its field).
+// The result line ready (v14: the climate read is used at once, no confirm step), then a palette and
+// its Share panel open (the palette foot's "Copy link"; the specs read its field).
 export async function confirmAndSuggest(page) {
-  await page.click('[data-location-confirm]');
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.climate.value, { timeout: 10_000 }).then(() => true, () => false), 'the climate read is used');
   await suggestReady(page);
   await page.evaluate(async () => { const { store } = window.__ctTest; await store.loadPool(store.climate.value); store.suggestMembers(); store.view.value = 'matrix'; });
-  assert.ok(await has(page, '.ct-action-row button', 10_000), 'the matrix\'s actions');
-  // The future panel (S5d, views/FutureSlot.tsx; idle, about 150 ms after the matrix) mounts above the
-  // action row and pushes Share down by ~720 px: clicking before it lands can hit a tick Puppeteer had
-  // scrolled into view a frame earlier ("Node is either not clickable"; P5-13b/13d flake, 2026-11-11).
-  assert.ok(await has(page, '[data-future]', 10_000), 'the future panel has landed');
-  await page.click('.ct-action-row button');
+  assert.ok(await has(page, aria('button', 'Copy link'), 10_000), 'the palette page\'s foot');
+  await page.locator(aria('button', 'Copy link')).click();
   assert.ok(await has(page, '#ct-share-field', 10_000), 'the Share panel');
 }
 
@@ -115,7 +109,8 @@ export async function slowTiles(mode, { saved = null, geolocation = { lat: SITES
       const gate = held ? new Promise((r) => { open = r; }) : new Promise(() => {});
       window.__releaseTiles = () => open?.();
       const f = window.fetch;
-      window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input)) ? gate.then(() => f(input, init)) : f(input, init));
+      window.__tileAsks = 0;
+      window.fetch = (input, init) => (/\/data\/climate\//.test(String(input?.url ?? input)) ? (window.__tileAsks++, gate.then(() => f(input, init))) : f(input, init));
     }, mode === 'held', saved) });
   // Not ready(): a held saved lookup keeps its loading line aria-busy, which loadState reads as loading.
   assert.ok(await page.waitForFunction(() => !!window.__ctTest?.store?.source.value && !!document.querySelector('input[name="ct-climate"]') && !document.querySelector('[data-load-error]'), { timeout: 20_000 }).then(() => true, () => false), 'the tool is up, with the test hook');
@@ -219,7 +214,7 @@ export async function savedOpening({ list = null } = {}) {
 
 export const savedFailing = () => savedOpening({ list: 'fail' });
 
-export const proposal = (page) => page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
+export const climateAsk = (page) => page.evaluate(() => ({ climate: window.__ctTest.store.climate.value, seen: window.__confirmSeen, shown: !!document.querySelector('[data-location-confirm]') }));
 
 export const members = (page) => page.evaluate(() => window.__ctTest.store.members.value.length);
 

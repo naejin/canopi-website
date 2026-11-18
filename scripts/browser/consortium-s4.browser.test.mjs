@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { loadState, startHarness } from './harness.mjs';
 import { aria, axNodes, layoutVariants, behaviour, en, findAx, fixtureDb, has } from './helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
+import { showPalette, toPlace } from './seams-helpers.mjs';
 import { encodeLink } from '../../src/lib/consortium/state.ts';
 import { CANOPI_FILE_SCHEMA, CURRENT_CANOPI_FILE_VERSION } from '../vendor/canopi-design-format/canopi-design-format.ts';
 import { validate } from '../vendor/canopi-design-format/validate.mjs';
@@ -15,20 +16,20 @@ before(async () => { h = await startHarness(); });
 after(async () => { await h?.close(); });
 
 // Choose a climate and press "Start from a small suggested palette" (Place, PP-B b1a): the palette
-// shows with its action row (Share, Print, Download for Canopi).
+// shows with its action row (Copy link, Print, Download for Canopi).
 const SUGGEST = en['consortium.start.suggest'];
 async function suggest(page, climate = 'Temperate') {
   await openCards(page);
   await page.locator(aria('radio', climate)).click();
   assert.equal(await loadState(page), 'ready');
   await page.locator(aria('button', SUGGEST)).click();
-  assert.ok(await has(page, aria('button', 'Share'), 8000), 'the result and its actions');
+  assert.ok(await has(page, aria('button', 'Copy link'), 8000), 'the result and its actions');
 }
 // The share link; with `place`, "Include my place" ticked first (PP-B b1a: off by default).
 const shareLink = async (page, { place = false } = {}) => {
   // Open the Share panel (closed first if open, so the field is read fresh).
-  if (await page.$('#ct-share-field')) await page.locator(aria('button', 'Share')).click();
-  await page.locator(aria('button', 'Share')).click();
+  if (await page.$('#ct-share-field')) await page.locator(aria('button', 'Copy link')).click();
+  await page.locator(aria('button', 'Copy link')).click();
   if (place) {
     await page.waitForSelector('input[data-share-location]', { timeout: 4000 });
     if (!(await page.$eval('input[data-share-location]', (el) => el.checked))) await page.click('input[data-share-location]');
@@ -41,7 +42,14 @@ const hashOf = (url) => new URL(url).hash;
 // Each page is a browser context with its own copy of the database: close it once used, so a test
 // with many pages keeps the browser small.
 const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
-const countryText = (page) => page.$eval('[data-ct="country"]', (el) => el.textContent);
+// The country line's words: Place's own line when Place shows; the palette page (v14) draws no country
+// line, so there the words Place would say for the page's country and where it came from.
+const countryText = async (page) => (await page.waitForFunction(() => document.querySelector('[data-ct="country"]') || typeof window.__ctTest === 'object', { timeout: 8000 }), page.evaluate((words) => {
+  const line = document.querySelector('[data-ct="country"]');
+  if (line) return line.textContent;
+  const c = window.__ctTest.store.country.value;
+  return c?.code ? `${c.code} ${words[c.source] ?? c.source}` : '';
+}, { link: en['consortium.country.linked'], chosen: en['consortium.country.chosen'], location: en['consortium.country.fromLocation'], guess: en['consortium.country.guessed'] }));
 const fixtureTemperate = () => fixtureDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY 1").all().map((r) => String(r.id)));
 const UNSURE_SPOT = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 // A #v=5 link of the first five fixture Temperate plants that brings a place: a country and a cell in
@@ -91,7 +99,7 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     // reader's; the save takes it with the first plant change (owner 2026-11-15, decision 2: only a
     // plant change replaces the reader's save on a link's page).
     const staged = await stageLink();
-    const shared = await h.open(`/palette/?run=${Date.now()}#${staged}`, { ...v, data: 'fixture' });
+    const shared = await h.open(`/palette/?run=${Date.now()}#${staged}`, { ...v, data: 'fixture', hook: true });
     assert.equal(await loadState(shared), 'ready');
     // The cell travels as the page's cell centre, so it is compared apart.
     const noCell = (h) => h.replace(/&o=[^&]+/, '');
@@ -101,23 +109,26 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.match(await countryText(shared), /from the shared link/);
     await shared.reload();
     assert.equal(await loadState(shared), 'ready');
-    assert.ok(await has(shared, aria('button', 'Share'), 8000));
+    assert.ok(await has(shared, aria('button', 'Copy link'), 8000));
     assert.match(await countryText(shared), /from the shared link/, 'a reload keeps the link label');
+    // "Use it" is Place's (the link's place notice): the "Your place" step, then back to the palette.
+    await toPlace(shared);
     await shared.locator(aria('button', en['consortium.place.useIt'])).click();
     await shared.waitForFunction(() => !document.querySelector('[data-place-notice="linkPlace"]'), { timeout: 4000 });
     assert.match(await countryText(shared), /chosen by you/, '"Use it" makes the link\'s country the reader\'s');
+    await showPalette(shared);
     // A plant removed (its details, Remove): the page's palette is saved, with the country taken.
     await shared.evaluate(() => [...document.querySelectorAll('#ct-root .ct-palette-pictures button')].find((b) => b.closest('[data-plant-id]')).click());
     assert.ok(await has(shared, 'dialog[open].ct-sheet', 8000), 'a plant\'s details');
     await shared.locator(aria('button', en['consortium.details.remove'])).click();
     assert.ok(await has(shared, aria('button', 'Undo'), 4000), 'the Remove is made');
     await shared.goto(new URL('/palette/', shared.url()).href);
-    assert.ok(await has(shared, aria('button', 'Share'), 8000));
+    assert.ok(await has(shared, aria('button', 'Copy link'), 8000));
     assert.match(await countryText(shared), /chosen by you/, 'the save keeps the country the reader took');
     await done(shared);
 
     // A country the reader chose, then a reload of the page's own address: still "chosen by you".
-    const mine = await h.open('/palette/', { ...v, data: 'fixture' });
+    const mine = await h.open('/palette/', { ...v, data: 'fixture', hook: true });
     await openCards(mine);
     await mine.locator(aria('radio', 'Temperate')).click();
     assert.equal(await loadState(mine), 'ready');
@@ -125,13 +136,15 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     const use = (await axNodes(mine)).find((n) => n.role === 'button' && /^Use /.test(n.name ?? '') && n.name !== en['consortium.location.geo'] && n.name !== en['consortium.location.useCentre']);
     if (use) await mine.locator(aria('button', use.name)).click();
     else {
+      // The board's picker: "Add your country", "France" typed into "Your country", Enter.
       await mine.locator(aria('button', 'Add your country')).click();
-      await mine.select('#ct-country-select', 'FR');
+      await mine.locator(aria('textbox', 'Your country')).fill('France');
+      await mine.keyboard.press('Enter');
     }
     await suggest(mine);
     assert.match(await countryText(mine), /chosen by you/);
     await mine.reload();
-    assert.ok(await has(mine, aria('button', 'Share'), 8000));
+    assert.ok(await has(mine, aria('button', 'Copy link'), 8000));
     assert.match(await countryText(mine), /chosen by you/, 'a reload never relabels the reader\'s country (review 1)');
 
     const own = await mine.evaluate(() => location.hash);
@@ -150,7 +163,7 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
 
     // With a palette shown, an old beta (unreadable) or cut pasted link changes nothing, says so there,
     // and the address goes back to the palette shown (round 2, 2 and 4).
-    for (const [bad, words] of [[staged.replace('v=5', 'v=3'), /pasted link could not be read/], [staged.replace(/c=temperate&/, ''), /pasted link could not be read/], [staged.replace(/&e=1$/, ''), /pasted link could not be read/]]) {
+    for (const [bad, words] of [[staged.replace('v=5', 'v=3'), /This link could not be read/], [staged.replace(/c=temperate&/, ''), /This link could not be read/], [staged.replace(/&e=1$/, ''), /This link could not be read/]]) {
       await mine.evaluate((f) => { location.hash = f; }, bad);
       assert.ok(await findAx(mine, { name: words }), `the notice for the pasted link (${words})`);
       for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== own; i++) await new Promise((r) => setTimeout(r, 100));
@@ -164,7 +177,7 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     assert.ok(await findAx(noClimate, { name: /could not be read/ }), 'the unreadable notice');
     await openCards(noClimate);
     assert.ok(await has(noClimate, aria('radio', 'Temperate')), 'Place stays');
-    assert.equal(await has(noClimate, aria('button', 'Share'), 500), false, 'no result without a climate');
+    assert.equal(await has(noClimate, aria('button', 'Copy link'), 500), false, 'no result without a climate');
     await done(noClimate);
     // The beta tool's query link and save are not read (owner 2026-11-17): Place, no notice.
     const v1 = await h.open(`/palette/?v=3&c=temperate&a=AbCdEf`, { ...v, data: 'fixture' });
@@ -184,7 +197,7 @@ test('BT-7 (S4 share, blocked storage): everything works and Share says the link
   await behaviour(t, async (v) => {
     const blocked = await h.open('/palette/', { ...v, data: 'fixture', storage: false });
     await suggest(blocked);
-    await blocked.locator(aria('button', 'Share')).click();
+    await blocked.locator(aria('button', 'Copy link')).click();
     assert.ok(await findAx(blocked, { name: /This browser does not keep your palette; your link does/ }));
     await done(blocked);
   });
@@ -195,7 +208,7 @@ test('BT-7 (S4 share, blocked storage): everything works and Share says the link
     try {
       assert.equal(await page.evaluate(() => { try { void localStorage.length; return 'works'; } catch (e) { return e.name; } }), 'SecurityError', 'the profile blocks site data');
       await suggest(page);
-      await page.locator(aria('button', 'Share')).click();
+      await page.locator(aria('button', 'Copy link')).click();
       assert.ok(await findAx(page, { name: /This browser does not keep your palette; your link does/ }));
     } finally { await page.close(); }
   });
@@ -246,6 +259,8 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     for (let i = 0; i < 12 && !(await active()).text.startsWith('Temperate'); i++) await page.keyboard.press('ArrowDown');
     assert.ok((await active()).text.startsWith('Temperate'), 'Temperate by arrow keys');
     if (!(await page.evaluate(() => document.activeElement.checked))) await page.keyboard.press('Space');
+    // Enter on the checked climate takes it and closes the climate screen (v14 board ClimateHand).
+    await page.keyboard.press('Enter');
     assert.equal(await loadState(page), 'ready');
     await tabTo((a) => a.text === SUGGEST, SUGGEST);
     await page.keyboard.press('Enter');
@@ -274,14 +289,14 @@ test('Exit walk-through (S4, every stream): on the real install, keyboard only: 
     assert.equal((await active()).plant, plant.plant, 'focus is on the restored plant');
 
     // Share: the link field holds the palette.
-    await tabTo((a) => a.text === 'Share', 'Share');
+    await tabTo((a) => a.text === 'Copy link', 'Copy link');
     await page.keyboard.press('Enter');
     const field = await findAx(page, { role: 'textbox', name: /link/i });
     assert.match(field?.value ?? '', /#v=5/, 'the share field holds the link');
     // The copied link, opened as a new document: the same palette (it writes back the same link).
     const copy = await h.open(`/palette/?run=${Date.now()}${hashOf(field.value)}`, v);
     assert.equal(await loadState(copy), 'ready');
-    assert.ok(await has(copy, aria('button', 'Share'), 8000), 'the link reopens the palette');
+    assert.ok(await has(copy, aria('button', 'Copy link'), 8000), 'the link reopens the palette');
     assert.equal(hashOf(await shareLink(copy)), hashOf(field.value), 'the same palette');
     await done(copy);
     // Print.

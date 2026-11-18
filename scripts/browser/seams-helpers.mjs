@@ -62,11 +62,9 @@ export async function openFind(page) {
 // Find lists every plant (its fit choice "Every plant on the list", the outside plants unfolded): the
 // start lists none until the grower searches, picks a job or sets a filter (fix round 2, K3). A DOM
 // click, as the choice sits in the filters, behind "Filters" below 960 px.
-// None judged (c1r5 W2: no location, the verdicts refused), "Every plant" is already the choice: the
-// start's "Show N plants" lists the plants, as a grower does.
-export const everyPlant = (page) => page.$eval('dialog.ct-find[open] [data-filter="all"]', (e) => {
-  if (!e.checked) e.click(); else e.closest('dialog').querySelector('[data-find-list]')?.click();
-});
+// A click lists the plants even when "Every plant" is already the choice (none judged, c1r5 W2): the
+// radio's click shows the list, as a grower's tap does.
+export const everyPlant = (page) => page.$eval('dialog.ct-find[open] [data-filter="all"]', (e) => e.click());
 // Find's own rows (its groups, not "In another climate's list"), every one, as scientific names.
 export async function addRows(page) {
   await everyPlant(page);
@@ -118,11 +116,11 @@ export const otherTabSaves = (page) => page.evaluate((x) => localStorage.setItem
 
 // A list pasted on Place stays on Place (b1a conformance-2); "Show my palette" makes it the palette.
 // "Show my palette", as the reader does, when Place shows (nothing to press when the palette page
-// already shows); then the palette's Share is on the page.
+// already shows); then the palette's foot "Copy link" (v14 board) is on the page.
 export const showPalette = async (page) => {
   const show = await page.$('[data-place-show]');
   if (show) await show.click();
-  assert.ok(await has(page, aria('button', 'Share'), 5000), 'the palette page shows');
+  assert.ok(await has(page, aria('button', 'Copy link'), 5000), 'the palette page shows');
 };
 
 export const pasteOne = async (page, name) => {
@@ -167,7 +165,7 @@ export const STRINGS = Object.fromEntries(['en', 'fr', 'ja'].map((l) => [l, JSON
 // en 320 and ja 390) about a second after load. Each control's box in the first frame it exists is
 // compared with its box once the database is open and the guess settled: no movement over 1 px, and
 // the layout-shift entries (PerformanceObserver, buffered) add up to 0.01 at most.
-export const STABLE = ['[data-location-action="geo"]', 'input[data-location-search]', '[data-location-action="map"]', '.ct-card:first-of-type', '.ct-card:last-of-type'];
+export const STABLE = ['[data-location-action="geo"]', 'input[data-location-search]', '[data-location-action="map"]', '[data-climate-row]:first-of-type', '[data-climate-polar]'];
 
 export const MISMATCH = { en: { languages: ['en-US', 'en'], zone: 'Africa/Bangui', guess: 'CF' }, fr: { languages: ['fr-FR', 'fr'], zone: 'America/St_Vincent', guess: 'VC' }, ja: { languages: ['ja-JP', 'ja'], zone: 'America/Puerto_Rico', guess: 'PR' } };
 

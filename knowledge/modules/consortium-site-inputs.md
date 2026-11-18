@@ -2,7 +2,9 @@
 type: Module
 title: Consortium site inputs
 description: The core module that owns every site input the Plant palette engine reads, merged from the climate grid and soil map with the grower's edits as shifts, plus the palette goals read beside them.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:33Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:05Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:34Z }
 sources:
   - id: site-inputs-ts
     resource: ../../src/lib/consortium/site-inputs.ts
@@ -12,8 +14,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:ae9f25c93cd4a332
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:91d21007fa090bfc
+    last_modified: 2026-11-18T18:43:00Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
@@ -22,13 +24,13 @@ sources:
   - id: holes-ts
     resource: ../../src/lib/consortium/holes.ts
     title: src/lib/consortium/holes.ts
-    digest: sha256:b4f4d6056b019fe5
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:5da2a7bd168c0ee5
+    last_modified: 2026-11-18T17:33:57Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:25f27fd3c3bc8810
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: consortium-scenarios-mjs
     resource: ../../scripts/consortium-scenarios.mjs
     title: scripts/consortium-scenarios.mjs
@@ -38,7 +40,7 @@ sources:
     resource: ../../scripts/fixtures/consortium-scenarios.json
     title: scripts/fixtures/consortium-scenarios.json
     digest: sha256:175ef17cc7bcf3b4
-    last_modified: 2026-11-18T06:08:54Z
+    last_modified: 2026-11-18T06:34:33Z
 enforced_by:
   - scripts/consortium-site-inputs.test.mjs
   - scripts/consortium-scenarios.test.mjs

@@ -55,7 +55,7 @@ test('X3: a list pasted on Start and shown is the consortium with Share, saved: 
     assert.match(link, /^#v=5/, 'the address holds it');
     await page.reload();
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000), 'a reload restores it');
+    assert.ok(await has(page, aria('button', 'Copy link'), 8000), 'a reload restores it');
     assert.equal(await linkOf(page), link, 'the same consortium');
     assert.equal((await memberIds(page)).length, 3, 'the three pasted plants');
     await done(page);
@@ -77,7 +77,7 @@ test('F1: back on Place, another climate is saved at once, every plant kept, and
     assert.equal(await savedFragment(page), after, 'the address and the save agree');
     await page.reload();
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000), 'a reload restores the palette');
+    assert.ok(await has(page, aria('button', 'Copy link'), 8000), 'a reload restores the palette');
     assert.equal(await linkOf(page), after, 'under Tropical, no plant lost');
     await done(page);
   });
@@ -104,7 +104,7 @@ test('F2: Undo after a list pasted from "Start over" and shown goes back to Star
     await page.reload();
     assert.equal(await loadState(page), 'ready');
     assert.ok(await has(page, aria('button', en['consortium.start.suggest']), 4000), 'a reload opens Start');
-    assert.ok(!(await has(page, aria('button', 'Share'), 800)), 'no empty consortium saved');
+    assert.ok(!(await has(page, aria('button', 'Copy link'), 800)), 'no empty consortium saved');
     await done(page);
   });
 });
@@ -157,7 +157,7 @@ test('T3 (R3-1): a consortium the reader emptied stays empty, saved, back on Pla
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000));
     await page.reload();
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000), 'the save reopens');
+    assert.ok(await has(page, aria('button', 'Copy link'), 8000), 'the save reopens');
     await page.waitForFunction(() => typeof window.__ctTest === 'object');
     await page.evaluate(() => { const s = window.__ctTest.store; for (const id of s.members.peek()) s.removeMember(id); });
     const emptied = await savedFragment(page);
@@ -247,7 +247,7 @@ test('pre-push 1: a guest removed from the consortium gives no "no longer in the
     }, guest);
     await page.reload();
     assert.equal(await loadState(page), 'ready');
-    assert.ok(await has(page, aria('button', 'Share'), 8000));
+    assert.ok(await has(page, aria('button', 'Copy link'), 8000));
     const notes = await page.$$eval('#ct-root .ct-notice', (els) => els.map((e) => e.textContent));
     assert.ok(!notes.some((x) => /no longer in the list/.test(x)), `no false notice (${notes.join(' | ')})`);
     await done(page);

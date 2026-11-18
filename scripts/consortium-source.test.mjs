@@ -121,7 +121,7 @@ test('pool: a Taxon carries names, traits, warnings, functions and the self-host
 
 // ---- schemas 2 and 3: climate ranges, Köppen shares, native areas (P5 commit 0; the ranges rebuild) ----
 
-test('pool: a Taxon carries its observed climate range (cultivation included) or null when none is recorded', async () => {
+test('pool: a Taxon carries its observed climate range (cultivation included) and its annual rain, read only, or null when none is recorded', async () => {
   const pool = await source.pool('Temperate');
   const by = (name) => pool.find((x) => x.canonical_name === name);
   // The fixture's rule (make-fixture.mjs climateRows): Castanea is plant 1, Temperate, shifted by -1 °C.
@@ -129,6 +129,8 @@ test('pool: a Taxon carries its observed climate range (cultivation included) or
   const s3 = { blocks: 40, lowSource: 'gbif_occurrences', highSource: 'gbif_occurrences', weak: false };
   assert.deepEqual(by('Castanea sativa').climate, {
     source: 'gbif_occurrences',
+    // M23: the annual rain (mm), read beside the ranges and never checked (READ_ONLY_VARIABLES).
+    precip: { low: 450, median: 800, high: 1600, count: 200, basis: 'thinned_cells', ...s3 },
     tminCold: { low: -15, median: -4, high: 2.5, count: 200, basis: 'thinned_cells', ...s3 },
     tmaxWarm: { low: 18, median: 24, high: 30, count: 200, basis: 'thinned_cells', ...s3 },
     // Schema 3: the year's warmth (not shifted, as aridity).

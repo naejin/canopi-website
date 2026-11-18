@@ -37,7 +37,7 @@ async function matrixPage(opts = {}) {
 }
 // The members' chips on the palette page (Through the years): their accessible names (the plant's name,
 // its main job, and its fit when it warns: kit/chart.tsx aria-label).
-const chips = async (page) => page.$$eval('.ct-years .ct-chip[data-plant-id]', (els) => [...new Set(els.map((e) => e.getAttribute('aria-label') ?? e.textContent.trim()))]);
+const chips = async (page) => page.$$eval('.ct-years button[data-plant-id]', (els) => [...new Set(els.map((e) => e.getAttribute('aria-label') ?? e.textContent.trim()))]);
 const memberIds = (page) => page.$$eval('#ct-root [data-plant-id]', (els) => [...new Set(els.map((e) => e.dataset.plantId))].sort());
 const dialogOpen = (page) => page.evaluate(() => !!document.querySelector('dialog[open]'));
 const focusedName = (page) => page.evaluate(() => (document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent || '').trim());
@@ -371,7 +371,7 @@ test('E6-25 (K3 hand-off review 1): the later chunk\'s parts share one retry: af
   try {
     assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
     await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
-    const share = aria('button', en['consortium.share.button']);
+    const share = aria('button', en['consortium.palette.chart.copyLink']);
     const shown = () => page.waitForFunction(() => !!document.querySelector('.ct-page-actions .ct-share, .ct-page-actions [role="alert"]'), { timeout: 8000 }).catch(() => {});
     // Share's use retries (another part may have retried first: the idle future part); whichever
     // retry failed, the next use asks for a URL not yet tried.
@@ -415,7 +415,7 @@ test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed s
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
     assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
     // Another later part loading (Share; or a sheet chunk's prefetch already) gives it its chance.
-    await page.locator(aria('button', en['consortium.share.button'])).click();
+    await page.locator(aria('button', en['consortium.palette.chart.copyLink'])).click();
     assert.ok(await waitFor(() => seen.length > 0, 8000), `the future part asks again (${log.join(', ')})`);
   } finally { await page.browserContext().close().catch(() => {}); }
 });

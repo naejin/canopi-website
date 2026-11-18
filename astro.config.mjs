@@ -19,6 +19,11 @@ import { climateTiles } from './scripts/climate-integration.mjs';
 // `include` also decides which .ts files are compiled at all, so the scope is a plugin of its own and
 // vite:esbuild skips those files; every other file compiles exactly as before (probe P7).
 const CONSORTIUM_TSX = /\/src\/islands\/consortium\/.*\.tsx$/;
+// The first-run kit (K3, check-built-site): the rows and the list fold that the lazy Find and palette
+// chunks share. App.tsx imports them for their place in the first run only, and they declare no side
+// effect, so Rollup would drop that import and give the two lazy chunks a third, shared lazy chunk
+// (a failed request for it would break Find until Reload). Built untreeshaken, they stay in the first run.
+const FIRST_RUN_KIT = /\/src\/islands\/consortium\/views\/(?:rows|kit\/more)\.tsx$/;
 /** @type {import('vite').Plugin} */
 const consortiumJsx = {
   name: 'canopi:consortium-jsx',
@@ -27,7 +32,7 @@ const consortiumJsx = {
     const path = id.split('?')[0];
     if (!CONSORTIUM_TSX.test(path)) return null;
     const out = await transformWithEsbuild(code, path, { loader: 'tsx', jsx: 'automatic', jsxImportSource: 'preact', target: 'esnext' });
-    return { code: out.code, map: out.map };
+    return { code: out.code, map: out.map, ...(FIRST_RUN_KIT.test(path) ? { moduleSideEffects: /** @type {const} */ ('no-treeshake') } : {}) };
   },
 };
 

@@ -631,24 +631,6 @@ test('one country-source enum: the save keeps store.ts CountrySource without the
   assert.equal(readRecord(saveRecord('v=5&c=temperate&a=&e=1', 'x', 'location', 'ES')).country, 'ES', 'a location country beside the fragment');
 });
 
-test('one climate shown: the reader\'s choice, else a link\'s still opening, else the location\'s proposal (shown as proposed), else none', async () => {
-  await shown();
-  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek() };
-  try {
-    store.proposedClimate.value = 'Arid';
-    assert.deepEqual(persist.climateShown.peek(), { zone: 'Temperate', proposed: false }, 'chosen wins over a proposal');
-    store.climate.value = null;
-    assert.deepEqual(persist.climateShown.peek(), { zone: 'Arid', proposed: true }, 'the proposal, marked proposed');
-    delays.Tropical = 50;
-    const opening = m.restore(await linkOf('Tropical', 3), { from: 'link' });
-    assert.deepEqual(persist.climateShown.peek(), { zone: 'Tropical', proposed: false }, 'a link\'s climate while it opens');
-    assert.equal(await opening, true);
-    store.proposedClimate.value = null;
-    store.climate.value = null;
-    assert.deepEqual(persist.climateShown.peek(), { zone: null, proposed: false }, 'none');
-  } finally { store.climate.value = before.climate ?? 'Temperate'; store.proposedClimate.value = before.proposed; }
-});
-
 test('a link\'s o= is looked up through the location step the view hands in (restore.ts provideLocationStep), its lookup held until it settles', async () => {
   await shown();
   const calls = [];
@@ -687,25 +669,17 @@ test('a link\'s o= is looked up through the location step the view hands in (res
 
 // ---- E6 chunk 5: the one shown climate (S2/R2 seam) ----
 
-test('climateShown agrees with the views\' own shown climate in every case (Start\'s cards and head, PoolSlot)', async () => {
+test('climateChosen: the reader\'s choice, else a link\'s climate while it opens', async () => {
   const store = await import('../src/islands/consortium/store.ts');
-  const before = { climate: store.climate.peek(), proposed: store.proposedClimate.peek(), inFlight: persist.inFlight.peek() };
+  const before = { climate: store.climate.peek(), inFlight: persist.inFlight.peek() };
   try {
-    for (const climate of [null, 'Temperate', 'Mediterranean']) for (const pending of [null, 'Temperate', 'Tropical']) for (const proposed of [null, 'Temperate', 'Mediterranean']) {
+    for (const climate of [null, 'Temperate', 'Mediterranean']) for (const pending of [null, 'Temperate', 'Tropical']) {
       store.climate.value = climate;
       persist.inFlight.value = pending ? { id: 1, climate: pending, from: 'link' } : null;
-      store.proposedClimate.value = proposed;
-      const at = `climate ${climate}, link ${pending}, proposed ${proposed}`;
-      // What Start.tsx Climates/StartView and PoolSlot.tsx shownZone computed before chunk 5.
-      const chosen = store.climate.value ?? persist.pendingClimate.value;
-      const wasProposed = chosen ? null : store.proposedClimate.value;
-      const shown = persist.climateShown.value;
-      assert.equal(shown.proposed ? null : shown.zone, chosen, `${at}: the chosen (or link's) climate`);
-      assert.equal(persist.climateChosen.value, chosen, `${at}: climateChosen, which Start and PoolSlot read`);
-      assert.equal(shown.proposed ? shown.zone : null, wasProposed, `${at}: the proposed card`);
+      assert.equal(persist.climateChosen.value, climate ?? pending, `climate ${climate}, link ${pending}`);
     }
   } finally {
-    store.climate.value = before.climate; store.proposedClimate.value = before.proposed; persist.inFlight.value = before.inFlight;
+    store.climate.value = before.climate; persist.inFlight.value = before.inFlight;
   }
 });
 

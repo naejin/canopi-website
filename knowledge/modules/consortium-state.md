@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:52:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:18Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
 sources:
@@ -15,23 +15,23 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:25f27fd3c3bc8810
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
-    digest: sha256:29b3c2f6251892f4
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:c9ccd5eed4274d87
+    last_modified: 2026-11-18T17:05:25Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:21da84df7c265fca
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:07f9775e9c850dec
+    last_modified: 2026-11-18T18:38:12Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:05dac65b027489d3
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:65c143542f9f4e35
+    last_modified: 2026-11-18T18:38:12Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
@@ -40,13 +40,13 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:0fc0963811ecc7a3
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:5e4f54887014f1e1
+    last_modified: 2026-11-18T18:41:19Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:437155c4bec846fc
-    last_modified: 2026-11-17T15:02:13Z
+    digest: sha256:ad330f5c00ac2504
+    last_modified: 2026-11-18T18:38:12Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -55,13 +55,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b706295ccaa71c2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:6b59d99cb0816bb6
+    last_modified: 2026-11-18T18:38:12Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
-    digest: sha256:6709d3b6c2980998
-    last_modified: 2026-11-16T20:25:28Z
+    digest: sha256:04d212e17c481deb
+    last_modified: 2026-11-18T17:40:12Z
   - id: consortium-start-test-mjs
     resource: ../../scripts/consortium-start.test.mjs
     title: scripts/consortium-start.test.mjs
@@ -70,13 +70,13 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:86627392588fb3f5
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:e393580af2534bc5
+    last_modified: 2026-11-18T17:13:28Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
-    digest: sha256:545ea194b80246a0
-    last_modified: 2026-11-17T19:12:17Z
+    digest: sha256:7a5518810d5d8e3a
+    last_modified: 2026-11-18T17:07:24Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs
@@ -189,3 +189,7 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 
 The spot and soil schema fields, `emptyPlace` and the spot and soil link keys are deleted. `persist.ts` `palette()` is the saved fields as they are; the save's `place` and the address's `pl` carry the grower's own values (`store.siteEdits`, saved since 0W-1); the `canopi-place` seed (`placeSeed()`) is room and plot only. While a link's place waits, the save keeps the reader's own country and own values (`linkPlace.own`), never the link's. A link brings a place with its cell (`o`) or the grower's values (`f b p i d`); `k` alone does not. A cut link (no `e=1`) is refused as unreadable and restores nothing (restore.ts; the "cut" notice and its strings are gone).
 
+## Main h2 hand-off (2026-11-18)
+
+- A Suggest that ran before the climate was read says so in the suggestion's own toast (`store.ts` `suggestMembers(note)`: its words, then `location.unread`, with "Read it again" (`location.ts` `tryAgain`) beside Undo); `suggest-wait.ts` never shows a second toast over that Undo.
+- Start over (`draft.ts` `startOver`) offers "Palette cleared: N plants." with Undo only when the palette had plants; with none left it shows no toast.

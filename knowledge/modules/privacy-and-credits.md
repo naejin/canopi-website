@@ -2,7 +2,7 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:17Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:04Z }
 sources:
@@ -59,25 +59,25 @@ sources:
   - id: consortium-state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:e9aaa0527146c2d9
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:163f7a3eecb8a67d
+    last_modified: 2026-11-18T17:29:04Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:a95d33626cb4756c
-    last_modified: 2026-11-17T18:36:51Z
+    digest: sha256:0697d0d5383c5a16
+    last_modified: 2026-11-18T18:38:12Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:21da84df7c265fca
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:07f9775e9c850dec
+    last_modified: 2026-11-18T18:38:12Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b706295ccaa71c2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:6b59d99cb0816bb6
+    last_modified: 2026-11-18T18:38:12Z
 enforced_by:
   - scripts/consortium-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs
@@ -114,3 +114,9 @@ The `/privacy/` page in 11 locales (owner answer 4, decision "P5 owner answers",
 ## PP-B b1a (2026-11-14)
 
 `privacy.location.link` now reads, in English: "A share link includes your place only if you tick 'Include my place', and then only as the centre of its climate-grid square (about 11 km north to south, narrower toward the poles), its country, your spot answers and your soil test." (owner-approved EN and FR; the other nine translated). `scripts/consortium-p5-seams-s5f.test.mjs` checks the 11 km figure and the country word in every locale.
+
+## Main h2 hand-off (2026-11-18): the link's name and "Look up its name"
+
+- With the tick a link also carries the place's name (`n=`, D6), but only a town-level one: `state/persist.ts` `linkName` reads `SiteLocation.placeLevel`, set for a search answer or reverse lookup of a D7 kind (city to country) and for a link's own `n`; a road, building or farm label stays on the page.
+- "Look up its name" (M26) sends the centre of the typed point's 0.1° climate-grid square (`snapOrigin`) to Nominatim `/reverse` (zoom 10), on that press only (`state/location.ts` `lookUpName`).
+- `privacy.location.link`, `privacy.location.search`, `consortium.share.locationNote` and `consortium.location.searchPrivacy` say both in 11 locales; `consortium-p5-seams-s5f.test.mjs` ("h2 R1, R3") pins the town word and the localized button name in each.

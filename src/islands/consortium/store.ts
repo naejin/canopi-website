@@ -5,7 +5,7 @@
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { Alternative, ClimateZone, Hole, HoleChange, LaneCount, Line, PaletteGoals, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteEdits, SiteInputs, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, ThinChange, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, checksFailedLine, countingLine, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, hasClimate, holeChange, holeChangeLines, holes, laneCounts, loadSuggest, loadVerdictRule, NO_EDITS, paletteGoalsOf, paletteSizeLine, periodIds, plantsPerJobOf, removedManyLine, secondLook, siteEditsOf, siteInputsOf, siteOf, snapOrigin, thinChange, thinTargets, zoneOf } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, checksFailedLine, countingLine, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, hasClimate, holeChange, holeChangeLines, holes, laneCounts, loadSuggest, loadVerdictRule, NO_EDITS, paletteGoalsOf, paletteSizeLine, periodIds, plantsPerJobOf, removedManyLine, secondLook, siteEditsOf, siteInputsOf, siteOf, SIZE_LIMIT, snapOrigin, thinChange, thinTargets, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -58,6 +58,9 @@ export const yearStep = signal<PhaseOrd>(2);
 // from data/load.ts's slow callback), and a return visit restoring (main.ts; App shows the palette
 // placeholder, never the Place form, P2).
 export const slow = signal(false);
+// The database's bytes received and its size while it loads (M28: board Loading "0.8 of 1.4 MB"), in
+// tenths of a MB steps, so the line changes at most once per step; null before the first byte.
+export const loadProgress = signal<{ got: number; total: number } | null>(null);
 export const opening = signal(false);
 // The holes put off with "Not now" (this page only, never saved).
 export const notNow = signal<ReadonlySet<string>>(new Set());
@@ -94,6 +97,8 @@ export const siteInputs = computed<SiteInputs>(() => siteInputsOf({ lookup: loca
 // site.ts fits()'s Site, from the inputs (core place.ts siteOf): the flags, print's basis line and the
 // site-fit words read it.
 export const site = computed<Site>(() => siteOf(siteInputs.value));
+// The size of the starting palette Suggest places for this room (site.ts SIZE_LIMIT; the Empty card says it).
+export const suggestionSize = computed(() => SIZE_LIMIT[room.value]);
 
 // ---- data (set once the database is open; S1's load fills them) ----
 export const source = signal<PlantSource | null>(null);
@@ -330,6 +335,17 @@ export const countFits = computed<{ fits: number; look: number; unknown: number;
   for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits') fits++; else if (x === 'look') look++; else if (x !== 'outside') unknown++; }
   return { fits, look, unknown, of: p.length };
 });
+// The borrowed list's plants kept for the next period (board Oulu, C7, BC10): countFits's rule and
+// site, judged for 2041–2070 (fits or second look); null until the rule and the list are here. Lazy:
+// only the Oulu banner reads it, so a palette on its own list never runs this pass (C5).
+export const laterFits = computed<number | null>(() => {
+  const rule = verdictRule.value, p = pool.value;
+  if (!rule || !p) return null;
+  const v = rule.verdicts(p, { ...verdictContext.value, period: periodIds[1] });
+  let k = 0;
+  for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits' || x === 'look') k++; }
+  return k;
+});
 // Whether the browser is offline (navigator.onLine and its events, wired in start(); App shows the line).
 export const offline = signal(false);
 
@@ -402,12 +418,6 @@ export function alternativesFor(id: PlantId): { fit: Alternative[]; outside: Alt
   const out = offer.filter((x) => away.has(x.id));
   return { fit: algo.alternatives(id, memberTaxa.value, offer.filter((x) => !away.has(x.id)), opts), outside: out.length ? algo.alternatives(id, memberTaxa.value, out, opts) : [] };
 }
-// A climate the site location suggests (P5 owner answer 1; S5b writes it): its card shows checked,
-// but store.climate stays unset until the reader confirms.
-export const proposedClimate = signal<ClimateZone | null>(null);
-// Whether that proposal came from the saved site looked up again (not the reader locating): only such
-// a proposal goes when a consortium opens (state/restore.ts restore; seam review round 4, 2).
-export const proposedFromSave = signal(false);
 // The warnings on members: conflicts, site misfits, invasive and toxicity (core conflicts.ts flagsOf).
 export const flags = computed<Flag[]>(() => {
   if (!pool.value) return [];
@@ -493,8 +503,11 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
     // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
     p = Promise.all([src.pool(c), src.interactions(c)]).then(([plants, rows]) => {
       if (source.peek() !== src) return null;
-      pools.value = { ...pools.peek(), [c]: plants };
-      interactionSets.value = { ...interactionSets.peek(), [c]: rows };
+      batch(() => {
+        pools.value = { ...pools.peek(), [c]: plants };
+        interactionSets.value = { ...interactionSets.peek(), [c]: rows };
+        if (failedPools.peek().includes(c)) failedPools.value = failedPools.peek().filter((x) => x !== c);
+      });
       return plants;
     }).catch((err: unknown) => {
       if (source.peek() !== src) return null;
@@ -511,6 +524,18 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
     reading.set(c, p);
   }
   return withRule(p);
+}
+// The palette's missing-list notice's "Try again" (board: PFA10, E6): each guest list that failed is read
+// again; one that answers leaves failedPools, so its notice and "not checked" go. The read is local
+// (the opened database), so a list that fails again is damage a re-read cannot mend (h2 R8): the
+// notice then offers Reload, which fetches the database again. listRetry: 'busy' while it re-reads,
+// 'failed' once a retry failed again (until a list read clears failedPools).
+export const listRetry = signal<'idle' | 'busy' | 'failed'>('idle');
+export async function retryFailedLists(): Promise<void> {
+  if (listRetry.peek() === 'busy') return;
+  listRetry.value = 'busy';
+  await Promise.all(failedPools.peek().map((c) => loadPool(c)));
+  listRetry.value = failedPools.peek().length ? 'failed' : 'idle';
 }
 
 // Sets the open database's PlantSource, closing the one before it first (Retry opens a new
@@ -559,7 +584,10 @@ export const waitsForVerdicts = (): boolean => siteClimate.value;
 // its seed; inventory C6), leaving out removed plants (core suggest.ts). Needs the climate's pool and
 // every guest climate's (a guest must count), and with a site climate the verdicts; false, changing
 // nothing, while any is not read (guestsPending, verdictRule).
-export function suggestMembers(): boolean {
+// note: a sentence said after the suggestion's own, in the same toast, with its action beside Undo
+// (board Loading "Suggested before the climate was read" with "Read it again"; state/suggest-wait.ts):
+// one toast, so the suggestion's Undo is never replaced.
+export function suggestMembers(note: { text: string; action: ToastAction | null } | null = null): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
   const seed = members.value;
@@ -589,7 +617,7 @@ export function suggestMembers(): boolean {
   // the palette the press saw, with only the place answers given during the wait kept.
   const before = snapshot();
   batch(() => { members.value = s.members; suggestedIds.value = [...s.members]; held.value = false; });
-  offerUndo(P('place.suggested', s.members.length), before);
+  offerUndo(note ? `${P('place.suggested', s.members.length)} ${note.text}` : P('place.suggested', s.members.length), before, note?.action ?? null);
   return true;
 }
 
@@ -600,9 +628,10 @@ export function suggestMembers(): boolean {
 // whose words title the sheet (board FillHole), and `fits`, the hole's own test (core holes.ts fills),
 // handed by the palette page so the sheet chunks never import holes.ts, a module only the palette
 // chunk has (E6-5d: sheets import first-run modules). Find lists every plant, site misfits included
-// and flagged (inform, don't block; owner 2026-11-14).
-export interface SheetFor { job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null }
-export const FOR_NOTHING: SheetFor = { job: null, hole: null, fits: null };
+// and flagged (inform, don't block; owner 2026-11-14). `fits` without a hole (M24, board MainMore's
+// "Find a soil feeder of another family"): Find lists only the plants it passes, under `title`.
+export interface SheetFor { job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null; title?: string | null }
+export const FOR_NOTHING: SheetFor = { job: null, hole: null, fits: null, title: null };
 export const sheetTarget = signal<SheetFor>(FOR_NOTHING);
 
 // ---- browser history (coordinator row 2026-11-14, "Sheets and browser history", inventory K7) ----
@@ -846,6 +875,20 @@ export function removeMember(id: PlantId): void {
   });
   offerUndo(T('details.removed', { name }), before, null, [id]);
 }
+// Find's row "Undo" right after an add (M22): the plant only goes back out. It is not left out of the
+// next suggestion (no `removed`), its guest home goes, and the toast says the add was taken back, with
+// its own Undo (the plant added again).
+export function takeBackAdd(id: PlantId): void {
+  const before = snapshot();
+  if (!before.members.includes(id)) return;
+  batch(() => {
+    held.value = false;
+    suggestedIds.value = [];
+    members.value = without(before.members, [id]);
+    if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
+  });
+  offerUndo(T('find.tookBack', { name: nameById(id) }), before, null, [id]);
+}
 // Swap: the new plant takes the old one's place in the order; the old one is left out of a new
 // suggestion.
 export function swapMember(oldId: PlantId, newId: PlantId): void {
@@ -949,12 +992,15 @@ export function setSiteEdits(next: SiteEdits, summary: EditSummary): void {
   });
   summaryWatch = stop;
 }
+// A climate cell's key (its centre to 0.01°), the unit a hand-chosen climate and the grower's own values
+// belong to; state/location.ts compares lookups with it too.
+export const cellKey = (c: { cellLat: number; cellLon: number } | null | undefined): string | null => (c ? `${c.cellLat.toFixed(2)},${c.cellLon.toFixed(2)}` : null);
 // The cell a location stands in (its lookup's climate cell, else its point snapped to one).
 const cellOf = (l: SiteLocation | null): string | null => {
   if (!l) return null;
-  const c = l.lookup?.climate;
-  const at = c ? { lat: c.cellLat, lon: c.cellLon } : snapOrigin({ lat: l.lat, lon: l.lon });
-  return at ? `${at.lat.toFixed(2)},${at.lon.toFixed(2)}` : null;
+  if (l.lookup?.climate) return cellKey(l.lookup.climate);
+  const at = snapOrigin({ lat: l.lat, lon: l.lon });
+  return at ? cellKey({ cellLat: at.lat, cellLon: at.lon }) : null;
 };
 // The grower's values were cleared by a new place (pf-c says it once in the place line; A7).
 export const editsCleared = signal(false);

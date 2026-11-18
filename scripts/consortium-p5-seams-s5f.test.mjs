@@ -140,3 +140,22 @@ test('the location paragraphs say what the code does: an 11 km cell, its country
     assert.match(words['privacy.location.tiles'], PRECISE[lang], `${lang}: privacy.location.tiles hides only the precise point`);
   }
 });
+
+// h2 R1, R3 (2026-11-18): what leaves the page beyond the cell, said where the grower decides it.
+// - a ticked link carries the place's town-level name beside the cell (D6; persist.ts linkName: only a
+//   town or a wider area, never a street): the privacy line and the tick's note name it;
+// - "Look up its name" (M26) sends the centre of the typed point's climate-grid square to Nominatim
+//   (state/location.ts lookUpName): the privacy page's search line and the tool's privacy line name
+//   that button, in the page's own words for it.
+const TOWN = { en: /town or area/, fr: /ville ou de sa région/, es: /ciudad o zona/, pt: /cidade ou região/, it: /città o zona/, zh: /城镇或地区/, de: /Stadt oder Gegend/, ja: /町や地域/, ko: /도시나 지역/, nl: /stad of streek/, ru: /города или района/ };
+test('h2 R1, R3: the link line and the tick\'s note name the town that travels; the search lines name "Look up its name"', () => {
+  for (const lang of LOCALES) {
+    const words = json(`src/i18n/translations/${lang}.json`);
+    for (const key of ['privacy.location.link', 'consortium.share.locationNote']) assert.match(words[key], TOWN[lang], `${lang}: ${key} says the town or area's name travels`);
+    const button = words['consortium.location.lookUpName'];
+    for (const key of ['privacy.location.search', 'consortium.location.searchPrivacy']) {
+      assert.ok(words[key].includes(button), `${lang}: ${key} names "${button}"`);
+      assert.ok(words[key].includes('Nominatim') || key === 'consortium.location.searchPrivacy', `${lang}: ${key} names Nominatim`);
+    }
+  }
+});

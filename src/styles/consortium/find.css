@@ -287,7 +287,9 @@
   .ct .ct-palette-body:has(> dialog.ct-find-panel) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
   .ct .ct-palette-body > dialog.ct-find-panel { grid-column: 2; grid-row: 1; }
   .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-next { grid-column: 2; grid-row: 2; }
-  .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-palette-pictures { grid-column: 1; grid-row: 1 / span 2; }
+  /* E2: the side column (Warnings, Balance) under the Next step, never on it; the pictures span all three rows. */
+  .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-palette-side { grid-column: 2; grid-row: 3; }
+  .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-palette-pictures { grid-column: 1; grid-row: 1 / span 3; }
   /* A hole's panel is one column beside the chart (board HoleOpen; BC13): the chart keeps its width. */
   .ct .ct-palette-body:has(> dialog.ct-find-panel.ct-find-hole) { grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); }
   /* Find's filters in the panel (board FindDesk; BC13): checkbox rows, each count at the right. */

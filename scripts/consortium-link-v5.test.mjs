@@ -181,6 +181,20 @@ test('a place seed (canopi-place) reads back room and plot size (old spot and so
 });
 
 // ---- the country gate of the schema (8.1 k, 8.3) ----
+test('D6: the sender\'s place name travels as `n` beside `o`, only with "Include my place"; the reader reads it back, no lookup', () => {
+  const c = V.cases.find((x) => x.input.state);
+  const s = shareOf(c.input.state);
+  const known = knownOf(c.input.lists);
+  const o = { lat: -1.15, lon: 36.85 };
+  const withName = encodeLink(s, known, { origin: o, place: true, name: 'Kiambu, Kenya' });
+  assert.equal(core.linkPlaceName(withName), 'Kiambu, Kenya');
+  assert.equal(core.linkPlaceName(encodeLink(s, known, { place: false, name: 'Kiambu, Kenya' })), null, 'no name without the tick');
+  assert.equal(core.linkPlaceName(encodeLink(s, known, { place: true, name: 'Kiambu, Kenya' })), null, 'no name without the cell');
+  assert.equal(core.linkPlaceName('v=5&n=Kiambu&e=1'), null, 'a name with no `o` is not read');
+  assert.equal(core.linkPlaceName(encodeLink(s, known, { origin: o, place: true, name: 'x'.repeat(81) })), null, 'a name past 80 characters is left out');
+  assert.equal(decodeLink(withName, known).notice.unknownCount, decodeLink(encodeLink(s, known, { origin: o, place: true }), known).notice.unknownCount, 'n is a key this decoder knows');
+});
+
 test('schema: k goes in a link only with "Include my place" and never from a guess', () => {
   const values = (source) => ({ ...schema.valuesOf(schema.lists.saved), climate: 'Temperate', country: { code: 'FR', source } });
   assert.equal(schema.share(values('chosen'), { place: false }).country, null);
@@ -211,7 +225,7 @@ test('schema: a link that brings no place keeps the reader\'s country and place;
 test('R4: the spot and soil seams are gone (emptyPlace, the spot and soil fields)', () => {
   assert.equal(core.emptyPlace, undefined);
   assert.equal('spot' in schema.signals || 'soil' in schema.signals, false);
-  assert.deepEqual([...core.PLACE_KEYS], ['k', 'o', 'f', 'b', 'p', 'i', 'd']);
+  assert.deepEqual([...core.PLACE_KEYS], ['k', 'o', 'n', 'f', 'b', 'p', 'i', 'd']);
   for (const k of ['l', 'w', 'q', 'r', 'h', 's']) assert.equal(core.LINK_KEYS.includes(k), false, k);
 });
 

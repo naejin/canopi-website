@@ -18,8 +18,6 @@
     "exports|src/data/release.ts|CANOPI_DOWNLOAD_BASE_URL",
     "exports|src/data/release.ts|CANOPI_RELEASE_TAG",
     "exports|src/i18n/utils.ts|isLocale",
-    "exports|src/islands/consortium/views/kit/fit.tsx|lightWords",
-    "exports|src/islands/consortium/views/kit/flags.ts|invasiveChip",
     "exports|src/lib/climate/model.js|CLIMATE_BANDS",
     "exports|src/lib/contact.mjs|LIMITS",
     "exports|src/lib/contact.mjs|mailText",
@@ -37,7 +35,6 @@
     "types|src/components/guides/planting-mix.ts|MixTone",
     "types|src/data/crops.ts|EaseTier",
     "types|src/data/crops.ts|L10n",
-    "types|src/islands/consortium/views/kit/flags.ts|InvasiveChip",
     "types|src/lib/location/geolocation.ts|GeolocationErrorCode",
     "unlisted|astro.config.mjs|vite"
   ]

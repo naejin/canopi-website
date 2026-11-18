@@ -5,16 +5,16 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:34:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:06Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:38Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:99639b1407a58d79
-    last_modified: 2026-11-18T06:06:30Z
+    digest: sha256:064c0a742833e349
+    last_modified: 2026-11-18T18:43:00Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -23,8 +23,8 @@ sources:
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
-    digest: sha256:ba4588c719d57559
-    last_modified: 2026-11-12T12:35:39Z
+    digest: sha256:74e29a7ac1a27d34
+    last_modified: 2026-11-18T17:37:33Z
   - id: maplibre-ts
     resource: ../../src/lib/location/maplibre.ts
     title: src/lib/location/maplibre.ts
@@ -33,13 +33,13 @@ sources:
   - id: place-search-ts
     resource: ../../src/lib/location/place-search.ts
     title: src/lib/location/place-search.ts
-    digest: sha256:973b9ec88284376b
-    last_modified: 2026-11-13T07:08:17Z
+    digest: sha256:8e36232a62615b80
+    last_modified: 2026-11-18T17:37:33Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:86627392588fb3f5
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:e393580af2534bc5
+    last_modified: 2026-11-18T17:13:28Z
 ---
 
 # Responsibility

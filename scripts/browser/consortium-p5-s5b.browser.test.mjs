@@ -15,19 +15,18 @@ import assert from 'node:assert/strict';
 import { loadState } from './harness.mjs';
 import { h, has, suggestReady, useHarness } from './helpers.mjs';
 import { SITES, lookupAt, openCards, pickCard } from './location-fixtures.mjs';
-import { tool, choose, locationControls, locationState, text, checkedCard, proposedCard, savedLocation, ready, storeClimate, confirmAndSuggest, search, slowTiles, releaseTiles, watchFirstMembers, withSavedSite, temperateLink, ownSite, savedOpening, savedFailing, proposal, members } from './p5-helpers.mjs';
+import { tool, choose, locationControls, locationState, text, checkedCard, savedLocation, ready, storeClimate, confirmAndSuggest, search, slowTiles, releaseTiles, watchFirstMembers, withSavedSite, temperateLink, ownSite, savedOpening, savedFailing, climateAsk, members } from './p5-helpers.mjs';
 
 useHarness();
 
 // ---- S5b: Where is your site? ----
 
-test('P5-1 (S5b location granted): "Use my location" fills the result line and the climate card from the reader', async () => {
+test('P5-1 (S5b location granted): "Use my location" fills the result line and uses the climate read at once', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   const tileRequests = [];
   page.on('request', (r) => { if (/\/data\/climate\//.test(r.url())) tileRequests.push(new URL(r.url()).pathname); });
   await locationControls(page);
-  assert.ok(await page.$eval('[data-location-action="geo"]', (b) => !!b.parentElement.querySelector(':scope > [data-location-privacy]')), 'a privacy line beside the button, in its own parent');
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
   assert.ok(tileRequests.some((u) => /\/tiles\//.test(u)), `the climate tile was read (${tileRequests.join(', ')})`);
@@ -35,24 +34,9 @@ test('P5-1 (S5b location granted): "Use my location" fills the result line and t
   const loc = await page.evaluate(() => window.__ctTest.store.location.value);
   assert.equal(loc.source, 'geo');
   assert.equal(loc.lookup.climate.periods[0].koppen, 'Csa');
-  assert.equal(await proposedCard(page), 'mediterranean', 'the Mediterranean card is shown as proposed');
-  assert.equal(await checkedCard(page), null, 'not as a checked radio (review round 1, 6)');
-  assert.equal(await storeClimate(page), null, 'and not chosen until the reader confirms (owner answer 1)');
-  await page.click('[data-location-confirm]');
-  assert.equal(await storeClimate(page), 'Mediterranean');
+  // v14 board Place ("We read … used at once"): no proposal to confirm.
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Mediterranean', { timeout: 5000 }).then(() => true, () => false), 'Mediterranean, read and used at once');
   assert.equal(await page.evaluate(() => window.__ctTest.store.country.value.source), 'location', 'the country "from your location"');
-});
-
-test('P5-1b (S5b review round 1, 6): clicking the proposed card confirms it, like the "Use" button', async () => {
-  const page = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
-  await locationControls(page);
-  await page.click('[data-location-action="geo"]');
-  assert.equal(await locationState(page), 'ready');
-  await openCards(page);
-  await page.click('[data-proposed]');
-  assert.equal(await storeClimate(page), 'Mediterranean', 'the click chose it');
-  assert.equal(await checkedCard(page), 'mediterranean');
-  assert.equal(await page.$('[data-location-confirm]'), null, 'nothing left to confirm');
 });
 
 test('P5-1c (S5b review round 1, 4): a lookup ending while a pasted link restores is not a reader action: the link still opens', async () => {
@@ -65,9 +49,12 @@ test('P5-1c (S5b review round 1, 4): a lookup ending while a pasted link restore
   const page = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
+  // The ask has begun (its chunk loaded, the line "loading"), then the link is pasted: the link is the
+  // newer act, so its climate stands when the lookup ends.
+  assert.ok(await page.waitForSelector('[data-location-state="loading"]', { timeout: 10_000 }).then(() => true, () => false), 'the lookup has begun');
   await page.evaluate((l) => { location.hash = l; }, link);
-  assert.equal(await locationState(page), 'ready', 'the lookup ends');
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link restored');
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup, { timeout: 15_000 }).then(() => true, () => false), 'the lookup ends');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link restored, its climate standing over the lookup\'s');
 });
 
 test('P5-1d (S5b review round 1 addendum): Suggest pressed while a location lookup is pending waits for it, so the range filter sees the site', async () => {
@@ -109,9 +96,19 @@ test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at mos
   await page.click('[data-place-suggest]');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: timeouts.suggest + 4000 }).then(() => true, () => false), 'Suggest ran within the cap');
   assert.ok(Date.now() - t0 >= timeouts.suggest * 0.8, 'after waiting for the site first');
-  assert.ok(await has(page, '[data-location-unread]', 4000), 'a line says the climate was not read');
-  assert.ok(await page.waitForFunction(() => document.querySelector('[data-location-state]')?.getAttribute('data-location-state') === 'failed', { timeout: timeouts.read + 4000 }).then(() => true, () => false), 'the stalled read ends as failed');
-  assert.equal(await page.$('[data-location-unread]'), null, 'review round 3 (3): the failed line replaces the "not read" note');
+  assert.ok(await page.waitForFunction(() => /not read in time/.test(document.querySelector('.ct-toast-region')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'a message says the climate was not read (board Loading)');
+  // h2 R1: one toast, the suggestion's: its words, the "not read" sentence, its Undo kept, and the
+  // board's "Read it again" beside it (a second toast would take the Undo the Empty card promises).
+  const toast = await page.evaluate(() => { const r = document.querySelector('.ct-toast-region'); return { text: r?.textContent.replace(/\s+/g, ' ') ?? '', buttons: [...(r?.querySelectorAll('button') ?? [])].map((b) => b.textContent.trim()) }; });
+  assert.match(toast.text, /A starting palette of \d+ plants was added, each marked “suggested”\. Plants were suggested without your place’s climate: it was not read in time\./, 'the suggestion and the unread sentence in one toast');
+  assert.ok(toast.buttons.includes('Undo'), `the suggestion's Undo stays (${toast.buttons.join(', ')})`);
+  assert.ok(toast.buttons.includes('Read it again'), `board Loading: "Read it again" (${toast.buttons.join(', ')})`);
+  await page.evaluate(() => [...document.querySelectorAll('.ct-toast-region button')].find((b) => b.textContent.trim() === 'Undo').click());
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 0, { timeout: 4000 }).then(() => true, () => false), 'Undo takes the suggested palette back');
+  // Undo went back to Place (the view is an undo field); else its step.
+  if (!(await has(page, '[data-location-state]', 2000))) assert.ok(await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
+  assert.ok(await page.waitForFunction(() => document.querySelector('[data-location-state]')?.getAttribute('data-location-state') === 'failed', { timeout: timeouts.read + 4000 }).then(() => true, () => false), 'the stalled read ends as failed, on Place');
+  assert.equal(await page.$('[data-location-unread]'), null, 'review round 3 (3): no "not read" note left beside the failed line');
 });
 
 test('P5-1g (S5b review round 4, 1): a "Use my location" left at its permission prompt and replaced by a search holds nothing: Suggest runs at once, no "not read"', async () => {
@@ -125,7 +122,6 @@ test('P5-1g (S5b review round 4, 1): a "Use my location" left at its permission 
   await page.click('[data-location-action="geo"]');
   await search(page, 'Seville');
   assert.equal(await locationState(page), 'ready', 'Seville read');
-  await page.click('[data-location-confirm]');
   assert.ok(await has(page, '[data-place-suggest]', 15_000));
   const t0 = Date.now();
   await page.click('[data-place-suggest]');
@@ -134,7 +130,7 @@ test('P5-1g (S5b review round 4, 1): a "Use my location" left at its permission 
   assert.equal(await page.$('[data-location-unread]'), null, 'Seville was read: no "not read" note');
 });
 
-test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a stalled network: no loading line, no later "failed", no Suggest hold', async () => {
+test('P5-13d (S5b review round 3, 2): the palette\'s "Your place" step drops a link\'s lookup on a stalled network: no loading line, no later "failed", no Suggest hold', async () => {
   const [lat, lon] = SITES.seville;
   const maker = await tool({ geolocation: { lat, lon } });
   await locationControls(maker);
@@ -159,20 +155,24 @@ test('P5-13d (S5b review round 3, 2): Start over drops a link\'s lookup on a sta
   // The read itself has started (its timer armed): the location chunk's own loading line, not the
   // slot's placeholder while that chunk loads. Pressed earlier, Start over drops the lookup before any
   // read, and no timer is left to fire (seen on CI, push B).
-  assert.ok(await page.waitForSelector('.ct-location-result[data-location-state="loading"]', { timeout: 15_000 }).then(() => true, () => false), 'the stalled read has started');
-  const started = await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Start over'); b?.click(); return { clicked: !!b, early: window.__readTimedOut }; });
-  assert.ok(started.clicked, 'Start over');
-  assert.equal(started.early, false, `Start over pressed while the read was still pending (before its ${READ} ms timer)`);
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start', { timeout: 5000 }).then(() => true, () => false));
-  assert.equal(await page.$('[data-location-state]'), null, 'no "loading" line left on Start');
+  assert.ok(await page.waitForFunction(() => window.__tileAsks > 0, { timeout: 15_000 }).then(() => true, () => false), 'the stalled read has started');
+  await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).catch(() => null);
+  const started = await page.evaluate(() => { const b = document.querySelector('button.ct-step'); b?.click(); return { clicked: !!b, early: window.__readTimedOut }; });
+  assert.ok(started.clicked, 'the "Your place" step');
+  assert.equal(started.early, false, `pressed while the read was still pending (before its ${READ} ms timer)`);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start' && window.__ctTest.store.location.value === null, { timeout: 5000 }).then(() => true, () => false), 'Place, the link\'s location gone');
+  const LINE = '[data-location-state]:not([data-location-state="none"])';
+  assert.equal(await page.$(LINE), null, 'no "loading" line on Place');
   // Any result line from now on is the dead lookup's.
-  await page.evaluate(() => { window.__lateLine = false; new MutationObserver(() => { if (document.querySelector('[data-location-state]')) window.__lateLine = true; }).observe(document.body, { subtree: true, childList: true }); });
+  await page.evaluate(() => { window.__lateLine = false; new MutationObserver(() => { if (document.querySelector('[data-location-state]:not([data-location-state="none"])')) window.__lateLine = true; }).observe(document.body, { subtree: true, childList: true }); });
   assert.ok(await page.waitForFunction(() => window.__readTimedOut, { timeout: READ + 5000 }).then(() => true, () => false), 'the stalled read\'s timer fired');
   // Its rejection settles in microtasks and Preact renders on the next tick: half a second covers both.
   await new Promise((r) => setTimeout(r, 500));
   assert.equal(await page.evaluate(() => window.__lateLine), false, 'the dead lookup wrote no line after its timeout');
-  assert.equal(await page.$('[data-location-state]'), null, 'no later "failed" line');
-  // Suggest is not held by it.
+  assert.equal(await page.$(LINE), null, 'no later "failed" line');
+  // Suggest is not held by it (Place's Start over first: with a palette Place offers no Suggest).
+  await page.click('[data-start-over]');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 0, { timeout: 5000 }).then(() => true, () => false), 'Start over');
   await pickCard(page, 'mediterranean');
   assert.ok(await has(page, '[data-place-suggest]', 15_000));
   const t0 = Date.now();
@@ -190,7 +190,6 @@ test('P5-2 (S5b location denied): a denied permission says so and leaves the man
   assert.ok(await has(page, '[data-place-climates]'), 'the climate cards stay, one link away');
   assert.equal(await text(page, '[data-place-climates]'), 'No location? Choose a climate');
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
-  assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });
 
 test('P5-3 (S5b location timeout): a location that never comes ends in "timeout", with search and map offered', async () => {
@@ -217,7 +216,6 @@ test('P5-4 (S5b search hit): Enter searches Nominatim once, in the page language
   assert.equal(url.searchParams.get('accept-language'), 'fr');
   assert.equal(url.searchParams.get('limit'), '5');
   assert.equal(url.searchParams.has('email'), false);
-  assert.match(await text(page, '.ct-location') ?? '', /Nominatim.*OpenStreetMap/);
   assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).source, 'search');
 });
 
@@ -292,9 +290,8 @@ test('P5-7c (S5b review round 1, 7): the WebGL probe runs once, outside the resu
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
   await confirmAndSuggest(page);
-  assert.ok(await has(page, '.ct-result-head [data-location-state], [data-location-state]', 10_000));
   const gl = await page.evaluate(() => window.__gl.map((c) => c.isContextLost()));
-  assert.equal(gl.length, 1, 'one probe, though the result head shows the location line too');
+  assert.equal(gl.length, 1, 'one probe, though Place and the palette page both draw location controls');
   assert.deepEqual(gl, [true], 'its context released (WEBGL_lose_context)');
 });
 
@@ -318,8 +315,7 @@ test('P5-8 (S5b coast): a point offshore takes the nearest cell\'s climate and s
   await locationControls(page);
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'coast');
-  assert.equal(await proposedCard(page), 'temperate', 'Cfb from the nearest cell, proposed');
-  assert.equal(await storeClimate(page), null, 'not chosen until confirmed');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate', { timeout: 5000 }).then(() => true, () => false), 'Cfb from the nearest cell, used');
   const c = await page.evaluate(() => window.__ctTest.store.country.value);
   assert.notEqual(c.source, 'location', 'no country from the location offshore');
   assert.ok(c.code === null || c.source !== 'location', 'no country offshore');
@@ -335,69 +331,6 @@ test('P5-9 (S5b polar): an ET site has its own state, no curated list claimed', 
   assert.equal(await checkedCard(page), null, 'no curated card claimed');
 });
 
-test('P5-10 (S5b borderline, UX audit fix 2): Lyon pre-selects Subtropical, says "between Subtropical and Temperate", and applies nothing until confirmed', async () => {
-  const [lat, lon] = SITES.lyon;
-  const page = await tool({ geolocation: { lat, lon } });
-  await locationControls(page);
-  await page.click('[data-location-action="geo"]');
-  assert.equal(await locationState(page), 'borderline');
-  assert.equal(await proposedCard(page), 'subtropical', 'the class\'s own climate is pre-selected (proposed)');
-  const text = await page.$eval('[data-location-state]', (e) => e.textContent);
-  assert.match(text, /Between Subtropical and Temperate/, 'both names, in plain words');
-  assert.match(text, /we picked Subtropical/i);
-  assert.match(text, /Cfa/, 'the Köppen code stays in the line');
-  assert.equal(await checkedCard(page), null, 'proposed, not checked');
-  assert.equal(await storeClimate(page), null, 'nothing applied until confirmed');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.country.value?.source ?? null), 'location', 'the country from the location (quiet), as for a clear site');
-  // The cards one link away (owner drop 10): "Not this climate? Choose another".
-  await openCards(page);
-  assert.equal(await page.$$eval('input[name="ct-climate"]', (r) => r.filter((x) => !x.disabled).length), await page.$$eval('input[name="ct-climate"]', (r) => r.length), 'every other card one tap away');
-  await pickCard(page, 'temperate');
-  assert.equal(await storeClimate(page), 'Temperate', 'the other climate, one tap');
-  assert.equal(await proposedCard(page), null);
-  // Review round 4 (2): with nothing proposed, the line no longer says "we picked".
-  const after = await page.$eval('[data-location-state]', (e) => e.textContent);
-  assert.doesNotMatch(after, /we picked/i, 'no "we picked" once no card is proposed');
-  assert.match(after, /Between Subtropical and Temperate: check that your climate is right/);
-  // Confirming the pre-selected card instead.
-  const other = await tool({ geolocation: { lat, lon } });
-  await locationControls(other);
-  await other.click('[data-location-action="geo"]');
-  assert.equal(await locationState(other), 'borderline');
-  await other.click('[data-location-confirm]');
-  assert.equal(await storeClimate(other), 'Subtropical', 'confirmed by the reader');
-  const calm = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
-  await locationControls(calm);
-  await calm.click('[data-location-action="geo"]');
-  assert.equal(await locationState(calm), 'ready', 'Seville is not borderline');
-  assert.equal(await proposedCard(calm), 'mediterranean', 'proposed');
-  assert.doesNotMatch(await calm.$eval('[data-location-state]', (e) => e.textContent), /Between/, 'a clear site names one climate');
-  assert.equal(await storeClimate(calm), null, 'not committed until confirmed');
-});
-
-test('P5-10b (S5b review round 2, 5): with a card proposed and none checked, Tab lands on it; arrows move without choosing; Space chooses', async () => {
-  const page = await tool({ geolocation: { lat: SITES.seville[0], lon: SITES.seville[1] } });
-  await locationControls(page);
-  await page.click('[data-location-action="geo"]');
-  assert.equal(await locationState(page), 'ready');
-  // From the result line's Forget, Tab reaches "Not this climate?
-  // Choose another" (owner drop 10); Enter opens the cards with the focus on the proposed one.
-  await page.evaluate(() => [...document.querySelectorAll('.ct-location button')].at(-1).focus());
-  // The country line sits between them (its buttons a Tab each).
-  for (let i = 0; i < 6 && !(await page.evaluate(() => document.activeElement?.hasAttribute('data-place-climates'))); i++) await page.keyboard.press('Tab');
-  assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute('data-place-climates')), true, 'Tab reaches the link to the cards');
-  await page.keyboard.press('Enter');
-  assert.ok(await page.waitForFunction(() => document.activeElement?.getAttribute('value') === 'mediterranean', { timeout: 4000 }).then(() => true, () => false), 'Enter lands on the proposed card');
-  await page.keyboard.press('ArrowRight');
-  const moved = await page.evaluate(() => document.activeElement?.getAttribute('value'));
-  assert.ok(moved && moved !== 'mediterranean', 'the arrow moves the focus');
-  assert.equal(await storeClimate(page), null, 'without choosing');
-  assert.equal(await checkedCard(page), null);
-  await page.keyboard.press('Space');
-  assert.equal(await checkedCard(page), moved, 'Space chooses the focused card');
-  assert.notEqual(await storeClimate(page), null);
-});
-
 test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual climate stays, with a line saying so', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon }, climateTiles: 404 });
@@ -408,7 +341,6 @@ test('P5-11 (S5b tiles fail): when the climate tiles cannot be read the manual c
   assert.ok(await has(page, '[data-place-climates]'), 'the manual climate cards, one link away');
   assert.equal(await text(page, '[data-place-climates]'), 'No location? Choose a climate', 'no climate came from the location: the link never says "Not this climate?"');
   assert.equal(await checkedCard(page), null, 'no card pre-checked');
-  assert.equal(await proposedCard(page), null, 'no card pre-checked: none proposed either');
 });
 
 test('P5-12 (S5b share without the tick): a link never carries the location, nor its country, unless asked', async () => {
@@ -441,12 +373,12 @@ test('P5-13 (S5b share with "include my location"): the link carries the cell ce
   assert.match(link, /[?&#]k=ES(&|$)/, 'and k=, with the tick');
   const cell = (await lookupAt(lat, lon)).climate;
   assert.deepEqual([Number(o[1]), Number(o[2])], [cell.cellLat, cell.cellLon], 'the cell centre, not the device position');
-  const opened = await h.open(new URL(link).pathname + new URL(link).search + new URL(link).hash);
+  const opened = await h.open(new URL(link).pathname + new URL(link).search + new URL(link).hash, { hook: true });
   assert.equal(await loadState(opened), 'ready');
-  assert.match(await text(opened, '[data-location-state]') ?? '', /approximate/i);
+  assert.ok(await opened.waitForFunction((a, b) => { const l = window.__ctTest.store.location.value; return l?.source === 'link' && l.lat === a && l.lon === b; }, { timeout: 15_000 }, cell.cellLat, cell.cellLon).then(() => true, () => false), 'the link\'s location: the cell centre, from the shared link');
 });
 
-test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortium: Start over and the palette\'s "Your place" step (Change site until b1a conformance-4) clear it', async () => {
+test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortium: the palette\'s "Your place" step clears it (v14: Place\'s Start over is only reached through that step)', async () => {
   const [lat, lon] = SITES.seville;
   const maker = await tool({ geolocation: { lat, lon } });
   await locationControls(maker);
@@ -456,7 +388,7 @@ test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortiu
   await maker.waitForSelector('input[data-share-location]', { visible: true, timeout: 10_000 });
   await maker.click('input[data-share-location]');
   const link = new URL(await maker.$eval('#ct-share-field', (e) => e.value));
-  for (const label of ['Start over', 'Your place']) {
+  for (const label of ['Your place']) {
     const page = await tool({ hash: link.hash });
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link opens with its location');
     assert.ok(await page.evaluate((l) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === l || (x.matches('.ct-step') && x.textContent.trim().endsWith(l))); b?.click(); return !!b; }, label), label);
@@ -479,17 +411,13 @@ test('P5-13b (S5b review round 1, 1 and 2): a link\'s o= lives for the page only
   const other = `${link.pathname}#${link.hash.slice(1).replace(/&k=[A-Z]{2}/, '').replace(/o=[^&]+/, 'o=45.75,4.85')}`;
   await page.goto(`${new URL(page.url()).origin}${other}`, { waitUntil: 'domcontentloaded' });
   await ready(page);
-  await locationState(page);
-  assert.match(await text(page, '[data-location-state]') ?? '', /approximate/i);
-  assert.equal((await page.evaluate(() => window.__ctTest.store.location.value)).source, 'link');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link', { timeout: 15_000 }).then(() => true, () => false), 'the link\'s location, from the shared link');
   assert.deepEqual(await savedLocation(page), mine, 'the reader\'s saved location is untouched');
   assert.notDeepEqual(await page.evaluate(() => window.__ctTest.store.country.value), { code: 'FR', source: 'location' }, 'no country "from your location" from the link\'s cell (Lyon, FR); the reader\'s own may stay');
   // A link without o= pasted into the tab: the link's location goes, with its line, and the reader's
   // own saved site comes back, as a fresh open of that link gives (seam review 5).
   await page.evaluate((h) => { location.hash = h; }, link.hash.replace(/&o=[^&]+/, ''));
   assert.ok(await page.waitForFunction((a, b) => { const l = window.__ctTest.store.location.value; return l?.lookup && l.lat === a && l.lon === b && l.source === 'geo'; }, { timeout: 15_000 }, lat, lon).then(() => true, () => false), 'the link\'s location replaced by the reader\'s own');
-  await locationState(page);
-  assert.doesNotMatch(await text(page, '[data-location-state]') ?? '', /approximate/i, 'no stale "from the shared link" line');
   // A later plain visit: the reader's own site again.
   await page.goto(`${new URL(page.url()).origin}/palette/`, { waitUntil: 'domcontentloaded' });
   await ready(page);
@@ -563,22 +491,12 @@ test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the sa
   const first = await savedOpening({ list: 'open' });
   assert.ok(await ownSite(first), 'the saved site is read');
   assert.ok(await first.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
-  assert.deepEqual(await proposal(first), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
+  assert.deepEqual(await climateAsk(first), { climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
   for (const page of [first]) {
-    assert.ok(await page.evaluate(() => { const b = document.querySelector('button.ct-step'); b?.click(); return !!b; }), 'the "Your place" step');
+    assert.ok(await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
     await new Promise((r) => setTimeout(r, 300));
-    assert.deepEqual(await proposal(page), { proposed: null, climate: 'Temperate', seen: false, shown: false }, 'back on Place: no stale proposal');
+    assert.deepEqual(await climateAsk(page), { climate: 'Temperate', seen: false, shown: false }, 'back on Place: no stale proposal');
   }
-});
-
-test('P5-27i (S5b seam review round 2, 2): a saved consortium that fails to open still lets the reader\'s saved site propose its climate card', async () => {
-  const page = await savedFailing();
-  assert.ok(await ownSite(page), 'the saved site is read');
-  assert.ok(await page.waitForFunction(() => !window.__ctTest.store.climate.value && document.querySelector('[data-location-state]'), { timeout: 15_000 }).then(() => true, () => false));
-  await new Promise((r) => setTimeout(r, 500));
-  const { proposed, climate } = await page.evaluate(() => ({ proposed: window.__ctTest.store.proposedClimate.value, climate: window.__ctTest.store.climate.value }));
-  assert.equal(climate, null, 'the saved consortium did not open');
-  assert.ok(proposed, 'the saved site proposes its climate card');
 });
 
 test('P5-27j (S5b seam review round 2, 3): a fresh link without o= looks the reader\'s saved site up once', async () => {
@@ -599,15 +517,3 @@ test('P5-27j (S5b seam review round 2, 3): a fresh link without o= looks the rea
   assert.equal(linked, plain, `the saved site is read as often as on a plain open (${plain}), not twice over`);
 });
 
-test('P5-27p (S5b seam review round 4, 2): a card the reader\'s own location proposed stays when a link opens', async () => {
-  const [lat, lon] = SITES.lyon;
-  const page = await tool({ geolocation: { lat, lon } });
-  await locationControls(page);
-  await page.click('[data-location-action="geo"]');
-  assert.equal(await locationState(page), 'borderline');
-  const before = await page.evaluate(() => window.__ctTest.store.proposedClimate.value);
-  assert.ok(before, 'the location proposes a card');
-  await page.evaluate((hsh) => { location.hash = hsh; }, await temperateLink());
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the link opens');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.proposedClimate.value), before, 'the reader\'s own proposal stays');
-});

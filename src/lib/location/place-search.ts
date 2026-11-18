@@ -10,6 +10,7 @@
 import {
   defaultGeocoderConfig,
   geocodeForward,
+  geocodeReverse,
   geocoderMinIntervalMs,
   getGeocodingProvider,
   nextDelayMs,
@@ -28,7 +29,14 @@ export interface PlaceSearchResult {
   readonly lat: number
   readonly lon: number
   readonly source: 'coordinates' | 'geocoder'
+  /** The kind of place, for the eight kinds the page names (website change, D7); null for any other. */
+  readonly placeType: PlaceType | null
 }
+
+/** The place kinds an answer row names (pf-decisions D7: "City · Andalusia, Spain"); any other kind gets no word. */
+export const PLACE_TYPES = ['city', 'town', 'village', 'suburb', 'county', 'state', 'region', 'country'] as const
+export type PlaceType = (typeof PLACE_TYPES)[number]
+const placeTypeOf = (kind: string | null): PlaceType | null => ((PLACE_TYPES as readonly string[]).includes(kind ?? '') ? (kind as PlaceType) : null)
 
 export type PlaceSearchStatus = 'idle' | 'searching' | 'results' | 'no-results' | 'error'
 
@@ -43,8 +51,11 @@ export interface PlaceSearchController {
   readonly status: ReadonlyBox<PlaceSearchStatus>
   /** Credit to show with geocoder results; null for coordinates. */
   readonly attribution: ReadonlyBox<string | null>
-  /** Runs one search; called on Enter only, never while typing. */
-  search(query: string): Promise<void>
+  /** Runs one search; called on Enter only, never while typing. asName: never read the text as
+   *  coordinates (website change, M26: "1.17 36" searched again goes to the geocoder as a name). */
+  search(query: string, options?: { asName?: boolean }): Promise<void>
+  /** The name of a point, or null when none is found; throws when the geocoder does not answer (M26). */
+  nameOf(lat: number, lon: number): Promise<PlaceSearchResult | null>
   clear(): void
   dispose(): void
 }
@@ -155,7 +166,7 @@ export function createPlaceSearchController(options: PlaceSearchOptions): PlaceS
     results,
     status,
     attribution,
-    async search(query) {
+    async search(query, { asName = false } = {}) {
       cancel()
       const trimmed = query.trim()
       if (!trimmed) {
@@ -164,13 +175,14 @@ export function createPlaceSearchController(options: PlaceSearchOptions): PlaceS
         attribution.value = null
         return
       }
-      const coordinates = parseCoordinates(trimmed)
+      const coordinates = asName ? null : parseCoordinates(trimmed)
       if (coordinates) {
         results.value = [{
           label: `${coordinates.lat.toFixed(6)}, ${coordinates.lon.toFixed(6)}`,
           detail: null,
           ...coordinates,
           source: 'coordinates',
+          placeType: null,
         }]
         status.value = 'results'
         attribution.value = null
@@ -206,6 +218,7 @@ export function createPlaceSearchController(options: PlaceSearchOptions): PlaceS
             lat: match.lat,
             lon: match.lon,
             source: 'geocoder',
+            placeType: placeTypeOf(match.kind),
           }))
         cache.set(trimmed, list)
         show(list)
@@ -214,6 +227,21 @@ export function createPlaceSearchController(options: PlaceSearchOptions): PlaceS
         results.value = []
         status.value = 'error'
         attribution.value = null
+      } finally {
+        if (controller === current) controller = null
+      }
+    },
+    async nameOf(lat, lon) {
+      cancel()
+      const current = new AbortController()
+      controller = current
+      try {
+        const endpoint = config.forwardEndpoint
+        await sleep(nextDelayMs(lastRequestStartedAt.get(endpoint) ?? null, now(), geocoderMinIntervalMs(endpoint)), current.signal)
+        lastRequestStartedAt.set(endpoint, now())
+        const match = await geocodeReverse(lat, lon, options.transport, { signal: current.signal, config })
+        if (!match) return null
+        return { ...shortPlaceLabel(match.displayName), lat, lon, source: 'geocoder', placeType: placeTypeOf(match.kind) }
       } finally {
         if (controller === current) controller = null
       }

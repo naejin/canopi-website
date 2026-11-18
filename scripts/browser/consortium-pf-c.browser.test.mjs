@@ -8,9 +8,8 @@
 // v13-spec-update.md section 5 where v14 does not override it.
 // Board figures come from the engine and the installed release (the climate cards' list sizes from
 // the index, the climate read from the tiles at each fixture place), never the board's numbers.
-// Each case still failing carries an expected-fail marker under pf-c (scripts/expect-fail.mjs
-// failing()), its reason the board's first missing word or element (pf-helpers.mjs BOARD); pf-c
-// removes a marker in the commit that makes it pass.
+// No case carries an expected-fail marker any more (the last, PFC5, passes since main h2 M26); a case
+// that fails again gets one (scripts/expect-fail.mjs failing()) with the board's first missing word.
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries F1a-P2 (pp-b2 → PP-C; a return visit opens "Opening your palette…", never the Place form) -> PFC15
@@ -46,8 +45,7 @@ import assert from 'node:assert/strict';
 import { aria, h, has, useHarness } from './helpers.mjs';
 import { atSite, releaseTiles, slowTiles, tool } from './p5-helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
-import { failing } from '../expect-fail.mjs';
-import { BOARD, boxOf, control, dialogText, done, focused, frames, idsOf, inOrder, linkOf, names, palette, pastEdge, press, savedPalette, says as saysOn, saysNot, setSiteEdits, toastText, withStorage } from './pf-helpers.mjs';
+import { boxOf, control, dialogText, done, focused, frames, idsOf, inOrder, linkOf, names, palette, pastEdge, press, savedPalette, says as saysOn, saysNot, setSiteEdits, toastText, withStorage } from './pf-helpers.mjs';
 import { FIELD, listSize, noticeOf, rankOf, searchFor, searchStub, toneOf } from './pf-c-helpers.mjs';
 
 useHarness();
@@ -117,7 +115,7 @@ test('PFC3 (pf-c the climate read, LocStates "read and used at once", Place, Pla
   assert.ok(zone, 'board: the climate read is used at once');
   await says(page, new RegExp(`We read: ${zone} \\([^)]+\\)\\. (?:This climate has its own plant list\\.|No list of its own yet: its plants come from the nearest lists \\([^)]+\\), each marked “estimate”\\.)`));
   assert.ok(!(await buttons(page)).some((b) => /^Use \w+$/.test(b)), 'board: no "Use <climate>" button (v13)');
-  await says(page, /We use this climate from now on; you can change it at any time\. Your place in figures: Köppen class C\w\w; nights in the coldest month average -?[\d.]+ ?°C\. Every figure the checks use is there, and you can change each one\./);
+  await says(page, /We use this climate from now on; you can change it at any time\. Your place in figures: Köppen class C\w\w; nights in the coldest month average [−-]?[\d.]+ ?°C\. Every figure the checks use is there, and you can change each one\./);
   await press(page, 'button', 'Your place in figures');
   assert.ok(await store(page, () => window.__ctTest.store.figureLine.value !== null), 'board: the link opens the figures (store.openFigure)');
   await press(page, 'button', 'Not this climate? Choose another');
@@ -139,7 +137,9 @@ test('PFC4 (pf-c LocStates, the place search): while it looks "Looking for “Ki
   await searchFor(several, 'Kiambu');
   await says(several, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
   await inOrder(several, ['Kiambu', 'Kiambu County', 'Kiambu Road', 'None of these? Try the nearest town, or pick on a map. Place names © OpenStreetMap contributors.',
-    'Your search words go to OpenStreetMap’s place search (Nominatim) only when you press Search; nothing is sent as you type. Coordinates are read on this device and sent nowhere.']);
+    'Your search words go to OpenStreetMap’s place search (Nominatim) only when you press Search; nothing is sent as you type. Coordinates are read on this device; only “Look up its name” sends the centre of their climate-grid square, never the exact point.']);
+  // D7 (board LocDesk "City · Andalusia, Spain"): a row names its kind for the eight kinds the page knows, none for the rest (a road).
+  assert.deepEqual(await several.$$eval('[data-location-choices] .ct-answer-detail', (es) => es.map((e) => e.textContent.trim())), ['Town · Kiambu County, Kenya', 'County · Kenya', 'Nairobi, Kenya'], 'D7: the kind of place before its locality');
   const chooses = (await names(several, 'button')).filter((n) => /^Choose/.test(n));
   assert.equal(chooses.length, 3, 'board: a "Choose" for each place');
   await control(several, 'link', 'Privacy');
@@ -159,7 +159,7 @@ test('PFC4 (pf-c LocStates, the place search): while it looks "Looking for “Ki
   await done(off);
 });
 
-failing('PFC5 (pf-c LocStates, typed coordinates, owner Q6): "-1.17, 36.83", "1°10′S 36°50′E" and a pasted map link each read "1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name." with "Adjust on the map" and "Look up its name", and send nothing; "1.17 36" says "We could not read “1.17 36” as coordinates. Write latitude, then longitude: −1.17, 36.83. Or press Search to look it up as a name." and sends nothing; Search again looks it up as a name', { owner: 'pf-c', reason: BOARD }, async () => {
+test('PFC5 (pf-c LocStates, typed coordinates, owner Q6; main h2 M26): "-1.17, 36.83", "1°10′S 36°50′E" and a pasted map link each read "1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name." with "Adjust on the map" and "Look up its name", and send nothing; "1.17 36" says "We could not read “1.17 36” as coordinates. Write latitude, then longitude: −1.17, 36.83. Or press Search to look it up as a name." and sends nothing; Search again looks it up as a name; "Look up its name" asks the place search once, on the press, and names the place', async () => {
   const page = await tool({ width: 390, nominatim: 'fixture' });
   for (const typed of ['-1.17, 36.83', '1°10′S 36°50′E', 'https://www.openstreetmap.org/#map=12/-1.17/36.83']) {
     await searchFor(page, typed);
@@ -173,6 +173,14 @@ failing('PFC5 (pf-c LocStates, typed coordinates, owner Q6): "-1.17, 36.83", "1�
   await press(page, 'button', 'Search');
   for (let i = 0; i < 50 && page.nominatim.length === 0; i++) await new Promise((r) => setTimeout(r, 100));
   assert.equal(page.nominatim.length, 1, 'board: Search again looks it up as a name');
+  // M26: typed coordinates again, then "Look up its name": one reverse lookup, only on the press.
+  await searchFor(page, '-1.17, 36.83');
+  await says(page, '1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name.', { timeout: 10_000 });
+  const before = page.nominatim.length;
+  await press(page, 'button', 'Look up its name');
+  await says(page, /Near Kiambu, Kenya/, { timeout: 10_000 });
+  assert.equal(page.nominatim.length, before + 1, 'M26: one request, on the press');
+  assert.match(page.nominatim.at(-1).url, /\/reverse\?/, 'M26: a reverse lookup');
   await done(page);
 });
 
@@ -1284,4 +1292,96 @@ test('PFC48 (pf-c board Country: "Why we ask." is a note box): under the rows an
   await press(none, 'button', 'Add your country');
   assert.deepEqual(await note(), { lead: 'Why we ask.', icon: true, ground: true, border: true }, 'board: the note box under the rows');
   await done(none);
+});
+
+test('PFC51 (pf-c ruling D6, a shared link with "Include my place"): the sender\'s place name travels beside the cell (`n`), and the reader\'s page names it ("Kiambu, Kenya") with no place search sent on open', async () => {
+  const hash = (await linkOf('Mediterranean', 5)).replace(/&e=1$/, `&o=${SITES.kiambu[0].toFixed(2)},${SITES.kiambu[1].toFixed(2)}&n=${encodeURIComponent('Kiambu, Kenya')}&e=1`);
+  const page = await tool({ hash, nominatim: 'fixture' });
+  const sent = [];
+  page.on('request', (r) => { if (/nominatim/.test(r.url())) sent.push(r.url()); });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link', { timeout: 15_000 }).then(() => true, () => false), 'the link opens with its location');
+  assert.equal(await store(page, () => window.__ctTest.store.location.value.label), 'Kiambu, Kenya', 'D6: the sender\'s place name, as it came');
+  await says(page, /Kiambu, Kenya/, { timeout: 10_000 });
+  assert.deepEqual(sent, [], 'D6: no reverse lookup on open');
+  await done(page);
+});
+
+test('PFC52 (pf-c Loading, the offline line; M27, carried from PP-B46): offline, the page says "You are offline. What is loaded still works." in one status line; back online, the line is empty', async () => {
+  const page = await palette({ n: 5 });
+  await page.setOfflineMode(true);
+  await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+  assert.ok(await page.waitForFunction(() => document.querySelector('.ct-offline[role="status"]')?.textContent.trim() === 'You are offline. What is loaded still works.', { timeout: 5000 }).then(() => true, () => false), 'the offline line says it');
+  await page.setOfflineMode(false);
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  assert.ok(await page.waitForFunction(() => document.querySelector('.ct-offline[role="status"]')?.textContent.trim() === '', { timeout: 5000 }).then(() => true, () => false), 'back online, the line is empty');
+  await done(page);
+});
+
+// ---- main h2 hand-off fixes (2026-11-18) ----
+
+// "Look up its name"'s reverse lookups held in the page until window.__releaseReverse() (the harness's
+// own Nominatim fixture answers them once released).
+const holdReverse = (pg) => pg.evaluateOnNewDocument(() => {
+  const real = window.fetch.bind(window);
+  let gates = [];
+  window.__reverseAsks = [];
+  window.__releaseReverse = () => { for (const g of gates) g(); gates = []; };
+  window.fetch = async (input, init) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    if (url.hostname === 'nominatim.openstreetmap.org' && url.pathname === '/reverse') { window.__reverseAsks.push(url.href); await new Promise((r) => { gates.push(r); }); }
+    return real(input, init);
+  };
+});
+
+test('PFC53 (pf-c, main h2 R2): an ask that ended without a place leaves nothing behind: "Use my location" refused, a climate chosen by hand, then typed coordinates for Seville use the climate read there', async () => {
+  const page = await tool({ geolocation: 'denied' });
+  await press(page, 'button', 'Use my location');
+  await says(page, 'Your location is blocked for this site. Search for a town or pick on a map instead; or allow it in your browser’s site settings.');
+  // A climate chosen by hand (as the climate rows do: chooseClimate asks no lookup).
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Temperate'; });
+  await searchFor(page, `${SITES.seville[0]}, ${SITES.seville[1]}`);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.lookup && window.__ctTest.store.climate.value === 'Mediterranean', { timeout: 15_000 }).then(() => true, () => false),
+    `the climate read at Seville is used (climate ${await store(page, () => window.__ctTest.store.climate.value)})`);
+  await done(page);
+});
+
+test('PFC54 (pf-c, main h2 R3, R9): "Look up its name" sends the centre of the typed point\'s climate-grid square, never the point; a second press while it asks sends nothing more; neither a second press nor a place search started meanwhile says it failed', async () => {
+  const page = await tool({ width: 390, nominatim: 'fixture', setup: holdReverse });
+  await searchFor(page, '-1.171234, 36.834567');
+  await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 10_000 });
+  await press(page, 'button', 'Look up its name');
+  const asks = () => page.evaluate(() => window.__reverseAsks);
+  for (let i = 0; i < 50 && !(await asks()).length; i++) await new Promise((r) => setTimeout(r, 100));
+  await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Look up its name')?.click());
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal((await asks()).length, 1, 'one lookup for two presses');
+  const u = new URL((await asks())[0]);
+  assert.deepEqual([u.searchParams.get('lat'), u.searchParams.get('lon')], ['-1.15', '36.85'], 'the cell centre (0.1° grid), never -1.171234, 36.834567');
+  await saysNot(page, 'The place search did not answer, so the place has no name. Try again later.', 'no failure while the first lookup still runs');
+  await page.evaluate(() => window.__releaseReverse());
+  await says(page, /Near Kiambu, Kenya/, { timeout: 10_000 });
+  // A place search started while a lookup runs: no false "did not answer".
+  await searchFor(page, '-1.171234, 36.834567');
+  await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 10_000 });
+  await press(page, 'button', 'Look up its name');
+  await searchFor(page, 'Lyon');
+  await says(page, /Lyon/, { timeout: 10_000 });
+  await saysNot(page, 'The place search did not answer, so the place has no name. Try again later.', 'a search that replaced the lookup is no failure');
+  await page.evaluate(() => window.__releaseReverse());
+  await done(page);
+});
+
+test('PFC55 (pf-c, main h2 R4): a place search answer names a town-level place only for the D7 kinds; a road\'s name is shown on the page but never marked to travel in a link', async () => {
+  const page = await tool({ width: 390, nominatim: 'fixture', setup: searchStub() });
+  await searchFor(page, 'Kiambu');
+  await says(page, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
+  await press(page, 'button', 'Choose Kiambu Road, Kenya');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.lookup, { timeout: 15_000 }).then(() => true, () => false), 'Kiambu Road read');
+  assert.deepEqual(await store(page, () => { const l = window.__ctTest.store.location.value; return [l.label, !!l.placeLevel]; }), ['Kiambu Road, Kenya', false], 'a road: named on the page, not town-level');
+  await searchFor(page, 'Kiambu');
+  await says(page, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
+  await press(page, 'button', 'Choose Kiambu, Kenya');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.label === 'Kiambu, Kenya', { timeout: 15_000 }).then(() => true, () => false), 'Kiambu read');
+  assert.equal(await store(page, () => !!window.__ctTest.store.location.value.placeLevel), true, 'a town: may travel');
+  await done(page);
 });

@@ -9,13 +9,10 @@
 //        backup form ("Feeds you from year 3 to year 25: a backup"), never "fills this hole".
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { english, locale, LOCALES } from './consortium-pf-env.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const words = await import('../src/islands/consortium/words.ts');
-const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
-(await import('../src/islands/consortium/strings.ts')).setStrings(Object.fromEntries(Object.entries(en).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice(11), v])), 'en');
-const say = (l) => words.say(l);
+const { en, say } = await english();
 
 const hole = (id, over = {}) => {
   const [kind, which, span] = id.split(':');
@@ -68,8 +65,6 @@ test('BC1, BC26, C4 fit reason: what the candidate does and when, in the target\
 });
 
 // ---- board check b3 (R3, BC29-BC31, BC34) ----
-const locale = (l) => JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
-const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
 
 test('R3 the no-fit state is decided by the group counts: no plant that fits and none still to be checked', () => {
   const t = { id: 'x' };

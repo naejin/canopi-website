@@ -528,7 +528,7 @@ test('core leaves: nearest.ts imports only types; placed.ts never imports placem
 // E6 R4 (design check A11): the page reaches suggest.ts only through loadSuggest (its own chunk); the
 // barrel re-exports none of it, so no first-run import can pull it back.
 test('core barrel: suggest.ts is not re-exported; loadSuggest gives suggest and alternatives', async () => {
-  for (const name of ['suggest', 'alternatives', 'SIZE_LIMIT', 'gain']) assert.equal(name in core, false, `index.ts does not export ${name}`);
+  for (const name of ['suggest', 'alternatives', 'gain']) assert.equal(name in core, false, `index.ts does not export ${name}`);
   const rule = await core.loadSuggest();
   assert.deepEqual(Object.keys(rule).sort(), ['alternatives', 'suggest']);
   assert.equal(rule.suggest, suggest);

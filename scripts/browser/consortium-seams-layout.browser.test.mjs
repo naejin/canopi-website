@@ -106,61 +106,69 @@ test('W8, W9, X4: bold is 600, CJK headings keep words whole, sheet and page cla
 
 // P5 walk-through 2, N1 (data loss since P2): the Undo toast sat over the Add sheet's "Add N plants"
 // when a search left few rows, so the click undid the last add and added nothing. A toast never
-// covers a control: in a sheet it sits in the sheet's foot above the action bar, never over it.
-// Written against Find (its search, "Select several" ticks and "Add N plants": c1's contract in
-// consortium-pp-c1.browser.test.mjs), which replaced the Add sheet.
-test('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" nor any other control (320, 390, 700, 960, 1280 px); owner c1: Find replaces the Add sheet', async () => {
+// covers a control. Written against v14 Find (boards AddMany, DeskStates): each row's own Add adds at
+// once; below 960 px Find is a sheet and the toast sits in its foot, in the flow under the rows; at
+// 960 px and wider Find is a panel beside the picture and the toast is the page's, bottom left, never
+// in the panel.
+const ROWS = 'dialog.ct-find[open] [data-find-row]';
+// Searches the next candidate listed with its Add button (few rows) and presses it; the row says Added.
+async function addByRow(page, candidates, at) {
+  while (candidates.length) {
+    const p = candidates.shift();
+    await page.$eval('dialog.ct-find[open] [data-find-search]', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
+    await page.type('dialog.ct-find[open] [data-find-search]', p.name);
+    const ok = await page.waitForFunction((sel, id) => { const r = [...document.querySelectorAll(sel)]; return r.length <= 3 && r.some((li) => li.dataset.plantId === id && li.querySelector('button[data-find-add]')); }, { timeout: 1500 }, ROWS, p.id).then(() => true, () => false);
+    if (!ok) continue;
+    await page.evaluate((sel, id) => [...document.querySelectorAll(sel)].find((li) => li.dataset.plantId === id).querySelector('button[data-find-add]').click(), ROWS, p.id);
+    assert.ok(await has(page, `${ROWS}[data-plant-id="${p.id}"] [data-plant-done]`, 4000), `${at}: ${p.name} says Added`);
+    return p;
+  }
+  return assert.fail(`${at}: no plant to add`);
+}
+// Every plant of the palette (the pictures and Your plants fold past 12, so not read from the page).
+const paletteIds = (page) => page.evaluate(() => [...window.__ctTest.store.members.value]);
+const openFindSheet = async (page) => {
+  await openFind(page); // the store's opener (the palette page's "Add plants" when drawn)
+  // Find is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
+  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)');
+};
+
+test('Walk-through 2 N1: in Find the Undo toast never covers a control of Find (320, 390, 700, 960, 1280 px); below 960 px it is in the sheet, at 960 px and wider bottom left in the page, outside the panel', async () => {
   const plants = await temperate();
   for (const width of [320, 390, 700, 960, 1280]) {
     const page = await suggested({ width, theme: 'light', hook: true });
-    // No smooth scrolling (global.css: off under reduced motion): closing the sheet sends the focus back
-    // to "Add plants" in a frame and the page's toast padding scrolls it, and a smooth scroll still
-    // running moved the button between puppeteer's measure and its click (the click hit .ct-tabs).
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }, { name: 'prefers-reduced-motion', value: 'reduce' }]);
-    const members = new Set(await memberIds(page));
+    const members = new Set(await paletteIds(page));
     const candidates = plants.filter((p) => !members.has(p.id) && !plants.some((q) => q !== p && q.name.includes(p.name)));
-    const rows = 'dialog.ct-find[open] [data-find-row]';
-    // Opens Find in "Select several", searches the next candidate listed with a tick (few rows), ticks it.
-    const addOne = async () => {
-      // Add through the store's opener: the palette page has no general Add button until Your plants
-      // (PP-B b3, chunk 2); the matrix's view bar it pressed went in 0a'.
-      await openFind(page);
-      // Find is a lazy chunk: its first open can pass the 4 s default under a loaded machine.
-      assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)');
-      if (!await page.$('dialog.ct-find[open] [data-find-row] input[type="checkbox"]')) { await everyPlant(page); await page.click('dialog.ct-find[open] [data-find-select]'); }
-      while (candidates.length) {
-        const p = candidates.shift();
-        await page.$eval('dialog.ct-find[open] [data-find-search]', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
-        await page.type('dialog.ct-find[open] [data-find-search]', p.name);
-        const ok = await page.waitForFunction((sel, id) => { const r = [...document.querySelectorAll(sel)]; return r.length <= 3 && r.some((li) => li.dataset.plantId === id && li.querySelector('input[type="checkbox"]')); }, { timeout: 1500 }, rows, p.id).then(() => true, () => false);
-        if (!ok) continue;
-        await page.evaluate((sel, id) => [...document.querySelectorAll(sel)].find((li) => li.dataset.plantId === id).querySelector('input[type="checkbox"]').click(), rows, p.id);
-        return p;
-      }
-      assert.fail(`${width} px: no plant to add`);
-    };
-    const a = await addOne();
-    await page.click('dialog.ct-find[open] [data-find-bar] .button-primary');
-    assert.ok(await has(page, '.ct-toast-page .ct-toast'), `${width} px: the first add's toast with Undo`);
-    const b = await addOne();
-    assert.ok(await has(page, 'dialog[open] .ct-toast .ct-toast-undo'), `${width} px: the toast moved into the sheet`);
-    // Where the bar lands depends on the rows above it and the window: every window height from 480 to
-    // 900 px, so the bar passes through the toast's band (Delhi at 1280 × 800 had it there).
+    await openFindSheet(page);
+    const a = await addByRow(page, candidates, `${width} px`);
+    const b = await addByRow(page, candidates, `${width} px`);
+    const desk = width >= 960;
+    const TOAST = desk ? '.ct-toast-page .ct-toast' : 'dialog.ct-find[open] .ct-toast';
+    assert.ok(await has(page, `${TOAST} .ct-toast-undo`), `${width} px: the add's toast with Undo ${desk ? 'in the page' : 'in the sheet'}`);
+    if (desk) {
+      const where = await page.evaluate(() => {
+        const t = document.querySelector('.ct-toast-page .ct-toast'), d = document.querySelector('dialog.ct-find[open]');
+        const r = t.getBoundingClientRect(), p = d.getBoundingClientRect();
+        return { inPanel: d.contains(t), left: r.left < innerWidth / 2, overPanel: r.right > p.left && r.left < p.right && r.bottom > p.top && r.top < p.bottom };
+      });
+      assert.deepEqual(where, { inPanel: false, left: true, overPanel: false }, `${width} px: the toast bottom left, outside the panel`);
+    }
+    // Where the rows land depends on the window: every window height from 480 to 900 px.
     const covered = [];
     for (let height = 480; height <= 900; height += 20) {
       await page.setViewport({ width, height, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-      const seen = await page.evaluate(() => {
+      const under = await page.evaluate((sel) => {
         const d = document.querySelector('dialog.ct-find[open]');
-        const toast = d.querySelector('.ct-toast').getBoundingClientRect();
-        const btn = d.querySelector('[data-find-bar] .button-primary');
-        const r = btn.getBoundingClientRect();
-        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        const t = document.querySelector(sel);
+        if (!t) return ['no toast'];
+        const toast = t.getBoundingClientRect();
         const meets = (x, y) => x.left < y.right && y.left < x.right && x.top < y.bottom && y.top < x.bottom;
-        // The part of a control the reader sees: its box clipped by every scrolling box around it (a
-        // result scrolled out of Find's body is not under the toast, it is out of view).
+        // The part of a control the reader sees: its box clipped by every scrolling box around it.
         const seen = (el) => {
-          let r = el.getBoundingClientRect(), top = r.top, bottom = r.bottom, left = r.left, right = r.right;
+          const r = el.getBoundingClientRect();
+          let top = r.top, bottom = r.bottom, left = r.left, right = r.right;
           for (let p = el.parentElement; p && p !== d.parentElement; p = p.parentElement) {
             if (getComputedStyle(p).overflowY === 'visible') continue;
             const c = p.getBoundingClientRect();
@@ -168,25 +176,20 @@ test('Walk-through 2 N1: in Find the Undo toast never covers "Add N plants" nor 
           }
           return { top, bottom, left, right };
         };
-        const under = [...d.querySelectorAll('button, input, a[href], select, textarea')]
+        return [...d.querySelectorAll('button, input, a[href], select, textarea')]
           .filter((el) => { if (el.closest('.ct-toast') || !el.getClientRects().length) return false; const v = seen(el); return v.top < v.bottom && v.left < v.right && meets(v, toast); })
           .map((el) => (el.getAttribute('aria-label') || el.textContent).trim().slice(0, 40));
-        return { onButton: btn.contains(hit), hit: hit?.className ?? null, under };
-      });
-      if (!seen.onButton) covered.push(`${height}: the Add button's centre is ${seen.hit}`);
-      for (const u of seen.under) covered.push(`${height}: ${u}`);
+      }, TOAST);
+      for (const u of under) covered.push(`${height}: ${u}`);
     }
-    assert.deepEqual(covered, [], `${width} px: no control of the sheet under the toast, at any window height`);
-    await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
-    await page.locator('dialog.ct-find[open] [data-find-bar] .button-primary').click();
-    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
-    const now = new Set(await memberIds(page));
+    assert.deepEqual(covered, [], `${width} px: no control of Find under the toast, at any window height`);
+    const now = new Set(await paletteIds(page));
     assert.ok(now.has(a.id) && now.has(b.id), `${width} px: both plants are in the consortium (${a.name}: ${now.has(a.id)}, ${b.name}: ${now.has(b.id)})`);
     await done(page);
   }
 });
 
-test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gutter at 320 and 390 px in en, fr and ja', async () => {
+test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gutter at 320 and 390 px in en, fr and ja; the map is a full-screen sheet (board LocMap)', async () => {
   const GUTTER = 16;
   const within = (page, sel) => page.evaluate((s, g) => {
     const vw = document.documentElement.clientWidth;
@@ -220,12 +223,18 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
         await settled(page, '[data-location-action="map"]');
         await page.click('[data-location-action="map"]');
         assert.ok(await has(page, 'dialog[data-location-map][open]', 8000), `${at}: the map dialog`);
-        bad.push(...await within(page, 'dialog[data-location-map][open]'));
+        // Board LocMap (v14): on a phone the map is a full-screen sheet, edge to edge, nothing wider.
+        bad.push(...await page.$eval('dialog[data-location-map][open]', (d) => {
+          const r = d.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+          return [...(Math.abs(r.left) > 0.5 || Math.abs(r.right - vw) > 0.5 ? [`map sheet ${Math.round(r.left)}–${Math.round(r.right)} of ${vw}, not full-screen`] : []),
+            ...(d.scrollWidth > d.clientWidth + 0.5 ? [`map sheet ${d.scrollWidth} px wide in ${d.clientWidth}`] : [])];
+        }));
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
       } else bad.push('no map button');
-      await settled(page, 'input[name="ct-site-room"][value="large"]');
-      await page.click('input[name="ct-site-room"][value="large"]');
+      // Clicked in the page too: at 320 px the room choice can sit under Place's sticky foot (its
+      // "Start from a small suggested palette"), which a click by position would press instead.
+      await page.$eval('input[name="ct-site-room"][value="large"]', (el) => el.click());
       await page.locator(aria('button', S('start.suggest'))).click();
       // The palette page (the matrix's and the side view's explanations went in PP-B commit 0a'): it
       // and the plant dialog stay within the gutter, nothing wider than the window.
@@ -351,16 +360,12 @@ test('Layout stability (N2, late fonts): when the web fonts arrive after the fir
 test('Walk-through 2 N1 (review): with a toast in Find, the last controls tabbed to are fully visible above the foot and clickable (390 × 600); owner c1: Find replaces the Add sheet', async () => {
   const plants = await temperate();
   const page = await suggested({ width: 390, theme: 'light', hook: true });
-  await openFind(page); // the store's opener, as in N1
-  assert.ok(await has(page, 'dialog.ct-find[open] [data-find-search]', 15_000), 'no Find sheet (dialog.ct-find)'); // lazy chunk, as in N1
-  await everyPlant(page); // the start lists no plant (K3)
-  await page.click('dialog.ct-find[open] [data-find-select]');
-  await page.click('dialog.ct-find[open] [data-find-row] input[type="checkbox"]');
-  await page.click('dialog.ct-find[open] [data-find-bar] .button-primary');
-  assert.ok(await has(page, '.ct-toast-page .ct-toast'), 'the add\'s toast');
-  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
-  await openFind(page);
+  await openFindSheet(page);
+  const members = new Set(await paletteIds(page));
+  await addByRow(page, plants.filter((p) => !members.has(p.id) && !plants.some((q) => q !== p && q.name.includes(p.name))), '390 px');
   assert.ok(await has(page, 'dialog.ct-find[open] .ct-toast'), 'the toast in the sheet');
+  await page.$eval('dialog.ct-find[open] [data-find-search]', (i) => { i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); });
+  await everyPlant(page); // every plant listed: controls to tab through
   await page.setViewport({ width: 390, height: 600, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   assert.ok(plants.length > 3);
   const focusables = 'dialog.ct-find[open] .ct-sheet-body :is(button, input, a[href], select, textarea):not([disabled])';

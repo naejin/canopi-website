@@ -21,7 +21,7 @@
 // Guests (plants added from another climate's list) are never picked or offered in Swap; a seeded
 // guest is a member like any other and counts for coverage, with its home placement.
 import type { Alternative, Fit, Flag, Hole, Interaction, JobId, PlantId, Site, Stratum, Taxon } from './types.ts';
-import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, tallerThanRoom } from './site.ts';
+import { canopyOf, fits, FULL_CANOPY, misfitsBeside, raise, shadedBy, SIZE_LIMIT as SIZE, tallerThanRoom } from './site.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { fills, holes } from './holes.ts';
 import { JUDGED_TO_YEAR, yearsOf as plantYears } from './years.ts';
@@ -29,12 +29,8 @@ import type { HoleContext } from './holes.ts';
 import type { FlagContext } from './conflicts.ts';
 import { warns, conflicts, flagsFor, invasiveIn, isSerious } from './conflicts.ts';
 
-// Suggestions stay small (owner, 2026-10-28): 6, 9 or 12 plants by room; 9 with Room "Not sure"
-// (design check A7, coordinator row "v2 build setup", revertible). The room limits plant size, never
-// the number of plants the reader adds.
-// Pots or a balcony (offered by Place since PP-B b1a) takes the small garden's count; its plant height
-// limit is site.ts ROOM_LIMIT_M, which tallerThanRoom applies.
-export const SIZE_LIMIT: Record<Site['room'], number> = { pots: 6, small: 6, large: 9, field: 12, unsure: 9 };
+// Suggestions stay small: site.ts SIZE_LIMIT (first-run core, so the Empty card can say the size).
+export { SIZE_LIMIT } from './site.ts';
 
 export interface SuggestOptions extends FlagContext {
   seed?: PlantId[]; // the plants already in the palette: always members, flagged or not; the seed wins over removed
@@ -135,7 +131,7 @@ function tieInvasive(options: FlagContext): (t: Taxon) => boolean {
 export function suggest(pool: Taxon[], options: SuggestOptions): Suggestion {
   const { site } = options;
   const invasive = tieInvasive(options);
-  const limit = SIZE_LIMIT[site.room];
+  const limit = SIZE[site.room];
   const seedIds = new Set(options.seed ?? []);
   const removedIds = new Set(options.removed ?? []);
   const own = new Set(pool.map((t) => t.id));

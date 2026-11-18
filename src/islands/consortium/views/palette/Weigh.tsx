@@ -18,7 +18,7 @@
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
-import { fitGroups, leaveGroups, mildExamples, weighLines } from '../../../../lib/consortium/index.ts';
+import { fitGroups, jobsOf, leaveGroups, mildExamples, weighLines } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { nameOf, P, pageLang, T } from '../../strings.ts';
 import { collatorFor, countryName, num } from '../kit/names.ts';
@@ -183,18 +183,20 @@ function Group({ label, ids, name, size }: { label: string; ids: readonly PlantI
 function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: number }) {
   const l = w.line, said = K(l), v = vars(l);
   if (w.kind === 'family') {
-    // The board's "Find a soil feeder of another family" waits for a Find entry that takes a job and a
-    // predicate without a hole (Find.tsx and store.ts, not this stream's; round 2 R1, C1): no action that
-    // opens an unfiltered list. A known board difference (MainMore) until then, kept visible by the
-    // expected-fail PFB23 (owner pf-b; hand-off to the main agent, c2 C3).
+    // Board MainMore: the hint ends with "Find a soil feeder of another family" (M24), Find narrowed to
+    // the plants that feed the soil and are not of that family, for a family the words name.
     const fam = String(l.vars.family), words = `palette.balance.familyWords.${fam}`, hint = `palette.balance.familyHint.${fam}`;
     const hintText = has(hint) ? T(hint) : T('plants.weigh.familyHint');
+    const findKey = `palette.balance.familyFind.${fam}`;
+    const find = has(findKey) && (
+      <>{' '}<button type="button" class="link-button" data-weigh-find="" onClick={() => store.openFind({ job: 'feeds_soil', hole: null, fits: (t) => t.family !== fam && jobsOf(t).includes('feeds_soil'), title: T(findKey) })}>{T(findKey)}</button></>
+    );
     return (
       <li data-weigh="family" data-family={fam}>
         <strong>{has(words) ? T('palette.balance.family', { ...v, words: T(words) }) : T('plants.weigh.family', v)}</strong><Est l={l} />
         {inlineNames(w.members.length, size)
-          ? <p><Names ids={w.members} name={name} size={size} text={(n) => `${n}. ${hintText}`} /></p>
-          : <><Names ids={w.members} name={name} size={size} /><p>{hintText}</p></>}
+          ? <p><Names ids={w.members} name={name} size={size} text={(n) => `${n}. ${hintText}`} />{find}</p>
+          : <><Names ids={w.members} name={name} size={size} /><p>{hintText}{find}</p></>}
       </li>
     );
   }

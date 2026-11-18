@@ -190,8 +190,14 @@ export interface ClimateRange {
 // field it fills: the one list of range variables (range.ts RANGE_BOUNDS says how each is checked).
 export const RANGE_VARIABLES = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', tmean_year: 'tmeanYear', tmean_warm: 'tmeanWarm', aridity: 'aridity' } as const;
 export type RangeVariable = keyof typeof RANGE_VARIABLES;
+// Read beside the range variables and never checked (M23): the annual rain of the plant's observed
+// cells in mm (plant_climate 'precip'), for the words "recorded from 25 mm" (verdict-line, Find's row).
+// Not in RANGE_VARIABLES, so no verdict changes with it.
+export const READ_ONLY_VARIABLES = { precip: 'precip' } as const;
 export interface TaxonClimate {
   source: string;
+  /** Annual rain of the observed cells, mm; never part of a verdict (READ_ONLY_VARIABLES). */
+  precip: ClimateRange | null;
   tminCold: ClimateRange | null;
   tmaxWarm: ClimateRange | null;
   tmeanYear: ClimateRange | null;
@@ -473,7 +479,10 @@ export interface SiteLookup {
 // device's location, a place search, a map pick, or a shared link's `o=` cell centre (approximate).
 // lookup: the climate reader's answer, null while it loads or when it failed (manual climate stays).
 export type LocationSource = 'geo' | 'search' | 'map' | 'link';
-export interface SiteLocation { lat: number; lon: number; source: LocationSource; label?: string; lookup: SiteLookup | null }
+// placeLevel: the label names a town or a wider area (a place search answer or a reverse lookup of a
+// town-level kind, pf-decisions D7, or a link's own `n`), so it may travel in a share link beside the
+// cell centre (h2 R4); a road, a building or a farm's name never does.
+export interface SiteLocation { lat: number; lon: number; source: LocationSource; label?: string; placeLevel?: true; lookup: SiteLookup | null }
 
 // Climate scenarios of the future check (canopi-climate slots 1–8), SSP2-4.5 by default (owner row).
 export const scenarios = ['ssp126', 'ssp245', 'ssp370', 'ssp585'] as const;
@@ -683,6 +692,10 @@ export interface LaneCount {
   counts: number[];
   thin: { fromYear: number; toYear: number; have: number; want: number }[];
   unchecked?: PlantId[];
+  /** The members doing this job or at this light level that count (not outside their range), palette order (M25). */
+  counted: PlantId[];
+  /** Those doing it outside their climate range: named apart, counted nowhere. */
+  outside: PlantId[];
 }
 export interface Hole {
   id: string; // `${kind}:${job ?? stratum ?? ''}:${fromYear}-${toYear}` + `:m${mask}` when months are set

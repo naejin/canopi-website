@@ -18,7 +18,7 @@ import { loadState } from './harness.mjs';
 import { ROOT } from './serve.mjs';
 import { aria, h, has, realDb, settled, suggestDirect, suggestReady, useHarness } from './helpers.mjs';
 import { SITES, pickCard } from './location-fixtures.mjs';
-import { tool, atSite, choose, locationControls, locationState, text, proposedCard, ready, search, RANGED, OUTSIDE, EDGE, pickRanged, atNowhere, members } from './p5-helpers.mjs';
+import { tool, atSite, choose, locationControls, locationState, text, ready, search, RANGED, OUTSIDE, EDGE, pickRanged, atNowhere, members } from './p5-helpers.mjs';
 
 useHarness();
 
@@ -62,15 +62,6 @@ test('P5-14 (S5c nothing fits): where no plant\'s range holds the site: the "not
   assert.ok(await has(page, 'dialog.ct-sheet[open]', 10_000), 'a named sheet');
 });
 
-test('P5-14i (S5c → PP-B b1b, the count line\'s chunk refused, pre-push review 1): with a site climate and only the count line\'s chunk failing, Place says it could not load, with Reload', async () => {
-  const page = await tool({ block: { pool: 404 } });
-  await atSite(page, 'seville');
-  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Mediterranean'; });
-  assert.ok(await page.waitForFunction(() => window.__ctTest.store.verdictRule.value, { timeout: 10_000 }).then(() => true, () => false), 'the range rule loaded');
-  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('.ct-notice[role="alert"]')].some((e) => /Reload/.test(e.textContent)), { timeout: 10_000 }).then(() => true, () => false), 'the failed line with Reload');
-  assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), 'the pool chunk was requested and refused by the block');
-  assert.equal(await page.$('[data-pool-count]'), null, 'no count line');
-});
 
 test('P5-14h (S5c annuals at a cold site, owner "Annuals skip the winter-cold check"): at Yakutsk the Boreal pool keeps its annual crops, Suggest uses them, and an annual is tagged "annual", no season claimed (decision row "Growing months") @real-data', async () => {
   const page = await tool();
@@ -105,21 +96,6 @@ test('P5-14b (S5c suggestions in range): at Seville a suggestion holds no plant 
   assert.ok(levels.length > 0 && !levels.includes('outside'), `no suggested plant is outside its range (${levels.join(', ')})`);
 });
 
-// PP-B b1b (drift check amendment 5): the matrix counts went with the matrix (0a'); the count line on
-// Place (views/pool/pool.tsx, store.countFits) counts the plants that fit or need a second look.
-test('P5-14c (S5c → PP-B b1b count line): at Seville the line counts the 198 of 200 Mediterranean plants that fit today, in the list\'s own words; without a location there is no line @real-data', async () => {
-  const page = await tool();
-  await choose(page, 'Mediterranean');
-  assert.ok(await has(page, '[data-place-suggest]', 15_000), 'Place, Mediterranean');
-  assert.equal(await page.$('[data-pool-count]'), null, 'no line without a location');
-  await atSite(page, 'seville');
-  assert.ok(await page.waitForFunction(() => document.querySelector('[data-pool-count]')?.dataset.poolCount === 'count', { timeout: 15_000 }).then(() => true, () => false), 'the count line');
-  assert.match(await text(page, '[data-pool-count]') ?? '', /^198 of the 200 plants on the Mediterranean list fit your place today\.$/, 'the design check\'s §C figure on this export: 198 of 200 (fits 167, a second look 31)');
-  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.countFits.value), { fits: 167, look: 31, unknown: 0, of: 200 });
-  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
-  assert.ok(await page.waitForFunction(() => !document.querySelector('[data-pool-count]'), { timeout: 5000 }).then(() => true, () => false), 'the line goes with the location');
-});
-
 // The chunk that holds the range checks (core range.ts): Rollup names it after one of its modules
 // ("range" until the site-inputs layer, "future" since range.ts and future.ts share their importers),
 // so it is found by its RANGE_BOUNDS table, never by its name.
@@ -129,13 +105,16 @@ function rangeChunk() {
   assert.equal(files.length, 1, `one chunk holds the range checks (${files.join(', ')})`);
   return files[0];
 }
+
 // The build's chunks that name the range chunk's file (the entry's import() included): its importers,
 // each of which may request it once.
 function rangeImporters(range) {
   return readdirSync(ASTRO()).filter((f) => f.endsWith('.js') && f !== range && readFileSync(join(ASTRO(), f), 'utf8').includes(range)).length;
 }
 
-test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; PP-C c2: one verdict failure state): a curated list says in place that part of the tool did not load (its count line: could not check, with Retry), no toast, no request again for a new location, and the line goes with the location', async () => {
+// h2 T1: P5-14g (fix review 231bead 1–2) rewritten on the v14 surface: Place's count line went with
+// the board, so the failure is read where the grower now meets it, the palette page's notice.
+test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; v14, main h2 T1): the palette page says in place that the fit check did not load, never by a toast, and a new location does not import the chunk again', async () => {
   const page = await tool(), range = rangeChunk();
   const cdp = await page.createCDPSession();
   const urls = new Map(), failed = [];
@@ -143,29 +122,45 @@ test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; PP-C c2: one ve
   cdp.on('Network.loadingFailed', (e) => { if ((urls.get(e.requestId) ?? '').endsWith(`/_astro/${range}`)) failed.push(e.blockedReason); });
   await cdp.send('Network.enable');
   await cdp.send('Network.setBlockedURLs', { urls: [`*/_astro/${range}`] });
-  await page.evaluate(() => { window.__toasts = new Set(); window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.add(t.id); }); });
+  await page.evaluate(() => { window.__toasts = []; window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.push(t.text); }); });
   await choose(page, 'Mediterranean');
   await atSite(page, 'seville');
-  // The panel no longer imports the range checks (the site-inputs layer moved siteToday to the first
-  // run): it loads, and its count line says the check failed, with Retry.
-  const FAILED = '#ct-root [data-pool-count="failed"]';
-  assert.ok(await has(page, FAILED, 10_000), 'the failed line, in place');
-  assert.equal(await page.$('[data-range-unavailable]'), null, 'a curated list keeps its panel');
+  // Five plants on the palette page (no Suggest: a suggestion's own toast is not the failure's).
+  await page.evaluate(async () => {
+    const { store } = window.__ctTest;
+    const pool = await store.loadPool('Mediterranean');
+    store.members.value = pool.slice(0, 5).map((t) => t.id);
+    store.view.value = 'matrix';
+  });
+  const NOTICE = /The fit check did not load: every plant says “Not checked”, and the holes were computed without it\./;
+  const said = () => page.evaluate(() => [...document.querySelectorAll('#ct-root [role="alert"]')].map((e) => e.textContent.replace(/\s+/g, ' ')).join(' | '));
+  assert.ok(await page.waitForFunction((re) => [...document.querySelectorAll('#ct-root [role="alert"]')].some((e) => new RegExp(re).test(e.textContent)), { timeout: 10_000 }, NOTICE.source).then(() => true, () => false), `the failure, in place on the palette page (${await said()})`);
   await new Promise((r) => setTimeout(r, 1000));
   // Several chunks reach the range chunk at the first location: the store's rule (import()) and every
-  // chunk that imports it statically (verdict since PP-B commit 0, mark providers, the pool and future
-  // parts, later). Chrome shares one request between imports in flight together, and reuses a failure
-  // for later ones locally, but the CI runner's Chrome sent four (run 43971791616). So the bound is
-  // read from the build, one request per importer at most, and none more after a new location.
+  // chunk that imports it statically. Chrome shares one request between imports in flight together, and
+  // reuses a failure for later ones locally, but the CI runner's Chrome sent four (run 43971791616). So
+  // the bound is read from the build, one request per importer at most, and none more after a new location.
   const before = failed.length, importers = rangeImporters(range);
   assert.ok(before >= 1 && before <= importers, `the chunk was requested at Seville (${before} of at most ${importers})`);
   await atSite(page, 'lyon');
   await new Promise((r) => setTimeout(r, 1000));
   assert.equal(failed.length, before, 'a new location does not import the chunk again');
-  assert.equal(await page.evaluate(() => window.__toasts.size), 0, 'said in place, never by a toast');
-  assert.ok(await has(page, FAILED), 'the line stays');
-  await page.evaluate(() => { window.__ctTest.store.location.value = null; });
-  assert.ok(await page.waitForFunction(() => !document.querySelector('#ct-root [data-pool-count="failed"]') && !window.__ctTest.store.rangeFailed.value, { timeout: 5_000 }).then(() => true, () => false), 'location cleared: plain P2, no failed line');
+  assert.deepEqual(await page.evaluate(() => window.__toasts), [], 'said in place, never by a toast');
+  assert.match(await said(), NOTICE, 'the notice stays');
+});
+
+// h2 T1: P5-14i (pre-push review 1) on the v14 Place: the pool panel's chunk is imported only when
+// Place mounts it for a reason it cannot go on (here: nothing fits the site, as P5-27a); refused, it
+// says in place that the part did not load, with Reload (board Loading "A sheet or panel failed").
+test('P5-14i (S5c → PP-B b1b, the pool panel\'s chunk refused; v14, main h2 T1): Place mounts the panel where nothing fits; its chunk refused, Place says the part did not load, with Reload, never a toast', async () => {
+  const page = await tool({ block: { pool: 404 } });
+  await page.evaluate(() => { window.__toasts = []; window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.push(t.text); }); });
+  await atNowhere(page);
+  await choose(page, 'Boreal');
+  const said = () => page.evaluate(() => [...document.querySelectorAll('#ct-root [role="alert"], #ct-root .ct-notice')].map((e) => e.textContent.replace(/\s+/g, ' ')).join(' | '));
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('#ct-root [role="alert"], #ct-root .ct-notice')].some((e) => /did not load|could not open/.test(e.textContent) && [...e.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Reload')), { timeout: 10_000 }).then(() => true, () => false), `the failed part, in place, with Reload (${await said()})`);
+  assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), 'the pool chunk was requested and refused by the block');
+  assert.deepEqual(await page.evaluate(() => window.__toasts), [], 'never a toast');
 });
 
 test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Place with the nothing-fits state', async () => {
@@ -391,7 +386,8 @@ test('P5-26f (S5c borrowed list without a location, fix review 29b709e 3; on Pla
 
 test('P5-26c (S5c card pill, UX audit fix 1): a borrowed climate\'s card says "Needs your location" until a location is given', async () => {
   const page = await tool();
-  const pill = (v) => page.$eval(`input[name="ct-climate"][value="${v}"] ~ .ct-card-desc .ct-pill`, (e) => e.textContent.trim());
+  // Board ClimateHand: each climate row's chip at the right of its name.
+  const pill = (v) => page.$eval(`input[name="ct-climate"][value="${v}"] ~ .ct-hand-head [data-chip]`, (e) => e.textContent.trim());
   assert.equal(await pill('subtropical'), 'Needs your location');
   assert.equal(await pill('temperate'), 'Ready');
   await atSite(page, 'lyon');
@@ -402,7 +398,8 @@ test('P5-27a (S5c seam review 1; on Place, PP-B b1a): where nothing fits, Place 
   for (const width of [390, 1280]) {
     const page = await tool({ width });
     await atNowhere(page);
-    await pickCard(page, 'boreal');
+    // The test's site is injected without a climate (a real read applies its own): set as P5-14 does.
+    await choose(page, 'Boreal');
     assert.ok(await has(page, '[data-pool-empty] button', 10_000), `${width} px: the nothing-fits state`);
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
     assert.match(await text(page, '[data-pool-empty]') ?? '', /−?-?39\.8 °C/, `${width} px: it says why`);
@@ -418,7 +415,9 @@ test('P5-27b (S5c seam review 1; on Place, PP-B b1a): a borrowed climate whose r
     // modulepreload, so the test passed or failed by timing.
     const page = await tool({ width, block: { verdict: 404 } });
     await atSite(page, 'seville');
-    await pickCard(page, 'subtropical'); // not Arid: curated since r-b7fb536f9cfd0700 (D9a)
+    // Not Arid: curated since r-b7fb536f9cfd0700 (D9a). The test's site is injected without its climate
+    // applied (a real read applies Mediterranean), so Subtropical is set as P5-14 does.
+    await page.evaluate(() => { window.__ctTest.store.climate.value = 'Subtropical'; });
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.rangeFailed.value, { timeout: 10_000 }).then(() => true, () => false), 'the range chunk failed');
     assert.ok(await has(page, '[data-range-unavailable]', 10_000), `${width} px: the notice`);
     assert.equal(await page.$('[data-place-suggest]'), null, `${width} px: no Suggest that can only refuse`);
@@ -464,7 +463,7 @@ test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the
 // made after it suggests around the plants at hand, so a waiting press does too. Its rewrite found
 // that the suggestion dropped the guest itself (core suggest.ts kept only the seeds it could read):
 // fixed test-first (consortium-pp-b1.test.mjs "PP-B exit").
-test('P5-27n (S5c seam review round 4, 1; PP-B exit): a waiting Suggest ends when the kept guest\'s list fails: it suggests around the plants it can read, keeps the guest, names the list as missing with Reload, and is no longer busy', async () => {
+test('P5-27n (S5c seam review round 4, 1; PP-B exit): a waiting Suggest ends when the kept guest\'s list fails: it suggests around the plants it can read, keeps the guest, names the list as missing with Try again, and is no longer busy', async () => {
   const page = await placeGuestHeld(1280);
   const guest = await page.evaluate(() => { const { store } = window.__ctTest, [id] = Object.keys(store.guests.value); store.addMembers([id], { [id]: 'Tropical' }); return id; });
   await page.click('[data-place-suggest]');
@@ -473,8 +472,8 @@ test('P5-27n (S5c seam review round 4, 1; PP-B exit): a waiting Suggest ends whe
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 1, { timeout: 10_000 }).then(() => true, () => false), 'the wait ends with a suggestion');
   assert.ok(await page.evaluate((id) => window.__ctTest.store.members.value.includes(id), guest), 'the guest stays in the palette');
   assert.equal(await loadState(page), 'ready', 'no load screen');
-  const named = () => [...document.querySelectorAll('.ct-notice')].some((n) => /The Tropical list could not be read: 1 plant from it is missing, not checked\./.test(n.textContent) && [...n.querySelectorAll('button')].some((b) => b.textContent === 'Reload'));
-  assert.ok(await page.waitForFunction(named, { timeout: 8000 }).then(() => true, () => false), 'the list named as missing, with Reload');
+  const named = () => [...document.querySelectorAll('.ct-notice')].some((n) => /The Tropical list could not be read: 1 plant from it is missing, not checked\./.test(n.textContent) && [...n.querySelectorAll('button')].some((b) => b.textContent === 'Try again'));
+  assert.ok(await page.waitForFunction(named, { timeout: 8000 }).then(() => true, () => false), 'the list named as missing, with Try again');
   assert.ok(await has(page, `.ct-plants [data-plant-id="${guest}"][data-missing="failed"]`, 5000), 'Your plants lists the guest as not checked');
   const n = await members(page);
   await new Promise((r) => setTimeout(r, 1000));
@@ -507,11 +506,13 @@ test('P5-27q (S5c climate ranges): Nairobi proposes Subtropical from its means; 
     await page.click('[data-location-action="geo"]');
     assert.equal(await locationState(page), 'borderline', `${width} px: Nairobi is borderline`);
     const line = await text(page, '[data-location-state]') ?? '';
-    assert.match(line, /Köppen class Cwb/, 'the class its means give');
+    assert.match(line, /own average temperatures give Cwb/, 'the class its means give');
     assert.match(line, /The climate map gives Aw here/, 'and the map class');
     assert.match(line, /Between Subtropical and Tropical; we picked Subtropical/);
     assert.match(line, /within 2 °C/);
-    assert.equal(await proposedCard(page), 'subtropical', 'Subtropical proposed');
+    // Picked, with one tap to the other (location.tsx borderline: Use Subtropical / Use Tropical).
+    assert.equal(await page.evaluate(() => window.__ctTest.store.climate.value), 'Subtropical', 'Subtropical picked');
+    assert.ok(await has(page, aria('button', 'Use Tropical')), 'the other one tap away');
     // Seville: Siberian purslane (stored annual, Temperate list, heat limit 31.7 °C against 34.8 °C) stays, for the cool
     // season (Siberian purslane until r-f3c6dd8b3c4391be, recorded perennial since D2d).
     await atSite(page, 'seville');
