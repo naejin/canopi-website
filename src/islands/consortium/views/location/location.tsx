@@ -108,7 +108,7 @@ export function PlaceRow({ loc, frame = false }: { loc: SiteLocation; frame?: bo
         {frame ? (
           <>{link(T('location.adjust'), openMap)}{sep}{link(T('location.searchAgain'), focusField)}{sep}{link(T('place.climate.other'), openClimates, { 'data-place-climates': '' })}{sep}{link(T('location.forget'), forget)}</>
         ) : fromTyped ? (
-          <>{link(T('location.adjust'), openMap)}{sep}{link(T('location.lookUpName'), () => void lookUpName(), naming.value === 'asking' ? { 'aria-busy': 'true' } : {})}</>
+          <>{link(T('location.adjust'), openMap)}{sep}{link(T('location.lookUpName'), () => void lookUpName(), naming.value === 'asking' ? { 'aria-busy': 'true', 'aria-disabled': 'true' } : {})}</>
         ) : desk.value ? (
           <>{link(T('location.adjust'), openMap)}{sep}{link(T('location.searchAgain'), focusField)}{sep}{link(T('location.forget'), forget)}</>
         ) : (

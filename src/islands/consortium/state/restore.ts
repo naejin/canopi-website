@@ -227,7 +227,7 @@ export async function restore(fragment: string, { from, src = null, keep = false
       linkPlace.value = asks ? { own: mine } : null;
       // The sender's place name (D6, `n`), shown as it came: no reverse lookup on open.
       const name = origin ? linkPlaceName(from === 'link' ? fragment : place ?? '') : null;
-      if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', ...(name ? { label: name } : {}), lookup: null };
+      if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', ...(name ? { label: name, placeLevel: true as const } : {}), lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
       // stale line shows and Share cannot attach its cell (review round 1, 2). The reader's own stays.
       else if (from === 'link' && store.location.peek()?.source === 'link') store.location.value = null;

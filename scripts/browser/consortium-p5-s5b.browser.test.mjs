@@ -97,7 +97,16 @@ test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at mos
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 0, { timeout: timeouts.suggest + 4000 }).then(() => true, () => false), 'Suggest ran within the cap');
   assert.ok(Date.now() - t0 >= timeouts.suggest * 0.8, 'after waiting for the site first');
   assert.ok(await page.waitForFunction(() => /not read in time/.test(document.querySelector('.ct-toast-region')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'a message says the climate was not read (board Loading)');
-  assert.ok(await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
+  // h2 R1: one toast, the suggestion's: its words, the "not read" sentence, its Undo kept, and the
+  // board's "Read it again" beside it (a second toast would take the Undo the Empty card promises).
+  const toast = await page.evaluate(() => { const r = document.querySelector('.ct-toast-region'); return { text: r?.textContent.replace(/\s+/g, ' ') ?? '', buttons: [...(r?.querySelectorAll('button') ?? [])].map((b) => b.textContent.trim()) }; });
+  assert.match(toast.text, /A starting palette of \d+ plants was added, each marked “suggested”\. Plants were suggested without your place’s climate: it was not read in time\./, 'the suggestion and the unread sentence in one toast');
+  assert.ok(toast.buttons.includes('Undo'), `the suggestion's Undo stays (${toast.buttons.join(', ')})`);
+  assert.ok(toast.buttons.includes('Read it again'), `board Loading: "Read it again" (${toast.buttons.join(', ')})`);
+  await page.evaluate(() => [...document.querySelectorAll('.ct-toast-region button')].find((b) => b.textContent.trim() === 'Undo').click());
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 0, { timeout: 4000 }).then(() => true, () => false), 'Undo takes the suggested palette back');
+  // Undo went back to Place (the view is an undo field); else its step.
+  if (!(await has(page, '[data-location-state]', 2000))) assert.ok(await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
   assert.ok(await page.waitForFunction(() => document.querySelector('[data-location-state]')?.getAttribute('data-location-state') === 'failed', { timeout: timeouts.read + 4000 }).then(() => true, () => false), 'the stalled read ends as failed, on Place');
   assert.equal(await page.$('[data-location-unread]'), null, 'review round 3 (3): no "not read" note left beside the failed line');
 });

@@ -95,6 +95,17 @@ test('state/persist.ts and state/location.ts: a location country goes into a lin
   assert.deepEqual(keep.readLocation(rec), { lat: 37.3891, lon: -5.9845, source: 'geo' });
   assert.deepEqual(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Lyon, France' })).label, 'Lyon, France');
   for (const bad of [null, '', '{', '{"lat":1}', '{"lat":95,"lon":0,"source":"geo"}', '{"lat":1,"lon":2,"source":"gps"}']) assert.equal(keep.readLocation(bad), null, String(bad));
+  // h2 R4: whether the label is town-level is kept with it, so a reload still knows what may travel.
+  assert.equal(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Lyon, France', placeLevel: true })).placeLevel, true);
+  assert.equal(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Chemin des Vignes, France' })).placeLevel, undefined);
+});
+
+test('h2 R4: a share link carries the place\'s name only when it is town-level (persist.ts linkName), never a road\'s or a farm\'s', async () => {
+  const m = await import('../src/islands/consortium/state/persist.ts');
+  assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'search', label: 'Chemin des Vignes, France', lookup: null }), null, 'a road\'s label stays on the page');
+  assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'search', label: 'Saint-Rémy-de-Provence, France', placeLevel: true, lookup: null }), 'Saint-Rémy-de-Provence, France');
+  assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'map', lookup: null }), null, 'no label, no name');
+  assert.equal(m.linkName(null), null);
 });
 
 test('state/location.ts locationCountry: replaces a guess or none, never a chosen or linked country; none offshore clears only its own', async () => {

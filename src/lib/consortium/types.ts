@@ -479,7 +479,10 @@ export interface SiteLookup {
 // device's location, a place search, a map pick, or a shared link's `o=` cell centre (approximate).
 // lookup: the climate reader's answer, null while it loads or when it failed (manual climate stays).
 export type LocationSource = 'geo' | 'search' | 'map' | 'link';
-export interface SiteLocation { lat: number; lon: number; source: LocationSource; label?: string; lookup: SiteLookup | null }
+// placeLevel: the label names a town or a wider area (a place search answer or a reverse lookup of a
+// town-level kind, pf-decisions D7, or a link's own `n`), so it may travel in a share link beside the
+// cell centre (h2 R4); a road, a building or a farm's name never does.
+export interface SiteLocation { lat: number; lon: number; source: LocationSource; label?: string; placeLevel?: true; lookup: SiteLookup | null }
 
 // Climate scenarios of the future check (canopi-climate slots 1–8), SSP2-4.5 by default (owner row).
 export const scenarios = ['ssp126', 'ssp245', 'ssp370', 'ssp585'] as const;

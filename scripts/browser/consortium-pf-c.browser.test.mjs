@@ -137,7 +137,7 @@ test('PFC4 (pf-c LocStates, the place search): while it looks "Looking for “Ki
   await searchFor(several, 'Kiambu');
   await says(several, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
   await inOrder(several, ['Kiambu', 'Kiambu County', 'Kiambu Road', 'None of these? Try the nearest town, or pick on a map. Place names © OpenStreetMap contributors.',
-    'Your search words go to OpenStreetMap’s place search (Nominatim) only when you press Search; nothing is sent as you type. Coordinates are read on this device and sent nowhere.']);
+    'Your search words go to OpenStreetMap’s place search (Nominatim) only when you press Search; nothing is sent as you type. Coordinates are read on this device; only “Look up its name” sends the centre of their climate-grid square, never the exact point.']);
   // D7 (board LocDesk "City · Andalusia, Spain"): a row names its kind for the eight kinds the page knows, none for the rest (a road).
   assert.deepEqual(await several.$$eval('[data-location-choices] .ct-answer-detail', (es) => es.map((e) => e.textContent.trim())), ['Town · Kiambu County, Kenya', 'County · Kenya', 'Nairobi, Kenya'], 'D7: the kind of place before its locality');
   const chooses = (await names(several, 'button')).filter((n) => /^Choose/.test(n));
@@ -1314,5 +1314,73 @@ test('PFC52 (pf-c Loading, the offline line; M27, carried from PP-B46): offline,
   await page.setOfflineMode(false);
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   assert.ok(await page.waitForFunction(() => document.querySelector('.ct-offline[role="status"]')?.textContent.trim() === '', { timeout: 5000 }).then(() => true, () => false), 'back online, the line is empty');
+  await done(page);
+});
+
+// ---- main h2 hand-off fixes (2026-11-18) ----
+
+// "Look up its name"'s reverse lookups held in the page until window.__releaseReverse() (the harness's
+// own Nominatim fixture answers them once released).
+const holdReverse = (pg) => pg.evaluateOnNewDocument(() => {
+  const real = window.fetch.bind(window);
+  let gates = [];
+  window.__releaseReverse = () => { for (const g of gates) g(); gates = []; };
+  window.fetch = async (input, init) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    if (url.hostname === 'nominatim.openstreetmap.org' && url.pathname === '/reverse') await new Promise((r) => { gates.push(r); });
+    return real(input, init);
+  };
+});
+
+test('PFC53 (main h2 R2): an ask that ended without a place leaves nothing behind: "Use my location" refused, a climate chosen by hand, then typed coordinates for Seville use the climate read there', async () => {
+  const page = await tool({ geolocation: 'denied' });
+  await press(page, 'button', 'Use my location');
+  await says(page, 'Your location is blocked for this site. Search for a town or pick on a map instead; or allow it in your browser’s site settings.');
+  // A climate chosen by hand (as the climate rows do: chooseClimate asks no lookup).
+  await page.evaluate(() => { window.__ctTest.store.climate.value = 'Temperate'; });
+  await searchFor(page, `${SITES.seville[0]}, ${SITES.seville[1]}`);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.lookup && window.__ctTest.store.climate.value === 'Mediterranean', { timeout: 15_000 }).then(() => true, () => false),
+    `the climate read at Seville is used (climate ${await store(page, () => window.__ctTest.store.climate.value)})`);
+  await done(page);
+});
+
+test('PFC54 (main h2 R3, R9): "Look up its name" sends the centre of the typed point\'s climate-grid square, never the point; a second press while it asks sends nothing more; neither a second press nor a place search started meanwhile says it failed', async () => {
+  const page = await tool({ width: 390, nominatim: 'fixture', setup: holdReverse });
+  await searchFor(page, '-1.171234, 36.834567');
+  await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 10_000 });
+  await press(page, 'button', 'Look up its name');
+  for (let i = 0; i < 50 && !page.nominatim.length; i++) await new Promise((r) => setTimeout(r, 100));
+  await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Look up its name')?.click());
+  await new Promise((r) => setTimeout(r, 1500));
+  const asks = page.nominatim.filter((r) => /\/reverse\?/.test(r.url));
+  assert.equal(asks.length, 1, 'one lookup for two presses');
+  const u = new URL(asks[0].url);
+  assert.deepEqual([u.searchParams.get('lat'), u.searchParams.get('lon')], ['-1.15', '36.85'], 'the cell centre (0.1° grid), never -1.171234, 36.834567');
+  await saysNot(page, 'The place search did not answer, so the place has no name. Try again later.', 'no failure while the first lookup still runs');
+  await page.evaluate(() => window.__releaseReverse());
+  await says(page, /Near Kiambu, Kenya/, { timeout: 10_000 });
+  // A place search started while a lookup runs: no false "did not answer".
+  await searchFor(page, '-1.171234, 36.834567');
+  await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 10_000 });
+  await press(page, 'button', 'Look up its name');
+  await searchFor(page, 'Lyon');
+  await says(page, /Lyon/, { timeout: 10_000 });
+  await saysNot(page, 'The place search did not answer, so the place has no name. Try again later.', 'a search that replaced the lookup is no failure');
+  await page.evaluate(() => window.__releaseReverse());
+  await done(page);
+});
+
+test('PFC55 (main h2 R4): a place search answer names a town-level place only for the D7 kinds; a road\'s name is shown on the page but never marked to travel in a link', async () => {
+  const page = await tool({ width: 390, nominatim: 'fixture', setup: searchStub() });
+  await searchFor(page, 'Kiambu');
+  await says(page, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
+  await press(page, 'button', 'Choose Kiambu Road, Kenya');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.lookup, { timeout: 15_000 }).then(() => true, () => false), 'Kiambu Road read');
+  assert.deepEqual(await store(page, () => { const l = window.__ctTest.store.location.value; return [l.label, !!l.placeLevel]; }), ['Kiambu Road, Kenya', false], 'a road: named on the page, not town-level');
+  await searchFor(page, 'Kiambu');
+  await says(page, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
+  await press(page, 'button', 'Choose Kiambu, Kenya');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.label === 'Kiambu, Kenya', { timeout: 15_000 }).then(() => true, () => false), 'Kiambu read');
+  assert.equal(await store(page, () => !!window.__ctTest.store.location.value.placeLevel), true, 'a town: may travel');
   await done(page);
 });

@@ -42,7 +42,7 @@
 // in flight (what Start shows while a link opens) and the count of the reader's actions, which the
 // store watcher (watchStore) keeps.
 import { computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, LinkOrigin, PlantId, ShareState, SiteEdits } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, LinkOrigin, PlantId, ShareState, SiteEdits, SiteLocation } from '../../../lib/consortium/index.ts';
 import { encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
@@ -182,6 +182,11 @@ function knownOf(now: Consortium): Partial<Record<ClimateZone, PlantId[]>> {
   }
   return known;
 }
+// The place name a share link may carry beside the cell (`n`, D6): the site's label only when it names
+// a town or a wider area (SiteLocation placeLevel: a search answer or a reverse lookup of a town-level
+// kind, or a link's own `n`), never a road, a building or a farm's name (h2 R4: the link holds no
+// more than the cell says).
+export const linkName = (l: SiteLocation | null): string | null => (l?.placeLevel && l.label ? l.label : null);
 // The palette as a fragment, against the climate's and the guest lists' ids. origin: the site's cell
 // centre, given only with Share's tick: the link then carries `o=`. place: the "Include my place" tick
 // (by default, whether an origin is given: Share's tick until b1a words it), which adds the country,

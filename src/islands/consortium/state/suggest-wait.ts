@@ -7,6 +7,7 @@ import { T } from '../strings.ts';
 import { state as schema } from './schema.ts';
 import { adoptPending } from './persist.ts';
 import { lookups, unread } from './lookups.ts';
+import { tryAgain } from './location.ts';
 
 // ---- the waiting Suggest ----
 
@@ -100,11 +101,12 @@ export function requestSuggest(): void {
     store.retryVerdict();
   }
   const busy = lookups.peek() && !waited.peek();
-  if (!busy && store.suggestMembers()) {
-    clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView();
-    // Board Loading "Suggested before the climate was read": the palette page says it (Place's note
-    // is not on screen there).
-    if (unread.peek()) store.showToast(T('location.unread'));
+  // Board Loading "Suggested before the climate was read", with "Read it again": said in the
+  // suggestion's own toast, after its words and beside its Undo (Place's note is not on screen on the
+  // palette page, and a second toast would replace the Undo the Empty card promises).
+  const late = !!lookups.peek();
+  if (!busy && store.suggestMembers(late ? { text: T('location.unread'), action: { label: T('location.readAgain'), run: () => void tryAgain() } } : null)) {
+    clearTimeout(cap); unread.value = late; waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView();
     return;
   }
   if (!pendingSuggest.peek()) cap = setTimeout(capped, suggestWaitMs());

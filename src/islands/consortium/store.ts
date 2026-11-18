@@ -577,7 +577,10 @@ export const waitsForVerdicts = (): boolean => siteClimate.value;
 // its seed; inventory C6), leaving out removed plants (core suggest.ts). Needs the climate's pool and
 // every guest climate's (a guest must count), and with a site climate the verdicts; false, changing
 // nothing, while any is not read (guestsPending, verdictRule).
-export function suggestMembers(): boolean {
+// note: a sentence said after the suggestion's own, in the same toast, with its action beside Undo
+// (board Loading "Suggested before the climate was read" with "Read it again"; state/suggest-wait.ts):
+// one toast, so the suggestion's Undo is never replaced.
+export function suggestMembers(note: { text: string; action: ToastAction | null } | null = null): boolean {
   const p = pool.value;
   if (!p || guestsPending.value.length) return false;
   const seed = members.value;
@@ -607,7 +610,7 @@ export function suggestMembers(): boolean {
   // the palette the press saw, with only the place answers given during the wait kept.
   const before = snapshot();
   batch(() => { members.value = s.members; suggestedIds.value = [...s.members]; held.value = false; });
-  offerUndo(P('place.suggested', s.members.length), before);
+  offerUndo(note ? `${P('place.suggested', s.members.length)} ${note.text}` : P('place.suggested', s.members.length), before, note?.action ?? null);
   return true;
 }
 
