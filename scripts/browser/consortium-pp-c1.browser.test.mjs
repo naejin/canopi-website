@@ -257,8 +257,10 @@ test('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit first;
   const n = Number(/\d+/.exec(label)?.[0] ?? 1); // "See the plant": one
   const showOutside = await page.evaluateHandle((sel) => [...document.querySelectorAll(`${sel} button`)].find((b) => /outside/i.test(b.textContent)) ?? null, FIND);
   const folded = await showOutside.evaluate((b) => (b ? Number(/\d+/.exec(b.textContent)?.[0] ?? NaN) : 0));
+  // pf-a BC3: "See all N" counts what Find lists before the outside ones unfold (fits, second looks, unchecked).
+  assert.equal((await rowIds(page)).length, n, `"${label}" counts the plants Find lists before "Show N outside"`);
   if (folded) await showOutside.click();
-  assert.equal((await rowIds(page)).length, n, `"${label}" counts the plants Find lists`);
+  assert.equal((await rowIds(page)).length, n + folded, 'the outside ones join the list once shown');
   // "Show N outside their climate range" (c1: the hole's fillers outside their range, folded behind
   // it; at Lyon's first hole there may be none, so it is checked against the rows it unfolds):
   // shown exactly when some are outside, N of them.
@@ -283,8 +285,8 @@ test('PP-C7 (c1 FillHole): a hole opens Find titled by the hole, best fit first;
     await findFromHole(page);
     const more = await page.evaluateHandle((sel) => [...document.querySelectorAll(`${sel} button`)].find((x) => /outside/i.test(x.textContent)) ?? null, FIND);
     const hidden = await more.evaluate((x) => (x ? Number(/\d+/.exec(x.textContent)?.[0] ?? NaN) : 0));
+    assert.equal((await rowIds(page)).length, count, `${hole}: Find lists what "See all ${count}" counts (pf-a BC3: the outside ones folded)`);
     if (hidden) await more.click();
-    assert.equal((await rowIds(page)).length, count, `${hole}: Find lists what "See all ${count}" counts`);
     assert.equal(hidden, await page.$$eval(`${FIND} [data-find-group="outside"] [data-find-row]`, (els) => els.length), `${hole}: "Show N outside" folds exactly the plants outside`);
     const misplaced = await page.$$eval(`${FIND} [data-find-row]`, (els) => {
       const v = window.__ctTest.store.poolVerdicts.value;
@@ -552,7 +554,10 @@ test('PP-C43 (c1 fix B1+B5+B13 row content): fills, light, size, years; Add anyw
   assert.ok(await has(page, `${first} [data-find-fills]`, 4000), 'a row in a hole says it fills it');
   const meta = await page.$eval(`${first} [data-find-meta]`, (e) => e.textContent).catch(() => '');
   assert.match(meta, /wide|tall|no size recorded/, `its size (${meta})`);
-  assert.match(meta, /year|month|days|All the years/i, `its years (${meta})`);
+  // pf-a BC26: one reason line says what it does and when; the years are not said again under it.
+  const reason = await page.$eval(`${first} [data-find-fills]`, (e) => e.textContent).catch(() => '');
+  assert.match(reason, /year|month|days/i, `its years, in its reason line (${reason})`);
+  assert.doesNotMatch(meta, /\byear \d|\bmonth \d|first year/i, `the years said once (${meta})`);
   await page.evaluate(() => window.__ctTest.store.closeSheet());
   await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
   await openFind(page);

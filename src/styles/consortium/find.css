@@ -197,6 +197,8 @@
 .ct .ct-other-holes { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border); }
 .ct .ct-other-holes h4 { margin: 0; font-size: 15px; font-weight: 600; }
 .ct .ct-other-holes .ct-more-items > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 6px 0; }
+/* The why sentence under the hole title (BC2): why it matters, the counts by fit, what holds. */
+.ct .ct-next-why { margin: 0; color: var(--text-muted); font-size: 14px; }
 .ct .ct-next-bulk { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 .ct .ct-next-bulk .button { white-space: normal; max-width: 100%; padding-block: 8px; text-align: center; }
 

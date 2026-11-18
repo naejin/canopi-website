@@ -159,16 +159,25 @@ export function thinTargets(lanes: readonly LaneCount[], pending = false): Hole[
 // spot among the thin spots ("thin spot 1 of 5"). index is 1-based; thinCount the open thin spots.
 const isOpen = (h: Hole): boolean => h.state === 'open';
 const putOffOf = (h: Hole, putOff: ReadonlySet<string>): boolean => putOff.has(h.thin && h.job ? thinKey(h.job) : h.id);
-export function targetPosition(holeList: readonly Hole[], thins: readonly Hole[], target: Hole): TargetPosition {
-  const open = holeList.filter(isOpen), openThins = thins.filter(isOpen);
+export function targetPosition(holeList: readonly Hole[], thins: readonly Hole[], target: Hole, hasFits?: (h: Hole) => boolean): TargetPosition {
+  const open = rankedHoles(holeList, hasFits).filter(isOpen), openThins = thins.filter(isOpen);
   const list = target.thin ? openThins : open;
   return { kind: target.thin ? 'thin' : 'hole', index: list.findIndex((h) => h.id === target.id) + 1, of: list.length, thinCount: openThins.length };
 }
-// The next target: the first open hole not put off, else the first open thin spot whose job is not put
-// off. putOff holds hole ids and thin keys (thinKey).
-export function nextTarget(holeList: readonly Hole[], thins: readonly Hole[], putOff: ReadonlySet<string> = new Set()): (TargetPosition & { target: Hole }) | null {
-  const target = holeList.find((h) => isOpen(h) && !putOffOf(h, putOff)) ?? thins.find((h) => isOpen(h) && !putOffOf(h, putOff));
-  return target ? { target, ...targetPosition(holeList, thins, target) } : null;
+// The holes in the Next step's order (pf-decisions 2026-11-18, v13 ranking change, kept by v14 'Parked'):
+// a cooler-months food hole comes first when plants that fit the place fill it (hasFits), the others
+// keep their rank order. Without hasFits, or with no such hole, the list as it is.
+export const isCoolFoodHole = (h: Hole): boolean => h.kind === 'cool' && (!h.job || h.job === 'feeds_you');
+export function rankedHoles(holeList: readonly Hole[], hasFits?: (h: Hole) => boolean): readonly Hole[] {
+  const cool = hasFits ? holeList.find((h) => isOpen(h) && isCoolFoodHole(h) && hasFits(h)) : undefined;
+  return cool ? [cool, ...holeList.filter((h) => h !== cool)] : holeList;
+}
+// The next target: the first open hole not put off (rankedHoles' order), else the first open thin spot
+// whose job is not put off. putOff holds hole ids and thin keys (thinKey).
+export function nextTarget(holeList: readonly Hole[], thins: readonly Hole[], putOff: ReadonlySet<string> = new Set(), hasFits?: (h: Hole) => boolean): (TargetPosition & { target: Hole }) | null {
+  const ranked = rankedHoles(holeList, hasFits);
+  const target = ranked.find((h) => isOpen(h) && !putOffOf(h, putOff)) ?? thins.find((h) => isOpen(h) && !putOffOf(h, putOff));
+  return target ? { target, ...targetPosition(ranked, thins, target) } : null;
 }
 
 // The plants a bulk add takes for a target: fits only, in fillers order (best fit first); a hole wants

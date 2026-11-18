@@ -57,11 +57,19 @@ const position = (e) => e.lead.kind === 'thin' ? `thin spot ${e.lead.index} of $
 const plural = (n, one, other = `${one}s`) => `${n} ${n === 1 ? one : other}`;
 // The bulk row's words for the lead (AddMany): "Add the 2 that fit best" / "Add all 7 that fill this hole";
 // on a thin job "Add the 1 that fits best" / "Add all 22 that do this job then".
+// C13: the second button only when it adds more than the first.
+const allWords = (e) => e.lead.kind === 'thin' ? (e.fits.length === 1 ? 'Add the 1 that does this job then' : `Add all ${e.fits.length} that do this job then`)
+  : (e.fits.length === 1 ? 'Add the 1 that fills this hole' : `Add all ${e.fits.length} that fill this hole`);
 const bulkWords = (e) => [
   `Add the ${e.best.length} that ${e.best.length === 1 ? 'fits' : 'fit'} best`,
-  e.lead.kind === 'thin' ? (e.fits.length === 1 ? 'Add the 1 that does this job then' : `Add all ${e.fits.length} that do this job then`)
-    : (e.fits.length === 1 ? 'Add the 1 that fills this hole' : `Add all ${e.fits.length} that fill this hole`),
+  ...(e.fits.length > e.best.length ? [allWords(e)] : []),
 ];
+// BC1, BC26: a candidate's first line says what it does for the target and when, in the target's terms
+// ("Covers the ground and is planted in shade: fills 4 holes", "Planted in full sun from year 3 on").
+const JOB_NAME = { feeds_you: 'Feeds you', feeds_soil: 'Feeds the soil', mulch: 'Makes mulch', ground: 'Covers the ground', helpers: 'Brings helpers', shelter: 'Shelters and protects' };
+const reasonRe = (t) => t.kind === 'job' && t.job
+  ? new RegExp(`${JOB_NAME[t.job]}(?: and is planted in (?:full sun|mostly sun|part shade|shade)| from (?:year|month) \\d+| in (?:the first|every))`)
+  : /Planted in (?:full sun|mostly sun|part shade|shade) (?:from|in)/;
 // The Add buttons of Find's rows, by their names ("Add Pinto peanut"), never the Next step's beside it.
 const findAdds = (page) => page.$$eval('dialog[open] [data-find-add]:not([data-added])', (bs) => bs.map((b) => b.getAttribute('aria-label')));
 // One row's Add in Find (by its name; the Next step's own "Add …" sits beside the desk panel).
@@ -91,8 +99,13 @@ test('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("Nex
   assert.ok((await addButtons(page)).length > 0, 'board: an Add on each candidate');
   // The bulk row (A1: whenever a plant fits), counting what the engine adds (bestToAdd).
   if (e.fits.length) for (const w of bulkWords(e)) await control(page, 'button', w);
+  if (e.fits.length && e.fits.length <= e.best.length) assert.ok(!(await names(page, 'button')).some((n) => /^Add all /.test(n)), 'C13: no second bulk button that adds what the first does');
+  if (e.fits.length) assert.match(card, reasonRe(e.lead.target), `BC1: a candidate's fit reason in the target's terms ("${card.slice(0, 400)}")`);
+  // BC2, C2: the why sentence counts the plants that do it then, by fit.
+  assert.match(card, new RegExp(`${e.all} plants? on your lists (?:does|do) this then: `), `BC2: "${e.all} plants on your lists do this then: …" (the engine's counts)`);
+  if (e.fits.length) assert.match(card, new RegExp(`\\b${e.fits.length} fits? your place`), 'BC2: the count that fits');
   await control(page, 'button', 'Not now');
-  await control(page, 'button', `See all ${e.all} plants`);
+  await control(page, 'button', `See all ${e.seeAll} plants`);
   // Other holes: its own card, one row per open hole but the lead, each in one form with its Find.
   const other = await section(page, 'Other holes');
   const count = Number(other.match(OTHER_HOLES)?.[1] ?? NaN);
@@ -105,7 +118,7 @@ test('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("Nex
     const chart = await sectionBox(page, 'Through the years'), next = await sectionBox(page, 'Next step');
     assert.ok(chart && next && next.x >= chart.right - 1 && next.y < chart.bottom, `board: at ${width} px the Next step stands beside the pictures (${JSON.stringify({ chart, next })})`);
   }
-  await press(page, 'button', `See all ${e.all} plants`);
+  await press(page, 'button', `See all ${e.seeAll} plants`);
   assert.ok(await until(page, () => window.__ctTest.store.sheet.value?.kind === 'find'), 'board: See all opens Find');
   assert.ok(await page.evaluate(() => !!window.__ctTest.store.sheetTarget.value.hole), 'board: Find opens preset to the hole');
   await done(page);
@@ -224,6 +237,8 @@ test('PFA6 (pf-a AddMany state 1, Toasts "several plants added", F19): "Add the 
   assert.equal(await members(page), before + e.best.length, 'board: a second tap adds nothing');
   const text = await toastText(page);
   assert.match(text, new RegExp(`^${e.best.length} plants? added: [^.]+\\. (?:No new hole\\.|\\d+ new holes?: |[A-Z][^:]+: (?:nobody|still))`), `board: "2 plants added: Pinto peanut, Pineapple. Covers the ground: nobody after year 25. 7 holes left." ("${text}")`);
+  assert.ok((text.match(/\. [A-Z][^.:]*: (?:nobody|still)/g) ?? []).length <= 1, `BC6: the toast names the target hole only, then the holes left ("${text}")`);
+  assert.doesNotMatch(text, /with a warning/, 'BC6, R4: the plants that fit carry no second look, so no "added with a warning" tail (a Mildly toxic mark is said on the row)');
   assert.equal(await page.$$eval('.ct-toast', (t) => t.length), 1, 'board: one toast');
   await press(page, 'button', 'Undo');
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before), 'board: one Undo takes them all back');
@@ -379,7 +394,7 @@ test('PFA14 (pf-a AddMany state 2, a thin job): once no hole is left to show (ea
   await control(page, 'button', 'Find a backup');
   if (e.fits.length) {
     const [best, all] = bulkWords(e);
-    await control(page, 'button', all);
+    if (all) await control(page, 'button', all);
     const before = await members(page);
     await press(page, 'button', best);
     assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + e.best.length), `board: the ${e.best.length} the goal still lacks are added`);
@@ -413,13 +428,18 @@ test('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the eng
   assert.ok(e.lead, 'the engine names a lead at 200 plants');
   const card = await nextText(page);
   assert.ok(card.includes(position(e)), `board: "${position(e)}" ("${card.slice(0, 90)}")`);
-  if (!e.fits.length) {
+  // R3, BC4: the no-fit state only when nothing fits, needs a second look or is unchecked; then how many do it outside their range.
+  if (!e.fits.length && !e.look.length && !e.unknown.length) {
     assert.ok(card.includes('No plant on your lists fits your place and does this then.'), 'board: the no-fit sentence');
+    if (e.outside.length) assert.ok(card.includes(`${e.outside.length} ${e.outside.length === 1 ? 'does it but is outside its' : 'do it but are outside their'} climate range here.`), 'board Many: "5 do it but are outside their climate range here."');
     if (e.outside.length) await control(page, 'button', `See the ${e.outside.length} outside ${e.outside.length === 1 ? 'its' : 'their'} range`);
     await control(page, 'button', 'Not now');
     assert.ok(!(await names(page, 'button')).some((n) => /^Add (?:the|all) /.test(n)), 'board: no bulk button when none fits');
   } else {
-    for (const w of bulkWords(e)) await control(page, 'button', w);
+    assert.ok(!card.includes('No plant on your lists fits your place and does this then.'), 'R3: no no-fit sentence while plants need a second look or are unchecked');
+    await control(page, 'button', e.seeAll === 1 ? 'See the plant' : `See all ${e.seeAll} plants`);
+    if (!e.fits.length) assert.ok(!(await names(page, 'button')).some((n) => /^Add (?:the|all) /.test(n)), 'A1: no bulk button while none fits (second looks are added one by one)');
+    else for (const w of bulkWords(e)) await control(page, 'button', w);
     if (e.fits.length > 12) assert.match(card, new RegExp(`\\+ ${e.fits.length - 3} more`), `board: the ${e.fits.length} that fit as a count cell ("+ ${e.fits.length - 3} more")`);
   }
   await done(page);
@@ -500,6 +520,9 @@ test('PFA21 (pf-a Recife, the Portuguese words): on the Portuguese page the Next
   await says(page, pt['consortium.palette.notNow']);
   const e = await engineLead(page);
   await says(page, pt['consortium.palette.holeOf'].replace('{i}', String(e.lead.index)).replace('{n}', String(e.lead.of)));
+  // C11, BC34: the board Recife's words, "falha 1 de 3", "Vale olhar de perto (2)".
+  await says(page, `falha ${e.lead.index} de ${e.lead.of}`);
+  if (e.look.length) await says(page, `Vale olhar de perto (${e.look.length})`);
   // The bulk row in Portuguese (AddMany), from pf-a's keys.
   const form = (s = '', k = 'other') => (s.split('|').map((x) => x.trim()).find((x) => x.startsWith(`${k}:`)) ?? '').slice(k.length + 1).trim();
   const best = form(pt['consortium.palette.next.addBest'], e.best.length === 1 ? 'one' : 'other');

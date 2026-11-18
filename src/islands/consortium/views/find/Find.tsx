@@ -25,11 +25,11 @@ import * as store from '../../store.ts';
 import type { AddResult } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fills, fitLine, jobIds, jobsOf, periodIds, periodName, queryTokens, secondLook, thinTitleLine, uncheckedLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fillReasonLine, fills, fitLine, jobIds, jobsOf, periodIds, periodName, queryTokens, secondLook, thinTitleLine, uncheckedLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, type Frame } from '../kit/sheet.tsx';
-import { FitLine, JobIcon, holeWords, midSentence, say } from '../kit/fit.tsx';
+import { FitLine, JobIcon, holeWords, lightWords as kitLight, midSentence, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
 import { listName, nameOf, nameOrder, num } from '../kit/names.ts';
 import { formatLength } from '../../format.ts';
@@ -82,8 +82,9 @@ const SCREEN = 20;
 // A row's light, size and years (board FindResults: "mostly sun · 18 m wide, 40 m tall"), measures
 // through format.ts, years through verdict-line.ts. Light is the plant's stratum (layer is light),
 // the same words as the palette's light rows and holes.
-function lightWords(t: Taxon): string | null {
-  return t.stratum ? midSentence(T(`stratum.${t.stratum.value}`)) : null;
+// C9: the light it grows in, the palette's words ("grows in: full sun – part shade"; kit/fit.tsx lightWords).
+function lightWordsOf(t: Taxon): string | null {
+  return t.light?.sunniest || t.stratum ? midSentence(kitLight(t).growsIn) : null;
 }
 // The one roles list (c1r3 T20): lower case after its first word where the language writes it so
 // (kit/fit.tsx midSentence). In a job hole the hole's own job is left out, the rest "Also …" (board
@@ -93,14 +94,12 @@ function lightWords(t: Taxon): string | null {
 // known: the job the list is filtered by, left out ("Also …") only on a row that does it (c1r5 W3: a
 // searched palette plant or a close spelling may not).
 // to: the last year it stays in its climate range through ("in range to 2099", board FillHole), else null.
-function metaWords(t: Taxon, known: JobId | null, to: string | null = null): string {
+// span: false where the row's reason line already says the years (BC26: one reason line).
+function metaWords(t: Taxon, known: JobId | null, to: string | null = null, span = true): string {
   const own = jobsOf(t), drop = known && own.includes(known) ? known : null;
   const jobs = rowRoles(own.filter((j) => j !== drop), !!drop);
-  return [jobs, lightWords(t), rowSpan(t), rowSize(t), to && T('find.inRangeTo', { year: to })].filter(Boolean).join(' · ');
+  return [jobs, lightWordsOf(t), span && rowSpan(t), rowSize(t), to && T('find.inRangeTo', { year: to })].filter(Boolean).join(' · ');
 }
-// A hole's lane in words ("Covers the ground", "Full sun"), as holeWords says it.
-const laneWords = (h: NonNullable<store.SheetFor['hole']>): string => T(h.kind === 'job' ? `job.${h.job}` : `palette.light_${h.stratum}`);
-
 // The add button's mark (board FindResults: "+ Add", "✓ Added"); the word carries the meaning.
 const PLUS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 const TICK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
@@ -348,7 +347,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // store computed: sheet chunks never import holes.ts; a seam for pf.)
   const later = store.period.value !== periodIds[0], fitsHere = judged;
   const subtitle = !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
-    : hole ? P('find.holeLede', fitsHere, { list: listName(climate) })
+    : hole ? P('find.holeLede', base.filter((t) => fits?.(t) && verdicts?.get(t.id)?.level === 'fits' && !store.warnedPlant(t)).length, { list: listName(climate) })
       : P(later ? 'find.fitCountLater' : 'find.fitCount', fitsHere, { total: num(base.length), list: listName(climate), period: periodName(store.period.value) });
   const start = !q && !hole && onCount === 0 && !listed;
   // A query before the search index is in (T4): "Searching…", no rows; the core's names failed, the
@@ -371,6 +370,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const later = outside ? inRangeBy(t) : null;
     // "Fits your place to 2099" (K1): the last later period it stays in range through.
     const n = stay.get(t.id) ?? 0, shownV = v && v.level === 'fits' && n > 0 ? { ...v, judged: after[n - 1] } : v;
+    const light = hole?.kind === 'job' ? open.find((o) => o.kind === 'light' && fills(o, t))?.stratum ?? null : null;
+    const reasonOf = hole && fits?.(t) ? say(fillReasonLine(hole, y, { light, holes: store.holeFillCount(t) })) : null;
     return (
       <li key={t.id} data-find-row="" data-plant-id={t.id}>
         <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
@@ -380,9 +381,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
             </button>
         {done && visit.includes(t.id) && <button type="button" class="text-link ct-find-undo" data-find-undo="" aria-label={T('find.undoAdding', { name: nameOf(t) })} onClick={() => { store.removeMember(t.id); setVisit((v) => v.filter((x) => x !== t.id)); }}>{T('find.undo')}</button>}
         <div class="ct-row-why">
-          {hole && fits?.(t) && y && <span class="ct-find-fills" data-find-fills="">{TICK} {T('find.fillsThis', { what: laneWords(hole), years: say(yearsLine(y.from, y.to)) })}</span>}
+          {/* BC26, C4: the fit reason, one line, in the target's terms (core fillReasonLine; a thin job's "a backup"). */}
+          {reasonOf && <span class="ct-find-fills" data-find-fills="">{TICK} {reasonOf}</span>}
           {why && <span class="ct-find-why" data-find-why="" data-lang={why.lang} data-kind={why.kind}>{why.text}</span>}
-          <span class="ct-find-meta" data-find-meta="">{metaWords(t, hole?.kind === 'job' ? hole.job ?? null : filters.jobs?.length === 1 ? filters.jobs[0] : null, v?.level === 'fits' && after.length && n === after.length ? after[n - 1].split('-')[1] : null)}</span>
+          <span class="ct-find-meta" data-find-meta="">{metaWords(t, hole?.kind === 'job' ? hole.job ?? null : filters.jobs?.length === 1 ? filters.jobs[0] : null, v?.level === 'fits' && after.length && n === after.length ? after[n - 1].split('-')[1] : null, !reasonOf)}</span>
           <FitLine v={shownV} />
           {later && <span class="ct-line" data-find-inrange="">{T('find.inRangeBy', { period: later })}</span>}
           <Marks t={t} lines={lines} country={scene.country} />
@@ -602,7 +604,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
               <h3 id="ct-find-holes">{P('find.holesHead', open.length)}</h3>
               <ul class="ct-rows">
                 {(allHoles ? open : open.slice(0, HOLES_FIRST)).map((h) => {
-                  const n = base.filter((t) => fills(h, t) && (!judged || verdicts?.get(t.id)?.level === 'fits')).length, u = uncheckedLine(h);
+                  const n = base.filter((t) => fills(h, t) && (!judged || (verdicts?.get(t.id)?.level === 'fits' && !store.warnedPlant(t)))).length, u = uncheckedLine(h);
                   return <li key={h.id}><button type="button" class="ct-find-holerow" data-find-hole={h.id} onClick={() => openFillers(h)}>{holeWords(h)}{u && ` · ${say(u)}`} <span class="ct-muted">{P('find.holePlants', n)}</span></button></li>;
                 })}
               </ul>

@@ -229,7 +229,10 @@ export async function engineLead(page) {
     };
   }, periodIds[periodIds.length - 1]);
   const open = s.holes.filter((h) => h.state === 'open'), thins = s.thins.filter((h) => h.state === 'open');
-  const lead = core.nextTarget(s.holes, s.untouched ? [] : s.thins, new Set(s.putOff));
+  // C5: the Next step's ranking reads whether plants that fit fill a hole (a cooler-months food hole leads then).
+  const pv = new Map(s.pv);
+  const hasFits = (h) => s.pool.some((t) => core.fills(h, t) && pv.get(t.id)?.level === 'fits' && !s.warned.includes(t.id));
+  const lead = core.nextTarget(s.holes, s.untouched ? [] : s.thins, new Set(s.putOff), hasFits);
   if (!lead) return { lead: null, open, thins, untouched: s.untouched };
   const f = core.fillers(lead.target, s.pool, new Map(s.pv), new Map(s.holds), new Set(s.warned), s.members, open);
   const sci = (list) => list.map((t) => t.canonical_name);
@@ -239,6 +242,8 @@ export async function engineLead(page) {
     fits: sci(f.fits), look: sci(f.look), outside: sci(f.outside), unknown: sci(f.unknown),
     best: best.map((id) => f.fits.find((t) => t.id === id).canonical_name),
     all: f.fits.length + f.look.length + f.outside.length + f.unknown.length,
+    // BC3: "See all N plants" counts what Find lists first: the fits, the second looks, the unchecked.
+    seeAll: f.fits.length + f.look.length + f.unknown.length,
   };
 }
 // The text of the Next step's card, one line (its heading "Next step" opens it), or ''.
