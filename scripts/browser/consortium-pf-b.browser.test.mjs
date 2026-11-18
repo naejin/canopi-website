@@ -281,7 +281,14 @@ test('PFB6 (pf-b Many and ManyDesk Jobs at 200): "How many of your plants do eac
     // M25 (board Many): the hole line goes on with what the lists hold for it: "…; no plant on your lists fits here and does this then; 5 do it but are outside their climate range."
     const lines = await page.$$eval('.ct-job-open:not([hidden]) .ct-job-thin', (ps) => ps.map((p) => p.textContent.replace(/\s+/g, ' ').trim()));
     assert.ok(lines.length > 0, 'the open row says its holes');
-    for (const l of lines) assert.match(l, /: a hole, number \d+ of \d+( · [^;]+?)?(([;·] )(no plant on your lists fits here and does this then|\d+ do(es)? it but (is|are) outside (its|their) climate range)(; \d+ do(es)? it but (is|are) outside (its|their) climate range)?\.)?$/, `M25: the hole line's clauses (${l})`);
+    // h2 R5: with no fit, the Next step's clause order: "no plant … fits" only when none is still to be
+    // checked (unknown is never a "no"), then "N need a second look", "N on your lists not checked",
+    // then the outside ones.
+    const CLAUSE = '(?:no plant on your lists fits here and does this then|\\d+ needs? a second look|\\d+ on your lists not checked|\\d+ do(?:es)? it but (?:is|are) outside (?:its|their) climate range)';
+    for (const l of lines) {
+      assert.match(l, new RegExp(`: a hole, number \\d+ of \\d+( · [^;]+?)?([;·] ${CLAUSE}(; ${CLAUSE})*\\.)?$`), `M25: the hole line's clauses (${l})`);
+      if (/on your lists not checked/.test(l)) assert.doesNotMatch(l, /no plant on your lists fits here/, `h2 R5: plants still to be checked are never said as "no plant fits" (${l})`);
+    }
   }
   const n = uncheckedOf(f).size;
   if (n) assert.ok(jobs.includes(`A plant counts under every job it does. Jobs not checked yet: ${plants(n)}, counted under no job but “Feeds you”`), `board: "Jobs not checked yet: ${plants(n)}"`);
