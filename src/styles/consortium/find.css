@@ -188,3 +188,43 @@
 }
 /* One clear button in the field: Find's own (B15), not the browser's. */
 .ct .ct-find [data-find-search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+
+/* The Next step's rows (views/palette/NextStep.tsx, pf-a v14): each group a kit MoreList, one row a
+   .ct-filler laid out as the old list rows; "Other holes" its own titled block under the card. */
+.ct .ct-fillers .ct-more-items { display: grid; gap: 0; }
+.ct .ct-fillers .ct-filler { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-width: 0; }
+.ct .ct-fillers [data-filler-meta] { flex: 1 0 100%; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-other-holes { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border); }
+.ct .ct-other-holes h4 { margin: 0; font-size: 15px; font-weight: 600; }
+.ct .ct-other-holes .ct-more-items > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 6px 0; }
+.ct .ct-next-bulk { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.ct .ct-next-bulk .button { white-space: normal; max-width: 100%; padding-block: 8px; text-align: center; }
+
+/* Find's start: the palette's holes, one row-button each with its count (board Find). */
+.ct .ct-find-holes { display: grid; gap: 6px; }
+.ct .ct-find-holes h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.ct .ct-find-holerow { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 12px; width: 100%; min-height: 44px; padding: 8px 4px; border: 0; border-top: 1px solid var(--border); background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ct .ct-find-holerow:hover { background: var(--surface-muted, var(--surface)); }
+.ct .ct-find-undo { min-height: 44px; }
+
+/* Find beside the chart at 960 px and wider (board DeskStates, Q5; views/Sheets.tsx FindPanel): a
+   non-modal dialog in the palette grid's right column, the Next step below it while it is open. */
+.ct dialog.ct-sheet.ct-find-panel { position: static; display: block; margin: 0; padding: 0; width: auto; max-width: none; height: auto; max-height: none; overflow: visible; box-shadow: none; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: inherit; min-width: 0; }
+.ct dialog.ct-sheet.ct-find-panel .ct-sheet-inner { display: flex; flex-direction: column; height: auto; }
+.ct dialog.ct-sheet.ct-find-panel .ct-sheet-body { overflow: visible; }
+@media (min-width: 960px) {
+  /* Board DeskStates: Find a panel beside the picture (not a modal), wide enough for FindDesk's filter
+     column; the pictures keep the left column, where the bottom-left message sits, never over the panel. */
+  .ct .ct-palette-body:has(> dialog.ct-find-panel) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+  .ct .ct-palette-body > dialog.ct-find-panel { grid-column: 2; grid-row: 1; }
+  .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-next { grid-column: 2; grid-row: 2; }
+  .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-palette-pictures { grid-column: 1; grid-row: 1 / span 2; }
+}
+
+/* The empty palette's ways in (board Empty): one row-button each, its label over what it does. */
+.ct .ct-next-ways { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-next-way { display: grid; gap: 2px; width: 100%; min-height: 44px; padding: 10px 4px; border: 0; border-top: 1px solid var(--border); background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ct .ct-next-ways li:last-child .ct-next-way { border-bottom: 1px solid var(--border); }
+.ct .ct-next-way-label { font-weight: 600; color: var(--accent-strong, var(--accent)); }
+.ct .ct-next-way-sub { font-size: 14px; color: var(--text-secondary); }
+.ct .ct-next-room { margin: 0; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-muted, var(--surface)); border: 1px solid var(--border); font-size: 14px; }

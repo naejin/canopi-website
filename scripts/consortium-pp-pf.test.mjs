@@ -8,7 +8,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { failing } from './expect-fail.mjs';
 
 const line = await import('../src/lib/consortium/verdict-line.ts');
 const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
@@ -17,7 +16,8 @@ const say = (l) => {
   if (!l) return null;
   let w = en[l.key] ?? `<${l.key}>`;
   if (/^\s*(one|other):/.test(w)) w = (w.split('|').map((s) => s.trim()).find((s) => s.startsWith(l.count === 1 ? 'one:' : 'other:')) ?? w).replace(/^(one|other):\s*/, '').replace(/#/g, String(l.count));
-  return w.replace(/\{(\w+)\}/g, (_, k) => String(l.vars?.[k] ?? `{${k}}`));
+  // {len} in metres, as format.ts writes it in English ("20 m").
+  return w.replace(/\{(\w+)\}/g, (_, k) => (k === 'len' && l.vars?.[k] !== undefined ? `${l.vars[k]} m` : String(l.vars?.[k] ?? `{${k}}`)));
 };
 
 test('PP-C-u18 (pf-a hole titles U5, owner Q1 one form): a hole title is one statement, the light level first ("Full sun: nobody in the first 3 years")', () => {
@@ -26,7 +26,7 @@ test('PP-C-u18 (pf-a hole titles U5, owner Q1 one form): a hole title is one sta
   assert.equal(say({ ...t, vars: { lane: say(t.parts.lane), span: say(t.parts.span) } }), 'Full sun: nobody in the first 3 years', 'U5: one statement');
 });
 
-failing('PP-C-u21 (pf-a room note #5, Balcony board): a plant taller than the room carries "Grows to 20 m: keep it pruned, or pick a smaller plant" in pots, nothing when the height is unknown', { owner: 'pf-a', reason: /roomNote\(.*\): not written yet \(PP-C pf\)/ }, () => {
+test('PP-C-u21 (pf-a room note #5, Balcony board): a plant taller than the room carries "Grows to 20 m: keep it pruned, or pick a smaller plant" in pots, nothing when the height is unknown', () => {
   assert.equal(say(line.roomNote(20, 'pots')), 'Grows to 20 m: keep it pruned, or pick a smaller plant');
   assert.equal(line.roomNote(null, 'pots'), null);
   assert.equal(line.roomNote(2, 'field'), null);

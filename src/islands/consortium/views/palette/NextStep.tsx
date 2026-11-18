@@ -1,59 +1,100 @@
 /** @jsxImportSource preact */
-// The Next step (boards Main, Palette, HoleOpen, Empty): the first open hole in words and years, the
-// three plants that fill it best (holes filled, then holding to the latest period, then name), each
-// with its fit line, its warnings in words and Add, then the fillers that need a second look under
-// their own heading, "See all" opening Find for the hole (store.openFind({job, hole, fits}); P1),
-// and "Not now" (this page only). Then the other holes, each with Find. A hole a plant
-// just added filled is gone from the list, so it is never the next step. An empty palette shows the
-// Empty board's ways in (Paste, Suggest), not a hole.
-// Outside-range fillers are grouped behind "Show N outside their climate range" and added in one tap
-// like any other; a warned plant is never dropped (inform, don't block; owner 2026-11-14).
+// The Next step (boards Main, Palette, AddMany, Many, HoleOpen, Empty; v14 spec pf-a): one card for the
+// engine's next target (core holes.ts nextTarget: the first open hole not put off, else the first thin
+// spot), its position ("hole 1 of 7 · then 5 thin spots", "thin spot 1 of 5 · you want 2 · Change"),
+// its title in one form, the plants that fill it best first (core fillers: fits, Mildly toxic among
+// them, R1), then "Needs a second look (n)", then the outside ones folded behind "Show N outside their
+// climate range"; each group a MoreList (the size rule, A14). The bulk row (A1, whenever a plant fits)
+// adds what core bestToAdd takes ("Add the 2 that fit best") or every fit; its toast says what the add
+// did through core holeChange/thinChange words. "See all N plants" opens Find for the hole; "Not now"
+// puts it off (this page only). Then the other holes, each with Find. No plant fits: "No plant on your
+// lists fits your place and does this then.", "See the N outside their range", "Not now", no bulk
+// button (F17). An untouched suggestion shows its thin spots as a count only (A19). A warned plant is
+// never dropped (inform, don't block; owner 2026-11-14).
 import type { ComponentChildren } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
-import type { Hole, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fillers, fills, nextStep, periodIds } from '../../../../lib/consortium/index.ts';
+import type { Hole, JobId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import { bestToAdd, fillers, fills, holeChangeLines, jobsOf, nextTarget, periodIds, roomNote, thinKey, thinTitleLine, yearsLine, yearsOf, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusNextStep, focusSoon } from '../../focus.ts';
+import { formatLength } from '../../format.ts';
 import { requestSuggest } from '../../state/suggest-wait.ts';
-import { nameOf, P, T } from '../../strings.ts';
-import { FitLine, holeWords } from '../kit/fit.tsx';
+import { nameOf, P, pageLang, T } from '../../strings.ts';
+import { FitLine, holeWords, midSentence, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
-import { FindEntry } from '../Sheets.tsx';
+import { MoreList } from '../kit/more.tsx';
 
-// What Find opens for (board FillHole): the hole itself (its plants, its words as the title) and its
-// job.
+// What Find opens for (board FillHole): the hole or thin spot itself (its plants, its words as the
+// title) and its job.
 export const openFillers = (h: Hole): void => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
 
-const BEST = 3;
-// "Show N outside" leaves as it shows the plants: the first plant it shows takes the focus (its Add),
-// else the Next step's title (pre-push fix 6, D; focus.ts's net covers the rest).
-const focusShown = (i: number): void => focusSoon(() => document.querySelectorAll<HTMLElement>('.ct-next [data-outside] li button')[i] ?? document.getElementById('ct-next-t'));
+// A row's words, shared with Find's rows (one owner): its jobs, "Also …" after the job it is listed
+// for (board FillHole, T15), and its size ("1 m wide, 2.5 m tall").
+export function rowRoles(jobs: readonly JobId[], also: boolean): string {
+  const list = jobs.map((j, i) => (i > 0 || also ? midSentence(T(`job.${j}`)) : T(`job.${j}`))).join(', ');
+  return also && list ? T('find.also', { jobs: list }) : list;
+}
+export function rowSize(t: Taxon): string {
+  const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
+  const W = w === null ? '' : formatLength(w, lang), H = h === null ? '' : formatLength(h, lang);
+  return w !== null && h !== null ? T('find.sizeBoth', { w: W, h: H }) : h !== null ? T('find.sizeTall', { h: H }) : w !== null ? T('find.sizeWide', { w: W }) : T('find.sizeNone');
+}
+
+// A row's years in the boards' words ("first year", "month 3 to year 3", "year 1 to year 25", "from
+// year 15 on"): core yearsLine for the first years and months, the row's own form after.
+export function rowSpan(t: Taxon): string | null {
+  const y = yearsOf(t);
+  if (!y) return null;
+  if (y.from >= 1 && y.to === null) return T('palette.next.spanFrom', { from: y.from });
+  if (y.from >= 1 && y.to !== null) return T('palette.next.spanBetween', { from: y.from, to: y.to });
+  return midSentence(say(yearsLine(y.from, y.to)));
+}
+
+// The toast of an add from the Next step: what joined, then what it did to the holes and, on a thin
+// spot, to its job (holeChangeLines; an add opens no hole, so "No new hole." is left out). A row's Add:
+// "Pineapple added. Covers the ground: nobody after year 15."; the bulk row (many): "2 plants added: Pinto
+// peanut, Pineapple. Covers the ground: nobody after year 25. 7 holes left." (board AddMany).
+export function addedWords(names: readonly string[], c: HoleChange, thins: ThinChange, job: JobId | null, many = names.length > 1): string {
+  const head = many ? P('palette.next.addedMany', names.length, { names: names.join(', ') }) : T('palette.added', { name: names[0] });
+  const lines = holeChangeLines(c, { left: many, thins, jobs: job ? [job] : [] }).filter((l) => !l.key.endsWith('.holesNoNew'));
+  return [head, ...lines.map(say)].join(' ');
+}
+
+// The double tap (F19): a second tap within the window adds nothing, whatever the card shows by then.
+const TAP_MS = 800;
+let lastBulk = 0;
+
 const NONE: readonly Taxon[] = [];
+const isOpen = (h: Hole) => h.state === 'open';
 
 function Card({ children, hole }: { children: ComponentChildren; hole?: string }) {
   return <section class="ct-next" aria-labelledby="ct-next-t" data-hole={hole}>{children}</section>;
 }
-const Title = ({ count }: { count?: string }) => <h3 id="ct-next-t" tabIndex={-1}>{T('palette.nextTitle')}{count && <> <span class="ct-next-count">{count}</span></>}</h3>;
+// The room card (board Balcony): with "Balcony or pots", what room does and does not do, first in the
+// card; never a filter (a plant taller than 6 m carries its note on its row).
+const RoomCard = () => (store.room.value === 'pots' ? <p class="ct-next-room" data-next-room="">{T('palette.next.roomPots')}</p> : null);
+const Title = ({ count }: { count?: ComponentChildren }) => <h3 id="ct-next-t" tabIndex={-1}>{T('palette.nextTitle')}{count && <> <span class="ct-next-count" data-next-position="">{count}</span></>}</h3>;
 
 export function NextStep({ holes, members }: { holes: readonly Hole[]; members: readonly Taxon[] }) {
   const skip = store.notNow.value;
-  const open = useMemo(() => holes.filter((h) => h.state === 'open'), [holes]);
-  const next = nextStep(holes, skip);
-  // The whole list, outside-range plants included: grouped behind "Show N outside their climate
-  // range", visible, never hidden, and one tap adds them (inform, don't block; owner 2026-11-14).
-  // Nothing from a borrowed list not fitted to a place (store.offerPool; the head says why).
+  const untouched = store.untouchedSuggestion.value;
+  const thins = store.thinSpots.value;
+  const goal = store.paletteGoals.value.plantsPerJob;
+  const open = useMemo(() => holes.filter(isOpen), [holes]);
+  const openThins = useMemo(() => thins.filter(isOpen), [thins]);
+  // A19: an untouched suggestion is never offered a thin spot, only its count.
+  const lead = nextTarget(holes, untouched ? [] : thins, skip);
+  const next = lead?.target ?? null;
+  // The whole list, outside-range plants included (folded, never hidden); nothing from a borrowed list
+  // not fitted to a place (store.offerPool; the head says why).
   const pool = store.offerPool.value ?? NONE;
-  const [showOutside, setShowOutside] = useState(false);
+  const [showOutside, setShowOutside] = useState<string | null>(null);
   const pv = store.poolVerdicts.value;
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
-  // The one warned rule (store.warnedPlant, as in Find): a site misfit, a serious conflict, invasive in
-  // the chosen country, toxic; listed as needing a second look, never dropped. Re-run when the flags'
-  // inputs change.
   const flagCtx = store.flagContext.value;
   const found = useMemo(() => {
     if (!next) return null;
-    // Holding to the latest period and the warnings, for the plants that fill this hole only.
     const ids = new Set(members.map((t) => t.id));
     const cands = pool.filter((t) => !ids.has(t.id) && fills(next, t));
     const last = periodIds[periodIds.length - 1];
@@ -65,83 +106,129 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   // Empty: no member at all; plants of a guest list still loading or that failed are members too, only
   // not read yet (review r2 empty-1), so the branches after this one say so.
   if (!store.members.value.length) {
+    // Empty (board Empty): the three ways in as rows, each with what it does, then when the pictures
+    // come (the place's count line is a hand-off: PFA4/PFA5).
+    const row = (id: string, label: string, sub: string, run: () => void, entry?: string) => (
+      <li><button type="button" class="ct-next-way" data-find-entry={entry} aria-label={label} aria-describedby={`ct-way-${id}`} onClick={run}><span class="ct-next-way-label">{label}</span><span class="ct-next-way-sub" id={`ct-way-${id}`}>{sub}</span></button></li>
+    );
     return (
-      <Card>
-        <Title />
-        <p>{T('palette.empty')}</p>
-        <FindEntry where="empty" />
-        <p class="ct-next-actions">
-          <button type="button" class="button button-primary" onClick={() => requestSuggest()}>{T('start.suggest')}</button>
-          <button type="button" class="button button-secondary" onClick={() => store.openSheet('paste')}>{T('start.paste')}</button>
-        </p>
-      </Card>
+      <section class="ct-next" aria-labelledby="ct-next-t" data-empty="">
+        <h3 id="ct-next-t" tabIndex={-1}>{T('palette.next.emptyTitle')}</h3>
+        <p>{T('palette.next.emptyLine')}</p>
+        <ul class="ct-next-ways">
+          {row('find', T('find.findPlants'), T('palette.next.emptyFindSub'), () => store.openFind(), 'empty')}
+          {row('paste', T('start.paste'), T('palette.next.emptyPasteSub'), () => store.openSheet('paste'))}
+          {row('small', T('palette.next.emptySmall'), T('palette.next.emptySmallSub'), () => requestSuggest())}
+        </ul>
+        <p class="ct-muted ct-small">{T('palette.next.emptyPictures')}</p>
+      </section>
     );
   }
   // A guest list that could not be read: its plants may fill a hole, so no hole is named (PP-B21).
   if (store.failedMembers.value.length) return <Card><Title /><p class="status-line">{T('palette.holesListMissing')}</p></Card>;
+  // F18 (first: the check waits, whatever else loads): until the fit check is here no hole is named and no bulk add offered (never named, then flipped).
+  if (!store.verdictsReady.value || (!store.memberVerdicts.value && !store.verdictFailed.value)) return <Card><Title /><p class="status-line">{T('palette.next.checking')}</p></Card>;
   if (store.guestsPending.value.length || store.missingMembers.value.loading.length) {
     return <Card><Title /><p class="status-line">{T('palette.holesPending')}</p></Card>;
   }
-  if (!next || !found) {
+  if (!next || !found || !lead) {
     return (
       <Card>
-        <Title />
+        <Title count={openThins.length ? P('palette.next.thinCount', openThins.length) : undefined} />
+        <RoomCard />
         <p>{T('palette.noHoles')}</p>
         {skip.size > 0 && <p><button type="button" class="button button-secondary" onClick={() => { store.notNow.value = new Set(); }}>{T('palette.showPutOff')}</button></p>}
       </Card>
     );
   }
-  const best = [...found.fits, ...found.unknown].slice(0, BEST);
-  const look = found.look.slice(0, BEST);
+  const thin = !!next.thin;
+  const fits = [...found.fits, ...found.unknown];
   const all = found.fits.length + found.look.length + found.outside.length + found.unknown.length;
   const others = open.filter((h) => h.id !== next.id && !skip.has(h.id));
-  const filler = (t: Taxon) => <Filler key={t.id} t={t} v={pv?.get(t.id)} warned={found.warned.has(t.id)} />;
+  const best = bestToAdd(next, found, store.paletteGoals.value);
+  const allFits = found.fits.map((t) => t.id);
+  const size = members.length;
+  const lines = (t: Taxon) => flagLines(t, store.flagsOfPlant(t), store.flagScene.value);
+  const flagged = (ids: readonly PlantId[]) => ids.filter((id) => { const t = found.fits.find((x) => x.id === id); return !!t && (found.warned.has(id) || lines(t).length > 0); });
+  const bulk = (ids: PlantId[], e: MouseEvent) => {
+    const now = Date.now();
+    if (e.detail > 1 || now - lastBulk < TAP_MS) return;
+    lastBulk = now;
+    const names = ids.map((id) => found.fits.find((t) => t.id === id)).filter((t): t is Taxon => !!t).map(nameOf);
+    store.addMembers(ids, {}, { warned: flagged(ids), text: (r) => addedWords(names, r.holeChange, r.thinChange, thin ? next.job ?? null : null, true) });
+    focusNextStep();
+  };
+  const putOff = () => { store.notNow.value = new Set([...skip, thin && next.job ? thinKey(next.job) : next.id]); };
+  const outsideOpen = showOutside === next.id;
+  const seeOutside = () => { setShowOutside(next.id); focusSoon(() => document.querySelector<HTMLElement>('.ct-next [data-outside] li button') ?? document.getElementById('ct-next-t')); };
+  const filler = (t: Taxon) => <Filler t={t} v={pv?.get(t.id)} warned={found.warned.has(t.id)} hole={next} />;
+  const position = thin
+    ? <>{T('palette.next.thinOf', { i: lead.index, n: lead.of })} · {T('palette.next.youWant', { n: goal })} · <button type="button" class="text-link" data-next-change="" onClick={() => focusSoon(() => document.getElementById('ct-plants-per-job'))}>{T('palette.next.change')}</button></>
+    : `${T('palette.holeOf', { i: lead.index, n: lead.of })} · ${openThins.length ? P(untouched ? 'palette.next.thinCount' : 'palette.next.thenThin', openThins.length) : T('palette.next.noThin')}`;
+  const warnedBest = flagged(best).length;
   return (
     <Card hole={next.id}>
-      <Title count={T('palette.holeOf', { i: open.indexOf(next) + 1, n: open.length })} />
-      <p class="ct-next-hole">{holeWords(next)}</p>
-      {best.length > 0 && <ul class="ct-fillers">{best.map(filler)}</ul>}
-      {look.length > 0 && (
+      <Title count={position} />
+      <RoomCard />
+      <h4 class="ct-next-hole" data-next-title="">{thin ? say(thinTitleLine(next)) : holeWords(next)}</h4>
+      {fits.length > 0 && <MoreList items={fits} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" />}
+      {!found.fits.length && <p data-next-nofit="">{T('palette.next.noFit')}</p>}
+      {found.look.length > 0 && (
         <>
           <h4 class="ct-fillers-head">{WARN} {T('palette.secondLook', { n: found.look.length })}</h4>
-          <ul class="ct-fillers" data-look="">{look.map(filler)}</ul>
+          <MoreList items={found.look} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" />
         </>
       )}
-      {!best.length && !look.length && <p>{T(found.outside.length ? 'palette.noFittingFillers' : 'palette.noFillers')}</p>}
-      {found.outside.length > 0 && (showOutside ? (
+      {found.outside.length > 0 && outsideOpen && <div data-outside=""><MoreList items={found.outside} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" /></div>}
+      {found.fits.length > 0 && (
         <>
-          <ul class="ct-fillers" data-outside="">{found.outside.map(filler)}</ul>
+          <p class="ct-next-bulk" data-next-bulk="">
+            <button type="button" class="button button-primary" onClick={(e) => bulk(best, e)}>{P('palette.next.addBest', best.length)}</button>
+            <button type="button" class="button button-secondary" onClick={(e) => bulk(allFits, e)}>{P(thin ? 'palette.next.addAllThin' : 'palette.next.addAllHole', allFits.length)}</button>
+          </p>
+          {warnedBest > 0 && <p class="ct-muted ct-small" data-next-bulk-warn="">{P('palette.next.bulkWarn', warnedBest)}</p>}
         </>
-      ) : <p><button type="button" class="button button-secondary" onClick={() => { setShowOutside(true); focusShown(0); }}>{P('palette.showOutside', found.outside.length)}</button></p>)}
+      )}
+      {found.fits.length > 0 && found.outside.length > 0 && !outsideOpen && <p class="ct-next-bulk"><button type="button" class="button button-secondary" onClick={seeOutside}>{P('palette.showOutside', found.outside.length)}</button></p>}
       <p class="ct-next-actions">
-        <button type="button" class="button button-secondary" onClick={() => openFillers(next)}>{P('palette.seeAll', all)}</button>
-        <button type="button" class="button button-secondary" onClick={() => { store.notNow.value = new Set([...skip, next.id]); }}>{T('palette.notNow')}</button>
+        {found.fits.length === 0 && found.outside.length > 0 && !outsideOpen && <button type="button" class="button button-secondary" onClick={seeOutside}>{P('palette.next.seeOutside', found.outside.length)}</button>}
+        {thin
+          ? <button type="button" class="button button-secondary" onClick={() => openFillers(next)}>{T('palette.next.findBackup')}</button>
+          : (found.fits.length > 0 || found.look.length > 0) && <button type="button" class="button button-secondary" data-next-seeall="" onClick={() => openFillers(next)}>{P('palette.seeAll', all)}</button>}
+        <button type="button" class="button button-secondary" onClick={putOff}>{T('palette.notNow')}</button>
       </p>
       {others.length > 0 && (
-        <details class="ct-other-holes">
-          <summary>{P('palette.otherHoles', others.length)}</summary>
-          <ul>{others.map((h) => <li key={h.id}>{holeWords(h)} <button type="button" class="button button-secondary" onClick={() => openFillers(h)}>{T('palette.find')}</button></li>)}</ul>
-        </details>
+        <section class="ct-other-holes" aria-labelledby="ct-other-holes-t">
+          <h4 id="ct-other-holes-t">{T('palette.next.otherHoles')} <span class="ct-next-count">{others.length}</span></h4>
+          <MoreList items={others} keyOf={(h) => h.id} paletteSize={size}
+            render={(h) => <>{holeWords(h)} <button type="button" class="button button-secondary" onClick={() => openFillers(h)}>{T('palette.find')}</button></>} />
+        </section>
       )}
     </Card>
   );
 }
 
-// One plant that fills the hole: its name, its fit in words with an icon, its warnings in words with
-// the warning icon, and Add (one tap, nothing asks; the toast names it, with Undo). Its row leaves as
-// it joins, so the focus goes to the Next step's title (review r1 conformance-3).
-function Filler({ t, v, warned }: { t: Taxon; v: PlantVerdict | undefined; warned: boolean }) {
+// One plant that fills the target: its name, its fit in words with an icon, what else it does, its
+// years and size ("Also makes mulch · first year · 20 cm wide, 90 cm tall"), its warnings in words
+// with the warning icon, and Add (one tap, nothing asks; the toast names it and what it did to the
+// holes, with Undo). Its row leaves as it joins, so the focus goes to the Next step's title.
+function Filler({ t, v, warned, hole }: { t: Taxon; v: PlantVerdict | undefined; warned: boolean; hole: Hole }) {
   const lines = flagLines(t, store.flagsOfPlant(t), store.flagScene.value);
   const add = () => {
-    store.addMembers([t.id], {}, { warned: warned || lines.length ? [t.id] : [], text: T('palette.added', { name: nameOf(t) }) });
+    store.addMembers([t.id], {}, { warned: warned || lines.length ? [t.id] : [], text: (r) => addedWords([nameOf(t)], r.holeChange, r.thinChange, hole.thin ? hole.job ?? null : null) });
     focusNextStep();
   };
+  const own = jobsOf(t), drop = hole.job && own.includes(hole.job) ? hole.job : null;
+  const meta = [rowRoles(own.filter((j) => j !== drop), !!drop), rowSpan(t), rowSize(t)].filter(Boolean).join(' · ');
+  const room = roomNote(t.traits.height_m?.max ?? null, store.room.value);
   return (
-    <li data-plant-id={t.id}>
+    <div class="ct-filler" data-filler-id={t.id}>
       <span class="ct-filler-name">{nameOf(t)} <i lang="la">{t.canonical_name}</i></span>
       <FitLine v={v} />
+      <span class="ct-line" data-filler-meta="">{meta}</span>
+      {room && <span class="ct-line" data-room-note="">{say(room)}</span>}
       {lines.length > 0 && <span class="ct-line ct-flag-line">{WARN} {lines.map((l) => l.text).join(' · ')}</span>}
       <button type="button" class="button button-primary" aria-label={T('palette.addNamed', { name: nameOf(t) })} onClick={add}>{T('palette.add')}</button>
-    </li>
+    </div>
   );
 }

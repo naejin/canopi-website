@@ -28,8 +28,9 @@ import { closeSheet, taxonOf, type Sheet as Opened, type SheetKind } from '../st
 import type { PlantId } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
 import { LiveLine, SheetDialog, SheetFrame, SheetWaiting, type Frame, type FrameProps } from './kit/sheet.tsx';
+import { CLOSE } from './kit/icons.tsx';
 import { nameOf } from './kit/names.ts';
-import { Toast } from './Toast.tsx';
+import { deskFind, Toast } from './Toast.tsx';
 import { later } from './lazy.tsx';
 import { focusView } from '../focus.ts';
 import { PlaceSheet } from './place/Place.tsx';
@@ -113,6 +114,7 @@ function Router() {
   // Keyed by opening: every sheet opened (details → Swap, one plant → another) mounts a fresh dialog
   // whose close listener knows its own sheet.
   if (!SHEETS.includes(s.kind) || (WITH_PLANT.includes(s.kind) && !s.id)) return null; // share and download are not sheets
+  if (deskFind.value) return null; // Find is the panel beside the chart (FindPanel)
   return <Opening key={`${s.kind}:${s.n}`} s={s} />;
 }
 
@@ -134,6 +136,32 @@ export function FindEntry({ where }: { where: FindEntryPlace }) {
   }
   if (where === 'head') return <button type="button" class="button button-secondary ct-find-head" data-find-entry="head" onClick={open}>{T('find.title')}</button>;
   return <p class="ct-find-empty"><button type="button" class="button button-primary" data-find-entry="empty" onClick={open}>{T('find.findPlants')}</button></p>;
+}
+
+// Find at 960 px and wider (board DeskStates, FindDesk; Q5): beside the chart, not a modal: a
+// non-modal <dialog open> (the page stays usable; the same sheet words, Close and Done, and the same
+// `dialog.ct-find` scope as the phone's sheet), placed in the palette grid by
+// views/palette/FindPanelSlot.tsx and find.css. Escape closes it from inside; the focus goes back to
+// the opener (the effect above). Its messages show in the page, bottom left (Toast.tsx deskFind, Q4).
+function PanelFrame({ titleId, head, foot, children, class: cls = '' }: FrameProps) {
+  return (
+    <dialog open class={`ct-sheet ct-find-panel ${cls}`} aria-labelledby={titleId} data-find-panel=""
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeSheet(); } }}>
+      <div class="ct-sheet-inner" ref={(el) => { if (el && !el.contains(document.activeElement)) el.querySelector<HTMLElement>('[data-autofocus]')?.focus(); }}>
+        <div class="ct-sheet-head">
+          <div class="ct-sheet-head-main">{head}</div>
+          <button type="button" class="ct-icon-button" aria-label={T('close')} onClick={closeSheet}>{CLOSE}</button>
+        </div>
+        <div class="ct-sheet-body">{children}</div>
+        <div class="ct-sheet-foot">{foot}</div>
+      </div>
+    </dialog>
+  );
+}
+export function FindPanel() {
+  const s = store.sheet.value;
+  if (!s || !deskFind.value || store.load.value.status !== 'ready') return null;
+  return <find.View key={s.n} Frame={PanelFrame} />;
 }
 
 export function Sheets() {

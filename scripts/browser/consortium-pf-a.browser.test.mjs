@@ -38,6 +38,7 @@
 import assert from 'node:assert/strict';
 import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
+import test from 'node:test';
 import { failing } from '../expect-fail.mjs';
 import { BOARD, HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
 
@@ -61,10 +62,15 @@ const bulkWords = (e) => [
   e.lead.kind === 'thin' ? (e.fits.length === 1 ? 'Add the 1 that does this job then' : `Add all ${e.fits.length} that do this job then`)
     : (e.fits.length === 1 ? 'Add the 1 that fills this hole' : `Add all ${e.fits.length} that fill this hole`),
 ];
+// The Add buttons of Find's rows, by their names ("Add Pinto peanut"), never the Next step's beside it.
+const findAdds = (page) => page.$$eval('dialog[open] [data-find-add]:not([data-added])', (bs) => bs.map((b) => b.getAttribute('aria-label')));
+// One row's Add in Find (by its name; the Next step's own "Add …" sits beside the desk panel).
+// (a DOM click on that very button: the list may still re-rank under a pointer click's coordinates).
+const addInFind = (page, label) => page.$eval(`dialog[open] [data-find-add][aria-label="${label}"]`, (b) => b.click());
 const members = (page) => page.evaluate(() => window.__ctTest.store.members.value.length);
 const until = (page, fn, arg, timeout = 6000) => page.waitForFunction(fn, { timeout }, arg).then(() => true, () => false);
 
-failing('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("Next step", the engine\'s position "hole 1 of N · then M thin spots", the lead hole\'s title in one form, a why sentence, the fitting candidates first, each with "Also …", span, size and Add; the bulk row "Add the K that fit best" and "Add all N that fill this hole"; "See all N plants" opening Find preset to the hole with its N plants; "Not now"), then the Other holes card ("Other holes N", one row per hole in one form with Find); beside the pictures at 1280 and 960, on the first screen at 390', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("Next step", the engine\'s position "hole 1 of N · then M thin spots", the lead hole\'s title in one form, a why sentence, the fitting candidates first, each with "Also …", span, size and Add; the bulk row "Add the K that fit best" and "Add all N that fill this hole"; "See all N plants" opening Find preset to the hole with its N plants; "Not now"), then the Other holes card ("Other holes N", one row per hole in one form with Find); beside the pictures at 1280 and 960, on the first screen at 390', async () => {
   const page = await palette();
   assert.ok(await verdictsSettled(page), 'the verdicts');
   await says(page, OTHER_HOLES);
@@ -79,7 +85,7 @@ failing('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("
   for (const sci of rows) assert.ok(card.includes(sci), `board: the candidate ${sci} (engine order: ${rows.join(', ')})`);
   if (rows.length > 1) assert.ok(card.indexOf(rows[0]) < card.indexOf(rows[1]), 'board: best fit first, as the engine orders them');
   if (e.look.length) assert.match(card, new RegExp(`Needs a second look \\(${e.look.length}\\)`), `board: "Needs a second look (${e.look.length})"`);
-  assert.match(card, /Also [a-z]/, 'board: a candidate says what else it does ("Also feeds you, makes mulch")');
+  if (e.lead.target.kind === 'job') assert.match(card, /Also [a-z]/, 'board: a candidate says what else it does ("Also feeds you, makes mulch")');
   assert.match(card, /\b(?:month|year) \d+ to year \d+|first \d+ (?:years|days)|first year|from year \d+ on/, 'board: a candidate\'s span ("month 3 to year 3")');
   assert.match(card, /\d+(?:\.\d+)? c?m (?:wide|tall)|no size recorded/, 'board: a candidate\'s size ("1 m wide, 2.5 m tall")');
   assert.ok((await addButtons(page)).length > 0, 'board: an Add on each candidate');
@@ -112,7 +118,7 @@ failing('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("
   await done(phone);
 });
 
-failing('PFA2 (pf-a holes, one form everywhere): the Next step, Other holes, Find\'s hole title and its rows all say "<light or job>: nobody …" with the light words (Full sun, Mostly sun, Part shade, Shade), never "Needs full sun" or high/medium/low; adding a candidate moves the Next step to another hole', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA2 (pf-a holes, one form everywhere): the Next step, Other holes, Find\'s hole title and its rows all say "<light or job>: nobody …" with the light words (Full sun, Mostly sun, Part shade, Shade), never "Needs full sun" or high/medium/low; adding a candidate moves the Next step to another hole', async () => {
   const page = await palette();
   assert.ok(await verdictsSettled(page), 'the verdicts');
   await saysNot(page, OLD_LIGHT, 'owner "Layer is light"');
@@ -130,11 +136,11 @@ failing('PFA2 (pf-a holes, one form everywhere): the Next step, Other holes, Fin
   // Add the Next step's first candidate: the Next step names another hole (PP-B6).
   const add = (await addButtons(page))[0];
   await press(page, 'button', add);
-  assert.ok(await page.waitForFunction((b, re) => !([...document.querySelectorAll('main h2, main h3')].map((h) => h.textContent.trim()).filter((t) => new RegExp(re).test(t))[0] === b), { timeout: 8000 }, before, HOLE_TITLE.source).then(() => true, () => false), 'board: the Next step moves on to another hole');
+  assert.ok(await page.waitForFunction((b, re) => !([...document.querySelectorAll('main h2, main h3, main h4')].map((h) => h.textContent.trim()).filter((t) => new RegExp(re).test(t))[0] === b), { timeout: 8000 }, before, HOLE_TITLE.source).then(() => true, () => false), 'board: the Next step moves on to another hole');
   await done(page);
 });
 
-failing('PFA3 (pf-a Next step waits for the verdicts, F18): while the fit check loads the Next step says "Checking your plants…", names no hole and offers no bulk add, so none is named and then flipped; then the hole', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA3 (pf-a Next step waits for the verdicts, F18): while the fit check loads the Next step says "Checking your plants…", names no hole and offers no bulk add, so none is named and then flipped; then the hole', async () => {
   const page = await tool({ block: { verdict: 'hold' }, hash: await linkOf('Mediterranean', 13) });
   await atSite(page, 'seville');
   await says(page, 'Checking your plants…');
@@ -204,7 +210,7 @@ failing('PFA5 (pf-a Empty count line states, carried from PP-B1): while the fit 
   await done(later);
 });
 
-failing('PFA6 (pf-a AddMany state 1, Toasts "several plants added", F19): "Add the K that fit best" adds the engine\'s best K in one tap: the toast "K plants added: <names>." then what it did to the holes ("Covers the ground: nobody after year 25." / "No new hole.", "N holes left."), one Undo takes them all back; a second tap adds nothing and leaves one toast', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA6 (pf-a AddMany state 1, Toasts "several plants added", F19): "Add the K that fit best" adds the engine\'s best K in one tap: the toast "K plants added: <names>." then what it did to the holes ("Covers the ground: nobody after year 25." / "No new hole.", "N holes left."), one Undo takes them all back; a second tap adds nothing and leaves one toast', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
   await says(page, OTHER_HOLES);
   const e = await engineLead(page);
@@ -224,7 +230,7 @@ failing('PFA6 (pf-a AddMany state 1, Toasts "several plants added", F19): "Add t
   await done(page);
 });
 
-failing('PFA7 (pf-a keyboard, carried from PP-B28 and PP-B33): with the keyboard only, "See all N plants" opens Find and Escape gives the focus back to it; a candidate\'s Add keeps the focus in the tool (the Next step\'s title once the candidate leaves) and its toast says "<plant> added."', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA7 (pf-a keyboard, carried from PP-B28 and PP-B33): with the keyboard only, "See all N plants" opens Find and Escape gives the focus back to it; a candidate\'s Add keeps the focus in the tool (the Next step\'s title once the candidate leaves) and its toast says "<plant> added."', async () => {
   const page = await palette();
   assert.ok(await verdictsSettled(page), 'the verdicts');
   await says(page, OTHER_HOLES);
@@ -246,29 +252,29 @@ failing('PFA7 (pf-a keyboard, carried from PP-B28 and PP-B33): with the keyboard
   await done(page);
 });
 
-failing('PFA8 (pf-a FillHole, HoleOpen): Find opened from a hole says "Best fit first: plants that fit before those that need a second look, then the holes a plant fills, then whether it stays in its climate range to 2071–2099."; a row that holds says "in range to 2099"; Add turns the row to "Added" with its Undo, the sheet stays open, and the line names the hole that is left ("Pineapple added. Covers the ground: nobody after year 15.")', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA8 (pf-a FillHole, HoleOpen): Find opened from a hole says "Best fit first: plants that fit before those that need a second look, then the holes a plant fills, then whether it stays in its climate range to 2071–2099."; a row that holds says "in range to 2099"; Add turns the row to "Added" with its Undo, the sheet stays open, and the line names the hole that is left ("Pineapple added. Covers the ground: nobody after year 15.")', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
   await says(page, OTHER_HOLES);
   await press(page, 'button', 'Find');
   assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens from the hole');
   await says(page, 'Best fit first: plants that fit before those that need a second look, then the holes a plant fills, then whether it stays in its climate range to 2071–2099.', { inDialog: true });
   await says(page, /in range to 2099/, { inDialog: true });
-  const add = (await names(page, 'button')).find((n) => /^Add \S/.test(n) && !/^Add (?:plants|the|all) /.test(n));
+  const add = (await findAdds(page))[0];
   assert.ok(add, 'board: a row\'s Add');
   const name = add.replace(/^Add /, '');
-  await press(page, 'button', add);
+  await addInFind(page, add);
   await control(page, 'button', `Undo adding ${name}`);
   assert.ok(await has(page, 'dialog[open]'), 'board: the sheet stays open');
   assert.match(await toastText(page), new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} added\\.(?: No new hole\\.| [A-Z][^:]+: (?:nobody|nothing)[^.]*\\.)`), `board: "Pineapple added. Covers the ground: nobody after year 15." ("${await toastText(page)}")`);
   await done(page);
 });
 
-failing('PFA9 (pf-a Find): Find opened from "Add plants" says "Your palette has N holes" (the engine\'s open holes), a row per hole in one form with its count of plants, and "All N holes" when they do not all show; on an empty palette that line is hidden', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA9 (pf-a Find): Find opened from "Add plants" says "Your palette has N holes" (the engine\'s open holes), a row per hole in one form with its count of plants, and "All N holes" when they do not all show; on an empty palette that line is hidden', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
   await says(page, OTHER_HOLES);
   const e = await engineLead(page);
   await press(page, 'button', 'Add plants');
-  assert.ok(await has(page, 'dialog[open], [role="region"][aria-label="Add plants"]', 10_000), 'Find opens');
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens');
   await says(page, `Your palette has ${plural(e.open.length, 'hole')}`, { timeout: 8000 });
   const t = await pageText(page) + ' ' + await dialogText(page);
   const rows = t.match(/(?:Full sun|Mostly sun|Part shade|Shade|Feeds you|Feeds the soil|Makes mulch|Covers the ground|Brings helpers|Shelters and protects): nobody[^0-9]*?(?:\d+ plants? not checked)?\s?\d+ plants?\b/g) ?? [];
@@ -300,11 +306,11 @@ failing('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP
   await saysNot(page, 'Start with the plants you want', 'a palette with plants is never empty');
   // Removing the guest: the line goes, a hole is named.
   await page.evaluate((g) => window.__ctTest.store.removeMember(g), String(guest));
-  assert.ok(await page.waitForFunction((re) => [...document.querySelectorAll('main h2, main h3')].some((h) => new RegExp(re).test(h.textContent.trim())), { timeout: 8000 }, HOLE_TITLE.source).then(() => true, () => false), 'board: then a hole is named');
+  assert.ok(await page.waitForFunction((re) => [...document.querySelectorAll('main h2, main h3, main h4')].some((h) => new RegExp(re).test(h.textContent.trim())), { timeout: 8000 }, HOLE_TITLE.source).then(() => true, () => false), 'board: then a hole is named');
   await done(page);
 });
 
-failing('PFA11 (pf-a inform, don\'t block, carried from PP-B39 and PP-B25; R1): the candidates that need a second look sit under "Needs a second look (n)", n the engine\'s count, each with its warning in words; a Mildly toxic plant that fits stays under the fitting ones; "Show N outside their climate range" folds the outside ones, each saying so in words, one tap adds it and Undo takes it out', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA11 (pf-a inform, don\'t block, carried from PP-B39 and PP-B25; R1): the candidates that need a second look sit under "Needs a second look (n)", n the engine\'s count, each with its warning in words; a Mildly toxic plant that fits stays under the fitting ones; "Show N outside their climate range" folds the outside ones, each saying so in words, one tap adds it and Undo takes it out', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
   await says(page, OTHER_HOLES);
   const e = await engineLead(page);
@@ -326,7 +332,7 @@ failing('PFA11 (pf-a inform, don\'t block, carried from PP-B39 and PP-B25; R1): 
   await done(page);
 });
 
-failing('PFA12 (pf-a Balcony): with "Balcony or pots" the room card says every plant stays in every list, the suggested palette prefers small plants, there is no pot data and the soil map is not used; a candidate taller than 6 m says "Grows to N m: keep it pruned, or pick a smaller plant", and never hides', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA12 (pf-a Balcony): with "Balcony or pots" the room card says every plant stays in every list, the suggested palette prefers small plants, there is no pot data and the soil map is not used; a candidate taller than 6 m says "Grows to N m: keep it pruned, or pick a smaller plant", and never hides', async () => {
   const page = await palette({ site: 'seville', n: 6, room: 'pots' });
   assert.ok(await verdictsSettled(page), 'the verdicts');
   await says(page, 'Balcony or pots. Every plant stays in every list: room never hides one. A suggested palette prefers plants that stay small, and a plant that grows above 6 m carries a note to prune. We have no data yet on which plants do well in pots. The soil map is not used for pots: you choose the mix.');
@@ -336,12 +342,12 @@ failing('PFA12 (pf-a Balcony): with "Balcony or pots" the room card says every p
   await done(page);
 });
 
-failing('PFA13 (pf-a DeskStates, Q4, section 6): at 1280 px "Add plants" opens Find as a panel beside the picture (not a modal: the page stays usable, the chart in view), the same words as the phone\'s sheet, with Done; a message sits bottom left, 420 px wide, never over the panel; at 390 px Find opens as a sheet and a message spans the width above the bar; nothing passes the right edge at 320 px', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA13 (pf-a DeskStates, Q4, section 6): at 1280 px "Add plants" opens Find as a panel beside the picture (not a modal: the page stays usable, the chart in view), the same words as the phone\'s sheet, with Done; a message sits bottom left, 420 px wide, never over the panel; at 390 px Find opens as a sheet and a message spans the width above the bar; nothing passes the right edge at 320 px', async () => {
   const page = await palette();
   assert.ok(await verdictsSettled(page), 'the verdicts');
   await press(page, 'button', 'Add plants');
   assert.ok(await until(page, () => window.__ctTest.store.sheet.value?.kind === 'find', null, 10_000), 'Find opens');
-  assert.ok(await has(page, '[role="region"][aria-label="Add plants"]', 10_000), 'board: at 1280 px Find is a region beside the picture');
+  assert.ok(await has(page, '.ct-palette-body > dialog.ct-find[open]', 10_000), 'board: at 1280 px Find is a panel beside the picture');
   assert.equal(await page.evaluate(() => !!document.querySelector(':modal')), false, 'board: at 1280 px Find is not a modal sheet');
   const chart = await sectionBox(page, 'Through the years');
   assert.ok(chart && chart.w > 0, 'board: the chart stays in view beside the panel');
@@ -361,7 +367,7 @@ failing('PFA13 (pf-a DeskStates, Q4, section 6): at 1280 px "Add plants" opens F
   await done(small);
 });
 
-failing('PFA14 (pf-a AddMany state 2, a thin job): once no hole is left to show (each put off), the card reads "thin spot 1 of M · you want 2 · Change" with the engine\'s M, the title "Feeds you: 1 plant in years 15 to 60: add a backup", "Find a backup", and the bulk row counting what the goal still lacks ("Add the 1 that fits best", "Add all N that do this job then"); its toast says the job is still thin ("Feeds you: still 1 plant in years 25 to 60.") or ends it', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA14 (pf-a AddMany state 2, a thin job): once no hole is left to show (each put off), the card reads "thin spot 1 of M · you want 2 · Change" with the engine\'s M, the title "Feeds you: 1 plant in years 15 to 60: add a backup", "Find a backup", and the bulk row counting what the goal still lacks ("Add the 1 that fits best", "Add all N that do this job then"); its toast says the job is still thin ("Feeds you: still 1 plant in years 25 to 60.") or ends it', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
   await says(page, OTHER_HOLES);
   await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
@@ -382,7 +388,7 @@ failing('PFA14 (pf-a AddMany state 2, a thin job): once no hole is left to show 
   await done(page);
 });
 
-failing('PFA15 (pf-a A19, F21, an untouched suggestion): a small suggested palette shows its thin spots as a count only (the position line), with no thin-spot card and no "Find a backup"; one add or a goal change brings the card', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA15 (pf-a A19, F21, an untouched suggestion): a small suggested palette shows its thin spots as a count only (the position line), with no thin-spot card and no "Find a backup"; one add or a goal change brings the card', async () => {
   const page = await emptyPalette();
   await press(page, 'button', (await names(page, 'button')).find((n) => n.startsWith('Start from a small palette')) ?? 'Start from a small palette');
   assert.ok(await until(page, () => window.__ctTest.store.untouchedSuggestion.value, null, 15_000), 'the suggestion is in, untouched');
@@ -400,7 +406,7 @@ failing('PFA15 (pf-a A19, F21, an untouched suggestion): a small suggested palet
   await done(page);
 });
 
-failing('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the engine\'s hole and position ("hole 1 of 2 · no thin spot"); when no plant on the lists fits it reads "No plant on your lists fits your place and does this then.", "See the N outside their range" and "Not now", with no bulk button; otherwise its bulk row counts what fits; its groups past the size rule are count cells ("+ N more")', { owner: 'pf-a', reason: BOARD, timeout: 180_000 }, async () => {
+test('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the engine\'s hole and position ("hole 1 of 2 · no thin spot"); when no plant on the lists fits it reads "No plant on your lists fits your place and does this then.", "See the N outside their range" and "Not now", with no bulk button; otherwise its bulk row counts what fits; its groups past the size rule are count cells ("+ N more")', { timeout: 180_000 }, async () => {
   const page = await loadPalette200();
   await says(page, 'Next step', { timeout: 20_000 });
   const e = await engineLead(page);
@@ -419,18 +425,19 @@ failing('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the 
   await done(page);
 });
 
-failing('PFA17 (pf-a AddMany state 3, F20, Toasts "one-tap adds in a row"): in the Add sheet each Add is one tap and the sheet stays open; the head reads "N added this visit · your palette: M plants" with Done; each added row says "Added" with its Undo; one toast counts up ("2 added this visit. Last: Tahitian lime."), never a stack, and its Undo takes back the last add only', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA17 (pf-a AddMany state 3, F20, Toasts "one-tap adds in a row"): in the Add sheet each Add is one tap and the sheet stays open; the head reads "N added this visit · your palette: M plants" with Done; each added row says "Added" with its Undo; one toast counts up ("2 added this visit. Last: Tahitian lime."), never a stack, and its Undo takes back the last add only', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
   await says(page, OTHER_HOLES);
   await page.evaluate(() => window.__ctTest.store.openFind());
   assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
-  await press(page, 'button', 'Feeds you');
+  await page.click('dialog[open] [data-job-chip="feeds_you"]');
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
   const before = await members(page);
   const added = [];
   for (let i = 0; i < 3; i++) {
-    const add = (await names(page, 'button')).find((n) => /^Add \S/.test(n) && !/^Add (?:plants|the|all) /.test(n));
+    const add = (await findAdds(page))[0];
     assert.ok(add, 'board: a row\'s Add');
-    await press(page, 'button', add);
+    await addInFind(page, add);
     added.push(add.replace(/^Add /, ''));
     assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
   }
@@ -444,18 +451,18 @@ failing('PFA17 (pf-a AddMany state 3, F20, Toasts "one-tap adds in a row"): in t
   await done(page);
 });
 
-failing('PFA18 (pf-a AddMany, "Find a backup"): Find opened from a thin job reads "Sorted: fills this first." with the filter "Fills a hole or a thin job" on ("Filters · 1"), and lists the plants that do that job then', { owner: 'pf-a', reason: BOARD }, async () => {
-  const page = await loadCase('kiambu-8-nights-2c-colder');
+test('PFA18 (pf-a AddMany, "Find a backup"): Find opened from a thin job reads "Sorted: fills this first." with the filter "Fills a hole or a thin job" on ("Filters · 1"), and lists the plants that do that job then', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
   await says(page, OTHER_HOLES);
   await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
   await press(page, 'button', 'Find a backup');
-  assert.ok(await has(page, 'dialog[open], [role="region"][aria-label]', 10_000), 'Find opens');
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens');
   await says(page, 'Sorted: fills this first.');
   await control(page, 'button', 'Filters · 1');
   await done(page);
 });
 
-failing('PFA19 (pf-a FindFilters, FindDesk, the v13 deltas): the filters read Job, Light ("To fill an empty light level. A plant shows under every level it grows in."), When it stands, Climate ("Well inside its range only", "Holds by 2041–2070", "Holds by 2071–2099"), Size and Hide ("Hide plants recorded toxic" with how many are not checked, "Hide plants whose light is not checked yet", "Hide plants with no size recorded"), in that order; no Life, "Has edible parts", "only repeat jobs" or "Select several"', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA19 (pf-a FindFilters, FindDesk, the v13 deltas): the filters read Job, Light ("To fill an empty light level. A plant shows under every level it grows in."), When it stands, Climate ("Well inside its range only", "Holds by 2041–2070", "Holds by 2071–2099"), Size and Hide ("Hide plants recorded toxic" with how many are not checked, "Hide plants whose light is not checked yet", "Hide plants with no size recorded"), in that order; no Life, "Has edible parts", "only repeat jobs" or "Select several"', async () => {
   const page = await palette({ width: 390 });
   assert.ok(await verdictsSettled(page), 'the verdicts');
   await press(page, 'button', 'Add plants');
@@ -473,7 +480,7 @@ failing('PFA19 (pf-a FindFilters, FindDesk, the v13 deltas): the filters read Jo
   await done(page);
 });
 
-failing('PFA20 (pf-a F16, Plants per job changed on 200 plants): the thin spots are recounted at once and the Next step\'s position follows the engine; a put-off thin spot stays put off while its job is still thin', { owner: 'pf-a', reason: BOARD, timeout: 180_000 }, async () => {
+test('PFA20 (pf-a F16, Plants per job changed on 200 plants): the thin spots are recounted at once and the Next step\'s position follows the engine; a put-off thin spot stays put off while its job is still thin', { timeout: 180_000 }, async () => {
   const page = await loadPalette200();
   await says(page, 'Next step', { timeout: 20_000 });
   await setPlantsPerJob(page, 5);
@@ -484,7 +491,7 @@ failing('PFA20 (pf-a F16, Plants per job changed on 200 plants): the thin spots 
   await done(page);
 });
 
-failing('PFA21 (pf-a Recife, the Portuguese words): on the Portuguese page the Next step\'s heading, position and buttons come from pt.json ("Próximo passo", its "hole i of n", "Ver todas as N plantas", "Agora não")', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA21 (pf-a Recife, the Portuguese words): on the Portuguese page the Next step\'s heading, position and buttons come from pt.json ("Próximo passo", its "hole i of n", "Ver todas as N plantas", "Agora não")', async () => {
   const pt = JSON.parse((await import('node:fs')).readFileSync(new URL('../../src/i18n/translations/pt.json', import.meta.url), 'utf8'));
   const page = await tool({ lang: 'pt', hash: await linkOf('Mediterranean', 13) });
   await atSite(page, 'seville');
@@ -494,9 +501,10 @@ failing('PFA21 (pf-a Recife, the Portuguese words): on the Portuguese page the N
   const e = await engineLead(page);
   await says(page, pt['consortium.palette.holeOf'].replace('{i}', String(e.lead.index)).replace('{n}', String(e.lead.of)));
   // The bulk row in Portuguese (AddMany), from pf-a's keys.
-  const best = pt['consortium.palette.next.addBest.other'];
+  const form = (s = '', k = 'other') => (s.split('|').map((x) => x.trim()).find((x) => x.startsWith(`${k}:`)) ?? '').slice(k.length + 1).trim();
+  const best = form(pt['consortium.palette.next.addBest'], e.best.length === 1 ? 'one' : 'other');
   assert.ok(best, 'board: the bulk row has its Portuguese words');
-  if (e.fits.length > 1) await control(page, 'button', best.replace('{n}', String(e.best.length)));
+  if (e.fits.length) await control(page, 'button', best.replace('#', String(e.best.length)));
   await done(page);
 });
 

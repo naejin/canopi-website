@@ -7,8 +7,8 @@
 // Inform, don't block (owner 2026-11-14): no group hides a plant. A plant with a warning (a serious
 // conflict, a site misfit, toxic, recorded as invasive in the country) that fits otherwise needs a
 // second look; a plant with no verdict is "not checked", never a fit.
-import type { JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, queryTokens, fold, strata, yearsOf } from '../../../lib/consortium/index.ts';
+import type { Hole, JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
+import { fills, jobIds, jobsOf, queryTokens, fold, strata, yearsOf } from '../../../lib/consortium/index.ts';
 
 export interface FindGroups { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unchecked: Taxon[] }
 export const GROUPS = ['fits', 'look', 'outside', 'unchecked'] as const;
@@ -67,8 +67,10 @@ export interface FindFilters {
   hideNoSize?: boolean;
   hideToxic?: boolean;
   hideInvasive?: boolean;
+  hideNoLight?: boolean;
+  fills?: boolean; // fills a hole or a thin job (AddMany: on when Find opens from a thin spot)
 }
-export type FilterId = 'job' | 'light' | 'size' | 'stands' | 'range' | 'holds' | 'no-size' | 'toxic' | 'invasive';
+export type FilterId = 'job' | 'light' | 'size' | 'stands' | 'range' | 'holds' | 'no-size' | 'toxic' | 'invasive' | 'fills' | 'no-light';
 
 // What the filters read beyond the plant: its verdict, whether it holds in a later period, whether it
 // is toxic or invasive in the country (null: not known).
@@ -77,6 +79,8 @@ export interface FilterContext {
   holds?: (t: Taxon, period: PeriodId) => boolean | null;
   toxic?: (t: Taxon) => boolean | null;
   invasive?: (t: Taxon) => boolean | null;
+  // The open holes and open thin spots (core holes.ts thinTargets), for "Fills a hole or a thin job".
+  targets?: readonly Hole[];
 }
 // The filters that hide (a plant they cannot judge stays): they say how many they hide.
 const HIDES: ReadonlySet<FilterId> = new Set(['toxic', 'invasive']);
@@ -95,6 +99,7 @@ const any = <T>(chosen: readonly T[], test: (x: T) => boolean | null): boolean |
 // Each active filter's test of one plant: true keeps it, false leaves it out, null cannot judge it.
 function tests(f: FindFilters, ctx: FilterContext): [FilterId, (t: Taxon) => boolean | null][] {
   const out: [FilterId, (t: Taxon) => boolean | null][] = [];
+  if (f.fills) out.push(['fills', (t) => (ctx.targets ?? []).some((h) => fills(h, t))]);
   if (f.jobs?.length) out.push(['job', (t) => { const j = jobsOf(t); return f.jobs!.some((x) => j.includes(x)) ? true : t.functions === null && t.role !== 'crop' ? null : false; }]);
   if (f.light?.length) out.push(['light', (t) => any(f.light!, (l) => lightOf(t, l))]);
   if (f.size?.length) out.push(['size', (t) => { const s = sizeOf(t); return s === null ? null : f.size!.includes(s); }]);
@@ -113,6 +118,7 @@ function tests(f: FindFilters, ctx: FilterContext): [FilterId, (t: Taxon) => boo
     return unknown ? null : true;
   }]);
   if (f.hideNoSize) out.push(['no-size', (t) => sizeOf(t) !== null]);
+  if (f.hideNoLight) out.push(['no-light', (t) => !!t.stratum]);
   if (f.hideToxic) out.push(['toxic', (t) => { const x = ctx.toxic?.(t) ?? null; return x === null ? null : !x; }]);
   if (f.hideInvasive) out.push(['invasive', (t) => { const x = ctx.invasive?.(t) ?? null; return x === null ? null : !x; }]);
   return out;

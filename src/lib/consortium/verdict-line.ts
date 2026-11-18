@@ -725,7 +725,10 @@ export function siteLines(taxon: Taxon, site: Site, fit: Fit): SiteLine[] {
   return out;
 }
 
-// The room note of a plant against the reader's room ("taller than your room" on a balcony; "grows to
-// … m: prune" in a small garden), or null when it fits the room or its height is not recorded (pf).
-const notYet = (what: string, owner: string): never => { throw new Error(`verdict-line ${what}: not written yet (PP-C ${owner})`); };
-export function roomNote(heightM: number | null, room: Room): Line | null { return notYet(`roomNote(${heightM}, ${room})`, 'pf'); }
+// The room note (Balcony board, #5): in pots, a plant that grows above 6 m says so with what to do
+// ("Grows to 10.7 m: keep it pruned, or pick a smaller plant"); room never hides a plant. null: no
+// note (another room, the height unknown, or small enough).
+export const POT_PRUNE_M = 6;
+export function roomNote(heightM: number | null, room: Room): Line | null {
+  return room === 'pots' && heightM !== null && heightM > POT_PRUNE_M ? { key: K('roomTall'), vars: { len: heightM } } : null;
+}
