@@ -18,9 +18,9 @@ import { holeLine, jobIds, jobsOf, PHASE_YEARS, PLANTS_PER_JOB, targetPosition, 
 import { stripStates, type StripState } from '../../rules/picture.ts';
 import * as store from '../../store.ts';
 import { nameOf, P, T } from '../../strings.ts';
-import { HoleButton, HoleTitle, Names, type PlantButtons } from '../kit/chart.tsx';
+import { HoleButton, HoleTitle, Names, SIZE_PALETTE, type PlantButtons } from '../kit/chart.tsx';
 import { JobIcon, say } from '../kit/fit.tsx';
-import { ReadPictures, SIZE_PALETTE, type PictureProps } from './Years.tsx';
+import { ReadPictures, type PictureProps } from './Years.tsx';
 
 const cap = (s: string): string => s.charAt(0).toLocaleUpperCase() + s.slice(1);
 
@@ -49,7 +49,8 @@ function Legend({ goal }: { goal: number }) {
 
 // A job's strip over the seven time spans (decorative: its words are the thin lines and hole buttons),
 // its states from the engine's targets (rules/picture.ts stripStates; R1, R9, BC9): a hole only inside
-// an open job hole, thin only inside an open thin spot, neutral while a list loads.
+// an open job hole, thin only inside an open thin spot. While a list loads there is no strip (round 2
+// R4: no shape the legend explains stands for "not known yet"); the intro says the holes are checked.
 function Strip({ states }: { states: StripState[] }) {
   return <span class="ct-strip" aria-hidden="true">{states.map((st, i) => <span key={i} class="ct-strip-cell" data-state={st} />)}</span>;
 }
@@ -60,14 +61,14 @@ const byName = (members: readonly Taxon[]) => { const m = new Map(members.map((t
 // A thin line, its lead in bold ("**Thin:** 1 plant only from year 15 to year 60. Add a backup."; BC24).
 const ThinLine = ({ words }: { words: string }) => <p class="ct-job-thin"><HoleTitle words={words} /></p>;
 
-function JobRow({ j, lane, members, holes, states, showThin, b }: { j: JobId; lane: LaneCount; members: readonly Taxon[]; holes: Hole[]; states: StripState[]; showThin: boolean; b: PlantButtons }) {
+function JobRow({ j, lane, members, holes, states, showThin, b }: { j: JobId; lane: LaneCount; members: readonly Taxon[]; holes: Hole[]; states: StripState[] | null; showThin: boolean; b: PlantButtons }) {
   const mine = plantsOf(members, j);
   return (
     <li class="ct-job" data-job={j}>
       <p class="ct-job-head"><span class="ct-job-tile" aria-hidden="true"><JobIcon job={j} /></span><span class="ct-job-title"><strong>{T(`job.${j}`)}</strong>{mine.length > 0 && <> <span class="ct-grid-count">{P('palette.chart.plants', mine.length)}</span></>}</span></p>
       <div class="ct-job-body">
         {mine.length > 0 && <div class="ct-job-names"><Names ids={mine.map((t) => t.id)} name={byName(members)} size={members.length} /></div>}
-        <Strip states={states} />
+        {states && <Strip states={states} />}
         {showThin && lane.thin.map((t) => <ThinLine key={`${t.fromYear}`} words={say(thinLine(t))} />)}
       </div>
       {holes.length > 0 && <div class="ct-job-holes">{holes.map((h) => <HoleButton key={h.id} id={h.id} b={b} find={T('palette.chart.findPlant')} />)}</div>}
@@ -129,7 +130,7 @@ export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdic
       <ul class="ct-jobs-list">
         {jobIds.map((j) => (big
           ? <BigRow key={j} j={j} members={members} holes={jobHoles(j)} all={holes} thins={thins} size={members.length} />
-          : <JobRow key={j} j={j} lane={laneOf(j)} members={members} holes={jobHoles(j)} states={stripStates(laneOf(j), holes, thins, pending)} showThin={showThin} b={b} />))}
+          : <JobRow key={j} j={j} lane={laneOf(j)} members={members} holes={jobHoles(j)} states={pending ? null : stripStates(laneOf(j), holes, thins)} showThin={showThin} b={b} />))}
       </ul>
       {big && (
         <p class="ct-chart-note">{T('palette.jobsFoot')}{unchecked.size > 0 && <> <HoleTitle words={P('palette.jobsUnchecked', unchecked.size)} /></>}{noJob > 0 && <> {P('palette.jobsNoJob', noJob)}</>}</p>

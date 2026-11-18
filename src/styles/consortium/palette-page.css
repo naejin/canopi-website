@@ -320,15 +320,13 @@
 /* A level of more than 12 plants in the grid: its count cell over the row (C1). */
 .ct .ct-grid-many { padding: 2px 6px; }
 .ct .ct-names-inline { display: inline-flex; flex-wrap: wrap; gap: 6px; }
-.ct .ct-grid-outside { color: var(--text-secondary); }
 /* Count cells (boards Many, ManyDesk; BC11): "+ N more" and "Show fewer" as pills, open names in two
    columns. */
 .ct .ct-cell-names .ct-more-actions button { min-height: 32px; padding: 2px 12px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; }
 .ct .ct-cell-names:not([data-stage="0"]) .ct-more-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ct .ct-years[data-mode="cells"] .ct-stepper-at strong { font-family: var(--font-sans); font-size: 15px; font-weight: 600; line-height: 22px; }
-/* The Mildly toxic sentence under its closed line (BC14); the family's Find action (BC16). */
+/* The Mildly toxic sentence under its closed line (BC14). */
 .ct .ct-fit-note { margin: 0 0 10px; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
-.ct .ct-link-button { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 /* The side column's cards: small semibold heads, as "Other holes" (BC15); Water use's lead at body size. */
 .ct .ct-side-card h3 { font-family: var(--font-sans); font-size: 16px; font-weight: 600; line-height: 22px; }
 .ct .ct-side-card .ct-balance-sub { font-size: 14px; font-weight: 400; }

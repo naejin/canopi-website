@@ -37,7 +37,7 @@ import { readFileSync } from 'node:fs';
 import { aria, has } from './helpers.mjs';
 import { useHarness } from './helpers.mjs';
 import { JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
-import { boardPalette, figures, fitOf, laneOf, standing, uncheckedOf } from './pf-b-helpers.mjs';
+import { boardPalette, figures, fitOf, inSection, jobCounts, laneOf, standing, uncheckedOf } from './pf-b-helpers.mjs';
 
 useHarness();
 
@@ -185,13 +185,15 @@ test('PFB4 (pf-b MainMore Jobs at 1280 and PaletteMore at 390, carried from PP-B
     }
     assert.equal(await pressed(page, '2'), 'true', 'board: "2" pressed');
     const bs = await buttons(page);
+    const doing = await jobCounts(page);
+    const bold = await inSection(page, 'Jobs', (sec) => [...sec.querySelectorAll('strong, b')].map((e) => e.textContent.trim()));
     for (const l of f.lanes.filter((x) => x.kind === 'job')) {
-      const has = await page.evaluate((j) => { const li = document.querySelector(`#ct-jobs .ct-job[data-job="${j}"] .ct-job-title`); return li ? li.textContent : null; }, l.key);
-      assert.ok(has && (/\d+ plants?$/.test(has) || !/\d/.test(has)), `board: "${JOB[l.key]} N plants", or no count for a job nobody does (BC24): "${has}"`);
-      assert.ok(!/ 0 plants$/.test(has), `BC24: no "${JOB[l.key]} 0 plants"`);
+      const n = doing[l.key] ?? 0;
+      if (n) assert.ok(jobs.includes(`${JOB[l.key]} ${plants(n)}`), `board: "${JOB[l.key]} ${plants(n)}" (the engine's jobs)`);
+      assert.ok(!jobs.includes(`${JOB[l.key]} 0 plants`), `BC24: no "${JOB[l.key]} 0 plants"`);
       for (const t of l.thin) assert.ok(jobs.includes(`Thin: ${plants(t.have)} only from year ${t.fromYear} to year ${t.toYear}. Add a backup.`), `board: the thin line of ${JOB[l.key]} (${t.fromYear}–${t.toYear})`);
-      if (l.thin.length) assert.ok(await page.evaluate((j) => [...document.querySelectorAll(`#ct-jobs .ct-job[data-job="${j}"] .ct-job-thin strong`)].some((e) => e.textContent.trim() === 'Thin:'), l.key), `BC24: "Thin:" bold in ${JOB[l.key]}`);
     }
+    if (f.lanes.some((l) => l.kind === 'job' && l.thin.length)) assert.ok(bold.includes('Thin:'), `BC24: "Thin:" bold (${bold.join(' | ')})`);
     for (const h of f.holes.filter((x) => x.kind === 'job')) assert.ok(bs.some((b) => b.startsWith(`${JOB[h.job]}: nobody`) && b.endsWith('Find a plant')), `board: the hole button of ${JOB[h.job]}`);
     assert.ok(!bs.some((b) => /backup|Find a backup/i.test(b)), 'A20: a thin row has no button');
     await saysNot(page, '1 plant: nobody else does this', 'the old one-plant line is gone');
@@ -326,8 +328,7 @@ test('PFB9 (pf-b MainMore Balance, carried from PP-B60 and PP-B63): "Balance thi
   if (/not recorded/.test(b)) assert.match(b, /\d+ not recorded(?: \([^)]+\): that is not a pass\.|: )/, 'BC17: the plants not recorded named');
   await saysNot(page, 'How much water the sources record each plant as using.', 'no "Water use" card at a place with a dry summer');
   if (hinted.length) assert.ok(b.includes(`Soil: ${hinted.length} hint${hinted.length === 1 ? '' : 's'} on pH${listEn(hinted.map((id) => f.names[id]))}`) || b.includes(`Soil: ${hinted.length} hint${hinted.length === 1 ? '' : 's'} on pH ${listEn(hinted.map((id) => f.names[id]))}`), `board: "Soil: ${hinted.length} hints on pH" with the names`);
-  // BC16: the family line's Find action.
-  if (/are legumes/.test(b)) assert.ok((await buttons(page)).includes('Find a soil feeder of another family'), 'BC16: "Find a soil feeder of another family"');
+  // BC16 (the family line's Find action) is held until Find takes a job without a hole: PFB23.
   await done(page);
 });
 
@@ -337,9 +338,12 @@ test('PFB10 (pf-b Kumasi Water use, carried from PP-B63): at a place without a d
   assert.ok(w.includes('How much water the sources record each plant as using. No check uses dry months: they are a reading of your place.'), 'board: the Water use sentence');
   assert.match(w, /Recorded as using a lot of water: |A medium amount: |Little: /, 'board: a recorded group');
   if (/not recorded/.test(w)) assert.match(w, /\d+ not recorded: .+\. That is not a pass\./, 'board: "N not recorded: …. That is not a pass."');
-  const bold = await page.$$eval('#ct-root .ct-balance strong', (es) => es.map((e) => e.textContent.trim()));
+  const bold = await inSection(page, 'Water use', (sec) => [...sec.querySelectorAll('strong, b')].map((e) => e.textContent.trim()));
   assert.ok(bold.some((x) => /^(Recorded as using a lot of water:|A medium amount:|Little:)$/.test(x)), `BC18: the group labels bold (${bold.join(' | ')})`);
   await saysNot(page, /Water needs: /, 'no "Water needs" line where the summer is not dry');
+  // Round 2 R6: on a borrowed list the heading reads "Water use estimate", a word apart.
+  await page.evaluate(() => { const s = window.__ctTest.store, c = s.climate.value; s.pools.value = { ...s.pools.value, [c]: s.pools.value[c].map((t) => ({ ...t, origin: { list: c, kind: 'borrowed' } })) }; });
+  assert.ok(await has(page, aria('heading', 'Water use estimate'), 6000), 'R6: the heading "Water use estimate"');
   await done(page);
 });
 
@@ -356,11 +360,21 @@ test('PFB11 (pf-b Toasts "How to read this", Q8, A18, carried from PP-B8): under
   await says(page, en['consortium.palette.readJobs']);
   await says(page, 'A row with no toxicity mark has not been checked, or nothing was recorded.');
   await says(page, en['consortium.palette.readSyntropic']);
-  assert.equal(await page.$$eval('#ct-jobs .ct-read-toggle', (es) => es.length), 1, 'BC19: "How to read this" under the Jobs title');
-  const panel = await page.$eval('#ct-years .ct-read-body', (e) => getComputedStyle(e).position);
-  assert.equal(panel, 'absolute', 'BC19: a small panel under its button at 1280 px');
+  assert.equal((await buttons(page)).filter((b) => b === 'How to read this').length, 2, 'BC19: "How to read this" under each picture\'s title, Jobs too');
+  assert.ok((await inSection(page, 'Jobs', (sec) => [...sec.querySelectorAll('button')].some((b) => b.textContent.trim() === 'How to read this'))), 'BC19: one in Jobs');
+  // BC19: a small panel under its button that pushes nothing down: the intro under it stays put.
+  const boxes = await page.$eval(aria('button', 'How to read this'), (btn, intro) => {
+    const panel = document.getElementById(btn.getAttribute('aria-controls'));
+    const p = [...document.querySelectorAll('main p')].find((e) => e.textContent.includes(intro));
+    const r = (e) => { const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom, left: b.left, right: b.right }; };
+    return { btn: r(btn), panel: r(panel), intro: r(p) };
+  }, en['consortium.palette.yearsIntro']);
   await page.keyboard.press('Escape');
-  assert.equal(await page.$eval('#ct-years .ct-read-toggle', (e) => e.getAttribute('aria-expanded')), 'false', 'Escape closes the panel');
+  assert.equal(await page.$eval(aria('button', 'How to read this'), (e) => e.getAttribute('aria-expanded')), 'false', 'Escape closes the panel');
+  const introClosed = await page.evaluate((intro) => [...document.querySelectorAll('main p')].find((e) => e.textContent.includes(intro)).getBoundingClientRect().top, en['consortium.palette.yearsIntro']);
+  assert.ok(boxes.panel.top >= boxes.btn.bottom - 1, `BC19: the panel under its button (${JSON.stringify(boxes)})`);
+  assert.ok(Math.abs(boxes.intro.top - introClosed) < 1, `BC19: the open panel pushes nothing down (intro at ${boxes.intro.top} open, ${introClosed} closed)`);
+  assert.ok(boxes.panel.bottom > boxes.intro.top, 'BC19: the panel lies over the page, as on the board');
   const table = await page.$$eval('#ct-root table', (ts) => ts.map((t) => t.textContent.replace(/\s+/g, ' ')).join(' '));
   for (const id of f.ids) if (f.stratum[id]) assert.ok(table.includes(f.names[id]), `board: ${f.names[id]} in the table`);
   assert.ok(LIGHT.some((w) => table.includes(w)), 'board: the table in the light words');
@@ -477,7 +491,7 @@ test('PFB17 (pf-b section 6 neighbours, the goal control): at 1280 px "Plants pe
     else assert.ok(pos.intro && pos.g.y >= pos.intro.bottom - 1, `board: the control under the intro on a phone (${JSON.stringify(pos)})`);
     assert.ok(pos.legend && pos.legend.y >= pos.g.bottom - 1, 'board: the legend under the control');
     // BC2: the four 44 px buttons in one row at every width.
-    const ys = await page.$$eval('#ct-root .ct-goal-n', (es) => es.map((e) => Math.round(e.getBoundingClientRect().top)));
+    const ys = await page.$$eval('[role="group"][aria-label="Plants per job"] button', (es) => es.map((e) => Math.round(e.getBoundingClientRect().top)));
     assert.equal(new Set(ys).size, 1, `BC2: 1 2 3 5 in one row at ${width} px (${ys})`);
     assert.deepEqual(await pastEdge(page), [], `board: nothing past the edge at ${width} px`);
     await done(page);
@@ -526,26 +540,56 @@ test('PFB19 (pf-b fix round 1, BC1, C5): every toxic plant carries its toxicity 
     }
     assert.ok(marks.some((m) => f.tox[m.id]), `${id}: a toxic member shown`);
     // BC21: the header steps on one line, the done step a check, "›" between them.
-    const steps = await page.$$eval('#ct-root .ct-steps li', (ls) => ls.map((l) => Math.round(l.getBoundingClientRect().top)));
-    assert.equal(new Set(steps).size, 1, `BC21: the steps on one line at ${width} px`);
-    assert.equal(await page.$eval('#ct-root .ct-steps .ct-step-done .ct-step-n', (e) => e.textContent), '\u2713', 'BC21: the done step a check');
+    const steps = await page.$$eval('nav[aria-label="Steps"] li', (ls) => ls.map((l) => ({ top: Math.round(l.getBoundingClientRect().top), text: l.innerText.replace(/\s+/g, ' ').trim() })));
+    assert.equal(new Set(steps.map((x) => x.top)).size, 1, `BC21: the steps on one line at ${width} px`);
+    assert.equal(steps[0].text, '\u2713 Your place', 'BC21: the done step a check');
+    // Round 2 R5: the done step says its place and that it is done, as the later steps say theirs.
+    assert.ok(await has(page, aria('button', '1 Your place, done'), 2000), 'R5: "1 Your place, done"');
     await done(page);
   }
 });
 
-test('PFB20 (pf-b fix round 1, C1, BC6): in a palette of 40 plants or fewer, a light level of more than 12 plants shows its count cell (three names and "+ N more"), never every bar; a job of more than 12 plants too; the key lists the six jobs', async () => {
+test('PFB20 (pf-b fix round 1, C1, BC6; round 2 R2, C2): in a palette of 40 plants or fewer, a light level of more than 12 plants that count shows its count cell (three names and "+ N more"), never every bar; the head\'s figure and the cell count the same plants, those outside their climate range left out of both, each of those still a button that says so; the head is the board\'s bare "Full sun N plants"; the key lists the six jobs', async () => {
   const page = await boardPalette('kiambu-200', { width: 1280 });
   const f = await figures(page);
+  const out = (id) => f.levels[id] === 'outside';
   const byLevel = STRATA.map((s) => ofStratum(f, s));
-  const big = byLevel.findIndex((ids) => ids.length >= 13);
-  assert.ok(big >= 0, 'kiambu-200 has a light level of 13 or more');
-  const pick = [...byLevel[big].slice(0, 16), ...byLevel.flatMap((ids, i) => (i === big ? [] : ids.slice(0, 6)))].slice(0, 34);
-  await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, pick);
+  const big = byLevel.findIndex((ids) => ids.filter((id) => !out(id)).length >= 13);
+  assert.ok(big >= 0, 'kiambu-200 has a light level of 13 or more plants in range');
+  // 12 that count and one outside its range in that level (the review's scenario: folded on 13 drawn
+  // plants while the head says 12), then the other levels, 34 plants in all.
+  const outsider = byLevel[big].find(out) ?? byLevel.flatMap((ids) => ids).find(out);
+  const twelve = byLevel[big].filter((id) => !out(id)).slice(0, 12);
+  const others = byLevel.flatMap((ids, i) => (i === big ? [] : ids.filter((id) => !out(id)).slice(0, 5)));
+  const small = [...twelve, ...(outsider ? [outsider] : []), ...others].slice(0, 34);
+  await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, small);
   assert.ok(await verdictsSettled(page, 40_000), 'the verdicts');
   await frames(page);
-  const row = await page.$eval(`#ct-years .ct-grid-row[data-lane="${STRATA[big]}"]`, (r) => ({ bars: r.querySelectorAll('.ct-bar').length, more: [...r.querySelectorAll('button')].some((b) => /^\+ \d+ more$/.test(b.textContent.trim())) }));
-  assert.equal(row.bars, 0, 'C1: no bars for a level of more than 12');
-  assert.ok(row.more, 'C1: "+ N more" in the level\'s count cell');
+  const rowOf = (key) => page.$eval(`#ct-years [data-lane="${key}"]`, (r) => ({
+    text: r.innerText.replace(/\s+/g, ' ').trim(),
+    plants: [...r.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') ?? b.textContent.trim()),
+    items: r.querySelectorAll('li').length,
+  }));
+  const level = LEVEL[STRATA[big]];
+  let row = await rowOf(STRATA[big]);
+  const head = Number(new RegExp(`^${esc(level)} (\\d+) plants?`).exec(row.text)?.[1]);
+  assert.ok(head <= 12, `R2: the head counts the plants in range (${row.text.slice(0, 60)})`);
+  assert.ok(!row.plants.some((b) => /^\+ \d+ more$/.test(b)), `R2: 12 plants that count are every bar, never folded on the plant outside its range (${row.text.slice(0, 80)})`);
+  assert.doesNotMatch(row.text.slice(0, 40), /outside/, 'C2: the board\'s bare head, no "· 1 outside its climate range"');
+  if (outsider && f.stratum[outsider] === STRATA[big]) assert.ok(row.plants.some((b) => b.startsWith(f.names[outsider]) && /outside its climate range/i.test(b)), `R2: ${f.names[outsider]} a button saying it is outside its climate range`);
+  // 13 that count: the count cell, its count the head's figure.
+  const thirteen = byLevel[big].filter((id) => !out(id)).slice(0, 13);
+  await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, [...thirteen, ...(outsider ? [outsider] : []), ...others].slice(0, 34));
+  assert.ok(await verdictsSettled(page, 40_000), 'the verdicts');
+  await frames(page);
+  row = await rowOf(STRATA[big]);
+  const n = Number(new RegExp(`^${esc(level)} (\\d+) plants?`).exec(row.text)?.[1]);
+  const more = Number(row.plants.map((b) => /^\+ (\d+) more$/.exec(b)?.[1]).find(Boolean));
+  assert.ok(more > 0, `C1: "+ N more" in the level's count cell (${row.text.slice(0, 80)})`);
+  assert.equal(row.items + more, n, `R2: the cell lists the head's ${n} plants (${row.items} shown + ${more} more)`);
+  const named = row.plants.filter((b) => thirteen.some((id) => b.startsWith(f.names[id]))).length;
+  assert.equal(named, row.items, 'C1: no bar for a plant of the folded level, only its name in the cell');
+  if (outsider && f.stratum[outsider] === STRATA[big]) assert.ok(row.plants.some((b) => b.startsWith(f.names[outsider]) && /outside its climate range/i.test(b)), `R2: ${f.names[outsider]} listed apart, saying it is outside its climate range`);
   await inOrder(page, ['Colour and icon show each plant’s main job:', ...JOBS]);
   await done(page);
 });
@@ -567,11 +611,32 @@ test('PFB21 (pf-b fix round 1, C2, R6): on an untouched suggestion the Jobs rows
 test('PFB22 (pf-b fix round 1, BC3, R2, BC12): past 40 plants no paragraph of Balance or Water lists more than 12 names; the long groups fold to a count cell with "+ N more"; folded names in alphabetical order', async () => {
   const page = await boardPalette('kiambu-200', { width: 390 });
   await section(page, 'Jobs', 20_000);
-  const paras = await page.$$eval('#ct-root .ct-balance p', (ps) => ps.map((p) => p.textContent));
-  for (const p of paras) assert.ok((p.match(/, /g) ?? []).length < 12, `R2: no paragraph naming every plant ("${p.slice(0, 80)}…")`);
-  const cells = await page.$$eval('#ct-root .ct-balance .ct-more', (ms) => ms.map((m) => [...m.querySelectorAll('li')].map((l) => l.textContent.trim())));
+  const read = (sec) => ({
+    paras: [...sec.querySelectorAll('p')].map((p) => p.textContent),
+    // A count cell: a list with "+ N more" right after it (its own fold's actions).
+    cells: [...sec.querySelectorAll('ul')].filter((u) => [...(u.parentElement?.querySelectorAll(':scope > p > button') ?? [])].some((b) => /^\+ \d+ more$/.test(b.textContent.trim()))).map((u) => [...u.querySelectorAll(':scope > li')].map((l) => l.textContent.trim())),
+  });
+  const parts = [await inSection(page, 'Balance', read), await inSection(page, 'Water use', read)].filter(Boolean);
+  for (const p of parts.flatMap((x) => x.paras)) assert.ok((p.match(/, /g) ?? []).length < 12, `R2: no paragraph naming every plant ("${p.slice(0, 80)}…")`);
+  const cells = parts.flatMap((x) => x.cells);
   assert.ok(cells.length > 0, 'BC3: the count cells in Balance');
   const order = new Intl.Collator('en');
   for (const c of cells) assert.deepEqual(c, [...c].sort(order.compare), `BC12: alphabetical (${c.join(', ')})`);
+  await done(page);
+});
+
+test('PFB23 (pf-b round 2 R1, C1): Balance offers no action that does not do what it says. "Find a soil feeder of another family", when offered, opens Find listing only plants that feed the soil and are not of that family; until Find takes a job without a hole (hand-off to the main agent) the line offers no such button', async () => {
+  const page = await boardPalette('seville-board', { width: 1280 });
+  const b = await section(page, 'Balance');
+  const fam = /One family: \d+ of your \d+ are legumes/.test(b) ? 'Fabaceae' : null;
+  assert.ok(fam, `seville-board: the legume line (${b.slice(0, 80)})`);
+  if (!(await buttons(page)).includes('Find a soil feeder of another family')) { await done(page); return; }
+  await press(page, 'button', 'Find a soil feeder of another family');
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] li[data-plant-id]').length > 0, { timeout: 15_000 }).then(() => true, () => false), 'Find lists plants');
+  const listed = await page.evaluate(() => {
+    const s = window.__ctTest.store, byId = new Map((s.pool.value ?? []).map((t) => [t.id, t]));
+    return [...document.querySelectorAll('dialog[open] li[data-plant-id]')].map((li) => { const t = byId.get(li.dataset.plantId); return { name: t?.names?.en || t?.canonical_name, family: t?.family, fixer: !!t?.functions?.some((x) => x.function === 'nitrogen_fixer') }; });
+  });
+  for (const t of listed) assert.ok(t.fixer && t.family !== fam, `R1: ${t.name} feeds the soil and is not a legume (${t.family})`);
   await done(page);
 });

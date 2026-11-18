@@ -27,7 +27,8 @@ import { FindEntry } from '../Sheets.tsx';
 import { FindPanelSlot } from './FindPanelSlot.tsx';
 import { NextStep, openFillers } from './NextStep.tsx';
 import { Balance, Warnings, WarningsAndFit, warningGroups } from './Weigh.tsx';
-import { SIZE_PALETTE, Years } from './Years.tsx';
+import { Years } from './Years.tsx';
+import { SIZE_PALETTE } from '../kit/chart.tsx';
 import { YourPlants } from './YourPlants.tsx';
 import { PaletteLimits } from '../figures/slots.tsx';
 
@@ -108,7 +109,7 @@ export function Palette() {
     <div class="ct-palette-page">
       <nav class="ct-steps" aria-label={T('palette.stepsLabel')}>
         <ol>
-          <li><button type="button" class="ct-step ct-step-done" onClick={toPlace}><span class="ct-step-n" aria-hidden="true">{'\u2713'}</span> {T('palette.stepPlace')}</button></li>
+          <li><button type="button" class="ct-step ct-step-done" aria-label={T('palette.chart.stepDone', { n: 1, step: T('palette.stepPlace') })} onClick={toPlace}><span class="ct-step-n" aria-hidden="true">{'\u2713'}</span> {T('palette.stepPlace')}</button></li>
           <li aria-current="step"><span class="ct-step"><span class="ct-step-n">2</span> {T('palette.stepPalette')}</span></li>
           <li><span class="ct-step ct-step-later"><span class="ct-step-n">3</span> {T('palette.stepPlan')}</span></li>
         </ol>

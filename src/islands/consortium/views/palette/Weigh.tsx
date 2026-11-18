@@ -16,11 +16,11 @@
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
-import { fitGroups, jobsOf, leaveGroups, weighLines } from '../../../../lib/consortium/index.ts';
+import { fitGroups, leaveGroups, mildExamples, weighLines } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { nameOf, P, pageLang, T } from '../../strings.ts';
 import { collatorFor, countryName, num } from '../kit/names.ts';
-import { inlineNames, Names, ToxMark, wordList } from '../kit/chart.tsx';
+import { inlineNames, Names, ToxMark } from '../kit/chart.tsx';
 
 const has = (key: string): boolean => T(key) !== key;
 type NameOf = (id: PlantId) => string;
@@ -102,8 +102,9 @@ function Line_({ head, n, children, note, cls = '' }: { head: string; n: number;
   );
 }
 
-// The second look's reasons, each its words (R3: the verdict's limiting factor, weigh.ts LOOK_REASON).
-const REASON_WORDS = [['edge', 'palette.warningsEdge'], ['soil', 'palette.warningsSoil'], ['water', 'palette.warningsWater'], ['misfit', 'palette.warningsMisfit'], ['clash', 'palette.warningsClash']] as const;
+// The second look's reasons past the edge, toxicity and invasive lines, each its words (weigh.ts
+// WarnReason: the room or plot, a serious clash).
+const REASON_WORDS = [['misfit', 'palette.warningsMisfit'], ['clash', 'palette.warningsClash']] as const;
 const OPEN_NAMES = 10; // an open list's names before "+ N more" (BC4)
 
 export function WarningsAndFit({ members, verdicts, flags, country }: { members: readonly Taxon[]; verdicts: ReadonlyMap<PlantId, PlantVerdict> | null; flags: readonly Flag[]; country: string | null }) {
@@ -114,9 +115,9 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
   const r = g.reasons;
   const tox = r.severe.length + r.moderate.length;
   const list = (ids: readonly PlantId[], closed = OPEN_NAMES) => <Names ids={ids} name={name} size={size} closed={closed} />;
-  // Mildly toxic: many are common foods, three named, alphabetically (BC14).
-  const order = collatorFor(pageLang());
-  const foods = g.mild.filter((id) => { const t = byId.get(id); return !!t && jobsOf(t).includes('feeds_you'); }).map(name).sort(order.compare).slice(0, 3);
+  // Mildly toxic: its first three by name, "many are common foods" when most feed you (weigh.ts
+  // mildExamples; BC14, round 2 C9).
+  const mildEx = useMemo(() => mildExamples(g, members, name, collatorFor(pageLang()).compare), [g, members]);
   return (
     <section class="ct-chart ct-warnings" id="ct-warnings" aria-labelledby="ct-warnings-h">
       <h3 id="ct-warnings-h">{T('palette.warningsFitTitle')}</h3>
@@ -135,7 +136,7 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
                     </Line_>
                   )}
                   {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}>{list(r.invasive)}</Line_>}
-                  {REASON_WORDS.filter(([k]) => k !== 'edge' && r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}>{list(r[k])}</Line_>)}
+                  {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}>{list(r[k])}</Line_>)}
                 </ul>
                 {g.several > 0 && <p class="ct-chart-note">{P('palette.warningsReasons', g.reasonCount, { plants: P('palette.warningsReasonsPlants', g.look.length), carry: P('palette.warningsReasonsCarry', g.several) })}</p>}
                 {g.outsideToxic.length > 0 && <div class="ct-chart-note"><Names ids={g.outsideToxic} name={name} size={size} few={3} text={(w) => P('palette.warningsOutsideToxic', g.outsideToxic.length, { names: w })} lead={<p>{P('palette.warningsOutsideToxicMany', g.outsideToxic.length)}</p>} /></div>}
@@ -144,7 +145,7 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
           </Line_>
         ))}
         {g.mild.length > 0 && (
-          <Line_ head={T('palette.warningsTox_slight')} n={g.mild.length} cls="ct-fit-mild" note={<p class="ct-fit-note">{foods.length ? T('palette.warningsMildFoods', { names: wordList(foods) }) : T('palette.warningsMildLead')} {P('palette.warningsMild', g.mildFits, { n: num(g.mild.length) })}</p>}>
+          <Line_ head={T('palette.warningsTox_slight')} n={g.mild.length} cls="ct-fit-mild" note={<p class="ct-fit-note">{mildEx.foods ? <Names ids={mildEx.ids} name={name} size={size} few={3} text={(w) => T('palette.warningsMildFoods', { names: w })} /> : T('palette.warningsMildLead')} {P('palette.warningsMild', g.mildFits, { n: num(g.mild.length) })}</p>}>
             {list(g.mild)}
           </Line_>
         )}
@@ -158,8 +159,8 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
 const K = (l: Line): string => l.key.split('.').pop() ?? '';
 const vars = (l: Line) => Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, typeof v === 'number' ? num(v) : v]));
 // One card head for every Balance line and the Water use card: its words and, on a borrowed list, the
-// estimate mark (R10).
-const Est = ({ l }: { l: Line }) => (l.vars.term === 'estimate' ? <span class="ct-weigh-est">{T('estimate.short')}</span> : null);
+// estimate mark (R10), a space before it in the text so a heading reads "Water use estimate" (round 2 R6).
+const Est = ({ l }: { l: Line }) => (l.vars.term === 'estimate' ? <>{' '}<span class="ct-weigh-est">{T('estimate.short')}</span></> : null);
 
 // The plants with no water need recorded, named (BC17): "1 not recorded (Myrtle): that is not a pass.",
 // or past the size rule "86 not recorded:", the count cell, "That is not a pass.".
@@ -180,7 +181,10 @@ function Group({ label, ids, name, size }: { label: string; ids: readonly PlantI
 function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: number }) {
   const l = w.line, said = K(l), v = vars(l);
   if (w.kind === 'family') {
-    const fam = String(l.vars.family), words = `palette.balance.familyWords.${fam}`, hint = `palette.balance.familyHint.${fam}`, find = `palette.balance.familyFind.${fam}`;
+    // The board's "Find a soil feeder of another family" waits for a Find entry that takes a job and a
+    // predicate without a hole (Find.tsx, not this stream's; round 2 R1, C1): no action that opens an
+    // unfiltered list (hand-off: the entry brings back the action and its words in the 11 locales).
+    const fam = String(l.vars.family), words = `palette.balance.familyWords.${fam}`, hint = `palette.balance.familyHint.${fam}`;
     const hintText = has(hint) ? T(hint) : T('plants.weigh.familyHint');
     return (
       <li data-weigh="family" data-family={fam}>
@@ -188,7 +192,6 @@ function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: numb
         {inlineNames(w.members.length, size)
           ? <p><Names ids={w.members} name={name} size={size} text={(n) => `${n}. ${hintText}`} /></p>
           : <><Names ids={w.members} name={name} size={size} /><p>{hintText}</p></>}
-        {has(find) && <button type="button" class="ct-link-button" onClick={() => store.openFind({ job: 'feeds_soil', hole: null, fits: (t: Taxon) => t.family !== fam })}>{T(find)}</button>}
       </li>
     );
   }
@@ -212,13 +215,17 @@ function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: numb
     const [re, dr, me] = [n('regular'), n('dry'), n('medium')];
     const reg = w.members.slice(0, re), dry = w.members.slice(re, re + dr), mid = w.members.slice(re + dr, re + dr + me);
     const small = [reg, dry, mid].every((g) => inlineNames(g.length, size));
+    // "3 thirsty: …, dry-loving: …; … sit between." from the three groups' names (each through Names).
+    const sentence = (hi: string, lo: string, between: string | null) => T('palette.balance.waterMixSentence', {
+      high: P('palette.balance.waterMixHigh', re, { names: hi }), low: T('palette.balance.waterMixLow', { names: lo }),
+      mid: between === null ? '' : P('palette.balance.waterMixMid', mid.length, { names: between }),
+    });
     return (
       <li data-weigh="water">
         <strong>{P('palette.balance.waterMix', re, v)}</strong><Est l={l} />
-        <p>{T('palette.balance.waterMixFor', v)}{small && <> <Names ids={reg} name={name} size={size} text={(hi) => <Names ids={dry} name={name} size={size} text={(lo) => T('palette.balance.waterMixSentence', {
-          high: P('palette.balance.waterMixHigh', re, { names: hi }), low: T('palette.balance.waterMixLow', { names: lo }),
-          mid: mid.length ? P('palette.balance.waterMixMid', mid.length, { names: wordList(mid.map(name)) }) : '',
-        })} />} /></>}</p>
+        <p>{T('palette.balance.waterMixFor', v)}{small && <> <Names ids={reg} name={name} size={size} text={(hi) => <Names ids={dry} name={name} size={size} text={(lo) => (mid.length
+          ? <Names ids={mid} name={name} size={size} text={(between) => sentence(hi, lo, between)} />
+          : sentence(hi, lo, null))} />} /></>}</p>
         {!small && <><Group label={T('palette.balance.useHigh')} ids={reg} name={name} size={size} /><Group label={T('palette.balance.useLow')} ids={dry} name={name} size={size} /><Group label={T('palette.balance.useMedium')} ids={mid} name={name} size={size} /></>}
         <NotRecorded ids={none} name={name} size={size} />
       </li>

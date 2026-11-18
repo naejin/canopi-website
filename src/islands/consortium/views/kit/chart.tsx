@@ -17,7 +17,7 @@ import { memo } from 'preact/compat';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { Flag, JobId, PlantId, PlantVerdict, Stratum } from '../../../../lib/consortium/index.ts';
 import { fitLine, jobIds, phaseOfYear, strata } from '../../../../lib/consortium/index.ts';
-import { tableOf, type Picture, type PictureRow } from '../../rules/picture.ts';
+import { countingIds, tableOf, type Picture, type PictureRow } from '../../rules/picture.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { collatorFor, listOf } from './names.ts';
 import { JobIcon, jobWord, LevelIcon, say, sayAll } from './fit.tsx';
@@ -30,8 +30,6 @@ import { MoreList } from './more.tsx';
 // (views/kit/more.tsx MoreList: its first names, "+ N more", then 10, then all, "Show fewer").
 export const SIZE_PALETTE = 40;
 export const SIZE_GROUP = 12;
-// Words as one list in the page's language (a few example names inside a sentence).
-export const wordList = (words: string[]): string => listOf(words);
 export const inlineNames = (n: number, size: number): boolean => size <= SIZE_PALETTE && n <= SIZE_GROUP;
 
 // Member plants named in words (review R2, C1): every list of member names in the pictures, Warnings
@@ -95,20 +93,31 @@ export const LaneHead = ({ r }: { r: Pick<PictureRow, 'key' | 'head'> }) => (
   <>{isJob(r.key) ? <JobIcon job={r.key} /> : isStratum(r.key) ? <LightIcon stratum={r.key} /> : <span class="ct-light-swatch" aria-hidden="true" />}{say(r.head)}</>
 );
 
-// One plant as a button: its main job's icon, its name, its toxicity mark (role img, its words) and,
-// when it warns, its verdict's icon; its name read as one phrase (the plant, its main job, its toxicity,
-// recorded invasive, its fit when it warns). A grid bar one time span long draws its colour behind the
-// icon only and its name after it, in the text colour (board Main: "Crimson clover"), so no name is cut.
-export function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Picture; b: PlantButtons; cls?: string; span?: Span }) {
+// A plant's accessible name, one phrase: the plant, its main job, its toxicity, recorded invasive, its
+// fit when it warns (outside its range, needs a second look). Every plant button of the pictures reads
+// it, a bar, a chip or a name in a count cell (round 2 R2: a folded name keeps its words).
+function plantWords(id: PlantId, p: Picture, b: PlantButtons) {
   const v = b.verdictOf?.(id), job = p.jobs[id] ?? null, warn = !!v && (v.level === 'outside' || v.level === 'look');
   const flags = b.flagsOf?.(id), tox = toxOf(flags), invasive = !!flags?.some((f) => f.kind === 'invasive');
   const label = [p.names[id] ?? id, jobWord(job), ...(tox ? [T(`palette.warningsTox_${tox}`)] : []), ...(invasive && b.invasiveWord ? [b.invasiveWord] : []), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
+  return { v, job, warn, tox, label };
+}
+// One plant as a button: its main job's icon, its name, its toxicity mark (role img, its words) and,
+// when it warns, its verdict's icon; its name read as one phrase (plantWords). A grid bar one time span
+// long draws its colour behind the icon only and its name after it, in the text colour (board Main:
+// "Crimson clover"), so no name is cut.
+export function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Picture; b: PlantButtons; cls?: string; span?: Span }) {
+  const { v, job, warn, tox, label } = plantWords(id, p, b);
   return (
     <button type="button" class={cls} {...spanAttrs(span)} data-short={span && span[0] === span[1] ? '' : undefined} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} data-tox={tox ?? undefined} aria-label={label} onClick={() => b.onPlant(id)}>
       <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <ToxMark tox={tox} />}{warn && <LevelIcon level={v!.level} />}
     </button>
   );
 }
+// A plant as a name in a count cell: its name shown, its words (plantWords) as its accessible name.
+const NameButton = ({ id, p, b }: { id: PlantId; p: Picture; b: PlantButtons }) => (
+  <button type="button" class="ct-name" data-plant-id={id} aria-label={plantWords(id, p, b).label} onClick={() => b.onPlant(id)}>{p.names[id] ?? id}</button>
+);
 // A hole's title with its lane in bold, the part before the first colon ("**Part shade:** nobody, at
 // any time"; BC8): holeWords' one form, consortium.palette.holeTitle, puts the lane first.
 export function HoleTitle({ words }: { words: string }) {
@@ -122,36 +131,17 @@ export const HoleButton = ({ id, b, find, span }: { id: string; b: PlantButtons;
   </button>
 );
 
-// The grid's runs of one hole: the columns of each contiguous run of cells that are that hole.
-// A run spans the hole's own years when its id names them ("light:low:0-3": the first 3 years, also
-// over the time spans not judged yet, as board Main draws "Full sun: nobody in the first 3 years").
-function holeRuns(r: PictureRow): { id: string; from: number; to: number }[] {
-  const out: { id: string; from: number; to: number }[] = [];
-  r.cells.forEach((c, i) => {
-    const last = out.at(-1);
-    if (!c.hole) return;
-    if (last && last.id === c.hole && last.to === i - 1) last.to = i;
-    else out.push({ id: c.hole, from: i, to: i });
-  });
-  const last = r.cells.length - 1;
-  for (const run of out) {
-    const m = /:(\d+)-(\d+)(?::|$)/.exec(run.id);
-    if (!m) continue;
-    run.from = Math.min(run.from, phaseOfYear(Number(m[1])));
-    run.to = Math.min(last, Math.max(run.to, phaseOfYear(Number(m[2]), true)));
-  }
-  return out;
+// A level's plants in one time span (the phone's step): while the plants that count are 12 or fewer
+// (and the palette 40 or fewer), every plant as a chip, those outside their range among them with their
+// words; else the count cell of the plants that count (the size rule A14, on the same plants as the
+// row's figure, round 2 R2), then the plants outside their range apart, each a chip with its words.
+function LevelPlants({ r, ids, p, b, size }: { r: PictureRow; ids: readonly PlantId[]; p: Picture; b: PlantButtons; size: number }) {
+  const counting = countingIds(r, { ids: [...ids] });
+  const chips = (list: readonly PlantId[]) => <span class="ct-names-inline">{list.map((id) => <span key={id}><PlantButton id={id} p={p} b={b} /></span>)}</span>;
+  if (inlineNames(counting.length, size)) return chips(ids);
+  const out = ids.filter((id) => r.outside.includes(id));
+  return <><Names ids={counting} name={(id) => p.names[id] ?? id} size={size} render={(id) => <NameButton id={id} p={p} b={b} />} />{out.length > 0 && chips(out)}</>;
 }
-
-// A row's figure (review R8): the plants standing in it that count toward the holes (PictureRow.count,
-// the same rule as the holes), and those outside their climate range said apart.
-function RowCount({ r }: { r: PictureRow }) {
-  return <span class="ct-grid-count">{P('palette.chart.plants', r.count)}{r.outside > 0 && <span class="ct-grid-outside"> · {P('palette.cellsOutside', r.outside)}</span>}</span>;
-}
-// A level's plants in one time span, as chips, or (more than 12, or past 40 plants) the count cell.
-const chipsOf = (ids: readonly PlantId[], p: Picture, b: PlantButtons, size: number) => (
-  <Names ids={ids} name={(id) => p.names[id] ?? id} size={size} render={(id) => inlineNames(ids.length, size) ? <PlantButton id={id} p={p} b={b} /> : <button type="button" class="ct-name" onClick={() => b.onPlant(id)}>{p.names[id] ?? id}</button>} />
-);
 
 function YearsGridView({ p, b, size }: { p: Picture; b: PlantButtons; size: number }) {
   return (
@@ -161,22 +151,22 @@ function YearsGridView({ p, b, size }: { p: Picture; b: PlantButtons; size: numb
         {p.columns.map((c, i) => <span key={i} class="ct-grid-col">{say(c)}</span>)}
       </div>
       {p.rows.map((r) => {
-        // A level holding more than 12 plants: its count cell over the whole row, never 13 bars (C1).
-        const many = r.marks.length > SIZE_GROUP;
+        // A level of more than 12 plants that count (its head's figure): their count cell over the whole
+        // row, never 13 bars (C1); the plants outside their range stay bars with their words (R2).
+        const many = !inlineNames(r.count, size);
         return (
           <div key={r.key} class="ct-grid-row" data-lane={r.key} data-state={r.state}>
             <div class="ct-grid-lane">
               <span class="ct-grid-level"><LaneHead r={r} /></span>
-              <RowCount r={r} />
+              <span class="ct-grid-count">{P('palette.chart.plants', r.count)}</span>
             </div>
             <div class="ct-grid-bars">
-              {many
-                ? <div class="ct-grid-many" data-from={0} data-to={p.columns.length - 1}>{chipsOf(r.marks.map((m) => m.id), p, b, size)}</div>
-                : r.marks.map((m) => {
-                  const a = phaseOfYear(m.from), z = phaseOfYear(m.to, true);
-                  return <PlantButton key={m.id} id={m.id} p={p} b={b} cls="ct-bar" span={[a, z]} />;
-                })}
-              {holeRuns(r).map((h) => <HoleButton key={`${h.id}${h.from}`} id={h.id} b={b} find={T('palette.find')} span={[h.from, h.to]} />)}
+              {many && <div class="ct-grid-many" data-from={0} data-to={p.columns.length - 1}><Names ids={r.counted} name={(id) => p.names[id] ?? id} size={size} render={(id) => <NameButton id={id} p={p} b={b} />} /></div>}
+              {r.marks.filter((m) => !many || m.marked).map((m) => {
+                const a = phaseOfYear(m.from), z = phaseOfYear(m.to, true);
+                return <PlantButton key={m.id} id={m.id} p={p} b={b} cls="ct-bar" span={[a, z]} />;
+              })}
+              {r.holeRuns.map((h) => <HoleButton key={`${h.id}${h.from}`} id={h.id} b={b} find={T('palette.find')} span={[h.from, h.to]} />)}
             </div>
           </div>
         );
@@ -196,7 +186,7 @@ export function StepLevels({ p, column, b, size }: { p: Picture; column: number;
         return (
           <li key={r.key} class="ct-level" data-lane={r.key}>
             <span class="ct-level-head"><LaneHead r={r} /></span>
-            {c.ids.length > 0 && <span class="ct-level-plants">{chipsOf(c.ids, p, b, size)}</span>}
+            {c.ids.length > 0 && <span class="ct-level-plants"><LevelPlants r={r} ids={c.ids} p={p} b={b} size={size} /></span>}
             {c.hole && <HoleButton id={c.hole} b={b} find={T('palette.chart.findPlant')} />}
           </li>
         );
@@ -217,7 +207,7 @@ export function CountCells({ p, column, size, standing, b }: { p: Picture; colum
         return (
           <div key={r.key} class="ct-cell" role="group" aria-label={label} data-lane={r.key}>
             <p class="ct-cell-head"><span class="ct-grid-level">{say(r.head)}</span><span class="ct-grid-count">{P('palette.chart.plants', ids.length)}</span></p>
-            <Names ids={ids} name={(id) => p.names[id] ?? id} size={size} render={(id) => <button type="button" class="ct-name" onClick={() => b.onPlant(id)}>{p.names[id] ?? id}</button>} />
+            <Names ids={ids} name={(id) => p.names[id] ?? id} size={size} render={(id) => <NameButton id={id} p={p} b={b} />} />
             {hole && <HoleButton id={hole} b={b} find={T('palette.chart.findPlant')} />}
           </div>
         );

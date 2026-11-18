@@ -14,9 +14,9 @@
 // stays as the screen-reader form, visually hidden (Q8).
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { Flag, Hole, PhaseOrd, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { PHASE_YEARS, spans } from '../../../../lib/consortium/index.ts';
+import { PHASE_YEARS } from '../../../../lib/consortium/index.ts';
 import { changeSummary } from '../../rules/change-summary.ts';
-import { columnOf, type PictureRow } from '../../rules/picture.ts';
+import { columnOf, countingIds, type PictureRow } from '../../rules/picture.ts';
 import { yearsPicture } from '../../rules/picture-years.ts';
 import * as store from '../../store.ts';
 import { nameOf, P, T } from '../../strings.ts';
@@ -24,8 +24,6 @@ import { CountCells, HowToRead, JobKey, Names, SIZE_PALETTE, SrTable, StepLevels
 import { say, sayAll } from '../kit/fit.tsx';
 
 const PHONE = '(max-width: 639px)';
-// The size rule's palette threshold (A14), kit/chart.tsx's: past it, the count cells.
-export { SIZE_PALETTE };
 export function usePhone(): boolean {
   const [phone, setPhone] = useState(() => typeof matchMedia === 'function' && matchMedia(PHONE).matches);
   useEffect(() => {
@@ -80,10 +78,11 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
     store.yearStep.value = next;
   };
   const byId = useMemo(() => new Map(members.map((t) => [t.id, t])), [members]);
-  // A level's plants standing in the stepper's span, those outside their range left out (laneCounts).
-  const standing = (r: PictureRow): PlantId[] => r.cells[at].ids.filter((id) => { const t = byId.get(id); return !!t && counts(t); });
+  // A level's plants standing in the stepper's span that count (the picture's rows: those outside their
+  // range left out, as laneCounts), and those outside their range standing then, said apart.
+  const standing = (r: PictureRow): PlantId[] => countingIds(r, r.cells[at]);
   const stand = big ? picture.rows.reduce((n, r) => n + standing(r).length, 0) : 0;
-  const outsideThen = big ? members.filter((t) => !counts(t) && t.stratum && spans(t, at)) : [];
+  const outsideThen = big ? picture.rows.flatMap((r) => r.cells[at].ids.filter((id) => r.outside.includes(id))) : [];
   const stepper = (
     <div class="ct-stepper">
       <button type="button" class="button button-secondary ct-step-btn" data-dir="back" aria-disabled={at === 0 ? 'true' : undefined} onClick={() => go(at - 1)}><span class="visually-hidden">{T('palette.earlier')}</span></button>
@@ -105,7 +104,7 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
           {stepper}
           <CountCells p={picture} column={at} size={members.length} standing={standing} b={b} />
           <p class="ct-chart-note">{T('palette.chart.others')}</p>
-          {outsideThen.length > 0 && <div class="ct-chart-note"><Names ids={outsideThen.map((t) => t.id)} name={(id) => { const t = byId.get(id); return t ? nameOf(t) : id; }} size={members.length} text={(names) => P('palette.chart.othersOutside', outsideThen.length, { names })} lead={<p>{P('palette.chart.othersOutsideMany', outsideThen.length)}</p>} /></div>}
+          {outsideThen.length > 0 && <div class="ct-chart-note"><Names ids={outsideThen} name={(id) => { const t = byId.get(id); return t ? nameOf(t) : id; }} size={members.length} text={(names) => P('palette.chart.othersOutside', outsideThen.length, { names })} lead={<p>{P('palette.chart.othersOutsideMany', outsideThen.length)}</p>} /></div>}
         </>
       ) : phone ? (
         <>

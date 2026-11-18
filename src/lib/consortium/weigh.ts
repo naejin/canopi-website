@@ -17,6 +17,7 @@
 // - Your plants: each plant once, warned plants first (owner "warn, never hide"), then the plants it
 //   cannot show, and its full-grown size as a Line (the view formats the lengths for the page language).
 import type { Factor, Flag, Line, PlantId, PlantVerdict, SiteInputs, Taxon, VerdictContext, WeighLine } from './types.ts';
+import { jobsOf } from './jobs.ts';
 import type { FactValues } from './types.ts';
 import { factAt } from './source.ts';
 import { secondLook } from './conflicts.ts';
@@ -35,7 +36,9 @@ const FAMILY_SHARE = 0.25;
 
 // A plant's water need, from its water_need fact: drought tolerance when recorded (the direct answer to
 // "takes a dry summer"), else moisture use; null when neither is (a value outside these lists counts as
-// not recorded). 'regular' reads "Needs regular water" (owner 2026-11-15, never "thirsty").
+// not recorded). The v14 boards (approved 2026-11-18, later than the owner's 2026-11-15 "Needs regular
+// water") name the 'regular' plants "thirsty" in the mixed form ("Water needs: one thirsty plant among 9
+// recorded", PaletteMore); the board wins.
 export type WaterNeed = 'dry' | 'medium' | 'regular';
 const BY_DROUGHT: Record<string, WaterNeed> = { High: 'dry', Medium: 'medium', Low: 'regular', None: 'regular' };
 const BY_MOISTURE: Record<string, WaterNeed> = { Low: 'dry', Medium: 'medium', High: 'regular' };
@@ -85,7 +88,7 @@ export function weighLines(members: readonly Taxon[], ctx: WeighContext, { pendi
   // The soil pH hints (R3, A12): the members whose verdict carries one, in palette order.
   if (verdicts) {
     const hinted = members.filter((t) => phHint(verdicts.get(t.id))).map((t) => t.id);
-    if (hinted.length) out.push({ kind: 'soil', line: { key: B('soilHints'), vars: { n: hinted.length, m, ...term }, count: hinted.length }, members: hinted });
+    if (hinted.length) out.push({ kind: 'soil', line: { key: B('soilHints'), vars: { n: hinted.length, m, ...term } }, members: hinted });
   }
   return out;
 }
@@ -112,13 +115,13 @@ function waterLines(members: readonly Taxon[], ctx: WeighContext, m: number, unc
   const vars: Line['vars'] = { n, m, missing: none.length, unchecked, ...term };
   if (n < WATER_JUDGE_SHARE * m) return [{ kind: 'water', line: { key: K('weigh.waterFew'), vars }, members: none }];
   if (by.regular.length && by.dry.length) {
-    return [{ kind: 'water', line: { key: B('waterMix'), vars: { ...vars, regular: by.regular.length, dry: by.dry.length, medium: by.medium.length }, count: by.regular.length }, members: [...by.regular, ...by.dry, ...by.medium, ...none] }];
+    return [{ kind: 'water', line: { key: B('waterMix'), vars: { ...vars, regular: by.regular.length, dry: by.dry.length, medium: by.medium.length } }, members: [...by.regular, ...by.dry, ...by.medium, ...none] }];
   }
   // At a place with a dry summer, none needing regular water: "all 12 recorded take a dry summer"; the
   // members are the plants not recorded (vars.missing of them), named on the line.
   if (drySummer(ctx.inputs) && !by.regular.length) return [{ kind: 'water', line: { key: B('waterDrySummer'), vars }, members: none }];
   // No water line to show: the plants with no water need recorded, named on their own (review b3f-4).
-  if (none.length) return [{ kind: 'water', line: { key: B('notRecordedNamed'), vars, count: none.length }, members: none }];
+  if (none.length) return [{ kind: 'water', line: { key: B('notRecordedNamed'), vars }, members: none }];
   return [];
 }
 
@@ -127,14 +130,17 @@ function waterLines(members: readonly Taxon[], ctx: WeighContext, m: number, unc
 // The climate factors: a second look from one of these is "Near the edge of their climate range" (the
 // one set: views/palette/Weigh.tsx reads it through leaveGroups).
 export const CLIMATE_FACTORS: ReadonlySet<Factor> = new Set<Factor>(['cold', 'mild', 'cool', 'summer', 'hot', 'dry']);
-// The second look's reasons (a member may carry several).
-export type WarnReason = 'edge' | 'severe' | 'moderate' | 'invasive' | 'soil' | 'water' | 'misfit' | 'clash';
+// The second look's reasons (a member may carry several): the board's near the edge, toxic or very
+// toxic, recorded invasive in the chosen country (word-map "Needs a second look"), and the flags'
+// misfit (the room or plot) and serious clash.
+export type WarnReason = 'edge' | 'severe' | 'moderate' | 'invasive' | 'misfit' | 'clash';
 // The reason a 'look' verdict gives, from its limiting factor: one row per Factor, so a new factor fails
 // the type check instead of falling into a wrong reason (review R3): the climate factors are the edge of
-// the range, the soil pH its own reason, water and drainage theirs, light and wind the room or plot.
-export const LOOK_REASON: Readonly<Record<Factor, WarnReason>> = {
+// the range, light and wind the room or plot. The soil pH, drainage and water are hints that never set
+// the level (types.ts setsLevel, v14 0W-2 R3), so never the limiting factor of a look: null, no reason.
+export const LOOK_REASON: Readonly<Record<Factor, WarnReason | null>> = {
   cold: 'edge', mild: 'edge', cool: 'edge', summer: 'edge', hot: 'edge', dry: 'edge',
-  'soil-ph': 'soil', water: 'water', drainage: 'water', light: 'misfit', wind: 'misfit',
+  light: 'misfit', wind: 'misfit', 'soil-ph': null, water: null, drainage: null,
 };
 // The palette in lines that add up (each member on one): fits, needs a second look, outside its
 // climate range, not checked. A member outside its range is on that line whatever else it carries; a
@@ -158,7 +164,7 @@ const toxLevel = (fl: readonly Flag[]): string | null => fl.find((f) => f.kind =
 export function fitGroups(members: readonly Taxon[], verdicts: ReadonlyMap<PlantId, PlantVerdict> | null, flags: readonly Flag[]): FitGroups {
   const byId = new Map<PlantId, Flag[]>();
   for (const f of flags) { const l = byId.get(f.id); if (l) l.push(f); else byId.set(f.id, [f]); }
-  const reasons: Record<WarnReason, PlantId[]> = { edge: [], severe: [], moderate: [], invasive: [], soil: [], water: [], misfit: [], clash: [] };
+  const reasons: Record<WarnReason, PlantId[]> = { edge: [], severe: [], moderate: [], invasive: [], misfit: [], clash: [] };
   const g: FitGroups = { fits: [], look: [], outside: [], unknown: [], reasons, mild: [], mildFits: 0, outsideToxic: [], reasonCount: 0, several: 0 };
   const seen = new Set<PlantId>();
   for (const t of members) {
@@ -173,7 +179,7 @@ export function fitGroups(members: readonly Taxon[], verdicts: ReadonlyMap<Plant
     } else if (v.level === 'look' || secondLook(fl)) {
       g.look.push(t.id);
       const why = new Set<WarnReason>();
-      if (v.level === 'look') why.add(v.limiting ? LOOK_REASON[v.limiting.factor] : 'edge');
+      if (v.level === 'look') why.add((v.limiting && LOOK_REASON[v.limiting.factor]) || 'edge');
       if (tox === 'Severe') why.add('severe');
       if (tox === 'Moderate') why.add('moderate');
       if (fl.some((f) => f.kind === 'invasive')) why.add('invasive');
@@ -186,6 +192,18 @@ export function fitGroups(members: readonly Taxon[], verdicts: ReadonlyMap<Plant
     if (tox === 'Slight') { g.mild.push(t.id); if (v && v.level === 'fits' && !secondLook(fl)) g.mildFits++; }
   }
   return g;
+}
+
+// The Mildly toxic line's examples (board ManyDesk: "Mildly toxic is a mark on the plant, not a second
+// look: many are common foods (African marigold, Bay laurel, Bell Pepper)"): the first three Mildly toxic
+// members in name order (`compare` over `name`, the page's collation), and whether "many are common
+// foods" holds: more than half of the Mildly toxic members feed you (jobs.ts jobsOf). Else the view says
+// the plain lead.
+export function mildExamples(g: Pick<FitGroups, 'mild'>, members: readonly Taxon[], name: (id: PlantId) => string, compare: (a: string, b: string) => number): { ids: PlantId[]; foods: boolean } {
+  const byId = new Map(members.map((t) => [t.id, t]));
+  const ids = [...g.mild].sort((a, b) => compare(name(a), name(b))).slice(0, 3);
+  const fed = g.mild.filter((id) => { const t = byId.get(id); return !!t && jobsOf(t).includes('feeds_you'); }).length;
+  return { ids, foods: fed * 2 > g.mild.length };
 }
 
 // The small Warnings card's range line (board MainMore): the members that leave their climate range by

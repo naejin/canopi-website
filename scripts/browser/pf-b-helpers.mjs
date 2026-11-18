@@ -83,3 +83,24 @@ export const standing = (f, at) => f.lanes.filter((l) => l.kind === 'light').red
 export const laneOf = (f, key) => f.lanes.find((l) => l.key === key);
 // The plants whose jobs are not checked (the union of the job lanes' unchecked).
 export const uncheckedOf = (f) => new Set(f.lanes.filter((l) => l.kind === 'job').flatMap((l) => l.unchecked));
+
+// The members doing each job (core jobs.ts jobsOf, the engine's rule, run here on the page's taxa).
+export async function jobCounts(page) {
+  const { jobsOf } = await import('../../src/lib/consortium/jobs.ts');
+  const taxa = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.map((t) => ({ id: t.id, role: t.role, functions: t.functions })));
+  const out = {};
+  for (const t of taxa) for (const j of jobsOf(t)) out[j] = (out[j] ?? 0) + 1;
+  return out;
+}
+
+// What a grower reads inside the section a heading opens (the heading's nearest section), by element
+// kind or role, never a class: `pick` runs in the page on that section and returns plain data.
+const SECTION_OF = (h) => {
+  const hs = [...document.querySelectorAll('main h2, main h3, main h4')];
+  const el = hs.find((e) => e.textContent.replace(/\s+/g, ' ').trim().startsWith(h));
+  return el ? (el.closest('section, article, aside, [role="region"]') ?? el.parentElement) : null;
+};
+export const inSection = (page, heading, pick, arg = null) => page.evaluate((h, f, p, a) => {
+  const s = new Function(`return (${f})`)()(h);
+  return s ? new Function(`return (${p})`)()(s, a) : null;
+}, heading, SECTION_OF.toString(), pick.toString(), arg);
