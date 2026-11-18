@@ -37,6 +37,7 @@ import { climate, closeSheet, country, location as siteLocation, proposedClimate
 import { P, T, pageLang } from '../../strings.ts';
 import { formatArea, formatLength, parsePlotSize } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
+import { PlaceFigures } from '../figures/slots.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
 import { climateChosen, climateShown, linkPlace, restoring } from '../../state/persist.ts';
 import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
@@ -397,7 +398,8 @@ export function Place() {
   return (
     <>
       <PlaceNotices />
-      {view.value === 'start' ? <PlaceForm /> : <Head />}
+      {/* v14 0W-1 item 8: PlaceFigures, a stub that renders nothing until pf-d; pf-c places it under the questions. */}
+      {view.value === 'start' ? <><PlaceForm /><PlaceFigures /></> : <Head />}
       {/* Always on the page, empty when nothing loads (A25); it also says what a notice's answer did. */}
       <p class="status-line ct-place-status" role="status">{view.value === 'start' && waiting ? T('load.plants') : placeSaid.value}</p>
     </>

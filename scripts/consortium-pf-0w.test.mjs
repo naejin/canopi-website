@@ -217,12 +217,12 @@ test('site-change: typed stubs exported from the core index (pf-d writes them)',
 // ---- the store, on the installed export (a Kiambu palette of the Subtropical list) ----
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 const scenarios = JSON.parse(readFileSync(new URL('./fixtures/consortium-scenarios.json', import.meta.url), 'utf8'));
-const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
-const real = createSqliteSource(opened.db, { images: {} });
-const store = await import('../src/islands/consortium/store.ts');
-const { state } = await import('../src/islands/consortium/state/schema.ts');
+const [{ openBytes }, { createSqliteSource }, store, { state }] = await Promise.all([
+  import('../src/islands/consortium/data/load.ts'), import('../src/islands/consortium/data/sqlite-source.ts'),
+  import('../src/islands/consortium/store.ts'), import('../src/islands/consortium/state/schema.ts'),
+]);
+const exportBytes = new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url))));
+const real = createSqliteSource((await openBytes(exportBytes, { releaseId: index.release_id, climates: index.climates })).db, { images: {} });
 const placeOf = (name, lat, lon) => {
   const p = scenarios.places[name];
   return { lat: lat ?? p.lat, lon: lon ?? p.lon, source: 'search', label: name, lookup: { lat: p.lat, lon: p.lon, soil: p.soil, regions: { wgsrpdL3: null, isoA2: null }, climate: { cellLat: lat ?? p.lat, cellLon: lon ?? p.lon, distanceCells: 0, periods: p.periods } } };

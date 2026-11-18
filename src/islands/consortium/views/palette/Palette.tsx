@@ -29,6 +29,7 @@ import { NextStep, openFillers } from './NextStep.tsx';
 import { Weigh } from './Weigh.tsx';
 import { Years } from './Years.tsx';
 import { YourPlants } from './YourPlants.tsx';
+import { PaletteLimits } from '../figures/slots.tsx';
 
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
 // step on the phone never re-renders the page (review r1 bugs-10).
@@ -121,6 +122,8 @@ export function Palette() {
       </div>
       <YourPlants rows={rows} />
       <Weigh members={members} pending={loading} unchecked={unchecked} />
+      {/* v14 0W-1 item 8: the figures panel's palette place, a stub that renders nothing until pf-d; pf-b places it. */}
+      <PaletteLimits />
       <Said />
       {shown && <FirstView />}
       <FindEntry where="bar" />
