@@ -23,7 +23,8 @@
 // panel, the save or a link is made safe once by siteEditsOf. The old spot and soil answers are gone
 // (v14 0W-2 R4).
 import type { ClimateInput, PaletteGoals, Room, SiteEdits, SiteInput, SiteInputs, SiteLookup, SitePeriod, SoilPhInput } from './types.ts';
-import { drainages, waterings } from './types.ts';
+import { drainages, textureIds, waterings } from './types.ts';
+import type { TextureId } from './types.ts';
 import { todayOf } from './site-today.ts';
 
 // No grower edit: the map as it is (the page today).
@@ -146,6 +147,22 @@ const SOIL_CELL_KM = 0.05 * 111.32;
 // in pots or brought-in soil, none (the ground's pH says nothing about the pot's). A hint, never a level
 // (types.ts setsLevel).
 export const soilPhOf = (inputs: SiteInputs | null): number | null => (!inputs || inputs.pots.value === true ? null : inputs.soilPh.value);
+
+// The soil map's texture at the place (lookup.ts textureClass, one of the 12 USDA classes), or null: no
+// soil read, or a class the core does not name. A reading the drainage line shows while unanswered,
+// and names once answered ("in place of the soil map's clay loam"); never a hint and never a drainage
+// answer (v14 A8: the hint comes only from the grower's "Stays wet for days").
+export function soilTextureOf(lookup: SiteLookup | null): TextureId | null {
+  const t = lookup?.soil?.texture ?? null;
+  return t !== null && (textureIds as readonly string[]).includes(t) ? (t as TextureId) : null;
+}
+
+// A dry place: a dryland in the UNCCD sense, the aridity index (rain over potential evapotranspiration)
+// under 0.65 (hyper-arid, arid, semi-arid and dry sub-humid; UNEP 1992). The Water card says "Your
+// place is dry" only there; a member drier than its band at a humid place is said without it. null
+// (on ice, not known): never dry.
+export const DRYLAND_AI = 0.65;
+export const isDryland = (aridityIndex: number | null | undefined): boolean => typeof aridityIndex === 'number' && aridityIndex < DRYLAND_AI;
 
 // ---- Palette goals: read beside the site inputs, never a site fact ----
 

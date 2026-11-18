@@ -18,11 +18,11 @@
 import { computed, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon, TextureId } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
 import {
-  LIMIT_LINES, NEAREST_LISTS, NO_EDITS, NO_SITE_CHANGE, EDIT_LIMITS, PH_BANDS, changeDetailLines, checksFailedLine, climateFor, countingLine, drierOf, hintsOf, holes,
-  lineCounts, limitsOf, named, periodIds, periodName, phBandOf, rangeMoves, siteChange, siteChangeLines, siteInputsOf, siteSnapshot, textureIds, textureLine,
-  textureNameLine, warmthOf, yearMeanC,
+  LIMIT_LINES, NEAREST_LISTS, NO_EDITS, NO_SITE_CHANGE, EDIT_LIMITS, PH_BANDS, changeDetailLines, checksFailedLine, climateFor, countingLine, drainageLine, drierOf, hintsOf,
+  holes, isDryland, lineCounts, limitsOf, named, periodIds, periodName, phBandOf, potsLine, rangeMoves, siteChange, siteChangeLines, siteInputsOf, siteSnapshot, soilTextureOf,
+  textureLine, textureNameLine, warmthOf, wateringLine, windRecorded, yearMeanC,
 } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { P, T, nameOf, pageLang } from '../../strings.ts';
@@ -120,6 +120,18 @@ const membersDry = computed(() => {
   return first;
 });
 const located = computed(() => !!store.location.value?.lookup);
+// The listed plants with a recorded wind tolerance (core windRecorded over the source's layer values):
+// "recorded for only N plants on the list" once the source reads them; until then (the PP-G source
+// returns none) the sentence without a number, never a guessed count.
+const windCount = signal<number | null>(null);
+let windAsk = 0;
+const windWords = computed(() => (windCount.value ? FP('laterWindCount', windCount.value) : F('laterWind')));
+function askWind(): void {
+  const src = store.source.value, c = store.climate.value, ids = list.value.map((t) => t.id), ask = ++windAsk;
+  windCount.value = null;
+  if (!src || !c || !ids.length) return;
+  src.layerValues(ids, c).then((values) => { if (ask === windAsk) windCount.value = windRecorded(ids, values); }, () => {});
+}
 // store.openFigure's target for the panel as a whole (no line named).
 const PANEL = 'panel';
 
@@ -289,16 +301,11 @@ function phSource(i: SiteInputs, short: boolean): string {
   if (s.nearKm) return F('srcNear', { dist: km(s.nearKm) });
   return F(short ? 'srcSoilShort' : 'srcSoil');
 }
-const answerWord = (line: ChoiceLine, i: SiteInputs): string => {
-  if (line === 'watering') return F(({ rain: 'waterRain', 'first-years': 'waterFirst', 'all-year': 'waterAll' } as const)[i.watering.value ?? 'rain']);
-  if (line === 'drainage') return F(i.drainage.value === 'wet' ? 'drainWet' : 'drainDrains');
-  return F(i.pots.value ? 'potsPots' : 'potsGround');
-};
-// The soil map's texture at the place (a reading for the drainage line, never a hint: A8).
-const texture = computed<TextureId | null>(() => {
-  const t = store.location.value?.lookup?.soil?.texture ?? null;
-  return t !== null && (textureIds as readonly string[]).includes(t) ? (t as TextureId) : null;
-});
+// A choice line's answer (or the one taken while not answered), in the words the summary says it with.
+const answerWord = (line: ChoiceLine, i: SiteInputs): string =>
+  sayAll([line === 'watering' ? wateringLine(i.watering.value ?? 'rain') : line === 'drainage' ? drainageLine(i.drainage.value ?? 'drains') : potsLine(!!i.pots.value)]);
+// The soil map's texture at the place (core soilTextureOf: a reading for the drainage line, never a hint: A8).
+const texture = computed(() => soilTextureOf(store.location.value?.lookup ?? null));
 const textureWords = (t: NonNullable<typeof texture.value>): string => sayAll([textureLine(t)]);
 function choiceSource(line: ChoiceLine, i: SiteInputs) {
   const s = i[line].source;
@@ -358,7 +365,11 @@ function effect(line: LineId, i: SiteInputs, main: boolean, panel = true): strin
     // and more plants are drier later; then which months are dry, not in our data.
     const s = store.scenario.value, r0 = climateFor({ inputs: i, scenario: s }, TODAY)?.precipMm, r2 = climateFor({ inputs: i, scenario: s }, LAST)?.precipMm;
     const stays = r0 !== undefined && r2 !== undefined && r0 > 0 && Math.abs(r2 - r0) / r0 < 0.05 && z.drier > a.drier;
-    return `${lead || `${F('rainNever')} `}${F(stays ? 'rainDrierStays' : 'rainDrier', { n: n0(a.drier), fit: n0(a.fit), mid: n0(b.drier), last: n0(z.drier) })} ${F('rainDryWhen')}${panel ? ` ${F('rainShift')}` : ''}`;
+    // The note's words follow the watering answer (verdict.ts R2): rain only, "may need watering"; the
+    // first years, "water it the first years"; all year, no note.
+    const w = i.watering.value ?? 'rain';
+    const key = w === 'first-years' ? 'rainDrierFirst' : w === 'all-year' ? 'rainDrierAllYear' : stays ? 'rainDrierStays' : 'rainDrier';
+    return `${lead || `${F('rainNever')} `}${F(key, { n: n0(a.drier), fit: n0(a.fit), mid: n0(b.drier), last: n0(z.drier) })} ${F('rainDryWhen')}${panel ? ` ${F('rainShift')}` : ''}`;
   }
   if (line === 'dry') {
     const m = i.dryMonths.value;
@@ -592,7 +603,10 @@ function choiceWhere(line: ChoiceLine, i: SiteInputs, answer = true) {
 
 // ---- one line ----
 // card: the row stands in the palette's limits card (no shift sentences there: board SiteMendoza).
-function Row({ line, i, always, main, card = false }: { line: LineId; i: SiteInputs; always: boolean; main: boolean; card?: boolean }) {
+function Row({ line, i, always: wide, main, card = false }: { line: LineId; i: SiteInputs; always: boolean; main: boolean; card?: boolean }) {
+  // The Pots line set by the room shows its two options in place on every width (v14 A3, F9): one tap
+  // to answer "In the ground", as on the laptop.
+  const always = wide || (line === 'pots' && i.pots.source === 'room');
   const climate = (CLIMATE as readonly string[]).includes(line);
   const cl = line as ClimateLine;
   const known = climate ? i[INPUT[cl]].value !== null : true;
@@ -755,6 +769,7 @@ function GroupHead({ text }: { text: string }) {
 
 export function PlaceFigures() {
   const i = store.siteInputs.value;
+  useEffect(askWind, [store.source.value, store.climate.value, list.value]);
   const wide = desk.value;
   const main = mainLimit.value;
   const root = useRef<HTMLElement>(null);
@@ -797,8 +812,8 @@ export function PlaceFigures() {
       </div>
       {wide && meaningP}
       <Fold label={F('laterTitle')} start={wide}>
-        <p><strong>{F('laterLightHead')}</strong> {F('laterLight')}</p>
-        <p><strong>{F('laterWindHead')}</strong> {F('laterWind')}</p>
+        <p><strong>{F('laterLightHead')}</strong> <span class="fg-later">{F('laterChip')}</span> {F('laterLight')}</p>
+        <p><strong>{F('laterWindHead')}</strong> <span class="fg-later">{F('laterChip')}</span> {windWords.value}</p>
       </Fold>
       <Fold label={F('notAskedTitle')} labelClosed={F('notAskedClosed')} start={wide}>
         <ul class="fg-list">{['askDay', 'askPests', 'askAnimals', 'askBudget', 'askFire'].map((k) => <li key={k}><Lead text={F(k)} /></li>)}</ul>
@@ -818,26 +833,30 @@ function MembersDry({ i }: { i: SiteInputs }) {
   const dry = membersDry.value, members = store.memberTaxa.value;
   if (!dry || !members.length) return null;
   const size = members.length;
+  // Watered all year: no plant carries the note (verdict.ts R2), so no member is named as needing water.
+  if (i.watering.value === 'all-year') return <p class="fg-effect"><strong>{F('membersAllYear')}</strong> {F('waterEffect')}</p>;
+  // The first years: "water it the first years", the note's own words (board PlaceDesk options).
+  const first = i.watering.value === 'first-years' ? 'First' : '';
   const at = (p: PeriodId) => members.filter((t) => dry.get(t.id) === p);
   const today = at(TODAY), later = [MID, LAST].map((p) => [p, at(p)] as const).filter(([, ts]) => ts.length);
   const others = size - dry.size;
   const rest: string[] = [];
   for (const [p, ts] of later) rest.push(named(ts.length, size) ? F('membersDryLater', { names: listOf(ts.map(nameOf)), period: periodName(p) }) : FP('membersDryLaterMany', ts.length, { period: periodName(p) }));
   if (dry.size && others) rest.push(FP('membersDryOther', others));
-  if (i.watering.value === 'all-year') rest.push(F('membersAllYear'));
   rest.push(F('waterEffect'));
   const tail = ` ${rest.join(' ')}`;
   // Board SiteMendoza: one paragraph, its first sentence's lead in bold ("1 of your 8 plants may need
   // watering today:"), then the names, the later periods, the others and what the answer does.
   if (!today.length) return <p class="fg-effect"><strong>{F('membersDryNone', { size: n0(size) })}</strong>{tail}</p>;
   if (named(today.length, size)) {
-    const first = FP('membersDry', today.length, { size: n0(size), names: listOf(today.map(nameOf)) });
-    return <p class="fg-effect"><Lead text={first} />{tail}</p>;
+    const lead = FP(`membersDry${first}`, today.length, { size: n0(size), names: listOf(today.map(nameOf)) });
+    return <p class="fg-effect"><Lead text={lead} />{tail}</p>;
   }
+  const many = FP(`membersDryMany${first}`, today.length, { size: n0(size) });
   return (
     <div class="fg-effect">
-      <p class="fg-effect"><strong>{FP('membersDryMany', today.length, { size: n0(size) })}</strong></p>
-      <MoreList items={today} keyOf={(t) => t.id} render={nameOf} paletteSize={size} group={FP('membersDryMany', today.length, { size: n0(size) })} class="fg-names" />
+      <p class="fg-effect"><strong>{many}</strong></p>
+      <MoreList items={today} keyOf={(t) => t.id} render={nameOf} paletteSize={size} group={many} class="fg-names" />
       <p class="fg-effect">{tail.trim()}</p>
     </div>
   );
@@ -855,6 +874,9 @@ function WaterCard({ i }: { i: SiteInputs }) {
   const today = members.filter((t) => dry.get(t.id) === TODAY), later = members.filter((t) => dry.get(t.id) && dry.get(t.id) !== TODAY);
   const rest = members.filter((t) => !dry.has(t.id));
   const c = counts.value?.periods[0], z = store.climate.value;
+  // "Your place is dry" only where the place is (a dryland, core isDryland), not wherever a member is
+  // drier than its band (C7).
+  const dryland = isDryland(climateFor({ inputs: i, scenario: store.scenario.value }, TODAY)?.aridityIndex);
   const chip = (text: string) => <span class="fg-chip fg-chip-map"><Icon d={DROP_ICON} />{text}</span>;
   const item = (t: Taxon) => dry.get(t.id) === TODAY
     ? <>{chip(F(first ? 'waterNowFirst' : 'waterNow'))} {F('waterNowWhy', { name: nameOf(t) })}</>
@@ -867,7 +889,7 @@ function WaterCard({ i }: { i: SiteInputs }) {
   return (
     <section class="fg-panel fg-water" aria-labelledby="fg-water-h">
       <h2 class="fg-h2" id="fg-water-h">{F('waterTitle')}</h2>
-      {i.rain.value !== null && <p class="fg-lede"><DryLede text={F('waterDry', { rain: mm(i.rain.value) })} /></p>}
+      {i.rain.value !== null && dryland && <p class="fg-lede"><DryLede text={F('waterDry', { rain: mm(i.rain.value) })} /></p>}
       <p class="fg-water-lead">{lead}</p>
       <MoreList items={[...today, ...later]} keyOf={(t) => t.id} render={item} paletteSize={size} group={lead} class="fg-list fg-water-list" />
       <p class="fg-note">{[restWords, F('waterNever'), c && z ? F('waterList', { fit: n0(c.fit), n: n0(c.drier), list: listWord(z) }) : ''].filter(Boolean).join(' ')}</p>

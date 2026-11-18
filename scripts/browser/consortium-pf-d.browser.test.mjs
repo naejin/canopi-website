@@ -13,7 +13,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { useHarness, aria, has } from './helpers.mjs';
-import { control, done, focused, inOrder, pastEdge, press, says, saysNot, section, sectionText, toastText, withStorage } from './pf-helpers.mjs';
+import { loadCase, control, done, focused, inOrder, pastEdge, press, says, saysNot, section, sectionText, toastText, withStorage } from './pf-helpers.mjs';
+import { searchFor } from './pf-c-helpers.mjs';
+import { failing } from '../expect-fail.mjs';
 import { atBoardPlace, atPlace, edits, movedTo, engineCounts, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
 
 useHarness();
@@ -205,7 +207,10 @@ test('PFD8 (pf-d F6): the verdict chunk failed: the edit is kept, the toast read
   await tapOption(page, 'Watering', 'Watered all year');
   assert.equal((await edits(page)).watering, 'all-year', 'board: the edit is kept');
   assert.ok(await page.waitForFunction(() => (window.__ctTest.store.toast.value?.text ?? '').includes('Checks could not run'), { timeout: 5000 }).then(() => true, () => false), `board: the toast says the checks could not run ("${await toastText(page)}")`);
-  assert.ok(await page.evaluate(() => window.__ctTest.store.toast.value?.action?.label === 'Try again' || !!window.__ctTest.store.toast.value?.action), 'board: Retry on the toast');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.toast.value?.action?.label ?? null), 'Try again', 'board: Retry on the toast, by its label');
+  // F6: the lines' counts read "not checked" while the checks cannot run (never a count from partial data).
+  await press(page, 'button', 'Coldest nights');
+  assert.match(await lineText(page, 'Coldest nights'), /not checked/, 'F6: the line counts read not checked');
   assert.ok(await page.evaluate(() => typeof window.__ctTest.store.toast.value?.undo === 'function'), 'board: Undo stays');
   await done(page);
 });
@@ -834,4 +839,106 @@ for (const width of [320, 390, 960, 1280]) {
     assert.deepEqual(await pastEdge(page), [], `section 6: nothing passes the right edge at ${width}`);
     await done(page);
   });
+}
+
+// ---- fix round 1, batch 4 (review findings C5-C12) ----
+
+failing('PFD32 (pf-d C5; waits for the hand-off: state/location.ts reads the soil tile): after a real lookup (typed coordinates at Kiambu) the drainage line reads the soil map\'s texture and the pH line the soil map\'s value', { owner: 'pf-d', reason: /the soil map's reading after a real lookup/ }, async () => {
+  const page = await placeStep('kiambu-8', { site: null, width: 390 });
+  await searchFor(page, '-1.1714, 36.8356');
+  assert.ok(await page.waitForFunction(() => Math.abs((window.__ctTest.store.location.value?.lat ?? 0) + 1.1714) < 0.01 && !!window.__ctTest.store.location.value?.lookup, { timeout: 20_000 }).then(() => true, () => false), 'the typed place is read');
+  await section(page, 'Your place in figures', 20_000);
+  const drain = await lineText(page, 'The ground after heavy rain');
+  assert.match(drain, /^The ground after heavy rain Likely holds water: clay · soil map/, `the soil map's reading after a real lookup ("${drain}")`);
+  assert.match(await lineText(page, 'Soil pH'), /^Soil pH \d+\.\d, [a-z ]+ · soil map/, 'the soil map\'s reading after a real lookup: the pH');
+  await done(page);
+});
+
+test('PFD33 (pf-d C7): at a humid place (Kiambu, 250 mm less rain, still humid) the Water card never says "Your place is dry", and its lead counts each member at the period it is first drier in', async () => {
+  const page = await loadKiambuWater();
+  const ai = await page.evaluate(() => window.__ctTest.store.siteInputs.value.periods.find((p) => p.period === '1991-2020')?.aridityIndex ?? null);
+  assert.ok(ai !== null && ai >= 0.65, `the place stays humid (aridity index ${ai})`);
+  const card = await sectionBy(page, 'Water', (s) => s.innerText.replace(/\s+/g, ' '));
+  assert.ok(card, 'the Water card shows (a member is drier here)');
+  assert.ok(!card.includes('Your place is dry'), `C7: a humid place is not a dry place ("${card.slice(0, 160)}")`);
+  const firsts = await memberFirsts(page);
+  const lead = await sectionBy(page, 'Water', (s) => [...s.querySelectorAll('p')].map((p) => p.innerText.replace(/\s+/g, ' ').trim()).find((t) => t.startsWith('With rain only')) ?? null);
+  assert.ok(lead, 'the Water card\'s lead');
+  for (const [p, n] of Object.entries(firsts)) if (p !== '1991-2020') assert.ok(lead.includes(`${n} more by ${p.replace('-', '–')}`), `C7: ${n} more by ${p} ("${lead}")`);
+  if (!firsts['2041-2070']) assert.doesNotMatch(lead, /[1-9]\d* more by 2041–2070/, `C7: no member is first drier by 2041–2070 ("${lead}")`);
+  await done(page);
+});
+
+test('PFD34 (pf-d C8): the members line follows the watering answer ("water it the first years"); watered all year, rain is no longer the main limit and no member "may need watering"', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  const membersLine = () => sectionBy(page, 'What limits plants here', (s) => s.querySelector('[role="group"][aria-label="Watering"]')?.innerText.replace(/\s+/g, ' ') ?? '');
+  assert.match(await membersLine(), /may need watering today/, 'rain only: "may need watering"');
+  await tapOption(page, 'Watering', 'Watered the first years');
+  await summary(page);
+  const first = await membersLine();
+  assert.match(first, /water (it|them) the first years/, `C8: the members line says "water it the first years" ("${first.slice(0, 200)}")`);
+  assert.doesNotMatch(first.split('Dryness never changes')[0], /may need watering/, 'C8: never "may need watering" once watered the first years');
+  await tapOption(page, 'Watering', 'Watered all year');
+  await summary(page);
+  const card = await section(page, 'What limits plants here');
+  const rows = await sectionBy(page, 'What limits plants here', (s) => [...s.querySelectorAll('[role="group"][aria-label]')].map((g) => g.getAttribute('aria-label')));
+  assert.ok(!rows.includes('Rain a year'), `C8: watered all year, no plant carries the note: rain is no limit (${JSON.stringify(rows)})`);
+  assert.ok(!card.includes('The main limit here.') || !rows.includes('Rain a year'), 'C8: rain is not "The main limit here."');
+  const all = await membersLine();
+  assert.ok(all.includes('Watered all year: no plant carries the note.'), `C8: the members line says no note ("${all.slice(0, 200)}")`);
+  assert.doesNotMatch(all.split('Dryness never changes')[0], /may need watering/, 'C8: no member "may need watering" when watered all year');
+  await done(page);
+});
+
+test('PFD35 (pf-d C9; PlaceDesk at 1280): "After release" names each part with its "after release" chip', async () => {
+  const page = await placeStep('seville-board', { site: 'seville', width: 1280 });
+  await atBoardPlace(page, 'seville-board');
+  await section(page, 'Your place in figures', 20_000);
+  const parts = await sectionBy(page, 'Your place in figures', (s) => [...s.querySelectorAll('p')].filter((p) => /^(Light on your plot|Wind and sea)/.test(p.innerText.trim())).map((p) => ({ head: p.querySelector('strong')?.textContent.trim(), chip: [...p.querySelectorAll('span')].map((x) => x.textContent.trim()).find((t) => t === 'after release') ?? null })));
+  assert.deepEqual(parts, [{ head: 'Light on your plot', chip: 'after release' }, { head: 'Wind and sea', chip: 'after release' }], 'board PlaceDesk: the head, then its "after release" chip');
+  await done(page);
+});
+
+test('PFD36 (pf-d C10, A3, F9; SiteKiambu at 390): the room "Pots or a balcony" shows the Pots line\'s two options in place: "In the ground" is one tap', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await page.evaluate(() => { window.__ctTest.store.room.value = 'pots'; });
+  await says(page, 'From your room');
+  assert.equal(await pressed(page, 'Pots or brought-in soil', 'Pots or brought-in soil'), 'true', 'A3: the room\'s answer is pressed in place');
+  await tapOption(page, 'Pots or brought-in soil', 'In the ground');
+  assert.equal((await edits(page)).pots, false, 'A3: one tap writes the answer');
+  await done(page);
+});
+
+// Kiambu's 8 plants, plus (when none is drier) a plant of the list first drier later, so the Water card
+// shows; the members' first drier period from the engine.
+async function memberFirsts(page) {
+  return page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, ms = s.memberTaxa.value;
+    const periods = ['1991-2020', '2041-2070', '2071-2099'];
+    const drier = (v) => !!v && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
+    const vs = periods.map((p) => rule.verdicts(ms, { ...s.verdictContext.value, period: p }));
+    const out = {};
+    for (const t of ms) { const k = vs.findIndex((m) => drier(m.get(t.id))); if (k >= 0) out[periods[k]] = (out[periods[k]] ?? 0) + 1; }
+    return out;
+  });
+}
+async function loadKiambuWater() {
+  const page = await loadCase('kiambu-8', { width: 390 });
+  await page.evaluate(() => { window.__ctTest.store.siteEdits.value = { rainShiftMm: -250 }; });
+  await section(page, 'What limits plants here', 20_000);
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.memberVerdicts.value && window.__ctTest.store.siteInputs.value.rain.shift === -250, { timeout: 20_000 }).then(() => true, () => false), 'the rain cut is read');
+  if (Object.keys(await memberFirsts(page)).length) return page;
+  const drierOne = await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, list = s.pool.value ?? [];
+    const drier = (v) => !!v && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
+    const vs = ['2071-2099', '2041-2070', '1991-2020'].map((p) => rule.verdicts(list, { ...s.verdictContext.value, period: p }));
+    return list.find((t) => vs.some((m) => drier(m.get(t.id))))?.id ?? null;
+  });
+  assert.ok(drierOne, 'engine: a plant of Kiambu\'s lists is drier here with 250 mm less rain');
+  const ids = await page.evaluate(() => window.__ctTest.store.members.value);
+  await page.evaluate((x) => { window.__ctTest.store.members.value = x; }, [...ids, drierOne]);
+  assert.ok(await page.waitForFunction((n) => window.__ctTest.store.memberTaxa.value.length === n && !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 }, ids.length + 1).then(() => true, () => false), 'the members');
+  return page;
 }

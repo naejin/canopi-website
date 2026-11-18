@@ -32,27 +32,24 @@ export async function placeStep(id, opts = {}) {
   return page;
 }
 
-// The engine's counts for the panel, on the page's own state: per period, the list's plants judged and
-// outside on neither night side ("take these nights"), the fit ones (fits or second look), the fit ones
-// where the place is drier than their recorded band, and the members drier today and later.
-export const engineCounts = (page) => page.evaluate(() => {
-  const s = window.__ctTest.store, rule = s.verdictRule.value, list = s.pool.value ?? [];
-  const periods = ['1991-2020', '2041-2070', '2071-2099'];
-  const drier = (v) => v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
-  return periods.map((p) => {
-    const vs = rule.verdicts(list, { ...s.verdictContext.value, period: p });
-    let nights = 0, fit = 0, dry = 0;
-    for (const t of list) {
-      const v = vs.get(t.id);
-      if (!v) continue;
-      const ok = v.level === 'fits' || v.level === 'look';
-      if (ok) fit++;
-      if (ok && drier(v)) dry++;
-      if (v.range === 'judged' && !v.factors.some((f) => (f.factor === 'cold' || f.factor === 'mild') && f.level === 'outside')) nights++;
+// The engine's counts for the panel, on the page's own state: the page's verdict rule judges the list
+// for each period (the store's own context), and core site-change.ts lineCounts counts them, the same
+// function the panel calls (never a copy of its arithmetic): per period, the list's plants that take
+// the nights, the fit ones, those drier here than their recorded band, those carrying the dryness note.
+const { lineCounts } = await import('../../src/lib/consortium/site-change.ts');
+export async function engineCounts(page) {
+  const { list, byPeriod } = await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, pool = s.pool.value ?? [];
+    const out = {};
+    for (const p of ['1991-2020', '2041-2070', '2071-2099']) {
+      const vs = rule.verdicts(pool, { ...s.verdictContext.value, period: p });
+      out[p] = pool.map((t) => [t.id, vs.get(t.id)]).filter(([, v]) => v).map(([id, v]) => [id, { level: v.level, range: v.range, notes: v.notes, factors: v.factors }]);
     }
-    return { period: p, of: list.length, nights, fit, drier: dry };
+    return { list: pool.map((t) => ({ id: t.id })), byPeriod: out };
   });
-});
+  const c = lineCounts(list, Object.fromEntries(Object.entries(byPeriod).map(([p, rows]) => [p, new Map(rows)])));
+  return c.periods.map(({ period, of, nights, fit, drier, noted }) => ({ period, of, nights, fit, drier, noted }));
+}
 
 // The store's edits and today's merged figures.
 export const edits = (page) => page.evaluate(() => ({ ...window.__ctTest.store.siteEdits.value }));

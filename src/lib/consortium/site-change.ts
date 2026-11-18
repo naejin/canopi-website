@@ -13,8 +13,9 @@
 //   near-the-edge counts of each range side (cold, mild, cool, summer, hot), the plants that take the
 //   nights (judged and outside on neither night side), and the dryness counts (the place drier than the
 //   plant's recorded band, read from the aridity factor itself, so the count does not depend on the
-//   watering answer that only sets the note's words: verdict.ts R2).
-import type { Factor, FactorVerdict, Hole, HoleChange, Level, PeriodId, PlantId, PlantVerdict, Taxon } from './types.ts';
+//   watering answer that only sets the note's words: verdict.ts R2) beside the plants that carry the
+//   dryness note (none when watered all year), which is what makes rain a limit (A5).
+import type { Factor, FactorVerdict, Hole, HoleChange, LayerValue, Level, PeriodId, PlantId, PlantVerdict, Taxon } from './types.ts';
 import { periodIds } from './types.ts';
 import { holeChange } from './holes.ts';
 
@@ -115,25 +116,26 @@ export interface PeriodCounts {
   sides: Record<RangeSideId, SideCount>;
   nights: number; // judged and outside on neither night side (cold, mild): "take these nights"
   drier: number; // of the fit plants, those where the place is drier than their recorded band
+  noted: number; // of the fit plants, those carrying the dryness note (the watering answer decides: verdict.ts R2)
 }
 export interface LineCounts { periods: PeriodCounts[] }
 export const NO_LINE_COUNTS: LineCounts = Object.freeze({ periods: [] }) as LineCounts;
 
-export function lineCounts(list: readonly Taxon[], verdictsByPeriod: Partial<Record<PeriodId, ReadonlyMap<PlantId, PlantVerdict>>> | ReadonlyMap<unknown, unknown>): LineCounts {
-  if (!list.length || verdictsByPeriod instanceof Map) return NO_LINE_COUNTS;
-  const byPeriod = verdictsByPeriod as Partial<Record<PeriodId, ReadonlyMap<PlantId, PlantVerdict>>>;
+export function lineCounts(list: readonly Pick<Taxon, 'id'>[], verdictsByPeriod: Partial<Record<PeriodId, ReadonlyMap<PlantId, PlantVerdict>>>): LineCounts {
+  if (!list.length) return NO_LINE_COUNTS;
   const periods: PeriodCounts[] = [];
   for (const p of periodIds) {
-    const vs = byPeriod[p];
+    const vs = verdictsByPeriod[p];
     if (!vs) continue;
     const sides = Object.fromEntries(RANGE_SIDES.map((s) => [s, { outside: 0, edge: 0 }])) as Record<RangeSideId, SideCount>;
-    let fit = 0, look = 0, judged = 0, nights = 0, drier = 0;
+    let fit = 0, look = 0, judged = 0, nights = 0, drier = 0, noted = 0;
     for (const t of list) {
       const v = vs.get(t.id);
       if (!v) continue;
       if (notOutside(v.level)) fit++;
       if (v.level === 'look') look++;
       if (notOutside(v.level) && drierOf(v)) drier++;
+      if (notOutside(v.level) && v.notes.includes('drier')) noted++;
       if (v.range !== 'judged') continue;
       judged++;
       let night = false;
@@ -145,7 +147,7 @@ export function lineCounts(list: readonly Taxon[], verdictsByPeriod: Partial<Rec
       }
       if (!night) nights++;
     }
-    periods.push({ period: p, of: list.length, fit, look, judged, sides, nights, drier });
+    periods.push({ period: p, of: list.length, fit, look, judged, sides, nights, drier, noted });
   }
   return { periods };
 }
@@ -156,8 +158,9 @@ export const warmthOf = (p: PeriodCounts): SideCount => p.sides.cool;
 
 // The line that limits plants most (the panel's "The main limit here"; A5's "What limits plants
 // here" shows every line that limits): a climate line by its outside count in any period (nights:
-// cold and mild; heat: hot; warmth: cool, warmthOf), the rain line by its dryness count; none when
-// nothing is outside and nothing is drier.
+// cold and mild; heat: hot; warmth: cool, warmthOf), the rain line by the plants carrying the dryness
+// note (A5: none when watered all year, though they are still drier here); none when nothing is
+// outside and no plant carries the note.
 export type LimitLine = 'nights' | 'days' | 'warmth' | 'rain';
 export function limitsOf(c: LineCounts): { line: LimitLine; n: number }[] {
   const most = (f: (p: PeriodCounts) => number) => Math.max(0, ...c.periods.map(f));
@@ -165,7 +168,7 @@ export function limitsOf(c: LineCounts): { line: LimitLine; n: number }[] {
     { line: 'nights', n: most((p) => p.sides.cold.outside + p.sides.mild.outside) },
     { line: 'days', n: most((p) => p.sides.hot.outside) },
     { line: 'warmth', n: most((p) => warmthOf(p).outside) },
-    { line: 'rain', n: most((p) => p.drier) },
+    { line: 'rain', n: most((p) => p.noted) },
   ];
   return out.filter((l) => l.n > 0).sort((a, b) => b.n - a.n);
 }
@@ -200,4 +203,12 @@ export function rangeMoves(list: readonly (Pick<Taxon, 'id'> & Partial<Pick<Taxo
   const role = new Map(list.map((t) => [t.id, t.role]));
   arrivals.sort((a, b) => Number(role.get(b) === 'crop') - Number(role.get(a) === 'crop'));
   return { dropSide, arrivals };
+}
+
+// The listed plants with a recorded wind tolerance (layer_values tolerates_wind, yes or no), each once:
+// the "After release" wind paragraph's count ("Wind tolerance is recorded for only 25 plants on the list").
+export function windRecorded(ids: readonly PlantId[], values: ReadonlyMap<PlantId, readonly LayerValue[]>): number {
+  let n = 0;
+  for (const id of new Set(ids)) if (values.get(id)?.some((v) => v.field === 'tolerates_wind' && v.flag !== null)) n++;
+  return n;
 }

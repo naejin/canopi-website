@@ -67,6 +67,7 @@
 .ct .fg-chip-yours svg { width: 14px; height: 14px; }
 .ct .fg-chip-none { border: 1px dashed var(--border-strong); color: var(--text-secondary); }
 .ct .fg-chip-map { border: 1px solid var(--border); color: var(--text-secondary); }
+.ct .fg-later { display: inline-block; padding: 0 6px; border: 1px dashed var(--border-strong); border-radius: 4px; font-size: 12px; line-height: 17px; color: var(--text-secondary); white-space: nowrap; font-weight: 400; }
 
 /* The choices, changed in place with one tap: 44 px, the pressed one framed in ink with a check. */
 .ct .fg-options { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }

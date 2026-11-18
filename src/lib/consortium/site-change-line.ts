@@ -35,7 +35,6 @@ export const PH_BANDS = Object.freeze([
   { word: 'phStrongAlkaline', mid: 8.5, from: 8.0, to: null },
 ] as const);
 export const phBandOf = (ph: number) => PH_BANDS.find((b) => (b.to === null || ph < b.to)) ?? PH_BANDS[PH_BANDS.length - 1];
-export const phWordLine = (ph: number): Line => L(phBandOf(ph).word);
 
 // The soil map's texture as the drainage line reads it (board SiteKiambu "Likely holds water: clay"):
 // a reading of the map, never a hint (A8; the hint comes only from the grower's "Stays wet for days").

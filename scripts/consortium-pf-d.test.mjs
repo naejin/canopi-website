@@ -10,15 +10,15 @@ const words = await import('../src/lib/consortium/site-change-line.ts');
 const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
 
 const P = core.periodIds;
-const v = (level, factors = [], range = 'judged') => ({ level, factors, range, limiting: factors.find((f) => f.level === level) ?? null });
+const v = (level, factors = [], range = 'judged', notes = []) => ({ level, factors, range, notes, limiting: factors.find((f) => f.level === level) ?? null });
 const f = (factor, level, extra = {}) => ({ factor, level, basis: 'range', place: null, low: null, high: null, ...extra });
 const t = (id) => ({ id });
 const map = (o) => new Map(Object.entries(o));
 
-test('empty inputs give the empty shapes (the 0W stubs keep their meaning)', () => {
-  assert.deepEqual(core.siteChange({}, {}), core.NO_SITE_CHANGE);
-  assert.deepEqual(core.lineCounts([], new Map()), core.NO_LINE_COUNTS);
-  assert.deepEqual(core.siteChangeLines(core.NO_SITE_CHANGE, core.NO_EDITS), []);
+test('C11: lineCounts takes verdicts by period (a record keyed by period id): no list or no period judged gives no counts', () => {
+  assert.deepEqual(core.lineCounts([], {}), core.NO_LINE_COUNTS);
+  assert.deepEqual(core.lineCounts([t('a')], {}).periods, [], 'no period judged yet');
+  assert.equal(core.lineCounts([t('a')], { [P[0]]: map({ a: v('fits') }) }).periods.length, 1);
 });
 
 test('lineCounts: per period the fit plants, each side outside and near its edge, the nights taken, the drier ones', () => {
@@ -26,7 +26,7 @@ test('lineCounts: per period the fit plants, each side outside and near its edge
   const today = map({
     a: v('fits'),
     b: v('outside', [f('cold', 'outside')]),
-    c: v('look', [f('hot', 'look'), f('dry', 'look', { place: 0.2, low: 0.4 })]),
+    c: v('look', [f('hot', 'look'), f('dry', 'look', { place: 0.2, low: 0.4 })], 'judged', ['drier']),
     d: v('unknown', [], 'not-recorded'),
   });
   const c = core.lineCounts(list, { [P[0]]: today });
@@ -209,4 +209,54 @@ test('BC23, BC16: the Water card names its list; Spanish quince agrees ("registr
   assert.match(es['consortium.figures.waterNowWhy'], /registrado\.$/);
   for (const [loc, json] of LOCALES) for (const k of ['countsNearest', 'listsTwo', 'listsThree']) assert.ok(json[`consortium.figures.${k}`], `${loc} has figures.${k}`);
   assert.match(en['consortium.figures.countsNearest'], /\{n\} plants on the \{k\} nearest lists \(\{lists\}\)/);
+});
+
+// ---- fix round 1, batch 4 ----
+
+test('C8: the rain line limits only while a listed plant carries the dryness note; watered all year, no plant does and rain is no limit (A5)', () => {
+  const list = ['a', 'b', 'c'].map(t);
+  const dry = f('dry', 'look', { place: 0.2, low: 0.4 });
+  // Rain only: the verdict rule puts the note on the plants drier here (verdict.ts R2).
+  const rain = core.lineCounts(list, { [P[0]]: map({ a: v('fits', [dry], 'judged', ['drier']), b: v('look', [dry], 'judged', ['drier']), c: v('fits') }) });
+  assert.deepEqual({ drier: rain.periods[0].drier, noted: rain.periods[0].noted }, { drier: 2, noted: 2 });
+  assert.deepEqual(core.limitsOf(rain), [{ line: 'rain', n: 2 }]);
+  // Watered all year: the same plants are drier here, and none carries the note.
+  const allYear = core.lineCounts(list, { [P[0]]: map({ a: v('fits', [dry]), b: v('look', [dry]), c: v('fits') }) });
+  assert.deepEqual({ drier: allYear.periods[0].drier, noted: allYear.periods[0].noted }, { drier: 2, noted: 0 });
+  assert.deepEqual(core.limitsOf(allYear), [], 'watered all year: rain is not "The main limit here."');
+});
+
+test('C7: "Your place is dry" only in drylands (UNCCD: aridity index under 0.65), never at a humid place where one plant is drier later', () => {
+  assert.equal(core.isDryland(0.28), true, 'Mendoza (semi-arid)');
+  assert.equal(core.isDryland(0.58), true, 'Seville (dry sub-humid)');
+  assert.equal(core.isDryland(1.15), false, 'Kiambu (humid)');
+  assert.equal(core.isDryland(0.65), false);
+  assert.equal(core.isDryland(null), false, 'unknown is never dry');
+});
+
+test('C9: the wind count is the listed plants with a recorded wind tolerance (layer_values tolerates_wind), each once; none recorded is 0', () => {
+  const lv = (field, flag) => ({ field, months: null, flag, climate: null, scope: null, source: 's', kind: 'recorded' });
+  const values = new Map([['a', [lv('tolerates_wind', true), lv('tolerates_wind', false)]], ['b', [lv('bloom_months', null)]], ['c', [lv('tolerates_wind', false)]], ['x', [lv('tolerates_wind', true)]]]);
+  assert.equal(core.windRecorded(['a', 'b', 'c'], values), 2, 'a and c have a recorded wind tolerance (yes or no); x is not on the list');
+  assert.equal(core.windRecorded(['a'], new Map()), 0);
+});
+
+test('C5: the soil map\'s texture is a reading of the site inputs layer (a known USDA class, else none), never a hint', () => {
+  const lookup = (texture) => ({ climate: null, soil: { phH2o: 6.3, texture, filled: false, fillDistanceCells: 0, distanceCells: 0 } });
+  assert.equal(core.soilTextureOf(lookup('clay')), 'clay');
+  assert.equal(core.soilTextureOf(lookup('clay_loam')), 'clay_loam');
+  assert.equal(core.soilTextureOf(lookup('peat')), null, 'a class the reader does not name');
+  assert.equal(core.soilTextureOf(lookup(null)), null);
+  assert.equal(core.soilTextureOf({ climate: null, soil: null }), null, 'no soil read');
+  assert.equal(core.soilTextureOf(null), null);
+  // A reading only (A8): the texture sets no drainage answer.
+  assert.equal(core.siteInputsOf({ lookup: lookup('clay') }).drainage.source, 'none');
+});
+
+test('C8: the members line\'s words follow the watering answer in all 11 locales', () => {
+  for (const [loc, json] of LOCALES) for (const k of ['membersDryFirst', 'membersDryManyFirst', 'laterChip', 'laterWindCount', 'rainDrierFirst', 'rainDrierAllYear']) assert.ok(json[`consortium.figures.${k}`], `${loc} has figures.${k}`);
+  assert.match(en['consortium.figures.membersDryFirst'], /water (it|them) the first years/);
+  assert.doesNotMatch(en['consortium.figures.membersDryFirst'], /may need watering/);
+  assert.equal(en['consortium.figures.laterChip'], 'after release');
+  assert.match(en['consortium.figures.laterWindCount'], /Wind tolerance is recorded for only # plants on the list/);
 });
