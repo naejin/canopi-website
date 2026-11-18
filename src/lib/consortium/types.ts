@@ -1,18 +1,18 @@
 // Consortium v2 core types (frozen seam, commit 0 of P2; design check §4). The core
 // (src/lib/consortium/) reads plants only through PlantSource (./source.ts) as these plain records,
 // imports nothing outside this folder and touches no DOM (scripts/consortium-boundary.test.mjs).
-// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 4.5 or later:
+// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 4.7 or later:
 // docs/website-handoff/2026-11-14-schema4-format.md, 4.2 2026-11-17-toxicity-parts.md, 4.5
-// 2026-11-17-light-span.md); the adapter
+// 2026-11-17-light-span.md, 4.6 2026-11-18-llm-estimates.md, 4.7 2026-11-18-name-kind.md); the adapter
 // (src/islands/consortium/data/sqlite-source.ts, stream S1) fills these records from SQL.
 // Streams may add fields; renaming or removing one is a seam change for the coordinator.
 //
 // null means unknown or not recorded. The schema's "no rows" for functions means not curated, never
 // "none": Taxon.functions is null then.
 
-// The schema the reader opens (PRAGMA user_version): 4, at minor 4.5 or later (the installer refuses an
+// The schema the reader opens (PRAGMA user_version): 4, at minor 4.7 or later (the installer refuses an
 // older minor: scripts/consortium-schema.mjs MIN_SCHEMA_MINOR). No older schema or minor is read (PP-C
-// 0b, owner 2026-11-17 "no backward compatibility").
+// 0b and 0c, owner 2026-11-17 "no backward compatibility").
 export const SCHEMA_VERSIONS = [4] as const;
 export type SchemaVersion = (typeof SCHEMA_VERSIONS)[number];
 // PRAGMA application_id of the export ("CCON"), checked when the database opens.
@@ -62,6 +62,9 @@ export type LayerField = (typeof layerFields)[number];
 // recorded: a dataset gives it; every other kind is an estimate and the page marks it.
 export const layerKinds = ['recorded', 'extracted', 'derived', 'llm'] as const;
 export type LayerKind = (typeof layerKinds)[number];
+// Schemas 4.6 (functions.kind) and 4.7 (plant_names.kind): 'llm', the one kind those columns hold
+// (the same word as layer_values and trait_sources), or null.
+export type EstimateKind = Extract<LayerKind, 'llm'>;
 export const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 export type Month = (typeof months)[number];
 
@@ -99,7 +102,10 @@ export interface Source { label: string; url: string | null; licence: string | n
 // export's remote url. credit is null only for CC0 or public domain.
 export interface Image { url: string; credit: string | null; licence: string | null; source_page_url: string | null }
 
-export interface TaxonFunction { function: FunctionId; method: FunctionMethod; sources: string[] }
+// kind (schema 4.6 functions.kind): 'llm' when every row behind the entry is an AI estimate: with method
+// 'extraction', a model's reading of the cited work in `sources` (pfaf or a book's credit id); with method
+// 'curated', an estimate from the model's own knowledge (sources ['llm-knowledge']). null: as before 4.6.
+export interface TaxonFunction { function: FunctionId; method: FunctionMethod; sources: string[]; kind: EstimateKind | null }
 
 // A plant's placement in one curated climate (design check §4). All of stratum, start, end and source
 // are null together: no accepted roles row yet ("no layer yet").
@@ -294,6 +300,9 @@ export interface Details {
   // source outside the closed lists is left out whole, so it reads at country level (never wrong).
   invasiveAreas: InvasiveScope[];
   gbifRecords: number | null; // plant_climate_status.gbif_records: the occurrence records the range rests on
+  // Schema 4.7 plant_names.kind: the locales whose primary name rests only on an AI suggestion ('llm');
+  // a locale absent here has a sourced or corrected primary, or none.
+  nameKinds: Partial<Record<Locale, EstimateKind>>;
 }
 
 // ---- Schema 4 records (format note tables; open vocabularies as strings: a value the reader does not

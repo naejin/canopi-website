@@ -1,23 +1,23 @@
 {
   "format_version": 4,
   "schema_version": 4,
-  "release_id": "r-bcc417fd89a3147c",
-  "generated_at": "2026-11-18T00:23:20Z",
-  "canopi_db_sha256": "151635f9a89ebc655984939348e794f7acc4ab3aca929f0dad79b32139da62fa",
+  "release_id": "r-255553893fa4f4b4",
+  "generated_at": "2026-11-18T04:38:06Z",
+  "canopi_db_sha256": "0cd8c8ea337d7d1e066432f0361e72006eaf5b78c0b4954c2562d9e7f474566c",
   "files": [
     {
-      "file": "consortium-v4.r-bcc417fd89a3147c.98e1bf66d711.sqlite.gz",
-      "url": "/data/consortium/consortium-v4.r-bcc417fd89a3147c.98e1bf66d711.sqlite.gz",
+      "file": "consortium-v4.r-255553893fa4f4b4.92cc136bb67b.sqlite.gz",
+      "url": "/data/consortium/consortium-v4.r-255553893fa4f4b4.92cc136bb67b.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Arid",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "3b4a749ecf51e41896b7571faeef0cb247d83685836e5b910d6dc060e53e8382",
-      "bytes": 769594,
-      "raw_sha256": "98e1bf66d7110f9c32448fc3fdcc12a869683f545525670e7815b5456b2a5ed0",
-      "raw_bytes": 3096576
+      "sha256": "7bf322c4949c5ea539350f2983ad5ae6bde8973971a0d3789cb15e0480790150",
+      "bytes": 775767,
+      "raw_sha256": "92cc136bb67b28b47be88a880828dea5a53aa90bfc8085ac50981b5141ca6406",
+      "raw_bytes": 3125248
     }
   ],
   "climates": [
@@ -1373,12 +1373,12 @@
     "dataset_ids": 591
   },
   "source_credits": {
-    "sha256": "9fc0082450ef1701e52fa17ea5d42b7ac71659f8685adbfd00af29111ac314ad",
-    "rows": 54
+    "sha256": "c875e6dacf524dc01fe2cf795d2bf48547770a531632db9c2b5e162235b78044",
+    "rows": 63
   },
   "climate_grid_manifest_sha256": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c",
   "ranges_review": "estimate_not_reviewed",
-  "schema_minor": 5,
+  "schema_minor": 7,
   "schema_additions": [
     {
       "table": "trait_sources",
@@ -1719,14 +1719,24 @@
       "column": "field",
       "value": "sun_exposure_sunniest",
       "since": 5
+    },
+    {
+      "table": "functions",
+      "column": "kind",
+      "since": 6
+    },
+    {
+      "table": "plant_names",
+      "column": "kind",
+      "since": 7
     }
   ],
   "search_names": {
-    "file": "names.r-bcc417fd89a3147c.0bfdc009cfe2.tsv.gz",
-    "url": "/data/consortium/names.r-bcc417fd89a3147c.0bfdc009cfe2.tsv.gz",
-    "sha256": "62e4324b50e09482b24895b1822199ef005b310cc38f852c0c3b58486d4ffd7b",
-    "bytes": 218879,
-    "raw_sha256": "0bfdc009cfe2553f702bc2c2a0a97ce4428276ba8c45ead46015d51540cf6767",
-    "raw_bytes": 691121
+    "file": "names.r-255553893fa4f4b4.8dea68ff9c3a.tsv.gz",
+    "url": "/data/consortium/names.r-255553893fa4f4b4.8dea68ff9c3a.tsv.gz",
+    "sha256": "7f888830548eb3ddb8775f0f56ecc248d6a24713dd01fe79f6f2b90a48aa8174",
+    "bytes": 216695,
+    "raw_sha256": "8dea68ff9c3a0f6a1581e86f6293733b3b97b227c56b85148f4c4b575d174355",
+    "raw_bytes": 686047
   }
 }

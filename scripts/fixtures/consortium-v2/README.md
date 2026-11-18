@@ -1,4 +1,4 @@
-# Invented consortium fixture (format 4, schema 4.5)
+# Invented consortium fixture (format 4, schema 4.7)
 
 Plausible but **invented** plant values for testing consortium v2 without the real export. Never shipped:
 `canopi_db_sha256` is all zeros, which a real install refuses, and the directory sits outside `public/`.
@@ -18,9 +18,13 @@ Plausible but **invented** plant values for testing consortium v2 without the re
   columns `plants.sun_exposure_sunniest`, `sun_exposure_shadiest`, `sun_exposure_preferred` with their
   `trait_sources` fields (`LIGHT_SPAN_DDL`, since 5: Malus domestica emergent to high, found mostly in high, PFAF
   and Ellenberg derived; Sambucus nigra found mostly in medium only, an `llm-knowledge` AI estimate),
-  `schema_minor` 5 (the fixture writes no 4.4 addition), with the names file
-  `names.<release>.<12 hex>.tsv.gz`. The 4.2 to 4.5 additions are the installer's `REQUIRED_ADDITIONS` (PP-C 0b, no
-  backward compatibility); the light span statements are canopi-data's, CHECKs included.
+  4.6's `functions.kind` and 4.7's `plant_names.kind` (`LLM_KIND_DDL`, canopi-data
+  `docs/website-handoff/2026-11-18-llm-estimates.md` and `2026-11-18-name-kind.md`: Ficus carica pollinator forage,
+  an AI reading of Crawford 2010, and Thymus vulgaris ground cover, an `llm-knowledge` estimate, appended after
+  every other entry; Inga edulis fr and Castanea sativa ja primary names of kind `llm`),
+  `schema_minor` 7 (the fixture writes no 4.4 addition), with the names file
+  `names.<release>.<12 hex>.tsv.gz`. The 4.2 to 4.7 additions are the installer's `REQUIRED_ADDITIONS` (PP-C 0b
+  and 0c, no backward compatibility); the light span and kind statements are canopi-data's, CHECKs included.
 - **Contract:** canopi-data `docs/consortium-export-v2.md`, `docs/website-handoff/2026-11-14-schema4-format.md`.
 - **Variants:** tests call `writeFixtureExport(dir, { edit, userVersion, applicationId, names, manifest, after })`
   for a broken copy rather than keep broken files here; `UNDECLARED_EXTRA` (an edit) and `DECLARED_COLUMN`
@@ -45,6 +49,8 @@ Plausible but **invented** plant values for testing consortium v2 without the re
 | 4.3 invasive scope in ES (`es_catalogo`, `atlas_aloctonas_es`; areas BAL, CNY, SPA): two sources on different areas; one source over every area beside another; one area only; an unknown area (MOR) read at country level | Tropaeolum (the note's Arundo donax pattern), Robinia (Ricinus), Psidium (as staged), Elaeagnus |
 | Every toxicity level and unknown (NULL) | None, Slight, Moderate, Severe; most plants NULL |
 | Functions: curated and imported; no rows (not curated, never "none") | Rubus, Zingiber, Olea, … have no rows |
+| 4.6 AI-estimate jobs (`functions.kind` llm): a cited reading (extraction, Crawford 2010) and a knowledge estimate (curated, `llm-knowledge`) | Ficus carica, Thymus vulgaris |
+| 4.7 AI-suggested primary names (`plant_names.kind` llm) | Inga edulis (fr), Castanea sativa (ja) |
 | Layer values: recorded, extracted, derived, llm; country, climate, latitude/hemisphere and region scopes; a run over the new year (Dec–Mar); wind flag | Fragaria, Malus, Corylus, Allium (sowing), Quercus robur, Olea |
 | Photos: Commons with credit, CC0 with no credit, an iNaturalist PNG original | Castanea, Quercus robur, Inga, … (6 plants) |
 | Names: missing locales, accents for folded search (Châtaignier, Trèfle, Phacélie), CJK and Cyrillic | `plant_names` |

@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:02Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:54Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:00Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:34Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -107,8 +107,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:4fcebb2d2ec2adba
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:93485b941ab6a2cc
+    last_modified: 2026-11-18T06:06:30Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -402,8 +402,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:fd0b37d55fa3180d
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:ae9f25c93cd4a332
+    last_modified: 2026-11-18T06:06:30Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -442,8 +442,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:15b74990f89ca4fb
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:879a20960c3b9aad
+    last_modified: 2026-11-18T04:57:11Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts

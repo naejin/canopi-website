@@ -1,4 +1,4 @@
-// The consortium export's schema (format 4, schema 4.5 or later) as the website expects it: the
+// The consortium export's schema (format 4, schema 4.7 or later) as the website expects it: the
 // installer (scripts/install-consortium.mjs) compares every table's columns and statements with them,
 // and the fixture (scripts/fixtures/consortium-v2/make-fixture.mjs) is built from them. A new schema
 // version in canopi-data means a new copy here, and a reader change in src/lib/consortium/.
@@ -17,10 +17,10 @@
 // indexes, copied from the sqlite_master of the staging export r-c15a216b9663d2fa. Later additive
 // changes (schema_minor, schema_additions) are judged by the installer's tier rules, never copied as
 // base statements; the ones the reader needs, schema 4.2's plant_toxicity_parts, 4.3's
-// plant_invasive_areas and 4.5's light span columns, are kept below with their declarations: the
+// plant_invasive_areas, 4.5's light span columns and 4.6/4.7's kind columns, are kept below with their declarations: the
 // installer requires them (REQUIRED_ADDITIONS, MIN_SCHEMA_MINOR) and the fixture builds them. The
 // schema-3 statements (DDL_3) are only the base DDL_4 is derived from: no schema-3 export installs
-// (PP-C 0b, owner 2026-11-17 "no backward compatibility").
+// (PP-C 0b, owner 2026-11-17 "no backward compatibility"); no export below 4.7 installs (PP-C 0c).
 // scripts/consortium-p5-ranges.test.mjs compares the installed export's schema with DDL_BY_SCHEMA.
 const DDL_3 = String.raw`
 CREATE TABLE meta (
@@ -445,9 +445,6 @@ ALTER TABLE plants ADD COLUMN sun_exposure_shadiest TEXT REFERENCES strata (id)
   CHECK (CASE sun_exposure_sunniest WHEN 'emergent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END <= CASE sun_exposure_shadiest WHEN 'emergent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END);
 ALTER TABLE plants ADD COLUMN sun_exposure_preferred TEXT REFERENCES strata (id);
 `;
-// The full schema the reader reads: the base statements and every required addition, in canopi-data's
-// order (scripts/consortium-p5-ranges.test.mjs compares it with the installed export, statement by statement).
-export const DDL_READ = DDL_4 + TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + '\n' + LIGHT_SPAN_DDL;
 export const LIGHT_SPAN_ADDITIONS = [
   { table: 'plants', column: 'sun_exposure_preferred', since: 5 },
   { table: 'plants', column: 'sun_exposure_shadiest', since: 5 },
@@ -457,9 +454,25 @@ export const LIGHT_SPAN_ADDITIONS = [
   { table: 'trait_sources', column: 'field', value: 'sun_exposure_sunniest', since: 5 },
 ];
 
-// The oldest minor the reader opens (PP-C 0b, owner 2026-11-17 "no backward compatibility": no 4.1 to
-// 4.4 fallbacks) and the declared additions the reader reads unconditionally: the installer refuses a
+// Schema 4.6 (canopi-data docs/website-handoff/2026-11-18-llm-estimates.md): functions.kind, 'llm' when
+// every row behind the entry is an AI estimate (method extraction: a model's reading of the cited work;
+// method curated: llm-knowledge, no passage), NULL otherwise. Schema 4.7 (2026-11-18-name-kind.md):
+// plant_names.kind, 'llm' when the primary name rests only on an AI suggestion, NULL otherwise. SQLite
+// writes each column before its table's constraint (UNIQUE, PRIMARY KEY); pragma_table_info lists it last.
+export const LLM_KIND_DDL = String.raw`ALTER TABLE functions ADD COLUMN kind TEXT CHECK (kind IS NULL OR kind = 'llm');
+ALTER TABLE plant_names ADD COLUMN kind TEXT CHECK (kind IS NULL OR kind = 'llm');
+`;
+export const LLM_KIND_ADDITIONS = [
+  { table: 'functions', column: 'kind', since: 6 },
+  { table: 'plant_names', column: 'kind', since: 7 },
+];
+// The full schema the reader reads: the base statements and every required addition, in canopi-data's
+// order (scripts/consortium-p5-ranges.test.mjs compares it with the installed export, statement by statement).
+export const DDL_READ = DDL_4 + TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + '\n' + LIGHT_SPAN_DDL + LLM_KIND_DDL;
+
+// The oldest minor the reader opens (PP-C 0b and 0c, owner 2026-11-17 "no backward compatibility": no
+// 4.1 to 4.6 fallbacks) and the declared additions the reader reads unconditionally: the installer refuses a
 // manifest below that minor or missing one of them (its tier rules then hold the database to them).
 // Open-vocabulary values stay optional: the reader skips a value it does not know.
-export const MIN_SCHEMA_MINOR = 5;
-export const REQUIRED_ADDITIONS = [...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS, ...LIGHT_SPAN_ADDITIONS.filter((a) => a.value === undefined)];
+export const MIN_SCHEMA_MINOR = 7;
+export const REQUIRED_ADDITIONS = [...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS, ...LIGHT_SPAN_ADDITIONS.filter((a) => a.value === undefined), ...LLM_KIND_ADDITIONS];

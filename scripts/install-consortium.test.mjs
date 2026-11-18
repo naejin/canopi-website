@@ -91,7 +91,7 @@ test('the fixture installs with --fixture --no-images --out: the database byte f
   assert.equal(index.ranges_review, 'estimate_not_reviewed');
   // Schema 4: the additive tier's state and the names file the page fetches after first paint.
   assert.equal(index.schema_version, 4);
-  assert.equal(index.schema_minor, 5);
+  assert.equal(index.schema_minor, 7);
   assert.deepEqual(index.schema_additions, FIXTURE_ADDITIONS);
   const n = manifest.names;
   assert.deepEqual(index.search_names, { file: n.file, url: `/data/consortium/${n.file}`, sha256: n.sha256, bytes: n.bytes, raw_sha256: n.raw_sha256, raw_bytes: n.raw_bytes });
@@ -334,22 +334,26 @@ test('databaseName: schema, release, 12 hex digits of the raw database, and the 
   assert.equal(namesFileName('r-0123456789abcdef', 'cd'.repeat(32)), 'names.r-0123456789abcdef.cdcdcdcdcdcd.tsv.gz');
 });
 
-// An older minor's database lacks 4.5's light span columns.
+// An older minor's database lacks 4.5's light span columns, and 4.6's and 4.7's kind columns.
+const NO_NAME_KIND = 'ALTER TABLE plant_names DROP COLUMN kind;';
 const NO_LIGHT_SPAN = ['preferred', 'shadiest', 'sunniest'].map((c) => `ALTER TABLE plants DROP COLUMN sun_exposure_${c};`).join(' ')
   + " DELETE FROM trait_sources WHERE field LIKE 'sun_exposure_%'; UPDATE meta SET value = (SELECT COUNT(*) FROM trait_sources) WHERE key = 'count.trait_sources';";
-// PP-C 0b (owner 2026-11-17, no backward compatibility): schema 3 and the minors before 4.5 are refused
-// by name; a 4.5 manifest must declare every addition the reader reads (REQUIRED_ADDITIONS).
-test('schema 3 and schema 4 before 4.5 are refused; the required additions must be declared', async (t) => {
+// PP-C 0b and 0c (owner 2026-11-17, no backward compatibility): schema 3 and the minors before 4.7 are
+// refused by name; a 4.7 manifest must declare every addition the reader reads (REQUIRED_ADDITIONS).
+test('schema 3 and schema 4 before 4.7 are refused; the required additions must be declared', async (t) => {
   const w = workspace(t);
   await refusedAll(w, 'old', [
     [{ manifest: (m) => { m.schema_version = 3; } }, /schema_version is 3; this installer reads schema 4 only/],
-    [{ edit: (db) => db.exec(NO_LIGHT_SPAN), manifest: (m) => { m.schema_minor = 4; m.schema_additions = m.schema_additions.filter((a) => a.since <= 4); } }, /schema_minor is 4; this installer reads schema 4\.5 or later only/],
+    [{ edit: (db) => db.exec(NO_NAME_KIND), manifest: (m) => { m.schema_minor = 6; m.schema_additions = m.schema_additions.filter((a) => a.since <= 6); } }, /schema_minor is 6; this installer reads schema 4\.7 or later only/],
+    [{ edit: (db) => db.exec(NO_LIGHT_SPAN), manifest: (m) => { m.schema_minor = 4; m.schema_additions = m.schema_additions.filter((a) => a.since <= 4); } }, /schema_minor is 4; this installer reads schema 4\.7 or later only/],
     [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.table !== 'plant_invasive_areas'); } }, /schema_additions does not declare \{"table":"plant_invasive_areas"\}, which this installer requires/],
     [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.column !== 'sun_exposure_preferred' || a.table !== 'plants'); } }, /does not declare \{"table":"plants","column":"sun_exposure_preferred"\}/],
+    [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.table !== 'functions'); } }, /does not declare \{"table":"functions","column":"kind"\}/],
+    [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.table !== 'plant_names'); } }, /does not declare \{"table":"plant_names","column":"kind"\}/],
   ]);
   assert.ok(!existsSync(w.out), 'nothing written');
   const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
-  assert.equal(indexProblem({ ...index, schema_minor: 4 }), 'the index is schema 4.4, not 4.5 or later: reinstall the export.');
+  assert.equal(indexProblem({ ...index, schema_minor: 4 }), 'the index is schema 4.4, not 4.7 or later: reinstall the export.');
   assert.equal(indexProblem({ ...index, search_names: undefined }), 'the index has no search_names entry.');
 });
 
@@ -364,7 +368,7 @@ test('schema 4, the additive tier: declared extras install, undeclared ones and 
     [{ edit: (db) => db.exec('CREATE INDEX plants_by_genus_x ON plants (genus)') }, /indexes outside the schema and schema_additions: plants_by_genus_x/],
     [{ edit: DECLARED_COLUMN.edit }, /table plants has columns outside the schema and schema_additions: flammability/],
     // 4: a declared addition the database lacks.
-    [{ manifest: (m) => { m.schema_minor = 6; m.schema_additions.push({ table: 'plant_spacing', since: 6 }); } }, /schema_additions declares the table plant_spacing, which the database lacks/],
+    [{ manifest: (m) => { m.schema_minor = 8; m.schema_additions.push({ table: 'plant_spacing', since: 8 }); } }, /schema_additions declares the table plant_spacing, which the database lacks/],
     // A declared column the database lacks (4.5's light span dropped, the manifest unchanged).
     [{ edit: (db) => db.exec(NO_LIGHT_SPAN) }, /schema_additions declares the column plants\.sun_exposure_(preferred|shadiest|sunniest), which the database lacks/],
     [{ manifest: DECLARED_COLUMN.manifest }, /schema_additions declares the column plants\.flammability, which the database lacks/],
@@ -377,7 +381,7 @@ test('schema 4, the additive tier: declared extras install, undeclared ones and 
     [{ manifest: (m) => { m.schema_additions = m.schema_additions.filter((a) => a.value !== 'toxicity'); } }, /trait_sources\.field holds values outside schema 4 and schema_additions: toxicity/],
     // The manifest's own keys.
     [{ manifest: (m) => { delete m.schema_minor; } }, /schema_minor is undefined/],
-    [{ manifest: (m) => { m.schema_additions[0].since = 9; } }, /since is not from 1 to schema_minor 5/],
+    [{ manifest: (m) => { m.schema_additions[0].since = 9; } }, /since is not from 1 to schema_minor 7/],
     [{ manifest: (m) => { delete m.names; } }, /has no names entry \(required at schema 4\)/],
     [{ manifest: (m) => { m.names.core_raw_sha256 = 'c'.repeat(64); } }, /core_raw_sha256 is not the core file's raw_sha256/],
   ];
@@ -502,13 +506,13 @@ test('the command line: a real export is refused when verify cannot say yes, and
 });
 
 // PP-B commit 0 (palette-vectors convention): canopi-data's range-verdict vectors, a stamped copy of
-// its range_verdicts.json for the installed release (r-bcc417fd89a3147c: canopi-data's
-// tests/vectors/range_verdicts.json at c25a27f, regenerated from that export; sha256 below) until install-consortium.mjs
+// its range_verdicts.json for the installed release (r-255553893fa4f4b4: canopi-data's
+// tests/vectors/range_verdicts.json at 89a99e9, regenerated from that export; sha256 below) until install-consortium.mjs
 // reads them from the installed release. The copy must be for the release the site installs: a new
 // export pin without new vectors fails here, never silently (b2 runs the cases).
 test('the stamped range-verdict vectors are for the installed consortium release', () => {
   const bytes = readFileSync(new URL('vectors/range-verdicts.json', import.meta.url));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), 'f38e05bbc853f4585dcac102fd31cdda4cb77923ac61dc62cb4075125c238093', 'the copy is canopi-data\'s file, unedited');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), '9866dcaff6cd42e71f308f208b887f2e0f0b19b96e2d24b635ab13b6602965b1', 'the copy is canopi-data\'s file, unedited');
   const vectors = JSON.parse(bytes.toString('utf8'));
   const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
   assert.equal(vectors.schema, 'canopi-range-verdicts/1');

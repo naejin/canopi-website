@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:57Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:06Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:40Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:fd0b37d55fa3180d
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:ae9f25c93cd4a332
+    last_modified: 2026-11-18T06:06:30Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts

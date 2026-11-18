@@ -1,16 +1,16 @@
 // The PlantSource over the opened SQLite database (stream S1; design check §4; canopi-data
-// docs/consortium-export-v2.md, format 4, schema 4.5 or later). It reads plain records with SQL and hands them to
+// docs/consortium-export-v2.md, format 4, schema 4.7 or later). It reads plain records with SQL and hands them to
 // the core, which computes the matrix, site fit and reason counts itself. No sqlite-wasm import here:
 // it takes any database with OO1's selectObjects and selectArrays, so the tests run it on the package's Node build.
 // Photos come from the index's {uuid: path} map (design check A4), never the export's remote URLs.
 // Search runs in JavaScript over folded names (A6, `fold`): lower case, Latin/Greek/Cyrillic marks
 // stripped, ß/œ/æ written out, word prefix;
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
-// Schema 4's tables and 4.5's light columns are read unconditionally: the installer refuses an export
-// below 4.5 (scripts/consortium-schema.mjs MIN_SCHEMA_MINOR, REQUIRED_ADDITIONS; PP-C 0b, no backward
-// compatibility). Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
+// Schema 4's tables, 4.5's light columns and 4.6/4.7's kind columns are read unconditionally: the
+// installer refuses an export below 4.7 (scripts/consortium-schema.mjs MIN_SCHEMA_MINOR,
+// REQUIRED_ADDITIONS; PP-C 0b and 0c, no backward compatibility). Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
 import type {
-  ClimateRange, ClimateZone, Details, Dispute, DisputeField, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
+  ClimateRange, ClimateZone, Details, Dispute, DisputeField, EstimateKind, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
   PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
 } from '../../../lib/consortium/index.ts';
 import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
@@ -28,6 +28,8 @@ const num = (v: unknown): number | null => (v === null || v === undefined ? null
 const bool = (v: unknown): boolean | null => (v === null || v === undefined ? null : Number(v) === 1);
 const range = (min: unknown, max: unknown) => (min === null && max === null ? null : { min: num(min), max: num(max) });
 const oneOf = <T extends string>(list: readonly T[], v: unknown): T | null => (list as readonly unknown[]).includes(v) ? (v as T) : null;
+// Schemas 4.6 and 4.7: functions.kind and plant_names.kind, 'llm' or NULL (the CHECK allows nothing else).
+const estimateOf = (v: unknown): EstimateKind | null => (v === 'llm' ? 'llm' : null);
 // Schema 4.5's light niche (canopi-data docs/website-handoff/2026-11-17-light-span.md): both ends or
 // neither (a half span reads as none), and the preferred level; each null is unknown.
 function lightOf(r: Row): LightNiche {
@@ -210,7 +212,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
     const rows = db.selectObjects(`SELECT p.*, x.role, x.stratum, x.phase_start, x.phase_end, x.source psrc
       FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ?1 ORDER BY p.canonical_name`, [c]);
     const names = group(db.selectObjects(`SELECT plant, locale, name FROM plant_names WHERE ${IN_CLIMATE}`, [c]), (r) => Number(r.plant));
-    const fns = group(db.selectObjects(`SELECT f.function_id, f.plant, f.function, f.method, s.source FROM functions f
+    const fns = group(db.selectObjects(`SELECT f.function_id, f.plant, f.function, f.method, f.kind, s.source FROM functions f
       LEFT JOIN function_sources s USING (function_id) WHERE f.${IN_CLIMATE} ORDER BY f.function_id, s.source`, [c]), (r) => Number(r.plant));
     const invasive = group(db.selectObjects(`SELECT plant, country, source FROM plant_invasive WHERE ${IN_CLIMATE} ORDER BY country, source`, [c]), (r) => Number(r.plant));
     const images = new Map(db.selectObjects(`SELECT * FROM plant_images WHERE ${IN_CLIMATE}`, [c]).map((r) => [Number(r.plant), r]));
@@ -221,7 +223,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const own = Object.fromEntries((names.get(plant) ?? []).map((n) => [n.locale, String(n.name)])) as Partial<Record<Locale, string>>;
       const fnRows = group(fns.get(plant) ?? [], (f) => Number(f.function_id));
       const functions = fnRows.size
-        ? [...fnRows.values()].map((list) => ({ function: list[0].function as FunctionId, method: list[0].method as FunctionMethod, sources: list.flatMap((f) => (f.source === null ? [] : [String(f.source)])) }))
+        ? [...fnRows.values()].map((list) => ({ function: list[0].function as FunctionId, method: list[0].method as FunctionMethod, sources: list.flatMap((f) => (f.source === null ? [] : [String(f.source)])), kind: estimateOf(list[0].kind) }))
         : null;
       const src = str(r.psrc);
       return {
@@ -397,6 +399,8 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const frost = frostRecorded ? rowsOf('plant_frost', plant, frostOf, 'kind, variety, source') : null;
       const toxicityParts = rowsOf('plant_toxicity_parts', plant, partOf, "who IS NOT NULL, who, part <> 'whole_plant', part, condition IS NOT NULL, condition, source");
       const invasiveAreas = scopesOf(db.selectObjects('SELECT country, source, area FROM plant_invasive_areas WHERE plant = ?1 ORDER BY country, source, area', [plant]));
+      const nameKinds: Details['nameKinds'] = Object.fromEntries(db.selectObjects("SELECT locale, kind FROM plant_names WHERE plant = ?1 AND kind IS NOT NULL ORDER BY locale", [plant])
+        .flatMap((r) => { const kind = estimateOf(r.kind); return kind ? [[String(r.locale), kind]] : []; }));
       const fnSources = db.selectObjects('SELECT s.source FROM functions f JOIN function_sources s USING (function_id) WHERE f.plant = ?1', [plant]).map((r) => String(r.source));
       const cited = new Set<string>([
         ...reasons.map((r) => r.source), ...layerValues.map((v) => v.source), ...toxicitySources, ...fnSources,
@@ -410,7 +414,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           sources[String(r.id)] = { label: String(r.label), url: str(r.url), licence: str(r.licence), attribution: str(r.attribution) };
         }
       }
-      return { id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen, disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas, gbifRecords };
+      return { id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen, disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas, gbifRecords, nameKinds };
     },
     async labels(l) {
       const out: Labels = {};

@@ -16,8 +16,8 @@
 // - manifest.json: format_version 4 and schema_version 4 (anything else refused by name), release_id
 //   (`r-` and 16 hex digits), canopi_db_sha256 not all zeros unless --fixture, `split` false (the page
 //   reads one file) with one file, the climates of the files those of `climates`, the TRY list and credits entries,
-//   and `climate_ranges` with the grid the ranges were sampled from; schema_minor (MIN_SCHEMA_MINOR, 5,
-//   or later: no 4.1 to 4.4 fallbacks), schema_additions (canopi-data
+//   and `climate_ranges` with the grid the ranges were sampled from; schema_minor (MIN_SCHEMA_MINOR, 7,
+//   or later: no 4.1 to 4.6 fallbacks), schema_additions (canopi-data
 //   docs/website-handoff/2026-11-14-schema4-format.md, the additive tier; REQUIRED_ADDITIONS declared)
 //   and the names entry (bound to the one core file).
 // - each database file: a safe name of the contract's form (schema, release, digest of the raw

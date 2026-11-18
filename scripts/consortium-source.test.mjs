@@ -542,6 +542,35 @@ test('schema 4.5: the light span and the preferred level reach the Taxon, null w
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+// PP-C 0c (schemas 4.6 and 4.7, canopi-data docs/website-handoff/2026-11-18-llm-estimates.md and
+// 2026-11-18-name-kind.md): functions.kind reaches each TaxonFunction ('llm' on a cited AI reading and on
+// an llm-knowledge estimate, null on every other entry), and plant_names.kind reaches Details as the
+// locales whose primary name is an AI suggestion ({} for a plant with none).
+test('schemas 4.6 and 4.7: functions.kind on the Taxon, plant_names.kind on Details', async () => {
+  const med = await source.pool('Mediterranean');
+  const fns = (name) => med.find((t) => t.canonical_name === name).functions;
+  assert.deepEqual(fns('Ficus carica'), [
+    { function: 'wildlife_habitat', method: 'curated', sources: ['pfaf'], kind: null },
+    { function: 'pollinator_forage', method: 'extraction', sources: ['crawford-2010'], kind: 'llm' },
+  ], 'a model\'s reading of a cited book: method extraction, the book as source, kind llm');
+  assert.deepEqual(fns('Thymus vulgaris'), [
+    { function: 'insectary', method: 'curated', sources: ['pfaf'], kind: null },
+    { function: 'ground_cover', method: 'curated', sources: ['llm-knowledge'], kind: 'llm' },
+  ], 'an estimate from the model\'s own knowledge: llm-knowledge alone');
+  for (const c of ['Temperate', 'Mediterranean', 'Tropical']) {
+    for (const t of await source.pool(c)) for (const f of t.functions ?? []) assert.ok(f.kind === null || f.kind === 'llm', `${t.canonical_name}: kind is llm or null`);
+  }
+  assert.equal(med.find((t) => t.canonical_name === 'Olea europaea').functions, null, 'no rows stays not curated');
+  const inga = (await source.pool('Tropical')).find((t) => t.canonical_name === 'Inga edulis');
+  assert.equal(inga.names.fr, 'Pois sucré', 'the name reads as usual');
+  assert.equal('nameKinds' in inga, false, 'the name kind is on Details, not the Taxon');
+  assert.deepEqual((await source.details(inga.id, 'Tropical', 'fr')).nameKinds, { fr: 'llm' });
+  assert.deepEqual((await source.details(idOf('Castanea sativa'), 'Temperate', 'en')).nameKinds, { ja: 'llm' }, 'every locale, whatever the page language');
+  assert.deepEqual((await source.details(idOf('Malus domestica'), 'Temperate', 'en')).nameKinds, {}, 'no AI name: empty');
+  const fig = await source.details(idOf('Ficus carica'), 'Mediterranean', 'en');
+  assert.equal(fig.sources['crawford-2010']?.label, 'Crawford, Creating a Forest Garden (2010)', 'the cited book is among the sheet\'s sources');
+});
+
 test('names(): every plant of the release with its integer, its lists, en and the page language', async () => {
   const all = await source.names('fr');
   assert.equal(all.length, oracle.prepare('SELECT count(*) n FROM plants').get().n);

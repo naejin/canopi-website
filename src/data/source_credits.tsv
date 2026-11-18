@@ -21,6 +21,15 @@ treegoer	treegeoer	TreeGOER	TreeGOER Köppen-Geiger zone distributions (Kindt 20
 koppen_geiger		Köppen-Geiger climate map	Beck et al. (2023) Köppen-Geiger map, 0.1° resolution, current climate (1991-2020), figshare file 61012822		unconfirmed	https://ndownloader.figshare.com/files/61012822	used
 eppo	agent	EPPO Global Database	EPPO (2026) EPPO Global Database. https://gd.eppo.int		unconfirmed	https://gd.eppo.int/	used
 wikipedia	wikipedia	Wikipedia	Article titles from Wikipedia (wikipedia.org)		unconfirmed	https://www.wikipedia.org/	used
+crawford_nuts_2016	crawford_nuts_2016	Crawford, How to Grow Your Own Nuts (2016)	Crawford, M. (2016). How to Grow Your Own Nuts. Green Books		unconfirmed		used
+crawford_perennial_vegetables_2012	crawford_perennial_vegetables_2012	Crawford, How to Grow Perennial Vegetables (2012)	Crawford, M. (2012). How to Grow Perennial Vegetables. Green Books		unconfirmed		used
+crawford_forest_garden_2010	crawford_forest_garden_2010	Crawford, Creating a Forest Garden (2010)	Crawford, M. (2010). Creating a Forest Garden: Working With Nature to Grow Edible Crops. Green Books		unconfirmed		used
+crawford_trees_2015	crawford_trees_2015	Crawford, Trees for Gardens, Orchards and Permaculture (2015)	Crawford, M. (2015). Trees for Gardens, Orchards, and Permaculture. Permanent Publications		unconfirmed		used
+toensmeier_carbon_farming_2016	toensmeier_carbon_farming_2016	Toensmeier, The Carbon Farming Solution (2016)	Toensmeier, E. (2016). The Carbon Farming Solution. Chelsea Green Publishing		unconfirmed		used
+eierman_pollinator_garden_2020	eierman_pollinator_garden_2020	Eierman, The Pollinator Victory Garden (2020)	Eierman, K. (2020). The Pollinator Victory Garden. Quarry Books		unconfirmed		used
+lofthouse_landrace_2022	lofthouse_landrace_2022	Lofthouse, Landrace Gardening (2022)	Lofthouse, J. (2022). Landrace Gardening: Food Security Through Biodiversity and Promiscuous Pollination. Father of Peace Ministry		unconfirmed		used
+gehring_back_to_basics_2011	gehring_back_to_basics_2011	Gehring, The Back to Basics Handbook (2011)	Gehring, A. R. (2011). The Back to Basics Handbook. Skyhorse Publishing		unconfirmed		used
+gliessman_agroecology_2022	gliessman_agroecology_2022	Gliessman et al., Agroecology (2022)	Gliessman, S. R., Méndez, V. E., Izzo, V. M., Engles, E. W. (2022). Agroecology: Leading the Transformation to a Just and Sustainable Food System. CRC Press		unconfirmed		used
 austraits	austraits	AusTraits	AusTraits 7.0.0, Zenodo record 15718081	CC BY 4.0	confirmed		used
 brot	brot	BROT 2.0	Tavsanoglu C. & Pausas J.G. 2018. A functional trait database for Mediterranean Basin plants. Scientific Data 5:180135. http://dx.doi.org/10.1038/sdata.2018.135. Licence unconfirmed: CC0 on the data article (figshare 5280868), CC BY 4.0 in the collection's DataCite record		unconfirmed	https://ndownloader.figshare.com/files/11194784	held
 uk_guide	uk_guide	UK guide	UK guide file (uk_guide_v7.xlsx), figshare file 52659353	CC BY 4.0	confirmed	https://ndownloader.figshare.com/files/52659353	used

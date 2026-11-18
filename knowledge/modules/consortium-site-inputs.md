@@ -2,7 +2,7 @@
 type: Module
 title: Consortium site inputs
 description: The core module that owns every site input the Plant palette engine reads, merged from the climate grid and soil map with the grower's edits as shifts, plus the palette goals read beside them.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:52:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:33Z }
 sources:
   - id: site-inputs-ts
     resource: ../../src/lib/consortium/site-inputs.ts
@@ -12,8 +12,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:fd0b37d55fa3180d
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:ae9f25c93cd4a332
+    last_modified: 2026-11-18T06:06:30Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
@@ -37,8 +37,8 @@ sources:
   - id: consortium-scenarios-json
     resource: ../../scripts/fixtures/consortium-scenarios.json
     title: scripts/fixtures/consortium-scenarios.json
-    digest: sha256:c6974e9df9e07df5
-    last_modified: 2026-11-18T04:37:58Z
+    digest: sha256:175ef17cc7bcf3b4
+    last_modified: 2026-11-18T06:08:54Z
 enforced_by:
   - scripts/consortium-site-inputs.test.mjs
   - scripts/consortium-scenarios.test.mjs
@@ -65,4 +65,4 @@ Owner decision 2026-11-18: one module owns every engine site input; the scenario
 - `holes.ts` `laneCounts(ctx, goals)`: per job and light level, the plant count per time step; jobs below the goal (but above 0) are "thin" year spans; nothing caps a lane.
 
 ## Scenario file
-- `scripts/fixtures/consortium-scenarios.json` (32 cases on 8 real places, incl. a 200-plant Seville palette), recorded by `node scripts/consortium-scenarios.mjs --record`, run by `scripts/consortium-scenarios.test.mjs` (skipped when the installed release differs). Members per case: `palette()` round-robin over light level in id order (a string sort since PP-C 0b; before, `a.id - b.id` on UUIDs was NaN and kept the pool's order), so a release that moves placements changes the picks; a case's `also` names plants added after the palette, so it keeps the plant that shows its rule (the Lyon cases hold Alnus cordata, near its cold limit there, so "2 °C colder" changes a verdict). Recorded for `r-bcc417fd89a3147c`.
+- `scripts/fixtures/consortium-scenarios.json` (32 cases on 8 real places, incl. a 200-plant Seville palette), recorded by `node scripts/consortium-scenarios.mjs --record`, run by `scripts/consortium-scenarios.test.mjs` (skipped when the installed release differs). Members per case: `palette()` round-robin over light level in id order (a string sort since PP-C 0b; before, `a.id - b.id` on UUIDs was NaN and kept the pool's order), so a release that moves placements changes the picks; a case's `also` names plants added after the palette, so it keeps the plant that shows its rule (the Lyon cases hold Alnus cordata, near its cold limit there, so "2 °C colder" changes a verdict). Recorded for `r-255553893fa4f4b4` (0c: the 13 moved placements changed the picks of 10 cases).

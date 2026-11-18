@@ -1,4 +1,4 @@
-// The invented consortium v2 fixture: a canopi-data export of format 4, schema 4.5 (canopi-data
+// The invented consortium v2 fixture: a canopi-data export of format 4, schema 4.7 (canopi-data
 // docs/consortium-export-v2.md and docs/website-handoff/2026-11-14-schema4-format.md), small enough to read, built in Node with
 // node:sqlite (coordinator row "v2 build setup", 2026-11-11: no Python on the website). See README.md
 // for what it covers.
@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, INVASIVE_AREAS_ADDITIONS, INVASIVE_AREAS_DDL, LATEST_SCHEMA, LIGHT_SPAN_ADDITIONS, LIGHT_SPAN_DDL, TOXICITY_PARTS_ADDITIONS, TOXICITY_PARTS_DDL } from '../../consortium-schema.mjs';
+import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, INVASIVE_AREAS_ADDITIONS, INVASIVE_AREAS_DDL, LATEST_SCHEMA, LIGHT_SPAN_ADDITIONS, LIGHT_SPAN_DDL, LLM_KIND_ADDITIONS, LLM_KIND_DDL, TOXICITY_PARTS_ADDITIONS, TOXICITY_PARTS_DDL } from '../../consortium-schema.mjs';
 
 export const FIXTURE_RELEASE = 'r-000000000000f1c7';
 export const FIXTURE_BUILT_AT = '2026-11-11T00:00:00Z';
@@ -226,8 +226,19 @@ export const FIXTURE_LIGHT = [
   ['Malus domestica', 'emergent', 'high', 'high', [['sun_exposure_sunniest', 'pfaf', 'derived'], ['sun_exposure_shadiest', 'pfaf', 'derived'], ['sun_exposure_preferred', 'ellenberg', 'derived']]],
   ['Sambucus nigra', null, null, 'medium', [['sun_exposure_preferred', 'llm-knowledge', 'llm']]],
 ];
-export const FIXTURE_ADDITIONS = [{ table: 'trait_sources', column: 'field', value: 'toxicity', since: 1 }, ...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS, ...LIGHT_SPAN_ADDITIONS];
-export const FIXTURE_SCHEMA_MINOR = 5;
+// Schema 4.6 (canopi-data docs/website-handoff/2026-11-18-llm-estimates.md): functions.kind 'llm' on two
+// entries appended after every other (earlier function ids unchanged): a model's reading of a cited book
+// (method extraction, the book's credit id) and an estimate from its own knowledge (method curated,
+// llm-knowledge alone). [canonical, function, method, source].
+export const FIXTURE_LLM_FUNCTIONS = [
+  ['Ficus carica', 'pollinator_forage', 'extraction', 'crawford-2010'],
+  ['Thymus vulgaris', 'ground_cover', 'curated', 'llm-knowledge'],
+];
+// Schema 4.7 (2026-11-18-name-kind.md): plant_names.kind 'llm' on two primary names that rest only on an
+// AI suggestion ([canonical, locale]); every other primary is NULL.
+export const FIXTURE_LLM_NAMES = [['Inga edulis', 'fr'], ['Castanea sativa', 'ja']];
+export const FIXTURE_ADDITIONS = [{ table: 'trait_sources', column: 'field', value: 'toxicity', since: 1 }, ...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS, ...LIGHT_SPAN_ADDITIONS, ...LLM_KIND_ADDITIONS];
+export const FIXTURE_SCHEMA_MINOR = 7;
 // 4.3 (canopi-data docs/website-handoff/2026-11-17-invasive-scope.md): the ES plant_invasive rows, one per
 // plant ([canonical, source]: the widest scope), and their plant_invasive_areas ([canonical, source, area]).
 // The cases are the note's, put on fixture plants (invented for these plants; only Psidium guajava's is
@@ -315,7 +326,7 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
   const db = new DatabaseSync(path);
   db.exec('PRAGMA page_size = 4096; PRAGMA foreign_keys = ON;');
   db.exec(DDL_BY_SCHEMA[schema]);
-  db.exec(TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + LIGHT_SPAN_DDL);
+  db.exec(TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + LIGHT_SPAN_DDL + LLM_KIND_DDL);
   const DATA_TABLES = DATA_TABLES_BY_SCHEMA[schema];
   const run = (sql, ...rows) => { const st = db.prepare(sql); for (const r of rows) st.run(...r); };
   db.exec('BEGIN');
@@ -337,7 +348,7 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
       t.frost ? 10 : 5, t.frost ? 12 : 9, t.frost ? 1 : 0, t.ph?.[0] ?? null, t.ph?.[1] ?? null, v(t.wd), v(t.moist), v(t.drought),
       t.habit === 'Tree' ? (t.ever ? 'Evergreen' : 'Deciduous') : null, t.annual ? 'Annual' : 'Perennial', t.annual ? 3 : 2, t.nfix ?? 0, t.annual ?? 0, t.annual ? 0 : 1, t.grownAnnual ?? 0,
       v(t.habit), t.habit === 'Herb' || t.habit === 'Shrub' ? 'Bees, Flies' : 'Bees', v(t.tox), v(t.allelo), v(t.weed), wcvp]);
-    for (const [loc, text] of Object.entries(names)) run('INSERT INTO plant_names VALUES (?, ?, ?)', [plant, loc, text]);
+    for (const [loc, text] of Object.entries(names)) run('INSERT INTO plant_names (plant, locale, name, kind) VALUES (?, ?, ?, ?)', [plant, loc, text, FIXTURE_LLM_NAMES.some(([n, l]) => n === name && l === loc) ? 'llm' : null]);
     if (extra.image) run('INSERT INTO plant_images VALUES (?, ?, ?, ?, ?)', [plant, ...extra.image]);
     if (t.tox) run('INSERT INTO toxicity_sources VALUES (?, ?, ?)', [plant, 0, 'pfaf']);
     for (const c of extra.invasive ?? []) run('INSERT INTO plant_invasive VALUES (?, ?, ?)', [plant, c, 'griis']);
@@ -372,11 +383,16 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
     }
     for (const f of extra.functions ?? []) {
       fn++;
-      run('INSERT INTO functions VALUES (?, ?, ?, ?)', [fn, plant, f, f === 'nitrogen_fixer' ? 'import' : 'curated']);
+      run('INSERT INTO functions (function_id, plant, function, method) VALUES (?, ?, ?, ?)', [fn, plant, f, f === 'nitrogen_fixer' ? 'import' : 'curated']);
       run('INSERT INTO function_sources VALUES (?, ?)', [fn, f === 'nitrogen_fixer' ? 'try' : 'pfaf']);
     }
   });
   const plantOf = (name) => P.findIndex((p) => p[0] === name) + 1;
+  for (const [name, f, method, source] of FIXTURE_LLM_FUNCTIONS) {
+    fn++;
+    run('INSERT INTO functions (function_id, plant, function, method, kind) VALUES (?, ?, ?, ?, ?)', [fn, plantOf(name), f, method, 'llm']);
+    run('INSERT INTO function_sources VALUES (?, ?)', [fn, source]);
+  }
   INTERACTIONS.forEach(([s, sr, o, or, type, climate, agent, severity, notes, sources], i) => {
     const id = i + 1;
     run('INSERT INTO interactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, s, sr, o, or, type, climate, agent, severity]);

@@ -1,7 +1,7 @@
 {
   "format_version": 4,
   "schema_version": 4,
-  "schema_minor": 5,
+  "schema_minor": 7,
   "schema_additions": [
     {
       "table": "trait_sources",
@@ -66,6 +66,16 @@
       "column": "field",
       "value": "sun_exposure_sunniest",
       "since": 5
+    },
+    {
+      "table": "functions",
+      "column": "kind",
+      "since": 6
+    },
+    {
+      "table": "plant_names",
+      "column": "kind",
+      "since": 7
     }
   ],
   "generated_at": "2026-11-11T00:00:00Z",
@@ -75,15 +85,15 @@
   "max_gzip_bytes": 10000000,
   "files": [
     {
-      "file": "consortium-v4.r-000000000000f1c7.f5e68e7a3005.sqlite.gz",
+      "file": "consortium-v4.r-000000000000f1c7.c70461689f7c.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "fed7d4346995c880b444a68ed0e1bd0ce7bc6c85785b887eb30f630a1cfcfccc",
-      "bytes": 34583,
-      "raw_sha256": "f5e68e7a30058689c30047b6e26b8e6fbe0fde69c0055e3ac114636d022e4cbf",
+      "sha256": "0131ae88dc42832773f669c95c940416d7f4fd8c6a36818d0fd465e7629b582c",
+      "bytes": 34724,
+      "raw_sha256": "c70461689f7c18e4d65574e8d90decb6eda25a6753e0a9aadfef3534a25ede03",
       "raw_bytes": 307200,
       "counts": {
         "climates": 3,
@@ -103,8 +113,8 @@
         "placements": 46,
         "placement_reasons": 47,
         "reason_texts": 92,
-        "functions": 44,
-        "function_sources": 44,
+        "functions": 46,
+        "function_sources": 46,
         "interactions": 8,
         "interaction_notes": 5,
         "interaction_sources": 9,
@@ -195,12 +205,12 @@
     "rows": 5
   },
   "names": {
-    "file": "names.r-000000000000f1c7.d53d27ca3eab.tsv.gz",
-    "sha256": "f3e71fcbf4b2f25eba04e43bdfe6cf6e2429a4a93b900788ad0a773d7fc3d682",
-    "bytes": 345,
-    "raw_sha256": "d53d27ca3eabdf7bf38748bcec9bbfd238d8675dd68619f6b84dbe7b464fc413",
+    "file": "names.r-000000000000f1c7.b297e2b23be4.tsv.gz",
+    "sha256": "53e8664622c6f06f44f658aed44d1a9869870160d08f512b09ce1c80c5e389f5",
+    "bytes": 342,
+    "raw_sha256": "b297e2b23be4892a5bb8fe68ad348d76dc0f7e9d8665aa5afb168e38384df6a1",
     "raw_bytes": 478,
     "rows": 11,
-    "core_raw_sha256": "f5e68e7a30058689c30047b6e26b8e6fbe0fde69c0055e3ac114636d022e4cbf"
+    "core_raw_sha256": "c70461689f7c18e4d65574e8d90decb6eda25a6753e0a9aadfef3534a25ede03"
   }
 }
