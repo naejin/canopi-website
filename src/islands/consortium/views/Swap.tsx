@@ -5,7 +5,7 @@
 // warnings or its fit) and the jobs it does; each candidate says how many of those jobs it does and
 // names the ones it does not ("Does 3 of its 4 jobs (no mulch)"), its years and what it does to the
 // palette's holes in the same sentence ("…, and stands to year 25: also fills the hole after year 15",
-// bold with a check; core gapLines), its light and size, and its climate as the board's mini band with
+// bold with a check; core swapYearsLine and gapLines), its light when it differs from the member's, its size, and its climate as the board's mini band with
 // the edge words ("Near its cool edge today; safer as it warms"; core rowBandOf; fix round 1 BC7). Each row swaps (Swap takes the member
 // out) or adds beside (both kept; v14 board Swap); "Only plants that hold by 2041–2070" leaves out the
 // candidates the engine judges outside their range then (verdict rule holdsBy), with its count. It shows
@@ -25,10 +25,10 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { Alternative, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { gapLines, jobsOf, periodIds, periodName, rowBandOf, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
+import { gapLines, jobsOf, periodIds, periodName, rowBandOf, swapYearsLine, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
 import { addMembers, closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
-import { doesWords, FitLine, jobList, lightWords, RowBandLine, say, sizeShort, SWAP, yearsWords } from './kit/fit.tsx';
+import { AltRow, doesWords, FitLine, jobList, lightWords, RowBandLine, say, sizeShort, SWAP, yearsWords } from './kit/fit.tsx';
 import { countryName, nameOf } from './kit/names.ts';
 import { LoadFailed } from './lazy.tsx';
 import { suggestWaitMs } from '../state/suggest-wait.ts';
@@ -100,35 +100,32 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // Why one might swap it: its warnings in words, else its fit when it is not a plain fit.
   const why = flagLines(t, store.flagsOfPlant(t), scene);
   const own = store.memberVerdicts.value?.get(id) ?? null;
+  // Its light only when it differs from the member's (board Swap: a row in the member's light shows its size only).
+  const ownLight = lightWords(t).growsIn;
   const row = (a: Alternative, far = false) => {
     const x = byId.get(a.id);
     if (!x) return null;
     const lines = flagLines(x, a.flags, scene);
     const v = verdicts?.get(x.id) ?? null;
     const y = yearsOf(x);
-    // One sentence (board Swap): the jobs it does, its years, and what it does to the palette's holes.
+    // One sentence (board Swap): the jobs it does, its years against the member's ("and stands to year
+    // 25", "to year 3 only"; core swapYearsLine), and what it does to the palette's holes.
     const gaps = gapLines(a.fills, a.leaves);
     const gap = [gaps.fills, gaps.leaves].filter((l) => !!l).map((l) => say(l!)).join('; ');
-    const years = y ? say(whenLine(y.from, y.to)) : T('timingUnknown');
+    const years = y ? say(swapYearsLine(yearsOf(t), y)) : T('timingUnknown');
     const does = gap ? T('swap.rowGap', { does: doesWords(memberJobs, a.sharedJobs), years, gap }) : T('swap.row', { does: doesWords(memberJobs, a.sharedJobs), years });
     const band = v ? rowBandOf(v, store.laterVerdictOf(x, v), periodName) : null;
+    const growsIn = lightWords(x).growsIn;
     return (
-      <li key={a.id} class={far || a.flags.length ? 'flagged' : ''} data-swap-row data-plant-id={x.id}>
-        <div class="ct-swap-text">
-          <div class="ct-row-main"><strong>{nameOf(x)}</strong> <i class="ct-sci">{x.canonical_name}</i></div>
-          <p class="ct-swap-does" data-swap-does data-fills={gaps.fills ? '' : undefined}>{gaps.fills ? <strong>{CHECK}{does}</strong> : does}</p>
-        </div>
-        <div class="ct-swap-acts">
-          <button type="button" class="button button-secondary" aria-label={T(far ? 'swap.anywayFor' : 'swap.for', { name: nameOf(x) })} onClick={() => swap(x)}>{SWAP}{T(far ? 'swap.swapAnyway' : 'details.swap')}</button>
-          <button type="button" class="ct-link-button" aria-label={T(far ? 'swap.addAnywayFor' : 'swap.besideFor', { name: nameOf(x) })} onClick={() => beside(x, far || a.flags.length > 0)}>{T(far ? 'addAnyway' : 'swap.addBeside')}</button>
-        </div>
-        <div class="ct-row-why">
-          <span class="ct-line" data-swap-size>{lightWords(x).growsIn} · {sizeShort(x)}</span>
-          <span class="ct-line ct-swap-status" data-conf={v ? undefined : 'not-checked'}>{band ? <RowBandLine b={band} /> : <FitLine v={v} known={far ? 'outside' : undefined} />}</span>
-          {!far && canJudge && stateOf(a) === 'unknown' && <span class="ct-line ct-muted" data-conf="not-checked" data-hold-unknown>{T('swap.holdUnknown', { period: periodName(HOLD_PERIOD) })}</span>}
-          {lines.length > 0 && <span class="ct-line ct-swap-flags">{lines.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.chip ?? l.text}</span>)}</span>}
-        </div>
-      </li>
+      <AltRow key={a.id} t={x} name={nameOf(x)} fills={!!gaps.fills} flagged={far || a.flags.length > 0} does={gaps.fills ? <strong>{CHECK}{does}</strong> : does} actions={<>
+        <button type="button" class="button button-secondary" aria-label={T(far ? 'swap.anywayFor' : 'swap.for', { name: nameOf(x) })} onClick={() => swap(x)}>{SWAP}{T(far ? 'swap.swapAnyway' : 'details.swap')}</button>
+        <button type="button" class="ct-link-button" aria-label={T(far ? 'swap.addAnywayFor' : 'swap.besideFor', { name: nameOf(x) })} onClick={() => beside(x, far || a.flags.length > 0)}>{T(far ? 'addAnyway' : 'swap.addBeside')}</button>
+      </>}>
+        <span class="ct-line" data-swap-size>{growsIn !== ownLight ? <>{growsIn} · </> : null}{sizeShort(x)}</span>
+        <span class="ct-line ct-swap-status" data-conf={v ? undefined : 'not-checked'}>{band ? <RowBandLine b={band} /> : <FitLine v={v} known={far ? 'outside' : undefined} />}</span>
+        {!far && canJudge && stateOf(a) === 'unknown' && <span class="ct-line ct-muted" data-conf="not-checked" data-hold-unknown>{T('swap.holdUnknown', { period: periodName(HOLD_PERIOD) })}</span>}
+        {lines.length > 0 && <span class="ct-line ct-swap-flags">{lines.map((l) => <span class="ct-flag" data-level={l.level ?? 'warning'}>{WARN}{l.chip ?? l.text}</span>)}</span>}
+      </AltRow>
     );
   };
   const country = store.flagContext.value.country ?? null;

@@ -14,8 +14,8 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import type { ComponentChildren } from 'preact';
 import type { AgainstEntry, Band, Dispute, Level, Line, Measure, Scenario, Taxon, TraitSource } from '../../../../lib/consortium/index.ts';
-import { againstLines, bandsOf, datasetLines, levelLine, limitOf, lineTerm, periodName, rainFromLine, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
-import { LevelIcon, MEASURE_GLYPH, say } from '../kit/fit.tsx';
+import { againstLines, bandsOf, datasetLines, drainageLine, levelLine, limitOf, lineTerm, periodName, rainFromLine, rangeSources, scenarioName, soilBandOf, soilPhOf } from '../../../../lib/consortium/index.ts';
+import { LevelIcon, MEASURE_GLYPH, midSentence, say } from '../kit/fit.tsx';
 import { WARN } from '../kit/icons.tsx';
 import { coords } from '../kit/names.ts';
 import { formatNumber, formatTemp } from '../../format.ts';
@@ -25,7 +25,10 @@ import { pageLang } from '../../strings.ts';
 const DISPUTED: Partial<Record<Measure, Dispute['field']>> = { tminCold: 'tmin_cold.low', tmeanYear: 'tmean_year.low' };
 const GLYPH = MEASURE_GLYPH;
 const W = 324, PAD = 6;
-const ORDER: readonly Measure[] = ['tminCold', 'tmeanYear', 'tmeanWarm', 'tmaxWarm', 'aridity'];
+// The boards' four bands, in their one order (Coldest nights, Warmth over the year, Hottest days, Rain
+// against evaporation). A measure core draws beyond them (the summer warmth a plant needs, tmeanWarm) has
+// no band on any v14 board: its lines stay in the list under the bands, so no limit is hidden (C6).
+const ORDER: readonly Measure[] = ['tminCold', 'tmeanYear', 'tmaxWarm', 'aridity'];
 
 // One measure's band, drawn (aria-hidden: the lines under it say it in words): the recorded range
 // (always drawn from its recorded ends, so a place past them is never drawn inside it), with an end
@@ -139,9 +142,9 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
   const later = store.laterVerdictOf(t, v);
   // The placement's estimate is said once, in the header (minor, round 3), not again here.
   const entries = againstLines(v, later, { period: periodName, scenario, heightM: t.traits.height_m?.max ?? null, rainFrom: rainFromLine(t) }).filter((e) => !e.placement);
-  // The four climate bands in the boards' one order (Coldest nights, Warmth over the year, Hottest days,
-  // Rain against evaporation); the soil is its own card under the section (SoilCard).
-  const bands = bandsOf(v, later, t.climate).filter((b): b is Band => !!b).sort((a, b) => ORDER.indexOf(a.measure) - ORDER.indexOf(b.measure));
+  // The four climate bands in the boards' one order (ORDER), no other; the soil is its own card under the
+  // section (SoilCard).
+  const bands = bandsOf(v, later, t.climate).filter((b): b is Band => !!b && ORDER.includes(b.measure)).sort((a, b) => ORDER.indexOf(a.measure) - ORDER.indexOf(b.measure));
   const period = later ? periodName(later.judged) : null;
   // Each measure's lines under its band; the rest (notes, hedges, the later period's lines) after.
   const inBand = (e: AgainstEntry, b: Band) => !e.later && !e.note && !!e.factor && b.factors.includes(e.factor);
@@ -232,13 +235,15 @@ export function soilSayOf(t: Taxon, traitSources: readonly TraitSource[] | null 
   const nearKm = input?.nearKm ?? null;
   const near = nearKm !== null && own === null && map !== null ? T('details.soilNear', { dist: km(Math.round(nearKm), lang) }) : null;
   const fit = T(level === 'fits' ? 'details.phFits' : level === 'unknown' ? 'details.phNotChecked' : 'details.phOff');
-  const niche = !ranged ? null : pots ? T('details.phPots') : own !== null ? T('details.phTestSays', { ph: n(own), fit }) : map !== null ? T('details.phMapSays', { ph: n(map), fit }) : null;
+  // No value to judge (F10): "not known … not checked on soil pH", never silence.
+  const niche = !ranged ? null : pots ? T('details.phPots') : own !== null ? T('details.phTestSays', { ph: n(own), fit }) : map !== null ? T('details.phMapSays', { ph: n(map), fit }) : T('details.phNoData');
   return { ranged, level, status, line, near, niche, map, own };
 }
 
 // The soil card (boards Details, DarkDetails, SiteMendoza; R3: soil pH is a hint that never sets the
 // level): the plant's recorded pH range against the soil map's value (a ring, "soil map: pH 6.3") and
-// the grower's own test (a dot), its status and lines in words (soilSayOf), the drainage need, and
+// the grower's own test (a dot), its status and lines in words (soilSayOf), the drainage need (core
+// drainageLine: the release's well_drained, or the hint when the grower's ground stays wet), and
 // "Set my own soil pH" (store.openFigure: the figures panel's soil line). Without a map value, "not
 // checked on soil pH" (F10); from a neighbouring square, "a weaker guess". The desk shows the same say on
 // the Niche row instead (board DetailsDesk; Details renders no card there).
@@ -273,7 +278,7 @@ export function SoilCard({ t, traitSources = null }: { t: Taxon; traitSources?: 
           {own !== null && <><path d={`M${x(own)} 20V48`} class="ct-bd-now" /><circle cx={x(own)} cy="37" r="4" class="ct-bd-now-dot" />{label(own, 28, T('details.soilOwnLabel', { ph: n(own) }), 'ct-bd-now-text')}</>}
         </svg>
       )}
-      <p class="ct-small" data-soil-line>{soil.line}{soil.near && <> {soil.near}</>} <span data-drainage>{T('details.drainageNone')}</span></p>
+      <p class="ct-small" data-soil-line>{soil.line}{soil.near && <> {soil.near}</>} <span data-drainage>{T('details.drainageSay', { what: midSentence(say(drainageLine(t, store.verdictOf(t)))) })}</span></p>
       <p class="ct-small"><button type="button" class="ct-link-button" data-set-ph onClick={() => store.openFigure('soilPh')}>{T('details.setOwnPh')}</button> · {T('details.soilNotProjected')}</p>
     </section>
   );

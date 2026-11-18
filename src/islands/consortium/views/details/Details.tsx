@@ -21,13 +21,13 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, JobId, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, factAt, fills, guestOf, invasiveLines, jobsOf, keepLine, laterLossOf, locales, measureOf, pairings, periodIds, periodName, placementZone, rowBandOf, siteIdOf, sourceTitle, spanOf, sureRows, warns, yearsLine, whenLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, candoLine, drainageLine, factAt, fills, guestOf, invasiveLines, jobsOf, keepLine, laterLossOf, locales, measureOf, pairings, periodIds, periodName, placementZone, rowBandOf, siteIdOf, sourceTitle, spanOf, sureRows, warns, yearsLine, whenLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import type { Factor, PlantVerdict, SureRow } from '../../../../lib/consortium/index.ts';
 import { bloomNear, monthsLong } from './bloom.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
 import { consortiumGuides, jobGuides } from '../../../../data/consortium-guides.ts';
 import { Against, SoilCard, soilSayOf } from './Against.tsx';
-import { doesWords, FitLine, JobIcon, jobList, MeasureGlyph, midSentence, nicheLight, RowBandLine, say, sizeShort, SWAP } from '../kit/fit.tsx';
+import { AltRow, FitLine, JobIcon, jobList, MeasureGlyph, midSentence, nicheLight, RowBandLine, say, sizeShort, SWAP } from '../kit/fit.tsx';
 import { shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phaseTerm, spanWords, zoneName } from '../kit/names.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -355,9 +355,10 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const lossFactor: Factor | null = (loss ?? now)?.limiting?.factor ?? null;
   const lossMeasure = lossFactor ? measureOf(lossFactor) : null;
   const keep = keepLine(now, laters, new Date().getFullYear());
-  // What you can do (board DetailsDesk; fix round 1 BC4): the two closest alternatives that hold by the
-  // later period (the verdict rule's holdsBy, as Swap's hold filter), each with its jobs and years, "holds
-  // in 2041–2070", and how far it is recorded on the measure that limits this member.
+  // What you can do (board DetailsDesk; fix round 1 BC4, C9): the two closest alternatives that hold by the
+  // later period (the verdict rule's holdsBy, as Swap's hold filter), each in the board's words (core
+  // candoLine: same years, what it does not do, what it adds, "holds in 2041–2070") in Swap's row frame
+  // (kit/fit.tsx AltRow), and how far it is recorded on the measure that limits this member.
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
   const holdPeriod = periodIds[1];
   const alts = member && rule ? (store.alternativesFor(id)?.fit ?? []).filter((a) => { const x = taxonOf(a.id); return !!x && rule.holdsBy(x, ctx, holdPeriod); }).slice(0, 2) : [];
@@ -437,18 +438,15 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
                   const x = taxonOf(a.id);
                   if (!x) return null;
                   const warn = flagLines(x, a.flags, scene);
-                  const xy = yearsOf(x);
                   const band = bandOf(x);
+                  // Board DetailsDesk: "Feeds you in the same years, brings no helpers; holds in 2041–2070" (core candoLine).
+                  const does = capital(say(candoLine(jobs, y, jobsOf(x), yearsOf(x), periodName(holdPeriod))));
                   return (
-                    <li data-swap-row data-plant-id={x.id}>
-                      <div class="ct-row-main"><strong>{nameOf(x)}</strong> <i class="ct-sci">{x.canonical_name}</i></div>
-                      <button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => { closeSheet(); store.swapMember(id, x.id); }}>{SWAP}{T('details.swap')}</button>
-                      <div class="ct-row-why">
-                        <span class="ct-d-cando-does" data-cando-does>{CHECK} {T('details.candoHolds', { does: doesWords(jobs, a.sharedJobs), years: xy ? say(whenLine(xy.from, xy.to)) : T('timingUnknown'), period: periodName(holdPeriod) })}</span>
-                        <span class="ct-line">{band ? <RowBandLine b={band} /> : <FitLine v={store.poolVerdicts.value?.get(x.id) ?? null} />}</span>
-                        {warn.length > 0 && <span class="ct-line ct-flag-line" data-swap-warn>{WARN} {warn.map((l) => l.text).join(' · ')}</span>}
-                      </div>
-                    </li>
+                    <AltRow key={a.id} t={x} name={nameOf(x)} flagged={a.flags.length > 0} does={<span class="ct-d-cando-does">{CHECK} {does}</span>}
+                      actions={<button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => { closeSheet(); store.swapMember(id, x.id); }}>{SWAP}{T('details.swap')}</button>}>
+                      <span class="ct-line">{band ? <RowBandLine b={band} /> : <FitLine v={store.poolVerdicts.value?.get(x.id) ?? null} />}</span>
+                      {warn.length > 0 && <span class="ct-line ct-flag-line" data-swap-warn>{WARN} {warn.map((l) => l.text).join(' · ')}</span>}
+                    </AltRow>
                   );
                 })}
               </ul>
@@ -482,7 +480,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
               <Row k={T('details.sizeLabel')}>{T('details.sizeFull', { size: sizeText })}</Row>
               <Row k={T('details.life')}>{labelOf(labels, 'lifespan', t.traits.lifespan)}</Row>
               <Row k={T('details.leaves')}>{labelOf(labels, 'deciduous_evergreen', t.traits.deciduous_evergreen)}</Row>
-              <Row k={T('details.drainage')}>{T('details.noNeed')}</Row>
+              {/* The soil card's words (core drainageLine: the release's well_drained, or the hint the grower's wet ground raises). */}
+              <Row k={T('details.drainage')}>{say(drainageLine(t, store.verdictOf(t)))}</Row>
               <Row k={T('details.wind')}>{(() => { const w = (facts?.layerValues ?? []).find((x) => x.field === 'tolerates_wind'); return w ? T(w.flag ? 'details.windYes' : 'details.windNo') : T('details.notRecorded'); })()}</Row>
               <Row k={T('details.rootPartners')}>{labelOf(labels, 'mycorrhizal_type', t.traits.mycorrhizal_type)}</Row>
             </dl>

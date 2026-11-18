@@ -132,6 +132,17 @@ export function hintLine(f: FactorVerdict): Line | null {
   return f.factor === 'drainage' || (f.factor === 'water' && f.basis === 'spot') ? { key: K('hintDrainage'), vars: {} } : null;
 }
 
+// A plant's drainage need in words (Details' soil card and its Time and size row; R3: a hint that never
+// sets the level, read from the grower's answer): the engine's hint when the grower's ground stays wet
+// and the plant wants free-draining soil (hintLine on the wet check), else what the release records
+// (well_drained true: "Wants free-draining soil"; false: "Does not need free-draining soil"; null: "No
+// need recorded", never a guess). `v`: the plant's verdict, null before the rule is here.
+export function drainageLine(t: Pick<Taxon, 'traits'>, v: Pick<PlantVerdict, 'factors'> | null): Line {
+  if (v?.factors.some((f) => (f.factor === 'drainage' || (f.factor === 'water' && f.basis === 'spot')) && hintLine(f) !== null)) return L('drainWetHere');
+  const wd = t.traits.well_drained;
+  return L(wd === true ? 'drainFree' : wd === false ? 'drainNotNeeded' : 'drainNone');
+}
+
 // Several plants removed at once: "3 plants removed." and the palette after it: "197 plants."
 export const removedManyLine = (n: number): Line => ({ key: K('removedMany'), vars: {}, count: n });
 export const paletteSizeLine = (n: number): Line => ({ key: K('paletteSize'), vars: {}, count: n });
@@ -155,6 +166,36 @@ export function whenLine(from: number, to: number | null): Line {
   if (from < 1 && to <= 1) return { key: K('whenMonths'), vars: { from: monthOf(from), to: monthOf(to) } };
   if (from < 1) return { key: K('whenMonthTo'), vars: { month: monthOf(from), to } };
   return { key: K('whenSpan'), vars: { from, to } };
+}
+
+// A swap candidate's years against the member's (board Swap): "and stands to year 25" when it starts
+// with the member and stands longer, "to year 3 only" when it stops earlier, else its own span ("from
+// year 3 on"). Without the member's years, its span.
+type Years = { from: number; to: number | null };
+export function swapYearsLine(member: Years | null, cand: Years): Line {
+  if (member && member.to !== null && cand.to !== null && cand.from <= member.from) {
+    if (cand.to > member.to) return L('swapStandsTo', { to: cand.to });
+    if (cand.to < member.to) return L('swapToOnly', { to: cand.to });
+  }
+  return whenLine(cand.from, cand.to);
+}
+
+// A suggested swap in "What you can do" (board DetailsDesk), one sentence in the language's own order:
+// the jobs it shares and when ("Feeds you in the same years"; "Same job, same years" when it does every
+// job), what it does not do ("brings no helpers"), what it adds ("also shelters"), then "holds in
+// 2041–2070" when `holds` names the period it holds by. Job words are verbs (line.does_*, line.lacks_*);
+// the view starts the sentence with a capital.
+const sameYears = (a: Years | null, b: Years | null): boolean => !!a && !!b && a.from === b.from && a.to === b.to;
+export function candoLine(memberJobs: readonly string[], memberYears: Years | null, jobs: readonly string[], years: Years | null, holds: string | null): Line {
+  const shared = memberJobs.filter((j) => jobs.includes(j)), missing = memberJobs.filter((j) => !jobs.includes(j)), extra = jobs.filter((j) => !memberJobs.includes(j));
+  const same = sameYears(memberYears, years);
+  const when = (bare: boolean): Line => (same ? L(bare ? 'sameYears' : 'inSameYears') : years ? whenLine(years.from, years.to) : L('whenUnknown'));
+  let l: Line = !missing.length && shared.length ? { key: K('candoSame'), vars: {}, count: shared.length, parts: { when: when(true) } }
+    : { key: K('candoSome'), vars: {}, parts: { jobs: shared.map((j) => L(`does_${j}`)), when: when(false) } };
+  if (missing.length) l = { key: K('candoLacks'), vars: {}, parts: { head: l, lacks: missing.map((j) => L(`lacks_${j}`)) } };
+  if (extra.length) l = { key: K('candoAlso'), vars: {}, parts: { head: l, jobs: extra.map((j) => L(`does_${j}`)) } };
+  if (holds) l = { key: K('candoHolds'), vars: { period: holds }, parts: { head: l } };
+  return l;
 }
 
 // Why a candidate is offered for a target, its first line (boards Palette, FillHole, Recife, Balcony,

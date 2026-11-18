@@ -5,6 +5,7 @@
 // formatted for the page language (words.ts says a Line). Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
 // plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
+import type { ComponentChildren } from 'preact';
 import type { Hole, JobId, Level, Line, Measure, PlantVerdict, RowBand, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, headLine, holeLine, levelLine, sizeLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { formatDepthCm, formatLength } from '../../format.ts';
@@ -150,4 +151,22 @@ export function MiniBand({ b }: { b: RowBand }) {
 }
 export function RowBandLine({ b }: { b: RowBand }) {
   return <span class="ct-rowband" data-level={b.level} data-row-band={b.measure}><MiniBand b={b} /><span><MeasureGlyph m={b.measure} /> {say(b.line)}</span></span>;
+}
+
+// One candidate row, the frame Swap's rows and Details' "What you can do" share (boards Swap and
+// DetailsDesk; C9): the name and scientific name, then its sentence (`does`: the words the board gives
+// that screen; `fills`: a filled hole, bold with a check by the caller), its actions beside, and the lines
+// under it (`children`: light, size, mini band, warnings). Store-free: the caller passes the words and
+// the buttons. `flagged`: a candidate with warnings or outside its range (the row's warning stripe).
+export function AltRow({ t, name, does, fills = false, flagged = false, actions, children }: { t: Taxon; name: string; does: ComponentChildren; fills?: boolean; flagged?: boolean; actions: ComponentChildren; children?: ComponentChildren }) {
+  return (
+    <li class={flagged ? 'flagged' : ''} data-swap-row data-plant-id={t.id}>
+      <div class="ct-swap-text">
+        <div class="ct-row-main"><strong>{name}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
+        <p class="ct-swap-does" data-swap-does data-fills={fills ? '' : undefined}>{does}</p>
+      </div>
+      <div class="ct-swap-acts">{actions}</div>
+      <div class="ct-row-why">{children}</div>
+    </li>
+  );
 }

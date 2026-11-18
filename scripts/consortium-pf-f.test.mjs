@@ -1,9 +1,12 @@
 // pf stream f, "One plant" (chunk 3): the words pf-f owns in the core's verdict-line vocabulary,
 // said in the locale files as the boards say them.
 // - F2 (chunk 2 hand-off triage): the German thin spot reads "Dünn besetzt: nur 1 Pflanze von Jahr 1
-//   bis Jahr 15." (board German), with no "Reserve finden" in its words (A20: thin rows carry no button).
+//   bis Jahr 15." (board German), with no "Reserve finden" (A20: thin rows carry no button), then the
+//   word map's backup prompt "Eine Reserve dazunehmen." (C5: every language asks for a backup).
 // - M23 (chunk 2 hand-off triage; boards SiteMendoza and Find): a plant's rain line "recorded from
-//   25 mm" / "registrada desde 25 mm", read from the low end of TaxonClimate.precip, never a guess.
+//   25 mm", read from the low end of TaxonClimate.precip, never a guess. C11: board SiteMendoza mixes
+//   "registrada" and "registrado" by the plant name's gender; the words take one form that fits every
+//   plant (es "con registros desde 25 mm"; pt, it, fr likewise), rather than a gender the data lacks.
 // - Fix round 1 (review batch 1): BC2 the Flowers row keeps only the bloom rows whose scope holds the
 //   place, as one span in full month names; BC7 a Swap row's gap words and edge words; BC4 the
 //   limiting measure's "Recorded up to"; BC11 the keep line counts a later second look.
@@ -17,7 +20,7 @@ const dir = new URL('../src/i18n/translations/', import.meta.url);
 const words = Object.fromEntries(readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(f, dir), 'utf8'))]));
 
 // A Line in a language's words as the island says it (strings.ts P for a count, words.ts for a
-// millimetre variable): the plural form for the count, # the number, then the {vars}.
+// millimetre variable and a list of Lines): the plural form for the count, # the number, then the {vars}.
 function said(l, lang) {
   let text = words[lang][l.key];
   assert.ok(text, `${lang} has ${l.key}`);
@@ -25,21 +28,20 @@ function said(l, lang) {
     const forms = Object.fromEntries(text.split(' | ').map((f) => { const i = f.indexOf(': '); return [f.slice(0, i), f.slice(i + 2)]; }));
     text = (forms[new Intl.PluralRules(lang).select(l.count)] ?? forms.other).replace('#', String(l.count));
   }
-  const parts = Object.fromEntries(Object.entries(l.parts ?? {}).map(([k, p]) => [k, said(p, lang)]));
+  const parts = Object.fromEntries(Object.entries(l.parts ?? {}).map(([k, p]) => [k, Array.isArray(p) ? new Intl.ListFormat(lang, { type: 'conjunction' }).format(p.map((x) => said(x, lang))) : said(p, lang)]));
   return text.replace(/\{(\w+)\}/g, (_, k) => (k in parts ? parts[k] : k.endsWith('Mm') ? formatMm(l.vars[k], lang) : k.startsWith('temp') ? `${l.vars[k]} °C` : String(l.vars[k])));
 }
 
-test('F2 (pf-f): the German thin spot as board German, with no "Reserve finden"', () => {
+test('F2 (pf-f): the German thin spot opens as board German, with no "Reserve finden" (A20; C5 adds the backup prompt)', () => {
   const one = line.thinLine({ have: 1, fromYear: 1, toYear: 15 });
-  assert.equal(said(one, 'de'), 'Dünn besetzt: nur 1 Pflanze von Jahr 1 bis Jahr 15.');
-  assert.equal(said(line.thinLine({ have: 2, fromYear: 3, toYear: 9 }), 'de'), 'Dünn besetzt: nur 2 Pflanzen von Jahr 3 bis Jahr 9.');
+  assert.match(said(one, 'de'), /^Dünn besetzt: nur 1 Pflanze von Jahr 1 bis Jahr 15\./);
   assert.doesNotMatch(words.de['consortium.line.thin'], /Reserve finden/);
 });
 
 test('M23 (pf-f): "recorded from N mm" from the low end of the plant\'s recorded rain; none without a rain range', () => {
   const t = (low) => ({ climate: { precip: low === undefined ? null : { low, median: null, high: null, count: null, basis: 'cells', blocks: null, lowSource: null, highSource: null, weak: false } } });
   const l = line.rainFromLine(t(24.6));
-  assert.equal(said(l, 'es'), 'registrada desde 25 mm');
+  assert.equal(said(l, 'es'), 'con registros desde 25 mm'); // C11: one form for every plant's gender
   assert.equal(said(l, 'en'), 'recorded from 25 mm');
   for (const lang of Object.keys(words)) assert.match(said(l, lang), /25/, `${lang} names the rain`);
   assert.equal(line.rainFromLine(t(undefined)), null, 'no rain range: no line');
@@ -129,9 +131,77 @@ test('R4 (pf-f M23 in Against): the aridity band\'s line says "recorded from N m
   const entry = line.againstLines(v, null, { ...W, rainFrom: line.rainFromLine(t) }).find((e) => e.factor === 'dry');
   const all = (l, lang) => [said({ ...l, also: undefined }, lang), ...(l.also ?? []).map((a) => said(a, lang))].join(' ');
   assert.match(all(entry.line, 'en'), /recorded from 25 mm/);
-  assert.match(all(entry.line, 'es'), /registrada desde 25 mm/);
+  assert.match(all(entry.line, 'es'), /registros desde 25 mm/); // C11: no gendered participle
   for (const lang of Object.keys(words)) assert.match(all(entry.line, lang), /25/, `${lang} names the rain in the aridity line`);
   // No rain range: the line as before, nothing guessed.
   const bare = line.againstLines(v, null, { ...W, rainFrom: null }).find((e) => e.factor === 'dry');
   assert.doesNotMatch(all(bare.line, 'en'), /mm/);
+});
+
+// ---- fix round 1, batch 3 (review findings C1 to C12) ----
+
+const core = await import('../src/lib/consortium/index.ts');
+const { verdict } = await import('../src/lib/consortium/verdict.ts');
+// A plant for the site checks: its drainage need (well_drained) and a high drought tolerance, so a wet
+// ground is a misfit only when it wants free-draining soil (site.ts water).
+const drainPlant = (wd) => ({ id: 1, canonical_name: 'Fixture plant', names: {}, traits: { well_drained: wd, drought_tolerance: 'High', moisture_use: null, soil_ph: null, height_m: null, habit: null }, climate: null, stratum: null, warnings: {}, phases: null });
+const verdictAt = (t, drainage) => verdict(t, { inputs: core.siteInputsOf({ lookup: null, room: 'unsure', edits: drainage ? { drainage } : core.NO_EDITS }), period: '1991-2020', scenario: 'ssp245' });
+
+test('C1 (pf-f drainage): the words come from well_drained and the grower\'s answer, the engine\'s hint when the ground stays wet', () => {
+  const cases = [
+    [true, null, 'Wants free-draining soil'], [false, null, 'Does not need free-draining soil'], [null, null, 'No need recorded'],
+    [true, 'wet', 'Wants free-draining soil, and your ground stays wet for days after heavy rain'],
+    [false, 'wet', 'Does not need free-draining soil'], [null, 'wet', 'No need recorded'], [true, 'drains', 'Wants free-draining soil'],
+  ];
+  for (const [wd, drainage, want] of cases) {
+    const t = drainPlant(wd);
+    assert.equal(said(line.drainageLine(t, verdictAt(t, drainage)), 'en'), want, `well_drained ${wd}, drainage ${drainage}`);
+  }
+  assert.equal(said(line.drainageLine(drainPlant(null), null), 'en'), 'No need recorded', 'no verdict yet: what the release records');
+  // The hint is the engine's (hintLine on the wet check), never a second rule in the words.
+  const t = drainPlant(true), v = verdictAt(t, 'wet');
+  assert.ok(v.factors.some((f) => line.hintLine(f)), 'the engine raises the drainage hint');
+  for (const lang of Object.keys(words)) for (const wd of [true, false, null]) assert.ok(said(line.drainageLine(drainPlant(wd), v), lang), `${lang}: drainage words`);
+  for (const lang of Object.keys(words)) assert.match(words[lang]['consortium.details.drainageSay'], /\{what\}/, `${lang}: "Drainage: {what}."`);
+});
+
+test('C3 (pf-f A9): the light misfit on shade names the light level, never a "spot" in any locale', () => {
+  const OLD = { en: /spot/, fr: /coin/, es: /rincón/, pt: /canto/, it: /angolo/, de: /Platz/, nl: /plek/, ru: /месте/, zh: /阴凉处/, ja: /場所/, ko: /자리/ };
+  assert.equal(words.en['consortium.misfit.light.shade'], 'Needs more light than shade gives');
+  for (const [lang, re] of Object.entries(OLD)) assert.doesNotMatch(words[lang]['consortium.misfit.light.shade'], re, `${lang}: no spot word`);
+});
+
+test('C5 (pf-f F2): the German thin spot keeps the board\'s opening and asks for a backup, as every language does', () => {
+  assert.equal(said(line.thinLine({ have: 1, fromYear: 1, toYear: 15 }), 'de'), 'Dünn besetzt: nur 1 Pflanze von Jahr 1 bis Jahr 15. Eine Reserve dazunehmen.');
+  assert.equal(said(line.thinLine({ have: 2, fromYear: 3, toYear: 9 }), 'de'), 'Dünn besetzt: nur 2 Pflanzen von Jahr 3 bis Jahr 9. Eine Reserve dazunehmen.');
+});
+
+test('C11 (pf-f M23): the rain words fit a plant of either gender (es, pt, it, fr: no gendered participle)', () => {
+  const t = { climate: { precip: { low: 202, median: null, high: null, count: null, basis: 'cells', blocks: null, lowSource: null, highSource: null, weak: false } } };
+  assert.equal(said(line.rainFromLine(t), 'es'), 'con registros desde 202 mm');
+  const GENDERED = { es: /registrad[ao]/, pt: /registrad[ao]/, it: /registrat[ao]/, fr: /recensée?\b/ };
+  for (const [lang, re] of Object.entries(GENDERED)) {
+    assert.doesNotMatch(words[lang]['consortium.line.rainFrom'], re, `${lang}: rainFrom neutral`);
+    assert.doesNotMatch(words[lang]['consortium.line.rainFromNote'], re, `${lang}: rainFromNote neutral`);
+  }
+});
+
+test('C7 (pf-f Swap rows): the years as the board says them against the member\'s years', () => {
+  const m = { from: 1, to: 15 };
+  assert.equal(said(line.swapYearsLine(m, { from: 1, to: 25 }), 'en'), 'and stands to year 25');
+  assert.equal(said(line.swapYearsLine(m, { from: 1, to: 3 }), 'en'), 'to year 3 only');
+  assert.equal(said(line.swapYearsLine(m, { from: 3, to: null }), 'en'), 'from year 3 on');
+  assert.equal(said(line.swapYearsLine(m, { from: 1, to: 15 }), 'en'), 'from year 1 to year 15');
+  assert.equal(said(line.swapYearsLine(null, { from: 1, to: 25 }), 'en'), 'from year 1 to year 25');
+});
+
+test('C9 (pf-f What you can do): the board\'s row words: same years, what it does not do, what it adds, holds in', () => {
+  const almond = ['feeds_you', 'helpers'], y = { from: 3, to: 60 };
+  const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  // Pistachio: feeds you, not helpers, same years, holds.
+  assert.equal(capital(said(line.candoLine(almond, y, ['feeds_you'], y, '2041–2070'), 'en')), 'Feeds you in the same years, brings no helpers; holds in 2041–2070');
+  // Jujube: the same jobs and years, and shelters too.
+  assert.equal(capital(said(line.candoLine(['feeds_you'], y, ['feeds_you', 'shelter'], y, null), 'en')), 'Same job, same years; also shelters');
+  assert.equal(capital(said(line.candoLine(almond, y, almond, { from: 1, to: 25 }, null), 'en')), 'Same jobs, from year 1 to year 25');
+  for (const lang of Object.keys(words)) assert.ok(said(line.candoLine(almond, y, ['feeds_you', 'shelter'], y, '2041–2070'), lang).includes('2041–2070'), `${lang}: cando words`);
 });

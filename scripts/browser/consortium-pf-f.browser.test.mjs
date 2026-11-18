@@ -13,7 +13,7 @@
 // rest of consortium-pp-c2.browser.test.mjs stays there):
 //   PP-C6  (Swap rows: fills / leaves / no gap changes, the fit line, job words mid-sentence, no phase jargon) -> PFF5
 //   PP-C6b (Swap at 320 px nothing sideways, the foot removes; Details adds from its foot; two columns from 960 px) -> PFF5, PFF1, PFF3
-//   PP-C6c (one band per measure numbered as core's bandsOf, the dot outside only when past, the key, 320 px) -> PFF1 (the soil card left the bands: PFF6)
+//   PP-C6c (one band per measure numbered as core's bandsOf, the dot outside only when past, the key, 320 px) -> PFF25 (the soil card left the bands: PFF6)
 //   PP-C6d (the DOM order is the visual order; a member's foot on the phone, What you can do on the desk) -> PFF3
 //   PP-C6e (the name link opens the form on the name; an empty send's summary above Cancel, then Send) -> PFF7
 //   PP-C6f (the summary's conflict pill short, inside the card at 390 and 1280 px) -> PFF3
@@ -26,6 +26,7 @@ import { LIGHT, dialogText, done, frames, says, setSiteEdits } from './pf-helper
 useHarness();
 
 const core = await import('../../src/lib/consortium/holes.ts');
+const { jobsOf, yearsOf } = await import('../../src/lib/consortium/index.ts');
 const DETAILS = 'dialog.ct-sheet[open]';
 const BANDS = ['Coldest nights', 'Warmth over the year', 'Hottest days', 'Rain against evaporation'];
 const idOf = (page, sci) => page.evaluate((n) => window.__ctTest.store.pool.value.find((t) => t.canonical_name === n || t.canonical_name.startsWith(`${n} `))?.id ?? null, sci);
@@ -86,6 +87,20 @@ async function firmStartsOnData(page, id) {
 const TEXTURE_EN = { sand: 'sand', loamy_sand: 'loamy sand', sandy_loam: 'sandy loam', loam: 'loam', silt_loam: 'silt loam', silt: 'silt', sandy_clay_loam: 'sandy clay loam', clay_loam: 'clay loam', silty_clay_loam: 'silty clay loam', sandy_clay: 'sandy clay', silty_clay: 'silty clay', clay: 'clay' };
 const soilOf = (page) => page.evaluate(() => { const s = window.__ctTest.store; return { texture: s.location.value?.lookup?.soil?.texture ?? null, nearKm: s.siteInputs.value.soilPh.nearKm ?? null, map: s.siteInputs.value.soilPh.map }; });
 
+// The drainage words the data gives (C1; R3: a hint read from the grower's answer): what the release
+// records (well_drained), or the engine's hint when the grower's ground stays wet (the wet check's factor
+// at 'look'). The test's own table of the en words, so a wrong rule in the view or the core shows.
+const drainageOf = (page, id) => page.evaluate((pid) => {
+  const s = window.__ctTest.store, t = s.taxonOf(pid), v = s.verdictOf(t);
+  const hint = !!v?.factors.some((f) => (f.factor === 'drainage' || (f.factor === 'water' && f.basis === 'spot')) && f.level !== 'fits' && f.level !== 'unknown');
+  return { wd: t.traits.well_drained, hint };
+}, id);
+const DRAIN_EN = (d) => (d.hint ? 'Wants free-draining soil, and your ground stays wet for days after heavy rain' : d.wd === true ? 'Wants free-draining soil' : d.wd === false ? 'Does not need free-draining soil' : 'No need recorded');
+const drainSay = (d) => { const w = DRAIN_EN(d); return `Drainage: ${w.charAt(0).toLowerCase()}${w.slice(1)}.`; };
+// A plant's data changed in place for a fixture case (the taxon the store hands out), then the verdicts
+// asked again (a site edit), so every part reads the changed plant.
+const patchTaxon = (page, id, patch) => page.evaluate((pid, p) => { const s = window.__ctTest.store, t = s.taxonOf(pid); for (const [k, v] of Object.entries(p)) t[k] = typeof v === 'object' && v && !Array.isArray(v) && t[k] && typeof t[k] === 'object' ? { ...t[k], ...v } : v; }, id, patch);
+
 // ---- Details (boards Details 390, DarkDetails, DetailsMore) ----
 
 test('PFF1 (pf-f Details at 390): Pinto peanut at Kiambu, a candidate: name line, summary with the engine\'s holes, Niche, chips, the four bands in one order, scenarios, records, table, the three sections, Add from the foot', async () => {
@@ -108,6 +123,7 @@ test('PFF1 (pf-f Details at 390): Pinto peanut at Kiambu, a candidate: name line
   const f = await figures(page, id);
   const titles = await page.$$eval(`${DETAILS} [data-against] [data-measure] .ct-bandcard-head b`, (els) => els.map((e) => e.textContent.trim()));
   assert.deepEqual(titles, BANDS.filter((b) => titles.includes(b)), `board: the bands in one order (${titles})`);
+  assert.ok(titles.every((b) => BANDS.includes(b)), `board: only the four bands (${titles})`);
   assert.ok(!titles.includes('Soil pH'), 'board: the soil is its own card, not a band');
   await says(page, /\d of 4 climate scenarios agree/, { inDialog: true });
   if (f.cells !== null) await says(page, `thinned to ${f.cells.toLocaleString('en')} map squares, cultivation included.`, { inDialog: true });
@@ -171,7 +187,7 @@ test('PFF6 (pf-f soil card, F10): the map\'s pH as a ring, the grower\'s test as
   const tex = (await soilOf(page)).texture;
   await says(page, `Recorded on pH ${num(f.ph.min)} to ${num(f.ph.max)}; the soil map says ${num(f.map)}${tex ? `, ${TEXTURE_EN[tex]}.` : ' here.'}`, { inDialog: true });
   await says(page, f.soilLevel === 'fits' ? 'Fits the likely soil' : 'Outside the likely soil’s pH', { inDialog: true });
-  await says(page, 'Drainage: no need recorded.', { inDialog: true });
+  await says(page, drainSay(await drainageOf(page, id)), { inDialog: true });
   await says(page, 'Soil is not projected: the same in every period. A hint, never a reason to hide a plant.', { inDialog: true });
   // The grower's own test: a dot, the status "your soil".
   await setSiteEdits(page, { soilPh: 6.8 });
@@ -201,7 +217,24 @@ test('PFF8 (pf-f SiteMendoza): Almond against Mendoza: the bands, the soil card,
   await open(page, 'details', id);
   await says(page, 'where Almond is recorded growing', { inDialog: true });
   assert.ok(await has(page, `${DETAILS} [data-soil-card]`, 2000), 'board: the soil card under Almond against your place');
-  await says(page, 'Drainage: no need recorded.', { inDialog: true });
+  await says(page, drainSay(await drainageOf(page, id)), { inDialog: true });
+  // R2 (board SiteMendoza "Watering"): a member drier here than where it is recorded, today or later (the
+  // engine's drier notes), carries the note, and the grower's watering sets its words.
+  const dry = await page.evaluate(() => {
+    const s = window.__ctTest.store;
+    return s.memberTaxa.value.find((t) => s.periodVerdictsOf(t).some((v) => v.limiting?.factor === 'dry' || v.notes.includes('drier') || v.notes.includes('drier-later')))?.id ?? null;
+  });
+  assert.ok(dry, 'a member drier here than where it is recorded (engine, Mendoza)');
+  await open(page, 'details', dry);
+  const against = () => page.$eval(`${DETAILS} [data-against]`, (e) => e.innerText.replace(/\s+/g, ' '));
+  await says(page, /may need watering/, { inDialog: true });
+  assert.doesNotMatch(await against(), /water it the first years/i, 'rain only: "may need watering"');
+  await setSiteEdits(page, { watering: 'first-years' });
+  await says(page, /water it the first years/i, { inDialog: true });
+  assert.doesNotMatch(await against(), /may need watering/, 'watered the first years: "water it the first years"');
+  await setSiteEdits(page, { watering: 'all-year' });
+  await page.waitForFunction(() => !/may need watering|water it the first years/i.test(document.querySelector('dialog[open] [data-against]')?.innerText ?? 'x'), { timeout: 6000 }).catch(() => {});
+  assert.doesNotMatch(await against(), /may need watering|water it the first years/i, 'watered all year: no note');
   await done(page);
 });
 
@@ -216,6 +249,9 @@ test('PFF3 (pf-f DetailsDesk 1280): Almond, a member at Seville: two columns, "I
   await says(page, `Planted in: ${en[`consortium.palette.light_${f.stratum}`]}`, { inDialog: true });
   await says(page, new RegExp(`\\(the soil map says ${f.map} here: (fits|outside its range|not checked)\\)`), { inDialog: true });
   assert.equal(await page.$eval(`${DETAILS} [data-soil-card]`, (e) => e.offsetParent === null).catch(() => true), true, 'board: no soil card on the desk');
+  // F10 on the desk (C2): the neighbour fill named as a weaker guess on the Niche row.
+  const near = (await soilOf(page)).nearKm;
+  if (near !== null) assert.match(await page.$eval(`${DETAILS} [data-niche-row="ph"]`, (e) => e.innerText), /Soil map, nearest square [\d,]+\skm away: a weaker guess\./, 'the desk names the neighbour fill');
   await says(page, 'where Almond is recorded growing', { inDialog: true });
   const cols = await page.evaluate(() => { const d = document.querySelector('dialog.ct-sheet[open]'); const a = d.querySelector('[data-against]').getBoundingClientRect(), s = d.querySelector('[data-summary]').getBoundingClientRect(); return { right: a.left > s.right - 1, width: d.getBoundingClientRect().width }; });
   assert.ok(cols.right && cols.width > 900, `two columns, Against on the right (${JSON.stringify(cols)})`);
@@ -275,9 +311,9 @@ test('PFF5 (pf-f Swap 390): Calliandra at Kiambu: the lede, its jobs and years, 
   assert.equal(rows.length, Math.min(want.n + want.unknown, 9), 'the rows are the holding candidates and the unjudged ones (fix round 1 R2), nine at most');
   assert.ok(rows.every((r) => r.buttons.includes('Swap') && r.buttons.includes('Add beside')), `board: Swap and Add beside on each row (${JSON.stringify(rows.map((r) => r.buttons))})`);
   // Fix round 1 BC7: one sentence per row, the gap folded in ("…: also fills the hole after year 15"), and its fit or edge words.
-  assert.ok(rows.every((r) => /, (from|in|to) [^:]+(: (also fills|leaves) .+)?$/.test(r.does) && r.fit), JSON.stringify(rows));
+  assert.ok(rows.every((r) => /, (from|in|to|and stands to) [^:]+(: (also fills|leaves) .+)?$/.test(r.does) && r.fit), JSON.stringify(rows));
   const does = await page.$$eval(`${DETAILS} [data-swap-does]`, (els) => els.map((e) => e.textContent.trim()));
-  for (const d of does) assert.match(d, /^Does (all its jobs|none of its jobs \([a-z][^)]*\)|\d of its \d jobs \((no [a-z ]+|[a-z][^)]*)\)), (from|in|to) [a-z\d]/, `a candidate's first line ("${d}")`);
+  for (const d of does) assert.match(d, /^Does (all its jobs|none of its jobs \([a-z][^)]*\)|\d of its \d jobs \((no [a-z ]+|[a-z][^)]*)\)), (from|in|to|and stands to) [a-z\d]/, `a candidate's first line ("${d}")`);
   await says(page, 'The closest in jobs and years first.', { inDialog: true });
   const text = await dialogText(page);
   assert.doesNotMatch(text, /Keep |Placenta|Secondary \d|Climax/, 'board: no Keep, no phase jargon');
@@ -383,12 +419,21 @@ test('PFF11 (pf-f BC3, BC10, BC11, BC12, DetailsDesk): Almond at Seville: the da
   // BC4: What you can do: each row holds by 2041–2070 (the engine), "holds in 2041–2070", and how far it is recorded on the member's limiting measure.
   const cando = await page.evaluate((pid) => {
     const s = window.__ctTest.store, rule = s.verdictRule.value, ctx = s.verdictContext.value;
-    return [...document.querySelectorAll('dialog[open] [data-cando] [data-swap-row]')].map((e) => { const t = s.taxonOf(e.dataset.plantId); return { holds: rule.holdsBy(t, ctx, '2041-2070'), does: e.querySelector('[data-cando-does]').textContent.trim(), band: e.querySelector('[data-row-band]')?.textContent.trim() ?? null, mini: !!e.querySelector('[data-mini-band]') }; });
+    return [...document.querySelectorAll('dialog[open] [data-cando] [data-swap-row]')].map((e) => { const t = s.taxonOf(e.dataset.plantId); return { id: t.id, holds: rule.holdsBy(t, ctx, '2041-2070'), does: e.querySelector('[data-swap-does]').textContent.trim(), band: e.querySelector('[data-row-band]')?.textContent.trim() ?? null, mini: !!e.querySelector('[data-mini-band]') }; });
   }, id);
   assert.ok(cando.length > 0, 'What you can do: rows');
+  const LACKS = { feeds_you: 'grows no food', feeds_soil: 'does not feed the soil', mulch: 'makes no mulch', ground: 'does not cover the ground', helpers: 'brings no helpers', shelter: 'gives no shelter' };
+  const DOES = { feeds_you: 'feeds you', feeds_soil: 'feeds the soil', mulch: 'makes mulch', ground: 'covers the ground', helpers: 'brings helpers', shelter: 'shelters' };
+  const jobs = await page.evaluate((pid) => { const s = window.__ctTest.store; return Object.fromEntries([pid, ...s.alternativesFor(pid).fit.map((a) => a.id)].map((x) => [x, s.taxonOf(x)])); }, id);
   for (const c of cando) {
     assert.ok(c.holds, `a row that holds by 2041–2070 (${c.does})`);
-    assert.match(c.does, /; holds in 2041–2070$/, 'the Swap words, then "holds in 2041–2070"');
+    // C9 (board DetailsDesk): "Feeds you in the same years, brings no helpers; holds in 2041–2070".
+    assert.match(c.does, /; holds in 2041–2070$/, 'the board\'s words, then "holds in 2041–2070"');
+    assert.doesNotMatch(c.does, /^Does \d+ of its|\(no /, `the board's words, not Swap's count (${c.does})`);
+    const mine = jobsOf(jobs[id]), theirs = jobsOf(jobs[c.id]);
+    for (const j of mine.filter((x) => !theirs.includes(x))) assert.ok(c.does.includes(LACKS[j]), `"${LACKS[j]}" (${c.does})`);
+    for (const j of theirs.filter((x) => !mine.includes(x))) assert.match(c.does, new RegExp(`; also .*${DOES[j]}`), `"also ${DOES[j]}" (${c.does})`);
+    if (JSON.stringify(yearsOf(jobs[id])) === JSON.stringify(yearsOf(jobs[c.id]))) assert.match(c.does, /same years/, c.does);
     if (c.band) assert.ok(c.mini && /^Recorded (up to|down to|from) /.test(c.band), `the mini band and "Recorded …" (${c.band})`);
   }
   await done(page);
@@ -458,6 +503,20 @@ test('PFF15 (pf-f BC7, BC8, BC9, Swap): rows as one sentence with the mini band,
   }
   // BC9: a palette plant that does the same jobs: "Already in your palette: does the N jobs to year M".
   for (const a of await page.$$eval(`${DETAILS} [data-swap-already] .ct-swap-does`, (els) => els.map((e) => e.textContent.trim()))) assert.match(a, /^Already in your palette: does the (\d+ jobs|job) to year \d+$/, a);
+  // C7: the years against the member's ("and stands to year 25", "to year 3 only", else its span), and
+  // "Grows in:" only when its light differs from the member's (board: Egyptian sesban shows its size only).
+  const facts = await page.evaluate((pid) => {
+    const s = window.__ctTest.store, light = (t) => JSON.stringify([t.light?.sunniest ?? t.stratum?.value ?? null, t.light?.shadiest ?? t.stratum?.value ?? null]);
+    const m = s.taxonOf(pid);
+    return [...document.querySelectorAll('dialog[open] [data-swap-row]')].map((e) => { const t = s.taxonOf(e.dataset.plantId); return { t, text: e.querySelector('[data-swap-does]').textContent.trim(), size: e.querySelector('[data-swap-size]').textContent.trim(), sameLight: light(t) === light(m) }; }).concat([{ member: m }]);
+  }, id);
+  const member = facts.pop().member, my = yearsOf(member);
+  for (const r of facts) {
+    const cy = yearsOf(r.t);
+    if (my && cy && my.to !== null && cy.to !== null && cy.from <= my.from && cy.to > my.to) assert.match(r.text, new RegExp(`, and stands to year ${cy.to}(:|$)`), r.text);
+    else if (my && cy && my.to !== null && cy.to !== null && cy.from <= my.from && cy.to < my.to) assert.match(r.text, new RegExp(`, to year ${cy.to} only(:|$)`), r.text);
+    assert.equal(/^Grows in/.test(r.size), !r.sameLight, `"Grows in" only for another light (${r.size})`);
+  }
   await done(page);
 });
 
@@ -608,7 +667,7 @@ test('PFF22 (pf-f R4, M23): Almond against Mendoza says how dry it is recorded, 
     const low = await page.evaluate((pid) => window.__ctTest.store.taxonOf(pid).climate?.precip?.low ?? null, id);
     assert.ok(low !== null, 'Almond has a recorded rain range (engine)');
     const mm = `${Math.round(low).toLocaleString(lang)} mm`;
-    await says(page, lang === 'en' ? `recorded from ${mm}` : `registrada desde ${mm}`, { inDialog: true });
+    await says(page, lang === 'en' ? `recorded from ${mm}` : `registros desde ${mm}`, { inDialog: true }); // C11: one form for either gender
     await done(page);
   }
 });
@@ -623,4 +682,118 @@ test('PFF23 (pf-f R5, site-check unknowns): a balcony grower sees what the site 
     await says(page, 'Height in the wild not recorded, so not checked against your space.', { inDialog: true });
     await done(page);
   }
+});
+
+// ---- fix round 1, batch 3 (review findings C1 to C12) ----
+
+test('PFF24 (pf-f C1, drainage): the soil card and Time and size say the plant\'s drainage need, and the hint when the grower\'s ground stays wet', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Arachis pintoi');
+  const row = () => page.$eval(`${DETAILS} details[data-more="jobs"] dl`, (dl) => { const dt = [...dl.querySelectorAll('dt')].find((d) => d.textContent.trim() === 'Drainage'); return dt?.nextElementSibling?.textContent.trim() ?? null; });
+  for (const [wd, drainage] of [[true, null], [false, null], [null, null], [true, 'wet'], [false, 'wet']]) {
+    await patchTaxon(page, id, { traits: { well_drained: wd, drought_tolerance: 'High', moisture_use: null } });
+    await setSiteEdits(page, drainage ? { drainage } : {});
+    await open(page, 'details', id);
+    const d = await drainageOf(page, id);
+    if (wd === true && drainage === 'wet') assert.ok(d.hint, 'the engine raises the drainage hint for a plant that wants free-draining soil on wet ground');
+    await says(page, drainSay(d), { inDialog: true });
+    await openAll(page);
+    assert.equal(await row(), DRAIN_EN(d), `Time and size: the same words (well_drained ${wd}, drainage ${drainage})`);
+  }
+  await done(page);
+});
+
+test('PFF26 (pf-f C2, DetailsDesk soil without a value): the Niche row says "not checked on soil pH", and "Set my own soil pH" stays', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await page.evaluate(() => { const s = window.__ctTest.store, l = s.location.value; s.location.value = { ...l, lookup: { ...l.lookup, soil: null } }; });
+  await open(page, 'details', id);
+  await says(page, '(not known: no data for your place or the squares next to it, so not checked on soil pH)', { inDialog: true });
+  assert.ok(await has(page, `${DETAILS} [data-niche] [data-set-ph]`, 1000), 'the desk keeps "Set my own soil pH"');
+  await done(page);
+});
+
+test('PFF27 (pf-f C6, the four bands only): a plant that needs summer heat draws the four bands, its summer limit said in the lines under them', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await page.evaluate(() => {
+    const { store, bandsOf } = window.__ctTest;
+    return store.pool.value.find((t) => { const v = store.poolVerdicts.value?.get(t.id) ?? store.verdictOf(t); return v && bandsOf(v, store.laterVerdictOf(t, v), t.climate).some((b) => b?.measure === 'tmeanWarm'); })?.id ?? null;
+  });
+  assert.ok(id, 'a plant at Kiambu whose summer warmth the engine checks (a tmeanWarm band in core: okra, peanut…)');
+  await open(page, 'details', id);
+  assert.ok(await has(page, `${DETAILS} [data-against] [data-measure]`, 6000));
+  const titles = await page.$$eval(`${DETAILS} [data-against] [data-measure] .ct-bandcard-head b`, (els) => els.map((e) => e.textContent.trim()));
+  assert.ok(titles.every((b) => BANDS.includes(b)), `only the four board bands (${titles})`);
+  assert.ok(await has(page, `${DETAILS} [data-against] li[data-factor="summer"]`, 2000), 'the summer limit stays in the lines');
+  await done(page);
+});
+
+test('PFF28 (pf-f C8, Swap hold filter empties the list): "None of the N hold by 2041–2070" with "See all N", never "No other plant"', async () => {
+  const page = await boardPalette('seville-board', { width: 390 });
+  const id = await idOf(page, 'Olea europaea');
+  // A place where every candidate leaves its range by 2041–2070: the rule says none holds (fixture).
+  await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value;
+    s.verdictRule.value = { ...rule, holdsBy: () => false, verdicts: (taxa, ctx) => new Map([...rule.verdicts(taxa, ctx)].map(([k, v]) => [k, { ...v, range: 'judged' }])) };
+  });
+  const m = await page.evaluate((pid) => window.__ctTest.store.alternativesFor(pid)?.fit.length ?? 0, id);
+  assert.ok(m > 0, 'Olive has alternatives (engine)');
+  await open(page, 'swap', id);
+  const already = await page.$$eval(`${DETAILS} [data-swap-already]`, (e) => e.length).catch(() => 0);
+  if (!already) await says(page, `None of the ${m} ${m === 1 ? 'holds' : 'hold'} by 2041–2070.`, { inDialog: true });
+  assert.doesNotMatch(await dialogText(page), /No other plant in this list can take its place/);
+  await page.click(`${DETAILS} ${aria('button', `See all ${m}`)}`);
+  assert.ok(await has(page, `${DETAILS} [data-swap-row]`, 4000), '"See all" lists them');
+  await done(page);
+});
+
+test('PFF29 (pf-f C12, light span on fixtures): "grows in A – B · found mostly in C" on the Niche row when the release has a span and a preferred level', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Arachis pintoi');
+  await patchTaxon(page, id, { light: { sunniest: 'high', shadiest: 'low', preferred: 'medium' } });
+  await open(page, 'details', id);
+  await says(page, 'Light: grows in Mostly sun – Shade · found mostly in Part shade', { inDialog: true });
+  await patchTaxon(page, id, { light: null });
+  await open(page, 'details', id);
+  const t = await page.$eval(`${DETAILS} [data-niche-row="light"]`, (e) => e.innerText);
+  assert.doesNotMatch(t, /found mostly in/, 'no preferred level in the data: no "found mostly in"');
+  await done(page);
+});
+
+// Carried from PP-C6c (c2 fix round 2 K2 K8 K16 R5, round 3 T3 T6): one band per measure, named with its
+// status in words, numbering the ends core gives, two decimals at most, a true minus, the place's dot
+// outside the drawn range only when past it; the key in words; nothing sideways at 320 px.
+test('PFF25 (pf-f C12, bands at 320 px): Almond at Seville: the band geometry, numbers and key as core gives them', async () => {
+  const page = await boardPalette('seville-board', { width: 320, height: 700 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await open(page, 'details', id);
+  assert.ok(await has(page, `${DETAILS} [data-against] [data-measure]`, 6000), 'the bands');
+  const bands = await page.$$eval(`${DETAILS} [data-against] [data-measure]`, (els) => els.map((e) => {
+    const box = (el) => (el ? el.getBBox() : null);
+    const rect = box(e.querySelector('.ct-bd-range')), dashed = box(e.querySelector('[data-disputed]')), dot = box(e.querySelector('.ct-bd-now-dot'));
+    const x0 = Math.min(rect.x, dashed ? dashed.x : Infinity);
+    return { m: e.dataset.measure, title: e.querySelector('.ct-bandcard-head b')?.textContent.trim(), status: e.querySelector('.ct-bandcard-status')?.textContent.trim(), nums: [...e.querySelectorAll('.ct-bd-num text')].map((t) => t.textContent), x0, x1: rect.x + rect.width, dot: dot ? dot.x + dot.width / 2 : null };
+  }));
+  const want = await page.evaluate((pid) => {
+    const { store, bandsOf } = window.__ctTest;
+    const t = store.taxonOf(pid), v = store.verdictOf(t);
+    return Object.fromEntries(bandsOf(v, store.laterVerdictOf(t, v), t.climate).filter(Boolean).map((b) => [b.measure, b]));
+  }, id);
+  assert.equal(new Set(bands.map((b) => b.m)).size, bands.length, 'one band per measure');
+  const num = (x) => Number(x.replace('\u2212', '-').replace('?', ''));
+  for (const b of bands) {
+    assert.ok(b.title && b.status, `band ${b.m}: its name and status in words`);
+    assert.ok(b.nums.every((n) => !/[.,]\d{3}/.test(n)), `band ${b.m}: two decimals at most (${b.nums})`);
+    assert.ok(b.nums.every((n) => !n.includes('-')), `band ${b.m}: a true minus sign (${b.nums})`);
+    const c = want[b.m];
+    assert.ok(c, `band ${b.m} is one core draws`);
+    assert.deepEqual(b.nums.map(num), [c.low, c.high].filter((x) => x !== null).map((x) => Math.round(x * 100) / 100), `band ${b.m}: the ends core gives`);
+    if (b.dot !== null) {
+      assert.equal(b.dot < b.x0 - 0.5, c.place < c.recordedLow, `band ${b.m}: the dot left of the range only when below its recorded low`);
+      assert.equal(b.dot > b.x1 + 0.5, c.place > c.recordedHigh, `band ${b.m}: the dot right of the range only when above its recorded high`);
+    }
+  }
+  assert.match(await page.$eval(`${DETAILS} [data-band-key]`, (e) => e.textContent), /where it is recorded growing.*your place today.*not a firm limit/s, 'the key in words');
+  assert.equal(await sideways(page), 0, 'Details at 320 px: nothing sideways');
+  await done(page);
 });
