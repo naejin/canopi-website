@@ -272,7 +272,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const otherHoles = !sentence && others.length > 0 && (
     <section class="ct-other-holes" aria-labelledby="ct-other-holes-t">
       <h3 id="ct-other-holes-t">{T('palette.next.otherHoles')} <span class="ct-next-count">{others.length}</span></h3>
-      <MoreList items={others} keyOf={(h) => h.id} paletteSize={size} render={(h) => <OtherHole h={h} members={members} open={open} />} />
+      <MoreList items={others} keyOf={(h) => h.id} paletteSize={size} group={T('palette.next.otherHoles')} render={(h) => <OtherHole h={h} members={members} open={open} />} />
     </section>
   );
   // The card's foot (board Main; BC17): its links, "See all N plants" (or "Find a backup", or the
@@ -285,22 +285,22 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
       <h4 class="ct-next-hole" data-next-title="">{thin ? say(thinTitleLine(next)) : holeWords(next)}</h4>
       {uncheckedText && <p class="ct-next-unchecked" data-next-unchecked="">{uncheckedText}</p>}
       {whySentence && <p class="ct-next-why" data-next-why="">{whySentence}</p>}
-      {found.fits.length > 0 && <MoreList items={found.fits} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" />}
+      {found.fits.length > 0 && <MoreList items={found.fits} keyOf={(t) => t.id} render={filler} paletteSize={size} group={thin ? say(thinTitleLine(next)) : holeWords(next)} class="ct-fillers" />}
       {noFit && <p data-next-nofit="">{T('palette.next.noFit')}{found.outside.length > 0 && <> {P('palette.next.noFitOutside', found.outside.length)}</>}</p>}
       {found.look.length > 0 && (
         <>
           <h4 class="ct-fillers-head">{WARN} {T('palette.secondLook', { n: found.look.length })}</h4>
-          <MoreList items={found.look} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} class="ct-fillers" />
+          <MoreList items={found.look} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} group={T('palette.secondLook', { n: found.look.length })} class="ct-fillers" />
         </>
       )}
       {/* R3: plants not checked were never judged, so they are not listed as fitting: their own group. */}
       {found.unknown.length > 0 && (
         <>
           <h4 class="ct-fillers-head" data-next-unchecked-head="">{T('palette.next.notCheckedHead', { n: num(found.unknown.length) })}</h4>
-          <MoreList items={found.unknown} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} class="ct-fillers" />
+          <MoreList items={found.unknown} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} group={T('palette.next.notCheckedHead', { n: num(found.unknown.length) })} class="ct-fillers" />
         </>
       )}
-      {found.outside.length > 0 && outsideOpen && <div data-outside=""><MoreList items={found.outside} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" /></div>}
+      {found.outside.length > 0 && outsideOpen && <div data-outside=""><MoreList items={found.outside} keyOf={(t) => t.id} render={filler} paletteSize={size} group={P('palette.next.noFitOutside', found.outside.length)} class="ct-fillers" /></div>}
       {found.fits.length > 0 && (
         <>
           <p class="ct-next-bulk" data-next-bulk="">

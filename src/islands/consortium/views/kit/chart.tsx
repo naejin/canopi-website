@@ -41,9 +41,9 @@ const plainNames = (items: string[]): string => plainList(items, pageLang());
 // Folded, `lead` then the count cell, its names sorted by display name (locale collation, BC12).
 // `closed`: the names a closed count cell shows. `few`: a sentence naming a handful whatever the
 // palette's size (board ManyDesk: "Cashew, outside its climate range, is toxic too"), inline up to that
-// many names.
-export function Names({ ids, name, size, closed = 3, few = 0, and = false, text, lead, render }: {
-  ids: readonly PlantId[]; name: (id: PlantId) => string; size: number; closed?: number; few?: number; and?: boolean;
+// many names. `group`: the list's name for its "+ N more" (MoreList group).
+export function Names({ ids, name, size, closed = 3, few = 0, and = false, text, lead, render, group }: {
+  ids: readonly PlantId[]; name: (id: PlantId) => string; size: number; closed?: number; few?: number; and?: boolean; group?: string;
   text?: (names: string) => ComponentChildren; lead?: ComponentChildren; render?: (id: PlantId) => ComponentChildren;
 }) {
   if (!ids.length) return null;
@@ -54,7 +54,7 @@ export function Names({ ids, name, size, closed = 3, few = 0, and = false, text,
   }
   const order = collatorFor(pageLang());
   const sorted = [...ids].sort((a, b) => order.compare(name(a), name(b)));
-  return <>{lead}<MoreList items={sorted} keyOf={(id) => id} paletteSize={size} closed={Math.max(1, closed)} class="ct-cell-names" render={render ?? name} /></>;
+  return <>{lead}<MoreList items={sorted} keyOf={(id) => id} paletteSize={size} closed={Math.max(1, closed)} class="ct-cell-names" render={render ?? name} group={group} /></>;
 }
 
 export interface PlantButtons {

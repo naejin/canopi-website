@@ -82,7 +82,7 @@ function JobRow({ j, lane, mine, name, size, holes, states, showThin, b }: { j: 
     <li class="ct-job" data-job={j}>
       <p class="ct-job-head"><span class="ct-job-tile" aria-hidden="true"><JobIcon job={j} /></span><span class="ct-job-title"><strong>{T(`job.${j}`)}</strong>{n > 0 && <> <span class="ct-grid-count">{P('palette.chart.plants', n)}</span></>}</span></p>
       <div class="ct-job-body">
-        {n > 0 && <div class="ct-job-names"><Names ids={mine.counted} name={name} size={size} /></div>}
+        {n > 0 && <div class="ct-job-names"><Names ids={mine.counted} name={name} size={size} group={T(`job.${j}`)} /></div>}
         <Outside ids={mine.outside} counted={n} name={name} size={size} />
         {states && <Strip states={states} />}
         {showThin && lane.thin.map((t) => <ThinLine key={`${t.fromYear}`} words={say(thinLine(t))} />)}
@@ -105,7 +105,7 @@ function BigRow({ j, mine, name, holes, all, thins, size }: { j: JobId; mine: Jo
         <JobIcon job={j} /><strong>{T(`job.${j}`)}</strong>{(n > 0 || holes.length > 0) && <> <span class="ct-grid-count">{n > 0 && P('palette.chart.plants', n)}{holes.length > 0 && <>{n > 0 ? ' · ' : '· '}{T('palette.jobHoleMark')}</>}</span></>}
       </button>
       <div id={id} class="ct-job-open" hidden={!open}>
-        {open && <Names ids={mine.counted} name={name} size={size} closed={10} />}
+        {open && <Names ids={mine.counted} name={name} size={size} closed={10} group={T(`job.${j}`)} />}
         {open && <Outside ids={mine.outside} counted={n} name={name} size={size} />}
         {open && holes.map((h) => {
           const un = uncheckedLine(h), at = targetPosition(all, thins, h);

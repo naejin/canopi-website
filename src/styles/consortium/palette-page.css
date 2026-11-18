@@ -336,11 +336,10 @@
 .ct .ct-key-chip[data-job="ground"] { --ct-job: var(--role-ground); }
 .ct .ct-key-chip[data-job="helpers"] { --ct-job: var(--role-helpers); }
 .ct .ct-key-chip[data-job="shelter"] { --ct-job: var(--role-shelter); }
-/* The light levels' glyph in ink on the light theme, amber on the dark one (BC7; icons.tsx sets an
-   inline accent colour: hand-off to drop it). */
-.ct .ct-palette-page svg[data-light] { color: var(--text) !important; }
-:root[data-theme="dark"] .ct .ct-palette-page svg[data-light] { color: var(--accent) !important; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ct .ct-palette-page svg[data-light] { color: var(--accent) !important; } }
+/* The light levels' glyph in ink on the light theme, amber on the dark one (BC7; base.css draws it amber). */
+.ct .ct-palette-page svg[data-light] { color: var(--text); }
+:root[data-theme="dark"] .ct .ct-palette-page svg[data-light] { color: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ct .ct-palette-page svg[data-light] { color: var(--accent); } }
 /* The hole's plus in ochre (BC8). */
 .ct .ct-hole-button::before { color: var(--accent-ink); }
 /* A level of more than 12 plants in the grid: its count cell over the row (C1). */

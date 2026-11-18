@@ -17,7 +17,7 @@ export const WarnIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true" focusa
 
 // A light level (pf hand-off; boards Main, PaletteMore, the "Layer is light" rule): a small sun disc
 // filled clockwise from the top to its share of light, full sun whole, mostly sun three quarters, part
-// shade half, shade a quarter, in the ochre accent (--accent, light and dark). Always beside its words
+// shade half, shade a quarter, in the ochre accent (base.css svg[data-light]; the palette page draws it in ink on light). Always beside its words
 // (consortium.palette.light_*), never alone.
 const LIGHT_FILL: Record<Stratum, string> = {
   emergent: 'M6 .75A5.25 5.25 0 0 1 6 11.25A5.25 5.25 0 0 1 6 .75Z',
@@ -26,7 +26,7 @@ const LIGHT_FILL: Record<Stratum, string> = {
   low: 'M6 6V.75A5.25 5.25 0 0 1 11.25 6Z',
 };
 export const LightIcon = ({ stratum }: { stratum: Stratum }) => (
-  <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false" data-light={stratum} style={{ color: 'var(--accent)', flex: 'none' }}>
+  <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false" data-light={stratum}>
     <path d={LIGHT_FILL[stratum]} fill="currentColor" />
     <circle cx="6" cy="6" r="5.25" fill="none" stroke="currentColor" stroke-width="1.5" />
   </svg>

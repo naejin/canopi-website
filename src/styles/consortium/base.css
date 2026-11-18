@@ -86,3 +86,6 @@
   min-height: 44px; min-width: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 6px;
   background: transparent; color: var(--text); font: inherit; cursor: pointer;
 }
+
+/* A light level's sun glyph (views/kit/icons.tsx LightIcon) in the ochre accent, light and dark; the palette page draws it in ink on light. */
+.ct svg[data-light] { color: var(--accent); flex: none; }

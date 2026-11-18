@@ -745,7 +745,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
             // holeEndWords, the second looks then those on the lists not checked), or that none fits.
             <section class="ct-find-holes" data-find-holes="" aria-labelledby="ct-find-holes">
               <h3 id="ct-find-holes">{P('find.holesHead', open.length)}</h3>
-              <MoreList items={open} keyOf={(h) => h.id} paletteSize={members.length} render={(h) => {
+              <MoreList items={open} keyOf={(h) => h.id} paletteSize={members.length} group={P('find.holesHead', open.length)} render={(h) => {
                 const f = holeFillers(h, memberTaxa, open), u = uncheckedLine(h);
                 return <HoleRow h={h} end={holeEndWords(f)} extra={u ? say(u) : null} onClick={() => openFillers(h)} attrs={{ 'data-find-hole': h.id }} />;
               }} />
@@ -808,7 +808,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
                     : <h3 id={`ct-find-g-${g}`}>{groupWords(g, store.period.value)} <span class="ct-muted">{g === 'look' ? T('find.lookWhy', { n: num(groups[g].length) }) : num(groups[g].length)}</span></h3>}
                   {g === 'outside' && <p class="ct-muted ct-small" data-find-anyway="">{T('find.anywayNote')}</p>}
                   {/* N4: each group is a MoreList (the size rule, A14), no other cap. */}
-                  <MoreList items={groups[g]} keyOf={(t) => t.id} paletteSize={members.length} render={(t) => rowBody(t, 'div')} class="ct-find-rows-list" />
+                  <MoreList items={groups[g]} keyOf={(t) => t.id} paletteSize={members.length} group={groupWords(g, store.period.value)} render={(t) => rowBody(t, 'div')} class="ct-find-rows-list" />
                 </section>
               ))}
               {outsideFolded && !holeSheet && (
@@ -835,7 +835,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
           {!q && !holeSheet && lookOther && otherZone && otherRows && (
             <section class="ct-find-group ct-find-others" aria-labelledby="ct-find-otherzone">
               <h3 id="ct-find-otherzone">{listName(otherZone)} <span class="ct-muted">{num(otherRows.length)}</span></h3>
-              <MoreList items={otherRows} keyOf={(t) => t.id} paletteSize={members.length} render={(t) => (
+              <MoreList items={otherRows} keyOf={(t) => t.id} paletteSize={members.length} group={listName(otherZone)} render={(t) => (
                 <div class="ct-find-otherrow" data-find-row="" data-plant-id={t.id}>
                   <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
                   <button type="button" class="button button-secondary" data-find-other="" disabled={added(t.id)} onClick={() => void addFrom(t.id, otherZone)}>{added(t.id) ? T('find.added') : T('find.addFrom', { list: listName(otherZone) })}</button>
