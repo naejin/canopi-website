@@ -1,55 +1,50 @@
 /** @jsxImportSource preact */
-// Place (PP-B stream b1a; boards Place, PlaceDesk, Arrivals, Balcony; plant-palette-architecture 3.1,
-// 8.3, 9): the grower names a place first, then starts from their own plants, with a small suggested
-// palette one link away. Moved here from views/Start.tsx (stream S4), which it replaces.
-// - The arrival lines first, in one live region that is always on the page (newer and
-//   unreadable with "Back to mine" over a saved palette, period, a guide's plant with
-//   "Open my saved palette instead", a link's place with "Use it" / "Use my own place").
-// - "Where is your place?" first (owner drop 10, decision row 127 (4)): the location step
-//   (LocationSlot: search, map, device), which can be skipped; then the country line, so the browser's
-//   guess is seen before it is used.
-// - The climate cards one link away (boards Place, PlaceDesk, ClimateHand): "No location? Choose a
-//   climate", or "Not this climate? Choose another" once a location gives one (a climate read from it);
-//   they open when a link, a save or the shared site climate already chose one and there is no
-//   location, on the page or kept on this device and still being looked up, and then stay open. Behind the link, without a
-//   climate read from a location, what a grower without one loses; then the cards, nothing chosen (never a
-//   default climate): Ready, Needs your location (a climate that borrows plants, without a location:
-//   PoolSlot cardPill), or Not covered yet with "Ask for this climate". Picking one writes the shared
-//   site climate (state/draft.ts chooseClimate).
-// - "How much room do you have?": the room in height words only (pots included; the limits from core
-//   site.ts ROOM_LIMIT_M through format.ts) and the optional plot size (format.ts parsePlotSize).
-// - "What grows there already": the grower's own plants, "Add a plant by name" (the search sheet) and
-//   "Paste a list". (The goal question is not built in PP-B.)
-// - "Your spot": today's light, soil and water questions, kept inside Place until PP-F replaces them
-//   (owner, 2026-11-14): all start at "Not sure".
-// - "Show my palette" and "No plants in mind? Start from a small suggested palette" (one Undo).
-// Once a palette is shown (store.view is not 'start'), Place shrinks to its head: the title with the
-// count and climate, the basis with "Change your place" and "Start over" (one Undo), the location line
-// and the country line, until b2's palette page hosts them. "Change your place" opens the "Your place"
-// sheet (PlaceSheet, hosted by views/Sheets.tsx; board ChangePlace, room and location parts; b1a review
-// r1 conformance-4): the location step, the climate cards, the room and plot, and the spot questions,
-// which change the palette's own place in place, every plant kept (state/draft.ts chooseClimate).
+// Your place (v14 boards Place, PlaceDesk (the three questions), SiteKiambu (the frame), ClimateHand,
+// Country, Arrivals, Oulu (the place banner), Toasts (Start over); pf-c; v13-spec-update.md section 5).
+// - The arrival lines first, in one live region that is always on the page (PlaceNotices): welcome
+//   back, a shared link over your palette (Look / Add its plants to mine / Stay with mine), a link
+//   with or without a place, a guide's plant, a link that could not be read or did not load.
+// - The first visit (PlaceForm): "1 Where is your place?" (LocationSlot: the field, Use my location,
+//   Pick on a map, and "No location? Choose a climate"); once a place is read, "We read: <climate>",
+//   used at once, with "Not this climate? Choose another" and "Your place in figures" (store.openFigure);
+//   the country line; "2 How much room do you have?"; "3 What grows there already…" with "Show my
+//   palette" and "No plants in mind? Start from a small suggested palette". On the laptop question 1
+//   stands left, 2 and 3 right; the figures (PlaceFigures, pf-d's panel) under the questions.
+// - The frame (SiteKiambu: Place again from the palette, with plants): the place row with its ways
+//   out, question 2, the country line, the figures, then "Start over" and "Back to my palette".
+// - The climate cards (ClimateHand), one link away: what a grower without a location loses, each
+//   climate with its state and its list, Polar with "Ask for this climate".
+// - On the palette step, Place is its place line (PlaceLine): "Near … · <list> · <room> · <your
+//   values> · N plants · Change", the once-said "Your own values were for your old place: cleared", and
+//   the place banner of a borrowed climate (Oulu).
 import { signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
-import { countryStatus, roomValues, ROOM_LIMIT_M, zoneOf } from '../../../../lib/consortium/index.ts';
-import { climate, closeSheet, country, location as siteLocation, proposedClimate, knownCountries, memberTaxa, members, openSheet, plot, pool, removeMember, room, site, view } from '../../store.ts';
+import { countryStatus, NEAREST_LISTS, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/consortium/index.ts';
+import { addMembers, climate, country, countFits, curatedClimates, editsCleared, knownCountries, location as siteLocation, memberTaxa, members, openFigure, openSheet, removeMember, room, siteEdits, toast, updateToast, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
-import { formatArea, formatLength, parsePlotSize } from '../../format.ts';
+import { say } from '../../words.ts';
+import { formatLength, formatTemp } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
 import { PlaceFigures } from '../figures/slots.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
-import { climateChosen, climateShown, linkPlace, restoring } from '../../state/persist.ts';
+import { climateChosen, linkPlace, memory, restoring } from '../../state/persist.ts';
 import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
-import { addOwnPlant, answering, cardsLatched, chooseClimate, chooseCountry, openSavedInstead, pickingCountry, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
+import { openingArrival } from '../../state/arrival.ts';
+import { STORE } from '../../state/save.ts';
+import { addOwnPlant, answering, backToPlace, cardsLatched, chooseClimate, chooseCountry, openSavedInstead, pickingCountry, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
 import { pendingSuggest, requestSuggest } from '../../state/suggest-wait.ts';
 import { page } from '../kit/page.ts';
-import type { Frame } from '../kit/sheet.tsx';
 import { markStart } from '../kit/start-mark.ts';
-import { focusAfterAdd } from '../../focus.ts';
-import { basisLine, countryName, nameOf, zoneName } from '../kit/names.ts';
+import { focusAfterAdd, focusView } from '../../focus.ts';
+import { countryName, nameOf, num, zoneName } from '../kit/names.ts';
+import { cardsAsked, focusField, openClimates, placeWords } from '../location/shared.ts';
+import { Steps } from './steps.tsx';
 
-// ---- the country line ----
+const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
+
+// ---- the country line (board Country) ----
+const whyOpen = signal(false);
 function CountryLine() {
   const { code, source: from } = country.value;
   // The page's list until the database opens (store.knownCountries): the line is final in its first frame.
@@ -57,159 +52,153 @@ function CountryLine() {
   const status = countryStatus(code, known);
   const picking = pickingCountry.value;
   const select = useRef<HTMLSelectElement>(null);
-  useEffect(() => { if (picking) select.current?.focus(); }, [picking]);
+  const [other, setOther] = useState(false);
+  useEffect(() => { if (other) select.current?.focus(); }, [other]);
   const sorted = [...known.keys()].map((c) => [c, countryName(c)] as const).sort((a, b) => a[1].localeCompare(b[1], pageLang()));
   const name = code ? countryName(code) : '';
+  const here = siteLocation.value?.source !== 'link' ? siteLocation.value?.lookup?.regions.isoA2 ?? null : null;
+  const travel = <p class="ct-muted ct-small-text">{T('country.travel')}</p>;
+  const open = () => { pickingCountry.value = true; setOther(false); };
+  const pick = (c: string | null) => { setOther(false); chooseCountry(c); };
   return (
     <div class="ct-country" data-ct="country">
       {code ? (
         <p class="ct-country-text">
-          <span>{T('country.line')} <strong>{name}</strong> <span class="ct-muted">({T(from === 'guess' ? 'country.guessed' : from === 'link' ? 'country.linked' : from === 'location' ? 'country.fromLocation' : 'country.chosen')})</span></span>
-          {status === 'unchecked' && <span class="ct-muted ct-country-note">{T('country.unchecked', { country: name })}</span>}
+          {T('country.line')} <strong>{name}</strong>{sep}<span class="ct-muted">{T(from === 'guess' ? 'country.guessed' : from === 'link' ? 'country.linked' : from === 'location' ? 'country.fromLocation' : 'country.chosen')}</span>
+          {from !== 'guess' && !picking && <>{sep}<button type="button" class="link-button ct-link" aria-expanded="false" onClick={open}>{T('country.change')}</button></>}
         </p>
       ) : (
-        <p class="ct-country-text"><span>{T('country.line')}: <strong>{T('country.none')}</strong></span> <span class="ct-muted ct-country-note">{T('country.noneNote')}</span></p>
+        <p class="ct-country-text">{T('country.noneLine')}</p>
       )}
-      {!picking && (
+      {code && status === 'unchecked' && <p class="ct-muted ct-small-text ct-country-note">{T('country.unchecked', { country: name })}</p>}
+      {!picking && (from === 'guess' || !code) && (
         <p class="ct-country-acts">
-          {code && from === 'guess' && <button type="button" class="button button-secondary ct-small" onClick={() => chooseCountry(code)}>{T('country.use', { country: name })}</button>}
-          <button type="button" class="link-button ct-link" aria-expanded="false" onClick={() => { pickingCountry.value = true; }}>{code ? T('country.change') : T('country.add')}</button>
-          {code && <button type="button" class="link-button ct-link" onClick={() => chooseCountry(null)}>{T('country.none')}</button>}
+          {code ? <button type="button" class="button button-secondary ct-small" onClick={() => chooseCountry(code)}>{T('country.use', { country: name })}</button>
+            : <button type="button" class="button button-secondary ct-small" aria-expanded="false" onClick={open}>{T('country.add')}</button>}
+          {code ? <button type="button" class="button button-secondary ct-small" aria-expanded="false" onClick={open}>{T('country.change')}</button>
+            : <button type="button" class="button button-secondary ct-small" aria-expanded={whyOpen.value ? 'true' : 'false'} onClick={() => { whyOpen.value = !whyOpen.value; }}>{T('country.whyAsk')}</button>}
         </p>
       )}
+      {!code && whyOpen.value && !picking && <><p class="ct-small-text">{T('country.why')}</p>{travel}</>}
       {picking && (
-        <p class="ct-country-pick">
-          <label for="ct-country-select">{T('country.pick')}</label>
-          <select id="ct-country-select" ref={select} value={code ?? ''} onChange={(e) => chooseCountry((e.currentTarget as HTMLSelectElement).value || null)}>
-            <option value="">{T('country.none')}</option>
-            {sorted.map(([c, n]) => <option value={c}>{n}</option>)}
-          </select>
-          <button type="button" class="link-button ct-link" onClick={() => { pickingCountry.value = false; }}>{T('country.cancel')}</button>
-        </p>
+        <div class="ct-country-pick">
+          <ul class="ct-country-choices">
+            {here && <li><button type="button" class="link-button ct-link" onClick={() => pick(here)}><strong>{countryName(here)}</strong> <span class="ct-muted">{T('country.fromLocation')}</span></button></li>}
+            <li>
+              <button type="button" class="link-button ct-link" aria-expanded={other ? 'true' : 'false'} onClick={() => setOther(true)}><strong>{T('country.another')}</strong> <span class="ct-muted">{T('country.anotherWhy')}</span></button>
+              {other && (
+                <p>
+                  <label class="ct-sr" for="ct-country-select">{T('country.pick')}</label>
+                  <select id="ct-country-select" ref={select} value={code ?? ''} onChange={(e) => pick((e.currentTarget as HTMLSelectElement).value || null)}>
+                    <option value="">{T('country.pick')}</option>
+                    {sorted.map(([c, n]) => <option value={c}>{n}</option>)}
+                  </select>
+                </p>
+              )}
+            </li>
+            <li><button type="button" class="link-button ct-link" onClick={() => pick(null)}><strong>{T('country.none')}</strong> <span class="ct-muted">{T('country.noneWhy')}</span></button></li>
+          </ul>
+          <p class="ct-small-text">{T('country.why')}</p>
+          {travel}
+          <p><button type="button" class="link-button ct-link" onClick={() => { pickingCountry.value = false; setOther(false); }}>{T('country.cancel')}</button></p>
+        </div>
       )}
     </div>
   );
 }
 
-// ---- the climate cards, one link away ----
-// Opened by the reader on this page (the link); kept open for the page. Opened by the page: latched
-// (state/draft.ts cardsLatched).
-const cardsAsked = signal(false);
-function openCards(): void {
-  cardsAsked.value = true;
-  // The link leaves with the press: the focus goes to the card Tab would land on (A25: never <body>).
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    // In this order (one selector list would give the first card in the page): checked, proposed, first.
-    const card = (q: string) => document.querySelector<HTMLInputElement>(`#ct-climates ${q}`);
-    (card('input:checked') ?? card('[data-proposed] input') ?? card('input'))?.focus();
-  }));
-}
+// ---- the climate cards (board ClimateHand), one link away ----
+const listsOf = (z: ClimateZone) => NEAREST_LISTS[z].filter((x) => curatedClimates.value.includes(x)).map(zoneName).join(', ');
 function Climates() {
-  // The one shown climate (state/persist.ts climateShown): the chosen one, else a link's while it loads,
-  // else a location's suggestion (store.proposedClimate, S5b), shown as proposed, not checked: a click
-  // on its card confirms it, as the result line's "Use" button does (owner answer 1; review round 1, 6).
-  const shown = climateShown.value;
   const chosen = climateChosen.value;
-  const proposed = shown.proposed ? shown.zone : null;
-  // With a card proposed and none checked (review round 2, 5): Tab lands on the proposed card (the
-  // others leave the tab order), and the arrows move the focus without checking a card; Space, Enter
-  // or a click confirms one.
-  const choose = (z: ClimateZone) => { proposedClimate.value = null; chooseClimate(z); };
-  const keys = (e: KeyboardEvent) => {
-    if (!proposed) return;
-    const r = e.currentTarget as HTMLInputElement;
-    if (e.key === 'Enter') { e.preventDefault(); r.click(); return; }
-    if (!e.key.startsWith('Arrow')) return;
-    e.preventDefault();
-    const all = [...r.closest('fieldset')!.querySelectorAll<HTMLInputElement>('input')];
-    all[(all.indexOf(r) + (/[RD]/.test(e.key[5]) ? 1 : all.length - 1)) % all.length].focus();
-  };
+  const where = siteLocation.value;
   // Open once asked for, or when a climate is already chosen (a link, a save, the shared site climate,
   // a pick) and no place could stand for it: none on the page and no kept location still being looked
-  // up (state/restore.ts locationAtStart: it counts until its lookup settles or Forget removes it,
-  // review rounds 2, 1 and 3, 1). Latched until Start over. The cards stay in the page while closed
-  // (hidden), so the link names what it opens.
-  const where = siteLocation.value;
+  // up (state/restore.ts locationAtStart). Latched until Start over.
   const latch = !!chosen && !where && !locationAtStart.value;
   if (latch && !cardsLatched.peek()) cardsLatched.value = true;
   const open = cardsAsked.value || cardsLatched.value || latch;
-  // The words follow a climate read from the location (its lookup), not a location object: a location
-  // whose tiles failed, or still loading, gives none of the checks (review round 2, 3).
   const read = !!where?.lookup;
   return (
-    <>
-      {!open && (
-        <p class="ct-place-climates">
-          <button type="button" class="link-button ct-link" data-place-climates aria-expanded="false" aria-controls="ct-climates" onClick={openCards}>
-            {T(proposed || (read && chosen) ? 'place.climate.other' : 'place.climate.open')}
-          </button>
-        </p>
-      )}
-    <fieldset class="ct-step ct-climates" id="ct-climates" hidden={!open}>
-      <legend class="ct-step-title">{T('start.climate.title')}</legend>
-      {!read && <p class="ct-step-lede">{T('place.climate.without')}</p>}
-      <p class="ct-muted ct-step-lede">{T('start.climate.lede')}</p>
+    <fieldset class="ct-climates" id="ct-climates" hidden={!open}>
+      <legend class="ct-q-title">{T('start.climate.title')}</legend>
+      {!read && <p class="ct-q-lede">{T('place.climate.without')}</p>}
       <div class="ct-cards">
-        {page().start.zones.map(({ id, label, places }) => {
+        {page().start.zones.map((zone) => {
+          const { id, label } = zone;
           const z = zoneOf(id)!;
-          // Ready, Needs your location (a borrowed climate without one), or Not covered yet (PoolSlot).
           const pill = cardPill(z);
+          const size = (zone as { size?: number }).size ?? 0;
+          const own = curatedClimates.value.includes(z);
           return (
-            <label class={`ct-card${chosen === z ? ' is-chosen' : proposed === z ? ' is-proposed' : ''}`} data-proposed={proposed === z ? '' : undefined}>
-              <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} tabIndex={proposed && proposed !== z ? -1 : undefined} onKeyDown={keys} onChange={() => choose(z)} />
+            <label class={`ct-card${chosen === z ? ' is-chosen' : ''}`}>
+              <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => chooseClimate(z)} />
               <span class="ct-card-name" id={`ct-cl-${id}`}>{label}</span>
               <span id={`ct-cl-${id}-d`} class="ct-card-desc">
-                {proposed === z && <span class="ct-card-proposed">{T('location.proposed')}</span>}
                 <span class={`ct-pill${pill.ready ? ' is-ready' : ''}`}>{pill.label}</span>
-                <span class="ct-card-places">{places}</span>
+                <span class="ct-card-places">{T(`place.climate.desc.${id}`)}{sep}{own ? P('place.climate.ownList', size) : T('place.climate.nearest', { lists: listsOf(z) })}</span>
               </span>
             </label>
           );
         })}
+        <div class="ct-card is-off" data-climate-polar>
+          <span class="ct-card-name">{T('place.climate.polar')}</span>
+          <span class="ct-card-desc">
+            <span class="ct-pill">{T('place.climate.noList')}</span>
+            <span class="ct-card-places">{T('start.climate.notYet')}. <a href={page().start.contact}>{T('start.uncovered.ask')}</a></span>
+          </span>
+        </div>
       </div>
+      {!chosen && <p class="ct-muted ct-small-text">{T('place.climate.toGoOn')}</p>}
     </fieldset>
-    </>
+  );
+}
+// ClimateHand: asked for, latched by a choice, or a climate kept with no place read (the cards stay open).
+const climatesOpen = () => cardsAsked.value || cardsLatched.value || (!!climate.value && !siteLocation.value?.lookup);
+function ClimatesLink() {
+  // Board Place: the ways row keeps "No location? Choose a climate"; once a climate is read its panel
+  // carries "Not this climate? Choose another" (WeRead), never twice.
+  if (climatesOpen()) return null;
+  return <button type="button" class="link-button ct-link" data-place-climates aria-expanded="false" aria-controls="ct-climates" onClick={openClimates}>{T('place.climate.open')}</button>;
+}
+
+// ---- "We read" (board Place): the climate read from the place, used at once ----
+function WeRead() {
+  const loc = siteLocation.value, z = climate.value;
+  if (!loc?.lookup || !z || loc.source === 'link') return null;
+  const sc = climateOf(loc.lookup);
+  if (!sc.zone || sc.state === 'polar' || !sc.today) return null;
+  const k = sc.koppen, type = k[0] === 'A' || k[0] === 'E' ? k : k.slice(0, 2);
+  const own = curatedClimates.value.includes(z);
+  return (
+    <div class="ct-read" data-place-read>
+      <p>
+        <strong>{T('place.read', { climate: zoneName(z), words: T(`location.k.${type}`) })}</strong>{' '}
+        {own ? T('place.readOwn') : T('place.readBorrowed', { lists: listsOf(z) })}
+        {!climatesOpen() && <>{' '}<button type="button" class="link-button ct-link" data-place-climates aria-expanded="false" aria-controls="ct-climates" onClick={openClimates}>{T('place.climate.other')}</button></>}
+      </p>
+      <p class="ct-small-text">
+        {T('place.readUse')}{' '}
+        <button type="button" class="link-button ct-link" onClick={() => openFigure('nights')}>{T('place.figures')}</button>
+        {T('place.figuresWhy', { koppen: k, temp: formatTemp(sc.today.tminColdC, pageLang()) })}
+      </p>
+    </div>
   );
 }
 
-// ---- How much room do you have? ----
-// Each answer's height in words (ROOM_LIMIT_M through formatLength; height only, never a count).
+// ---- 2 How much room do you have? ----
 function roomLimit(r: Room): string {
   const m = ROOM_LIMIT_M[r];
   if (r === 'unsure') return T('place.room.limit.unsure');
   if (!Number.isFinite(m)) return T('place.room.limit.any');
   return T(r === 'pots' ? 'place.room.limit.plants' : 'place.room.limit.trees', { len: formatLength(m, pageLang()) });
 }
-function PlotSize() {
-  const lang = pageLang();
-  const now = plot.value;
-  const [text, setText] = useState(now === null ? '' : String(now));
-  const [bad, setBad] = useState(false);
-  // A plot size from elsewhere (a link, Undo, Start over keeps it) shows in the field.
-  useEffect(() => { if (parsePlotSize(text, lang) !== now) { setText(now === null ? '' : String(now)); setBad(false); } }, [now]);
-  const commit = (t: string) => {
-    const n = t.trim() ? parsePlotSize(t, lang) : null;
-    setBad(t.trim() !== '' && n === null);
-    if (t.trim() === '' || n !== null) plot.value = n;
-  };
-  const example = formatArea(200, lang);
-  return (
-    <p class="ct-plot">
-      <label for="ct-plot-size">{T('place.plot.label')} <span class="ct-muted">({T('place.plot.optional')})</span></label>
-      <input id="ct-plot-size" class="ct-plot-field" type="text" inputMode="decimal" autoComplete="off" value={text} placeholder={T('place.plot.placeholder', { area: example })}
-        aria-describedby="ct-plot-note" aria-invalid={bad ? 'true' : undefined}
-        onInput={(e) => setText((e.currentTarget as HTMLInputElement).value)} onChange={(e) => commit((e.currentTarget as HTMLInputElement).value)} />
-      <span id="ct-plot-note" class="ct-muted ct-small-text">{bad ? T('place.plot.bad', { area: example }) : T('place.plot.note')}</span>
-    </p>
-  );
-}
 function RoomStep() {
   const r = room.value;
   return (
-    <section class="ct-step ct-panel" aria-labelledby="ct-room-h">
-      <h2 class="ct-step-title" id="ct-room-h">{T('place.room.title')}</h2>
-      <fieldset class="ct-seg ct-room">
-        <legend class="ct-sr">{T('place.room.title')}</legend>
+    <section class="ct-q" aria-labelledby="ct-room-h">
+      <h2 class="ct-q-title" id="ct-room-h"><span class="ct-q-n" aria-hidden="true">2</span> {T('place.room.title')}</h2>
+      <fieldset class="ct-room" aria-labelledby="ct-room-h">
         <div class="ct-room-row">
           {roomValues.map((v) => (
             <label class={r === v ? 'is-on' : ''}>
@@ -221,12 +210,11 @@ function RoomStep() {
         </div>
       </fieldset>
       <p class="ct-muted ct-small-text">{T('site.roomHint')}</p>
-      <PlotSize />
     </section>
   );
 }
 
-// ---- What grows there already ----
+// ---- 3 What grows there already ----
 // A chip's × leaves with its plant: the focus goes to the neighbour's ×, else "Add a plant" (pre-push
 // fix 6, A); the chip carries data-plant-id, so Undo finds it again where it was (focus.ts focusPlant).
 function OwnPlants() {
@@ -240,62 +228,157 @@ function OwnPlants() {
       ?? document.querySelector<HTMLElement>('[data-place-add]'));
   };
   return (
-    <section class="ct-step ct-panel" aria-labelledby="ct-own-h" data-place-plants>
-      <h2 class="ct-step-title" id="ct-own-h">{T('place.plants.title')}</h2>
-      <p class="ct-muted ct-step-lede">{T('place.plants.lede')}</p>
+    <section class="ct-q" aria-labelledby="ct-own-h" data-place-plants>
+      <h2 class="ct-q-title" id="ct-own-h"><span class="ct-q-n" aria-hidden="true">3</span> {T('place.plants.title')}</h2>
+      <p class="ct-muted ct-q-lede">{T('place.plants.lede')}</p>
+      <p class="ct-own-acts">
+        <button type="button" class="ct-place-field ct-field-button" data-place-add onClick={addOwnPlant}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20"><path d="M10 4.5v11M4.5 10h11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>{T('place.plants.add')}</button>
+        <button type="button" class="button button-secondary" onClick={() => openSheet('paste')}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20"><path d="M5.5 2.5h6l3.5 3.5v11.5h-9.5zM11.5 2.5V6H15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /></svg>{T('start.paste')}</button>
+      </p>
       {taxa.length > 0 && (
         <ul ref={list} class="ct-own" aria-label={T('place.plants.title')}>
           {taxa.map((t) => (
             <li key={t.id} class="ct-own-chip" data-plant-id={t.id}>
               <span>{nameOf(t)}</span>
-              <button type="button" class="link-button ct-link" aria-label={T('place.plants.remove', { name: nameOf(t) })} onClick={() => remove(t.id)}>×</button>
+              <button type="button" class="ct-chip-x" aria-label={T('place.plants.remove', { name: nameOf(t) })} onClick={() => remove(t.id)}>×</button>
             </li>
           ))}
         </ul>
       )}
-      <p class="ct-own-acts">
-        <button type="button" class="button button-secondary" data-place-add onClick={addOwnPlant}>{T('place.plants.add')}</button>
-        <button type="button" class="link-button ct-link" onClick={() => openSheet('paste')}>{T('start.paste')}</button>
-      </p>
     </section>
   );
 }
 
-// ---- Your spot: gone with the site-inputs layer (spot and soil answers dormant until PP-F, owner
-// 2026-11-18; spec update point 6). The spot questions come back with PP-F's Spot board.
+// ---- Start over (Toasts board): "Palette cleared: 8 plants. Your place is kept." with Undo ----
+const welcomeGone = signal(false);
+function startOverNow(): void {
+  const n = members.peek().length;
+  welcomeGone.value = true;
+  startOver();
+  const t = toast.peek();
+  if (t && n) updateToast(t.id, P('place.cleared', n));
+}
 
-// ---- the arrival lines (Arrivals board) ----
-// In one live region that stays on the page, so a line is never inserted with its region (A25).
+// ---- the arrival lines (board Arrivals) ----
+// The shared link over your palette: asked (Look / Add / Stay), then looked at (Keep it as mine / Back
+// to mine). The shown palette is the link's from the start, yours held (state/persist.ts holdSave).
+const sharedSeen = signal<'ask' | 'looking' | 'done'>('ask');
+const laterPlace = signal(false);
+async function addShared(): Promise<void> {
+  const theirs = members.peek().slice();
+  sharedSeen.value = 'done';
+  await openSavedInstead();
+  addMembers(theirs);
+}
+// "9 November" (board Arrivals): day then month; English in its day-first form, unambiguous worldwide.
+const dayMonth = (iso: string | undefined): string => {
+  const d = iso ? new Date(iso) : null;
+  return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString(pageLang() === 'en' ? 'en-GB' : pageLang(), { day: 'numeric', month: 'long' }) : '';
+};
+function savedWords(): { n: number; at: string } | null {
+  try {
+    const rec = JSON.parse(memory.read(STORE) ?? 'null') as { fragment?: string; at?: string } | null;
+    if (!rec?.fragment) return null;
+    // The link's plant tokens (lib state.ts readTokens: 6 characters, or "." and 22), members (a) and
+    // plants from other lists (g, after their two-letter list code).
+    const count = (v: string) => { let k = 0; for (let i = 0; i < v.length; i += v[i] === '.' ? 23 : 6) k++; return k; };
+    const q = new URLSearchParams(rec.fragment);
+    const n = count(q.get('a') ?? '') + q.getAll('g').reduce((sum, g) => sum + count(g.slice(2)), 0);
+    return { n, at: dayMonth(rec.at) };
+  } catch { return null; }
+}
+const near = () => { const l = siteLocation.value; return l && l.source !== 'link' ? placeWords(l, true) : null; };
 function PlaceNotices() {
   const n = notices.value;
-  const guide = n.guidePlant && pool.value?.find((x) => x.id === n.guidePlant);
+  const guideId = n.guidePlant;
+  const guide = guideId ? memberTaxa.value.find((t) => t.id === guideId) : null;
   const saved = savedInstead.value;
   const theirs = linkPlace.value;
   const busy = answering.value;
-  // A newer or unreadable link over a readable save: back to it (Arrivals board).
-  const backMine = saved && (n.newer || n.unreadable) ? <>{' '}<button type="button" class="link-button ct-link" data-back-mine onClick={() => void openSavedInstead()}>{T('place.backToMine')}</button></> : null;
+  const onPalette = view.value !== 'start';
+  const z = climate.value;
+  const mine = near();
+  const opened = openingArrival();
+  const btn = (label: string, run: () => unknown, attrs: Record<string, string> = {}, primary = false) => <button type="button" class={`button ${primary ? 'button-primary' : 'button-secondary'} ct-small`} onClick={() => void run()} {...attrs}>{label}</button>;
+  const savedN = saved ? savedWords() : null;
+  const linkOpen = onPalette && opened.kind === 'link' && !n.unreadable && !n.failed;
+  // A shared palette over yours: asked once, then looked at.
+  const shared = linkOpen && saved && !guide && sharedSeen.value !== 'done' ? sharedSeen.value : null;
+  const noPlace = linkOpen && !saved && !theirs && !laterPlace.value && opened.kind === 'link' && !siteLocation.value?.lookup && !locationAtStart.value;
+  const checkedAgainst = linkOpen && !saved && !theirs && !!mine && !!siteLocation.value?.lookup;
+  const welcome = onPalette && opened.kind === 'saved' && !welcomeGone.value && !saved && members.value.length > 0 ? savedWords() : null;
   return (
     <div class="ct-place-notices" role="status">
-      {n.newer && (
-        <p class="ct-notice" data-place-notice="newer">
-          {T('place.newer')}{' '}
-          <button type="button" class="link-button ct-link" onClick={() => location.reload()}>{T('place.reload')}</button>
-          {backMine}
+      {welcome && (
+        <p class="ct-notice ct-notice-calm" data-place-notice="welcome">
+          {T(mine ? 'place.welcome' : 'place.welcomeNoPlace', { date: (opened.kind === 'saved' && dayMonth(opened.at)) || welcome.at, count: P('start.count', members.value.length), place: mine ?? '' })}{' '}
+          {btn(T('start.over'), startOverNow, { 'data-start-over': '' })}
         </p>
       )}
-      {n.unreadable && <p class="ct-notice" data-place-notice="unreadable">{T('place.unreadable')}{backMine}</p>}
+      {shared === 'ask' && z && (
+        <div class="ct-notice" data-place-notice="shared">
+          <p><strong>{T('place.shared.title')}</strong></p>
+          <p>{T('place.shared.body', { count: P('start.count', members.value.length), list: T('place.line.list', { climate: zoneName(z) }), mine: `${P('start.count', savedN?.n ?? 0)}${mine ? ` ${mine}` : ''}` })}</p>
+          <p class="ct-notice-acts">
+            {btn(T('place.shared.look'), () => { sharedSeen.value = 'looking'; focusView(); })}
+            {btn(T('place.shared.add'), addShared)}
+            {btn(T('place.shared.stay'), () => { sharedSeen.value = 'done'; return openSavedInstead(); }, { 'data-back-mine': '' })}
+          </p>
+        </div>
+      )}
+      {shared === 'looking' && (
+        <p class="ct-notice" data-place-notice="looking">
+          {T('place.shared.looking')}{' '}
+          {btn(T('place.shared.keep'), () => { sharedSeen.value = 'done'; showPalette(); })}
+          {btn(T('place.backToMine'), () => { sharedSeen.value = 'done'; return openSavedInstead(); }, { 'data-back-mine': '' })}
+        </p>
+      )}
+      {n.unreadable && (
+        <p class="ct-notice" data-place-notice="unreadable">
+          {T('place.unreadable')}{' '}
+          {btn(T('place.newPalette'), startOverNow)}
+          {saved && btn(T('place.backToMine'), () => openSavedInstead(), { 'data-back-mine': '' })}
+        </p>
+      )}
       {n.period && <p class="ct-notice" data-place-notice="period">{T('place.period')}</p>}
-      {n.failed && <p class="ct-notice" data-place-notice="failed">{T('share.failed')}</p>}
-      {n.guideMissing && <p class="ct-notice" data-place-notice="guideMissing">{T('start.guideMissing', { name: n.guideMissing, climate: zoneName(climate.value) })}</p>}
-      {(guide || (saved && !backMine)) && (
+      {n.failed && <p class="ct-notice" data-place-notice="failed">{T('share.failed')} {btn(T('location.tryAgain'), () => location.reload())}</p>}
+      {n.guideMissing && z && (
+        <p class="ct-notice" data-place-notice="guideMissing">
+          {T('start.guideMissing', { name: n.guideMissing, climate: zoneName(z) })}{' '}
+          {btn(T('place.findPlant'), addOwnPlant)}
+        </p>
+      )}
+      {guide && z && (
         <p class="ct-notice ct-notice-calm" data-place-notice="guide">
-          {guide && <>{T('place.guidePlant', { name: nameOf(guide), climate: zoneName(climate.value) })}{' '}</>}
-          {saved && <button type="button" class="link-button ct-link" data-open-saved onClick={() => void openSavedInstead()}>{T('place.openSaved')}</button>}
+          {saved && savedN
+            ? T('place.guideSaved', { name: nameOf(guide), climate: zoneName(z), count: P('start.count', savedN.n) })
+            : T('place.guidePlant', { name: nameOf(guide), climate: zoneName(z) })}{' '}
+          {!siteLocation.value?.lookup && btn(T('place.givePlace'), () => { backToPlace(); setTimeout(focusField, 50); })}
+          {saved && btn(T('place.openSaved'), () => openSavedInstead(), { 'data-open-saved': '' })}
+        </p>
+      )}
+      {/* Your own save, not the one shown (another tab saved, or a guide over it): back to it. */}
+      {saved && !guide && !shared && sharedSeen.value !== 'looking' && !n.unreadable && (
+        <p class="ct-notice ct-notice-calm" data-place-notice="saved">
+          {btn(T('place.openSaved'), () => openSavedInstead(), { 'data-open-saved': '' })}
+        </p>
+      )}
+      {noPlace && z && (
+        <p class="ct-notice ct-notice-calm" data-place-notice="noPlace">
+          {T('place.noPlace', { list: T('place.line.list', { climate: zoneName(z) }) })}{' '}
+          {btn(T('place.givePlace'), () => { backToPlace(); setTimeout(focusField, 50); })}
+          {btn(T('place.later'), () => { laterPlace.value = true; })}
+        </p>
+      )}
+      {checkedAgainst && (
+        <p class="ct-notice ct-notice-calm" data-place-notice="checkedAgainst">
+          {T('place.checkedAgainst', { place: mine! })}{' '}
+          {btn(T('place.changePlace'), backToPlace)}
         </p>
       )}
       {theirs && (
         <p class="ct-notice" data-place-notice="linkPlace">
-          {T('place.linkPlace')}{' '}
+          {T(Object.keys(siteEdits.value).length ? 'place.linkPlace' : 'place.linkPlaceBare', { place: siteLocation.value ? placeWords({ ...siteLocation.value, source: 'map' }, true) : T('location.linkPlace'), values: siteEditLines(siteEdits.value).map(say).join(', ') })}{' '}
           <span class="ct-notice-acts">
             <button type="button" class="button button-secondary ct-small" data-use-link-place disabled={busy} aria-busy={busy ? 'true' : undefined} onClick={() => void useLinkPlace()}>{T('place.useIt')}</button>
             <button type="button" class="button button-secondary ct-small" data-use-own-place disabled={busy} onClick={useOwnPlace}>{T('place.useMine')}</button>
@@ -306,102 +389,123 @@ function PlaceNotices() {
   );
 }
 
-// Head (the palette step's place line: count, climate, the place and its actions) and the guide line name store.climate, not climateShown: a palette (and a guide preset's line)
-// shows only under a chosen climate, where the two are the same.
-function Head() {
-  const n = members.value.length, z = climate.value;
-  // A borrowed list not fitted to a place, or none at all: the palette suggests and swaps nothing
-  // from it (store.offerPool), and says why here (b1a2-2).
+// ---- the palette step's place line (boards Main, Palette, Many, Oulu) ----
+const seenPalette = signal(false);
+function OuluBanner({ zone }: { zone: ClimateZone }) {
+  const loc = siteLocation.value, n = countFits.value;
+  if (curatedClimates.value.includes(zone) || !loc?.lookup) return null;
+  const sc = climateOf(loc.lookup);
+  if (!sc.today) return null;
+  const colder = zone === 'Continental' || zone === 'Boreal';
+  return (
+    <p class="ct-place-banner" data-place-banner>
+      {colder ? `${T('place.banner.colder')} ` : ''}
+      {T('place.banner.read', { koppen: sc.koppen, climate: zoneName(zone), how: loc.source === 'link' ? T('location.fromLink') : T('location.readFrom'), temp: formatTemp(sc.today.tminColdC, pageLang()) })}{' '}
+      {n ? P('place.banner.kept', n.fits + n.look, { lists: listsOf(zone), of: num(n.of) }) : T('place.banner.lists', { lists: listsOf(zone) })}{' '}
+      {T('place.banner.estimate')}
+    </p>
+  );
+}
+function PlaceLine() {
+  useEffect(() => { seenPalette.value = true; }, []);
+  const n = members.value.length, z = climate.value, loc = siteLocation.value, r = room.value;
   const why = z ? suggestBlock(z) : null;
+  const own = z ? curatedClimates.value.includes(z) : true;
+  const parts: string[] = [];
+  if (loc) parts.push(placeWords(loc));
+  if (z) parts.push(own ? T('place.line.list', { climate: zoneName(z) }) : T('place.line.borrowed', { climate: zoneName(z) }));
+  if (r !== 'unsure') parts.push(T(`place.line.room.${r}`));
+  const values = siteEditLines(siteEdits.value).map(say).join(', ');
+  if (values) parts.push(values);
+  parts.push(P('start.count', n));
   return (
     <div class="ct-result-head">
-      {/* A plain place line, not a heading: the palette page's own title follows (pre-push fix 7, E:
-          one "Your palette" heading, as the mock-ups show). */}
-      <p class="ct-muted ct-result-sub">{P('start.count', n)} · {zoneName(climate.value)}</p>
-      <p class="ct-basis">
-        <span>{basisLine(site.value)}</span>
-        <button type="button" class="link-button ct-link" onClick={() => openSheet('place')}>{T('place.sheet.open')}</button>
-        <button type="button" class="link-button ct-link" data-start-over onClick={startOver}>{T('start.over')}</button>
+      <p class="ct-place-line" data-place-line>
+        {parts.map((p, i) => <>{i > 0 && sep}<span>{p}</span></>)}
+        {sep}<button type="button" class="link-button ct-link" onClick={backToPlace}>{T('place.change')}</button>
       </p>
-      <LocationSlot compact />
-      <CountryLine />
+      {editsCleared.value && <p class="ct-muted ct-small-text" data-edits-cleared>{T('place.editsCleared')}</p>}
+      {z && <OuluBanner zone={z} />}
       {z && why && why !== 'nothingFits' && <PoolSlot zone={z} head />}
     </div>
   );
 }
 
-function PlaceForm() {
+function Questions() {
   const z = climateChosen.value;
-  // The ct:start timing mark (F1a commit 0 seam, perf1), told on every render of the form; perf1 marks
-  // once per page, after the paint. A plain call, not an effect: the empty seam costs the first run nothing.
-  markStart();
+  const ready = !!z && hasList(z);
+  const block = z ? suggestBlock(z) : null;
   return (
-    <div class="ct-start ct-place">
-      <p class="ct-muted ct-place-lede">{T('place.lede')}</p>
-      <LocationSlot />
-      <CountryLine />
-      <Climates />
-      {z && <PoolSlot zone={z} />}
-      {z && hasList(z) && (
-        <>
+    <>
+      <div class="ct-place-col">
+        <LocationSlot><ClimatesLink /></LocationSlot>
+        <WeRead />
+        <CountryLine />
+        <Climates />
+        {z && (block || !hasList(z)) && <PoolSlot zone={z} />}
+      </div>
+      {ready && (
+        <div class="ct-place-col">
           <RoomStep />
           <OwnPlants />
           <div class="ct-cta">
-            <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}</button>
+            <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+            {!block && (
+              <p class="ct-place-suggest">
+                {T('place.none')}{' '}
+                <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={() => requestSuggest()}>{T('start.suggest')}</button>
+              </p>
+            )}
           </div>
-          {/* One rule for "can Suggest now" (PoolSlot suggestBlock): here only nothing-fits can block it, PoolSlot saying why. */}
-          {!suggestBlock(z) && (
-            <p class="ct-place-suggest">
-              {T('place.none')}{' '}
-              <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={() => requestSuggest()}>{T('start.suggest')}</button>
-            </p>
-          )}
-          <p class="ct-muted ct-small-text">{T('page.hypothesis')}</p>
-        </>
+        </div>
       )}
+    </>
+  );
+}
+
+function PlaceForm() {
+  // The ct:start timing mark (F1a commit 0 seam, perf1), told on every render of the form.
+  markStart();
+  return (
+    <div class="ct-start ct-place">
+      <div class="ct-place-grid"><Questions /></div>
+      <PlaceFigures />
     </div>
   );
 }
 
-// ---- the "Your place" sheet (board ChangePlace, room and location parts; b1a review r1 conformance-4)
-// ---- The palette's own place, changed in place: no draft, nothing set aside, so the palette follows
-// each answer at once and no plant is removed. In its sheet frame (views/Sheets.tsx; Back closes it).
-// The country line stays in the head behind it (one picker on the page). A climate with no list of its
-// own here (Not covered yet, Needs your location) says why under the cards, with what Place offers
-// (PoolSlot; fix round 1, b1a2-2). Its foot: "Start over" and "Done" (board ChangePlace; Done closes,
-// as Close does).
-export function PlaceSheet({ Frame }: { Frame: Frame }) {
-  const z = climate.value;
+// The frame (board SiteKiambu): Place again from the palette, with plants.
+function Frame() {
   return (
-    <Frame titleId="ct-place-sheet-h" foot={
-      <div class="ct-add-bar" data-place-sheet-foot>
-        <button type="button" class="link-button ct-link" onClick={startOver}>{T('start.over')}</button>
-        <button type="button" class="button button-primary" onClick={closeSheet}>{T('place.sheet.done')}</button>
-      </div>
-    }>
-      <div class="ct-start ct-place">
-        <div>
-          <h2 id="ct-place-sheet-h" tabIndex={-1} data-autofocus>{T('place.sheet.title')}</h2>
-          <p class="ct-muted ct-place-lede">{T('place.sheet.lede')}{members.value.length > 0 && <> {P('place.sheet.kept', members.value.length)}</>}</p>
-        </div>
-        <LocationSlot />
-        <Climates />
-        {z && <PoolSlot zone={z} />}
-        <RoomStep />
-      </div>
-    </Frame>
+    <div class="ct-start ct-place ct-place-frame">
+      <LocationSlot frame />
+      <Climates />
+      <RoomStep />
+      <CountryLine />
+      <PlaceFigures />
+      <p class="ct-frame-foot">
+        <button type="button" class="button button-secondary" data-start-over onClick={startOverNow}>{T('start.over')}</button>
+        <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.back')}</button>
+      </p>
+    </div>
   );
 }
 
+// The "Your place" sheet went with v13 (Change opens Place); views/Sheets.tsx still names it until its
+// route goes (hand-off): it shows the frame.
+export function PlaceSheet(_: { Frame?: unknown }) { return <Frame />; }
+
 export function Place() {
   const waiting = pendingSuggest.value || restoring.value;
+  const start = view.value === 'start';
+  const frame = start && seenPalette.value && members.value.length > 0;
   return (
     <>
+      <Steps />
       <PlaceNotices />
-      {/* v14 0W-1 item 8: PlaceFigures, a stub that renders nothing until pf-d; pf-c places it under the questions. */}
-      {view.value === 'start' ? <><PlaceForm /><PlaceFigures /></> : <Head />}
+      {!start ? <PlaceLine /> : frame ? <Frame /> : <PlaceForm />}
       {/* Always on the page, empty when nothing loads (A25); it also says what a notice's answer did. */}
-      <p class="status-line ct-place-status" role="status">{view.value === 'start' && waiting ? T('load.plants') : placeSaid.value}</p>
+      <p class="status-line ct-place-status" role="status">{start && waiting ? T('load.plants') : placeSaid.value}</p>
     </>
   );
 }

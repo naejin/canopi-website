@@ -59,7 +59,8 @@ function OfflineLine() {
   return <p class="ct-offline" role="status">{offline.value ? T('load.offline') : ''}</p>;
 }
 // The database still loading: one status line on the page from the start, its words switching to
-// "Still loading" after the threshold, so the change is announced (bugs-12). The line goes on the page
+// "Still loading" after the threshold, so the change is announced (bugs-12). Board Loading (pf-c): the
+// Place step works meanwhile, and the line says so ("You can already give your place."). The line goes on the page
 // empty and takes its words after the first paint (an effect), so a screen reader hears them: the
 // first render comes before the plants are read (PP-B3, A25; the test build hid it while its render
 // waited for the hook and the database was often ready by then, PP-B exit).
@@ -67,7 +68,7 @@ function LoadingLine() {
   const busy = !ready.value;
   const [placed, setPlaced] = useState(false);
   useEffect(() => setPlaced(true), []);
-  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? T(slow.value ? 'load.slow' : 'load.plants') : ''}</p>;
+  return <p class="status-line" role="status" aria-busy={busy ? 'true' : undefined}>{busy && placed ? (slow.value ? T('load.slow') : `${T('load.plants')} ${T('load.canGive')}`) : ''}</p>;
 }
 function PlaceOrPlaceholder() {
   return restoring.value ? <Placeholder /> : slot(Place);

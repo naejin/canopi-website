@@ -177,7 +177,8 @@ export async function restore(fragment: string, { from, src = null, keep = false
   // (above 5) and unreadable (the old beta tool's versions below 5 included) restore nothing; a save of
   // those is not removed here.
   const status = linkVersionStatus(new URLSearchParams(fragment).get('v'));
-  if (status === 'newer') { cancelRestore(); return refuse('newer', { newer: true }); }
+  // A newer link reads as any link this version cannot read (v14 Arrivals, F14: one message, nothing
+  // restored; "Reload to get it" went with the newer notice).
   if (status !== 'current') { cancelRestore(); return refuse('unreadable', { unreadable: true }); }
   // A link with no climate (cut before it, or edited): unreadable, and nothing opens (review 7; R4).
   const climate = zoneOf(new URLSearchParams(fragment).get('c'));

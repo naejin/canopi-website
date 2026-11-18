@@ -90,7 +90,9 @@ const data = {
   // places (site-wide climate.* keys), the contact address for "Ask for this climate", and the
   // site's own URL for the print foot. Read by views/Start.tsx; nothing here is chosen.
   start: {
-    zones: climates.map((id) => ({ id, label: t(`climate.${id}`, lang), places: t(`climate.${id}.places`, lang) })),
+    // size: the plants on the climate's own list in the installed release (ClimateHand "its own list, N
+    // plants"; 0: none of its own).
+    zones: climates.map((id) => ({ id, label: t(`climate.${id}`, lang), places: t(`climate.${id}.places`, lang), size: ((index as { names?: Record<string, unknown[]> }).names?.[id[0].toUpperCase() + id.slice(1)] ?? []).length })),
     contact,
     site: new URL(consortiumPath(lang), 'https://projectcanopi.com').href,
   },
@@ -102,8 +104,9 @@ const data = {
 // script, so the strings stay apart.
 const climateIndex = Object.values(import.meta.glob('../../data/climate-index.json', { eager: true, import: 'default' }))[0] ?? null;
 const climate = climatePageData(climateIndex as Parameters<typeof climatePageData>[0]);
-// copy-m2: the number of climates is the installed index's, read at build time.
 setStrings(strings, lang);
+// copy-m2: the number of climates is the installed index's, read at build time. The Beta line sits in
+// the foot (pf-c): the v14 head carries the steps, the title and the lede only.
 const betaNote = P('betaNote', index.climates.length);
 ---
 <Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path={consortiumPath(defaultLocale)}>
@@ -115,9 +118,19 @@ const betaNote = P('betaNote', index.climates.length);
   <main id="main" class="ct">
     <div class="wrap ct-wrap">
       <div class="tool-head" id="ct-head">
-        <div class="tool-head-row"><h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span></div>
-        <p class="tool-lede">{t('home.consortium.lede', lang)}</p>
-        <p class="tool-meta">{betaNote} <a class="text-link" href={contact}>{tr('feedback')}</a> <a class="text-link" href={localizedUrl('/data-sources/', lang)}>{t('dataSources.title', lang)}</a></p>
+        {/* The three steps (v14 boards Place, SiteKiambu): static here, so they show before the island;
+            views/place/steps.tsx renders them again on Place (step 1 current, step 2 a link once there is
+            a palette). The palette step's own head hides them and the lede (shell.css, #ct-head[data-step]). */}
+        <ol class="ct-steps" id="ct-steps" aria-label={tr('palette.stepsLabel')}>
+          <li aria-current="step"><span class="ct-steps-n">1</span> {tr('palette.stepPlace')}</li>
+          <li><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</li>
+          <li><span class="ct-steps-n">3</span> {tr('palette.stepPlan')}</li>
+        </ol>
+        <div class="tool-head-row">
+          <h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span>
+          <span class="tool-head-links"><a class="text-link" href={contact}>{tr('feedback')}</a> <a class="text-link" href={localizedUrl('/data-sources/', lang)}>{t('dataSources.title', lang)}</a></span>
+        </div>
+        <p class="tool-lede">{tr('place.lede')}</p>
       </div>
       <noscript>
         <div class="callout"><p>{tr('noscript')}</p>{guide && <p><a class="text-link" href={guide.url} hreflang={guide.lang !== lang ? guide.lang : undefined}>{tr('noscript.link')}</a></p>}</div>
@@ -133,7 +146,7 @@ const betaNote = P('betaNote', index.climates.length);
         h.dataset.opens = opens;
       } catch (e) {} })();</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
-      <p class="tool-release">{tr('release').replace('{id}', index.release_id)}</p>
+      <p class="tool-release">{betaNote} {tr('release').replace('{id}', index.release_id)}</p>
     </div>
   </main>
   <Footer lang={lang} />

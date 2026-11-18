@@ -1,47 +1,162 @@
-/* Place (stream b1a): page-level, imported by src/components/consortium/ConsortiumPage.astro (PP-B commit 0).
-   Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5); Source Sans 3 /
-   Literata at 400 and 600; breakpoints max-width 639px and min-width 960px only; nothing wider than the
-   page at 320 px (long words wrap: ru, de). */
+/* Place (pf-c; v14 boards Place, PlaceDesk, SiteKiambu, LocStates, LocMap, LocDesk, ClimateHand, Country,
+   Arrivals, Oulu): page-level, imported by src/components/consortium/ConsortiumPage.astro. Colours only
+   from the tokens of src/styles/tokens.css (ochre and ink chrome, no green); Source Sans 3 / Literata at
+   400 and 600; breakpoints max-width 639px and min-width 960px only; nothing wider than the page at
+   320 px (long words wrap: ru, de). */
 .ct .ct-place { min-width: 0; }
-.ct .ct-place-lede { margin: 0; font-size: 17px; max-width: 62ch; }
+/* Place is the page, not a panel: the details sheet's own .ct-place box (details.css) does not apply. */
+.ct .ct-start.ct-place { padding: 0; border-radius: 0; background: none; }
 .ct .ct-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.ct .ct-place :is(h2, p, label, legend, button) { overflow-wrap: anywhere; }
+.ct .ct-place :is(h2, p, label, legend, button, li) { overflow-wrap: anywhere; }
+.ct .ct-sep { color: var(--text-muted); }
 
-/* How much room: each answer shows its height limit under its name (a two-line pill). */
-.ct .ct-room { margin: 0 0 8px; }
-.ct .ct-room-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); gap: 8px; }
-.ct .ct-room .ct-room-row label { display: grid; align-content: center; gap: 2px; min-height: 56px; padding: 8px 14px; border-radius: 10px; min-width: 0; }
+/* The three questions: a numbered title, a short muted lede, then the answer. */
+.ct .ct-place-grid { display: grid; gap: 22px; }
+.ct .ct-place-col { display: grid; gap: 22px; align-content: start; min-width: 0; }
+.ct .ct-q { display: grid; gap: 8px; min-width: 0; margin: 0; }
+.ct .ct-q-title { margin: 0; padding: 0; font-family: inherit; font-size: 17px; line-height: 23px; font-weight: 600; }
+.ct .ct-q-n { color: var(--accent-ink); }
+.ct .ct-q-lede { margin: 0; font-size: 14px; line-height: 19px; color: var(--text-secondary); }
+.ct .ct-q-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; margin: 0; font-size: 14px; }
+.ct .ct-q-links .ct-link, .ct .ct-read .ct-link, .ct .ct-place-row .ct-link { min-height: 32px; font-size: inherit; }
+
+/* The field: the place search, and the "Add a plant" button drawn as a field. */
+.ct .ct-field-row { display: flex; gap: 8px; min-width: 0; }
+.ct .ct-place-field {
+  flex: 1 1 auto; min-width: 0; min-height: 46px; padding: 0 12px; font: inherit; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px;
+}
+.ct .ct-place-field::placeholder { color: var(--text-muted); opacity: 1; }
+.ct .ct-field-row .button { min-height: 46px; flex: none; }
+.ct .ct-field-button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: start; color: var(--text-muted); cursor: pointer; }
+.ct .ct-field-button svg { flex: none; color: var(--text-secondary); }
+.ct .ct-icon-button, .ct-map-dialog .ct-icon-button {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; width: 46px; height: 46px; padding: 0;
+  border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 20px; cursor: pointer;
+}
+.ct .ct-icon-button:hover, .ct-map-dialog .ct-icon-button:hover { border-color: var(--text); }
+
+/* What we read, the place row, the answers: quiet panels. */
+.ct .ct-location-live { display: grid; gap: 8px; }
+.ct .ct-location-live > [data-location-state] { display: grid; gap: 8px; }
+.ct .ct-location-live > [data-location-state] > p { margin: 0; }
+.ct .ct-location-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; }
+.ct .ct-read { display: grid; gap: 6px; padding: 9px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-alt); font-size: 15px; line-height: 21px; }
+.ct .ct-read p { margin: 0; }
+.ct .ct-read strong { font-weight: 600; }
+.ct .ct-read .ct-small-text { font-size: 14px; color: var(--text-secondary); }
+.ct .ct-place-row { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 8px; gap: 4px 8px; padding: 10px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface); }
+.ct .ct-place-row p { margin: 0; }
+.ct .ct-place-row > svg { grid-row: 1 / span 2; margin-top: 1px; color: var(--text-secondary); }
+.ct .ct-place-row > p { grid-column: 2; }
+.ct .ct-place-row-text { display: grid; gap: 2px; font-size: 15px; line-height: 21px; }
+.ct .ct-place-name { font-weight: 600; }
+.ct .ct-place-coords { font-size: 14px; line-height: 19px; color: var(--text-secondary); }
+.ct .ct-place-row-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; font-size: 14px; }
+.ct .ct-answers { display: grid; gap: 8px; }
+.ct .ct-answers p { margin: 0; }
+.ct .ct-answers-head { font-weight: 600; }
+.ct .ct-answers-list { display: grid; margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); }
+.ct .ct-answer { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name act" "detail act"; align-items: center; gap: 0 10px; padding: 8px 12px; }
+.ct .ct-answer + .ct-answer { border-top: 1px solid var(--border); }
+.ct .ct-answer-name { grid-area: name; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-answer-detail { grid-area: detail; font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-answer .button { grid-area: act; }
+
+/* Climate cards (ClimateHand): the description and the list size under the name; Polar has no list. */
+/* #ct-climates: the class is a hook (consortium-css.test.mjs HOOK_ONLY), so the rule goes by id. */
+.ct #ct-climates { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.ct #ct-climates[hidden] { display: none; }
+.ct #ct-climates > legend { margin-bottom: 4px; }
+.ct .ct-card.is-off { cursor: default; border-style: dashed; background: var(--surface-alt); }
+.ct .ct-place .ct-card-places { display: block; }
+
+/* How much room: each answer shows its height limit under its name. */
+.ct .ct-room { margin: 0; padding: 0; border: 0; min-width: 0; }
+.ct .ct-room-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.ct .ct-room .ct-room-row label { position: relative; display: grid; align-content: center; gap: 2px; min-height: 52px; padding: 5px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); min-width: 0; text-align: start; cursor: pointer; }
+.ct .ct-room-row input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.ct .ct-room-row label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-room-row label.is-on { border: 2px solid var(--text); padding: 4px 9px; background: var(--surface-alt); }
 .ct .ct-room-name { font-weight: 600; }
-.ct .ct-room-limit { font-size: 13.5px; color: var(--text-muted); }
+.ct .ct-room-limit { font-size: 13.5px; color: var(--text-secondary); font-weight: 400; }
 .ct .ct-room label.is-on .ct-room-limit { color: inherit; }
 
-/* Plot size (optional). */
-.ct .ct-plot { display: grid; gap: 6px; margin: 12px 0 0; max-width: 34rem; }
-.ct .ct-plot-field { min-height: 40px; max-width: 14rem; width: 100%; padding: 0 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; }
-.ct .ct-plot-field[aria-invalid="true"] { border-color: var(--danger); }
-
-/* The grower's own plants. */
-.ct .ct-own { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 0; list-style: none; }
-.ct .ct-own-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; min-width: 0; padding: 0 2px 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); font-size: 15px; }
+/* The grower's own plants: chips with a remove cross. */
+.ct .ct-own { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ct .ct-own-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; min-width: 0; min-height: 36px; padding: 0 2px 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); font-size: 15px; font-weight: 600; }
 .ct .ct-own-chip > span { overflow-wrap: anywhere; min-width: 0; }
-.ct .ct-own-chip .ct-link { min-width: 40px; justify-content: center; }
-.ct .ct-own-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0; }
-.ct .ct-place .button { white-space: normal; max-width: 100%; min-width: 0; text-align: center; padding-block: 8px; }
-
-/* "No plants in mind?" and its link to a small suggested palette. */
+.ct .ct-chip-x { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text-secondary); font: inherit; font-size: 18px; cursor: pointer; }
+.ct .ct-chip-x:hover { color: var(--text); background: var(--surface-alt); }
+.ct .ct-own-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; align-items: stretch; }
+.ct .ct-own-acts > [data-place-add] { flex: 1 1 260px; }
+.ct .ct-own-acts > .button { display: inline-flex; align-items: center; gap: 6px; }
+.ct .ct-place .button { white-space: normal; max-width: 100%; min-width: 0; text-align: center; }
 .ct .ct-place-suggest { margin: 0; }
+
+/* The country line (Country board). */
+.ct .ct-country { display: grid; gap: 8px; }
+.ct .ct-country-choices { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.ct .ct-country-choices .ct-link { display: inline; min-height: 0; padding-block: 8px; font-weight: 400; text-align: start; }
+.ct .ct-country-choices .ct-link strong { font-weight: 600; }
 
 /* Arrival lines: one live region always on the page (never display:none, so a line added later is read). */
 .ct .ct-place-notices { display: grid; gap: 10px; }
+.ct .ct-place-notices:not(:empty) { margin-bottom: 16px; }
 .ct .ct-place-notices .ct-notice { display: block; overflow-wrap: anywhere; }
 .ct .ct-notice-calm { border-color: var(--border); background: var(--surface-alt); }
 .ct .ct-notice-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ct .ct-place-notices .ct-notice > .button { margin: 8px 8px 0 0; }
 .ct .ct-place-status { min-height: 0; }
-/* The link to the climate cards (Place first, owner drop 10): a line of its own under the location step. */
-.ct .ct-place-climates { margin: 12px 0 0; }
 
+/* The place line over the palette, and the colder-than-any-list banner (Oulu). */
+.ct .ct-place-line { margin: 0; font-size: 15px; color: var(--text-secondary); }
+.ct .ct-place-line .ct-link { min-height: 32px; font-size: inherit; }
+.ct .ct-place-banner { margin: 0; padding: 10px 14px; border-left: 3px solid var(--warning-line); border-radius: 0 8px 8px 0; background: var(--warning-bg); color: var(--text); font-size: 15px; }
+
+/* The frame (SiteKiambu): the questions again, with a foot to start over or go back. */
+.ct .ct-place-frame { gap: 22px; }
+.ct .ct-frame-foot { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding-top: 14px; border-top: 1px solid var(--border-strong); }
+
+/* The map: phone, a full-screen sheet (LocMap); laptop, a dialog with the search on the left (LocDesk). */
+.ct-map-dialog { padding: 0; overflow: auto; }
+.ct-map-dialog::backdrop { background: rgb(30 22 10 / 0.5); }
+.ct-map-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px 8px 4px; border-bottom: 1px solid var(--border); }
+.ct-map-head .ct-step-title { flex: 1 1 auto; margin: 0; font-size: 19px; line-height: 24px; font-weight: 600; }
+.ct-map-dialog .ct-map-head .ct-icon-button { width: 44px; height: 44px; border: 0; background: none; }
+.ct-map-dialog .ct-map-zoom .ct-icon-button { width: 44px; height: 44px; }
+.ct-map-body { display: grid; gap: 12px; padding: 0 0 14px; }
+.ct-map-main { display: grid; gap: 8px; min-width: 0; }
+.ct-map-main > p { margin: 0 16px; }
+.ct-map-dialog .ct-map-frame { border-inline: 0; }
+.ct-map-zoom { position: absolute; right: 8px; top: 8px; display: grid; gap: 6px; }
+.ct-map-centre { position: absolute; left: 8px; top: 8px; margin: 0; padding: 3px 8px; border-radius: 6px; background: var(--surface); font-size: 14px; line-height: 20px; }
+.ct-map-foot { display: flex; gap: 8px; }
+.ct-map-foot .button { flex: 1 1 0; min-height: 44px; }
+.ct-map-dialog.is-desk { width: min(calc(100vw - 48px), 1040px); border-radius: 14px; box-shadow: 0 20px 50px rgb(30 22 10 / 0.28); }
+.ct-map-dialog.is-desk .ct-map-head { align-items: flex-start; flex-wrap: wrap; padding: 16px 10px 8px 20px; border-bottom: 0; }
+.ct-map-dialog.is-desk .ct-map-head .ct-step-title { font-family: var(--font-display); font-size: 22px; line-height: 28px; }
+.ct-map-lede { flex: 1 0 100%; order: 3; margin: 0; font-size: 14px; }
+.ct-map-dialog.is-desk .ct-map-body { grid-template-columns: 400px minmax(0, 1fr); gap: 20px; padding: 0 20px 16px; }
+.ct-map-side { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.ct-map-dialog.is-desk .ct-map-main > p { margin: 0; }
+.ct-map-dialog.is-desk .ct-map-frame { border-inline: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.ct-map-dialog.is-desk .ct-map-foot { justify-content: flex-end; }
+.ct-map-dialog.is-desk .ct-map-foot .button { flex: none; }
+
+@media (min-width: 960px) {
+  .ct .ct-place-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px 40px; align-items: start; }
+  .ct .ct-place-grid > :not(.ct-place-col) { grid-column: 1 / -1; }
+  .ct .ct-field-row { max-width: 560px; }
+}
 @media (max-width: 639px) {
-  .ct .ct-place-lede { font-size: 16px; }
-  .ct .ct-plot-field { font-size: 16px; max-width: none; }
-  .ct .ct-own-acts .button { flex: 1 1 100%; }
+  .ct .ct-place-field { font-size: 16px; }
+  .ct-map-dialog:not(.is-desk) { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
+  .ct .ct-frame-foot .button { flex: 1 1 100%; }
+}
+
+/* "Show my palette" (boards Place, PlaceDesk): its chevron; on a phone it stays at the bottom of the screen. */
+.ct .ct-place [data-place-show] { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+@media (max-width: 639px) {
+  .ct .ct-place .ct-cta { position: sticky; bottom: 0; z-index: 1; padding: 10px 0; border-top: 1px solid var(--border); background: var(--bg); justify-content: center; text-align: center; }
 }

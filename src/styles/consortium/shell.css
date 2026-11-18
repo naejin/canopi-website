@@ -117,3 +117,20 @@
 /* Offline (b2): one persistent status line, empty while online. */
 .ct .ct-offline { margin: 0; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-alt); font-size: 15px; }
 .ct .ct-offline:empty { padding: 0; border: 0; }
+
+/* The page head on Place (pf-c; v14 boards Place, PlaceDesk, SiteKiambu): three steps above the title,
+   step 1 current in ink, the others outlined; the lede under the title. On the palette step the head
+   carries data-step="palette" and the palette's own head takes over (the steps and the lede go). */
+.ct ol.ct-steps { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; line-height: 18px; color: var(--text-secondary); }
+.ct ol.ct-steps > li { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; min-width: 0; }
+.ct ol.ct-steps > li:not(:last-child)::after { content: "›"; padding-left: 4px; color: var(--text-muted); }
+.ct ol.ct-steps > li[aria-current="step"] { color: var(--text); font-weight: 600; }
+.ct ol.ct-steps .ct-link { min-height: 24px; gap: 6px; font-size: inherit; }
+.ct .ct-steps-n { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border-strong); font-size: 12px; font-weight: 600; line-height: 1; color: var(--text-secondary); }
+.ct ol.ct-steps > li[aria-current="step"] .ct-steps-n { border-color: var(--text); background: var(--text); color: var(--surface); }
+.ct .tool-head-links { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
+.ct #ct-head[data-step="palette"] :is(ol.ct-steps, .tool-lede) { display: none; }
+#ct-head:not([data-step="palette"]) .tool-lede { font-family: inherit; font-size: 17px; line-height: 1.45; max-width: none; }
+@media (max-width: 639px) {
+  #ct-head:not([data-step="palette"]) .tool-lede { font-size: 15px; }
+}

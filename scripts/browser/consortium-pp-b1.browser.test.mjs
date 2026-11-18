@@ -67,7 +67,7 @@ async function temperatePalette(page) {
   await choose(page, 'Temperate');
   await suggestReady(page);
   await page.evaluate(() => { const s = window.__ctTest.store; s.suggestMembers(); s.view.value = 'matrix'; });
-  assert.ok(await has(page, aria('button', W('place.sheet.open')), 8000), 'no "Change your place" on the palette');
+  assert.ok(await has(page, '[data-place-line] button', 8000), 'no "Change" in the palette\'s place line');
 }
 // "Add a plant by name" on Place, as a grower does: the name given and added; the page has k plants
 // then, and stays on Place. The button opens Find (store.openFind): the name searched, its row's Add,
@@ -85,9 +85,11 @@ async function addByName(page, name, k) {
   await page.locator(`dialog.ct-find[open] ${aria('button', 'Done')}`).click();
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', `plant ${k}: adding a plant left Place`);
 }
+// The place is changed on Place (pf-c: the "Your place" sheet is gone): the place line's Change, then
+// the climate cards a chosen climate keeps open.
 const openPlaceSheet = async (page) => {
-  await page.locator(aria('button', W('place.sheet.open'))).click();
-  assert.ok(await has(page, 'dialog[open].ct-sheet #ct-place-sheet-h', 4000), 'the "Your place" sheet opens');
+  await page.click('[data-place-line] button');
+  assert.ok(await has(page, '#ct-climates input[name="ct-climate"]', 6000), 'Change opens Place with its climate cards');
 };
 
 // Fix round 2, C (8.3): each history entry carries what Back needs: `pp`, and its start `st` (new on
@@ -135,7 +137,7 @@ test('PP-B2 (b1a fix round 2, r2-7 Back to Place past a pasted link): Place, pal
 
 // b1a2-1 (fix round 1): changing the place never removes a plant; each kept plant is still drawn and
 // saved, so a reload keeps it.
-test('PP-B2 (b1a fix round 1, b1a2-1 a climate changed in the sheet): a Temperate-only plant stays through Temperate → Mediterranean and a reload', async () => {
+test('PP-B2 (b1a fix round 1, b1a2-1 a climate changed on Place): a Temperate-only plant stays through Temperate → Mediterranean and a reload', async () => {
   const page = await tool();
   await temperatePalette(page);
   const only = await page.evaluate(async () => {
@@ -145,7 +147,7 @@ test('PP-B2 (b1a fix round 1, b1a2-1 a climate changed in the sheet): a Temperat
   assert.ok(only.length, 'a plant only Temperate lists');
   const before = await page.evaluate(() => window.__ctTest.store.members.value.slice().sort().join());
   await openPlaceSheet(page);
-  await page.click('dialog[open] input[name="ct-climate"][value="mediterranean"]');
+  await page.click('#ct-climates input[name="ct-climate"][value="mediterranean"]');
   assert.ok(await until(page, () => window.__ctTest.store.climate.value === 'Mediterranean', 4000), 'another climate');
   assert.ok(await until(page, (ids) => ids.every((id) => window.__ctTest.store.memberTaxa.value.some((t) => t.id === id)), 8000, only), 'the Temperate-only plants are drawn');
   await page.reload();
@@ -266,7 +268,7 @@ test('PP-B10 (b1a share): with "Include my place" off the link holds none of k o
   await page.click('input[data-share-location]');
   assert.ok(await until(page, () => /[#&]k=/i.test(document.querySelector('#ct-share-field').value), 4000), 'ticked: the chosen country travels');
   assert.ok(!placeKeysIn(await link()).includes('l'), 'ticked: no spot answer travels (dormant until PP-F)');
-  assert.match(await words(page, '.ct-share'), /spot answers/, 'the sheet says what travels, in words');
+  assert.match(await words(page, '.ct-share'), /own values for your plot/, 'the sheet says what travels, in words');
 });
 
 test('PP-B14 (b1a guide link): ?plant=…&climate=… opens on /palette/ with the plant as a member (the old /consortium/ address is not forwarded: owner 2026-11-17)', async () => {
