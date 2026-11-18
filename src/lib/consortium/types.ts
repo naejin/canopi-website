@@ -387,14 +387,11 @@ export type JobId = (typeof jobIds)[number];
 // pruning) are said aloud. An 'unsure' answer checks nothing.
 export type Verdict = 'fit' | 'misfit' | 'unknown';
 export type FitReason =
-  | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null; note?: FitNote }
+  | { key: 'light' | 'soil' | 'water'; verdict: Verdict; trait: keyof Traits | null }
   // Room checks the height only. meters: the plant's wild maximum height; limit: the room's.
   | { key: 'room'; verdict: Verdict; kind: 'fits' | 'wild_height'; meters: number; limit: number }
   // A climber's recorded size can be a runner length, so its room is unknown, said as such.
   | { key: 'room'; verdict: 'unknown'; kind: 'height_not_recorded' | 'climber' };
-// A fit that still asks something of the reader: 'dry_months', drought tolerance Medium on a dry site
-// ("needs watering in the dry months", owner, decision row "Climate ranges fixed before the P5 push").
-export type FitNote = 'dry_months';
 export interface Fit { verdict: Verdict; misfits: SiteKey[]; unknowns: SiteKey[]; reasons: FitReason[] }
 
 // Swap: a plant that could take a member's place, with what it changes in the matrix ("Also fills…",
@@ -629,12 +626,12 @@ export interface FactorVerdict {
 export const setsLevel = (f: FactorVerdict): boolean => f.factor !== 'dry' || (f.place !== null && f.high !== null && f.place > f.high);
 // Notes beside the level, never a level themselves (3.2): the room ('room-tall', with the plant's height),
 // an annual ('annual': its winter cold is not checked), the cool-season advice, the place drier or wetter
-// than where it is recorded at the period judged, watering in the dry months ('dry-months': drought
-// tolerance Medium on a dry spot), cold air on a hill top or in a hollow, and, on today's verdict of a
+// than where it is recorded at the period judged (the grower's watering decides whether drier is said:
+// verdict.ts, v14 0W-2 R2), cold air on a hill top or in a hollow, and, on today's verdict of a
 // plant judged later in its own years, what the later period changes: 'warm-enough-later' (too cool
 // today, within its range then) and 'drier-later' (drier then, not today); 'few-records': the ranges
 // rest on few recorded places (PlantVerdict.records), so their limits are not firm.
-export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'wetter' | 'dry-months' | 'warm-enough-later' | 'drier-later' | 'cold-air' | 'few-records';
+export type VerdictNote = 'room-tall' | 'annual' | 'cool-season' | 'drier' | 'wetter' | 'warm-enough-later' | 'drier-later' | 'cold-air' | 'few-records';
 // Why the climate factors are what they are: compared ('judged'), a place climate with no range recorded
 // for the plant ('not-recorded'), or no climate for the period (no location, no projection: 'no-climate',
 // "not checked"). Kept apart so "not recorded" never reads as "not checked" (A15).
@@ -652,6 +649,9 @@ export interface PlantVerdict {
   range: RangeBasisState;
   borrowed?: ClimateZone; // placed from a nearest list (Taxon.origin borrowed): its lines carry "estimate"
   records?: number; // with 'few-records': the recorded places (TaxonClimate.cells) its ranges rest on
+  // The grower's watering when it changes the dryness words (SiteInputs.watering; v14 0W-2 R2): first
+  // years, "water it the first years" instead of "may need watering"; all year, no watering advice.
+  watered?: 'first-years' | 'all-year';
 }
 // What every verdict reads (site-inputs layer, owner 2026-11-18): the merged site inputs (never the
 // lookup or a stored answer), the period shown, the scenario, and the members' canopy.

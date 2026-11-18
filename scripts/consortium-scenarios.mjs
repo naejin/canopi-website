@@ -20,7 +20,7 @@ export const releaseFile = new URL(`public${consortiumIndex.files[0].url}`, ROOT
 const core = await import('../src/lib/consortium/index.ts');
 const { verdicts, holdsBy } = await import('../src/lib/consortium/verdict.ts');
 // The dryness notes a verdict carries (beside its level, never a level).
-const DRY_NOTES = new Set(['drier', 'drier-later', 'dry-months']);
+const DRY_NOTES = new Set(['drier', 'drier-later']);
 // The factors that are soil hints (soil pH, drainage): listed per member when they are not 'fits'.
 const HINT_FACTORS = new Set(['soil-ph', 'drainage']);
 
@@ -280,7 +280,7 @@ async function record() {
       'places: each place\'s climate slots (today and the 8 future slots) and its soil reading (phH2o, texture, filled, fillDistanceCells, distanceCells; null: no soil value) as the climate and soil grid reader answers them at its coordinates. seville-board and mendoza-board are seville and mendoza with the v14 boards\' values in the historical and SSP2-4.5 slots (aridity scaled with rain).',
       'Inputs: the list, the place (a name in places, or null: no location), the period, the scenario (default ssp245), the room (default unsure), the palette goals (default plantsPerJob 2), the grower edits (SiteEdits: climate shifts applied to every slot, soil test pH, answers), pots (the grower\'s answer: pots or brought-in soil) and the member plant ids of the release.',
       'Outputs, keys and codes only: fit (member ids by level), why (the limiting factor of each member that does not fit), holes (id, rank, state, unchecked members), lanes (each job and light level: plant counts per time step of years.ts PHASE_YEARS, thin year spans below the goal plantsPerJob, default 2, and the count of members not checked), jobs (jobGapsByPhase), next (the lead hole and its fillers: count and first five ids per group, with no country warning), second (members that need a second look: conflicts.ts secondLook, no country), notes (each member\'s dryness notes), thin (thin targets: id, have, want), best (the lead target, hole or thin spot, and bestToAdd\'s ids for it), hints (each member\'s soil hint factors that are not fits: soil-ph, drainage).',
-      'Watering is held but read by no rule until F4, so rain-only and watered cases match.',
+      'Watering sets the dryness note (v14 0W-2 R2): rain or no answer and first-years give drier / drier-later (first-years in other words, not in these codes); all-year gives none. Dryness never changes a fit.',
     ],
     release_id: consortiumIndex.release_id,
     climate_grid: climateIndex.release.grid_manifest_sha256,

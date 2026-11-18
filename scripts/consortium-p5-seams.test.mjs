@@ -20,11 +20,10 @@ test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags k
   assert.deepEqual(ms.map((m) => [m.about, m.key, m.misfit, m.note ?? null]), [
     ['light', 'misfit.light.part', true, null],
     ['soil', 'misfit.soil.acid', true, null],
-    ['water', 'water.dryMonths', false, 'dry_months'],
     ['room', 'room.tall', false, 'tall'],
   ]);
   assert.deepEqual(ms[1].vars, { min: 7.8, max: 8.4 }, 'the soil misfit names the plant\'s pH range');
-  assert.deepEqual(ms[3].vars, { m: 13.7 }, 'the height to a tenth');
+  assert.deepEqual(ms[2].vars, { m: 13.7 }, 'the height to a tenth');
   assert.deepEqual(lines(taxon({ traits: { ...traits, soil_ph: { min: 7.8, max: null } } }), site)[1].vars, { min: 7.8, max: '?' }, 'a missing end is "?"');
   // What the check could not decide: neither a misfit nor a note.
   const unknown = taxon({ traits: { sun: null, habit: 'Climber' } });
@@ -37,6 +36,6 @@ test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags k
   const canopy = taxon({ id: 'tall', stratum: { value: 'emergent', sources: [] }, phases: { start: 'placenta_i', end: 'climax', sources: [] } });
   assert.deepEqual(misfitsOf(siteFit(shy, sunny, [])).map((m) => m.line.key), ['consortium.misfit.light.sun'], 'alone: a light misfit');
   assert.deepEqual(misfitsOf(siteFit(shy, sunny, [canopy])), [], 'under the canopy: none');
-  assert.deepEqual(siteFit(shy, sunny, [canopy]).map((m) => m.line.key), ['consortium.water.dryMonths', 'consortium.room.tall'], 'the notes stay');
+  assert.deepEqual(siteFit(shy, sunny, [canopy]).map((m) => m.line.key), ['consortium.room.tall'], 'the note stays');
   assert.equal(core.siteFitMessages, undefined, 'the vocabulary left core site.ts (fix round 1 B2)');
 });

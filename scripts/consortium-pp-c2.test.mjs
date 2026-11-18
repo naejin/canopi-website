@@ -349,8 +349,8 @@ test('c2 fix A2 (scenario agreement): a verdict judged at its own later period s
 
 test('c2 fix A3 + A7 (row form): rowLines gives the later loss, watering, season, room and few-records notes in short words, then the terms; no "Not checked" twice', () => {
   const later = vOf({ judged: '2041-2070', level: 'outside', limiting: { factor: 'hot', level: 'outside', basis: 'range', place: 41, low: null, high: 36 } });
-  const rows = line.rowLines(vOf({ notes: ['dry-months'] }), later, W);
-  assert.deepEqual(keysOf(rows), ['rowLossHot', 'rowDryMonths']);
+  const rows = line.rowLines(vOf({ notes: ['drier'] }), later, W);
+  assert.deepEqual(keysOf(rows), ['rowLossHot', 'rowDrier']);
   assert.deepEqual(rows[0].line.vars, { period: '2041–2070' });
   assert.match(en['consortium.line.rowLossHot'], /^too hot by \{period\}$/);
   assert.deepEqual(keysOf(line.rowLines(vOf({ notes: ['cool-season', 'annual'] }), null, W)), ['rowCoolSeason'], 'the cool season replaces annual');
@@ -380,7 +380,6 @@ test('c2 fix A3 (mapping probe, row surfaces): every old row mark kind maps to a
     'future.warmEnoughShort': [vOf({ notes: ['warm-enough-later'] }), vOf({ judged: '2071-2099' }), (_, r) => r.some((e) => e.note === 'warm-enough-later')],
     'future.mark.heat': [vOf(), vOf({ judged: '2071-2099', level: 'outside', limiting: hot }), (_, r) => r.some((e) => e.later)],
     'future.drierShort': [vOf({ notes: ['drier-later'] }), vOf({ judged: '2071-2099', notes: ['drier'] }), (_, r) => r.some((e) => e.note === 'drier-later')],
-    'water.dryMonthsShort': [vOf({ notes: ['dry-months'] }), null, (_, r) => r.some((e) => e.note === 'dry-months')],
     'room.tallShort': [vOf({ notes: ['room-tall'] }), null, (_, r) => r.some((e) => e.note === 'room-tall'), 9],
   };
   const unmapped = Object.entries(OLD).filter(([, [v, later, mapped, h]]) => !mapped(v.level, line.rowLines(v, later, { ...W, heightM: h ?? null }))).map(([k]) => k);

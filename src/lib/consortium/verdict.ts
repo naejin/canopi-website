@@ -21,7 +21,10 @@
 //   checked") is said with its measure. Past the wet end it asks a second look like the hot and cold
 //   edges (owner, decision row "Wetter than recorded is a second look", 2026-11-17: cause "wetter here
 //   than where it is recorded"); past the dry end it stays a note that names the limit (PP-C5).
-//   Drought tolerance Medium on a dry spot: note 'dry-months' ("needs watering in the dry months").
+// - Watering sets the dryness note (v14 0W-2 R2; one dry rule, aridity against the plant's band, and it
+//   never changes the level): rain or no answer says drier / drier-later ("may need watering");
+//   'first-years' says the same with "water it the first years"; 'all-year' says none (no drier note, the
+//   dry edge no longer names the limit, its measure gives no advice). PlantVerdict.watered carries both.
 // - "Higher than the town" or a hollow: note 'cold-air' on a plant within the margin of its cold limit.
 // - The level is the worst factor (outside, then look, then fits); 'unknown' when no climate factor
 //   was judged and no hint asks a second look.
@@ -96,7 +99,7 @@ function isColdLimited(taxon: Taxon, tmin: number): boolean {
 // The spot and soil hints asked today (light, water, a soil word), each at most 'look'.
 // site: siteOf(ctx.inputs), read once per verdicts() call.
 type SiteOf = ReturnType<typeof siteOf>;
-function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors: FactorVerdict[]; roomTall: boolean; dryMonths: boolean } {
+function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors: FactorVerdict[]; roomTall: boolean } {
   const fit = fits(taxon, site);
   const shaded = !!ctx.canopy && shadedBy(taxon, site, ctx.canopy);
   // The misfits that hold beside the canopy: the one rule the flags read too (site.ts misfitsBeside,
@@ -110,7 +113,7 @@ function hintFactors(taxon: Taxon, ctx: VerdictContext, site: SiteOf): { factors
     const factor: Factor = r.key === 'soil' ? 'soil-ph' : r.key;
     factors.push({ factor, level, basis: r.key === 'soil' ? 'soil-test' : 'spot', place: null, low: null, high: null });
   }
-  return { factors, roomTall: tallerThanRoom(fit), dryMonths: fit.reasons.some((r) => r.key === 'water' && r.note === 'dry_months') };
+  return { factors, roomTall: tallerThanRoom(fit) };
 }
 
 // The aridity factor ('dry') sets the level only past the wet end (header; types.ts setsLevel).
@@ -125,11 +128,11 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   const climate = climateFactors(taxon, ctx, judged, ctx.scenario);
   const hints = hintFactors(taxon, ctx, site);
   const factors = [...(climate?.factors ?? []), ...hints.factors];
-  const notes: VerdictNote[] = [...new Set<VerdictNote>(climate?.notes ?? [])];
+  const watering = ctx.inputs.watering.value;
+  const notes: VerdictNote[] = [...new Set<VerdictNote>(climate?.notes ?? [])].filter((n) => !(watering === 'all-year' && n === 'drier'));
   if (hints.roomTall) notes.push('room-tall');
-  if (hints.dryMonths) notes.push('dry-months');
   if (isAnnual(taxon)) notes.push('annual');
-  if (judged === TODAY && climate) notes.push(...laterNotes(taxon, ctx));
+  if (judged === TODAY && climate) notes.push(...laterNotes(taxon, ctx).filter((n) => !(watering === 'all-year' && n === 'drier-later')));
   const cells = taxon.climate?.cells ?? null;
   const few = !!climate && cells !== null && cells < FEW_RECORDS;
   if (few) notes.push('few-records');
@@ -140,13 +143,14 @@ function verdictAt(taxon: Taxon, ctx: VerdictContext, site: SiteOf): PlantVerdic
   // What limits the plant: the worst measure; when nothing else is past 'fits', a drier edge (the place
   // drier than the band) names it, still without setting the level (Mendoza: the dry edge first). A
   // wetter place is worst() itself ("needs a second look · wetter here"), never "may need watering".
-  const dryEdge = factors.find((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low) ?? null;
+  const dryEdge = watering === 'all-year' ? null : factors.find((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low) ?? null;
   const limiting = dryEdge && (!worstOne || worstOne.level === 'fits') ? dryEdge : worstOne;
   const range = climate ? 'judged' : climateFor({ inputs: ctx.inputs, scenario: ctx.scenario }, judged) ? 'not-recorded' : 'no-climate';
   const out: PlantVerdict = { id: taxon.id, judged, ownYears: judged !== ctx.period, level, limiting, factors, notes, range };
   const from = borrowedFrom(taxon);
   if (from) out.borrowed = from;
   if (few) out.records = cells!;
+  if (watering === 'first-years' || watering === 'all-year') out.watered = watering;
   // The scenarios that agree on a later period (each scenario's slot judged the same way).
   if (judged !== TODAY && climate) {
     let agree = 0, of = 0;

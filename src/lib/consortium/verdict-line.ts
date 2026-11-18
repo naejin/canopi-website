@@ -25,7 +25,7 @@ export const levelLine = (level: Level): Line => ({ key: K(level), vars: {} });
 // PP-C5: named, the level unchanged), else few records under every range ('few-records').
 export function fitLine(v: PlantVerdict): Line {
   if (v.level !== 'fits') return { key: K(v.level), vars: {} };
-  const by = v.judged !== TODAY_PERIOD, more = v.limiting?.factor === 'dry' ? 'Dry' : v.notes.includes('few-records') ? 'Few' : '';
+  const by = v.judged !== TODAY_PERIOD, more = v.limiting?.factor === 'dry' ? (v.watered === 'first-years' ? 'DryFirst' : 'Dry') : v.notes.includes('few-records') ? 'Few' : '';
   return { key: K(`${by ? 'fitsTo' : 'fits'}${more}`), vars: by ? { period: periodName(v.judged) } : {} };
 }
 
@@ -182,8 +182,9 @@ const SOURCE_KEY: Record<string, string> = { treegoer_ranges: 'sourceTreegoer', 
 // Why a plant has its level, from one factor: the measure, the place's value and the plant's band, in
 // words ("Colder winters here: coldest month −14 °C, mostly recorded down to −8 °C"), then its hedges:
 // the confidence term, the bound's source, a disputed limit. A factor with no value to compare says
-// what was not checked or not recorded.
-export function reasonLine(f: FactorVerdict): Line {
+// what was not checked or not recorded. watered (PlantVerdict.watered): the drier measure's advice
+// says "water it the first years", or none when watered all year (R2).
+export function reasonLine(f: FactorVerdict, watered?: PlantVerdict['watered']): Line {
   const also: Line[] = [];
   // The edge as a sentence after the reason (its term's short words are for rows and print).
   if (f.confidence) also.push(f.confidence.term === 'edge' ? L('confEdgeLine') : confidenceLine(f.confidence));
@@ -203,7 +204,7 @@ export function reasonLine(f: FactorVerdict): Line {
   if (f.factor === 'dry') {
     if (f.level === 'unknown' || f.place === null || f.low === null || f.high === null) return L('dryNotChecked', {}, also);
     const at = endAt(f);
-    const which = f.place < f.low ? 'pastDrier' : f.place > f.high ? 'pastWetter' : at === 'low' ? 'atDryEnd' : at === 'high' ? 'atWetEnd' : 'withinDry';
+    const which = f.place < f.low ? `pastDrier${watered === 'first-years' ? 'First' : watered === 'all-year' ? 'Watered' : ''}` : f.place > f.high ? 'pastWetter' : at === 'low' ? 'atDryEnd' : at === 'high' ? 'atWetEnd' : 'withinDry';
     return L(which, { place: f.place, low: f.low, high: f.high }, also);
   }
   // The spot and soil hints: a misfit (look), a fit, or what the catalogue does not record.
@@ -212,20 +213,21 @@ export function reasonLine(f: FactorVerdict): Line {
 }
 
 // A verdict note in words (the room note takes the plant's height in metres; the later notes the
-// period and the scenario as the page writes them).
-interface NoteVars { period?: string; scenario?: string; len?: number; n?: number }
+// period and the scenario as the page writes them; firstYears: the drier notes say "water it the first
+// years", PlantVerdict.watered, v14 0W-2 R2).
+interface NoteVars { period?: string; scenario?: string; len?: number; n?: number; firstYears?: boolean }
 export function noteLine(note: VerdictNote, vars: NoteVars = {}): Line | null {
   const later = { period: vars.period ?? '', scenario: vars.scenario ?? '' };
+  const first = vars.firstYears ? 'First' : '';
   switch (note) {
     case 'room-tall': return vars.len === undefined ? null : L('noteRoomTall', { len: vars.len });
     case 'annual': return L('noteAnnual');
     case 'cool-season': return L('noteCoolSeason');
-    case 'drier': return vars.period ? L('noteDrierBy', later) : L('noteDrier');
+    case 'drier': return vars.period ? L(`noteDrierBy${first}`, later) : L(`noteDrier${first}`);
     case 'wetter': return L('noteWetter');
-    case 'dry-months': return L('noteDryMonths');
     case 'cold-air': return L('noteColdAir');
     case 'warm-enough-later': return L('noteWarmEnoughLater', later);
-    case 'drier-later': return L('noteDrierBy', later);
+    case 'drier-later': return L(`noteDrierBy${first}`, later);
     case 'few-records': return vars.n === undefined ? null : L('noteFewRecords', { n: vars.n });
   }
 }
@@ -384,7 +386,7 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
   const order = (f: FactorVerdict): number => (f === v.limiting ? -1 : RANK[f.level] * 2 + (f.basis === 'range' ? 0 : 1));
   const byOrder = (a: FactorVerdict, b: FactorVerdict): number => order(a) - order(b) || nearness(a) - nearness(b);
   for (const f of [...v.factors].filter(speaks).sort(byOrder)) {
-    out.push({ line: reasonLine(f), factor: f.factor, level: f.level });
+    out.push({ line: reasonLine(f, v.watered), factor: f.factor, level: f.level });
   }
   if (v.range !== 'judged') {
     const term: ConfidenceTerm = v.range === 'not-recorded' ? 'not-recorded' : 'not-checked';
@@ -405,7 +407,7 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
       if (n === 'warm-enough-later' && then?.level === 'fits') out.push({ line: L('noteWarmEnoughLater', { period: w.period(then.judged), scenario: w.scenario }), note: n });
       continue;
     }
-    const vars: NoteVars = n === 'room-tall' ? { len: w.heightM ?? undefined } : n === 'few-records' ? { n: v.records } : judged;
+    const vars: NoteVars = n === 'room-tall' ? { len: w.heightM ?? undefined } : n === 'few-records' ? { n: v.records } : { ...judged, firstYears: v.watered === 'first-years' };
     const line = noteLine(n, vars);
     if (line) out.push({ line, note: n });
   }
@@ -423,7 +425,7 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
     // Its notes, each said once on the page: drier then (unless drier now), the cool season (unless now).
     const drierNow = v.notes.includes('drier') || v.limiting?.factor === 'dry';
     for (const n of then.notes) {
-      if ((n === 'drier' && !drierNow) || (n === 'cool-season' && !cool)) { const line = noteLine(n, at); if (line) out.push({ line, note: n, later: true }); }
+      if ((n === 'drier' && !drierNow) || (n === 'cool-season' && !cool)) { const line = noteLine(n, { ...at, firstYears: then.watered === 'first-years' }); if (line) out.push({ line, note: n, later: true }); }
     }
   }
   return out;
@@ -437,7 +439,7 @@ export function againstLines(v: PlantVerdict, later: PlantVerdict | null, w: Aga
 interface RowEntry { line: Line; conf?: ConfidenceTerm; note?: VerdictNote; later?: boolean }
 const LOSS_KEY: Partial<Record<Factor, string>> = { hot: 'rowLossHot', cold: 'rowLossCold', mild: 'rowLossMild', cool: 'rowLossCool', summer: 'rowLossSummer' };
 const ROW_NOTE: Partial<Record<VerdictNote, string>> = {
-  'dry-months': 'rowDryMonths', drier: 'rowDrier', wetter: 'rowWetter', 'cool-season': 'rowCoolSeason', annual: 'rowAnnual', 'cold-air': 'rowColdAir', 'few-records': 'rowFewRecords',
+  wetter: 'rowWetter', 'cool-season': 'rowCoolSeason', annual: 'rowAnnual', 'cold-air': 'rowColdAir', 'few-records': 'rowFewRecords',
 };
 export function rowLines(v: PlantVerdict, later: PlantVerdict | null, w: AgainstWords): RowEntry[] {
   const out: RowEntry[] = [];
@@ -446,16 +448,18 @@ export function rowLines(v: PlantVerdict, later: PlantVerdict | null, w: Against
   if (then && at && then.level === 'outside') out.push({ line: L((then.limiting && LOSS_KEY[then.limiting.factor]) ?? 'rowOutsideBy', at), later: true });
   const fit = fitLine(v).key;
   const cool = v.notes.includes('cool-season');
+  const first = v.watered === 'first-years' ? 'First' : '';
   for (const n of v.notes) {
     if (n === 'annual' && cool) continue;
-    if ((n === 'drier' && fit.endsWith('Dry')) || (n === 'few-records' && fit.endsWith('Few'))) continue;
+    if ((n === 'drier' && /Dry(First)?$/.test(fit)) || (n === 'few-records' && fit.endsWith('Few'))) continue;
     if (n === 'room-tall') { if (w.heightM !== null) out.push({ line: L('rowRoomTall', { len: w.heightM }), note: n }); continue; }
     if (n === 'warm-enough-later') { if (at && then?.level === 'fits') out.push({ line: L('rowWarmEnough', at), note: n }); continue; }
-    if (n === 'drier-later') { if (at) out.push({ line: L('rowDrierBy', at), note: n }); continue; }
+    if (n === 'drier-later') { if (at) out.push({ line: L(`rowDrierBy${first}`, at), note: n }); continue; }
+    if (n === 'drier') { out.push({ line: L(`rowDrier${first}`), note: n }); continue; }
     const key = ROW_NOTE[n];
     if (key) out.push({ line: L(key), note: n });
   }
-  if (then && at && then.notes.includes('drier') && !v.notes.includes('drier') && !v.notes.includes('drier-later') && !fit.endsWith('Dry')) out.push({ line: L('rowDrierBy', at), note: 'drier-later' });
+  if (then && at && then.notes.includes('drier') && !v.notes.includes('drier') && !v.notes.includes('drier-later') && !/Dry(First)?$/.test(fit)) out.push({ line: L(`rowDrierBy${then.watered === 'first-years' ? 'First' : ''}`, at), note: 'drier-later' });
   for (const t of againstTerms(againstLines(v, then, w))) {
     if (t.term === 'not-checked' && v.level === 'unknown') continue;
     out.push({ line: t.line, conf: t.term });
@@ -705,7 +709,7 @@ const MISFIT: { [K in 'light' | 'soil' | 'water']: Partial<Record<Site[K], strin
 const UNKNOWN = { light: 'misfit.unk.light', soil: 'misfit.unk.soil', water: 'misfit.unk.water', room: 'misfit.unk.room', climber: 'misfit.unk.climber' };
 // misfit: a warning in words (never a confirm step); note: a fit that still asks something of the
 // reader; neither: what the check could not decide (said aloud, never a silent fit).
-export interface SiteLine { about: SiteKey; misfit: boolean; note?: 'dry_months' | 'tall'; line: Line }
+export interface SiteLine { about: SiteKey; misfit: boolean; note?: 'tall'; line: Line }
 const S = (k: string, vars: Line['vars'] = {}): Line => ({ key: `consortium.${k}`, vars });
 export function siteLines(taxon: Taxon, site: Site, fit: Fit): SiteLine[] {
   const out: SiteLine[] = [];
@@ -716,7 +720,6 @@ export function siteLines(taxon: Taxon, site: Site, fit: Fit): SiteLine[] {
     } else if (r.verdict === 'unknown') {
       out.push({ about: r.key, misfit: false, line: S(UNKNOWN[r.key === 'room' && r.kind === 'climber' ? 'climber' : r.key]) });
     }
-    if (r.key === 'water' && r.note === 'dry_months') out.push({ about: 'water', misfit: false, note: 'dry_months', line: S('water.dryMonths') });
     if (r.key === 'room' && r.kind === 'wild_height') out.push({ about: 'room', misfit: false, note: 'tall', line: S('room.tall', { m: Math.round(r.meters * 10) / 10 }) });
   }
   return out;

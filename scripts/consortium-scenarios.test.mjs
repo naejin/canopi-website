@@ -40,9 +40,14 @@ test('every case gives its recorded output on the installed release', { skip: !s
   for (const c of file.cases) assert.deepEqual(await run(c.input, file.places), c.output, c.id);
 });
 
-test('the file states the rules it shows: watering read by no rule yet, a grower shift and a soil test change verdicts', () => {
+test('the file states the rules it shows: watering sets the dryness note only, a grower shift and a soil test change verdicts', () => {
   const out = (id) => file.cases.find((c) => c.id === id).output;
-  assert.deepEqual(out('mendoza-rain-only'), out('mendoza-watered-all-year'), 'watering waits for its rule (F4)');
+  const but = (o, ...keys) => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)));
+  assert.ok(Object.keys(out('mendoza-rain-only').notes).length > 0, 'rain only: dryness notes');
+  assert.deepEqual(out('mendoza-watered-all-year').notes, {}, 'watered all year: none');
+  assert.deepEqual(out('mendoza-board-all-year').notes, {});
+  assert.deepEqual(out('mendoza-board-first-years').notes, out('mendoza-board-rain').notes, 'first years: the same notes (other words)');
+  assert.deepEqual(but(out('mendoza-watered-all-year'), 'notes'), but(out('mendoza-rain-only'), 'notes'), 'watering never changes a fit');
   assert.notDeepEqual(out('lyon-2c-colder').fit, out('lyon-today').fit, '2 °C colder changes a verdict');
   assert.notDeepEqual(out('lyon-soil-test-chalky').fit, out('lyon-today').fit, 'a soil test is read');
   assert.equal(file.cases.find((c) => c.id === 'seville-200-plants').input.members.length, 200, 'a 200-plant palette');

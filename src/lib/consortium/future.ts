@@ -93,7 +93,8 @@ export function futureCheck(taxon: Taxon, site: SiteInputs | null, scenario: Sce
     if (why.length ? f.some((r) => why.includes(r)) : f.length === 0) agree++;
   }
   const warmEnough = !!today && slotCheck(taxon, today).beyond.some((s) => s === 'cool' || s === 'summer') && slotCheck(taxon, own).beyond.length === 0;
-  const drier = aridityFit(taxon, own) === 'drier' && !(today && aridityFit(taxon, today) === 'drier');
+  // Watered all year: no dryness note (verdict.ts, v14 0W-2 R2).
+  const drier = site?.watering.value !== 'all-year' && aridityFit(taxon, own) === 'drier' && !(today && aridityFit(taxon, today) === 'drier');
   return { period, verdict, why, already, agree, of, coolSeason: mine.coolSeason && !now?.coolSeason, warmEnough, drier };
 }
 

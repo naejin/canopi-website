@@ -108,9 +108,9 @@ const hotFuture = core.siteInputsOf({ lookup: { ...lyon.lookup, climate: { ...ly
 // ---- 4. drought tolerance Medium on a dry site ----
 
 const DRY = { light: 'unsure', soil: 'unsure', water: 'dry', room: 'unsure' };
-test('fits: on a dry site, drought tolerance Medium fits with a watering note; None and Low stay misfits', () => {
+test('fits: on a dry site, drought tolerance Medium fits (no note: watering is the aridity rule\'s, R2); None and Low stay misfits', () => {
   const medium = taxon({ traits: { drought_tolerance: 'Medium' } });
-  assert.deepEqual(core.fits(medium, DRY).reasons, [{ key: 'water', verdict: 'fit', trait: 'drought_tolerance', note: 'dry_months' }]);
+  assert.deepEqual(core.fits(medium, DRY).reasons, [{ key: 'water', verdict: 'fit', trait: 'drought_tolerance' }]);
   assert.equal(core.fits(taxon({ traits: { drought_tolerance: 'None' } }), DRY).verdict, 'misfit');
   assert.equal(core.fits(taxon({ traits: { drought_tolerance: 'Low' } }), DRY).verdict, 'misfit');
   assert.deepEqual(core.fits(taxon({ traits: { drought_tolerance: 'High' } }), DRY).reasons, [{ key: 'water', verdict: 'fit', trait: 'drought_tolerance' }]);

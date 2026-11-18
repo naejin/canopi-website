@@ -382,3 +382,36 @@ test('R1: a toxicity flag carries its level; Slight alone is no second look, Mod
   const flags = core.flagsFor(plant('Slight'), [], { site, interactions: [], country: null });
   assert.deepEqual(flags.filter((f) => f.kind === 'toxicity'), [{ id: 'p', kind: 'toxicity', level: 'Slight' }], 'the chip\'s flag stays');
 });
+
+// ---- 0W-2 R2: watering sets the dryness note; the dry-months path is gone ----
+const S = await import('./consortium-scenarios.mjs');
+const { verdict } = await import('../src/lib/consortium/verdict.ts');
+test('R2: rain or no answer says drier, first-years the same note in "water it the first years" words, all-year none; the fit never moves', async () => {
+  const file = JSON.parse(readFileSync(new URL('./fixtures/consortium-scenarios.json', import.meta.url), 'utf8'));
+  const c = file.cases.find((x) => x.id === 'mendoza-board-rain');
+  const pool = await S.pool(c.input.list);
+  const by = new Map(pool.map((t) => [t.id, t]));
+  const drierId = Object.keys(c.output.notes).find((id) => c.output.notes[id].includes('drier'));
+  const taxon = by.get(drierId);
+  const at = (watering) => {
+    const inputs = S.inputsOf({ ...c.input, edits: { ...c.input.edits, watering } }, file.places);
+    return verdict(taxon, { inputs, period: c.input.period, scenario: 'ssp245' });
+  };
+  const [none, rain, first, all] = [undefined, 'rain', 'first-years', 'all-year'].map(at);
+  assert.ok(rain.notes.includes('drier') && none.notes.includes('drier'), 'rain or no answer: drier');
+  assert.ok(first.notes.includes('drier') && first.watered === 'first-years', 'first years: the same note, its words');
+  assert.equal(rain.watered, undefined);
+  assert.ok(!all.notes.includes('drier') && !all.notes.includes('drier-later'), 'all year: none');
+  assert.deepEqual([none, rain, first, all].map((v) => v.level), Array(4).fill(rain.level), 'the fit never moves');
+  const W = { period: (p) => p, scenario: 'SSP2-4.5', heightM: null };
+  const keys = (v) => [core.fitLine(v).key, ...core.againstLines(v, null, W).map((e) => e.line.key), ...core.rowLines(v, null, W).map((e) => e.line.key)].join(' ');
+  assert.match(keys(first), /First\b/);
+  assert.doesNotMatch(keys(rain), /First\b/);
+  assert.doesNotMatch(keys(all), /(Drier|Dry|DrierBy)(First)?\b/, 'no watering advice');
+  assert.match(keys(all), /pastDrierWatered/, 'the measure stays, without advice');
+  assert.doesNotMatch(en['consortium.line.pastDrierWatered'], /water/i);
+  for (const k of ['pastDrierFirst', 'noteDrierFirst', 'noteDrierByFirst', 'rowDrierFirst', 'rowDrierByFirst', 'fitsDryFirst', 'fitsToDryFirst']) assert.match(en[`consortium.line.${k}`], /first years/, k);
+  for (const gone of ['consortium.water.dryMonths', 'consortium.line.noteDryMonths', 'consortium.line.rowDryMonths']) assert.equal(en[gone], undefined, gone);
+  const medium = { ...taxon, traits: { ...taxon.traits, drought_tolerance: 'Medium' } };
+  assert.ok(core.fits(medium, { light: 'unsure', soil: 'unsure', water: 'dry', room: 'unsure' }).reasons.every((r) => !('note' in r)), 'no dry-months note');
+});
