@@ -194,7 +194,6 @@
   "consortium.title": "植栽パレット",
   "consortium.description": "気候を選んで、6〜12種の提案から始めるか、数百種まで自分で組み立てましょう。Canopiの無料ベータツールです。",
   "consortium.beta": "ベータ",
-  "consortium.betaNote": "other: ベータ版：今のところ # つの気候に植物リストを用意しています。ほかの気候はいちばん近いリストを借り、あなたの場所で確かめます。",
   "consortium.feedback": "ご意見をお聞かせください",
   "consortium.noscript": "このツールはブラウザ上で動き、JavaScriptが必要です。JavaScriptがなくても、フィールドガイドで階層のある庭を手で計画する方法を読めます。",
   "consortium.noscript.link": "食べられる森のガイドを読む",

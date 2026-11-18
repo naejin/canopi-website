@@ -194,7 +194,6 @@
   "consortium.title": "Plant palette",
   "consortium.description": "Choose your climate: start from a suggestion of 6 to 12 plants, or build your own, up to hundreds. A free beta tool from Canopi.",
   "consortium.beta": "Beta",
-  "consortium.betaNote": "one: Beta: a curated plant list for # climate so far; the other climates borrow the nearest list, checked against your location. | other: Beta: curated plant lists for # climates so far; the other climates borrow the nearest list, checked against your location.",
   "consortium.feedback": "Tell us what you think",
   "consortium.noscript": "This tool runs in your browser and needs JavaScript. Without it, the Field Guides explain how to plan a layered garden by hand.",
   "consortium.noscript.link": "Read the food forest guide",

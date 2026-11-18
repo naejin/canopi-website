@@ -1,6 +1,6 @@
 ---
 // The consortium design tool (beta, v2): /palette/ and /<lang>/palette/ ("Plant palette"; the old /consortium/ paths 301 here, public/_redirects).
-// Astro renders the static shell (design check A1): the head (title, beta badge, lede, the beta note),
+// Astro renders the static shell (design check A1): the head (title, beta badge, lede, the release line),
 // the noscript callout with its guide link, a loading line and the data release line. The tool is a
 // Preact island, src/islands/consortium/main.ts, mounted from the page script into #ct-root; it reads
 // #ct-data: every consortium.* key of the page language without its prefix, the release id, the
@@ -20,7 +20,7 @@ import { climates } from '../../data/climates';
 import { countryZones } from '../../lib/consortium/country-zones.ts';
 import index from '../../data/consortium-index.json';
 import { climatePageData } from '../../data/climate-page-data';
-import { P, setStrings } from '../../islands/consortium/strings.ts';
+import { setStrings } from '../../islands/consortium/strings.ts';
 import { END_KEY, LINK_VERSION } from '../../lib/consortium/state.ts';
 import { SAVE_FRAGMENT_MAX, STORE } from '../../islands/consortium/state/save.ts';
 import '../../styles/consortium/base.css';
@@ -109,7 +109,6 @@ const climate = climatePageData(climateIndex as Parameters<typeof climatePageDat
 setStrings(strings, lang);
 // copy-m2: the number of climates is the installed index's, read at build time. The Beta line sits in
 // the foot (pf-c): the v14 head carries the steps, the title and the lede only.
-const betaNote = P('betaNote', index.climates.length);
 ---
 <Base title={`${tr('title')} · Canopi`} description={tr('description')} lang={lang} path={consortiumPath(defaultLocale)}>
   {/* Design check A2: the database (≤ 1 MB gzipped) starts downloading with the page; crossorigin
@@ -160,11 +159,10 @@ const betaNote = P('betaNote', index.climates.length);
         h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
       } catch (e) {}</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
-      {/* The release line and the beta note apart (R1): one paragraph each, in one type (C6 of fix
-          round 3: one rule, base.css .tool-release); the release line first, the one tests and
-          check-built-site read. */}
+      {/* The release line (base.css .tool-release), the one tests and check-built-site read. The long
+          beta note went (D8, pf-decisions 2026-11-18): the head's beta badge says it, and the place line
+          and the Oulu banner say when a list is borrowed. */}
       <p class="tool-release">{tr('release').replace('{id}', index.release_id)}</p>
-      <p class="tool-release">{betaNote}</p>
     </div>
   </main>
   <Footer lang={lang} />

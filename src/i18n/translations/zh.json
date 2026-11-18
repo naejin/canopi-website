@@ -194,7 +194,6 @@
   "consortium.title": "植物搭配",
   "consortium.description": "选择你的气候：从 6 到 12 种植物的推荐开始，或自己搭配，多达数百种。Canopi 的免费测试版工具。",
   "consortium.beta": "测试版",
-  "consortium.betaNote": "other: 测试版：目前为 # 种气候整理了植物清单；其他气候借用最接近的清单，并按你的位置核对。",
   "consortium.feedback": "告诉我们你的想法",
   "consortium.noscript": "此工具在你的浏览器中运行，需要 JavaScript。没有它，田间指南也会讲解如何手工规划分层的园子。",
   "consortium.noscript.link": "阅读食物森林指南",
