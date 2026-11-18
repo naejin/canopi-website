@@ -7,8 +7,7 @@
 //   the plants standing there, or the open hole it is (an HTML button in the view).
 // - No fold in the model (v14 A14, the size rule): every plant is in its cells; the view decides
 //   between every name and the count cell (views/kit/more.tsx MoreList). Order: plants that fill a
-//   hole first, then the main job (jobIds order), then name. `hidden` stays empty (the cell shape the
-//   table form and its vector read; main's consortium-pp-pf.test.mjs still reads it).
+//   hole first, then the main job (jobIds order), then name.
 // - `counts` (opts): whether a plant counts toward the holes (not outside its climate range): a cell
 //   whose plants all fail it is still the open hole, and their bands are marked 'outside'. A row's
 //   `counted` (and its length `count`) are its plants that count, `outside` the ids of those that do not (review R8, round 2 R2: the
@@ -24,7 +23,7 @@ import { JUDGED_FROM_YEAR, PHASE_YEARS, jobIds, jobsOf, phaseOfYear } from '../.
 
 export interface Mark { id: PlantId; name: string; job: JobId | null; from: number; to: number | null; marked?: 'outside' }
 export interface HoleRun { id: string; from: number; to: number }
-export interface Cell { ids: PlantId[]; hidden: PlantId[]; hole: string | null; judged: boolean }
+export interface Cell { ids: PlantId[]; hole: string | null; judged: boolean }
 export interface PictureRow {
   key: string; // the lane's id (a stratum, a job), for keyed rendering
   head: Line;
@@ -93,7 +92,7 @@ export function lane(key: string, head: Line, plants: readonly Taxon[], columns:
     const here = sorted.filter((t) => opts.at(t, c));
     for (const t of here) standing.add(t);
     const judged = opts.judged(c);
-    cells.push({ ids: here.map((t) => t.id), hidden: [], hole: here.some(counts) || !judged ? null : opts.holeAt(c), judged });
+    cells.push({ ids: here.map((t) => t.id), hole: here.some(counts) || !judged ? null : opts.holeAt(c), judged });
   }
   const marks = sorted.flatMap((t) => {
     const y = opts.years(t);
@@ -167,13 +166,13 @@ export function tableOf(p: Picture): Table {
     title: p.title, summary: p.summary, columns: p.columns,
     rows: p.rows.map((r) => ({
       key: r.key, head: r.head, state: r.state,
-      cells: r.cells.map((c) => { const ids = [...c.ids, ...c.hidden]; return { ids, names: ids.map((id) => p.names[id] ?? id), hole: c.hole, judged: c.judged }; }),
+      cells: r.cells.map((c) => ({ ids: c.ids, names: c.ids.map((id) => p.names[id] ?? id), hole: c.hole, judged: c.judged })),
     })),
   };
 }
 
 // The plants a picture shows (each once), and its open holes.
-export const plantsIn = (p: Picture): Set<PlantId> => new Set(p.rows.flatMap((r) => r.cells.flatMap((c) => [...c.ids, ...c.hidden])));
+export const plantsIn = (p: Picture): Set<PlantId> => new Set(p.rows.flatMap((r) => r.cells.flatMap((c) => c.ids)));
 export const holesIn = (p: Picture): string[] => [...new Set(p.rows.flatMap((r) => r.cells.flatMap((c) => (c.hole ? [c.hole] : []))))];
 
 // One column of a picture (the phone's year stepper shows one time step at a time).

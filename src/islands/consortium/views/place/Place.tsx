@@ -18,12 +18,12 @@
 // - On the palette step, Place is its place line (PlaceLine): "Near … · <list> · <room> · <your
 //   values> · N plants · Change", the once-said "Your own values were for your old place: cleared", and
 //   the place banner of a borrowed climate (Oulu).
-import { computed, signal } from '@preact/signals';
+import { signal } from '@preact/signals';
 import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/consortium/index.ts';
-import { type Country, addMembers, climate, country, countFits, curatedClimates, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, pool, removeMember, room, siteEdits, snapshot, verdictContext, verdictRule, view } from '../../store.ts';
+import { type Country, addMembers, climate, country, countFits, curatedClimates, laterFits, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, removeMember, room, siteEdits, snapshot, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { formatLength, formatTemp } from '../../format.ts';
@@ -251,9 +251,8 @@ const CHIP = {
 const chip = (kind: keyof typeof CHIP, label: string) => (
   <span class={`ct-chip${kind === 'site' ? ' is-warning' : ''}`} data-chip><svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d={CHIP[kind]} /></svg>{label}</span>
 );
-// Each row carries data-climate-row, the stable hook the layout-stability check is to measure (hand-off:
-// scripts/browser/seams-helpers.mjs STABLE to '[data-climate-row]:first-of-type' and ':last-of-type');
-// the class ct-card stays, unstyled, until STABLE moves to it (final1 N1).
+// Each row carries data-climate-row, the polar row data-climate-polar: the hooks the layout-stability
+// check measures (scripts/browser/seams-helpers.mjs STABLE).
 // Mounted with Place and hidden until asked, so the questions keep their state behind it and the
 // radios are always in the page (the location step's tests read them).
 function ClimateHand({ open }: { open: boolean }) {
@@ -280,20 +279,19 @@ function ClimateHand({ open }: { open: boolean }) {
       {open && countryShown.current && <CountryLine />}
       <fieldset class="ct-climates" id="ct-climates" aria-labelledby="ct-hand-h">
         {zones.map((zone) => {
-          const { id, label } = zone;
+          const { id, label, size } = zone;
           const z = zoneOf(id)!;
           const pill = cardPill(z);
-          const size = (zone as { size?: number }).size ?? 0;
           const own = curatedClimates.value.includes(z);
           return (
-            <label class={`ct-card ct-hand-row${chosen === z ? ' is-chosen' : ''}`} data-climate-row>
+            <label class={`ct-hand-row${chosen === z ? ' is-chosen' : ''}`} data-climate-row>
               <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => chooseClimate(z)} onClick={closeOnPointer(z)} onKeyDown={closeOnKey} />
               <span class="ct-hand-head"><span class="ct-hand-name" id={`ct-cl-${id}`} data-name>{label}</span>{chip(pill.ready ? 'ready' : pill.site ? 'site' : 'none', pill.label)}</span>
               <span id={`ct-cl-${id}-d`} class="ct-hand-desc">{T(`place.climate.desc.${id}`)}{sep}{own ? P('place.climate.ownList', size) : T('place.climate.nearest', { lists: listsOf(z) })}</span>
             </label>
           );
         })}
-        <div class="ct-card ct-hand-row is-off" data-climate-row data-climate-polar>
+        <div class="ct-hand-row is-off" data-climate-row data-climate-polar>
           <span class="ct-hand-head"><span class="ct-hand-name" data-name>{T('place.climate.polar')}</span>{chip('none', T('place.climate.noList'))}</span>
           <span class="ct-hand-desc">{T('start.climate.notYet')}. <a href={page().start.contact}>{T('start.uncovered.ask')}</a></span>
         </div>
@@ -639,16 +637,6 @@ function Announcer({ items }: { items: readonly Arrival[] }) {
 
 // ---- the palette step's place line (boards Main, Palette, Many, Oulu) ----
 const seenPalette = signal(false);
-// The plants of the borrowed list kept for the next period (C7, BC10): the same rule and site as the
-// page's count, judged for 2041–2070; null until the rule and the list are here.
-const laterKept = computed<number | null>(() => {
-  const rule = verdictRule.value, p = pool.value;
-  if (!rule || !p) return null;
-  const v = rule.verdicts(p, { ...verdictContext.value, period: periodIds[1] });
-  let k = 0;
-  for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits' || x === 'look') k++; }
-  return k;
-});
 // Board Oulu: on the neutral card with a wave icon; "Colder than any list we have made." and "Each is an
 // estimate." in bold. "Colder" stays the zone rule (Continental, Boreal: the climates with no list of
 // their own colder than every list), as the board's case.
@@ -659,7 +647,7 @@ function OuluBanner({ zone }: { zone: ClimateZone }) {
   if (!sc.today) return null;
   // Read only here, after the own-list and lookup checks: a palette on its own list never runs the
   // later period's pass (C5).
-  const n = countFits.value, later = laterKept.value;
+  const n = countFits.value, later = laterFits.value;
   const colder = zone === 'Continental' || zone === 'Boreal';
   const lists = listsOf(zone);
   const kept = n ? (later !== null

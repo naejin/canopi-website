@@ -330,6 +330,17 @@ export const countFits = computed<{ fits: number; look: number; unknown: number;
   for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits') fits++; else if (x === 'look') look++; else if (x !== 'outside') unknown++; }
   return { fits, look, unknown, of: p.length };
 });
+// The borrowed list's plants kept for the next period (board Oulu, C7, BC10): countFits's rule and
+// site, judged for 2041–2070 (fits or second look); null until the rule and the list are here. Lazy:
+// only the Oulu banner reads it, so a palette on its own list never runs this pass (C5).
+export const laterFits = computed<number | null>(() => {
+  const rule = verdictRule.value, p = pool.value;
+  if (!rule || !p) return null;
+  const v = rule.verdicts(p, { ...verdictContext.value, period: periodIds[1] });
+  let k = 0;
+  for (const t of p) { const x = v.get(t.id)?.level; if (x === 'fits' || x === 'look') k++; }
+  return k;
+});
 // Whether the browser is offline (navigator.onLine and its events, wired in start(); App shows the line).
 export const offline = signal(false);
 
@@ -943,12 +954,15 @@ export function setSiteEdits(next: SiteEdits, summary: EditSummary): void {
   });
   summaryWatch = stop;
 }
+// A climate cell's key (its centre to 0.01°), the unit a hand-chosen climate and the grower's own values
+// belong to; state/location.ts compares lookups with it too.
+export const cellKey = (c: { cellLat: number; cellLon: number } | null | undefined): string | null => (c ? `${c.cellLat.toFixed(2)},${c.cellLon.toFixed(2)}` : null);
 // The cell a location stands in (its lookup's climate cell, else its point snapped to one).
 const cellOf = (l: SiteLocation | null): string | null => {
   if (!l) return null;
-  const c = l.lookup?.climate;
-  const at = c ? { lat: c.cellLat, lon: c.cellLon } : snapOrigin({ lat: l.lat, lon: l.lon });
-  return at ? `${at.lat.toFixed(2)},${at.lon.toFixed(2)}` : null;
+  if (l.lookup?.climate) return cellKey(l.lookup.climate);
+  const at = snapOrigin({ lat: l.lat, lon: l.lon });
+  return at ? cellKey({ cellLat: at.lat, cellLon: at.lon }) : null;
 };
 // The grower's values were cleared by a new place (pf-c says it once in the place line; A7).
 export const editsCleared = signal(false);

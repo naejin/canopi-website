@@ -13,7 +13,7 @@ export function sameCells(picture, table, label = picture.title) {
     assert.deepEqual([t.key, t.head, t.state], [row.key, row.head, row.state], `${label}: row ${row.key}`);
     assert.equal(t.cells.length, row.cells.length, `${label}: row ${row.key} cells`);
     row.cells.forEach((cell, c) => {
-      assert.deepEqual([...t.cells[c].ids].sort(), [...cell.ids, ...cell.hidden].sort(), `${label}: ${row.key} column ${c}: the same plants`);
+      assert.deepEqual([...t.cells[c].ids].sort(), [...cell.ids].sort(), `${label}: ${row.key} column ${c}: the same plants`);
       assert.equal(t.cells[c].hole, cell.hole, `${label}: ${row.key} column ${c}: the same hole`);
       assert.equal(t.cells[c].names.length, t.cells[c].ids.length, `${label}: ${row.key} column ${c}: a full name for each plant`);
     });

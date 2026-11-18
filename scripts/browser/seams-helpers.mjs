@@ -165,7 +165,7 @@ export const STRINGS = Object.fromEntries(['en', 'fr', 'ja'].map((l) => [l, JSON
 // en 320 and ja 390) about a second after load. Each control's box in the first frame it exists is
 // compared with its box once the database is open and the guess settled: no movement over 1 px, and
 // the layout-shift entries (PerformanceObserver, buffered) add up to 0.01 at most.
-export const STABLE = ['[data-location-action="geo"]', 'input[data-location-search]', '[data-location-action="map"]', '.ct-card:first-of-type', '.ct-card:last-of-type'];
+export const STABLE = ['[data-location-action="geo"]', 'input[data-location-search]', '[data-location-action="map"]', '[data-climate-row]:first-of-type', '[data-climate-polar]'];
 
 export const MISMATCH = { en: { languages: ['en-US', 'en'], zone: 'Africa/Bangui', guess: 'CF' }, fr: { languages: ['fr-FR', 'fr'], zone: 'America/St_Vincent', guess: 'VC' }, ja: { languages: ['ja-JP', 'ja'], zone: 'America/Puerto_Rico', guess: 'PR' } };
 

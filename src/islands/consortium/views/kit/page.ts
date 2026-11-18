@@ -7,8 +7,9 @@ import type { DbRef } from '../../data/bytes.ts';
 import type { Strings } from '../../strings.ts';
 
 // Start (stream S4): every site climate in the site's order with its label and three example places,
-// the contact address for "Ask for this climate", and the site's own URL for the print foot.
-export interface StartData { zones: { id: string; label: string; places: string }[]; contact: string; site: string }
+// the contact address for "Ask for this climate", and the site's own URL for the print foot. size: the
+// plants on the climate's own list in the installed release (ClimateHand's "its own list, N plants").
+export interface StartData { zones: { id: string; label: string; places: string; size: number }[]; contact: string; site: string }
 
 // What the page hands the island (ConsortiumPage.astro, checked by scripts/check-built-site.mjs).
 export interface PageData {

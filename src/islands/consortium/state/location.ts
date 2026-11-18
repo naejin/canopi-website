@@ -144,9 +144,6 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   } finally { clearTimeout(timer); }
 }
 
-// The climate cell a lookup read (its centre), the unit a hand-chosen climate and the grower's own
-// values belong to (store.placeAt's rule).
-const cellOf = (l: { climate: { cellLat: number; cellLon: number } | null }): string | null => (l.climate ? `${l.climate.cellLat.toFixed(2)},${l.climate.cellLon.toFixed(2)}` : null);
 
 // A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
 // country, in one batch. A failed read or a point at sea changes nothing (seam review 2, 3): a site
@@ -183,7 +180,7 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   // grower's own place before it ("Adjust on the map" within the cell), and goes with any other cell,
   // even one that reads the same climate. A shared link's place is never the grower's own "before".
   const was = store.location.peek();
-  const sameCell = !!was?.lookup && was.source !== 'link' && cellOf(was.lookup) === cellOf(lookup);
+  const sameCell = !!was?.lookup && was.source !== 'link' && store.cellKey(was.lookup.climate) === store.cellKey(lookup.climate);
   siteFound(() => {
     // Another climate cell clears the grower's own values (A7: store.placeAt).
     store.placeAt(loc);
