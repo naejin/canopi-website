@@ -5,7 +5,7 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:34:01Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:10Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:08Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -86,7 +86,7 @@ sources:
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
     digest: sha256:fedb89affcc38d4a
-    last_modified: 2026-11-18T06:34:33Z
+    last_modified: 2026-11-18T06:11:33Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
@@ -295,8 +295,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:b272f585d8a43eda
-    last_modified: 2026-11-18T12:36:20Z
+    digest: sha256:23faca32f3f115d2
+    last_modified: 2026-11-17T12:58:14Z
   - id: e6-browser-test-mjs
     resource: ../../scripts/browser/consortium-e6.browser.test.mjs
     title: scripts/browser/consortium-e6.browser.test.mjs
@@ -325,8 +325,8 @@ sources:
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx
-    digest: sha256:be5ce0cb84d9ae42
-    last_modified: 2026-11-18T12:36:20Z
+    digest: sha256:1008dce6d378d893
+    last_modified: 2026-11-17T19:39:04Z
   - id: names-ts-2
     resource: ../../src/islands/consortium/views/find/names.ts
     title: src/islands/consortium/views/find/names.ts

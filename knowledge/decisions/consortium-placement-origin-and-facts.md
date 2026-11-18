@@ -5,13 +5,13 @@ description: One placement origin on guest and borrowed plants replaces three fi
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:57Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:16Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:40Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:ae9f25c93cd4a332
-    last_modified: 2026-11-18T06:34:33Z
+    last_modified: 2026-11-18T06:06:30Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -45,8 +45,8 @@ sources:
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:ad4f35d943aa0638
-    last_modified: 2026-11-18T12:36:20Z
+    digest: sha256:a27dd2125990ab47
+    last_modified: 2026-11-18T04:32:21Z
 ---
 
 ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).

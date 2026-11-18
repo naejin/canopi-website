@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:34:04Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:11Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:37Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -192,7 +192,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:93485b941ab6a2cc
-    last_modified: 2026-11-18T06:34:33Z
+    last_modified: 2026-11-18T06:06:30Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -246,8 +246,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:b272f585d8a43eda
-    last_modified: 2026-11-18T12:36:20Z
+    digest: sha256:23faca32f3f115d2
+    last_modified: 2026-11-17T12:58:14Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
