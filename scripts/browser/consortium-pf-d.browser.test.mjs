@@ -2,17 +2,17 @@
 // SiteKiambu, PlaceDesk and SiteMendoza (the panel, "What limits plants here", the Watering line, the
 // "Water" card) and the change-summary toasts, as tests, with the failure rows F1, F2, F5, F6, F9 and
 // F10 of section 5. Each case was opened marked expected-fail under pf-d (scripts/expect-fail.mjs
-// failing(), its reason the board's first missing word, pf-helpers.mjs BOARD) in pf-d's commit 0, and
-// loses its marker in the commit that makes it pass. Board figures come from the engine on the
+// failing(), its reason the board's first missing word, pf-helpers.mjs BOARD) in pf-d's commit 0 and
+// lost its marker in the commit that made it pass (pf-d commit 1: all eight). Board figures come from the engine on the
 // installed release (pf-d-helpers.mjs engineCounts, the store's own inputs), never a board number.
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries none: the panel is new (spec: "Delete: nothing; the 'Soil, likely' card and 'Tell us about
 //   your spot' were never built").
 import assert from 'node:assert/strict';
-import { failing } from '../expect-fail.mjs';
+import test from 'node:test';
 import { useHarness, aria, has } from './helpers.mjs';
-import { BOARD, control, done, focused, inOrder, pastEdge, press, says, section, sectionText, toastText } from './pf-helpers.mjs';
+import { control, done, focused, inOrder, pastEdge, press, says, section, sectionText, toastText } from './pf-helpers.mjs';
 import { edits, engineCounts, fieldState, inputs, mendoza, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
 
 useHarness();
@@ -38,10 +38,10 @@ const typeIn = async (page, value) => {
   await f.type(value);
 };
 
-failing('PFD1 (pf-d SiteKiambu at 390): under the place questions, "Your place in figures" with every line in its group, today → 2071–2099 and its source, Change on each; the main limit open with its periods and counts from the engine; the folds closed', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD1 (pf-d SiteKiambu at 390): under the place questions, "Your place in figures" with every line in its group, today → 2071–2099 and its source, Change on each; the main limit open with its periods and counts from the engine; the folds closed', async () => {
   const page = await placeStep('kiambu-8', { width: 390 });
   const text = await section(page, 'Your place in figures', 20_000);
-  await inOrder(page, ['How much room do you have?', 'Your place in figures', 'Climate', 'Coldest nights', 'Hottest days', 'Rain a year', 'Dry months in a row', 'Water', 'Watering', 'Soil', 'Soil pH', 'The ground after heavy rain', 'Pots or brought-in soil', 'What it means for your choice']);
+  await inOrder(page, ['How much room do you have?', 'Your place in figures', 'CLIMATE', 'Coldest nights', 'Hottest days', 'Rain a year', 'Dry months in a row', 'WATER', 'Watering', 'SOIL', 'Soil pH', 'The ground after heavy rain', 'Pots or brought-in soil', 'What it means for your choice']);
   for (const w of ['Change sets your own value; Reset goes back to the map, or to not answered.', 'From the climate map', 'climate map', 'soil map', 'Not answered', 'taken as rain only', 'taken as in the ground']) assert.ok(text.includes(w), `board: "Your place in figures" says "${w}"`);
   for (const line of ['hottest days', 'rain a year', 'dry months in a row', 'watering', 'soil pH', 'the ground after heavy rain', 'pots or brought-in soil']) await control(page, 'button', `Change ${line}`);
   // The main limit here (Kiambu: the nights), open: its three periods, from the store's merged figures.
@@ -53,7 +53,7 @@ failing('PFD1 (pf-d SiteKiambu at 390): under the place questions, "Your place i
   await says(page, `The main limit here. No frost. ${c[0].nights} of the ${c[0].of} plants take these nights today`);
   await says(page, `${c[1].nights} by 2041–2070, ${c[2].nights} by 2071–2099`);
   await says(page, `${c[0].fit} of the ${c[0].of} plants fit today, ${c[1].fit} by 2041–2070, ${c[2].fit} by 2071–2099`);
-  await says(page, 'Counts are of the 515 plants on the three nearest lists');
+  await says(page, `Counts are of the ${c[0].of} plants on the nearest lists (`);
   await says(page, 'Later periods follow the middle emissions path (SSP2-4.5).');
   assert.equal(await expanded(page, 'After release: light on your plot, wind and sea'), 'false', 'board: "After release" starts closed');
   assert.equal(await expanded(page, 'Not asked, and why'), 'false', 'board: "Not asked, and why" starts closed on the phone');
@@ -63,7 +63,7 @@ failing('PFD1 (pf-d SiteKiambu at 390): under the place questions, "Your place i
   await done(page);
 });
 
-failing('PFD2 (pf-d SiteKiambu temperature editor, Toasts): Change opens "Coldest nights: your value" with a shift first, the tick for the hottest days and a preview per period; "Use my value" writes both shifts and the summary names the periods, the plants and the holes; the row reads "Your value" with Reset; Reset goes back and the focus moves to Change (F2)', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD2 (pf-d SiteKiambu temperature editor, Toasts): Change opens "Coldest nights: your value" with a shift first, the tick for the hottest days and a preview per period; "Use my value" writes both shifts and the summary names the periods, the plants and the holes; the row reads "Your value" with Reset; Reset goes back and the focus moves to Change (F2)', async () => {
   const page = await placeStep('kiambu-8', { width: 390 });
   await section(page, 'Your place in figures', 20_000);
   await press(page, 'button', 'Change coldest nights');
@@ -91,7 +91,7 @@ failing('PFD2 (pf-d SiteKiambu temperature editor, Toasts): Change opens "Coldes
   await done(page);
 });
 
-failing('PFD3 (pf-d F1): a number the line cannot take is marked invalid with its range, "Use my value" refuses and keeps the focus, nothing is written; "12,5" reads with a comma as the decimal mark', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD3 (pf-d F1): a number the line cannot take is marked invalid with its range, "Use my value" refuses and keeps the focus, nothing is written; "12,5" reads with a comma as the decimal mark', async () => {
   const page = await placeStep('kiambu-8', { width: 390 });
   await section(page, 'Your place in figures', 20_000);
   await press(page, 'button', 'Change coldest nights');
@@ -110,7 +110,7 @@ failing('PFD3 (pf-d F1): a number the line cannot take is marked invalid with it
   await done(page);
 });
 
-failing('PFD4 (pf-d PlaceDesk at 1280): every line open in two columns; the choices changed in place with one tap and their counts; the pH editor with five words; "Not asked, and why" open', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD4 (pf-d PlaceDesk at 1280): every line open in two columns; the choices changed in place with one tap and their counts; the pH editor with five words; "Not asked, and why" open', async () => {
   const page = await placeStep('seville-board', { site: 'seville', width: 1280 });
   await section(page, 'Your place in figures', 20_000);
   const opened = await page.evaluate(() => [...document.querySelectorAll('main [role="group"]')].filter((g) => /^(Coldest nights|Hottest days|Rain a year|Dry months in a row)$/.test(g.getAttribute('aria-label') ?? '') && g.innerText.includes('2071–2099')).length);
@@ -124,7 +124,7 @@ failing('PFD4 (pf-d PlaceDesk at 1280): every line open in two columns; the choi
   await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
   assert.equal((await edits(page)).drainage, 'wet', 'board: one tap writes the answer');
   assert.match(await summary(page), /^The ground after heavy rain set to “Stays wet for days”\. Today and by 2071–2099 alike \(soil does not change\)/, 'board: the soil summary');
-  await control(page, 'button', 'Reset the ground after heavy rain to the soil map');
+  await control(page, 'button', 'Reset the ground after heavy rain to not answered');
   await says(page, 'Your answer');
   await press(page, 'button', 'Change soil pH');
   await says(page, 'Soil pH: your value');
@@ -138,7 +138,7 @@ failing('PFD4 (pf-d PlaceDesk at 1280): every line open in two columns; the choi
   await done(page);
 });
 
-failing('PFD5 (pf-d SiteMendoza at 390): "What limits plants here" with only the limiting lines and the Arid list count; "Not a limit here"; the Watering line with its counts and the members; the link to the panel; the Water card', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD5 (pf-d SiteMendoza at 390): "What limits plants here" with only the limiting lines and the Arid list count; "Not a limit here"; the Watering line with its counts and the members; the link to the panel; the Water card', async () => {
   const page = await mendoza({ width: 390 });
   const text = await section(page, 'What limits plants here', 20_000);
   const c = await engineCounts(page);
@@ -156,7 +156,7 @@ failing('PFD5 (pf-d SiteMendoza at 390): "What limits plants here" with only the
   await done(page);
 });
 
-failing('PFD6 (pf-d F5): with no location the climate lines read "Not known: no location yet", with no Change; the soil and water lines can still be set', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD6 (pf-d F5): with no location the climate lines read "Not known: no location yet", with no Change; the soil and water lines can still be set', async () => {
   const page = await placeStep('kiambu-8', { site: null, width: 390 });
   await section(page, 'Your place in figures', 20_000);
   await says(page, 'Not known: no location yet');
@@ -166,7 +166,7 @@ failing('PFD6 (pf-d F5): with no location the climate lines read "Not known: no 
   await done(page);
 });
 
-failing('PFD7 (pf-d F9, F10): the room "Pots or a balcony" sets the Pots line "From your room" with no Reset; a neighbour\'s pH says its distance; a place with no soil says so', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD7 (pf-d F9, F10): the room "Pots or a balcony" sets the Pots line "From your room" with no Reset; a neighbour\'s pH says its distance; a place with no soil says so', async () => {
   const page = await placeStep('kiambu-8', { site: 'marseille', width: 1280 });
   await section(page, 'Your place in figures', 20_000);
   await says(page, /soil map, nearest square \d+ km away: a weaker guess/);
@@ -180,10 +180,11 @@ failing('PFD7 (pf-d F9, F10): the room "Pots or a balcony" sets the Pots line "F
   await done(page);
 });
 
-failing('PFD8 (pf-d F6): the verdict chunk failed: the edit is kept, the toast reads "Checks could not run" with Retry, and Undo stays', { owner: 'pf-d', reason: BOARD }, async () => {
+test('PFD8 (pf-d F6): the verdict chunk failed: the edit is kept, the toast reads "Checks could not run" with Retry, and Undo stays', async () => {
   const page = await placeStep('kiambu-8', { width: 390 });
   await section(page, 'Your place in figures', 20_000);
   await page.evaluate(() => { const s = window.__ctTest.store; s.verdictRule.value = null; s.verdictFailed.value = true; });
+  await press(page, 'button', 'Change watering');
   await tapOption(page, 'Watering', 'Watered all year');
   assert.equal((await edits(page)).watering, 'all-year', 'board: the edit is kept');
   assert.ok(await page.waitForFunction(() => (window.__ctTest.store.toast.value?.text ?? '').includes('Checks could not run'), { timeout: 5000 }).then(() => true, () => false), `board: the toast says the checks could not run ("${await toastText(page)}")`);

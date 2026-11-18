@@ -57,14 +57,15 @@ export const engineCounts = (page) => page.evaluate(() => {
 // The store's edits and today's merged figures.
 export const edits = (page) => page.evaluate(() => ({ ...window.__ctTest.store.siteEdits.value }));
 export const inputs = (page) => page.evaluate(() => { const i = window.__ctTest.store.siteInputs.value; return { nights: i.nights, days: i.days, rain: i.rain, dryMonths: i.dryMonths, soilPh: i.soilPh, pots: i.pots }; });
-// The page's number words (the page language's digits and units), as format.ts writes them.
-export const tempEn = (c) => `${c < 0 ? '−' : ''}${Math.abs(c).toFixed(1)} °C`;
+// A temperature as the panel's text reads it in English: one decimal always, as the boards write it
+// ("12.0 °C"), a true minus; the narrow space before ° reads as a plain space once collapsed (says).
+export const tempEn = (c) => `${c < 0 ? '\u2212' : ''}${Math.abs(c).toFixed(1)} °C`;
 
-// The toast's text once it no longer reads "Counting…".
+// The toast's text once it no longer reads "Counting…", its spaces collapsed (the narrow one before °C too).
 export async function summary(page, timeout = 20_000) {
   const ok = await page.waitForFunction(() => { const t = window.__ctTest.store.toast.value?.text ?? ''; return t && !t.includes('Counting'); }, { timeout }).then(() => true, () => false);
   assert.ok(ok, 'board: the change summary arrives on the toast');
-  return page.evaluate(() => window.__ctTest.store.toast.value.text);
+  return page.evaluate(() => window.__ctTest.store.toast.value.text.replace(/\s+/g, ' '));
 }
 // The aria-invalid state and message of the editor's number field.
 export const fieldState = (page) => page.evaluate(() => {
