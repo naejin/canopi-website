@@ -10,7 +10,7 @@
 //   not understood, or lies out of range (board: "We could not read “1.17 36” as coordinates");
 //   two bare numbers with only a space between them are not read: which one is the latitude is a guess;
 // - null: words, a place name to look up; also a single number with or without a letter ("69001",
-//   "W1"): coordinates hold two numbers.
+//   "W1"), once no pair form matched: coordinates hold two numbers.
 interface Coords { lat: number; lon: number }
 export type CoordsRead = Coords | 'bad' | null;
 
@@ -49,13 +49,15 @@ export function readCoords(input: string): CoordsRead {
   if (!text) return null;
   if (/^(?:https?:\/\/|geo:)/i.test(text)) return fromLink(text);
   if (!/^[\d\s.,;:°'′’"″”+\-NSEWnsew]+$/.test(text) || !/\d/.test(text)) return null;
-  // Words that are only N S E W letters are not coordinates (a digit is required above). Coordinates
-  // hold two numbers at least: one number, with or without a letter, is a name (a postcode "69001", a
-  // UK outward code "W1"), as most map search boxes read it (R12).
-  if ((text.match(/\d+(?:[.,]\d+)?/g) ?? []).length < 2) return null;
-  // Decimal pair with a comma or semicolon (a decimal comma only with a semicolon between the two).
+  // The pair forms first (R2): a decimal pair with a comma or semicolon between the two (a decimal comma
+  // only with a semicolon between them, so "1,36" and "-1,37" are whole degrees, read here and sent
+  // nowhere).
   const plain = new RegExp(String.raw`^(${NUM})\s*;\s*(${NUM})$`).exec(text) ?? /^([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)$/.exec(text);
   if (plain) return inRange({ lat: Number(plain[1].replace(',', '.')), lon: Number(plain[2].replace(',', '.')) });
+  // Then the rest: one number, with or without a letter, is a name (a postcode "69001", a UK outward
+  // code "W1"), as most map search boxes read it (R12); words that are only N S E W letters are not
+  // coordinates (a digit is required above).
+  if ((text.match(/\d+(?:\.\d+)?/g) ?? []).length < 2) return null;
   if (/[NSEW]/i.test(text)) {
     // Split into two axes: at a comma or semicolon, else after the first hemisphere letter that ends one.
     const split = text.split(/\s*[,;]\s*/);

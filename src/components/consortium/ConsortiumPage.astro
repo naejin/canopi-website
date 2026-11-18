@@ -21,6 +21,7 @@ import { countryZones } from '../../lib/consortium/country-zones.ts';
 import index from '../../data/consortium-index.json';
 import { climatePageData } from '../../data/climate-page-data';
 import { P, setStrings } from '../../islands/consortium/strings.ts';
+import { LINK_VERSION } from '../../lib/consortium/state.ts';
 import '../../styles/consortium/base.css';
 import '../../styles/consortium/details.css';
 import '../../styles/consortium/shell.css';
@@ -139,20 +140,25 @@ const betaNote = P('betaNote', index.climates.length);
       {/* How the page opens, set before the first paint so nothing jumps when the island mounts:
           "link" for a share link (any fragment with v or a; one this tool cannot read says so on Place),
           "preset" for a guide's ?plant=&climate= (design check A5), else "start". The island reads the
-          address itself; this only marks the head, and its step (R16): "palette" for a link, a guide or
-          a palette saved on this device, so a return paints the palette head first. */}
-      <script is:inline>(function () { try {
+          address itself; this only marks the head, and its step (R16): "palette" for what the island
+          will open as a palette: a link or a save this version reads (its v, a climate, the end mark
+          e=1; a save also as persist.ts readRecord takes it), or a guide's plant. A cut, damaged,
+          newer or old link or save lands on Place, so its head paints as Place (C4); the island
+          confirms or undoes the mark on every outcome (Steps on Place, App on a failure: R6). */}
+      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION) }}>try {
         var h = document.getElementById('ct-head');
         var hp = new URLSearchParams((location.hash || '').replace(/^#/, '')), q = new URLSearchParams(location.search);
         var opens = hp.has('v') || hp.has('a') ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
         h.dataset.opens = opens;
+        var readable = function (f) { var p = new URLSearchParams(f); return p.get('v') === linkVersion && !!p.get('c') && p.get('e') === '1'; };
         var saved = null;
         try { saved = JSON.parse(localStorage.getItem('canopi-consortium') || 'null'); } catch (e) {}
-        h.dataset.step = opens !== 'start' || (saved && saved.fragment) ? 'palette' : 'place';
-      } catch (e) {} })();</script>
+        var save = !!saved && typeof saved.fragment === 'string' && saved.fragment.length < 20000 && typeof saved.at === 'string' && readable(saved.fragment);
+        h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
+      } catch (e) {}</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
       {/* The beta note and the release line apart (R1): one paragraph each. */}
-      <p class="tool-release tool-beta">{betaNote}</p>
+      <p class="tool-beta">{betaNote}</p>
       <p class="tool-release">{tr('release').replace('{id}', index.release_id)}</p>
     </div>
   </main>

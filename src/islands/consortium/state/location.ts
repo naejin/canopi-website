@@ -51,9 +51,8 @@ export const choices = signal<Choices | null>(null);
 export const badCoords = signal<string | null>(null);
 // The site in use came from typed coordinates: "Read on this device. Nothing was sent, so the place has no name."
 export const typed = signal(false);
-// How long "Use my location" waited before it gave up, in seconds, as the read used it (R10): the
-// browser's own timeout once the permission was granted, else the one cap over the prompt and the fix
-// (lib/location/geolocation.ts currentPosition).
+// How long "Use my location" waited before it gave up, in seconds, as the read used it (R10;
+// devicePosition).
 export const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
 // The last ask, for "Try again" (offline search, device timeout, a climate that did not load).
 let lastAsk: (() => Promise<void>) | null = null;
@@ -138,6 +137,10 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   } finally { clearTimeout(timer); }
 }
 
+// The climate cell a lookup read (its centre), the unit a hand-chosen climate and the grower's own
+// values belong to (store.placeAt's rule).
+const cellOf = (l: { climate: { cellLat: number; cellLon: number } | null }): string | null => (l.climate ? `${l.climate.cellLat.toFixed(2)},${l.climate.cellLon.toFixed(2)}` : null);
+
 // A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
 // country, in one batch. A failed read or a point at sea changes nothing (seam review 2, 3): a site
 // already read stays in use on the page, in storage and as the country's source, and the line names it
@@ -160,10 +163,12 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   const sc = siteClimate(lookup);
   if (sc.state === 'sea') { line.value = { state: 'sea', ...extra }; return; }
   const loc: SiteLocation = { lat, lon, source, ...(label ? { label } : {}), lookup };
-  // What the place before this one read (R5): a climate the grower chose by hand ("Use <other>", "Not
-  // this climate? Choose another") stays while the new point reads the same climate.
-  const before = store.location.peek()?.lookup;
-  const readBefore = before ? siteClimate(before).suggested : null;
+  // A climate the grower chose by hand ("Use <other>", "Not this climate? Choose another") overrides
+  // the read of one cell (R5, R3, C7): it stays while the new point is in the same climate cell as the
+  // grower's own place before it ("Adjust on the map" within the cell), and goes with any other cell,
+  // even one that reads the same climate. A shared link's place is never the grower's own "before".
+  const was = store.location.peek();
+  const sameCell = !!was?.lookup && was.source !== 'link' && cellOf(was.lookup) === cellOf(lookup);
   siteFound(() => {
     // Another climate cell clears the grower's own values (A7: store.placeAt).
     store.placeAt(loc);
@@ -171,9 +176,9 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
   // The climate read is used at once (v13 Place; borderline: its own class's, the other one tap away;
-  // polar: none), suggested once: never over a climate the grower chose, unless the new point reads
-  // another climate than the last one did (R5). A link's location never changes the link's climate.
-  if (sc.suggested && source !== 'link' && (!store.climate.peek() || sc.suggested !== readBefore)) chooseClimate(sc.suggested);
+  // polar: none), never over a climate kept for this same cell. A link's location never changes the
+  // link's climate.
+  if (sc.suggested && source !== 'link' && (!store.climate.peek() || !sameCell)) chooseClimate(sc.suggested);
   keepLocation(loc);
 }
 
@@ -209,16 +214,25 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
 }
 
 // ---- the three ways ----
+// One read of the device's position with the wait it ran (R10; R7, C6 of fix round 2): the browser's
+// own timeout once the permission is granted, else the one cap over the prompt and the fix
+// (lib/location/geolocation.ts currentPosition). "Use my location" and the map's "Centre on my
+// location" both read through it, so the seconds a timeout names are the ones it waited.
+type Read = Awaited<ReturnType<typeof currentPosition>>;
+export async function devicePosition(): Promise<{ at: Read; seconds: number }> {
+  const permission = await queryGeolocationPermission();
+  const seconds = Math.round((permission?.state === 'granted' ? SITE_POSITION_OPTIONS.timeout ?? 15_000 : PROMPT_CAP_MS) / 1000);
+  if (permission?.state === 'denied') return { at: { code: 1 }, seconds };
+  return { at: await currentPosition(undefined, permission), seconds };
+}
 export async function useMyLocation(): Promise<void> {
   const id = nextLookup();
   lastAsk = useMyLocation;
   batch(() => { clearStep(); asking.value = 'geo'; line.value = { state: 'loading' }; });
-  const permission = await unlessReplaced(queryGeolocationPermission());
-  if (!liveLookup(id) || permission === undefined) return;
-  waited.value = Math.round((permission?.state === 'granted' ? SITE_POSITION_OPTIONS.timeout ?? 15_000 : PROMPT_CAP_MS) / 1000);
-  if (permission?.state === 'denied') { batch(() => { asking.value = null; line.value = { state: 'denied' }; }); return; }
-  const at = await unlessReplaced(currentPosition(undefined, permission));
-  if (!liveLookup(id) || !at) return;
+  const read = await unlessReplaced(devicePosition());
+  if (!liveLookup(id) || !read) return;
+  const { at, seconds } = read;
+  waited.value = seconds;
   asking.value = null;
   if ('code' in at) { line.value = { state: at.code === 1 ? 'denied' : at.code === 3 ? 'timeout' : 'unavailable' }; return; }
   await locate(at.lat, at.lon, 'geo', undefined);

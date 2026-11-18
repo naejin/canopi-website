@@ -1,7 +1,8 @@
 /** @jsxImportSource preact */
 // Your place (v14 boards Place, PlaceDesk (the three questions), SiteKiambu (the frame), ClimateHand,
 // Country, Arrivals, Oulu (the place banner), Toasts (Start over); pf-c; v13-spec-update.md section 5).
-// - The arrival lines first, in one live region that is always on the page (PlaceNotices): welcome
+// - The arrival lines first (PlaceNotices), their sentences said by one short status line always on
+//   the page, the notices and their buttons outside it (R8): welcome
 //   back, a shared link over your palette (Look / Add its plants to mine / Stay with mine), a link
 //   with or without a place, a guide's plant, a link that could not be read or did not load.
 // - The first visit (PlaceForm): "1 Where is your place?" (LocationSlot: the field, Use my location,
@@ -62,14 +63,18 @@ function CountryLine() {
   const travel = <p class="ct-muted ct-small-text">{T('country.travel')}</p>;
   // Board Country: the invasive icon (a shield) leads the line.
   const mark = <svg aria-hidden="true" class="ct-country-icon" width="16" height="16" viewBox="0 0 20 20"><path d="M10 2.5 16 5v4.5c0 4-2.6 6.7-6 8-3.4-1.3-6-4-6-8V5Z" /><path d="M10 6.5v4M10 13v.1" /></svg>;
+  const box = useRef<HTMLDivElement>(null);
+  // An answer replaces its control in place (R5): the focus goes to the line's own Change (or its
+  // first button), never to <body> with the button that had it.
+  const refocus = () => requestAnimationFrame(() => (box.current?.querySelector<HTMLElement>('[data-country-change]') ?? box.current?.querySelector<HTMLElement>('button'))?.focus());
   const open = () => { pickingCountry.value = true; setOther(false); };
-  const pick = (c: string | null) => { setOther(false); chooseCountry(c); };
+  const pick = (c: string | null) => { setOther(false); chooseCountry(c); refocus(); };
   return (
-    <div class="ct-country" data-ct="country">
+    <div class="ct-country" data-ct="country" ref={box}>
       {code ? (
         <p class="ct-country-text">
           {mark}{T('country.line')} <strong>{name}</strong>{sep}<span class="ct-muted">{T(from === 'guess' ? 'country.guessed' : from === 'link' ? 'country.linked' : from === 'location' ? 'country.fromLocation' : 'country.chosen')}</span>
-          {from !== 'guess' && !picking && <>{sep}<button type="button" class="link-button ct-link" aria-expanded="false" onClick={open}>{T('country.change')}</button></>}
+          {from !== 'guess' && !picking && <>{sep}<button type="button" class="link-button ct-link" aria-expanded="false" data-country-change onClick={open}>{T('country.change')}</button></>}
         </p>
       ) : (
         <p class="ct-country-text">{mark}{T('country.noneLine')}</p>
@@ -77,7 +82,7 @@ function CountryLine() {
       {code && status === 'unchecked' && <p class="ct-muted ct-small-text ct-country-note">{T('country.unchecked', { country: name })}</p>}
       {!picking && (from === 'guess' || !code) && (
         <p class="ct-country-acts">
-          {code ? <button type="button" class="button button-primary ct-small" onClick={() => chooseCountry(code)}>{T('country.use', { country: name })}</button>
+          {code ? <button type="button" class="button button-primary ct-small" onClick={() => pick(code)}>{T('country.use', { country: name })}</button>
             : <button type="button" class="button button-secondary ct-small" aria-expanded="false" onClick={open}>{T('country.add')}</button>}
           {code ? <button type="button" class="button button-secondary ct-small" aria-expanded="false" onClick={open}>{T('country.change')}</button>
             : <button type="button" class="button button-secondary ct-small" aria-expanded={whyOpen.value ? 'true' : 'false'} onClick={() => { whyOpen.value = !whyOpen.value; }}>{T('country.whyAsk')}</button>}
@@ -130,6 +135,11 @@ const chip = (kind: keyof typeof CHIP, label: string) => (
 // radios are always in the page (the location step's tests read them).
 function ClimateHand({ open }: { open: boolean }) {
   const chosen = climateChosen.value;
+  // The guessed country line stays once shown while the screen is open (R5): answered, it turns into
+  // its chosen form in place, so the focus it keeps has somewhere to be.
+  const countryShown = useRef(false);
+  if (!open) countryShown.current = false;
+  else if (country.value.source === 'guess') countryShown.current = true;
   const read = !!siteLocation.value?.lookup;
   const zones = [...page().start.zones].sort((x, y) => ORDER.indexOf(zoneOf(x.id)!) - ORDER.indexOf(zoneOf(y.id)!));
   // A tap or a click on a row chooses and closes (board ClimateHand). From the keyboard the arrows move
@@ -144,7 +154,7 @@ function ClimateHand({ open }: { open: boolean }) {
       <button type="button" class="link-button ct-link ct-hand-back" onClick={closeClimates}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>{T('palette.stepPlace')}</button>
       <h2 class="ct-hand-title" id="ct-hand-h">{T('start.climate.title')}</h2>
       {!read && <p class="ct-q-lede">{T('place.climate.without')}</p>}
-      {open && country.value.source === 'guess' && <CountryLine />}
+      {open && countryShown.current && <CountryLine />}
       <fieldset class="ct-climates" id="ct-climates" aria-labelledby="ct-hand-h">
         {zones.map((zone) => {
           const { id, label } = zone;
@@ -153,14 +163,14 @@ function ClimateHand({ open }: { open: boolean }) {
           const size = (zone as { size?: number }).size ?? 0;
           const own = curatedClimates.value.includes(z);
           return (
-            <label class={`ct-card ct-hand-row${chosen === z ? ' is-chosen' : ''}`}>
+            <label class={`ct-hand-row${chosen === z ? ' is-chosen' : ''}`}>
               <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => chooseClimate(z)} onClick={closeOnPointer(z)} onKeyDown={closeOnKey} />
               <span class="ct-hand-head"><span class="ct-hand-name" id={`ct-cl-${id}`} data-name>{label}</span>{chip(pill.ready ? 'ready' : pill.site ? 'site' : 'none', pill.label)}</span>
               <span id={`ct-cl-${id}-d`} class="ct-hand-desc">{T(`place.climate.desc.${id}`)}{sep}{own ? P('place.climate.ownList', size) : T('place.climate.nearest', { lists: listsOf(z) })}</span>
             </label>
           );
         })}
-        <div class="ct-card ct-hand-row is-off" data-climate-polar>
+        <div class="ct-hand-row is-off" data-climate-polar>
           <span class="ct-hand-head"><span class="ct-hand-name" data-name>{T('place.climate.polar')}</span>{chip('none', T('place.climate.noList'))}</span>
           <span class="ct-hand-desc">{T('start.climate.notYet')}. <a href={page().start.contact}>{T('start.uncovered.ask')}</a></span>
         </div>
@@ -331,18 +341,17 @@ function Notice({ id, tone = 'neutral', mark, text, children }: { id: string; to
 // to mine). The shown palette is the link's from the start, yours held (state/persist.ts holdSave).
 const sharedSeen = signal<'ask' | 'looking' | 'done'>('ask');
 const laterPlace = signal(false);
-// "Add its plants to mine" (R4, C11): each of its plants joins with the list it came from (the link's
-// climate, or its own guest list), and the reader's place and own values stay (a link without a place
-// brings none, so the values set while looking are the reader's).
+// "Add its plants to mine" (R4, C11; R1, C1 of fix round 2): the reader's own palette comes back as
+// saved, with its place and values (the merge only adds plants and never touches the place), then
+// each of the link's plants joins with the list it came from (the link's climate, or its own guest
+// list), as one undoable add.
 async function addShared(): Promise<void> {
   const theirs = members.peek().slice(), homes = { ...guests.peek() }, linkZone = climate.peek();
-  const edits = linkPlace.peek() ? null : siteEdits.peek();
   sharedSeen.value = 'done';
   await openSavedInstead();
   const mine = climate.peek();
   const from: Partial<Record<string, ClimateZone>> = {};
   for (const id of theirs) { const z = homes[id] ?? linkZone; if (z && z !== mine) from[id] = z; }
-  if (edits) siteEdits.value = edits;
   addMembers(theirs, from);
 }
 // "Keep it as mine" (R3): the shared palette becomes the save now, with Undo putting the earlier save back.
@@ -350,7 +359,7 @@ function keepShared(): void {
   sharedSeen.value = 'done';
   const before = snapshot();
   holdSave(false);
-  offerUndo(T('place.keptMine'), before);
+  offerUndo(P('palette.place.keptMine', members.peek().length), before);
   showPalette();
 }
 // "9 November" (board Arrivals): day then month; English in its day-first form, unambiguous worldwide.
@@ -405,8 +414,28 @@ function PlaceNotices() {
   const welcome = candidate && (!welcomeAt.value || welcomeAt.value === list) ? candidate : null;
   const givePlace = () => { backToPlace(); setTimeout(focusField, 50); };
   const values = siteEditLines(siteEdits.value).map(say).join(', ');
+  // What a screen reader hears (R8, C12): each notice's sentence, in a short status line of its own;
+  // the notices with their headings and buttons stand outside it, reached by focus.
+  const heard = (text: string) => text.replace(/\*\*/g, '');
+  const spoken: string[] = [];
+  if (welcome) spoken.push(heard(T(mine ? 'place.welcome' : 'place.welcomeNoPlace', { date: (opened.kind === 'saved' && dayMonth(opened.at)) || welcome.at, count: P('start.count', list.length), place: mine ?? '' })));
+  if (shared === 'ask' && z) spoken.push(T('palette.place.said', { place: T('place.shared.title'), note: T('place.shared.body', { count: P('start.count', list.length), list: T('place.line.list', { climate: zoneName(z) }), mine: savedCount }) }));
+  if (shared === 'looking') spoken.push(heard(T('place.shared.looking')));
+  if (n.unreadable) spoken.push(heard(T('place.unreadable')));
+  if (n.period) spoken.push(heard(T('place.period')));
+  if (n.failed) spoken.push(heard(T('share.failed')));
+  if (n.guideMissing && z) spoken.push(heard(T('start.guideMissing', { name: n.guideMissing, climate: zoneName(z) })));
+  if (guide && z) spoken.push(heard(saved && savedN ? T('place.guideSaved', { name: nameOf(guide), climate: zoneName(z), count: savedCount }) : T('place.guidePlant', { name: nameOf(guide), climate: zoneName(z) })));
+  if (noPlace && z) spoken.push(heard(T('place.noPlace', { list: T('place.line.list', { climate: zoneName(z) }) })));
+  if (checkedAgainst) spoken.push(heard(T(values ? 'place.checkedAgainst' : 'place.checkedAgainstBare', { place: placeWords(siteLocation.value!, true) })));
+  if (theirs) spoken.push(heard(T(values ? 'place.linkPlace' : 'place.linkPlaceBare', { place: siteLocation.value ? placeWords({ ...siteLocation.value, source: 'map' }, true) : T('location.linkPlace'), values })));
+  // On the page before its first words (A25): they come after the first paint.
+  const [placed, setPlaced] = useState(false);
+  useEffect(() => setPlaced(true), []);
   return (
-    <div class="ct-place-notices" role="status">
+    <>
+    <p class="ct-sr" role="status">{placed ? spoken.join(' ') : ''}</p>
+    <div class="ct-place-notices">
       {welcome && (
         <Notice id="welcome" mark="check" text={T(mine ? 'place.welcome' : 'place.welcomeNoPlace', { date: (opened.kind === 'saved' && dayMonth(opened.at)) || welcome.at, count: P('start.count', list.length), place: mine ?? '' })}>
           {act(T('start.over'), startOverNow, 'quiet', { 'data-start-over': '' })}
@@ -474,6 +503,7 @@ function PlaceNotices() {
         </Notice>
       )}
     </div>
+    </>
   );
 }
 
@@ -493,10 +523,13 @@ const laterKept = computed<number | null>(() => {
 // estimate." in bold. "Colder" stays the zone rule (Continental, Boreal: the climates with no list of
 // their own colder than every list), as the board's case.
 function OuluBanner({ zone }: { zone: ClimateZone }) {
-  const loc = siteLocation.value, n = countFits.value, later = laterKept.value;
+  const loc = siteLocation.value;
   if (curatedClimates.value.includes(zone) || !loc?.lookup) return null;
   const sc = climateOf(loc.lookup);
   if (!sc.today) return null;
+  // Read only here, after the own-list and lookup checks: a palette on its own list never runs the
+  // later period's pass (C5).
+  const n = countFits.value, later = laterKept.value;
   const colder = zone === 'Continental' || zone === 'Boreal';
   const lists = listsOf(zone);
   const kept = n ? (later !== null

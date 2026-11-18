@@ -25,13 +25,12 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { BORDERLINE_C, MEANS_MARGIN_C, koppenZone, siteClimate, type ClimateZone, type SiteLocation } from '../../../../lib/consortium/index.ts';
 import { loadMapLibreModule } from '../../../../lib/location/maplibre.ts';
 import type { PlaceSearchResult } from '../../../../lib/location/place-search.ts';
-import { currentPosition } from '../../../../lib/location/geolocation.ts';
 import * as store from '../../store.ts';
 import { T, P, pageLang } from '../../strings.ts';
 import { formatNumber } from '../../format.ts';
 import { chooseClimate } from '../../state/draft.ts';
 import { line, unread, type Line } from '../../state/lookups.ts';
-import { asking, badCoords, choices, choose, findPlaces, forget, locate, placeName, searchRead, stop, tryAgain, typed, waited } from '../../state/location.ts';
+import { asking, badCoords, choices, choose, devicePosition, findPlaces, forget, locate, placeName, searchRead, stop, tryAgain, typed, waited } from '../../state/location.ts';
 import { readCoords } from './coords.ts';
 import { coords, zoneName } from '../kit/names.ts';
 import { page } from '../kit/page.ts';
@@ -42,7 +41,7 @@ export { settle, useMyLocation, stop, adoptLinkLocation as adopt } from '../../s
 // that could not be read as coordinates sends the words as a name (the name path never takes a
 // coordinate reading: state/location.ts searchRead, R2).
 export const searchPlace = (q: string, asName = badCoords.peek() === q.trim()): Promise<void> => searchRead(q, asName ? null : readCoords(q.trim()));
-export { asking } from '../../state/location.ts';
+export { asking, typed } from '../../state/location.ts';
 
 // The map dialog is open (LocationSlot's "Pick on a map", "Adjust on the map").
 export const mapOpen = signal(false);
@@ -192,7 +191,8 @@ export function said(): string {
   if (site && loc) {
     const sc = siteClimate(loc.lookup!);
     const note = sc.state === 'polar' ? T('location.state.polar') : sc.state === 'borderline' && sc.zone ? borderWords(sc) : sc.state === 'coast' ? T('location.state.coast') : '';
-    return `${placeWords(loc)}. ${note}`.trim();
+    // Joined through the locale's own template (C11: "。" in ja and zh).
+    return note ? T('palette.place.said', { place: placeWords(loc), note }) : placeWords(loc);
   }
   return '';
 }
@@ -293,14 +293,14 @@ export function MapDialog() {
     else { setSaid(''); setFound({ query: q, results, attribution: r.attribution }); }
   };
   // "Centre on my location" (LocMap): busy while the device answers; a refusal, a timeout or no
-  // position says so, as "Use my location" does (R17).
+  // position says so, as "Use my location" does (R17), a timeout naming the wait this read ran (R7, C6).
   const near = async () => {
     if (finding) return;
     setFinding(true);
     setSaid(T('location.waiting'));
-    const at = await currentPosition();
+    const { at, seconds } = await devicePosition();
     setFinding(false);
-    if ('code' in at) { setSaid(at.code === 1 ? T('location.state.denied') : at.code === 3 ? T('location.state.timeout', { s: waited.peek() }) : T('location.state.unavailable')); return; }
+    if ('code' in at) { setSaid(at.code === 1 ? T('location.state.denied') : at.code === 3 ? T('location.state.timeout', { s: seconds }) : T('location.state.unavailable')); return; }
     setSaid('');
     go(at.lat, at.lon);
   };

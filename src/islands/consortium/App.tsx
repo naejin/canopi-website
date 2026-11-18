@@ -32,15 +32,17 @@ export const PalettePage = lazyPart(retryableImport(() => import('./views/palett
 import './views/StageBar.tsx';
 
 export interface AppProps {
-  // The noscript guide link, reused under the failure screens.
+  // The page's guide (the noscript link's address), linked as "Read the guides" on the screens where
+  // the tool cannot run in this browser (board Loading: Old browser, WebAssembly blocked).
   guide: { url: string; lang: string } | null;
   onRetry: () => void;
 }
 
-// The §5 screen of each failure: its text key and its button (none: only the guide link helps).
-const screens: Record<LoadFailure, { text: string; action: 'retry' | 'reload' | null }> = {
-  'too-old': { text: 'load.tooOld', action: null },
-  'wasm-blocked': { text: 'load.wasmBlocked', action: null },
+// The §5 screen of each failure (board Loading): its text key, its button, and whether it links the
+// guides (the tool cannot run in this browser, the guides can).
+const screens: Record<LoadFailure, { text: string; action: 'retry' | 'reload' | null; guides?: true }> = {
+  'too-old': { text: 'load.tooOld', action: null, guides: true },
+  'wasm-blocked': { text: 'load.wasmBlocked', action: 'retry', guides: true },
   'wasm-fetch': { text: 'load.toolFailed', action: 'reload' },
   fetch: { text: 'load.fetch', action: 'retry' },
   damaged: { text: 'load.damaged', action: 'retry' },
@@ -76,21 +78,31 @@ function PlaceOrPlaceholder() {
   return restoring.value ? <Placeholder /> : slot(Place);
 }
 
-// The failure screens say their own words (board Loading), with no added guide sentence (BC22); the
-// guide link stays in the page's noscript.
-export function App({ onRetry }: AppProps) {
+// The failure screens say their own words (board Loading), with no added guide sentence (BC22), and
+// "Read the guides" where the board draws it (C2). A failure ends the page's opening: the head the
+// inline script marked as the palette step before the island ran goes back to the Place step, with its
+// steps and lede (R6: the pre-paint hint is confirmed or undone on every outcome).
+function Failed({ error, guide, onRetry }: AppProps & { error: LoadFailure }) {
+  const screen = screens[error];
+  useEffect(() => { const head = document.getElementById('ct-head'); if (head) head.dataset.step = 'place'; }, []);
+  return (
+    <div class="callout ct-load-failed" role="alert" data-load-error={error}>
+      <p>{T(screen.text)}</p>
+      {(screen.action || (screen.guides && guide)) && (
+        <p class="ct-load-acts">
+          {screen.action === 'retry' && <button type="button" class="button button-primary" onClick={onRetry}>{T('load.retry')}</button>}
+          {/* Reload keeps the address, so the link state is kept. */}
+          {screen.action === 'reload' && <button type="button" class="button button-primary" onClick={() => location.reload()}>{T('load.reload')}</button>}
+          {screen.guides && guide && <a class="text-link" href={guide.url} hreflang={guide.lang !== document.documentElement.lang ? guide.lang : undefined}>{T('palette.place.readGuides')}</a>}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function App({ guide, onRetry }: AppProps) {
   const { status, error } = load.value;
-  if (status === 'failed' && error) {
-    const screen = screens[error];
-    return (
-      <div class="callout ct-load-failed" role="alert" data-load-error={error}>
-        <p>{T(screen.text)}</p>
-        {screen.action === 'retry' && <p><button type="button" class="button button-primary" onClick={onRetry}>{T('load.retry')}</button></p>}
-        {/* Reload keeps the address, so the link state is kept. */}
-        {screen.action === 'reload' && <p><button type="button" class="button button-primary" onClick={() => location.reload()}>{T('load.reload')}</button></p>}
-      </div>
-    );
-  }
+  if (status === 'failed' && error) return <Failed error={error} guide={guide} onRetry={onRetry} />;
   // A return visit restoring shows the palette's placeholder, never the Place form (P2), and so does
   // the palette page until the plants are read and its chunk is in.
   const onPalette = step.value === 'palette';

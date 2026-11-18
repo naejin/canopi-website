@@ -22,9 +22,6 @@
 .ct .ct-country-acts, .ct .ct-country-pick { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
 .ct .ct-country-pick select { min-height: 40px; max-width: 100%; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
 
-.ct .ct-pill { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
-.ct .ct-pill.is-ready { border-color: var(--accent); color: var(--accent-ink); }
-
 /* Notices: neutral callouts, the warning colours only for warnings. */
 .ct .ct-notice { display: grid; gap: 8px; margin: 0; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); }
 .ct .ct-notice p { margin: 0; }
@@ -119,3 +116,7 @@
   #ct-head:not([data-step="palette"]) .tool-lede { font-size: 15px; }
 }
 .ct ol.ct-steps [hidden] { display: none; }
+/* The failure screens' actions (board Loading): the button, then "Read the guides" beside it. */
+.ct .ct-load-acts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+/* The beta note, its own paragraph above the release line (R1), in the release line's type. */
+.ct .tool-beta { margin-top: 20px; font-size: 13.5px; color: var(--text-muted); overflow-wrap: anywhere; }

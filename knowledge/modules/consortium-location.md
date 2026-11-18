@@ -2,20 +2,20 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:52:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T10:32:39Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:02Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:349ff16b9b85cbc7
-    last_modified: 2026-11-13T16:13:32Z
+    digest: sha256:4dd4dc60bbd298a6
+    last_modified: 2026-11-18T10:14:23Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:a95d33626cb4756c
-    last_modified: 2026-11-17T18:36:51Z
+    digest: sha256:4b3782c2238c8d13
+    last_modified: 2026-11-18T10:14:17Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -74,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:61c0fde1b6c5951f
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:8ea60977f1a6938b
+    last_modified: 2026-11-18T10:15:21Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b706295ccaa71c2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:e340a2881e8d38e2
+    last_modified: 2026-11-18T10:21:31Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:05dac65b027489d3
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:5f1824e5dabf28a7
+    last_modified: 2026-11-18T09:55:56Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -157,3 +157,12 @@ At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied 
 - **"Use it" for a link's place** reverses the old rule that a link's `o=` is never saved over the reader's `canopi-location` (coordinator row 2026-11-14): `state/location.ts` `adoptLinkLocation()` turns a `link` location into the reader's own (`source: 'map'`, kept with `keepLocation`); `views/location/location.tsx` re-exports it as `adopt`, reached through restore.ts's `LocationSettle.adopt`.
 - **Forget this location** also clears the palette's place (the grower's own values to `NO_EDITS`; the spot and soil answers are deleted since v14 0W-2 R4) and `canopi-place`, besides `canopi-location`; forgetting the reader's own kept location also clears `restore.ts` `locationAtStart`, so Place's climate cards open when a climate is chosen (b1a review round 3, 1). On a held page (a link's place shown, or another tab owns the save) it also scrubs the stored record (`persist.ts` `forgetSavedPlace`): its place goes, and its country too when it came from the reader's own location; a link's country, the plants, room and plot stay (pre-push fix 3).
 - Share's tick is "Include my place" (place, not only location): ticked, the link carries `k o` and the grower's own values `f b p i d` (since v14 0W-2 R4; `l w q r h s` are no keys); unticked none of them.
+
+## pf-c, v14 Place (fix round 2, 2026-11-18)
+
+- **A hand-chosen climate belongs to its cell** (R5, R3, C7): `locateNow` keeps a climate the grower chose ("Use <other>", "Not this climate? Choose another") only while the new point is in the same climate cell (`cellOf`: the lookup's `cellLat,cellLon`, the rule `store.placeAt` uses for the grower's values) as the grower's own place before it; any other cell, even one that reads the same climate, takes its own read. A link's location (`source: 'link'`) is never the "before" (Place drops it anyway: `draft.ts` `backToPlace`).
+- **One device read, one wait** (R10; R7, C6): `devicePosition()` queries the permission, then reads once; it returns `{ at, seconds }`, the seconds being the wait that read ran (granted: the browser's 15 s; else `PROMPT_CAP_MS` 45 s). "Use my location" (`useMyLocation`, which also sets `waited` for the step's timeout line) and the map's "Centre on my location" (`MapDialog` `near()`) both go through it.
+- **Typed coordinates, pair forms first** (R2, R12): `views/location/coords.ts` `readCoords` tries the decimal pair (comma, or semicolon with decimal commas) before the "one number is a name" rule, so "1,36" and "-1,37" are whole degrees read on the device, while "69001" or "W1" go to the place search.
+- **The field mirrors the place in use** (R4, C10): `LocationSlot` sets the field to the place's label; a place with no label (map point, device, link) or none (Forget) empties it; typed coordinates keep the typed text (`typed`, re-exported by location.tsx).
+- **Status words** (C11): `said()` joins the place and its note through `consortium.palette.place.said` ("{place}. {note}", "{place}。{note}" in ja and zh).
+

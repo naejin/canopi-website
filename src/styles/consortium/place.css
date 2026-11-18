@@ -66,7 +66,6 @@
 /* #ct-climates: the class is a hook (consortium-css.test.mjs HOOK_ONLY), so the rule goes by id. */
 .ct #ct-climates { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .ct #ct-climates[hidden] { display: none; }
-.ct #ct-climates > legend { margin-bottom: 4px; }
 
 /* How much room: each answer shows its height limit under its name. */
 .ct .ct-room { margin: 0; padding: 0; border: 0; min-width: 0; }
@@ -101,8 +100,6 @@
 .ct .ct-place-notices { display: grid; gap: 10px; }
 .ct .ct-place-notices:not(:empty) { margin-bottom: 16px; }
 .ct .ct-place-notices .ct-notice { display: block; overflow-wrap: anywhere; }
-.ct .ct-notice-calm { border-color: var(--border); background: var(--surface-alt); }
-.ct .ct-notice-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .ct .ct-place-notices .ct-notice > .button { margin: 8px 8px 0 0; }
 .ct .ct-place-status { min-height: 0; }
 

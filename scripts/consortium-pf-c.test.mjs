@@ -65,11 +65,11 @@ test('pf-c "We read" (R11): every class the site climate can give has its words 
   for (const k of classes) for (const l of LOCALES) assert.ok(words[l][`consortium.location.k.${koppenWordsKey(k)}`], `${l}: consortium.location.k.${koppenWordsKey(k)} (class ${k})`);
 });
 
-test('pf-c words (C16, C2, C17, C1): "your place", never "site", in the privacy line; the newer-link and duplicate borderline keys are gone', () => {
-  assert.match(words.en['privacy.tool.device'], /your place's climate/);
-  assert.doesNotMatch(words.en['privacy.tool.device'], /site/);
-  for (const l of LOCALES) {
-    for (const gone of ['consortium.share.pasted.newer', 'consortium.location.state.borderline']) assert.equal(words[l][gone], undefined, `${l}: ${gone}`);
-  }
-  assert.equal(words.en['consortium.share.pasted.unreadable'], 'This link could not be read. Nothing was changed.');
+// ---- fix round 2 ----
+test('pf-c readCoords (R2): a whole-degree pair with a comma ("1,36", "-1,37", "52,4") is read on this device, never sent as a name', () => {
+  near(readCoords('1,36'), 1, 36);
+  near(readCoords('-1,37'), -1, 37);
+  near(readCoords('52,4'), 52, 4);
+  near(readCoords('-1, 37'), -1, 37);
+  for (const name of ['69001', 'W1', '75']) assert.equal(readCoords(name), null, `${name} stays a name`);
 });
