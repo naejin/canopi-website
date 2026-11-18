@@ -116,36 +116,58 @@ type Fit = 'fits' | 'inside' | 'all';
 const HOLES_FIRST = 4; // the start's holes before "All N holes" (board Find)
 type BoxKey = 'fills' | 'hideNoSize' | 'hideToxic' | 'hideInvasive' | 'hideNoLight';
 const BOXES: readonly BoxKey[] = ['fills', 'hideNoSize', 'hideToxic', 'hideInvasive', 'hideNoLight'];
+// The boxes that keep plants ("Fills a hole or a thin job"); the others hide them (R6).
+const KEEPS: readonly BoxKey[] = ['fills'];
 type Option = { key: string; label: string; on: boolean; toggle: () => void; count: number };
+
+// R9: what the grower set in one opening of Find (its search, filters, the visit's adds, the frozen
+// order) lives here, keyed by that opening (store.sheet's n), not in the component: crossing 960 px
+// swaps the panel for the sheet (or back), which mounts Find again in the other frame, and the new
+// mount reads the same opening's state. A new opening starts afresh.
+type Kept = Record<string, unknown>;
+let opening: { n: number; kept: Kept } | null = null;
+const keptFor = (n: number): Kept => {
+  if (opening?.n !== n) opening = { n, kept: {} };
+  return opening.kept;
+};
+// useState over the opening's state: the first mount takes init(), a later one what the last showed.
+function useKept<V>(kept: Kept, name: string, init: () => V): [V, (v: V | ((was: V) => V)) => void] {
+  const [v, set] = useState<V>(() => (name in kept ? (kept[name] as V) : init()));
+  kept[name] = v;
+  return [v, set];
+}
 
 export default function Find({ Frame }: { Frame: Frame }) {
   const source = store.source.value;
   const climate = store.climate.value;
   const { hole, fits } = store.sheetTarget.value;
+  // R9: this opening's state, kept across a remount in the other frame (keptFor).
+  const kept = keptFor(store.sheet.value?.n ?? 0);
   // The members when Find opened: listed apart ("In your palette"); a plant added here keeps its row,
   // its button turned to "Added".
-  const [atOpen] = useState(() => new Set(store.members.peek()));
-  const [query, setQuery] = useState('');
+  const [atOpen] = useKept(kept, 'atOpen', () => new Set(store.members.peek()));
+  const [query, setQuery] = useKept(kept, 'query', () => '');
   // Opened from a thin spot ("Find a backup", AddMany): sorted to fill it first, "Fills a hole or a
   // thin job" on.
-  const [chosen, setFilters] = useState<FindFilters>(() => (hole?.thin ? { fills: true } : {}));
-  // The plants added since this sheet opened (AddMany state 3): the head's count, the toast's count.
-  const [visit, setVisit] = useState<readonly string[]>([]);
-  const [allHoles, setAllHoles] = useState(false); // the start's "All 7 holes" pressed
+  const [chosen, setFilters] = useKept<FindFilters>(kept, 'filters', () => (hole?.thin ? { fills: true } : {}));
+  // The plants added in this visit (AddMany state 3), in the order added; the visit's count is derived
+  // from it and the palette (visitIn below), never a second copy of the members (R7).
+  const [visit, setVisit] = useKept<readonly string[]>(kept, 'visit', () => []);
+  const [allHoles, setAllHoles] = useKept(kept, 'allHoles', () => false); // the start's "All 7 holes" pressed
   // The fit choice (board FindFilters, B8): fits (the outside plants folded behind one counted
   // button, in a hole and in plain Find, B3), well inside its range only, every plant.
-  const [fitChoice, setFit] = useState<Fit>('fits');
-  const [whole, setWhole] = useState<ReadonlySet<Group>>(new Set()); // the groups shown whole ("Show all N")
-  const [outsideShown, setOutsideShown] = useState(false); // "Show N outside their climate range" pressed
+  const [fitChoice, setFit] = useKept<Fit>(kept, 'fit', () => 'fits');
+  const [whole, setWhole] = useKept<ReadonlySet<Group>>(kept, 'whole', () => new Set()); // the groups shown whole ("Show all N")
+  const [outsideShown, setOutsideShown] = useKept(kept, 'outsideShown', () => false); // "Show N outside their climate range" pressed
   // The hole's preset lifted for a search ("N on your list but outside this hole · Show"): the whole
   // list for that search only; another query or none, the hole's plants again (fix round 2, r2-12).
-  const [wide, setWide] = useState(false);
+  const [wide, setWide] = useKept(kept, 'wide', () => false);
   const ask = (text: string) => batch(() => { setQuery(text); setWide(false); });
   // The list asked for from the start (c1r3 T3): "Show N plants" or the start's "Show the N plants
   // that fit". The start is no query, no hole, no filter and not listed.
-  const [listed, setListed] = useState(false);
+  const [listed, setListed] = useKept(kept, 'listed', () => false);
   // The palette's plants a filtered list matches, shown on "Show" (board FindResults, T18).
-  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useKept(kept, 'paletteOpen', () => false);
   // Below 960 px the filters open in place over the results (board FindFilters, fix round 2, r2-02):
   // the focus moves to their heading, "Show N plants" or Escape returns to the results and the focus
   // to "Filters"; the query and filters stay. At 960 they are a column beside the results.
@@ -167,9 +189,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const [backFromPaste, setBackFromPaste] = useState(false);
   // "Look in another climate's list" (board Find's foot): the other curated lists as choices; one chosen
   // lists its plants this list lacks, each added from that list as a guest (addFrom).
-  const [lookOther, setLookOther] = useState(false);
-  const [otherZone, setOtherZone] = useState<ClimateZone | null>(null);
-  const [otherList, setOtherList] = useState<readonly Taxon[] | null>(null);
+  const [lookOther, setLookOther] = useKept(kept, 'lookOther', () => false);
+  const [otherZone, setOtherZone] = useKept<ClimateZone | null>(kept, 'otherZone', () => null);
+  const [otherList, setOtherList] = useKept<readonly Taxon[] | null>(kept, 'otherList', () => null);
   // Find as the panel beside the chart (board FindDesk, Q5): the filters as checkbox rows, the
   // "searched on this computer" line beside the field.
   const desk = deskFind.value;
@@ -191,6 +213,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
 
   const pool = store.pool.value, offer = store.offerPool.value;
   const members = store.members.value;
+  // R7: the visit's adds still in the palette (a toast's Undo or a row's takes one out, a later Undo
+  // can put it back): the head's count and the burst toast's.
+  const visitIn = visit.filter((id) => members.includes(id));
   const verdicts = store.verdictFailed.value ? null : store.poolVerdicts.value;
   const located = store.siteClimate.value;
   const rule = store.verdictRule.value, vctx = store.verdictContext.value;
@@ -238,7 +263,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // Frozen once the reader adds in this visit (AddMany state 3): an added row keeps its place, "Added"
   // with its Undo, never re-ranked out of the screenful.
   const liveFilled = useMemo(() => new Map(base.map((t) => [t.id, store.holeFillCount(t)] as const)), [base, open]);
-  const frozenFilled = useRef<ReadonlyMap<PlantId, number> | null>(null);
+  const frozenFilled = (kept.frozenFilled ??= { current: null }) as { current: ReadonlyMap<PlantId, number> | null };
   const filled = frozenFilled.current ?? liveFilled;
   // The periods after the one viewed (fix round 2, r2-09): an outside plant's first one in range ("In
   // range by 2071–2099", B5) and how many a plant stays in range through (best first).
@@ -264,14 +289,14 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // is, frozenFilled): an add that closes a hole or a thin spot never takes the rows for that job out
   // from under the reader. A fresh opening of Find reads the targets again.
   const liveTargets = useMemo(() => [...open, ...thins.filter((h) => h.state === 'open')], [open, thins]);
-  const frozenTargets = useRef<readonly Hole[] | null>(null);
+  const frozenTargets = (kept.frozenTargets ??= { current: null }) as { current: readonly Hole[] | null };
   const targets = frozenTargets.current ?? liveTargets;
   // The plants added in this visit stay listed whatever the filters say ("Added" with its Undo; AddMany
   // state 3): a list snapshot for the visit, so no recompute moves a row the reader just acted on.
   const keepVisit = (rows: readonly Taxon[], from: readonly Taxon[]): Taxon[] => {
     if (!visit.length) return [...rows];
-    const kept = new Set(rows.map((t) => t.id));
-    return from.filter((t) => kept.has(t.id) || visit.includes(t.id));
+    const keep = new Set(rows.map((t) => t.id));
+    return from.filter((t) => keep.has(t.id) || visit.includes(t.id));
   };
   const ctx = useMemo(() => {
     return {
@@ -348,7 +373,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // visit. Last: Tahitian lime."), replaced in place, its Undo taking back the last add only.
   // The first add says what it changed (board FillHole: "Pineapple added. Covers the ground: nobody after year 15.").
   // BC6: the first add names the change to the hole the sheet is for only, never the other holes it narrowed.
-  const said = (t: Taxon) => (visit.length ? P('toast.burst', visit.length + 1, { name: nameOf(t) })
+  const said = (t: Taxon) => (visitIn.length ? P('toast.burst', visitIn.length + 1, { name: nameOf(t) })
     : (r: AddResult) => addedWords([nameOf(t)], r.holeChange, r.thinChange, hole?.thin ? hole.job ?? null : null, false, hole ?? null));
   const addOne = (t: Taxon, from?: ClimateZone) => {
     if (added(t.id)) return;
@@ -356,7 +381,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     frozenTargets.current ??= targets;
     const text = said(t);
     store.addMembers([t.id], from ? { [t.id]: from } : {}, { warned: warned.has(t.id) ? [t.id] : [], text });
-    setVisit((v) => [...v, t.id]);
+    setVisit((v) => (v.includes(t.id) ? v : [...v, t.id]));
     // The Add button is gone with the add: the focus moves to the row's Undo (BC27).
     requestAnimationFrame(() => document.querySelector<HTMLElement>(`dialog[open] [data-find-row][data-plant-id="${CSS.escape(t.id)}"] [data-find-undo]`)?.focus());
   };
@@ -365,7 +390,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     frozenTargets.current ??= targets;
     const list = await store.loadPool(z);
     const t = list?.find((x) => x.id === id);
-    if (t) { store.addMembers([id], { [id]: z }, { warned: store.warnedPlant(t) ? [id] : [], text: said(t) }); setVisit((v) => [...v, id]); }
+    if (t) { store.addMembers([id], { [id]: z }, { warned: store.warnedPlant(t) ? [id] : [], text: said(t) }); setVisit((v) => (v.includes(id) ? v : [...v, id])); }
   };
 
   // The filters on: each chosen value, and a fit choice other than "Fits your place".
@@ -439,7 +464,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
         {done ? (
           <span class="ct-find-done" data-plant-done="">
             <span class="ct-find-added" data-find-add="" data-added="">{TICK} {T('find.added')}</span>
-            {visit.includes(t.id) && <button type="button" class="text-link ct-find-undo" data-find-undo="" aria-label={T('find.undoAdding', { name: nameOf(t) })} onClick={() => { store.removeMember(t.id); setVisit((v) => v.filter((x) => x !== t.id)); }}>{T('find.undo')}</button>}
+            {visit.includes(t.id) && <button type="button" class="text-link ct-find-undo" data-find-undo="" aria-label={T('find.undoAdding', { name: nameOf(t) })} onClick={() => store.removeMember(t.id)}>{T('find.undo')}</button>}
           </span>
         ) : (
           <button type="button" class="button button-secondary ct-find-add" data-find-add="" aria-label={T('find.addName', { name: nameOf(t) })} onClick={() => addOne(t)}>
@@ -503,9 +528,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
     </fieldset>
   );
   // A box with its count on the right (board FindFilters): a hide box counts the plants it hides, a
-  // keep box (edible, holds) the plants it keeps, both with the other filters in force.
+  // keep box ("Fills a hole or a thin job", KEEPS) the plants it keeps, both with the other filters in
+  // force: the count says what ticking it gives (R6).
   const box = (id: FilterId, k: BoxKey, label: string, sub?: string, kept = false) => {
-    const n = count({ ...filters, [k]: false }) - count({ ...filters, [k]: true });
+    const n = KEEPS.includes(k) ? count({ ...filters, [k]: true }) : count({ ...filters, [k]: false }) - count({ ...filters, [k]: true });
     return (
       <label class="ct-check ct-find-check">
         <input type="checkbox" data-filter={id} checked={!!filters[k]} onChange={() => toggleFilter(k)} />
@@ -631,7 +657,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
       <div class="ct-find-headrow">
         <div class="ct-find-headtext">
           <h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2>
-          <p class="ct-find-visit" data-find-visit={visit.length ? '' : undefined}>{visit.length ? <><b>{P('find.visit', visit.length)}</b> · {P('find.visitPalette', members.length)}</> : P('find.inPalette', members.length)}</p>
+          <p class="ct-find-visit" data-find-visit={visitIn.length ? '' : undefined}>{visitIn.length ? <><b>{P('find.visit', visitIn.length)}</b> · {P('find.visitPalette', members.length)}</> : P('find.inPalette', members.length)}</p>
         </div>
         <button type="button" class="button button-primary" onClick={() => store.closeSheet()}>{T('find.done')}</button>
       </div>

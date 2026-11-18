@@ -920,3 +920,126 @@ test('PFA36 (pf-a Empty at 390, BC33): the three ways are bordered buttons, each
   await says(page, /The pictures \(through the years, through the year, jobs\) appear with your first plant\. \d+ of the \d+ plants on .+ fit near .+ today\./);
   await done(page);
 });
+
+// ---- Fix batch b4 (review R4-R9, C1-C4): the grower's scenarios, each a case.
+
+test('PFA37 (pf-a R5, C1, AddMany state 2): "Change" on the thin-spot card opens "Plants per job 1 2 3 5" in the card, the focus on the pressed goal; a choice sets the goal and the card follows the engine', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder');
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
+  const e = await engineLead(page);
+  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  // The card's own Change (the place line has its own "Change").
+  await page.$eval('[aria-labelledby="ct-next-t"] [data-next-change]', (b) => b.click());
+  await frames(page);
+  const at = await page.evaluate(() => { const a = document.activeElement; return { text: a?.textContent?.trim().slice(0, 40), pressed: a?.getAttribute('aria-pressed'), group: a?.closest('[role="group"]')?.getAttribute('aria-label') ?? null }; });
+  assert.deepEqual(at, { text: String(e.goal), pressed: 'true', group: 'Plants per job' }, `R5, C1: Change puts the focus on the pressed goal of "Plants per job" (${JSON.stringify(at)})`);
+  const card = await nextText(page);
+  assert.match(card, /Plants per job\s*1\s*2\s*3\s*5/, `R5: the choice "Plants per job 1 2 3 5" in the card ("${card.slice(0, 200)}")`);
+  const want = e.goal === 3 ? 5 : 3;
+  await page.evaluate((n) => [...document.querySelectorAll('[aria-labelledby="ct-next-t"] [role="group"][aria-label="Plants per job"] button')].find((b) => b.textContent.trim() === String(n)).click(), want);
+  assert.ok(await until(page, (n) => window.__ctTest.store.plantsPerJob.value === n, want), `R5: the choice sets Plants per job to ${want}`);
+  await frames(page);
+  const e2 = await engineLead(page);
+  if (e2.lead?.kind === 'thin') assert.ok((await nextText(page)).includes(`you want ${want}`), `the card follows the goal ("you want ${want}")`);
+  assert.ok((await focused(page)).inTool, 'the focus stays in the tool');
+  await done(page);
+});
+
+test('PFA38 (pf-a R6, FindFilters): "Fills a hole or a thin job" counts the plants it keeps: its count is what ticking it lists', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens');
+  await press(page, 'button', 'Filters');
+  const said = await page.$eval('dialog[open] input[data-filter="fills"]', (i) => Number(i.closest('label').querySelector('[data-filter-count]').textContent.replace(/\D/g, '')));
+  await page.$eval('dialog[open] input[data-filter="fills"]', (i) => i.click());
+  await frames(page);
+  const shown = await page.$eval('dialog[open] [data-find-filters-show]', (b) => Number(b.textContent.replace(/\D/g, '')));
+  assert.ok(shown > 0, 'some plants fill a hole or a thin job');
+  assert.equal(said, shown, `R6: the box said ${said}, ticking it lists ${shown}`);
+  await done(page);
+});
+
+test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the toast\'s Undo takes the last add out of "N added this visit" and the next toast\'s count; a row\'s Undo taken back keeps the row\'s Undo', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => window.__ctTest.store.openFind());
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
+  await page.click('dialog[open] [data-job-chip="feeds_you"]');
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  const before = await members(page);
+  const added = [];
+  for (let i = 0; i < 2; i++) {
+    const add = (await findAdds(page))[0];
+    await addInFind(page, add);
+    added.push(add.replace(/^Add /, ''));
+    assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + i + 1), 'one tap adds it');
+  }
+  await says(page, `2 added this visit · your palette: ${before + 2} plants`, { inDialog: true });
+  await page.locator('dialog[open] .ct-toast .ct-toast-undo').click();
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 1), 'the toast\'s Undo takes back the last add');
+  await says(page, `1 added this visit · your palette: ${before + 1} plants`, { inDialog: true });
+  const add = (await findAdds(page))[0];
+  await addInFind(page, add);
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 2), 'the next add');
+  assert.equal(await toastText(page), `2 added this visit. Last: ${add.replace(/^Add /, '')}.`, 'R7: the next toast counts what this visit still holds');
+  // A row's Undo, then the toast's Undo that puts the plant back: the row keeps "Added" with its Undo.
+  await press(page, 'button', `Undo adding ${added[0]}`);
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 1), 'the row\'s Undo takes it out');
+  await page.locator('dialog[open] .ct-toast .ct-toast-undo').click();
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 2), 'the toast\'s Undo puts it back');
+  await control(page, 'button', `Undo adding ${added[0]}`);
+  await done(page);
+});
+
+test('PFA40 (pf-a R9, DeskStates): crossing 960 px with Find open keeps its search, its filters, the visit\'s count and each added row\'s Undo', async () => {
+  const page = await palette();
+  assert.ok(await verdictsSettled(page), 'the verdicts');
+  await says(page, OTHER_HOLES);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel at 1280 px');
+  await page.$eval('dialog[open] [data-job-chip="feeds_you"]', (b) => b.click());
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  const add = (await findAdds(page))[0];
+  const name = add.replace(/^Add /, '');
+  await addInFind(page, add);
+  await says(page, '1 added this visit', { inDialog: true });
+  const word = name.split(' ')[0].slice(0, 4);
+  await page.type('dialog[open] [data-find-search]', word);
+  await frames(page);
+  for (const width of [900, 1280]) {
+    await page.setViewport({ width, height: 900 });
+    assert.ok(await until(page, (w) => w < 960 ? !!document.querySelector(':modal') : !!document.querySelector('dialog[data-find-panel][open]'), width), `Find at ${width} px`);
+    await frames(page);
+    assert.equal(await page.$eval('dialog[open] [data-find-search]', (i) => i.value), word, `R9: the search stays at ${width} px`);
+    await says(page, '1 added this visit', { inDialog: true });
+    await control(page, 'button', 'Remove the filter Feeds you');
+    await control(page, 'button', `Undo adding ${name}`);
+  }
+  await done(page);
+});
+
+test('PFA41 (pf-a R4, R8, C3, AddMany): a Mildly toxic plant that fits adds with no "added with a warning"; the bulk note names the picks and says the marks of what each button adds, the others too', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder');
+  await says(page, OTHER_HOLES);
+  const e = await engineLead(page);
+  assert.ok(e.fits.length > 0, 'plants fit the lead');
+  const rows = await page.$$eval('[aria-labelledby="ct-next-t"] [data-filler-id]', (rs) => rs.map((r) => ({ sci: r.querySelector('i[lang="la"]')?.textContent, name: r.querySelector('button[aria-label^="Add "]')?.getAttribute('aria-label').replace(/^Add /, ''), marks: [...r.querySelectorAll('[data-kind]')].map((m) => m.textContent.trim()) })));
+  const fits = rows.filter((r) => e.fits.includes(r.sci));
+  const note = await page.$eval('[data-next-bulk-note]', (p) => p.innerText.replace(/\s+/g, ' '));
+  const bestRows = fits.filter((r) => e.best.includes(r.sci)), others = fits.filter((r) => !e.best.includes(r.sci));
+  // C3: the picks named ("the 2 are Pinto peanut, Pineapple"), each marked pick in words.
+  for (const r of bestRows) assert.ok(note.includes(r.name), `C3: the note names the pick ${r.name} ("${note}")`);
+  for (const r of bestRows.filter((x) => x.marks.length)) assert.match(note, new RegExp(`${r.name} is [^.]+ and says so on its row\\.`), `C3: "${r.name} is … and says so on its row." ("${note}")`);
+  // R8: the others "Add all N" adds, their marks said before the tap.
+  if (others.some((r) => r.marks.length)) assert.match(note, /Among the others, \d+ (?:is|are) /, `R8: the marks of the others "Add all" adds ("${note}")`);
+  // R4: Mildly toxic is a mark, not a second look: its add says no "with a warning".
+  const mild = fits.find((r) => r.marks.some((m) => /Mildly toxic/.test(m)));
+  if (mild) {
+    await press(page, 'button', `Add ${mild.name}`);
+    assert.ok(await until(page, () => !!window.__ctTest.store.toast.value), 'a toast');
+    assert.doesNotMatch(await toastText(page), /with a warning/, `R4: "${mild.name}" (Mildly toxic) adds with no "added with a warning"`);
+  }
+  await done(page);
+});

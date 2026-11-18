@@ -323,6 +323,14 @@
 .ct .ct-next-way-sub { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
 .ct .ct-next-emptynote { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
 .ct .ct-next-emptynote .ct-glyph { width: 14px; height: 14px; vertical-align: -2px; }
+/* The goal's choice the card's "Change" opens (R5, C1): "Plants per job" then four 44 px buttons,
+   the pressed one in ink (its state also said by aria-pressed). */
+.ct .ct-next-goal { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0 0; }
+.ct .ct-next-goal-label { font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-goal-ns { display: flex; gap: 6px; }
+.ct .ct-next-goal-n { min-width: 44px; min-height: 44px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.ct .ct-next-goal-n:hover { background: var(--surface-alt); }
+.ct .ct-next-goal-n[aria-pressed="true"] { border-color: var(--text); background: var(--surface-alt); box-shadow: inset 0 0 0 1px var(--text); font-weight: 600; }
 /* The room note above the Next step card (board Balcony; BC32): the pot mark, then the words. */
 .ct .ct-next-room { display: flex; gap: 8px; margin: 0; padding: 9px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-alt); font-size: 14px; line-height: 20px; color: var(--text-secondary); }
 .ct .ct-next-room b { color: var(--text); font-weight: 600; }

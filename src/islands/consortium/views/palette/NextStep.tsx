@@ -12,9 +12,9 @@
 // button (F17). An untouched suggestion shows its thin spots as a count only (A19). A warned plant is
 // never dropped (inform, don't block; owner 2026-11-14).
 import type { ComponentChildren } from 'preact';
-import { useMemo, useState } from 'preact/hooks';
+import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { Fillers, Hole, JobId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { bestToAdd, dryIntroLine, edgeChipLine, fillReasonLine, fillers, fills, holeChangeLines, jobsOf, nextTarget, noneFits, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
+import { bestToAdd, dryIntroLine, edgeChipLine, fillReasonLine, fillers, fills, holeChangeLines, jobsOf, nextTarget, noneFits, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PLANTS_PER_JOB, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusNextStep, focusSoon } from '../../focus.ts';
 import { formatLength } from '../../format.ts';
@@ -202,6 +202,8 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   // not fitted to a place (store.offerPool; the head says why).
   const pool = store.offerPool.value ?? NONE;
   const [showOutside, setShowOutside] = useState<string | null>(null);
+  // R5, C1: "Change" and "Change the 2" open the goal's own choice in the card (GoalChoice).
+  const [goalOpen, setGoalOpen] = useState(false);
   const pv = store.poolVerdicts.value;
   // C5: a cooler-months food hole leads when plants that fit (no second look) fill it (core rankedHoles).
   const hasFits = (h: Hole) => { const ids = new Set(members.map((t) => t.id)); return pool.some((t) => !ids.has(t.id) && fills(h, t) && pv?.get(t.id)?.level === 'fits' && !store.warnedPlant(t)); };
@@ -291,10 +293,12 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const seeOutside = () => { setShowOutside(next.id); focusSoon(() => document.querySelector<HTMLElement>('.ct-next [data-outside] li button') ?? document.getElementById('ct-next-t')); };
   const filler = (t: Taxon) => <Filler t={t} v={pv?.get(t.id)} hole={next} open={open} />;
   const lookFiller = (t: Taxon) => <Filler t={t} v={pv?.get(t.id)} hole={next} open={open} look />;
-  // "Change" and "Change the 2" go to the Plants per job control (pf-b's Jobs card renders the id).
-  const changeGoal = () => focusSoon(() => document.getElementById(PLANTS_PER_JOB_ID));
+  // R5, C1: "Change" and "Change the 2" act on the goal itself: they open "Plants per job 1 2 3 5" in
+  // the card (GoalChoice), never another part's control found by its id.
+  const changeGoal = () => setGoalOpen(!goalOpen);
+  const goalChoice = goalOpen && <GoalChoice close={() => setGoalOpen(false)} />;
   const position = thin
-    ? <><Part>{T('palette.next.thinOf', { i: lead.index, n: lead.of })}</Part> · <Part>{T('palette.next.youWant', { n: goal })}</Part> · <button type="button" class="text-link" data-next-change="" onClick={changeGoal}>{T('palette.next.change')}</button></>
+    ? <><Part>{T('palette.next.thinOf', { i: lead.index, n: lead.of })}</Part> · <Part>{T('palette.next.youWant', { n: goal })}</Part> · <button type="button" class="text-link" data-next-change="" aria-expanded={goalOpen} onClick={changeGoal}>{T('palette.next.change')}</button></>
     : <><Part>{T('palette.holeOf', { i: lead.index, n: lead.of })}</Part> · <Part>{openThins.length ? P(untouched ? 'palette.next.thinCount' : 'palette.next.thenThin', openThins.length) : T('palette.next.noThin')}</Part></>;
   const bestNames = best.map(byId).filter((t): t is Taxon => !!t).map(nameOf).join(', ');
   const have = thin && next.thin ? next.thin.have : 0;
@@ -340,6 +344,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   return (
     <Card hole={next.id} after={otherHoles}>
       <Title count={position} />
+      {thin && goalChoice}
       <h4 class="ct-next-hole" data-next-title="">{thin ? say(thinTitleLine(next)) : holeWords(next)}</h4>
       {uncheckedText && <p class="ct-next-unchecked" data-next-unchecked="">{uncheckedText}</p>}
       {whySentence && <p class="ct-next-why" data-next-why="">{whySentence}</p>}
@@ -378,7 +383,8 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
         </span>
         <button type="button" class={link} onClick={putOff}>{T('palette.notNow')}</button>
       </p>
-      {sentence && <OthersSentence others={others} openThins={untouched ? [] : openThins} thinCount={openThins.length} goal={goal} members={members} open={open} change={changeGoal} />}
+      {sentence && <OthersSentence others={others} openThins={untouched ? [] : openThins} thinCount={openThins.length} goal={goal} members={members} open={open} change={changeGoal} expanded={goalOpen} />}
+      {sentence && !thin && goalChoice}
     </Card>
   );
 }
@@ -448,9 +454,26 @@ function Filler({ t, v, hole, open, look = false }: { t: Taxon; v: PlantVerdict 
   );
 }
 
-// The id of the Plants per job control ("Plants per job 1 2 3 5", pf-b's Jobs card) that "Change" and
-// "Change the 2" focus (a hand-off: the owning stream renders it on its pressed button's group).
-export const PLANTS_PER_JOB_ID = 'ct-plants-per-job';
+// The goal's choice (R5, C1): "Plants per job 1 2 3 5" (core PLANTS_PER_JOB), opened in the card by
+// "Change" or "Change the 2", the focus on the goal pressed now; a choice writes the goal
+// (store.setPlantsPerJob, the one writer), closes the choice and leaves the focus on the Next step's
+// title, the card having followed the engine to its new target.
+function GoalChoice({ close }: { close: () => void }) {
+  const goal = store.plantsPerJob.value;
+  const pressed = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => { pressed.current?.focus(); }, []);
+  return (
+    <div class="ct-next-goal" role="group" aria-label={T('palette.goalLabel')} data-next-goal=""
+      onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); focusSoon(() => document.querySelector<HTMLElement>('.ct-next [data-next-change], .ct-next [data-next-change-goal]')); } }}>
+      <span class="ct-next-goal-label" aria-hidden="true">{T('palette.goalLabel')}</span>
+      <span class="ct-next-goal-ns">
+        {PLANTS_PER_JOB.map((n) => (
+          <button key={n} ref={n === goal ? pressed : undefined} type="button" class="ct-next-goal-n" aria-pressed={n === goal} onClick={() => { store.setPlantsPerJob(n); close(); focusNextStep(); }}>{n}</button>
+        ))}
+      </span>
+    </div>
+  );
+}
 
 // The other holes and the thin spots as one paragraph (boards Many, ManyDesk, AddMany): "The other hole:
 // Covers the ground: nobody known after year 25 · 7 plants not checked (no plant on your lists fits here
@@ -458,7 +481,7 @@ export const PLANTS_PER_JOB_ID = 'ct-plants-per-job';
 // plants you want, from year 1 to year 60." or "Then 5 thin spots, with fewer than the 2 plants you
 // want: Feeds you (years 15 to 60), …", and "Change the 2". Counts from core fills and the verdicts,
 // with the store's one second-look rule.
-function OthersSentence({ others, openThins, thinCount, goal, members, open, change }: { others: readonly Hole[]; openThins: readonly Hole[]; thinCount: number; goal: number; members: readonly Taxon[]; open: readonly Hole[]; change: () => void }) {
+function OthersSentence({ others, openThins, thinCount, goal, members, open, change, expanded }: { others: readonly Hole[]; openThins: readonly Hole[]; thinCount: number; goal: number; members: readonly Taxon[]; open: readonly Hole[]; change: () => void; expanded: boolean }) {
   const holeText = (h: Hole) => {
     const f = holeFillers(h, members, open), fit = f.fits.length, look = f.look.length;
     const u = uncheckedLine(h);
@@ -472,7 +495,7 @@ function OthersSentence({ others, openThins, thinCount, goal, members, open, cha
   return (
     <p class="ct-next-others" data-next-others="">
       {holesPart && <>{holesPart} </>}{thinPart}{' '}
-      <button type="button" class="text-link" data-next-change-goal="" onClick={change}>{T('palette.next.changeGoal', { n: goal })}</button>
+      <button type="button" class="text-link" data-next-change-goal="" aria-expanded={expanded} onClick={change}>{T('palette.next.changeGoal', { n: goal })}</button>
     </p>
   );
 }
