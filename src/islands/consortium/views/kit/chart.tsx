@@ -47,13 +47,15 @@ export const LaneHead = ({ r }: { r: Pick<PictureRow, 'key' | 'head'> }) => (
 );
 
 // One plant as a button: its main job's icon, its name, the warning mark when it warns; its name read
-// as one phrase (the plant, its main job, its fit when it warns).
+// as one phrase (the plant, its main job, its fit when it warns). A grid bar one time span long draws
+// its colour behind the icon only and its name after it, in the text colour (board Main: "Crimson
+// clover"), so no name is cut.
 export function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Picture; b: PlantButtons; cls?: string; span?: Span }) {
   const v = b.verdictOf?.(id), job = p.jobs[id] ?? null, warn = !!v && (v.level === 'outside' || v.level === 'look');
   const label = [p.names[id] ?? id, jobWord(job), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
   return (
-    <button type="button" class={cls} {...spanAttrs(span)} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} aria-label={label} onClick={() => b.onPlant(id)}>
-      <JobIcon job={job} /><span class="ct-bar-name">{p.names[id] ?? id}</span>{warn && WARN}
+    <button type="button" class={cls} {...spanAttrs(span)} data-short={span && span[0] === span[1] ? '' : undefined} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} aria-label={label} onClick={() => b.onPlant(id)}>
+      <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{warn && WARN}
     </button>
   );
 }
@@ -65,6 +67,8 @@ export const HoleButton = ({ id, b, find, span }: { id: string; b: PlantButtons;
 );
 
 // The grid's runs of one hole: the columns of each contiguous run of cells that are that hole.
+// A run spans the hole's own years when its id names them ("light:low:0-3": the first 3 years, also
+// over the time spans not judged yet, as board Main draws "Full sun: nobody in the first 3 years").
 function holeRuns(r: PictureRow): { id: string; from: number; to: number }[] {
   const out: { id: string; from: number; to: number }[] = [];
   r.cells.forEach((c, i) => {
@@ -73,6 +77,13 @@ function holeRuns(r: PictureRow): { id: string; from: number; to: number }[] {
     if (last && last.id === c.hole && last.to === i - 1) last.to = i;
     else out.push({ id: c.hole, from: i, to: i });
   });
+  const last = r.cells.length - 1;
+  for (const run of out) {
+    const m = /:(\d+)-(\d+)(?::|$)/.exec(run.id);
+    if (!m) continue;
+    run.from = Math.min(run.from, phaseOfYear(Number(m[1])));
+    run.to = Math.min(last, Math.max(run.to, phaseOfYear(Number(m[2]), true)));
+  }
   return out;
 }
 

@@ -29,9 +29,10 @@ const has = (key: string): boolean => T(key) !== key;
 const names = (ids: readonly PlantId[], byId: Map<PlantId, Taxon>): string[] => ids.flatMap((id) => { const t = byId.get(id); return t ? [nameOf(t)] : []; });
 const named = (ids: readonly PlantId[], byId: Map<PlantId, Taxon>): string => commaList(ids.flatMap((id) => { const t = byId.get(id); return t ? [nameOf(t)] : []; }));
 
-// Names under the size rule: all as a sentence, or the count cell.
+// Names under the size rule: all as a sentence, or the count cell (a block: never inside a <p>).
+const inline = (ids: readonly PlantId[], size: number): boolean => size <= SIZE_PALETTE && ids.length <= 12;
 function Names({ ids, byId, size, closed = 3 }: { ids: readonly PlantId[]; byId: Map<PlantId, Taxon>; size: number; closed?: number }) {
-  if (size <= SIZE_PALETTE && ids.length <= 12) return <>{named(ids, byId)}</>;
+  if (inline(ids, size)) return <>{named(ids, byId)}</>;
   return <MoreList items={ids} keyOf={(id) => id} paletteSize={size} closed={closed} class="ct-cell-names" render={(id) => { const t = byId.get(id); return t ? nameOf(t) : id; }} />;
 }
 
@@ -154,12 +155,14 @@ function BalanceItem({ w, byId, size }: { w: WeighLine; byId: Map<PlantId, Taxon
     return (
       <li data-weigh="family" data-family={fam}>
         <strong>{has(words) ? T('palette.balance.family', { ...v, words: T(words) }) : T('plants.weigh.family', v)}</strong>{est}
-        <p><Names ids={w.members} byId={byId} size={size} />. {has(hint) ? T(hint) : T('plants.weigh.familyHint')}</p>
+        {inline(w.members, size)
+          ? <p><Names ids={w.members} byId={byId} size={size} />. {has(hint) ? T(hint) : T('plants.weigh.familyHint')}</p>
+          : <><Names ids={w.members} byId={byId} size={size} /><p>{has(hint) ? T(hint) : T('plants.weigh.familyHint')}</p></>}
       </li>
     );
   }
   if (w.kind === 'soil') {
-    return <li data-weigh="soil"><strong>{P('palette.balance.soilHints', Number(l.vars.n))}</strong>{est}<p><Names ids={w.members} byId={byId} size={size} /></p></li>;
+    return <li data-weigh="soil"><strong>{P('palette.balance.soilHints', Number(l.vars.n))}</strong>{est}{inline(w.members, size) ? <p><Names ids={w.members} byId={byId} size={size} /></p> : <Names ids={w.members} byId={byId} size={size} />}</li>;
   }
   const missing = Number(l.vars.missing ?? 0);
   if (said === 'waterDrySummer') {

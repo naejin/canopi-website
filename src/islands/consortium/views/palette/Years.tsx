@@ -82,12 +82,13 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
   const outsideThen = big ? members.filter((t) => !counts(t) && t.stratum && spans(t, at)) : [];
   const stepper = (
     <div class="ct-stepper">
-      <button type="button" class="button button-secondary" aria-disabled={at === 0 ? 'true' : undefined} onClick={() => go(at - 1)}>{T('palette.earlier')}</button>
+      <button type="button" class="button button-secondary ct-step-btn" data-dir="back" aria-disabled={at === 0 ? 'true' : undefined} onClick={() => go(at - 1)}><span class="visually-hidden">{T('palette.earlier')}</span></button>
       <div class="ct-stepper-at" role="group" aria-label={T('palette.chart.span', { n: at + 1, m: PHASE_YEARS.length })}>
         <strong>{say(picture.columns[at])}</strong>
-        {big && <span class="ct-stepper-note">{P('palette.chart.standing', stand, { m: members.length })}</span>}
+        {big ? <span class="ct-stepper-note">{P('palette.chart.standing', stand, { m: members.length })}</span>
+          : <span class="ct-stepper-dots" aria-hidden="true">{PHASE_YEARS.map((_, i) => <span key={i} data-on={i === at ? '' : undefined} />)}</span>}
       </div>
-      <button type="button" class="button button-secondary" aria-disabled={at === last ? 'true' : undefined} onClick={() => go(at + 1)}>{T('palette.later')}</button>
+      <button type="button" class="button button-secondary ct-step-btn" data-dir="next" aria-disabled={at === last ? 'true' : undefined} onClick={() => go(at + 1)}><span class="visually-hidden">{T('palette.later')}</span></button>
     </div>
   );
   return (
