@@ -163,6 +163,20 @@ test('b1a Start over then one Undo: members, removed and guests come back, the p
   assert.equal(store.toast.peek()?.undo ?? null, null, 'a change ends the Undo offer');
 });
 
+test('h2 R7: Start over with no plant left (every one removed) says no "Palette cleared: 0 plants"', async () => {
+  await mine(5);
+  for (const id of store.members.peek()) store.removeMember(id);
+  assert.equal(store.members.peek().length, 0);
+  assert.ok(store.removed.peek().length > 0, 'the removed list holds them');
+  store.hideToast();
+  draft.startOver();
+  assert.equal(store.toast.peek(), null, 'nothing to count: no "Palette cleared: 0 plants" toast');
+  // With plants, the count and its Undo (board Toasts "Palette cleared: 8 plants. Your place is kept.").
+  await mine(5);
+  draft.startOver();
+  assert.ok(store.toast.peek()?.undo, 'with plants: the count toast and its Undo');
+});
+
 test('b1a a guide preset gives members == [id] and writes no save until the reader acts', async () => {
   const pool = await mine(5);
   persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; });

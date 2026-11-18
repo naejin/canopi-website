@@ -93,7 +93,9 @@ export function startOver(): void {
     dropLinkLocation();
     notices.value = { ...NO_NOTICES };
   });
-  if (before.members.length || before.removed.length || Object.keys(before.guests).length) store.offerUndo(P('place.cleared', before.members.length), before);
+  // Board Toasts "Palette cleared: 8 plants. Your place is kept." with its Undo, for a palette with
+  // plants; none left (each removed already), nothing to count and no toast (h2 R7: never "0 plants").
+  if (before.members.length) store.offerUndo(P('place.cleared', before.members.length), before);
   // Its button leaves with the palette: the toast's Undo, else Place's heading (pre-push fix 6, B).
   focusAfterStartOver();
 }
