@@ -2,30 +2,30 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T15:41:02Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:07Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:15b74990f89ca4fb
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:4f0a65d288c28653
+    last_modified: 2026-11-18T15:30:23Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:cb7e165cdbf709c4
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:bdf5b8bd1bc69e10
+    last_modified: 2026-11-18T15:30:23Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
-    digest: sha256:931b5dc8429fbd9d
-    last_modified: 2026-11-14T16:49:53Z
+    digest: sha256:d95ac5253a5e56ae
+    last_modified: 2026-11-18T14:24:53Z
   - id: chart-tsx
     resource: ../../src/islands/consortium/views/kit/chart.tsx
     title: src/islands/consortium/views/kit/chart.tsx
-    digest: sha256:d25c6598c940822f
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:8a4e140bb3b3859b
+    last_modified: 2026-11-18T15:37:38Z
   - id: fit-tsx
     resource: ../../src/islands/consortium/views/kit/fit.tsx
     title: src/islands/consortium/views/kit/fit.tsx
@@ -34,13 +34,13 @@ sources:
   - id: picture-ts
     resource: ../../src/islands/consortium/rules/picture.ts
     title: src/islands/consortium/rules/picture.ts
-    digest: sha256:239424e30f36130f
-    last_modified: 2026-11-14T18:01:21Z
+    digest: sha256:6fb285724a08ae22
+    last_modified: 2026-11-18T14:24:53Z
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:ca29813fffe9f702
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:6976729b01cae6cf
+    last_modified: 2026-11-18T15:30:23Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
@@ -54,8 +54,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:ef7536bd28f46910
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:6346b81af8801e47
+    last_modified: 2026-11-18T15:30:23Z
 enforced_by:
   - scripts/browser/consortium-pp-b2.browser.test.mjs
   - scripts/consortium-pp-b2.test.mjs
@@ -88,6 +88,12 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   unused-key check matches a template literal only against single-segment keys.
 - `kit/fit.tsx` reaches the first run through `views/kit/sheet.tsx` `shared` (Add reads `FitLine`; a
   sheet chunk may import first-run modules only, check-built-site K3).
+- The rows the Next step and Find share (`Marks`, `rowRoles`/`rowSize`/`rowSpan`, `holeFillers`,
+  `HoleRow`, `addedWords`, `PLUS`) live in `views/rows.tsx` (not `views/kit/`: they read the store, and
+  the kit is a leaf, L5). `App.tsx` imports it and `views/kit/more.tsx` (MoreList) for their place in the
+  first run, and `astro.config.mjs` `FIRST_RUN_KIT` builds both untreeshaken: a module with no side
+  effect of its own would otherwise be dropped from that import and land in a third, shared lazy chunk
+  that the Find chunk imports statically (K3 red).
 - Your plants and Things to weigh derive in the views (`useMemo`), never in the store (first run). Vectors:
   `scripts/vectors/weigh.json`; unit tests `scripts/consortium-pp-b3.test.mjs`; browser: the pf
   board specs `scripts/browser/consortium-pf-b.browser.test.mjs` (pf commit 0 swept
