@@ -369,3 +369,16 @@ test('store: the 200-plant Kiambu palette\'s holes, lanes and thin spots (timed,
   assert.ok(n[1] > 0);
   store.hideToast();
 });
+
+// ---- 0W-2 R1: Mildly toxic (Slight) is not a second look; the chip stays (the flag and its level) ----
+test('R1: a toxicity flag carries its level; Slight alone is no second look, Moderate and Severe are', () => {
+  const tox = (level) => [{ id: 'p', kind: 'toxicity', level }];
+  assert.equal(core.secondLook(tox('Slight')), false);
+  assert.equal(core.secondLook(tox('Moderate')), true);
+  assert.equal(core.secondLook(tox('Severe')), true);
+  assert.equal(core.secondLook([...tox('Slight'), { id: 'p', kind: 'misfit' }]), true, 'a misfit beside it still is');
+  const plant = (level) => ({ id: 'p', canonical_name: 'P', stratum: null, warnings: { toxicity: { level } }, jobs: [] });
+  const site = core.siteOf(core.siteInputsOf({ lookup: null, room: 'unsure', edits: core.NO_EDITS }));
+  const flags = core.flagsFor(plant('Slight'), [], { site, interactions: [], country: null });
+  assert.deepEqual(flags.filter((f) => f.kind === 'toxicity'), [{ id: 'p', kind: 'toxicity', level: 'Slight' }], 'the chip\'s flag stays');
+});

@@ -369,6 +369,7 @@ export interface Flag {
   type?: Exclude<InteractionType, 'allelopathy_tolerant' | 'intercropped_yield_gain'>;
   agent?: string | null;
   note?: Text | null;
+  level?: string; // a toxicity flag's recorded level (Slight, Moderate, Severe): Slight is no second look
 }
 // The reader's country for the invasive check (conflicts.ts countryStatus): none given, given and
 // checked against GRIIS ("not recorded" is then a real answer), or given but not checked.

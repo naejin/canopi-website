@@ -121,8 +121,9 @@ export function invasiveIn(taxon: Taxon, country: string | null | undefined, che
 // with its countryStatus (only 'checked' gives invasive flags and "not recorded").
 export interface FlagContext { site: Site; interactions: Interaction[]; country?: string | null; countryStatus?: CountryStatus }
 
-// Every recorded level but None warns, Slight too (owner: mild = warning, moderate and above = danger;
-// the level travels on the plant, views/kit/flags.ts reads it).
+// Every recorded level but None gives a toxicity flag, Slight too (owner: mild = warning, moderate and
+// above = danger; the chip stays). The flag carries its level: Slight is no second look (owner ruling,
+// v14 fix round 3, 1; spec 0W-2 R1).
 const TOXIC = new Set(['Slight', 'Moderate', 'Severe']);
 
 // A conflict found for a plant: the other member and the row (severity, type, agent, note).
@@ -143,7 +144,7 @@ function flagsWith(taxon: Taxon, fit: Fit, canopy: Canopy, found: Found[], ctx: 
   if (misfitsBeside(taxon, ctx.site, canopy, fit).length) out.push({ id, kind: 'misfit' });
   if (invasiveIn(taxon, ctx.country, ctx.countryStatus === 'checked') === true) out.push({ id, kind: 'invasive' });
   const tox = taxon.warnings.toxicity?.level;
-  if (tox && TOXIC.has(tox)) out.push({ id, kind: 'toxicity' });
+  if (tox && TOXIC.has(tox)) out.push({ id, kind: 'toxicity', level: tox });
   return out;
 }
 
@@ -182,8 +183,9 @@ export const warns = (flags: readonly Flag[]): boolean => flags.some((f) => f.ki
 
 // Whether a plant needs a second look (pf hand-off; owner answer Q2, 2026-11-17): its flags warn (a
 // site misfit, a serious conflict), or it is recorded as invasive in the chosen country (a flag only
-// where a source assessed that country: flagsWith), or toxic. The one rule of the Next step's grouping,
-// Find's and every add's "added with a warning" (store.ts warnedPlant reads it); no country chosen gives
-// no invasive flag, so no second look for it.
+// where a source assessed that country: flagsWith), or toxic beyond Slight ("Mildly toxic" is a chip,
+// never a second look: R1). The one rule of the Next step's grouping, Find's and FillHole's, every
+// add's "added with a warning" and the Warnings card (store.ts warnedPlant reads it); no country chosen
+// gives no invasive flag, so no second look for it.
 export const secondLook = (flags: readonly Flag[]): boolean =>
-  warns(flags) || flags.some((f) => f.kind === 'invasive' || f.kind === 'toxicity');
+  warns(flags) || flags.some((f) => f.kind === 'invasive' || (f.kind === 'toxicity' && f.level !== 'Slight'));
