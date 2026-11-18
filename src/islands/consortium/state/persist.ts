@@ -42,8 +42,8 @@
 // in flight (what Start shows while a link opens) and the count of the reader's actions, which the
 // store watcher (watchStore) keeps.
 import { computed, effect, signal, untracked } from '@preact/signals';
-import type { ClimateZone, LinkOrigin, PlantId, ShareState, SiteEdits, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
-import { emptyPlace, encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, LinkOrigin, PlantId, ShareState, SiteEdits } from '../../../lib/consortium/index.ts';
+import { encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
@@ -106,7 +106,7 @@ export function readRecord(text: string | null): SavedRecord | null {
 // ---- the share state ----
 
 // The state a link or the save holds, each field as state/schema.ts puts it. place: the reader's
-// "Include my place" tick: the country (never a guess), the spot and the soil go in only with it.
+// "Include my place" tick: the country (never a guess) and the grower's own values go in only with it.
 export function shareState(s: ShareInput, { place = false }: { place?: boolean } = {}): ShareState {
   return schema.share(s, { place }) as unknown as ShareState;
 }
@@ -161,14 +161,10 @@ export function adoptPending(): void {
 // The page's palette (null: no climate yet). A guest the chosen climate's list holds, once read, is
 // left out: it is one of the list's own (a card clicked before its list was read marks each member
 // of the list it left a guest; r3-3).
-// Spot and soil as the save and links write them until PP-F: empty.
-const DORMANT = Object.freeze({ spot: { ...emptyPlace.spot }, soil: { from: 'map' } as SoilAnswer });
 export function palette(): Consortium | null {
   const climate = store.climate.peek();
   if (!climate) return null;
-  // The spot and soil answers are dormant until PP-F (owner 2026-11-18; spec update point 6): the save,
-  // the address and links write them empty, whatever the store holds.
-  const now = { ...(schema.peek(schema.lists.saved) as Consortium), ...DORMANT };
+  const now = schema.peek(schema.lists.saved) as Consortium;
   const list = store.pools.peek()[climate];
   const own = list && Object.keys(now.guests).filter((id) => list.some((t) => t.id === id));
   if (!own?.length) return now;
@@ -195,8 +191,8 @@ function knownOf(now: Consortium): Partial<Record<ClimateZone, PlantId[]>> {
 }
 // The palette as a fragment, against the climate's and the guest lists' ids. origin: the site's cell
 // centre, given only with Share's tick: the link then carries `o=`. place: the "Include my place" tick
-// (by default, whether an origin is given: Share's tick until b1a words it), which adds the country,
-// the spot and the soil; the address bar and the save's fragment never pass it.
+// (by default, whether an origin is given: Share's tick until b1a words it), which adds the country
+// and the grower's own values; the address bar and the save's fragment never pass it.
 export function currentFragment({ origin = null, place = origin !== null }: { origin?: LinkOrigin | null; place?: boolean } = {}): string | null {
   const now = palette();
   if (!now) return null;
@@ -207,8 +203,8 @@ export function currentFragment({ origin = null, place = origin !== null }: { or
 export const SUGGESTED_KEY = 'sg';
 const suggestedPart = (): string => (store.untouchedSuggestion.peek() ? `${SUGGESTED_KEY}=1` : '');
 const joined = (...parts: string[]): string => parts.filter(Boolean).join('&');
-// A palette's private place answers, as the save's `place` and history.state.pl keep them: the spot,
-// the soil and the grower's own values, without the country and the cell (core encodePlace), then the
+// A palette's private place answers, as the save's `place` and history.state.pl keep them: the
+// grower's own values, without the country and the cell (core encodePlace), then the
 // untouched-suggestion mark.
 export function currentPlace(of: Consortium | null = null): string {
   const now = of ?? palette();
@@ -216,7 +212,7 @@ export function currentPlace(of: Consortium | null = null): string {
   return joined(encodePlace({ ...shareState(now, { place: true }), country: null }), suggestedPart());
 }
 // history.state.pl: the tab's place, with a link's country (`k`) too, so a reload of a link's page keeps
-// the country "from the shared link" (the address holds none of `k o l w q r h s`; the reader's own
+// the country "from the shared link" (the address holds none of `k o f b p i d`; the reader's own
 // country is kept on the device, COUNTRY_STORE, and in the save record's `country`).
 // While a link's place waits on the reader, its cell (`o`) too, so "Use it" after a reload still has it
 // (per tab, never in the save).
@@ -227,13 +223,10 @@ function addressPlace(): string {
   const o = linkPlace.peek() && at?.source === 'link' ? { lat: at.lat, lon: at.lon } : null;
   return joined(encodePlace({ ...shareState(now, { place: true }), country: now.country.source === 'link' ? now.country.code : null }, o), suggestedPart());
 }
-// The canopi-place seed: room, plot size, spot and soil (`m z l w q r h s`), without the country.
-// The spot and soil are dormant until PP-F: the seed writes them empty.
+// The canopi-place seed: room and plot size (`m z`), without the country.
 export function placeSeed(): string {
   const s = schema.peek(['room', 'plot']);
-  const { spot, soil } = DORMANT;
-  const pairs = [`m=${s.room}`, ...(s.plot !== null ? [`z=${s.plot}`] : []), encodePlace({ country: null, spot, soil })].filter(Boolean);
-  return pairs.join('&');
+  return [`m=${s.room}`, ...(s.plot !== null ? [`z=${s.plot}`] : [])].join('&');
 }
 
 // ---- a link that brings a place, and the save held until the reader acts (plant-palette-architecture 8.3) ----
@@ -242,7 +235,7 @@ export function placeSeed(): string {
 // place" (restore.ts sets it; draft.ts useLinkPlace / useOwnPlace end it). own: the reader's place,
 // country and site cell (location: their own, never a link's) just before the link applied; the save
 // keeps them until the reader chooses.
-export interface OwnPlace { spot: Spot; soil: SoilAnswer; siteEdits: SiteEdits; country: Country; location: LinkOrigin | null }
+export interface OwnPlace { siteEdits: SiteEdits; country: Country; location: LinkOrigin | null }
 export const linkPlace = signal<{ own: OwnPlace } | null>(null);
 // What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
 // notice's button leaves the page with its line, so the focus moves on and this says what happened:
@@ -264,8 +257,8 @@ function writeSave(next: string): void {
   if (memory.write(STORE, next)) lastSave.value = next;
 }
 
-// "Forget this location" (location.ts forget; privacy.tool.device): the stored record keeps no spot
-// or soil answers and no country from the location, held page or not (pre-push fix 3: a held page
+// "Forget this location" (location.ts forget; privacy.tool.device): the stored record keeps none of the
+// grower's own values and no country from the location, held page or not (pre-push fix 3: a held page
 // writes nothing, so its save kept them and "Open my saved palette instead" or a plain visit brought
 // them back). A link's own country (src 'link'), the plants, the room and the plot (the fragment) stay.
 // own: the reader's own location was forgotten (a link's location goes alone, so the country the
@@ -321,7 +314,7 @@ function persist(): void {
   const now = held.peek() ? null : palette();
   if (!now) return;
   const pending = linkPlace.peek()?.own;
-  const kept = pending ? { ...now, country: pending.country } : now; // spot and soil stay dormant (palette())
+  const kept = pending ? { ...now, country: pending.country, siteEdits: pending.siteEdits } : now;
   writeSave(saveRecord(currentFragment() ?? '', new Date().toISOString(), countryFrom(kept.country), kept.country.code, currentPlace(kept)));
 }
 
@@ -377,19 +370,13 @@ export function watchStore(): void {
     untracked(persist);
   });
   // canopi-place follows the room and plot the reader gives (a restore applying a link's or a save's
-  // place is not the reader: it seeds nothing). Spot and soil are dormant until PP-F (seeded empty).
+  // place is not the reader: it seeds nothing).
   let firstPlace = true;
   effect(() => {
     void schema.track(['room', 'plot']);
     if (firstPlace) { firstPlace = false; return; }
     if (quiet) return;
     untracked(() => memory.write(PLACE_STORE, placeSeed()));
-  });
-  let firstSpot = true;
-  effect(() => {
-    void schema.track(['spot', 'soil']);
-    if (firstSpot) { firstSpot = false; return; }
-    if (!quiet && untracked(() => linkPlace.peek())) linkPlace.value = null;
   });
 }
 

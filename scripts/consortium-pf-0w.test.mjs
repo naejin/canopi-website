@@ -7,6 +7,7 @@
 //   store.ts        plantsPerJob, suggestedIds, untouchedSuggestion, updateToast, setSiteEdits, placeAt,
 //                   removeMembers, addMembers' text function, openFigure (items 4-6, 8);
 //   views/kit/more.tsx's fold (item 7, the pure part: views/kit/fold.ts), site-change stubs (item 9).
+//   R1-R4 (0W-2 rules): toxicity levels, the watering rule, soil and drainage as hints, a cut link unreadable.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -441,4 +442,26 @@ test('R3: setsLevel is false for soil-ph and drainage (and the wet check), dry k
   assert.deepEqual(core.flagsFor(plant, [], { site: core.siteOf(measured), interactions: [], country: null }), [], 'no misfit flag, no second look');
   const potted = core.siteInputsOf({ lookup: lookup({ phH2o: 8.1, texture: 'clay', filled: false, fillDistanceCells: 0, distanceCells: 0 }), edits: { pots: true } });
   assert.equal(verdict(plant, { inputs: potted, period: '1991-2020', scenario: 'ssp245' }).factors.some((x) => x.factor === 'soil-ph' && x.level !== 'unknown'), false, 'pots: no soil hint');
+});
+
+test('R4: a link without e=1 is unreadable and restores nothing (cut is the reason only); l w q r h s are no keys', () => {
+  const NONE = { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false };
+  const ok = core.decodeLink('v=5&c=temperate&m=small&a=&k=FR&b=60&e=1', {}, null);
+  assert.deepEqual([ok.state.climate, ok.state.room, ok.notice], ['Temperate', 'small', NONE]);
+  for (const cut of ['v=5&c=temperate&m=small&a=&k=FR&b=60', 'v=5&c=temperate&m=small']) {
+    const d = core.decodeLink(cut, {}, null);
+    assert.deepEqual(d.notice, { ...NONE, cut: true, unreadable: true }, cut);
+    assert.deepEqual([d.state.climate, d.state.room, d.state.country, d.state.siteEdits ?? null, d.state.members], [null, 'unsure', null, null, []], `${cut}: nothing restored`);
+  }
+  // The old spot and soil keys: dropped from LINK_KEYS and PLACE_KEYS, so the codec ignores them and they bring no place.
+  for (const k of ['l', 'w', 'q', 'r', 'h', 's']) {
+    assert.equal(core.LINK_KEYS.includes(k), false, k);
+    assert.equal(core.PLACE_KEYS.includes(k), false, k);
+  }
+  assert.deepEqual(['k', 'o'].map((k) => core.PLACE_KEYS.includes(k)), [true, true], 'k and o stay');
+  const old = 'v=5&c=temperate&m=small&a=&l=shade&w=wet&q=windy&r=clay&h=valley&s=own.acid.-&e=1';
+  const d = core.decodeLink(old, {}, null);
+  assert.deepEqual(d.notice, NONE);
+  assert.equal(core.bringsPlace(old, d), false);
+  assert.deepEqual(Object.keys(d.state).filter((k) => k === 'spot' || k === 'soil'), []);
 });

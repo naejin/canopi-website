@@ -404,17 +404,14 @@ export interface JobGap { job: JobId; members: PlantId[]; missing: PhaseOrd[] }
 
 // Share state (link v5, state.ts; plant-palette-architecture 8.1): what a link or the save restores,
 // and what the page must say about it. room (`m`) and plot (`z`) are always public; period (`y`) is
-// public; country (`k`), spot (`l w q r h s`) and soil (`s`) travel only with "Include my place".
-// spot and soil are null when the link brings none of their answers (every answer 'unsure' and the
-// soil map count as none: plant-palette-architecture 8.3 "A link without a place").
+// public; country (`k`), the cell (`o`) and the grower's own values travel only with "Include my
+// place". The old spot and soil answers are gone (v14 0W-2 R4).
 export interface ShareState {
   climate: ClimateZone | null;
   country: string | null;
   room: Room;
   plot: number | null; // whole m², 1 to MAX_PLOT_M2 (state.ts)
   period: PeriodId;
-  spot: Spot | null;
-  soil: SoilAnswer | null;
   members: PlantId[];
   removed: PlantId[];
   guests: { id: PlantId; from: ClimateZone }[];
@@ -424,13 +421,13 @@ export interface ShareState {
   // Plants per job (`j`, outside "Include my place": the palette's, A10); absent or 2: the default.
   plantsPerJob?: number;
 }
-// unknownCount: plants of the link no longer in the list ("2 plants from this link…"); cut: the link
-// lost its end marker ("This link looks cut off"). "Some apps cut long links…" is not a notice of a
-// link being read: it is checked on the URL at share time (state.ts isLongLink).
+// unknownCount: plants of the link no longer in the list ("2 plants from this link…"); cut: why a link
+// is unreadable when it was cut short (no e=1, a token list stopping mid-token, a guest list twice;
+// v14 0W-2 R4): a reason for tests, never a notice of its own. "Some apps cut long links…" is not a
+// notice of a link being read: it is checked on the URL at share time (state.ts isLongLink).
 // newer: from a newer version (v > 5, nothing restored), or a v5 link whose `u=` lists a key this
 // decoder does not know (plants restored); unreadable: `v` not a whole number or below 5 (the old beta
-// tool's links: no backward compatibility work, owner 2026-11-17), or `e=1` with a
-// non-empty `a` holding no readable token (nothing restored); period: `y` names no period this page
+// tool's links: no backward compatibility work, owner 2026-11-17), or a cut link (nothing restored); period: `y` names no period this page
 // knows (today shown instead). plant-palette-architecture 8.2.
 export interface LinkNotice { unknownCount: number; cut: boolean; newer: boolean; unreadable: boolean; period: boolean }
 export interface DecodedLink { state: ShareState; notice: LinkNotice }
@@ -518,31 +515,12 @@ export interface Confidence { term: ConfidenceTerm; agree?: number; of?: number 
 export const periodIds = ['1991-2020', '2041-2070', '2071-2099'] as const;
 export type PeriodId = (typeof periodIds)[number];
 
-// The place answers (3.1). Every answer starts 'unsure' (DEC:89); PP-B asks light and water as today.
-export const spotLights = ['sun', 'part', 'shade', 'varies', 'unsure'] as const;
-export const spotWaters = ['dry', 'average', 'wet', 'unsure'] as const;
-export const spotWinds = ['sheltered', 'windy', 'sea', 'unsure'] as const;
-export const spotGrounds = ['drains', 'wet', 'unsure'] as const; // after heavy rain
-export const spotHeights = ['town', 'higher', 'lower', 'hollow', 'unsure'] as const;
-export interface Spot {
-  light: (typeof spotLights)[number];
-  water: (typeof spotWaters)[number];
-  wind: (typeof spotWinds)[number];
-  ground: (typeof spotGrounds)[number];
-  height: (typeof spotHeights)[number];
-}
-export type SpotKey = keyof Spot;
 // The 12 USDA classes of the climate reader (src/lib/climate/soil.ts TextureId; equality checked at
 // compile time beside readerFitsCore in src/islands/consortium/store.ts).
 export const textureIds = ['sand', 'loamy_sand', 'sandy_loam', 'loam', 'silt_loam', 'silt', 'sandy_clay_loam', 'clay_loam', 'silty_clay_loam', 'sandy_clay', 'silty_clay', 'clay'] as const;
 export type TextureId = (typeof textureIds)[number];
 export const soilWords = ['acid', 'neutral', 'chalky'] as const;
 export type SoilWord = (typeof soilWords)[number];
-export type SoilAnswer =
-  | { from: 'map' } // the soil map's estimate, the default
-  | { from: 'own'; ph: number | null; word: SoilWord | null; texture: TextureId | null }
-  | { from: 'pots' };
-export interface Place { room: Room; plotM2: number | null; spot: Spot; soil: SoilAnswer }
 
 // ---- Site inputs (owner decision 2026-11-18; bodies in site-inputs.ts) ----
 // Every site input the engine reads, each with where its value comes from: 'map' (the climate grid,

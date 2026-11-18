@@ -22,7 +22,7 @@
 // (review round 1, 4).
 import { batch } from '@preact/signals';
 import type { ClimateZone, LocationSource, SiteLocation } from '../../../lib/consortium/index.ts';
-import { NO_EDITS, emptyPlace, siteClimate } from '../../../lib/consortium/index.ts';
+import { NO_EDITS, siteClimate } from '../../../lib/consortium/index.ts';
 import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../lib/climate/index.ts';
 import { createPlaceSearchController, type PlaceSearchController, type PlaceSearchResult } from '../../../lib/location/place-search.ts';
 import { defaultGeocoderConfig } from '../../../lib/location/registry.ts';
@@ -209,9 +209,9 @@ export function confirmProposed(z: ClimateZone): void {
 // "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
 // location goes alone: the reader's own saved location is not the link's to remove.
 // "Forget this location" also clears the last place answers (canopi-place) and the open palette's
-// place, its spot and soil (plant-palette-architecture 8.3; privacy.tool.device); the tab's place
+// place, the grower's own values (plant-palette-architecture 8.3; privacy.tool.device); the tab's place
 // follows it, and so does the stored palette (canopi-consortium), held page or not (pre-push fix 3,
-// persist.ts forgetSavedPlace): no spot or soil answers and no country from the location stay in it; a
+// persist.ts forgetSavedPlace): none of those values and no country from the location stay in it; a
 // link's own country, the plants, the room and plot size are the palette's and stay. The kept location
 // no longer holds Place's climate cards.
 export function forget(): void {
@@ -222,8 +222,6 @@ export function forget(): void {
   batch(() => {
     store.location.value = null; store.proposedClimate.value = null; line.value = null;
     if (own) locationCountry(null, true);
-    store.spot.value = { ...emptyPlace.spot };
-    store.soil.value = { from: 'map' };
     // The grower's own values are of that place: they go with it, as the save's place does.
     store.siteEdits.value = NO_EDITS;
   });

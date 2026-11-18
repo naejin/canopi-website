@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
 // View slot of stream S4, in the palette slot (App.tsx renders it once the plant list is ready; the
 // matrix it followed went in PP-B commit 0a', and b2 hosts it under the palette page): the link
-// notices (§5: plants of a link no longer in the list, a cut link, a pasted link that changed
+// notices (§5: plants of a link no longer in the list, a pasted link that changed
 // nothing), then Share, Print and "Download for Canopi", the Share panel and the print sheet (hidden
 // on screen), then the future panel. Nothing here while Start is shown.
 import { useEffect, useState } from 'preact/hooks';
@@ -46,12 +46,11 @@ const future = later(() => laterChunk().then((m) => m.FutureSlot), { idle: true 
 
 function LinkNotices() {
   const n = notices.value;
-  if (!n.unknownCount && !n.cut && !n.pasted) return null;
+  if (!n.unknownCount && !n.pasted) return null;
   return (
     <div class="ct-notice" role="status">
       {n.pasted && <p>{T(`share.pasted.${n.pasted}`)}</p>}
       {n.unknownCount > 0 && <p>{P('share.unknown', n.unknownCount)}</p>}
-      {n.cut && <p>{T('share.cut')}</p>}
       <p><button type="button" class="link-button ct-link" onClick={() => { notices.value = { ...notices.peek(), unknownCount: 0, cut: false, pasted: null }; }}>{T('share.close')}</button></p>
     </div>
   );

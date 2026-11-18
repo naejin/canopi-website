@@ -22,7 +22,7 @@ const { guarded, saveRecord, readRecord, arrival, hashAction, countryAtStart, sh
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'save', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
   .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
-const { decodeLink, emptyPlace, encodeLink, NO_EDITS, zoneOf } = await import('../src/lib/consortium/index.ts');
+const { decodeLink, encodeLink, NO_EDITS, zoneOf } = await import('../src/lib/consortium/index.ts');
 const { openBytes } = await import('../src/islands/consortium/data/load.ts');
 const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
 
@@ -133,18 +133,17 @@ test('the country at start: a link, the reader\'s choice ("-" is none), the save
   assert.deepEqual(countryAtStart({ link: null, pref: null, saved: null, guess: () => null }), { code: null, source: null });
 });
 
-const SUN_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 test('the share state never carries a guessed country and lists guests', () => {
-  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a', 'b'], removed: ['c'], guests: { b: 'Tropical' } };
+  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', siteEdits: { soilPh: 6.5 }, members: ['a', 'b'], removed: ['c'], guests: { b: 'Tropical' } };
   const place = { place: true };
   assert.equal(shareState({ ...base, country: { code: 'US', source: 'guess' } }, place).country, null);
   assert.equal(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, place).country, 'FR');
   assert.equal(shareState({ ...base, country: { code: 'FR', source: 'link' } }, place).country, 'FR');
   assert.equal(shareState({ ...base, country: { code: 'FR', source: 'location' } }, place).country, 'FR');
-  // Link v5: without "Include my place" the share state holds no country, spot or soil (8.1).
+  // Link v5: without "Include my place" the share state holds no country and none of the grower's values (8.1).
   const pub = shareState({ ...base, country: { code: 'FR', source: 'chosen' } });
-  assert.deepEqual([pub.country, pub.spot, pub.soil, pub.room], [null, null, null, 'small']);
-  assert.deepEqual(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, place).spot, SUN_SPOT);
+  assert.deepEqual([pub.country, pub.siteEdits ?? null, pub.room], [null, null, 'small']);
+  assert.deepEqual(shareState({ ...base, country: { code: 'FR', source: 'chosen' } }, place).siteEdits, { soilPh: 6.5 });
   const s = shareState({ ...base, country: { code: null, source: null } });
   assert.deepEqual(s.guests, [{ id: 'b', from: 'Tropical' }]);
   assert.deepEqual(Object.keys(s).filter((k) => ['kept', 'crops', 'stage'].includes(k)), [], 'no kept, crops or stage since PP-B commit 0a\'');
@@ -170,16 +169,14 @@ const realSource = createSqliteSource(real.db, { images: {} });
 test('a share state round-trips through the #v=5 link', async () => {
   const pool = await realSource.pool('Temperate');
   const ids = pool.slice(0, 9).map((t) => t.id);
-  const spot = { light: 'part', water: 'wet', wind: 'unsure', ground: 'unsure', height: 'unsure' };
-  const soil = { from: 'own', ph: null, word: 'acid', texture: null };
-  const state = shareState({ climate: 'Temperate', country: { code: 'FR', source: 'chosen' }, room: 'large', plot: 300, period: '2041-2070', spot, soil, members: ids, removed: [pool[20].id], guests: {} }, { place: true });
+  const siteEdits = { soilPh: 5.5, watering: 'all-year' };
+  const state = shareState({ climate: 'Temperate', country: { code: 'FR', source: 'chosen' }, room: 'large', plot: 300, period: '2041-2070', siteEdits, members: ids, removed: [pool[20].id], guests: {} }, { place: true });
   const known = { Temperate: pool.map((t) => t.id) };
   const back = decodeLink(encodeLink(state, known, { place: true }), known);
   assert.deepEqual(back.notice, { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false });
   assert.deepEqual(back.state.members, ids);
   assert.deepEqual([back.state.room, back.state.plot, back.state.period], ['large', 300, '2041-2070']);
-  assert.deepEqual(back.state.spot, spot);
-  assert.deepEqual(back.state.soil, soil);
+  assert.deepEqual(back.state.siteEdits, siteEdits);
   assert.equal(back.state.country, 'FR');
   assert.equal('stage' in back.state, false, 'the stage is not in link v5');
 });
@@ -349,19 +346,20 @@ for (const [what, act] of [['a room answer', () => { store.room.value = 'large';
   });
 }
 
-test('restore: a newer cut link cancels the older restore and keeps its notice (redesign review, 3)', async () => {
+test('restore: a newer cut link cancels the older restore and keeps its notice, unreadable (redesign review, 3; R4)', async () => {
   await shown();
   store.view.value = 'start';
   store.climate.value = null;
   store.members.value = [];
-  m.notices.value = { ...m.notices.peek(), cut: false, unknownCount: 0 };
+  m.notices.value = { ...m.notices.peek(), unreadable: false, unknownCount: 0 };
   const link = await linkOf('Tropical', 4);
   delays.Tropical = 40;
   const a = m.restore(link, { from: 'link' });
   await wait(5);
   assert.equal(await m.restore('v=5&k=FR', { from: 'link' }), false, 'a v5 link cut before its climate');
   assert.equal(await a, false);
-  assert.equal(m.notices.peek().cut, true, 'the cut notice stays');
+  assert.equal(m.notices.peek().unreadable, true, 'the unreadable notice stays');
+  assert.equal(m.notices.peek().cut, false, 'cut is never a notice of its own');
   assert.deepEqual(store.members.peek(), []);
   assert.equal(m.restoring.peek(), false);
 });
@@ -386,7 +384,7 @@ test('applyPreset: a card the reader picks while the guide\'s plant is read wins
 // passes { place: true }). The save keeps it beside the fragment, never in it, so the address bar and
 // the save's fragment never carry it; since PP-B commit 0a a link's country is kept beside it too.
 test('a country from the location: never in a link or the address without the tick, saved on the device as "location"', () => {
-  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', spot: SUN_SPOT, soil: { from: 'map' }, members: ['a'], removed: [], guests: {} };
+  const base = { climate: 'Temperate', room: 'small', plot: null, period: '1991-2020', members: ['a'], removed: [], guests: {} };
   const here = { code: 'FR', source: 'location' };
   assert.equal(shareState({ ...base, country: here }).country, null, 'no k= without the tick');
   assert.equal(shareState({ ...base, country: here }, { place: true }).country, 'FR', 'k= with the tick');
@@ -412,10 +410,10 @@ test('schema: each field declares its part once (snapshot, Undo, saved, link, wa
   const L = schema.lists;
   assert.deepEqual(sorted(L.snapshot), sorted(['members', 'removed', 'guests', 'siteEdits', 'suggestedIds', 'view']), 'Undo puts these back');
   assert.deepEqual(sorted(L.endsUndo), sorted(['climate', 'members', 'removed', 'guests', 'siteEdits']), 'a change to these ends the Undo offer');
-  // PP-B commit 0a: the place (room, plot, spot, soil) and the period replace the site answers; site is
-  // derived from them (store.ts), not saved. Commit 0a' removed kept and crops; stage is unsaved (print).
-  // v14 pf commit 0W: the grower's site edits and the plants per job are saved too.
-  const saved = ['climate', 'country', 'room', 'plot', 'spot', 'soil', 'period', 'members', 'removed', 'guests', 'siteEdits', 'plantsPerJob'];
+  // PP-B commit 0a: the place (room, plot) and the period replace the site answers; site is derived
+  // (store.ts), not saved. Commit 0a' removed kept and crops; stage is unsaved (print). v14 pf commit
+  // 0W: the grower's site edits and the plants per job are saved too; R4 removed spot and soil.
+  const saved = ['climate', 'country', 'room', 'plot', 'period', 'members', 'removed', 'guests', 'siteEdits', 'plantsPerJob'];
   assert.deepEqual(sorted(L.saved), sorted(saved), 'the Consortium the save keeps');
   assert.deepEqual(sorted(Object.keys(CONSORTIUM_FIELDS)), sorted(saved), 'CONSORTIUM_FIELDS (the Consortium type) holds the saved fields');
   assert.deepEqual(sorted(L.reader), sorted([...saved, 'suggestedIds', 'view']), 'a write to these is the reader acting, and the save and the address follow them');
@@ -480,8 +478,6 @@ async function blankShown() {
   store.country.value = { code: null, source: null };
   store.room.value = 'unsure';
   store.plot.value = null;
-  store.spot.value = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
-  store.soil.value = { from: 'map' };
   store.period.value = '1991-2020';
   store.removed.value = [];
   store.guests.value = {};
@@ -490,12 +486,10 @@ async function blankShown() {
   store.plantsPerJob.value = 2;
   return pool;
 }
-const PART_WET = { light: 'part', water: 'wet', wind: 'unsure', ground: 'unsure', height: 'unsure' };
-const ACID = { from: 'own', ph: null, word: 'acid', texture: null };
 const EDITS = { nightsShiftC: -2, rainShiftMm: -100, watering: 'first-years', soilPh: 6.5, drainage: 'wet', pots: true };
 // Per saved field (link v5, PP-B commit 0a): the change and the value it reads back. A save restores
 // with its private place (the record's `place`); a link is written with "Include my place" when the
-// field is a place answer (`place`), and a link's spot or soil applies only when it brings a place.
+// field is a place answer (`place`), and a link's place answers apply only when it brings a place.
 // `saved` / `link`: the value read back when it differs from `want`; `fromSave`: where the save keeps
 // it when restore does not read it; `before`: a value set just before the restore, to show it is replaced
 // (or kept). kept and crops went in PP-B commit 0a'; stage is not saved (print's, until PP-B18).
@@ -504,16 +498,12 @@ const CASES = {
   // A location's country is kept beside the save's fragment and read at start (countryAtStart); in a
   // link only with the tick, and applied only with a place (k alone keeps the reader's country, 8.3).
   country: {
-    // The place a link brings is its location cell (`o`) now: spot and soil answers are dormant until PP-F.
     change: () => { store.country.value = { code: 'DE', source: 'location' }; }, want: { code: 'DE', source: 'location' }, origin: { lat: 52.52, lon: 13.4 },
     fromSave: (rec) => countryAtStart({ link: null, pref: null, saved: rec.country ?? null, savedFrom: rec.src, guess: () => null }),
     place: true, link: { code: 'DE', source: 'link' },
   },
   room: { change: () => { store.room.value = 'large'; }, want: 'large' },
   plot: { change: () => { store.plot.value = 300; }, want: 300 },
-  // Dormant until PP-F (owner 2026-11-18): a save and a link write them empty, so a change is never read back.
-  spot: { change: () => { store.spot.value = { ...PART_WET }; }, want: PART_WET, place: true, saved: emptyPlace.spot, link: emptyPlace.spot },
-  soil: { change: () => { store.soil.value = { ...ACID }; }, want: ACID, place: true, saved: emptyPlace.soil, link: emptyPlace.soil },
   period: { change: () => { store.period.value = '2041-2070'; }, want: '2041-2070' },
   members: { change: (p) => { store.members.value = p.slice(10, 14).map((t) => t.id); }, want: (p) => p.slice(10, 14).map((t) => t.id) },
   removed: { change: (p) => { store.removed.value = [p[30].id]; }, want: (p) => [p[30].id] },

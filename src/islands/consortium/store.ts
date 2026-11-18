@@ -43,13 +43,13 @@ export interface Load { status: LoadStatus; error: LoadFailure | null }
 // ---- state ----
 // The consortium's fields are declared once in state/schema.ts (what each is, whether Undo, the save
 // and the link hold it, who watches it); their signals are re-exported here under their names.
-// climate, country; the place (PP-B commit 0, plant-palette-architecture 3.6): room, plot (m²), spot,
-// soil and the period shown; the plant lists members (in the order added; a new suggestion is built
+// climate, country; the place (PP-B commit 0, plant-palette-architecture 3.6): room, plot (m²) and the
+// period shown; the plant lists members (in the order added; a new suggestion is built
 // around them), removed (taken out: a new suggestion leaves them out) and guests (from another
 // climate's list, A9); the view; the stage print draws (unsaved, until PP-B18).
 // siteEdits, plantsPerJob (v14 pf commit 0W): the grower's own values and the palette's goal, saved;
 // suggestedIds: the plants the last "Suggest plants" placed, until any plant or goal change.
-export const { climate, country, room, plot, spot, soil, period, members, removed, guests, siteEdits, plantsPerJob, suggestedIds, view, stage } = state.signals;
+export const { climate, country, room, plot, period, members, removed, guests, siteEdits, plantsPerJob, suggestedIds, view, stage } = state.signals;
 export const step = computed<Step>(() => (view.value === 'start' ? 'place' : 'palette'));
 // The time step Through the years shows (PhaseOrd; unsaved, not in Undo): the phone's stepper and
 // print's side drawing read it (PP-B18; replaces the deprecated `stage`). Opens on years 1-3.
@@ -89,9 +89,7 @@ void texturesAgree;
 // The one place the store hands site data to the rules: verdictContext, the flags and the views read
 // this, never the lookup or a stored answer. siteEdits (a field of state/schema.ts): the grower's edits
 // (shifts, a soil test, answers), written by the figures panel (pf-d) through setSiteEdits below,
-// saved in the save's private place and in a link only with "Include my place". The spot and soil
-// answers are dormant until PP-F: never read here, never written by the store (spec update 2026-11-18
-// point 6), and the save and links keep them empty (state/persist.ts palette).
+// saved in the save's private place and in a link only with "Include my place".
 export const siteInputs = computed<SiteInputs>(() => siteInputsOf({ lookup: location.value?.lookup ?? null, room: room.value, edits: siteEdits.value }));
 // site.ts fits()'s Site, from the inputs (core place.ts siteOf): the flags, print's basis line and the
 // site-fit words read it.

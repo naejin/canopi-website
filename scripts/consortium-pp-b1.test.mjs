@@ -57,12 +57,7 @@ test('PP-B exit: a seeded plant the suggestion cannot read stays in the palette'
 // storage double; Node has no location or history, so the address is left alone. ----
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { emptyPlace, encodeLink, encodePlace, linkOrigin, decodeLink, NO_EDITS } from '../src/lib/consortium/index.ts';
-
-test('b1a emptyPlace: the dormant place a save and a link write (spot and soil answers wait for PP-F)', () => {
-  assert.equal(Object.isFrozen(emptyPlace), true);
-  assert.deepEqual(emptyPlace, { room: 'unsure', plotM2: null, spot: { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: { from: 'map' } });
-});
+import { encodeLink, encodePlace, linkOrigin, decodeLink, NO_EDITS } from '../src/lib/consortium/index.ts';
 
 const persist = await import('../src/islands/consortium/state/persist.ts');
 // The device save's own state (fix round 3 save model, state/save.ts): held, and the save as this page
@@ -92,12 +87,8 @@ test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the
   assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'link', place: 'k=FR&l=sun', ask: true, hold: true });
   // A save with no v, and v4 / v6 saves: not a record.
   for (const f of ['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1']) assert.equal(readRecord(saveRecord(f, 'x', null)), null, f);
-  // The seed: room, plot, spot and soil read through the link's words; nothing else.
-  const seed = arrivalM.placeOfSeed('m=pots&z=40&l=shade&q=windy&s=own.acid.-');
-  assert.equal(seed.room, 'pots');
-  assert.equal(seed.plot, 40);
-  assert.deepEqual(seed.spot, { light: 'shade', water: 'unsure', wind: 'windy', ground: 'unsure', height: 'unsure' });
-  assert.deepEqual(seed.soil, { from: 'own', ph: null, word: 'acid', texture: null });
+  // The seed: room and plot read through the link's words (old spot and soil keys ignored, R4).
+  assert.deepEqual(arrivalM.placeOfSeed('m=pots&z=40&l=shade&q=windy&s=own.acid.-'), { room: 'pots', plot: 40 });
   assert.equal(arrivalM.placeOfSeed(null), null);
 });
 
@@ -110,9 +101,11 @@ globalThis.localStorage = { getItem: (k) => (kept.has(k) ? kept.get(k) : null), 
 store.start();
 persist.watchStore();
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-const SUN = { ...emptyPlace.spot, light: 'sun' };
-// The save's private place: spot and soil answers are dormant until PP-F (owner 2026-11-18), so the
-// save writes none of them; the reader's own place is their country and location.
+// The reader's own values: none (v14 0W-2 R4: the old spot and soil answers are gone; a link's place
+// is its cell, its country and the grower's own values, here a soil test of pH 5).
+const SUN = NO_EDITS;
+const SHADE = Object.freeze({ soilPh: 5 });
+// The save's private place: the reader's own values (none here); their place is their country and location.
 const OWN_PLACE = '';
 // A Temperate palette of n plants on screen with the reader's own place (full sun), saved.
 async function mine(n = 5) {
@@ -129,8 +122,7 @@ async function mine(n = 5) {
     store.climate.value = 'Temperate';
     store.country.value = { code: 'FR', source: 'chosen' };
     store.room.value = 'small';
-    store.spot.value = { ...SUN };
-    store.soil.value = { from: 'map' };
+    store.siteEdits.value = SUN;
     store.members.value = pool.slice(0, n).map((t) => t.id);
     store.removed.value = [pool[30].id];
     store.guests.value = {};
@@ -145,7 +137,7 @@ const saved = () => readRecord(kept.get(STORE) ?? null);
 const known = async (zone) => ({ [zone]: (await realSource.pool(zone)).map((t) => t.id) });
 const linkWith = async (zone, n, extra = {}, opts = {}) => {
   const k = await known(zone);
-  return encodeLink({ climate: zone, country: null, room: 'unsure', plot: null, period: '1991-2020', spot: null, soil: null, members: k[zone].slice(0, n), removed: [], guests: [], ...extra }, k, opts);
+  return encodeLink({ climate: zone, country: null, room: 'unsure', plot: null, period: '1991-2020', members: k[zone].slice(0, n), removed: [], guests: [], ...extra }, k, opts);
 };
 
 test('b1a Start over then one Undo: members, removed and guests come back, the palette\'s place stays', async () => {
@@ -156,13 +148,13 @@ test('b1a Start over then one Undo: members, removed and guests come back, the p
   draft.startOver();
   assert.deepEqual([store.members.peek().length, store.removed.peek().length, Object.keys(store.guests.peek()).length], [0, 0, 0]);
   assert.equal(saved(), null, 'the save goes');
-  assert.deepEqual(store.spot.peek(), SUN, 'Start over keeps the place');
+  assert.deepEqual(store.siteEdits.peek(), SUN, 'Start over keeps the place');
   assert.ok(store.toast.peek()?.undo, 'no Undo offered after Start over');
   store.toast.peek().undo();
   assert.deepEqual(store.members.peek(), before.members);
   assert.deepEqual(store.removed.peek(), before.removed);
   assert.deepEqual(store.guests.peek(), before.guests);
-  assert.deepEqual(store.spot.peek(), SUN);
+  assert.deepEqual(store.siteEdits.peek(), SUN);
   await wait(0);
   assert.equal(saved()?.place, OWN_PLACE, 'the save comes back with its place');
   // A new plant after Start over ends the offer: Undo never puts back a palette over new work.
@@ -188,16 +180,16 @@ async function arriveWithPlace() {
   await mine(5);
   await wait(0);
   assert.equal(saved()?.place, OWN_PLACE);
-  const link = await linkWith('Mediterranean', 4, { country: 'ES', spot: { ...emptyPlace.spot, light: 'shade' } }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
+  const link = await linkWith('Mediterranean', 4, { country: 'ES', siteEdits: SHADE }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
   const before = restoreM.provideLocationStep(async () => ({ settle: async () => {}, adopt: locationM.adoptLinkLocation }));
   assert.equal(await restoreM.restore(link, { from: 'link' }), true);
   return before;
 }
-test('b1a link place (a): a palette edit while the notice shows keeps the reader\'s own l=sun in the save', async () => {
+test('b1a link place (a): a palette edit while the notice shows keeps the reader\'s own values in the save', async () => {
   const before = await arriveWithPlace();
   try {
     assert.ok(restoreM.linkPlace?.peek(), 'no link-place notice');
-    assert.equal(store.spot.peek().light, 'shade', 'the page is judged with the link\'s place');
+    assert.equal(store.siteEdits.peek().soilPh, 5, 'the page is judged with the link\'s place');
     store.removeMember(store.members.peek()[0]);
     await wait(0);
     assert.equal(saved()?.place, OWN_PLACE, 'the save keeps its own place until the reader chooses');
@@ -210,7 +202,7 @@ test('b1a link place (c): "Use my own place" gives back the reader\'s own answer
     draft.useOwnPlace();
     await wait(0);
     assert.equal(restoreM.linkPlace.peek(), null);
-    assert.deepEqual(store.spot.peek(), SUN);
+    assert.deepEqual(store.siteEdits.peek(), SUN);
     assert.deepEqual(store.country.peek(), { code: 'FR', source: 'chosen' });
     assert.notEqual(store.location.peek()?.source, 'link', 'the link\'s location goes');
     assert.equal(saved()?.place, OWN_PLACE);
@@ -229,11 +221,11 @@ test('b1a link place (d): Back to the reader\'s own palette while the notice sho
 });
 
 test('b1a a link\'s m and z never bring a place; k alone keeps the reader\'s country and place', async () => {
-  for (const extra of [{ room: 'field', plot: 900 }, { country: 'DE' }, { country: 'DE', spot: { ...emptyPlace.spot } }]) {
+  for (const extra of [{ room: 'field', plot: 900 }, { country: 'DE' }, { country: 'DE', siteEdits: NO_EDITS }]) {
     await mine(5);
     const link = await linkWith('Temperate', 3, extra, { place: true });
     assert.equal(await restoreM.restore(link, { from: 'link' }), true);
-    assert.deepEqual(store.spot.peek(), SUN, JSON.stringify(extra));
+    assert.deepEqual(store.siteEdits.peek(), SUN, JSON.stringify(extra));
     assert.deepEqual(store.country.peek(), { code: 'FR', source: 'chosen' }, JSON.stringify(extra));
     if (extra.room) assert.deepEqual([store.room.peek(), store.plot.peek()], ['field', 900], 'the link\'s room and plot win');
     assert.equal(restoreM.linkPlace?.peek() ?? null, null, 'no link-place notice');
@@ -254,8 +246,7 @@ test('b1a Forget this location clears canopi-location, canopi-place and the pale
   await forgetSeville();
   assert.equal(kept.get(LOCATION_STORE), undefined, 'canopi-location goes');
   assert.equal(kept.get(PLACE_STORE), undefined, 'Forget left canopi-place');
-  assert.deepEqual(store.spot.peek(), emptyPlace.spot);
-  assert.deepEqual(store.soil.peek(), { from: 'map' });
+  assert.deepEqual(store.siteEdits.peek(), NO_EDITS);
   assert.equal(saved()?.place, '', 'the save\'s place goes');
   assert.equal(store.room.peek(), 'small', 'the room is the palette\'s, kept');
 });
@@ -308,7 +299,7 @@ test('b1a bugs-1: a link the reader has not acted on keeps their save held acros
   const restoreAddress = fakeAddress();
   try {
     // A link that brings no place, and one whose place is the reader's own: neither shows the notice.
-    for (const [extra, opts] of [[{}, {}], [{ country: 'FR', spot: { ...SUN } }, { place: true }]]) {
+    for (const [extra, opts] of [[{}, {}], [{ country: 'FR', siteEdits: { ...SUN } }, { place: true }]]) {
       await mine(5);
       await wait(0);
       const own = kept.get(STORE);
@@ -345,7 +336,7 @@ test('b1a bugs-2: a link\'s country never stands for the reader\'s own (k=FR ove
   // As startMemory opens a link that brings a place: the reader's own country worked out first, then
   // the link's shown on the page.
   persist.quietly(() => { store.country.value = { code: 'FR', source: 'link' }; });
-  const link = await linkWith('Temperate', 3, { country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true });
+  const link = await linkWith('Temperate', 3, { country: 'FR', siteEdits: SHADE }, { place: true });
   assert.equal(await restoreM.restore(link, { from: 'link', country: KE }), true);
   assert.ok(restoreM.linkPlace.peek(), 'no link-place notice');
   store.removeMember(store.members.peek()[0]);
@@ -362,10 +353,12 @@ test('b1a bugs-2: a link\'s country never stands for the reader\'s own (k=FR ove
   await wait(0);
   assert.equal(saved()?.src, 'location', 'the held save took the link\'s country source');
   assert.equal(saved()?.country, 'KE', 'the held save took the link\'s country');
-  // A link whose only difference is its country asks too.
+  // A link whose only difference is its country asks too (its cell is the reader's own: k alone brings
+  // no place, and R4 left out the old spot answers that brought one).
   await mine(5);
+  kept.set(LOCATION_STORE, JSON.stringify({ lat: 37.39, lon: -5.98, source: 'geo' }));
   persist.quietly(() => { store.country.value = { code: 'DE', source: 'link' }; });
-  const deLink = await linkWith('Temperate', 3, { country: 'DE', spot: { ...SUN } }, { place: true });
+  const deLink = await linkWith('Temperate', 3, { country: 'DE' }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
   assert.equal(await restoreM.restore(deLink, { from: 'link', country: { code: 'FR', source: 'chosen' } }), true);
   assert.ok(restoreM.linkPlace.peek(), 'a link that differs only by its country gave no notice: the link\'s country was taken as the reader\'s');
 });
@@ -374,9 +367,9 @@ test('b1a bugs-3: a link\'s cell is compared with the reader\'s own cell, and "U
   const before = instantStep();
   try {
     const PARIS = { lat: 48.85, lon: 2.35, source: 'geo' };
-    // An o-only link (no spot answer) over a reader whose answers are all unsure.
+    // An o-only link (none of the grower's values) over a reader whose answers are all unsure.
     await mine(5);
-    persist.quietly(() => { store.spot.value = { ...emptyPlace.spot }; });
+    persist.quietly(() => { store.siteEdits.value = NO_EDITS; });
     kept.set(LOCATION_STORE, JSON.stringify(PARIS));
     const seville = await linkWith('Temperate', 3, {}, { origin: { lat: 37.39, lon: -5.98 }, place: true });
     assert.equal(await restoreM.restore(seville, { from: 'link' }), true);
@@ -388,7 +381,7 @@ test('b1a bugs-3: a link\'s cell is compared with the reader\'s own cell, and "U
     assert.ok(back && back.source === 'geo' && back.lat === PARIS.lat, `"Use my own place" did not bring the reader's location back (${JSON.stringify(back)})`);
     // The same cell as the reader's own (a point inside it): no notice.
     await mine(5);
-    persist.quietly(() => { store.spot.value = { ...emptyPlace.spot }; });
+    persist.quietly(() => { store.siteEdits.value = NO_EDITS; });
     kept.set(LOCATION_STORE, JSON.stringify({ lat: 37.38, lon: -5.97, source: 'search' }));
     assert.equal(await restoreM.restore(seville, { from: 'link' }), true);
     assert.equal(restoreM.linkPlace.peek(), null, 'a link of the reader\'s own cell asked');
@@ -402,11 +395,11 @@ test('b1a bugs-4: a room or plot change while the notice waits seeds canopi-plac
     store.room.value = 'large';
     await wait(0);
     assert.match(kept.get(PLACE_STORE) ?? '', /m=large/, 'the room answer is the reader\'s');
-    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=shade/, 'the link\'s spot answers seeded canopi-place (room)');
+    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /b=50/, 'the link\'s values seeded canopi-place (room)');
     store.plot.value = 120;
     await wait(0);
     assert.match(kept.get(PLACE_STORE) ?? '', /z=120/);
-    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=shade/, 'the link\'s spot answers seeded canopi-place (plot)');
+    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /b=50/, 'the link\'s values seeded canopi-place (plot)');
     assert.ok(restoreM.linkPlace.peek(), 'a room change is no answer to the notice');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
@@ -421,8 +414,7 @@ test('b1a bugs-5: Forget on Place (back from the palette) also clears the set-as
   assert.equal(saved()?.place, '', 'the set-aside palette kept its place in the save');
   draft.showPalette();
   await wait(0);
-  assert.deepEqual(store.spot.peek(), emptyPlace.spot, 'the set-aside palette kept its place: the spot answers came back');
-  assert.deepEqual(store.soil.peek(), { from: 'map' });
+  assert.deepEqual(store.siteEdits.peek(), NO_EDITS, 'the set-aside palette kept its place: the values came back');
   assert.equal(store.room.peek(), 'small', 'the room stays');
   assert.equal(saved()?.place, '', 'the palette kept its place in the save after "Show my palette"');
 });
@@ -503,7 +495,7 @@ async function reloadAsking(fresh = () => {}) {
   const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, history.state);
   assert.equal(how.ask, true);
   fresh();
-  const ask = { spot: { ...SUN }, soil: { from: 'map' }, country: { code: 'FR', source: 'chosen' }, location: null };
+  const ask = { siteEdits: SUN, country: { code: 'FR', source: 'chosen' }, location: null };
   assert.equal(await restoreM.restore(how.fragment, { from: 'saved', src: how.src, place: how.place, ask, hold: how.hold }), true);
   return how;
 }
@@ -535,7 +527,7 @@ test('b1a bugs-10: "Use my own place" pressed while "Use it" is still working ch
     const chosen = kept.get(COUNTRY_STORE) ?? null;
     assert.equal(chosen === null || chosen === store.country.peek().code, true, `half-way: the page shows ${store.country.peek().code} but the device keeps ${chosen}`);
     const seed = kept.get(PLACE_STORE) ?? '';
-    assert.doesNotMatch(seed, /l=/, 'spot answers are dormant: canopi-place holds none');
+    assert.doesNotMatch(seed, /b=/, 'canopi-place holds room and plot only');
   } finally { restoreM.provideLocationStep(slow); restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
@@ -580,8 +572,8 @@ test('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country bef
   const cell = () => { reads++; return PARIS; };
   const plan = (how, over = {}) => arrivalM.arrivalPlan(how, { saved: null, pref: null, guess: () => null, seed: null, cell, ...over });
   // A link that brings a place (k=FR, l=shade, o=): the link's country shown, the reader's own (KE) kept.
-  const shade = { ...emptyPlace.spot, light: 'shade' };
-  const link = await linkWith('Temperate', 3, { country: 'FR', spot: shade }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
+  const shade = SHADE;
+  const link = await linkWith('Temperate', 3, { country: 'FR', siteEdits: shade }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
   const p = plan({ kind: 'link', fragment: link }, { pref: 'KE', guess: () => 'DE' });
   assert.deepEqual(p.country, { code: 'FR', source: 'link' });
   assert.deepEqual(p.own, { code: 'KE', source: 'chosen' }, 'the reader\'s own country');
@@ -602,15 +594,15 @@ test('b1a r2-5: arrivalPlan works out the arrival: the reader\'s own country bef
   assert.equal(s.ask, undefined);
   // A reload while a link's place waited (history.state ask, the link's cell in pl): the link's cell,
   // and the ask against the reader's own place (the held save's), country and own cell.
-  const pl = encodePlace({ country: 'FR', spot: shade, soil: { from: 'map' } }, { lat: 37.35, lon: -5.95 });
+  const pl = encodePlace({ country: 'FR', siteEdits: shade }, { lat: 37.35, lon: -5.95 });
   const r = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { saved: rec, pref: 'KE', seed: 'w=dry' });
   assert.deepEqual(r.linkCell, linkOrigin(pl));
   assert.ok(r.linkCell, 'the link\'s cell from the tab\'s place');
   assert.equal(reads, 1, 'the reader\'s own cell read once for the ask');
-  assert.deepEqual(r.ask, { spot: { ...emptyPlace.spot, light: 'sun' }, soil: { from: 'map' }, siteEdits: NO_EDITS, country: { code: 'KE', source: 'chosen' }, location: PARIS });
-  // No save: the seed stands for the reader's own place.
+  assert.deepEqual(r.ask, { siteEdits: NO_EDITS, country: { code: 'KE', source: 'chosen' }, location: PARIS });
+  // No save: the reader's own values are none (the seed holds room and plot only).
   const n = plan({ kind: 'saved', fragment: link, at: '', src: 'link', place: pl, ask: true }, { pref: 'KE', seed: 'w=dry' });
-  assert.equal(n.ask.spot.water, 'dry');
+  assert.deepEqual(n.ask.siteEdits, NO_EDITS);
 });
 
 // perf-1 (b2's review, confirmed): the browser's guess walks every country's time zones (about 0.4 s,
@@ -633,7 +625,7 @@ test('b1a perf-1: the browser\'s country guess is worked out only when no link, 
   const rec = { fragment: f, place: '', at: '2026-11-14', src: 'location', country: 'KE' };
   const p = arrivalM.arrivalPlan({ kind: 'saved', fragment: f, at: rec.at, src: 'location', place: '' }, { saved: rec, pref: null, guess, seed: null, cell: () => null });
   assert.deepEqual(p.country, { code: 'KE', source: 'location' });
-  const link = await linkWith('Temperate', 3, { country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true });
+  const link = await linkWith('Temperate', 3, { country: 'FR', siteEdits: SHADE }, { place: true });
   arrivalM.arrivalPlan({ kind: 'link', fragment: link }, { saved: null, pref: 'KE', guess, seed: null, cell: () => null });
   assert.equal(calls, 0, 'the guess was worked out although a country was saved or chosen');
   // No country anywhere: worked out once, though both the link's and the reader's own are decided.
@@ -680,7 +672,7 @@ test('b1a r3-3: startMemory\'s wiring passes the reader\'s own country to a link
     // (a) canopi-country KE, a k=FR link with a spot answer.
     await mine(5);
     await wait(0);
-    const link = await linkWith('Temperate', 3, { country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true });
+    const link = await linkWith('Temperate', 3, { country: 'FR', siteEdits: SHADE }, { place: true });
     const how = arrivalM.arrival({ hash: `#${link}`, search: '' }, saved(), null);
     const plan = arrivalM.arrivalPlan(how, { saved: saved(), pref: 'KE', guess: () => null, seed: null, cell: () => null });
     arrivalM.openWith({ how, plan, saved: saved(), seed: null, keptLocation: null });
@@ -697,7 +689,7 @@ test('b1a r3-3: startMemory\'s wiring passes the reader\'s own country to a link
     await wait(0);
     store.location.value = null;
     settled.length = 0;
-    const pl = encodePlace({ country: 'FR', spot: { ...emptyPlace.spot, light: 'shade' }, soil: { from: 'map' } }, { lat: 37.35, lon: -5.95 });
+    const pl = encodePlace({ country: 'FR', siteEdits: SHADE }, { lat: 37.35, lon: -5.95 });
     const f = await linkWith('Temperate', 3);
     const reload = arrivalM.arrival({ hash: `#${f}`, search: '' }, saved(), null, { ct: f, src: 'link', pl, ask: 1 });
     assert.equal(reload.ask, true);
@@ -740,7 +732,7 @@ const undo = async () => { const t = store.toast.peek(); assert.ok(t?.undo, 'an 
 test('save model walk 1: a reload of [A,B], B removed on the palette, B added again on Place: [A] then [A,B] saved; the add\'s Undo saves [A]', async () => {
   const pool = await mine(5);
   const [A, B] = [pool[0].id, pool[1].id];
-  const link = encodeLink({ climate: 'Temperate', country: null, room: 'small', plot: null, period: '1991-2020', spot: null, soil: null, members: [A, B], removed: [], guests: [] }, await known('Temperate'));
+  const link = encodeLink({ climate: 'Temperate', country: null, room: 'small', plot: null, period: '1991-2020', members: [A, B], removed: [], guests: [] }, await known('Temperate'));
   persist.holdSave(true);
   assert.equal(await restoreM.restore(link, { from: 'saved' }), true);
   await wait(0);
@@ -898,7 +890,7 @@ test('save model walk 10: a reload on Place: an owned page\'s address has no hol
 
 // Section 4, the additions.
 test('save model: place answers, "Use it" and "Use my own place" on a held page write nothing (owner 2026-11-15, 2)', async () => {
-  const answers = { 'place answers': () => { store.room.value = 'large'; store.plot.value = 40; store.spot.value = { ...store.spot.peek(), water: 'dry' }; draft.chooseCountry('KE'); }, '"Use it"': () => draft.useLinkPlace(), '"Use my own place"': () => draft.useOwnPlace() };
+  const answers = { 'place answers': () => { store.room.value = 'large'; store.plot.value = 40; store.siteEdits.value = { watering: 'all-year' }; draft.chooseCountry('KE'); }, '"Use it"': () => draft.useLinkPlace(), '"Use my own place"': () => draft.useOwnPlace() };
   for (const [name, act] of Object.entries(answers)) {
     const before = await arriveWithPlace();
     try {
@@ -909,7 +901,7 @@ test('save model: place answers, "Use it" and "Use my own place" on a held page 
     } finally { restoreM.provideLocationStep(before); store.location.value = null; }
   }
 });
-test('save model link place (b): "Use it" keeps the save R; the link\'s place l=shade reaches the save with the first plant change', async () => {
+test('save model link place (b): "Use it" keeps the save R; the link\'s values (b=50) reach the save with the first plant change', async () => {
   const before = await arriveWithPlace();
   try {
     const R = kept.get(STORE);
@@ -921,10 +913,10 @@ test('save model link place (b): "Use it" keeps the save R; the link\'s place l=
     assert.ok(loc && Math.abs(loc.lat - 37.35) < 0.051 && Math.abs(loc.lon - -5.95) < 0.051, `the link's cell in canopi-location (${kept.get(LOCATION_STORE)})`);
     assert.notEqual(loc.source, 'link', 'kept as the reader\'s own');
     assert.equal(kept.get(COUNTRY_STORE), 'ES', 'the link\'s country kept');
-    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /l=/, 'spot answers are dormant: never seeded');
+    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /b=/, 'canopi-place holds room and plot only');
     store.removeMember(store.members.peek()[0]);
     await wait(0);
-    assert.equal(saved()?.place, OWN_PLACE, 'the link\'s spot answers never reach the save (dormant until PP-F)');
+    assert.equal(saved()?.place, 'b=50', 'the link\'s values, used, reach the save with the plant change');
   } finally { restoreM.provideLocationStep(before); store.location.value = null; }
 });
 test('save model: "Show my palette" on a guide preset leaves R and its offer', async () => {
@@ -1272,7 +1264,7 @@ test('save model invariants over random sequences: the save, the flag and every 
         over: () => draft.startOver(),
         undo: () => store.toast.peek()?.undo?.(),
         link: async () => { await restoreM.restore(await linkWith('Temperate', 2 + Math.floor(rnd() * 3)), { from: 'link' }); },
-        placeLink: async () => { await restoreM.restore(await linkWith('Temperate', 3, { country: 'ES', spot: { ...emptyPlace.spot, light: 'shade' } }, { place: true }), { from: 'link' }); },
+        placeLink: async () => { await restoreM.restore(await linkWith('Temperate', 3, { country: 'ES', siteEdits: SHADE }, { place: true }), { from: 'link' }); },
         useIt: async () => { await draft.useLinkPlace(); },
         useOwn: () => draft.useOwnPlace(),
         open: async () => { await draft.openSavedInstead(); },

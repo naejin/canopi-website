@@ -150,7 +150,7 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
 
     // With a palette shown, an old beta (unreadable) or cut pasted link changes nothing, says so there,
     // and the address goes back to the palette shown (round 2, 2 and 4).
-    for (const [bad, words] of [[staged.replace('v=5', 'v=3'), /pasted link could not be read/], [staged.replace(/c=temperate&/, ''), /pasted link looks cut off/]]) {
+    for (const [bad, words] of [[staged.replace('v=5', 'v=3'), /pasted link could not be read/], [staged.replace(/c=temperate&/, ''), /pasted link could not be read/], [staged.replace(/&e=1$/, ''), /pasted link could not be read/]]) {
       await mine.evaluate((f) => { location.hash = f; }, bad);
       assert.ok(await findAx(mine, { name: words }), `the notice for the pasted link (${words})`);
       for (let i = 0; i < 40 && (await mine.evaluate(() => location.hash)) !== own; i++) await new Promise((r) => setTimeout(r, 100));
@@ -159,9 +159,9 @@ test('BT-7 (S4 share): a copied link opened as a new document restores the same 
     }
     await done(mine);
 
-    // A #v=5 link without a climate: the cut notice, and Place (review 7).
+    // A #v=5 link without a climate: unreadable (v14 0W-2 R4: a cut link restores nothing), and Place (review 7).
     const noClimate = await h.open(`/palette/?run=${Date.now()}#${staged.replace(/c=temperate&/, '')}`, { ...v, data: 'fixture' });
-    assert.ok(await findAx(noClimate, { name: /looks cut off/ }), 'the cut notice');
+    assert.ok(await findAx(noClimate, { name: /could not be read/ }), 'the unreadable notice');
     await openCards(noClimate);
     assert.ok(await has(noClimate, aria('radio', 'Temperate')), 'Place stays');
     assert.equal(await has(noClimate, aria('button', 'Share'), 500), false, 'no result without a climate');

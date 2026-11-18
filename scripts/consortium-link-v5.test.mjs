@@ -2,13 +2,13 @@
 // live in scripts/vectors/link-v5.json (convention palette-vectors: plain JSON in the link's own
 // words, no TypeScript names), so the app's Rust code can run them; the adapter from those words to
 // the core's ShareState is here. Beside the vectors: the save record and the arrival on each version,
-// the country gate of the schema, the shape check of the vector file, emptyPlace and siteOf.
+// the country gate of the schema, the shape check of the vector file and siteOf.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
-const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, emptyPlace, siteOf, siteInputsOf, NO_INPUTS, climateFor, LINK_VERSION } = core;
+const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, siteOf, siteInputsOf, NO_INPUTS, climateFor, LINK_VERSION } = core;
 const grid = await import('../src/lib/climate/grid.ts');
 const persist = await import('../src/islands/consortium/state/persist.ts');
 const { saveRecord, readRecord } = persist;
@@ -22,26 +22,17 @@ const KNOWN_SCHEMAS = ['canopi-palette-link/5'];
 const idOf = (name) => { const p = V.plants[name]; assert.ok(p, `plant ${name} is in the file`); return p.id; };
 const nameOfId = new Map(Object.entries(V.plants).map(([n, p]) => [p.id, n]));
 const knownOf = (lists) => Object.fromEntries(lists.map((l) => [zoneOf(l), Object.values(V.plants).filter((p) => p.lists.includes(l)).map((p) => p.id)]));
-const SPOT = { l: 'light', w: 'water', q: 'wind', r: 'ground', h: 'height' };
+// A place's words: its country and cell (the old spot and soil keys are gone, v14 0W-2 R4).
 function placeOf(name) {
   const words = V.places[name];
   assert.ok(words, `place ${name} is in the file`);
-  const answered = Object.entries(SPOT).filter(([k]) => words[k]);
-  const spot = answered.length ? { ...emptyPlace.spot, ...Object.fromEntries(answered.map(([k, f]) => [f, words[k]])) } : null;
-  let soil = null;
-  if (words.s === 'pots') soil = { from: 'pots' };
-  else if (words.s?.startsWith('own.')) {
-    const [, ph, tex] = words.s.split('.');
-    const n = /^\d+$/.test(ph) ? Number(ph) / 10 : null;
-    soil = { from: 'own', ph: n, word: n === null && ph !== '-' ? ph : null, texture: tex === '-' ? null : tex };
-  }
-  return { spot, soil, origin: words.o ?? null };
+  return { origin: words.o ?? null };
 }
 const originOf = (text) => { if (!text) return null; const [lat, lon] = text.split(',').map(Number); return { lat, lon }; };
 function shareOf(s) {
-  const { spot, soil } = placeOf(s.place);
+  placeOf(s.place);
   return {
-    climate: zoneOf(s.climate), country: s.country, room: s.room, plot: s.plot_m2, period: s.period, spot, soil,
+    climate: zoneOf(s.climate), country: s.country, room: s.room, plot: s.plot_m2, period: s.period,
     members: s.members.map(idOf), removed: s.removed.map(idOf), guests: s.guests.map((g) => ({ id: idOf(g.plant), from: zoneOf(g.list) })),
   };
 }
@@ -49,7 +40,6 @@ function shareOf(s) {
 function wordsOf(st) {
   return {
     climate: st.climate ? siteIdOf(st.climate) : null, country: st.country, room: st.room, plot_m2: st.plot, period: st.period,
-    spot: st.spot, soil: st.soil,
     members: st.members.map((id) => nameOfId.get(id) ?? id), removed: st.removed.map((id) => nameOfId.get(id) ?? id),
     guests: st.guests.map((g) => ({ plant: nameOfId.get(g.id) ?? g.id, list: siteIdOf(g.from) })),
   };
@@ -146,17 +136,17 @@ test('link v5: an encoded place round-trips through decode', () => {
     const known = knownOf(c.input.lists);
     const d = decodeLink(encodeLink(s, known, { origin: originOf(c.input.origin), place: c.input.place }), known);
     assert.deepEqual(d.state.members.sort(), [...s.members].sort(), c.name);
-    if (c.input.place) { assert.deepEqual(d.state.spot, s.spot, c.name); assert.deepEqual(d.state.soil, s.soil, c.name); }
-    else { assert.equal(d.state.spot, null, c.name); assert.equal(d.state.country, null, c.name); }
+    if (!c.input.place) assert.equal(d.state.country, null, c.name);
   }
 });
 
 test('link v5: the private place kept beside a save fills only the keys the fragment lacks', () => {
   const known = knownOf(['temperate']);
-  const d = decodeLink('v=5&c=temperate&m=small&a=obLD1O&l=shade&e=1', known, 'l=sun&s=pots&k=FR&m=field');
-  assert.equal(d.state.spot.light, 'shade', 'the fragment wins');
-  assert.deepEqual(d.state.soil, { from: 'pots' }, 'the place fills the soil');
+  const d = decodeLink('v=5&c=temperate&m=small&a=obLD1O&b=65&e=1', known, 'b=50&p=1&k=FR&m=field&l=sun');
+  assert.equal(d.state.siteEdits.soilPh, 6.5, 'the fragment wins');
+  assert.equal(d.state.siteEdits.pots, true, 'the place fills pots');
   assert.equal(d.state.country, 'FR');
+  assert.equal('spot' in d.state, false, 'an old spot key is no place key (R4)');
   assert.equal(d.state.room, 'small', 'm is not a place key');
 });
 
@@ -185,12 +175,8 @@ test('arrival: a v4 or v6 link in the fragment is a link (restore gives its noti
   assert.deepEqual(arrival({ hash: '', search: '' }, old, 'temperate'), { kind: 'start', climate: 'Temperate' });
 });
 
-test('a place seed (canopi-place) reads back room, plot size, spot and soil; nothing on damage', () => {
-  const p = placeOfSeed('m=pots&z=6&l=shade&s=pots');
-  assert.equal(p.room, 'pots');
-  assert.equal(p.plot, 6);
-  assert.equal(p.spot.light, 'shade');
-  assert.deepEqual(p.soil, { from: 'pots' });
+test('a place seed (canopi-place) reads back room and plot size (old spot and soil keys ignored); nothing on damage', () => {
+  assert.deepEqual(placeOfSeed('m=pots&z=6&l=shade&s=pots'), { room: 'pots', plot: 6 });
   assert.equal(placeOfSeed(null), null);
 });
 
@@ -201,31 +187,32 @@ test('schema: k goes in a link only with "Include my place" and never from a gue
   assert.equal(schema.share(values('chosen'), { place: true }).country, 'FR');
   assert.equal(schema.share(values('location'), { place: true }).country, 'FR');
   assert.equal(schema.share(values('guess'), { place: true }).country, null);
-  assert.equal(schema.share(values('chosen'), { place: false }).spot, null);
-  assert.equal(schema.share(values('chosen'), { place: false }).soil, null);
+  assert.equal('spot' in schema.share(values('chosen'), { place: true }), false, 'no spot field (R4)');
+  assert.equal('soil' in schema.share(values('chosen'), { place: true }), false, 'no soil field (R4)');
 });
 
 test('schema: a link that brings no place keeps the reader\'s country and place; one that does replaces them', () => {
   const known = knownOf(['temperate']);
-  schema.write({ country: { code: 'DE', source: 'chosen' }, spot: { ...emptyPlace.spot, light: 'shade' }, soil: { from: 'pots' } });
-  for (const link of ['v=5&c=temperate&m=small&a=&k=FR&e=1', 'v=5&c=temperate&m=small&a=&l=unsure&e=1']) {
+  schema.write({ country: { code: 'DE', source: 'chosen' }, siteEdits: { soilPh: 5, pots: true } });
+  for (const link of ['v=5&c=temperate&m=small&a=&k=FR&e=1', 'v=5&c=temperate&m=small&a=&k=FR&l=shade&s=pots&e=1']) {
     const d = decodeLink(link, known);
     schema.apply(d.state, { countryFrom: 'link', bringsPlace: bringsPlace(link, d) });
     assert.deepEqual(schema.signals.country.peek(), { code: 'DE', source: 'chosen' }, link);
-    assert.equal(schema.signals.spot.peek().light, 'shade', link);
+    assert.deepEqual(schema.signals.siteEdits.peek(), { soilPh: 5, pots: true }, link);
   }
-  const link = 'v=5&c=temperate&m=small&a=&k=FR&w=wet&e=1';
+  const link = 'v=5&c=temperate&m=small&a=&k=FR&d=wet&u=d&e=1';
   const d = decodeLink(link, known);
   schema.apply(d.state, { countryFrom: 'link', bringsPlace: bringsPlace(link, d) });
   assert.deepEqual(schema.signals.country.peek(), { code: 'FR', source: 'link' });
-  assert.deepEqual(schema.signals.spot.peek(), { ...emptyPlace.spot, water: 'wet' }, 'the whole place: light back to unsure');
-  assert.deepEqual(schema.signals.soil.peek(), { from: 'map' });
+  assert.deepEqual(schema.signals.siteEdits.peek(), { drainage: 'wet' }, 'the whole place: the reader\'s pH and pots go');
 });
 
 // ---- the place seams (3.1) ----
-test('emptyPlace: every answer unsure, no plot size, the soil map; frozen', () => {
-  assert.deepEqual(emptyPlace, { room: 'unsure', plotM2: null, spot: { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: { from: 'map' } });
-  assert.ok(Object.isFrozen(emptyPlace) && Object.isFrozen(emptyPlace.spot));
+test('R4: the spot and soil seams are gone (emptyPlace, the spot and soil fields)', () => {
+  assert.equal(core.emptyPlace, undefined);
+  assert.equal('spot' in schema.signals || 'soil' in schema.signals, false);
+  assert.deepEqual([...core.PLACE_KEYS], ['k', 'o', 'f', 'b', 'p', 'i', 'd']);
+  for (const k of ['l', 'w', 'q', 'r', 'h', 's']) assert.equal(core.LINK_KEYS.includes(k), false, k);
 });
 
 test('siteOf: the Site fits() reads comes from the site inputs; a soil test pH gives the word, else the soil map\'s (R3), none in pots', () => {

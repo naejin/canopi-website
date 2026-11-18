@@ -284,7 +284,6 @@ function PlaceNotices() {
       )}
       {n.unreadable && <p class="ct-notice" data-place-notice="unreadable">{T('place.unreadable')}{backMine}</p>}
       {n.period && <p class="ct-notice" data-place-notice="period">{T('place.period')}</p>}
-      {n.cut && view.value === 'start' && <p class="ct-notice" data-place-notice="cut">{T('share.cut')}</p>}
       {n.failed && <p class="ct-notice" data-place-notice="failed">{T('share.failed')}</p>}
       {n.guideMissing && <p class="ct-notice" data-place-notice="guideMissing">{T('start.guideMissing', { name: n.guideMissing, climate: zoneName(climate.value) })}</p>}
       {(guide || (saved && !backMine)) && (

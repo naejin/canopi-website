@@ -5,10 +5,9 @@
 // links…", core isLongLink on the whole URL), and a browser that keeps nothing ("This browser does
 // not keep your palette; your link does."). Rendered by views/Actions.tsx.
 // "Include my place" (PP-B b1a; plant-palette-architecture 8.3; Share board), off by default and shown
-// when there is a place to include (a location, a spot or soil answer, a country the reader gave):
-// ticked, the link also carries the climate-grid square's centre (`o=`, never the precise position),
-// the country (`k=`), the spot answers and the soil test; unticked, none of `k o l w q r h s`. The
-// sheet says both in words.
+// when there is a place to include (a location, a country the reader gave): ticked, the link also
+// carries the climate-grid square's centre (`o=`, never the precise position), the country (`k=`) and
+// the grower's own values (`f b p i d`); unticked, none of `k o f b p i d`. The sheet says both in words.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { cellCentre, isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
@@ -20,7 +19,6 @@ export function Share({ onClose }: { onClose: () => void }) {
   const [withPlace, setWithPlace] = useState(false);
   const origin = cellCentre(site.value?.lookup ?? null);
   const c = country.value;
-  // The spot and soil answers are dormant until PP-F (links carry none): the place is the cell and the country.
   const hasPlace = origin !== null || (c.code !== null && c.source !== 'guess');
   const fragment = withPlace && hasPlace ? currentFragment({ origin, place: true }) ?? shown : shown;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;

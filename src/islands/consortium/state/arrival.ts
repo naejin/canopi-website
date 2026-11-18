@@ -54,7 +54,7 @@ const linkPartOf = (place: string): string => {
   return out.toString().replace(/%2C/gi, ',');
 };
 
-// The spot and soil answers of a place string, without a link's country `k` and cell `o` (the tab's
+// The grower's own values of a place string, without a link's country `k` and cell `o` (the tab's
 // place carries them, the save's never does).
 const answersOf = (place: string): string => {
   const q = new URLSearchParams(place);
@@ -144,13 +144,13 @@ export function guessCountry(codes: readonly string[], { zone, languages = [], z
 
 // ---- the place seed ----
 
-// The canopi-place seed (`m z l w q r h s`, persist.ts placeSeed) as the place fields' values, or null
+// The canopi-place seed (`m z`, persist.ts placeSeed) as the place fields' values, or null
 // when there is none: read through the link decoder (a v5 fragment of the place keys alone), so a seed
 // follows the link's words and fallbacks.
-export function placeOfSeed(seed: string | null): Pick<ReturnType<typeof schema.peek<'room' | 'plot' | 'spot' | 'soil'>>, 'room' | 'plot' | 'spot' | 'soil'> | null {
+export function placeOfSeed(seed: string | null): Pick<ReturnType<typeof schema.peek<'room' | 'plot'>>, 'room' | 'plot'> | null {
   if (!seed || seed.length > 2_000) return null;
   const d = decodeLink(`v=5&${seed}&e=1`, {});
-  return { room: d.state.room, plot: d.state.plot, spot: d.state.spot ?? schema.valuesOf(['spot']).spot, soil: d.state.soil ?? { from: 'map' } };
+  return { room: d.state.room, plot: d.state.plot };
 }
 // Writes the seed into the place fields (not the reader acting: no save, no seed written back).
 function seedPlace(seed: string | null): void {
@@ -185,9 +185,8 @@ export function arrivalPlan(how: Arrival, { saved, pref, guess, seed, cell }: Ar
   const country = linkK ? countryAtStart({ link: linkK, ...countries }) : own;
   const linkCell = how.kind === 'link' ? linkOrigin(how.fragment) : how.kind === 'saved' && how.ask ? linkOrigin(how.place) : null;
   if (how.kind !== 'saved' || !how.ask) return { country, own, linkCell };
-  const mine = placeOfSeed(saved?.place || seed);
   const kept = saved?.place && saved.place.length <= 2_000 ? decodeLink(`v=5&${saved.place}&e=1`, {}).state.siteEdits : null;
-  return { country, own, linkCell, ask: { spot: mine?.spot ?? schema.valuesOf(['spot']).spot, soil: mine?.soil ?? { from: 'map' }, siteEdits: kept ?? NO_EDITS, country, location: cell() } };
+  return { country, own, linkCell, ask: { siteEdits: kept ?? NO_EDITS, country, location: cell() } };
 }
 
 // ---- the wiring ----

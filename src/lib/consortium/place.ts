@@ -1,24 +1,11 @@
-// The palette's place and its projections (PP-B commit 0; plant-palette-architecture 3.1): the place
-// answers (room, plot size, spot, soil) a palette keeps, and the translation of the merged site inputs
-// (site-inputs.ts, owner 2026-11-18) into what a rule reads: siteOf for site.ts fits(), climateFor for
-// a period's slot. resolveSoil (the old stored-answer soil reader) went with the site-inputs layer; PP-F
-// reads the soil map through site-inputs.ts.
-//
-// The spot and soil answers are dormant until PP-F (owner 2026-11-18): no rule reads Place.spot or
-// Place.soil; the store passes the room to the site inputs, and grower edits come through SiteEdits.
-import type { PeriodId, Place, Site, SiteInputs, SitePeriod, SoilWord } from './types.ts';
+// The translation of the merged site inputs (site-inputs.ts, owner 2026-11-18) into what a rule reads
+// (PP-B commit 0; plant-palette-architecture 3.1): siteOf for site.ts fits(), climateFor for a period's
+// slot. The old spot and soil answers are gone (v14 0W-2 R4): the grower's values come through
+// SiteEdits, the soil map through site-inputs.ts soilPhOf.
+import type { PeriodId, Site, SiteInputs, SitePeriod, SoilWord } from './types.ts';
 import { soilPhOf } from './site-inputs.ts';
 import { ACID_BELOW, CHALKY_ABOVE } from './site.ts';
 import { TODAY_PERIOD } from './source.ts';
-
-
-// Every answer "not sure", no plot size, the soil map: the place a palette starts from (DEC:89).
-export const emptyPlace: Place = Object.freeze({
-  room: 'unsure',
-  plotM2: null,
-  spot: Object.freeze({ light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }),
-  soil: Object.freeze({ from: 'map' }),
-}) as Place;
 
 // A measured pH in words, on site.ts's thresholds (acid below 6, chalky above 7.5).
 export const soilWordOf = (ph: number): SoilWord => (ph < ACID_BELOW ? 'acid' : ph > CHALKY_ABOVE ? 'chalky' : 'neutral');

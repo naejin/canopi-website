@@ -4,7 +4,7 @@
 // rule (coordinator row "Plant palette plan amendments", 2026-11-14), so a tab on PP-B code reads a link
 // a later push writes.
 //
-//   #v=5&c=temperate&m=small&a=…&x=…&g=tr…&z=120&y=2041-2070&j=3[&k=FR&o=45.75,4.85&l=sun&w=average&q=sheltered&r=drains&h=town&s=own.65.loam&f=-20..-200.1&b=65&p=1&i=rain&d=wet&u=f,b,p,i,d]&e=1
+//   #v=5&c=temperate&m=small&a=…&x=…&g=tr…&z=120&y=2041-2070&j=3[&k=FR&o=45.75,4.85&f=-20..-200.1&b=65&p=1&i=rain&d=wet&u=f,b,p,i,d]&e=1
 //
 //   v link version (LINK_VERSION); c climate (lowercase); m room (pots, small, large, field, unsure;
 //   always written); a the members in order; x removed plants; g plants added from another climate's
@@ -14,20 +14,18 @@
 //   the palette's goal, outside "Include my place", v14 A10). Only with "Include my place" (encodePlace,
 //   the bracketed part): k country
 //   (ISO alpha-2, from a chosen, location or link source, never a guess), o the site's climate cell
-//   centre "lat,lon" (never the precise position), l w q r h the spot answers (light, water, wind,
-//   ground after rain, height; only when answered), s the soil (`pots`, or
-//   `own.<pH × 10 | acid | neutral | chalky | ->.<texture id | ->`; absent: the soil map); the grower's
-//   own values (SiteEdits, v14 0W-1 item 5), each only when set: f the climate shifts
+//   centre "lat,lon" (never the precise position); the grower's own values (SiteEdits, v14 0W-1 item 5), each only when set: f the climate shifts
 //   `<nights tenths of °C>.<days tenths of °C>.<rain mm>.<dry months>` (integers, an empty segment 0,
 //   trailing empty segments left out), b the soil pH × 10, p=1 pots or brought-in soil (apart from b,
 //   so neither answer loses the other), i watering (rain, first, all), d the ground after heavy rain
 //   (drains, wet); then u, the requires key, listing those of f b p i d present. e=1 the end, always
-//   last: a link a mail or chat client cut short lacks it.
+//   last: a link a mail or chat client cut short lacks it, and is unreadable (v14 0W-2 R4: nothing
+//   restored; LinkNotice.cut is only the reason). The old spot and soil keys (l w q r h s) are gone:
+//   any other key, they included, is ignored.
 //
 // Extension rule (8.1): 1. a key this decoder does not know is ignored wherever it appears; 2. a value
-// it cannot read falls back for that key alone (m → unsure, an unknown climate dropped, a spot value
-// read up to its first "." and unknown words → unsure, s segments after the third ignored, an unknown
-// pH or texture → "-", y → today with LinkNotice.period); 3. a key whose absence would change a
+// it cannot read falls back for that key alone (m → unsure, an unknown climate dropped, y → today with
+// LinkNotice.period); 3. a key whose absence would change a
 // verdict needs a bump or a place in the requires key `u=<comma list>`: a key listed there this
 // decoder does not know gives the "newer" notice, plants restored; 4. a version below 5 (the old beta
 // tool) is read as any unreadable link (owner 2026-11-17: no backward compatibility work). u is the
@@ -41,11 +39,12 @@
 // base64url characters are used, which a query string leaves unescaped. 6 characters per member: 200
 // members stay near 1,200 characters. Decoding reads at most MAX_LINK_IDS tokens per key (every `g`
 // together), so a hostile link cannot block the page; the rest are counted as unknown. Decoding never
-// throws: a token list that stops mid-token is read up to there and reported as cut.
-import type { ClimateZone, DecodedLink, LinkNotice, PeriodId, PlantId, ShareState, SiteEdits, SiteLookup, SoilAnswer, Spot, Watering } from './types.ts';
+// throws: a token list that stops mid-token, a guest list given twice or a missing e=1 is a cut link,
+// read as unreadable.
+import type { ClimateZone, DecodedLink, LinkNotice, PeriodId, PlantId, ShareState, SiteEdits, SiteLookup, Watering } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 import { DEFAULT_GOALS, NO_EDITS, plantsPerJobOf, siteEditsOf } from './site-inputs.ts';
-import { periodIds, roomValues, soilWords, spotGrounds, spotHeights, spotLights, spotWaters, spotWinds, textureIds } from './types.ts';
+import { periodIds, roomValues } from './types.ts';
 import { climateZones, siteIdOf, zoneOfSiteId } from './zones.ts';
 
 export const LINK_VERSION = 5;
@@ -58,15 +57,13 @@ export const GUEST_CODES: Record<ClimateZone, string> = { Tropical: 'tr', Subtro
 export const MAX_PLOT_M2 = 1_000_000;
 // The keys this decoder knows (a key listed in `u=` and not here gives the "newer" notice); any other
 // key (n and t included) is ignored.
-export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'j', 'o', 'l', 'w', 'q', 'r', 'h', 's', 'f', 'b', 'p', 'i', 'd', 'u', END_KEY] as const;
+export const LINK_KEYS = ['v', 'c', 'k', 'm', 'a', 'x', 'g', 'z', 'y', 'j', 'o', 'f', 'b', 'p', 'i', 'd', 'u', END_KEY] as const;
 // The private keys, written only with "Include my place" (encodePlace), in this order.
-export const PLACE_KEYS = ['k', 'o', 'l', 'w', 'q', 'r', 'h', 's', 'f', 'b', 'p', 'i', 'd'] as const;
+export const PLACE_KEYS = ['k', 'o', 'f', 'b', 'p', 'i', 'd'] as const;
 // The grower's own values' keys: each changes a verdict or a note, so a link lists those it holds in `u=`.
 export const EDIT_KEYS = ['f', 'b', 'p', 'i', 'd'] as const;
 const WATERING_CODE: Record<Watering, string> = { rain: 'rain', 'first-years': 'first', 'all-year': 'all' };
-// Spot answers by link key.
-const SPOT_KEYS = { l: ['light', spotLights], w: ['water', spotWaters], q: ['wind', spotWinds], r: ['ground', spotGrounds], h: ['height', spotHeights] } as const;
-const UNSURE_SPOT: Spot = { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
+
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const SHORT = 6, LONG = 22, SHORT_HEX = 9, LONG_HEX = 32, LONG_MARK = '.';
@@ -163,14 +160,6 @@ export function linkVersionStatus(v: string | null): LinkVersion {
   return n === LINK_VERSION ? 'current' : n > LINK_VERSION ? 'newer' : 'unreadable';
 }
 
-// The soil answer as `s` writes it (null: the soil map, written as no `s`).
-function soilText(soil: SoilAnswer | null): string | null {
-  if (!soil || soil.from === 'map') return null;
-  if (soil.from === 'pots') return 'pots';
-  const ph = soil.ph !== null && Number.isFinite(soil.ph) && soil.ph >= 0 && soil.ph <= 14 ? String(Math.round(soil.ph * 10)) : soil.word ?? '-';
-  return `own.${ph}.${soil.texture ?? '-'}`;
-}
-
 // The grower's own values as their link pairs (made safe first: siteEditsOf), in EDIT_KEYS order.
 function editPairs(raw: SiteEdits | null | undefined): string[] {
   const e = siteEditsOf(raw), out: string[] = [];
@@ -209,29 +198,22 @@ function readEdits(q: URLSearchParams): SiteEdits | null {
   return e === NO_EDITS ? null : e;
 }
 
-// The private part of a link alone, without "&" around it: "k=…&o=…&l=…&w=…&q=…&r=…&h=…&s=…&f=…&b=…&p=1&i=…&d=…"
-// (8.1). k: state.country (the caller passes it only from a chosen, location or link source, never a
-// guess); o: the site's cell centre, when given; a spot answer only when answered; s only when not the
-// map; the grower's own values only when set. Also the save's `place` (without k and o: persist.ts) and
-// the canopi-place seed.
-export function encodePlace(state: Pick<ShareState, 'country' | 'spot' | 'soil' | 'siteEdits'>, origin: LinkOrigin | null = null): string {
+// The private part of a link alone, without "&" around it: "k=…&o=…&f=…&b=…&p=1&i=…&d=…" (8.1).
+// k: state.country (the caller passes it only from a chosen, location or link source, never a guess);
+// o: the site's cell centre, when given; the grower's own values only when set. Also the save's
+// `place` (without k and o: persist.ts).
+export function encodePlace(state: Pick<ShareState, 'country' | 'siteEdits'>, origin: LinkOrigin | null = null): string {
   const out: string[] = [];
   const k = state.country && COUNTRY.test(state.country.toUpperCase()) ? state.country.toUpperCase() : null;
   if (k) out.push(`k=${k}`);
   const o = origin && originText(origin);
   if (o) out.push(`o=${o}`);
-  const spot = state.spot ?? UNSURE_SPOT;
-  for (const [key, [field]] of Object.entries(SPOT_KEYS) as [keyof typeof SPOT_KEYS, (typeof SPOT_KEYS)[keyof typeof SPOT_KEYS]][]) {
-    if (spot[field] !== 'unsure') out.push(`${key}=${spot[field]}`);
-  }
-  const s = soilText(state.soil);
-  if (s) out.push(`s=${s}`);
   out.push(...editPairs(state.siteEdits));
   return out.join('&');
 }
 
 // The link's fragment, without "#": "v=5&…&e=1". place: the reader's "Include my place" tick, which
-// adds encodePlace's part (k, o when origin is given, the spot answers, the soil; an origin given
+// adds encodePlace's part (k, o when origin is given, the grower's own values; an origin given
 // implies the tick unless place is false, as persist.ts currentFragment); without it the link holds
 // the palette only (the address bar and the save's fragment are always this public form).
 export function encodeLink(state: ShareState, known: KnownIds, { origin = null, place = origin !== null }: { origin?: LinkOrigin | null; place?: boolean } = {}): string {
@@ -320,23 +302,8 @@ function readTokens(value: string, cap: { left: number; excess: number }): { tok
 
 const oneOf = <T extends string>(list: readonly T[], v: string | null): T | null => (v !== null && (list as readonly string[]).includes(v) ? (v as T) : null);
 
-// A spot value: the word before the first "." (a later figure, such as CLIM-4's `h=higher.650`, is
-// left to the decoder that knows it), else 'unsure'.
-const spotWord = <T extends string>(list: readonly T[], v: string | null): T | 'unsure' =>
-  oneOf(list, v === null ? null : v.split('.')[0]) ?? 'unsure';
-
-// The soil a link's `s` holds, or null for the soil map (absent, `map` or a value not read).
-function readSoil(v: string | null): SoilAnswer | null {
-  if (v === null) return null;
-  if (v === 'pots') return { from: 'pots' };
-  const [from, ph = '-', texture = '-'] = v.split('.');
-  if (from !== 'own') return null;
-  const tenths = /^\d{1,3}$/.test(ph) && Number(ph) <= 140 ? Number(ph) / 10 : null;
-  return { from: 'own', ph: tenths, word: tenths === null ? oneOf(soilWords, ph) : null, texture: oneOf(textureIds, texture) };
-}
-
 // A state that restores nothing: no climate, no plants, every answer as it starts.
-const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD, spot: null, soil: null, members: [], removed: [], guests: [], siteEdits: null, plantsPerJob: DEFAULT_GOALS.plantsPerJob });
+const emptyState = (): ShareState => ({ climate: null, country: null, room: 'unsure', plot: null, period: TODAY_PERIOD, members: [], removed: [], guests: [], siteEdits: null, plantsPerJob: DEFAULT_GOALS.plantsPerJob });
 const noNotice = (): LinkNotice => ({ unknownCount: 0, cut: false, newer: false, unreadable: false, period: false });
 
 // Reads a link (with or without its "#") against the ids at hand (see linkClimates). Never throws.
@@ -355,7 +322,9 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
     else if (status === 'unreadable' || q.has('a')) notice.unreadable = true;
     return { state, notice };
   }
-  notice.cut = q.get(END_KEY) !== '1';
+  // A cut link (no e=1 at its end) is unreadable: nothing restored, cut kept as the reason (R4).
+  const unreadableCut = (): DecodedLink => ({ state: emptyState(), notice: { ...noNotice(), cut: true, unreadable: true } });
+  if (q.get(END_KEY) !== '1') return unreadableCut();
   // `u=`: the keys this link needs read (rule 3); one this decoder does not know: the newer line.
   const requires = (q.get('u') ?? '').split(',').map((k) => k.trim()).filter(Boolean);
   if (requires.some((k) => !(LINK_KEYS as readonly string[]).includes(k))) notice.newer = true;
@@ -372,13 +341,6 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   const period = oneOf(periodIds, y);
   if (y !== null && !period) notice.period = true;
   state.period = period ?? TODAY_PERIOD;
-  const spot: Spot = { ...UNSURE_SPOT };
-  for (const [key, [field, list]] of Object.entries(SPOT_KEYS) as [keyof typeof SPOT_KEYS, (typeof SPOT_KEYS)[keyof typeof SPOT_KEYS]][]) {
-    (spot as unknown as Record<string, string>)[field] = spotWord(list as readonly string[], q.get(key));
-  }
-  // No answer other than 'unsure': the link brings no spot (8.3 "A link without a place").
-  state.spot = Object.values(spot).some((v) => v !== 'unsure') ? spot : null;
-  state.soil = readSoil(q.get('s'));
   state.siteEdits = readEdits(q);
   state.plantsPerJob = plantsPerJobOf(q.get('j'));
 
@@ -405,15 +367,11 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   const resolve = (tok: Token) => resolveIn(tok, byShort, byLong);
   const uniq = (ids: (PlantId | null)[]) => [...new Set(ids.filter((x): x is PlantId => x !== null))];
 
-  // Members. `e=1` with a non-empty `a` holding no readable token is unreadable (8.2: a token matter,
-  // not a cut); an empty `a` is a valid empty palette.
+  // Members. A token list that stops mid-token is a cut link (unreadable, R4); an empty `a` is a valid
+  // empty palette.
   const aCap = { left: MAX_LINK_IDS, excess: 0 };
-  const a = q.get('a') ?? '';
-  const r = readTokens(a, aCap);
-  if (a && !r.tokens.length && !aCap.excess && r.malformed && !notice.cut) {
-    return { state: emptyState(), notice: { ...noNotice(), unreadable: true } };
-  }
-  if (r.malformed) notice.cut = true;
+  const r = readTokens(q.get('a') ?? '', aCap);
+  if (r.malformed) return unreadableCut();
   notice.unknownCount += aCap.excess;
   const members: PlantId[] = [];
   for (const tok of r.tokens) {
@@ -422,7 +380,7 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   }
   const xCap = { left: MAX_LINK_IDS, excess: 0 };
   const x = readTokens(q.get('x') ?? '', xCap);
-  if (x.malformed) notice.cut = true;
+  if (x.malformed) return unreadableCut();
   notice.unknownCount += xCap.excess;
   const removed = uniq(x.tokens.map(resolve));
   // Guests are matched in their own list; one cap for every `g` together; a list given twice is cut.
@@ -430,12 +388,12 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   const gCap = { left: MAX_LINK_IDS, excess: 0 }, codes = new Set<string>();
   for (const value of q.getAll('g')) {
     const code = value.slice(0, 2), zone = codeZone.get(code);
-    if (!zone || codes.has(code)) { notice.cut = true; continue; }
+    if (!zone || codes.has(code)) return unreadableCut();
     codes.add(code);
     const short = new Map<string, PlantId[]>(), long = new Map<string, PlantId>();
     index(known[zone] ?? [], short, long);
     const g = readTokens(value.slice(2), gCap);
-    if (g.malformed) notice.cut = true;
+    if (g.malformed) return unreadableCut();
     for (const tok of g.tokens) {
       const id = resolveIn(tok, short, long);
       if (id && !guests.some((h) => h.id === id)) guests.push({ id, from: zone });
@@ -447,11 +405,10 @@ export function decodeLink(link: string, known: KnownIds, place: string | null =
   return { state, notice };
 }
 
-// Whether a decoded link brings a place (8.3): its cell (`o`), a spot or soil answer other than
-// 'unsure' and the soil map, or the grower's own values. `m`, `z` and `j` never count (they belong to
+// Whether a decoded link brings a place (8.3): its cell (`o`) or the grower's own values. `m`, `z` and `j` never count (they belong to
 // the palette), nor does `k` alone: the reader's country is then kept.
 export function bringsPlace(link: string, decoded: DecodedLink): boolean {
-  return linkOrigin(link) !== null || decoded.state.spot !== null || decoded.state.soil !== null || !!decoded.state.siteEdits;
+  return linkOrigin(link) !== null || !!decoded.state.siteEdits;
 }
 
 // A Field Guide opens the tool with ?plant=<canonical name>&climate=<id> (design check A5; not a

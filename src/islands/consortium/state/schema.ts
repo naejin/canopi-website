@@ -20,13 +20,13 @@
 // state with one more field and sees it round-trip through the schema.
 import { batch, signal } from '@preact/signals';
 import type { Signal } from '@preact/signals';
-import type { ClimateZone, PeriodId, PhaseOrd, PlantId, Room, ShareState, Site, SiteEdits, SoilAnswer, Spot } from '../../../lib/consortium/index.ts';
-import { DEFAULT_GOALS, emptyPlace, NO_EDITS, periodIds, plantsPerJobOf, siteEditsOf } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, PeriodId, PhaseOrd, PlantId, Room, ShareState, Site, SiteEdits } from '../../../lib/consortium/index.ts';
+import { DEFAULT_GOALS, NO_EDITS, periodIds, plantsPerJobOf, siteEditsOf } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource, View } from '../store.ts';
 
 // What the link's put and take may read: the reader's "Include my place" tick (share: place), where a
 // decoded link or save came from (apply: countryFrom) and whether it brings a place (apply:
-// bringsPlace, core state.ts bringsPlace: its cell, or a spot or soil answer; plant-palette-architecture 8.3).
+// bringsPlace, core state.ts bringsPlace: its cell or the grower's own values; plant-palette-architecture 8.3).
 export interface LinkOptions { place?: boolean; countryFrom?: Extract<CountrySource, 'link' | 'chosen'>; bringsPlace?: boolean }
 export interface Field<T> {
   initial: () => T;
@@ -118,25 +118,10 @@ export const CONSORTIUM_FIELDS = {
     },
   } satisfies Field<Country>,
   // The place (plant-palette-architecture 3.6): room (`m`) and plot size (`z`) are the palette's,
-  // always in the link and the save, and a link's win; the spot and the soil go in a link only with
-  // "Include my place" and the save keeps them as its private `place`. A link that brings a place
-  // gives its whole place; one that brings none is judged against the open palette's.
+  // always in the link and the save, and a link's win. The grower's own values (siteEdits, below) go in
+  // a link only with "Include my place" and the save keeps them as its private `place`.
   room: { initial: (): Room => 'unsure', saved: true } satisfies Field<Room>,
   plot: { initial: (): number | null => null, saved: true, link: { take: (s: ShareState) => s.plot } } satisfies Field<number | null>,
-  spot: {
-    initial: (): Spot => ({ ...emptyPlace.spot }), saved: true,
-    link: {
-      put: (v: Spot, o: LinkOptions) => (o.place ? v : null),
-      take: (s: ShareState, now: Spot, o: LinkOptions): Spot => s.spot ?? (o.bringsPlace ? { ...emptyPlace.spot } : now),
-    },
-  } satisfies Field<Spot>,
-  soil: {
-    initial: (): SoilAnswer => ({ from: 'map' }), saved: true,
-    link: {
-      put: (v: SoilAnswer, o: LinkOptions) => (o.place ? v : null),
-      take: (s: ShareState, now: SoilAnswer, o: LinkOptions): SoilAnswer => s.soil ?? (o.bringsPlace ? { from: 'map' } : now),
-    },
-  } satisfies Field<SoilAnswer>,
   // The grower's own values (v14 pf commit 0W-1 item 5; SiteEdits, made safe by siteEditsOf from every
   // source): in a link only with "Include my place" (f b p i d), in the save's private place; Undo puts
   // them back and a change ends the plant Undo offer. A link that brings a place gives its own (none:

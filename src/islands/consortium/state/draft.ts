@@ -129,14 +129,12 @@ export async function useLinkPlace(): Promise<void> {
   } finally { answering.value = false; }
 }
 
-// "Use my own place": the reader's own spot, soil and country come back, the link's location goes and
+// "Use my own place": the reader's own values and country come back, the link's location goes and
 // the reader's own is looked up again.
 export function useOwnPlace(): void {
   const pending = linkPlace.peek();
   if (!pending || answering.peek()) return;
   batch(() => {
-    store.spot.value = pending.own.spot;
-    store.soil.value = pending.own.soil;
     store.siteEdits.value = pending.own.siteEdits;
     store.country.value = pending.own.country;
     dropLinkLocation();

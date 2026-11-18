@@ -20,8 +20,8 @@
 //
 // What the page reaches (store.ts siteInputs): the lookup, the room and store.siteEdits, a saved field
 // (state/schema.ts) the figures panel (pf-d) writes through store.setSiteEdits; every edit from the
-// panel, the save or a link is made safe once by siteEditsOf. Spot and soil answers are dormant until
-// PP-F (owner 2026-11-18): this layer never reads store.spot or store.soil.
+// panel, the save or a link is made safe once by siteEditsOf. The old spot and soil answers are gone
+// (v14 0W-2 R4).
 import type { ClimateInput, PaletteGoals, Room, SiteEdits, SiteInput, SiteInputs, SiteLookup, SitePeriod, SoilPhInput } from './types.ts';
 import { drainages, waterings } from './types.ts';
 import { todayOf } from './site-today.ts';

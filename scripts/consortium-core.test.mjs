@@ -343,19 +343,18 @@ test('alternatives: the closest in years first, members and removed plants left 
 
 // ================= share state =================
 
-// Link v5 (PP-B commit 0a): the place keys (k, o, the spot answers, the soil) only with the place tick;
+// Link v5 (PP-B commit 0a): the place keys (k, o, the grower's own values) only with the place tick;
 // kept, crops and stage were never written and went from the share state in PP-B commit 0a'
 // (scripts/consortium-link-v5.test.mjs holds the contract).
-const V5_SPOT = { light: 'sun', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' };
 const shareV5 = (over = {}) => ({
-  climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020', spot: V5_SPOT, soil: null,
+  climate: 'Temperate', country: 'FR', room: 'small', plot: null, period: '1991-2020',
   members: [], removed: [], guests: [], siteEdits: null, plantsPerJob: 2, ...over,
 });
 const NO_NOTICE = { unknownCount: 0, cut: false, newer: false, unreadable: false, period: false };
 
 const known = (extra = {}) => ({ Temperate: ids(temperate), Tropical: ids(tropical), ...extra });
 
-test('state: #v=5 round-trips members, removed, guests, room, country and the spot; kept, crops and stage are neither written nor read', () => {
+test('state: #v=5 round-trips members, removed, guests, room and country; kept, crops and stage are neither written nor read', () => {
   const inga = byName(tropical, 'Inga edulis').id;
   const st = shareV5({
     members: [T('Castanea sativa').id, T('Allium cepa').id, inga, T('Malus domestica').id],
@@ -365,7 +364,7 @@ test('state: #v=5 round-trips members, removed, guests, room, country and the sp
   const link = encodeLink(st, known(), { place: true });
   assert.equal(LINK_VERSION, 5);
   assert.match(link, /^v=5&c=temperate&m=small&a=/);
-  assert.match(link, /&k=FR&l=sun&e=1$/);
+  assert.match(link, /&k=FR&e=1$/);
   assert.deepEqual(linkClimates(link), ['Temperate', 'Tropical']);
   const back = decodeLink(link, known());
   assert.deepEqual(back.notice, NO_NOTICE);
@@ -376,9 +375,9 @@ test('state: #v=5 round-trips members, removed, guests, room, country and the sp
   assert.equal(encodeLink(old, known(), { place: true }), link);
   const back4 = decodeLink(encodeLink(old, known(), { place: true }), known()).state;
   assert.deepEqual(['kept', 'crops', 'stage'].filter((k) => k in back4), []);
-  // Without the tick the link is the public form: no country and no spot.
+  // Without the tick the link is the public form: no country.
   const pub = decodeLink(encodeLink(st, known()), known()).state;
-  assert.deepEqual([pub.country, pub.spot, pub.members], [null, null, st.members]);
+  assert.deepEqual([pub.country, pub.members], [null, st.members]);
 });
 
 test('state: tokens are 36 bits in 6 base64url characters, whole ids ("." + 22) on a clash', () => {
@@ -405,19 +404,20 @@ test('state: an unknown plant is counted and left out; the rest is restored', ()
   assert.equal(back.notice.cut, false);
 });
 
-test('state: a cut link opens what parses and says so; a long link is flagged; an old version reads no plants', () => {
+test('state: a cut link is unreadable and restores nothing (R4); a long link is flagged; an old version reads no plants', () => {
   const real = [0, 1, 2].map((i) => idOf(0x100 + i * 0x1000000));
   const st = shareV5({ members: real });
   const link = encodeLink(st, { Temperate: real });
   const cutAtEnd = link.replace(/&e=1$/, '');
   const a = decodeLink(cutAtEnd, { Temperate: real });
-  assert.deepEqual(a.state.members, real);
-  assert.equal(a.notice.cut, true);
+  assert.deepEqual([a.state.members, a.state.climate, a.state.room], [[], null, 'unsure']);
+  assert.deepEqual(a.notice, { ...NO_NOTICE, cut: true, unreadable: true }, 'cut is the reason');
   const midToken = link.slice(0, link.indexOf('&a=') + 3 + 6 + 3);
   const b = decodeLink(midToken, { Temperate: real });
-  assert.deepEqual(b.state.members, real.slice(0, 1));
-  assert.equal(b.notice.cut, true);
-  assert.equal(b.state.room, 'small', 'the keys before the cut are kept');
+  assert.deepEqual(b.state.members, []);
+  assert.deepEqual(b.notice, { ...NO_NOTICE, cut: true, unreadable: true });
+  const garbled = decodeLink(link.replace('&e=1', '!!&e=1'), { Temperate: real });
+  assert.deepEqual([garbled.state.members, garbled.notice.unreadable], [[], true], 'a token list stopping mid-token, with its end');
   // Long links are checked on the whole URL at share time, never on a link being read.
   assert.equal(LONG_LINK, 2000);
   const many = Array.from({ length: 400 }, (_, i) => idOf(0x10000000 + i * 0x1000));
@@ -448,7 +448,7 @@ test('state: at most MAX_LINK_IDS tokens per key are read; malformed values fall
   const e = decodeLink('v=5&c=nowhere&l=moon&m=castle&t=9&k=france&e=1', known());
   assert.equal(e.state.climate, null);
   assert.equal(e.state.room, 'unsure');
-  assert.equal(e.state.spot, null, 'an unknown light word reads as unsure, so no spot');
+  assert.equal('spot' in e.state, false, 'l is a key v5 no longer knows (R4): ignored');
   assert.equal('stage' in e.state, false, 't= is a key v5 does not know: ignored');
   assert.equal(e.state.country, null);
 });
