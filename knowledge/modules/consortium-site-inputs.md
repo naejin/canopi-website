@@ -2,43 +2,43 @@
 type: Module
 title: Consortium site inputs
 description: The core module that owns every site input the Plant palette engine reads, merged from the climate grid and soil map with the grower's edits as shifts, plus the palette goals read beside them.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:51:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:10Z }
 sources:
   - id: site-inputs-ts
     resource: ../../src/lib/consortium/site-inputs.ts
     title: src/lib/consortium/site-inputs.ts
     digest: sha256:55765af03043370d
-    last_modified: 2026-11-18T00:41:37Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:130be072c506a3b0
-    last_modified: 2026-11-18T00:10:23Z
+    digest: sha256:2b3666675741b3cf
+    last_modified: 2026-11-18T01:44:32Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
     digest: sha256:de3d31fb8eed5d71
-    last_modified: 2026-11-17T23:47:52Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: holes-ts
     resource: ../../src/lib/consortium/holes.ts
     title: src/lib/consortium/holes.ts
     digest: sha256:d155fea328696f39
-    last_modified: 2026-11-18T00:10:23Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:6b68b3a0f3306bd6
-    last_modified: 2026-11-18T00:13:24Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: consortium-scenarios-mjs
     resource: ../../scripts/consortium-scenarios.mjs
     title: scripts/consortium-scenarios.mjs
-    digest: sha256:d23228a79568b776
-    last_modified: 2026-11-18T00:16:42Z
+    digest: sha256:428b9a9e2a1faddd
+    last_modified: 2026-11-18T01:59:36Z
   - id: consortium-scenarios-json
     resource: ../../scripts/fixtures/consortium-scenarios.json
     title: scripts/fixtures/consortium-scenarios.json
-    digest: sha256:6cf5b6870c307522
-    last_modified: 2026-11-18T00:11:11Z
+    digest: sha256:de42c3140b77273d
+    last_modified: 2026-11-18T01:59:36Z
 enforced_by:
   - scripts/consortium-site-inputs.test.mjs
   - scripts/consortium-scenarios.test.mjs
@@ -65,4 +65,4 @@ Owner decision 2026-11-18: one module owns every engine site input; the scenario
 - `holes.ts` `laneCounts(ctx, goals)`: per job and light level, the plant count per time step; jobs below the goal (but above 0) are "thin" year spans; nothing caps a lane.
 
 ## Scenario file
-- `scripts/fixtures/consortium-scenarios.json` (32 cases on 8 real places, incl. a 200-plant Seville palette), recorded by `node scripts/consortium-scenarios.mjs --record`, run by `scripts/consortium-scenarios.test.mjs` (skipped when the installed release differs).
+- `scripts/fixtures/consortium-scenarios.json` (32 cases on 8 real places, incl. a 200-plant Seville palette), recorded by `node scripts/consortium-scenarios.mjs --record`, run by `scripts/consortium-scenarios.test.mjs` (skipped when the installed release differs). Members per case: `palette()` round-robin over light level in id order (a string sort since PP-C 0b; before, `a.id - b.id` on UUIDs was NaN and kept the pool's order), so a release that moves placements changes the picks; a case's `also` names plants added after the palette, so it keeps the plant that shows its rule (the Lyon cases hold Alnus cordata, near its cold limit there, so "2 °C colder" changes a verdict). Recorded for `r-bcc417fd89a3147c`.

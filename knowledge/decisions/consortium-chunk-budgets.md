@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:49Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T09:54:57Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:01Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
@@ -15,8 +15,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:155926d0301ae183
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:d659829480fc0fac
+    last_modified: 2026-11-18T01:44:03Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs

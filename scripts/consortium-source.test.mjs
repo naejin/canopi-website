@@ -517,17 +517,28 @@ test('schema 4: a value the reader does not know skips its row, never the plant'
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('schema 3: the export opens; every schema-4 field is null (the feature off), no frost line', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'consortium-s3-'));
+// PP-C 0b (schema 4.5, canopi-data docs/website-handoff/2026-11-17-light-span.md): the light span and
+// the preferred level reach every Taxon, each null when unknown (never "no light needs"); a half span
+// (one end set) reads as no span; the trait_sources rows of each end reach Details.
+test('schema 4.5: the light span and the preferred level reach the Taxon, null when unknown', async () => {
+  const pool = await source.pool('Temperate');
+  const by = (name) => pool.find((t) => t.canonical_name === name);
+  assert.deepEqual(by('Malus domestica').light, { sunniest: 'emergent', shadiest: 'high', preferred: 'high' });
+  assert.deepEqual(by('Sambucus nigra').light, { sunniest: null, shadiest: null, preferred: 'medium' }, 'a preferred level with no span');
+  assert.deepEqual(by('Castanea sativa').light, { sunniest: null, shadiest: null, preferred: null }, 'unknown is null, never a level');
+  for (const t of pool) assert.ok(t.light && 'sunniest' in t.light, `${t.canonical_name}: light is always read`);
+  const malus = await source.details(by('Malus domestica').id, 'Temperate', 'en');
+  assert.deepEqual(malus.traitSources.filter((r) => r.field.startsWith('sun_exposure_')).map((r) => [r.field, r.source, r.kind]).sort(),
+    [['sun_exposure_preferred', 'ellenberg', 'derived'], ['sun_exposure_shadiest', 'pfaf', 'derived'], ['sun_exposure_sunniest', 'pfaf', 'derived']]);
+  const elder = await source.details(by('Sambucus nigra').id, 'Temperate', 'en');
+  assert.deepEqual(elder.traitSources.filter((r) => r.field === 'sun_exposure_preferred').map((r) => [r.source, r.kind]), [['llm-knowledge', 'llm']]);
+  const dir = mkdtempSync(join(tmpdir(), 'consortium-light-'));
   try {
-    const { file } = await writeFixtureExport(join(dir, 'x'), { schema: 3 });
+    // The CHECK forbids a half span in the export; the reader still reads one as none (defence in depth).
+    const { file } = await writeFixtureExport(join(dir, 'x'), { edit: (db) => db.exec("PRAGMA ignore_check_constraints = ON; UPDATE plants SET sun_exposure_shadiest = NULL WHERE canonical_name = 'Malus domestica'") });
     const db = (await openBytes(new Uint8Array(gunzipSync(readFileSync(join(dir, 'x', file)))), expected)).db;
-    const s3 = createSqliteSource(db, { images: {} });
-    assert.equal(s3.info().schemaVersion, 3);
-    assert.equal(s3.info().frostRecorded, false);
-    const d = await s3.details(idOf('Hedera helix'), 'Mediterranean', 'en');
-    assert.deepEqual([d.disputes, d.audiences, d.traitSources, d.frost, d.toxicityParts, d.invasiveAreas], [null, null, null, null, null, null]);
-    assert.ok((await s3.names('fr')).length > 0);
+    const half = (await createSqliteSource(db, { images: {} }).pool('Temperate')).find((t) => t.canonical_name === 'Malus domestica');
+    assert.deepEqual(half.light, { sunniest: null, shadiest: null, preferred: 'high' }, 'a half span is none; the preferred level stays');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

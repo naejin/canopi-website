@@ -134,8 +134,9 @@ async function kiambuStore() {
 // the Arid list only, which Subtropical does not borrow. Re-run on r-415fcc60773473a4 (Q1 data fixes):
 // the same 305 of 515 (196 fit, 109 look). Re-run on r-c15a216b9663d2fa (S4, PFAF page values): the same.
 // Re-run on r-4db8a127ab860011 (sand cherry pH back to 5.1–8.5): the same.
+// Re-run on r-bcc417fd89a3147c (schema 4.5 light span, 681 plants): the same; the 8 new plants are Arid only.
 test('PP-B (b1b countFits, real data): Kiambu, 305 of the 515 plants on the nearest lists fit (196) or need a second look (109) today', async () => {
-  assert.equal(index.release_id, 'r-4db8a127ab860011', 'the export the figure was read on');
+  assert.equal(index.release_id, 'r-bcc417fd89a3147c', 'the export the figure was read on');
   const store = await kiambuStore();
   const n = store.countFits.value;
   assert.deepEqual(n, { fits: 196, look: 109, unknown: 0, of: 515 });

@@ -1,18 +1,19 @@
 // Consortium v2 core types (frozen seam, commit 0 of P2; design check §4). The core
 // (src/lib/consortium/) reads plants only through PlantSource (./source.ts) as these plain records,
 // imports nothing outside this folder and touches no DOM (scripts/consortium-boundary.test.mjs).
-// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schemas 3 and 4; schema 4:
-// docs/website-handoff/2026-11-14-schema4-format.md, 4.2 2026-11-17-toxicity-parts.md); the adapter
+// The data contract is canopi-data docs/consortium-export-v2.md (format 4, schema 4.5 or later:
+// docs/website-handoff/2026-11-14-schema4-format.md, 4.2 2026-11-17-toxicity-parts.md, 4.5
+// 2026-11-17-light-span.md); the adapter
 // (src/islands/consortium/data/sqlite-source.ts, stream S1) fills these records from SQL.
 // Streams may add fields; renaming or removing one is a seam change for the coordinator.
 //
 // null means unknown or not recorded. The schema's "no rows" for functions means not curated, never
 // "none": Taxon.functions is null then.
 
-// The schemas the reader opens (PRAGMA user_version): 3 and 4 until PP-C 0b installs schema 4. A
-// schema-4 table absent from the database (a schema-3 export, or a later table of the additive tier)
-// is the feature off, read with the same "not recorded" words (Details fields null).
-export const SCHEMA_VERSIONS = [3, 4] as const;
+// The schema the reader opens (PRAGMA user_version): 4, at minor 4.5 or later (the installer refuses an
+// older minor: scripts/consortium-schema.mjs MIN_SCHEMA_MINOR). No older schema or minor is read (PP-C
+// 0b, owner 2026-11-17 "no backward compatibility").
+export const SCHEMA_VERSIONS = [4] as const;
 export type SchemaVersion = (typeof SCHEMA_VERSIONS)[number];
 // PRAGMA application_id of the export ("CCON"), checked when the database opens.
 export const APPLICATION_ID = 0x43434f4e;
@@ -231,10 +232,10 @@ export interface Taxon {
   // borrowed it from (placement.ts placeFor, the nearest-list table; the "estimate" label). Absent for
   // the climate's own plants: they are never stamped.
   origin?: PlacementOrigin;
-  // Schema 4.5 (canopi-data light span, additive; v13 hand-off item 1): the light levels the plant grows
-  // in (sunniest to shadiest end, both or neither) and the level it is found mostly in (preferred).
-  // Absent: the release has no such columns; each null: unknown (the plant shows its single level).
-  light?: LightNiche;
+  // Schema 4.5 (canopi-data light span; v13 hand-off item 1): the light levels the plant grows in
+  // (sunniest to shadiest end, both or neither) and the level it is found mostly in (preferred). Each
+  // null: unknown, never "no light needs" (the plant shows its single level).
+  light: LightNiche;
 }
 export interface LightNiche { sunniest: Stratum | null; shadiest: Stratum | null; preferred: Stratum | null }
 
@@ -280,18 +281,18 @@ export interface Details {
   sources: Record<string, Source>; // every source id the sheet cites
   placements: Partial<Record<ClimateZone, Placement>>; // this plant in every curated climate
   koppen: KoppenShare[]; // schema 2: the Köppen classes of its observed cells, largest share first; [] with no range
-  // Schema 4 (PP-C commit 0; each null when its table is absent: the feature off; c2 draws them). None of
-  // them changes a verdict, a filter or a ranking (format note, decision 17: inform, don't block).
-  disputes: Dispute[] | null; // plant_disputes: other sources that disagree with a shipped value
-  audiences: ToxicityAudience[] | null; // plant_toxicity_audience: one row per animal audience and source
-  traitSources: TraitSource[] | null; // trait_sources: where a shipped trait value comes from and holds
-  // plant_frost: this plant's frost facts. null: the table is absent, or the release has no row at all
-  // (no frost line); [] with frostRecorded: the release has rows, none for this plant ("not recorded").
+  // Schema 4 (PP-C commit 0; c2 draws them; [] for a plant without rows). None of them changes a
+  // verdict, a filter or a ranking (format note, decision 17: inform, don't block).
+  disputes: Dispute[]; // plant_disputes: other sources that disagree with a shipped value
+  audiences: ToxicityAudience[]; // plant_toxicity_audience: one row per animal audience and source
+  traitSources: TraitSource[]; // trait_sources: where a shipped trait value comes from and holds
+  // plant_frost: this plant's frost facts. null: the release has no row at all (no frost line); [] with
+  // frostRecorded: the release has rows, none for this plant ("not recorded").
   frost: FrostFact[] | null;
-  toxicityParts: ToxicityPart[] | null; // 4.2 plant_toxicity_parts: the parts a source names as toxic
+  toxicityParts: ToxicityPart[]; // 4.2 plant_toxicity_parts: the parts a source names as toxic
   // 4.3 plant_invasive_areas: per (country, source), the areas it names; a pair holding an area or a
   // source outside the closed lists is left out whole, so it reads at country level (never wrong).
-  invasiveAreas: InvasiveScope[] | null;
+  invasiveAreas: InvasiveScope[];
   gbifRecords: number | null; // plant_climate_status.gbif_records: the occurrence records the range rests on
 }
 

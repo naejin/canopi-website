@@ -1,27 +1,28 @@
-# Invented consortium fixture (format 4, schema 4.5; schema-3 variant)
+# Invented consortium fixture (format 4, schema 4.5)
 
 Plausible but **invented** plant values for testing consortium v2 without the real export. Never shipped:
 `canopi_db_sha256` is all zeros, which a real install refuses, and the directory sits outside `public/`.
 
 - **Built by** `node scripts/fixtures/consortium-v2/make-fixture.mjs` (Node's `node:sqlite`, no Python on the
   website: coordinator row "v2 build setup", 2026-11-11). The output in `export/` is committed.
-- **Schema:** schema 3 (the ranges rebuild), the stored `CREATE` statements of export `r-01102782139409b5`:
+- **Base statements:** schema 3's (the ranges rebuild; the base `DDL_4` derives from them, no schema-3 export is
+  written or read since PP-C 0b), the stored `CREATE` statements of export `r-01102782139409b5`:
   schema 1's (canopi-data `consortium_sqlite.ddl()` at `consortium-v2-export` ab6bfad) plus `plant_climate_status`
   (with `documented_cells`), `plant_climate` (variables with `tmean_year`, basis `thinned_cells`, `blocks`,
   `low_source`, `high_source`, `weak`) and `plant_koppen`. canopi-data's `check_export` passed on the schema 1
   `export/`; it was not re-run on the schema 2 or 3 ones.
-- **Schema 4 (PP-C commit 0):** the default build is schema 4 (`scripts/consortium-schema.mjs` `DDL_4`, copied from
+- **Schema 4 (PP-C commit 0, 0b):** the build is schema 4 (`scripts/consortium-schema.mjs` `DDL_4`, copied from
   the staging export `r-c15a216b9663d2fa`) plus 4.2's declared `plant_toxicity_parts` (`TOXICITY_PARTS_DDL`,
   canopi-data `docs/website-handoff/2026-11-17-toxicity-parts.md`) and 4.3's declared `plant_invasive_areas`
-  (`INVASIVE_AREAS_DDL`, `docs/website-handoff/2026-11-17-invasive-scope.md`) and 4.5's declared light span
+  (`INVASIVE_AREAS_DDL`, `docs/website-handoff/2026-11-17-invasive-scope.md`), 4.5's declared light span
   columns `plants.sun_exposure_sunniest`, `sun_exposure_shadiest`, `sun_exposure_preferred` with their
   `trait_sources` fields (`LIGHT_SPAN_DDL`, since 5: Malus domestica emergent to high, found mostly in high, PFAF
   and Ellenberg derived; Sambucus nigra found mostly in medium only, an `llm-knowledge` AI estimate),
   `schema_minor` 5 (the fixture writes no 4.4 addition), with the names file
-  `names.<release>.<12 hex>.tsv.gz`. `writeFixtureExport(dir, { schema: 3 })` writes the schema-3 export the reader
-  still accepts until PP-C 0b.
+  `names.<release>.<12 hex>.tsv.gz`. The 4.2 to 4.5 additions are the installer's `REQUIRED_ADDITIONS` (PP-C 0b, no
+  backward compatibility); the light span statements are canopi-data's, CHECKs included.
 - **Contract:** canopi-data `docs/consortium-export-v2.md`, `docs/website-handoff/2026-11-14-schema4-format.md`.
-- **Variants:** tests call `writeFixtureExport(dir, { schema, edit, userVersion, applicationId, names, manifest, after })`
+- **Variants:** tests call `writeFixtureExport(dir, { edit, userVersion, applicationId, names, manifest, after })`
   for a broken copy rather than keep broken files here; `UNDECLARED_EXTRA` (an edit) and `DECLARED_COLUMN`
   (an edit and a manifest edit) are the tier rule's two extras.
 

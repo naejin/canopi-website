@@ -167,7 +167,7 @@ function openWith(sqlite3: Sqlite3, bytes: Uint8Array, expected: Expected): Open
     } catch (err) {
       throw new LoadError('damaged', `not a database: ${(err as Error).message}`);
     }
-    // Schemas 3 and 4 until PP-C 0b (types.ts SCHEMA_VERSIONS); any other is the Reload screen.
+    // Schema 4 only (types.ts SCHEMA_VERSIONS); any other is the Reload screen.
     if (appId !== APPLICATION_ID || !(SCHEMA_VERSIONS as readonly unknown[]).includes(userVersion)) throw new LoadError('schema', `application_id ${String(appId)}, user_version ${String(userVersion)}`);
     let release: unknown, climates: unknown[];
     try {

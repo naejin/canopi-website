@@ -223,9 +223,9 @@ for (const name of ['Ficus carica', 'Ziziphus jujuba', 'Punica granatum']) {
   });
 }
 
-test('schema 3: the reader and the installer read schema 3 (and 4, PP-C), the source reads blocks, sources and weak', async () => {
+test('schema 4: the reader and the installer read schema 4 only (PP-C 0b), the source reads blocks, sources and weak', async () => {
   const types = await import('../src/lib/consortium/types.ts');
-  assert.deepEqual(types.SCHEMA_VERSIONS, [3, 4]);
+  assert.deepEqual(types.SCHEMA_VERSIONS, [4]);
   const cacao = plant('Theobroma cacao').climate;
   assert.deepEqual(cacao.tmeanYear, { low: 21.3, median: 25.2, high: 27.5, count: cacao.tmeanYear.count, basis: 'thinned_cells', blocks: 499, lowSource: 'treegoer_ranges', highSource: null, weak: false });
   assert.equal(cacao.tmaxWarm.highSource, 'treegoer_ranges');
@@ -300,15 +300,13 @@ test('month layers: every PFAF month row of the export carries its source region
 
 // ---- review of 619e6a7 ----
 
-// PP-C commit 0: the schema of the installed export's version (3 until 0b installs schema 4). Schema 4's
-// declared additions (schema_additions in the index) are left out of the comparison: they are judged by
-// the installer's tier rule, never copied as base statements.
+// PP-C 0b: the schema the reader reads (consortium-schema.mjs DDL_READ: the base statements and every
+// required 4.2 to 4.5 addition) against the installed export, table by table and statement by statement.
 test('schema module: every table, column and statement, in order, as the installed export holds them (the fixture is built from the same DDL)', async () => {
-  const { DDL_BY_SCHEMA } = await import('./consortium-schema.mjs');
+  const { DDL_READ } = await import('./consortium-schema.mjs');
   const { DatabaseSync } = await import('node:sqlite');
   const mem = new DatabaseSync(':memory:');
-  mem.exec(DDL_BY_SCHEMA[index.schema_version]);
-  const additions = new Set((index.schema_additions ?? []).flatMap((a) => (a.column ? [] : [a.index ?? a.table])));
+  mem.exec(DDL_READ);
   const cols = (db) => Object.fromEntries(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all().map(({ name }) => [name, db.prepare('SELECT name, "notnull" FROM pragma_table_info(?)').all(name).map((c) => `${c.name}${c.notnull ? '!' : ''}`).join(',')]));
   const ours = cols(mem);
   const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
@@ -316,16 +314,15 @@ test('schema module: every table, column and statement, in order, as the install
   const dir = mkdtempSync(`${tmpdir()}/ct-schema-`);
   writeFileSync(`${dir}/x.sqlite`, gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url))));
   const installed = new DatabaseSync(`${dir}/x.sqlite`, { readOnly: true });
-  const drop = (o) => Object.fromEntries(Object.entries(o).filter(([name]) => !additions.has(name)));
-  const exp = drop(cols(installed));
-  const expSql = drop(Object.fromEntries(installed.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name').all().map((r) => [r.name, r.sql])));
+  const exp = cols(installed);
+  const expSql = Object.fromEntries(installed.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name').all().map((r) => [r.name, r.sql]));
   installed.close();
   rmSync(dir, { recursive: true });
   assert.deepEqual(ours, exp);
   // And every statement as SQLite stores it (CHECK lists included: a new variable shows here).
   const sqlOf = (db) => Object.fromEntries(db.prepare('SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL ORDER BY name').all().map((r) => [r.name, r.sql]));
   assert.deepEqual(sqlOf(mem), expSql);
-  assert.ok(ours.plants.endsWith(',grown_as_annual!'), 'grown_as_annual last in plants, NOT NULL (canopi-data consortium_sqlite.py)');
+  assert.ok(ours.plants.endsWith(',grown_as_annual!,sun_exposure_sunniest,sun_exposure_shadiest,sun_exposure_preferred'), 'grown_as_annual last of the base plants columns, NOT NULL (canopi-data consortium_sqlite.py), then 4.5\'s three nullable light columns');
 });
 
 // ---- the summer-warmth bound for annuals (canopi-data, schema 3 tmean_warm low; coordinator 2026-11-12) ----

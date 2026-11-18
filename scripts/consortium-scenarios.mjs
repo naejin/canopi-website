@@ -87,9 +87,10 @@ const PLACES = {
   recife: [-8.054, -34.881], kumasi: [6.688, -1.624], osaka: [34.694, 135.502], lyon: [45.76, 4.84],
 };
 // A palette per list: round-robin over light level (stratum) in id order, `n` plants, deterministic.
+// (Ids are UUID strings: until PP-C 0b `a.id - b.id` was NaN and left the pool's own order.)
 function palette(list, n = 10) {
   const groups = new Map();
-  for (const t of [...list].sort((a, b) => a.id - b.id)) {
+  for (const t of [...list].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
     const k = t.stratum?.value ?? 'none';
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(t);
@@ -103,7 +104,11 @@ function palette(list, n = 10) {
   return out;
 }
 // [id, place, list, period, extra]: extra holds scenario, room, edits, goals, members ('none': empty
-// palette; a number: that many plants of the list, round-robin as palette()).
+// palette; a number: that many plants of the list, round-robin as palette()) and also (canonical names
+// added after the palette, so a case keeps the plant that shows its rule whatever a release changes).
+// Lyon: Alnus cordata sits near its cold limit there, so "2 °C colder" changes its verdict (PP-C 0b:
+// the round-robin palette alone stopped holding such a plant when placements moved).
+const LYON = ['Alnus cordata'];
 const CASES = [
   ['seville-today', 'seville', 'Mediterranean', '1991-2020'],
   ['seville-2041-2070', 'seville', 'Mediterranean', '2041-2070'],
@@ -127,18 +132,19 @@ const CASES = [
   ['kumasi-2041-2070', 'kumasi', 'Tropical', '2041-2070'],
   ['osaka-balcony', 'osaka', 'Subtropical', '1991-2020', { room: 'pots' }],
   ['osaka-balcony-temperate', 'osaka', 'Temperate', '1991-2020', { room: 'pots' }],
-  ['lyon-today', 'lyon', 'Temperate', '1991-2020'],
-  ['lyon-2c-colder', 'lyon', 'Temperate', '1991-2020', { edits: { nightsShiftC: -2, daysShiftC: -2 } }],
-  ['lyon-2c-colder-2071-2099', 'lyon', 'Temperate', '2071-2099', { edits: { nightsShiftC: -2, daysShiftC: -2 } }],
-  ['lyon-soil-test-acid', 'lyon', 'Temperate', '1991-2020', { edits: { soilPh: 5.2 } }],
-  ['lyon-soil-test-chalky', 'lyon', 'Temperate', '1991-2020', { edits: { soilPh: 8.1 } }],
-  ['lyon-wet-ground', 'lyon', 'Temperate', '1991-2020', { edits: { drainage: 'wet' } }],
-  ['lyon-frost-hollow', 'lyon', 'Temperate', '1991-2020', { edits: { coldAir: 'hollow' } }],
-  ['lyon-3-per-job', 'lyon', 'Temperate', '1991-2020', { goals: { plantsPerJob: 3 } }],
+  ['lyon-today', 'lyon', 'Temperate', '1991-2020', { also: LYON }],
+  ['lyon-2c-colder', 'lyon', 'Temperate', '1991-2020', { edits: { nightsShiftC: -2, daysShiftC: -2 }, also: LYON }],
+  ['lyon-2c-colder-2071-2099', 'lyon', 'Temperate', '2071-2099', { edits: { nightsShiftC: -2, daysShiftC: -2 }, also: LYON }],
+  ['lyon-soil-test-acid', 'lyon', 'Temperate', '1991-2020', { edits: { soilPh: 5.2 }, also: LYON }],
+  ['lyon-soil-test-chalky', 'lyon', 'Temperate', '1991-2020', { edits: { soilPh: 8.1 }, also: LYON }],
+  ['lyon-wet-ground', 'lyon', 'Temperate', '1991-2020', { edits: { drainage: 'wet' }, also: LYON }],
+  ['lyon-frost-hollow', 'lyon', 'Temperate', '1991-2020', { edits: { coldAir: 'hollow' }, also: LYON }],
+  ['lyon-3-per-job', 'lyon', 'Temperate', '1991-2020', { goals: { plantsPerJob: 3 }, also: LYON }],
   ['seville-200-plants', 'seville', 'Mediterranean', '1991-2020', { members: 200 }],
   ['no-location', null, 'Temperate', '1991-2020'],
 ];
 
+const fail = (message) => { throw new Error(message); };
 async function record() {
   const C = await import('../src/lib/climate/index.ts');
   const climateIndex = JSON.parse(readFileSync(new URL('src/data/climate-index.json', ROOT), 'utf8'));
@@ -154,7 +160,10 @@ async function record() {
   const cases = [], plants = {};
   for (const [id, place, list, period, extra = {}] of CASES) {
     for (const t of await pool(list)) plants[t.id] ??= t.canonical_name;
-    const members = extra.members === 'none' ? [] : palette(await pool(list), typeof extra.members === 'number' ? extra.members : 10).map((t) => t.id);
+    const picked = extra.members === 'none' ? [] : palette(await pool(list), typeof extra.members === 'number' ? extra.members : 10);
+    const listed = await pool(list);
+    const also = (extra.also ?? []).map((name) => listed.find((t) => t.canonical_name === name) ?? fail(`${id}: ${name} is not on the ${list} list`));
+    const members = [...new Set([...picked, ...also].map((t) => t.id))];
     const input = { list, place, period, ...(extra.scenario ? { scenario: extra.scenario } : {}), ...(extra.room ? { room: extra.room } : {}), ...(extra.edits ? { edits: extra.edits } : {}), ...(extra.goals ? { goals: extra.goals } : {}), members };
     cases.push({ id, input, output: await run(input, places) });
   }

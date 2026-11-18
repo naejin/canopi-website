@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:06Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T16:48:40Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:00Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -52,8 +52,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:155926d0301ae183
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:d659829480fc0fac
+    last_modified: 2026-11-18T01:44:03Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -97,8 +97,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:0bf61b46e5182717
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:9dcf900b8bd5e06b
+    last_modified: 2026-11-18T01:44:32Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -107,8 +107,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:76403c6b7eef8bf5
-    last_modified: 2026-11-17T23:54:43Z
+    digest: sha256:4fcebb2d2ec2adba
+    last_modified: 2026-11-18T01:44:37Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -153,7 +153,7 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:b8c580d9ae59f7c4
-    last_modified: 2026-11-18T00:03:33Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -163,7 +163,7 @@ sources:
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
     digest: sha256:c676d7c2ab37a93f
-    last_modified: 2026-11-17T23:49:27Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -173,7 +173,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:6b68b3a0f3306bd6
-    last_modified: 2026-11-18T00:13:24Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -238,7 +238,7 @@ sources:
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
     digest: sha256:b951f3a6ffed4d20
-    last_modified: 2026-11-17T23:52:29Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
@@ -268,7 +268,7 @@ sources:
     resource: ../../src/islands/consortium/views/pool/pool.tsx
     title: src/islands/consortium/views/pool/pool.tsx
     digest: sha256:5e6e8f91c970fca9
-    last_modified: 2026-11-17T23:48:48Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: side-ts
     resource: ../../src/islands/consortium/views/side.ts
     title: src/islands/consortium/views/side.ts
@@ -313,12 +313,12 @@ sources:
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
     digest: sha256:8a0d6587efece546
-    last_modified: 2026-11-17T23:48:11Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:c1c19c1206540419
-    last_modified: 2026-11-17T23:48:31Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -363,7 +363,7 @@ sources:
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
     digest: sha256:87afdfe9588901b8
-    last_modified: 2026-11-17T23:48:11Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -377,8 +377,8 @@ sources:
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
-    digest: sha256:979384ee60637bd0
-    last_modified: 2026-11-17T23:48:18Z
+    digest: sha256:432c3fbf13e13afc
+    last_modified: 2026-11-18T00:51:57Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -402,8 +402,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:130be072c506a3b0
-    last_modified: 2026-11-18T00:10:23Z
+    digest: sha256:2b3666675741b3cf
+    last_modified: 2026-11-18T01:44:32Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -418,7 +418,7 @@ sources:
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
     digest: sha256:de3d31fb8eed5d71
-    last_modified: 2026-11-17T23:47:52Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css

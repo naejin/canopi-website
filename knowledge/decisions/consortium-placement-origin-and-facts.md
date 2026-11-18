@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:33:43Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:04Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:130be072c506a3b0
-    last_modified: 2026-11-18T00:10:23Z
+    digest: sha256:2b3666675741b3cf
+    last_modified: 2026-11-18T01:44:32Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -26,7 +26,7 @@ sources:
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
     digest: sha256:d6e0c4c9735c7307
-    last_modified: 2026-11-17T23:48:53Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -36,7 +36,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:6b68b3a0f3306bd6
-    last_modified: 2026-11-18T00:13:24Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
@@ -46,7 +46,7 @@ sources:
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
     digest: sha256:5097f48e59e0f4b2
-    last_modified: 2026-11-17T23:52:07Z
+    last_modified: 2026-11-18T00:51:57Z
 ---
 
 ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).

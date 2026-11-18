@@ -4,9 +4,9 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:11Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T18:43:45Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:02Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -106,8 +106,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:155926d0301ae183
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:d659829480fc0fac
+    last_modified: 2026-11-18T01:44:03Z
   - id: consortium-balance-test-mjs
     resource: ../../scripts/consortium-balance.test.mjs
     title: scripts/consortium-balance.test.mjs
@@ -181,8 +181,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:0bf61b46e5182717
-    last_modified: 2026-11-17T10:34:49Z
+    digest: sha256:9dcf900b8bd5e06b
+    last_modified: 2026-11-18T01:44:32Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -191,8 +191,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:76403c6b7eef8bf5
-    last_modified: 2026-11-17T23:54:43Z
+    digest: sha256:4fcebb2d2ec2adba
+    last_modified: 2026-11-18T01:44:37Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -222,7 +222,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:6b68b3a0f3306bd6
-    last_modified: 2026-11-18T00:13:24Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -252,7 +252,7 @@ sources:
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
     digest: sha256:b951f3a6ffed4d20
-    last_modified: 2026-11-17T23:52:29Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
@@ -307,7 +307,7 @@ sources:
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:c1c19c1206540419
-    last_modified: 2026-11-17T23:48:31Z
+    last_modified: 2026-11-18T00:51:57Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -346,8 +346,8 @@ sources:
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
-    digest: sha256:979384ee60637bd0
-    last_modified: 2026-11-17T23:48:18Z
+    digest: sha256:432c3fbf13e13afc
+    last_modified: 2026-11-18T00:51:57Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -372,7 +372,7 @@ sources:
     resource: ../../scripts/plan/pp-c-owners.json
     title: scripts/plan/pp-c-owners.json
     digest: sha256:4f55320076bd6602
-    last_modified: 2026-11-17T23:53:41Z
+    last_modified: 2026-11-18T00:51:57Z
 ---
 
 Pushes of the [Plant palette redesign](/project/consortium-v2-plan.md), in order: **PP-B, PP-C, PP-D, PP-E, PP-F, PP-G** (owner answers of 2026-11-14: no separate push A; later climates, then soil and your spot, then through the year). Module names, shapes and link keys: [Plant palette architecture](/architecture/plant-palette-architecture.md); use them exactly. Boards are named by file in `.local/consortium/v2/f1a/mockups-v3/project/<Name>.dc.html` (main checkout, gitignored); inventory rows are those of `mockups-v3/ux-inventory.md`. Citations are at `f1a/int` 648baf2. Amended 2026-11-14 by the plan recheck and the look-ahead check and by the owner's plan check answers (decision rows "Plant palette plan check answers" and "Plant palette plan amendments"), then by the owner's "Delete first" answer (rows "Delete first" and "Plant palette delete-first amendments": PP-B's commit 0 deletes the old screens before the new page is built). Amended again at the PP-B chunk-2 plan commit (2026-11-16) by the decision rows of 2026-11-14 to 2026-11-16 (scale contract, budgets as a tripwire, process fitted to risk, no export split, things to weigh, frost, search, the b1b review) and by the chunk-2 drift check recorded in `scripts/plan/pp-b-owners.json`.

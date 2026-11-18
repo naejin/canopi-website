@@ -3,6 +3,8 @@ try	try	TRY Plant Trait Database			terms	https://www.try-db.org/	used
 pfaf	pfaf;pfaf_sqlite;pfaf_notes	Plants For A Future	Plants For A Future (pfaf.org)		permission	https://pfaf.org/	used
 plantatlas	plantatlas	USDA PLANTS Database (via PlantAtlas)		Public domain (US government)	confirmed	https://plants.usda.gov/	used
 griis	griis	Global Register of Introduced and Invasive Species (GRIIS)	Global Register of Introduced and Invasive Species (griis.org), compendium via Zenodo	CC BY 4.0	confirmed	https://griis.org/	used
+es_catalogo		Catálogo Español de Especies Exóticas Invasoras (RD 630/2013)	Fuente de los datos: Agencia Estatal Boletín Oficial del Estado (https://www.boe.es). Real Decreto 630/2013, anexo, texto consolidado	BOE reuse conditions (AEBOE, 2024-06-27); legal text, LPI art. 13	confirmed	https://www.boe.es/eli/es/rd/2013/08/02/630/con	used
+atlas_aloctonas_es		Atlas de las Plantas Alóctonas Invasoras en España (MITECO 2004; expert atlas, not a legal list)	SANZ ELORZA M., DANA SÁNCHEZ E.D. & SOBRINO VESPERINAS E., eds. 2004. Atlas de las Plantas Alóctonas Invasoras en España. Dirección General para la Biodiversidad. Madrid, 384 pp. Cap. II, Tabla 2 (facts cited; no prose, map or photograph copied)	MITECO aviso legal (https://www.miteco.gob.es/es/atencion-al-ciudadano/aviso-legal.html): reuse without express authorisation, citing the source; third-party IP excepted	confirmed	https://www.miteco.gob.es/es/biodiversidad/temas/inventarios-nacionales/inventario-especies-terrestres/inventario-nacional-de-biodiversidad/ieet_flora_vasc_aloct_invas.html	used
 gisd	gisd	Global Invasive Species Database (GISD)	Global Invasive Species Database (iucngisd.org), Darwin Core Archive via GBIF	CC BY 4.0	confirmed	https://www.iucngisd.org/	used
 eol	eol;eol_distribution	Encyclopedia of Life TraitBank	Encyclopedia of Life TraitBank (eol.org), Zenodo bulk download	CC BY	confirmed	https://eol.org/	used
 ellenberg	ellenberg	Ellenberg-type indicator values	Tichý et al. (2023), Ellenberg-type indicator values for European vascular plants, Zenodo compilation of 13 regional datasets (tables of 2022-11-07, v2)	CC BY	confirmed		used
@@ -28,12 +30,15 @@ agroforestreeadvice	agroforestreeadvice	AgroforesTreeAdvice tables	AgroforesTree
 shadetreeadvice	shadetreeadvice	ShadeTreeAdvice	ShadeTreeAdvice farmers' ratings (dataSTA.txt, AgroforesTreeAdvice models/ folder)		permission	https://github.com/euraf/agroforestreeadvice	held
 dentro	dentro	DENTRO	DENTRO table (AgroforesTreeAdvice models/ folder)		permission	https://github.com/euraf/agroforestreeadvice	held
 intercropping	intercropping	Horticulture intercropping experiments	Horticulture intercropping experiments, version 7, Recherche Data Gouv. https://doi.org/10.57745/HV33V1	Etalab 2.0	confirmed	https://doi.org/10.57745/HV33V1	used
+alveoles	alveoles	Les Alvéoles	Les Alvéoles (plantes.alveoles.fr), practitioner nursery, France: plant cards		permission	https://plantes.alveoles.fr/	used
 canopi		Canopi catalog			none		internal
 canopi-correction	canopi-correction	Canopi correction			none		internal
 canopi-knowledge		Canopi curator knowledge			none		internal
 canopi_rules	dq-fix;gap-fill;try-autonym	Canopi rules	Values derived by Canopi's rules from the values of the sources above		none		internal
-canopi_strata	human-verified	Canopi curated strata	Strata and succession phases from Canopi's reviewed consortium roles (data/curated/consortium_roles.tsv)		none		internal
+canopi_strata	human-verified	Canopi curated sun exposure	Sun exposure and succession phases from Canopi's reviewed consortium roles (data/curated/consortium_roles.tsv)		none		internal
 model_output	llm;ai-generated	Model output	Common names and classifications written by a language model		none		internal
+canopi-light-span	canopi-light-span	Canopi rule: light span and preferred sun exposure	The light span derived by Canopi's rule from the sun and shade tolerance of the sources above, and the preferred sun exposure from their Ellenberg light value		none		internal
+llm-knowledge	llm-knowledge	AI estimate, no source	A language model's estimate from its own knowledge, with no passage cited		none		internal
 curated_names	curated	Canopi curated names	Common names added by Canopi's curators (data/curated/common_names.tsv)		none		internal
 unrecorded	unknown	Source not recorded	Common names whose source was not recorded when they were loaded		none		internal
 gbif_occurrences		GBIF occurrence maps	GBIF.org occurrence density maps (https://api.gbif.org/v2/map/occurrence/density), every basis of record but fossil and living specimens, read 2026-11-11 for Canopi's observed plant climate ranges. The maps include records under CC0, CC BY and CC BY-NC; CC BY-NC records are used under the owner's open-source permission.		unconfirmed	https://www.gbif.org/	used

@@ -1,4 +1,4 @@
-// The consortium export's schemas (format 4; schemas 3 and 4) as the website expects them: the
+// The consortium export's schema (format 4, schema 4.5 or later) as the website expects it: the
 // installer (scripts/install-consortium.mjs) compares every table's columns and statements with them,
 // and the fixture (scripts/fixtures/consortium-v2/make-fixture.mjs) is built from them. A new schema
 // version in canopi-data means a new copy here, and a reader change in src/lib/consortium/.
@@ -16,11 +16,13 @@
 // tables (plant_disputes, plant_aliases, trait_sources, plant_frost, plant_toxicity_audience) and two
 // indexes, copied from the sqlite_master of the staging export r-c15a216b9663d2fa. Later additive
 // changes (schema_minor, schema_additions) are judged by the installer's tier rules, never copied as
-// base statements; the ones the reader knows, schema 4.2's plant_toxicity_parts and 4.3's
-// plant_invasive_areas, are kept below with their declarations (the fixture builds them, the reader
-// treats them as optional).
+// base statements; the ones the reader needs, schema 4.2's plant_toxicity_parts, 4.3's
+// plant_invasive_areas and 4.5's light span columns, are kept below with their declarations: the
+// installer requires them (REQUIRED_ADDITIONS, MIN_SCHEMA_MINOR) and the fixture builds them. The
+// schema-3 statements (DDL_3) are only the base DDL_4 is derived from: no schema-3 export installs
+// (PP-C 0b, owner 2026-11-17 "no backward compatibility").
 // scripts/consortium-p5-ranges.test.mjs compares the installed export's schema with DDL_BY_SCHEMA.
-export const DDL_3 = String.raw`
+const DDL_3 = String.raw`
 CREATE TABLE meta (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -360,19 +362,17 @@ export const DDL_4 = DDL_3.replace(LAYER_VALUES_3, LAYER_VALUES_4).replace(FIRST
 
 
 // The tables counted in meta and the manifest, in DDL order (canopi-data DATA_TABLES).
-export const DATA_TABLES_3 = ['climates', 'climate_regions', 'strata', 'phases', 'sources', 'countries', 'areas', 'labels', 'plants',
+const DATA_TABLES_3 = ['climates', 'climate_regions', 'strata', 'phases', 'sources', 'countries', 'areas', 'labels', 'plants',
   'plant_names', 'plant_images', 'toxicity_sources', 'plant_invasive', 'plant_areas', 'placements',
   'placement_reasons', 'reason_texts', 'functions', 'function_sources', 'interactions', 'interaction_notes',
   'interaction_sources', 'agent_names', 'agent_name_sources', 'layer_values', 'plant_climate_status', 'plant_climate', 'plant_koppen'];
 // Schema 4 appends its five tables (format note "General rules": in DATA_TABLES in that order).
 export const DATA_TABLES_4 = [...DATA_TABLES_3, 'plant_disputes', 'plant_aliases', 'trait_sources', 'plant_frost', 'plant_toxicity_audience'];
 
-// The schemas the website reads (the reader accepts 3 and 4 until the schema-4 export is installed, PP-C
-// 0b; slices 3.2), each with its base DDL and counted tables.
-export const SCHEMAS = [3, 4];
-export const DDL_BY_SCHEMA = { 3: DDL_3, 4: DDL_4 };
-export const DATA_TABLES_BY_SCHEMA = { 3: DATA_TABLES_3, 4: DATA_TABLES_4 };
-// The newest schema: what the fixture is built at unless a test asks for schema 3.
+// The schema the website reads (schema 4 only since PP-C 0b), with its base DDL and counted tables.
+export const SCHEMAS = [4];
+export const DDL_BY_SCHEMA = { 4: DDL_4 };
+export const DATA_TABLES_BY_SCHEMA = { 4: DATA_TABLES_4 };
 export const LATEST_SCHEMA = 4;
 
 // Schema 4's open vocabularies (format note: not in the DDL, held by canopi release verify; a later
@@ -390,8 +390,8 @@ export const VOCABULARIES_4 = {
 };
 
 // Schema 4.2 (canopi-data docs/website-handoff/2026-11-17-toxicity-parts.md): plant_toxicity_parts and
-// its key, a declared addition (schema_minor 2), never a base table: an export without it is a 4.1
-// export, and the reader then shows no parts. Its count is the declared meta key
+// its key, a declared addition (schema_minor 2), never a base table; required (REQUIRED_ADDITIONS). Its
+// count is the declared meta key
 // count.plant_toxicity_parts (not in DATA_TABLES_4).
 export const TOXICITY_PARTS_DDL = String.raw`CREATE TABLE plant_toxicity_parts (
   plant INTEGER NOT NULL REFERENCES plants (plant),
@@ -401,7 +401,8 @@ export const TOXICITY_PARTS_DDL = String.raw`CREATE TABLE plant_toxicity_parts (
   genus_wide INTEGER NOT NULL CHECK (genus_wide IN (0, 1)),
   source TEXT NOT NULL REFERENCES sources (id)
 );
-CREATE UNIQUE INDEX plant_toxicity_parts_key ON plant_toxicity_parts (plant, ifnull(who, ''), part, ifnull(condition, ''), source);
+CREATE UNIQUE INDEX plant_toxicity_parts_key ON plant_toxicity_parts
+  (plant, ifnull(who, ''), part, ifnull(condition, ''), source);
 `;
 // The declarations a 4.2 manifest carries for it (since 2).
 export const TOXICITY_PARTS_ADDITIONS = [
@@ -409,7 +410,7 @@ export const TOXICITY_PARTS_ADDITIONS = [
   { table: 'plant_toxicity_parts', since: 2 },
   { table: 'plant_toxicity_parts', index: 'plant_toxicity_parts_key', since: 2 },
 ];
-// Its open vocabularies (same rule as VOCABULARIES_4), held only when the table is present.
+// Its open vocabularies (same rule as VOCABULARIES_4).
 export const VOCABULARIES_42 = {
   'plant_toxicity_parts.part': ['whole_plant', 'leaves', 'stems', 'shoots', 'bark', 'sap', 'flowers', 'fruits', 'berries', 'seeds', 'pods', 'nuts', 'roots', 'bulbs', 'tubers', 'essential_oil'],
   'plant_toxicity_parts.condition': ['raw', 'unripe', 'immature', 'wilted', 'sprouted', 'large_amounts', 'prolonged_use', 'skin_contact', 'pregnancy'],
@@ -418,7 +419,7 @@ export const VOCABULARIES_42 = {
 
 // Schema 4.3 (canopi-data docs/website-handoff/2026-11-17-invasive-scope.md, staging r-0dfc15e7cfe22e19):
 // plant_invasive_areas, a declared addition (schema_minor 3) created last: a source naming a plant
-// invasive in part of a country (WCVP level-3 areas). An export without it is a 4.2 export.
+// invasive in part of a country (WCVP level-3 areas). Required (REQUIRED_ADDITIONS).
 export const INVASIVE_AREAS_DDL = String.raw`CREATE TABLE plant_invasive_areas (
   plant INTEGER NOT NULL REFERENCES plants (plant),
   country TEXT NOT NULL,
@@ -432,3 +433,33 @@ export const INVASIVE_AREAS_ADDITIONS = [
   { table: 'meta', column: 'key', value: 'count.plant_invasive_areas', since: 3 },
   { table: 'plant_invasive_areas', since: 3 },
 ];
+
+// Schema 4.5 (canopi-data docs/website-handoff/2026-11-17-light-span.md): three plants columns appended
+// after grown_as_annual (the light span's two ends and the preferred level, each a strata code or NULL:
+// unknown) and their trait_sources field values, since 5.
+// Both ends set or both NULL, the sunniest never shadier than the shadiest (by strata.ord); the statements
+// as canopi-data's consortium_sqlite.ddl() writes them (the installed plants statement holds them).
+export const LIGHT_SPAN_DDL = String.raw`ALTER TABLE plants ADD COLUMN sun_exposure_sunniest TEXT REFERENCES strata (id);
+ALTER TABLE plants ADD COLUMN sun_exposure_shadiest TEXT REFERENCES strata (id)
+  CHECK ((sun_exposure_sunniest IS NULL) = (sun_exposure_shadiest IS NULL))
+  CHECK (CASE sun_exposure_sunniest WHEN 'emergent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END <= CASE sun_exposure_shadiest WHEN 'emergent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END);
+ALTER TABLE plants ADD COLUMN sun_exposure_preferred TEXT REFERENCES strata (id);
+`;
+// The full schema the reader reads: the base statements and every required addition, in canopi-data's
+// order (scripts/consortium-p5-ranges.test.mjs compares it with the installed export, statement by statement).
+export const DDL_READ = DDL_4 + TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + '\n' + LIGHT_SPAN_DDL;
+export const LIGHT_SPAN_ADDITIONS = [
+  { table: 'plants', column: 'sun_exposure_preferred', since: 5 },
+  { table: 'plants', column: 'sun_exposure_shadiest', since: 5 },
+  { table: 'plants', column: 'sun_exposure_sunniest', since: 5 },
+  { table: 'trait_sources', column: 'field', value: 'sun_exposure_preferred', since: 5 },
+  { table: 'trait_sources', column: 'field', value: 'sun_exposure_shadiest', since: 5 },
+  { table: 'trait_sources', column: 'field', value: 'sun_exposure_sunniest', since: 5 },
+];
+
+// The oldest minor the reader opens (PP-C 0b, owner 2026-11-17 "no backward compatibility": no 4.1 to
+// 4.4 fallbacks) and the declared additions the reader reads unconditionally: the installer refuses a
+// manifest below that minor or missing one of them (its tier rules then hold the database to them).
+// Open-vocabulary values stay optional: the reader skips a value it does not know.
+export const MIN_SCHEMA_MINOR = 5;
+export const REQUIRED_ADDITIONS = [...TOXICITY_PARTS_ADDITIONS, ...INVASIVE_AREAS_ADDITIONS, ...LIGHT_SPAN_ADDITIONS.filter((a) => a.value === undefined)];

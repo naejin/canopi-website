@@ -33,6 +33,7 @@
 //   dropped PP-B18 print at a year step (the PP-D Print board replaces it), P5-19b (the panel below Share,
 //   gone with the boards), PF2's old words ("Needs full sun", "taller than your room").
 // Kept where they are (lasting seams): PP-B29 (200-plant scale), PP-B30, PP-B31, PP-B32 in pp-b2.
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import { aria, has, useHarness } from './helpers.mjs';
 import { failing } from '../expect-fail.mjs';
@@ -207,7 +208,9 @@ failing('PFB10 (pf-b Loading notices, carried from PP-B46): offline the page say
   await done(page);
 });
 
-failing('PFB11 (pf-b German and 320 px, carried from PP-B22): in German the Next step says "Nächster Schritt", "Lücke 1 von N", "Hinzufügen", "Alle N Pflanzen ansehen", "Später", the head "Pflanzenpalette" and "Ändern"; long words never pass the right edge at 390 and 320 px, nor in ru and ja at 320', { owner: 'pf-b', reason: BOARD }, async () => {
+// PP-C 0b (release r-bcc417fd89a3147c): passes since the install (the test palette's members and lead
+// hole moved with the placements; failed twice as "now passes"), so its marker is gone; pf-b keeps it passing.
+test('PFB11 (pf-b German and 320 px, carried from PP-B22): in German the Next step says "Nächster Schritt", "Lücke 1 von N", "Hinzufügen", "Alle N Pflanzen ansehen", "Später", the head "Pflanzenpalette" and "Ändern"; long words never pass the right edge at 390 and 320 px, nor in ru and ja at 320', async () => {
   const de = await palette({ lang: 'de', width: 390 });
   assert.ok(await verdictsSettled(de), 'the verdicts');
   for (const w of ['Pflanzenpalette', 'Nächster Schritt', 'Hinzufügen', 'Später', 'Ändern']) await says(de, w);

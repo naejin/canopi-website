@@ -1,15 +1,14 @@
 // The PlantSource over the opened SQLite database (stream S1; design check §4; canopi-data
-// docs/consortium-export-v2.md, format 4, schemas 3 and 4). It reads plain records with SQL and hands them to
+// docs/consortium-export-v2.md, format 4, schema 4.5 or later). It reads plain records with SQL and hands them to
 // the core, which computes the matrix, site fit and reason counts itself. No sqlite-wasm import here:
 // it takes any database with OO1's selectObjects and selectArrays, so the tests run it on the package's Node build.
 // Photos come from the index's {uuid: path} map (design check A4), never the export's remote URLs.
 // Search runs in JavaScript over folded names (A6, `fold`): lower case, Latin/Greek/Cyrillic marks
 // stripped, ß/œ/æ written out, word prefix;
 // never SQL LIKE (ASCII-only folding, a substring match, % and _ unescaped).
-// Schema 4's tables (PP-C commit 0) are optional: each is read only when the database has it (a
-// schema-3 export, a 4.1 export without 4.2's plant_toxicity_parts, a 4.2 one without 4.3's
-// plant_invasive_areas), else its Details field is null,
-// the feature off. Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
+// Schema 4's tables and 4.5's light columns are read unconditionally: the installer refuses an export
+// below 4.5 (scripts/consortium-schema.mjs MIN_SCHEMA_MINOR, REQUIRED_ADDITIONS; PP-C 0b, no backward
+// compatibility). Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
 import type {
   ClimateRange, ClimateZone, Details, Dispute, DisputeField, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
   PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
@@ -30,7 +29,7 @@ const bool = (v: unknown): boolean | null => (v === null || v === undefined ? nu
 const range = (min: unknown, max: unknown) => (min === null && max === null ? null : { min: num(min), max: num(max) });
 const oneOf = <T extends string>(list: readonly T[], v: unknown): T | null => (list as readonly unknown[]).includes(v) ? (v as T) : null;
 // Schema 4.5's light niche (canopi-data docs/website-handoff/2026-11-17-light-span.md): both ends or
-// neither (a half span reads as none), and the preferred level.
+// neither (a half span reads as none), and the preferred level; each null is unknown.
 function lightOf(r: Row): LightNiche {
   const sunniest = oneOf(strata, r.sun_exposure_sunniest), shadiest = oneOf(strata, r.sun_exposure_shadiest);
   const span = sunniest !== null && shadiest !== null;
@@ -175,19 +174,16 @@ const interactionsIn = (zones: readonly ClimateZone[]): string =>
 
 export function createSqliteSource(db: Db, options: SourceOptions): PlantSource {
   const meta = new Map(db.selectObjects('SELECT key, value FROM meta').map((r) => [String(r.key), String(r.value)]));
-  // The tables the database holds: a schema-4 table absent is its feature off.
-  const tables = new Set(db.selectObjects("SELECT name FROM sqlite_master WHERE type = 'table'").map((r) => String(r.name)));
-  const has = (table: string): boolean => tables.has(table);
-  // The rows of an optional table for one plant (or null when the table is absent).
-  const rowsOf = <T>(table: string, plant: number, read: (r: Row) => T[], order: string): T[] | null =>
-    has(table) ? db.selectObjects(`SELECT * FROM ${table} WHERE plant = ?1 ORDER BY ${order}`, [plant]).flatMap(read) : null;
+  // The rows of a schema-4 table for one plant.
+  const rowsOf = <T>(table: string, plant: number, read: (r: Row) => T[], order: string): T[] =>
+    db.selectObjects(`SELECT * FROM ${table} WHERE plant = ?1 ORDER BY ${order}`, [plant]).flatMap(read);
   // plant_aliases (a declared schema-4 table) is accepted and never read: old links need not survive a
   // data change (owner 2026-11-17, "No backward compatibility work"); an unreadable token is unknown.
-  const frostRecorded = has('plant_frost') && db.selectObjects('SELECT 1 FROM plant_frost LIMIT 1').length > 0;
+  const frostRecorded = db.selectObjects('SELECT 1 FROM plant_frost LIMIT 1').length > 0;
   const info: SourceInfo = {
     releaseId: meta.get('release_id') ?? '',
     // load.ts opened it only at a schema the reader knows.
-    schemaVersion: Number(meta.get('schema_version') ?? 3) as SchemaVersion,
+    schemaVersion: Number(meta.get('schema_version')) as SchemaVersion,
     builtAt: meta.get('built_at') ?? '',
     climates: db.selectObjects('SELECT id FROM climates ORDER BY ord').map((r) => r.id as ClimateZone),
     griisAvailable: meta.get('griis_available') === '1',
@@ -248,9 +244,8 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         },
         climate: climates.get(plant) ?? null,
         areasKnown: r.wcvp_match !== null && r.wcvp_match !== undefined,
-        // Schema 4.5 (light span; a column absent before it, so `light` is absent): each end and the
-        // preferred level, null when unknown (never "no light needs").
-        ...('sun_exposure_sunniest' in r ? { light: lightOf(r) } : {}),
+        // Schema 4.5 (light span): each end and the preferred level, null when unknown (never "no light needs").
+        light: lightOf(r),
       };
     });
   }
@@ -395,13 +390,13 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const status = db.selectObjects('SELECT range_source, gbif_records FROM plant_climate_status WHERE plant = ?1', [plant])[0];
       const rangeSource = status && status.range_source !== null ? [String(status.range_source)] : [];
       const gbifRecords = status ? num(status.gbif_records) : null;
-      // Schema 4's optional tables (null: absent). Frost: null too when the release has no row at all.
+      // Schema 4's tables ([] for a plant without rows). Frost: null when the release has no row at all.
       const disputes = rowsOf('plant_disputes', plant, disputeOf, 'field, source, scope');
       const audiences = rowsOf('plant_toxicity_audience', plant, audienceOf, 'who, source');
       const traitSources = rowsOf('trait_sources', plant, traitSourceOf, 'field');
       const frost = frostRecorded ? rowsOf('plant_frost', plant, frostOf, 'kind, variety, source') : null;
       const toxicityParts = rowsOf('plant_toxicity_parts', plant, partOf, "who IS NOT NULL, who, part <> 'whole_plant', part, condition IS NOT NULL, condition, source");
-      const invasiveAreas = has('plant_invasive_areas') ? scopesOf(db.selectObjects('SELECT country, source, area FROM plant_invasive_areas WHERE plant = ?1 ORDER BY country, source, area', [plant])) : null;
+      const invasiveAreas = scopesOf(db.selectObjects('SELECT country, source, area FROM plant_invasive_areas WHERE plant = ?1 ORDER BY country, source, area', [plant]));
       const fnSources = db.selectObjects('SELECT s.source FROM functions f JOIN function_sources s USING (function_id) WHERE f.plant = ?1', [plant]).map((r) => String(r.source));
       const cited = new Set<string>([
         ...reasons.map((r) => r.source), ...layerValues.map((v) => v.source), ...toxicitySources, ...fnSources,

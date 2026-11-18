@@ -1,6 +1,5 @@
-// The invented consortium v2 fixture: a canopi-data export of format 4, schema 4 (canopi-data
-// docs/consortium-export-v2.md and docs/website-handoff/2026-11-14-schema4-format.md; `schema: 3` writes
-// the schema-3 variant the reader still accepts until PP-C 0b), small enough to read, built in Node with
+// The invented consortium v2 fixture: a canopi-data export of format 4, schema 4.5 (canopi-data
+// docs/consortium-export-v2.md and docs/website-handoff/2026-11-14-schema4-format.md), small enough to read, built in Node with
 // node:sqlite (coordinator row "v2 build setup", 2026-11-11: no Python on the website). See README.md
 // for what it covers.
 //
@@ -8,8 +7,8 @@
 //
 // writes the export directory (default: scripts/fixtures/consortium-v2/export/, committed): the
 // gzipped database under its contract name, manifest.json, SHA256SUMS, try_references.tsv,
-// source_credits.tsv and (schema 4) the names file under its digest-bearing name. Tests import
-// writeFixtureExport() and pass `schema` (3 or 4), `edit` (SQL run on the filled database), `names` (an
+// source_credits.tsv and the names file under its digest-bearing name. Tests import
+// writeFixtureExport() and pass `edit` (SQL run on the filled database), `names` (an
 // edit of the names file's lines), `manifest` (an edit of the manifest object) or `after` (a hook on the
 // directory) to build the variants they need (UNDECLARED_EXTRA and DECLARED_COLUMN below: the tier rule).
 //
@@ -21,7 +20,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, INVASIVE_AREAS_ADDITIONS, INVASIVE_AREAS_DDL, LATEST_SCHEMA, TOXICITY_PARTS_ADDITIONS, TOXICITY_PARTS_DDL } from '../../consortium-schema.mjs';
+import { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, INVASIVE_AREAS_ADDITIONS, INVASIVE_AREAS_DDL, LATEST_SCHEMA, LIGHT_SPAN_ADDITIONS, LIGHT_SPAN_DDL, TOXICITY_PARTS_ADDITIONS, TOXICITY_PARTS_DDL } from '../../consortium-schema.mjs';
 
 export const FIXTURE_RELEASE = 'r-000000000000f1c7';
 export const FIXTURE_BUILT_AT = '2026-11-11T00:00:00Z';
@@ -31,7 +30,7 @@ export const FIXTURE_GRID_SHA256 = '04ec85f4603f29c5add8eada88c79599d044a61732b5
 export const DEFAULT_EXPORT = join(dirname(fileURLToPath(import.meta.url)), 'export');
 const ZERO_SHA = '0'.repeat(64);
 
-export { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, LATEST_SCHEMA };
+export { DATA_TABLES_BY_SCHEMA, DDL_BY_SCHEMA, LATEST_SCHEMA, LIGHT_SPAN_ADDITIONS };
 
 const CLIMATE_ORDER = ['Tropical', 'Subtropical', 'Arid', 'Mediterranean', 'Temperate', 'Continental', 'Boreal'];
 // Three curated climates, as the real export; Arid and the others are uncovered ("Ask for this climate").
@@ -219,15 +218,7 @@ const TRAIT_SOURCE = { 'Zingiber officinale': 'canopi-knowledge', 'Mangifera ind
 // (since 3: INVASIVE_AREAS_ADDITIONS), so the fixture is 4.3.
 // Schema 4.5 (canopi-data docs/website-handoff/2026-11-17-light-span.md): three plants columns and their
 // trait_sources field values, since 5 (no 4.4 entry: flammability stays a test variant, DECLARED_COLUMN).
-export const LIGHT_SPAN_ADDITIONS = [
-  { table: 'plants', column: 'sun_exposure_preferred', since: 5 },
-  { table: 'plants', column: 'sun_exposure_shadiest', since: 5 },
-  { table: 'plants', column: 'sun_exposure_sunniest', since: 5 },
-  { table: 'trait_sources', column: 'field', value: 'sun_exposure_preferred', since: 5 },
-  { table: 'trait_sources', column: 'field', value: 'sun_exposure_shadiest', since: 5 },
-  { table: 'trait_sources', column: 'field', value: 'sun_exposure_sunniest', since: 5 },
-];
-const LIGHT_SPAN_DDL = 'ALTER TABLE plants ADD COLUMN sun_exposure_sunniest TEXT REFERENCES strata (id); ALTER TABLE plants ADD COLUMN sun_exposure_shadiest TEXT REFERENCES strata (id); ALTER TABLE plants ADD COLUMN sun_exposure_preferred TEXT REFERENCES strata (id);';
+// (LIGHT_SPAN_ADDITIONS and LIGHT_SPAN_DDL live in scripts/consortium-schema.mjs.)
 // The 4.5 values: one span (Malus domestica, Full sun to Mostly sun, both ends PFAF-derived) with a
 // preferred level inside it (Ellenberg); one preferred level with no span (Sambucus nigra, Part shade),
 // an AI estimate with no source ([canonical, sunniest, shadiest, preferred, [field, source, kind]...]).
@@ -324,7 +315,7 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
   const db = new DatabaseSync(path);
   db.exec('PRAGMA page_size = 4096; PRAGMA foreign_keys = ON;');
   db.exec(DDL_BY_SCHEMA[schema]);
-  if (schema >= 4) db.exec(TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + LIGHT_SPAN_DDL);
+  db.exec(TOXICITY_PARTS_DDL + INVASIVE_AREAS_DDL + LIGHT_SPAN_DDL);
   const DATA_TABLES = DATA_TABLES_BY_SCHEMA[schema];
   const run = (sql, ...rows) => { const st = db.prepare(sql); for (const r of rows) st.run(...r); };
   db.exec('BEGIN');
@@ -401,7 +392,7 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
     run('INSERT INTO layer_values VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [i + 1, plantOf(name), climate, field, mask, months ? months[0] : null, flag,
       scope?.climate ?? null, scope?.country ?? null, scope?.hemisphere ?? null, scope?.latitude ?? null, scope?.region ?? null, source, kind]);
   });
-  if (schema >= 4) {
+  {
     for (const [name, field, kind, other, unit, derived, scope, source] of FIXTURE_DISPUTES) run('INSERT INTO plant_disputes VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [plantOf(name), field, kind, other, unit, derived, scope, source]);
     for (const [name, who, level, source] of FIXTURE_AUDIENCE) run('INSERT INTO plant_toxicity_audience VALUES (?, ?, ?, ?)', [plantOf(name), who, level, source]);
     P.forEach(([name], i) => {
@@ -433,7 +424,7 @@ export async function buildFixtureDb(path, { schema = LATEST_SCHEMA, edit = null
   // A table an edit dropped counts 0 (the installer then refuses it by name).
   const has = (table) => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
   // Schema 4.2's and 4.3's declared tables are counted beside them (their count keys are declared: FIXTURE_ADDITIONS).
-  const COUNTED = schema >= 4 ? [...DATA_TABLES, 'plant_toxicity_parts', 'plant_invasive_areas'] : DATA_TABLES;
+  const COUNTED = [...DATA_TABLES, 'plant_toxicity_parts', 'plant_invasive_areas'];
   for (const table of COUNTED) meta[`count.${table}`] = String(has(table) ? db.prepare(`SELECT count(*) n FROM ${table}`).get().n : 0);
   run('INSERT OR REPLACE INTO meta VALUES (?, ?)', ...COUNTED.map((t) => [`count.${t}`, meta[`count.${t}`]]));
   db.exec('COMMIT');
@@ -472,9 +463,9 @@ export async function writeFixtureExport(dir, { schema = LATEST_SCHEMA, edit = n
     writeFileSync(join(dir, file), gz);
     writeFileSync(join(dir, 'try_references.tsv'), FIXTURE_TRY);
     writeFileSync(join(dir, 'source_credits.tsv'), FIXTURE_CREDITS);
-    // The names file (schema 4): gzip -9, mtime 0, no name (node's gzip writes neither), under its digest.
+    // The names file: gzip -9, mtime 0, no name (node's gzip writes neither), under its digest.
     let names = null;
-    if (schema >= 4) {
+    {
       const lines = fixtureNamesLines(rawSha);
       const text = `${(editNames ? editNames(lines) : lines).join('\n')}\n`;
       const rawNames = Buffer.from(text), gzNames = gzipSync(rawNames, { level: 9 });
@@ -483,7 +474,7 @@ export async function writeFixtureExport(dir, { schema = LATEST_SCHEMA, edit = n
       writeFileSync(join(dir, names.file), gzNames);
     }
     const manifest = {
-      format_version: 4, schema_version: schema, ...(schema >= 4 ? { schema_minor: FIXTURE_SCHEMA_MINOR, schema_additions: structuredClone(FIXTURE_ADDITIONS) } : {}), generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
+      format_version: 4, schema_version: schema, schema_minor: FIXTURE_SCHEMA_MINOR, schema_additions: structuredClone(FIXTURE_ADDITIONS), generated_at: FIXTURE_BUILT_AT, canopi_db_sha256: ZERO_SHA, release_id: FIXTURE_RELEASE,
       split: false, max_gzip_bytes: 10_000_000,
       files: [{ file, climate_zones: FIXTURE_CLIMATES, sha256: sha256(gz), bytes: gz.length, raw_sha256: rawSha, raw_bytes: rawBytes.length, counts }],
       climates: FIXTURE_CLIMATES.map((c) => ({ climate_zone: c, regions: REGIONS[c], ...perClimate[c] })),

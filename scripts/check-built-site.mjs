@@ -402,10 +402,10 @@ for (const lang of locales) {
   assert.equal(pageData?.releaseId, consortiumIndex.release_id, `${path}: the island gets the release id`);
   assert.deepEqual(pageData?.db, { url: consortiumIndex.files[0].url, sha256: consortiumIndex.files[0].sha256, bytes: consortiumIndex.files[0].bytes, rawSha256: consortiumIndex.files[0].raw_sha256, rawBytes: consortiumIndex.files[0].raw_bytes }, `${path}: the island gets the installed database`);
   assert.deepEqual(pageData?.climates, consortiumIndex.climates.map((c) => c.toLowerCase()), `${path}: the island gets the installed climates`);
-  // Schema 4's names file (PP-C commit 0): its reference when the index names one, else null; the page
-  // never preloads it (Find fetches it after first paint).
+  // The names file (always named since PP-C 0b): its reference; the page never preloads it (Find
+  // fetches it after first paint).
   const sn = consortiumIndex.search_names;
-  assert.deepEqual(pageData?.names ?? null, sn ? { url: sn.url, sha256: sn.sha256, bytes: sn.bytes, rawSha256: sn.raw_sha256, rawBytes: sn.raw_bytes } : null, `${path}: the island gets the installed names file`);
+  assert.deepEqual(pageData?.names ?? null, { url: sn.url, sha256: sn.sha256, bytes: sn.bytes, rawSha256: sn.raw_sha256, rawBytes: sn.raw_bytes }, `${path}: the island gets the installed names file`);
   assert.ok(!/<link[^>]+rel="(?:preload|prefetch)"[^>]+names\.r-/.test(html), `${path}: the names file is never preloaded`);
   // The country guess reads each country's time zones from the page, built at build time, never
   // asking the browser for all of them (about 0.5 s of main thread; 2026-11-14 load profile).

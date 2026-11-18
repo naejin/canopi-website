@@ -1,23 +1,23 @@
 {
   "format_version": 4,
-  "schema_version": 3,
-  "release_id": "r-4db8a127ab860011",
-  "generated_at": "2026-11-17T06:23:13Z",
-  "canopi_db_sha256": "387fdcb4a169b65ba4127bf593efc9f369c193f6b100437ed1c3351c3a0921e8",
+  "schema_version": 4,
+  "release_id": "r-bcc417fd89a3147c",
+  "generated_at": "2026-11-18T00:23:20Z",
+  "canopi_db_sha256": "151635f9a89ebc655984939348e794f7acc4ab3aca929f0dad79b32139da62fa",
   "files": [
     {
-      "file": "consortium-v3.r-4db8a127ab860011.b4633efa6272.sqlite.gz",
-      "url": "/data/consortium/consortium-v3.r-4db8a127ab860011.b4633efa6272.sqlite.gz",
+      "file": "consortium-v4.r-bcc417fd89a3147c.98e1bf66d711.sqlite.gz",
+      "url": "/data/consortium/consortium-v4.r-bcc417fd89a3147c.98e1bf66d711.sqlite.gz",
       "climate_zones": [
         "Tropical",
         "Arid",
         "Mediterranean",
         "Temperate"
       ],
-      "sha256": "64261a7e3711ef8049dc34d656a53fec7e85d1eb586c00fdf5d032b1d6f7c04a",
-      "bytes": 757949,
-      "raw_sha256": "b4633efa6272b64da6ddfd25c2aed4a3d805047168f3ae7490215b8440e6033e",
-      "raw_bytes": 2813952
+      "sha256": "3b4a749ecf51e41896b7571faeef0cb247d83685836e5b910d6dc060e53e8382",
+      "bytes": 769594,
+      "raw_sha256": "98e1bf66d7110f9c32448fc3fdcc12a869683f545525670e7815b5456b2a5ed0",
+      "raw_bytes": 3096576
     }
   ],
   "climates": [
@@ -28,9 +28,9 @@
   ],
   "griis_available": true,
   "countries": {
-    "AD": true,
+    "AD": false,
     "AE": true,
-    "AF": true,
+    "AF": false,
     "AG": true,
     "AI": false,
     "AL": true,
@@ -47,7 +47,7 @@
     "BA": true,
     "BB": true,
     "BD": true,
-    "BE": true,
+    "BE": false,
     "BF": true,
     "BG": true,
     "BH": true,
@@ -105,7 +105,7 @@
     "FR": true,
     "GA": true,
     "GB": true,
-    "GD": true,
+    "GD": false,
     "GE": true,
     "GF": false,
     "GG": false,
@@ -124,7 +124,7 @@
     "GY": true,
     "HK": false,
     "HM": false,
-    "HN": true,
+    "HN": false,
     "HR": true,
     "HT": true,
     "HU": true,
@@ -136,7 +136,7 @@
     "IO": false,
     "IQ": true,
     "IR": true,
-    "IS": true,
+    "IS": false,
     "IT": true,
     "JE": false,
     "JM": true,
@@ -147,10 +147,10 @@
     "KH": true,
     "KI": true,
     "KM": true,
-    "KN": true,
+    "KN": false,
     "KP": true,
     "KR": true,
-    "KW": true,
+    "KW": false,
     "KY": false,
     "KZ": true,
     "LA": true,
@@ -174,7 +174,7 @@
     "MK": true,
     "ML": true,
     "MM": true,
-    "MN": true,
+    "MN": false,
     "MO": false,
     "MP": false,
     "MQ": false,
@@ -210,7 +210,7 @@
     "PM": false,
     "PN": false,
     "PR": false,
-    "PS": true,
+    "PS": false,
     "PT": true,
     "PW": true,
     "PY": true,
@@ -231,18 +231,18 @@
     "SJ": false,
     "SK": true,
     "SL": true,
-    "SM": true,
+    "SM": false,
     "SN": true,
     "SO": true,
     "SR": true,
     "SS": true,
-    "ST": true,
-    "SV": true,
+    "ST": false,
+    "SV": false,
     "SX": false,
     "SY": true,
     "SZ": true,
     "TC": false,
-    "TD": true,
+    "TD": false,
     "TF": false,
     "TG": true,
     "TH": true,
@@ -486,6 +486,7 @@
       "Abelmoschus esculentus",
       "Achillea millefolium",
       "Adansonia digitata",
+      "Adiantum capillus-veneris",
       "Agave americana",
       "Agave murpheyi",
       "Agave parryi",
@@ -497,6 +498,8 @@
       "Amaranthus cruentus",
       "Amelanchier utahensis",
       "Anethum graveolens",
+      "Anthriscus cerefolium",
+      "Apocynum cannabinum",
       "Arachis hypogaea",
       "Argania spinosa",
       "Artemisia dracunculus",
@@ -515,10 +518,12 @@
       "Baileya multiradiata",
       "Balanites aegyptiaca",
       "Bassia prostrata",
+      "Berberis aquifolium",
       "Berberis repens",
       "Boscia senegalensis",
       "Bouteloua dactyloides",
       "Bouteloua gracilis",
+      "Bowlesia incana",
       "Cajanus cajan",
       "Calliandra eriophylla",
       "Calligonum comosum",
@@ -542,6 +547,7 @@
       "Chrysopogon zizanioides",
       "Cicer arietinum",
       "Citrullus lanatus",
+      "Claytonia perfoliata",
       "Cleome gynandra",
       "Corchorus olitorius",
       "Crocus sativus",
@@ -573,6 +579,7 @@
       "Forestiera pubescens var. parvifolia",
       "Fouquieria splendens",
       "Gaillardia aristata",
+      "Galium aparine",
       "Geoffroea decorticans",
       "Gleditsia triacanthos",
       "Glycyrrhiza glabra",
@@ -581,6 +588,7 @@
       "Guiera senegalensis",
       "Haloxylon ammodendron",
       "Haloxylon persicum",
+      "Hedera helix",
       "Hedysarum boreale",
       "Helianthus annuus",
       "Helianthus maximiliani",
@@ -681,6 +689,7 @@
       "Strombocarpa pubescens",
       "Strombocarpa tamarugo",
       "Stylosanthes hamata",
+      "Symphoricarpos occidentalis",
       "Tamarindus indica",
       "Tamarix aphylla",
       "Thinopyrum intermedium subsp. intermedium",
@@ -1141,6 +1150,7 @@
     "141e8e8e-3452-49dc-a48d-bb3487534198": "/data/consortium/images/141e8e8e-3452-49dc-a48d-bb3487534198.3ff654826aff.jpg",
     "150039dc-73ed-4f89-a081-3c1025063493": "/data/consortium/images/150039dc-73ed-4f89-a081-3c1025063493.b2c24b59723a.jpg",
     "16031678-389b-4857-b03a-e19a967389ba": "/data/consortium/images/16031678-389b-4857-b03a-e19a967389ba.789e94435721.jpg",
+    "1691bb78-ca29-4bf5-9437-7caa1a16a6d1": "/data/consortium/images/1691bb78-ca29-4bf5-9437-7caa1a16a6d1.d901097eda78.jpg",
     "192b8e6a-6d90-4b58-b717-a40e997a876a": "/data/consortium/images/192b8e6a-6d90-4b58-b717-a40e997a876a.1490fb75cbdc.jpg",
     "193a6e97-3890-47bf-9e2c-bc5b24c664c1": "/data/consortium/images/193a6e97-3890-47bf-9e2c-bc5b24c664c1.79d701cb2af0.jpg",
     "1b97fda7-f1f2-483c-a61a-5224f0534657": "/data/consortium/images/1b97fda7-f1f2-483c-a61a-5224f0534657.f7eb16129e2b.jpg",
@@ -1189,6 +1199,7 @@
     "50d3b377-e217-4909-b0c9-770903b6c5c2": "/data/consortium/images/50d3b377-e217-4909-b0c9-770903b6c5c2.0b2393f7430b.jpg",
     "51f2bcd2-da10-4221-bf2c-6bdffa09e653": "/data/consortium/images/51f2bcd2-da10-4221-bf2c-6bdffa09e653.8c302eddce6b.jpg",
     "5394bf49-8f1b-41df-9af4-138bd64f6c45": "/data/consortium/images/5394bf49-8f1b-41df-9af4-138bd64f6c45.3832c63a3933.jpg",
+    "54b3204f-574c-4a6b-9e1a-3727473f26f8": "/data/consortium/images/54b3204f-574c-4a6b-9e1a-3727473f26f8.ede6f42e9d50.jpg",
     "55ff6907-7c01-4fd5-b4ae-8b60ab1c1fc6": "/data/consortium/images/55ff6907-7c01-4fd5-b4ae-8b60ab1c1fc6.9d9d7b68026d.jpg",
     "581b9012-e2e1-4bb1-9bb1-fdeef58cceeb": "/data/consortium/images/581b9012-e2e1-4bb1-9bb1-fdeef58cceeb.4aaeff017d50.jpg",
     "58c06648-3dc7-49c8-89e5-06dd1a7e75ad": "/data/consortium/images/58c06648-3dc7-49c8-89e5-06dd1a7e75ad.3c4d204987f1.jpg",
@@ -1216,6 +1227,7 @@
     "6f67505a-8b7a-450b-a571-a17f159812b3": "/data/consortium/images/6f67505a-8b7a-450b-a571-a17f159812b3.4e80053b65c6.jpg",
     "7065f1b9-b178-42fd-8c55-4517deae30e9": "/data/consortium/images/7065f1b9-b178-42fd-8c55-4517deae30e9.4f2ecc65bfda.jpg",
     "71143a69-9032-43e7-a42e-2fac9b2ffb9b": "/data/consortium/images/71143a69-9032-43e7-a42e-2fac9b2ffb9b.75764f5f514d.jpg",
+    "716a70ea-2181-4ba4-bd2d-67b75cc9143b": "/data/consortium/images/716a70ea-2181-4ba4-bd2d-67b75cc9143b.0406cd554895.jpg",
     "731064e3-f225-447d-ac51-6ef24c6f9ece": "/data/consortium/images/731064e3-f225-447d-ac51-6ef24c6f9ece.d5d7bf14f8ed.jpg",
     "73139e1a-79dd-44a7-809d-526abb822fef": "/data/consortium/images/73139e1a-79dd-44a7-809d-526abb822fef.fc64c4686332.jpg",
     "7324671e-e4d4-4b5c-abfb-a7fc35c2abf9": "/data/consortium/images/7324671e-e4d4-4b5c-abfb-a7fc35c2abf9.9e4e46c04c91.jpg",
@@ -1325,6 +1337,7 @@
     "da7b4aed-d27a-41b3-ac4f-5f256201edc2": "/data/consortium/images/da7b4aed-d27a-41b3-ac4f-5f256201edc2.a6cfaba77839.jpg",
     "da923247-f55e-4b34-8173-7cce301f32c3": "/data/consortium/images/da923247-f55e-4b34-8173-7cce301f32c3.058e66b1886f.jpg",
     "db4dc58b-b6a8-4b00-9788-03e72815451d": "/data/consortium/images/db4dc58b-b6a8-4b00-9788-03e72815451d.42bcb4952450.jpg",
+    "de7a58b1-df13-4632-9cae-8c040bf2b6cf": "/data/consortium/images/de7a58b1-df13-4632-9cae-8c040bf2b6cf.cc0f05095846.jpg",
     "deaed607-a07b-44b2-879e-2c5c344ae802": "/data/consortium/images/deaed607-a07b-44b2-879e-2c5c344ae802.9087cc16bd27.jpg",
     "e2fa6f2f-77bf-41ef-97d3-a066dce8611f": "/data/consortium/images/e2fa6f2f-77bf-41ef-97d3-a066dce8611f.47b7d82b4c9c.jpg",
     "e3d6b8d4-0da2-4ae9-ac26-371a32b012f9": "/data/consortium/images/e3d6b8d4-0da2-4ae9-ac26-371a32b012f9.820a87b6b851.jpg",
@@ -1360,9 +1373,360 @@
     "dataset_ids": 591
   },
   "source_credits": {
-    "sha256": "80dcb77f5570ba7bdbd56a19e6b0b3527dda2cc0f5de300f2b6c75c82b2cdbf7",
-    "rows": 49
+    "sha256": "9fc0082450ef1701e52fa17ea5d42b7ac71659f8685adbfd00af29111ac314ad",
+    "rows": 54
   },
   "climate_grid_manifest_sha256": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c",
-  "ranges_review": "estimate_not_reviewed"
+  "ranges_review": "estimate_not_reviewed",
+  "schema_minor": 5,
+  "schema_additions": [
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "age_of_maturity_years",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "allelopathic",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "bloom_period",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "clonal_growth_form",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "deciduous_evergreen",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "drought_tolerance",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "edibility_rating",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "fertility_requirement",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "growth_rate",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "habit",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "hardiness_zone_max",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "hardiness_zone_min",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "height_max_m",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "height_min_m",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "is_annual",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "is_perennial",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "lifespan",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "moisture_use",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "mycorrhizal_type",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "nitrogen_fixer",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "root_system_type",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "self_fertile",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "sexual_system",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "soil_ph_max",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "soil_ph_min",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "taproot_persistent",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "tolerates_full_shade",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "tolerates_full_sun",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "tolerates_semi_shade",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "toxicity",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "vegetative_spread_rate",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "weed_potential",
+      "since": 1
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "well_drained",
+      "since": 1
+    },
+    {
+      "table": "meta",
+      "column": "key",
+      "value": "count.plant_toxicity_parts",
+      "since": 2
+    },
+    {
+      "table": "plant_toxicity_parts",
+      "since": 2
+    },
+    {
+      "table": "plant_toxicity_parts",
+      "index": "plant_toxicity_parts_key",
+      "since": 2
+    },
+    {
+      "table": "meta",
+      "column": "key",
+      "value": "count.plant_invasive_areas",
+      "since": 3
+    },
+    {
+      "table": "plant_invasive_areas",
+      "since": 3
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "age_of_maturity_years",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "bloom_period",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "deciduous_evergreen",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "hardiness_zone_min",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "height_max_m",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "height_min_m",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "moisture_use",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "nitrogen_fixer",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "root_system_type",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "tolerates_full_shade",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "tolerates_full_sun",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "tolerates_semi_shade",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "field",
+      "value": "width_max_m",
+      "since": 4
+    },
+    {
+      "table": "plant_disputes",
+      "column": "kind",
+      "value": "source",
+      "since": 4
+    },
+    {
+      "table": "plants",
+      "column": "sun_exposure_preferred",
+      "since": 5
+    },
+    {
+      "table": "plants",
+      "column": "sun_exposure_shadiest",
+      "since": 5
+    },
+    {
+      "table": "plants",
+      "column": "sun_exposure_sunniest",
+      "since": 5
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "sun_exposure_preferred",
+      "since": 5
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "sun_exposure_shadiest",
+      "since": 5
+    },
+    {
+      "table": "trait_sources",
+      "column": "field",
+      "value": "sun_exposure_sunniest",
+      "since": 5
+    }
+  ],
+  "search_names": {
+    "file": "names.r-bcc417fd89a3147c.0bfdc009cfe2.tsv.gz",
+    "url": "/data/consortium/names.r-bcc417fd89a3147c.0bfdc009cfe2.tsv.gz",
+    "sha256": "62e4324b50e09482b24895b1822199ef005b310cc38f852c0c3b58486d4ffd7b",
+    "bytes": 218879,
+    "raw_sha256": "0bfdc009cfe2553f702bc2c2a0a97ce4428276ba8c45ead46015d51540cf6767",
+    "raw_bytes": 691121
+  }
 }
