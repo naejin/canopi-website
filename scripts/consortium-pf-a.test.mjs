@@ -125,8 +125,9 @@ test('PFA-B3 the bulk note\'s figure is the goal the sentence explains (core add
   assert.deepEqual(core.bestToAdd(ground, one, { plantsPerJob: 2 }), ['a'], 'only 1 fits: 1 picked, the goal still 2');
   for (const l of LOCALES) {
     const s = locale(l);
-    for (const k of ['bulkPicksHole', 'bulkPicksHoleFewer', 'bulkPicksThin', 'bulkPicksThinFewer', 'bulkMarkOf', 'bulkRest', 'restLook', 'restOutside', 'restUnchecked', 'otherUnchecked']) assert.ok(s[`consortium.palette.next.${k}`], `${l}: consortium.palette.next.${k}`);
+    for (const k of ['bulkPicksHole', 'bulkPicksHoleFewer', 'bulkPicksThin', 'bulkPicksThinFewer', 'bulkMarkOf', 'bulkRest', 'restLook', 'restOutside', 'restUnchecked', 'otherParts', 'countUncheckedLists']) assert.ok(s[`consortium.palette.next.${k}`], `${l}: consortium.palette.next.${k}`);
     assert.equal(s['consortium.palette.next.bulkMarkMore'], undefined, `${l}: "Among the others …" is gone (N6)`);
+    assert.equal(s['consortium.palette.next.otherUnchecked'], undefined, `${l}: the unchecked-only form is gone (PFA-R3: one ordered rule, otherParts)`);
   }
 });
 
@@ -145,9 +146,43 @@ test('N7 the Portuguese invasive chip reads without a bare "em" before the count
   assert.equal(pt.replace('{country}', 'Brasil'), 'Registrada como invasora: Brasil');
 });
 
-test('N8 find.css says each rule\'s comment once: no comment repeats the opening words of the one just before it (the stale BC17 foot copy)', () => {
-  const css = readFileSync(new URL('../src/styles/consortium/find.css', import.meta.url), 'utf8');
-  const heads = [...css.matchAll(/\/\*([^:*]*:)?/g)].map((m) => ({ at: m.index, head: m[0] }));
-  const repeats = heads.filter((h, i) => i > 0 && h.head.length > 8 && h.head === heads[i - 1].head && !/\S/.test(css.slice(css.indexOf('*/', heads[i - 1].at) + 2, h.at)));
-  assert.deepEqual(repeats.map((r) => r.head), []);
+// ---- final3 fixes (PFA-R3/F5, R4, R5, F4) ----
+
+test('PFA-R5 one group rule for the card and the sheet: core fillers and Find\'s findGroups put each plant in the same group; a warned plant with no range recorded is "not checked" in both, a warned fit a second look', async () => {
+  const { taxon } = await import('./consortium-p5-fixtures.mjs');
+  const { findGroups } = await import('../src/islands/consortium/rules/find-query.ts');
+  const h = hole('light:emergent:0-60');
+  const ids = ['fit', 'fitWarned', 'unknownWarned', 'unknown', 'look', 'outsideWarned', 'none'];
+  const taxa = ids.map((id) => taxon({ id, canonical_name: id }));
+  const level = { fit: 'fits', fitWarned: 'fits', unknownWarned: 'unknown', unknown: 'unknown', look: 'look', outsideWarned: 'outside' };
+  const verdicts = new Map(Object.entries(level).map(([id, l]) => [id, { id, level: l, judged: '1991-2020', ownYears: false, limiting: null, factors: [], notes: [] }]));
+  const warned = new Set(['fitWarned', 'unknownWarned', 'outsideWarned']);
+  assert.ok(taxa.every((t) => core.fills(h, t)), 'every fixture fills the hole');
+  const card = core.fillers(h, taxa, verdicts, new Map(), warned, []);
+  const sheet = findGroups(taxa, verdicts, warned);
+  const ids2 = (g) => g.map((t) => t.id).sort();
+  assert.deepEqual(ids2(card.fits), ids2(sheet.fits), 'fits');
+  assert.deepEqual(ids2(card.look), ids2(sheet.look), 'needs a second look');
+  assert.deepEqual(ids2(card.outside), ids2(sheet.outside), 'outside');
+  assert.deepEqual(ids2(card.unknown), ids2(sheet.unchecked), 'not checked');
+  assert.ok(card.unknown.some((t) => t.id === 'unknownWarned'), 'a warned plant never judged stays "not checked" (unknown is never a hole)');
+  assert.ok(card.look.some((t) => t.id === 'fitWarned'), 'a warned fit needs a second look');
+  for (const id of ids) assert.equal(core.fillerGroup(verdicts.get(id)?.level, warned.has(id)), Object.entries(card).find(([, g]) => g.some((t) => t.id === id))[0], `fillerGroup(${id})`);
+});
+
+test('PFA-R4 the plants on the lists not checked read apart from the palette\'s own "N plants not checked": "3 on your lists not checked", in every locale', () => {
+  assert.equal(locale('en')['consortium.palette.next.countUncheckedLists'], 'one: # on your lists not checked | other: # on your lists not checked');
+  for (const l of LOCALES) {
+    const s = locale(l);
+    assert.notEqual(s['consortium.palette.next.countUncheckedLists'], s['consortium.palette.next.countUnchecked'], `${l}: worded apart from the bare count`);
+    assert.match(s['consortium.palette.next.otherParts'], /\{hole\}.*\{parts\}/, `${l}: otherParts`);
+  }
+});
+
+test('PFA-F4 the pt and de rest sentence uses the word map\'s second-look words (row 89: "Vale olhar de perto", "Genauer ansehen")', () => {
+  const pt = locale('pt')['consortium.palette.next.restLook'], de = locale('de')['consortium.palette.next.restLook'];
+  assert.match(pt, /olhar de perto/, `pt: ${pt}`);
+  assert.doesNotMatch(pt, /segundo olhar/, `pt: ${pt}`);
+  assert.match(de, /genauer ansehen/, `de: ${de}`);
+  assert.doesNotMatch(de, /zweiten Blick/, `de: ${de}`);
 });

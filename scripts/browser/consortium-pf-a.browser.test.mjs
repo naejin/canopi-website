@@ -637,7 +637,10 @@ const token = (page, name) => page.evaluate((n) => { const e = document.createEl
 const style = (page, sel, props) => page.$eval(sel, (e, p) => { const s = getComputedStyle(e), r = e.getBoundingClientRect(); return { ...Object.fromEntries(p.map((k) => [k, s.getPropertyValue(k)])), x: r.left, y: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height }; }, props);
 const plantsWord = (n) => `${n} ${n === 1 ? 'plant' : 'plants'}`;
 // PFA-B6: the no-fit words only when none fits and none is unchecked (core noneFits).
-const endWords = (c) => c.fits ? plantsWord(c.fits) : c.look ? `${c.look} ${c.look === 1 ? 'needs' : 'need'} a second look` : c.unknown ? `${c.unknown} not checked` : 'no plant fits here';
+// PFA-R3, R4: one ordered rule: the second looks, then those on the lists not checked, both said.
+const andList = (xs) => new Intl.ListFormat('en', { type: 'conjunction' }).format(xs);
+const fillerParts = (c) => [c.look && `${c.look} ${c.look === 1 ? 'needs' : 'need'} a second look`, c.unknown && `${c.unknown} on your lists not checked`].filter(Boolean);
+const endWords = (c) => c.fits ? plantsWord(c.fits) : fillerParts(c).length ? andList(fillerParts(c)) : 'no plant fits here';
 
 test('PFA23 (pf-a Main, DarkMain, BC14-BC17, BC20): the card\'s head is a small ochre "Next step" with the position right-aligned on its line, the hole title the large Literata heading; its edge is ochre in both themes; each row\'s Add is an outline "+ Add" at the row\'s right; "See all N plants" (left) and "Not now" (right) are underlined links; no bare count repeated under a counted heading', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
@@ -1119,7 +1122,7 @@ test('PFA42 (pf-a PFA-B1, SiteMendoza, FillHole): a second look says its own rea
   await done(page);
 });
 
-test('PFA43 (pf-a PFA-B2, N5, FillHole): "See all N plants" opens a sheet that lists those N: the plants that fit, "Needs a second look (n)" and "Not checked (n)"; its intro counts the fits from the Next step\'s count and follows an add', { timeout: 120_000 }, async () => {
+test('PFA43 (pf-a PFA-B2, N5, PFA-F1, FillHole): "See all N plants" opens a sheet that lists those N: the plants that fit, "Needs a second look (n)" and "Not checked (n)"; its intro counts the fits from the Next step\'s count and keeps that figure through the visit\'s adds', { timeout: 120_000 }, async () => {
   // A hole filled by 3+ plants that fit, some second looks and 4 plants with no range recorded (not checked).
   const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
   await says(page, OTHER_HOLES);
@@ -1145,7 +1148,13 @@ test('PFA43 (pf-a PFA-B2, N5, FillHole): "See all N plants" opens a sheet that l
     const first = (await findAdds(page))[0];
     await addInFind(page, first);
     assert.ok(await until(page, () => !!document.querySelector('dialog[open] [data-find-undo]')), 'added');
-    await says(page, intro(pick.fits - 1), { inDialog: true });
+    // PFA-F1 (board FillHole: the intro keeps "7 plants …" while Pineapple shows Added).
+    await says(page, intro(pick.fits), { inDialog: true });
+    // Every other plant that fits (the fits group lists first).
+    for (const label of (await findAdds(page)).slice(0, pick.fits - 1)) await addInFind(page, label).catch(() => {});
+    await frames(page);
+    await says(page, intro(pick.fits), { inDialog: true });
+    assert.ok(!(await dialogText(page)).includes('No plant on your lists fits your place'), 'PFA-F1: the visit\'s own adds never turn the intro to the no-fit words');
   }
   await done(page);
 });
@@ -1161,9 +1170,14 @@ test('PFA44 (pf-a PFA-B3, N6, AddMany): the bulk note explains the goal ("2 is y
   const best = [];
   for (const b of e.best) best.push(await page.evaluate((c) => [...document.querySelectorAll('[data-filler-id]')].find((r) => r.querySelector('i[lang="la"]')?.textContent === c)?.querySelector('button[aria-label^="Add "]')?.getAttribute('aria-label').replace(/^Add /, ''), b));
   assert.ok(note.startsWith(`${e.goal} is your “Plants per job”; ${e.goal === 1 ? `it is ${best[0]}` : `the ${e.goal} are ${and(best)}`}.`), `board AddMany: "${e.goal} is your “Plants per job”; the ${e.goal} are …" ("${note}")`);
-  const parts = [e.look.length && `${e.look.length} ${e.look.length === 1 ? 'that needs' : 'that need'} a second look`, e.outside.length && `${e.outside.length} outside ${e.outside.length === 1 ? 'its' : 'their'} range`, e.unknown.length && `${e.unknown.length} not checked`].filter(Boolean);
+  // PFA-R1: each group under the link that lists it: the second looks and the unchecked in "See all N"
+  // (N counts them), the outside ones under the card's "Show N outside their climate range".
+  const parts = [e.look.length && `${e.look.length} ${e.look.length === 1 ? 'that needs' : 'that need'} a second look`, e.unknown.length && `${e.unknown.length} not checked`].filter(Boolean);
   if (parts.length) assert.ok(note.includes(`are in “See all ${e.seeAll} plants”, each with its word.`) || note.includes(`is in “See all ${e.seeAll} plants”, with its word.`), `N6: where the others are ("${note}")`);
   for (const p of parts) assert.ok(note.includes(p), `N6: "${p}" ("${note}")`);
+  const o = e.outside.length;
+  if (o) assert.ok(note.includes(o === 1 ? 'The 1 outside its range is in “Show 1 outside its climate range”, with its word.' : `The ${o} outside their range are in “Show ${o} outside their climate range”, each with its word.`), `PFA-R1: the outside ones under their own link ("${note}")`);
+  assert.doesNotMatch(note, /outside (?:its|their) range[^.]*in “See (?:all|the)/, `PFA-R1: never the outside ones in "See all N" ("${note}")`);
   assert.ok(note.includes('Best fit first: plants that fit before those that need a second look'), `N6: the order ("${note}")`);
   // Fewer fit than the goal: a goal above the fits of a hole with some.
   const counts = await holeCounts(page);
@@ -1178,23 +1192,24 @@ test('PFA44 (pf-a PFA-B3, N6, AddMany): the bulk note explains the goal ("2 is y
   await done(page);
 });
 
-test('PFA45 (pf-a PFA-B6, Find, Many): a hole whose only fillers are not checked never reads "no plant fits here": Find\'s hole rows and the 200-plant sentence count them "N not checked", as the Next step card does', { timeout: 180_000 }, async () => {
+test('PFA45 (pf-a PFA-B6, PFA-R3, R4, R5, Find, Many): a hole with no plant that fits but second looks and plants not checked never reads "no plant fits here": Find\'s hole rows and the 200-plant sentence both say "1 needs a second look and 3 on your lists not checked", in that order', { timeout: 180_000 }, async () => {
   const page = await loadPalette200();
   await says(page, 'Next step', { timeout: 20_000 });
   // One other hole's only fillers have no range recorded: not checked, never "no plant fits".
   const e0 = await engineLead(page);
-  const other = (await holeCounts(page)).find((c) => c.id !== e0.lead?.target.id && !c.fits && c.look > 0);
+  const other = (await holeCounts(page)).find((c) => c.id !== e0.lead?.target.id && !c.fits && c.look > 1);
   assert.ok(other, 'another hole filled only by second looks');
-  await notRecorded(page, await lookFillers(page, other.id));
+  const looks = await lookFillers(page, other.id);
+  await notRecorded(page, looks.slice(0, looks.length - 1));
   assert.ok(await until(page, (id) => !!document.querySelector('[data-next-others]')?.textContent.includes('not checked)'), other.id), 'PFA-B6: the sentence counts the plants not checked');
   const e = await engineLead(page);
   const counts = await holeCounts(page);
-  assert.ok(counts.some((c) => c.id === other.id && !c.fits && !c.look && c.unknown > 0), `the hole is filled only by plants not checked (${JSON.stringify(counts)})`);
+  assert.ok(counts.some((c) => c.id === other.id && !c.fits && c.look === 1 && c.unknown > 0), `the hole is filled by one second look and plants not checked (${JSON.stringify(counts)})`);
   const card = await nextText(page);
   const others = counts.filter((c) => c.id !== e.lead?.target.id);
   const noFit = others.filter((c) => !c.fits && !c.unknown).length;
   assert.equal((card.match(/no plant on your lists fits here and does this then/g) ?? []).length, noFit, `PFA-B6: the no-fit words for the ${noFit} holes none fits and none is unchecked (${JSON.stringify(others)})`);
-  for (const c of others.filter((x) => !x.fits && x.unknown)) assert.ok(card.includes(`(${c.unknown} not checked)`), `PFA-B6: "${c.unknown} not checked" for ${c.id}`);
+  for (const c of others.filter((x) => !x.fits && x.unknown)) assert.ok(card.includes(`(${andList(fillerParts(c))})`), `PFA-R3: "${andList(fillerParts(c))}" for ${c.id} ("${card}")`);
   await page.evaluate(() => window.__ctTest.store.openFind());
   assert.ok(await has(page, 'dialog[open] [data-find-hole]', 10_000), 'Find\'s hole rows');
   await openMore(page);
@@ -1264,5 +1279,30 @@ test('PFA48 (pf-a N4, size rule A14): Find\'s groups are count cells past 12 row
   if (total > 10) await press(page, 'button', `+ ${total - 10} more`);
   assert.equal(await rows(), total, 'N4: then all');
   await control(page, 'button', 'Show fewer');
+  await done(page);
+});
+
+test('PFA49 (pf-a PFA-R2, AddMany state 2): on a thin spot whose fillers include plants not checked, the bulk note says they are in “Find a backup”, and the sheet that opens lists them under its "Not checked" group', { timeout: 120_000 }, async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
+  const e0 = await engineLead(page);
+  assert.equal(e0.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  // Two of its second looks (else its fits past the first) with no range recorded: not checked.
+  const sci = e0.look.length >= 2 ? e0.look.slice(0, 2) : e0.fits.slice(1, 3);
+  assert.equal(sci.length, 2, 'two fillers to mark not recorded');
+  const ids = await page.evaluate((list) => (window.__ctTest.store.offerPool.value ?? []).filter((t) => list.includes(t.canonical_name)).map((t) => t.id), sci);
+  await notRecorded(page, ids);
+  assert.ok(await until(page, () => !!document.querySelector('[data-next-unchecked-head]')), 'the card lists them under "Not checked (2)"');
+  const e = await engineLead(page);
+  assert.equal(e.unknown.length, 2, 'two not checked');
+  assert.ok(e.fits.length > 0, 'the bulk row stays');
+  const note = await page.$eval('[data-next-bulk-note]', (p) => p.innerText.replace(/\s+/g, ' '));
+  assert.match(note, /the 2 not checked (?:are|is) in “Find a backup”/i, `PFA-R2: the note names the link that lists them ("${note}")`);
+  await press(page, 'button', 'Find a backup');
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
+  await openMore(page);
+  const listed = await page.$$eval('dialog[open] [data-find-group="unchecked"] [data-find-row]', (r) => r.map((x) => x.dataset.plantId));
+  assert.deepEqual(listed.sort(), [...ids].sort(), 'PFA-R2: the sheet lists the 2 plants not checked the note sends the grower to');
   await done(page);
 });

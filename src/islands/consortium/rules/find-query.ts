@@ -8,18 +8,16 @@
 // conflict, a site misfit, toxic, recorded as invasive in the country) that fits otherwise needs a
 // second look; a plant with no verdict is "not checked", never a fit.
 import type { Hole, JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { fills, jobIds, jobsOf, queryTokens, fold, strata, yearsOf } from '../../../lib/consortium/index.ts';
+import { fillerGroup, fills, jobIds, jobsOf, queryTokens, fold, strata, yearsOf } from '../../../lib/consortium/index.ts';
 
 export interface FindGroups { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unchecked: Taxon[] }
 export const GROUPS = ['fits', 'look', 'outside', 'unchecked'] as const;
 export type Group = (typeof GROUPS)[number];
 
-// A plant's group: its verdict's level, a warned fit moved to "needs a second look".
+// A plant's group: core fillerGroup, the Next step's own rule (PFA-R5), its "unknown" named "unchecked".
 function groupOf(level: Level | undefined, warned: boolean): Group {
-  if (level === 'outside') return 'outside';
-  if (level === 'look' || (level === 'fits' && warned)) return 'look';
-  if (level === 'fits') return 'fits';
-  return 'unchecked';
+  const g = fillerGroup(level, warned);
+  return g === 'unknown' ? 'unchecked' : g;
 }
 
 // Plants grouped in their order; verdicts null (the rule not loaded or refused): all not checked.

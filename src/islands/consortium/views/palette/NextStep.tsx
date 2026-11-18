@@ -180,6 +180,21 @@ export function holeFillers(h: Hole, members: readonly Taxon[], open: readonly H
   return { ...fillers(h, cands, store.poolVerdicts.value ?? new Map(), holds, warned, members, open), warned, holds, judged: !!rule };
 }
 
+// What fills a hole, said one way (PFA-R3, R4): Find's hole rows and the 200-plant sentence read this
+// one ordered rule. The plants that fit, else in the card's group order those that need a second look,
+// then those on the lists not checked ("3 on your lists not checked", apart from the palette's own
+// "N plants not checked"); none of them, no plant fits.
+export function holeFillerParts(f: Pick<Fillers, 'look' | 'unknown'>): string[] {
+  return [
+    f.look.length ? P('palette.next.countLook', f.look.length) : '',
+    f.unknown.length ? P('palette.next.countUncheckedLists', f.unknown.length) : '',
+  ].filter(Boolean);
+}
+export function holeEndWords(f: Fillers): string {
+  const parts = holeFillerParts(f);
+  return f.fits.length ? P('find.holePlants', f.fits.length) : parts.length ? listOf(parts) : T('palette.next.holeNoneFits');
+}
+
 // A hole as a row (boards Main "Other holes", Find "Your palette has 7 holes"; BC21, BC23): a dashed
 // box with the add mark, the hole's lane in bold ("Covers the ground:"), the rest of its title, and at
 // the right what it opens, in ochre ("Find", "7 plants").
@@ -318,17 +333,22 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   // the picks, counted over every plant it adds.
   const allMarked = marked(allFits), restKinds = new Set(allMarked.filter((m) => !best.includes(m.t.id)).flatMap((m) => m.kinds));
   const ofMarks = [...restKinds].map((k) => [k, allMarked.filter((m) => m.kinds.includes(k)).length] as const);
-  // N6 (board AddMany): where the plants the bulk row leaves out are, under the link that lists them
-  // ("The 15 that need a second look and the 35 outside their range are in “See all 23 plants”, each
-  // with its word."), then the order those lists use (find.bestFirst).
+  // N6, PFA-R1, R2 (board AddMany): where the plants the bulk row leaves out are, each group under the
+  // link that really lists it: the second looks and the plants not checked in "See all N plants" (N
+  // counts them; on a thin spot "Find a backup", whose sheet keeps its "Not checked" group), the outside
+  // ones under the card's own "Show N outside their climate range" while it is folded ("The 15 that
+  // need a second look are in “See all 23 plants”, each with its word. The 37 outside their range are
+  // in “Show 37 outside their climate range”, each with its word."), then the order (find.bestFirst).
   const linkLabel = thin ? T('palette.next.findBackup') : P('palette.seeAll', all);
-  const restParts = [
+  const inLink = [
     found.look.length ? P('palette.next.restLook', found.look.length) : '',
-    found.outside.length ? P('palette.next.restOutside', found.outside.length) : '',
     found.unknown.length ? P('palette.next.restUnchecked', found.unknown.length) : '',
   ].filter(Boolean);
-  const restCount = found.look.length + found.outside.length + found.unknown.length;
-  const rest = restParts.length ? sentenceCase(P('palette.next.bulkRest', restCount, { parts: listOf(restParts), link: linkLabel })) : '';
+  const nOut = found.outside.length;
+  const rest = [
+    inLink.length ? sentenceCase(P('palette.next.bulkRest', found.look.length + found.unknown.length, { parts: listOf(inLink), link: linkLabel })) : '',
+    nOut && !outsideOpen ? sentenceCase(P('palette.next.bulkRest', nOut, { parts: P('palette.next.restOutside', nOut), link: P('palette.showOutside', nOut) })) : '',
+  ].filter(Boolean).join(' ');
   const order = found.judged ? T('find.bestFirst', { period: periodName(periodIds[periodIds.length - 1]) }) : '';
   // BC2, C2: why this hole matters, then how many plants on the lists do it then, by fit, and how many
   // of those that fit stay in their climate range to the last period.
@@ -511,10 +531,11 @@ function OthersSentence({ others, openThins, thinCount, goal, members, open, cha
     const u = uncheckedLine(h);
     const title = u ? `${holeWords(h)} · ${say(u)}` : holeWords(h);
     // PFA-B6: no-fit words only when core noneFits says so (the card's own test); plants not checked
-    // keep a hole out of the no-fit state, counted as such.
+    // keep a hole out of the no-fit state. PFA-R3, F5: otherwise the one ordered rule Find's hole rows
+    // read (holeFillerParts): the second looks, then the plants on the lists not checked, both said.
     if (fit) return P('palette.next.otherFit', fit, { hole: title });
-    if (!noneFits(f)) return P('palette.next.otherUnchecked', f.unknown.length, { hole: title });
-    return look ? P('palette.next.otherNoFitLook', look, { hole: title }) : T('palette.next.otherNoFit', { hole: title });
+    if (noneFits(f)) return look ? P('palette.next.otherNoFitLook', look, { hole: title }) : T('palette.next.otherNoFit', { hole: title });
+    return T('palette.next.otherParts', { hole: title, parts: listOf(holeFillerParts(f)) });
   };
   const holesPart = others.length ? P('palette.next.otherHolesSay', others.length, { holes: others.map(holeText).join('; ') }) : '';
   const thinPart = openThins.length

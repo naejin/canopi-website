@@ -38,7 +38,7 @@ import { page } from '../kit/page.ts';
 import { finder, finderFailed, namesState, releasePlants, wantNames } from './names.ts';
 import { Marks } from './marks.tsx';
 import Paste from './Paste.tsx';
-import { addedWords, holeFillers, HoleRow, openFillers, PLUS, rowRoles, rowSize, rowSpan } from '../palette/NextStep.tsx';
+import { addedWords, holeEndWords, holeFillers, HoleRow, openFillers, PLUS, rowRoles, rowSize, rowSpan } from '../palette/NextStep.tsx';
 import { deskFind } from '../Toast.tsx';
 
 // The later periods "Holds by …" offers (types.ts periodIds), named by verdict-line.ts periodName
@@ -288,6 +288,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // from under the reader. A fresh opening of Find reads the targets again.
   const liveTargets = useMemo(() => [...open, ...thins.filter((h) => h.state === 'open')], [open, thins]);
   const frozenTargets = (kept.frozenTargets ??= { current: null }) as { current: readonly Hole[] | null };
+  // PFA-F1: the hole sheet's intro counts frozen with them, at the visit's first add (holeF below): the
+  // visit's own adds never lower its figure nor turn it to the no-fit words (board FillHole).
+  const frozenHoleF = (kept.frozenHoleF ??= { current: null }) as { current: ReturnType<typeof holeFillers> | null };
   const targets = frozenTargets.current ?? liveTargets;
   // The plants added in this visit stay listed whatever the filters say ("Added" with its Undo; AddMany
   // state 3): a list snapshot for the visit, so no recompute moves a row the reader just acted on.
@@ -317,8 +320,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const folds = (v: Fit) => v !== 'all' && !q && !outsideShown;
   // "Fits your place" lists the judged plants only (c1r5 W2): an unchecked plant is listed under "Every
   // plant", in its "Not checked" group; a search lists every hit, marked. A hole's sheet keeps its
-  // "Not checked (n)" group (PFA-B2): it lists every plant the Next step's "See all N" counts.
-  const drops = (v: Fit) => v === 'fits' && !q && !holeSheet;
+  // "Not checked (n)" group (PFA-B2): it lists every plant the Next step's "See all N" counts; so does
+  // the Add sheet a thin spot's "Find a backup" opens (PFA-R2: the card's note says they are there).
+  const drops = (v: Fit) => v === 'fits' && !q && !hole;
   // The one count: how many plants the list shows under these filters and this fit choice.
   // (the job card counts the list its "Show these N plants" lists: the whole list, the query gone).
   const count = (f: FindFilters, v: Fit = fit, list = matched, fold = folds(v), drop = drops(v)): number => {
@@ -378,6 +382,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     if (added(t.id)) return;
     frozenFilled.current ??= filled;
     frozenTargets.current ??= targets;
+    frozenHoleF.current ??= holeF;
     const text = said(t);
     store.addMembers([t.id], from ? { [t.id]: from } : {}, { warned: warned.has(t.id) ? [t.id] : [], text });
     setVisit((v) => (v.includes(t.id) ? v : [...v, t.id]));
@@ -387,6 +392,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const addFrom = async (id: PlantId, z: ClimateZone) => {
     frozenFilled.current ??= filled;
     frozenTargets.current ??= targets;
+    frozenHoleF.current ??= holeF;
     const list = await store.loadPool(z);
     const t = list?.find((x) => x.id === id);
     if (t) { store.addMembers([id], { [id]: z }, { warned: store.warnedPlant(t) ? [id] : [], text: said(t) }); setVisit((v) => (v.includes(id) ? v : [...v, id])); }
@@ -416,7 +422,8 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // BC8, N5: a hole's intro counts the plants that fit (no second look) from the one count source the
   // Next step reads (holeFillers), then says the order (board FillHole: "7 plants … fit your place. Best
   // fit first: …"); none fits (core noneFits), the Next step's no-fit words; only unchecked ones, no claim.
-  const holeF = hole ? holeFillers(hole, memberTaxa, open) : null;
+  // PFA-F1: as the sheet opened, frozen at the visit's first add (frozenHoleF).
+  const holeF = hole ? frozenHoleF.current ?? holeFillers(hole, memberTaxa, open) : null;
   const holeFits = holeF?.fits.length ?? 0;
   const holeLede = holeFits ? `${P('find.holeLede', holeFits, { list: listName(climate) })}.` : holeF && noneFits(holeF) ? T('palette.next.noFit') : '';
   const holeUnchecked = hole ? uncheckedLine(hole) : null;
@@ -734,14 +741,13 @@ export default function Find({ Frame }: { Frame: Frame }) {
             // hole while the palette has 40 plants or fewer, else MoreList's fold; the board's 4-of-7 fold is a
             // known board difference.
             // BC25: each row counts what the Next step counts for that hole (holeFillers: the plants that
-            // fit, no second look); none fits, it says how many need a second look, or that none fits.
+            // fit, no second look); none fits, the one ordered rule of the 200-plant sentence (PFA-R3:
+            // holeEndWords, the second looks then those on the lists not checked), or that none fits.
             <section class="ct-find-holes" data-find-holes="" aria-labelledby="ct-find-holes">
               <h3 id="ct-find-holes">{P('find.holesHead', open.length)}</h3>
               <MoreList items={open} keyOf={(h) => h.id} paletteSize={members.length} render={(h) => {
                 const f = holeFillers(h, memberTaxa, open), u = uncheckedLine(h);
-                // PFA-B6: the no-fit words only when core noneFits says so; plants not checked are counted.
-                const end = f.fits.length ? P('find.holePlants', f.fits.length) : f.look.length ? P('palette.next.countLook', f.look.length) : noneFits(f) ? T('palette.next.holeNoneFits') : P('palette.next.countUnchecked', f.unknown.length);
-                return <HoleRow h={h} end={end} extra={u ? say(u) : null} onClick={() => openFillers(h)} attrs={{ 'data-find-hole': h.id }} />;
+                return <HoleRow h={h} end={holeEndWords(f)} extra={u ? say(u) : null} onClick={() => openFillers(h)} attrs={{ 'data-find-hole': h.id }} />;
               }} />
             </section>
           )}

@@ -9,7 +9,7 @@
 // - The judged window is year 1 to year 60 (owner): a gap that ends by year 1 is 'not-judged' (a thin
 //   line, never a hole); nothing after year 60 is raised; a gap ending at 60 runs "after year n".
 // - While a guest list loads (ctx.pending), every hole is 'pending', never a false hole (marker P11).
-import type { Fillers, Hole, HoleChange, HoleKind, HoleRank, JobGap, JobId, LaneCount, PaletteGoals, PhaseOrd, PlantId, PlantVerdict, Stratum, TargetPosition, Taxon, ThinChange } from './types.ts';
+import type { Fillers, Hole, HoleChange, HoleKind, HoleRank, JobGap, JobId, LaneCount, Level, PaletteGoals, PhaseOrd, PlantId, PlantVerdict, Stratum, TargetPosition, Taxon, ThinChange } from './types.ts';
 import { jobIds, strata } from './types.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PHASE_YEARS, yearsOf } from './years.ts';
@@ -243,8 +243,20 @@ export function fills(hole: Hole, taxon: Taxon): boolean {
   return !!y && y.from < hole.toYear && (y.to === null || y.to > from);
 }
 
-// The plants that fill a hole, grouped: fits; needs a second look (level look, or a toxic or invasive
-// warning: never dropped, warn never hide); outside its range; not checked. Members are left out.
+// A plant's group, one ordered rule for the Next step's card (fillers) and Find's sheet (find-query.ts
+// findGroups), so a card and the sheet it opens give the same counts (PFA-R5): outside its range first;
+// then needs a second look (level look, or a fit with a toxic or invasive warning: never dropped, warn
+// never hide); then fits; anything else, a warned plant with no range recorded too, not checked
+// (unknown is never a second look nor a hole).
+export function fillerGroup(level: Level | undefined, warned: boolean): keyof Fillers {
+  if (level === 'outside') return 'outside';
+  if (level === 'look' || (level === 'fits' && warned)) return 'look';
+  if (level === 'fits') return 'fits';
+  return 'unknown';
+}
+
+// The plants that fill a hole, grouped by fillerGroup: fits; needs a second look; outside its range;
+// not checked. Members are left out.
 // Ranked by the open holes filled (of `open`, else this one), then holding to the latest period
 // (holds), then name.
 export function fillers(hole: Hole, pool: readonly Taxon[], verdicts: ReadonlyMap<PlantId, PlantVerdict>,
@@ -255,11 +267,7 @@ export function fillers(hole: Hole, pool: readonly Taxon[], verdicts: ReadonlyMa
   for (const t of pool) {
     if (inPalette.has(t.id) || !fills(hole, t)) continue;
     score.set(t.id, open.filter((h) => h.state === 'open' && fills(h, t)).length);
-    const level = verdicts.get(t.id)?.level ?? 'unknown';
-    if (level === 'outside') out.outside.push(t);
-    else if (level === 'look' || warned.has(t.id)) out.look.push(t);
-    else if (level === 'fits') out.fits.push(t);
-    else out.unknown.push(t);
+    out[fillerGroup(verdicts.get(t.id)?.level, warned.has(t.id))].push(t);
   }
   const rank = (a: Taxon, b: Taxon) => (score.get(b.id)! - score.get(a.id)!)
     || (Number(holds.get(b.id) ?? false) - Number(holds.get(a.id) ?? false))
