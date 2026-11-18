@@ -1308,6 +1308,8 @@
   "consortium.palette.jobsNoJob": "one: Mais # não tem tarefas registradas mas só está no primeiro ano ou está fora da sua faixa climática: não conta para nenhuma lacuna. | other: Mais # não têm tarefas registradas mas só estão no primeiro ano ou estão fora da sua faixa climática: não contam para nenhuma lacuna.",
   "consortium.palette.jobOutside": "one: Mais # faz isso, mas está fora da sua faixa climática ({names}): não contada aqui. | other: Mais # fazem isso, mas estão fora da sua faixa climática ({names}): não contadas aqui.",
   "consortium.palette.jobOutsideMany": "one: Mais # faz isso, mas está fora da sua faixa climática: não contada aqui: | other: Mais # fazem isso, mas estão fora da sua faixa climática: não contadas aqui:",
+  "consortium.palette.chart.jobOutsideOnly": "one: # planta faz isso, mas está fora da sua faixa climática ({names}): não contada aqui. | other: # plantas fazem isso, mas estão fora da sua faixa climática ({names}): não contadas aqui.",
+  "consortium.palette.chart.jobOutsideOnlyMany": "one: # planta faz isso, mas está fora da sua faixa climática: não contada aqui: | other: # plantas fazem isso, mas estão fora da sua faixa climática: não contadas aqui:",
   "consortium.palette.warningsTitle": "Avisos",
   "consortium.palette.warningsLeave": "one: # sai da sua faixa climática até {period} | other: # saem da sua faixa climática até {period}",
   "consortium.palette.warningsEdgeThen": "Perto do limite da sua faixa então: {names}.",

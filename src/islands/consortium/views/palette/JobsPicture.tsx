@@ -62,11 +62,16 @@ type NameOf = (id: PlantId) => string;
 const byName = (members: readonly Taxon[]): NameOf => { const m = new Map(members.map((t) => [t.id, nameOf(t)])); return (id) => m.get(id) ?? id; };
 
 // The job's members outside their climate range, apart: "2 more do this but are outside their climate
-// range (Cashew, Coconut): not counted here." (up to three named in the sentence past 40 plants, as the
-// years' line; else the count cell).
-const Outside = ({ ids, name, size }: { ids: readonly PlantId[]; name: NameOf; size: number }) => (
-  ids.length ? <div class="ct-job-outside"><Names ids={ids} name={name} size={size} few={3} text={(names) => <p>{P('palette.jobOutside', ids.length, { names })}</p>} lead={<p>{P('palette.jobOutsideMany', ids.length)}</p>} /></div> : null
-);
+// range (Cashew, Coconut): not counted here." beside a counted figure; with none counted (no figure in
+// the head), "1 plant does this but is outside its climate range (Mango): not counted here." (c2 B3:
+// "more" never refers to nothing). Up to three named in the sentence past 40 plants, as the years'
+// line; else the count cell.
+const Outside = ({ ids, counted, name, size }: { ids: readonly PlantId[]; counted: number; name: NameOf; size: number }) => {
+  if (!ids.length) return null;
+  const n = ids.length, more = counted > 0;
+  const text = (names: string) => <p>{more ? P('palette.jobOutside', n, { names }) : P('palette.chart.jobOutsideOnly', n, { names })}</p>;
+  return <div class="ct-job-outside"><Names ids={ids} name={name} size={size} few={3} text={text} lead={<p>{more ? P('palette.jobOutsideMany', n) : P('palette.chart.jobOutsideOnlyMany', n)}</p>} /></div>;
+};
 
 // A thin line, its lead in bold ("**Thin:** 1 plant only from year 15 to year 60. Add a backup."; BC24).
 const ThinLine = ({ words }: { words: string }) => <p class="ct-job-thin"><HoleTitle words={words} /></p>;
@@ -78,7 +83,7 @@ function JobRow({ j, lane, mine, name, size, holes, states, showThin, b }: { j: 
       <p class="ct-job-head"><span class="ct-job-tile" aria-hidden="true"><JobIcon job={j} /></span><span class="ct-job-title"><strong>{T(`job.${j}`)}</strong>{n > 0 && <> <span class="ct-grid-count">{P('palette.chart.plants', n)}</span></>}</span></p>
       <div class="ct-job-body">
         {n > 0 && <div class="ct-job-names"><Names ids={mine.counted} name={name} size={size} /></div>}
-        <Outside ids={mine.outside} name={name} size={size} />
+        <Outside ids={mine.outside} counted={n} name={name} size={size} />
         {states && <Strip states={states} />}
         {showThin && lane.thin.map((t) => <ThinLine key={`${t.fromYear}`} words={say(thinLine(t))} />)}
       </div>
@@ -99,7 +104,7 @@ function BigRow({ j, mine, name, holes, all, thins, size }: { j: JobId; mine: Jo
       </button>
       <div id={id} class="ct-job-open" hidden={!open}>
         {open && <Names ids={mine.counted} name={name} size={size} closed={10} />}
-        {open && <Outside ids={mine.outside} name={name} size={size} />}
+        {open && <Outside ids={mine.outside} counted={mine.counted.length} name={name} size={size} />}
         {open && holes.map((h) => {
           const un = uncheckedLine(h), at = targetPosition(all, thins, h);
           return <p key={h.id} class="ct-job-thin"><HoleTitle words={T('palette.jobHoleNumber', { span: cap(say(holeLine(h))), i: at.index, n: at.of })} />{un && <> · {say(un)}</>}</p>;

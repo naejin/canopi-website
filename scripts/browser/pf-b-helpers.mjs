@@ -84,14 +84,16 @@ export const laneOf = (f, key) => f.lanes.find((l) => l.key === key);
 // The plants whose jobs are not checked (the union of the job lanes' unchecked).
 export const uncheckedOf = (f) => new Set(f.lanes.filter((l) => l.kind === 'job').flatMap((l) => l.unchecked));
 
-// The members doing each job that count toward its holes (core jobs.ts jobsOf, the engine's rule, run
-// here on the page's taxa; a member outside its climate range counts for no job, as holes.ts
-// laneCounts: c2 R1).
-export async function jobCounts(page) {
+// The members doing each job (core jobs.ts jobsOf, run here on the page's taxa), each with the time
+// spans it stands in (years.ts spans), in palette order. Whether a member counts toward its job is never
+// decided here (c2 D1: no copy of holes.ts' rule): a test checks the view's counted names against the
+// lane's own figures (store.lanes counts) span by span.
+export async function jobDoers(page) {
   const { jobsOf } = await import('../../src/lib/consortium/jobs.ts');
-  const taxa = await page.evaluate(() => { const s = window.__ctTest.store; return s.memberTaxa.value.filter((t) => s.memberVerdicts.value?.get(t.id)?.level !== 'outside').map((t) => ({ id: t.id, role: t.role, functions: t.functions })); });
+  const { PHASE_YEARS, spans } = await import('../../src/lib/consortium/years.ts');
+  const taxa = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.map((t) => ({ id: t.id, role: t.role, functions: t.functions, phases: t.phases, name: t.names?.en || t.canonical_name })));
   const out = {};
-  for (const t of taxa) for (const j of jobsOf(t)) out[j] = (out[j] ?? 0) + 1;
+  for (const t of taxa) for (const j of jobsOf(t)) (out[j] ??= []).push({ id: t.id, name: t.name, stands: PHASE_YEARS.map((_, c) => spans(t, c)) });
   return out;
 }
 

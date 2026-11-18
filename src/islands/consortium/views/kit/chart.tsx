@@ -14,10 +14,10 @@
 // icon and word, a level its icon and words (colour never alone).
 import type { ComponentChildren } from 'preact';
 import { memo } from 'preact/compat';
-import { useId, useRef, useState } from 'preact/hooks';
+import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { Flag, JobId, PlantId, PlantVerdict, Stratum } from '../../../../lib/consortium/index.ts';
 import { fitLine, jobIds, phaseOfYear, strata } from '../../../../lib/consortium/index.ts';
-import { countingIds, tableOf, type Picture, type PictureRow } from '../../rules/picture.ts';
+import { countingIds, plainList, tableOf, type Picture, type PictureRow } from '../../rules/picture.ts';
 import { P, pageLang, T } from '../../strings.ts';
 import { collatorFor, listOf } from './names.ts';
 import { JobIcon, jobWord, LevelIcon, say, sayAll } from './fit.tsx';
@@ -31,8 +31,8 @@ import { MoreList } from './more.tsx';
 export const SIZE_PALETTE = 40;
 export const inlineNames = (n: number, size: number): boolean => size <= SIZE_PALETTE && n <= 12;
 
-// The boards' plain list of names ("Olive, Almond, Fig": Intl.ListFormat unit, the page's language).
-const plainList = (items: string[]): string => new Intl.ListFormat(pageLang(), { type: 'unit', style: 'short' }).format(items);
+// The boards' plain list of names ("Olive, Almond, Fig"; "橄榄、杏仁、无花果"): rules/picture.ts plainList.
+const plainNames = (items: string[]): string => plainList(items, pageLang());
 
 // Member plants named in words (review R2, C1): every list of member names in the pictures, Warnings
 // and Balance goes through here. Inline, the boards' plain list ("Olive, Almond, Fig"; c2 C1), in
@@ -49,7 +49,7 @@ export function Names({ ids, name, size, closed = 3, few = 0, and = false, text,
   if (!ids.length) return null;
   if (inlineNames(ids.length, size) || ids.length <= few) {
     if (render) return <span class="ct-names-inline">{ids.map((id) => <span key={id}>{render(id)}</span>)}</span>;
-    const words = (and ? listOf : plainList)(ids.map(name));
+    const words = (and ? listOf : plainNames)(ids.map(name));
     return <>{text ? text(words) : words}</>;
   }
   const order = collatorFor(pageLang());
@@ -240,30 +240,49 @@ export function JobKey({ p }: { p: Picture }) {
 }
 
 // "How to read this" (Toasts and DeskStates boards, A18): a closed disclosure under each picture's
-// title. Escape inside it closes it, the focus back on its button; an Escape elsewhere is not its own
-// (c2 R2). At 960 px and wider it is a small panel lying over the page (palette-page.css), so it also
-// closes when the focus leaves it (a Tab past it, a click outside, the other panel opened): it never
-// covers the control the focus moves to. Its words take the focus on a click (tabindex -1), so reading
-// or selecting them keeps it open. On a phone it opens in the flow and stays open until closed.
+// title. At 960 px and wider it is a small panel lying over the page, the standard popover (c2 B2, D2):
+// popover="auto" on its words, popovertarget on its button, so a click anywhere outside it and Escape
+// close it in every engine (Safari and Firefox on macOS focus no button on a click, so no focus rule
+// could), one open at a time, drawn in the top layer under its button (palette-page.css, anchor
+// positioning). It also closes when the keyboard focus leaves it (a Tab past it, R2): a popover stays
+// open then, and would cover the control the focus moves to. Its words take the focus on a click
+// (tabindex -1), so reading or selecting them keeps it open. On a phone it opens in the flow and stays
+// open until closed; Escape inside it closes it, the focus back on its button.
 const OVERLAY = '(min-width: 960px)';
+const overlayNow = (): boolean => typeof matchMedia === 'function' && matchMedia(OVERLAY).matches;
 export function HowToRead({ children }: { children: ComponentChildren }) {
   const [open, setOpen] = useState(false);
+  const [overlay, setOverlay] = useState(overlayNow);
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const mq = matchMedia(OVERLAY), on = () => { setOverlay(mq.matches); setOpen(false); };
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key !== 'Escape' || !open) return;
+    if (overlay || e.key !== 'Escape' || !open) return;
     e.stopPropagation();
     setOpen(false);
     button.current?.focus();
   };
+  // Closed once the focus has landed outside (a task later), so hiding it never pulls the focus back
+  // to its button (the popover's focus return applies only to a focus still inside it).
   const onFocusOut = (e: FocusEvent) => {
     const to = e.relatedTarget as Node | null, wrap = e.currentTarget as HTMLElement;
-    if (open && !(to && wrap.contains(to)) && typeof matchMedia === 'function' && matchMedia(OVERLAY).matches) setOpen(false);
+    if (!overlay || !to || wrap.contains(to)) return;
+    setTimeout(() => { const el = body.current; if (el?.isConnected && el.matches(':popover-open') && !wrap.contains(document.activeElement)) el.hidePopover(); }, 0);
   };
   return (
     <div class="ct-read" onKeyDown={onKeyDown} onFocusOut={onFocusOut}>
-      <button ref={button} type="button" class="ct-read-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>{T('palette.readTitle')}</button>
-      <div id={id} class="ct-read-body" tabIndex={-1} hidden={!open}>{children}</div>
+      {overlay
+        ? <button key="pop" ref={button} type="button" class="ct-read-toggle" aria-expanded={open} aria-controls={id} popovertarget={id}>{T('palette.readTitle')}</button>
+        : <button key="flow" ref={button} type="button" class="ct-read-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>{T('palette.readTitle')}</button>}
+      {overlay
+        ? <div key="pop" ref={body} id={id} class="ct-read-body" tabIndex={-1} popover="auto" onBeforeToggle={(e) => setOpen((e as ToggleEvent).newState === 'open')}>{children}</div>
+        : <div key="flow" id={id} class="ct-read-body" tabIndex={-1} hidden={!open}>{children}</div>}
     </div>
   );
 }

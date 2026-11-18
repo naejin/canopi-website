@@ -1308,6 +1308,8 @@
   "consortium.palette.jobsNoJob": "one: Nog # heeft geen taken vastgelegd, maar staat er alleen het eerste jaar of valt buiten haar klimaatbereik: telt voor geen gat. | other: Nog # hebben geen taken vastgelegd, maar staan er alleen het eerste jaar of vallen buiten hun klimaatbereik: tellen voor geen gat.",
   "consortium.palette.jobOutside": "one: Nog # doet dit, maar valt buiten haar klimaatbereik ({names}): hier niet geteld. | other: Nog # doen dit, maar vallen buiten hun klimaatbereik ({names}): hier niet geteld.",
   "consortium.palette.jobOutsideMany": "one: Nog # doet dit, maar valt buiten haar klimaatbereik: hier niet geteld: | other: Nog # doen dit, maar vallen buiten hun klimaatbereik: hier niet geteld:",
+  "consortium.palette.chart.jobOutsideOnly": "one: # plant doet dit, maar valt buiten haar klimaatbereik ({names}): hier niet geteld. | other: # planten doen dit, maar vallen buiten hun klimaatbereik ({names}): hier niet geteld.",
+  "consortium.palette.chart.jobOutsideOnlyMany": "one: # plant doet dit, maar valt buiten haar klimaatbereik: hier niet geteld: | other: # planten doen dit, maar vallen buiten hun klimaatbereik: hier niet geteld:",
   "consortium.palette.warningsTitle": "Waarschuwingen",
   "consortium.palette.warningsLeave": "one: # verlaat haar klimaatbereik tegen {period} | other: # verlaten hun klimaatbereik tegen {period}",
   "consortium.palette.warningsEdgeThen": "Dan dicht bij de rand van hun bereik: {names}.",

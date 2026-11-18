@@ -259,9 +259,18 @@
 .ct .ct-stepper [aria-disabled="true"] { opacity: 0.55; cursor: default; }
 
 @media (min-width: 960px) {
-  /* "How to read this": a small panel under its button (board DeskStates, BC19). */
-  .ct .ct-read { position: relative; }
-  .ct .ct-read-body { position: absolute; z-index: 5; inset-block-start: 100%; inset-inline-start: 0; width: min(30rem, 80vw); border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); color: var(--text); }
+  /* "How to read this": a small panel under its button (board DeskStates, BC19), the standard popover
+     (kit/chart.tsx HowToRead: popover="auto", light dismiss and Escape in every engine; c2 B2) in the
+     top layer, placed under its button by anchor positioning (each panel's own anchor: anchor-scope),
+     in the page's coordinates (absolute: a tall panel runs on down the page, as the board's did, and
+     scrolls with it); without anchor positioning, centred in the window (the popover's own place). */
+  .ct .ct-read-body[popover] { position: fixed; inset: 0; margin: auto; height: fit-content; width: min(30rem, 80vw); border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); color: var(--text); }
+  .ct .ct-read-body[popover]:not(:popover-open) { display: none; }
+  @supports (anchor-scope: --ct-read) {
+    .ct .ct-read { anchor-scope: --ct-read; }
+    .ct .ct-read-toggle { anchor-name: --ct-read; }
+    .ct .ct-read-body[popover] { position: absolute; position-anchor: --ct-read; inset: auto; inset-block-start: anchor(end); inset-inline-start: anchor(start); margin: 0; overflow: visible; position-try-fallbacks: flip-inline; }
+  }
   /* Warnings and Balance stand under the Next step, beside the pictures (board MainMore); the last
      row takes the pictures' extra height, so nothing gapes between them. */
   .ct .ct-palette-body[data-pictures] { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); grid-template-rows: auto auto 1fr; }

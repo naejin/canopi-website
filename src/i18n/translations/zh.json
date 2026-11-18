@@ -1308,6 +1308,8 @@
   "consortium.palette.jobsNoJob": "other: 另有 # 种没有记录任务，但只在第一年在场或超出其气候范围，因此不计入任何空缺。",
   "consortium.palette.jobOutside": "other: 另有 # 种也做这件事，但超出其气候范围（{names}）：此处不计。",
   "consortium.palette.jobOutsideMany": "other: 另有 # 种也做这件事，但超出其气候范围：此处不计：",
+  "consortium.palette.chart.jobOutsideOnly": "other: # 种植物做这件事，但超出其气候范围（{names}）：此处不计。",
+  "consortium.palette.chart.jobOutsideOnlyMany": "other: # 种植物做这件事，但超出其气候范围：此处不计：",
   "consortium.palette.warningsTitle": "警示",
   "consortium.palette.warningsLeave": "other: 到 {period}，有 # 种超出其气候范围",
   "consortium.palette.warningsEdgeThen": "届时接近其范围边缘：{names}。",

@@ -1308,6 +1308,8 @@
   "consortium.palette.jobsNoJob": "other: ほかに#種は役割の記録がありませんが、1年目だけか気候の範囲外なので、どの穴にも数えません。",
   "consortium.palette.jobOutside": "other: ほかに#種がこの役目をしますが、気候の範囲外です（{names}）：ここでは数えません。",
   "consortium.palette.jobOutsideMany": "other: ほかに#種がこの役目をしますが、気候の範囲外です：ここでは数えません：",
+  "consortium.palette.chart.jobOutsideOnly": "other: #種がこの役目をしますが、気候の範囲外です（{names}）：ここでは数えません。",
+  "consortium.palette.chart.jobOutsideOnlyMany": "other: #種がこの役目をしますが、気候の範囲外です：ここでは数えません：",
   "consortium.palette.warningsTitle": "注意",
   "consortium.palette.warningsLeave": "other: {period}までに#種が気候の範囲を出ます",
   "consortium.palette.warningsEdgeThen": "その頃に範囲の端に近い：{names}。",

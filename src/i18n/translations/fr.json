@@ -1308,6 +1308,8 @@
   "consortium.palette.jobsNoJob": "one: # autre n’a aucune tâche enregistrée mais n’est en place que la première année ou est hors de son aire climatique : elle ne compte pour aucun trou. | other: # autres n’ont aucune tâche enregistrée mais ne sont en place que la première année ou sont hors de leur aire climatique : elles ne comptent pour aucun trou.",
   "consortium.palette.jobOutside": "one: # de plus le fait, mais elle est hors de son aire climatique ({names}) : non comptée ici. | other: # de plus le font, mais elles sont hors de leur aire climatique ({names}) : non comptées ici.",
   "consortium.palette.jobOutsideMany": "one: # de plus le fait, mais elle est hors de son aire climatique : non comptée ici : | other: # de plus le font, mais elles sont hors de leur aire climatique : non comptées ici :",
+  "consortium.palette.chart.jobOutsideOnly": "one: # plante le fait, mais elle est hors de son aire climatique ({names}) : non comptée ici. | other: # plantes le font, mais elles sont hors de leur aire climatique ({names}) : non comptées ici.",
+  "consortium.palette.chart.jobOutsideOnlyMany": "one: # plante le fait, mais elle est hors de son aire climatique : non comptée ici : | other: # plantes le font, mais elles sont hors de leur aire climatique : non comptées ici :",
   "consortium.palette.warningsTitle": "Avertissements",
   "consortium.palette.warningsLeave": "one: # sort de son aire climatique d’ici {period} | other: # sortent de leur aire climatique d’ici {period}",
   "consortium.palette.warningsEdgeThen": "Près de la limite de leur aire à ce moment : {names}.",

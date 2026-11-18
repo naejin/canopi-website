@@ -1308,6 +1308,8 @@
   "consortium.palette.jobsNoJob": "one: # más no tiene tareas registradas pero solo está el primer año o está fuera de su rango climático: no cuenta para ningún hueco. | other: # más no tienen tareas registradas pero solo están el primer año o están fuera de su rango climático: no cuentan para ningún hueco.",
   "consortium.palette.jobOutside": "one: # más lo hace, pero está fuera de su rango climático ({names}): no se cuenta aquí. | other: # más lo hacen, pero están fuera de su rango climático ({names}): no se cuentan aquí.",
   "consortium.palette.jobOutsideMany": "one: # más lo hace, pero está fuera de su rango climático: no se cuenta aquí: | other: # más lo hacen, pero están fuera de su rango climático: no se cuentan aquí:",
+  "consortium.palette.chart.jobOutsideOnly": "one: # planta lo hace, pero está fuera de su rango climático ({names}): no se cuenta aquí. | other: # plantas lo hacen, pero están fuera de su rango climático ({names}): no se cuentan aquí.",
+  "consortium.palette.chart.jobOutsideOnlyMany": "one: # planta lo hace, pero está fuera de su rango climático: no se cuenta aquí: | other: # plantas lo hacen, pero están fuera de su rango climático: no se cuentan aquí:",
   "consortium.palette.warningsTitle": "Avisos",
   "consortium.palette.warningsLeave": "one: # sale de su rango climático hacia {period} | other: # salen de su rango climático hacia {period}",
   "consortium.palette.warningsEdgeThen": "Cerca del borde de su rango entonces: {names}.",

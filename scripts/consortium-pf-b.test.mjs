@@ -235,6 +235,16 @@ test('jobMembers on kiambu-200 (c2 R1): each job\'s counted members are the ones
   assert.ok(rows.some((r) => r.outside.length > 0), 'kiambu-200 has a job member outside its range (Cashew)');
 });
 
+test('plainList (c2 B1): the boards\' plain list of names keeps three names apart in every locale, with no conjunction: a Chinese reader\'s Feeds you row reads "橄榄、杏仁、无花果", never "橄榄杏仁无花果"; a Russian one "Красный клевер, Розмарин, Инжир"', () => {
+  const three = { zh: ['橄榄', '杏仁', '无花果'], ja: ['アフリカンマリーゴールド', 'ゲッケイジュ', 'ピーマン'], ko: ['올리브', '아몬드', '무화과'], ru: ['Красный клевер', 'Розмарин', 'Инжир'] };
+  const sep = { zh: '、', ja: '、', ko: ', ', ru: ', ' };
+  for (const [lang, xs] of Object.entries(three)) assert.equal(picture.plainList(xs, lang), xs.join(sep[lang]), `${lang}: the names stay apart`);
+  for (const lang of ['en', 'fr', 'es', 'pt', 'it', 'de', 'nl']) assert.equal(picture.plainList(['A', 'B', 'C'], lang), 'A, B, C', `${lang}: commas only, no conjunction`);
+  assert.equal(picture.plainList(['A', 'B'], 'es'), 'A, B', 'es: two names, a comma');
+  assert.equal(picture.plainList(['A'], 'zh'), 'A');
+  assert.equal(picture.plainList([], 'en'), '');
+});
+
 // ---- policies ----
 
 const VIEWS = new URL('../src/islands/consortium/views/palette/', import.meta.url);

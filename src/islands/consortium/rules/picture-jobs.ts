@@ -9,7 +9,7 @@ import { jobIds, jobsOf } from '../../../lib/consortium/index.ts';
 
 export interface JobMembers { job: JobId; counted: PlantId[]; outside: PlantId[] }
 
-export function jobMembers(members: readonly Taxon[], counts: (t: Taxon) => boolean = () => true): JobMembers[] {
+export function jobMembers(members: readonly Taxon[], counts: (t: Taxon) => boolean): JobMembers[] {
   const rows = new Map<JobId, JobMembers>(jobIds.map((job) => [job, { job, counted: [], outside: [] }]));
   for (const t of members) {
     const ok = counts(t);
