@@ -79,7 +79,8 @@ function PlaceOrPlaceholder() {
 }
 
 // The failure screens say their own words (board Loading), with no added guide sentence (BC22), and
-// "Read the guides" where the board draws it (C2). A failure ends the page's opening: the head the
+// "Read the guides" where the board draws it (C2). "Try again" is a secondary button, as Loading draws
+// it on every screen; "Reload" after an update stays the primary one. A failure ends the page's opening: the head the
 // inline script marked as the palette step before the island ran goes back to the Place step, with its
 // steps and lede (R6: the pre-paint hint is confirmed or undone on every outcome).
 function Failed({ error, guide, onRetry }: AppProps & { error: LoadFailure }) {
@@ -90,10 +91,11 @@ function Failed({ error, guide, onRetry }: AppProps & { error: LoadFailure }) {
       <p>{T(screen.text)}</p>
       {(screen.action || (screen.guides && guide)) && (
         <p class="ct-load-acts">
-          {screen.action === 'retry' && <button type="button" class="button button-primary" onClick={onRetry}>{T('load.retry')}</button>}
+          {screen.action === 'retry' && <button type="button" class="button button-secondary" onClick={onRetry}>{T('load.retry')}</button>}
           {/* Reload keeps the address, so the link state is kept. */}
           {screen.action === 'reload' && <button type="button" class="button button-primary" onClick={() => location.reload()}>{T('load.reload')}</button>}
-          {screen.guides && guide && <a class="text-link" href={guide.url} hreflang={guide.lang !== document.documentElement.lang ? guide.lang : undefined}>{T('palette.place.readGuides')}</a>}
+          {/* Alone, a secondary button; beside "Try again", a text link (board Loading, C2 of fix round 3). */}
+          {screen.guides && guide && <a class={screen.action ? 'text-link' : 'button button-secondary'} href={guide.url} hreflang={guide.lang !== document.documentElement.lang ? guide.lang : undefined}>{T('palette.place.readGuides')}</a>}
         </p>
       )}
     </div>

@@ -118,5 +118,3 @@
 .ct ol.ct-steps [hidden] { display: none; }
 /* The failure screens' actions (board Loading): the button, then "Read the guides" beside it. */
 .ct .ct-load-acts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
-/* The beta note, its own paragraph above the release line (R1), in the release line's type. */
-.ct .tool-beta { margin-top: 20px; font-size: 13.5px; color: var(--text-muted); overflow-wrap: anywhere; }

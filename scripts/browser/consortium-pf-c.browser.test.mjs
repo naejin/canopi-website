@@ -735,7 +735,9 @@ test('PFC30 (pf-c fix round 1 R3, R4, R9, C11: the shared palette over yours): "
   // C9: the save is the shared palette now: its fragment is the address of the palette on screen, which
   // holds the link's climate and the link's plants exactly.
   assert.ok(await keep.waitForFunction((link) => { try { const f = JSON.parse(localStorage.getItem('canopi-consortium')).fragment, q = new URLSearchParams(f), l = new URLSearchParams(link); return f === location.hash.slice(1) && q.get('c') === l.get('c') && q.get('a') === l.get('a'); } catch { return false; } }, { timeout: 4000 }, hash.slice(1)).then(() => true, () => false), `R3: the shared palette is the save now (${await keep.evaluate(() => localStorage.getItem('canopi-consortium'))})`);
-  assert.equal(await toastText(keep), 'Kept as yours: 13 plants.', 'C3: the toast in the Toasts board\'s pattern');
+  // Round 3 C1: no board draws this toast; its words are the pasted-list toast's second sentence
+  // (Toasts "12 plants added. Your palette: 20 plants."), the palette that is now yours.
+  assert.equal(await toastText(keep), 'Your palette: 13 plants.', 'C1: board words only');
   await saysNot(keep, 'Open my saved palette', 'R3: no offer to go back to what was replaced, but Undo');
   await press(keep, 'button', 'Undo');
   assert.ok(await keep.waitForFunction((s) => localStorage.getItem('canopi-consortium') === s, { timeout: 4000 }, save).then(() => true, () => false), 'R3: Undo puts the old save back');
@@ -815,6 +817,8 @@ test('PFC34 (pf-c fix round 2 C2, board Loading): "Old browser" says "This brows
   const old = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument(() => { delete window.DecompressionStream; }) });
   await says(old, 'This browser is too old for the tool. The field guides work everywhere.', { timeout: 10_000 });
   await control(old, 'link', 'Read the guides');
+  // Round 3 C2: alone, "Read the guides" is drawn as a bordered secondary button (board Loading).
+  assert.equal(await rankOf(old, 'Read the guides'), 'secondary', 'C2: Old browser draws "Read the guides" as a secondary button');
   assert.match(await old.evaluate(() => [...document.querySelectorAll('[data-load-error] a')].find((a) => a.textContent.trim() === 'Read the guides')?.getAttribute('href') ?? ''), /\/guides\//, 'the link opens a guide');
   await saysNot(old, 'Meanwhile, the Field Guides');
   await done(old);
@@ -822,6 +826,8 @@ test('PFC34 (pf-c fix round 2 C2, board Loading): "Old browser" says "This brows
   await says(wasm, 'Something blocks a part the tool needs (WebAssembly: a browser setting, an add-on or your network). Try another browser.', { timeout: 10_000 });
   await control(wasm, 'button', 'Try again');
   await control(wasm, 'link', 'Read the guides');
+  // Round 3 C2: "Try again" on parchment with an ink border, "Read the guides" an underlined link beside it.
+  assert.deepEqual([await rankOf(wasm, 'Try again'), await rankOf(wasm, 'Read the guides')], ['secondary', 'quiet'], 'C2: WebAssembly blocked as board Loading draws it');
   await done(wasm);
 });
 
@@ -926,4 +932,112 @@ test('PFC40 (pf-c fix round 2 C9, C11: words as the reader sees them): the priva
   await ja.keyboard.press('Enter');
   assert.ok(await ja.waitForFunction(() => [...document.querySelectorAll('.ct-location [role="status"]')].some((r) => /。\S/.test(r.textContent) && !/\. /.test(r.textContent.slice(0, 40))), { timeout: 15_000 }).then(() => true, () => false), `C11: joined with "。" (${await ja.evaluate(() => [...document.querySelectorAll('.ct-location [role="status"]')].map((r) => r.textContent).join(' | '))})`);
   await done(ja);
+});
+
+// ---- fix round 3 ----
+
+// The country line's control of a name (within the line) and its aria-expanded, or null.
+const countryControl = (page, name) => page.evaluate((n) => {
+  const b = [...document.querySelectorAll('[data-ct="country"] button')].find((x) => x.textContent.replace(/\s+/g, ' ').trim() === n && x.getClientRects().length);
+  return b ? (b.getAttribute('aria-expanded') ?? 'none') : null;
+}, name);
+const focusCountry = (page, name) => page.evaluate((n) => [...document.querySelectorAll('[data-ct="country"] button')].find((x) => x.textContent.replace(/\s+/g, ' ').trim() === n && x.getClientRects().length)?.focus(), name);
+
+test('PFC41 (pf-c fix round 3 R1: the country picker is a disclosure): Enter on "Change" keeps "Change" on the line, expanded, and puts the focus on the first choice; Escape and Cancel close the choices and give the focus back to "Change"; "Add your country" does the same; on the climate screen, "Use Kenya" then "Change" keeps the focus on that screen (never <body>)', async () => {
+  const placed = await tool({ nominatim: 'fixture' });
+  await searchFor(placed, 'Kiambu');
+  await says(placed, 'Invasive warnings for Kenya · from your location · Change', { timeout: 10_000 });
+  await focusCountry(placed, 'Change');
+  await placed.keyboard.press('Enter');
+  await frames(placed);
+  let f = await focused(placed);
+  assert.ok(!f.body && /^Kenya from your location/.test(f.name), `R1: the focus on the first choice (${JSON.stringify(f)})`);
+  assert.equal(await countryControl(placed, 'Change'), 'true', 'R1: "Change" stays, expanded');
+  await placed.keyboard.press('Escape');
+  await frames(placed);
+  f = await focused(placed);
+  assert.equal(f.name, 'Change', `R1: Escape gives the focus back to "Change" (${JSON.stringify(f)})`);
+  assert.equal(await countryControl(placed, 'Change'), 'false', 'R1: "Change" collapsed');
+  await placed.keyboard.press('Enter');
+  await frames(placed);
+  await focusCountry(placed, 'Cancel');
+  await placed.keyboard.press('Enter');
+  await frames(placed);
+  f = await focused(placed);
+  assert.equal(f.name, 'Change', `R1: Cancel gives the focus back to "Change" (${JSON.stringify(f)})`);
+  await done(placed);
+  const none = await withStorage({ 'canopi-country': '-' });
+  await says(none, /No country\. Each plant says/);
+  await focusCountry(none, 'Add your country');
+  await none.keyboard.press('Enter');
+  await frames(none);
+  f = await focused(none);
+  assert.ok(!f.body && /^Another country/.test(f.name), `R1: the focus on the first choice (${JSON.stringify(f)})`);
+  assert.equal(await countryControl(none, 'Add your country'), 'true', 'R1: "Add your country" stays, expanded');
+  await focusCountry(none, 'Cancel');
+  await none.keyboard.press('Enter');
+  await frames(none);
+  f = await focused(none);
+  assert.equal(f.name, 'Add your country', `R1: Cancel gives the focus back (${JSON.stringify(f)})`);
+  await done(none);
+  const hand = await tool({ width: 390, setup: async (pg) => { await pg.emulateTimezone('Africa/Nairobi'); await pg.evaluateOnNewDocument(() => { Object.defineProperty(navigator, 'languages', { get: () => ['en-KE', 'en'] }); }); } });
+  await press(hand, 'button', 'No location? Choose a climate');
+  await focusCountry(hand, 'Use Kenya');
+  await hand.keyboard.press('Enter');
+  await frames(hand);
+  await says(hand, 'Invasive warnings for Kenya · chosen by you · Change');
+  await focusCountry(hand, 'Change');
+  await hand.keyboard.press('Enter');
+  await frames(hand);
+  const g = await hand.evaluate(() => { const a = document.activeElement; return { body: a === document.body || !a, inHand: !!a?.closest('[data-place-hand]'), name: a?.textContent.trim() }; });
+  assert.deepEqual([g.body, g.inHand], [false, true], `R1: the focus stays on the climate screen (${JSON.stringify(g)})`);
+  await done(hand);
+});
+
+test('PFC42 (pf-c fix round 3 R2: choosing another country from the keyboard): moving through the country list changes nothing and keeps it open; "Use <country>" beside it commits that country, and the focus goes back to "Change"', async () => {
+  const page = await tool({ nominatim: 'fixture' });
+  await searchFor(page, 'Kiambu');
+  await says(page, 'Invasive warnings for Kenya · from your location · Change', { timeout: 10_000 });
+  await press(page, 'button', 'Change');
+  await press(page, 'button', 'Another country for a plot elsewhere than the point you gave');
+  await page.waitForSelector(aria('combobox', 'Your country'), { timeout: 4000 });
+  // What an arrow key on a closed select does on Windows: the value moves and change fires.
+  await page.select(aria('combobox', 'Your country'), 'AF');
+  await frames(page);
+  assert.equal(await store(page, () => window.__ctTest.store.country.value.code), 'KE', 'R2: a move through the list commits nothing');
+  assert.ok(await page.$(aria('combobox', 'Your country')), 'R2: the list stays open');
+  await page.select(aria('combobox', 'Your country'), 'TZ');
+  await frames(page);
+  await press(page, 'button', 'Use Tanzania');
+  await frames(page);
+  assert.deepEqual(await store(page, () => { const c = window.__ctTest.store.country.value; return [c.code, c.source]; }), ['TZ', 'chosen'], 'R2: "Use Tanzania" commits it');
+  await says(page, 'Invasive warnings for Tanzania · chosen by you · Change');
+  assert.equal((await focused(page)).name, 'Change', 'R1: the focus back on "Change"');
+  await done(page);
+});
+
+test('PFC43 (pf-c fix round 3 R3, C3: each arrival said once): a link without a place over your own place says "…checked against yours…" once when it appears; setting your own values changes the visible sentence to "with your own values" and says nothing again', async () => {
+  const kiambu = JSON.stringify({ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'search', label: 'Kiambu, Kenya' });
+  const page = await h.open(`/palette/${await linkOf('Mediterranean', 5)}`, { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((loc) => {
+    if (localStorage.getItem('canopi-location') === null) localStorage.setItem('canopi-location', loc);
+    window.__said = [];
+    const last = new WeakMap();
+    new MutationObserver(() => {
+      for (const r of document.querySelectorAll('#ct-root [role="status"], #ct-root [aria-live]:not([aria-live="off"])')) {
+        const t = r.textContent.replace(/\s+/g, ' ').trim();
+        if (t !== (last.get(r) ?? '')) { last.set(r, t); if (t) window.__said.push(t); }
+      }
+    }).observe(document, { subtree: true, childList: true, characterData: true });
+  }, kiambu) });
+  await says(page, 'This palette came without a place, so it is checked against yours: near Kiambu, Kenya. The sender’s place and own values were not sent.', { timeout: 15_000 });
+  await frames(page);
+  const first = await page.evaluate(() => window.__said.filter((t) => t.includes('checked against yours')));
+  assert.equal(first.length, 1, `R3: said once when it appears (${JSON.stringify(first)})`);
+  await page.evaluate(() => { window.__said.length = 0; });
+  await setSiteEdits(page, { watering: 'first-years' });
+  await says(page, /checked against yours: near Kiambu, Kenya, with your own values\./, { timeout: 8000 });
+  await frames(page);
+  const again = await page.evaluate(() => window.__said.filter((t) => t.includes('checked against yours') || t.includes('without a place')));
+  assert.deepEqual(again, [], 'R3: a notice whose words change is not said again');
+  await done(page);
 });

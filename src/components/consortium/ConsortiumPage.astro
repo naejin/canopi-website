@@ -157,9 +157,11 @@ const betaNote = P('betaNote', index.climates.length);
         h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
       } catch (e) {}</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
-      {/* The beta note and the release line apart (R1): one paragraph each. */}
-      <p class="tool-beta">{betaNote}</p>
+      {/* The release line and the beta note apart (R1): one paragraph each, in one type (C6 of fix
+          round 3: one rule, base.css .tool-release); the release line first, the one tests and
+          check-built-site read. */}
       <p class="tool-release">{tr('release').replace('{id}', index.release_id)}</p>
+      <p class="tool-release">{betaNote}</p>
     </div>
   </main>
   <Footer lang={lang} />

@@ -1,8 +1,8 @@
 /** @jsxImportSource preact */
 // Your place (v14 boards Place, PlaceDesk (the three questions), SiteKiambu (the frame), ClimateHand,
 // Country, Arrivals, Oulu (the place banner), Toasts (Start over); pf-c; v13-spec-update.md section 5).
-// - The arrival lines first (PlaceNotices), their sentences said by one short status line always on
-//   the page, the notices and their buttons outside it (R8): welcome
+// - The arrival lines first (PlaceNotices, one list), each sentence said once when its notice appears
+//   (Announcer), the notices and their buttons outside the status line (R8): welcome
 //   back, a shared link over your palette (Look / Add its plants to mine / Stay with mine), a link
 //   with or without a place, a guide's plant, a link that could not be read or did not load.
 // - The first visit (PlaceForm): "1 Where is your place?" (LocationSlot: the field, Use my location,
@@ -19,7 +19,7 @@
 //   values> · N plants · Change", the once-said "Your own values were for your old place: cleared", and
 //   the place banner of a borrowed climate (Oulu).
 import { computed, signal } from '@preact/signals';
-import type { ComponentChildren } from 'preact';
+import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/consortium/index.ts';
@@ -47,6 +47,11 @@ import { Steps } from './steps.tsx';
 const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
 
 // ---- the country line (board Country) ----
+// A disclosure (R1 of fix round 3): the line's one trigger ("Change", or "Add your country" with no
+// country) stays on the line, aria-expanded while the choices are open; opening puts the focus on the
+// first choice; Cancel, Escape, the trigger again or a choice close them and give the focus back to
+// the trigger (after a choice, the trigger of the line's new form). "Another country" is a list that
+// commits only with "Use <country>" beside it, or Enter (R2): moving through it changes nothing.
 const whyOpen = signal(false);
 function CountryLine() {
   const { code, source: from } = country.value;
@@ -54,8 +59,18 @@ function CountryLine() {
   const known = knownCountries.value;
   const status = countryStatus(code, known);
   const picking = pickingCountry.value;
+  const trigger = useRef<HTMLButtonElement>(null);
+  const choices = useRef<HTMLUListElement>(null);
   const select = useRef<HTMLSelectElement>(null);
   const [other, setOther] = useState(false);
+  const [draft, setDraft] = useState('');
+  const back = useRef(false);
+  const wasPicking = useRef(picking);
+  useEffect(() => {
+    if (picking && !wasPicking.current) choices.current?.querySelector<HTMLElement>('button')?.focus();
+    if (back.current) { back.current = false; trigger.current?.focus(); }
+    wasPicking.current = picking;
+  });
   useEffect(() => { if (other) select.current?.focus(); }, [other]);
   const sorted = [...known.keys()].map((c) => [c, countryName(c)] as const).sort((a, b) => a[1].localeCompare(b[1], pageLang()));
   const name = code ? countryName(code) : '';
@@ -63,45 +78,47 @@ function CountryLine() {
   const travel = <p class="ct-muted ct-small-text">{T('country.travel')}</p>;
   // Board Country: the invasive icon (a shield) leads the line.
   const mark = <svg aria-hidden="true" class="ct-country-icon" width="16" height="16" viewBox="0 0 20 20"><path d="M10 2.5 16 5v4.5c0 4-2.6 6.7-6 8-3.4-1.3-6-4-6-8V5Z" /><path d="M10 6.5v4M10 13v.1" /></svg>;
-  const box = useRef<HTMLDivElement>(null);
-  // An answer replaces its control in place (R5): the focus goes to the line's own Change (or its
-  // first button), never to <body> with the button that had it.
-  const refocus = () => requestAnimationFrame(() => (box.current?.querySelector<HTMLElement>('[data-country-change]') ?? box.current?.querySelector<HTMLElement>('button'))?.focus());
-  const open = () => { pickingCountry.value = true; setOther(false); };
-  const pick = (c: string | null) => { setOther(false); chooseCountry(c); refocus(); };
+  const open = () => { setOther(false); setDraft(code ?? ''); pickingCountry.value = true; };
+  const close = () => { back.current = true; setOther(false); pickingCountry.value = false; };
+  const pick = (c: string | null) => { back.current = true; setOther(false); chooseCountry(c); };
+  const toggle = () => (picking ? close() : open());
+  const expanded = picking ? 'true' : 'false';
   return (
-    <div class="ct-country" data-ct="country" ref={box}>
+    <div class="ct-country" data-ct="country">
       {code ? (
         <p class="ct-country-text">
           {mark}{T('country.line')} <strong>{name}</strong>{sep}<span class="ct-muted">{T(from === 'guess' ? 'country.guessed' : from === 'link' ? 'country.linked' : from === 'location' ? 'country.fromLocation' : 'country.chosen')}</span>
-          {from !== 'guess' && !picking && <>{sep}<button type="button" class="link-button ct-link" aria-expanded="false" data-country-change onClick={open}>{T('country.change')}</button></>}
+          {from !== 'guess' && <>{sep}<button type="button" class="link-button ct-link" ref={trigger} aria-expanded={expanded} aria-controls="ct-country-pick" onClick={toggle}>{T('country.change')}</button></>}
         </p>
       ) : (
         <p class="ct-country-text">{mark}{T('country.noneLine')}</p>
       )}
       {code && status === 'unchecked' && <p class="ct-muted ct-small-text ct-country-note">{T('country.unchecked', { country: name })}</p>}
-      {!picking && (from === 'guess' || !code) && (
+      {(from === 'guess' || !code) && (
         <p class="ct-country-acts">
-          {code ? <button type="button" class="button button-primary ct-small" onClick={() => pick(code)}>{T('country.use', { country: name })}</button>
-            : <button type="button" class="button button-secondary ct-small" aria-expanded="false" onClick={open}>{T('country.add')}</button>}
-          {code ? <button type="button" class="button button-secondary ct-small" aria-expanded="false" onClick={open}>{T('country.change')}</button>
-            : <button type="button" class="button button-secondary ct-small" aria-expanded={whyOpen.value ? 'true' : 'false'} onClick={() => { whyOpen.value = !whyOpen.value; }}>{T('country.whyAsk')}</button>}
+          {code ? !picking && <button type="button" class="button button-primary ct-small" onClick={() => pick(code)}>{T('country.use', { country: name })}</button>
+            : <button type="button" class="button button-secondary ct-small" ref={trigger} aria-expanded={expanded} aria-controls="ct-country-pick" onClick={toggle}>{T('country.add')}</button>}
+          {code ? <button type="button" class="button button-secondary ct-small" ref={trigger} aria-expanded={expanded} aria-controls="ct-country-pick" onClick={toggle}>{T('country.change')}</button>
+            : !picking && <button type="button" class="button button-secondary ct-small" aria-expanded={whyOpen.value ? 'true' : 'false'} onClick={() => { whyOpen.value = !whyOpen.value; }}>{T('country.whyAsk')}</button>}
         </p>
       )}
       {!code && whyOpen.value && !picking && <><p class="ct-small-text">{T('country.why')}</p>{travel}</>}
       {picking && (
-        <div class="ct-country-pick">
-          <ul class="ct-country-choices">
+        <div class="ct-country-pick" id="ct-country-pick" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } }}>
+          <ul class="ct-country-choices" ref={choices}>
             {here && <li><button type="button" class="link-button ct-link" onClick={() => pick(here)}><strong>{countryName(here)}</strong> <span class="ct-muted">{T('country.fromLocation')}</span></button></li>}
             <li>
               <button type="button" class="link-button ct-link" aria-expanded={other ? 'true' : 'false'} onClick={() => setOther(true)}><strong>{T('country.another')}</strong> <span class="ct-muted">{T('country.anotherWhy')}</span></button>
               {other && (
-                <p>
+                <p class="ct-country-other">
                   <label class="ct-sr" for="ct-country-select">{T('country.pick')}</label>
-                  <select id="ct-country-select" ref={select} value={code ?? ''} onChange={(e) => pick((e.currentTarget as HTMLSelectElement).value || null)}>
+                  <select id="ct-country-select" ref={select} value={draft}
+                    onChange={(e) => setDraft((e.currentTarget as HTMLSelectElement).value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && draft) { e.preventDefault(); pick(draft); } }}>
                     <option value="">{T('country.pick')}</option>
                     {sorted.map(([c, n]) => <option value={c}>{n}</option>)}
                   </select>
+                  {draft && <button type="button" class="button button-secondary ct-small" onClick={() => pick(draft)}>{T('country.use', { country: countryName(draft) })}</button>}
                 </p>
               )}
             </li>
@@ -109,7 +126,7 @@ function CountryLine() {
           </ul>
           <p class="ct-small-text">{T('country.why')}</p>
           {travel}
-          <p><button type="button" class="link-button ct-link" onClick={() => { pickingCountry.value = false; setOther(false); }}>{T('country.cancel')}</button></p>
+          <p><button type="button" class="link-button ct-link" onClick={close}>{T('country.cancel')}</button></p>
         </div>
       )}
     </div>
@@ -414,97 +431,107 @@ function PlaceNotices() {
   const welcome = candidate && (!welcomeAt.value || welcomeAt.value === list) ? candidate : null;
   const givePlace = () => { backToPlace(); setTimeout(focusField, 50); };
   const values = siteEditLines(siteEdits.value).map(say).join(', ');
-  // What a screen reader hears (R8, C12): each notice's sentence, in a short status line of its own;
-  // the notices with their headings and buttons stand outside it, reached by focus.
-  const heard = (text: string) => text.replace(/\*\*/g, '');
-  const spoken: string[] = [];
-  if (welcome) spoken.push(heard(T(mine ? 'place.welcome' : 'place.welcomeNoPlace', { date: (opened.kind === 'saved' && dayMonth(opened.at)) || welcome.at, count: P('start.count', list.length), place: mine ?? '' })));
-  if (shared === 'ask' && z) spoken.push(T('palette.place.said', { place: T('place.shared.title'), note: T('place.shared.body', { count: P('start.count', list.length), list: T('place.line.list', { climate: zoneName(z) }), mine: savedCount }) }));
-  if (shared === 'looking') spoken.push(heard(T('place.shared.looking')));
-  if (n.unreadable) spoken.push(heard(T('place.unreadable')));
-  if (n.period) spoken.push(heard(T('place.period')));
-  if (n.failed) spoken.push(heard(T('share.failed')));
-  if (n.guideMissing && z) spoken.push(heard(T('start.guideMissing', { name: n.guideMissing, climate: zoneName(z) })));
-  if (guide && z) spoken.push(heard(saved && savedN ? T('place.guideSaved', { name: nameOf(guide), climate: zoneName(z), count: savedCount }) : T('place.guidePlant', { name: nameOf(guide), climate: zoneName(z) })));
-  if (noPlace && z) spoken.push(heard(T('place.noPlace', { list: T('place.line.list', { climate: zoneName(z) }) })));
-  if (checkedAgainst) spoken.push(heard(T(values ? 'place.checkedAgainst' : 'place.checkedAgainstBare', { place: placeWords(siteLocation.value!, true) })));
-  if (theirs) spoken.push(heard(T(values ? 'place.linkPlace' : 'place.linkPlaceBare', { place: siteLocation.value ? placeWords({ ...siteLocation.value, source: 'map' }, true) : T('location.linkPlace'), values })));
-  // On the page before its first words (A25): they come after the first paint.
-  const [placed, setPlaced] = useState(false);
-  useEffect(() => setPlaced(true), []);
-  return (
-    <>
-    <p class="ct-sr" role="status">{placed ? spoken.join(' ') : ''}</p>
-    <div class="ct-place-notices">
-      {welcome && (
-        <Notice id="welcome" mark="check" text={T(mine ? 'place.welcome' : 'place.welcomeNoPlace', { date: (opened.kind === 'saved' && dayMonth(opened.at)) || welcome.at, count: P('start.count', list.length), place: mine ?? '' })}>
-          {act(T('start.over'), startOverNow, 'quiet', { 'data-start-over': '' })}
-        </Notice>
-      )}
-      {shared === 'ask' && z && (
+  // One list of the arrivals (C3 of fix round 3): each with the sentence a screen reader hears and
+  // what the page draws, in the board's order; Announcer says each once, PlaceNotices draws them.
+  const items: Arrival[] = [];
+  const notice = (id: string, text: string, props: { tone?: Tone; mark: keyof typeof ICONS }, children?: ComponentChildren) =>
+    items.push({ id, said: heard(text), view: <Notice id={id} text={text} {...props}>{children}</Notice> });
+  if (welcome) {
+    notice('welcome', T(mine ? 'place.welcome' : 'place.welcomeNoPlace', { date: (opened.kind === 'saved' && dayMonth(opened.at)) || welcome.at, count: P('start.count', list.length), place: mine ?? '' }), { mark: 'check' },
+      act(T('start.over'), startOverNow, 'quiet', { 'data-start-over': '' }));
+  }
+  if (shared === 'ask' && z) {
+    const title = T('place.shared.title');
+    const body = T('place.shared.body', { count: P('start.count', list.length), list: T('place.line.list', { climate: zoneName(z) }), mine: savedCount });
+    items.push({
+      id: 'shared',
+      said: T('palette.place.sharedSaid', { title, body }),
+      view: (
         <section class="ct-arrival ct-arrival-card is-neutral" data-place-notice="shared" aria-labelledby="ct-shared-h">
-          <h3 class="ct-arrival-title" id="ct-shared-h">{icon('share')}{T('place.shared.title')}</h3>
-          <p>{T('place.shared.body', { count: P('start.count', list.length), list: T('place.line.list', { climate: zoneName(z) }), mine: savedCount })}</p>
+          <h3 class="ct-arrival-title" id="ct-shared-h">{icon('share')}{title}</h3>
+          <p>{body}</p>
           <p class="ct-arrival-acts ct-arrival-stack">
             {act(T('place.shared.look'), () => { sharedSeen.value = 'looking'; focusView(); }, 'primary')}
             {act(T('place.shared.add'), addShared, 'secondary')}
             {act(T('place.shared.stay'), () => { sharedSeen.value = 'done'; return openSavedInstead(); }, 'quiet', { 'data-back-mine': '' })}
           </p>
         </section>
-      )}
-      {shared === 'looking' && (
-        <Notice id="looking" mark="share" text={T('place.shared.looking')}>
-          {act(T('place.shared.keep'), keepShared, 'secondary')}
-          {act(T('place.backToMine'), () => { sharedSeen.value = 'done'; return openSavedInstead(); }, 'quiet', { 'data-back-mine': '' })}
-        </Notice>
-      )}
-      {n.unreadable && (
-        <Notice id="unreadable" tone="danger" mark="alert" text={T('place.unreadable')}>
-          {act(T('place.newPalette'), startOverNow, 'secondary')}
-          {saved && act(T('place.backToMine'), () => openSavedInstead(), 'quiet', { 'data-back-mine': '' })}
-        </Notice>
-      )}
-      {n.period && <Notice id="period" tone="warning" mark="clock" text={T('place.period')} />}
-      {n.failed && (
-        <Notice id="failed" tone="danger" mark="alert" text={T('share.failed')}>
-          {act(T('location.tryAgain'), () => location.reload(), 'secondary')}
-        </Notice>
-      )}
-      {n.guideMissing && z && (
-        <Notice id="guideMissing" tone="warning" mark="leaf" text={T('start.guideMissing', { name: n.guideMissing, climate: zoneName(z) })}>
-          {act(T('place.findPlant'), addOwnPlant, 'secondary')}
-        </Notice>
-      )}
-      {guide && z && (
-        <Notice id="guide" mark="leaf" text={saved && savedN ? T('place.guideSaved', { name: nameOf(guide), climate: zoneName(z), count: savedCount }) : T('place.guidePlant', { name: nameOf(guide), climate: zoneName(z) })}>
-          {!siteLocation.value?.lookup && act(T('place.givePlace'), givePlace, 'primary')}
-          {saved && act(T('place.openSaved'), () => openSavedInstead(), 'quiet', { 'data-open-saved': '' })}
-        </Notice>
-      )}
-      {/* Your own save, not the one shown (another tab saved, or a guide over it): back to it. */}
-      {saved && !guide && !shared && sharedSeen.value !== 'looking' && !n.unreadable && (
-        <p class="ct-arrival-acts" data-place-notice="saved">{act(T('place.openSaved'), () => openSavedInstead(), 'quiet', { 'data-open-saved': '' })}</p>
-      )}
-      {noPlace && z && (
-        <Notice id="noPlace" tone="warning" mark="pin" text={T('place.noPlace', { list: T('place.line.list', { climate: zoneName(z) }) })}>
-          {act(T('place.givePlace'), givePlace, 'primary')}
-          {act(T('place.later'), () => { laterPlace.value = true; }, 'quiet')}
-        </Notice>
-      )}
-      {checkedAgainst && (
-        <Notice id="checkedAgainst" mark="pin" text={T(values ? 'place.checkedAgainst' : 'place.checkedAgainstBare', { place: placeWords(siteLocation.value!, true) })}>
-          {act(T('place.changePlace'), backToPlace, 'quiet')}
-        </Notice>
-      )}
-      {theirs && (
-        <Notice id="linkPlace" mark="pin" text={T(values ? 'place.linkPlace' : 'place.linkPlaceBare', { place: siteLocation.value ? placeWords({ ...siteLocation.value, source: 'map' }, true) : T('location.linkPlace'), values })}>
-          {act(T('place.useIt'), () => useLinkPlace(), 'primary', { 'data-use-link-place': '', disabled: busy, 'aria-busy': busy ? 'true' : undefined })}
-          {act(T('place.useMine'), useOwnPlace, 'secondary', { 'data-use-own-place': '', disabled: busy })}
-        </Notice>
-      )}
-    </div>
+      ),
+    });
+  }
+  if (shared === 'looking') {
+    notice('looking', T('place.shared.looking'), { mark: 'share' }, <>
+      {act(T('place.shared.keep'), keepShared, 'secondary')}
+      {act(T('place.backToMine'), () => { sharedSeen.value = 'done'; return openSavedInstead(); }, 'quiet', { 'data-back-mine': '' })}
+    </>);
+  }
+  if (n.unreadable) {
+    notice('unreadable', T('place.unreadable'), { tone: 'danger', mark: 'alert' }, <>
+      {act(T('place.newPalette'), startOverNow, 'secondary')}
+      {saved && act(T('place.backToMine'), () => openSavedInstead(), 'quiet', { 'data-back-mine': '' })}
+    </>);
+  }
+  if (n.period) notice('period', T('place.period'), { tone: 'warning', mark: 'clock' });
+  if (n.failed) notice('failed', T('share.failed'), { tone: 'danger', mark: 'alert' }, act(T('location.tryAgain'), () => location.reload(), 'secondary'));
+  if (n.guideMissing && z) notice('guideMissing', T('start.guideMissing', { name: n.guideMissing, climate: zoneName(z) }), { tone: 'warning', mark: 'leaf' }, act(T('place.findPlant'), addOwnPlant, 'secondary'));
+  if (guide && z) {
+    notice('guide', saved && savedN ? T('place.guideSaved', { name: nameOf(guide), climate: zoneName(z), count: savedCount }) : T('place.guidePlant', { name: nameOf(guide), climate: zoneName(z) }), { mark: 'leaf' }, <>
+      {!siteLocation.value?.lookup && act(T('place.givePlace'), givePlace, 'primary')}
+      {saved && act(T('place.openSaved'), () => openSavedInstead(), 'quiet', { 'data-open-saved': '' })}
+    </>);
+  }
+  // Your own save, not the one shown (another tab saved, or a guide over it): back to it (no sentence).
+  if (saved && !guide && !shared && sharedSeen.value !== 'looking' && !n.unreadable) {
+    items.push({ id: 'saved', said: null, view: <p class="ct-arrival-acts" data-place-notice="saved">{act(T('place.openSaved'), () => openSavedInstead(), 'quiet', { 'data-open-saved': '' })}</p> });
+  }
+  if (noPlace && z) {
+    notice('noPlace', T('place.noPlace', { list: T('place.line.list', { climate: zoneName(z) }) }), { tone: 'warning', mark: 'pin' }, <>
+      {act(T('place.givePlace'), givePlace, 'primary')}
+      {act(T('place.later'), () => { laterPlace.value = true; }, 'quiet')}
+    </>);
+  }
+  if (checkedAgainst) notice('checkedAgainst', T(values ? 'place.checkedAgainst' : 'place.checkedAgainstBare', { place: placeWords(siteLocation.value!, true) }), { mark: 'pin' }, act(T('place.changePlace'), backToPlace, 'quiet'));
+  if (theirs) {
+    notice('linkPlace', T(values ? 'place.linkPlace' : 'place.linkPlaceBare', { place: siteLocation.value ? placeWords({ ...siteLocation.value, source: 'map' }, true) : T('location.linkPlace'), values }), { mark: 'pin' }, <>
+      {act(T('place.useIt'), () => useLinkPlace(), 'primary', { 'data-use-link-place': '', disabled: busy, 'aria-busy': busy ? 'true' : undefined })}
+      {act(T('place.useMine'), useOwnPlace, 'secondary', { 'data-use-own-place': '', disabled: busy })}
+    </>);
+  }
+  return (
+    <>
+      <Announcer items={items} />
+      <div class="ct-place-notices">{items.map((x) => <Fragment key={x.id}>{x.view}</Fragment>)}</div>
     </>
   );
+}
+
+// What a screen reader hears of the arrivals (R3 of fix round 3): each notice's sentence once, when
+// the notice first appears, in a short status line of its own (outside the notices, their headings
+// and buttons: R8). A notice whose words change (your own values set, the link's place read) is not
+// said again; one that goes and comes back is; one that goes takes its sentence. The line empties
+// after a while, so browsing the page does not read the sentence twice. It is on the page empty
+// before its first words (A25): they come from an effect, after the first paint.
+type Arrival = { id: string; said: string | null; view: ComponentChildren };
+const heard = (text: string) => text.replace(/\*\*/g, '');
+const SAID_MS = 7000;
+function Announcer({ items }: { items: readonly Arrival[] }) {
+  const heardIds = useRef(new Set<string>());
+  const [said, setSaid] = useState<{ ids: readonly string[]; text: string }>({ ids: [], text: '' });
+  const spoken = items.filter((x) => x.said);
+  const key = spoken.map((x) => x.id).join(' ');
+  useEffect(() => {
+    const fresh = spoken.filter((x) => !heardIds.current.has(x.id));
+    heardIds.current = new Set(spoken.map((x) => x.id));
+    if (fresh.length) setSaid({ ids: fresh.map((x) => x.id), text: fresh.map((x) => x.said).join(' ') });
+  }, [key]);
+  useEffect(() => {
+    if (!said.text) return;
+    const t = setTimeout(() => setSaid({ ids: [], text: '' }), SAID_MS);
+    return () => clearTimeout(t);
+  }, [said]);
+  // A notice gone takes its sentence with it, in the same frame.
+  const live = said.ids.every((id) => spoken.some((x) => x.id === id));
+  return <p class="ct-sr" role="status">{live ? said.text : ''}</p>;
 }
 
 // ---- the palette step's place line (boards Main, Palette, Many, Oulu) ----

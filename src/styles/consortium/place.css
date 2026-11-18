@@ -95,6 +95,8 @@
 .ct .ct-country-choices { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .ct .ct-country-choices .ct-link { display: inline; min-height: 0; padding-block: 8px; font-weight: 400; text-align: start; }
 .ct .ct-country-choices .ct-link strong { font-weight: 600; }
+/* "Another country": the list, then "Use <country>" beside it (R2 of fix round 3). */
+.ct .ct-country-other { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 4px 0 0; }
 
 /* Arrival lines: one live region always on the page (never display:none, so a line added later is read). */
 .ct .ct-place-notices { display: grid; gap: 10px; }
