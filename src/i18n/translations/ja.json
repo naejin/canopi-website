@@ -1364,7 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "other: 、{names}はその間",
   "consortium.palette.readJobs": "「役割」の帯は7つの期間です。1年未満のすき間と60年目以降は判定しません：細い線で、穴にはなりません。",
   "consortium.palette.readUnknown": "毒の目印がない行は、未確認か、何も記録がありません。わからないことは、穴や「いいえ」や埋まった段としては決して示しません：植物の役割や光がまだ確認されていないときは、「地面を覆う：25年目以降は知られている植物なし · 2種は未確認」や「日陰：1種が合う、2種は不明」のように行がそう言います。",
-  "consortium.palette.chart.readTox": "文字が入らない細いバーでは、三角形の後の印が毒の程度を示します：! {slight}、!! {moderate}、!!! {severe}。植物を開くと言葉で読めます。",
+  "consortium.palette.chart.readTox": "文字が入らない細いバーでは、三角形の後の点が毒の程度を示します：●○○ {slight}、●●○ {moderate}、●●● {severe}。植物を開くと言葉で読めます。",
   "consortium.palette.readSyntropic": "シントロピック農法を知っているなら：4つの光の段は階層で、期間は遷移の段階です。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

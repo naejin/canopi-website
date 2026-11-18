@@ -1364,7 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "one: ; {names} sta nel mezzo | other: ; {names} stanno nel mezzo",
   "consortium.palette.readJobs": "In Compiti, la striscia sono i sette periodi. Un vuoto di meno di un anno, e il tempo dopo l’anno 60, non sono giudicati: una linea sottile, mai un buco.",
   "consortium.palette.readUnknown": "Una riga senza segno di tossicità non è stata verificata, o non è stato registrato nulla. Un dato ignoto non è mai mostrato come un buco, un «no» o un livello pieno: dove i compiti o la luce di una pianta non sono ancora verificati, la riga lo dice, come in «Copre il suolo: nessuno noto dopo l’anno 25 · 2 piante non verificate» o «Ombra: 1 pianta adatta, 2 ignote».",
-  "consortium.palette.chart.readTox": "Su una barra troppo stretta per le sue parole, i segni dopo il triangolo dicono il livello di tossicità: ! {slight}, !! {moderate}, !!! {severe}. Apri la pianta per leggerlo per intero.",
+  "consortium.palette.chart.readTox": "Su una barra troppo stretta per le sue parole, i punti dopo il triangolo dicono il livello di tossicità: ●○○ {slight}, ●●○ {moderate}, ●●● {severe}. Apri la pianta per leggerlo per intero.",
   "consortium.palette.readSyntropic": "Se conosci l’agricoltura sintropica: i quattro livelli di luce sono gli strati, e i periodi sono le fasi della successione.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

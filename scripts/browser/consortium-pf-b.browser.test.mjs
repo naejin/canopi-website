@@ -55,7 +55,7 @@ const buttons = async (page) => [...(await names(page, 'button'))];
 // C1); "and" only inside a sentence ("Silk oak and Napier grass sit between").
 const listEn = (xs) => xs.join(', ');
 const TOX = { Slight: 'Mildly toxic', Moderate: 'Toxic', Severe: 'Very toxic' };
-const TOX_MARKS = { Slight: '!', Moderate: '!!', Severe: '!!!' };
+const TOX_MARKS = { Slight: '●○○', Moderate: '●●○', Severe: '●●●' };
 
 // A Jobs row as read at 40 plants or fewer (its lines): the head's figure, the names it counts (the
 // plain list under the head) and the figure of its sentence on the plants outside their range.
@@ -568,7 +568,7 @@ test('PFB19 (pf-b fix round 1, BC1, C5; c2 H1): every toxic plant carries its to
     const page = await boardPalette(id, { width });
     const f = await figures(page);
     await section(page, 'Through the years');
-    const marks = await page.$$eval('#ct-years button[data-plant-id]', (bs) => bs.map((b) => ({ id: b.dataset.plantId, label: b.getAttribute('aria-label'), img: b.querySelector('svg[role="img"]')?.getAttribute('aria-label') ?? null, title: b.querySelector('svg[role="img"] title')?.textContent ?? null, barTitle: b.getAttribute('title'), text: b.innerText.replace(/\s+/g, ' ').trim(), width: b.getBoundingClientRect().width })));
+    const marks = await page.$$eval('#ct-years button[data-plant-id]', (bs) => bs.map((b) => ({ id: b.dataset.plantId, label: b.getAttribute('aria-label'), img: b.querySelector('svg[role="img"]')?.getAttribute('aria-label') ?? null, title: b.querySelector('svg[role="img"] title')?.textContent ?? null, text: b.innerText.replace(/\s+/g, ' ').trim(), width: b.getBoundingClientRect().width })));
     assert.ok(marks.length > 0, `the plant buttons at ${width} px`);
     for (const m of marks) {
       const level = f.tox[m.id];
@@ -579,12 +579,13 @@ test('PFB19 (pf-b fix round 1, BC1, C5; c2 H1): every toxic plant carries its to
         // c2 H1: never the colour alone: the level word shown beside the triangle where there is room,
         // on every chip of the phone's time span and on a bar of 16rem or more.
         if (width === 390 || m.width >= 256) assert.ok(m.text.includes(TOX[level]), `H1: "${TOX[level]}" seen on ${f.names[m.id]} ("${m.text}", ${Math.round(m.width)} px)`);
-        // c2 B1: a bar too narrow for the word shows its level's marks, seen without hovering ("!" Mildly
-        // toxic, "!!" Toxic, "!!!" Very toxic), and its title says the level in words.
+        // c2 B1 (fix C1): a bar too narrow for the word shows its level as a three-dot meter apart from the
+        // triangle, seen without hovering ("●○○" Mildly toxic, "●●○" Toxic, "●●●" Very toxic); never a
+        // "!", which the triangle draws already (C1); no bar title (C2).
         if (width === 1280) {
-          const seen = m.text.includes(TOX[level]) ? TOX[level] : (/(!+)$/.exec(m.text)?.[1] ?? '');
+          const seen = m.text.includes(TOX[level]) ? TOX[level] : (/([●○]{3})$/.exec(m.text)?.[1] ?? '');
           assert.ok(seen === TOX[level] || seen === TOX_MARKS[level], `B1: the level of ${f.names[m.id]} seen on its ${Math.round(m.width)} px bar ("${m.text}"; ${TOX[level]}: "${TOX_MARKS[level]}")`);
-          assert.ok(m.barTitle?.includes(TOX[level]), `B1: the bar's title says "${TOX[level]}" ("${m.barTitle}")`);
+          assert.ok(!/!/.test(m.text), `C1: no "!" mark on ${f.names[m.id]} beside the triangle ("${m.text}")`);
         }
       } else assert.equal(m.img, null, `${f.names[m.id]}: no toxicity mark`);
     }
@@ -592,7 +593,7 @@ test('PFB19 (pf-b fix round 1, BC1, C5; c2 H1): every toxic plant carries its to
       assert.ok(marks.some((m) => f.tox[m.id] && m.width >= 256), 'H1: seville-board has a long toxic bar');
       assert.ok(marks.some((m) => f.tox[m.id] && m.width < 256), 'B1: seville-board has a toxic bar too narrow for the word (1 to 2 spans)');
       await press(page, 'button', 'How to read this');
-      await says(page, 'the marks after the triangle say the toxicity level: ! Mildly toxic, !! Toxic, !!! Very toxic.');
+      await says(page, 'the dots after the triangle say the toxicity level: ●○○ Mildly toxic, ●●○ Toxic, ●●● Very toxic.');
       await page.keyboard.press('Escape');
     }
     assert.ok(marks.some((m) => f.tox[m.id]), `${id}: a toxic member shown`);

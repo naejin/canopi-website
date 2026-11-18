@@ -1364,7 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "one: ; {names} fica no meio | other: ; {names} ficam no meio",
   "consortium.palette.readJobs": "Em Tarefas, a faixa são os sete períodos. Uma lacuna de menos de um ano, e o tempo depois do ano 60, não são julgados: uma linha fina, nunca uma lacuna.",
   "consortium.palette.readUnknown": "Uma linha sem marca de toxicidade não foi verificada, ou nada foi registrado. Um desconhecido nunca aparece como lacuna, como “não” ou como nível preenchido: quando as tarefas ou a luz de uma planta ainda não foram verificadas, a linha diz isso, como em “Cobre o solo: ninguém conhecido depois do ano 25 · 2 plantas não verificadas” ou “Sombra: 1 planta se adequa, 2 desconhecidas”.",
-  "consortium.palette.chart.readTox": "Numa barra estreita demais para as palavras, as marcas depois do triângulo dizem o nível de toxicidade: ! {slight}, !! {moderate}, !!! {severe}. Abra a planta para ler por extenso.",
+  "consortium.palette.chart.readTox": "Numa barra estreita demais para as palavras, os pontos depois do triângulo dizem o nível de toxicidade: ●○○ {slight}, ●●○ {moderate}, ●●● {severe}. Abra a planta para ler por extenso.",
   "consortium.palette.readSyntropic": "Se você conhece a agricultura sintrópica: os quatro níveis de luz são os estratos, e os períodos são as etapas da sucessão.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

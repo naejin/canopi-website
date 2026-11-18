@@ -1364,7 +1364,7 @@
   "consortium.palette.balance.waterMixMid": "other: ；{names}介于两者之间",
   "consortium.palette.readJobs": "在“任务”中，条带是七个时间段。不到一年的空隙，以及第 60 年以后的时间，都不做判断：一条细线，绝不是空缺。",
   "consortium.palette.readUnknown": "没有毒性标记的一行表示尚未核实，或没有记录。未知绝不会显示为空缺、“否”或填满的层级：植物的任务或光照尚未核实时，该行会说明，例如“覆盖地面：第 25 年后没有已知植物 · 2 种植物未核实”或“荫蔽：1 种植物适合，2 种未知”。",
-  "consortium.palette.chart.readTox": "条形太窄、写不下文字时，三角形后的标记表示毒性级别：! {slight}，!! {moderate}，!!! {severe}。打开植物可读到完整说明。",
+  "consortium.palette.chart.readTox": "条形太窄、写不下文字时，三角形后的圆点表示毒性级别：●○○ {slight}，●●○ {moderate}，●●● {severe}。打开植物可读到完整说明。",
   "consortium.palette.readSyntropic": "如果你了解协同农业（syntropic farming）：四个光照层级就是层次，时间段就是演替的阶段。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
