@@ -1305,3 +1305,14 @@ test('PFC51 (pf-c ruling D6, a shared link with "Include my place"): the sender\
   assert.deepEqual(sent, [], 'D6: no reverse lookup on open');
   await done(page);
 });
+
+test('PFC52 (pf-c Loading, the offline line; M27, carried from PP-B46): offline, the page says "You are offline. What is loaded still works." in one status line; back online, the line is empty', async () => {
+  const page = await palette({ n: 5 });
+  await page.setOfflineMode(true);
+  await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+  assert.ok(await page.waitForFunction(() => document.querySelector('.ct-offline[role="status"]')?.textContent.trim() === 'You are offline. What is loaded still works.', { timeout: 5000 }).then(() => true, () => false), 'the offline line says it');
+  await page.setOfflineMode(false);
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  assert.ok(await page.waitForFunction(() => document.querySelector('.ct-offline[role="status"]')?.textContent.trim() === '', { timeout: 5000 }).then(() => true, () => false), 'back online, the line is empty');
+  await done(page);
+});
