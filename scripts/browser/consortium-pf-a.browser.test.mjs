@@ -1151,8 +1151,15 @@ test('PFA43 (pf-a PFA-B2, N5, PFA-F1, FillHole): "See all N plants" opens a shee
     // PFA-F1 (board FillHole: the intro keeps "7 plants …" while Pineapple shows Added).
     await says(page, intro(pick.fits), { inDialog: true });
     // Every other plant that fits (the fits group lists first).
-    for (const label of (await findAdds(page)).slice(0, pick.fits - 1)) await addInFind(page, label).catch(() => {});
+    // PFA-G3: every add must land (no swallowed failure): each shows "Added", and the hole has no plant
+    // left that fits, so the intro is checked in the very case it names.
+    const rest = (await findAdds(page)).slice(0, pick.fits - 1);
+    assert.equal(rest.length, pick.fits - 1, 'the other plants that fit each have their Add');
+    for (const label of rest) await addInFind(page, label);
+    assert.ok(await until(page, (n) => document.querySelectorAll('dialog[open] [data-added]').length === n && document.querySelectorAll('dialog[open] [data-find-undo]').length === n, pick.fits), `every plant that fits (${pick.fits}) shows "Added" with its Undo`);
     await frames(page);
+    const left = (await holeCounts(page)).find((c) => c.id === pick.id);
+    assert.equal(left?.fits ?? 0, 0, 'PFA-G3: no plant on the lists still fits this hole');
     await says(page, intro(pick.fits), { inDialog: true });
     assert.ok(!(await dialogText(page)).includes('No plant on your lists fits your place'), 'PFA-F1: the visit\'s own adds never turn the intro to the no-fit words');
   }
@@ -1282,27 +1289,52 @@ test('PFA48 (pf-a N4, size rule A14): Find\'s groups are count cells past 12 row
   await done(page);
 });
 
-test('PFA49 (pf-a PFA-R2, AddMany state 2): on a thin spot whose fillers include plants not checked, the bulk note says they are in “Find a backup”, and the sheet that opens lists them under its "Not checked" group', { timeout: 120_000 }, async () => {
+test('PFA49 (pf-a PFA-R2, PFA-G1, G2, AddMany state 2): "Find a backup" opens the Add sheet, where "Fits your place" means what it means in any Add sheet: a thin spot\'s fillers not checked are not sent there by the bulk note nor listed there, and the count line, the "Fits your place" choice and the job card\'s "Show these N plants" give one figure', { timeout: 120_000 }, async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
   await says(page, OTHER_HOLES);
   await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
   const e0 = await engineLead(page);
   assert.equal(e0.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
-  // Two of its second looks (else its fits past the first) with no range recorded: not checked.
-  const sci = e0.look.length >= 2 ? e0.look.slice(0, 2) : e0.fits.slice(1, 3);
-  assert.equal(sci.length, 2, 'two fillers to mark not recorded');
-  const ids = await page.evaluate((list) => (window.__ctTest.store.offerPool.value ?? []).filter((t) => list.includes(t.canonical_name)).map((t) => t.id), sci);
+  // Two of its fillers with no warning (second looks for their range, else fits past the first) with no
+  // range recorded: not checked (a warned plant would stay a second look, core fillerGroup).
+  const ids = await page.evaluate(({ look, fits }) => {
+    const st = window.__ctTest.store, pool = st.offerPool.value ?? [];
+    const plain = (names) => pool.filter((t) => names.includes(t.canonical_name) && !st.warnedPlant(t)).map((t) => t.id);
+    const a = plain(look);
+    return (a.length >= 2 ? a : [...a, ...plain(fits.slice(1))]).slice(0, 2);
+  }, { look: e0.look, fits: e0.fits });
+  assert.equal(ids.length, 2, 'two fillers to mark not recorded');
   await notRecorded(page, ids);
   assert.ok(await until(page, () => !!document.querySelector('[data-next-unchecked-head]')), 'the card lists them under "Not checked (2)"');
   const e = await engineLead(page);
   assert.equal(e.unknown.length, 2, 'two not checked');
   assert.ok(e.fits.length > 0, 'the bulk row stays');
   const note = await page.$eval('[data-next-bulk-note]', (p) => p.innerText.replace(/\s+/g, ' '));
-  assert.match(note, /the 2 not checked (?:are|is) in “Find a backup”/i, `PFA-R2: the note names the link that lists them ("${note}")`);
+  assert.doesNotMatch(note, /not checked/i, `PFA-G1: the note never sends the plants not checked to "Find a backup", whose "Fits your place" does not list them ("${note}")`);
+  if (e.look.length) assert.match(note, /need(?:s)? a second look (?:are|is) in “Find a backup”/i, `the second looks are there ("${note}")`);
   await press(page, 'button', 'Find a backup');
-  assert.ok(await has(page, 'dialog[open]', 10_000), 'the Add sheet');
+  assert.ok(await has(page, 'dialog[open] [data-find-row]', 10_000), 'the Add sheet');
   await openMore(page);
-  const listed = await page.$$eval('dialog[open] [data-find-group="unchecked"] [data-find-row]', (r) => r.map((x) => x.dataset.plantId));
-  assert.deepEqual(listed.sort(), [...ids].sort(), 'PFA-R2: the sheet lists the 2 plants not checked the note sends the grower to');
+  const rows = await page.$$eval('dialog[open] [data-find-row]', (r) => r.map((x) => x.dataset.plantId));
+  assert.equal(await page.$('dialog[open] [data-find-group="unchecked"]'), null, 'PFA-G1: no "Not checked" group under "Fits your place"');
+  assert.ok(ids.every((id) => !rows.includes(id)), 'PFA-G1: the plants not checked are not listed as fitting');
+  const figure = async () => Number(/^(\d+) plants?\./.exec(await page.$eval('dialog[open] [data-find-count]', (x) => x.textContent.trim()))?.[1] ?? NaN);
+  const fitsChoice = async () => Number(/^Fits your place\D*?(\d+) plants?/.exec(await page.$eval('dialog[open] [data-filter="fits"]', (i) => i.closest('label').textContent.replace(/\s+/g, ' ').trim()))?.[1] ?? NaN);
+  const n = await figure();
+  assert.ok(n > 0, 'the count line says a figure');
+  assert.equal(await fitsChoice(), n, 'PFA-G2: the "Fits your place" choice and the count line give one figure');
+  assert.equal(rows.length, n, 'the rows are the plants the count line counts');
+  // The thin spot's job typed: the job card's "Show these K plants" lists K, as the count line then says.
+  const en = JSON.parse((await import('node:fs')).readFileSync(new URL('../../src/i18n/translations/en.json', import.meta.url), 'utf8'));
+  await page.type('dialog[open] [data-find-search]', en[`consortium.job.${e0.lead.target.job}`]);
+  assert.ok(await until(page, () => !!document.querySelector('dialog[open] [data-job] button')), 'the job card');
+  const show = await page.$eval('dialog[open] [data-job] button', (b) => b.textContent.replace(/\s+/g, ' ').trim());
+  const k = Number(/Show (?:these|this) (\d+) plants?/.exec(show)?.[1] ?? NaN);
+  assert.ok(k > 0, `the job card offers its plants ("${show}")`);
+  await page.$eval('dialog[open] [data-job] button', (b) => b.click());
+  assert.ok(await until(page, () => !document.querySelector('dialog[open] [data-find-search]')?.value), 'the query gone');
+  await frames(page);
+  assert.equal(await figure(), k, `PFA-G1: "Show these ${k} plants" lists ${k}, as the count line says`);
+  assert.equal(await fitsChoice(), k, 'PFA-G1: the "Fits your place" choice says the same figure');
   await done(page);
 });

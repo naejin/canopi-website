@@ -148,7 +148,7 @@ test('N7 the Portuguese invasive chip reads without a bare "em" before the count
 
 // ---- final3 fixes (PFA-R3/F5, R4, R5, F4) ----
 
-test('PFA-R5 one group rule for the card and the sheet: core fillers and Find\'s findGroups put each plant in the same group; a warned plant with no range recorded is "not checked" in both, a warned fit a second look', async () => {
+test('PFA-R5, PFA-G1 one group rule for the card and the sheet: core fillers and Find\'s findGroups put each plant in the same group; a warned plant is a second look whatever its level but outside (pf-decisions "Toxic counts as a second look"), a warned fit too', async () => {
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const { findGroups } = await import('../src/islands/consortium/rules/find-query.ts');
   const h = hole('light:emergent:0-60');
@@ -165,7 +165,9 @@ test('PFA-R5 one group rule for the card and the sheet: core fillers and Find\'s
   assert.deepEqual(ids2(card.look), ids2(sheet.look), 'needs a second look');
   assert.deepEqual(ids2(card.outside), ids2(sheet.outside), 'outside');
   assert.deepEqual(ids2(card.unknown), ids2(sheet.unchecked), 'not checked');
-  assert.ok(card.unknown.some((t) => t.id === 'unknownWarned'), 'a warned plant never judged stays "not checked" (unknown is never a hole)');
+  assert.ok(card.look.some((t) => t.id === 'unknownWarned'), 'a warned plant with no range recorded keeps its warning: a second look');
+  assert.deepEqual(ids2(card.unknown), ['none', 'unknown'], 'only the unwarned plants never judged is "not checked" (unknown is never a hole)');
+  assert.ok(card.outside.some((t) => t.id === 'outsideWarned'), 'a warned plant outside its range stays outside');
   assert.ok(card.look.some((t) => t.id === 'fitWarned'), 'a warned fit needs a second look');
   for (const id of ids) assert.equal(core.fillerGroup(verdicts.get(id)?.level, warned.has(id)), Object.entries(card).find(([, g]) => g.some((t) => t.id === id))[0], `fillerGroup(${id})`);
 });
@@ -183,6 +185,17 @@ test('PFA-F4 the pt and de rest sentence uses the word map\'s second-look words 
   const pt = locale('pt')['consortium.palette.next.restLook'], de = locale('de')['consortium.palette.next.restLook'];
   assert.match(pt, /olhar de perto/, `pt: ${pt}`);
   assert.doesNotMatch(pt, /segundo olhar/, `pt: ${pt}`);
-  assert.match(de, /genauer ansehen/, `de: ${de}`);
+  assert.match(de, /genauer anzusehende/, `de: ${de}`);
   assert.doesNotMatch(de, /zweiten Blick/, `de: ${de}`);
+});
+
+test('PFA-G5 the German rest sentence has no unclosed relative clause: restLook alone and before restUnchecked inside bulkRest', () => {
+  const de = locale('de'), k = (x) => de[`consortium.palette.next.${x}`];
+  const form = (key, n) => { const m = Object.fromEntries(k(key).split(' | ').map((f) => f.split(': '))); return (m[n === 1 ? 'one' : 'other'] ?? m.other).replace('#', String(n)); };
+  for (const parts of [[form('restLook', 15)], [form('restLook', 1)], [form('restLook', 15), form('restUnchecked', 3)]]) {
+    const sentence = form('bulkRest', 18).replace('{parts}', parts.join(' und ')).replace('{link}', 'Alle 23 Pflanzen ansehen');
+    assert.doesNotMatch(sentence, /, die /, `no relative clause left open: ${sentence}`);
+  }
+  assert.equal(form('restLook', 15), 'die 15 genauer anzusehenden');
+  assert.equal(form('restLook', 1), 'die 1 genauer anzusehende');
 });

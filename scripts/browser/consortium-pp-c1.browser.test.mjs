@@ -525,6 +525,8 @@ test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s count
   assert.equal(await page.$eval(`${FIND} [data-find-filters-show]`, (e) => e.textContent.trim()), `Show ${said} plants`, '"Show N plants" says it too');
   const mine = await page.$eval(`${FIND} [data-find-inpalette-line]`, (e) => Number(/\d+/.exec(e.textContent)?.[0] ?? NaN));
   await page.click(`${FIND} [data-find-inpalette-line] button`);
+  // The render the click asked for, then the line (a read straight after the click raced it).
+  await page.waitForFunction((sel, n) => new RegExp(`^${n} plants?\\.`).test(document.querySelector(sel)?.textContent ?? ''), { timeout: 4000 }, `${FIND} [data-find-count]`, said + mine).catch(() => {});
   assert.equal(await countSays(), said + mine, 'with the palette\'s plants listed as rows, the count line counts them');
   const all = await page.$eval(`${FIND} [data-filter="all"]`, (i) => Number(/(\d+) plants?/.exec(i.closest('label').textContent)?.[1]));
   // (a DOM click: at 1280 the panel's foot bar, "N plants in your palette · Done" (pf-a N2), can sit over

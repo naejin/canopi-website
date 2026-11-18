@@ -1344,7 +1344,7 @@
   "consortium.palette.next.bulkPicksThin": "one: # ist die Zahl der {want} gewünschten weniger der {have} vorhandenen; am besten passt {names}. | other: # sind die {want} gewünschten weniger die {have} vorhandenen; am besten passen {names}.",
   "consortium.palette.next.bulkPicksThinFewer": "one: Du willst {want} und hast {have}; nur # passt: {names}. | other: Du willst {want} und hast {have}; nur # passen: {names}.",
   "consortium.palette.next.bulkMarkOf": "one: # der {m}: {kinds}. | other: # der {m}: {kinds}.",
-  "consortium.palette.next.restLook": "one: die #, die man genauer ansehen sollte | other: die #, die man genauer ansehen sollte",
+  "consortium.palette.next.restLook": "one: die # genauer anzusehende | other: die # genauer anzusehenden",
   "consortium.palette.next.restOutside": "one: die # außerhalb ihres Bereichs | other: die # außerhalb ihres Bereichs",
   "consortium.palette.next.restUnchecked": "one: die # nicht geprüfte | other: die # nicht geprüften",
   "consortium.palette.next.bulkRest": "one: {parts} steht unter „{link}“, mit ihrem Wort. | other: {parts} stehen unter „{link}“, jede mit ihrem Wort.",

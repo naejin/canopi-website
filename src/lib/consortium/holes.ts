@@ -245,12 +245,13 @@ export function fills(hole: Hole, taxon: Taxon): boolean {
 
 // A plant's group, one ordered rule for the Next step's card (fillers) and Find's sheet (find-query.ts
 // findGroups), so a card and the sheet it opens give the same counts (PFA-R5): outside its range first;
-// then needs a second look (level look, or a fit with a toxic or invasive warning: never dropped, warn
-// never hide); then fits; anything else, a warned plant with no range recorded too, not checked
-// (unknown is never a second look nor a hole).
+// then needs a second look (level look, or a toxic or invasive warning whatever the level: never
+// dropped, warn never hide; pf-decisions "Toxic counts as a second look", store.warnedPlant's one
+// second-look rule, so a warned plant with no range recorded keeps its warning heading); then fits;
+// anything else not checked (unknown is never a hole).
 export function fillerGroup(level: Level | undefined, warned: boolean): keyof Fillers {
   if (level === 'outside') return 'outside';
-  if (level === 'look' || (level === 'fits' && warned)) return 'look';
+  if (level === 'look' || warned) return 'look';
   if (level === 'fits') return 'fits';
   return 'unknown';
 }

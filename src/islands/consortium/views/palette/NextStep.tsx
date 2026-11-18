@@ -335,18 +335,20 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const ofMarks = [...restKinds].map((k) => [k, allMarked.filter((m) => m.kinds.includes(k)).length] as const);
   // N6, PFA-R1, R2 (board AddMany): where the plants the bulk row leaves out are, each group under the
   // link that really lists it: the second looks and the plants not checked in "See all N plants" (N
-  // counts them; on a thin spot "Find a backup", whose sheet keeps its "Not checked" group), the outside
+  // counts them; on a thin spot "Find a backup" and its second looks only, PFA-G1), the outside
   // ones under the card's own "Show N outside their climate range" while it is folded ("The 15 that
   // need a second look are in “See all 23 plants”, each with its word. The 37 outside their range are
   // in “Show 37 outside their climate range”, each with its word."), then the order (find.bestFirst).
   const linkLabel = thin ? T('palette.next.findBackup') : P('palette.seeAll', all);
   const inLink = [
     found.look.length ? P('palette.next.restLook', found.look.length) : '',
-    found.unknown.length ? P('palette.next.restUnchecked', found.unknown.length) : '',
+    // PFA-G1: a thin spot's "Find a backup" opens the Add sheet, whose "Fits your place" lists the
+    // judged plants only: the plants not checked are not there, so the note does not send them there.
+    !thin && found.unknown.length ? P('palette.next.restUnchecked', found.unknown.length) : '',
   ].filter(Boolean);
   const nOut = found.outside.length;
   const rest = [
-    inLink.length ? sentenceCase(P('palette.next.bulkRest', found.look.length + found.unknown.length, { parts: listOf(inLink), link: linkLabel })) : '',
+    inLink.length ? sentenceCase(P('palette.next.bulkRest', found.look.length + (thin ? 0 : found.unknown.length), { parts: listOf(inLink), link: linkLabel })) : '',
     nOut && !outsideOpen ? sentenceCase(P('palette.next.bulkRest', nOut, { parts: P('palette.next.restOutside', nOut), link: P('palette.showOutside', nOut) })) : '',
   ].filter(Boolean).join(' ');
   const order = found.judged ? T('find.bestFirst', { period: periodName(periodIds[periodIds.length - 1]) }) : '';

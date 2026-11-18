@@ -320,9 +320,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const folds = (v: Fit) => v !== 'all' && !q && !outsideShown;
   // "Fits your place" lists the judged plants only (c1r5 W2): an unchecked plant is listed under "Every
   // plant", in its "Not checked" group; a search lists every hit, marked. A hole's sheet keeps its
-  // "Not checked (n)" group (PFA-B2): it lists every plant the Next step's "See all N" counts; so does
-  // the Add sheet a thin spot's "Find a backup" opens (PFA-R2: the card's note says they are there).
-  const drops = (v: Fit) => v === 'fits' && !q && !hole;
+  // "Not checked (n)" group (PFA-B2): it lists every plant the Next step's "See all N" counts. The Add
+  // sheet a thin spot's "Find a backup" opens is the Add sheet: "Fits your place" means the same there
+  // (PFA-G1, G2), so its count line, that choice's count and the job card's "Show these N" agree.
+  const drops = (v: Fit) => v === 'fits' && !q && !holeSheet;
   // The one count: how many plants the list shows under these filters and this fit choice.
   // (the job card counts the list its "Show these N plants" lists: the whole list, the query gone).
   const count = (f: FindFilters, v: Fit = fit, list = matched, fold = folds(v), drop = drops(v)): number => {

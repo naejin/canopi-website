@@ -280,13 +280,15 @@ export const notRecorded = (page, ids) => page.evaluate((list) => {
     holdsBy: (t, c, p) => !set.has(t.id) && rule.holdsBy(t, c, p),
   };
 }, ids);
-// The plants on the lists (not in the palette) that fill a hole and need a second look: core fills on
-// the page's own pool and verdicts.
+// The plants on the lists (not in the palette) that fill a hole and need a second look for their range
+// alone (level look, no warning): core fills on the page's own pool and verdicts. Marked not recorded,
+// they turn "not checked"; a warned plant would stay a second look (PFA-G1, core fillerGroup).
 export async function lookFillers(page, holeId) {
   const s = await page.evaluate((id) => {
     const st = window.__ctTest.store, ids = new Set(st.members.value);
-    return { hole: st.openHoles.value.find((h) => h.id === id), pool: (st.offerPool.value ?? []).filter((t) => !ids.has(t.id)), pv: [...(st.poolVerdicts.value ?? new Map())] };
+    const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
+    return { hole: st.openHoles.value.find((h) => h.id === id), pool, pv: [...(st.poolVerdicts.value ?? new Map())], warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id) };
   }, holeId);
-  const pv = new Map(s.pv);
-  return s.pool.filter((t) => core.fills(s.hole, t) && pv.get(t.id)?.level === 'look').map((t) => t.id);
+  const pv = new Map(s.pv), warned = new Set(s.warned);
+  return s.pool.filter((t) => core.fills(s.hole, t) && pv.get(t.id)?.level === 'look' && !warned.has(t.id)).map((t) => t.id);
 }
