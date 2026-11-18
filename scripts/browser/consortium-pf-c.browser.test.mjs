@@ -43,8 +43,8 @@
 // pp-b1. The restored marker F1a-P9 restored (scripts/plan/parked-markers.json) lives in PFC21.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aria, h, useHarness } from './helpers.mjs';
-import { atSite, tool } from './p5-helpers.mjs';
+import { aria, h, has, useHarness } from './helpers.mjs';
+import { atSite, releaseTiles, slowTiles, tool } from './p5-helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
 import { failing } from '../expect-fail.mjs';
 import { BOARD, boxOf, control, dialogText, done, focused, frames, idsOf, inOrder, linkOf, names, palette, pastEdge, press, savedPalette, says as saysOn, saysNot, setSiteEdits, toastText, withStorage } from './pf-helpers.mjs';
@@ -941,6 +941,8 @@ const countryControl = (page, name) => page.evaluate((n) => {
   const b = [...document.querySelectorAll('[data-ct="country"] button')].find((x) => x.textContent.replace(/\s+/g, ' ').trim() === n && x.getClientRects().length);
   return b ? (b.getAttribute('aria-expanded') ?? 'none') : null;
 }, name);
+// The focused element and its name as read out (a radio by its label).
+const focusedChoice = (page) => page.evaluate(() => { const a = document.activeElement; return { body: !a || a === document.body, name: ((a?.labels?.[0] ?? a)?.textContent ?? '').replace(/\s+/g, ' ').trim() }; });
 const focusCountry = (page, name) => page.evaluate((n) => [...document.querySelectorAll('[data-ct="country"] button')].find((x) => x.textContent.replace(/\s+/g, ' ').trim() === n && x.getClientRects().length)?.focus(), name);
 
 test('PFC41 (pf-c fix round 3 R1: the country picker is a disclosure): Enter on "Change" keeps "Change" on the line, expanded, and puts the focus on the first choice; Escape and Cancel close the choices and give the focus back to "Change"; "Add your country" does the same; on the climate screen, "Use Kenya" then "Change" keeps the focus on that screen (never <body>)', async () => {
@@ -950,7 +952,7 @@ test('PFC41 (pf-c fix round 3 R1: the country picker is a disclosure): Enter on 
   await focusCountry(placed, 'Change');
   await placed.keyboard.press('Enter');
   await frames(placed);
-  let f = await focused(placed);
+  let f = await focusedChoice(placed);
   assert.ok(!f.body && /^Kenya from your location/.test(f.name), `R1: the focus on the first choice (${JSON.stringify(f)})`);
   assert.equal(await countryControl(placed, 'Change'), 'true', 'R1: "Change" stays, expanded');
   await placed.keyboard.press('Escape');
@@ -971,7 +973,7 @@ test('PFC41 (pf-c fix round 3 R1: the country picker is a disclosure): Enter on 
   await focusCountry(none, 'Add your country');
   await none.keyboard.press('Enter');
   await frames(none);
-  f = await focused(none);
+  f = await focusedChoice(none);
   assert.ok(!f.body && /^Another country/.test(f.name), `R1: the focus on the first choice (${JSON.stringify(f)})`);
   assert.equal(await countryControl(none, 'Add your country'), 'true', 'R1: "Add your country" stays, expanded');
   await focusCountry(none, 'Cancel');
@@ -994,25 +996,49 @@ test('PFC41 (pf-c fix round 3 R1: the country picker is a disclosure): Enter on 
   await done(hand);
 });
 
-test('PFC42 (pf-c fix round 3 R2: choosing another country from the keyboard): moving through the country list changes nothing and keeps it open; "Use <country>" beside it commits that country, and the focus goes back to "Change"', async () => {
+test('PFC42 (pf-c final1 N2, board Country "Changing it"; round 3 R2): "Change" opens the choices as radio rows "Kenya from your location", "Another country for a plot elsewhere than the point you gave" and "No country each plant then shows its worldwide count"; moving through them changes nothing; "Another country" shows the field "Your country", where "Tan" offers Tanzania and Enter commits it, the focus back on "Change"; no list box and no "Use <country>" beside it', async () => {
   const page = await tool({ nominatim: 'fixture' });
   await searchFor(page, 'Kiambu');
   await says(page, 'Invasive warnings for Kenya · from your location · Change', { timeout: 10_000 });
   await press(page, 'button', 'Change');
-  await press(page, 'button', 'Another country for a plot elsewhere than the point you gave');
-  await page.waitForSelector(aria('combobox', 'Your country'), { timeout: 4000 });
-  // What an arrow key on a closed select does on Windows: the value moves and change fires.
-  await page.select(aria('combobox', 'Your country'), 'AF');
   await frames(page);
-  assert.equal(await store(page, () => window.__ctTest.store.country.value.code), 'KE', 'R2: a move through the list commits nothing');
-  assert.ok(await page.$(aria('combobox', 'Your country')), 'R2: the list stays open');
-  await page.select(aria('combobox', 'Your country'), 'TZ');
+  for (const r of ['Kenya from your location', 'Another country for a plot elsewhere than the point you gave', 'No country each plant then shows its worldwide count']) {
+    assert.ok(await page.$(aria('radio', r)), `board Country: the radio row "${r}"`);
+  }
+  assert.equal(await page.$eval(aria('radio', 'Kenya from your location'), (e) => e.checked), true, 'board: the country in use is the checked row');
+  // From the keyboard, the arrows move through the rows: nothing is committed, the rows stay.
+  await page.focus(aria('radio', 'Kenya from your location'));
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
   await frames(page);
-  await press(page, 'button', 'Use Tanzania');
+  assert.equal(await store(page, () => window.__ctTest.store.country.value.code), 'KE', 'R2: a move through the rows commits nothing');
+  assert.ok(await page.$(aria('radio', 'No country each plant then shows its worldwide count')), 'R2: the rows stay open');
+  await page.keyboard.press('ArrowUp');
   await frames(page);
-  assert.deepEqual(await store(page, () => { const c = window.__ctTest.store.country.value; return [c.code, c.source]; }), ['TZ', 'chosen'], 'R2: "Use Tanzania" commits it');
+  assert.ok(await has(page, aria('textbox', 'Your country'), 2000), 'board: "Another country" shows the field "Your country"');
+  assert.equal(await page.$eval(aria('textbox', 'Your country'), (e) => e.placeholder), 'Your country', 'board: its placeholder');
+  assert.equal(await page.$('select'), null, 'board: no list box');
+  const inLine = await page.$$eval('[data-ct="country"] button', (bs) => bs.map((b) => b.textContent.trim()));
+  assert.ok(!inLine.some((b) => /^Use /.test(b)), `board: no "Use <country>" beside the field (${inLine.join(' | ')})`);
+  await page.focus(aria('textbox', 'Your country'));
+  await page.keyboard.type('Tan');
+  await frames(page);
+  assert.ok((await buttons(page)).includes('Tanzania'), `board: "Tan" offers Tanzania (${(await buttons(page)).join(' | ')})`);
+  assert.equal(await store(page, () => window.__ctTest.store.country.value.code), 'KE', 'typing commits nothing');
+  await page.keyboard.press('Enter');
+  await frames(page);
+  assert.deepEqual(await store(page, () => { const c = window.__ctTest.store.country.value; return [c.code, c.source]; }), ['TZ', 'chosen'], 'Enter commits the first match');
   await says(page, 'Invasive warnings for Tanzania · chosen by you · Change');
   assert.equal((await focused(page)).name, 'Change', 'R1: the focus back on "Change"');
+  // A click on a match commits it too; "No country" by pointer commits at once.
+  await press(page, 'button', 'Change');
+  await page.locator(aria('radio', 'Another country for a plot elsewhere than the point you gave')).click();
+  await page.locator(aria('textbox', 'Your country')).fill('ken');
+  await press(page, 'button', 'Kenya');
+  await says(page, 'Invasive warnings for Kenya · chosen by you · Change');
+  await press(page, 'button', 'Change');
+  await page.locator(aria('radio', 'No country each plant then shows its worldwide count')).click();
+  await says(page, /No country\. Each plant says/);
   await done(page);
 });
 
@@ -1039,5 +1065,68 @@ test('PFC43 (pf-c fix round 3 R3, C3: each arrival said once): a link without a 
   await frames(page);
   const again = await page.evaluate(() => window.__said.filter((t) => t.includes('checked against yours') || t.includes('without a place')));
   assert.deepEqual(again, [], 'R3: a notice whose words change is not said again');
+  await done(page);
+});
+
+// ---- final1 ----
+
+test('PFC44 (pf-c final1 N1: the page never writes over the grower\'s typing): a saved place, named or not, whose lookup comes back while the grower types in the field leaves their words; an untouched field shows the saved name', async () => {
+  for (const [rec, what] of [[{ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'map' }, 'a place with no name'], [{ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'search', label: 'Kiambu, Kenya' }, 'a named place']]) {
+    const page = await slowTiles('held', { saved: JSON.stringify(rec) });
+    await page.waitForSelector('[data-location-search]', { timeout: 10_000 });
+    await page.focus('[data-location-search]');
+    await page.keyboard.type('Nak');
+    await releaseTiles(page);
+    await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup, { timeout: 15_000 });
+    await frames(page);
+    assert.equal(await page.$eval('[data-location-search]', (e) => e.value), 'Nak', `N1, ${what}: the grower's words stay`);
+    await done(page);
+  }
+  const page = await slowTiles('held', { saved: JSON.stringify({ lat: SITES.kiambu[0], lon: SITES.kiambu[1], source: 'search', label: 'Kiambu, Kenya' }) });
+  await releaseTiles(page);
+  await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup, { timeout: 15_000 });
+  await frames(page);
+  assert.equal(await page.$eval('[data-location-search]', (e) => e.value), 'Kiambu, Kenya', 'BC18: an untouched field shows the saved place');
+  await done(page);
+});
+
+test('PFC45 (pf-c final1 N2: typed coordinates belong to their place only): after "-1.17, 36.83" read on the device, a link with a place opened in the same tab and "Use it" leave no typed text and no "Read on this device" line for the link\'s place', async () => {
+  const { encodeLink } = await import('../../src/lib/consortium/state.ts');
+  const { TODAY_PERIOD } = await import('../../src/lib/consortium/source.ts');
+  const { realDb } = await import('./helpers.mjs');
+  const page = await tool({ width: 390, nominatim: 'fixture' });
+  await searchFor(page, '-1.17, 36.83');
+  await says(page, 'Read on this device. Nothing was sent, so the place has no name.', { timeout: 10_000 });
+  const all = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Mediterranean' ORDER BY 1").all().map((r) => String(r.id)));
+  const members = await idsOf('Mediterranean', 5);
+  const frag = encodeLink({ climate: 'Mediterranean', country: 'ES', room: 'unsure', plot: null, period: TODAY_PERIOD, members, removed: [], guests: [], siteEdits: { watering: 'rain' } }, { Mediterranean: all }, { origin: { lat: SITES.seville[0], lon: SITES.seville[1] } });
+  await page.evaluate((f) => { location.hash = f; }, frag);
+  await says(page, /The link carries a place/, { timeout: 15_000 });
+  await press(page, 'button', 'Use it');
+  await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'map', { timeout: 8000 });
+  if (await page.evaluate(() => window.__ctTest.store.view.value !== 'start')) await press(page, 'button', 'Change');
+  await says(page, '1 Where is your place?');
+  await frames(page);
+  await saysNot(page, 'Read on this device. Nothing was sent, so the place has no name.', 'N2: the link\'s place was not typed');
+  assert.equal(await page.$eval('[data-location-search]', (e) => e.value), '', 'N2: the field holds no coordinates of another place');
+  await done(page);
+});
+
+test('PFC46 (pf-c final1 N3: one country picker at a time): on the climate screen with a guessed country, "Change" opens one set of choices; its aria-controls names the choices on screen; no id is used twice', async () => {
+  const page = await tool({ width: 1280, setup: async (pg) => { await pg.emulateTimezone('Africa/Nairobi'); await pg.evaluateOnNewDocument(() => { Object.defineProperty(navigator, 'languages', { get: () => ['en-KE', 'en'] }); }); } });
+  await press(page, 'button', 'No location? Choose a climate');
+  await focusCountry(page, 'Change');
+  await page.keyboard.press('Enter');
+  await frames(page);
+  const r = await page.evaluate(() => {
+    const ids = [...document.querySelectorAll('#ct-root [id]')].map((e) => e.id);
+    const dup = ids.filter((id, i) => ids.indexOf(id) !== i);
+    const t = [...document.querySelectorAll('[data-ct="country"] button[aria-controls]')].filter((b) => b.getClientRects().length);
+    const target = t[0] && document.getElementById(t[0].getAttribute('aria-controls'));
+    return { dup, lines: document.querySelectorAll('[data-ct="country"]').length, shown: !!target?.getClientRects().length, inHand: !!target?.closest('[data-place-hand]') };
+  });
+  assert.deepEqual(r.dup, [], 'N3: no id twice');
+  assert.equal(r.lines, 1, 'N3: one country line mounted');
+  assert.deepEqual([r.shown, r.inHand], [true, true], 'N3: aria-controls names the choices on the climate screen');
   await done(page);
 });

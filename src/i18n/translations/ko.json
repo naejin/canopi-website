@@ -744,6 +744,7 @@
   "consortium.country.another": "다른 국가",
   "consortium.country.anotherWhy": "입력한 지점과 다른 곳의 땅을 위해",
   "consortium.country.noneWhy": "각 식물은 전 세계 수치를 보여 줍니다",
+  "consortium.country.noMatch": "그런 이름의 나라가 없습니다.",
   "consortium.share.button": "공유",
   "consortium.share.title": "이 팔레트 공유",
   "consortium.share.field": "이 팔레트 링크",

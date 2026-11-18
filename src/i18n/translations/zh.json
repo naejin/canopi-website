@@ -744,6 +744,7 @@
   "consortium.country.another": "其他国家",
   "consortium.country.anotherWhy": "用于不在你所给位置的地块",
   "consortium.country.noneWhy": "每种植物将显示全球数字",
+  "consortium.country.noMatch": "没有这个名称的国家。",
   "consortium.share.button": "分享",
   "consortium.share.title": "分享这个植物搭配",
   "consortium.share.field": "这个植物搭配的链接",

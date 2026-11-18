@@ -744,6 +744,7 @@
   "consortium.country.another": "Een ander land",
   "consortium.country.anotherWhy": "voor een perceel elders dan het punt dat je gaf",
   "consortium.country.noneWhy": "elke plant toont dan haar wereldwijde aantal",
+  "consortium.country.noMatch": "Geen land met die naam.",
   "consortium.share.button": "Delen",
   "consortium.share.title": "Dit palet delen",
   "consortium.share.field": "Link naar dit palet",

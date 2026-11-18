@@ -744,6 +744,7 @@
   "consortium.country.another": "Another country",
   "consortium.country.anotherWhy": "for a plot elsewhere than the point you gave",
   "consortium.country.noneWhy": "each plant then shows its worldwide count",
+  "consortium.country.noMatch": "No country by that name.",
   "consortium.share.button": "Share",
   "consortium.share.title": "Share this palette",
   "consortium.share.field": "Link to this palette",

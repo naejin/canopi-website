@@ -744,6 +744,7 @@
   "consortium.country.another": "Другая страна",
   "consortium.country.anotherWhy": "для участка не там, где указанная точка",
   "consortium.country.noneWhy": "тогда каждое растение показывает мировое число",
+  "consortium.country.noMatch": "Страны с таким названием нет.",
   "consortium.share.button": "Поделиться",
   "consortium.share.title": "Поделиться этой палитрой",
   "consortium.share.field": "Ссылка на эту палитру",

@@ -73,3 +73,20 @@ test('pf-c readCoords (R2): a whole-degree pair with a comma ("1,36", "-1,37", "
   near(readCoords('-1, 37'), -1, 37);
   for (const name of ['69001', 'W1', '75']) assert.equal(readCoords(name), null, `${name} stays a name`);
 });
+
+// ---- final1 ----
+test('pf-c final1 N4 (board Loading, Old browser): the button names the guides with the word of the sentence above it', () => {
+  const guideWord = { fr: 'guides', de: 'Ratgeber' };
+  for (const [l, w] of Object.entries(guideWord)) {
+    assert.ok(words[l]['consortium.load.tooOld'].includes(w), `${l}: the sentence says "${w}"`);
+    assert.ok(words[l]['consortium.palette.place.readGuides'].includes(w), `${l}: the button says "${w}" too (${words[l]['consortium.palette.place.readGuides']})`);
+  }
+});
+
+test('pf-c final1 N5 (the head painted before the island): the inline script takes the link\'s end key and the save\'s store name from the code that writes them, keeping no copy', () => {
+  const page = readFileSync(new URL('../src/components/consortium/ConsortiumPage.astro', import.meta.url), 'utf8');
+  const script = page.slice(page.indexOf('<script is:inline define:vars'), page.indexOf('</script>', page.indexOf('<script is:inline define:vars')));
+  assert.match(script, /define:vars=\{\{[^}]*\bendKey: END_KEY\b/, 'END_KEY (lib/consortium/state.ts) passed in');
+  assert.match(script, /define:vars=\{\{[^}]*\bsaveStore: STORE\b/, 'the save\'s store name (state/save.ts STORE) passed in');
+  assert.doesNotMatch(script, /'canopi-consortium'|p\.get\('e'\)/, 'no copy of the store name or the end key');
+});

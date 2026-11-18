@@ -21,7 +21,8 @@ import { countryZones } from '../../lib/consortium/country-zones.ts';
 import index from '../../data/consortium-index.json';
 import { climatePageData } from '../../data/climate-page-data';
 import { P, setStrings } from '../../islands/consortium/strings.ts';
-import { LINK_VERSION } from '../../lib/consortium/state.ts';
+import { END_KEY, LINK_VERSION } from '../../lib/consortium/state.ts';
+import { STORE } from '../../islands/consortium/state/save.ts';
 import '../../styles/consortium/base.css';
 import '../../styles/consortium/details.css';
 import '../../styles/consortium/shell.css';
@@ -144,15 +145,17 @@ const betaNote = P('betaNote', index.climates.length);
           will open as a palette: a link or a save this version reads (its v, a climate, the end mark
           e=1; a save also as persist.ts readRecord takes it), or a guide's plant. A cut, damaged,
           newer or old link or save lands on Place, so its head paints as Place (C4); the island
-          confirms or undoes the mark on every outcome (Steps on Place, App on a failure: R6). */}
-      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION) }}>try {
+          confirms or undoes the mark on every outcome (Steps on Place, App on a failure: R6). The link
+          version, its end key and the save's store name come from the code that writes them (final1
+          N5); the save's size cap is still a copy of persist.ts readRecord's until persist.ts exports it. */}
+      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION), endKey: END_KEY, saveStore: STORE }}>try {
         var h = document.getElementById('ct-head');
         var hp = new URLSearchParams((location.hash || '').replace(/^#/, '')), q = new URLSearchParams(location.search);
         var opens = hp.has('v') || hp.has('a') ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
         h.dataset.opens = opens;
-        var readable = function (f) { var p = new URLSearchParams(f); return p.get('v') === linkVersion && !!p.get('c') && p.get('e') === '1'; };
+        var readable = function (f) { var p = new URLSearchParams(f); return p.get('v') === linkVersion && !!p.get('c') && p.get(endKey) === '1'; };
         var saved = null;
-        try { saved = JSON.parse(localStorage.getItem('canopi-consortium') || 'null'); } catch (e) {}
+        try { saved = JSON.parse(localStorage.getItem(saveStore) || 'null'); } catch (e) {}
         var save = !!saved && typeof saved.fragment === 'string' && saved.fragment.length < 20000 && typeof saved.at === 'string' && readable(saved.fragment);
         h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
       } catch (e) {}</script>

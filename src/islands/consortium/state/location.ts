@@ -23,7 +23,7 @@
 // never a country (review round 1, 1). A lookup's writes are not reader actions (the click was): the
 // country goes through persist's quiet write, so a link pasted while tiles load still restores
 // (review round 1, 4).
-import { batch, signal } from '@preact/signals';
+import { batch, computed, signal } from '@preact/signals';
 import type { LocationSource, SiteLocation } from '../../../lib/consortium/index.ts';
 import { NO_EDITS, siteClimate } from '../../../lib/consortium/index.ts';
 import { createTileSource, DEFAULT_RADIUS, lookupSite, siteIndex, type SiteLookup, type TileSource } from '../../../lib/climate/index.ts';
@@ -49,8 +49,15 @@ export interface Choices { query: string; results: readonly PlaceSearchResult[];
 export const choices = signal<Choices | null>(null);
 // Text that looks like coordinates but could not be read (board: "We could not read “1.17 36” …").
 export const badCoords = signal<string | null>(null);
-// The site in use came from typed coordinates: "Read on this device. Nothing was sent, so the place has no name."
-export const typed = signal(false);
+// The grower's last act on the place (final1 N1, N2): the place it put in use (locate; "Use it" on a
+// link's place; null for Forget) and whether it came from typed coordinates. The place field
+// (views/LocationSlot.tsx) follows these acts and leaves the grower's typing to anything else the
+// page does (a restore, a link, a re-read).
+export const lastAct = signal<{ place: SiteLocation | null; typed: boolean } | null>(null);
+// The site in use came from typed coordinates: "Read on this device. Nothing was sent, so the place has
+// no name." True only while that very place is in use: any other (a link's, one adopted from a link,
+// the saved one read again) is never "typed", whichever path set it.
+export const typed = computed(() => { const a = lastAct.value, l = store.location.value; return !!l && !!a?.typed && a.place === l; });
 // How long "Use my location" waited before it gave up, in seconds, as the read used it (R10;
 // devicePosition).
 export const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
@@ -172,7 +179,7 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   siteFound(() => {
     // Another climate cell clears the grower's own values (A7: store.placeAt).
     store.placeAt(loc);
-    typed.value = fromTyped;
+    lastAct.value = { place: loc, typed: fromTyped };
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
   // The climate read is used at once (v13 Place; borderline: its own class's, the other one tap away;
@@ -290,7 +297,7 @@ export function forget(): void {
   unread.value = false;
   const own = store.location.peek()?.source !== 'link';
   batch(() => {
-    store.location.value = null; line.value = null; typed.value = false;
+    store.location.value = null; line.value = null; lastAct.value = { place: null, typed: false };
     clearStep();
     if (own) locationCountry(null, true);
     // The grower's own values are of that place: they go with it, as the save's place does.
@@ -309,5 +316,6 @@ export function adoptLinkLocation(): boolean {
   if (l?.source !== 'link') return false;
   const mine: SiteLocation = { ...l, source: 'map' };
   quietly(() => { store.location.value = mine; });
+  lastAct.value = { place: mine, typed: false };
   return keepLocation(mine);
 }

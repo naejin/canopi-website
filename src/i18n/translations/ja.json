@@ -744,6 +744,7 @@
   "consortium.country.another": "別の国",
   "consortium.country.anotherWhy": "指定した地点とは別の場所の区画のために",
   "consortium.country.noneWhy": "各植物に世界全体の数を表示",
+  "consortium.country.noMatch": "その名前の国はありません。",
   "consortium.share.button": "共有",
   "consortium.share.title": "このパレットを共有",
   "consortium.share.field": "このパレットへのリンク",

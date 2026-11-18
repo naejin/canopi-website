@@ -744,6 +744,7 @@
   "consortium.country.another": "Un altro paese",
   "consortium.country.anotherWhy": "per un terreno altrove rispetto al punto dato",
   "consortium.country.noneWhy": "ogni pianta mostra allora la sua cifra mondiale",
+  "consortium.country.noMatch": "Nessun paese con questo nome.",
   "consortium.share.button": "Condividi",
   "consortium.share.title": "Condividi questa palette",
   "consortium.share.field": "Link a questa palette",

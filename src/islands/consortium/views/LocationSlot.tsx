@@ -49,15 +49,24 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
   const field = useRef<HTMLInputElement>(null);
   // The field mirrors the place in use (board Place, PlaceDesk; R4, C10): its name once found; a place
   // with no name (a map point, the device, a link's) or none at all (Forget) empties it, so it never
-  // names a place no longer in use; typed coordinates keep the text the grower typed. What the grower
-  // types stays until a place is set.
+  // names a place no longer in use; typed coordinates keep the text the grower typed. The grower's own
+  // acts (state/location.ts lastAct) always set it; anything else the page does (a saved place or a
+  // link read, a re-read) changes it only while it still holds what was last written there, never
+  // what the grower has typed since (final1 N1). Keyed on the place, not on each re-read of it.
   const label = loc?.source !== 'link' ? loc?.label : undefined;
+  const act = m ? m.lastAct.value : null;
+  const seenAct = useRef(act);
+  const written = useRef('');
   useEffect(() => {
     const f = field.current;
     if (!f) return;
-    if (label) f.value = label;
-    else if (!(loc && m?.typed.peek())) f.value = '';
-  }, [loc]);
+    const mine = act !== seenAct.current;
+    seenAct.current = act;
+    if (!mine && f.value !== written.current) return;
+    const next = label ?? (m?.typed.peek() ? f.value : '');
+    f.value = next;
+    written.current = next;
+  }, [label, loc?.lat, loc?.lon, loc?.source, act]);
   const geoIcon = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 2v3M10 15v3M2 10h3M15 10h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>;
   const showWays = !(frame && loc?.lookup);
   const search = (q: string) => { if (q.trim()) void run((x) => x.searchPlace(q)); };

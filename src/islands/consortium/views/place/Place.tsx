@@ -20,7 +20,7 @@
 //   the place banner of a borrowed climate (Oulu).
 import { computed, signal } from '@preact/signals';
 import { Fragment, type ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/consortium/index.ts';
 import { addMembers, climate, country, countFits, curatedClimates, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, pool, removeMember, room, siteEdits, snapshot, toast, updateToast, verdictContext, verdictRule, view } from '../../store.ts';
@@ -50,45 +50,70 @@ const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
 // A disclosure (R1 of fix round 3): the line's one trigger ("Change", or "Add your country" with no
 // country) stays on the line, aria-expanded while the choices are open; opening puts the focus on the
 // first choice; Cancel, Escape, the trigger again or a choice close them and give the focus back to
-// the trigger (after a choice, the trigger of the line's new form). "Another country" is a list that
-// commits only with "Use <country>" beside it, or Enter (R2): moving through it changes nothing.
+// the trigger (after a choice, the trigger of the line's new form). The choices are board Country's
+// radio rows (final1 N2): the location's country, "Another country" and "No country", the one in use
+// checked. Moving through them (arrows, Space) changes nothing (R2); a tap or Enter on a row commits
+// it. "Another country" opens the field "Your country": what is typed filters the countries, a tap on
+// one or Enter (the first) commits it. One line is mounted at a time (N3: the Place form's own goes
+// while the climate screen is open), and its ids are its own (useId).
 const whyOpen = signal(false);
+type Row = 'here' | 'other' | 'none';
+// Accents and case aside, as a grower types a name.
+const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase(pageLang());
 function CountryLine() {
   const { code, source: from } = country.value;
   // The page's list until the database opens (store.knownCountries): the line is final in its first frame.
   const known = knownCountries.value;
   const status = countryStatus(code, known);
   const picking = pickingCountry.value;
+  const uid = useId();
+  const pickId = `${uid}-pick`;
   const trigger = useRef<HTMLButtonElement>(null);
-  const choices = useRef<HTMLUListElement>(null);
-  const select = useRef<HTMLSelectElement>(null);
-  const [other, setOther] = useState(false);
-  const [draft, setDraft] = useState('');
+  const choices = useRef<HTMLFieldSetElement>(null);
+  const field = useRef<HTMLInputElement>(null);
+  const results = useRef<HTMLUListElement>(null);
+  const [row, setRow] = useState<Row>('none');
+  const [query, setQuery] = useState('');
+  const [toField, setToField] = useState(0);
   const back = useRef(false);
   const wasPicking = useRef(picking);
   useEffect(() => {
-    if (picking && !wasPicking.current) choices.current?.querySelector<HTMLElement>('button')?.focus();
+    if (picking && !wasPicking.current) choices.current?.querySelector<HTMLElement>('input')?.focus();
     if (back.current) { back.current = false; trigger.current?.focus(); }
     wasPicking.current = picking;
   });
-  useEffect(() => { if (other) select.current?.focus(); }, [other]);
-  const sorted = [...known.keys()].map((c) => [c, countryName(c)] as const).sort((a, b) => a[1].localeCompare(b[1], pageLang()));
+  useEffect(() => { if (toField) field.current?.focus(); }, [toField]);
   const name = code ? countryName(code) : '';
   const here = siteLocation.value?.source !== 'link' ? siteLocation.value?.lookup?.regions.isoA2 ?? null : null;
+  const q = fold(query.trim());
+  const matches = q ? [...known.keys()].map((c) => [c, countryName(c), fold(countryName(c))] as const).filter((x) => x[2].includes(q))
+    .sort((x, y) => Number(!x[2].startsWith(q)) - Number(!y[2].startsWith(q)) || x[1].localeCompare(y[1], pageLang())) : [];
   const travel = <p class="ct-muted ct-small-text">{T('country.travel')}</p>;
   // Board Country: the invasive icon (a shield) leads the line.
   const mark = <svg aria-hidden="true" class="ct-country-icon" width="16" height="16" viewBox="0 0 20 20"><path d="M10 2.5 16 5v4.5c0 4-2.6 6.7-6 8-3.4-1.3-6-4-6-8V5Z" /><path d="M10 6.5v4M10 13v.1" /></svg>;
-  const open = () => { setOther(false); setDraft(code ?? ''); pickingCountry.value = true; };
-  const close = () => { back.current = true; setOther(false); pickingCountry.value = false; };
-  const pick = (c: string | null) => { back.current = true; setOther(false); chooseCountry(c); };
+  const open = () => { setRow(!code ? 'none' : code === here ? 'here' : 'other'); setQuery(''); pickingCountry.value = true; };
+  const close = () => { back.current = true; pickingCountry.value = false; };
+  const pick = (c: string | null) => { back.current = true; chooseCountry(c); };
+  const commit = (r: Row) => { if (r === 'here') pick(here); else if (r === 'none') pick(null); else { setRow('other'); setToField((n) => n + 1); } };
   const toggle = () => (picking ? close() : open());
   const expanded = picking ? 'true' : 'false';
+  const triggerProps = { ref: trigger, 'aria-expanded': expanded, 'aria-controls': pickId, onClick: toggle } as const;
+  // A row: its own radio over the whole row (a tap anywhere on it is the radio's), the board's circle.
+  const radio = (r: Row, label: string, why: string) => (
+    <label class="ct-country-row">
+      <input type="radio" name={`${uid}-row`} value={r} checked={row === r} onChange={() => setRow(r)}
+        onClick={(e) => { if (e.detail > 0) commit(r); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit(r); } }} />
+      <span class="ct-country-dot" aria-hidden="true" />
+      <span class="ct-country-row-text"><span class="ct-country-row-name">{label}</span>{' '}<span class="ct-country-row-why">{why}</span></span>
+    </label>
+  );
   return (
     <div class="ct-country" data-ct="country">
       {code ? (
         <p class="ct-country-text">
           {mark}{T('country.line')} <strong>{name}</strong>{sep}<span class="ct-muted">{T(from === 'guess' ? 'country.guessed' : from === 'link' ? 'country.linked' : from === 'location' ? 'country.fromLocation' : 'country.chosen')}</span>
-          {from !== 'guess' && <>{sep}<button type="button" class="link-button ct-link" ref={trigger} aria-expanded={expanded} aria-controls="ct-country-pick" onClick={toggle}>{T('country.change')}</button></>}
+          {from !== 'guess' && <>{sep}<button type="button" class="link-button ct-link" {...triggerProps}>{T('country.change')}</button></>}
         </p>
       ) : (
         <p class="ct-country-text">{mark}{T('country.noneLine')}</p>
@@ -97,33 +122,36 @@ function CountryLine() {
       {(from === 'guess' || !code) && (
         <p class="ct-country-acts">
           {code ? !picking && <button type="button" class="button button-primary ct-small" onClick={() => pick(code)}>{T('country.use', { country: name })}</button>
-            : <button type="button" class="button button-secondary ct-small" ref={trigger} aria-expanded={expanded} aria-controls="ct-country-pick" onClick={toggle}>{T('country.add')}</button>}
-          {code ? <button type="button" class="button button-secondary ct-small" ref={trigger} aria-expanded={expanded} aria-controls="ct-country-pick" onClick={toggle}>{T('country.change')}</button>
+            : <button type="button" class="button button-secondary ct-small" {...triggerProps}>{T('country.add')}</button>}
+          {code ? <button type="button" class="button button-secondary ct-small" {...triggerProps}>{T('country.change')}</button>
             : !picking && <button type="button" class="button button-secondary ct-small" aria-expanded={whyOpen.value ? 'true' : 'false'} onClick={() => { whyOpen.value = !whyOpen.value; }}>{T('country.whyAsk')}</button>}
         </p>
       )}
       {!code && whyOpen.value && !picking && <><p class="ct-small-text">{T('country.why')}</p>{travel}</>}
       {picking && (
-        <div class="ct-country-pick" id="ct-country-pick" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } }}>
-          <ul class="ct-country-choices" ref={choices}>
-            {here && <li><button type="button" class="link-button ct-link" onClick={() => pick(here)}><strong>{countryName(here)}</strong> <span class="ct-muted">{T('country.fromLocation')}</span></button></li>}
-            <li>
-              <button type="button" class="link-button ct-link" aria-expanded={other ? 'true' : 'false'} onClick={() => setOther(true)}><strong>{T('country.another')}</strong> <span class="ct-muted">{T('country.anotherWhy')}</span></button>
-              {other && (
-                <p class="ct-country-other">
-                  <label class="ct-sr" for="ct-country-select">{T('country.pick')}</label>
-                  <select id="ct-country-select" ref={select} value={draft}
-                    onChange={(e) => setDraft((e.currentTarget as HTMLSelectElement).value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && draft) { e.preventDefault(); pick(draft); } }}>
-                    <option value="">{T('country.pick')}</option>
-                    {sorted.map(([c, n]) => <option value={c}>{n}</option>)}
-                  </select>
-                  {draft && <button type="button" class="button button-secondary ct-small" onClick={() => pick(draft)}>{T('country.use', { country: countryName(draft) })}</button>}
-                </p>
-              )}
-            </li>
-            <li><button type="button" class="link-button ct-link" onClick={() => pick(null)}><strong>{T('country.none')}</strong> <span class="ct-muted">{T('country.noneWhy')}</span></button></li>
-          </ul>
+        <div class="ct-country-pick" id={pickId} onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); } }}>
+          <fieldset class="ct-country-choices" ref={choices}>
+            <legend class="ct-sr">{T('country.pick')}</legend>
+            {here && radio('here', countryName(here), T('country.fromLocation'))}
+            {radio('other', T('country.another'), T('country.anotherWhy'))}
+            {row === 'other' && (
+              <div class="ct-country-other">
+                <label class="ct-country-search">
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5" /><path d="M12.3 12.3l4.2 4.2" /></svg>
+                  <input type="text" ref={field} value={query} aria-label={T('country.pick')} placeholder={T('country.pick')} autoComplete="off" aria-controls={`${uid}-found`}
+                    onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); if (matches[0]) pick(matches[0][0]); }
+                      else if (e.key === 'ArrowDown' && matches.length) { e.preventDefault(); results.current?.querySelector('button')?.focus(); }
+                    }} />
+                </label>
+                {q && (matches.length
+                  ? <ul class="ct-country-results" id={`${uid}-found`} ref={results}>{matches.map(([c, n]) => <li><button type="button" class="link-button ct-link" onClick={() => pick(c)}>{n}</button></li>)}</ul>
+                  : <p class="ct-muted ct-small-text" id={`${uid}-found`}>{T('country.noMatch')}</p>)}
+              </div>
+            )}
+            {radio('none', T('country.none'), T('country.noneWhy'))}
+          </fieldset>
           <p class="ct-small-text">{T('country.why')}</p>
           {travel}
           <p><button type="button" class="link-button ct-link" onClick={close}>{T('country.cancel')}</button></p>
@@ -132,6 +160,8 @@ function CountryLine() {
     </div>
   );
 }
+// The Place form's country line: none while the climate screen is open, which shows its own (N3).
+const MainCountry = () => (cardsAsked.value ? null : <CountryLine />);
 
 // ---- the climate cards (board ClimateHand): their own screen, one link away (BC5, BC15) ----
 // "‹ Your place", "Choose a climate", what a grower without a location loses, the country guess, then one
@@ -148,6 +178,8 @@ const CHIP = {
 const chip = (kind: keyof typeof CHIP, label: string) => (
   <span class={`ct-chip${kind === 'site' ? ' is-warning' : ''}`} data-chip><svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d={CHIP[kind]} /></svg>{label}</span>
 );
+// Each row keeps the class ct-card: no rule styles it; it is the hook the layout-stability check measures
+// (scripts/browser/seams-helpers.mjs STABLE, '.ct-card:first-of-type' and ':last-of-type'; final1 N1).
 // Mounted with Place and hidden until asked, so the questions keep their state behind it and the
 // radios are always in the page (the location step's tests read them).
 function ClimateHand({ open }: { open: boolean }) {
@@ -180,14 +212,14 @@ function ClimateHand({ open }: { open: boolean }) {
           const size = (zone as { size?: number }).size ?? 0;
           const own = curatedClimates.value.includes(z);
           return (
-            <label class={`ct-hand-row${chosen === z ? ' is-chosen' : ''}`}>
+            <label class={`ct-card ct-hand-row${chosen === z ? ' is-chosen' : ''}`}>
               <input type="radio" name="ct-climate" value={id} checked={chosen === z} aria-labelledby={`ct-cl-${id}`} aria-describedby={`ct-cl-${id}-d`} onChange={() => chooseClimate(z)} onClick={closeOnPointer(z)} onKeyDown={closeOnKey} />
               <span class="ct-hand-head"><span class="ct-hand-name" id={`ct-cl-${id}`} data-name>{label}</span>{chip(pill.ready ? 'ready' : pill.site ? 'site' : 'none', pill.label)}</span>
               <span id={`ct-cl-${id}-d`} class="ct-hand-desc">{T(`place.climate.desc.${id}`)}{sep}{own ? P('place.climate.ownList', size) : T('place.climate.nearest', { lists: listsOf(z) })}</span>
             </label>
           );
         })}
-        <div class="ct-hand-row is-off" data-climate-polar>
+        <div class="ct-card ct-hand-row is-off" data-climate-polar>
           <span class="ct-hand-head"><span class="ct-hand-name" data-name>{T('place.climate.polar')}</span>{chip('none', T('place.climate.noList'))}</span>
           <span class="ct-hand-desc">{T('start.climate.notYet')}. <a href={page().start.contact}>{T('start.uncovered.ask')}</a></span>
         </div>
@@ -611,13 +643,13 @@ function Questions() {
         <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
         <WeRead />
         <KeptClimate />
-        {!ready && !wide && <CountryLine />}
+        {!ready && !wide && <MainCountry />}
         {z && (block || !hasList(z)) && <PoolSlot zone={z} />}
       </div>
       {ready && (
         <div class="ct-place-col">
           <RoomStep />
-          {!wide && <CountryLine />}
+          {!wide && <MainCountry />}
           <OwnPlants />
           <div class="ct-cta">
             <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
@@ -641,7 +673,7 @@ function PlaceForm() {
     <div class="ct-start ct-place">
       <div class="ct-place-main" hidden={cardsAsked.value}>
         <div class="ct-place-grid"><Questions /></div>
-        {desk.value && <CountryLine />}
+        {desk.value && <MainCountry />}
         <PlaceFigures />
       </div>
       {/* After the questions, so the view's first heading (focus.ts) is question 1 while it is hidden. */}
@@ -658,7 +690,7 @@ function Frame() {
         <LocationSlot frame />
         <KeptClimate />
         <RoomStep />
-        <CountryLine />
+        <MainCountry />
         <PlaceFigures />
         <p class="ct-frame-foot">
           <button type="button" class="link-button ct-link ct-frame-over" data-start-over onClick={startOverNow}>{T('start.over')}</button>
