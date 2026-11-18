@@ -32,8 +32,7 @@ export function wasmMissing(): boolean {
 // The whole body of url (bytes null when the status is not ok). Throws when it did not arrive: a
 // network error or a stall.
 // onBytes: the bytes received so far, after each part (M28: "0.8 of 1.4 MB").
-/** @testonly exported for the progress unit test; the page reaches it through openDatabase. */
-export async function download(url: string, onBytes?: (got: number) => void): Promise<{ status: number; bytes: Uint8Array | null }> {
+async function download(url: string, onBytes?: (got: number) => void): Promise<{ status: number; bytes: Uint8Array | null }> {
   const ctrl = new AbortController();
   let why = '';
   let stall: ReturnType<typeof setTimeout> | undefined;

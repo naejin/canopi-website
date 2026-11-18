@@ -196,8 +196,8 @@ export type RangeVariable = keyof typeof RANGE_VARIABLES;
 export const READ_ONLY_VARIABLES = { precip: 'precip' } as const;
 export interface TaxonClimate {
   source: string;
-  /** Annual rain of the observed cells, mm; read only, never part of a verdict. */
-  readonly precip: ClimateRange | null;
+  /** Annual rain of the observed cells, mm; never part of a verdict (READ_ONLY_VARIABLES). */
+  precip: ClimateRange | null;
   tminCold: ClimateRange | null;
   tmaxWarm: ClimateRange | null;
   tmeanYear: ClimateRange | null;
