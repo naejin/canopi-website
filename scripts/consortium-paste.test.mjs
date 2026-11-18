@@ -25,7 +25,7 @@ test('a pasted list: one name per line, commas and semicolons split, each name o
 test('a spreadsheet paste reads its columns; a header row of column words is left out and kept apart', () => {
   const text = 'Scientific name\tQty\nMalus domestica\t3\n"Castanea sativa"\t1\n';
   assert.equal(pasteTable(text).columns, 2);
-  const names = pasteNames(text, 0);
+  const names = pasteNames(text);
   assert.deepEqual([...names], ['Malus domestica', 'Castanea sativa']);
   assert.equal(names.header, 'Scientific name');
   assert.ok(looksLikeHeader('Nom latin'));
@@ -156,9 +156,8 @@ test('c1r4 U4 + U6: a close spelling on another list, or already in the palette,
 test('comma or semicolon columns: the same count on every line makes a table; a split cell never goes to the word-prefix search', () => {
   const csv = 'Malus domestica,Tree,Sun\nCastanea sativa,Tree,Sun\n';
   assert.deepEqual([pasteTable(csv).columns, pasteTable(csv).sep], [3, ',']);
-  assert.deepEqual([...pasteNames(csv, 0)], ['Malus domestica', 'Castanea sativa']);
+  
   assert.equal(pasteTable('"Malus domestica";"Tree"\n"Rubus idaeus";"Shrub"').columns, 2);
-  assert.deepEqual([...pasteNames('"Malus domestica";"Tree"\n"Rubus idaeus";"Shrub"', 0)], ['Malus domestica', 'Rubus idaeus']);
   assert.equal(pasteTable('Apple, Hawthorn\nRaspberry').columns, 1, 'uneven counts stay a list');
   const one = readPaste(pasteNames('Malus domestica,Tree,Sun'), { here: temperate, others: [['Tropical', tropical]], members: [] });
   assert.deepEqual(one.found.map((f) => f.taxon.id), ['t1']);
@@ -166,19 +165,15 @@ test('comma or semicolon columns: the same count on every line makes a table; a 
   assert.deepEqual(one.none.map((x) => x.name), ['Tree', 'Sun']);
 });
 
-test('comma or semicolon columns read every cell unless the reader picks one; tabs keep the first column', () => {
-  const { pasteColumn } = paste;
+test('comma or semicolon columns read every cell; tabs read the first column (no column to pick, v14 pf-e)', () => {
   const list = 'Apple, Hawthorn\nRaspberry, Blackberry';
-  assert.equal(pasteColumn(list, null), -1, 'every cell by default');
-  assert.deepEqual([...pasteNames(list, pasteColumn(list, null))], ['Apple', 'Hawthorn', 'Raspberry', 'Blackberry']);
-  assert.deepEqual([...pasteNames(list, pasteColumn(list, 1))], ['Hawthorn', 'Blackberry'], 'a picked column');
+  assert.deepEqual([...pasteNames(list)], ['Apple', 'Hawthorn', 'Raspberry', 'Blackberry']);
   const csv = 'Malus domestica,Tree,Sun\nCastanea sativa,Tree,Sun\n';
-  const r = readPaste(pasteNames(csv, pasteColumn(csv, null)), { here: temperate, others: [['Tropical', tropical]], members: [] });
+  const r = readPaste(pasteNames(csv), { here: temperate, others: [['Tropical', tropical]], members: [] });
   assert.deepEqual(r.found.map((f) => f.taxon.id), ['t1', 't2']);
   assert.deepEqual(r.choose, [], 'cells cut from a row skip the word-prefix search');
-  const tabs = 'Malus domestica\t3\nCastanea sativa\t1';
-  assert.equal(pasteColumn(tabs, null), 0, 'tabs: the first column');
-  assert.equal(pasteColumn(tabs, -1), 0);
+  assert.deepEqual([...pasteNames('Malus domestica\t3\nCastanea sativa\t1')], ['Malus domestica', 'Castanea sativa'], 'tabs: the first column');
+  assert.equal(paste.pasteColumn, undefined, 'no column picker');
 });
 
 // The cost guard: 500 unmatched lines against a large list. It used to time the read (< 200 ms wall

@@ -94,16 +94,10 @@ function readPasteTable(src: string): PasteTable {
   const wide = readTable(src, true);
   return wide.rows.length < strict.rows.length && wide.rows.every((r) => r.length === strict.columns) ? { ...wide, sep: '\t' } : strict;
 }
-// EVERY_CELL: names come from every cell of every row (a comma or semicolon table's default, so a
-// comma list over several lines never loses names unless the reader picks a column).
-export const EVERY_CELL = -1;
-// The column names are read from, always one the text has: null is the default (every cell for comma
-// or semicolon columns, else the first column).
-export function pasteColumn(text: string, column: number | null): number {
-  const table = pasteTable(text), bySep = table.sep === ',' || table.sep === ';';
-  if (column === null || column === EVERY_CELL) return bySep ? EVERY_CELL : 0;
-  return column > 0 && column < table.columns ? column : 0;
-}
+// Names come from the first column of a spreadsheet paste (tabs: board Paste, "Pasted from a
+// spreadsheet? The names are read from the first column."), and from every cell of a comma or
+// semicolon list, so a comma list over several lines never loses a name. No column to pick (v14 pf-e).
+const EVERY_CELL = -1;
 
 // Column words a list's first row may hold, in the site's 11 languages (folded). A first cell made
 // only of these words (and small joining words) is a header; any other first row is read like every
@@ -129,11 +123,13 @@ export function looksLikeHeader(cell: string | undefined): boolean {
 // (never sent to the word-prefix search: "Malus domestica,Tree,Sun" does not offer trees); twice: the
 // names pasted more than once (one row, "listed twice, counted once", board Paste).
 export type PastedNames = string[] & { header?: string | null; split?: ReadonlySet<string>; twice?: ReadonlySet<string> };
-// The names in one column: a cell split on commas and semicolons (unless they separate the columns),
-// each name once (folded; a repeat marks the first as `twice`). A first row that looks like column
-// names (in a paste of two rows or more) is left out and kept as `header`.
-export function pasteNames(text: string, column = 0): PastedNames {
+// The names of a paste, every line read (no cap: v14 pf-e, F23): a spreadsheet's first column, a cell
+// split on commas and semicolons (unless they separate the columns, when every cell is a name), each
+// name once (folded; a repeat marks the first as `twice`). A first row that looks like column names
+// (in a paste of two rows or more) is left out and kept as `header`.
+export function pasteNames(text: string): PastedNames {
   const out: PastedNames = [], seen = new Map<string, string>(), split = new Set<string>(), twice = new Set<string>(), table = pasteTable(text);
+  const column = table.sep === ',' || table.sep === ';' ? EVERY_CELL : 0;
   const every = column === EVERY_CELL;
   const first = table.rows[0] ?? [];
   const head = table.rows.length > 1 && (every ? first.length > 0 && first.every((c) => looksLikeHeader(c)) && first.join(', ') : looksLikeHeader(first[column]) && first[column].trim()) || null;
@@ -209,8 +205,6 @@ export function matchName<T extends Named>(name: string, lists: PasteLists<T>): 
   return null;
 }
 
-const PREFIX_LIMIT = 8;
-
 // `at`: the reading's line in the paste (the sheet lists the paste in its order, board Paste).
 export interface PasteResult<T> {
   found: { at: number; name: string; taxon: T; close: string | null }[];
@@ -252,9 +246,9 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
   };
   // A choose group from one list: this climate's plants when it has any, else the first other list's;
   // a name's one plant is no question (board Paste: a found line), a guess's is.
-  const group = (name: string, taxa: T[], guess: boolean, limit = Infinity, word = name) => {
+  const group = (name: string, taxa: T[], guess: boolean, word = name) => {
     const z = taxa.some((t) => lists.climate.get(t.id) === null) ? null : lists.climate.get(taxa[0].id) ?? null;
-    const own = taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z).slice(0, limit);
+    const own = taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z);
     if (own.length === 1 && !guess) one(name, own[0], null);
     else out.choose.push({ at, name, word, taxa: own, inside: [], climate: z, guess });
   };
@@ -270,10 +264,10 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
     // A plural common name ("beans", "pommes"): the plants named by its singular, to choose (B10).
     let word = name, hits = search(name);
     if (!hits.length && /\p{L}{3}s$/u.test(name.trim())) hits = search(word = name.trim().slice(0, -1));
-    if (hits.length) { group(name, hits, true, PREFIX_LIMIT, word); continue; }
+    if (hits.length) { group(name, hits, true, word); continue; }
     const close = lists.index.close(name, true).filter((h) => lists.taxa.has(h.id));
     if (close.length === 1) one(name, lists.taxa.get(close[0].id)!, close[0].why.text);
-    else if (close.length) group(name, close.map((h) => lists.taxa.get(h.id)!), true, PREFIX_LIMIT);
+    else if (close.length) group(name, close.map((h) => lists.taxa.get(h.id)!), true);
     else out.none.push({ at, name });
   }
   // Plants another line matched leave the choose groups; a group they leave empty keeps its line, as

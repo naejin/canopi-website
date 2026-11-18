@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
-// Paste a list (stream S3; mockup 01 `paste`, design check A8): one name per line (or a spreadsheet
-// column, picked when the paste has several; comma or semicolon columns read every cell unless one is picked), matched against this climate's list, then the other
+// Paste a list (stream S3; mockup 01 `paste`, design check A8): one name per line (a spreadsheet's
+// first column; comma or semicolon columns read every cell), matched against this climate's list, then the other
 // climates' lists (views/find/paste.ts, through Find's search: data/search.ts, synonyms and the names
 // file's names included). The other lists are the release's plants as Find reads them (views/find/
 // names.ts releasePlants): opening Paste loads no list; a plant of another list loads its list only
@@ -13,7 +13,7 @@
 // anyway" (a guest, labelled "From the {climate} list", A9) adds it in one tap and "Add all" adds the
 // found and ticked plants; a plant with a warning (store.warnedPlant, as in Find) makes the toast say
 // "n added with a warning" with Show. Each added plant is kept. The text is read a moment after typing
-// stops (at once on "Read the list" and on "Add all"), at most MAX_LINES lines (board Paste: 200). A
+// stops (at once on "Read the list" and on "Add all"), every line (no cap, v14 pf-e). A
 // close spelling ("chesnut") is offered, "Read as European chestnut", and added only once ticked.
 // Loaded on first use with Find, one chunk (views/find/index.ts, views/Sheets.tsx).
 import type { ComponentChildren } from 'preact';
@@ -21,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { EVERY_CELL, pasteColumn, pasteNames, pasteTable, plan, readPaste, type Named } from './paste.ts';
+import { pasteNames, plan, readPaste, type Named } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
@@ -31,7 +31,6 @@ import { FitLine } from '../kit/fit.tsx';
 import { nameOf, zoneName } from '../kit/names.ts';
 import { finder, releasePlants, wantNames } from './names.ts';
 
-const MAX_LINES = 200;
 const SETTLE_MS = 200;
 const INFO = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 7v4.5M8 4.6v.8" stroke="currentColor" stroke-width="1.6" /></svg>;
 const OK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
@@ -47,7 +46,6 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   const [text, setText] = useState('');
   const box = useRef<HTMLTextAreaElement>(null);
   const [settled, setSettled] = useState('');
-  const [column, setColumn] = useState<number | null>(null); // null: the default (every cell for comma columns)
   const [ticked, setTicked] = useState<PlantId[]>([]);
   const zones = store.curatedClimates.value;
   const release = releasePlants.value;
@@ -55,8 +53,6 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   useEffect(() => { if (source) wantNames(source, pageLang() as Locale); }, [source]);
   useEffect(() => { const id = setTimeout(() => setSettled(text), SETTLE_MS); return () => clearTimeout(id); }, [text]);
 
-  const table = pasteTable(settled);
-  const col = pasteColumn(settled, column);
   // The plants only other lists hold, each under its first list in the export's order.
   const lists = useMemo(() => {
     const here = new Set(pool?.map((t) => t.id) ?? []), by = new Map<ClimateZone, Named[]>();
@@ -66,12 +62,8 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     }
     return zones.flatMap((z) => (by.has(z) ? [[z, by.get(z)!] as [ClimateZone, Named[]]] : []));
   }, [release, pool, climate, zones]);
-  const read = (src: string) => {
-    const all = pasteNames(src, pasteColumn(src, column));
-    const names = all.length > MAX_LINES ? Object.assign(all.slice(0, MAX_LINES), { header: all.header, split: all.split }) : all;
-    return { capped: all.length > MAX_LINES, result: pool ? readPaste<Named>(names, { here: pool, others: lists, members, index }) : null };
-  };
-  const { capped, result } = useMemo(() => read(settled), [settled, column, pool, members, lists, index]);
+  const read = (src: string) => ({ result: pool ? readPaste<Named>(pasteNames(src), { here: pool, others: lists, members, index }) : null });
+  const { result } = useMemo(() => read(settled), [settled, pool, members, lists, index]);
   if (!climate) return null;
   if (!pool || !result) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
@@ -108,7 +100,6 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     return t ? <Marks t={t} lines={flagLines(t, flagsOfPlant(t), scene)} country={scene.country} /> : null;
   };
   const empty = !result.found.length && !result.choose.length && !result.other.length && !result.already.length && !result.duplicate.length && !result.none.length;
-  const sample = (c: number) => table.rows.find((r, i) => i > 0 && r[c]?.trim())?.[c]?.trim().slice(0, 24) ?? table.rows[0]?.[c]?.trim().slice(0, 24) ?? '';
 
   // The paste in its order (board Paste, fix round 1 B10): one row a line, its reading said on it, with
   // its mark (K11): ✓ read, ⓘ a question, ✗ not found; the mark has its word on the row.
@@ -186,22 +177,12 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         <h2 id="ct-paste-title" tabIndex={-1} data-autofocus>{T('paste.title')}</h2>
         <p class="ct-muted">{T('paste.lede')}</p>
       </div>
-      <p class="ct-paste-intro">{T('find.pasteIntro', { n: MAX_LINES })}</p>
+      <p class="ct-paste-intro">{T('find.pasteIntro')}</p>
       <div class="ct-field">
         <label for="ct-paste-text" class="visually-hidden">{T('paste.label')}</label>
         <textarea ref={box} id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onInput={(e) => setText((e.target as HTMLTextAreaElement).value)} />
       </div>
-      {table.columns > 1 && (
-        <div class="ct-field">
-          <label for="ct-paste-col">{T(table.sep === '\t' ? 'paste.columns' : 'paste.columnsSep', { n: table.columns })}</label>
-          <select id="ct-paste-col" value={String(col)} onChange={(e) => setColumn(Number((e.target as HTMLSelectElement).value))}>
-            {table.sep !== '\t' && <option value={String(EVERY_CELL)}>{T('paste.everyCell')}</option>}
-            {Array.from({ length: table.columns }, (_, c) => <option value={String(c)}>{T('paste.column', { n: c + 1, sample: sample(c) })}</option>)}
-          </select>
-        </div>
-      )}
       <button type="button" class="button button-secondary ct-paste-read" data-paste-read="" onClick={() => setSettled(box.current?.value ?? text)}>{T('find.readList')}</button>
-      {capped && <p class="ct-note">{T('paste.cap', { n: MAX_LINES })}</p>}
       <div aria-live="polite">
         {empty && <p class="ct-muted">{T('paste.empty')}</p>}
         {lines > 0 && <p id="ct-p-count" tabIndex={-1} data-paste-count=""><strong>{P('paste.read', lines)}</strong>{sum && <span class="ct-muted"> {sum}</span>}</p>}
