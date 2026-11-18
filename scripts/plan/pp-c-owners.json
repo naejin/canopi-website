@@ -1,5 +1,5 @@
 {
-  "_comment": "Owners file of push PP-C (find a plant, know a plant; plus the palette-page fixes of the mock-up conformance report) of the Consortium v2 plan (knowledge/project/plant-palette-slices.md section 3, rewritten 2026-11-17 from .local/consortium/v2/ppc/design-check-c1.md, design-check-c2.md and conformance/report.md, citations at master f102922, corrected the same day by the amendment check .local/consortium/v2/ppc/amendment-check.md, 23 findings). Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks (store.ts main -> c2 -> pf; verdict-line.ts main -> c2 -> pf; kit/fit.tsx c2 -> pf; App.tsx c2 -> pf; PoolSlot.tsx c2 -> pf; views/palette/** main/c2 -> pf; views/kit/sheet.tsx and Sheets.tsx main -> c1; sqlite-source.ts and source.ts main -> c1; consortium-pp-b2.browser.test.mjs main -> c1 -> pf (c2's :441 range case handed to c1 through the coordinator); consortium-p5-s5c, -e6 browser and consortium-p5-seams main -> c2; consortium-pp-b1, -seams-layout and -seams-p2 browser main -> c1 -> pf, -seams-p5 browser main -> c1 (coordinator, 2026-11-17: c1's Find breaks their Add and Paste cases, pf's Place and palette rework the rest); the role files main -> c2 -> main). Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel (at most two building agents). Streams by feature: c1 Find (chunk 1), c2 One plant (chunk 1), pf the palette-page and Place fixes (chunk 2, after c1 and c2 merge; no early start). Commit 0 (chunk 0) deletes the Add sheet, list-query, jobFind and P5-14e first (owner rule 'Delete first'), writes the final role table (find matches views/find/** and views/Paste.tsx, so c1 needs no role change), keeps the reader accepting schema 3 and 4, and moves the 11 PP-C markers from parked to moved (plan-owners.test.mjs widened to PP-C). Chunk 3 main opens with 0b, the install of the published schema-4 export (real-data figures, weigh.json APG family cases, vectors), before the hand-offs. 'shared' lists the locale files: each listed stream adds keys only under its own prefix and changes or deletes only the keys its edits name; the merge agent joins the blocks. node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/pp-c-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken. No backward compatibility work (owner, 2026-11-17): main deletes in commit 0 the beta tool's older-version paths and their keys consortium.share.outdated, consortium.share.pasted.outdated and consortium.start.oldSave (listed in main's edits); no stream adds alias or old-format handling.",
+  "_comment": "Owners file of push PP-C (find a plant, know a plant; plus the palette-page fixes of the mock-up conformance report) of the Consortium v2 plan (knowledge/project/plant-palette-slices.md section 3, rewritten 2026-11-17 from .local/consortium/v2/ppc/design-check-c1.md, design-check-c2.md and conformance/report.md, citations at master f102922, corrected the same day by the amendment check .local/consortium/v2/ppc/amendment-check.md, 23 findings). Path -> stream per chunk: one owner per path per chunk; a path may change hands between chunks (store.ts main -> c2 -> pf; verdict-line.ts main -> c2 -> pf; kit/fit.tsx c2 -> pf; App.tsx c2 -> pf; PoolSlot.tsx c2 -> pf; views/palette/** main/c2 -> pf; views/kit/sheet.tsx and Sheets.tsx main -> c1; sqlite-source.ts and source.ts main -> c1; consortium-pp-b2.browser.test.mjs main -> c1 -> pf (c2's :441 range case handed to c1 through the coordinator); consortium-p5-s5c, -e6 browser and consortium-p5-seams main -> c2; consortium-pp-b1, -seams-layout and -seams-p2 browser main -> c1 -> pf, -seams-p5 browser main -> c1 (coordinator, 2026-11-17: c1's Find breaks their Add and Paste cases, pf's Place and palette rework the rest); the role files main -> c2 -> main). Patterns are repo-relative: '*' stays within a folder, '**' crosses folders. Chunks run in order; streams inside a chunk run in parallel (at most two building agents). Streams by feature: c1 Find (chunk 1), c2 One plant (chunk 1), pf the palette-page and Place fixes (chunk 2, after c1 and c2 merge; no early start). Commit 0 (chunk 0) deletes the Add sheet, list-query, jobFind and P5-14e first (owner rule 'Delete first'), writes the final role table (find matches views/find/** and views/Paste.tsx, so c1 needs no role change), keeps the reader accepting schema 3 and 4, and moves the 11 PP-C markers from parked to moved (plan-owners.test.mjs widened to PP-C). v14 split (2026-11-18, .local/consortium/v2/ppc/pf/v14-spec-update.md section 1): chunk 2 keeps pf-a, pf-b, pf-c with v14 duties; chunk 3 is new (pf-d 'Your place in figures', pf-e 'Many plants', pf-f 'One plant'; at most two building, pf-f third or first if a slot is free); the old chunk 3 (main) is chunk 4. pf commit 0W (main agent, before chunk 2) lands the shared seams and rulings R1 to R4 in files no stream owns. Chunk 4 main opens with 0b, the install of the published schema-4 export (real-data figures, weigh.json APG family cases, vectors), before the hand-offs. 'shared' lists the locale files: each listed stream adds keys only under its own prefix and changes or deletes only the keys its edits name; the merge agent joins the blocks. node scripts/plan/owners.mjs check <chunk> <stream> <base> --file scripts/plan/pp-c-owners.json fails a stream diff outside its rows. A file found needed mid-build is requested from the main agent, never taken. No backward compatibility work (owner, 2026-11-17): main deletes in commit 0 the beta tool's older-version paths and their keys consortium.share.outdated, consortium.share.pasted.outdated and consortium.start.oldSave (listed in main's edits); no stream adds alias or old-format handling.",
   "step": "consortium-v2 Plant palette redesign, push PP-C",
   "branch": "pp/c",
   "shared": [
@@ -27,7 +27,13 @@
             "consortium.job.*.find",
             "consortium.share.outdated",
             "consortium.share.pasted.outdated",
-            "consortium.start.oldSave"
+            "consortium.start.oldSave",
+            "consortium.kit.*",
+            "consortium.line.thin*",
+            "consortium.line.holeChange*",
+            "consortium.line.siteEdit*",
+            "consortium.line.hint*",
+            "consortium.palette.goal*"
           ]
         },
         "c1": {
@@ -94,7 +100,9 @@
             "consortium.palette.invasiveCountries",
             "consortium.palette.room*",
             "consortium.line.*",
-            "consortium.find.*"
+            "consortium.find.*",
+            "consortium.palette.thin*",
+            "consortium.toast.*"
           ]
         },
         "pf-b": {
@@ -115,14 +123,12 @@
             "consortium.palette.later",
             "consortium.palette.stepPrinted",
             "consortium.palette.toast*",
-            "consortium.plants.*",
             "consortium.details.removed",
             "consortium.future.*",
             "consortium.weigh.*",
-            "consortium.details.*",
-            "consortium.d.*",
-            "consortium.swap.*",
-            "consortium.palette.read*"
+            "consortium.palette.read*",
+            "consortium.palette.goal*",
+            "consortium.palette.cells*"
           ]
         },
         "pf-c": {
@@ -151,7 +157,38 @@
             "consortium.share.*",
             "consortium.shell.*",
             "consortium.privacy.*",
-            "privacy.tool.*"
+            "privacy.tool.*",
+            "privacy.location.*"
+          ]
+        },
+        "pf-d": {
+          "prefix": "consortium.figures.",
+          "edits": [
+            "consortium.figures.*",
+            "consortium.site.*"
+          ]
+        },
+        "pf-e": {
+          "prefix": "consortium.many.",
+          "edits": [
+            "consortium.paste.*",
+            "consortium.plants.*",
+            "consortium.find.paste*",
+            "consortium.palette.plants*",
+            "consortium.palette.warnings*"
+          ]
+        },
+        "pf-f": {
+          "prefix": "consortium.details.",
+          "edits": [
+            "consortium.details.*",
+            "consortium.d.*",
+            "consortium.swap.*",
+            "consortium.swapped",
+            "consortium.correction.*",
+            "consortium.range.*",
+            "consortium.line.*",
+            "consortium.misfit.*"
           ]
         }
       },
@@ -382,7 +419,6 @@
             "src/lib/consortium/holes.ts",
             "src/lib/consortium/verdict-line.ts",
             "src/islands/consortium/rules/change-summary.ts",
-            "src/islands/consortium/views/find/**",
             "src/islands/consortium/rules/find-query.ts",
             "src/islands/consortium/views/Sheets.tsx",
             "src/styles/consortium/find.css",
@@ -392,9 +428,15 @@
             "scripts/consortium-pp-pf.test.mjs",
             "scripts/consortium-pf-a.test.mjs",
             "scripts/browser/consortium-pf-a.browser.test.mjs",
-            "scripts/browser/pf-helpers.mjs"
+            "scripts/browser/pf-helpers.mjs",
+            "src/islands/consortium/views/find/Find.tsx",
+            "src/islands/consortium/views/find/index.ts",
+            "src/islands/consortium/views/find/marks.tsx",
+            "src/islands/consortium/views/find/names.ts",
+            "src/islands/consortium/views/Toast.tsx",
+            "src/styles/consortium/details.css"
           ],
-          "duty": "pf-a 'What's missing next', ported from the v13 boards (.local/consortium/v2/f1a/mockups-v13/project/, word-map.md; owner-approved 2026-11-18; spec: .local/consortium/v2/ppc/pf/v13-spec-update.md section 3, owner answers pf-decisions.md). Boards: Main and Palette (Next step, Other holes), Empty, Balcony (room card and room note only), Toasts (result lines), Find, FindType, FindResults, FindFilters, FindNone, FindDesk, FillHole, HoleOpen, Paste, DeskStates (Find, and the Swap frame, as a panel beside the chart at 960 px and wider). Holes: one title form everywhere ('Full sun: nobody in the first 3 years'; 'Covers the ground: nobody, at any time'); unknown is never a hole: a hole whose only possible doers are unchecked reads 'nobody known' with 'N plant(s) not checked' (counted only inside the hole's span); ranking: a cooler-months food hole ('Food crops: nothing in the cooler months') ranks first when fitting candidates exist for the place, then the HOLE_ORDER ranks (no cool or flowering hole is produced from today's release: the rule is tested on fixture holes). Next step: 'hole i of n', the why sentence, candidates with 'Also …' (every other recorded job), years, size, 'Grows in: …' and 'best in …' (said only when known), grouped Fits / 'Needs a second look (n)' (one rule: a toxic or invasive warning, or near the edge; store.warnedPlant), See all N (equal to what the hole opens), Not now; Other holes card with Find on each row and '1 plant fills it: X' with its chip; the soft chip 'Recorded invasive in N (other) countries' (ink, never a second look). FillHole result toast names the hole that is left ('Sweet potato added. Covers the ground: nobody after year 1.') with Undo. Empty 'Start with the plants you want' (three row cards, the count line). Balcony: the room card and 'Grows to N m: keep it pruned, or pick a smaller plant'. 'Checking your plants…' on store.verdictsReady; the 320 overflow. Find, v13 deltas: 'Your palette has N holes' (not 'lacks'); rows 'Grows in: …', 'best in …', 'is planted in shade: fills 2 holes', 'Another <job> <when>: a backup' (S1); filters 9 groups to 6 (Job, Light, When it stands, Climate, Size, Hide): Life, edible, native, repeat-jobs and 'Also gives' gone; Light: four levels, any number, 'To fill an empty light level. A plant shows under every level it grows in.'; Climate merges fit and later climate; Hide: 'Hide plants recorded toxic' with 'toxicity not checked for N of the M plants' in its line, 'Hide plants recorded invasive in <country>', 'Hide plants whose light is not checked yet', 'Hide plants with no size recorded'; no 'Select several' (S7); no anyway ask: 'Add anyway' one tap, the rule off-screen (S3, S11); FindNone 'A job word' state; Paste reads the first column (S14); K6 other-list rows (store.failedOther); fills N holes and ranking from store.holeFillCount. DeskStates: Sheets.tsx and views/palette/FindPanelSlot.tsx (the slot Palette.tsx mounts; its grid placement styled from find.css), focus model and layout tests; FindDesk filter column with the Light group and 'Show N outside their climate range'. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, persist.ts, types.ts, data/sqlite-source.ts, kit/flags.ts and the core outside holes.ts and verdict-line.ts have no chunk-2 owner: the v13 seams commit (main agent, before the streams; .local/consortium/v2/ppc/pf/v13-spec-update.md section 2) lands what two streams share, and a stream that needs more asks the main agent. Each stream's commit 0 deletes its old screens and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v13 board text as failing behaviour tests; one full board check in Chrome before review 1; at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Data the release lacks (canopi-data 4.5: light span, preferred level, estimate labels; season) renders from today's single level or says nothing, with the 4.5 path tested on fixtures (owner 2026-11-18). Spot and soil answers are PP-F, after the first release: nothing here asks for or reads them (owner 2026-11-18)."
+          "duty": "pf-a 'What's missing next', ported from the v14 boards (.local/consortium/v2/f1a/mockups-v14/project/, word-map.md; approved 2026-11-18; spec: .local/consortium/v2/ppc/pf/v14-spec-update.md section 2 'pf-a', F17-F21, section 6; v13-spec-update.md section 3 where v14 does not override it). Boards: Main, Palette, DarkMain and Recife (Next step, Other holes), Many and ManyDesk (Next step card), SiteMendoza (Next step rows; partial board, A1 governs), Empty, Balcony (room card and note), Find, FindType, FindResults, FindFilters, FindNone, FindDesk, FillHole, HoleOpen, AddMany states 1-3, DeskStates (Find panel, toast), Toasts (add, bulk add, burst). Next step: 'hole i of n · then N thin spots' (0W nextTarget), then the thin-spot card ('thin spot 1 of 5 · you want 2 · Change', 'Find a backup'), never on an untouched suggestion (A19: count only). Candidate groups Fits / 'Needs a second look (n)' as MoreList (Mildly toxic under Fits, R1); the bulk row 'Add the N that fit best' / 'Add all N that fill this hole' (thin: 'Add all N that do this job then') from 0W bestToAdd, shown whenever a plant fits, warning counts said before the tap; the no-fit state; 'See all N plants' (A1). Deletes OUTSIDE_FIRST and its fold. Add sheet stays open: 'N added this visit · your palette: M plants', Done, 'Added' with Undo, one counting toast; bulk-add toasts from 0W holeChange (narrowed: 'Covers the ground: nobody after year 25.') and thinChange ('still 1 plant in years 25 to 60'). Toast bottom-left 420 px at 960 px and wider (Q4, decided; details.css is granted, as it is centred today). Find: v13 deltas; filter 'Fills a hole or a thin job'; 'Sorted: fills this first'; 'Best fit first' from find-query.ts bestFirst; groups and other lists as MoreList (no slice(0, 8)). Deletes 'Select several' and its keys. Rewords the spot keys consortium.line.lightMisfit, lightFits, waterMisfit, waterFits (A9). Paste (views/find/Paste.tsx, paste.ts) is pf-e's in chunk 3 and is not touched here. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, state/schema.ts, persist.ts and the core state.ts, types.ts, index.ts, conflicts.ts, verdict.ts, place.ts, site.ts, plus site-inputs.ts (chunk 2), views/kit/more.tsx (MoreList), views/figures/slots.tsx (chunk 2), scripts/built-modules.mjs, check-built-site.mjs and browser-tests.test.mjs have no stream owner. pf commit 0W (main agent, before chunk 2; .local/consortium/v2/ppc/pf/v14-spec-update.md section 4) lands the shared seams: thin targets keyed by job, bestToAdd, holeChange with narrowed holes, thinChange, plantsPerJob, untouchedSuggestion, siteEdits with setSiteEdits, updateToast and Undo, removeMembers, MoreList, the lazy figures role and slots, openFigure, the site-change stubs exported from index.ts, scenario format 2 with soil on places, and the fixture places and helpers. It also lands the rulings R1 to R4: Mildly toxic is not a second look; watering sets the dryness note and the dry-months path goes; soil pH and drainage are hints that never set the level, read from the map or the grower; spot keys go and a cut link is unreadable. A stream that needs more asks the main agent. Board figures come from the engine: commit-0 tests re-derive each figure through the engine on the installed release at the boards' inputs (0W scenario cases), never a hard-coded board number. Each stream's commit 0 deletes its old screens and code (section 2 'Delete') and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v14 board text as failing behaviour tests, with its failure rows (section 5) and neighbour rows (section 6). There is one full board check in Chrome before review 1 and at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Size rule: every name or row while the palette has 40 plants or fewer and the group 12 or fewer, else the count cell (MoreList: three names, '+ N more', 10, all, 'Show fewer'); no other list cap; 200 plants stay fast (timings reported, never failed). Parked parts (section 2 'Parked': PP-D, PP-E, PP-F, PP-G) are neither ported nor flagged."
         },
         "pf-b": {
           "needs": [
@@ -406,7 +448,6 @@
             "src/islands/consortium/views/palette/Palette.tsx",
             "src/islands/consortium/views/palette/Years.tsx",
             "src/islands/consortium/views/palette/JobsPicture.tsx",
-            "src/islands/consortium/views/palette/YourPlants.tsx",
             "src/islands/consortium/views/palette/Weigh.tsx",
             "src/islands/consortium/views/kit/chart.tsx",
             "src/islands/consortium/views/kit/fit.tsx",
@@ -417,21 +458,17 @@
             "src/islands/consortium/views/FutureSlot.tsx",
             "src/islands/consortium/views/future/future.tsx",
             "src/styles/consortium/palette-page.css",
-            "src/styles/consortium/plants.css",
-            "src/styles/consortium/details.css",
             "scripts/picture-table.mjs",
             "scripts/consortium-pp-b2.test.mjs",
             "scripts/browser/consortium-pp-b2.browser.test.mjs",
             "scripts/browser/consortium-seams-layout.browser.test.mjs",
             "scripts/consortium-pf-b.test.mjs",
             "scripts/browser/consortium-pf-b.browser.test.mjs",
-            "src/islands/consortium/views/details/Details.tsx",
-            "src/islands/consortium/views/details/Against.tsx",
-            "src/islands/consortium/views/Swap.tsx",
-            "scripts/consortium-pp-c2.test.mjs",
-            "scripts/browser/consortium-pp-c2.browser.test.mjs"
+            "src/lib/consortium/weigh.ts",
+            "scripts/vectors/weigh.json",
+            "scripts/browser/pf-b-helpers.mjs"
           ],
-          "duty": "pf-b 'The pictures and your plants', ported from the v13 boards (spec: .local/consortium/v2/ppc/pf/v13-spec-update.md section 4). Boards: Main and Palette (head order, Through the years chart), MainMore (Jobs, Other holes slot, Warnings, Balance, foot), PaletteMore (Jobs, Balance, Your plants), DarkMain (DarkPalette is gone: dark Palette reads as Palette), German, Toasts ('How to read this', toast words), DeskStates (toast bottom-left 420 px, Q4; take-away panel). Chart: row heads Full sun / Mostly sun / Part shade / Shade with LightIcon, column head 'Light', bars named, warning marks in words (Mildly toxic, Toxic, Very toxic, Recorded invasive in <country>), hole cells in the one title form with 'Find' (laptop) or 'Find a plant' (phone), stepper chevrons and dots on the phone only, 'Further down this page' links only to sections that exist. Jobs rows: icon, name, count, names, 7-span strip, hole line; a one-plant job reads '1 plant: nobody else does this' (S1); a job whose doers are unchecked reads 'Covers the ground: nobody known, at any time · 1 plant not checked'. Your plants: 'Your N plants', 'Plants with a warning come first', rows 'Planted in: <level> · <years>', size, job tags, warning chips (invasive with a country in the warning colour; no country: the soft count chip, which never puts a plant first), 'Its jobs have not been checked yet', 'Light not checked yet', 'Show all N plants'. Warnings card: leave-their-range line, one group per toxicity level, worst first, shared disease. Balance: one family, water needs ('not recorded: that is not a pass'); the soil-hint line is PP-F (parked). One take-away block 'Copy link · Print · Download for Canopi' and the saved-on-device foot (S9); take-aways and future panel hidden at 0 plants; the old future panel loses its emissions picker (S10: 'Later periods follow the middle emissions path (SSP2-4.5).'). 'How to read this' with the four levels, grows in / planted in, the unknown sentence, the toxicity sentence and the two estimate labels; the table stays the screen-reader text form (Q8). Arrivals chart bug (c2 3.7). Palette.tsx is pf-b's: it mounts pf-a's NextStep and FindPanelSlot and pf-c's place line where the boards put them. Proposed, pending the coordinator's grant (v13-spec-update.md section 6): the v13 deltas of the plant boards c2 built in chunk 1 (Details, DarkDetails, DetailsMore, DetailsDesk, Swap): the Niche block (Light live from today's level, 'does best in' only when known; Soil pH recorded range live, 'best pH' tagged 'after release'; Moisture and Root depth 'after release'; Flowers live), three sections, no in-sheet period switch, 'Planted in' / 'Grows in', chip 'Toxicity: not checked yet', estimate labels in Sources ('Estimate, from <work>', 'AI estimate, no source'), Swap 'Add beside' and 'Swap anyway' / 'Add anyway' with no ask and no 'Keep <plant>'. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, persist.ts, types.ts, data/sqlite-source.ts, kit/flags.ts and the core outside holes.ts and verdict-line.ts have no chunk-2 owner: the v13 seams commit (main agent, before the streams; .local/consortium/v2/ppc/pf/v13-spec-update.md section 2) lands what two streams share, and a stream that needs more asks the main agent. Each stream's commit 0 deletes its old screens and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v13 board text as failing behaviour tests; one full board check in Chrome before review 1; at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Data the release lacks (canopi-data 4.5: light span, preferred level, estimate labels; season) renders from today's single level or says nothing, with the 4.5 path tested on fixtures (owner 2026-11-18). Spot and soil answers are PP-F, after the first release: nothing here asks for or reads them (owner 2026-11-18). Granted in the v13 hand-off (spec update section 6, main agent 2026-11-18): Details and Against (Niche, three sections, no period switch, Planted in, toxicity chip, estimate labels through verdict-line.ts sourceLine), Swap's content (Add beside, no ask, no Keep, Grows in / found mostly in through kit/fit.tsx lightWords; pf-a builds the laptop panel frame), and their pp-c2 node and browser tests; i18n consortium.details.*, consortium.d.*, consortium.swap.* and consortium.palette.read* ('How to read this')."
+          "duty": "pf-b 'The pictures', ported from the v14 boards (.local/consortium/v2/f1a/mockups-v14/project/, word-map.md; approved 2026-11-18; spec: .local/consortium/v2/ppc/pf/v14-spec-update.md section 2 'pf-b', F16, F29, section 6; v13-spec-update.md section 4 where v14 does not override it). Boards: Main, Palette, DarkMain and German (head, Through the years), MainMore and PaletteMore (Jobs, Warnings, Balance, foot), Many and ManyDesk (count cells, 'Years 1–3 · 91 of your 200 plants stand then', Jobs, 'Warnings and fit'), Kumasi (Water use), Toasts ('How to read this', removed and swapped lines), DeskStates (take-away panel), Focus. Through the years under the size rule (A14), replacing the PICTURE_LANE_MAX fold. Jobs: the goal sentence; the control 'Plants per job 1 2 3 5' (0W setPlantsPerJob, default 2); the legend; thin strips; 'Thin: N plant(s) only from year a to year b. Add a backup.' (0W thinLine) with no row button in any language (A20); rows as 44 px buttons opening a MoreList; 'Jobs not checked yet: N plants'. One card 'Warnings and fit': past 40 plants the lines that add up, a line at 0 hidden (A13), each closed and opening to its reasons, plus 'Mildly toxic N' as its own line (R1); at 40 or fewer, MainMore's groups; no 'Tick these' (pf-e, A15). Balance (weigh.ts and weigh.json granted): one family; 'Soil: N hints on pH' from the R3 hints (A12; the SoilDesk link is PP-F); one water line, 'Water needs' at a place with a dry summer, else 'Water use' (Kumasi). Palette.tsx is pf-b's in chunk 2: it mounts pf-a's NextStep and FindPanelSlot, pf-c's place line and 0W's PaletteLimits slot where the boards put them. Details, Against, Swap and their pp-c2 tests go to pf-f (chunk 3); YourPlants and plants.css go to pf-e (chunk 3). Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, state/schema.ts, persist.ts and the core state.ts, types.ts, index.ts, conflicts.ts, verdict.ts, place.ts, site.ts, plus site-inputs.ts (chunk 2), views/kit/more.tsx (MoreList), views/figures/slots.tsx (chunk 2), scripts/built-modules.mjs, check-built-site.mjs and browser-tests.test.mjs have no stream owner. pf commit 0W (main agent, before chunk 2; .local/consortium/v2/ppc/pf/v14-spec-update.md section 4) lands the shared seams: thin targets keyed by job, bestToAdd, holeChange with narrowed holes, thinChange, plantsPerJob, untouchedSuggestion, siteEdits with setSiteEdits, updateToast and Undo, removeMembers, MoreList, the lazy figures role and slots, openFigure, the site-change stubs exported from index.ts, scenario format 2 with soil on places, and the fixture places and helpers. It also lands the rulings R1 to R4: Mildly toxic is not a second look; watering sets the dryness note and the dry-months path goes; soil pH and drainage are hints that never set the level, read from the map or the grower; spot keys go and a cut link is unreadable. A stream that needs more asks the main agent. Board figures come from the engine: commit-0 tests re-derive each figure through the engine on the installed release at the boards' inputs (0W scenario cases), never a hard-coded board number. Each stream's commit 0 deletes its old screens and code (section 2 'Delete') and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v14 board text as failing behaviour tests, with its failure rows (section 5) and neighbour rows (section 6). There is one full board check in Chrome before review 1 and at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Size rule: every name or row while the palette has 40 plants or fewer and the group 12 or fewer, else the count cell (MoreList: three names, '+ N more', 10, all, 'Show fewer'); no other list cap; 200 plants stay fast (timings reported, never failed). Parked parts (section 2 'Parked': PP-D, PP-E, PP-F, PP-G) are neither ported nor flagged."
         },
         "pf-c": {
           "needs": [
@@ -457,14 +494,90 @@
             "scripts/browser/consortium-pp-b1.browser.test.mjs",
             "scripts/browser/consortium-seams-p2.browser.test.mjs",
             "scripts/consortium-pf-c.test.mjs",
-            "scripts/browser/consortium-pf-c.browser.test.mjs"
+            "scripts/browser/consortium-pf-c.browser.test.mjs",
+            "scripts/browser/pf-c-helpers.mjs"
           ],
-          "duty": "pf-c 'Your place', ported from the v13 boards (spec: .local/consortium/v2/ppc/pf/v13-spec-update.md section 5). Boards: Place and PlaceDesk (without the place-in-figures panel, PP-E), LocStates (LocSearch is now its 'Several answers' state), LocMap (DarkMap is gone: dark uses the OpenFreeMap dark style), LocDesk, SiteKiambu (the Place page with a palette, opened by 'Change', S8), ClimateHand, Country, Arrivals, Loading. The page frame (steps, h1 with Data sources, one place line with Change, body; Placeholder the same frame; lede on Place only: 'Tell us where your place is, then see your palette. Room and your own plants can wait.'). Place: 3 numbered questions (where; room, starting on 'Not sure'; own plants), no plot size (it moves to the plan, PP-D), no 'What do you want from it', no 'Your spot'; the read climate is used at once ('We use this climate from now on; you can change it at any time.', 'Not this climate? Choose another'), no 'Use <climate>' button except in 'Between two climates' (S5a). LocStates: Searching with Stop, One answer, Several answers (attribution and privacy line with the list), No place found, search unreachable, typed coordinates (Q6, a parser in state/location.ts; DMS and a pasted map link too), coordinates not understood, my location waiting / refused / not found, sea, reading the climate, climate could not be read, map could not load, between two climates, off the coast, a failing new point keeps the place, polar, no WebGL or no location service. LocMap readout, instruction, privacy line, full screen on the phone; LocDesk side by side at 1280. SiteKiambu: the place row ('read from your location', Adjust on the map, Search again, Not this climate? Choose another, Forget), room, country line, 'Changing your place never removes a plant…', Start over, Back to my palette; its figures are PP-E and its 'Soil, likely' block and 'Tell us about your spot' are PP-F (parked). ClimateHand: Arid 'Ready', its own list. Country: Why we ask (v13 words), stays on this device, the soft chip, consortium.country.unchecked for schema 4.3. Arrivals: 'Welcome back. Your palette, last changed <date>: N plants near X. Kept on this device only.' (store.lastChanged, Q3); the shared link's Look / Add its plants to mine / Stay with mine with Undo (Q7); one message 'This link could not be read. Nothing was changed.' (S14); spot answers are neither shown nor applied from a link or a save until PP-F. Loading lines (incl. '0.8 of 1.4 MB', 'You can already give your place'). Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, persist.ts, types.ts, data/sqlite-source.ts, kit/flags.ts and the core outside holes.ts and verdict-line.ts have no chunk-2 owner: the v13 seams commit (main agent, before the streams; .local/consortium/v2/ppc/pf/v13-spec-update.md section 2) lands what two streams share, and a stream that needs more asks the main agent. Each stream's commit 0 deletes its old screens and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v13 board text as failing behaviour tests; one full board check in Chrome before review 1; at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Data the release lacks (canopi-data 4.5: light span, preferred level, estimate labels; season) renders from today's single level or says nothing, with the 4.5 path tested on fixtures (owner 2026-11-18). Spot and soil answers are PP-F, after the first release: nothing here asks for or reads them (owner 2026-11-18)."
+          "duty": "pf-c 'Your place', ported from the v14 boards (.local/consortium/v2/f1a/mockups-v14/project/, word-map.md; approved 2026-11-18; spec: .local/consortium/v2/ppc/pf/v14-spec-update.md section 2 'pf-c', F8, F12-F14, section 6; v13-spec-update.md section 5 where v14 does not override it). Boards: Place and PlaceDesk (the three questions), SiteKiambu (the frame), LocStates, LocMap, LocDesk, ClimateHand, Country, Arrivals, Loading, Oulu (the place banner 'Colder than any list we have made…'), Toasts (Start over: 'Palette cleared: 8 plants. Your place is kept.'). v13 duties are unchanged except as follows. Mount 0W's PlaceFigures slot (phone: under the last question; laptop: full width under the three questions); question 1's link 'Your place in figures: …' calls store.openFigure; pf-d fills the slot in chunk 3. The place line names the grower's values through 0W siteEditLines ('rain only, 540 mm a year'), and says once 'Your own values were for your old place: cleared' when a new climate cell clears them (A7). Arrivals: 'with the sender's own values: watering, rain only'; 'checked against yours: near Kiambu, Kenya, with your own values'; 'The sender's place and own values were not sent.'. A cut, damaged or newer link gives one message, 'This link could not be read. Nothing was changed.', and restores nothing (0W-2 R4; the approved board wins); deletes the cut-link notice and share.cut from restore.ts. Rewords the spot keys consortium.place.linkPlace, consortium.share.locationNote, privacy.tool.device and privacy.location.link (A9). Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, state/schema.ts, persist.ts and the core state.ts, types.ts, index.ts, conflicts.ts, verdict.ts, place.ts, site.ts, plus site-inputs.ts (chunk 2), views/kit/more.tsx (MoreList), views/figures/slots.tsx (chunk 2), scripts/built-modules.mjs, check-built-site.mjs and browser-tests.test.mjs have no stream owner. pf commit 0W (main agent, before chunk 2; .local/consortium/v2/ppc/pf/v14-spec-update.md section 4) lands the shared seams: thin targets keyed by job, bestToAdd, holeChange with narrowed holes, thinChange, plantsPerJob, untouchedSuggestion, siteEdits with setSiteEdits, updateToast and Undo, removeMembers, MoreList, the lazy figures role and slots, openFigure, the site-change stubs exported from index.ts, scenario format 2 with soil on places, and the fixture places and helpers. It also lands the rulings R1 to R4: Mildly toxic is not a second look; watering sets the dryness note and the dry-months path goes; soil pH and drainage are hints that never set the level, read from the map or the grower; spot keys go and a cut link is unreadable. A stream that needs more asks the main agent. Board figures come from the engine: commit-0 tests re-derive each figure through the engine on the installed release at the boards' inputs (0W scenario cases), never a hard-coded board number. Each stream's commit 0 deletes its old screens and code (section 2 'Delete') and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v14 board text as failing behaviour tests, with its failure rows (section 5) and neighbour rows (section 6). There is one full board check in Chrome before review 1 and at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Size rule: every name or row while the palette has 40 plants or fewer and the group 12 or fewer, else the count cell (MoreList: three names, '+ N more', 10, all, 'Show fewer'); no other list cap; 200 plants stay fast (timings reported, never failed). Parked parts (section 2 'Parked': PP-D, PP-E, PP-F, PP-G) are neither ported nor flagged."
         }
       }
     },
     {
       "chunk": 3,
+      "streams": {
+        "pf-d": {
+          "needs": [
+            "main",
+            "pf-b",
+            "pf-c"
+          ],
+          "files": [
+            "src/islands/consortium/views/figures/**",
+            "src/lib/consortium/site-change.ts",
+            "src/lib/consortium/site-change-line.ts",
+            "src/lib/consortium/site-inputs.ts",
+            "src/styles/consortium/figures.css",
+            "scripts/consortium-scenarios.mjs",
+            "scripts/consortium-scenarios.test.mjs",
+            "scripts/fixtures/consortium-scenarios.json",
+            "scripts/consortium-pf-d.test.mjs",
+            "scripts/browser/consortium-pf-d.browser.test.mjs",
+            "scripts/browser/pf-d-helpers.mjs"
+          ],
+          "duty": "pf-d 'Your place in figures', ported from the v14 boards (.local/consortium/v2/f1a/mockups-v14/project/, word-map.md; approved 2026-11-18; spec: .local/consortium/v2/ppc/pf/v14-spec-update.md sections 2 'pf-d' and 3, F1-F11, F28, section 6; ./site-inputs-design.md). Boards: SiteKiambu and PlaceDesk (the panel, its state strips and editors), SiteMendoza ('What limits plants here', 'Every figure, and yours', the Watering line, 'El agua' when any member carries the dryness note), Toasts (the change summary). Fills 0W's lazy views/figures/Figures.tsx behind PlaceFigures and PaletteLimits. The lines: Climate (Coldest nights, Hottest days, Rain a year, Dry months in a row; three periods each), Water (Watering), Soil (Soil pH, The ground after heavy rain, Pots or brought-in soil), 'After release' (closed, opening to the board's two paragraphs), 'Not asked, and why', 'What it means for your choice'. Each line has its value, source chip, effect in counts and Change, and Reset only on the grower's own values; a room-set Pots line shows 'From your room' and has no Reset (A3). The editors: temperature (shift in °C first, 'I know my plot's figure', the hottest-days tick on, preview) and pH (a number or five words). Every edit goes through 0W setSiteEdits; the summary arrives through updateToast (pending, failed with Retry, arrived), always with Undo. Fills the core site-change.ts (siteChange per period; lineCounts per factor side, warmth included, and note counts per watering answer) and its words site-change-line.ts; 'See these plants' is dropped (A6). Owns the scenario recorder and file in chunk 3 and adds only the 'change' output (ids and codes); 0W records every case. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, state/schema.ts, persist.ts and the core state.ts, types.ts, index.ts, conflicts.ts, verdict.ts, place.ts, site.ts, plus site-inputs.ts (chunk 2), views/kit/more.tsx (MoreList), views/figures/slots.tsx (chunk 2), scripts/built-modules.mjs, check-built-site.mjs and browser-tests.test.mjs have no stream owner. pf commit 0W (main agent, before chunk 2; .local/consortium/v2/ppc/pf/v14-spec-update.md section 4) lands the shared seams: thin targets keyed by job, bestToAdd, holeChange with narrowed holes, thinChange, plantsPerJob, untouchedSuggestion, siteEdits with setSiteEdits, updateToast and Undo, removeMembers, MoreList, the lazy figures role and slots, openFigure, the site-change stubs exported from index.ts, scenario format 2 with soil on places, and the fixture places and helpers. It also lands the rulings R1 to R4: Mildly toxic is not a second look; watering sets the dryness note and the dry-months path goes; soil pH and drainage are hints that never set the level, read from the map or the grower; spot keys go and a cut link is unreadable. A stream that needs more asks the main agent. Board figures come from the engine: commit-0 tests re-derive each figure through the engine on the installed release at the boards' inputs (0W scenario cases), never a hard-coded board number. Each stream's commit 0 deletes its old screens and code (section 2 'Delete') and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v14 board text as failing behaviour tests, with its failure rows (section 5) and neighbour rows (section 6). There is one full board check in Chrome before review 1 and at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Size rule: every name or row while the palette has 40 plants or fewer and the group 12 or fewer, else the count cell (MoreList: three names, '+ N more', 10, all, 'Show fewer'); no other list cap; 200 plants stay fast (timings reported, never failed). Parked parts (section 2 'Parked': PP-D, PP-E, PP-F, PP-G) are neither ported nor flagged."
+        },
+        "pf-e": {
+          "needs": [
+            "main",
+            "pf-a",
+            "pf-b"
+          ],
+          "files": [
+            "src/islands/consortium/views/palette/YourPlants.tsx",
+            "src/islands/consortium/views/palette/Weigh.tsx",
+            "src/islands/consortium/views/palette/Palette.tsx",
+            "src/islands/consortium/views/plants/**",
+            "src/islands/consortium/views/find/Paste.tsx",
+            "src/islands/consortium/views/find/paste.ts",
+            "src/islands/consortium/data/search.ts",
+            "src/styles/consortium/plants.css",
+            "scripts/consortium-paste.test.mjs",
+            "scripts/palette-200.mjs",
+            "scripts/browser/consortium-pp-b2.browser.test.mjs",
+            "scripts/consortium-pf-e.test.mjs",
+            "scripts/browser/consortium-pf-e.browser.test.mjs",
+            "src/islands/consortium/views/Sheets.tsx",
+            "src/islands/consortium/views/palette/FindPanelSlot.tsx",
+            "src/styles/consortium/find.css",
+            "src/lib/consortium/weigh.ts",
+            "scripts/vectors/weigh.json",
+            "scripts/browser/pf-e-helpers.mjs"
+          ],
+          "duty": "pf-e 'Many plants', ported from the v14 boards (.local/consortium/v2/f1a/mockups-v14/project/, word-map.md; approved 2026-11-18; spec: .local/consortium/v2/ppc/pf/v14-spec-update.md section 2 'pf-e', F22-F28, F30, section 6). Boards: Paste, AddMany state 4, Many and ManyDesk ('Your plants', the head link '200 plants: Your plants' and the search field under the place line, the in-place search), PaletteMore and Recife ('Your plants' small form: every row, warned first; the boards' 6- and 3-row folds are a known difference, A21), Toasts (bulk remove, pasted list). Your plants under the size rule: compact list (phone) and table (laptop, sorted by column heads); Sort (Fit, Name, Light, Job, Years); Group (Light level, Job, Fit, Family, No groups); ticks (44 px labels; a module under views/plants/**, not the store) kept across search, sort and regroup; 'Tick all N' per group; 'N ticked · Remove N plants' with Undo (0W removeMembers); 'Tick these N' on a 'Warnings and fit' line (Weigh.tsx). Deletes ROWS_MAX. ManyDesk: 'Add plants' opens the search in place of the list and stays open while adding. The board wins over Q5 for this entry (A22), so Sheets.tsx, FindPanelSlot.tsx and find.css are granted. Paste: every line read in slices that yield (no cap); three closed groups Recognised / Need a choice / Not found; nothing taken unasked; 'Add N plants'; 'Skip the N left'; 'Search by hand'; 'Copy these N names'; the toast with Show and Undo. The matcher ranks name-token matches in the page language and English first ('maize', 'banana', 'beans'; A16). Deletes MAX_LINES, paste.cap and PREFIX_LIMIT. Owns the 200-plant scale spec (consortium-pp-b2.browser.test.mjs, 4x CPU; timings reported, never failed). Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, state/schema.ts, persist.ts and the core state.ts, types.ts, index.ts, conflicts.ts, verdict.ts, place.ts, site.ts, plus site-inputs.ts (chunk 2), views/kit/more.tsx (MoreList), views/figures/slots.tsx (chunk 2), scripts/built-modules.mjs, check-built-site.mjs and browser-tests.test.mjs have no stream owner. pf commit 0W (main agent, before chunk 2; .local/consortium/v2/ppc/pf/v14-spec-update.md section 4) lands the shared seams: thin targets keyed by job, bestToAdd, holeChange with narrowed holes, thinChange, plantsPerJob, untouchedSuggestion, siteEdits with setSiteEdits, updateToast and Undo, removeMembers, MoreList, the lazy figures role and slots, openFigure, the site-change stubs exported from index.ts, scenario format 2 with soil on places, and the fixture places and helpers. It also lands the rulings R1 to R4: Mildly toxic is not a second look; watering sets the dryness note and the dry-months path goes; soil pH and drainage are hints that never set the level, read from the map or the grower; spot keys go and a cut link is unreadable. A stream that needs more asks the main agent. Board figures come from the engine: commit-0 tests re-derive each figure through the engine on the installed release at the boards' inputs (0W scenario cases), never a hard-coded board number. Each stream's commit 0 deletes its old screens and code (section 2 'Delete') and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v14 board text as failing behaviour tests, with its failure rows (section 5) and neighbour rows (section 6). There is one full board check in Chrome before review 1 and at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Size rule: every name or row while the palette has 40 plants or fewer and the group 12 or fewer, else the count cell (MoreList: three names, '+ N more', 10, all, 'Show fewer'); no other list cap; 200 plants stay fast (timings reported, never failed). Parked parts (section 2 'Parked': PP-D, PP-E, PP-F, PP-G) are neither ported nor flagged."
+        },
+        "pf-f": {
+          "needs": [
+            "main",
+            "pf-b"
+          ],
+          "files": [
+            "src/islands/consortium/views/details/**",
+            "src/islands/consortium/views/Swap.tsx",
+            "src/islands/consortium/views/Correction.tsx",
+            "src/islands/consortium/views/kit/fit.tsx",
+            "src/lib/consortium/verdict-line.ts",
+            "src/styles/consortium/details.css",
+            "scripts/consortium-pp-c2.test.mjs",
+            "scripts/browser/consortium-pp-c2.browser.test.mjs",
+            "scripts/consortium-pf-f.test.mjs",
+            "scripts/browser/consortium-pf-f.browser.test.mjs",
+            "scripts/browser/pf-f-helpers.mjs"
+          ],
+          "duty": "pf-f 'One plant', ported from the v14 boards (.local/consortium/v2/f1a/mockups-v14/project/, word-map.md; approved 2026-11-18; spec: .local/consortium/v2/ppc/pf/v14-spec-update.md section 2 'pf-f', F10; v13-spec-update.md section 4 'Details' where v14 does not override it). Boards: Details, DarkDetails, DetailsMore, DetailsDesk, Swap, Correction (board check only), SiteMendoza ('Almond against your place' is Details' Against section: no new mount). Details: the v13 deltas (Niche block, three sections, no in-sheet period switch, 'Planted in' / 'Grows in', 'found mostly in', toxicity chip, estimate labels). Against: the four bands only (Coldest nights, Warmth over the year, Hottest days, Rain against evaporation); Soil pH against the map value (ring for the map, dot for the grower's test; a hint, R3; 0W already reads soilPhOf); 'Drainage: no need recorded.'; the dryness note by watering (R2); 'Set my own soil pH' through 0W store.openFigure; 'N of 4 climate scenarios agree'. No 'Rain a year' or 'Dry months' rows. Swap: 'Add beside', no ask, no 'Keep <plant>'. Rewords the spot key consortium.misfit.light.shade (A9). Independent of pf-d and pf-e: may start first in chunk 3. Granted to nobody (owner 2026-11-17, site header stays): src/components/Header.astro, src/layouts/**, site navigation and global styles (src/styles/global.css, tokens.css). store.ts, state/schema.ts, persist.ts and the core state.ts, types.ts, index.ts, conflicts.ts, verdict.ts, place.ts, site.ts, plus site-inputs.ts (chunk 2), views/kit/more.tsx (MoreList), views/figures/slots.tsx (chunk 2), scripts/built-modules.mjs, check-built-site.mjs and browser-tests.test.mjs have no stream owner. pf commit 0W (main agent, before chunk 2; .local/consortium/v2/ppc/pf/v14-spec-update.md section 4) lands the shared seams: thin targets keyed by job, bestToAdd, holeChange with narrowed holes, thinChange, plantsPerJob, untouchedSuggestion, siteEdits with setSiteEdits, updateToast and Undo, removeMembers, MoreList, the lazy figures role and slots, openFigure, the site-change stubs exported from index.ts, scenario format 2 with soil on places, and the fixture places and helpers. It also lands the rulings R1 to R4: Mildly toxic is not a second look; watering sets the dryness note and the dry-months path goes; soil pH and drainage are hints that never set the level, read from the map or the grower; spot keys go and a cut link is unreadable. A stream that needs more asks the main agent. Board figures come from the engine: commit-0 tests re-derive each figure through the engine on the installed release at the boards' inputs (0W scenario cases), never a hard-coded board number. Each stream's commit 0 deletes its old screens and code (section 2 'Delete') and their tests, then rewrites its board spec (scripts/browser/consortium-pf-<x>.browser.test.mjs) from the v14 board text as failing behaviour tests, with its failure rows (section 5) and neighbour rows (section 6). There is one full board check in Chrome before review 1 and at most 2 fix rounds (owner rules 'Delete first', 'Board-first builds', 'Two rounds, board first'). Size rule: every name or row while the palette has 40 plants or fewer and the group 12 or fewer, else the count cell (MoreList: three names, '+ N more', 10, all, 'Show fewer'); no other list cap; 200 plants stay fast (timings reported, never failed). Parked parts (section 2 'Parked': PP-D, PP-E, PP-F, PP-G) are neither ported nor flagged."
+        }
+      }
+    },
+    {
+      "chunk": 4,
       "streams": {
         "main": {
           "needs": [
@@ -472,7 +585,10 @@
             "c2",
             "pf-a",
             "pf-b",
-            "pf-c"
+            "pf-c",
+            "pf-d",
+            "pf-e",
+            "pf-f"
           ],
           "files": [
             "public/data/consortium/**",
@@ -499,7 +615,7 @@
             "CLAUDE.md",
             "knowledge/**"
           ],
-          "duty": "chunk 3 (main agent): 0b first: install the published schema-4 export and names file (sizes reported, never failed), re-pin real-data figures, the weigh.json family cases to APG IV and the vectors; then hand-offs (stream knowledge patches, f1a-helpers.mjs deleted once unread, shards rebalanced by measured time, baselines, canopi-data notes: Ruscus name, toxicity part and audience wording, GRIIS ES records); the real-browser check of every PP-C board at 320, 390 and 1280 px light and dark with the mock-up conformance re-run (the same 30 rows plus the states the first report could not judge: LocStates, Loading, Arrivals, Toasts, Country, ChangePlace below the first screen, skip link and tab order; fable-advisor judging); concepts (okf impact); zero markers; pre-push review; push."
+          "duty": "chunk 4 (main agent; chunk 3 before the v14 split): 0b first: install the published schema-4 export and names file (sizes reported, never failed), re-pin real-data figures, the weigh.json family cases to APG IV and the vectors; then hand-offs (stream knowledge patches, f1a-helpers.mjs deleted once unread, shards rebalanced by measured time, baselines, canopi-data notes: Ruscus name, toxicity part and audience wording, GRIIS ES records); the real-browser check of every PP-C board at 320, 390 and 1280 px light and dark with the mock-up conformance re-run (the same 30 rows plus the states the first report could not judge: LocStates, Loading, Arrivals, Toasts, Country, ChangePlace below the first screen, skip link and tab order; an Opus reviewer judging, no Fable unless the owner asks); concepts (okf impact); zero markers; pre-push review; push."
         }
       }
     }
