@@ -49,15 +49,15 @@ export interface Choices { query: string; results: readonly PlaceSearchResult[];
 export const choices = signal<Choices | null>(null);
 // Text that looks like coordinates but could not be read (board: "We could not read “1.17 36” …").
 export const badCoords = signal<string | null>(null);
-// The grower's last act on the place (final1 N1, N2): the place it put in use (locate; "Use it" on a
-// link's place; null for Forget) and whether it came from typed coordinates. The place field
-// (views/LocationSlot.tsx) follows these acts and leaves the grower's typing to anything else the
+// The grower's own acts on the place (locate, Forget, "Use it" on a link's place), counted: the place
+// field (views/LocationSlot.tsx) follows these and leaves the grower's typing to anything else the
 // page does (a restore, a link, a re-read).
-export const lastAct = signal<{ place: SiteLocation | null; typed: boolean } | null>(null);
-// The site in use came from typed coordinates: "Read on this device. Nothing was sent, so the place has
-// no name." True only while that very place is in use: any other (a link's, one adopted from a link,
-// the saved one read again) is never "typed", whichever path set it.
-export const typed = computed(() => { const a = lastAct.value, l = store.location.value; return !!l && !!a?.typed && a.place === l; });
+export const acts = signal(0);
+// A place read from typed coordinates carries the mark itself (final1 N2): "Read on this device.
+// Nothing was sent, so the place has no name." holds for that very place and no other, whichever path
+// replaces it (a link's place, one adopted from a link, the saved one read again).
+export type Place = SiteLocation & { typed?: true };
+export const typed = computed(() => !!(store.location.value as Place | null)?.typed);
 // How long "Use my location" waited before it gave up, in seconds, as the read used it (R10;
 // devicePosition).
 export const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
@@ -169,7 +169,7 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   }
   const sc = siteClimate(lookup);
   if (sc.state === 'sea') { line.value = { state: 'sea', ...extra }; return; }
-  const loc: SiteLocation = { lat, lon, source, ...(label ? { label } : {}), lookup };
+  const loc: Place = { lat, lon, source, ...(label ? { label } : {}), ...(fromTyped ? { typed: true as const } : {}), lookup };
   // A climate the grower chose by hand ("Use <other>", "Not this climate? Choose another") overrides
   // the read of one cell (R5, R3, C7): it stays while the new point is in the same climate cell as the
   // grower's own place before it ("Adjust on the map" within the cell), and goes with any other cell,
@@ -179,7 +179,7 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   siteFound(() => {
     // Another climate cell clears the grower's own values (A7: store.placeAt).
     store.placeAt(loc);
-    lastAct.value = { place: loc, typed: fromTyped };
+    acts.value++;
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
   // The climate read is used at once (v13 Place; borderline: its own class's, the other one tap away;
@@ -297,7 +297,7 @@ export function forget(): void {
   unread.value = false;
   const own = store.location.peek()?.source !== 'link';
   batch(() => {
-    store.location.value = null; line.value = null; lastAct.value = { place: null, typed: false };
+    store.location.value = null; line.value = null; acts.value++;
     clearStep();
     if (own) locationCountry(null, true);
     // The grower's own values are of that place: they go with it, as the save's place does.
@@ -314,8 +314,9 @@ export function forget(): void {
 export function adoptLinkLocation(): boolean {
   const l = store.location.peek();
   if (l?.source !== 'link') return false;
-  const mine: SiteLocation = { ...l, source: 'map' };
+  const { typed: _, ...rest } = l as Place;
+  const mine: SiteLocation = { ...rest, source: 'map' };
   quietly(() => { store.location.value = mine; });
-  lastAct.value = { place: mine, typed: false };
+  acts.value++;
   return keepLocation(mine);
 }

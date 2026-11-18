@@ -49,12 +49,15 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
   const field = useRef<HTMLInputElement>(null);
   // The field mirrors the place in use (board Place, PlaceDesk; R4, C10): its name once found; a place
   // with no name (a map point, the device, a link's) or none at all (Forget) empties it, so it never
-  // names a place no longer in use; typed coordinates keep the text the grower typed. The grower's own
-  // acts (state/location.ts lastAct) always set it; anything else the page does (a saved place or a
-  // link read, a re-read) changes it only while it still holds what was last written there, never
-  // what the grower has typed since (final1 N1). Keyed on the place, not on each re-read of it.
+  // names a place no longer in use; typed coordinates (the place's own mark, state/location.ts Place)
+  // keep the text the grower typed. The effect is keyed on the place's identity (where it is, how it
+  // was found, its name), never on each re-read of the same place (its lookup arriving). The grower's
+  // own acts (state/location.ts acts) always set it; anything else the page does (a saved place or a
+  // link read) changes it only while it still holds what was last written there, never what the
+  // grower has typed since (final1 N1).
   const label = loc?.source !== 'link' ? loc?.label : undefined;
-  const act = m ? m.lastAct.value : null;
+  const place = loc ? `${loc.lat},${loc.lon},${loc.source},${label ?? ''}` : '';
+  const act = m ? m.acts.value : 0;
   const seenAct = useRef(act);
   const written = useRef('');
   useEffect(() => {
@@ -66,7 +69,7 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
     const next = label ?? (m?.typed.peek() ? f.value : '');
     f.value = next;
     written.current = next;
-  }, [label, loc?.lat, loc?.lon, loc?.source, act]);
+  }, [place, act]);
   const geoIcon = <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" /><path d="M10 2v3M10 15v3M2 10h3M15 10h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>;
   const showWays = !(frame && loc?.lookup);
   const search = (q: string) => { if (q.trim()) void run((x) => x.searchPlace(q)); };

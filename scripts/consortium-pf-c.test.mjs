@@ -90,3 +90,38 @@ test('pf-c final1 N5 (the head painted before the island): the inline script tak
   assert.match(script, /define:vars=\{\{[^}]*\bsaveStore: STORE\b/, 'the save\'s store name (state/save.ts STORE) passed in');
   assert.doesNotMatch(script, /'canopi-consortium'|p\.get\('e'\)/, 'no copy of the store name or the end key');
 });
+
+// ---- step back: the country field (board Country "Your country") ----
+import { findCountries, foldName } from '../src/islands/consortium/views/place/country-search.ts';
+
+const CODES = ['KE', 'TZ', 'RE', 'FR', 'DE', 'GH', 'CV', 'GY', 'KZ', 'QA', 'CA', 'PK', 'BH', 'HT', 'PE', 'MR', 'AF'];
+const namesIn = (lang) => { const d = new Intl.DisplayNames([lang], { type: 'region' }); return (c) => d.of(c); };
+const english = namesIn('en');
+const codesOf = (r) => r.list.map(([c]) => c);
+
+test('pf-c country field: Latin accents and case aside ("reunion" finds Réunion), the English name and the ISO code in every locale', () => {
+  assert.deepEqual(codesOf(findCountries('reunion', CODES, namesIn('fr'), english, 'fr')), ['RE']);
+  assert.deepEqual(codesOf(findCountries('Kenya', CODES, namesIn('ja'), english, 'ja')), ['KE'], 'a Latin spelling in ja');
+  assert.deepEqual(codesOf(findCountries('kenya', CODES, namesIn('ru'), english, 'ru')), ['KE'], 'a Latin spelling in ru');
+  assert.deepEqual(codesOf(findCountries('tz', CODES, namesIn('en'), english, 'en')), ['TZ'], 'the ISO code');
+  assert.deepEqual(codesOf(findCountries('Kenia', CODES, namesIn('es'), english, 'es')), ['KE'], 'the page-language name');
+  assert.deepEqual(findCountries('  ', CODES, namesIn('en'), english, 'en'), { count: 0, list: [] });
+});
+
+test('pf-c country field: kana voicing is kept (ガ never finds カ), only U+0300–U+036F folded', () => {
+  assert.equal(foldName('ガ', 'ja'), 'ガ'.normalize('NFD'));
+  const ja = namesIn('ja');
+  const ga = findCountries('ガ', CODES, ja, english, 'ja');
+  assert.ok(ga.list.every(([, n]) => n.normalize('NFD').includes('ガ'.normalize('NFD'))), `ガ finds only names with ガ (${ga.list.map(([, n]) => n).join(', ')})`);
+  assert.ok(codesOf(ga).includes('GH'), 'ガーナ is found');
+  assert.ok(!codesOf(ga).includes('CA'), 'カナダ is not');
+});
+
+test('pf-c country field: names that start with the words first, a short list with the full count', () => {
+  const r = findCountries('a', CODES, english, english, 'en', 3);
+  assert.equal(r.list.length, 3, 'a short list');
+  assert.ok(r.count > 3, `the count is every match (${r.count})`);
+  const tan = findCountries('tan', CODES, english, english, 'en');
+  assert.equal(codesOf(tan)[0], 'TZ', `Tanzania first (${codesOf(tan).join(', ')})`);
+  assert.ok(codesOf(tan).includes('PK') && codesOf(tan).includes('AF'), 'names holding it follow');
+});

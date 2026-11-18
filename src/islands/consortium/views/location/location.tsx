@@ -41,7 +41,7 @@ export { settle, useMyLocation, stop, adoptLinkLocation as adopt } from '../../s
 // that could not be read as coordinates sends the words as a name (the name path never takes a
 // coordinate reading: state/location.ts searchRead, R2).
 export const searchPlace = (q: string, asName = badCoords.peek() === q.trim()): Promise<void> => searchRead(q, asName ? null : readCoords(q.trim()));
-export { asking, lastAct, typed } from '../../state/location.ts';
+export { acts, asking, typed } from '../../state/location.ts';
 
 // The map dialog is open (LocationSlot's "Pick on a map", "Adjust on the map").
 export const mapOpen = signal(false);

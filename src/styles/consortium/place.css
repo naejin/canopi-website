@@ -91,7 +91,7 @@
 .ct .ct-place-suggest { margin: 0; }
 
 /* The country line (Country board). */
-.ct .ct-country { display: grid; gap: 8px; }
+.ct .ct-country { display: grid; gap: 8px; background: var(--surface); }
 /* "Changing it" (board Country): radio rows, each its own radio over the whole row and the board's
    circle (ochre ring when checked, name bold); "Another country" opens the field "Your country" with
    its search icon and the countries it matches (final1 N2). */
@@ -113,6 +113,12 @@
 .ct .ct-country-search input:focus { outline: none; }
 .ct .ct-country-results { display: grid; margin: 0; padding: 0; list-style: none; max-height: 16rem; overflow-y: auto; }
 .ct .ct-country-results .ct-link { display: block; width: 100%; min-height: 40px; text-align: start; font-weight: 400; }
+.ct .ct-country-other [role="status"]:empty { display: none; }
+/* Board Country's note box: "Why we ask." in bold after the invasive mark. */
+.ct .ct-country-why { display: flex; gap: 8px; flex-basis: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-alt); font-size: 14px; line-height: 20px; color: var(--text); }
+.ct .ct-country-why .ct-country-icon { align-self: flex-start; margin-top: 2px; }
+.ct .ct-country-why p { margin: 0; flex: 1; min-width: 0; }
+.ct .ct-country-why strong { font-weight: 600; }
 
 /* Arrival lines: plain content, never a live region; Announcer (views/place/Place.tsx) speaks each
    arrival once in its own status sentence (fix round 3, R3 and R8). */
@@ -124,7 +130,7 @@
 
 /* The place line over the palette, and the colder-than-any-list banner (Oulu). */
 .ct .ct-place-line { margin: 0; font-size: 15px; color: var(--text-secondary); }
-.ct .ct-place-line .ct-link { min-height: 32px; font-size: inherit; }
+.ct .ct-place-line .ct-link { min-height: 40px; margin-block: -4px; font-size: inherit; }
 .ct .ct-place-banner { margin: 0; padding: 10px 14px; border-left: 3px solid var(--warning-line); border-radius: 0 8px 8px 0; background: var(--warning-bg); color: var(--text); font-size: 15px; }
 
 /* The frame (SiteKiambu): the questions again, with a foot to start over or go back. */

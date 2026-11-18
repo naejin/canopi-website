@@ -19,8 +19,8 @@
 .ct .ct-country { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-alt); font-size: 15px; }
 .ct .ct-country p { margin: 0; }
 .ct .ct-country-text { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
-.ct .ct-country-acts, .ct .ct-country-pick { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
-.ct .ct-country-pick select { min-height: 40px; max-width: 100%; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
+.ct .ct-country-acts { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.ct .ct-country-pick { display: grid; gap: 8px; flex-basis: 100%; min-width: 0; }
 
 /* Notices: neutral callouts, the warning colours only for warnings. */
 .ct .ct-notice { display: grid; gap: 8px; margin: 0; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); }
@@ -92,7 +92,7 @@
   .ct .ct-step-title { font-size: 21px; }
   .ct .ct-cta .button { flex: 1 1 100%; }
   .ct .ct-link-button { min-height: 40px; display: inline-flex; align-items: center; }
-  .ct .ct-share-field, .ct .ct-country-pick select { font-size: 16px; }
+  .ct .ct-share-field, .ct .ct-country-search input { font-size: 16px; }
 }
 
 /* Offline (b2): one persistent status line, empty while online. */
