@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "{name} entfernen",
   "consortium.place.show": "Meine Palette zeigen",
   "consortium.place.none": "Keine Pflanzen im Kopf?",
-  "consortium.place.suggested": "one: Eine Startpalette mit # Pflanze wurde hinzugefügt. | other: Eine Startpalette mit # Pflanzen wurde hinzugefügt.",
+  "consortium.place.suggested": "one: Eine Startpalette mit # Pflanze wurde hinzugefügt, als „vorgeschlagen“ markiert. | other: Eine Startpalette mit # Pflanzen wurde hinzugefügt, jede als „vorgeschlagen“ markiert.",
   "consortium.place.unreadable": "**Dieser Link konnte nicht gelesen werden.** Nichts wurde geändert.",
   "consortium.place.period": "Dieser Link nennt einen Klimazeitraum, den diese Version nicht kennt; er wird daher mit dem heutigen Klima geprüft.",
   "consortium.place.guidePlant": "**Aus dem Ratgeber übernommen: {name}.** {name} gehört jetzt zu deinen Pflanzen, auf der Liste {climate}, die der Ratgeber nannte. Gib deinen Ort an, um sie zu prüfen.",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "Nach Namen oder nach der Aufgabe, die Sie brauchen",
   "consortium.palette.next.emptyPasteSub": "Aus einer Nachricht, einem Buch oder einer Tabelle",
   "consortium.palette.next.emptySmall": "Mit einer kleinen Palette beginnen",
-  "consortium.palette.next.emptySmallSub": "Pflanzen, die zu Ihrem Ort passen; jede ist als „vorgeschlagen“ markiert und lässt sich rückgängig machen",
+  "consortium.palette.next.emptySmallSub": "one: # Pflanze, die zu Ihrem Ort passt; sie ist als „vorgeschlagen“ markiert und lässt sich rückgängig machen | other: # Pflanzen, die zu Ihrem Ort passen; jede ist als „vorgeschlagen“ markiert und lässt sich rückgängig machen",
   "consortium.palette.next.emptyPictures": "Die Bilder (über die Jahre, übers Jahr, Aufgaben) erscheinen mit Ihrer ersten Pflanze.",
   "consortium.palette.next.emptyCount": "one: # der {total} Pflanzen aus den nächstgelegenen Listen passt heute in der Nähe von {place}. | other: # der {total} Pflanzen aus den nächstgelegenen Listen passen heute in der Nähe von {place}.",
   "consortium.palette.next.emptyCountLater": "one: # der {total} Pflanzen aus den nächstgelegenen Listen passt im Zeitraum {period} in der Nähe von {place}. | other: # der {total} Pflanzen aus den nächstgelegenen Listen passen im Zeitraum {period} in der Nähe von {place}.",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "Wir lesen: {climate}.",
   "consortium.place.readDeskKoppen": "Köppen-Klasse {koppen} ({words}); die Nächte im kältesten Monat liegen im Mittel bei {temp}.",
   "consortium.place.banner.keptLater": "one: Seine Pflanzen kommen aus den nächsten Listen ({lists}): wir behalten # ihrer {of} Pflanzen, deren Klimabereich deinen Ort einschließt, {later} bis {period}. | other: Seine Pflanzen kommen aus den nächsten Listen ({lists}): wir behalten die # ihrer {of} Pflanzen, deren Klimabereich deinen Ort einschließt, {later} bis {period}.",
+  "consortium.find.tookBack": "{name} wieder herausgenommen.",
+  "consortium.palette.balance.familyFind.Fabaceae": "Einen Bodennährer aus einer anderen Familie finden",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

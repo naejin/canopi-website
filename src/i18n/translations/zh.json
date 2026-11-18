@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "移除 {name}",
   "consortium.place.show": "查看我的植物搭配",
   "consortium.place.none": "还没有想好种什么？",
-  "consortium.place.suggested": "other: 已添加一个包含 # 种植物的初始搭配。",
+  "consortium.place.suggested": "other: 已添加一个包含 # 种植物的初始搭配，每种都标为“建议”。",
   "consortium.place.unreadable": "**无法读取这个链接。**没有做任何更改。",
   "consortium.place.period": "这个链接指定了此版本不认识的气候时期，因此按今天的气候来核对。",
   "consortium.place.guidePlant": "**已从指南保留：{name}。**{name} 现在是你的植物之一，位于指南指定的{climate}列表。添加你的地方以检查它。",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "按名称，或按你需要的作用",
   "consortium.palette.next.emptyPasteSub": "来自消息、书籍或表格",
   "consortium.palette.next.emptySmall": "从一个小调色板开始",
-  "consortium.palette.next.emptySmallSub": "适合你地点的植物；每种都标为“建议”，可以撤销",
+  "consortium.palette.next.emptySmallSub": "other: # 种适合你地点的植物；每种都标为“建议”，可以撤销",
   "consortium.palette.next.emptyPictures": "图示（历年、全年、作用）会在你添加第一种植物后出现。",
   "consortium.palette.next.emptyCount": "other: 最接近的列表中 {total} 种植物里，有 # 种今天适合{place}附近。",
   "consortium.palette.next.emptyCountLater": "other: 最接近的列表中 {total} 种植物里，有 # 种在 {period} 适合{place}附近。",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "我们读到：{climate}。",
   "consortium.place.readDeskKoppen": "柯本分类 {koppen}（{words}）；最冷月的夜间平均 {temp}。",
   "consortium.place.banner.keptLater": "other: 它的植物来自最近的列表（{lists}）：在它们的 {of} 种植物中，我们保留气候范围包含你的地方的 # 种；到 {period} 为 {later} 种。",
+  "consortium.find.tookBack": "已重新移出{name}。",
+  "consortium.palette.balance.familyFind.Fabaceae": "找一种其他科的养土植物",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

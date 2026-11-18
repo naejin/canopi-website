@@ -44,7 +44,7 @@ export function Marks({ t, lines, country, look = null }: { t: Taxon; lines: rea
 
 // What Find opens for (board FillHole): the hole or thin spot itself (its plants, its words as the
 // title) and its job.
-export const openFillers = (h: Hole): void => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null });
+export const openFillers = (h: Hole): void => store.openFind({ hole: h, fits: (t: Taxon) => fills(h, t), job: h.job ?? null, title: null });
 
 // A row's words, shared with Find's rows (one owner): its jobs, "Also …" after the job it is listed
 // for (board FillHole, T15), and its size ("1 m wide, 2.5 m tall").

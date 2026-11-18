@@ -8,7 +8,7 @@
 // plants or fewer and the group 12 or fewer, else the count cell). Every figure is re-derived through the
 // engine at the board's inputs (pf-b-helpers.mjs: the 0W scenario cases), never a board number. Written
 // expected-fail under pf-b in commit 0 (scripts/expect-fail.mjs failing()); every pf-b marker is gone since
-// the pictures were built. One marker is left, PFB23 (re-owned to main h2, which removes it).
+// the pictures were built; the last, PFB23, went with M24 (Find takes a job and a predicate).
 // Parked, neither ported nor tested: Through the year and the cooler months (PP-G), the period tabs and
 // "See 2041–2070" (PP-E), Soil and its links (PP-F), Plan, Print and Share boards (PP-D).
 //
@@ -36,7 +36,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { aria, has } from './helpers.mjs';
 import { useHarness } from './helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 import { JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { boardPalette, figures, fitOf, inSection, jobDoers, laneOf, scenario, standing, uncheckedOf } from './pf-b-helpers.mjs';
 
@@ -683,25 +682,19 @@ test('PFB22 (pf-b fix round 1, BC3, R2, BC12): past 40 plants no paragraph of Ba
   await done(page);
 });
 
-// Expected-fail (c2 C3): the board's action waits for a Find entry that takes a job and a predicate
-// without a hole (Find.tsx and store.ts are the main agent's: a chunk-4 hand-off; the main agent removes
-// this marker in the commit that brings the action back). The marker names pf-b, the file's stream, as
-// browser-tests.test.mjs requires of a pf spec. Listed as a known board difference of MainMore in the
-// board check until then. The reason matches the held action only: a lost legume line is a plain
-// failure (asserted before the held part, its message without that phrase).
-failing('PFB23 (pf-b round 2 R1, C1; c2 C3; held for main h2): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find listing only plants that feed the soil and are not of that family (never an unfiltered list)', { owner: 'main h2', reason: /^MainMore held: "Find a soil feeder of another family"/ }, async () => {
+// M24: Find takes a job and a predicate without a hole (store.ts SheetFor fits + title).
+test('PFB23 (pf-b round 2 R1, C1; c2 C3; M24): board MainMore\'s Balance offers "Find a soil feeder of another family" under the legume line, and it opens Find under that title listing only plants that feed the soil and are not of that family (never an unfiltered list)', async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   const b = await section(page, 'Balance');
   const fam = /One family: \d+ of your \d+ are legumes/.test(b) ? 'Fabaceae' : null;
   assert.ok(fam, `seville-board has the legume line (${b.slice(0, 80)})`);
-  const offered = (await buttons(page)).includes('Find a soil feeder of another family');
-  if (!offered) await done(page);
-  assert.ok(offered, 'MainMore held: "Find a soil feeder of another family" under the legume line (hand-off to the main agent for a Find entry taking a job and a predicate)');
+  assert.ok((await buttons(page)).includes('Find a soil feeder of another family'), 'board: "Find a soil feeder of another family" under the legume line');
   await press(page, 'button', 'Find a soil feeder of another family');
-  assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] li[data-plant-id]').length > 0, { timeout: 15_000 }).then(() => true, () => false), 'Find lists plants');
+  assert.ok(await page.waitForFunction(() => document.querySelectorAll('dialog[open] [data-find-row][data-plant-id]').length > 0, { timeout: 15_000 }).then(() => true, () => false), 'Find lists plants');
+  assert.equal(await page.evaluate(() => document.querySelector('dialog[open] h2')?.textContent.trim()), 'Find a soil feeder of another family', 'Find says what it lists');
   const listed = await page.evaluate(() => {
     const s = window.__ctTest.store, byId = new Map((s.pool.value ?? []).map((t) => [t.id, t]));
-    return [...document.querySelectorAll('dialog[open] li[data-plant-id]')].map((li) => { const t = byId.get(li.dataset.plantId); return { name: t?.names?.en || t?.canonical_name, family: t?.family, fixer: !!t?.functions?.some((x) => x.function === 'nitrogen_fixer') }; });
+    return [...document.querySelectorAll('dialog[open] [data-find-row][data-plant-id]')].map((li) => { const t = byId.get(li.dataset.plantId); return { name: t?.names?.en || t?.canonical_name, family: t?.family, fixer: !!t?.functions?.some((x) => x.function === 'nitrogen_fixer') }; });
   });
   for (const t of listed) assert.ok(t.fixer && t.family !== fam, `R1: ${t.name} feeds the soil and is not a legume (${t.family})`);
   await done(page);

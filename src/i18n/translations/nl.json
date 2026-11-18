@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "{name} weghalen",
   "consortium.place.show": "Mijn palet tonen",
   "consortium.place.none": "Geen planten in gedachten?",
-  "consortium.place.suggested": "one: Er is een startpalet van # plant toegevoegd. | other: Er is een startpalet van # planten toegevoegd.",
+  "consortium.place.suggested": "one: Er is een startpalet van # plant toegevoegd, gemarkeerd als “voorgesteld”. | other: Er is een startpalet van # planten toegevoegd, elk gemarkeerd als “voorgesteld”.",
   "consortium.place.unreadable": "**Deze link kon niet worden gelezen.** Er is niets veranderd.",
   "consortium.place.period": "Deze link noemt een klimaatperiode die deze versie niet kent, dus wordt hij getoetst aan het klimaat van nu.",
   "consortium.place.guidePlant": "**Bewaard uit de gids: {name}.** {name} is nu een van je planten, op de lijst {climate} die de gids noemde. Voeg je plek toe om hem te toetsen.",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "Op naam, of op de taak die je nodig hebt",
   "consortium.palette.next.emptyPasteSub": "Uit een bericht, een boek of een spreadsheet",
   "consortium.palette.next.emptySmall": "Begin met een klein palet",
-  "consortium.palette.next.emptySmallSub": "Planten die bij je plek passen; elk is gemarkeerd als “voorgesteld” en kan ongedaan worden",
+  "consortium.palette.next.emptySmallSub": "one: # plant die bij je plek past; gemarkeerd als “voorgesteld” en ongedaan te maken | other: # planten die bij je plek passen; elk is gemarkeerd als “voorgesteld” en kan ongedaan worden",
   "consortium.palette.next.emptyPictures": "De afbeeldingen (door de jaren, door het jaar, taken) verschijnen met je eerste plant.",
   "consortium.palette.next.emptyCount": "one: # van de {total} planten op de dichtstbijzijnde lijsten past vandaag in de buurt van {place}. | other: # van de {total} planten op de dichtstbijzijnde lijsten passen vandaag in de buurt van {place}.",
   "consortium.palette.next.emptyCountLater": "one: # van de {total} planten op de dichtstbijzijnde lijsten past in {period} in de buurt van {place}. | other: # van de {total} planten op de dichtstbijzijnde lijsten passen in {period} in de buurt van {place}.",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "We lezen: {climate}.",
   "consortium.place.readDeskKoppen": "Köppen-klasse {koppen} ({words}); de nachten in de koudste maand zijn gemiddeld {temp}.",
   "consortium.place.banner.keptLater": "one: De planten komen uit de dichtstbijzijnde lijsten ({lists}): we houden de # van hun {of} planten waarvan het klimaatbereik je plek omvat, {later} tegen {period}. | other: De planten komen uit de dichtstbijzijnde lijsten ({lists}): we houden de # van hun {of} planten waarvan het klimaatbereik je plek omvat, {later} tegen {period}.",
+  "consortium.find.tookBack": "{name} weer weggehaald.",
+  "consortium.palette.balance.familyFind.Fabaceae": "Zoek een bodemvoeder uit een andere familie",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

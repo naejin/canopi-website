@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "Retirer {name}",
   "consortium.place.show": "Voir ma palette",
   "consortium.place.none": "Pas de plantes en tête ?",
-  "consortium.place.suggested": "one: Une palette de départ de # plante a été ajoutée. | other: Une palette de départ de # plantes a été ajoutée.",
+  "consortium.place.suggested": "one: Une palette de départ de # plante a été ajoutée, marquée « suggérée ». | other: Une palette de départ de # plantes a été ajoutée, chacune marquée « suggérée ».",
   "consortium.place.unreadable": "**Ce lien n’a pas pu être lu.** Rien n’a été changé.",
   "consortium.place.period": "Ce lien nomme une période climatique que cette version ne connaît pas : il est donc vérifié avec le climat d’aujourd’hui.",
   "consortium.place.guidePlant": "**Gardée depuis le guide : {name}.** {name} fait maintenant partie de vos plantes, sur la liste {climate} que le guide nommait. Ajoutez votre lieu pour la vérifier.",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "Par nom, ou par le travail à faire",
   "consortium.palette.next.emptyPasteSub": "Depuis un message, un livre ou un tableur",
   "consortium.palette.next.emptySmall": "Partir d’une petite palette",
-  "consortium.palette.next.emptySmallSub": "Des plantes adaptées à votre lieu ; chacune est marquée « suggérée » et peut être annulée",
+  "consortium.palette.next.emptySmallSub": "one: # plante adaptée à votre lieu ; elle est marquée « suggérée » et peut être annulée | other: # plantes adaptées à votre lieu ; chacune est marquée « suggérée » et peut être annulée",
   "consortium.palette.next.emptyPictures": "Les images (au fil des ans, au fil de l’année, travaux) apparaissent avec votre première plante.",
   "consortium.palette.next.emptyCount": "one: # des {total} plantes des listes les plus proches convient près de {place} aujourd’hui. | other: # des {total} plantes des listes les plus proches conviennent près de {place} aujourd’hui.",
   "consortium.palette.next.emptyCountLater": "one: # des {total} plantes des listes les plus proches convient près de {place} sur la période {period}. | other: # des {total} plantes des listes les plus proches conviennent près de {place} sur la période {period}.",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "Nous lisons : {climate}.",
   "consortium.place.readDeskKoppen": "Classe de Köppen {koppen} ({words}) ; les nuits du mois le plus froid sont en moyenne à {temp}.",
   "consortium.place.banner.keptLater": "one: Ses plantes viennent des listes les plus proches ({lists}) : nous gardons la # de leurs {of} plantes dont l’aire climatique comprend votre lieu, {later} d’ici {period}. | other: Ses plantes viennent des listes les plus proches ({lists}) : nous gardons les # de leurs {of} plantes dont l’aire climatique comprend votre lieu, {later} d’ici {period}.",
+  "consortium.find.tookBack": "{name} retirée à nouveau.",
+  "consortium.palette.balance.familyFind.Fabaceae": "Trouver une plante qui nourrit le sol, d’une autre famille",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

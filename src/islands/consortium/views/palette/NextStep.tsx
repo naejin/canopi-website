@@ -145,7 +145,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
           <ul class="ct-next-ways">
             {way('find', SEARCH_MARK, T('find.findPlants'), T('palette.next.emptyFindSub'), () => store.openFind(), 'empty', true)}
             {way('paste', PAGE_MARK, T('start.paste'), T('palette.next.emptyPasteSub'), () => store.openSheet('paste'))}
-            {way('small', LEAF_MARK, T('palette.next.emptySmall'), T('palette.next.emptySmallSub'), () => requestSuggest())}
+            {way('small', LEAF_MARK, T('palette.next.emptySmall'), P('palette.next.emptySmallSub', store.suggestionSize.value), () => requestSuggest())}
           </ul>
         </section>
         <p class="ct-next-emptynote" data-next-emptynote="">{INFO_MARK} {T('palette.next.emptyPictures')}<EmptyCount /></p>

@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "Remove {name}",
   "consortium.place.show": "Show my palette",
   "consortium.place.none": "No plants in mind?",
-  "consortium.place.suggested": "one: A starting palette of # plant was added. | other: A starting palette of # plants was added.",
+  "consortium.place.suggested": "one: A starting palette of # plant was added, marked “suggested”. | other: A starting palette of # plants was added, each marked “suggested”.",
   "consortium.place.unreadable": "**This link could not be read.** Nothing was changed.",
   "consortium.place.period": "This link names a climate period this version does not know, so it is checked against today’s climate.",
   "consortium.place.guidePlant": "**Kept from the guide: {name}.** {name} is one of your plants now, on the {climate} list the guide named. Add your place to check it.",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "By name, or by the job you need done",
   "consortium.palette.next.emptyPasteSub": "From a message, a book or a spreadsheet",
   "consortium.palette.next.emptySmall": "Start from a small palette",
-  "consortium.palette.next.emptySmallSub": "Plants that fit your place; each is marked “suggested” and can be undone",
+  "consortium.palette.next.emptySmallSub": "one: # plant that fits your place; it is marked “suggested” and can be undone | other: # plants that fit your place; each is marked “suggested” and can be undone",
   "consortium.palette.next.emptyPictures": "The pictures (through the years, through the year, jobs) appear with your first plant.",
   "consortium.palette.next.emptyCount": "one: # of the {total} plants on the nearest lists fits near {place} today. | other: # of the {total} plants on the nearest lists fit near {place} today.",
   "consortium.palette.next.emptyCountLater": "one: # of the {total} plants on the nearest lists fits near {place} in {period}. | other: # of the {total} plants on the nearest lists fit near {place} in {period}.",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "We read: {climate}.",
   "consortium.place.readDeskKoppen": "Köppen class {koppen} ({words}); nights in the coldest month average {temp}.",
   "consortium.place.banner.keptLater": "one: Its plants come from the nearest lists ({lists}): we keep the # of their {of} plants whose climate range includes your place, {later} by {period}. | other: Its plants come from the nearest lists ({lists}): we keep the # of their {of} plants whose climate range includes your place, {later} by {period}.",
+  "consortium.find.tookBack": "{name} taken back out.",
+  "consortium.palette.balance.familyFind.Fabaceae": "Find a soil feeder of another family",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

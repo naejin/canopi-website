@@ -406,7 +406,7 @@ test('P5-27m (S5c seam review round 4, 1): a waiting Suggest is dropped when the
 // made after it suggests around the plants at hand, so a waiting press does too. Its rewrite found
 // that the suggestion dropped the guest itself (core suggest.ts kept only the seeds it could read):
 // fixed test-first (consortium-pp-b1.test.mjs "PP-B exit").
-test('P5-27n (S5c seam review round 4, 1; PP-B exit): a waiting Suggest ends when the kept guest\'s list fails: it suggests around the plants it can read, keeps the guest, names the list as missing with Reload, and is no longer busy', async () => {
+test('P5-27n (S5c seam review round 4, 1; PP-B exit): a waiting Suggest ends when the kept guest\'s list fails: it suggests around the plants it can read, keeps the guest, names the list as missing with Try again, and is no longer busy', async () => {
   const page = await placeGuestHeld(1280);
   const guest = await page.evaluate(() => { const { store } = window.__ctTest, [id] = Object.keys(store.guests.value); store.addMembers([id], { [id]: 'Tropical' }); return id; });
   await page.click('[data-place-suggest]');
@@ -415,8 +415,8 @@ test('P5-27n (S5c seam review round 4, 1; PP-B exit): a waiting Suggest ends whe
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length > 1, { timeout: 10_000 }).then(() => true, () => false), 'the wait ends with a suggestion');
   assert.ok(await page.evaluate((id) => window.__ctTest.store.members.value.includes(id), guest), 'the guest stays in the palette');
   assert.equal(await loadState(page), 'ready', 'no load screen');
-  const named = () => [...document.querySelectorAll('.ct-notice')].some((n) => /The Tropical list could not be read: 1 plant from it is missing, not checked\./.test(n.textContent) && [...n.querySelectorAll('button')].some((b) => b.textContent === 'Reload'));
-  assert.ok(await page.waitForFunction(named, { timeout: 8000 }).then(() => true, () => false), 'the list named as missing, with Reload');
+  const named = () => [...document.querySelectorAll('.ct-notice')].some((n) => /The Tropical list could not be read: 1 plant from it is missing, not checked\./.test(n.textContent) && [...n.querySelectorAll('button')].some((b) => b.textContent === 'Try again'));
+  assert.ok(await page.waitForFunction(named, { timeout: 8000 }).then(() => true, () => false), 'the list named as missing, with Try again');
   assert.ok(await has(page, `.ct-plants [data-plant-id="${guest}"][data-missing="failed"]`, 5000), 'Your plants lists the guest as not checked');
   const n = await members(page);
   await new Promise((r) => setTimeout(r, 1000));

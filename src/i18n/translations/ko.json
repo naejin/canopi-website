@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "{name} 빼기",
   "consortium.place.show": "내 팔레트 보기",
   "consortium.place.none": "떠오르는 식물이 없나요?",
-  "consortium.place.suggested": "other: 식물 #종으로 된 시작 팔레트를 넣었습니다.",
+  "consortium.place.suggested": "other: 식물 #종으로 된 시작 팔레트를 넣었습니다. 각각 \"제안\"으로 표시됩니다.",
   "consortium.place.unreadable": "**이 링크를 읽을 수 없습니다.** 아무것도 바뀌지 않았습니다.",
   "consortium.place.period": "이 링크는 이 버전이 모르는 기후 기간을 가리키므로, 오늘의 기후로 확인합니다.",
   "consortium.place.guidePlant": "**가이드에서 추가: {name}.** {name}은(는) 이제 내 식물입니다(가이드가 정한 {climate} 목록). 확인하려면 장소를 입력하세요.",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "이름으로, 또는 필요한 역할로",
   "consortium.palette.next.emptyPasteSub": "메시지, 책, 스프레드시트에서",
   "consortium.palette.next.emptySmall": "작은 팔레트로 시작",
-  "consortium.palette.next.emptySmallSub": "이 장소에 맞는 식물. 각각 \"제안\"으로 표시되며 취소할 수 있습니다",
+  "consortium.palette.next.emptySmallSub": "other: 이 장소에 맞는 식물 #종. 각각 \"제안\"으로 표시되며 취소할 수 있습니다",
   "consortium.palette.next.emptyPictures": "그림(해마다, 한 해 동안, 역할)은 첫 식물과 함께 나타납니다.",
   "consortium.palette.next.emptyCount": "other: 가장 가까운 목록의 식물 {total}종 중 #종이 오늘 {place} 근처에 맞습니다.",
   "consortium.palette.next.emptyCountLater": "other: 가장 가까운 목록의 식물 {total}종 중 #종이 {period}에 {place} 근처에 맞습니다.",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "읽은 결과: {climate}.",
   "consortium.place.readDeskKoppen": "쾨펜 분류 {koppen} ({words}), 가장 추운 달의 밤 평균 {temp}.",
   "consortium.place.banner.keptLater": "other: 식물은 가장 가까운 목록({lists})에서 가져옵니다. 그 {of}종 가운데 기후 범위에 내 장소가 들어가는 #종을 남깁니다. {period}에는 {later}종.",
+  "consortium.find.tookBack": "{name}을(를) 다시 뺐습니다.",
+  "consortium.palette.balance.familyFind.Fabaceae": "다른 과의 흙을 기르는 식물 찾기",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "Quitar {name}",
   "consortium.place.show": "Ver mi paleta",
   "consortium.place.none": "¿No tienes plantas en mente?",
-  "consortium.place.suggested": "one: Se añadió una paleta inicial de # planta. | other: Se añadió una paleta inicial de # plantas.",
+  "consortium.place.suggested": "one: Se añadió una paleta inicial de # planta, con la marca «sugerida». | other: Se añadió una paleta inicial de # plantas, cada una con la marca «sugerida».",
   "consortium.place.unreadable": "**No se pudo leer este enlace.** No se cambió nada.",
   "consortium.place.period": "Este enlace nombra un periodo climático que esta versión no conoce, así que se comprueba con el clima de hoy.",
   "consortium.place.guidePlant": "**Guardada desde la guía: {name}.** {name} es ahora una de tus plantas, en la lista {climate} que nombraba la guía. Añade tu lugar para comprobarla.",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "Por nombre, o por la función que necesitas",
   "consortium.palette.next.emptyPasteSub": "Desde un mensaje, un libro o una hoja de cálculo",
   "consortium.palette.next.emptySmall": "Empezar con una paleta pequeña",
-  "consortium.palette.next.emptySmallSub": "Plantas que encajan con tu lugar; cada una lleva la marca «sugerida» y se puede deshacer",
+  "consortium.palette.next.emptySmallSub": "one: # planta que encaja con tu lugar; lleva la marca «sugerida» y se puede deshacer | other: # plantas que encajan con tu lugar; cada una lleva la marca «sugerida» y se puede deshacer",
   "consortium.palette.next.emptyPictures": "Las imágenes (a lo largo de los años, a lo largo del año, funciones) aparecen con tu primera planta.",
   "consortium.palette.next.emptyCount": "one: # de las {total} plantas de las listas más cercanas se adapta cerca de {place} hoy. | other: # de las {total} plantas de las listas más cercanas se adaptan cerca de {place} hoy.",
   "consortium.palette.next.emptyCountLater": "one: # de las {total} plantas de las listas más cercanas se adapta cerca de {place} en el periodo {period}. | other: # de las {total} plantas de las listas más cercanas se adaptan cerca de {place} en el periodo {period}.",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "Leemos: {climate}.",
   "consortium.place.readDeskKoppen": "Clase de Köppen {koppen} ({words}); las noches del mes más frío promedian {temp}.",
   "consortium.place.banner.keptLater": "one: Sus plantas vienen de las listas más cercanas ({lists}): conservamos la # de sus {of} plantas cuyo rango climático incluye tu lugar, {later} para {period}. | other: Sus plantas vienen de las listas más cercanas ({lists}): conservamos las # de sus {of} plantas cuyo rango climático incluye tu lugar, {later} para {period}.",
+  "consortium.find.tookBack": "{name} quitada de nuevo.",
+  "consortium.palette.balance.familyFind.Fabaceae": "Buscar una planta que alimente el suelo, de otra familia",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

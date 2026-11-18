@@ -177,7 +177,7 @@ test('E6-18 (R4 seams, chunk-5 exit fix round): at the cap with the list still u
     assert.ok(await until(page, () => window.__ctTest.store.members.value.length > 0, 8000), 'suggests once the list and the chunk arrive');
     // The suggestion's own Undo (fix round 4, s-2: every suggestion offers one), and no other toast.
     const placed = await page.evaluate(() => window.__ctTest.store.members.value.length);
-    assert.deepEqual(await toasts(), [`A starting palette of ${placed} plants was added.`], 'no toast on the way but the suggestion\'s Undo');
+    assert.deepEqual(await toasts(), [`A starting palette of ${placed} plants was added, each marked “suggested”.`], 'no toast on the way but the suggestion\'s Undo');
   } finally { await page.browserContext().close().catch(() => {}); }
 });
 

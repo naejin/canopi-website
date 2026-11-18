@@ -120,7 +120,7 @@ export function Palette() {
       {store.verdictFailed.value && <VerdictNotice />}
       {failedLists.length > 0 && (
         <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {off ? T('load.needsConnection')
-          : <button type="button" class="button button-secondary" onClick={() => location.reload()}>{T('load.reload')}</button>}</p>
+          : <button type="button" class="button button-secondary" onClick={() => store.retryFailedLists()}>{T('load.retry')}</button>}</p>
       )}
       <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
         <NextStep holes={holes} members={members} />

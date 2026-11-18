@@ -5,7 +5,7 @@
 // inside the computed bodies, the core calls they own (flags: S1 conflicts and site).
 import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { Alternative, ClimateZone, Hole, HoleChange, LaneCount, Line, PaletteGoals, PeriodId, PhaseOrd, Flag, FlagContext, Interaction, JobId, PlantId, PlantVerdict, Scenario, Site, SiteEdits, SiteInputs, SiteLocation, SiteLookup as CoreLookup, SuggestRule, Taxon, TextureId as CoreTexture, ThinChange, VerdictContext, VerdictRule } from '../../lib/consortium/index.ts';
-import { asGuest, canopyOf, checksFailedLine, countingLine, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, hasClimate, holeChange, holeChangeLines, holes, laneCounts, loadSuggest, loadVerdictRule, NO_EDITS, paletteGoalsOf, paletteSizeLine, periodIds, plantsPerJobOf, removedManyLine, secondLook, siteEditsOf, siteInputsOf, siteOf, snapOrigin, thinChange, thinTargets, zoneOf } from '../../lib/consortium/index.ts';
+import { asGuest, canopyOf, checksFailedLine, countingLine, countryStatus, DEFAULT_SCENARIO, fills, flagsFor, flagsOf, hasClimate, holeChange, holeChangeLines, holes, laneCounts, loadSuggest, loadVerdictRule, NO_EDITS, paletteGoalsOf, paletteSizeLine, periodIds, plantsPerJobOf, removedManyLine, secondLook, siteEditsOf, siteInputsOf, siteOf, SIZE_LIMIT, snapOrigin, thinChange, thinTargets, zoneOf } from '../../lib/consortium/index.ts';
 import { needsRule, needsSite, nothingFits, notOutside } from './rules/suggest-block.ts';
 import type { FlagScene } from './rules/site-fit.ts';
 import type { SiteLookup as ReaderLookup } from '../../lib/climate/index.ts';
@@ -94,6 +94,8 @@ export const siteInputs = computed<SiteInputs>(() => siteInputsOf({ lookup: loca
 // site.ts fits()'s Site, from the inputs (core place.ts siteOf): the flags, print's basis line and the
 // site-fit words read it.
 export const site = computed<Site>(() => siteOf(siteInputs.value));
+// The size of the starting palette Suggest places for this room (site.ts SIZE_LIMIT; the Empty card says it).
+export const suggestionSize = computed(() => SIZE_LIMIT[room.value]);
 
 // ---- data (set once the database is open; S1's load fills them) ----
 export const source = signal<PlantSource | null>(null);
@@ -498,8 +500,11 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
     // A read of a source replaced meanwhile (Retry) neither writes nor fails the new load.
     p = Promise.all([src.pool(c), src.interactions(c)]).then(([plants, rows]) => {
       if (source.peek() !== src) return null;
-      pools.value = { ...pools.peek(), [c]: plants };
-      interactionSets.value = { ...interactionSets.peek(), [c]: rows };
+      batch(() => {
+        pools.value = { ...pools.peek(), [c]: plants };
+        interactionSets.value = { ...interactionSets.peek(), [c]: rows };
+        if (failedPools.peek().includes(c)) failedPools.value = failedPools.peek().filter((x) => x !== c);
+      });
       return plants;
     }).catch((err: unknown) => {
       if (source.peek() !== src) return null;
@@ -516,6 +521,11 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
     reading.set(c, p);
   }
   return withRule(p);
+}
+// The palette's missing-list notice's "Try again" (board: PFA10, E6): each guest list that failed is read
+// again; one that answers leaves failedPools, so its notice and "not checked" go.
+export function retryFailedLists(): void {
+  for (const c of failedPools.peek()) void loadPool(c);
 }
 
 // Sets the open database's PlantSource, closing the one before it first (Retry opens a new
@@ -605,9 +615,10 @@ export function suggestMembers(): boolean {
 // whose words title the sheet (board FillHole), and `fits`, the hole's own test (core holes.ts fills),
 // handed by the palette page so the sheet chunks never import holes.ts, a module only the palette
 // chunk has (E6-5d: sheets import first-run modules). Find lists every plant, site misfits included
-// and flagged (inform, don't block; owner 2026-11-14).
-export interface SheetFor { job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null }
-export const FOR_NOTHING: SheetFor = { job: null, hole: null, fits: null };
+// and flagged (inform, don't block; owner 2026-11-14). `fits` without a hole (M24, board MainMore's
+// "Find a soil feeder of another family"): Find lists only the plants it passes, under `title`.
+export interface SheetFor { job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null; title?: string | null }
+export const FOR_NOTHING: SheetFor = { job: null, hole: null, fits: null, title: null };
 export const sheetTarget = signal<SheetFor>(FOR_NOTHING);
 
 // ---- browser history (coordinator row 2026-11-14, "Sheets and browser history", inventory K7) ----
@@ -850,6 +861,20 @@ export function removeMember(id: PlantId): void {
     if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
   });
   offerUndo(T('details.removed', { name }), before, null, [id]);
+}
+// Find's row "Undo" right after an add (M22): the plant only goes back out. It is not left out of the
+// next suggestion (no `removed`), its guest home goes, and the toast says the add was taken back, with
+// its own Undo (the plant added again).
+export function takeBackAdd(id: PlantId): void {
+  const before = snapshot();
+  if (!before.members.includes(id)) return;
+  batch(() => {
+    held.value = false;
+    suggestedIds.value = [];
+    members.value = without(before.members, [id]);
+    if (before.guests[id]) { const g = { ...before.guests }; delete g[id]; guests.value = g; }
+  });
+  offerUndo(T('find.tookBack', { name: nameById(id) }), before, null, [id]);
 }
 // Swap: the new plant takes the old one's place in the order; the old one is left out of a new
 // suggestion.

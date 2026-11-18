@@ -8,8 +8,8 @@
 // Board figures come from the engine (owner 2026-11-18): every count, name and order a case checks is
 // computed through core holes.ts (pf-helpers engineLead) on the installed release at the board's
 // inputs (scenario cases kiambu-8-*, kiambu-200), never a board number; the words and the layout come
-// from the boards. Cases still failing carry an expected-fail marker (scripts/expect-fail.mjs failing(),
-// owner pf-a, reason /board: /); pf-a removes a marker in the commit that makes the case pass.
+// from the boards. No expected-fail marker is left (the last two, PFA4 and PFA10, went with main h2's
+// M2 and E6).
 // Not here: SiteMendoza's rows (its dryness note is the row's fit line, kit/fit.tsx, 0W R2; no Mendoza
 // place in the browser fixtures), the parked parts (Balcony's light question, "Before you plant",
 // Through the year and the cooler months: PP-F, PP-G), Start over (pf-c) and the removal and swap words
@@ -39,8 +39,7 @@ import assert from 'node:assert/strict';
 import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import test from 'node:test';
-import { failing } from '../expect-fail.mjs';
-import { BOARD, HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, holeCounts, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, holeCounts, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -212,7 +211,7 @@ test('PFA3 (pf-a Next step waits for the verdicts, F18): while the fit check loa
   await done(page);
 });
 
-failing('PFA4 (pf-a Empty at 390 and 1280; main h2): "Start with the plants you want" and its line, three rows (Find plants, Paste a list, Start from a small palette) each with its sub-line, then "The pictures (through the years, through the year, jobs) appear with your first plant." and "N of the M plants on … fit near <place> today."; no picture; the rows open Find and Paste, and the small palette is added with a "suggested" toast and one Undo', { owner: 'main h2', reason: BOARD }, async () => {
+test('PFA4 (pf-a Empty at 390 and 1280): "Start with the plants you want" and its line, three rows (Find plants, Paste a list, Start from a small palette) each with its sub-line, then "The pictures (through the years, through the year, jobs) appear with your first plant." and "N of the M plants on … fit near <place> today."; no picture; the rows open Find and Paste, and the small palette is added with a "suggested" toast and one Undo', async () => {
   for (const width of [390, 1280]) {
     const page = await emptyPalette({ width });
     await says(page, 'Start with the plants you want');
@@ -357,7 +356,7 @@ test('PFA9 (pf-a Find, C8): Find opened from "Add plants" says "Your palette has
   await done(empty);
 });
 
-failing('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP-B45; main h2 after pf-e): the list is named as missing with Try again, its plants are not checked, the Next step says the holes wait for it and names none, the tool stays; a palette of only those plants is never "Start with the plants you want"; once the grower removes them the line goes and a hole is named', { owner: 'main h2', reason: BOARD }, async () => {
+test('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP-B45): the list is named as missing with Try again, its plants are not checked, the Next step says the holes wait for it and names none, the tool stays; a palette of only those plants is never "Start with the plants you want"; once the grower removes them the line goes and a hole is named', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   const own = await idsOf('Temperate', 2);
@@ -993,8 +992,12 @@ test('PFA39 (pf-a R7, AddMany state 3): the visit count follows the palette: the
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 2), 'the next add');
   assert.equal(await toastText(page), `2 added this visit. Last: ${add.replace(/^Add /, '')}.`, 'R7: the next toast counts what this visit still holds');
   // A row's Undo, then the toast's Undo that puts the plant back: the row keeps "Added" with its Undo.
+  const leftOut = await page.evaluate(() => window.__ctTest.store.removed.value.length);
   await press(page, 'button', `Undo adding ${added[0]}`);
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 1), 'the row\'s Undo takes it out');
+  // M22: taking an add back is not a removal: the toast says so, and the plant is not left out of the next suggestion.
+  assert.equal(await toastText(page), `${added[0]} taken back out.`, 'M22: the row\'s Undo says the add was taken back, never "removed"');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.removed.value.length), leftOut, 'M22: nothing is left out of the next suggestion');
   await page.locator('dialog[open] .ct-toast .ct-toast-undo').click();
   assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k, before + 2), 'the toast\'s Undo puts it back');
   await control(page, 'button', `Undo adding ${added[0]}`);

@@ -609,7 +609,7 @@
   "consortium.place.plants.remove": "{name}を外す",
   "consortium.place.show": "自分のパレットを見る",
   "consortium.place.none": "思い浮かぶ植物がありませんか？",
-  "consortium.place.suggested": "other: # 種類の植物でスタート用のパレットを追加しました。",
+  "consortium.place.suggested": "other: # 種類の植物でスタート用のパレットを追加しました。それぞれ「提案」と表示されます。",
   "consortium.place.unreadable": "**このリンクを読み取れませんでした。**何も変更していません。",
   "consortium.place.period": "このリンクは、このバージョンが知らない気候期間を指定しているため、現在の気候で確認します。",
   "consortium.place.guidePlant": "**ガイドから追加：{name}。**{name} はあなたの植物になりました（ガイドが示した{climate}リスト）。場所を指定して確認してください。",
@@ -1337,7 +1337,7 @@
   "consortium.palette.next.emptyFindSub": "名前で、または必要な役目で",
   "consortium.palette.next.emptyPasteSub": "メッセージ、本、表計算から",
   "consortium.palette.next.emptySmall": "小さなパレットから始める",
-  "consortium.palette.next.emptySmallSub": "この場所に合う植物。それぞれ「提案」と表示され、取り消せます",
+  "consortium.palette.next.emptySmallSub": "other: この場所に合う植物 # 種類。それぞれ「提案」と表示され、取り消せます",
   "consortium.palette.next.emptyPictures": "図（年ごと、一年の中、役目）は最初の植物とともに表示されます。",
   "consortium.palette.next.emptyCount": "other: 最も近いリストの {total} 種のうち # 種が、今日の{place}付近に合います。",
   "consortium.palette.next.emptyCountLater": "other: 最も近いリストの {total} 種のうち # 種が、{period} の{place}付近に合います。",
@@ -1512,5 +1512,7 @@
   "consortium.place.readDesk": "読み取り結果：{climate}。",
   "consortium.place.readDeskKoppen": "ケッペン区分 {koppen}（{words}）。最も寒い月の夜は平均 {temp}。",
   "consortium.place.banner.keptLater": "other: 植物は最も近いリスト（{lists}）から取ります。その {of} 種のうち、気候範囲にあなたの場所が含まれる # 種を残します。{period} には {later} 種。",
+  "consortium.find.tookBack": "{name}を取り出しました。",
+  "consortium.palette.balance.familyFind.Fabaceae": "別の科の土を肥やす植物を探す",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
