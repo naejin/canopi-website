@@ -31,6 +31,8 @@ import { Balance, Warnings, WarningsAndFit, warningGroups } from './Weigh.tsx';
 import { Years } from './Years.tsx';
 import { SIZE_PALETTE } from '../kit/chart.tsx';
 import { YourPlants } from './YourPlants.tsx';
+import { PlantSearch } from '../plants/Many.tsx';
+import { wide } from '../plants/state.ts';
 import { PaletteLimits } from '../figures/slots.tsx';
 
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
@@ -98,7 +100,7 @@ export function Palette() {
   // The small Warnings card's groups (also "Warnings (N)" under Through the years): today's verdicts and
   // those of 2041–2070 at a place with projections (the leave-their-range line).
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
-  const big = members.length > SIZE_PALETTE;
+  const big = members.length > SIZE_PALETTE, desk = wide.value;
   const later = useMemo(() => (!big && rule && ctx.inputs?.periods.some((x) => x.period === '2041-2070') ? rule.verdicts(members, { ...ctx, period: '2041-2070' }) : null), [big, rule, members, ctx]);
   const groups = useMemo(() => (big ? [] : warningGroups(members, flags, verdicts, later, country)), [big, members, flags, verdicts, later, country]);
   const failedLists = store.failedPools.value;
@@ -117,7 +119,8 @@ export function Palette() {
           <li><span class="ct-step ct-step-later"><span class="ct-step-n">3</span> {T('palette.stepPlan')}</span></li>
         </ol>
       </nav>
-      <h2 data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
+      {/* No board draws a "Your palette" title (v14 pf-e E4): kept for the reader's focus and outline only. */}
+      <h2 class="visually-hidden" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
       <FindEntry where="head" />
       {store.verdictFailed.value && <VerdictNotice />}
       {failedLists.length > 0 && (
@@ -125,25 +128,54 @@ export function Palette() {
           ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
           : <button type="button" class="button button-secondary" aria-busy={retry === 'busy' ? 'true' : undefined} aria-disabled={retry === 'busy' ? 'true' : undefined} onClick={() => void store.retryFailedLists()}>{T('load.retry')}</button>}</p>
       )}
-      <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
-        <NextStep holes={holes} members={members} />
-        {members.length > 0 && (
-          <div class="ct-palette-pictures">
-            <Years {...pic} warnings={groups.length} />
-            <JobsPicture {...pic} />
-            {big && <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />}
-            {big && <Balance members={members} pending={loading} unchecked={unchecked} />}
+      {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
+      {big ? (
+        // Past 40 plants (v14 pf-e E3; boards Many, ManyDesk): on the phone one column, Your plants
+        // last; at 960 px and wider the chart's column (Next step, Through the years, Jobs) and Your
+        // plants' column (with Warnings and fit and Balance under it), in the DOM in reading order.
+        <>
+          <div class="ct-palette-body" data-pictures="" data-many="">
+            <div class="ct-many-left">
+              <NextStep holes={holes} members={members} />
+              <div class="ct-palette-pictures">
+                <Years {...pic} warnings={groups.length} />
+                <JobsPicture {...pic} />
+                {!desk && <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />}
+                {!desk && <Balance members={members} pending={loading} unchecked={unchecked} />}
+              </div>
+            </div>
+            {desk && (
+              <div class="ct-many-right">
+                <YourPlants rows={rows} />
+                <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />
+                <Balance members={members} pending={loading} unchecked={unchecked} />
+              </div>
+            )}
+            <FindPanelSlot />
           </div>
-        )}
-        {members.length > 0 && !big && (
-          <div class="ct-palette-side">
-            <Warnings groups={groups} />
-            <Balance members={members} pending={loading} unchecked={unchecked} />
+          {!desk && <YourPlants rows={rows} />}
+        </>
+      ) : (
+        <>
+          <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
+            <NextStep holes={holes} members={members} />
+            {members.length > 0 && (
+              <div class="ct-palette-pictures">
+                <Years {...pic} warnings={groups.length} />
+                <JobsPicture {...pic} />
+              </div>
+            )}
+            {members.length > 0 && (
+              <div class="ct-palette-side">
+                <Warnings groups={groups} />
+                <Balance members={members} pending={loading} unchecked={unchecked} />
+              </div>
+            )}
+            <FindPanelSlot />
           </div>
-        )}
-        <FindPanelSlot />
-      </div>
-      <YourPlants rows={rows} />
+          <YourPlants rows={rows} />
+        </>
+      )}
       {/* v14 0W-1 item 8: the figures panel's palette place, a stub that renders nothing until pf-d; pf-b places it. */}
       <PaletteLimits />
       <Said />

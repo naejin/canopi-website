@@ -174,19 +174,50 @@
 .ct .ct-paste-read { width: 100%; justify-content: center; }
 .ct .ct-paste-info { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; margin: 12px 0 0; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-alt); color: var(--text-secondary); }
 .ct .ct-paste-info > .ct-glyph { margin-top: 3px; }
-.ct .ct-paste-rows > li[data-paste-row] { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
-.ct .ct-paste-body { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
-.ct .ct-paste-mark { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; border: 1px solid var(--border-strong); }
-.ct .ct-paste-mark[data-status="choose"] { color: var(--warning); border-color: var(--warning-line); }
-.ct .ct-paste-mark[data-status="none"] { color: var(--danger); border-color: var(--danger); }
-.ct .ct-paste-choices { display: flex; flex-wrap: wrap; gap: 6px; }
-.ct .ct-paste-choice {
-  display: inline-flex; align-items: center; gap: 0.3em; flex-wrap: wrap; min-height: 40px; padding: 4px 12px; border-radius: 999px;
-  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 14.5px; cursor: pointer;
+/* The reading in three groups (board Paste, AddMany state 4): the count line under a rule; each group a
+   44 px head (its words, its count, a chevron) over its rows; a row is its mark and one flowing line
+   ("corn" Maize Zea mays · in your palette), with its choices or button under it. */
+.ct .ct-paste-count { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-size: 14px; line-height: 20px; }
+.ct .ct-paste-count > strong { font-weight: 600; }
+.ct .ct-paste-sheet { margin: 0; font-size: 13px; line-height: 18px; }
+.ct .ct-paste-group { border-top: 1px solid var(--border); }
+.ct .ct-paste-ghead {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0;
+  border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; text-align: start; cursor: pointer;
 }
-.ct .ct-paste-choice[aria-pressed="true"] { border-color: var(--text); background: var(--surface-alt); box-shadow: inset 0 0 0 1px var(--text); font-weight: 600; }
+.ct .ct-paste-ghead > span { flex: 1; }
+.ct .ct-paste-ghead > b { font-weight: 600; white-space: nowrap; }
+.ct .ct-paste-ghead::after { content: ""; width: 7px; height: 7px; margin: 0 5px; border: solid currentColor; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg) translate(-2px, -2px); }
+.ct .ct-paste-ghead[aria-expanded="true"]::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.ct .ct-paste-ghead:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-paste-gbody { display: grid; gap: 8px; padding-bottom: 10px; }
+.ct .ct-paste-gbody > p { margin: 0; }
+.ct .ct-paste-gbody > .button { justify-self: start; }
+.ct .ct-paste-rows { margin: 0; padding: 0; list-style: none; }
+.ct .ct-paste-rows > li[data-paste-row] {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px; align-items: start; justify-items: stretch;
+  padding: 7px 0; border-top: 1px solid var(--border); font-size: 14px; line-height: 20px;
+}
+.ct .ct-paste-body { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-paste-line { color: var(--text); }
+.ct .ct-paste-line > strong { font-weight: 600; }
+.ct .ct-paste-line .ct-find-mark { vertical-align: baseline; }
+.ct .ct-paste-line > .text-link { min-height: 0; display: inline; }
+.ct .ct-paste-q { color: var(--text-secondary); }
+.ct .ct-paste-after { display: grid; gap: 6px; justify-items: start; }
+.ct .ct-paste-mark { display: flex; padding-top: 2px; color: var(--text-secondary); }
+.ct .ct-paste-mark[data-status="choose"], .ct .ct-paste-mark[data-status="none"] { color: var(--warning); }
+.ct .ct-paste-progress { font-size: 14px; line-height: 20px; }
+.ct .ct-paste-choices { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+.ct .ct-paste-choice {
+  display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 44px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 15px; cursor: pointer;
+}
+.ct .ct-paste-choice .ct-sci { color: var(--text-secondary); }
+.ct .ct-paste-choice[aria-pressed="true"] { border: 1.5px solid var(--text); background: var(--surface-alt); font-weight: 600; }
 .ct .ct-paste-choice.is-in { cursor: default; color: var(--text-secondary); }
 .ct .ct-paste-choice:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-paste-fit { color: var(--text-secondary); font-weight: 400; }
 /* At 960 the filter column holds the job chips: the start shows one set (K15). */
 @media (min-width: 960px) {
   .ct .ct-find-byjob { display: none; }
@@ -358,3 +389,10 @@
 .ct .ct-next-unchecked { margin: 0; font-size: 14px; color: var(--text); }
 .ct .ct-next-others { margin: 0; font-size: 14px; color: var(--text-secondary); }
 .ct .ct-next-others .text-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+@media (min-width: 960px) {
+  /* Past 40 plants (v14 pf-e; board ManyDesk): Find from the page head stands over Your plants' column;
+     from Your plants' "Add plants" it stands in place of the table (F30), inside the section. */
+  .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-left { grid-column: 1; grid-row: 1 / span 2; }
+  .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-right { grid-column: 2; grid-row: 2; }
+  .ct .ct-plants > dialog.ct-find-panel { border: 0; border-radius: 0; background: none; }
+}

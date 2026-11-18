@@ -15,6 +15,7 @@
 // fewer and 12 or fewer, else the count cell; review R2, C1): the boards' plain list ("Toxic: Almond,
 // Licorice"), "and" only where the names sit inside a sentence (`and`: "Olive and Almond share
 // Xylella", "Silk oak and Napier grass sit between", the outside-and-toxic sentence; c2 C1).
+import { tickIds } from '../plants/state.ts';
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
@@ -108,6 +109,11 @@ function Line_({ head, n, children, note, cls = '' }: { head: string; n: number;
 // WarnReason: the room or plot, a serious clash).
 const REASON_WORDS = [['misfit', 'palette.warningsMisfit'], ['clash', 'palette.warningsClash']] as const;
 const OPEN_NAMES = 10; // an open list's names before "+ N more" (BC4)
+// "Tick these N" (board Many, A15): ticks a reason's plants in Your plants, ready for Remove (one Undo
+// there); nothing is removed here.
+function TickThese({ ids }: { ids: readonly PlantId[] }) {
+  return <button type="button" class="button button-secondary ct-tick-these" onClick={() => tickIds(ids)}>{T('many.tickThese', { n: num(ids.length) })}</button>;
+}
 
 export function WarningsAndFit({ members, verdicts, flags, country }: { members: readonly Taxon[]; verdicts: ReadonlyMap<PlantId, PlantVerdict> | null; flags: readonly Flag[]; country: string | null }) {
   const g = useMemo(() => fitGroups(members, verdicts, flags), [members, verdicts, flags]);
@@ -130,15 +136,16 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
             {key === 'palette.warningsLook' ? (
               <>
                 <ul class="ct-jobs-list">
-                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}>{list(r.edge)}</Line_>}
+                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}>{list(r.edge)}<TickThese ids={r.edge} /></Line_>}
                   {tox > 0 && (
                     <Line_ head={T('palette.warningsToxic')} n={tox}>
                       {r.severe.length > 0 && <div><strong>{T('palette.warningsVery', { n: num(r.severe.length) })}</strong> {list(r.severe, Math.min(OPEN_NAMES, r.severe.length))}</div>}
                       {r.moderate.length > 0 && <div><strong>{T('palette.warningsTox', { n: num(r.moderate.length) })}</strong> {list(r.moderate, OPEN_NAMES - Math.min(OPEN_NAMES - 1, r.severe.length))}</div>}
+                      <TickThese ids={[...r.severe, ...r.moderate]} />
                     </Line_>
                   )}
-                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}>{list(r.invasive)}</Line_>}
-                  {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}>{list(r[k])}</Line_>)}
+                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}>{list(r.invasive)}<TickThese ids={r.invasive} /></Line_>}
+                  {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}>{list(r[k])}<TickThese ids={r[k]} /></Line_>)}
                 </ul>
                 {g.several > 0 && <p class="ct-chart-note">{P('palette.warningsReasons', g.reasonCount, { plants: P('palette.warningsReasonsPlants', g.look.length), carry: P('palette.warningsReasonsCarry', g.several) })}</p>}
                 {g.outsideToxic.length > 0 && <div class="ct-chart-note"><Names ids={g.outsideToxic} name={name} size={size} few={3} and text={(w) => P('palette.warningsOutsideToxic', g.outsideToxic.length, { names: w })} lead={<p>{P('palette.warningsOutsideToxicMany', g.outsideToxic.length)}</p>} /></div>}

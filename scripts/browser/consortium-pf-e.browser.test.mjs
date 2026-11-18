@@ -3,35 +3,34 @@
 // from Warnings and fit, "Add plants" opening the search in place of the list), PaletteMore and Recife
 // (the small form), Paste and AddMany state 4 (every line read, three groups, one Add) and the bulk
 // toasts, as tests. Each case was written failing in pf-e's commit 0 (scripts/expect-fail.mjs
-// failing(), its reason the board's first missing word, pf-helpers.mjs BOARD); its marker went in the
-// commit that made it pass. Figures come from the page's own store (the engine on the installed
+// failing(), its reason the board's first missing word); its marker went in the commit that made it
+// pass. Figures come from the page's own store (the engine on the installed
 // release), never from the board. The 200-plant palette is pf-helpers.mjs loadPalette200 (scenario
 // case kiambu-200).
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
-//   PP-B9   warnings first, each in words with the icon, Slight and Moderate in their own colours  -> PFE8
-//   PP-B61  the height note on a row (small garden)                                               -> PFE9
-//   PP-B61b the height note on a row (balcony or pots)                                            -> PFE9
-//   PP-B62  plants the page cannot show: a row saying why, with Remove                            -> PFE10
-//   PP-B23  200 plants: the list folds, opening moves the focus, Remove with Undo and the focus   -> PFE2, PFE3
-//   PP-B23b Your plants at 1 and 0 plants: no fold, no section of nothing                         -> PFE10
-//   PP-B64  Undo after a remove in Your plants lands on the restored row                          -> PFE3
+//   carries PP-B9   warnings first, each in words with the icon, Slight and Moderate in their own colours  -> PFE8
+//   carries PP-B61  the height note on a row (small garden)                                               -> PFE9
+//   carries PP-B61b the height note on a row (balcony or pots)                                            -> PFE9
+//   carries PP-B62  plants the page cannot show: a row saying why, with Remove                            -> PFE10
+//   carries PP-B23  200 plants: the list folds, opening moves the focus, Remove with Undo and the focus   -> PFE2, PFE3
+//   carries PP-B23b Your plants at 1 and 0 plants: no fold, no section of nothing                         -> PFE10
+//   carries PP-B64  Undo after a remove in Your plants lands on the restored row                          -> PFE3
 // Not carried: per-row Remove in the small form (boards PaletteMore, Recife: a row opens the plant,
 // whose Details and Swap keep Remove; decision recorded in pf-e's report).
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { useHarness, has, en, realDb } from './helpers.mjs';
 import { tool, choose, atSite } from './p5-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
-import { BOARD, control, done, focused, frames, loadCase, loadPalette200, press, says, saysNot, toastText, verdictsSettled } from './pf-helpers.mjs';
-import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts } from './pf-e-helpers.mjs';
+import { control, done, focused, frames, loadCase, loadPalette200, press, says, saysNot, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts, typeIn } from './pf-e-helpers.mjs';
 
 useHarness();
 
 const SEARCH = (n) => `Search your ${n} plants`;
 const firstLevel = async (page) => { const c = await strataCounts(page); const s = ['emergent', 'high', 'medium', 'low'].find((k) => c[k]); return { s, word: LIGHT_OF[s], n: c[s] }; };
 
-failing('PFE1 (pf-e Many at 390): the 200-plant palette shows "Your 200 plants" with its lede, the search under the head, Sort and Group, and every light group closed with its count and "Tick all N"', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE1 (pf-e Many at 390): the 200-plant palette shows "Your 200 plants" with its lede, the search under the head, Sort and Group, and every light group closed with its count and "Tick all N"', async () => {
   const page = await loadPalette200({ width: 390 });
   await says(page, 'Your 200 plants');
   await says(page, 'A compact list: open a plant for its details. The search at the top of the page filters it. Sorted by fit: plants outside their range first, then those that need a second look.');
@@ -52,7 +51,7 @@ failing('PFE1 (pf-e Many at 390): the 200-plant palette shows "Your 200 plants" 
   await done(page);
 });
 
-failing('PFE2 (pf-e Many, PP-B23): a group opens to its first 10 rows sorted by fit, then "+ N more"; each row has its tick, its name, its years and jobs, and its word; opening the rest moves the focus to the first new row', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE2 (pf-e Many, PP-B23): a group opens to its first 10 rows sorted by fit, then "+ N more"; each row has its tick, its name, its years and jobs, and its word; opening the rest moves the focus to the first new row', async () => {
   const page = await loadPalette200({ width: 390 });
   const { word, n } = await firstLevel(page);
   await press(page, 'button', `${word} ${n} plants`);
@@ -78,7 +77,7 @@ failing('PFE2 (pf-e Many, PP-B23): a group opens to its first 10 rows sorted by 
   await done(page);
 });
 
-failing('PFE3 (pf-e F22, PP-B23, PP-B64): ticking 3 plants shows "3 ticked" with "Remove 3 plants"; Remove takes them out at once with one Undo ("3 plants removed. 197 plants."), Undo brings them back, and the focus never falls to the page', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE3 (pf-e F22, PP-B23, PP-B64): ticking 3 plants shows "3 ticked" with "Remove 3 plants"; Remove takes them out at once with one Undo ("3 plants removed. 197 plants."), Undo brings them back, and the focus never falls to the page', async () => {
   const page = await loadPalette200({ width: 390 });
   const { word, n } = await firstLevel(page);
   await press(page, 'button', `${word} ${n} plants`);
@@ -87,10 +86,10 @@ failing('PFE3 (pf-e F22, PP-B23, PP-B64): ticking 3 plants shows "3 ticked" with
   await control(page, 'group', '3 plants ticked');
   await says(page, '3 ticked');
   // Ticks stay when you sort or regroup.
-  await page.selectOption(`${PLANTS} select[data-plants-sort]`, 'name');
-  await page.selectOption(`${PLANTS} select[data-plants-group]`, 'none');
+  await page.select(`${PLANTS} select[data-plants-sort]`, 'name');
+  await page.select(`${PLANTS} select[data-plants-group]`, 'none');
   await control(page, 'group', '3 plants ticked');
-  await page.selectOption(`${PLANTS} select[data-plants-group]`, 'light');
+  await page.select(`${PLANTS} select[data-plants-group]`, 'light');
   await press(page, 'button', 'Remove 3 plants');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 197, { timeout: 4000 }).then(() => true, () => false), 'board: Remove takes the 3 out');
   assert.match(await toastText(page), /^3 plants removed\. 197 plants\./, 'board: the toast says how many and the palette after');
@@ -102,24 +101,24 @@ failing('PFE3 (pf-e F22, PP-B23, PP-B64): ticking 3 plants shows "3 ticked" with
   await done(page);
 });
 
-failing('PFE4 (pf-e Many): the search under the head filters Your plants by name, groups and counts following, and clearing it brings the list back', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE4 (pf-e Many): the search under the head filters Your plants by name, groups and counts following, and clearing it brings the list back', async () => {
   const page = await loadPalette200({ width: 390 });
   const target = await page.evaluate(() => { const t = window.__ctTest.store.memberTaxa.value[5]; return { id: t.id, q: t.canonical_name.split(' ')[0] }; });
   const box = await control(page, 'textbox', SEARCH(200));
   assert.ok(box);
-  await page.fill(`#ct-root input[aria-label="${SEARCH(200)}"]`, target.q);
+  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, target.q);
   await frames(page);
   const expect = await page.evaluate((q) => window.__ctTest.store.memberTaxa.value.filter((t) => `${t.names?.en ?? ''} ${t.canonical_name}`.toLowerCase().includes(q.toLowerCase())).map((t) => t.id).sort(), target.q);
   assert.ok(await has(page, `${PLANTS} [data-plant-id="${target.id}"]`, 3000), 'board: a search opens the matching groups and shows the plant');
   const shown = (await rowsShown(page)).map((r) => r.id).sort();
   assert.deepEqual(shown, expect, 'board: only the matching plants are listed');
-  await page.fill(`#ct-root input[aria-label="${SEARCH(200)}"]`, '');
+  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, '');
   await frames(page);
   assert.equal((await rowsShown(page)).length, 0, 'board: cleared, the groups are closed again');
   await done(page);
 });
 
-failing('PFE5 (pf-e ManyDesk at 1280): Your plants is a table with its lede, "Add plants", the search, "Group by", the head tick and sortable column heads; a column head sorts it; grouped by job a "Planted in" column says the light level', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE5 (pf-e ManyDesk at 1280): Your plants is a table with its lede, "Add plants", the search, "Group by", the head tick and sortable column heads; a column head sorts it; grouped by job a "Planted in" column says the light level', async () => {
   const page = await loadPalette200({ width: 1280 });
   await says(page, 'Search and group the list; a column head sorts it. Tick plants to remove several at once.');
   await control(page, 'button', 'Add plants');
@@ -137,20 +136,24 @@ failing('PFE5 (pf-e ManyDesk at 1280): Your plants is a table with its lede, "Ad
   assert.deepEqual(ids, sorted, 'board: "Plant" sorts by name');
   await page.click('#ct-root input[aria-label="Tick the rows on screen"]');
   await control(page, 'group', `${ids.length} plants ticked`);
-  await page.selectOption(`${PLANTS} select[data-plants-group]`, 'job');
+  await page.select(`${PLANTS} select[data-plants-group]`, 'job');
   await control(page, 'button', 'Planted in');
   const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(over <= 0, 'board: no sideways scroll at 1280');
   await done(page);
 });
 
-failing('PFE6 (pf-e F30, ManyDesk): "Add plants" opens the search in place of the list and stays open while adding; Done closes it and the focus goes back to "Add plants"', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE6 (pf-e F30, ManyDesk): "Add plants" opens the search in place of the list and stays open while adding; Done closes it and the focus goes back to "Add plants"', async () => {
   const page = await loadPalette200({ width: 1280 });
-  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, `${PLANTS} [data-plants-add]`, 4000), 'board: no "Add plants" in Your plants');
+  await page.click(`${PLANTS} [data-plants-add]`);
   assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'board: the search opens inside Your plants');
   assert.equal(await page.$(`${PLANTS} table`), null, 'board: in place of the list');
-  await page.waitForSelector(`${PLANTS} [data-find-add]`, { timeout: 15_000 });
-  await page.click(`${PLANTS} [data-find-add]`);
+  const pick = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); const t = Object.values(s.pools.value).flat().find((x) => x && !m.has(x.id)); return { id: t.id, q: t.canonical_name }; });
+  await typeIn(page, `${PLANTS} [data-find-search]`, pick.q);
+  const row = `${PLANTS} [data-find-row][data-plant-id="${pick.id}"]`;
+  assert.ok(await has(page, row, 10_000), 'board: the search lists the plant');
+  await page.click(`${row} [data-find-add]`);
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 201, { timeout: 4000 }).then(() => true, () => false), 'board: a plant added');
   assert.ok(await has(page, `${PLANTS} .ct-find`, 1000), 'board: the search stays open while adding');
   await press(page, 'button', 'Done');
@@ -159,7 +162,7 @@ failing('PFE6 (pf-e F30, ManyDesk): "Add plants" opens the search in place of th
   await done(page);
 });
 
-failing('PFE7 (pf-e Many, A15): "Tick these N" on Warnings and fit\'s toxic line ticks the toxic and very toxic plants in Your plants, ready for Remove', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE7 (pf-e Many, A15): "Tick these N" on Warnings and fit\'s toxic line ticks the toxic and very toxic plants in Your plants, ready for Remove', async () => {
   const page = await loadPalette200({ width: 390 });
   const n = await page.evaluate(() => { const s = window.__ctTest.store; return s.memberTaxa.value.filter((t) => s.flagsOfPlant(t).some((f) => f.kind === 'toxicity' && (f.level === 'Severe' || f.level === 'Moderate')) && s.memberVerdicts.value?.get(t.id)?.level !== 'outside').length; });
   assert.ok(n > 0, 'the premise: toxic plants in the palette');
@@ -171,7 +174,7 @@ failing('PFE7 (pf-e Many, A15): "Tick these N" on Warnings and fit\'s toxic line
   await done(page);
 });
 
-failing('PFE8 (pf-e PaletteMore at 390, PP-B9): a small palette lists "Your 8 plants", warned first, each row opening the plant with its light, years, size, jobs and warnings in words; no Sort, Group, tick or fold', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE8 (pf-e PaletteMore at 390, PP-B9): a small palette lists "Your 8 plants", warned first, each row opening the plant with its light, years, size, jobs and warnings in words; no Sort, Group, tick or fold', async () => {
   const page = await loadCase('kiambu-8', { width: 390 });
   await says(page, 'Your 8 plants');
   await says(page, 'Plants with a warning come first.');
@@ -183,7 +186,7 @@ failing('PFE8 (pf-e PaletteMore at 390, PP-B9): a small palette lists "Your 8 pl
   for (const s of ['Sort', 'Group']) assert.equal(await page.$(`${PLANTS} select[data-plants-${s.toLowerCase()}]`), null, `board: no ${s} below 41 plants`);
   assert.equal(await page.$(`${PLANTS} input[type="checkbox"]`), null, 'board: no ticks below 41 plants');
   // Slight and Moderate each in words, in their own colours (PP-B9).
-  const marks = await page.$$eval(`${PLANTS} .ct-find-mark[data-kind="toxicity"]`, (els) => els.map((e) => ({ t: e.textContent.trim(), c: getComputedStyle(e).color })));
+  const marks = await page.$$eval(`${PLANTS} .ct-find-mark[data-kind="toxicity"]`, (els) => els.map((e) => ({ t: e.textContent.trim(), c: getComputedStyle(e).borderTopColor })));
   const slight = marks.find((m) => m.t === en['consortium.tox.Slight']), mod = marks.find((m) => m.t === en['consortium.tox.Moderate']);
   if (slight && mod) assert.notEqual(slight.c, mod.c, 'board: Mildly toxic and Toxic in their own colours');
   const id = rows[0].id;
@@ -192,7 +195,7 @@ failing('PFE8 (pf-e PaletteMore at 390, PP-B9): a small palette lists "Your 8 pl
   await done(page);
 });
 
-failing('PFE9 (pf-e Recife pt, PP-B61, PP-B61b): the small form in Portuguese ("Suas 10 plantas", "As plantas com aviso vêm primeiro."); a tall plant in a small garden or in pots keeps its height note on its row', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE9 (pf-e Recife pt, PP-B61, PP-B61b): the small form in Portuguese ("Suas 10 plantas", "As plantas com aviso vêm primeiro."); a tall plant in a small garden or in pots keeps its height note on its row', async () => {
   const pt = await loadCase('recife-today', { site: 'manaus', lang: 'pt', width: 390 });
   await says(pt, 'Suas 10 plantas');
   await says(pt, 'As plantas com aviso vêm primeiro.');
@@ -210,7 +213,7 @@ failing('PFE9 (pf-e Recife pt, PP-B61, PP-B61b): the small form in Portuguese ("
   }
 });
 
-failing('PFE10 (pf-e PP-B62, PP-B23b): a member the page cannot show keeps a row saying why with Remove; at 1 plant one row and no fold; at 0 plants no section of nothing', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE10 (pf-e PP-B62, PP-B23b): a member the page cannot show keeps a row saying why with Remove; at 1 plant one row and no fold; at 0 plants no section of nothing', async () => {
   const page = await tool();
   await choose(page, 'Temperate');
   const ids = await realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT 1").all().map((r) => String(r.id)));
@@ -220,34 +223,52 @@ failing('PFE10 (pf-e PP-B62, PP-B23b): a member the page cannot show keeps a row
   await says(page, 'Not checked: not on this climate\'s plant lists.');
   await press(page, 'button', 'Remove not-a-plant-id');
   await says(page, 'Your 1 plant');
-  await saysNot(page, /\+ \d+ more/);
+  assert.doesNotMatch(await page.$eval(PLANTS, (e) => e.innerText), /\+ \d+ more/, 'board: no fold at 1 plant');
   await page.evaluate(() => { window.__ctTest.store.members.value = []; });
   await frames(page);
   assert.equal(await page.$(PLANTS), null, 'board: no Your plants at 0 plants');
   await done(page);
 });
 
+// A Paste group opened (pressed only when closed).
+async function openGroup(page, name) {
+  const g = await control(page, 'button', name);
+  if (!g.expanded) await press(page, 'button', g.name);
+}
 const SMALL_PASTE = 'corn, beans, sukuma wiki\npigeon pea, avocado, corn\ngrevillea, napier';
-failing('PFE11 (pf-e Paste board): every line is read into three groups, Recognised (new, you have, listed twice), Need a choice (a loose word asks, nothing chosen for you) and Not found; the first column of a spreadsheet; Add counts the new and the chosen', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE11 (pf-e Paste board): every line is read into three groups, Recognised (new, you have, listed twice), Need a choice (a loose word asks, nothing chosen for you) and Not found; the first column of a spreadsheet; Add counts the new and the chosen', async () => {
   const page = await loadCase('kiambu-8', { width: 390 });
+  // The board's palette: corn and pigeon pea in it, avocado, grevillea and napier not (the figures
+  // after it are the engine's: "napier" is a search guess, so it asks (pf decision: never taken unasked;
+  // the board draws it found), and the beans the pool holds are the ones named).
+  const before = await page.evaluate(() => {
+    const s = window.__ctTest.store, out = new Set(['Persea americana', 'Grevillea robusta', 'Cenchrus purpureus']);
+    s.members.value = s.memberTaxa.value.filter((t) => !out.has(t.canonical_name)).map((t) => t.id);
+    return s.members.value.length;
+  });
   await pasteText(page, SMALL_PASTE);
   await says(page, 'One plant a line, or separated by commas. Any of the 11 languages, or scientific names. Every line is read, on your device; nothing is sent.', { inDialog: true });
   await says(page, 'Pasted from a spreadsheet? The names are read from the first column.', { inDialog: true });
   await says(page, '8 names read', { inDialog: true });
-  await says(page, /6 recognised, 1 needs a choice, 1 not found/, { inDialog: true });
-  await control(page, 'button', /^Recognised: 3 new, 2 you have, 1 listed twice/);
+  await says(page, /5 recognised, 2 need a choice, 1 not found/, { inDialog: true });
+  assert.equal((await control(page, 'button', /^Recognised: 2 new, 2 you have, 1 listed twice/)).expanded, true, 'board: Recognised opens by itself up to 10 names');
   await control(page, 'button', /^Need a choice/);
   await control(page, 'button', /^Not found/);
+  await says(page, '“corn” Corn Zea mays · in your palette · listed twice, counted once', { inDialog: true });
   await says(page, '“grevillea” Silk oak Grevillea robusta · new, found by its scientific name', { inDialog: true });
+  await says(page, '“avocado” Avocado Persea americana · new', { inDialog: true });
   await says(page, /“beans” Which bean\? \d+ plants are called bean\./, { inDialog: true });
-  const choices = await page.$$eval('dialog[open] [role="group"] button[aria-pressed]', (bs) => bs.map((b) => ({ t: b.textContent.trim(), on: b.getAttribute('aria-pressed') })));
-  assert.equal(choices.slice(0, 3).map((c) => c.t.split(' ')[0] + ' ' + c.t.split(' ')[1]).join(', '), 'Common bean, Lima bean, Sword bean', 'board: the name-word matches first (A16)');
-  assert.ok(choices.every((c) => c.on === 'false' || c.t === 'None'), 'board: nothing chosen for the grower');
+  await says(page, '“sukuma wiki” Not found. Search by hand', { inDialog: true });
+  const choices = await page.$$eval('dialog[open] [role="group"] button[aria-pressed]', (bs) => bs.map((b) => ({ t: b.textContent.replace(/\s+/g, ' ').trim(), on: b.getAttribute('aria-pressed') })));
+  assert.ok(choices.slice(0, 3).every((c) => /\bbean\b/i.test(c.t)), `board: the plants named bean come first (A16): ${choices.slice(0, 3).map((c) => c.t)}`);
+  assert.ok(choices.every((c) => c.on === 'false'), 'board: nothing chosen for the grower');
+  await press(page, 'button', choices[0].t);
   await press(page, 'button', 'Add 3 plants');
+  assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 3, { timeout: 8000 }, before).then(() => true, () => false), 'board: Add counts the new and the chosen');
   await done(page);
 });
 
-failing('PFE12 (pf-e AddMany state 4, F23 F24 F25): 205 names on a palette of 20 are all read with no cap; the groups start closed past 10; choices say their fit; "Skip the N left", "Copy these N names"; one Add takes everything; the toast says "N plants added. Your palette: M plants." with Undo', { owner: 'pf-e', reason: BOARD }, async () => {
+test('PFE12 (pf-e AddMany state 4, F23 F24 F25): 205 names on a palette of 20 are all read with no cap; the groups start closed past 10; choices say their fit; "Skip the N left", "Copy these N names"; one Add takes everything; the toast says "N plants added. Your palette: M plants." with Undo', async () => {
   const page = await loadPalette200({ width: 390 });
   const text = await page.evaluate(() => {
     const s = window.__ctTest.store, have = s.members.value.slice(0, 20);
@@ -259,10 +280,10 @@ failing('PFE12 (pf-e AddMany state 4, F23 F24 F25): 205 names on a palette of 20
   await says(page, /\b\d{3} names read\b/, { inDialog: true, timeout: 15_000 });
   const rec = await control(page, 'button', /^Recognised: /);
   assert.equal(rec.expanded ?? false, false, 'board: Recognised starts closed above 10 names');
-  await press(page, 'button', (await control(page, 'button', /^Need a choice/)).name);
+  await openGroup(page, /^Need a choice/);
   await says(page, /\d+ chosen, \d+ to go\. A name you leave is not added\./, { inDialog: true });
   await control(page, 'button', /^Skip the \d+ left$/);
-  await press(page, 'button', (await control(page, 'button', /^Not found/)).name);
+  await openGroup(page, /^Not found/);
   await control(page, 'button', /^Copy these \d+ names$/);
   const add = await control(page, 'button', /^Add \d+ plants$/);
   const n = Number(add.name.match(/\d+/)[0]);

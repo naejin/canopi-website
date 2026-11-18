@@ -32,3 +32,100 @@
   justify-self: start; padding: 0 6px; border: 1px dashed var(--border-strong); border-radius: 4px;
   font-size: 12.5px; color: var(--text-muted);
 }
+
+/* ---- Your plants, v14 pf-e (boards PaletteMore, Recife, Many, ManyDesk) ---- */
+/* The section is a card, as on the boards. */
+.ct .ct-plants { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 14px; gap: 8px; }
+.ct .ct-plants h3 { font-weight: 600; font-size: 20px; line-height: 26px; }
+.ct .ct-plants > .ct-muted, .ct .ct-many-titles > .ct-muted { margin: 0; font-size: 14px; line-height: 20px; }
+
+/* The small form: each row opens the plant (a full-width button with a chevron). */
+.ct .ct-plants-small .ct-plant-rows > li { padding: 0; }
+.ct .ct-plant-open {
+  display: grid; gap: 2px; width: 100%; padding: 10px 28px 10px 0; position: relative; border: 0; background: none;
+  color: inherit; font: inherit; text-align: start; cursor: pointer;
+}
+.ct .ct-plant-open:hover .ct-plant-name strong { text-decoration: underline; }
+.ct .ct-plant-more { display: grid; gap: 2px; }
+.ct .ct-plant-fit { padding-top: 2px; }
+.ct .ct-many-group { min-width: 0; }
+.ct .ct-plant-open .ct-plant-name { font-size: 15px; }
+.ct .ct-plant-open .ct-sci, .ct .ct-many .ct-sci { color: var(--text-muted); font-size: 14px; }
+.ct .ct-plant-open .ct-line { font-size: 13.5px; line-height: 19px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ct .ct-plant-open .ct-line svg { flex: none; width: 16px; height: 16px; }
+.ct .ct-plant-marks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 4px; }
+.ct .ct-plant-marks .ct-find-marks { display: contents; }
+.ct .ct-plant-job { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--text-secondary); }
+.ct .ct-plant-job .ct-job-icon { width: 14px; height: 14px; }
+.ct .ct-plant-chevron { position: absolute; right: 2px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--text-muted); }
+
+/* The big form: tools, tick bar, groups, rows (phone) or table (desk). */
+.ct .ct-many-top { display: flex; align-items: flex-end; gap: 16px; }
+.ct .ct-many-titles { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ct .ct-many-tools { display: flex; gap: 8px; align-items: center; padding-top: 4px; }
+.ct .ct-many-select { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-many-select select {
+  flex: 1; min-width: 0; min-height: 44px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); font: inherit; font-size: 15px; color: var(--text);
+}
+.ct .ct-many-search {
+  display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border: 1px solid var(--border-strong);
+  border-radius: 8px; background: var(--surface); color: var(--text-muted); flex: 2; min-width: 0;
+}
+.ct .ct-many-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--text); }
+.ct .ct-many-search input:focus { outline: none; }
+.ct .ct-many-search:focus-within { outline: 2px solid var(--focus, var(--text)); outline-offset: 2px; }
+.ct .ct-many-headsearch { margin: 0 0 4px; }
+.ct .ct-many-tickbar {
+  display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; border-radius: 11px; border: 2px solid var(--text);
+  background: var(--surface-alt); font-size: 15px;
+}
+.ct .ct-many-tickbar b { flex: 1; font-weight: 600; }
+.ct .ct-many-ghead { display: flex; gap: 6px; padding-top: 6px; }
+.ct .ct-many-gtoggle {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 44px; padding: 0 10px; background: var(--surface-alt);
+  border: 1px solid var(--border); border-radius: 8px; font: inherit; font-size: 15px; color: var(--text); text-align: start; cursor: pointer;
+}
+.ct .ct-many-gtoggle b { font-weight: 600; }
+.ct .ct-many-gtoggle span { flex: 1; color: var(--text-secondary); white-space: nowrap; }
+.ct .ct-many-tickall { min-height: 44px; padding: 0 10px; font-size: 14px; white-space: nowrap; }
+.ct .ct-many-rows { list-style: none; margin: 0; padding: 0; font-size: 15px; line-height: 21px; }
+.ct .ct-many-rows > li { display: flex; align-items: center; min-height: 48px; padding: 4px 0; border-top: 1px solid var(--border); }
+.ct .ct-many-tick { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; margin-right: 8px; cursor: pointer; }
+.ct .ct-many-tick input { width: 22px; height: 22px; margin: 0; accent-color: var(--text); }
+.ct .ct-many-main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-many-name { font-weight: 600; text-decoration: none; }
+.ct .ct-many-sub { display: block; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-many-word { display: block; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
+.ct .ct-many-word[data-level="danger"] { color: var(--danger); }
+.ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
+.ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
+.ct .ct-many-word .ct-fit { color: inherit; }
+.ct .ct-many-more { justify-self: start; min-height: 44px; padding: 0 2px; }
+.ct .ct-many-foot { font-size: 13px; line-height: 19px; padding-top: 4px; }
+.ct .ct-many-table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 21px; }
+.ct .ct-many-table thead th { padding: 6px 8px; text-align: start; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary); }
+.ct .ct-many-table .ct-many-tickcell { padding-left: 0; width: 52px; }
+.ct .ct-many-colhead { min-height: 44px; padding: 0; background: none; border: 0; font: inherit; font-weight: 600; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.ct .ct-many-colhead[data-on] { color: var(--text); }
+.ct .ct-many-table tbody td, .ct .ct-many-table tbody th { padding: 1px 8px; border-top: 1px solid var(--border); vertical-align: middle; text-align: start; font-weight: 400; }
+.ct .ct-many-table tbody .ct-many-gcell { padding: 0; border-top: 0; }
+.ct .ct-many-table tbody th .ct-sci { display: block; }
+.ct .ct-many-fit { font-size: 14px; }
+.ct .ct-many-level { display: block; }
+.ct .ct-many-level[data-level="outside"], .ct .ct-many-level[data-level="look"] { font-weight: 600; }
+.ct .ct-many-reason { display: block; font-size: 13px; color: var(--warning); font-weight: 600; }
+.ct .ct-many-reason .ct-fit { color: inherit; }
+.ct .ct-tick-these { justify-self: start; margin-top: 6px; }
+/* The phone's tick bar stays in reach above the bottom bar (v14 section 6); the desk's sits in place. */
+.ct .ct-many-tickbar { position: sticky; bottom: calc(var(--ct-bar-room, 0px) + 8px); z-index: 2; }
+@media (min-width: 960px) { .ct .ct-many-tickbar { position: static; } }
+
+/* Past 40 plants at 960 px and wider (v14 pf-e E3; board ManyDesk): the chart's column and Your plants'
+   column, the second wider. */
+.ct .ct-many-left, .ct .ct-many-right { display: grid; gap: 24px; min-width: 0; align-content: start; }
+@media (min-width: 960px) {
+  .ct .ct-palette-body[data-pictures][data-many] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); grid-template-rows: auto; }
+  .ct .ct-palette-body[data-many] > .ct-many-left { grid-column: 1; grid-row: 1; }
+  .ct .ct-palette-body[data-many] > .ct-many-right { grid-column: 2; grid-row: 1; }
+}

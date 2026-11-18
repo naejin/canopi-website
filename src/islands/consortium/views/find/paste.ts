@@ -122,34 +122,41 @@ export function looksLikeHeader(cell: string | undefined): boolean {
 // header: the first row, when it holds column names; split: the names cut out of a longer cell
 // (never sent to the word-prefix search: "Malus domestica,Tree,Sun" does not offer trees); twice: the
 // names pasted more than once (one row, "listed twice, counted once", board Paste).
-export type PastedNames = string[] & { header?: string | null; split?: ReadonlySet<string>; twice?: ReadonlySet<string> };
+export type PastedNames = string[] & { header?: string | null; split?: ReadonlySet<string>; twice?: ReadonlySet<string>; repeats?: number };
+// repeats: the lines that repeat a name already read (board Paste: "8 names read" counts every line).
 // The names of a paste, every line read (no cap: v14 pf-e, F23): a spreadsheet's first column, a cell
 // split on commas and semicolons (unless they separate the columns, when every cell is a name), each
 // name once (folded; a repeat marks the first as `twice`). A first row that looks like column names
 // (in a paste of two rows or more) is left out and kept as `header`.
 export function pasteNames(text: string): PastedNames {
   const out: PastedNames = [], seen = new Map<string, string>(), split = new Set<string>(), twice = new Set<string>(), table = pasteTable(text);
+  let repeats = 0;
   const column = table.sep === ',' || table.sep === ';' ? EVERY_CELL : 0;
   const every = column === EVERY_CELL;
   const first = table.rows[0] ?? [];
   const head = table.rows.length > 1 && (every ? first.length > 0 && first.every((c) => looksLikeHeader(c)) && first.join(', ') : looksLikeHeader(first[column]) && first[column].trim()) || null;
   table.rows.forEach((row, r) => {
     if (r === 0 && head) return;
-    const parts = every ? row.map(String) : table.sep === ',' || table.sep === ';' ? [String(row[column] ?? '')] : String(row[column] ?? '').split(/[,;]/);
+    const cell = String(row[column] ?? '');
+    const parts = every ? row.map(String) : table.sep === ',' || table.sep === ';' ? [cell] : cell.split(/[,;]/);
+    // A list typed by hand ("corn, beans, sukuma wiki": a space after each comma) is read word by word
+    // like any line; a machine row ("Malus domestica,Tree,Sun") keeps its other cells off the search.
+    const machine = every || !/[,;]\s/.test(cell);
     for (const part of parts) {
       let name = part.replace(/\s+/g, ' ').trim();
       if ((name.match(/"/g) ?? []).length === 1 && /^"|"$/.test(name)) name = name.replace(/^"|"$/, '').trim();
       const key = fold(name);
       if (!name) continue;
-      if (seen.has(key)) { twice.add(seen.get(key)!); continue; }
+      if (seen.has(key)) { twice.add(seen.get(key)!); repeats++; continue; }
       seen.set(key, name);
       out.push(name);
-      if (parts.length > 1) split.add(name);
+      if (parts.length > 1 && machine) split.add(name);
     }
   });
   Object.defineProperty(out, 'header', { value: head, enumerable: false });
   Object.defineProperty(out, 'split', { value: split, enumerable: false });
   Object.defineProperty(out, 'twice', { value: twice, enumerable: false });
+  Object.defineProperty(out, 'repeats', { value: repeats, enumerable: false });
   return out;
 }
 
@@ -188,7 +195,8 @@ export function pasteLists<T extends Named>(here: readonly T[], others: readonly
   return { index, taxa, climate, genus };
 }
 
-export interface Match<T> { how: 'exact' | 'choose'; taxa: T[] }
+// sci: matched by a scientific name (a synonym, a binomial, a genus), not by a name of the plant.
+export interface Match<T> { how: 'exact' | 'choose'; taxa: T[]; sci?: boolean }
 // One name, or null: a whole name of one plant (scientific names first, then a genus and species
 // without authors, then any other name in any language the search holds), then a genus or a shared
 // name (several plants: choose). A slip is read as Find reads it, after its search (readPaste).
@@ -198,19 +206,21 @@ export function matchName<T extends Named>(name: string, lists: PasteLists<T>): 
   const one = (hits: FindHit[]): Match<T> | null => (hits.length === 1 ? { how: 'exact', taxa: plants(hits) } : hits.length > 1 ? { how: 'choose', taxa: plants(hits) } : null);
   const exact = known(lists.index.exact(name)), b = binomial(name);
   const scientific = exact.filter((h) => h.tier === 'scientific');
-  const hit = one(scientific) ?? (b ? one(known(lists.index.exact(b)).filter((h) => h.tier === 'scientific')) : null) ?? one(exact);
+  const sciHit = one(scientific) ?? (b ? one(known(lists.index.exact(b)).filter((h) => h.tier === 'scientific')) : null);
+  if (sciHit) return { ...sciHit, sci: true };
+  const hit = one(exact);
   if (hit) return hit;
   const f = fold(name), g = lists.genus.get(f);
-  if (!f.includes(' ') && g?.length) return { how: 'choose', taxa: g };
+  if (!f.includes(' ') && g?.length) return { how: 'choose', taxa: g, sci: true };
   return null;
 }
 
 // `at`: the reading's line in the paste (the sheet lists the paste in its order, board Paste).
 export interface PasteResult<T> {
-  found: { at: number; name: string; taxon: T; close: string | null }[];
+  found: { at: number; name: string; taxon: T; close: string | null; sci?: boolean }[];
   choose: { at: number; name: string; word: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null; guess: boolean }[];
   other: { at: number; name: string; climate: ClimateZone; taxon: T; close: string | null }[];
-  already: { at: number; name: string; taxon: T; close: string | null; climate: ClimateZone | null }[];
+  already: { at: number; name: string; taxon: T; close: string | null; climate: ClimateZone | null; sci?: boolean }[];
   duplicate: { at: number; name: string; taxon: T }[];
   none: { at: number; name: string }[];
   header: string | null;
@@ -232,38 +242,58 @@ export interface PasteResult<T> {
 //   none       in no list
 // here: this climate's plants; others: [[climate, plants], …] in the export's order; members: the
 // consortium's ids; index: the page's release-wide search (Find's), else one over these lists.
-export function readPaste<T extends Named>(names: PastedNames, { here, others = [], members = [], index }: { here: readonly T[]; others?: [ClimateZone, readonly T[]][]; members?: readonly PlantId[]; index?: Finder }): PasteResult<T> {
+// rank: a plant's order among a guess's choices after the name rule (A16), lower first (the sheet gives
+// its fit: fits, a second look, outside, not checked); lang: the page's language.
+export function readPaste<T extends Named>(names: PastedNames, { here, others = [], members = [], index, rank, lang = 'en' }: { here: readonly T[]; others?: [ClimateZone, readonly T[]][]; members?: readonly PlantId[]; index?: Finder; rank?: (id: PlantId) => number; lang?: string }): PasteResult<T> {
   const lists = pasteLists(here, others, index), ins = new Set(members), seen = new Set<PlantId>();
+  // A hit on the plant's own name (the page's language, or English) holding the query's words whole.
+  const ownName = (h: FindHit): boolean => (h.why.match === 'exact' || h.why.match === 'tokens' || h.why.match === 'prefix') && (h.why.kind === 'name' || (h.why.kind === 'other' && h.why.lang === 'en' && lang !== 'en'));
   const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], duplicate: [], none: [], header: null, twice: names.twice ?? new Set() };
   let at = 0;
-  const one = (name: string, t: T, close: string | null) => {
+  const one = (name: string, t: T, close: string | null, sci = false) => {
     const climate = lists.climate.get(t.id) ?? null;
     if (seen.has(t.id)) { out.duplicate.push({ at, name, taxon: t }); return; }
     seen.add(t.id);
-    if (ins.has(t.id)) out.already.push({ at, name, taxon: t, close, climate });
+    if (ins.has(t.id)) out.already.push({ at, name, taxon: t, close, climate, sci });
     else if (climate) out.other.push({ at, name, climate, taxon: t, close });
-    else out.found.push({ at, name, taxon: t, close });
+    else out.found.push({ at, name, taxon: t, close, sci });
   };
   // A choose group from one list: this climate's plants when it has any, else the first other list's;
   // a name's one plant is no question (board Paste: a found line), a guess's is.
-  const group = (name: string, taxa: T[], guess: boolean, word = name) => {
+  const group = (name: string, taxa: T[], guess: boolean, word = name, sci = false) => {
     const z = taxa.some((t) => lists.climate.get(t.id) === null) ? null : lists.climate.get(taxa[0].id) ?? null;
     const own = taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z);
-    if (own.length === 1 && !guess) one(name, own[0], null);
+    if (own.length === 1 && !guess) one(name, own[0], null, sci);
     else out.choose.push({ at, name, word, taxa: own, inside: [], climate: z, guess });
   };
   for (const [i, name] of names.entries()) {
     at = i;
     const m = matchName(name, lists);
-    if (m?.how === 'exact') { one(name, m.taxa[0], null); continue; }
-    if (m) { group(name, m.taxa, false); continue; }
+    if (m?.how === 'exact') { one(name, m.taxa[0], null, !!m.sci); continue; }
+    // A16: a name several plants share (a genus, or another language's name: "beans") yields to the
+    // search below when that finds plants whose own name holds the word ("Which bean?").
+    const shared = m && !m.sci ? m : null;
+    if (m && !shared) { group(name, m.taxa, false, name, true); continue; }
     // No name matched: Find's search (not for a piece of a longer cell), then, as Find, its close
     // spellings (data/search.ts close with words: "chesnut" is one letter off "European chestnut"),
     // one plant read as it ("read as …", left unticked), several to choose.
-    const search = (q: string) => (names.split?.has(name) ? [] : lists.index(q)).filter((h) => lists.taxa.has(h.id)).map((h) => lists.taxa.get(h.id)!);
-    // A plural common name ("beans", "pommes"): the plants named by its singular, to choose (B10).
-    let word = name, hits = search(name);
-    if (!hits.length && /\p{L}{3}s$/u.test(name.trim())) hits = search(word = name.trim().slice(0, -1));
+    const search = (q: string) => (names.split?.has(name) ? [] : lists.index(q)).filter((h) => lists.taxa.has(h.id));
+    // A plural common name ("beans", "pommes"): the plants named by its singular too, to choose (B10).
+    // A16: a plant's own name holding the word as a whole word, in the page's language or English,
+    // ranks first ("beans": Common bean, Lima bean, Sword bean before a scientific prefix or another
+    // language's name), then the rank the caller gives (its fit), then the search's order.
+    const plural = /\p{L}{3}s$/u.test(name.trim()) ? name.trim().slice(0, -1) : null;
+    let word = name, found = search(name);
+    if (plural) { const more = search(plural); if (more.length && (!found.length || more.some((h) => ownName(h)))) word = plural; found = [...found, ...more]; }
+    if (shared && !found.some((h) => ownName(h))) { group(name, shared.taxa, false); continue; }
+    const best = new Map<PlantId, { h: FindHit; at: number }>();
+    found.forEach((h, k) => { const had = best.get(h.id); if (!had || (ownName(h) && !ownName(had.h))) best.set(h.id, { h, at: had?.at ?? k }); });
+    const hits = [...best.values()].sort((a, b) => Number(ownName(b.h)) - Number(ownName(a.h)) || (rank?.(a.h.id) ?? 0) - (rank?.(b.h.id) ?? 0) || a.at - b.at).map((x) => lists.taxa.get(x.h.id)!);
+    for (const t of shared?.taxa ?? []) if (!hits.includes(t)) hits.push(t);
+    // A search guess stays a question, even of one plant (c1r3 T1; pf decisions 2026-11-18: Paste never
+    // takes a plant unasked): "napier" asks about Napier grass (board Paste draws it found).
+    // A guess of one plant you already have asks nothing (nothing would be added): you have it.
+    if (hits.length === 1 && ins.has(hits[0].id)) { one(name, hits[0], null); continue; }
     if (hits.length) { group(name, hits, true, word); continue; }
     const close = lists.index.close(name, true).filter((h) => lists.taxa.has(h.id));
     if (close.length === 1) one(name, lists.taxa.get(close[0].id)!, close[0].why.text);

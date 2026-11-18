@@ -20,7 +20,7 @@
 // to this opening's close and the sheet's toast region), so no sheet imports the store's closer or the
 // toast. Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is inert,
 // Escape closes).
-import { effect } from '@preact/signals';
+import { effect, signal } from '@preact/signals';
 import { useLayoutEffect, useMemo, useRef } from 'preact/hooks';
 import * as store from '../store.ts';
 import { closeSheet, taxonOf, type Sheet as Opened, type SheetKind } from '../store.ts';
@@ -159,9 +159,16 @@ function PanelFrame({ titleId, head, foot, children, class: cls = '' }: FramePro
     </dialog>
   );
 }
-export function FindPanel() {
+// Where the desk's panel stands (v14 pf-e F30, A22; board ManyDesk): beside the chart in the palette
+// grid ('grid', FindPanelSlot), or in place of Your plants' table past 40 plants ('list', its "Add
+// plants": the panel stays open while the reader adds, Done brings the table back and the focus to
+// "Add plants" through the opener above). Back to 'grid' once Find closes.
+export const findIn = signal<'grid' | 'list'>('grid');
+export function openFindInList(): void { findIn.value = 'list'; store.openFind(); }
+if (typeof document !== 'undefined') effect(() => { if (store.sheet.value?.kind !== 'find' && findIn.peek() !== 'grid') findIn.value = 'grid'; });
+export function FindPanel({ where = 'grid' }: { where?: 'grid' | 'list' }) {
   const s = store.sheet.value;
-  if (!s || !deskFind.value || store.load.value.status !== 'ready') return null;
+  if (!s || !deskFind.value || store.load.value.status !== 'ready' || findIn.value !== where) return null;
   return <find.View key={s.n} Frame={PanelFrame} />;
 }
 

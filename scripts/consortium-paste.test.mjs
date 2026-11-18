@@ -42,7 +42,7 @@ test('binomials drop authors and rank words; one letter off needs five letters o
 
 test('matching: scientific name, then binomial, then a common name in any language, folded (marks, ß, case)', () => {
   const idx = pasteLists(temperate);
-  assert.deepEqual(matchName('MALUS DOMESTICA', idx), { how: 'exact', taxa: [temperate[0]] });
+  assert.deepEqual(matchName('MALUS DOMESTICA', idx), { how: 'exact', taxa: [temperate[0]], sci: true });
   assert.equal(matchName('Malus domestica Borkh.', idx).taxa[0].id, 't1');
   assert.equal(matchName('chataignier', idx).taxa[0].id, 't2');
   assert.equal(matchName('Weissdorn', idx).taxa[0].id, 't3');

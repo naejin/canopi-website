@@ -39,3 +39,6 @@ export async function pasteText(page, text) {
   await page.$eval('dialog[open] #ct-paste-text', (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, text);
   await page.click('dialog[open] [data-paste-read]');
 }
+
+// A text field set as a reader types it (its input event; Puppeteer has no fill).
+export const typeIn = (page, sel, v) => page.$eval(sel, (el, x) => { el.value = x; el.dispatchEvent(new Event('input', { bubbles: true })); }, v);
