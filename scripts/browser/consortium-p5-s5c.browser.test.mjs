@@ -106,6 +106,63 @@ function rangeChunk() {
   return files[0];
 }
 
+// The build's chunks that name the range chunk's file (the entry's import() included): its importers,
+// each of which may request it once.
+function rangeImporters(range) {
+  return readdirSync(ASTRO()).filter((f) => f.endsWith('.js') && f !== range && readFileSync(join(ASTRO(), f), 'utf8').includes(range)).length;
+}
+
+// h2 T1: P5-14g (fix review 231bead 1–2) rewritten on the v14 surface: Place's count line went with
+// the board, so the failure is read where the grower now meets it, the palette page's notice.
+test('P5-14g (S5c range chunk offline, fix review 231bead 1–2; v14, main h2 T1): the palette page says in place that the fit check did not load, never by a toast, and a new location does not import the chunk again', async () => {
+  const page = await tool(), range = rangeChunk();
+  const cdp = await page.createCDPSession();
+  const urls = new Map(), failed = [];
+  cdp.on('Network.requestWillBeSent', (e) => urls.set(e.requestId, e.request.url));
+  cdp.on('Network.loadingFailed', (e) => { if ((urls.get(e.requestId) ?? '').endsWith(`/_astro/${range}`)) failed.push(e.blockedReason); });
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setBlockedURLs', { urls: [`*/_astro/${range}`] });
+  await page.evaluate(() => { window.__toasts = []; window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.push(t.text); }); });
+  await choose(page, 'Mediterranean');
+  await atSite(page, 'seville');
+  // Five plants on the palette page (no Suggest: a suggestion's own toast is not the failure's).
+  await page.evaluate(async () => {
+    const { store } = window.__ctTest;
+    const pool = await store.loadPool('Mediterranean');
+    store.members.value = pool.slice(0, 5).map((t) => t.id);
+    store.view.value = 'matrix';
+  });
+  const NOTICE = /The fit check did not load: every plant says “Not checked”, and the holes were computed without it\./;
+  const said = () => page.evaluate(() => [...document.querySelectorAll('#ct-root [role="alert"]')].map((e) => e.textContent.replace(/\s+/g, ' ')).join(' | '));
+  assert.ok(await page.waitForFunction((re) => [...document.querySelectorAll('#ct-root [role="alert"]')].some((e) => new RegExp(re).test(e.textContent)), { timeout: 10_000 }, NOTICE.source).then(() => true, () => false), `the failure, in place on the palette page (${await said()})`);
+  await new Promise((r) => setTimeout(r, 1000));
+  // Several chunks reach the range chunk at the first location: the store's rule (import()) and every
+  // chunk that imports it statically. Chrome shares one request between imports in flight together, and
+  // reuses a failure for later ones locally, but the CI runner's Chrome sent four (run 43971791616). So
+  // the bound is read from the build, one request per importer at most, and none more after a new location.
+  const before = failed.length, importers = rangeImporters(range);
+  assert.ok(before >= 1 && before <= importers, `the chunk was requested at Seville (${before} of at most ${importers})`);
+  await atSite(page, 'lyon');
+  await new Promise((r) => setTimeout(r, 1000));
+  assert.equal(failed.length, before, 'a new location does not import the chunk again');
+  assert.deepEqual(await page.evaluate(() => window.__toasts), [], 'said in place, never by a toast');
+  assert.match(await said(), NOTICE, 'the notice stays');
+});
+
+// h2 T1: P5-14i (pre-push review 1) on the v14 Place: the pool panel's chunk is imported only when
+// Place mounts it for a reason it cannot go on (here: nothing fits the site, as P5-27a); refused, it
+// says in place that the part did not load, with Reload (board Loading "A sheet or panel failed").
+test('P5-14i (S5c → PP-B b1b, the pool panel\'s chunk refused; v14, main h2 T1): Place mounts the panel where nothing fits; its chunk refused, Place says the part did not load, with Reload, never a toast', async () => {
+  const page = await tool({ block: { pool: 404 } });
+  await page.evaluate(() => { window.__toasts = []; window.__ctTest.store.toast.subscribe((t) => { if (t) window.__toasts.push(t.text); }); });
+  await atNowhere(page);
+  await choose(page, 'Boreal');
+  const said = () => page.evaluate(() => [...document.querySelectorAll('#ct-root [role="alert"], #ct-root .ct-notice')].map((e) => e.textContent.replace(/\s+/g, ' ')).join(' | '));
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('#ct-root [role="alert"], #ct-root .ct-notice')].some((e) => /did not load|could not open/.test(e.textContent) && [...e.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Reload')), { timeout: 10_000 }).then(() => true, () => false), `the failed part, in place, with Reload (${await said()})`);
+  assert.ok(page.blocked.some((u) => h.roles.pool.includes(u)), 'the pool chunk was requested and refused by the block');
+  assert.deepEqual(await page.evaluate(() => window.__toasts), [], 'never a toast');
+});
+
 test('P5-14f (S5c Suggest while the range rule loads): when nothing fits, a Suggest pressed before the rule arrives stays on Place with the nothing-fits state', async () => {
   const page = await tool();
   // Temperate (curated): no count line without a location, so the rule's chunk is not fetched before
