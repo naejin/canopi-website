@@ -1324,10 +1324,11 @@ test('PFC52 (pf-c Loading, the offline line; M27, carried from PP-B46): offline,
 const holdReverse = (pg) => pg.evaluateOnNewDocument(() => {
   const real = window.fetch.bind(window);
   let gates = [];
+  window.__reverseAsks = [];
   window.__releaseReverse = () => { for (const g of gates) g(); gates = []; };
   window.fetch = async (input, init) => {
     const url = new URL(typeof input === 'string' ? input : input.url, location.href);
-    if (url.hostname === 'nominatim.openstreetmap.org' && url.pathname === '/reverse') await new Promise((r) => { gates.push(r); });
+    if (url.hostname === 'nominatim.openstreetmap.org' && url.pathname === '/reverse') { window.__reverseAsks.push(url.href); await new Promise((r) => { gates.push(r); }); }
     return real(input, init);
   };
 });
@@ -1349,12 +1350,12 @@ test('PFC54 (main h2 R3, R9): "Look up its name" sends the centre of the typed p
   await searchFor(page, '-1.171234, 36.834567');
   await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 10_000 });
   await press(page, 'button', 'Look up its name');
-  for (let i = 0; i < 50 && !page.nominatim.length; i++) await new Promise((r) => setTimeout(r, 100));
+  const asks = () => page.evaluate(() => window.__reverseAsks);
+  for (let i = 0; i < 50 && !(await asks()).length; i++) await new Promise((r) => setTimeout(r, 100));
   await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Look up its name')?.click());
   await new Promise((r) => setTimeout(r, 1500));
-  const asks = page.nominatim.filter((r) => /\/reverse\?/.test(r.url));
-  assert.equal(asks.length, 1, 'one lookup for two presses');
-  const u = new URL(asks[0].url);
+  assert.equal((await asks()).length, 1, 'one lookup for two presses');
+  const u = new URL((await asks())[0]);
   assert.deepEqual([u.searchParams.get('lat'), u.searchParams.get('lon')], ['-1.15', '36.85'], 'the cell centre (0.1° grid), never -1.171234, 36.834567');
   await saysNot(page, 'The place search did not answer, so the place has no name. Try again later.', 'no failure while the first lookup still runs');
   await page.evaluate(() => window.__releaseReverse());
