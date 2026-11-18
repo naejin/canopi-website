@@ -6,7 +6,7 @@
 // second look"): outside its climate range, a second look, fits with a mark (Mildly toxic), fits, not
 // checked; then by name. The groups and the second look's reasons are core weigh.ts fitGroups' (the
 // lines of Warnings and fit), so a row and the line it is counted on always agree.
-import type { FitGroups, JobId, PlantId, Stratum, Taxon, WarnReason } from '../../../../lib/consortium/index.ts';
+import type { FitGroups, Flag, JobId, PlantId, Stratum, Taxon, WarnReason } from '../../../../lib/consortium/index.ts';
 import { fold, jobsOf, strata, yearsOf } from '../../../../lib/consortium/index.ts';
 
 export type SortKey = 'fit' | 'name' | 'light' | 'job' | 'years';
@@ -14,11 +14,16 @@ export type GroupKey = 'light' | 'job' | 'fit' | 'family' | 'none';
 export const SORTS: readonly SortKey[] = ['fit', 'name', 'light', 'job', 'years'];
 export const GROUPS: readonly GroupKey[] = ['light', 'job', 'fit', 'family', 'none'];
 // A row's line: outside, a second look, fits (with a mark or not), not checked.
-export type FitLevel = 'outside' | 'look' | 'fits' | 'unknown';
-export type Reason = WarnReason | 'mild' | null;
+type FitLevel = 'outside' | 'look' | 'fits' | 'unknown';
+type Reason = WarnReason | 'mild' | null;
+// The plant's own marks, said beside its fit word when the reason does not say them already (board
+// Many: Mango's and Silk oak's "Mildly toxic", an outside plant's "Toxic"): its toxicity level and
+// whether it is recorded invasive in the chosen country.
+type Tox = 'Slight' | 'Moderate' | 'Severe';
 export interface PlantItem {
   id: PlantId; t: Taxon; name: string;
   level: FitLevel; reason: Reason; rank: number;
+  tox: Tox | null; invasive: boolean;
   jobs: JobId[]; jobsKnown: boolean; job: JobId | null;
   stratum: Stratum | null; from: number | null; family: string | null;
 }
@@ -27,7 +32,8 @@ export interface PlantItem {
 const REASON_ORDER: readonly WarnReason[] = ['severe', 'moderate', 'invasive', 'edge', 'misfit', 'clash'];
 const RANK: Record<FitLevel, number> = { outside: 0, look: 1, fits: 3, unknown: 4 };
 
-export function plantItems(members: readonly Taxon[], g: FitGroups, nameOf: (t: Taxon) => string): PlantItem[] {
+const TOX: ReadonlySet<string> = new Set(['Slight', 'Moderate', 'Severe']);
+export function plantItems(members: readonly Taxon[], g: FitGroups, nameOf: (t: Taxon) => string, flagsOf: (id: PlantId) => readonly Flag[] = () => []): PlantItem[] {
   const level = new Map<PlantId, FitLevel>();
   for (const k of ['outside', 'look', 'fits', 'unknown'] as const) for (const id of g[k]) level.set(id, k);
   const reason = new Map<PlantId, Reason>();
@@ -39,14 +45,33 @@ export function plantItems(members: readonly Taxon[], g: FitGroups, nameOf: (t: 
     seen.add(t.id);
     const lv = level.get(t.id) ?? 'unknown';
     const why: Reason = lv === 'look' ? reason.get(t.id) ?? null : lv === 'fits' && mild.has(t.id) ? 'mild' : null;
-    const jobs = jobsOf(t);
+    const jobs = jobsOf(t), fl = flagsOf(t.id);
+    const tox = fl.find((f) => f.kind === 'toxicity')?.level ?? null;
     out.push({
       id: t.id, t, name: nameOf(t), level: lv, reason: why, rank: lv === 'fits' && why === 'mild' ? 2 : RANK[lv],
+      tox: tox && TOX.has(tox) ? tox as Tox : null, invasive: fl.some((f) => f.kind === 'invasive'),
       jobs, jobsKnown: t.functions !== null, job: jobs[0] ?? null,
       stratum: t.stratum?.value ?? null, from: yearsOf(t)?.from ?? null, family: t.family ?? null,
     });
   }
   return out;
+}
+
+// The marks a row says after its fit word: those its reason does not name already (an outside plant's
+// toxicity, a second look's other mark; a Mildly toxic fit says its pill as its reason).
+export type Mark = Tox | 'invasive';
+export function extraMarks(i: Pick<PlantItem, 'reason' | 'tox' | 'invasive'>): Mark[] {
+  const said: Record<string, Mark> = { severe: 'Severe', moderate: 'Moderate', mild: 'Slight', invasive: 'invasive' };
+  const named = i.reason ? said[i.reason] : undefined;
+  return ([i.tox, i.invasive ? 'invasive' : null] as (Mark | null)[]).filter((m): m is Mark => !!m && m !== named);
+}
+
+// The small form's order (boards PaletteMore, Recife: "Plants with a warning come first"): the big
+// list's fit rank (outside its climate range, a second look, marks only, fits, not checked), the
+// palette's order within a rank. A row the page cannot show (no item) is not checked: last.
+export function byFitRank<R>(rows: readonly R[], idOf: (r: R) => PlantId, rankOf: ReadonlyMap<PlantId, number>): R[] {
+  const NOT_CHECKED = RANK.unknown;
+  return rows.map((r, at) => ({ r, at, k: rankOf.get(idOf(r)) ?? NOT_CHECKED })).sort((a, b) => a.k - b.k || a.at - b.at).map((x) => x.r);
 }
 
 const LIGHT_AT = (s: Stratum | null): number => (s ? strata.indexOf(s) : strata.length);
@@ -92,7 +117,7 @@ export function searchItems(items: readonly PlantItem[], query: string): PlantIt
 
 // A group's rows shown at a fold stage (board Many: "a group opens to its first 10 names, then '+ N
 // more'"): 0 closed, 1 the first STEP, 2 all. A search shows every match.
-export const STEP = 10;
+const STEP = 10;
 export function shownRows(count: number, stage: 0 | 1 | 2): number {
   return stage === 0 ? 0 : stage === 1 ? Math.min(count, STEP) : count;
 }

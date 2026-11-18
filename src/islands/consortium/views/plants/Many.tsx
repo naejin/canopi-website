@@ -11,7 +11,7 @@
 // focus to "Add plants".
 import type { ComponentChildren } from 'preact';
 import { useMemo, useRef } from 'preact/hooks';
-import type { PlantId, PlantRow, PlantVerdict } from '../../../../lib/consortium/index.ts';
+import type { Flag, PlantId, PlantRow, PlantVerdict } from '../../../../lib/consortium/index.ts';
 import { fitGroups, fitLine, headLine, jobIds, moreLine } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
@@ -22,7 +22,7 @@ import { WARN, CLOSE } from '../kit/icons.tsx';
 import { rowSpan, PLUS } from '../rows.tsx';
 import { FindPanel, findIn, openFindInList } from '../Sheets.tsx';
 import { deskFind } from '../Toast.tsx';
-import { GROUPS, groupItems, plantItems, searchItems, shownRows, SORTS, sortItems, type GroupKey, type PlantItem, type SortKey } from './model.ts';
+import { extraMarks, GROUPS, groupItems, plantItems, searchItems, shownRows, SORTS, sortItems, type GroupKey, type Mark, type PlantItem, type SortKey } from './model.ts';
 import { clearTicks, groupKey, isTicked, query, removeTicked, setGroup, setStage, setTick, sortKey, stages, tickIds, ticked, wide } from './state.ts';
 import { Missing } from './Small.tsx';
 
@@ -30,7 +30,7 @@ const CHEVRON = (up: boolean) => <svg class="ct-glyph" viewBox="0 0 16 16" aria-
 const SEARCH_ICON = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="m10.2 10.2 3.4 3.4" stroke="currentColor" stroke-width="1.5" /></svg>;
 
 // A row's jobs in short words ("Food, mulch"), or "Jobs not checked yet".
-export function jobsShort(i: Pick<PlantItem, 'jobs' | 'jobsKnown'>): string {
+function jobsShort(i: Pick<PlantItem, 'jobs' | 'jobsKnown'>): string {
   if (!i.jobsKnown && !i.jobs.length) return T('many.jobsNone');
   const words = i.jobs.map((j, n) => { const w = T(`many.job_${j}`); return n === 0 ? w : lowerMid(w); });
   return words.join(T('many.jobsSep'));
@@ -73,12 +73,25 @@ function Reason({ i, range }: { i: PlantItem; range: (v: PlantVerdict | undefine
   return <span class="ct-many-word" data-level={level}>{level === 'mild' ? <span class="ct-many-pill">{WARN}{w}</span> : <>{level !== 'plain' && WARN} {w}</>}</span>;
 }
 const wholeLine = (v: PlantVerdict | undefined) => (v ? say(headLine(v)) : T('palette.warningsUnknown'));
+// The plant's own marks its reason does not say (board Many: each mark its own chip, as on Mango and
+// Silk oak): an outside plant's toxicity, a second look's other mark. Mildly toxic and recorded
+// invasive in the warning colour, Toxic and Very toxic in the danger colour; always in words.
+function markWord(m: Mark): string {
+  if (m !== 'invasive') return T(`tox.${m}`);
+  const country = store.country.value?.code ?? null;
+  return country ? T('palette.warningsInvasive', { country: countryName(country) }) : T('many.invasive');
+}
+function Marks({ i }: { i: PlantItem }) {
+  const marks = extraMarks(i);
+  if (!marks.length) return null;
+  return <>{marks.map((m) => <span key={m} class="ct-many-pill" data-mark={m} data-level={m === 'Moderate' || m === 'Severe' ? 'danger' : 'warning'}>{WARN}{markWord(m)}</span>)}</>;
+}
 function FitWord({ i }: { i: PlantItem }) {
-  return <Reason i={i} range={wholeLine} />;
+  return <span class="ct-many-fitline"><Reason i={i} range={wholeLine} /><Marks i={i} /></span>;
 }
 // The desk's fit cell (board ManyDesk): the line's words, then its reason ("Needs a second look / ⚠ Toxic").
 function FitCell({ i }: { i: PlantItem }) {
-  return <><span class="ct-many-level" data-level={i.level}>{T(LEVEL_KEY[i.level])}</span>{i.level !== 'unknown' && <Reason i={i} range={rangeWhy} />}</>;
+  return <><span class="ct-many-level" data-level={i.level}>{T(LEVEL_KEY[i.level])}</span><span class="ct-many-fitline">{i.level !== 'unknown' && <Reason i={i} range={rangeWhy} />}<Marks i={i} /></span></>;
 }
 
 const groupWord = (key: GroupKey, k: string): string => {
@@ -171,8 +184,11 @@ function TickBar({ heading }: { heading: () => HTMLElement | null }) {
   return (
     <div class="ct-many-tickbar" role="group" aria-label={P('many.tickedGroup', n)}>
       <b>{P('many.ticked', n)}</b>
-      <button type="button" class="button button-secondary" onClick={remove}>{P('many.remove', n)}</button>
-      <button type="button" class="ct-icon-button" aria-label={T('many.clear')} onClick={() => { clearTicks(); heading()?.focus(); }}>{CLOSE}</button>
+      {/* Remove and the clear button wrap together (320 px), never apart. */}
+      <span class="ct-many-tickacts">
+        <button type="button" class="button button-secondary" data-plants-remove="" onClick={remove}>{P('many.remove', n)}</button>
+        <button type="button" class="ct-icon-button" aria-label={T('many.clear')} onClick={() => { clearTicks(); heading()?.focus(); }}>{CLOSE}</button>
+      </span>
     </div>
   );
 }
@@ -206,7 +222,11 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
   const lang = pageLang();
   const cmp = useMemo(() => collatorFor(lang).compare, [lang]);
   const failed = store.verdictFailed.value;
-  const all = useMemo(() => plantItems(members, fitGroups(members, failed ? null : verdicts, flags), nameOf), [members, verdicts, flags, failed]);
+  const all = useMemo(() => {
+    const byId = new Map<PlantId, Flag[]>();
+    for (const f of flags) { const l = byId.get(f.id); if (l) l.push(f); else byId.set(f.id, [f]); }
+    return plantItems(members, fitGroups(members, failed ? null : verdicts, flags), nameOf, (id) => byId.get(id) ?? []);
+  }, [members, verdicts, flags, failed]);
   const q = query.value, sk = sortKey.value, gk = groupKey.value, st = stages.value, desk = wide.value;
   const found = useMemo(() => sortItems(searchItems(all, q), sk, cmp, jobIds), [all, q, sk, cmp]);
   const groups = useMemo(() => groupItems(found, gk, cmp, jobIds), [found, gk, cmp]);
@@ -229,13 +249,16 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
   const allScreen = screen.length > 0 && screen.every((i) => isTicked(i.id));
 
   return (
-    <section class="ct-plants ct-many" aria-labelledby="ct-plants-t" data-many="">
+    <section class="ct-plants ct-many" id="your-plants" aria-labelledby="ct-plants-t" data-many="">
+      {/* While the search stands in place of the list (A22, F30), only its own head shows (Add plants,
+          Done, ×): the list's lede and "Add plants" describe a list that is hidden (BC12). */}
       <div class="ct-many-top">
         <div class="ct-many-titles">
           <h3 id="ct-plants-t" ref={heading} tabIndex={-1}>{P('many.title', n)}</h3>
-          <p class="ct-muted">{desk ? T('many.ledeDesk') : T('many.lede')}</p>
+          {!inList && <p class="ct-muted">{desk ? T('many.ledeDesk') : T('many.lede')}</p>}
         </div>
-        {desk && <button type="button" class="button button-secondary" data-plants-add="" onClick={openFindInList}>{PLUS} {T('find.title')}</button>}
+        {/* Hidden, not unmounted, while the search is open: Done gives the focus back to this node. */}
+        {desk && <button type="button" class="button button-secondary" data-plants-add="" hidden={inList} onClick={openFindInList}>{PLUS} {T('find.title')}</button>}
       </div>
       {inList ? <FindPanel where="list" /> : <>
         <div class="ct-many-tools">
@@ -243,7 +266,7 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
           {!desk && <Select label={T('many.sort')} keys={SORTS} value={sk} onChange={(k) => { sortKey.value = k; }} word={(k) => T(`many.sort_${k}`)} data="data-plants-sort" />}
           <Select label={desk ? T('many.groupBy') : T('many.group')} keys={GROUPS} value={gk} onChange={setGroup} word={(k) => T(`many.group_${k}`)} data="data-plants-group" />
         </div>
-        <TickBar heading={() => heading.current} />
+        {desk && <TickBar heading={() => heading.current} />}
         {searching && !found.length && <p class="ct-muted">{T('many.noMatch', { q: q.trim() })}</p>}
         {desk ? (
           <table class="ct-many-table">
@@ -279,7 +302,10 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
           );
         })}
         {missing.length > 0 && <ul class="ct-plant-rows">{missing.map((r) => <Missing key={r.id} id={r.id} why={r.missing} onRemove={removeOne} />)}</ul>}
-        <p class="ct-muted ct-many-foot">{T('many.foot')}</p>
+        {/* The phone's tick bar comes after the rows, so it sticks above the bottom bar while any row of
+            the list is on screen (v14 section 6, BC4: a sticky bar only stays in view below its place). */}
+        {!desk && <TickBar heading={() => heading.current} />}
+        <p class="ct-muted ct-many-foot">{desk ? T('many.footDesk') : T('many.foot')}</p>
       </>}
     </section>
   );

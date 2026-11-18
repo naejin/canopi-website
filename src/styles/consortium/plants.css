@@ -67,14 +67,17 @@
 .ct .ct-plant-chevron { position: absolute; right: 2px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--text-muted); }
 
 /* The big form: tools, tick bar, groups, rows (phone) or table (desk). */
-.ct .ct-many-top { display: flex; align-items: flex-end; gap: 16px; }
-.ct .ct-many-titles { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.ct .ct-many-tools { display: flex; gap: 8px; align-items: center; padding-top: 4px; }
-.ct .ct-many-select { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-many-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 16px; min-width: 0; }
+.ct .ct-many-titles { flex: 1 1 16em; min-width: 0; display: grid; gap: 2px; }
+/* The tool row wraps before it spills (BC6): on the phone Sort and Group share the row, each shrinking. */
+.ct .ct-many-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; min-width: 0; }
+.ct .ct-many-select { display: flex; align-items: center; gap: 6px; flex: 1 1 9em; min-width: 0; font-size: 14px; color: var(--text-secondary); }
 .ct .ct-many-select select {
-  flex: 1; min-width: 0; min-height: 44px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 8px;
+  flex: 1 1 auto; width: 100%; min-width: 0; min-height: 44px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 8px;
   background: var(--surface); font: inherit; font-size: 15px; color: var(--text);
 }
+/* At 960 px and wider the select keeps its longest word ("Light level"; BC5). */
+@media (min-width: 960px) { .ct .ct-many-select { flex: 0 1 auto; } .ct .ct-many-select select { width: auto; min-width: max-content; } }
 .ct .ct-many-search {
   display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border: 1px solid var(--border-strong);
   border-radius: 8px; background: var(--surface); color: var(--text-muted); flex: 2; min-width: 0;
@@ -84,26 +87,30 @@
 .ct .ct-many-search:focus-within { outline: 2px solid var(--focus, var(--text)); outline-offset: 2px; }
 .ct .ct-many-headsearch { margin: 0 0 4px; }
 .ct .ct-many-tickbar {
-  display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; border-radius: 11px; border: 2px solid var(--text);
-  background: var(--surface-alt); font-size: 15px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; border-radius: 11px; border: 2px solid var(--text);
+  background: var(--surface-alt); font-size: 15px; min-width: 0;
 }
-.ct .ct-many-tickbar b { flex: 1; font-weight: 600; }
-.ct .ct-many-ghead { display: flex; gap: 6px; padding-top: 6px; }
+.ct .ct-many-tickbar b { flex: 1 1 auto; font-weight: 600; }
+.ct .ct-many-tickacts { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; min-width: 0; }
+.ct .ct-many-tickacts .button { padding-inline: 12px; }
+.ct .ct-many-ghead { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; min-width: 0; }
 .ct .ct-many-gtoggle {
-  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 44px; padding: 0 10px; background: var(--surface-alt);
+  display: flex; align-items: center; gap: 8px; flex: 1 1 10em; min-width: 0; min-height: 44px; padding: 0 10px; background: var(--surface-alt);
   border: 1px solid var(--border); border-radius: 8px; font: inherit; font-size: 15px; color: var(--text); text-align: start; cursor: pointer;
 }
 .ct .ct-many-gtoggle b { font-weight: 600; }
+.ct .ct-many-gtoggle b { min-width: 0; overflow-wrap: anywhere; }
 .ct .ct-many-gtoggle span { flex: 1; color: var(--text-secondary); white-space: nowrap; }
 .ct .ct-many-tickall { min-height: 44px; padding: 0 10px; font-size: 14px; white-space: nowrap; }
-.ct .ct-many-rows { list-style: none; margin: 0; padding: 0; font-size: 15px; line-height: 21px; }
-.ct .ct-many-rows > li { display: flex; align-items: center; min-height: 48px; padding: 4px 0; border-top: 1px solid var(--border); }
+.ct .ct-many-rows { list-style: none; margin: 0; padding: 0; font-size: 15px; line-height: 21px; min-width: 0; }
+.ct .ct-many-rows > li { display: flex; align-items: center; min-height: 48px; padding: 4px 0; border-top: 1px solid var(--border); min-width: 0; }
 .ct .ct-many-tick { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; margin-right: 8px; cursor: pointer; }
 .ct .ct-many-tick input { width: 22px; height: 22px; margin: 0; accent-color: var(--text); }
 .ct .ct-many-main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .ct .ct-many-name { font-weight: 600; text-decoration: none; }
 .ct .ct-many-sub { display: block; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
-.ct .ct-many-word { display: block; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
+.ct .ct-many-fitline { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
+.ct .ct-many-word { display: block; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
 .ct .ct-many-word[data-level="danger"] { color: var(--danger); }
 .ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
 .ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
@@ -114,8 +121,11 @@
 }
 .ct .ct-many-pill {
   display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border: 1px solid var(--warning-line); border-radius: 999px;
-  background: var(--warning-bg); color: var(--warning); font-size: 13px; line-height: 20px; white-space: nowrap;
+  background: var(--warning-bg); color: var(--warning); font-size: 13px; line-height: 20px; font-weight: 600; white-space: nowrap;
 }
+/* A plant's other mark beside its fit word (BC8): Toxic and Very toxic in the danger colour. */
+.ct .ct-many-pill[data-level="danger"] { border-color: var(--danger); background: transparent; color: var(--danger); }
+.ct .ct-many-pill .ct-glyph { width: 13px; height: 13px; }
 .ct .ct-many-foot { font-size: 13px; line-height: 19px; padding-top: 4px; }
 .ct .ct-many-table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 21px; }
 .ct .ct-many-table thead th { padding: 6px 8px; text-align: start; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary); }
@@ -133,8 +143,23 @@
 .ct .ct-many-table .ct-many-jobs { width: 18%; }
 .ct .ct-many-table .ct-many-fit { width: 24%; }
 .ct .ct-many-level { display: block; }
-.ct .ct-tick-these { justify-self: start; margin-top: 6px; }
-/* The phone's tick bar stays in reach above the bottom bar (v14 section 6); the desk's sits in place. */
+/* A reason of Warnings and fit (board Many): its names as one paragraph, bold labels inline, then one
+   row of 44 px pills, "+ N more" (the count cell's) beside "Tick these N" (BC9); the status under it. */
+.ct .ct-reason { display: block; font-size: 14px; line-height: 20px; }
+.ct .ct-reason .ct-reason-text { display: inline; }
+.ct .ct-reason .ct-more.ct-cell-names, .ct .ct-reason .ct-cell-names .ct-more-items { display: inline; }
+.ct .ct-reason .ct-cell-names .ct-more-items > li { display: inline; }
+.ct .ct-reason .ct-cell-names .ct-more-items > li + li::before { content: ", "; }
+.ct .ct-reason .ct-more.ct-cell-names:last-of-type .ct-more-items::after { content: "\A"; white-space: pre; }
+.ct .ct-reason .ct-cell-names .ct-more-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 8px 8px 0 0; vertical-align: top; }
+.ct .ct-reason .ct-cell-names .ct-more-actions button, .ct .ct-tick-these {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; margin-top: 8px; border: 1px solid var(--border-strong);
+  border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; vertical-align: top;
+}
+.ct .ct-reason .ct-cell-names .ct-more-actions button { margin-top: 0; }
+.ct .ct-tick-said { margin: 6px 0 0; font-size: 14px; }
+/* The phone's tick bar comes after the rows and sticks above the bottom bar while the list is on
+   screen (v14 section 6, BC4); the desk's sits in the table's tool row. */
 .ct .ct-many-tickbar { position: sticky; bottom: calc(var(--ct-bar-room, 0px) + 8px); z-index: 2; }
 @media (min-width: 960px) { .ct .ct-many-tickbar { position: static; } }
 
@@ -142,7 +167,8 @@
    column, the second wider. */
 .ct .ct-many-left, .ct .ct-many-right { display: grid; gap: 24px; min-width: 0; align-content: start; }
 @media (min-width: 960px) {
-  .ct .ct-palette-body[data-pictures][data-many] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); grid-template-rows: auto; }
+  /* The chart's column keeps at least 380 px (at 960 px the Jobs head and the names; BC5). */
+  .ct .ct-palette-body[data-pictures][data-many] { grid-template-columns: minmax(380px, 1fr) minmax(0, 1.6fr); grid-template-rows: auto; }
   .ct .ct-palette-body[data-many] > .ct-many-left { grid-column: 1; grid-row: 1; }
   .ct .ct-palette-body[data-many] > .ct-many-right { grid-column: 2; grid-row: 1; }
 }

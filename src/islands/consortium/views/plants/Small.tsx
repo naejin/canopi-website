@@ -1,6 +1,7 @@
 /** @jsxImportSource preact */
 // Your plants up to 40 plants (v14 pf-e; boards PaletteMore, Recife; A21: every row shown, the boards'
-// fold a known difference): "Your N plants", the warned ones first (core weigh.ts yourPlants), each row
+// fold a known difference): "Your N plants", the warned ones first by the big list's fit rank (model.ts
+// byFitRank: outside its range, a second look, marks only such as Mildly toxic, fits, not checked), each row
 // opening the plant (Details, which keeps Remove and Swap): its name and scientific name, "Planted in:
 // Mostly sun · year 1 to year 15", its full-grown size, its jobs (the job's mark with its word) and its
 // warnings in words with the icon (rows.tsx Marks: Slight in the warning colour, Moderate and Severe in
@@ -8,8 +9,10 @@
 // is not plain in words. A member the page cannot show (its guest list could not be read, or it is on
 // none of this climate's lists) has a plain row saying why, with Remove (PP-B62). Nothing at 0 plants.
 import type { ComponentChildren } from 'preact';
+import { useMemo } from 'preact/hooks';
 import type { PlantId, PlantRow, Taxon } from '../../../../lib/consortium/index.ts';
-import { jobsOf } from '../../../../lib/consortium/index.ts';
+import { fitGroups, jobsOf } from '../../../../lib/consortium/index.ts';
+import { byFitRank, plantItems } from './model.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { nameOf, P, T, pageLang } from '../../strings.ts';
@@ -23,7 +26,7 @@ import { RowNotes } from '../StageBar.tsx';
 const CHEVRON = <svg class="ct-glyph ct-plant-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>;
 
 // Its full-grown size in the boards' words ("Grows to 6 m wide, 6 m tall").
-export function grownSize(t: Taxon): string {
+function grownSize(t: Taxon): string {
   const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
   const W = w === null ? '' : formatLength(w, lang), H = h === null ? '' : formatLength(h, lang);
   return w !== null && h !== null ? T('many.sizeBoth', { w: W, h: H }) : h !== null ? T('many.sizeTall', { h: H }) : w !== null ? T('many.sizeWide', { w: W }) : T('find.sizeNone');
@@ -68,11 +71,21 @@ export function Missing({ id, why, onRemove }: { id: PlantId; why: 'failed' | 'u
   );
 }
 
-export function SmallPlants({ rows, children }: { rows: readonly PlantRow[]; children?: ComponentChildren }) {
+const idOf = (r: PlantRow): PlantId => ('plant' in r ? r.plant.id : r.id);
+
+export function SmallPlants({ rows: given, children }: { rows: readonly PlantRow[]; children?: ComponentChildren }) {
+  const members = store.memberTaxa.value, verdicts = store.memberVerdicts.value, flags = store.flags.value;
+  const failed = store.verdictFailed.value;
+  const { rows, rank } = useMemo(() => {
+    const rank = new Map(plantItems(members, fitGroups(members, failed ? null : verdicts, flags), nameOf).map((i) => [i.id, i.rank]));
+    return { rows: byFitRank(given, idOf, rank), rank };
+  }, [given, members, verdicts, flags, failed]);
+  // A warning: a flag in words, or a fit outside its range or needing a second look (rank 0 to 2).
+  const warned = rows.some((r) => 'plant' in r && (r.warned || (rank.get(r.plant.id) ?? 4) < 3));
   const remove = (id: PlantId) => {
-    const at = rows.findIndex((r) => ('plant' in r ? r.plant.id : r.id) === id);
+    const at = rows.findIndex((r) => idOf(r) === id);
     const near = rows[at + 1] ?? rows[at - 1];
-    const next = near ? ('plant' in near ? near.plant.id : near.id) : null;
+    const next = near ? idOf(near) : null;
     store.removeMember(id);
     focusAfterAdd(() => (next ? document.querySelector<HTMLElement>(`#ct-root .ct-plants [data-plant-id="${CSS.escape(next)}"] button`) : null)
       ?? document.getElementById('ct-plants-t'));
@@ -80,7 +93,7 @@ export function SmallPlants({ rows, children }: { rows: readonly PlantRow[]; chi
   return (
     <section class="ct-plants ct-plants-small" aria-labelledby="ct-plants-t">
       <h3 id="ct-plants-t" tabIndex={-1}>{P('many.title', rows.length)}</h3>
-      {rows.some((r) => 'plant' in r && r.warned) && <p class="ct-muted">{T('many.warnedFirst')}</p>}
+      {warned && <p class="ct-muted">{T('many.warnedFirst')}</p>}
       {children}
       <ul class="ct-plant-rows">{rows.map((r) => ('plant' in r
         ? <Row key={r.plant.id} t={r.plant} />

@@ -31,6 +31,27 @@ test('fit order: outside, a second look, fits with a mark, fits, not checked; th
   assert.deepEqual(M.sortItems(items, 'name', cmp, []).map((i) => i.name), ['Ash', 'Bay', 'Cob', 'Dill', 'Elm', 'Fig']);
 });
 
+test('BC3 small form order: outside, a second look, marks only (Mildly toxic), fits, not checked; palette order within a rank; a row the page cannot show last', () => {
+  // kiambu-8's case: two Toxic plants, a Mildly toxic one before a recorded invasive one in palette order.
+  const ts = ['Bean', 'Avocado', 'Silk oak', 'Calliandra', 'Pigeon pea', 'Napier'].map((n, i) => taxon(`p${i}`, n));
+  const g = groups({ look: ['p0', 'p1', 'p3'], fits: ['p2', 'p4'], mild: ['p2'], unknown: ['p5'] });
+  g.reasons.moderate = ['p0', 'p1']; g.reasons.invasive = ['p3'];
+  const rank = new Map(M.plantItems(ts, g, (t) => t.names.en).map((i) => [i.id, i.rank]));
+  const rows = [...ts.map((t) => ({ id: t.id })), { id: 'gone' }];
+  const order = M.byFitRank(rows, (r) => r.id, rank).map((r) => r.id);
+  assert.deepEqual(order, ['p0', 'p1', 'p3', 'p2', 'p4', 'p5', 'gone']);
+  assert.ok(order.indexOf('p2') > order.indexOf('p3'), 'a Mildly-toxic-only row never comes before a second look');
+});
+
+test('BC8 a row says the marks its reason does not: an outside plant keeps its toxicity, a second look its other mark', () => {
+  const ts = ['Tamarind', 'Cashew', 'Lantana', 'Mango'].map((n, i) => taxon(`p${i}`, n));
+  const g = groups({ outside: ['p0', 'p1'], look: ['p2'], fits: ['p3'], mild: ['p0', 'p3'] });
+  g.reasons.severe = ['p2']; g.reasons.invasive = ['p2'];
+  const flags = { p0: [{ kind: 'toxicity', level: 'Slight' }], p1: [{ kind: 'toxicity', level: 'Moderate' }], p2: [{ kind: 'toxicity', level: 'Severe' }, { kind: 'invasive' }], p3: [{ kind: 'toxicity', level: 'Slight' }] };
+  const items = M.plantItems(ts, g, (t) => t.names.en, (id) => flags[id] ?? []);
+  assert.deepEqual(items.map((i) => M.extraMarks(i)), [['Slight'], ['Moderate'], ['invasive'], []]);
+});
+
 test('groups: light levels sunniest first, the plants with none last; one group for "No groups"', () => {
   const ts = [taxon('a', 'A', { stratum: 'low' }), taxon('b', 'B', { stratum: 'emergent' }), taxon('c', 'C'), taxon('d', 'D', { stratum: 'low' })];
   const items = M.plantItems(ts, groups({ fits: ['a', 'b', 'c', 'd'] }), (t) => t.names.en);

@@ -22,7 +22,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { useHarness, has, en, realDb } from './helpers.mjs';
 import { tool, choose, atSite } from './p5-helpers.mjs';
-import { control, done, focused, frames, loadCase, loadPalette200, press, says, saysNot, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { control, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { failing } from '../expect-fail.mjs';
 import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts, typeIn } from './pf-e-helpers.mjs';
 
 useHarness();
@@ -181,8 +182,13 @@ test('PFE8 (pf-e PaletteMore at 390, PP-B9): a small palette lists "Your 8 plant
   await says(page, /Planted in: (?:Full sun|Mostly sun|Part shade|Shade) · /);
   const rows = await rowsShown(page);
   assert.equal(rows.length, 8, 'board: every row shown');
-  const warned = await page.evaluate(() => { const s = window.__ctTest.store; return s.memberTaxa.value.filter((t) => s.flagsOfPlant(t).some((f) => f.kind !== 'conflict' || f.severity !== 'low')).map((t) => t.id); });
-  assert.deepEqual(rows.slice(0, warned.length).map((r) => r.id).sort(), [...warned].sort(), 'board: the warned plants first');
+  // BC3: by the big list's fit rank (outside, a second look, marks only, fits, not checked): a
+  // Mildly-toxic-only row never comes before a second look (boards PaletteMore, Recife).
+  const rank = await fitRanks(page);
+  const ranks = rows.map((r) => rank[r.id]);
+  assert.deepEqual(ranks, [...ranks].sort((x, y) => x - y), `board: warned first by fit rank: ${rows.map((r, i) => `${r.text.split(' ').slice(0, 2).join(' ')}=${ranks[i]}`).join(', ')}`);
+  const lastLook = ranks.lastIndexOf(1), firstMild = ranks.indexOf(2);
+  if (lastLook >= 0 && firstMild >= 0) assert.ok(firstMild > lastLook, 'board: a Mildly-toxic-only row never comes before a second look');
   for (const s of ['Sort', 'Group']) assert.equal(await page.$(`${PLANTS} select[data-plants-${s.toLowerCase()}]`), null, `board: no ${s} below 41 plants`);
   assert.equal(await page.$(`${PLANTS} input[type="checkbox"]`), null, 'board: no ticks below 41 plants');
   // Slight and Moderate each in words, in their own colours (PP-B9).
@@ -199,6 +205,10 @@ test('PFE9 (pf-e Recife pt, PP-B61, PP-B61b): the small form in Portuguese ("Sua
   const pt = await loadCase('recife-today', { site: 'manaus', lang: 'pt', width: 390 });
   await says(pt, 'Suas 10 plantas');
   await says(pt, 'As plantas com aviso vêm primeiro.');
+  // BC3 (board Recife): Pitanga and Mulungu (Tóxica, a second look) before Tamarindo and Grevileia
+  // (Ligeiramente tóxica, a mark only): the fit rank, never the palette's order.
+  const rank = await fitRanks(pt), ranks = (await rowsShown(pt)).map((r) => rank[r.id]);
+  assert.deepEqual(ranks, [...ranks].sort((x, y) => x - y), `board: warned first by fit rank: ${ranks.join(' ')}`);
   await done(pt);
   for (const room of ['small', 'pots']) {
     const page = await tool();
@@ -298,5 +308,191 @@ test('PFE13 (pf-e E5): the old "Your place" sheet is gone: openSheet("place") op
   await page.evaluate(() => window.__ctTest.store.openSheet('place'));
   await frames(page);
   assert.equal(await page.$('dialog[open]'), null, 'board: no sheet opens for "place"');
+  await done(page);
+});
+
+// ---- fix round 1, batch 1 (board check findings BC1 to BC12) ----
+
+// A row ticked as a phone reader does: scrolled to the middle of the screen first, as the sticky tick
+// bar covers the rows under it.
+async function tickRow(page, id) {
+  const sel = `${PLANTS} [data-plant-id="${id}"] input[type="checkbox"]`;
+  await page.$eval(sel, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await frames(page);
+  await page.click(sel);
+}
+// The sunniest light group opened and its first 3 rows ticked; its rows.
+async function openFirstTick3(page) {
+  const { word, n } = await firstLevel(page);
+  await press(page, 'button', `${word} ${n} plants`);
+  await frames(page);
+  const rows = await rowsShown(page);
+  for (const r of rows.slice(0, 3)) await tickRow(page, r.id);
+  return rows;
+}
+
+failing('PFE14 (pf-e E4, BC1; the place line is main\'s Place.tsx: hand-off): past 40 plants under 960 px the place line says "200 plants: Your plants", the link landing on Your plants\' heading; at 1280 no link', { owner: 'pf-e', reason: /no link "Your plants"/ }, async () => {
+  const page = await loadPalette200({ width: 390 });
+  const link = await page.evaluate(() => [...document.querySelectorAll('#ct-root [data-place-line] a')].find((a) => a.textContent.trim() === 'Your plants') ? true : false);
+  assert.ok(link, 'board: no link "Your plants" in the place line');
+  await says(page, /200 plants: Your plants · Change/);
+  await page.locator('::-p-aria([name="Your plants"][role="link"])').click();
+  await frames(page);
+  assert.equal((await focused(page)).name, 'Your 200 plants', 'board: the focus lands on Your plants\' heading');
+  await done(page);
+  const desk = await loadPalette200({ width: 1280 });
+  assert.ok(!(await names(desk, 'link')).includes('Your plants'), 'board ManyDesk: no link at 1280');
+  await done(desk);
+});
+
+test('PFE15 (pf-e E4, BC2; boards Many, Main): on the phone the one search comes directly under the place line, before the steps and the Next step', async () => {
+  for (const width of [390, 320]) {
+    const page = await loadPalette200({ width });
+    await control(page, 'textbox', SEARCH(200));
+    const order = await page.evaluate((label) => {
+      const search = document.querySelector(`#ct-root input[aria-label="${label}"]`);
+      const place = document.querySelector('#ct-root [data-place-line]');
+      const next = [...document.querySelectorAll('#ct-root h2, #ct-root h3')].find((h) => /^Next step/.test(h.textContent.trim()));
+      const steps = document.querySelector('#ct-root nav[aria-label]');
+      const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return { place: before(place, search), steps: !steps || before(search, steps), next: before(search, next) };
+    }, SEARCH(200));
+    assert.deepEqual(order, { place: true, steps: true, next: true }, `board at ${width}: the search under the place line, above the steps and the Next step: ${JSON.stringify(order)}`);
+    await done(page);
+  }
+});
+
+failing('PFE15b (pf-e E4, BC2; the head is main\'s ConsortiumPage.astro, shell.css and steps.tsx): the step bar stands above "Plant palette" on the palette step, as on Place', { owner: 'pf-e', reason: /the step bar comes after the title/ }, async () => {
+  const page = await loadPalette200({ width: 390 });
+  await control(page, 'textbox', SEARCH(200));
+  const at = await page.evaluate(() => {
+    const visible = (e) => !!e && e.getClientRects().length > 0;
+    const steps = [...document.querySelectorAll('main ol, main nav')].find((e) => visible(e) && /Your place/.test(e.textContent) && /Planting plan/.test(e.textContent));
+    const title = document.querySelector('main h1');
+    return { steps: steps?.getBoundingClientRect().top ?? Infinity, title: title?.getBoundingClientRect().top ?? 0 };
+  });
+  assert.ok(at.steps < at.title, 'board: the step bar comes after the title');
+  await done(page);
+});
+
+test('PFE16 (pf-e BC4, v14 section 6): at 320 the tick bar\'s "Remove 3 plants" stays on screen above the bottom bar while the reader scrolls to the open group\'s last row', async () => {
+  const page = await loadPalette200({ width: 320 });
+  const rows = await openFirstTick3(page);
+  await control(page, 'button', 'Remove 3 plants');
+  await page.$eval(`${PLANTS} [data-plant-id="${rows[rows.length - 1].id}"]`, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await frames(page);
+  const at = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#ct-root button')].find((x) => x.textContent.trim() === 'Remove 3 plants');
+    const bar = [...document.querySelectorAll('#ct-root button')].filter((x) => x.textContent.trim() === 'Add plants' && x.getClientRects().length).map((x) => x.getBoundingClientRect().top);
+    const r = b.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, barTop: bar.length ? Math.min(...bar) : innerHeight, vh: innerHeight };
+  });
+  assert.ok(at.top >= 0 && at.bottom <= at.vh, `board: Remove is on screen after scrolling (top ${Math.round(at.top)}, viewport ${at.vh})`);
+  assert.ok(at.bottom <= at.barTop + 1, `board: Remove sits above the bottom bar (${Math.round(at.bottom)} against ${Math.round(at.barTop)})`);
+  await done(page);
+});
+
+test('PFE17 (pf-e E3, BC5; ManyDesk at 960): the chart\'s column keeps the Jobs title on one line and "Group by" shows "Light level" whole', async () => {
+  const page = await loadPalette200({ width: 960 });
+  await control(page, 'combobox', 'Group by');
+  await control(page, 'heading', /^Jobs/);
+  const at = await page.evaluate(() => {
+    const jobs = [...document.querySelectorAll('#ct-root h3')].find((h) => h.textContent.trim().startsWith('Jobs'));
+    const text = jobs && [...jobs.childNodes].find((c) => c.nodeType === 3 && c.textContent.includes('Job')) || jobs?.firstChild;
+    const range = document.createRange(); if (text) range.selectNodeContents(text);
+    const lines = text ? new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size : 0;
+    const sel = document.querySelector('#ct-root select[data-plants-group]');
+    const ctx = document.createElement('canvas').getContext('2d'); ctx.font = getComputedStyle(sel).font;
+    return { lines, need: ctx.measureText(sel.selectedOptions[0].text).width, has: sel.clientWidth };
+  });
+  assert.equal(at.lines, 1, 'board: "Jobs" on one line at 960');
+  assert.ok(at.need + 16 <= at.has, `board: "Light level" whole in Group by (${Math.round(at.need)} px of text, ${at.has} px select)`);
+  await done(page);
+});
+
+test('PFE18 (pf-e BC6, Many at 320): Your plants\' contents stay inside their card with a group open and 3 ticked', async () => {
+  const page = await loadPalette200({ width: 320 });
+  await openFirstTick3(page);
+  await frames(page);
+  const w = await page.$eval(PLANTS, (s) => ({ scroll: s.scrollWidth, client: s.clientWidth }));
+  assert.ok(w.scroll <= w.client, `board: nothing spills past the card (scrollWidth ${w.scroll}, clientWidth ${w.client})`);
+  await done(page);
+});
+
+test('PFE19 (pf-e BC8, board Many): an outside plant keeps its toxicity mark on its row, beside the fit word', async () => {
+  const page = await loadPalette200({ width: 390 });
+  const pick = await page.evaluate(() => {
+    const s = window.__ctTest.store, v = s.memberVerdicts.value;
+    const t = s.memberTaxa.value.find((x) => v?.get(x.id)?.level === 'outside' && s.flagsOfPlant(x).some((f) => f.kind === 'toxicity'));
+    return t ? { id: t.id, q: t.canonical_name, level: s.flagsOfPlant(t).find((f) => f.kind === 'toxicity').level } : null;
+  });
+  assert.ok(pick, 'the premise: an outside plant with a toxicity mark');
+  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, pick.q);
+  assert.ok(await has(page, `${PLANTS} [data-plant-id="${pick.id}"]`, 3000));
+  const row = (await rowsShown(page)).find((r) => r.id === pick.id);
+  assert.match(row.text, /Outside its climate range/, 'its fit word');
+  assert.ok(row.text.includes(en[`consortium.tox.${pick.level}`]), `board: the row says "${en[`consortium.tox.${pick.level}`]}" too: ${row.text}`);
+  await done(page);
+});
+
+const openToxic = async (page) => {
+  await press(page, 'button', (await control(page, 'button', /^Needs a second look/)).name);
+  await press(page, 'button', (await control(page, 'button', /^Toxic or very toxic/)).name);
+};
+const toxicN = (page) => page.evaluate(() => { const s = window.__ctTest.store; return s.memberTaxa.value.filter((t) => s.flagsOfPlant(t).some((f) => f.kind === 'toxicity' && (f.level === 'Severe' || f.level === 'Moderate')) && s.memberVerdicts.value?.get(t.id)?.level !== 'outside').length; });
+
+test('PFE20 (pf-e BC9, board Many): the open toxic reason is one paragraph ("Very toxic, N: …. Toxic, N: …") with "+ N more" and "Tick these N" side by side as 44 px pills', async () => {
+  for (const width of [390, 1280]) {
+    const page = await loadPalette200({ width });
+    await openToxic(page);
+    const n = await toxicN(page);
+    const at = await page.evaluate((label) => {
+      const tick = [...document.querySelectorAll('#ct-root button')].find((b) => b.textContent.trim() === label);
+      const line = tick.closest('li');
+      const more = [...line.querySelectorAll('button')].find((b) => /^\+ \d+ more$/.test(b.textContent.trim()));
+      const labels = [...line.querySelectorAll('strong')].filter((x) => /, \d+:$/.test(x.textContent.trim()));
+      const text = labels.map((x) => x.textContent.trim());
+      const blocks = new Set(labels.map((x) => x.parentElement)).size;
+      const r = (e) => { if (!e) return null; const x = e.getBoundingClientRect(); return { top: x.top, height: x.height }; };
+      return { tick: r(tick), more: r(more), text, blocks };
+    }, `Tick these ${n}`);
+    assert.ok(at.more, `board at ${width}: "+ N more" in the toxic reason`);
+    assert.ok(Math.abs(at.more.top - at.tick.top) < 4, `board at ${width}: "+ N more" and "Tick these" on one row: ${JSON.stringify([at.more, at.tick])}`);
+    assert.ok(at.more.height >= 44 && at.tick.height >= 44 && Math.abs(at.more.height - at.tick.height) < 2, `board at ${width}: both 44 px pills of one size`);
+    assert.equal(at.blocks, 1, `board at ${width}: the labels in one paragraph (${at.text.join(' | ')})`);
+    await done(page);
+  }
+});
+
+test('PFE21 (pf-e A15, BC10): "Tick these N" says in place what it did ("N ticked in Your plants."), and "Go to Remove" takes the focus to Remove', async () => {
+  const page = await loadPalette200({ width: 390 });
+  await openToxic(page);
+  const n = await toxicN(page);
+  await press(page, 'button', `Tick these ${n}`);
+  await says(page, `${n} ticked in Your plants.`);
+  const said = await page.evaluate((w) => [...document.querySelectorAll('#ct-root [role="status"]')].some((e) => e.textContent.includes(w)), `${n} ticked in Your plants.`);
+  assert.ok(said, 'board: said in a status');
+  await press(page, 'button', 'Go to Remove');
+  await frames(page);
+  assert.equal((await focused(page)).name, `Remove ${n} plants`, 'board: the focus on Remove');
+  await done(page);
+});
+
+test('PFE22 (pf-e BC11, board ManyDesk): at 960 px and wider Your plants\' note says the desk\'s sentences; the phone keeps its own', async () => {
+  const page = await loadPalette200({ width: 1280 });
+  await says(page, en['consortium.many.footDesk']);
+  await saysNot(page, en['consortium.many.foot']);
+  await done(page);
+});
+
+test('PFE23 (pf-e A22, BC12; F30, ManyDesk): while the search stands in place of the list, the list\'s lede and its "Add plants" give way; Done brings them back with the focus on "Add plants"', async () => {
+  const page = await loadPalette200({ width: 1280 });
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'board: the search opens inside Your plants');
+  await saysNot(page, en['consortium.many.ledeDesk'], 'the lede of a hidden list');
+  assert.ok(!(await names(page, 'button')).includes('Add plants'), 'board: no second "Add plants" above the search\'s own head');
+  await press(page, 'button', 'Done');
+  await says(page, en['consortium.many.ledeDesk']);
+  assert.equal((await focused(page)).name, 'Add plants', 'board: the focus goes back to "Add plants"');
   await done(page);
 });

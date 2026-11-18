@@ -112,6 +112,9 @@ export function Palette() {
   const shown = (!!verdicts || store.verdictFailed.value) && !pending;
   return (
     <div class="ct-palette-page">
+      {/* Past 40 plants on the phone the one search sits directly under the place line (boards Many,
+          Main: step bar, title, place line, search; the PP-E period tabs go above it later). */}
+      {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
       <nav class="ct-steps" aria-label={T('palette.stepsLabel')}>
         <ol>
           <li><button type="button" class="ct-step ct-step-done" aria-label={T('palette.chart.stepDone', { n: 1, step: T('palette.stepPlace') })} onClick={toPlace}><span class="ct-step-n" aria-hidden="true">{'\u2713'}</span> {T('palette.stepPlace')}</button></li>
@@ -129,7 +132,6 @@ export function Palette() {
           ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
           : <button type="button" class="button button-secondary" aria-busy={retry === 'busy' ? 'true' : undefined} aria-disabled={retry === 'busy' ? 'true' : undefined} onClick={() => void store.retryFailedLists()}>{T('load.retry')}</button>}</p>
       )}
-      {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
       {big ? (
         // Past 40 plants (v14 pf-e E3; boards Many, ManyDesk): on the phone one column, Your plants
         // last; at 960 px and wider the chart's column (Next step, Through the years, Jobs) and Your
