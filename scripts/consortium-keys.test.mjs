@@ -101,7 +101,7 @@ test('the room hint and the Beta line say what the tool does, in all 11 locales'
 // the policy; each moves when its stream rewrites it (and leaves this list), never a new one joins.
 const UNIT_AFTER_PLACEHOLDER = /\{\w+\}\s?(m²|m2|cm|mm|km|ha|m|°C|°F|м|см|米|メートル|미터)(?![\p{L}\p{N}²])/u;
 const UNIT_KEYS_BEFORE_POLICY = new Set([
-  'meters', 'room.tall', 'side.height', 'side.metres', 'details.heightV', 'location.why', 'location.meansNear',
+  'meters', 'room.tall', 'side.height', 'side.metres', 'details.heightV', 'location.meansNear',
   'range.pool.count', 'range.empty.body',
 ]);
 test('no new consortium key writes a unit after a placeholder, in any locale (format.ts measures)', () => {
