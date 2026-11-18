@@ -1287,3 +1287,15 @@ test('PFC48 (pf-c board Country: "Why we ask." is a note box): under the rows an
   assert.deepEqual(await note(), { lead: 'Why we ask.', icon: true, ground: true, border: true }, 'board: the note box under the rows');
   await done(none);
 });
+
+test('PFC51 (pf-c ruling D6, a shared link with "Include my place"): the sender\'s place name travels beside the cell (`n`), and the reader\'s page names it ("Kiambu, Kenya") with no place search sent on open', async () => {
+  const hash = (await linkOf('Mediterranean', 5)).replace(/&e=1$/, `&o=${SITES.kiambu[0].toFixed(2)},${SITES.kiambu[1].toFixed(2)}&n=${encodeURIComponent('Kiambu, Kenya')}&e=1`);
+  const page = await tool({ hash, nominatim: 'fixture' });
+  const sent = [];
+  page.on('request', (r) => { if (/nominatim/.test(r.url())) sent.push(r.url()); });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link', { timeout: 15_000 }).then(() => true, () => false), 'the link opens with its location');
+  assert.equal(await store(page, () => window.__ctTest.store.location.value.label), 'Kiambu, Kenya', 'D6: the sender\'s place name, as it came');
+  await says(page, /Kiambu, Kenya/, { timeout: 10_000 });
+  assert.deepEqual(sent, [], 'D6: no reverse lookup on open');
+  await done(page);
+});

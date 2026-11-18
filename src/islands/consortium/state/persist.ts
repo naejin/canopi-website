@@ -184,12 +184,13 @@ function knownOf(now: Consortium): Partial<Record<ClimateZone, PlantId[]>> {
 }
 // The palette as a fragment, against the climate's and the guest lists' ids. origin: the site's cell
 // centre, given only with Share's tick: the link then carries `o=`. place: the "Include my place" tick
-// (by default, whether an origin is given: Share's tick until b1a words it), which adds the country
+// (by default, whether an origin is given: Share's tick until b1a words it), which adds the country,
+// the place name (name, written beside `o`: D6)
 // and the grower's own values; the address bar and the save's fragment never pass it.
-export function currentFragment({ origin = null, place = origin !== null }: { origin?: LinkOrigin | null; place?: boolean } = {}): string | null {
+export function currentFragment({ origin = null, place = origin !== null, name = null }: { origin?: LinkOrigin | null; place?: boolean; name?: string | null } = {}): string | null {
   const now = palette();
   if (!now) return null;
-  return encodeLink(shareState(now, { place }), knownOf(now), { origin, place });
+  return encodeLink(shareState(now, { place }), knownOf(now), { origin, place, name });
 }
 // Beside the place answers, never in a link: whether the palette is the last suggestion untouched
 // (store.untouchedSuggestion, v14 A19), so a reload keeps not nagging it (restore.ts reads it back).

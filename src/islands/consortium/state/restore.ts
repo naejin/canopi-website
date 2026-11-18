@@ -6,7 +6,7 @@
 // has to be cleared on the way out for saving to work again.
 import { batch, effect, signal } from '@preact/signals';
 import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { bringsPlace, decodeLink, linkClimates, linkOrigin, linkVersionStatus, NO_EDITS, sameEdits, snapOrigin, zoneOf } from '../../../lib/consortium/index.ts';
+import { bringsPlace, decodeLink, linkClimates, linkOrigin, linkPlaceName, linkVersionStatus, NO_EDITS, sameEdits, snapOrigin, zoneOf } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
@@ -225,7 +225,9 @@ export async function restore(fragment: string, { from, src = null, keep = false
       applyDecoded(d, from === 'link' || src === 'link' ? 'link' : 'chosen', brings, from === 'saved' && !!place && new URLSearchParams(place).get(SUGGESTED_KEY) === '1');
       notices.value = { ...notices.peek(), unknownCount: d.notice.unknownCount, cut: false, newer: false, period: d.notice.period, unreadable: false, pasted: null, failed: false };
       linkPlace.value = asks ? { own: mine } : null;
-      if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', lookup: null };
+      // The sender's place name (D6, `n`), shown as it came: no reverse lookup on open.
+      const name = origin ? linkPlaceName(from === 'link' ? fragment : place ?? '') : null;
+      if (origin) store.location.value = { lat: origin.lat, lon: origin.lon, source: 'link', ...(name ? { label: name } : {}), lookup: null };
       // A link without `o=` (pasted into the tab): an earlier link's location goes with it, so no
       // stale line shows and Share cannot attach its cell (review round 1, 2). The reader's own stays.
       else if (from === 'link' && store.location.peek()?.source === 'link') store.location.value = null;
