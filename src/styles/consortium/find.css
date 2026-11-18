@@ -221,7 +221,6 @@
 .ct .ct-fillers [data-filler-meta] { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
 .ct .ct-filler-add { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; }
 .ct .ct-next .ct-fillers-head { padding-top: 8px; border-top: 1px solid var(--border); font-size: 14px; line-height: 20px; }
-/* The foot (board Main; BC17): text links, "See all N plants" at the left, "Not now" at the right. */
 /* The foot (board Main; BC17): the links that open more at the left, one under another when they do
    not fit; "Not now" at the right of the first line. */
 .ct .ct-next-card .ct-next-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 12px; margin: 0; border-top: 1px solid var(--border); }

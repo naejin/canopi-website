@@ -144,3 +144,10 @@ test('N7 the Portuguese invasive chip reads without a bare "em" before the count
   assert.doesNotMatch(pt, /\bem \{country\}/, `pt: ${pt}`);
   assert.equal(pt.replace('{country}', 'Brasil'), 'Registrada como invasora: Brasil');
 });
+
+test('N8 find.css says each rule\'s comment once: no comment repeats the opening words of the one just before it (the stale BC17 foot copy)', () => {
+  const css = readFileSync(new URL('../src/styles/consortium/find.css', import.meta.url), 'utf8');
+  const heads = [...css.matchAll(/\/\*([^:*]*:)?/g)].map((m) => ({ at: m.index, head: m[0] }));
+  const repeats = heads.filter((h, i) => i > 0 && h.head.length > 8 && h.head === heads[i - 1].head && !/\S/.test(css.slice(css.indexOf('*/', heads[i - 1].at) + 2, h.at)));
+  assert.deepEqual(repeats.map((r) => r.head), []);
+});
