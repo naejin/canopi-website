@@ -5,7 +5,7 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:03Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:10Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:23Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -25,8 +25,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:140dc86ef849bd85
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -40,8 +40,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:75d680dc504c162f
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:f51632afa38a12d9
+    last_modified: 2026-11-18T18:43:00Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -115,8 +115,8 @@ sources:
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
-    digest: sha256:7d5b08c21e3625a5
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:999e00a13dc79cee
+    last_modified: 2026-11-18T18:38:12Z
   - id: printsheet-tsx
     resource: ../../src/islands/consortium/views/PrintSheet.tsx
     title: src/islands/consortium/views/PrintSheet.tsx
@@ -225,8 +225,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:a28a740230c4e13e
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:0697d0d5383c5a16
+    last_modified: 2026-11-18T18:38:12Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -325,8 +325,8 @@ sources:
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx
-    digest: sha256:62c4618243e88681
-    last_modified: 2026-11-18T17:23:10Z
+    digest: sha256:b496ee089ca809b4
+    last_modified: 2026-11-18T18:40:07Z
   - id: names-ts-2
     resource: ../../src/islands/consortium/views/find/names.ts
     title: src/islands/consortium/views/find/names.ts

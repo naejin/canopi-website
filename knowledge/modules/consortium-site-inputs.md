@@ -4,7 +4,7 @@ title: Consortium site inputs
 description: The core module that owns every site input the Plant palette engine reads, merged from the climate grid and soil map with the grower's edits as shifts, plus the palette goals read beside them.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:05Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:20Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:34Z }
 sources:
   - id: site-inputs-ts
     resource: ../../src/lib/consortium/site-inputs.ts
@@ -14,8 +14,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:608d3c9dafcf322a
-    last_modified: 2026-11-18T17:33:57Z
+    digest: sha256:91d21007fa090bfc
+    last_modified: 2026-11-18T18:43:00Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
@@ -29,8 +29,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:140dc86ef849bd85
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: consortium-scenarios-mjs
     resource: ../../scripts/consortium-scenarios.mjs
     title: scripts/consortium-scenarios.mjs

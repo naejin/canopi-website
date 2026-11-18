@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:51Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:11Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:26Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -181,8 +181,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:75d680dc504c162f
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:f51632afa38a12d9
+    last_modified: 2026-11-18T18:43:00Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -191,8 +191,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:ed64afa32f3f008c
-    last_modified: 2026-11-18T17:30:56Z
+    digest: sha256:c97ea2817fd76eb5
+    last_modified: 2026-11-18T18:43:00Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -216,13 +216,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:85c9d5cc1e198756
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:6b59d99cb0816bb6
+    last_modified: 2026-11-18T18:38:12Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:140dc86ef849bd85
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx

@@ -6,13 +6,13 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:01Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:17Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:21Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:608d3c9dafcf322a
-    last_modified: 2026-11-18T17:33:57Z
+    digest: sha256:91d21007fa090bfc
+    last_modified: 2026-11-18T18:43:00Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -111,8 +111,8 @@ sources:
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
-    digest: sha256:3d5c66d5344256fc
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:ed97d885681f97b4
+    last_modified: 2026-11-18T18:38:12Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
@@ -176,8 +176,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:ed64afa32f3f008c
-    last_modified: 2026-11-18T17:30:56Z
+    digest: sha256:c97ea2817fd76eb5
+    last_modified: 2026-11-18T18:43:00Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts

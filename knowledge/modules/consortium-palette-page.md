@@ -2,15 +2,15 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:04Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:19Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:e0e9aa3007ede7b9
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:13d771d2d5c86882
+    last_modified: 2026-11-18T18:42:15Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:140dc86ef849bd85
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -69,8 +69,8 @@ sources:
   - id: jobs-picture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
     title: src/islands/consortium/views/palette/JobsPicture.tsx
-    digest: sha256:2589072742e68720
-    last_modified: 2026-11-18T17:52:14Z
+    digest: sha256:16cf075b0795055f
+    last_modified: 2026-11-18T18:39:03Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -86,6 +86,11 @@ sources:
     title: scripts/consortium-pf-b.test.mjs
     digest: sha256:a4849dd51b47e1a0
     last_modified: 2026-11-18T17:33:57Z
+  - id: find-tsx
+    resource: ../../src/islands/consortium/views/find/Find.tsx
+    title: src/islands/consortium/views/find/Find.tsx
+    digest: sha256:b496ee089ca809b4
+    last_modified: 2026-11-18T18:40:07Z
 enforced_by:
   - scripts/browser/consortium-pp-b2.browser.test.mjs
   - scripts/consortium-pf-b.test.mjs
@@ -232,3 +237,9 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 - **Shell.** The slow loading line adds the bytes ("0.8 of 1.4 MB.", `store.loadProgress` from
   data/load.ts `download`'s reader, total from the index's size; `load.progress`, format.ts
   `formatMegabytes`). The offline line is pinned by PFC52.
+
+## Main h2 hand-off (2026-11-18)
+
+- The missing guest list's notice: "Try again" re-reads the list from the opened database (`store.ts` `retryFailedLists`, `listRetry` busy while it reads); a retry that fails again gives way to Reload, which fetches the database again (the read is local, so no "needs a connection").
+- Past 40 plants a job's hole line uses the Next step's clause order: "no plant on your lists fits here…" only when none is still to be checked (`noneFits`), then the second-look and unchecked counts (`rows.tsx` `holeFillerParts`), then the outside ones.
+- Find's "· N already in your palette" counts the palette's plants that pass the sheet's predicate and filters; a predicate sheet without a hole (Balance's "Find a soil feeder of another family") counts its own listed plants in the subtitle (`find.lede`).

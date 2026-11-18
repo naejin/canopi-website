@@ -6,7 +6,7 @@ tags: [consortium, architecture]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:14Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:22Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -97,8 +97,8 @@ sources:
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
-    digest: sha256:75d680dc504c162f
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:f51632afa38a12d9
+    last_modified: 2026-11-18T18:43:00Z
   - id: search-ts
     resource: ../../src/islands/consortium/data/search.ts
     title: src/islands/consortium/data/search.ts
@@ -107,8 +107,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:ed64afa32f3f008c
-    last_modified: 2026-11-18T17:30:56Z
+    digest: sha256:c97ea2817fd76eb5
+    last_modified: 2026-11-18T18:43:00Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -142,23 +142,23 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:d2404d13956492ff
-    last_modified: 2026-11-18T17:05:25Z
+    digest: sha256:5e4f54887014f1e1
+    last_modified: 2026-11-18T18:41:19Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:85c9d5cc1e198756
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:6b59d99cb0816bb6
+    last_modified: 2026-11-18T18:38:12Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:25359ddb9cb0717f
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:07f9775e9c850dec
+    last_modified: 2026-11-18T18:38:12Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:461977e8299259fc
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:65c143542f9f4e35
+    last_modified: 2026-11-18T18:38:12Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -167,13 +167,13 @@ sources:
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
-    digest: sha256:6ce135ca08973b82
-    last_modified: 2026-11-18T16:40:02Z
+    digest: sha256:ad330f5c00ac2504
+    last_modified: 2026-11-18T18:38:12Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:140dc86ef849bd85
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:2d6f468d17a922a7
+    last_modified: 2026-11-18T18:42:15Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -402,8 +402,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:608d3c9dafcf322a
-    last_modified: 2026-11-18T17:33:57Z
+    digest: sha256:91d21007fa090bfc
+    last_modified: 2026-11-18T18:43:00Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -437,8 +437,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:e0e9aa3007ede7b9
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:13d771d2d5c86882
+    last_modified: 2026-11-18T18:42:15Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts

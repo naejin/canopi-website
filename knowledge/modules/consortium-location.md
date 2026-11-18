@@ -2,7 +2,7 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:02Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:18Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:02Z }
 sources:
@@ -14,8 +14,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:a28a740230c4e13e
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:0697d0d5383c5a16
+    last_modified: 2026-11-18T18:38:12Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -64,8 +64,8 @@ sources:
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
-    digest: sha256:7d5b08c21e3625a5
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:999e00a13dc79cee
+    last_modified: 2026-11-18T18:38:12Z
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:85c9d5cc1e198756
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:6b59d99cb0816bb6
+    last_modified: 2026-11-18T18:38:12Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,8 +94,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:461977e8299259fc
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:65c143542f9f4e35
+    last_modified: 2026-11-18T18:38:12Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
@@ -184,3 +184,9 @@ At canopi `b039f14ee612c6090c91d44b9968357cbdd1d33e` (AGPL header and a "copied 
 - **Country line.** One country line at a time; its choices open from the line's own trigger
   (aria-expanded), board Country's radio rows, closed by Escape or the trigger.
 - The browser harness answers `/reverse` from the Nominatim fixtures (a place within 0.25°).
+
+## Main h2 hand-off (2026-11-18)
+
+- The climate when an ask began travels with its own `locate` call (`useMyLocation`, the search's single answer: `asked`), never in module state, so an ask that ends without a place (refused, timed out, no answer, offline, several answers) leaves nothing that could make a later locate refuse its read.
+- `lookUpName` asks `/reverse` at the cell centre (`snapOrigin`), ignores a second press while asking (`aria-disabled`), and treats an AbortError (a search or new place replaced it) as no failure.
+- `SiteLocation.placeLevel` marks a town-level label (D7 kinds, a reverse lookup of one, a link's `n`); the saved record (`locationRecord`, `readLocation`) keeps it.
