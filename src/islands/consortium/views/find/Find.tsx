@@ -409,6 +409,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const shownCount = count(filters) + paletteRows + view.others.length;
   // "Fits your place" under these filters: the judged plants only (isFit), as the list it lists.
   const fitsCount = (f: FindFilters) => applyFilters(matched, { ...f, range: false }, ctx).rows.filter(isFit).length;
+  // D5 (pf-decisions 2026-11-18): the subtitle counts the whole list, members included (board Find); the
+  // choice counts the plants not yet in the palette, so it adds the palette's plants that fit, and with
+  // no filter the two figures add up.
+  const fitsInPalette = pool.filter((t) => atOpen.has(t.id) && isFit(t)).length;
 
   // C7 (board AddMany state 3): a thin job opens the Add sheet, titled "Add plants"; where it came from
   // is the sorted line's "Opened from …". A hole's sheet is titled by its hole.
@@ -592,7 +596,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
       <fieldset class="ct-find-fgroup">
         <legend>{T('find.f.fit')}</legend>
         <p class="ct-muted ct-small">{T('find.f.fitFor')}</p>
-        {fitBox('fits', 'fits', T('find.fits'), P('find.fitsCount', fitsCount(filters)))}
+        {fitBox('fits', 'fits', T('find.fits'), `${P('find.fitsCount', fitsCount(filters))}${fitsInPalette ? ` · ${P('find.fitsInPalette', fitsInPalette)}` : ''}`)}
         {judging && fitBox('inside', 'range', T('find.range'), P('find.count', count(filters, 'inside')))}
         {fitBox('all', 'all', T('find.fitAll'), P('find.fitAllCount', count(filters, 'all'), { outside: num(outsideAll) }))}
         {judging && unknownLine('range')}

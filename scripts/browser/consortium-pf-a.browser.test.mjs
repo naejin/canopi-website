@@ -1017,6 +1017,17 @@ test('PFA-E2 (seam E2, board DeskStates): at 1280 px with Find\'s panel open on 
   await done(page);
 });
 
+test('PFA-D5 (pf-decisions D5, board Find): the subtitle counts the whole list, palette included ("N of the M plants … fit"); "Fits your place" counts the plants not yet in the palette and adds "· K already in your palette", so with no filter the two add up', async () => {
+  const page = await deskPanel();
+  const sub = await page.$eval('dialog[open] [data-find-fitcount]', (e) => e.textContent.replace(/\s+/g, ' ').trim());
+  const whole = Number(/(\d+) of the \d+ plants/.exec(sub)?.[1] ?? NaN);
+  const choice = await page.$eval('dialog[open] [data-filter="fits"]', (i) => i.closest('label').textContent.replace(/\s+/g, ' ').trim());
+  const m = /Fits your place\D*?(\d+) plants?;.*? · (\d+) already in your palette/.exec(choice);
+  assert.ok(m, `D5: the choice says the palette's share ("${choice}")`);
+  assert.equal(Number(m[1]) + Number(m[2]), whole, `D5: ${m[1]} + ${m[2]} make the subtitle's ${whole} ("${sub}")`);
+  await done(page);
+});
+
 test('PFA40 (pf-a R9, DeskStates): crossing 960 px with Find open keeps its search, its filters, the visit\'s count and each added row\'s Undo', async () => {
   const page = await deskPanel();
   await page.$eval('dialog[open] [data-job-chip="feeds_you"]', (b) => b.click());
