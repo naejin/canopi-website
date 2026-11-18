@@ -31,7 +31,7 @@ test('W6: on a phone, primary controls are at least 40 px tall, inline secondary
     if (await page.$eval('.ct-years', (el) => !!el.querySelector('button[disabled]') && i > 0).catch(() => false)) break;
     if (await has(page, later, 300)) await page.locator(later).click().catch(() => {});
   }
-  assert.ok(seen.has('chip') && seen.has(en['consortium.palette.later']) && seen.has(en['consortium.palette.showTable']), `the palette page's controls were measured (${[...seen].slice(0, 12)})`);
+  assert.ok(seen.has('chip') && seen.has(en['consortium.palette.later']) && seen.has(en['consortium.palette.readTitle']), `the palette page's controls were measured (${[...seen].slice(0, 12)})`);
   // Centred first: puppeteer clicks a control in view where it is, and at the window's foot the phone's
   // bottom bar ("Add plants", fixed, PP-C c1) lies over it, as over any page content scrolled there.
   await page.$eval('#ct-root .ct-chart button[data-plant-id]', (b) => b.scrollIntoView({ block: 'center', behavior: 'instant' }));

@@ -1,29 +1,19 @@
-// The jobs picture (plant-palette-architecture 3.4; board MainMore "Jobs"): what the plants do for the
-// plot and for how long, one row per job, the seven time steps as columns. An empty judged cell is
-// an open job hole. A plant doing several jobs stands in each of their rows; plants with no job
-// recorded are a row of their own, counted, never dropped. Pure; words are Lines.
-// Each band is drawn in its row's job, the job its lane head names with its icon and word (the "No
-// job recorded" row neutral): this picture has no key, so a band in the plant's main job would say
-// that job by colour alone, against its row (review r2 colour-1). Each plant's main job stays in its
-// accessible name (Picture.jobs).
-import type { Line } from '../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, PHASE_YEARS, spans, yearsLine, yearsOf } from '../../../lib/consortium/index.ts';
-import { holeAt, judgedColumn, lane, namesAndJobs, type Picture } from './picture.ts';
-import type { PictureInput } from './picture-years.ts';
+// The jobs' membership (v14 boards MainMore, PaletteMore, Many, ManyDesk; review c2 R1): per job, the
+// members doing it that count toward its holes and thin spots, and those doing it outside their climate
+// range, apart. One rule for the row's head, its names and its strip: `counts` is the holes' rule (a
+// member counts when it is not outside its climate range, holes.ts laneCounts), so "Feeds you 1 plant"
+// stands beside the thin strip of that one plant, never "3 plants" beside "Thin: 1 plant only…". The
+// view reads these rows and never filters the members again. Pure; palette order.
+import type { JobId, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import { jobIds, jobsOf } from '../../../lib/consortium/index.ts';
 
-export function jobsPicture({ members, holes, nameOf, first }: PictureInput): Picture {
-  const columns = PHASE_YEARS.map(([from, to]) => yearsLine(from, to));
-  const common = { nameOf, first, at: spans, judged: judgedColumn, years: yearsOf };
-  const rows = jobIds.map((j) => lane(j, { key: `consortium.job.${j}`, vars: {} }, members.filter((t) => jobsOf(t).includes(j)), columns.length, {
-    ...common, markJob: j, holeAt: (c: number) => holeAt(holes, (h) => h.kind === 'job' && h.job === j, c),
-  }));
-  const none = members.filter((t) => !jobsOf(t).length);
-  const head = (key: string, count?: number): Line => ({ key: `consortium.palette.${key}`, vars: {}, ...(count === undefined ? {} : { count }) });
-  if (none.length) rows.push(lane('none', head('jobsNone'), none, columns.length, { ...common, markJob: null, holeAt: () => null, state: 'not-recorded' }));
-  const open = holes.filter((h) => h.kind === 'job' && h.state === 'open').length;
-  return {
-    title: 'consortium.palette.jobsTitle', columns, rows,
-    summary: [head('jobsSummary', members.length), head('jobsHoles', open)],
-    ...namesAndJobs(members, nameOf),
-  };
+export interface JobMembers { job: JobId; counted: PlantId[]; outside: PlantId[] }
+
+export function jobMembers(members: readonly Taxon[], counts: (t: Taxon) => boolean): JobMembers[] {
+  const rows = new Map<JobId, JobMembers>(jobIds.map((job) => [job, { job, counted: [], outside: [] }]));
+  for (const t of members) {
+    const ok = counts(t);
+    for (const j of jobsOf(t)) (ok ? rows.get(j)!.counted : rows.get(j)!.outside).push(t.id);
+  }
+  return [...rows.values()];
 }

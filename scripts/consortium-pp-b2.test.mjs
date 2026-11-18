@@ -316,11 +316,10 @@ test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export are 
   t.diagnostic(`${ms.toFixed(1)} ms (reference 150 ms; reported, never a failure: owner row "No hard limits", 2026-11-16)`);
 });
 
-// ---- the picture model (rules/picture.ts, picture-years.ts, picture-jobs.ts, change-summary.ts) ----
+// ---- the picture model (rules/picture.ts, picture-years.ts, change-summary.ts; the jobs picture is drawn from store.lanes since pf-b)) ----
 const pictures = async () => ({
   ...await import('../src/islands/consortium/rules/picture.ts'),
   ...await import('../src/islands/consortium/rules/picture-years.ts'),
-  ...await import('../src/islands/consortium/rules/picture-jobs.ts'),
   ...await import('../src/islands/consortium/rules/change-summary.ts'),
 });
 const { sameCells } = await import('./picture-table.mjs');
@@ -346,55 +345,13 @@ test('PP-B (b2 pictures, 3.4): Through the years has a row per light level, band
   sameCells(bare, P.tableOf(bare));
 });
 
-test('PP-B (b2 pictures, 3.4): the jobs picture has a row per job, a plant in each of its jobs, its job holes, and the same cells in its table', async () => {
-  const P = await pictures();
-  const p = pictureOf(P, 'jobsPicture', palette);
-  assert.deepEqual(p.rows.map((r) => r.key), [...core.jobIds, 'none'], 'a row per job, then the plants with no job (High any), never dropped');
-  assert.equal(p.rows.at(-1).state, 'not-recorded');
-  assert.ok(p.rows.filter((r) => r.cells.some((c) => c.ids.includes('tree_all'))).length === 5, 'the tree in each of its five jobs');
-  const food = p.rows.find((r) => r.key === 'feeds_you');
-  assert.equal(food.cells[3].hole, 'job:feeds_you:3-15');
-  assert.deepEqual(food.head, { key: 'consortium.job.feeds_you', vars: {} });
-  sameCells(p, P.tableOf(p));
-});
-
 // Review r1 conformance-6: colour never alone. The band colour and the chip's icon and word read the
 // main job from the picture itself (Picture.jobs), the same job the band is drawn with.
-test('PP-B (b2 pictures, review r1 conformance-6): each picture names every plant\'s main job; Through the years draws each band with it', async () => {
+test('PP-B (b2 pictures, review r1 conformance-6): Through the years names every plant\'s main job; Through the years draws each band with it', async () => {
   const P = await pictures();
-  for (const kind of ['yearsPicture', 'jobsPicture']) {
-    const p = pictureOf(P, kind, palette);
-    assert.deepEqual(p.jobs, Object.fromEntries(palette.map((t) => [t.id, P.mainJob(t)])), `${kind}: the main job of every plant`);
-  }
-  const years = pictureOf(P, 'yearsPicture', palette);
-  for (const r of years.rows) for (const m of r.marks) assert.equal(m.job, years.jobs[m.id], `yearsPicture ${r.key}: ${m.id}'s band and its job agree`);
-});
-
-// Review r2 colour-1: the jobs picture shows no key (its lanes are the jobs), so a band in the plant's
-// main job would say that job by colour alone, against the row it stands in. Each band takes its row's
-// job (the lane head's icon and word); the "No job recorded" row is neutral (null).
-test('PP-B (b2 pictures, review r2 colour-1): the jobs picture draws each band in its row\'s job, the no-job row neutral', async () => {
-  const P = await pictures();
-  const p = pictureOf(P, 'jobsPicture', palette);
-  for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, r.key === 'none' ? null : r.key, `jobsPicture ${r.key}: ${m.id}'s band in its row's job`);
-});
-
-test('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one light level draw at most PICTURE_LANE_MAX per lane, "+ n more" holds the rest, the table lists every plant', async () => {
-  const P = await pictures();
-  const many = Array.from({ length: 200 }, (_, i) => plantOf(`p${String(i).padStart(3, '0')}`, { name: `Plant ${String(i).padStart(3, '0')}`, role: i % 2 ? 'crop' : 'support', stratum: 'low', phase_start: 'placenta_i', phase_end: 'climax' }));
-  for (const kind of ['yearsPicture', 'jobsPicture']) {
-    const p = pictureOf(P, kind, many);
-    for (const r of p.rows) {
-      assert.ok(r.cells.every((c) => c.ids.length <= P.PICTURE_LANE_MAX), `${kind} ${r.key}: at most ${P.PICTURE_LANE_MAX} drawn`);
-      assert.ok(r.marks.length <= P.PICTURE_LANE_MAX);
-    }
-    const lane = p.rows.find((r) => r.key === (kind === 'yearsPicture' ? 'low' : 'none'));
-    assert.equal(lane.more.count, (kind === 'yearsPicture' ? 200 : 100) - P.PICTURE_LANE_MAX);
-    assert.deepEqual(lane.more.line, core.moreLine(lane.more.count));
-    if (kind === 'yearsPicture') assert.ok(lane.marks.slice(0, 12).every((m) => m.job === 'feeds_you'), 'the main job first, then name');
-    sameCells(p, P.tableOf(p), kind);
-    assert.equal(P.plantsIn(p).size, 200, 'the table lists every plant');
-  }
+  const p = pictureOf(P, 'yearsPicture', palette);
+  assert.deepEqual(p.jobs, Object.fromEntries(palette.map((t) => [t.id, P.mainJob(t)])), 'yearsPicture: the main job of every plant');
+  for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, p.jobs[m.id], `yearsPicture ${r.key}: ${m.id}'s band and its job agree`);
 });
 
 test('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added says the plants and the holes that changed; another time step says its years first', async () => {
@@ -415,9 +372,9 @@ const derive = (P, members) => {
   const v = verdicts(members, ctx);
   const holes = core.holes({ members, verdicts: v, pending: false });
   core.nextStep(holes);
-  return { v, holes, years: P.yearsPicture({ members, holes, nameOf }), jobs: P.jobsPicture({ members, holes, nameOf }) };
+  return { v, holes, years: P.yearsPicture({ members, holes, nameOf }) };
 };
-test('PP-B (b2 scale, 200 plants): every picture folds and its table lists all 200; verdicts, holes and one added plant timed and reported', async (t) => {
+test('PP-B (b2 scale, 200 plants): Through the years holds all 200 (no fold in the model, v14 A14) and its table lists them; verdicts, holes and one added plant timed and reported', async (t) => {
   const P = await pictures();
   const { members } = await p200.palette200();
   assert.equal(members.length, 200);
@@ -430,12 +387,7 @@ test('PP-B (b2 scale, 200 plants): every picture folds and its table lists all 2
   const levels = new Set([...v.values()].map((x) => x.level));
   assert.ok(levels.size >= 2, `the verdicts mix (${[...levels]})`);
   const d = derive(P, members);
-  for (const [kind, p] of [['years', d.years], ['jobs', d.jobs]]) {
-    for (const r of p.rows) {
-      assert.ok(r.marks.length <= P.PICTURE_LANE_MAX && r.cells.every((c) => c.ids.length <= P.PICTURE_LANE_MAX), `${kind} ${r.key}: at most ${P.PICTURE_LANE_MAX} drawn`);
-      const drawn = new Set(r.cells.flatMap((c) => c.ids)), all = new Set(r.cells.flatMap((c) => [...c.ids, ...c.hidden]));
-      if (all.size > drawn.size) assert.ok(r.more && r.more.count >= all.size - drawn.size, `${kind} ${r.key}: "+ k more" holds the rest`);
-    }
+  for (const [kind, p] of [['years', d.years]]) {
     sameCells(p, P.tableOf(p), kind);
     assert.equal(P.plantsIn(p).size, 200, `${kind}: the table lists all 200`);
   }
@@ -443,7 +395,7 @@ test('PP-B (b2 scale, 200 plants): every picture folds and its table lists all 2
   // The median of five runs: npm test runs the files in parallel, and one run can lose the CPU.
   const runs = Array.from({ length: 5 }, () => { const t1 = performance.now(); derive(P, [...members, extra]); return performance.now() - t1; }).sort((a, b) => a - b);
   const add = runs[2];
-  t.diagnostic(`200 plants: verdicts + holes ${probe.toFixed(1)} ms; one added, verdicts + holes + both pictures ${add.toFixed(1)} ms (median of 5)`);
+  t.diagnostic(`200 plants: verdicts + holes ${probe.toFixed(1)} ms; one added, verdicts + holes + the picture ${add.toFixed(1)} ms (median of 5)`);
   // Owner, 2026-11-16 (row "No hard limits"): timings are reported, never a failure.
   if (probe >= 150 || add >= 30) t.diagnostic(`over the reference figures (150 ms, 30 ms), reported, not a failure`);
 });

@@ -1,10 +1,13 @@
 /** @jsxImportSource preact */
-// View slot of stream S4, in the palette slot (App.tsx renders it once the plant list is ready; the
-// matrix it followed went in PP-B commit 0a', and b2 hosts it under the palette page): the link
-// notices (§5: plants of a link no longer in the list, a pasted link that changed
-// nothing), then Share, Print and "Download for Canopi", the Share panel and the print sheet (hidden
-// on screen), then the future panel. Nothing here while Start is shown.
-import { useEffect, useState } from 'preact/hooks';
+// The palette's foot (v14 board MainMore, S9; App.tsx renders it once the plant list is ready): the link
+// notices (§5: plants of a link no longer in the list, a pasted link that changed nothing), then "Your
+// palette is saved on this device. Copy link · Print · Download for Canopi", and the print sheet (hidden
+// on screen), then the future panel (until the period tabs, PP-E). Copy link writes the page's address
+// Copy link is a disclosure (board DeskStates, C3, review R4, R5): it opens the Share panel under it,
+// at every width, with the link built from the palette shown (Share.tsx: the link field, Copy, Include
+// my place; its status cleared when the palette changes); it stays in place, so the focus never falls
+// to the page, and closing the panel puts the focus back on it. Nothing here while Start is shown.
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { climate, memberTaxa, source, view } from '../store.ts';
 import { P, T } from '../strings.ts';
@@ -104,17 +107,20 @@ async function printNow(): Promise<void> {
 
 function ActionsView() {
   const [sharing, setSharing] = useState(false);
+  const copyButton = useRef<HTMLButtonElement>(null);
+  const close = (): void => { setSharing(false); copyButton.current?.focus(); };
   return (
-    <section class="ct-page-actions" aria-label={T('page.actions')}>
+    <section class="ct-page-actions ct-foot" aria-label={T('page.actions')}>
       <LinkNotices />
-      <div class="ct-action-row">
-        <button type="button" class="button button-secondary ct-small" aria-expanded={sharing ? 'true' : 'false'} onClick={() => setSharing(!sharing)}>{T('share.button')}</button>
-        <button type="button" class="button button-secondary ct-small" onClick={() => void printNow()}>{T('print.button')}</button>
-        <button type="button" class="button button-secondary ct-small" onClick={() => void download()}>{T('download.button')}</button>
-      </div>
+      <p class="ct-foot-line">
+        {T('palette.chart.saved')}{' '}
+        <button ref={copyButton} type="button" class="link-button ct-link" aria-expanded={sharing} aria-controls="ct-share-panel" onClick={() => setSharing(!sharing)}>{T('palette.chart.copyLink')}</button>{' · '}
+        <button type="button" class="link-button ct-link" onClick={() => void printNow()}>{T('print.button')}</button>{' · '}
+        <button type="button" class="link-button ct-link" aria-describedby="ct-download-note" onClick={() => void download()}>{T('download.button')}</button>
+      </p>
+      <p id="ct-download-note" class="visually-hidden">{T('download.note')}</p>
+      <div id="ct-share-panel" class="ct-share-panel">{sharing && <share.View onClose={close} />}</div>
       {partFailed.value && <LoadFailed retry={clearFailed} />}
-      <p class="ct-muted ct-small-text">{T('download.note')}</p>
-      {sharing && <share.View onClose={() => setSharing(false)} />}
       <PrintHost />
     </section>
   );
