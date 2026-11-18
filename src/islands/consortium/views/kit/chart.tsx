@@ -108,13 +108,16 @@ const LaneHead = ({ r }: { r: Pick<PictureRow, 'key' | 'head'> }) => (
   <>{isJob(r.key) ? <JobIcon job={r.key} /> : isStratum(r.key) ? <LightIcon stratum={r.key} /> : <span class="ct-light-swatch" aria-hidden="true" />}{say(r.head)}</>
 );
 
-// A plant's accessible name, one phrase: the plant, its main job, its toxicity, recorded invasive, its
+// A plant's accessible name, one phrase: the plant, its toxicity, its main job, recorded invasive, its
 // fit when it warns (outside its range, needs a second look). Every plant button of the pictures reads
 // it, a bar, a chip or a name in a count cell (round 2 R2: a folded name keeps its words).
 function plantWords(id: PlantId, p: Picture, b: PlantButtons) {
   const v = b.verdictOf?.(id), job = p.jobs[id] ?? null, warn = !!v && (v.level === 'outside' || v.level === 'look');
   const flags = b.flagsOf?.(id), tox = toxOf(flags), invasive = !!flags?.some((f) => f.kind === 'invasive');
-  const label = [p.names[id] ?? id, jobWord(job), ...(tox ? [T(`palette.warningsTox_${tox}`)] : []), ...(invasive && b.invasiveWord ? [b.invasiveWord] : []), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
+  // The words seen on the button come first, in its order (its name, a space, its toxicity word), so
+  // the accessible name holds the visible text (WCAG 2.5.3, axe label-content-name-mismatch); the flex
+  // button draws no space.
+  const label = [p.names[id] ?? id, ...(tox ? [T(`palette.warningsTox_${tox}`)] : []), jobWord(job), ...(invasive && b.invasiveWord ? [b.invasiveWord] : []), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
   return { v, job, warn, tox, label };
 }
 // One plant as a button: its main job's icon, its name, its toxicity mark (role img, its words) and,
@@ -125,7 +128,7 @@ function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Pict
   const { v, job, warn, tox, label } = plantWords(id, p, b);
   return (
     <button type="button" class={cls} {...spanAttrs(span)} data-short={span && span[0] === span[1] ? '' : undefined} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} data-tox={tox ?? undefined} aria-label={label} onClick={() => b.onPlant(id)}>
-      <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <ToxMark tox={tox} word />}{warn && <LevelIcon level={v!.level} />}
+      <span class="ct-bar-icon"><JobIcon job={job} /></span><span class="ct-bar-name">{p.names[id] ?? id}</span>{tox && <>{' '}<ToxMark tox={tox} word /></>}{warn && <LevelIcon level={v!.level} />}
     </button>
   );
 }
