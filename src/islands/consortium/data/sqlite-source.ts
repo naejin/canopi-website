@@ -13,7 +13,7 @@ import type {
   ClimateRange, ClimateZone, Details, Dispute, DisputeField, EstimateKind, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
   PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
 } from '../../../lib/consortium/index.ts';
-import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
+import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, READ_ONLY_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -151,18 +151,19 @@ function textOf(rows: Row[] | undefined): Text | null {
 // Schemas 2 and 3: the observed climate of a climate's plants, in one query of arrays (the pool is read
 // before the matrix draws; objects for every row cost ~0.1 s at 4× CPU). A plant without a
 // range_source is absent: "range not recorded" (Taxon.climate null).
-// The variables: types.ts RANGE_VARIABLES, the one list (fixed strings, so the query stays a constant).
+// The variables: types.ts RANGE_VARIABLES, the one list, and READ_ONLY_VARIABLES (precip, M23: read, never
+// checked) (fixed strings, so the query stays a constant).
 const CLIMATE_ROWS = `SELECT s.plant, s.range_source, s.gbif_cells, s.native_share, c.variable, c.low, c.median, c.high, c.count, c.basis,
   c.blocks, c.low_source, c.high_source, c.weak
-  FROM plant_climate_status s LEFT JOIN plant_climate c ON c.plant = s.plant AND c.variable IN (${Object.keys(RANGE_VARIABLES).map((v) => `'${v}'`).join(', ')})
+  FROM plant_climate_status s LEFT JOIN plant_climate c ON c.plant = s.plant AND c.variable IN (${[...Object.keys(RANGE_VARIABLES), ...Object.keys(READ_ONLY_VARIABLES)].map((v) => `'${v}'`).join(', ')})
   WHERE s.range_source IS NOT NULL AND s.plant IN (SELECT plant FROM placements WHERE climate_zone = ?1)`;
 function climatesOf(rows: unknown[][]): Map<number, TaxonClimate> {
   const out = new Map<number, TaxonClimate>();
   for (const [plant, source, cells, share, variable, low, median, high, count, basis, blocks, lowSource, highSource, weak] of rows) {
     let t = out.get(Number(plant));
-    if (!t) out.set(Number(plant), t = { source: String(source), tminCold: null, tmaxWarm: null, tmeanYear: null, tmeanWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
-    const field = RANGE_VARIABLES[variable as RangeVariable];
-    if (field) t[field] = { low: num(low), median: num(median), high: num(high), count: num(count), basis: basis as RangeBasis,
+    if (!t) out.set(Number(plant), t = { source: String(source), precip: null, tminCold: null, tmaxWarm: null, tmeanYear: null, tmeanWarm: null, aridity: null, cells: num(cells), nativeShare: num(share) });
+    const field = variable === 'precip' ? 'precip' : RANGE_VARIABLES[variable as RangeVariable];
+    if (field) (t as { -readonly [K in keyof TaxonClimate]: TaxonClimate[K] })[field] = { low: num(low), median: num(median), high: num(high), count: num(count), basis: basis as RangeBasis,
       blocks: num(blocks), lowSource: lowSource == null ? null : String(lowSource), highSource: highSource == null ? null : String(highSource), weak: Number(weak) === 1 } satisfies ClimateRange;
   }
   return out;

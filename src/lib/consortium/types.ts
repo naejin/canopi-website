@@ -190,8 +190,14 @@ export interface ClimateRange {
 // field it fills: the one list of range variables (range.ts RANGE_BOUNDS says how each is checked).
 export const RANGE_VARIABLES = { tmin_cold: 'tminCold', tmax_warm: 'tmaxWarm', tmean_year: 'tmeanYear', tmean_warm: 'tmeanWarm', aridity: 'aridity' } as const;
 export type RangeVariable = keyof typeof RANGE_VARIABLES;
+// Read beside the range variables and never checked (M23): the annual rain of the plant's observed
+// cells in mm (plant_climate 'precip'), for the words "recorded from 25 mm" (verdict-line, Find's row).
+// Not in RANGE_VARIABLES, so no verdict changes with it.
+export const READ_ONLY_VARIABLES = { precip: 'precip' } as const;
 export interface TaxonClimate {
   source: string;
+  /** Annual rain of the observed cells, mm; read only, never part of a verdict. */
+  readonly precip: ClimateRange | null;
   tminCold: ClimateRange | null;
   tmaxWarm: ClimateRange | null;
   tmeanYear: ClimateRange | null;
