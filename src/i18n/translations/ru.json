@@ -1525,5 +1525,8 @@
   "consortium.location.type.country": "Страна",
   "consortium.palette.jobHoleNoFit": "ни одно растение из ваших списков не подходит здесь и не делает этого в это время",
   "consortium.palette.jobHoleOutside": "one: # делает это, но вне своего климатического диапазона | few: # делают это, но вне своего климатического диапазона | many: # делают это, но вне своего климатического диапазона | other: # делают это, но вне своего климатического диапазона",
+  "consortium.location.lookUpName": "Узнать название",
+  "consortium.location.noName": "Там не записано никакого названия места.",
+  "consortium.location.nameFailed": "Поиск мест не ответил, поэтому у места нет названия. Попробуйте позже.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

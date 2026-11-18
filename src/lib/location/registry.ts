@@ -48,6 +48,9 @@ export interface GeocodingProvider {
   readonly defaultForwardEndpoint: string
   buildForwardUrl(config: GeocoderConfig, query: string, options: { limit?: number }): string
   parseForward(data: unknown): GeocodeMatch[]
+  /** The name of a point (website change, M26: "Look up its name", sent only on the grower's press). */
+  buildReverseUrl(config: GeocoderConfig, lat: number, lon: number): string
+  parseReverse(data: unknown): GeocodeMatch | null
 }
 
 /** Performs one GET and returns the parsed JSON body (undefined for an empty body). */
@@ -88,6 +91,18 @@ function nominatimForwardResultToMatch(result: NominatimForwardResult): GeocodeM
   return { lat, lon, displayName: result.display_name ?? '', score: coerceScore(result.importance), kind: typeof result.addresstype === 'string' ? result.addresstype : null }
 }
 
+// Nominatim's /reverse beside the configured /search endpoint (same host, same pacing).
+function buildReverseGeocodeUrl(endpoint: string, lat: number, lon: number, language?: string): string {
+  const url = new URL(endpoint)
+  url.pathname = url.pathname.replace(/\/search\/?$/, '') + '/reverse'
+  url.searchParams.set('lat', String(lat))
+  url.searchParams.set('lon', String(lon))
+  url.searchParams.set('format', 'jsonv2')
+  url.searchParams.set('zoom', '10')
+  if (language) url.searchParams.set('accept-language', language)
+  return url.toString()
+}
+
 const nominatimProvider: GeocodingProvider = {
   id: 'nominatim',
   label: 'Nominatim (OpenStreetMap)',
@@ -104,6 +119,12 @@ const nominatimProvider: GeocodingProvider = {
           .map(nominatimForwardResultToMatch)
           .filter((match): match is GeocodeMatch => match !== null)
       : [],
+  buildReverseUrl: (config, lat, lon) => buildReverseGeocodeUrl(config.forwardEndpoint, lat, lon, config.language),
+  // An object with a display name; Nominatim answers {"error": …} for a point with no place.
+  parseReverse: (data) =>
+    data && typeof data === 'object' && !Array.isArray(data) && typeof (data as NominatimForwardResult).display_name === 'string'
+      ? nominatimForwardResultToMatch(data as NominatimForwardResult)
+      : null,
 }
 
 /** Selectable providers: Nominatim only. */
@@ -150,4 +171,16 @@ export async function geocodeForward(
   const provider = getGeocodingProvider(config.providerId)
   const url = provider.buildForwardUrl(config, query, { ...(options.limit ? { limit: options.limit } : {}) })
   return provider.parseForward(await transport(url, options.signal))
+}
+
+/** Reverse-geocode one point through the configured provider and transport (M26). */
+export async function geocodeReverse(
+  lat: number,
+  lon: number,
+  transport: GeocodingTransport,
+  options: { signal?: AbortSignal; config?: GeocoderConfig } = {},
+): Promise<GeocodeMatch | null> {
+  const config = options.config ?? defaultGeocoderConfig()
+  const provider = getGeocodingProvider(config.providerId)
+  return provider.parseReverse(await transport(provider.buildReverseUrl(config, lat, lon), options.signal))
 }

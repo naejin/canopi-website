@@ -1525,5 +1525,8 @@
   "consortium.location.type.country": "国家",
   "consortium.palette.jobHoleNoFit": "你的清单中没有适合这里并在那时承担它的植物",
   "consortium.palette.jobHoleOutside": "other: # 种做这件事，但超出其气候范围",
+  "consortium.location.lookUpName": "查找地名",
+  "consortium.location.noName": "那里没有记录地名。",
+  "consortium.location.nameFailed": "地点搜索没有回应，所以这个地点没有名称。请稍后再试。",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

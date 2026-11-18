@@ -1525,5 +1525,8 @@
   "consortium.location.type.country": "Nazione",
   "consortium.palette.jobHoleNoFit": "nessuna pianta delle tue liste si adatta qui e lo fa allora",
   "consortium.palette.jobHoleOutside": "one: # lo fa, ma è fuori dal suo areale climatico | other: # lo fanno, ma sono fuori dal loro areale climatico",
+  "consortium.location.lookUpName": "Cerca il suo nome",
+  "consortium.location.noName": "Nessun nome di luogo è registrato lì.",
+  "consortium.location.nameFailed": "La ricerca dei luoghi non ha risposto, quindi il luogo resta senza nome. Riprova più tardi.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

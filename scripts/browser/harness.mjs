@@ -386,6 +386,12 @@ export async function startHarness({ log = () => {}, dir } = {}) {
         if (url.hostname === 'nominatim.openstreetmap.org' && nominatim) {
           page.nominatim.push({ url: url.href, headers: request.headers() });
           if (nominatim === 'offline') return request.abort('internetdisconnected');
+          // /reverse ("Look up its name", M26): the fixture place within 0.25° of the point, else Nominatim's error object.
+          if (url.pathname === '/reverse') {
+            const lat = Number(url.searchParams.get('lat')), lon = Number(url.searchParams.get('lon'));
+            const near = Object.values(NOMINATIM).flat().find((r) => Math.abs(Number(r.lat) - lat) <= 0.25 && Math.abs(Number(r.lon) - lon) <= 0.25);
+            return request.respond({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(near ?? { error: 'Unable to geocode' }) });
+          }
           const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
           return request.respond({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(NOMINATIM[q] ?? []) });
         }

@@ -49,6 +49,8 @@ export interface Choices { query: string; results: readonly PlaceSearchResult[];
 export const choices = signal<Choices | null>(null);
 // Text that looks like coordinates but could not be read (board: "We could not read “1.17 36” …").
 export const badCoords = signal<string | null>(null);
+// "Look up its name" on typed coordinates (M26): asking, none found, or no answer; cleared with the step.
+export const naming = signal<'asking' | 'none' | 'failed' | null>(null);
 // The grower's own acts on the place (locate, Forget, "Use it" on a link's place), counted: the place
 // field (views/LocationSlot.tsx) follows these and leaves the grower's typing to anything else the
 // page does (a restore, a link, a re-read).
@@ -64,7 +66,7 @@ export const waited = signal(Math.round(PROMPT_CAP_MS / 1000));
 // The last ask, for "Try again" (offline search, device timeout, a climate that did not load).
 let lastAsk: (() => Promise<void>) | null = null;
 export const tryAgain = (): Promise<void> => (lastAsk ? lastAsk() : Promise.resolve());
-const clearStep = () => batch(() => { asking.value = null; choices.value = null; badCoords.value = null; });
+const clearStep = () => batch(() => { asking.value = null; choices.value = null; badCoords.value = null; naming.value = null; });
 // Stop: the ask in flight goes (its late answer is dropped), and so does its line.
 export function stop(): void {
   nextLookup();
@@ -274,11 +276,11 @@ export async function searchRead(q: string, read: CoordsRead): Promise<void> {
   asked = { id, climate: store.climate.peek() };
   lastAsk = () => searchRead(query, null);
   batch(() => { clearStep(); asking.value = 'search'; line.value = { state: 'loading', query }; });
-  await unlessReplaced(searcher().search(query));
+  await unlessReplaced(searcher().search(query, { asName: true }));
   if (!liveLookup(id)) return;
   const search = searcher();
   asking.value = null;
-  // The name path never takes the controller's own coordinate reading (R2): text the field refused as
+  // The name path never takes the controller's own coordinate reading (R2; asName, M26): text the field refused as
   // coordinates ("1.17 36") is never turned into a guessed point; it reads as no place found.
   const status = search.status.value, results = search.results.value.filter((r) => r.source !== 'coordinates'), attribution = search.attribution.value;
   if (status === 'error') { line.value = { state: 'offline', query }; return; }
@@ -286,6 +288,25 @@ export async function searchRead(q: string, read: CoordsRead): Promise<void> {
   if (results.length > 1) { batch(() => { line.value = null; choices.value = { query, results, attribution }; }); return; }
   await take(results[0], { query, attribution });
 }
+// "Look up its name" (M26): typed coordinates have no name until the grower asks; then one reverse
+// lookup, on that press only. The answer names the place where it stands ("Near Kiambu, Kenya"), kept
+// on this device as the location was; none found or no answer is said beside the row (naming).
+export async function lookUpName(): Promise<void> {
+  const l = store.location.peek() as Place | null;
+  if (!l?.typed || l.label) return;
+  naming.value = 'asking';
+  try {
+    const r = await searcher().nameOf(l.lat, l.lon);
+    if (store.location.peek() !== l) { naming.value = null; return; }
+    if (!r) { naming.value = 'none'; return; }
+    const next: Place = { ...l, label: placeName(r) };
+    batch(() => { store.location.value = next; naming.value = null; });
+    keepLocation(next);
+  } catch {
+    if (store.location.peek() === l) naming.value = 'failed';
+  }
+}
+
 // One answer taken: the only one (take, the search's ask), or the grower's choice among several (a new ask).
 const take = (r: PlaceSearchResult, extra: Partial<Line> = {}): Promise<void> =>
   locate(r.lat, r.lon, 'search', r.source === 'geocoder' ? placeName(r) : undefined, extra);

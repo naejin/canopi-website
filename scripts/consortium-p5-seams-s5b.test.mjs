@@ -147,6 +147,27 @@ test('registry and place search (copied from canopi): Nominatim on request only,
   assert.equal(failing.status.value, 'error');
 });
 
+test('M26, D7: "1.17 36" searched as a name goes to the geocoder; "Look up its name" is one /reverse request; an answer row names its kind for the eight kinds', async () => {
+  const ps = await import('../src/lib/location/place-search.ts');
+  ps.resetPlaceSearchPacingForTests();
+  const sent = [];
+  const transport = async (u) => {
+    sent.push(u);
+    if (u.includes('/reverse')) return u.includes('lat=0&') ? { error: 'Unable to geocode' } : { lat: '-1.17', lon: '36.83', display_name: 'Kiambu, Kiambu County, Kenya', addresstype: 'town' };
+    return [{ lat: '-1.17', lon: '36.83', display_name: 'Kiambu, Kenya', addresstype: 'town' }, { lat: '-1.2', lon: '36.8', display_name: 'Kiambu Road, Kenya', addresstype: 'road' }];
+  };
+  const ctl = ps.createPlaceSearchController({ transport, sleep: async () => {} });
+  await ctl.search('1.17 36');
+  assert.deepEqual([ctl.results.value[0].source, sent.length], ['coordinates', 0], 'without asName, read on this device');
+  await ctl.search('1.17 36', { asName: true });
+  assert.equal(sent.length, 1, 'asName: sent as a name');
+  assert.deepEqual(ctl.results.value.map((r) => r.placeType), ['town', null], 'D7: a town named, a road not');
+  const named = await ctl.nameOf(-1.17, 36.83);
+  assert.match(sent.at(-1), /^https:\/\/nominatim\.openstreetmap\.org\/reverse\?lat=-1\.17&lon=36\.83&/);
+  assert.deepEqual([named.label, named.detail, named.placeType], ['Kiambu', 'Kiambu County, Kenya', 'town']);
+  assert.equal(await ctl.nameOf(0, 0), null, 'no place there');
+});
+
 test('the location step stays off the first run: the shell imports its chunk only through import()', () => {
   const shell = view('LocationSlot.tsx'), loader = view('location/load.ts');
   assert.doesNotMatch(shell, /from '\.\/location\/location\.tsx'/);

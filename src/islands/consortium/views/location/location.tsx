@@ -30,7 +30,7 @@ import { T, P, pageLang } from '../../strings.ts';
 import { formatNumber } from '../../format.ts';
 import { chooseClimate } from '../../state/draft.ts';
 import { line, unread, type Line } from '../../state/lookups.ts';
-import { asking, badCoords, choices, choose, devicePosition, findPlaces, forget, locate, placeName, searchRead, stop, tryAgain, typed, waited } from '../../state/location.ts';
+import { asking, badCoords, choices, choose, devicePosition, findPlaces, forget, locate, lookUpName, naming, placeName, searchRead, stop, tryAgain, typed, waited } from '../../state/location.ts';
 import { readCoords } from './coords.ts';
 import { coords, zoneName } from '../kit/names.ts';
 import { page } from '../kit/page.ts';
@@ -88,7 +88,7 @@ export function Answers({ query, results, attribution, pick }: { query: string; 
 // frame: the return to Place from the palette (SiteKiambu): its ways out with the climate and Forget.
 // On the laptop the settled row (PlaceDesk: Adjust on the map · Search again · Forget); on the phone
 // LocStates' "One answer" (Not this place? Search again · Adjust on the map). Typed coordinates: no
-// name, Adjust on the map ("Look up its name" waits for a reverse lookup in lib/location: R2, C9).
+// name, Adjust on the map and "Look up its name" (one reverse lookup on that press, M26).
 export function PlaceRow({ loc, frame = false }: { loc: SiteLocation; frame?: boolean }) {
   const sc = loc.lookup ? siteClimate(loc.lookup) : null;
   const z = store.climate.value;
@@ -102,12 +102,13 @@ export function PlaceRow({ loc, frame = false }: { loc: SiteLocation; frame?: bo
         {named && <strong class="ct-place-name">{placeWords(loc)}</strong>}
         <span class="ct-place-coords">{coords(loc.lat, loc.lon)}{frame && sc && z && <>{sep}{T('location.rowClimate', { climate: zoneName(z), koppen: sc.koppen, how })}</>}</span>
         {fromTyped && <span class="ct-muted">{T('location.typed')}</span>}
+        {fromTyped && naming.value && naming.value !== 'asking' && <span class="ct-muted" role="status">{T(naming.value === 'none' ? 'location.noName' : 'location.nameFailed')}</span>}
       </p>
       <p class="ct-place-row-acts">
         {frame ? (
           <>{link(T('location.adjust'), openMap)}{sep}{link(T('location.searchAgain'), focusField)}{sep}{link(T('place.climate.other'), openClimates, { 'data-place-climates': '' })}{sep}{link(T('location.forget'), forget)}</>
         ) : fromTyped ? (
-          <>{link(T('location.adjust'), openMap)}</>
+          <>{link(T('location.adjust'), openMap)}{sep}{link(T('location.lookUpName'), () => void lookUpName(), naming.value === 'asking' ? { 'aria-busy': 'true' } : {})}</>
         ) : desk.value ? (
           <>{link(T('location.adjust'), openMap)}{sep}{link(T('location.searchAgain'), focusField)}{sep}{link(T('location.forget'), forget)}</>
         ) : (

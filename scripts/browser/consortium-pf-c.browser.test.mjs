@@ -8,9 +8,8 @@
 // v13-spec-update.md section 5 where v14 does not override it.
 // Board figures come from the engine and the installed release (the climate cards' list sizes from
 // the index, the climate read from the tiles at each fixture place), never the board's numbers.
-// Each case still failing carries an expected-fail marker under pf-c (scripts/expect-fail.mjs
-// failing()), its reason the board's first missing word or element (pf-helpers.mjs BOARD); pf-c
-// removes a marker in the commit that makes it pass.
+// No case carries an expected-fail marker any more (the last, PFC5, passes since main h2 M26); a case
+// that fails again gets one (scripts/expect-fail.mjs failing()) with the board's first missing word.
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries F1a-P2 (pp-b2 → PP-C; a return visit opens "Opening your palette…", never the Place form) -> PFC15
@@ -46,8 +45,7 @@ import assert from 'node:assert/strict';
 import { aria, h, has, useHarness } from './helpers.mjs';
 import { atSite, releaseTiles, slowTiles, tool } from './p5-helpers.mjs';
 import { SITES, lookupAt } from './location-fixtures.mjs';
-import { failing } from '../expect-fail.mjs';
-import { BOARD, boxOf, control, dialogText, done, focused, frames, idsOf, inOrder, linkOf, names, palette, pastEdge, press, savedPalette, says as saysOn, saysNot, setSiteEdits, toastText, withStorage } from './pf-helpers.mjs';
+import { boxOf, control, dialogText, done, focused, frames, idsOf, inOrder, linkOf, names, palette, pastEdge, press, savedPalette, says as saysOn, saysNot, setSiteEdits, toastText, withStorage } from './pf-helpers.mjs';
 import { FIELD, listSize, noticeOf, rankOf, searchFor, searchStub, toneOf } from './pf-c-helpers.mjs';
 
 useHarness();
@@ -161,7 +159,7 @@ test('PFC4 (pf-c LocStates, the place search): while it looks "Looking for “Ki
   await done(off);
 });
 
-failing('PFC5 (pf-c LocStates, typed coordinates, owner Q6; main h2): "-1.17, 36.83", "1°10′S 36°50′E" and a pasted map link each read "1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name." with "Adjust on the map" and "Look up its name", and send nothing; "1.17 36" says "We could not read “1.17 36” as coordinates. Write latitude, then longitude: −1.17, 36.83. Or press Search to look it up as a name." and sends nothing; Search again looks it up as a name', { owner: 'main h2', reason: BOARD }, async () => {
+test('PFC5 (pf-c LocStates, typed coordinates, owner Q6; main h2 M26): "-1.17, 36.83", "1°10′S 36°50′E" and a pasted map link each read "1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name." with "Adjust on the map" and "Look up its name", and send nothing; "1.17 36" says "We could not read “1.17 36” as coordinates. Write latitude, then longitude: −1.17, 36.83. Or press Search to look it up as a name." and sends nothing; Search again looks it up as a name; "Look up its name" asks the place search once, on the press, and names the place', async () => {
   const page = await tool({ width: 390, nominatim: 'fixture' });
   for (const typed of ['-1.17, 36.83', '1°10′S 36°50′E', 'https://www.openstreetmap.org/#map=12/-1.17/36.83']) {
     await searchFor(page, typed);
@@ -175,6 +173,14 @@ failing('PFC5 (pf-c LocStates, typed coordinates, owner Q6; main h2): "-1.17, 36
   await press(page, 'button', 'Search');
   for (let i = 0; i < 50 && page.nominatim.length === 0; i++) await new Promise((r) => setTimeout(r, 100));
   assert.equal(page.nominatim.length, 1, 'board: Search again looks it up as a name');
+  // M26: typed coordinates again, then "Look up its name": one reverse lookup, only on the press.
+  await searchFor(page, '-1.17, 36.83');
+  await says(page, '1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name.', { timeout: 10_000 });
+  const before = page.nominatim.length;
+  await press(page, 'button', 'Look up its name');
+  await says(page, /Near Kiambu, Kenya/, { timeout: 10_000 });
+  assert.equal(page.nominatim.length, before + 1, 'M26: one request, on the press');
+  assert.match(page.nominatim.at(-1).url, /\/reverse\?/, 'M26: a reverse lookup');
   await done(page);
 });
 

@@ -1525,5 +1525,8 @@
   "consortium.location.type.country": "나라",
   "consortium.palette.jobHoleNoFit": "목록에 여기에 맞고 그때 이 역할을 하는 식물이 없음",
   "consortium.palette.jobHoleOutside": "other: #종이 이 일을 하지만 기후 범위 밖입니다",
+  "consortium.location.lookUpName": "이름 찾기",
+  "consortium.location.noName": "그곳에는 기록된 지명이 없습니다.",
+  "consortium.location.nameFailed": "장소 검색이 응답하지 않아 이 장소에는 이름이 없습니다. 나중에 다시 시도하세요.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

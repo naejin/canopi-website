@@ -1525,5 +1525,8 @@
   "consortium.location.type.country": "Land",
   "consortium.palette.jobHoleNoFit": "geen plant op je lijsten past hier en doet dit dan",
   "consortium.palette.jobHoleOutside": "one: # doet dit, maar valt buiten haar klimaatbereik | other: # doen dit, maar vallen buiten hun klimaatbereik",
+  "consortium.location.lookUpName": "De naam opzoeken",
+  "consortium.location.noName": "Daar staat geen plaatsnaam geregistreerd.",
+  "consortium.location.nameFailed": "Het zoeken naar plaatsen gaf geen antwoord, dus de plek heeft geen naam. Probeer het later nog eens.",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
