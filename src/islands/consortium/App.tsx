@@ -28,8 +28,12 @@ import { Placeholder } from './views/palette/Placeholder.tsx';
 export const PalettePage = lazyPart(retryableImport(() => import('./views/palette/Palette.tsx'), (m) => m.Palette), { retry: true, page: true, loading: Placeholder });
 // Kept in the first run: modules the sheets, the later views and the future panel share, which no
 // first-run module imports since the matrix went (PP-B commit 0a'), so no part pays for them on first
-// use and no sheet imports a lazy chunk statically (check-built-site's K3 rule).
+// use and no sheet imports a lazy chunk statically (check-built-site's K3 rule). The rows and the list
+// fold Find and the palette share are kept here too (astro.config.mjs FIRST_RUN_KIT builds them
+// untreeshaken, since they have no side effect of their own).
 import './views/StageBar.tsx';
+import './views/kit/rows.tsx';
+import './views/kit/more.tsx';
 
 export interface AppProps {
   // The page's guide (the noscript link's address), linked as "Read the guides" on the screens where

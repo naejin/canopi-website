@@ -36,9 +36,8 @@ import { listName, nameOf, nameOrder, num, zoneName } from '../kit/names.ts';
 import { formatLength } from '../../format.ts';
 import { page } from '../kit/page.ts';
 import { finder, finderFailed, namesState, releasePlants, wantNames } from './names.ts';
-import { Marks } from './marks.tsx';
 import Paste from './Paste.tsx';
-import { addedWords, holeEndWords, holeFillers, HoleRow, openFillers, PLUS, rowRoles, rowSize, rowSpan } from '../palette/NextStep.tsx';
+import { addedWords, holeEndWords, holeFillers, HoleRow, Marks, openFillers, PLUS, rowRoles, rowSize, rowSpan } from '../kit/rows.tsx';
 import { deskFind } from '../Toast.tsx';
 
 // The later periods "Holds by …" offers (types.ts periodIds), named by verdict-line.ts periodName
