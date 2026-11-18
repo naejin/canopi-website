@@ -379,24 +379,6 @@ test('PP-B (b2 pictures, review r2 colour-1): the jobs picture draws each band i
   for (const r of p.rows) for (const m of r.marks) assert.equal(m.job, r.key === 'none' ? null : r.key, `jobsPicture ${r.key}: ${m.id}'s band in its row's job`);
 });
 
-test('PP-B (b2 pictures stay readable, moved from P5): 200 plants on one light level draw at most PICTURE_LANE_MAX per lane, "+ n more" holds the rest, the table lists every plant', async () => {
-  const P = await pictures();
-  const many = Array.from({ length: 200 }, (_, i) => plantOf(`p${String(i).padStart(3, '0')}`, { name: `Plant ${String(i).padStart(3, '0')}`, role: i % 2 ? 'crop' : 'support', stratum: 'low', phase_start: 'placenta_i', phase_end: 'climax' }));
-  for (const kind of ['yearsPicture', 'jobsPicture']) {
-    const p = pictureOf(P, kind, many);
-    for (const r of p.rows) {
-      assert.ok(r.cells.every((c) => c.ids.length <= P.PICTURE_LANE_MAX), `${kind} ${r.key}: at most ${P.PICTURE_LANE_MAX} drawn`);
-      assert.ok(r.marks.length <= P.PICTURE_LANE_MAX);
-    }
-    const lane = p.rows.find((r) => r.key === (kind === 'yearsPicture' ? 'low' : 'none'));
-    assert.equal(lane.more.count, (kind === 'yearsPicture' ? 200 : 100) - P.PICTURE_LANE_MAX);
-    assert.deepEqual(lane.more.line, core.moreLine(lane.more.count));
-    if (kind === 'yearsPicture') assert.ok(lane.marks.slice(0, 12).every((m) => m.job === 'feeds_you'), 'the main job first, then name');
-    sameCells(p, P.tableOf(p), kind);
-    assert.equal(P.plantsIn(p).size, 200, 'the table lists every plant');
-  }
-});
-
 test('PP-B (b2 changeSummary, 3.4): nothing changed says nothing; a plant added says the plants and the holes that changed; another time step says its years first', async () => {
   const P = await pictures();
   const before = pictureOf(P, 'yearsPicture', palette);
@@ -417,7 +399,7 @@ const derive = (P, members) => {
   core.nextStep(holes);
   return { v, holes, years: P.yearsPicture({ members, holes, nameOf }), jobs: P.jobsPicture({ members, holes, nameOf }) };
 };
-test('PP-B (b2 scale, 200 plants): every picture folds and its table lists all 200; verdicts, holes and one added plant timed and reported', async (t) => {
+test('PP-B (b2 scale, 200 plants): every picture holds all 200 (no fold in the model, v14 A14) and its table lists them; verdicts, holes and one added plant timed and reported', async (t) => {
   const P = await pictures();
   const { members } = await p200.palette200();
   assert.equal(members.length, 200);
@@ -431,11 +413,6 @@ test('PP-B (b2 scale, 200 plants): every picture folds and its table lists all 2
   assert.ok(levels.size >= 2, `the verdicts mix (${[...levels]})`);
   const d = derive(P, members);
   for (const [kind, p] of [['years', d.years], ['jobs', d.jobs]]) {
-    for (const r of p.rows) {
-      assert.ok(r.marks.length <= P.PICTURE_LANE_MAX && r.cells.every((c) => c.ids.length <= P.PICTURE_LANE_MAX), `${kind} ${r.key}: at most ${P.PICTURE_LANE_MAX} drawn`);
-      const drawn = new Set(r.cells.flatMap((c) => c.ids)), all = new Set(r.cells.flatMap((c) => [...c.ids, ...c.hidden]));
-      if (all.size > drawn.size) assert.ok(r.more && r.more.count >= all.size - drawn.size, `${kind} ${r.key}: "+ k more" holds the rest`);
-    }
     sameCells(p, P.tableOf(p), kind);
     assert.equal(P.plantsIn(p).size, 200, `${kind}: the table lists all 200`);
   }

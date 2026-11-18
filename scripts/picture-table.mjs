@@ -1,6 +1,6 @@
 // The cell-equivalence check every picture's unit test calls (plant-palette-architecture 3.4, P17):
-// the "Show as a table" form (rules/picture.ts tableOf) holds the same rows, columns and cells as the
-// picture, with every plant listed (the folded ones included), and a hole in the same cells. Not a
+// the table form (rules/picture.ts tableOf, the pictures' screen-reader form) holds the same rows,
+// columns and cells as the picture, with every plant listed, and a hole in the same cells. Not a
 // test file: import { sameCells } from './picture-table.mjs' and pass the picture and its table.
 import assert from 'node:assert/strict';
 
@@ -17,7 +17,5 @@ export function sameCells(picture, table, label = picture.title) {
       assert.equal(t.cells[c].hole, cell.hole, `${label}: ${row.key} column ${c}: the same hole`);
       assert.equal(t.cells[c].names.length, t.cells[c].ids.length, `${label}: ${row.key} column ${c}: a full name for each plant`);
     });
-    const listed = new Set(t.cells.flatMap((c) => c.ids));
-    for (const id of row.more?.ids ?? []) assert.ok(listed.has(id), `${label}: ${row.key}: folded plant ${id} listed in the table`);
   });
 }

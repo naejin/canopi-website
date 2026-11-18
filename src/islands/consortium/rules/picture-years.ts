@@ -8,11 +8,12 @@ import { holeAt, judgedColumn, lane, namesAndJobs, type Picture } from './pictur
 
 const L = (key: string, count?: number): Line => (count === undefined ? { key: `consortium.palette.${key}`, vars: {} } : { key: `consortium.palette.${key}`, vars: {}, count });
 
-export interface PictureInput { members: readonly Taxon[]; holes: readonly Hole[]; nameOf: (t: Taxon) => string; first?: ReadonlySet<PlantId> }
+// counts: whether a member counts toward the holes (not outside its climate range; default every one).
+export interface PictureInput { members: readonly Taxon[]; holes: readonly Hole[]; nameOf: (t: Taxon) => string; first?: ReadonlySet<PlantId>; counts?: (t: Taxon) => boolean }
 
-export function yearsPicture({ members, holes, nameOf, first }: PictureInput): Picture {
+export function yearsPicture({ members, holes, nameOf, first, counts }: PictureInput): Picture {
   const columns = PHASE_YEARS.map(([from, to]) => yearsLine(from, to));
-  const common = { nameOf, first, at: spans, judged: judgedColumn, years: yearsOf };
+  const common = { nameOf, first, at: spans, judged: judgedColumn, years: yearsOf, counts };
   const rows = strata.map((s) => lane(s, L(`light_${s}`), members.filter((t) => t.stratum?.value === s), columns.length, {
     ...common, holeAt: (c: number) => holeAt(holes, (h) => h.kind === 'light' && h.stratum === s, c),
   }));

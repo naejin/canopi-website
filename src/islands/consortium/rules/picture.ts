@@ -5,18 +5,18 @@
 //
 // - Columns are the time steps (or months); rows are the lanes (a light level, a job). Each cell holds
 //   the plants standing there, or the open hole it is (an HTML button in the view).
-// - Fold rule: at most PICTURE_LANE_MAX plants per lane are drawn; the rest are the row's `more`
-//   ("+ {n} more", the core's moreLine) with their ids, and every cell keeps its folded ids in
-//   `hidden`, so the table form (tableOf) lists every plant. Order: plants that fill a hole first, then
-//   the main job (jobIds order), then name.
+// - No fold in the model (v14 A14, the size rule): every plant is in its cells; the view decides
+//   between every name and the count cell (views/kit/more.tsx MoreList). Order: plants that fill a
+//   hole first, then the main job (jobIds order), then name. `hidden` stays empty (the cell shape the
+//   table form and its vector read).
+// - `counts` (opts): whether a plant counts toward the holes (not outside its climate range): a cell
+//   whose plants all fail it is still the open hole, and their bands are marked 'outside'.
 // - A row with no data is counted, never dropped (state 'not-recorded'); a column outside the judged
 //   window is 'not-judged' (a thin line, never a hole). Models carry full plant names.
 import type { Hole, JobId, Line, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { JUDGED_FROM_YEAR, PHASE_YEARS, jobIds, jobsOf, moreLine } from '../../../lib/consortium/index.ts';
+import { JUDGED_FROM_YEAR, PHASE_YEARS, jobIds, jobsOf } from '../../../lib/consortium/index.ts';
 
-export const PICTURE_LANE_MAX = 12;
-
-export interface Mark { id: PlantId; name: string; job: JobId | null; from: number; to: number | null }
+export interface Mark { id: PlantId; name: string; job: JobId | null; from: number; to: number | null; marked?: 'outside' }
 export interface Cell { ids: PlantId[]; hidden: PlantId[]; hole: string | null; judged: boolean }
 export interface PictureRow {
   key: string; // the lane's id (a stratum, a job), for keyed rendering
@@ -24,7 +24,6 @@ export interface PictureRow {
   cells: Cell[];
   marks: Mark[]; // the lane's drawn plants (bands in years: from, to; to null past 60)
   state: 'data' | 'not-recorded' | 'not-judged';
-  more?: { count: number; ids: PlantId[]; line: Line };
 }
 // names: each plant's full name; jobs: each plant's main job (the chip's icon and accessible name read
 // it here, so no view works it out again). A band's colour is its Mark's job: the main job in Through
@@ -43,34 +42,39 @@ export function namesAndJobs(members: readonly Taxon[], nameOf: (t: Taxon) => st
 
 // One collator for every lane (String#localeCompare builds one per call; 200 plants sort thousands of times).
 const collator = typeof Intl !== 'undefined' ? new Intl.Collator() : null;
-// The fold order (hole fillers, main job, name) and the split into drawn and folded plants. Each
-// plant's sort key is read once, then the lane is sorted on the keys.
-export function foldLane(plants: readonly Taxon[], nameOf: (t: Taxon) => string, first: ReadonlySet<PlantId> = new Set()): { shown: Taxon[]; folded: Taxon[] } {
+// The lane order (hole fillers, main job, name). Each plant's sort key is read once, then the lane is
+// sorted on the keys.
+export function laneOrder(plants: readonly Taxon[], nameOf: (t: Taxon) => string, first: ReadonlySet<PlantId> = new Set()): Taxon[] {
   const keyed = plants.map((t) => { const j = mainJob(t); return { t, first: first.has(t.id) ? 0 : 1, job: j ? jobIds.indexOf(j) : jobIds.length, name: nameOf(t) }; });
   const byName = collator ? collator.compare : (a: string, b: string) => a.localeCompare(b);
   keyed.sort((a, b) => a.first - b.first || a.job - b.job || byName(a.name, b.name));
-  const sorted = keyed.map((k) => k.t);
-  return { shown: sorted.slice(0, PICTURE_LANE_MAX), folded: sorted.slice(PICTURE_LANE_MAX) };
+  return keyed.map((k) => k.t);
 }
 
 // One lane: its cells over the columns (`at(t, column)`: whether the plant stands in it), its marks,
-// and its fold. `holeAt(column)`: the open hole an empty judged cell is, or null.
+// `holeAt(column)`: the open hole an empty judged cell is (a cell of only non-counting plants too), or null.
 export function lane(key: string, head: Line, plants: readonly Taxon[], columns: number, opts: {
   nameOf: (t: Taxon) => string; at: (t: Taxon, column: number) => boolean; judged: (column: number) => boolean;
   holeAt: (column: number) => string | null; years: (t: Taxon) => { from: number; to: number | null } | null; first?: ReadonlySet<PlantId>; state?: PictureRow['state'];
   markJob?: JobId | null; // every band's job (the jobs picture: its row's); else each plant's main job
+  counts?: (t: Taxon) => boolean; // counts toward the holes (default: every plant)
 }): PictureRow {
-  const { shown, folded } = foldLane(plants, opts.nameOf, opts.first);
+  const sorted = laneOrder(plants, opts.nameOf, opts.first);
+  const counts = opts.counts ?? (() => true);
   const cells: Cell[] = [];
   for (let c = 0; c < columns; c++) {
-    const ids = shown.filter((t) => opts.at(t, c)).map((t) => t.id), hidden = folded.filter((t) => opts.at(t, c)).map((t) => t.id);
+    const here = sorted.filter((t) => opts.at(t, c));
     const judged = opts.judged(c);
-    cells.push({ ids, hidden, hole: ids.length || hidden.length || !judged ? null : opts.holeAt(c), judged });
+    cells.push({ ids: here.map((t) => t.id), hidden: [], hole: here.some(counts) || !judged ? null : opts.holeAt(c), judged });
   }
-  const marks = shown.flatMap((t) => { const y = opts.years(t); return y ? [{ id: t.id, name: opts.nameOf(t), job: opts.markJob === undefined ? mainJob(t) : opts.markJob, from: y.from, to: y.to }] : []; });
-  const row: PictureRow = { key, head, cells, marks, state: opts.state ?? 'data' };
-  if (folded.length) row.more = { count: folded.length, ids: folded.map((t) => t.id), line: moreLine(folded.length) };
-  return row;
+  const marks = sorted.flatMap((t) => {
+    const y = opts.years(t);
+    if (!y) return [];
+    const m: Mark = { id: t.id, name: opts.nameOf(t), job: opts.markJob === undefined ? mainJob(t) : opts.markJob, from: y.from, to: y.to };
+    if (!counts(t)) m.marked = 'outside';
+    return [m];
+  });
+  return { key, head, cells, marks, state: opts.state ?? 'data' };
 }
 
 // A time step is judged when it ends after year 1 and before 60 (owner: shorter gaps and after 60
@@ -82,7 +86,7 @@ export function holeAt(holes: readonly Hole[], mine: (h: Hole) => boolean, c: nu
   return holes.find((h) => h.state === 'open' && mine(h) && h.fromYear <= from && to !== null && h.toYear >= to)?.id ?? null;
 }
 
-// The "Show as a table" form: the same rows and columns, every plant listed (folded ones included).
+// The table form (the pictures' screen-reader form, Q8): the same rows and columns, every plant listed.
 export interface TableCell { ids: PlantId[]; names: string[]; hole: string | null; judged: boolean }
 export interface Table { title: string; summary: Line[]; columns: Line[]; rows: { key: string; head: Line; state: PictureRow['state']; cells: TableCell[] }[] }
 export function tableOf(p: Picture): Table {

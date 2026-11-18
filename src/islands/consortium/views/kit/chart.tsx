@@ -111,7 +111,6 @@ function ChartView({ picture, intro, column = null, marked = null, holeWords, on
                       </button>
                     );
                   })}
-                  {r.more && <button type="button" class="ct-chip ct-chip-more" onClick={() => setTable('more')}>{say(r.more.line)}</button>}
                   {holes.map((h) => <button key={h} type="button" class="ct-hole-button" data-hole={h} onClick={() => onHole(h)}>{holeWords(h)}</button>)}
                 </li>
               );
