@@ -147,7 +147,7 @@ export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdic
   const [before, after = ''] = P('palette.jobsIntro', goal, { goal: '\u0000' }).split('\u0000');
   const intro = big ? T('palette.jobsIntroMany')
     : pending ? T('palette.holesPending')
-    : <>{before}<span class="ct-goal-say">{goalWords}</span><button type="button" class="text-link ct-goal-link" aria-expanded={goalOpen} aria-controls={GOAL_ID} onClick={() => setGoalOpen(!goalOpen)}>{goalWords}</button>{after} {P('palette.goalHoles', open.length)}{goal > 1 && thin > 0 ? P('palette.goalThin', thin, { held }) : '.'}</>;
+    : <>{before}<span class="ct-goal-say">{goalWords}</span><button type="button" class="link-button ct-goal-link" aria-expanded={goalOpen} aria-controls={GOAL_ID} onClick={() => setGoalOpen(!goalOpen)}>{goalWords}</button>{after} {P('palette.goalHoles', open.length)}{goal > 1 && thin > 0 ? P('palette.goalThin', thin, { held }) : '.'}</>;
   return (
     <section class="ct-chart ct-jobs" id="ct-jobs" aria-labelledby="ct-jobs-h" data-mode={big ? 'rows' : 'strips'}>
       <div class="ct-jobs-top">

@@ -189,7 +189,7 @@ function BalanceItem({ w, name, size }: { w: WeighLine; name: NameOf; size: numb
     const hintText = has(hint) ? T(hint) : T('plants.weigh.familyHint');
     const findKey = `palette.balance.familyFind.${fam}`;
     const find = has(findKey) && (
-      <>{' '}<button type="button" class="text-link" data-weigh-find="" onClick={() => store.openFind({ job: 'feeds_soil', hole: null, fits: (t) => t.family !== fam && jobsOf(t).includes('feeds_soil'), title: T(findKey) })}>{T(findKey)}</button></>
+      <>{' '}<button type="button" class="link-button" data-weigh-find="" onClick={() => store.openFind({ job: 'feeds_soil', hole: null, fits: (t) => t.family !== fam && jobsOf(t).includes('feeds_soil'), title: T(findKey) })}>{T(findKey)}</button></>
     );
     return (
       <li data-weigh="family" data-family={fam}>

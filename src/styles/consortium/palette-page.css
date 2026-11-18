@@ -169,7 +169,7 @@
    and wider the control always shows and the phrase is plain words. */
 .ct .ct-goal-link { font: inherit; }
 @media (min-width: 960px) { .ct .ct-goal-link { display: none; } }
-@media not all and (min-width: 960px) { .ct .ct-goal-say, .ct .ct-goal[data-folded] { display: none; } }
+@media not all and (min-width: 960px) { .ct .ct-goal-say, .ct .ct-jobs-top > .ct-goal[data-folded] { display: none; } }
 .ct .ct-goal-n { min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 0; background: var(--surface); color: var(--text); font: inherit; font-weight: 400; cursor: pointer; }
 .ct .ct-goal-n + .ct-goal-n { margin-inline-start: -9px; }
 .ct .ct-goal-ns { display: inline-flex; flex-wrap: nowrap; }
