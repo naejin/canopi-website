@@ -11,7 +11,7 @@
 // more fit by 2071–2099." A status message, never a question; the hole words are verdict-line.ts's.
 // A leaf beside verdict-line.ts: keys under consortium.figures.
 import type { MemberChange, PeriodChange, SiteChange } from './site-change.ts';
-import type { Factor, Line, SiteEdits, SiteInputs } from './types.ts';
+import type { Factor, Line, SiteEdits, SiteInputs, TextureId } from './types.ts';
 import { periodIds } from './types.ts';
 import { holeChangeLines, periodName } from './verdict-line.ts';
 
@@ -37,21 +37,33 @@ export const PH_BANDS = Object.freeze([
 export const phBandOf = (ph: number) => PH_BANDS.find((b) => (b.to === null || ph < b.to)) ?? PH_BANDS[PH_BANDS.length - 1];
 export const phWordLine = (ph: number): Line => L(phBandOf(ph).word);
 
+// The soil map's texture as the drainage line reads it (board SiteKiambu "Likely holds water: clay"):
+// a reading of the map, never a hint (A8; the hint comes only from the grower's "Stays wet for days").
+// Textures of the hydrologic soil groups C and D (much clay) likely hold water; A and B (sand, loam,
+// silt) likely drain within a day.
+const HOLDS: ReadonlySet<TextureId> = new Set<TextureId>(['sandy_clay_loam', 'clay_loam', 'silty_clay_loam', 'sandy_clay', 'silty_clay', 'clay']);
+export const textureNameLine = (t: TextureId): Line => L(`tex_${t}`);
+export const textureLine = (t: TextureId): Line => L(HOLDS.has(t) ? 'textureHolds' : 'textureDrains', {}, undefined, { texture: textureNameLine(t) });
+
 // ---- what was set ----
 
 type Key = keyof SiteEdits;
 const differs = (a: SiteEdits, b: SiteEdits, k: Key) => a[k] !== b[k];
+// The view's temperature forms (board: the nights with one decimal, the hottest days in whole degrees);
+// without them the values stay numbers for words.ts.
+export interface TempForms { nights: (c: number) => string; days: (c: number) => string }
 // The head of the summary: what the grower set, or what went back to the map or to not answered.
-export function setLines(was: SiteEdits, now: SiteEdits, inputs: SiteInputs | null): Line[] {
+export function setLines(was: SiteEdits, now: SiteEdits, inputs: SiteInputs | null, temp?: TempForms, texture: TextureId | null = null): Line[] {
   const out: Line[] = [];
+  const tn = (c: number) => (temp ? temp.nights(c) : c), td = (c: number) => (temp ? temp.days(c) : c);
   const dir = (n: number, less: string, more: string) => (n < 0 ? less : more);
   const nights = differs(was, now, 'nightsShiftC'), days = differs(was, now, 'daysShiftC');
   const n = now.nightsShiftC, d = now.daysShiftC;
   if (nights && days && n !== undefined && n === d) out.push(L(dir(n, 'setBothColder', 'setBothWarmer'), { tempShift: Math.abs(n) }));
-  else if (nights && days && n === undefined && d === undefined) out.push(L('backBoth', { tempNights: inputs?.nights.value ?? 0, tempDays: inputs?.days.value ?? 0 }));
+  else if (nights && days && n === undefined && d === undefined) out.push(L('backBoth', { tempNights: tn(inputs?.nights.value ?? 0), tempDays: td(inputs?.days.value ?? 0) }));
   else {
-    if (nights) out.push(n === undefined ? L('backNights', { temp: inputs?.nights.value ?? 0 }) : L(dir(n, 'setNightsColder', 'setNightsWarmer'), { tempShift: Math.abs(n) }));
-    if (days) out.push(d === undefined ? L('backDays', { temp: inputs?.days.value ?? 0 }) : L(dir(d, 'setDaysColder', 'setDaysWarmer'), { tempShift: Math.abs(d) }));
+    if (nights) out.push(n === undefined ? L('backNights', { temp: tn(inputs?.nights.value ?? 0) }) : L(dir(n, 'setNightsColder', 'setNightsWarmer'), { tempShift: Math.abs(n) }));
+    if (days) out.push(d === undefined ? L('backDays', { temp: td(inputs?.days.value ?? 0) }) : L(dir(d, 'setDaysColder', 'setDaysWarmer'), { tempShift: Math.abs(d) }));
   }
   if (differs(was, now, 'rainShiftMm')) { const r = now.rainShiftMm; out.push(r === undefined ? L('backRain', { rainMm: inputs?.rain.value ?? 0 }) : L(dir(r, 'setRainLess', 'setRainMore'), { rainMm: Math.abs(r) })); }
   if (differs(was, now, 'dryMonthsShift')) { const m = now.dryMonthsShift; out.push(m === undefined ? L('backDry', {}, inputs?.dryMonths.value ?? 0) : L(dir(m, 'setDryShorter', 'setDryLonger'), {}, Math.abs(m))); }
@@ -62,7 +74,7 @@ export function setLines(was: SiteEdits, now: SiteEdits, inputs: SiteInputs | nu
     else if (inputs?.soilPh.value != null && inputs.soilPh.source === 'map') out.push(L('backPh', { ph: inputs.soilPh.value }));
     else out.push(L('backPhNone'));
   }
-  if (differs(was, now, 'drainage')) out.push(now.drainage ? L('setAnswer', {}, undefined, { line: L('lineDrainage'), answer: drainageLine(now.drainage) }) : L('backDrainage'));
+  if (differs(was, now, 'drainage')) out.push(now.drainage ? L('setAnswer', {}, undefined, { line: L('lineDrainage'), answer: drainageLine(now.drainage) }) : texture ? L('backDrainageMap', {}, undefined, { texture: textureNameLine(texture) }) : L('backDrainage'));
   if (differs(was, now, 'pots')) out.push(now.pots !== undefined ? L('setAnswer', {}, undefined, { line: L('linePots'), answer: potsLine(now.pots) }) : inputs?.pots.source === 'room' ? L('backPotsRoom') : L('backPots'));
   return out;
 }
@@ -117,13 +129,15 @@ export interface ChangeWords {
   inputs?: SiteInputs | null; // the merged inputs after (a Reset says the value it went back to)
   size?: number; // the palette's plant count
   nameOf?: (id: string) => string;
+  temp?: TempForms; // the view's temperature forms for the values a Reset goes back to
+  texture?: TextureId | null; // the soil map's texture (a drainage Reset goes back to its reading)
 }
 // The summary toast: what was set, how many fit today and by 2071–2099, the grower's plants, the holes.
 export function siteChangeLines(change: SiteChange, edits: SiteEdits, w: ChangeWords = {}): Line[] {
   const nameOf = w.nameOf ?? ((id: string) => id);
   const was = w.was ?? edits;
   const soil = (['soilPh', 'drainage', 'pots'] as Key[]).some((k) => differs(was, edits, k));
-  const out = [...setLines(was, edits, w.inputs ?? null), ...countLines(change, nameOf, soil), ...keptLines(change, w.size ?? 0, nameOf)];
+  const out = [...setLines(was, edits, w.inputs ?? null, w.temp, w.texture ?? null), ...countLines(change, nameOf, soil), ...keptLines(change, w.size ?? 0, nameOf)];
   if (change.periods.length) out.push(...holeChangeLines(change.holes, { left: false }));
   return out;
 }

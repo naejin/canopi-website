@@ -150,9 +150,13 @@ export function lineCounts(list: readonly Taxon[], verdictsByPeriod: Partial<Rec
   return { periods };
 }
 
+// "Want more warmth over the year" (the warmth line): the cool side only, the year's mean below the
+// plant's range (range.ts 'cool'). Summer warmth is its own side and never joins this count.
+export const warmthOf = (p: PeriodCounts): SideCount => p.sides.cool;
+
 // The line that limits plants most (the panel's "The main limit here"; A5's "What limits plants
 // here" shows every line that limits): a climate line by its outside count in any period (nights:
-// cold and mild; heat: hot; warmth: cool and summer), the rain line by its dryness count; none when
+// cold and mild; heat: hot; warmth: cool, warmthOf), the rain line by its dryness count; none when
 // nothing is outside and nothing is drier.
 export type LimitLine = 'nights' | 'days' | 'warmth' | 'rain';
 export function limitsOf(c: LineCounts): { line: LimitLine; n: number }[] {
@@ -160,8 +164,40 @@ export function limitsOf(c: LineCounts): { line: LimitLine; n: number }[] {
   const out: { line: LimitLine; n: number }[] = [
     { line: 'nights', n: most((p) => p.sides.cold.outside + p.sides.mild.outside) },
     { line: 'days', n: most((p) => p.sides.hot.outside) },
-    { line: 'warmth', n: most((p) => p.sides.cool.outside + p.sides.summer.outside) },
+    { line: 'warmth', n: most((p) => warmthOf(p).outside) },
     { line: 'rain', n: most((p) => p.drier) },
   ];
   return out.filter((l) => l.n > 0).sort((a, b) => b.n - a.n);
+}
+
+// How the list moves as the climate warms ("What it means for your choice", board SiteKiambu):
+// - dropSide: the side most of the plants that drop out leave on (fit today, outside in a later
+//   period; the side that limits them in the first period they are outside); null when none drops;
+// - arrivals: the plants that want more warmth (outside today on the cold or cool side) and come into
+//   range by 2041–2070 (not outside then), food crops first, then in the list's order.
+export type DropSide = RangeSideId | 'dry' | 'other';
+export interface RangeMoves { dropSide: DropSide | null; arrivals: PlantId[] }
+export function rangeMoves(list: readonly (Pick<Taxon, 'id'> & Partial<Pick<Taxon, 'role'>>)[], verdictsByPeriod: Partial<Record<PeriodId, ReadonlyMap<PlantId, PlantVerdict>>>): RangeMoves {
+  const [today, mid, ...rest] = periodIds.map((p) => verdictsByPeriod[p]);
+  if (!today || !mid) return { dropSide: null, arrivals: [] };
+  const later = [mid, ...rest].filter((m): m is ReadonlyMap<PlantId, PlantVerdict> => !!m);
+  const out = (v: PlantVerdict | undefined) => v?.level === 'outside';
+  const sides = new Map<DropSide, number>();
+  const arrivals: PlantId[] = [];
+  for (const t of list) {
+    const v = today.get(t.id);
+    if (!v) continue;
+    if (!out(v)) {
+      const m = later.find((x) => out(x.get(t.id)));
+      if (!m) continue;
+      const f = m.get(t.id)?.limiting?.factor;
+      const side: DropSide = f && (SIDES.has(f) || f === 'dry') ? (f as DropSide) : 'other';
+      sides.set(side, (sides.get(side) ?? 0) + 1);
+    } else if (!out(mid.get(t.id)) && mid.get(t.id) && (v.limiting?.factor === 'cold' || v.limiting?.factor === 'cool')) arrivals.push(t.id);
+  }
+  let dropSide: DropSide | null = null, most = 0;
+  for (const [k, n] of sides) if (n > most) { dropSide = k; most = n; }
+  const role = new Map(list.map((t) => [t.id, t.role]));
+  arrivals.sort((a, b) => Number(role.get(b) === 'crop') - Number(role.get(a) === 'crop'));
+  return { dropSide, arrivals };
 }

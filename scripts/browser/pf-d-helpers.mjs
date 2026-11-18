@@ -74,3 +74,77 @@ export const fieldState = (page) => page.evaluate(() => {
   const msg = f.getAttribute('aria-describedby')?.split(' ').map((id) => document.getElementById(id)?.textContent ?? '').join(' ') ?? '';
   return { invalid: f.getAttribute('aria-invalid') === 'true', message: msg.replace(/\s+/g, ' ').trim(), focused: document.activeElement === f };
 });
+
+// The engine's range sides on the page's own state, per period (the board-figures rule: the verdict rule
+// over the list, never a board number): for each side (cold, mild, cool, summer, hot) the plants outside
+// and near the edge; the plants that come into range by 2041–2070 wanting more warmth (outside today on
+// the cold or cool side, not outside by 2041–2070); and the plants that drop out (fit today, outside
+// later) by the side that limits them then.
+export const engineSides = (page) => page.evaluate(() => {
+  const s = window.__ctTest.store, rule = s.verdictRule.value, list = s.pool.value ?? [];
+  const periods = ['1991-2020', '2041-2070', '2071-2099'];
+  const vs = periods.map((p) => rule.verdicts(list, { ...s.verdictContext.value, period: p }));
+  const sides = vs.map((m) => {
+    const o = Object.fromEntries(['cold', 'mild', 'cool', 'summer', 'hot'].map((k) => [k, { outside: 0, edge: 0 }]));
+    for (const t of list) {
+      const v = m.get(t.id);
+      if (!v || v.range !== 'judged') continue;
+      for (const f of v.factors) if (o[f.factor]) { if (f.level === 'outside') o[f.factor].outside++; else if (f.level === 'look') o[f.factor].edge++; }
+    }
+    return o;
+  });
+  const out = (m, t) => m.get(t.id)?.level === 'outside';
+  const arrivals = list.filter((t) => out(vs[0], t) && !out(vs[1], t) && ['cold', 'cool'].includes(vs[0].get(t.id)?.limiting?.factor)).map((t) => t.id);
+  const drops = {};
+  for (const t of list) {
+    if (out(vs[0], t) || !vs[0].get(t.id)) continue;
+    const k = [1, 2].find((i) => out(vs[i], t));
+    if (k === undefined) continue;
+    const f = vs[k].get(t.id)?.limiting?.factor ?? 'other';
+    drops[f] = (drops[f] ?? 0) + 1;
+  }
+  return { sides, arrivals, drops, of: list.length };
+});
+// The plant names the page shows for these ids (the store's own naming: the member or pool taxon).
+export const namesOf = (page, ids) => page.evaluate((xs) => {
+  const s = window.__ctTest.store, by = new Map((s.pool.value ?? []).map((t) => [t.id, t]));
+  return xs.map((id) => by.get(id)).filter(Boolean).map((t) => t.names?.en || t.canonical_name);
+}, ids);
+// Whether an icon (an svg) stands in the smallest element of `root` that says `words`, before the words.
+export const iconBefore = (page, words, root = 'main') => page.evaluate((w, r) => {
+  const els = [...document.querySelector(r).querySelectorAll('*')].filter((e) => e.textContent.replace(/\s+/g, ' ').includes(w));
+  const el = els.filter((e) => ![...e.children].some((c) => c.textContent.replace(/\s+/g, ' ').includes(w)))[0];
+  if (!el) return null;
+  let host = el;
+  for (let k = 0; k < 3 && host; k++, host = host.parentElement) {
+    const svg = host.querySelector('svg');
+    if (svg && (svg.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING || el.contains(svg))) {
+      const at = host.textContent.indexOf(w), before = host.textContent.slice(0, Math.max(0, at));
+      return before.replace(/\s+/g, '').length <= 40;
+    }
+  }
+  return false;
+}, words, root);
+// A control's look as the grower sees it: its colour against the accent token, underline, border, position.
+export const lookOf = (page, role, name) => page.evaluate((r, n) => {
+  const els = [...document.querySelectorAll(r === 'button' ? 'main button' : r)].filter((b) => ((b.getAttribute('aria-label') ?? b.textContent).replace(/\s+/g, ' ').trim()) === n && b.getClientRects().length);
+  const b = els[0];
+  if (!b) return null;
+  const cs = getComputedStyle(b), probe = document.createElement('span');
+  probe.style.color = 'var(--accent-ink)';
+  b.parentElement.appendChild(probe);
+  const accent = getComputedStyle(probe).color;
+  probe.remove();
+  const box = b.getBoundingClientRect();
+  return { color: cs.color, accent, underline: cs.textDecorationLine.includes('underline'), border: cs.borderTopStyle === 'none' || cs.borderTopColor === 'rgba(0, 0, 0, 0)' || cs.borderTopWidth === '0px', bg: cs.backgroundColor, icon: !!b.querySelector('svg'), x: box.left, y: box.top, bottom: box.bottom, count: els.length };
+}, role, name);
+// A board place of the scenario file (seville-board, mendoza-board): its real lookup with the board's
+// climate slots (the 0W board cases: the boards' values in the historical and SSP2-4.5 slots).
+export async function atBoardPlace(page, name) {
+  const { lat, lon, periods } = FILE.places[name];
+  const lookup = await lookupAt(lat, lon);
+  lookup.climate = { ...lookup.climate, periods };
+  await page.evaluate((loc) => { window.__ctTest.store.location.value = loc; }, { lat, lon, source: 'map', label: name, lookup });
+  await page.waitForFunction(() => !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 });
+  return lookup;
+}

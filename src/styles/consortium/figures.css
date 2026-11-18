@@ -11,7 +11,17 @@
 .ct .fg-lede, .ct .fg-note, .ct .fg-foot, .ct .fg-help { margin: 0; font-size: 14px; line-height: 19px; color: var(--text-secondary); }
 .ct .fg-foot { font-size: 13px; }
 .ct .fg-muted { color: var(--text-muted); }
-.ct .fg-summary { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-alt); font-size: 14px; line-height: 19px; }
+/* The change summary under the panel head: the toast's dark bar (its tokens), with its own Undo. */
+.ct .fg-summary { display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 6px 6px 12px; border-radius: 11px; background: var(--text); color: var(--surface); font-size: 14px; line-height: 19px; }
+.ct .fg-summary-text { flex: 1 1 auto; min-width: 0; }
+.ct .fg-summary-undo { flex: none; min-height: 44px; padding: 0 12px; border: 1px solid currentColor; border-radius: var(--radius); background: transparent; color: inherit; font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer; }
+/* A map source with its pin ("(pin) From the climate map"). */
+.ct .fg-map { display: inline; white-space: nowrap; }
+.ct .fg-map svg { display: inline-block; width: 14px; height: 14px; margin-inline-end: 4px; vertical-align: -2px; }
+.ct .fg-chip-none svg { width: 13px; height: 13px; }
+/* Reset and the editor's links: the ochre underlined link. */
+.ct .fg-reset { min-height: 44px; margin: 0; padding: 0 6px; color: var(--accent-ink); font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; }
+.ct .fg-link { color: var(--accent-ink); }
 
 /* Columns: one on the phone; Climate and Water, then Soil, from 960 px. */
 .ct .fg-cols { display: grid; gap: 4px; min-width: 0; }
@@ -73,11 +83,18 @@
 .ct .fg-number { width: 5.5em; min-height: 44px; padding: 0 10px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; }
 .ct .fg-number[aria-invalid="true"] { border: 2px solid var(--danger); }
 .ct .fg-error { margin: 0; font-size: 14px; line-height: 19px; color: var(--danger); font-weight: 600; }
-.ct .fg-toggle { min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
-.ct .fg-toggle[aria-pressed="true"] { border: 2px solid var(--text); background: var(--surface-alt); font-weight: 600; }
+/* colder | warmer: one segmented pair on its own row, the pressed half framed with a check. */
+.ct .fg-segment { display: inline-flex; gap: 2px; width: fit-content; max-width: 100%; padding: 2px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface-alt); }
+.ct .fg-seg { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1 1 auto; min-height: 44px; padding: 0 10px; border: 1.5px solid transparent; border-radius: 7px; background: none; color: var(--text-secondary); font: inherit; font-size: 15px; white-space: nowrap; cursor: pointer; }
+.ct .fg-seg[aria-pressed="true"] { background: var(--surface); border-color: var(--text-secondary); color: var(--text); font-weight: 600; }
+.ct .fg-seg svg { width: 14px; height: 14px; }
+.ct .fg-use svg { width: 18px; height: 18px; }
+@media (max-width: 639px) { .ct .fg-actions .fg-use { flex: 1 1 auto; } }
 .ct .fg-tick { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 19px; }
 .ct .fg-tick input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--accent); }
 .ct .fg-tick .fg-muted { display: block; }
+.ct .fg-preview:empty { display: none; }
+.ct .fg-preview strong { font-weight: 600; color: var(--text); }
 .ct .fg-preview { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--surface-alt); font-size: 14px; line-height: 19px; }
 .ct .fg-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ct .fg-actions .button { min-height: 44px; }

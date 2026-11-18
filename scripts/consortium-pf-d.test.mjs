@@ -90,3 +90,44 @@ test('the release: a nights shift at Kiambu moves fits in each period, watering 
   assert.ok(out('kiambu-8-nights-2c-colder').periods.some((p) => p.in || p.out));
   assert.ok(out('mendoza-board-all-year').periods.every((p) => !p.in && !p.out && !p.lookNew && !p.lookGone));
 });
+
+// ---- fix round 1, batch 1 ----
+
+test('BC1: "want more warmth over the year" counts the cool side only; summer warmth stays out of the warmth line and its limit', () => {
+  const list = ['a', 'b', 'c', 'd'].map(t);
+  const today = map({ a: v('outside', [f('cool', 'outside')]), b: v('look', [f('cool', 'look')]), c: v('outside', [f('summer', 'outside')]), d: v('look', [f('summer', 'look')]) });
+  const c = core.lineCounts(list, { [P[0]]: today });
+  assert.deepEqual(core.warmthOf(c.periods[0]), { outside: 1, edge: 1 });
+  assert.deepEqual(core.limitsOf(c).find((l) => l.line === 'warmth'), { line: 'warmth', n: 1 });
+});
+
+test('BC13: rangeMoves: the side most of the dropping plants leave on, and the plants wanting more warmth that come into range by 2041–2070 (crops first)', () => {
+  const tx = (id, role = 'support') => ({ id, role });
+  const list = [tx('a'), tx('b'), tx('c'), tx('d', 'crop'), tx('e'), tx('g')];
+  const by = {
+    [P[0]]: map({ a: v('fits'), b: v('fits'), c: v('look', [f('hot', 'look')]), d: v('outside', [f('cool', 'outside')]), e: v('outside', [f('cold', 'outside')]), g: v('outside', [f('mild', 'outside')]) }),
+    [P[1]]: map({ a: v('outside', [f('mild', 'outside')]), b: v('fits'), c: v('fits'), d: v('fits'), e: v('look', [f('cold', 'look')]), g: v('fits') }),
+    [P[2]]: map({ a: v('outside', [f('mild', 'outside')]), b: v('outside', [f('mild', 'outside')]), c: v('outside', [f('hot', 'outside')]), d: v('fits'), e: v('fits'), g: v('fits') }),
+  };
+  const m = core.rangeMoves(list, by);
+  assert.equal(m.dropSide, 'mild');
+  assert.deepEqual(m.arrivals, ['d', 'e'], 'g came in on the mild side: not wanting more warmth');
+  assert.equal(core.rangeMoves(list, { [P[0]]: by[P[0]] }).dropSide, null);
+});
+
+test('BC4: the soil map\'s texture reads as likely holding water or likely draining (hydrologic soil groups C/D against A/B), in words', () => {
+  assert.equal(words.textureLine('clay').key, 'consortium.figures.textureHolds');
+  assert.equal(words.textureLine('clay_loam').key, 'consortium.figures.textureHolds');
+  assert.equal(words.textureLine('sandy_loam').key, 'consortium.figures.textureDrains');
+  assert.equal(words.textureLine('loam').key, 'consortium.figures.textureDrains');
+  for (const id of core.textureIds) assert.ok(en[`consortium.figures.tex_${id}`], `en names ${id}`);
+  assert.equal(say(words.textureLine('clay')), 'Likely holds water: clay');
+  assert.equal(say(words.textureLine('clay_loam')), 'Likely holds water: clay loam');
+});
+
+test('BC12: the Reset summary writes the nights with one decimal and the hottest days in whole degrees through the view\'s formatter', () => {
+  const change = { periods: P.map((period) => ({ period, fitIn: 0, fitOut: 0, lookNew: 0, lookGone: 0, members: [] })), hintsNew: [], holes: { added: [], closed: [], narrowed: [], open: [] } };
+  const fmt = { nights: (c) => `${c.toFixed(1)} °C`, days: (c) => `${Math.round(c)} °C` };
+  const back = words.siteChangeLines(change, {}, { was: { nightsShiftC: -2, daysShiftC: -2 }, inputs: { nights: { value: 12 }, days: { value: 26.1 } }, temp: fmt }).map(say).join(' ');
+  assert.match(back, /^Coldest nights and hottest days back to the climate map: 12\.0 °C and 26 °C today\./);
+});
