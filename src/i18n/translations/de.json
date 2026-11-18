@@ -1600,5 +1600,6 @@
   "consortium.paste.sumChoose": "one: # zu wählen | other: # zu wählen",
   "consortium.paste.sumRec": "one: # erkannt | other: # erkannt",
   "consortium.paste.whichLabel": "Welche Pflanze ist „{name}“?",
+  "consortium.inConsortium": "In deiner Palette",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

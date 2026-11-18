@@ -1600,5 +1600,6 @@
   "consortium.paste.sumChoose": "one: # требует выбора | few: # требуют выбора | many: # требуют выбора | other: # требуют выбора",
   "consortium.paste.sumRec": "one: # распознано | few: # распознано | many: # распознано | other: # распознано",
   "consortium.paste.whichLabel": "Какое растение — «{name}»?",
+  "consortium.inConsortium": "Уже в палитре",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

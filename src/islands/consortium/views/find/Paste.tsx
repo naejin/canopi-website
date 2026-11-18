@@ -200,7 +200,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         {rangeWarn(f.taxon)}</> })),
     ...result.other.filter((o) => o.close).map((o) => ({ at: o.at, name: o.name, status: 'choose' as Status, ids: [] as PlantId[], ...otherRow(o) })),
     ...result.choose.map((c) => ({ at: c.at, name: c.name, status: 'choose' as Status, ids: c.taxa.map((t) => t.id),
-      line: <><strong>{T('paste.whichWord', { word: c.word })}</strong> {P('paste.called', c.taxa.length, { word: c.word })}</>,
+      line: <>{c.taxa.length > 1 && <><strong>{T('paste.whichWord', { word: c.word })}</strong> </>}{P('paste.called', c.taxa.length, { word: c.word })}</>,
       after: <>
         {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}
         <span class="ct-paste-choices" role="group" aria-label={T('paste.whichLabel', { name: c.name })}>
@@ -275,17 +275,17 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
       )}
       {questions.length > 0 && (
         <PasteGroup id="choose" head={T('paste.groupChoose')} n={questions.length} openAt={settled}>
-          <p class="ct-muted">{T('paste.chooseNote')}</p>
+          {questions.length > 10 && <p class="ct-muted">{T('paste.chooseNote')}</p>}
           <Folded items={questions.map(rowOf)} max={12} closed={5} list label={T('paste.otherQuestions')} />
-          {asking.length > 0 && <p class="ct-paste-progress">{T('paste.progress', { chosen: num(chosen), left: num(left) })}</p>}
-          {left > 0 && <button type="button" class="button button-secondary" onClick={() => setNope((n) => { const m = new Set(n); for (const q of asking) if (!answered(q)) m.add(q.at); return m; })}>{P('paste.skip', left)}</button>}
+          {asking.length > 1 && <p class="ct-paste-progress">{T('paste.progress', { chosen: num(chosen), left: num(left) })}</p>}
+          {asking.length > 1 && left > 0 && <button type="button" class="button button-secondary" onClick={() => setNope((n) => { const m = new Set(n); for (const q of asking) if (!answered(q)) m.add(q.at); return m; })}>{P('paste.skip', left)}</button>}
         </PasteGroup>
       )}
       {missing.length > 0 && (
         <PasteGroup id="none" head={T('paste.groupNone')} n={missing.length} openAt={settled}>
           <Folded items={missing.map(rowOf)} max={10} closed={10} list label={T('paste.otherNames')} />
           <p class="ct-muted">{T('paste.noneText')}</p>
-          <button type="button" class="button button-secondary" onClick={() => void copy()}>{P('paste.copy', missing.length)}</button>
+          {missing.length > 1 && <button type="button" class="button button-secondary" onClick={() => void copy()}>{P('paste.copy', missing.length)}</button>}
           {copied === 'done' && <p class="ct-muted" role="status">{T('paste.copied')}</p>}
           {copied === 'hand' && <>
             <p class="ct-muted" role="status">{T('paste.copyByHand')}</p>

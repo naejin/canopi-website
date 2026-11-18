@@ -44,7 +44,7 @@ function Row({ t }: { t: Taxon }) {
           <span class="ct-line">{grownSize(t)}</span>
           <span class="ct-plant-marks">
             {t.functions === null && !jobs.length ? <span class="ct-line">{T('many.jobsNoneLong')}</span>
-              : jobs.map((j) => <span class="ct-plant-job"><JobIcon job={j} />{T(`many.job_${j}`)}</span>)}
+              : jobs.map((j) => <span class="ct-plant-job" data-job={j}><JobIcon job={j} />{T(`many.job_${j}`)}</span>)}
             <Marks t={t} lines={lines} country={scene.country} />
           </span>
           {v && <span class="ct-line ct-plant-fit" data-level={v.level}>{v.level !== 'fits' && <FitLine v={v} />}<RowNotes t={t} v={v} /></span>}

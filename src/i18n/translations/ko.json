@@ -1600,5 +1600,6 @@
   "consortium.paste.sumChoose": "other: 선택 필요 #개",
   "consortium.paste.sumRec": "other: 인식됨 #개",
   "consortium.paste.whichLabel": "“{name}”은(는) 어떤 식물인가요?",
+  "consortium.inConsortium": "팔레트에 있음",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

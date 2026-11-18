@@ -1600,5 +1600,6 @@
   "consortium.paste.sumChoose": "other: 選択が必要 # 件",
   "consortium.paste.sumRec": "other: 認識済み # 件",
   "consortium.paste.whichLabel": "「{name}」はどの植物ですか？",
+  "consortium.inConsortium": "パレットに入っています",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

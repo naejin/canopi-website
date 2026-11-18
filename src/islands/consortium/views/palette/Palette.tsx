@@ -121,7 +121,8 @@ export function Palette() {
       </nav>
       {/* No board draws a "Your palette" title (v14 pf-e E4): kept for the reader's focus and outline only. */}
       <h2 class="visually-hidden" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
-      <FindEntry where="head" />
+      {/* Past 40 plants on a desk "Add plants" is Your plants' own, opening the search in place (board ManyDesk). */}
+      {!(big && desk) && <FindEntry where="head" />}
       {store.verdictFailed.value && <VerdictNotice />}
       {failedLists.length > 0 && (
         <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {retry === 'failed'

@@ -53,9 +53,16 @@
 .ct .ct-plant-open .ct-sci, .ct .ct-many .ct-sci { color: var(--text-muted); font-size: 14px; }
 .ct .ct-plant-open .ct-line { font-size: 13.5px; line-height: 19px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .ct .ct-plant-open .ct-line svg { flex: none; width: 16px; height: 16px; }
-.ct .ct-plant-marks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 4px; }
+.ct .ct-plant-marks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-top: 4px; }
 .ct .ct-plant-marks .ct-find-marks { display: contents; }
-.ct .ct-plant-job { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--text-secondary); }
+.ct .ct-plant-job { display: inline-flex; align-items: center; gap: 4px; padding: 0 9px 0 0; font-size: 13px; line-height: 26px; font-weight: 600; color: var(--text-secondary); }
+/* Board PaletteMore: each job's word in its plant-data colour, beside its mark (never colour alone). */
+.ct .ct-plant-job[data-job="feeds_you"] { color: var(--role-food); }
+.ct .ct-plant-job[data-job="feeds_soil"] { color: var(--role-soil); }
+.ct .ct-plant-job[data-job="mulch"] { color: var(--role-mulch); }
+.ct .ct-plant-job[data-job="ground"] { color: var(--role-ground); }
+.ct .ct-plant-job[data-job="helpers"] { color: var(--role-helpers); }
+.ct .ct-plant-job[data-job="shelter"] { color: var(--role-shelter); }
 .ct .ct-plant-job .ct-job-icon { width: 14px; height: 14px; }
 .ct .ct-plant-chevron { position: absolute; right: 2px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--text-muted); }
 
@@ -101,7 +108,14 @@
 .ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
 .ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
 .ct .ct-many-word .ct-fit { color: inherit; }
-.ct .ct-many-more { justify-self: start; min-height: 44px; padding: 0 2px; }
+.ct .ct-many-more {
+  justify-self: start; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 999px;
+  background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
+}
+.ct .ct-many-pill {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border: 1px solid var(--warning-line); border-radius: 999px;
+  background: var(--warning-bg); color: var(--warning); font-size: 13px; line-height: 20px; white-space: nowrap;
+}
 .ct .ct-many-foot { font-size: 13px; line-height: 19px; padding-top: 4px; }
 .ct .ct-many-table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 21px; }
 .ct .ct-many-table thead th { padding: 6px 8px; text-align: start; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary); }
@@ -110,12 +124,15 @@
 .ct .ct-many-colhead[data-on] { color: var(--text); }
 .ct .ct-many-table tbody td, .ct .ct-many-table tbody th { padding: 1px 8px; border-top: 1px solid var(--border); vertical-align: middle; text-align: start; font-weight: 400; }
 .ct .ct-many-table tbody .ct-many-gcell { padding: 0; border-top: 0; }
-.ct .ct-many-table tbody th .ct-sci { display: block; }
-.ct .ct-many-fit { font-size: 14px; }
+.ct .ct-many-table tbody th { font-weight: 400; }
+.ct .ct-many-table tbody th strong { font-weight: 600; }
+.ct .ct-many-table tbody th .ct-sci { display: inline; }
+.ct .ct-many-table tbody td { padding-top: 5px; padding-bottom: 5px; }
+/* Board ManyDesk's columns: When it stands and Jobs narrow, Fit and warnings wider, Plant the rest. */
+.ct .ct-many-table .ct-many-when { width: 15%; }
+.ct .ct-many-table .ct-many-jobs { width: 18%; }
+.ct .ct-many-table .ct-many-fit { width: 24%; }
 .ct .ct-many-level { display: block; }
-.ct .ct-many-level[data-level="outside"], .ct .ct-many-level[data-level="look"] { font-weight: 600; }
-.ct .ct-many-reason { display: block; font-size: 13px; color: var(--warning); font-weight: 600; }
-.ct .ct-many-reason .ct-fit { color: inherit; }
 .ct .ct-tick-these { justify-self: start; margin-top: 6px; }
 /* The phone's tick bar stays in reach above the bottom bar (v14 section 6); the desk's sits in place. */
 .ct .ct-many-tickbar { position: sticky; bottom: calc(var(--ct-bar-room, 0px) + 8px); z-index: 2; }

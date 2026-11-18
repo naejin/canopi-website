@@ -1600,5 +1600,6 @@
   "consortium.paste.sumChoose": "other: # 个需要选择",
   "consortium.paste.sumRec": "other: 已识别 # 个",
   "consortium.paste.whichLabel": "“{name}”是哪种植物？",
+  "consortium.inConsortium": "已在你的植物搭配中",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

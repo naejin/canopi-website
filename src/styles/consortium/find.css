@@ -177,7 +177,8 @@
 /* The reading in three groups (board Paste, AddMany state 4): the count line under a rule; each group a
    44 px head (its words, its count, a chevron) over its rows; a row is its mark and one flowing line
    ("corn" Maize Zea mays · in your palette), with its choices or button under it. */
-.ct .ct-paste-count { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-size: 14px; line-height: 20px; }
+.ct .ct-paste-count { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; }
+.ct .ct-paste-count > .ct-muted { color: var(--text-secondary); }
 .ct .ct-paste-count > strong { font-weight: 600; }
 .ct .ct-paste-sheet { margin: 0; font-size: 13px; line-height: 18px; }
 .ct .ct-paste-group { border-top: 1px solid var(--border); }
@@ -190,7 +191,8 @@
 .ct .ct-paste-ghead::after { content: ""; width: 7px; height: 7px; margin: 0 5px; border: solid currentColor; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg) translate(-2px, -2px); }
 .ct .ct-paste-ghead[aria-expanded="true"]::after { transform: rotate(-135deg) translate(-2px, -2px); }
 .ct .ct-paste-ghead:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.ct .ct-paste-gbody { display: grid; gap: 8px; padding-bottom: 10px; }
+.ct .ct-paste-gbody { display: grid; gap: 8px; padding-bottom: 8px; }
+.ct .ct-paste-gbody > .ct-paste-rows:only-child { margin-bottom: -8px; }
 .ct .ct-paste-gbody > p { margin: 0; }
 .ct .ct-paste-gbody > .button { justify-self: start; }
 .ct .ct-paste-rows { margin: 0; padding: 0; list-style: none; }
@@ -210,7 +212,7 @@
 .ct .ct-paste-progress { font-size: 14px; line-height: 20px; }
 .ct .ct-paste-choices { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
 .ct .ct-paste-choice {
-  display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 44px; padding: 0 12px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 44px; padding: 4px 12px; border-radius: 22px; text-align: start;
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 15px; cursor: pointer;
 }
 .ct .ct-paste-choice .ct-sci { color: var(--text-secondary); }

@@ -5,13 +5,13 @@ description: The consortium island's layers L0-L4, the import rules dependency-c
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:14:58Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:36Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T22:27:49Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:7167212cdac6fb15
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:7de6becf4a26ed29
+    last_modified: 2026-11-18T22:15:30Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -50,8 +50,8 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:ff8a93245b7a3669
-    last_modified: 2026-11-18T13:15:44Z
+    digest: sha256:372ec9798e88def9
+    last_modified: 2026-11-18T21:43:34Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx

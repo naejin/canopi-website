@@ -11,12 +11,12 @@
 // focus to "Add plants".
 import type { ComponentChildren } from 'preact';
 import { useMemo, useRef } from 'preact/hooks';
-import type { PlantId, PlantRow } from '../../../../lib/consortium/index.ts';
-import { fitGroups, jobIds, moreLine } from '../../../../lib/consortium/index.ts';
+import type { PlantId, PlantRow, PlantVerdict } from '../../../../lib/consortium/index.ts';
+import { fitGroups, fitLine, headLine, jobIds, moreLine } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { nameOf, P, T, pageLang } from '../../strings.ts';
-import { FitLine, say } from '../kit/fit.tsx';
+import { say } from '../kit/fit.tsx';
 import { collatorFor, countryName } from '../kit/names.ts';
 import { WARN, CLOSE } from '../kit/icons.tsx';
 import { rowSpan, PLUS } from '../rows.tsx';
@@ -54,22 +54,31 @@ function reasonWords(i: PlantItem): string | null {
 }
 const LEVEL_KEY = { outside: 'palette.warningsOutside', look: 'palette.warningsLook', fits: 'palette.warningsFits', unknown: 'palette.warningsUnknown' } as const;
 
-// The phone's word line: a warned row in the warning colour, with the icon.
-function FitWord({ i }: { i: PlantItem }) {
-  const v = store.memberVerdicts.value?.get(i.id);
-  if (i.level === 'outside' || (i.level === 'look' && (i.reason === 'edge' || !i.reason))) {
-    return <span class="ct-many-word" data-level="warning"><FitLine v={v} head /></span>;
-  }
-  const w = i.level === 'unknown' ? T('palette.warningsUnknown') : reasonWords(i);
-  if (!w) return null;
-  return <span class="ct-many-word" data-level={i.level === 'unknown' ? 'plain' : i.reason === 'severe' || i.reason === 'invasive' ? 'danger' : 'warning'}>{i.level !== 'unknown' && WARN} {w}</span>;
+// What sets a range line, in words ("cooler over the year here than where it is recorded"; the
+// verdict's headline cause, verdict-line.ts headLine), else the short fit line.
+function rangeWhy(v: PlantVerdict | undefined): string {
+  if (!v) return T('palette.warningsUnknown');
+  const why = headLine(v).parts?.why;
+  return why && !Array.isArray(why) ? say(why) : say(fitLine(v));
 }
-// The desk's fit cell: the line's words, then its reason ("Needs a second look / Toxic").
+const isRange = (i: PlantItem) => i.level === 'outside' || (i.level === 'look' && (i.reason === 'edge' || !i.reason));
+// A row's reason (board Many): Mildly toxic a pill (a mark, not a second look, R1); a range line or a
+// second look's reason in the warning colour with the icon, Very toxic in the danger colour; not checked
+// plain. `range`: the range line's words (the phone says the whole line, the desk its cause under the
+// level word).
+function Reason({ i, range }: { i: PlantItem; range: (v: PlantVerdict | undefined) => string }) {
+  const w = isRange(i) ? range(store.memberVerdicts.value?.get(i.id)) : i.level === 'unknown' ? T('palette.warningsUnknown') : reasonWords(i);
+  if (!w) return null;
+  const level = i.level === 'unknown' ? 'plain' : i.reason === 'mild' ? 'mild' : i.reason === 'severe' ? 'danger' : 'warning';
+  return <span class="ct-many-word" data-level={level}>{level === 'mild' ? <span class="ct-many-pill">{WARN}{w}</span> : <>{level !== 'plain' && WARN} {w}</>}</span>;
+}
+const wholeLine = (v: PlantVerdict | undefined) => (v ? say(headLine(v)) : T('palette.warningsUnknown'));
+function FitWord({ i }: { i: PlantItem }) {
+  return <Reason i={i} range={wholeLine} />;
+}
+// The desk's fit cell (board ManyDesk): the line's words, then its reason ("Needs a second look / ⚠ Toxic").
 function FitCell({ i }: { i: PlantItem }) {
-  const v = store.memberVerdicts.value?.get(i.id);
-  const why = i.level === 'outside' || (i.level === 'look' && (i.reason === 'edge' || !i.reason)) ? <FitLine v={v} head /> : reasonWords(i);
-  return <><span class="ct-many-level" data-level={i.level}>{T(LEVEL_KEY[i.level])}</span>{why && i.level !== 'outside' && <span class="ct-many-reason">{why}</span>}
-    {i.level === 'outside' && <span class="ct-many-reason">{why}</span>}</>;
+  return <><span class="ct-many-level" data-level={i.level}>{T(LEVEL_KEY[i.level])}</span>{i.level !== 'unknown' && <Reason i={i} range={rangeWhy} />}</>;
 }
 
 const groupWord = (key: GroupKey, k: string): string => {
@@ -140,7 +149,7 @@ const focusRow = (id: PlantId | undefined) => {
 
 function MoreButton({ k, word, rest, firstNew, desk }: { k: string; word: string; rest: number; firstNew?: PlantId; desk: boolean }) {
   return (
-    <button type="button" class="ct-many-more text-link" aria-expanded="false" aria-label={T(desk ? 'many.showOtherRows' : 'many.showOther', { group: word })}
+    <button type="button" class="ct-many-more" aria-expanded="false" aria-label={T(desk ? 'many.showOtherRows' : 'many.showOther', { group: word })}
       onClick={() => { setStage(k, 2); focusRow(firstNew); }}>{say(moreLine(rest))}</button>
   );
 }
@@ -214,7 +223,7 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
   const light = gk !== 'light';
   const colHead = (col: keyof typeof SORT_OF_COLUMN, word: string) => {
     const on = sk === SORT_OF_COLUMN[col];
-    return <th scope="col" aria-sort={on ? 'ascending' : undefined}><button type="button" class="ct-many-colhead" data-on={on ? '' : undefined} onClick={() => { sortKey.value = SORT_OF_COLUMN[col]; }}>{word}{on && CHEVRON(true)}</button></th>;
+    return <th scope="col" class={`ct-many-${col}`} aria-sort={on ? 'ascending' : undefined}><button type="button" class="ct-many-colhead" data-on={on ? '' : undefined} onClick={() => { sortKey.value = SORT_OF_COLUMN[col]; }}>{word}{on && CHEVRON(true)}</button></th>;
   };
   const screen = desk ? groups.flatMap((g) => { const s = searching ? 2 : (gk === 'none' ? (st.get(g.key) ?? 1) : st.get(g.key) ?? 0); return g.items.slice(0, shownRows(g.items.length, s)); }) : [];
   const allScreen = screen.length > 0 && screen.every((i) => isTicked(i.id));
