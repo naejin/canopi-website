@@ -186,7 +186,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     return taxa.map((t) => {
       const fit = choiceFit(t), on = ticked.includes(t.id);
       return members.includes(t.id)
-        ? <span class="ct-paste-choice is-in">{nameOf(t)} {sci(t)} · {T('paste.choiceIn')}</span>
+        ? <span class="ct-paste-choice is-in">{nameOf(t)} {sci(t)} <span class="ct-tag">{T('inConsortium')}</span></span>
         : <button type="button" class="ct-paste-choice" aria-pressed={on ? 'true' : 'false'} onClick={() => toggle(t.id, ids, at)}>{pressed(on)}{nameOf(t)} {sci(t)}{fit && <span class="ct-paste-fit"> · {fit}</span>}</button>;
     });
   };
