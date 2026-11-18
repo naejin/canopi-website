@@ -1025,6 +1025,16 @@ test('PFA51 (pf-a ruling D5, board Find): the subtitle counts the whole list, pa
   const m = /Fits your place\D*?(\d+) plants?;.*? · (\d+) already in your palette/.exec(choice);
   assert.ok(m, `D5: the choice says the palette's share ("${choice}")`);
   assert.equal(Number(m[1]) + Number(m[2]), whole, `D5: ${m[1]} + ${m[2]} make the subtitle's ${whole} ("${sub}")`);
+  // h2 R6: under a filter, "already in your palette" follows it, as the figure beside it does: the
+  // palette's plants that feed you and fit, never every fitting member.
+  await page.$eval('dialog[open] [data-job-chip="feeds_you"]', (b) => b.click());
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  const filtered = await page.$eval('dialog[open] [data-filter="fits"]', (i) => i.closest('label').textContent.replace(/\s+/g, ' ').trim());
+  const k = Number(/ · (\d+) already in your palette/.exec(filtered)?.[1] ?? 0);
+  // The palette's plants that feed you, outside ones left out (the Jobs lane's counted plants): the
+  // fitting ones among them are at most that many.
+  const doers = await page.evaluate(() => window.__ctTest.store.lanes.value.find((l) => l.kind === 'job' && l.job === 'feeds_you')?.counted.length ?? 0);
+  assert.ok(k <= Math.min(Number(m[2]), doers), `h2 R6: the filter narrows the palette's share (${k}; ${m[2]} unfiltered, ${doers} feed you; "${filtered}")`);
   await done(page);
 });
 

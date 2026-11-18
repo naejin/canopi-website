@@ -411,8 +411,10 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const fitsCount = (f: FindFilters) => applyFilters(matched, { ...f, range: false }, ctx).rows.filter(isFit).length;
   // D5 (pf-decisions 2026-11-18): the subtitle counts the whole list, members included (board Find); the
   // choice counts the plants not yet in the palette, so it adds the palette's plants that fit, and with
-  // no filter the two figures add up.
-  const fitsInPalette = pool.filter((t) => atOpen.has(t.id) && isFit(t)).length;
+  // no filter the two figures add up. Counted as the choice's own figure is (h2 R6): the palette's
+  // plants that pass the sheet's predicate (a hole's or Balance's "another family") and the filters.
+  const inSheet = (t: Taxon) => !fits || wide || fits(t);
+  const fitsInPalette = applyFilters(memberTaxa.filter((t) => atOpen.has(t.id) && inSheet(t)), { ...filters, range: false }, ctx).rows.filter(isFit).length;
 
   // C7 (board AddMany state 3): a thin job opens the Add sheet, titled "Add plants"; where it came from
   // is the sorted line's "Opened from …". A hole's sheet is titled by its hole.
@@ -438,7 +440,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const placeLine = n && n.fits + n.look > 0
     ? P(own ? (later ? 'place.count.ownLater' : 'place.count.own') : later ? 'place.count.borrowedLater' : 'range.pool.count', n.fits + n.look, { total: num(n.of), list: listName(climate), period: periodName(store.period.value) }).replace(/[.。]$/, '')
     : null;
-  const subtitle = !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
+  // A predicate without a hole (Balance's "Find a soil feeder of another family"): the listed base,
+  // counted as the hole sheet counts its own, never the whole list's line (h2 R6).
+  const subtitle = !fitsHere || (fits && !wide && !hole) ? P('find.lede', base.length, { list: listName(climate) })
     : hole ? [holeUnchecked && `${say(holeUnchecked)}.`, holeLede, judging && T('find.bestFirst', { period: periodName(periodIds[periodIds.length - 1]) })].filter(Boolean).join(' ')
       : placeLine ? T('find.fitCount', { zone: zoneName(climate), line: placeLine }) : P('find.lede', base.length, { list: listName(climate) });
   const start = !q && !hole && !fits && onCount === 0 && !listed;

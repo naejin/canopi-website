@@ -718,6 +718,18 @@ test('PFB23 (pf-b round 2 R1, C1; c2 C3; M24): board MainMore\'s Balance offers 
     return [...document.querySelectorAll('dialog[open] [data-find-row][data-plant-id]')].map((li) => { const t = byId.get(li.dataset.plantId); return { name: t?.names?.en || t?.canonical_name, family: t?.family, fixer: !!t?.functions?.some((x) => x.function === 'nitrogen_fixer') }; });
   });
   for (const t of listed) assert.ok(t.fixer && t.family !== fam, `R1: ${t.name} feeds the soil and is not a legume (${t.family})`);
+  // h2 R6: the subtitle counts what this sheet lists, never the whole list's line; "already in your
+  // palette" counts the palette's soil feeders of another family that fit, never every fitting member.
+  const sub = await page.$eval('dialog[open] [data-find-fitcount]', (e) => e.textContent.replace(/\s+/g, ' ').trim());
+  assert.match(sub, /^\d+ plants? on the .+ not yet in your palette/, `h2 R6: the sheet's own count ("${sub}")`);
+  assert.doesNotMatch(sub, /of the \d+ plants/, 'h2 R6: not the whole list\'s line');
+  const mine = await page.evaluate((f) => {
+    const s = window.__ctTest.store, v = s.poolVerdicts.value;
+    return s.memberTaxa.value.filter((t) => t.family !== f && t.functions?.some((x) => x.function === 'nitrogen_fixer') && ['fits', 'look'].includes(v?.get(t.id)?.level)).length;
+  }, fam);
+  const choice = await page.$eval('dialog[open] [data-filter="fits"]', (i) => i.closest('label').textContent.replace(/\s+/g, ' ').trim());
+  const said = Number(/ · (\d+) already in your palette/.exec(choice)?.[1] ?? 0);
+  assert.equal(said, mine, `h2 R6: "already in your palette" counts the sheet's own plants ("${choice}")`);
   await done(page);
 });
 
