@@ -189,24 +189,75 @@
 /* One clear button in the field: Find's own (B15), not the browser's. */
 .ct .ct-find [data-find-search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
 
-/* The Next step's rows (views/palette/NextStep.tsx, pf-a v14): each group a kit MoreList, one row a
-   .ct-filler laid out as the old list rows; "Other holes" its own titled block under the card. */
-.ct .ct-fillers .ct-more-items { display: grid; gap: 0; }
-.ct .ct-fillers .ct-filler { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-width: 0; }
-.ct .ct-fillers [data-filler-meta] { flex: 1 0 100%; font-size: 14px; color: var(--text-secondary); }
-.ct .ct-other-holes { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border); }
-.ct .ct-other-holes h4 { margin: 0; font-size: 15px; font-weight: 600; }
-.ct .ct-other-holes .ct-more-items > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 6px 0; }
+/* The Next step (views/palette/NextStep.tsx, pf-a v14; boards Main, DarkMain, Palette, AddMany): the
+   grid cell holds the card in its ochre frame (BC15, both themes: --accent) and the Other holes card
+   under it (BC21). The head (BC14): the small "Next step" label in ochre small capitals (never
+   text-transform: the words stay as written for every reader), the position at the right of the same
+   line, then the target's title in the display face. */
+.ct .ct-next.ct-next-stack { display: grid; gap: 12px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.ct .ct-next-card { display: grid; gap: 6px; min-width: 0; padding: 12px 14px 4px; border: 1.5px solid var(--accent); border-radius: 14px; background: var(--surface); box-shadow: 0 1px 2px rgba(39, 35, 29, .06), 0 8px 24px rgba(39, 35, 29, .08); }
+.ct .ct-next-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; }
+.ct .ct-next .ct-next-label { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 18px; font-weight: 600; font-variant-caps: all-small-caps; letter-spacing: .04em; color: var(--accent-ink); }
+.ct .ct-next-head .ct-next-count { margin-inline-start: auto; text-align: end; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-next-part { white-space: nowrap; }
+.ct .ct-next-head .text-link { min-height: 0; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ct .ct-next .ct-next-hole { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 600; overflow-wrap: anywhere; }
+/* A MoreList under a heading that already gives its count (BC20): its count cell is not said twice. */
+.ct :is(.ct-next, .ct-other-holes) .ct-more-count { display: none; }
+/* Its rows (BC16): the words at the left, the outline "+ Add" at the right; rows ruled between. */
+.ct .ct-fillers .ct-more-items { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-fillers .ct-more-items > li + li { border-top: 1px solid var(--border); }
+.ct .ct-fillers .ct-filler { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 0; }
+.ct .ct-filler-text { flex: 1; min-width: 0; display: grid; gap: 1px; font-size: 14px; line-height: 19px; overflow-wrap: anywhere; }
+.ct .ct-filler-text .ct-filler-name { font-size: 16px; font-weight: 600; }
+.ct .ct-filler-text .ct-filler-name i { font-weight: 400; color: var(--text-muted); }
+.ct .ct-filler-reason { font-weight: 600; }
+.ct .ct-filler-reason .ct-glyph { color: var(--accent-ink); }
+.ct .ct-fillers [data-filler-meta] { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-filler-add { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; }
+.ct .ct-next .ct-fillers-head { padding-top: 8px; border-top: 1px solid var(--border); font-size: 14px; line-height: 20px; }
+/* The foot (board Main; BC17): text links, "See all N plants" at the left, "Not now" at the right. */
+/* The foot (board Main; BC17): the links that open more at the left, one under another when they do
+   not fit; "Not now" at the right of the first line. */
+.ct .ct-next-card .ct-next-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 12px; margin: 0; border-top: 1px solid var(--border); }
+.ct .ct-next-actions-start { display: flex; flex-wrap: wrap; gap: 0 12px; min-width: 0; }
+.ct .ct-next-card .ct-next-link { min-height: 40px; padding: 0 4px; border: 1px solid transparent; background: none; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: normal; text-align: start; }
+.ct .ct-next-card .ct-next-link:hover { border-color: transparent; color: var(--accent); }
+/* Other holes (board Main; BC21): its own card, a dashed box per hole. */
+.ct .ct-other-holes { display: grid; gap: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); }
+.ct .ct-other-holes h3 { margin: 0 0 6px; font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 600; }
+.ct .ct-other-holes h3 .ct-next-count { font-weight: 400; color: var(--text-secondary); }
+.ct .ct-other-holes .ct-more-items { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-other-holes .ct-more-items > li { padding-top: 6px; }
+.ct .ct-hole-fillers { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; padding: 4px 10px 0; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-hole-fillers .ct-hole-filler { min-height: 40px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.ct .ct-find-mark[data-level="soft"] { border-color: var(--border-strong); background: var(--surface-alt); color: var(--text-secondary); }
+/* A hole as a row (Other holes, Find's start; BC21, BC23): the dashed box, the add mark, the lane in
+   bold, what it opens in ochre at the right. */
+.ct .ct-hole-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 4px 10px; border: 1.5px dashed var(--text-secondary); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; line-height: 19px; text-align: start; cursor: pointer; }
+.ct .ct-hole-row:hover { border-color: var(--text); }
+.ct .ct-hole-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-hole-row-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-hole-row-text b, .ct .ct-hole-row-end { font-weight: 600; }
+.ct .ct-hole-row-end { color: var(--accent-ink); white-space: nowrap; }
 /* The why sentence under the hole title (BC2): why it matters, the counts by fit, what holds. */
 .ct .ct-next-why { margin: 0; color: var(--text-muted); font-size: 14px; }
-.ct .ct-next-bulk { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
-.ct .ct-next-bulk .button { white-space: normal; max-width: 100%; padding-block: 8px; text-align: center; }
+.ct .ct-next-bulk { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding-top: 8px; }
+.ct .ct-next-bulk .button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: normal; max-width: 100%; min-height: 44px; padding-block: 8px; text-align: center; }
+/* On the phone the bulk buttons take the card's width, one under the other, above the foot (BC18). */
+@media (max-width: 639px) {
+  .ct .ct-next-bulk { flex-direction: column; align-items: stretch; }
+  .ct .ct-next-bulk .button { width: 100%; }
+}
 
-/* Find's start: the palette's holes, one row-button each with its count (board Find). */
+/* Find's start (board Find; BC23): the palette's holes as dashed rows under a small ruled label, then
+   "Or look by job" under the same label, then the foot links. */
 .ct .ct-find-holes { display: grid; gap: 6px; }
-.ct .ct-find-holes h3 { margin: 0; font-size: 17px; font-weight: 600; }
-.ct .ct-find-holerow { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 12px; width: 100%; min-height: 44px; padding: 8px 4px; border: 0; border-top: 1px solid var(--border); background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
-.ct .ct-find-holerow:hover { background: var(--surface-muted, var(--surface)); }
+.ct .ct-find-holes .ct-rows { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; list-style: none; }
+.ct .ct-find-holes .ct-rows > li { padding: 0; border: 0; }
+.ct :is(.ct-find-holes, .ct-find-byjob) > h3 { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+.ct .ct-find-holes > .text-link { justify-self: start; }
+.ct .ct-find-footlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; margin: 0; font-size: 14px; color: var(--text-secondary); }
 .ct .ct-find-undo { min-height: 44px; }
 
 /* Find beside the chart at 960 px and wider (board DeskStates, Q5; views/Sheets.tsx FindPanel): a
@@ -223,7 +274,28 @@
   .ct .ct-palette-body > dialog.ct-find-panel { grid-column: 2; grid-row: 1; }
   .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-next { grid-column: 2; grid-row: 2; }
   .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-palette-pictures { grid-column: 1; grid-row: 1 / span 2; }
+  /* A hole's panel is one column beside the chart (board HoleOpen; BC13): the chart keeps its width. */
+  .ct .ct-palette-body:has(> dialog.ct-find-panel.ct-find-hole) { grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); }
+  /* Find's filters in the panel (board FindDesk; BC13): checkbox rows, each count at the right. */
+  .ct .ct-find-panel:not(.ct-find-hole) .ct-find-layout { grid-template-columns: 230px minmax(0, 1fr); gap: 20px; }
 }
+.ct .ct-find-rows { display: grid; gap: 2px; }
+.ct .ct-find-rows .ct-find-check { min-height: 32px; font-size: 14px; }
+.ct .ct-find-rows .ct-find-check[data-on] > span:nth-of-type(1) { font-weight: 600; }
+.ct .ct-find-rows .ct-find-check > input { width: 18px; height: 18px; accent-color: var(--accent); }
+.ct .ct-find-local { align-self: center; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-find-filters-btn { display: inline-flex; align-items: center; gap: 6px; }
+.ct .ct-find-otherzones { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.ct .ct-find-otherrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 6px 0; }
+.ct .ct-find-others .ct-more-items { margin: 0; padding: 0; list-style: none; }
+/* The job chips' marks (board Find; BC24): the board's glyphs, in ink, the word beside each. */
+.ct .ct-find .ct-find-chip .ct-job-icon { color: var(--text); }
+.ct .ct-find .ct-find-chip .ct-job-icon[data-job="feeds_you"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 6.5c-3-2-6.5 0-6 4s3 6.5 6 5.5c3 1 5.5-1.5 6-5.5s-3-6-6-4Z'/%3E%3Cpath d='M10 6.5c0-2 1-3 2.5-3.5'/%3E%3C/svg%3E"); }
+.ct .ct-find .ct-find-chip .ct-job-icon[data-job="feeds_soil"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 3v7M10 10l-4.5 6M10 10l4.5 6M10 10v7M3 10h14'/%3E%3C/svg%3E"); }
+.ct .ct-find .ct-find-chip .ct-job-icon[data-job="mulch"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 13l7 3 7-3M3 9.5l7 3 7-3M10 4l7 2.5-7 3-7-3Z'/%3E%3C/svg%3E"); }
+.ct .ct-find .ct-find-chip .ct-job-icon[data-job="ground"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 15.5h15M6 15.5c0-3 1-4.5 3.5-5M10 15.5c0-4 1.5-6.5 5-7M10 15.5c0-2.5-1.5-4-4.5-4.5'/%3E%3C/svg%3E"); }
+.ct .ct-find .ct-find-chip .ct-job-icon[data-job="helpers"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6'%3E%3Ccircle cx='10' cy='10' r='1.8'/%3E%3Ccircle cx='10' cy='5.2' r='2.4'/%3E%3Ccircle cx='14.8' cy='10' r='2.4'/%3E%3Ccircle cx='10' cy='14.8' r='2.4'/%3E%3Ccircle cx='5.2' cy='10' r='2.4'/%3E%3C/svg%3E"); }
+.ct .ct-find .ct-find-chip .ct-job-icon[data-job="shelter"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h9a2.5 2.5 0 1 0-2.5-2.5M3 11h12a2.5 2.5 0 1 1-2.5 2.5M3 15h6'/%3E%3C/svg%3E"); }
 
 /* The empty palette's ways in (board Empty): one row-button each, its label over what it does. */
 .ct .ct-next-ways { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }

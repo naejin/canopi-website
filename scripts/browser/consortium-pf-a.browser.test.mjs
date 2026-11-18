@@ -148,7 +148,9 @@ test('PFA2 (pf-a holes, one form everywhere): the Next step, Other holes, Find\'
   assert.doesNotMatch(text, /Nobody in (?:full sun|some shade|deep shade)|Nobody covers/, 'board: one form, never "Nobody in …"');
   // Find from an Other holes row: titled by that hole, in the same form.
   const before = (await holeTitles(page))[0];
-  await press(page, 'button', 'Find');
+  // BC21: the whole dashed row is the button, "Find" at its right.
+  await control(page, 'button', /: .+ Find$/);
+  await page.click('.ct-other-holes button.ct-hole-row');
   assert.ok(await has(page, 'dialog[open]', 10_000), 'board: Find opens from the hole');
   const head = (await dialogText(page)).split(' ').slice(0, 12).join(' ');
   assert.match(head, new RegExp(HOLE_TITLE.source), `board: Find is titled by the hole in one form ("${head}")`);
@@ -277,7 +279,9 @@ test('PFA7 (pf-a keyboard, carried from PP-B28 and PP-B33): with the keyboard on
 test('PFA8 (pf-a FillHole, HoleOpen): Find opened from a hole says "Best fit first: plants that fit before those that need a second look, then the holes a plant fills, then whether it stays in its climate range to 2071–2099."; a row that holds says "in range to 2099"; Add turns the row to "Added" with its Undo, the sheet stays open, and the line names the hole that is left ("Pineapple added. Covers the ground: nobody after year 15.")', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
   await says(page, OTHER_HOLES);
-  await press(page, 'button', 'Find');
+  // BC21: the whole dashed row is the button, "Find" at its right.
+  await control(page, 'button', /: .+ Find$/);
+  await page.click('.ct-other-holes button.ct-hole-row');
   assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens from the hole');
   await says(page, 'Best fit first: plants that fit before those that need a second look, then the holes a plant fills, then whether it stays in its climate range to 2071–2099.', { inDialog: true });
   await says(page, /in range to 2099/, { inDialog: true });
@@ -595,5 +599,168 @@ test('PFA22 (pf-a FillHole at 390, BC7-BC9, BC11): a hole\'s sheet is a bottom s
   assert.ok(frame.top >= 16, `BC7: the sheet leaves the dimmed page above it (top ${frame.top})`);
   assert.ok(frame.radius >= 8, `BC7: rounded top corners (${frame.radius})`);
   assert.ok(frame.title && frame.close && frame.close.top < frame.title.bottom && frame.title.top < frame.close.bottom, `BC7: the title and the close button share the head row (${JSON.stringify(frame)})`);
+  await done(page);
+});
+
+// ---- Board check b2 (BC13-BC25): the card's layout and words, Other holes, the Find start, the desk panel.
+const core = await import('../../src/lib/consortium/holes.ts');
+const { periodIds } = await import('../../src/lib/consortium/types.ts');
+// Per open hole, what the engine's fillers() puts in each group (core holes.ts, the installed release):
+// the count every hole row says (the Next step's, Other holes', Find's), BC25.
+async function holeCounts(page) {
+  const s = await page.evaluate((last) => {
+    const st = window.__ctTest.store;
+    const members = st.memberTaxa.value, ids = new Set(members.map((t) => t.id));
+    const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
+    const rule = st.verdictRule.value, ctx = st.verdictContext.value;
+    return { holes: st.paletteHoles.value, members, pool, pv: [...(st.poolVerdicts.value ?? new Map())], holds: rule ? pool.map((t) => [t.id, rule.holdsBy(t, ctx, last)]) : [], warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id) };
+  }, periodIds[periodIds.length - 1]);
+  const open = s.holes.filter((h) => h.state === 'open');
+  return open.map((h) => {
+    const f = core.fillers(h, s.pool.filter((t) => core.fills(h, t)), new Map(s.pv), new Map(s.holds), new Set(s.warned), s.members, open);
+    return { id: h.id, fits: f.fits.length, look: f.look.length, unknown: f.unknown.length };
+  });
+}
+// A colour token as the page computes it (rgb()).
+const token = (page, name) => page.evaluate((n) => { const e = document.createElement('span'); e.style.color = `var(${n})`; document.querySelector('.ct').append(e); const c = getComputedStyle(e).color; e.remove(); return c; }, name);
+const style = (page, sel, props) => page.$eval(sel, (e, p) => { const s = getComputedStyle(e), r = e.getBoundingClientRect(); return { ...Object.fromEntries(p.map((k) => [k, s.getPropertyValue(k)])), x: r.left, y: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height }; }, props);
+const plantsWord = (n) => `${n} ${n === 1 ? 'plant' : 'plants'}`;
+const endWords = (c) => c.fits ? plantsWord(c.fits) : c.look ? `${c.look} ${c.look === 1 ? 'needs' : 'need'} a second look` : 'no plant fits here';
+
+test('PFA23 (pf-a Main, DarkMain, BC14-BC17, BC20): the card\'s head is a small ochre "Next step" with the position right-aligned on its line, the hole title the large Literata heading; its edge is ochre in both themes; each row\'s Add is an outline "+ Add" at the row\'s right; "See all N plants" (left) and "Not now" (right) are underlined links; no bare count repeated under a counted heading', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder');
+  await says(page, OTHER_HOLES);
+  const label = await style(page, '.ct-next-card .ct-next-label', ['color', 'font-size']);
+  assert.equal((await page.$eval('.ct-next-card .ct-next-label', (e) => e.innerText.trim().toLowerCase())), 'next step');
+  assert.equal(label.color, await token(page, '--accent-ink'), 'BC14: the label is ochre');
+  assert.ok(parseFloat(label['font-size']) <= 16, 'BC14: the label is small');
+  const pos = await style(page, '.ct-next-card [data-next-position]', ['text-align']);
+  const head = await style(page, '.ct-next-card .ct-next-head', []);
+  assert.ok(Math.abs(pos.y - label.y) < 8 && Math.abs(pos.right - head.right) < 2, `BC14: the position right-aligned on the label's line (${JSON.stringify({ pos, label, head })})`);
+  const title = await style(page, '.ct-next-card .ct-next-hole', ['font-family', 'font-size']);
+  assert.match(title['font-family'], /Literata/, 'BC14: the hole title in Literata');
+  assert.equal(title['font-size'], '20px', 'BC14: the hole title is the large heading');
+  assert.equal((await style(page, '.ct-next-card', ['border-top-color']))['border-top-color'], await token(page, '--accent'), 'BC15: an ochre edge (light)');
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+  await frames(page);
+  assert.equal((await style(page, '.ct-next-card', ['border-top-color']))['border-top-color'], await token(page, '--accent'), 'BC15: an ochre edge (dark)');
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+  // BC16: "+ Add", an outline button right of the row's words.
+  const add = await page.$eval('.ct-next .ct-fillers li button.ct-filler-add', (b) => { const r = b.getBoundingClientRect(), s = getComputedStyle(b), text = b.parentElement.querySelector('.ct-filler-text').getBoundingClientRect(); return { words: b.innerText.trim(), svg: !!b.querySelector('svg'), border: s.borderTopStyle, left: r.left, textRight: text.right }; });
+  assert.equal(add.words, 'Add', 'BC16: the row button says Add');
+  assert.ok(add.svg && add.border === 'solid', 'BC16: a + and an outline');
+  assert.ok(add.left >= add.textRight - 1, `BC16: right of the row's words (${JSON.stringify(add)})`);
+  // BC17: the foot's links.
+  const links = await page.$$eval('.ct-next .ct-next-actions button', (bs) => bs.map((b) => ({ t: b.innerText.trim(), u: getComputedStyle(b).textDecorationLine, x: b.getBoundingClientRect().left, r: b.getBoundingClientRect().right })));
+  const all = links.find((l) => /^See all \d+ plants$/.test(l.t)), not = links.find((l) => l.t === 'Not now');
+  assert.ok(all && not, `BC17: See all and Not now (${JSON.stringify(links)})`);
+  assert.ok(links.every((l) => /underline/.test(l.u)), 'BC17: underlined links');
+  assert.ok(all.x < not.x, 'BC17: See all at the left, Not now at the right');
+  // BC20: no bare number in the card but its heading counts.
+  const bare = await page.$$eval('.ct-next *, .ct-other-holes *', (els) => els.filter((e) => e.children.length === 0 && /^\d+$/.test(e.innerText?.trim() ?? '') && e.offsetParent && !e.closest('h2, h3')).map((e) => e.className));
+  assert.deepEqual(bare, [], 'BC20: no bare count under a counted heading');
+  await done(page);
+});
+
+test('PFA24 (pf-a Main, BC21, BC25): "Other holes" is its own card under the Next step card; each hole a dashed row with a +, its bold lane name and an ochre "Find"; a hole one to three plants fill says "1 plant fills it: <name>" with its name', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder');
+  await says(page, OTHER_HOLES);
+  const card = await style(page, '.ct-next-card', []), other = await style(page, '.ct-other-holes', ['border-top-style']);
+  assert.ok(other.y >= card.bottom, 'BC21: below the Next step card');
+  assert.equal(await page.$eval('.ct-other-holes', (e) => !!e.closest('.ct-next-card')), false, 'BC21: a card of its own');
+  const rows = await page.$$eval('.ct-other-holes button.ct-hole-row', (bs) => bs.map((b) => ({ dashed: getComputedStyle(b).borderTopStyle, svg: !!b.querySelector('svg'), lane: b.querySelector('b:not(.ct-hole-row-end)')?.innerText.trim(), end: b.querySelector('.ct-hole-row-end')?.innerText.trim(), endColor: getComputedStyle(b.querySelector('.ct-hole-row-end')).color })));
+  assert.ok(rows.length > 0, 'BC21: hole rows');
+  const accent = await token(page, '--accent-ink'), accent2 = await token(page, '--accent');
+  for (const r of rows) {
+    assert.equal(r.dashed, 'dashed', 'BC21: a dashed row');
+    assert.ok(r.svg && r.lane && /:$/.test(r.lane), `BC21: the + and the bold lane name (${JSON.stringify(r)})`);
+    assert.equal(r.end, 'Find');
+    assert.ok([accent, accent2].includes(r.endColor), 'BC21: an ochre Find');
+  }
+  const e = await engineLead(page), counts = await holeCounts(page);
+  for (const c of counts.filter((x) => x.id !== e.lead.target.id)) {
+    const n = c.fits + c.look + c.unknown;
+    if (n >= 1 && n <= 3) await says(page, `${n} ${n === 1 ? 'plant fills' : 'plants fill'} it:`);
+  }
+  await done(page);
+});
+
+test('PFA25 (pf-a AddMany at 390, BC18, BC19): under 640 px the bulk buttons are full width and stacked; a mark is named in the sentence ("Pineapple is mildly toxic and says so on its row."), never "is marked"', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  const e = await engineLead(page);
+  if (e.fits.length > 1) {
+    const bs = await page.$$eval('.ct-next-bulk .button', (els) => els.map((b) => { const r = b.getBoundingClientRect(), p = b.parentElement.getBoundingClientRect(); return { y: r.top, w: r.width, pw: p.width }; }));
+    assert.ok(bs.length >= 1 && bs.every((b) => Math.abs(b.w - b.pw) <= 1), `BC18: full width (${JSON.stringify(bs)})`);
+    if (bs.length > 1) assert.ok(bs[1].y > bs[0].y, 'BC18: stacked');
+  }
+  const note = await page.$eval('[data-next-bulk-note]', (p) => p.innerText).catch(() => '');
+  assert.doesNotMatch(note, /is marked|carr(?:y|ies) a mark/, `BC19: the mark is named ("${note}")`);
+  if (/says so on its row/.test(note)) assert.match(note, /\S is [a-z][^.]* and says so on its row\./, `BC19: "<plant> is mildly toxic and says so on its row." ("${note}")`);
+  await done(page);
+});
+
+test('PFA26 (pf-a Find at 390, BC23-BC25): with nothing typed, Find says "<climate> · N of the M plants … fit your place today", its field "Name in any language, or a job", a sliders mark on Filters, no "Show the N plants that fit"; "Your palette has N holes" a small label over dashed hole rows with ochre counts (each the Next step\'s count, or the no-fit words), four before "All N holes"; job chips in the board\'s ink glyphs; the foot "Look in another climate\'s list"', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  const counts = await holeCounts(page);
+  const fit = await page.evaluate(() => { const n = window.__ctTest.store.countFits.value; return n && { k: n.fits + n.look, of: n.of }; });
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[open] [data-find-holes]', 10_000), 'Find opens');
+  const sub = await dialogText(page);
+  assert.match(sub, new RegExp(`[A-Z][a-z]+ · ${fit.k} of the ${fit.of} plants [^.]*fit your place today`), `BC23: the subtitle ("${sub.slice(0, 200)}")`);
+  assert.equal(await page.$eval('dialog[open] [data-find-search]', (i) => i.placeholder), 'Name in any language, or a job', 'BC23: the placeholder');
+  assert.ok(await page.$('dialog[open] .ct-find-filters-btn svg'), 'BC23: a sliders mark on Filters');
+  assert.ok(!/Show the \d+ plants? that fits?/.test(sub), 'BC23: no "Show the N plants that fit"');
+  assert.ok(parseFloat((await style(page, 'dialog[open] #ct-find-holes', ['font-size']))['font-size']) <= 14, 'BC23: "Your palette has N holes" is a small label');
+  const rows = await page.$$eval('dialog[open] [data-find-hole]', (bs) => bs.map((b) => ({ id: b.dataset.findHole, dashed: getComputedStyle(b).borderTopStyle, end: b.querySelector('.ct-hole-row-end')?.innerText.trim(), color: getComputedStyle(b.querySelector('.ct-hole-row-end')).color })));
+  assert.equal(rows.length, Math.min(4, counts.length), 'BC23: four holes before "All N holes"');
+  if (counts.length > 4) await control(page, 'button', `All ${counts.length} holes`);
+  const ochre = [await token(page, '--accent-ink'), await token(page, '--accent')];
+  for (const r of rows) {
+    assert.equal(r.dashed, 'dashed', 'BC23: dashed hole rows');
+    assert.ok(ochre.includes(r.color), 'BC23: an ochre count');
+    const c = counts.find((x) => x.id === r.id);
+    assert.equal(r.end, endWords(c), `BC25: the row counts what the Next step counts (${JSON.stringify(c)})`);
+  }
+  // BC24: the board's glyphs, in ink.
+  const ink = await token(page, '--text');
+  const glyph = await page.$$eval('dialog[open] [data-job-chip] .ct-job-icon', (els) => els.map((e) => ({ job: e.dataset.job, color: getComputedStyle(e).color, mark: getComputedStyle(e).getPropertyValue('--job-mark') })));
+  assert.ok(glyph.length > 0, 'the job chips');
+  const PATH = { feeds_soil: 'M10 3v7', mulch: 'M3 13l7 3 7-3', helpers: "cx='10' cy='5.2'", shelter: 'M3 7h9a2.5' };
+  for (const g of glyph) {
+    assert.equal(g.color, ink, `BC24: ${g.job} in ink`);
+    if (PATH[g.job]) assert.ok(g.mark.includes(PATH[g.job]), `BC24: ${g.job} is the board's glyph`);
+  }
+  await control(page, 'button', 'Look in another climate’s list');
+  await done(page);
+});
+
+test('PFA27 (pf-a FindDesk, HoleOpen, BC13): at 1280 the plain Find panel\'s filters are checkbox rows, each count at the right, under "Filters" with "Clear all"; "Searched on this computer; nothing is sent." beside the field; a hole\'s panel is one column about 440 px wide beside the chart', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder');
+  await says(page, OTHER_HOLES);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, '.ct-palette-body > dialog.ct-find-panel[open]', 10_000), 'the panel');
+  await says(page, 'Searched on this computer; nothing is sent.', { inDialog: true });
+  await control(page, 'button', 'Clear all');
+  const boxes = await page.$$eval('dialog[open] input[type=checkbox][data-filter="job"]', (is) => is.map((i) => { const l = i.closest('label'), c = l.querySelector('.ct-find-boxcount'); return { count: c?.innerText.trim(), right: c && Math.abs(c.getBoundingClientRect().right - l.getBoundingClientRect().right) < 2 }; }));
+  assert.ok(boxes.length >= 4, `BC13: the jobs as checkbox rows (${boxes.length})`);
+  assert.ok(boxes.every((b) => /^\d+$/.test(b.count) && b.right), `BC13: each count at the right (${JSON.stringify(boxes)})`);
+  await done(page);
+  const hole = await loadCase('kiambu-8-nights-2c-colder');
+  await says(hole, OTHER_HOLES);
+  await hole.click('.ct-other-holes button.ct-hole-row');
+  assert.ok(await has(hole, '.ct-palette-body > dialog.ct-find-panel.ct-find-hole[open]', 10_000), 'the hole panel');
+  const w = (await style(hole, 'dialog.ct-find-panel[open]', [])).w;
+  assert.ok(w >= 320 && w <= 445, `BC13: one column of about 440 px (${w})`);
+  await done(hole);
+});
+
+test('PFA28 (pf-a Main in Spanish at 390, BC14): the position line never breaks inside a part', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390, lang: 'es' });
+  assert.ok(await has(page, '.ct-next-card [data-next-position]', 15_000), 'the position');
+  const parts = await page.$$eval('.ct-next-card .ct-next-part', (ps) => ps.map((p) => ({ t: p.innerText, lines: p.getClientRects().length })));
+  assert.ok(parts.length > 0, 'BC14: the position\'s parts');
+  for (const p of parts) assert.equal(p.lines, 1, `BC14: "${p.t}" on one line`);
   await done(page);
 });

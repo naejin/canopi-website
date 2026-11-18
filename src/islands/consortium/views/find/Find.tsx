@@ -29,15 +29,17 @@ import { fillReasonLine, fills, fitLine, jobIds, jobsOf, periodIds, periodName, 
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, type Frame } from '../kit/sheet.tsx';
+import { MoreList } from '../kit/more.tsx';
 import { FitLine, JobIcon, holeWords, lightWords as kitLight, midSentence, say } from '../kit/fit.tsx';
 import { flagLines } from '../kit/flags.ts';
-import { listName, nameOf, nameOrder, num } from '../kit/names.ts';
+import { listName, nameOf, nameOrder, num, zoneName } from '../kit/names.ts';
 import { formatLength } from '../../format.ts';
 import { page } from '../kit/page.ts';
 import { finder, finderFailed, namesState, releasePlants, wantNames } from './names.ts';
 import { Marks } from './marks.tsx';
 import Paste from './Paste.tsx';
-import { addedWords, openFillers, rowRoles, rowSize, rowSpan } from '../palette/NextStep.tsx';
+import { addedWords, holeFillers, HoleRow, openFillers, PLUS, rowRoles, rowSize, rowSpan } from '../palette/NextStep.tsx';
+import { deskFind } from '../Toast.tsx';
 
 // The later periods "Holds by …" offers (types.ts periodIds), named by verdict-line.ts periodName
 // (first-run words).
@@ -101,13 +103,14 @@ function metaWords(t: Taxon, known: JobId | null, to: string | null = null, span
   return [jobs, lightWordsOf(t), span && rowSpan(t), rowSize(t), to && T('find.inRangeTo', { year: to })].filter(Boolean).join(' · ');
 }
 // The add button's mark (board FindResults: "+ Add", "✓ Added"); the word carries the meaning.
-const PLUS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 const TICK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 const CROSS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
+// The Filters button's mark (board Find: three bars, shorter downwards).
+const SLIDERS = <svg class="ct-glyph" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5.5h14M6 10h8M8.5 14.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" /></svg>;
 const CHEVRON = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 
 type Fit = 'fits' | 'inside' | 'all';
-const HOLES_FIRST = 3; // the start's holes before "All N holes" (board Find)
+const HOLES_FIRST = 4; // the start's holes before "All N holes" (board Find)
 type BoxKey = 'fills' | 'hideNoSize' | 'hideToxic' | 'hideInvasive' | 'hideNoLight';
 const BOXES: readonly BoxKey[] = ['fills', 'hideNoSize', 'hideToxic', 'hideInvasive', 'hideNoLight'];
 type Option = { key: string; label: string; on: boolean; toggle: () => void; count: number };
@@ -159,6 +162,14 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const [pasting, setPasting] = useState(false);
   const pasteBtn = useRef<HTMLButtonElement>(null);
   const [backFromPaste, setBackFromPaste] = useState(false);
+  // "Look in another climate's list" (board Find's foot): the other curated lists as choices; one chosen
+  // lists its plants this list lacks, each added from that list as a guest (addFrom).
+  const [lookOther, setLookOther] = useState(false);
+  const [otherZone, setOtherZone] = useState<ClimateZone | null>(null);
+  const [otherList, setOtherList] = useState<readonly Taxon[] | null>(null);
+  // Find as the panel beside the chart (board FindDesk, Q5): the filters as checkbox rows, the
+  // "searched on this computer" line beside the field.
+  const desk = deskFind.value;
   useEffect(() => { if (backFromPaste && !pasting) { (query ? field : pasteBtn).current?.focus(); setBackFromPaste(false); } }, [backFromPaste, pasting]);
   useEffect(() => { if (source) wantNames(source, pageLang() as Locale); }, [source]);
   // Escape while the filters are open returns to the results, never closes Find (r2-02): the sheet's
@@ -301,6 +312,14 @@ export default function Find({ Frame }: { Frame: Frame }) {
   if (pasting) return <Paste Frame={Frame} onBack={(name?: string) => batch(() => { setPasting(false); setBackFromPaste(true); if (name) ask(name); })} />;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
 
+  const otherZones = store.curatedClimates.value.filter((z) => z !== climate);
+  const showOther = async (z: ClimateZone) => {
+    batch(() => { setOtherZone(z); setOtherList(null); });
+    const list = await store.loadPool(z);
+    if (list) setOtherList(list);
+  };
+  const inPool = new Set(pool.map((t) => t.id));
+  const otherRows = otherList ? otherList.filter((t) => !inPool.has(t.id) && !atOpen.has(t.id)).sort(order) : null;
   const toggleFilter = (k: BoxKey) => setFilters((f) => ({ ...f, [k]: !f[k] }));
   type ListKey = 'jobs' | 'light' | 'size' | 'stands' | 'holds';
   const toggleIn = <K extends ListKey>(k: K, v: NonNullable<FindFilters[K]>[number]) => setFilters((f) => {
@@ -356,9 +375,16 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const holeFits = hole ? base.filter((t) => fits?.(t) && verdicts?.get(t.id)?.level === 'fits' && !store.warnedPlant(t)).length : 0;
   const holeLede = holeFits ? `${P('find.holeLede', holeFits, { list: listName(climate) })}.` : T('palette.next.noFit');
   const holeUnchecked = hole ? uncheckedLine(hole) : null;
+  // BC23 (board Find): the plain sheet's line is the place's count line after the climate's name
+  // ("Subtropical · 305 of the 515 plants on the nearest lists fit your place today"), the whole list
+  // counted (store.countFits, what the place line says), in the place line's own words.
+  const n = store.countFits.value, own = store.curatedClimates.value.includes(climate);
+  const placeLine = n && n.fits + n.look > 0
+    ? P(own ? (later ? 'place.count.ownLater' : 'place.count.own') : later ? 'place.count.borrowedLater' : 'range.pool.count', n.fits + n.look, { total: num(n.of), list: listName(climate), period: periodName(store.period.value) }).replace(/[.。]$/, '')
+    : null;
   const subtitle = !fitsHere ? P('find.lede', base.length, { list: listName(climate) })
     : hole ? [holeUnchecked && `${say(holeUnchecked)}.`, holeLede, judging && T('find.bestFirst', { period: periodName(periodIds[periodIds.length - 1]) })].filter(Boolean).join(' ')
-      : P(later ? 'find.fitCountLater' : 'find.fitCount', fitsHere, { total: num(base.length), list: listName(climate), period: periodName(store.period.value) });
+      : placeLine ? T('find.fitCount', { zone: zoneName(climate), line: placeLine }) : P('find.lede', base.length, { list: listName(climate) });
   const start = !q && !hole && onCount === 0 && !listed;
   // A query before the search index is in (T4): "Searching…", no rows; the core's names failed, the
   // could-not-load line (the next focus on the search tries again).
@@ -420,13 +446,26 @@ export default function Find({ Frame }: { Frame: Frame }) {
     <fieldset class="ct-find-fgroup">
       <legend>{T(`find.f.${key}`)}</legend>
       <p class="ct-muted ct-small">{T(`find.f.${key}For`)}</p>
-      <div class="ct-find-chips">
-        {opts.map((c) => (
-          <button type="button" class="ct-find-chip" data-filter={id} data-value={c.key} aria-pressed={c.on ? 'true' : 'false'} onClick={c.toggle}>
-            {id === 'job' && <JobIcon job={c.key as JobId} />}{c.label} <span class="ct-find-chipcount">{num(c.count)}</span>
-          </button>
-        ))}
-      </div>
+      {desk ? (
+        // BC13 (board FindDesk): on a laptop each value is a checkbox row, its count at the right.
+        <div class="ct-find-rows">
+          {opts.map((c) => (
+            <label class="ct-check ct-find-check" data-on={c.on ? '' : undefined}>
+              <input type="checkbox" data-filter={id} data-value={c.key} checked={c.on} onChange={c.toggle} />
+              <span>{c.label}</span>
+              <span class="ct-find-boxcount">{num(c.count)}</span>
+            </label>
+          ))}
+        </div>
+      ) : (
+        <div class="ct-find-chips">
+          {opts.map((c) => (
+            <button type="button" class="ct-find-chip" data-filter={id} data-value={c.key} aria-pressed={c.on ? 'true' : 'false'} onClick={c.toggle}>
+              {id === 'job' && <JobIcon job={c.key as JobId} />}{c.label} <span class="ct-find-chipcount">{num(c.count)}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {id !== 'job' && unknownLine(id)}
       {extra}
     </fieldset>
@@ -453,7 +492,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // None judged, only "Every plant" can be chosen; the others stay, with their 0 (c1r5 W2).
   const fitBox = (v: Fit, id: string, label: string, sub: string) => (
     <label class="ct-check ct-find-check">
-      <input type="radio" name="ct-find-fit" data-filter={id} checked={fit === v} disabled={!judged && v !== 'all'} onChange={() => batch(() => { setFit(v); setOutsideShown(false); })} />
+      <input type="radio" name="ct-find-fit" data-filter={id} checked={fit === v} disabled={!judged && v !== 'all'} onChange={() => batch(() => { setFit(v); setOutsideShown(false); })} onClick={() => setListed(true)} />
       <span>{label}<span class="ct-find-sub" data-fit-count="">{sub}</span></span>
     </label>
   );
@@ -475,7 +514,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     <div class="ct-find-filters" id="ct-find-filters" data-open={showFilters ? '' : undefined}>
       <div class="ct-find-fhead">
         <h3 id="ct-find-ftitle" ref={filtersHead} tabIndex={-1}>{T('find.filters')}</h3>
-        {onCount > 0 && <button type="button" class="text-link ct-find-fclear" onClick={clearAll}>{T('find.clear')}</button>}
+        {(onCount > 0 || desk) && <button type="button" class="text-link ct-find-fclear" onClick={clearAll}>{T('find.clear')}</button>}
         <p class="ct-muted ct-small ct-find-flede">{P('find.filtersLede', onCount)}</p>
       </div>
       {chipGroup('job', 'job', jobOpts, box('fills', 'fills', T('find.f.fills')))}
@@ -544,7 +583,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const countLine = pending
     ? <span data-find-searching="">{searchFailed ? T('details.loadFailed') : T('find.searching')}</span>
     : start
-      ? <><button type="button" class="text-link" data-find-list="" onClick={() => setListed(true)}>{P(judged ? 'find.showFit' : 'find.showN', count(filters))}</button>{namesNote}</>
+      ? namesNote
       : q
         ? <>{!nothing && `${P('find.countSay', shownCount)} `}{namesWords(search?.langs ?? [])}{namesNote}</>
         : <>{P('find.countSay', shownCount)}{judging && ` ${T('find.bestFirst', { period: periodName(periodIds[periodIds.length - 1]) })}`}{namesNote}</>;
@@ -569,15 +608,17 @@ export default function Find({ Frame }: { Frame: Frame }) {
       {!holeSheet && <div class="ct-find-searchrow">
         <div class="ct-search">
           {SEARCH}
-          <input ref={field} type="search" data-find-search="" aria-label={T('find.search')} placeholder={T('find.searchShort')} value={query}
+          <input ref={field} type="search" data-find-search="" aria-label={T('find.search')} placeholder={T('find.search')} value={query}
             onInput={(e) => ask((e.target as HTMLInputElement).value)} onFocus={() => { if (source) wantNames(source, pageLang() as Locale); }} />
           {query && (
             <button type="button" class="ct-find-x" data-find-clear="" aria-label={T('find.clearSearch')} onClick={() => { ask(''); field.current?.focus(); }}>{CROSS}</button>
           )}
         </div>
         <button ref={filtersBtn} type="button" class="button button-secondary ct-find-filters-btn" aria-expanded={showFilters} aria-controls="ct-find-filters" onClick={() => setShowFilters(!showFilters)}>
-          {onCount ? T('find.filtersOn', { n: onCount }) : T('find.filters')}
+          {SLIDERS} {onCount ? T('find.filtersOn', { n: onCount }) : T('find.filters')}
         </button>
+        {/* Board FindDesk: beside the field on a laptop, where the search runs. */}
+        {desk && <span class="ct-find-local" data-find-local="">{T('palette.next.searchLocal')}</span>}
       </div>}
       {!holeSheet && active.length > 0 && (
         <p class="ct-find-active" data-find-active="">
@@ -589,7 +630,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
           <button type="button" class="text-link" onClick={clearAll}>{T('find.clearShort')}</button>
         </p>
       )}
-      {!noneBox && !holeSheet && <p class="ct-muted ct-small ct-find-names" data-find-count="">{countLine}</p>}
+      {!noneBox && !holeSheet && !(start && !namesNote) && <p class="ct-muted ct-small ct-find-names" data-find-count="">{countLine}</p>}
       <p class="visually-hidden" data-find-status="" aria-live="polite">{status}</p>
       <div class="ct-find-layout">
         {!holeSheet && panel}
@@ -612,13 +653,16 @@ export default function Find({ Frame }: { Frame: Frame }) {
             <p class="ct-muted ct-small" data-find-jobwords="">{T('find.jobWordsAll', { words: jobIds.map((j) => jobWords(j)[1] ?? jobWords(j)[0]).join(', ') })}</p>
           )}
           {start && open.length > 0 && members.length > 0 && (
-            // The palette's holes first (board Find): three, then "All 7 holes"; each opens Find for it.
+            // The palette's holes first (board Find): four, then "All 7 holes"; each opens Find for it.
+            // BC25: each row counts what the Next step counts for that hole (holeFillers: the plants that
+            // fit, no second look); none fits, it says how many need a second look, or that none fits.
             <section class="ct-find-holes" data-find-holes="" aria-labelledby="ct-find-holes">
               <h3 id="ct-find-holes">{P('find.holesHead', open.length)}</h3>
               <ul class="ct-rows">
                 {(allHoles ? open : open.slice(0, HOLES_FIRST)).map((h) => {
-                  const n = base.filter((t) => fills(h, t) && (!judged || (verdicts?.get(t.id)?.level === 'fits' && !store.warnedPlant(t)))).length, u = uncheckedLine(h);
-                  return <li key={h.id}><button type="button" class="ct-find-holerow" data-find-hole={h.id} onClick={() => openFillers(h)}>{holeWords(h)}{u && ` · ${say(u)}`} <span class="ct-muted">{P('find.holePlants', n)}</span></button></li>;
+                  const f = holeFillers(h, memberTaxa, open), u = uncheckedLine(h);
+                  const end = f.fits.length ? P('find.holePlants', f.fits.length) : f.look.length ? P('palette.next.countLook', f.look.length) : T('palette.next.holeNoneFits');
+                  return <li key={h.id}><HoleRow h={h} end={end} extra={u ? say(u) : null} onClick={() => openFillers(h)} attrs={{ 'data-find-hole': h.id }} /></li>;
                 })}
               </ul>
               {!allHoles && open.length > HOLES_FIRST && <button type="button" class="text-link" data-find-allholes="" onClick={() => setAllHoles(true)}>{P('find.allHoles', open.length)}</button>}
@@ -643,9 +687,11 @@ export default function Find({ Frame }: { Frame: Frame }) {
             </section>
           ) : (
             // A job list (board FindResults, T18): the palette's plants named on one line, "Show" lists them.
-            <p class="ct-find-kept" data-find-inpalette-line="">
-              <strong>{T('find.inYourPalette')}</strong> <span class="ct-muted">{num(view.inPalette.length)}</span> · {view.inPalette.map(nameOf).join(', ')} · <button type="button" class="text-link" onClick={() => setPaletteOpen(true)}>{T('find.show')}</button>
-            </p>
+            // BC13 (board FindDesk): its own group heading, the names under it.
+            <section class="ct-find-group ct-find-kept" data-find-inpalette-line="" aria-labelledby="ct-find-g-palette-line">
+              <h3 id="ct-find-g-palette-line">{T('find.inYourPalette')} <span class="ct-muted">{num(view.inPalette.length)}</span></h3>
+              <p class="ct-muted">{view.inPalette.map(nameOf).join(', ')} · <button type="button" class="text-link" onClick={() => setPaletteOpen(true)}>{T('find.show')}</button></p>
+            </section>
           ))}
           {view.byFilters > 0 && (
             <p class="ct-find-kept" data-find-hidden-filters="">{P('find.hiddenByFilters', view.byFilters)} · <button type="button" class="text-link" onClick={clearAll}>{T('find.clearShort')}</button></p>
@@ -690,8 +736,30 @@ export default function Find({ Frame }: { Frame: Frame }) {
             </>
           )}
           {!q && !holeSheet && (
-            // Paste a list (board Find: at the foot of the start and of a list, hidden while typing, K10, K19).
-            <p class="ct-find-pastelink"><button ref={pasteBtn} type="button" class="text-link" data-find-paste="" onClick={() => setPasting(true)}>{T('find.paste')}</button></p>
+            // Paste a list (board Find: at the foot of the start and of a list, hidden while typing, K10, K19),
+            // then "Look in another climate's list" (the other curated lists, to add from as a guest).
+            <p class="ct-find-pastelink ct-find-footlinks">
+              <button ref={pasteBtn} type="button" class="text-link" data-find-paste="" onClick={() => setPasting(true)}>{T('find.paste')}</button>
+              {otherZones.length > 0 && <>{' · '}<button type="button" class="text-link" data-find-otherlist="" aria-expanded={lookOther} onClick={() => setLookOther(!lookOther)}>{T('palette.next.otherList')}</button></>}
+            </p>
+          )}
+          {!q && !holeSheet && lookOther && otherZones.length > 0 && (
+            <p class="ct-find-otherzones" data-find-otherzones="">
+              {otherZones.map((z) => (
+                <button key={z} type="button" class="ct-find-chip" aria-pressed={otherZone === z ? 'true' : 'false'} onClick={() => void showOther(z)}>{zoneName(z)}</button>
+              ))}
+            </p>
+          )}
+          {!q && !holeSheet && lookOther && otherZone && otherRows && (
+            <section class="ct-find-group ct-find-others" aria-labelledby="ct-find-otherzone">
+              <h3 id="ct-find-otherzone">{listName(otherZone)} <span class="ct-muted">{num(otherRows.length)}</span></h3>
+              <MoreList items={otherRows} keyOf={(t) => t.id} paletteSize={members.length} render={(t) => (
+                <div class="ct-find-otherrow" data-find-row="" data-plant-id={t.id}>
+                  <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
+                  <button type="button" class="button button-secondary" data-find-other="" disabled={added(t.id)} onClick={() => void addFrom(t.id, otherZone)}>{added(t.id) ? T('find.added') : T('find.addFrom', { list: listName(otherZone) })}</button>
+                </div>
+              )} />
+            </section>
           )}
         </div>
       </div>
