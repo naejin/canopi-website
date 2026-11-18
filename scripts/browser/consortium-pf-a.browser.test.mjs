@@ -1277,9 +1277,11 @@ test('PFA48 (pf-a N4, size rule A14): Find\'s groups are count cells past 12 row
   const rows = () => page.$$eval('dialog[open] [data-find-group="fits"] [data-find-row]', (r) => r.length);
   assert.equal(await rows(), 3, 'N4: closed, three rows');
   assert.ok(!(await names(page, 'button')).some((n) => /^Show all \d+/.test(n)), 'N4: no "Show all N" cap');
-  await press(page, 'button', `+ ${total - 3} more`);
+  // The opener names its group after the count ("+ 71 more: Fits your place", MoreList group).
+  const more = async (n) => (await names(page, 'button')).find((x) => x === `+ ${n} more` || x.startsWith(`+ ${n} more: `));
+  await press(page, 'button', await more(total - 3));
   assert.equal(await rows(), Math.min(10, total), 'N4: opened, ten rows');
-  if (total > 10) await press(page, 'button', `+ ${total - 10} more`);
+  if (total > 10) await press(page, 'button', await more(total - 10));
   assert.equal(await rows(), total, 'N4: then all');
   await control(page, 'button', 'Show fewer');
   await done(page);
