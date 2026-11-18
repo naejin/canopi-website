@@ -373,6 +373,9 @@ test('PFA10 (pf-a a guest list that fails, carried from PP-B21, PP-B44 and PP-B4
   }, String(guest), own);
   await says(page, /Mediterranean list/);
   assert.ok((await names(page, 'button')).includes('Try again'), 'board: the missing list\'s line offers Try again');
+  // h2 R8: the list is read from the opened database, so a retry that fails again is damage: Reload.
+  await press(page, 'button', 'Try again');
+  assert.ok(await until(page, () => [...document.querySelectorAll('[role="alert"] button')].some((b) => b.textContent.trim() === 'Reload')), 'h2 R8: failing again, the line offers Reload');
   assert.equal(await page.evaluate(() => window.__ctTest.store.load.value.status), 'ready', 'the tool stays');
   assert.deepEqual(await holeTitles(page), [], 'board: no hole named while a list is missing');
   await saysNot(page, 'Start with the plants you want', 'a palette with plants is never empty');

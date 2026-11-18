@@ -177,6 +177,27 @@ test('h2 R7: Start over with no plant left (every one removed) says no "Palette 
   assert.ok(store.toast.peek()?.undo, 'with plants: the count toast and its Undo');
 });
 
+test('h2 R8: "Try again" on a missing guest list re-reads it ("busy" meanwhile); failing again, the notice offers Reload ("failed"); a read that answers clears it', async () => {
+  const pool = await mine(3);
+  const guest = (await realSource.pool('Mediterranean')).find((t) => !pool.some((p) => p.id === t.id));
+  let broken = true;
+  const src = { ...realSource, pool: (c) => (c === 'Mediterranean' && broken ? Promise.reject(new Error('test: list unreadable')) : realSource.pool(c)), info: () => realSource.info() };
+  store.source.value = src;
+  try {
+    store.guests.value = { [guest.id]: 'Mediterranean' };
+    store.members.value = [...store.members.peek(), guest.id];
+    await store.loadPool('Mediterranean');
+    assert.deepEqual(store.failedPools.peek(), ['Mediterranean'], 'the guest list is missing');
+    const run = store.retryFailedLists();
+    assert.equal(store.listRetry.peek(), 'busy', 'busy while it re-reads');
+    await run;
+    assert.equal(store.listRetry.peek(), 'failed', 'failed again: the notice offers Reload');
+    broken = false;
+    await store.retryFailedLists();
+    assert.deepEqual([store.listRetry.peek(), store.failedPools.peek()], ['idle', []], 'a read that answers clears it');
+  } finally { store.source.value = realSource; store.failedPools.value = []; store.listRetry.value = 'idle'; }
+});
+
 test('b1a a guide preset gives members == [id] and writes no save until the reader acts', async () => {
   const pool = await mine(5);
   persist.quietly(() => { store.view.value = 'start'; store.climate.value = null; store.members.value = []; store.removed.value = []; });

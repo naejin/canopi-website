@@ -526,9 +526,16 @@ export function loadPool(c: ClimateZone): Promise<Taxon[] | null> {
   return withRule(p);
 }
 // The palette's missing-list notice's "Try again" (board: PFA10, E6): each guest list that failed is read
-// again; one that answers leaves failedPools, so its notice and "not checked" go.
-export function retryFailedLists(): void {
-  for (const c of failedPools.peek()) void loadPool(c);
+// again; one that answers leaves failedPools, so its notice and "not checked" go. The read is local
+// (the opened database), so a list that fails again is damage a re-read cannot mend (h2 R8): the
+// notice then offers Reload, which fetches the database again. listRetry: 'busy' while it re-reads,
+// 'failed' once a retry failed again (until a list read clears failedPools).
+export const listRetry = signal<'idle' | 'busy' | 'failed'>('idle');
+export async function retryFailedLists(): Promise<void> {
+  if (listRetry.peek() === 'busy') return;
+  listRetry.value = 'busy';
+  await Promise.all(failedPools.peek().map((c) => loadPool(c)));
+  listRetry.value = failedPools.peek().length ? 'failed' : 'idle';
 }
 
 // Sets the open database's PlantSource, closing the one before it first (Retry opens a new
