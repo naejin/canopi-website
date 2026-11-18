@@ -13,13 +13,14 @@
 // never dropped (inform, don't block; owner 2026-11-14).
 import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import type { Fillers, Hole, JobId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { bestToAdd, dryIntroLine, edgeChipLine, fillReasonLine, fillers, fills, holeChangeLines, jobsOf, nextTarget, noneFits, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PLANTS_PER_JOB, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
+import type { Fillers, Hole, JobId, Line, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import { addGoal, bestToAdd, dryIntroLine, fillReasonLine, fillers, fills, holeChangeLines, jobsOf, lookChipLine, nextTarget, noneFits, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PLANTS_PER_JOB, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusNextStep, focusSoon } from '../../focus.ts';
 import { formatLength } from '../../format.ts';
 import { requestSuggest } from '../../state/suggest-wait.ts';
 import { nameOf, P, pageLang, T } from '../../strings.ts';
+import { listOf } from '../../words.ts';
 import { FitLine, holeWords, midSentence, say } from '../kit/fit.tsx';
 import { flagLines, invasiveChip, type Line as FlagLine } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
@@ -32,17 +33,19 @@ import { countKind } from '../../rules/suggest-block.ts';
 // its range") in the warning or danger token, never colour alone; the full sentence stays in Details.
 // The Next step's rows, Find's rows and Paste's rows all draw them here (views/find/marks.tsx passes it
 // on), so a mark reads the same everywhere. A site misfit or a conflict keeps its sentence: it names
-// its reason. `edge`: the plant needs a second look for its range edge (its verdict's level), said as
-// the chip "Near the edge of its range" (BC11), the group heading already saying "Needs a second look".
+// its reason. `look`: why the plant needs a second look (core lookChipLine, PFA-B1): "Near the edge of
+// its range" for a range edge only (BC11), else the cause itself ("Wetter here than where it is
+// recorded"), the group heading already saying "Needs a second look".
 const markWords = (t: Taxon, l: FlagLine, country: string | null): string =>
   l.kind === 'toxicity' && t.warnings.toxicity ? T(`tox.${t.warnings.toxicity.level}`)
     : l.kind === 'invasive' && country ? T('find.invasiveShort', { country: countryName(country) })
       : l.text;
-export function Marks({ t, lines, country, edge = false }: { t: Taxon; lines: readonly FlagLine[]; country: string | null; edge?: boolean }) {
-  if (!lines.length && !edge) return null;
+const sentenceCase = (s: string): string => s.charAt(0).toLocaleUpperCase(pageLang()) + s.slice(1);
+export function Marks({ t, lines, country, look = null }: { t: Taxon; lines: readonly FlagLine[]; country: string | null; look?: Line | null }) {
+  if (!lines.length && !look) return null;
   return (
     <span class="ct-find-marks">
-      {edge && <span class="ct-find-mark" data-kind="edge" data-level="warning">{WARN} {say(edgeChipLine())}</span>}
+      {look && <span class="ct-find-mark" data-kind={look.key.endsWith('.bandEdge') ? 'edge' : 'look'} data-level="warning">{WARN} {sentenceCase(say(look))}</span>}
       {lines.map((l) => (
         <span class="ct-find-mark" data-kind={l.kind} data-level={l.level ?? (l.kind === 'invasive' ? 'danger' : 'warning')}>
           {WARN} {markWords(t, l, country)}
@@ -82,10 +85,11 @@ export function rowSpan(t: Taxon): string | null {
 // (BC6: that hole only, as it is now; the others it narrowed are not listed) and, on a thin spot, to
 // its job (holeChangeLines; an add opens no hole, so "No new hole." is left out). A row's Add:
 // "Pineapple added. Covers the ground: nobody after year 15."; the bulk row (many): "2 plants added: Pinto
-// peanut, Pineapple. Covers the ground: nobody after year 25. 7 holes left." (board AddMany).
+// peanut, Pineapple. Covers the ground: nobody after year 25. 7 holes left." (board AddMany). With no
+// target (plain Find, PFA-B7): the name only ("Pinto peanut added.", board Toasts), no narrowed hole.
 export function addedWords(names: readonly string[], c: HoleChange, thins: ThinChange, job: JobId | null, many = names.length > 1, target: Hole | null = null): string {
   const head = many ? P('palette.next.addedMany', names.length, { names: names.join(', ') }) : T('palette.added', { name: names[0] });
-  const lines = holeChangeLines(c, { left: many, thins, jobs: job ? [job] : [], target: target && !target.thin ? target : null }).filter((l) => !l.key.endsWith('.holesNoNew'));
+  const lines = holeChangeLines(c, { left: many, thins, jobs: job ? [job] : [], target: !target ? 'none' : target.thin ? null : target }).filter((l) => !l.key.endsWith('.holesNoNew'));
   return [head, ...lines.map(say)].join(' ');
 }
 
@@ -300,13 +304,32 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const position = thin
     ? <><Part>{T('palette.next.thinOf', { i: lead.index, n: lead.of })}</Part> · <Part>{T('palette.next.youWant', { n: goal })}</Part> · <button type="button" class="text-link" data-next-change="" aria-expanded={goalOpen} onClick={changeGoal}>{T('palette.next.change')}</button></>
     : <><Part>{T('palette.holeOf', { i: lead.index, n: lead.of })}</Part> · <Part>{openThins.length ? P(untouched ? 'palette.next.thinCount' : 'palette.next.thenThin', openThins.length) : T('palette.next.noThin')}</Part></>;
-  const bestNames = best.map(byId).filter((t): t is Taxon => !!t).map(nameOf).join(', ');
-  const have = thin && next.thin ? next.thin.have : 0;
-  const picks = thin ? T('palette.next.bulkPicksThin', { n: best.length, want: goal, have, names: bestNames }) : T('palette.next.bulkPicksHole', { n: best.length, names: bestNames });
+  // PFA-B3 (board AddMany): the note explains the figure the add aims for (core addGoal: the Plants per
+  // job, or on a thin job the plants wanted less those it has), then names the picks; fewer fit than
+  // that, it says so ("Your “Plants per job” is 2; only 1 fits: Pinto peanut.").
+  const bestNames = listOf(best.map(byId).filter((t): t is Taxon => !!t).map(nameOf));
+  const aim = addGoal(next, store.paletteGoals.value);
+  const want = next.thin?.want ?? goal, have = next.thin?.have ?? 0;
+  const picks = best.length < aim
+    ? P(thin ? 'palette.next.bulkPicksThinFewer' : 'palette.next.bulkPicksHoleFewer', best.length, { goal, want, have, names: bestNames })
+    : P(thin ? 'palette.next.bulkPicksThin' : 'palette.next.bulkPicksHole', aim, { want, have, names: bestNames });
   const bestMarks = marked(best);
-  // The others the second button adds, counted by mark ("Among the others, 2 are mildly toxic …").
-  const moreMarks = new Map<string, number>();
-  for (const m of marked(allFits.filter((id) => !best.includes(id)))) for (const k of new Set(m.kinds)) moreMarks.set(k, (moreMarks.get(k) ?? 0) + 1);
+  // N6 (spec pf-a: "1 of the 8 is recorded invasive in Kenya"): a mark the second button adds beyond
+  // the picks, counted over every plant it adds.
+  const allMarked = marked(allFits), restKinds = new Set(allMarked.filter((m) => !best.includes(m.t.id)).flatMap((m) => m.kinds));
+  const ofMarks = [...restKinds].map((k) => [k, allMarked.filter((m) => m.kinds.includes(k)).length] as const);
+  // N6 (board AddMany): where the plants the bulk row leaves out are, under the link that lists them
+  // ("The 15 that need a second look and the 35 outside their range are in “See all 23 plants”, each
+  // with its word."), then the order those lists use (find.bestFirst).
+  const linkLabel = thin ? T('palette.next.findBackup') : P('palette.seeAll', all);
+  const restParts = [
+    found.look.length ? P('palette.next.restLook', found.look.length) : '',
+    found.outside.length ? P('palette.next.restOutside', found.outside.length) : '',
+    found.unknown.length ? P('palette.next.restUnchecked', found.unknown.length) : '',
+  ].filter(Boolean);
+  const restCount = found.look.length + found.outside.length + found.unknown.length;
+  const rest = restParts.length ? sentenceCase(P('palette.next.bulkRest', restCount, { parts: listOf(restParts), link: linkLabel })) : '';
+  const order = found.judged ? T('find.bestFirst', { period: periodName(periodIds[periodIds.length - 1]) }) : '';
   // BC2, C2: why this hole matters, then how many plants on the lists do it then, by fit, and how many
   // of those that fit stay in their climate range to the last period.
   const why = next.kind === 'job' && next.job ? T(`palette.next.why.${next.job}`) : next.kind === 'light' && next.stratum ? T(`palette.next.why.light_${next.stratum}`) : '';
@@ -371,7 +394,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
             {/* C13: the second button only when it adds more than the first. */}
             {allFits.length > best.length && <button type="button" class="button button-secondary" onClick={(e) => bulk(allFits, e)}>{P(thin ? 'palette.next.addAllThin' : 'palette.next.addAllHole', allFits.length)}</button>}
           </p>
-          <p class="ct-muted ct-small" id="ct-next-picks" data-next-bulk-note="">{picks}{bestMarks.map((m) => <> {T('palette.next.bulkMark', { name: nameOf(m.t), kinds: m.kinds.join(', ') })}</>)}{allFits.length > best.length && [...moreMarks].map(([k, n]) => <> {P('palette.next.bulkMarkMore', n, { kinds: k })}</>)}</p>
+          <p class="ct-muted ct-small" id="ct-next-picks" data-next-bulk-note="">{picks}{bestMarks.map((m) => <> {T('palette.next.bulkMark', { name: nameOf(m.t), kinds: m.kinds.join(', ') })}</>)}{ofMarks.map(([k, n]) => <> {P('palette.next.bulkMarkOf', n, { m: num(allFits.length), kinds: k })}</>)}{rest && <> {rest}</>}{order && <> {order}</>}</p>
         </>
       )}
       <p class="ct-next-actions">
@@ -445,9 +468,10 @@ function Filler({ t, v, hole, open, look = false }: { t: Taxon; v: PlantVerdict 
         <span class="ct-line" data-filler-meta="">{meta}</span>
         {room && <span class="ct-line" data-room-note="">{say(room)}</span>}
         {/* BC1 (board SiteMendoza): the fit word after the meta; under "Needs a second look" the group
-            says it and the row's chips say why (BC11: "Near the edge of its range", BC12: "Toxic"). */}
+            says it and the row's chips say why (PFA-B1: core lookChipLine, "Near the edge of its range"
+            for a range edge only, else its own cause; BC12: "Toxic"). */}
         {!look && <FitLine v={v} />}
-        <Marks t={t} lines={lines} country={store.flagScene.value.country} edge={look && v?.level === 'look'} />
+        <Marks t={t} lines={lines} country={store.flagScene.value.country} look={v ? lookChipLine(v) : null} />
       </div>
       <button type="button" class="button button-secondary ct-filler-add" aria-label={T('palette.addNamed', { name: nameOf(t) })} onClick={add}>{PLUS} {T('palette.add')}</button>
     </div>
@@ -486,7 +510,11 @@ function OthersSentence({ others, openThins, thinCount, goal, members, open, cha
     const f = holeFillers(h, members, open), fit = f.fits.length, look = f.look.length;
     const u = uncheckedLine(h);
     const title = u ? `${holeWords(h)} · ${say(u)}` : holeWords(h);
-    return fit ? P('palette.next.otherFit', fit, { hole: title }) : look ? P('palette.next.otherNoFitLook', look, { hole: title }) : T('palette.next.otherNoFit', { hole: title });
+    // PFA-B6: no-fit words only when core noneFits says so (the card's own test); plants not checked
+    // keep a hole out of the no-fit state, counted as such.
+    if (fit) return P('palette.next.otherFit', fit, { hole: title });
+    if (!noneFits(f)) return P('palette.next.otherUnchecked', f.unknown.length, { hole: title });
+    return look ? P('palette.next.otherNoFitLook', look, { hole: title }) : T('palette.next.otherNoFit', { hole: title });
   };
   const holesPart = others.length ? P('palette.next.otherHolesSay', others.length, { holes: others.map(holeText).join('; ') }) : '';
   const thinPart = openThins.length

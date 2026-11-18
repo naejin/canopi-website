@@ -101,3 +101,46 @@ test('BC31, BC29, BC30, BC34 the boards\' words: "También te alimenta" with no 
   assert.doesNotMatch(JSON.stringify(es), /segunda mirada/, 'es: never "Requiere una segunda mirada"');
   assert.equal(locale('pt')['consortium.palette.holeOf'], 'falha {i} de {n}', 'board Recife: "falha 1 de 3"');
 });
+
+// ---- final1 fixes (PFA-B1, PFA-B3, PFA-B7, N7) ----
+
+test('PFA-B1 a second look says its own reason: "Near the edge of its range" only for a range edge; a wetter place or a spot misfit names that cause, never the edge', () => {
+  const look = (limiting) => ({ id: 'x', judged: '1981-2010', ownYears: false, level: 'look', limiting, factors: [limiting], notes: [], range: 'judged' });
+  const edge = look({ factor: 'hot', level: 'look', basis: 'range', place: 31, low: null, high: 30, confidence: { term: 'edge' } });
+  assert.equal(say(core.lookChipLine(edge)), 'Near the edge of its range', 'a range side within the margin: the edge chip (BC11)');
+  const wet = look({ factor: 'dry', level: 'look', basis: 'range', place: 1.4, low: 0.2, high: 0.9 });
+  assert.equal(say(core.lookChipLine(wet)), 'wetter here than where it is recorded', 'past the wet end of its band: the cause, not the edge');
+  const spot = look({ factor: 'light', level: 'look', basis: 'spot', place: null, low: null, high: null });
+  assert.equal(say(core.lookChipLine(spot)), 'the light here is not what it needs', 'a spot misfit: the spot\'s words');
+  assert.equal(core.lookChipLine({ ...edge, level: 'fits' }), null, 'a fit carries no look chip');
+  assert.equal(core.lookChipLine({ ...edge, limiting: null }), null, 'nothing limiting named: no chip (the fit line says it)');
+});
+
+test('PFA-B3 the bulk note\'s figure is the goal the sentence explains (core addGoal, the figure bestToAdd takes), never the number picked', () => {
+  const ground = hole('job:ground:0-60');
+  const thin = hole('job:feeds_you:15-60', { thin: { have: 1, want: 3 } });
+  assert.equal(core.addGoal(ground, { plantsPerJob: 2 }), 2, 'a hole: the Plants per job');
+  assert.equal(core.addGoal(thin, { plantsPerJob: 3 }), 2, 'a thin job: want less have');
+  const one = { fits: [{ id: 'a' }], look: [], outside: [], unknown: [] };
+  assert.deepEqual(core.bestToAdd(ground, one, { plantsPerJob: 2 }), ['a'], 'only 1 fits: 1 picked, the goal still 2');
+  for (const l of LOCALES) {
+    const s = locale(l);
+    for (const k of ['bulkPicksHole', 'bulkPicksHoleFewer', 'bulkPicksThin', 'bulkPicksThinFewer', 'bulkMarkOf', 'bulkRest', 'restLook', 'restOutside', 'restUnchecked', 'otherUnchecked']) assert.ok(s[`consortium.palette.next.${k}`], `${l}: consortium.palette.next.${k}`);
+    assert.equal(s['consortium.palette.next.bulkMarkMore'], undefined, `${l}: "Among the others …" is gone (N6)`);
+  }
+});
+
+test('PFA-B7 a toast with no target names no narrowed hole (plain Find: "Pinto peanut added."); a new hole is still said', () => {
+  const shade = hole('light:low:0-60'), shadeAfter = hole('light:low:15-60');
+  const ground = hole('job:ground:0-60'), groundAfter = hole('job:ground:25-60');
+  const c = core.holeChange([shade, ground], [shadeAfter, groundAfter]);
+  assert.deepEqual(core.holeChangeLines(c, { left: false, target: 'none' }).filter((l) => !l.key.endsWith('.holesNoNew')).map(say), [], 'board Toasts: the Added line only');
+  const opened = core.holeChange([shade], [shade, ground]);
+  assert.equal(core.holeChangeLines(opened, { left: false, target: 'none' }).filter((l) => l.key.endsWith('.holesNew')).length, 1, 'a new hole is said');
+});
+
+test('N7 the Portuguese invasive chip reads without a bare "em" before the country ("em Brasil" is wrong; board: "no Brasil")', () => {
+  const pt = locale('pt')['consortium.find.invasiveShort'];
+  assert.doesNotMatch(pt, /\bem \{country\}/, `pt: ${pt}`);
+  assert.equal(pt.replace('{country}', 'Brasil'), 'Registrada como invasora: Brasil');
+});

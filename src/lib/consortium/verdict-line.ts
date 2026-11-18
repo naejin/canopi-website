@@ -82,10 +82,13 @@ export const thinTitleLine = (h: Hole): Line => ({ key: K('thinTitle'), vars: { 
 // `target`: the hole an add was for (the Next step's card, a hole's sheet): only that hole's change is
 // named, as it is now ("Covers the ground: nobody after year 25."), never the other holes the plants
 // narrowed (boards AddMany, FillHole); the holes-left count still counts them all.
-export function holeChangeLines(c: HoleChange, { left = true, thins = null, jobs = null, target = null }: { left?: boolean; thins?: ThinChange | null; jobs?: readonly string[] | null; target?: Pick<Hole, 'kind' | 'job' | 'stratum' | 'fromYear' | 'toYear'> | null } = {}): Line[] {
+// target: the hole the change was made for (its narrowed lane only is said), 'none' (an add with no
+// target, plain Find: no narrowed hole is said; board Toasts "Pinto peanut added."), or null (a removal,
+// a site edit: every narrowed hole).
+export function holeChangeLines(c: HoleChange, { left = true, thins = null, jobs = null, target = null }: { left?: boolean; thins?: ThinChange | null; jobs?: readonly string[] | null; target?: Pick<Hole, 'kind' | 'job' | 'stratum' | 'fromYear' | 'toYear'> | 'none' | null } = {}): Line[] {
   const out: Line[] = [];
   out.push(c.added.length ? { key: K('holesNew'), vars: {}, count: c.added.length, parts: { holes: c.added.map(holeTitleLine) } } : { key: K('holesNoNew'), vars: {} });
-  const sameLane = (h: Hole) => !target || (h.kind === target.kind && (h.job ?? h.stratum) === (target.job ?? target.stratum) && h.fromYear < target.toYear && target.fromYear < h.toYear);
+  const sameLane = (h: Hole) => target !== 'none' && (!target || (h.kind === target.kind && (h.job ?? h.stratum) === (target.job ?? target.stratum) && h.fromYear < target.toYear && target.fromYear < h.toYear));
   for (const n of c.narrowed) if (sameLane(n.before)) out.push({ key: K('holeNow'), vars: {}, parts: { hole: holeTitleLine(n.after) } });
   if (left && (c.added.length || c.closed.length || c.narrowed.length)) out.push(c.open.length ? { key: K('holesLeft'), vars: {}, count: c.open.length } : { key: K('holesNoneLeft'), vars: {} });
   for (const t of thins?.still ?? []) {
@@ -182,6 +185,16 @@ export function dryIntroLine(verdicts: readonly (PlantVerdict | null | undefined
 // The chip of a plant that needs a second look for its range edge (its verdict's level 'look'): "Near
 // the edge of its range" (boards FillHole, Main; BC11), on the candidate rows of the Next step and Find.
 export const edgeChipLine = (): Line => ({ key: K('bandEdge'), vars: {} });
+// A second look's chip on a candidate row (PFA-B1): its own reason, never a borrowed one. A range side
+// passed within the margin (its factor's confidence 'edge') is "Near the edge of its range"; any other
+// cause (a wetter place, a light or water misfit) says that cause (headLine's words). null: not a
+// second look, or no limiting factor named (the row's fit line says it).
+export function lookChipLine(v: PlantVerdict): Line | null {
+  if (v.level !== 'look' || !v.limiting) return null;
+  if (v.limiting.confidence?.term === 'edge') return edgeChipLine();
+  const cause = CAUSE[v.limiting.factor];
+  return cause ? { key: K(cause), vars: {} } : null;
+}
 
 // "+ {n} more" on a folded lane of a picture (ux-inventory E6; plant-palette-architecture 3.4).
 export const moreLine = (n: number): Line => ({ key: K('more'), vars: { n }, count: n });

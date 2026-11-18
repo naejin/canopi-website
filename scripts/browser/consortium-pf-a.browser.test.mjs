@@ -40,7 +40,7 @@ import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import test from 'node:test';
 import { failing } from '../expect-fail.mjs';
-import { BOARD, HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { BOARD, HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -636,7 +636,8 @@ async function holeCounts(page) {
 const token = (page, name) => page.evaluate((n) => { const e = document.createElement('span'); e.style.color = `var(${n})`; document.querySelector('.ct').append(e); const c = getComputedStyle(e).color; e.remove(); return c; }, name);
 const style = (page, sel, props) => page.$eval(sel, (e, p) => { const s = getComputedStyle(e), r = e.getBoundingClientRect(); return { ...Object.fromEntries(p.map((k) => [k, s.getPropertyValue(k)])), x: r.left, y: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height }; }, props);
 const plantsWord = (n) => `${n} ${n === 1 ? 'plant' : 'plants'}`;
-const endWords = (c) => c.fits ? plantsWord(c.fits) : c.look ? `${c.look} ${c.look === 1 ? 'needs' : 'need'} a second look` : 'no plant fits here';
+// PFA-B6: the no-fit words only when none fits and none is unchecked (core noneFits).
+const endWords = (c) => c.fits ? plantsWord(c.fits) : c.look ? `${c.look} ${c.look === 1 ? 'needs' : 'need'} a second look` : c.unknown ? `${c.unknown} not checked` : 'no plant fits here';
 
 test('PFA23 (pf-a Main, DarkMain, BC14-BC17, BC20): the card\'s head is a small ochre "Next step" with the position right-aligned on its line, the hole title the large Literata heading; its edge is ochre in both themes; each row\'s Add is an outline "+ Add" at the row\'s right; "See all N plants" (left) and "Not now" (right) are underlined links; no bare count repeated under a counted heading', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
@@ -733,14 +734,22 @@ test('PFA26 (pf-a Find at 390, BC23-BC25): with nothing typed, Find says "<clima
     const c = counts.find((x) => x.id === r.id);
     assert.equal(r.end, endWords(c), `BC25: the row counts what the Next step counts (${JSON.stringify(c)})`);
   }
-  // BC24: the board's glyphs, in ink.
+  // BC24, N3: the job chips in ink, each job's mark the page's one glyph (the Jobs legend's), never a
+  // Find-only drawing. (The board's glyphs replace the shared set where palette-page.css draws it: a
+  // hand-off to its owner.)
   const ink = await token(page, '--text');
-  const glyph = await page.$$eval('dialog[open] [data-job-chip] .ct-job-icon', (els) => els.map((e) => ({ job: e.dataset.job, color: getComputedStyle(e).color, mark: getComputedStyle(e).getPropertyValue('--job-mark') })));
+  const glyph = await page.$$eval('dialog[open] [data-job-chip] .ct-job-icon', (els) => els.map((e) => {
+    const twin = document.createElement('span');
+    twin.className = e.className; twin.dataset.job = e.dataset.job;
+    document.querySelector('.ct').append(twin);
+    const page = getComputedStyle(twin).getPropertyValue('--job-mark');
+    twin.remove();
+    return { job: e.dataset.job, color: getComputedStyle(e).color, mark: getComputedStyle(e).getPropertyValue('--job-mark'), page };
+  }));
   assert.ok(glyph.length > 0, 'the job chips');
-  const PATH = { feeds_soil: 'M10 3v7', mulch: 'M3 13l7 3 7-3', helpers: "cx='10' cy='5.2'", shelter: 'M3 7h9a2.5' };
   for (const g of glyph) {
     assert.equal(g.color, ink, `BC24: ${g.job} in ink`);
-    if (PATH[g.job]) assert.ok(g.mark.includes(PATH[g.job]), `BC24: ${g.job} is the board's glyph`);
+    assert.equal(g.mark, g.page, `N3: ${g.job} is the page's one glyph for that job`);
   }
   await control(page, 'button', 'Look in another climate’s list');
   await done(page);
@@ -1056,7 +1065,9 @@ test('PFA41 (pf-a R4, R8, C3, AddMany): a Mildly toxic plant that fits adds with
   for (const r of bestRows) assert.ok(note.includes(r.name), `C3: the note names the pick ${r.name} ("${note}")`);
   for (const r of bestRows.filter((x) => x.marks.length)) assert.match(note, new RegExp(`${r.name} is [^.]+ and says so on its row\\.`), `C3: "${r.name} is … and says so on its row." ("${note}")`);
   // R8: the others "Add all N" adds, their marks said before the tap.
-  if (others.some((r) => r.marks.length)) assert.match(note, /Among the others, \d+ (?:is|are) /, `R8: the marks of the others "Add all" adds ("${note}")`);
+  // N6 (spec pf-a: "1 of the 8 is recorded invasive in Kenya"): a mark the second button adds beyond the picks.
+  if (others.some((r) => r.marks.length)) assert.match(note, new RegExp(`\\d+ of the ${e.fits.length} (?:is|are) `), `R8, N6: the marks of what "Add all" adds ("${note}")`);
+  assert.doesNotMatch(note, /Among the others/, 'N6: the spec\'s form, never "Among the others"');
   // R4: Mildly toxic is a mark, not a second look: its add says no "with a warning".
   const mild = fits.find((r) => r.marks.some((m) => /Mildly toxic/.test(m)));
   if (mild) {
@@ -1064,5 +1075,194 @@ test('PFA41 (pf-a R4, R8, C3, AddMany): a Mildly toxic plant that fits adds with
     assert.ok(await until(page, () => !!window.__ctTest.store.toast.value), 'a toast');
     assert.doesNotMatch(await toastText(page), /with a warning/, `R4: "${mild.name}" (Mildly toxic) adds with no "added with a warning"`);
   }
+  await done(page);
+});
+
+// ---- final1 fixes (PFA-B1..B7, N2, N4-N6): the grower's scenario first, each figure from the engine ----
+
+// The rows of the Next step card or of the open sheet, each with its verdict and the chips it shows.
+const lookRows = (page, scope) => page.evaluate((sc) => {
+  const pv = window.__ctTest.store.poolVerdicts.value;
+  return [...document.querySelectorAll(`${sc} [data-filler-id], ${sc} [data-find-row]`)].map((r) => {
+    const id = r.dataset.fillerId ?? r.dataset.plantId, v = pv?.get(id);
+    return { id, level: v?.level, factor: v?.limiting?.factor ?? null, edge: v?.limiting?.confidence?.term === 'edge', text: r.textContent.replace(/\s+/g, ' ') };
+  }).filter((r) => r.level === 'look');
+}, scope);
+
+test('PFA42 (pf-a PFA-B1, SiteMendoza, FillHole): a second look says its own reason: "Near the edge of its range" only when a range side is near its limit; a plant held back by a wetter place says "Wetter here than where it is recorded", never the edge, in the Next step and in the hole\'s sheet', { timeout: 120_000 }, async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  // Far more rain than Kiambu's: plants recorded only in drier places need a second look for it.
+  await setSiteEdits(page, { rainShiftMm: 4000 }, 'Rain set');
+  assert.ok(await until(page, () => [...(window.__ctTest.store.poolVerdicts.value ?? new Map()).values()].some((v) => v.level === 'look' && v.limiting?.factor === 'dry'), null, 15_000), 'the engine puts some plants at a second look for the wetter place');
+  await openMore(page, '[aria-labelledby="ct-next-t"]');
+  const rows = [...await lookRows(page, '[aria-labelledby="ct-next-t"]')];
+  // The hole sheets of every open hole: their second looks, all listed.
+  // (the lead's through "See all N plants", the others through their rows)
+  const holeIds = await page.$$eval('.ct-other-holes button.ct-hole-row', (bs) => bs.length);
+  for (let i = -1; i < holeIds; i++) {
+    if (i < 0) await page.evaluate(() => document.querySelector('[data-next-seeall]')?.click());
+    else await page.$$eval('.ct-other-holes button.ct-hole-row', (bs, k) => bs[k]?.click(), i);
+    if (!await has(page, 'dialog[open]', 6000)) continue;
+    await openMore(page);
+    rows.push(...await lookRows(page, 'dialog[open]'));
+    await page.evaluate(() => window.__ctTest.store.closeSheet());
+    await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  }
+  const wet = rows.filter((r) => !r.edge && r.factor === 'dry'), edge = rows.filter((r) => r.edge);
+  assert.ok(wet.length > 0, `a second look held back by the wetter place is listed (${rows.length} second looks)`);
+  for (const r of wet) {
+    assert.ok(!r.text.includes('Near the edge of its range'), `PFA-B1: a plant held back by rain is not "near the edge of its range" ("${r.text.slice(0, 160)}")`);
+    assert.ok(r.text.includes('Wetter here than where it is recorded'), `PFA-B1: it names its reason ("${r.text.slice(0, 160)}")`);
+  }
+  for (const r of edge) assert.ok(r.text.includes('Near the edge of its range'), `BC11: a range edge keeps its chip ("${r.text.slice(0, 160)}")`);
+  await done(page);
+});
+
+test('PFA43 (pf-a PFA-B2, N5, FillHole): "See all N plants" opens a sheet that lists those N: the plants that fit, "Needs a second look (n)" and "Not checked (n)"; its intro counts the fits from the Next step\'s count and follows an add', { timeout: 120_000 }, async () => {
+  // A hole filled by 3+ plants that fit, some second looks and 4 plants with no range recorded (not checked).
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  const target = (await holeCounts(page)).find((c) => c.fits > 2 && c.look > 4);
+  assert.ok(target, 'a hole with fits and second looks');
+  await notRecorded(page, (await lookFillers(page, target.id)).slice(0, 4));
+  assert.ok(await until(page, (id) => document.querySelector('[data-next-unchecked-head]') || window.__ctTest.store.openHoles.value.some((h) => h.id === id), target.id), 'the verdicts follow');
+  const pick = (await holeCounts(page)).find((c) => c.id === target.id);
+  assert.equal(pick.unknown, 4, 'four plants not checked');
+  await page.evaluate((id) => { const st = window.__ctTest.store; st.notNow.value = new Set(st.openHoles.value.map((h) => h.id).filter((x) => x !== id)); }, pick.id);
+  const n = pick.fits + pick.look + pick.unknown;
+  await press(page, 'button', n === 1 ? 'See the plant' : `See all ${n} plants`);
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'the hole\'s sheet');
+  const heads = await page.evaluate(() => [...document.querySelectorAll('dialog[open] h3')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()));
+  if (pick.look) assert.ok(heads.includes(`Needs a second look (${pick.look})`), `the second looks (${heads.join(' | ')})`);
+  if (pick.unknown) assert.ok(heads.includes(`Not checked (${pick.unknown})`), `PFA-B2: "Not checked (${pick.unknown})" in the sheet, as on the card (${heads.join(' | ')})`);
+  await openMore(page);
+  const listed = await page.$$eval('dialog[open] [data-find-group]:not([data-find-group="outside"]) [data-find-row]', (r) => r.length);
+  assert.equal(listed, n, `PFA-B2: the sheet lists the ${n} plants "See all" counts`);
+  if (pick.fits > 1) {
+    const intro = (k) => new RegExp(`\\b${k} plants? on [^.]+ fills? it and fits? your place`);
+    await says(page, intro(pick.fits), { inDialog: true });
+    const first = (await findAdds(page))[0];
+    await addInFind(page, first);
+    assert.ok(await until(page, () => !!document.querySelector('dialog[open] [data-find-undo]')), 'added');
+    await says(page, intro(pick.fits - 1), { inDialog: true });
+  }
+  await done(page);
+});
+
+test('PFA44 (pf-a PFA-B3, N6, AddMany): the bulk note explains the goal ("2 is your “Plants per job”; the 2 are A and B."), says where the others are ("The 15 that need a second look and the 35 outside their range are in “See all N plants”, each with its word.") and the order; when fewer fit than the goal it says so ("Your “Plants per job” is 5; only 3 fit: …")', { timeout: 120_000 }, async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder');
+  await says(page, OTHER_HOLES);
+  const e = await engineLead(page);
+  assert.ok(e.lead && e.lead.kind !== 'thin' && e.fits.length >= e.goal, 'the lead hole has as many fits as the goal');
+  const bulkNote = () => page.$eval('[data-next-bulk-note]', (p) => p.innerText.replace(/\s+/g, ' ')).catch(() => '');
+  const and = (xs) => new Intl.ListFormat('en', { type: 'conjunction' }).format(xs);
+  let note = await bulkNote();
+  const best = [];
+  for (const b of e.best) best.push(await page.evaluate((c) => [...document.querySelectorAll('[data-filler-id]')].find((r) => r.querySelector('i[lang="la"]')?.textContent === c)?.querySelector('button[aria-label^="Add "]')?.getAttribute('aria-label').replace(/^Add /, ''), b));
+  assert.ok(note.startsWith(`${e.goal} is your “Plants per job”; ${e.goal === 1 ? `it is ${best[0]}` : `the ${e.goal} are ${and(best)}`}.`), `board AddMany: "${e.goal} is your “Plants per job”; the ${e.goal} are …" ("${note}")`);
+  const parts = [e.look.length && `${e.look.length} ${e.look.length === 1 ? 'that needs' : 'that need'} a second look`, e.outside.length && `${e.outside.length} outside ${e.outside.length === 1 ? 'its' : 'their'} range`, e.unknown.length && `${e.unknown.length} not checked`].filter(Boolean);
+  if (parts.length) assert.ok(note.includes(`are in “See all ${e.seeAll} plants”, each with its word.`) || note.includes(`is in “See all ${e.seeAll} plants”, with its word.`), `N6: where the others are ("${note}")`);
+  for (const p of parts) assert.ok(note.includes(p), `N6: "${p}" ("${note}")`);
+  assert.ok(note.includes('Best fit first: plants that fit before those that need a second look'), `N6: the order ("${note}")`);
+  // Fewer fit than the goal: a goal above the fits of a hole with some.
+  const counts = await holeCounts(page);
+  const few = counts.filter((c) => c.fits > 0).sort((a, b) => a.fits - b.fits)[0];
+  const goal = [1, 2, 3, 5].find((g) => g > few.fits);
+  assert.ok(goal, `a goal above ${few.fits}`);
+  await page.evaluate(([id, g]) => { const st = window.__ctTest.store; st.setPlantsPerJob(g); st.notNow.value = new Set(st.openHoles.value.map((h) => h.id).filter((x) => x !== id)); }, [few.id, goal]);
+  assert.ok(await until(page, (k) => document.querySelector('[data-next-bulk-note]')?.innerText.includes(`is ${k};`), goal), 'the note follows the goal');
+  note = await bulkNote();
+  assert.match(note, new RegExp(`^Your “Plants per job” is ${goal}; only ${few.fits} ${few.fits === 1 ? 'fits' : 'fit'}: `), `PFA-B3: the goal stays the goal; only ${few.fits} fit ("${note}")`);
+  assert.doesNotMatch(note, /the 1 are|\b1 is your/, 'PFA-B3: never "the 1 are"');
+  await done(page);
+});
+
+test('PFA45 (pf-a PFA-B6, Find, Many): a hole whose only fillers are not checked never reads "no plant fits here": Find\'s hole rows and the 200-plant sentence count them "N not checked", as the Next step card does', { timeout: 180_000 }, async () => {
+  const page = await loadPalette200();
+  await says(page, 'Next step', { timeout: 20_000 });
+  // One other hole's only fillers have no range recorded: not checked, never "no plant fits".
+  const e0 = await engineLead(page);
+  const other = (await holeCounts(page)).find((c) => c.id !== e0.lead?.target.id && !c.fits && c.look > 0);
+  assert.ok(other, 'another hole filled only by second looks');
+  await notRecorded(page, await lookFillers(page, other.id));
+  assert.ok(await until(page, (id) => !!document.querySelector('[data-next-others]')?.textContent.includes('not checked)'), other.id), 'PFA-B6: the sentence counts the plants not checked');
+  const e = await engineLead(page);
+  const counts = await holeCounts(page);
+  assert.ok(counts.some((c) => c.id === other.id && !c.fits && !c.look && c.unknown > 0), `the hole is filled only by plants not checked (${JSON.stringify(counts)})`);
+  const card = await nextText(page);
+  const others = counts.filter((c) => c.id !== e.lead?.target.id);
+  const noFit = others.filter((c) => !c.fits && !c.unknown).length;
+  assert.equal((card.match(/no plant on your lists fits here and does this then/g) ?? []).length, noFit, `PFA-B6: the no-fit words for the ${noFit} holes none fits and none is unchecked (${JSON.stringify(others)})`);
+  for (const c of others.filter((x) => !x.fits && x.unknown)) assert.ok(card.includes(`(${c.unknown} not checked)`), `PFA-B6: "${c.unknown} not checked" for ${c.id}`);
+  await page.evaluate(() => window.__ctTest.store.openFind());
+  assert.ok(await has(page, 'dialog[open] [data-find-hole]', 10_000), 'Find\'s hole rows');
+  await openMore(page);
+  const rows = await page.$$eval('dialog[open] [data-find-hole]', (bs) => bs.map((b) => ({ id: b.dataset.findHole, end: b.querySelector(':scope > b')?.textContent.trim() })));
+  for (const r of rows) assert.equal(r.end, endWords(counts.find((c) => c.id === r.id)), `PFA-B6: Find's row says what the card says (${r.id})`);
+  await done(page);
+});
+
+test('PFA46 (pf-a PFA-B7, Toasts): in plain Find ("Add plants") the first add\'s message is the board\'s "Pinto peanut added.", no hole listed', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[open] [data-find-search]', 10_000), 'Find');
+  await page.type('dialog[open] [data-find-search]', 'pinto');
+  assert.ok(await until(page, () => document.querySelectorAll('dialog[open] [data-find-add]:not([data-added])').length > 0, null, 10_000), 'a hit');
+  const add = (await findAdds(page))[0];
+  const name = add.replace(/^Add /, '');
+  await addInFind(page, add);
+  assert.ok(await until(page, () => !!window.__ctTest.store.toast.value), 'a message');
+  const t = await toastText(page);
+  assert.ok(t === `${name} added.` || /^.+ added\. New holes?: /.test(t), `board Toasts: "${name} added." ("${t}")`);
+  assert.doesNotMatch(t, /: (?:nobody|nothing)\b/, `PFA-B7: no narrowed hole in plain Find ("${t}")`);
+  await done(page);
+});
+
+test('PFA47 (pf-a N2, boards Find, FindResults, AddMany state 3): before any add the sheet\'s foot reads "8 plants in your palette" with Done; after the first add the head reads "1 added this visit · your palette: 9 plants" with Done and the foot bar goes', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  const before = await members(page);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[open] [data-find-search]', 10_000), 'Find');
+  await says(page, `${before} plants in your palette`, { inDialog: true });
+  const where = () => page.evaluate(() => {
+    const d = document.querySelector('dialog[open]'), dr = d.getBoundingClientRect();
+    const dones = [...d.querySelectorAll('button')].filter((b) => b.textContent.trim() === 'Done').map((b) => b.getBoundingClientRect());
+    const title = d.querySelector('h2').getBoundingClientRect(), field = d.querySelector('[data-find-search]').getBoundingClientRect();
+    return { n: dones.length, done: dones[0] && { top: dones[0].top, bottom: dones[0].bottom }, title: { top: title.top, bottom: title.bottom }, field: field.bottom, sheetBottom: dr.bottom };
+  });
+  let w = await where();
+  assert.equal(w.n, 1, 'one Done');
+  assert.ok(w.done.top > w.field, `N2: Done in the foot bar, below the search (${JSON.stringify(w)})`);
+  await page.click('dialog[open] [data-job-chip="feeds_you"]');
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  await addInFind(page, (await findAdds(page))[0]);
+  await says(page, `1 added this visit · your palette: ${before + 1} plants`, { inDialog: true });
+  w = await where();
+  assert.equal(w.n, 1, 'one Done');
+  assert.ok(w.done.top < w.title.bottom + 30, `N2: Done in the head beside the title after the add (${JSON.stringify(w)})`);
+  assert.ok(!(await dialogText(page)).includes(`${before + 1} plants in your palette`), 'N2: the foot bar is gone');
+  await done(page);
+});
+
+test('PFA48 (pf-a N4, size rule A14): Find\'s groups are count cells past 12 rows: three rows and "+ N more", then 10, then all with "Show fewer"; no "Show all N" cap', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => window.__ctTest.store.openFind());
+  assert.ok(await has(page, 'dialog[open]', 10_000), 'Find');
+  await page.click('dialog[open] [data-job-chip="feeds_you"]');
+  await page.waitForSelector('dialog[open] [data-find-group="fits"] [data-find-row]', { timeout: 6000 });
+  const total = await page.$eval('dialog[open] [data-find-group="fits"] h3', (h) => Number(h.textContent.replace(/[^\d]/g, ' ').trim().split(/\s+/).pop()));
+  assert.ok(total > 12, `a group past 12 rows (${total})`);
+  const rows = () => page.$$eval('dialog[open] [data-find-group="fits"] [data-find-row]', (r) => r.length);
+  assert.equal(await rows(), 3, 'N4: closed, three rows');
+  assert.ok(!(await names(page, 'button')).some((n) => /^Show all \d+/.test(n)), 'N4: no "Show all N" cap');
+  await press(page, 'button', `+ ${total - 3} more`);
+  assert.equal(await rows(), Math.min(10, total), 'N4: opened, ten rows');
+  if (total > 10) await press(page, 'button', `+ ${total - 10} more`);
+  assert.equal(await rows(), total, 'N4: then all');
+  await control(page, 'button', 'Show fewer');
   await done(page);
 });

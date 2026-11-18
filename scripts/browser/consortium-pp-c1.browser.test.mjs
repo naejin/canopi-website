@@ -26,6 +26,7 @@ import { test } from 'node:test';
 import { aria, en, has, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { suggestedAt } from './f1a-helpers.mjs';
+import { openMore } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -55,8 +56,9 @@ const plainFind = async () => {
   await hasFind(page);
   return page;
 };
-// Every "Show all N" of Find pressed, so each group lists all its plants (fix round 1, B2).
-const expandAll = async (page) => { for (let i = 0; i < 8 && await page.$(`${FIND} [data-find-showall]`); i++) await page.click(`${FIND} [data-find-showall]`); };
+// Every group's "+ N more" pressed (pf-a N4: each group is a MoreList, the size rule), so each group
+// lists all its plants (fix round 1, B2).
+const expandAll = (page) => openMore(page, FIND);
 // The start lists no plant (board Find, K3): "Every plant on the list" lists them all, a job chip
 // (the filter column at 960) its plants, as a grower does.
 // None judged (c1r5 W2), "Every plant" is already the choice: the start's "Show N plants" lists them.
@@ -525,7 +527,9 @@ test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s count
   await page.click(`${FIND} [data-find-inpalette-line] button`);
   assert.equal(await countSays(), said + mine, 'with the palette\'s plants listed as rows, the count line counts them');
   const all = await page.$eval(`${FIND} [data-filter="all"]`, (i) => Number(/(\d+) plants?/.exec(i.closest('label').textContent)?.[1]));
-  await page.click(`${FIND} [data-filter="all"]`);
+  // (a DOM click: at 1280 the panel's foot bar, "N plants in your palette · Done" (pf-a N2), can sit over
+  // the radio where the pointer would land)
+  await page.$eval(`${FIND} [data-filter="all"]`, (e) => e.click());
   assert.equal(await listed(), all, `"Every plant on the list" said ${all}`);
   assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), /Best fit first/, 'ranked: "Best fit first"');
   const nowhere = await suggestedAt(null, 'Temperate');
@@ -536,21 +540,20 @@ test('PP-C49 (c1 fix round 2 r2-10 + r2-08): a chip\'s and a fit choice\'s count
 });
 
 // Fix round 1, B2 and B3 (board FindResults; conformance c1 #2, #3): plain Find folds the plants outside
-// their range behind one counted button too, lists best first (the years in range; the palette's holes
-// wait for a store seam, pf) with the line saying so, and shows at most a screenful per group behind "Show all N".
-test('PP-C42 (c1 fix B2+B3 best first, folded outside, Show all): plain Find', async () => {
+// their range behind one counted button too, lists best first with the line saying so, and (pf-a N4,
+// the size rule A14) each group past 12 rows is a count cell: three rows and "+ N more", then all.
+test('PP-C42 (c1 fix B2+B3 best first, folded outside; pf-a N4 count cells): plain Find', async () => {
   const page = await plainFind();
   // A list, as a grower asks for one: Part shade and Shade (Lyon's one outside plant, Rubus tricolor, is Shade).
   for (const v of ['medium', 'low']) await page.click(`${FIND} [data-filter="light"][data-value="${v}"]`);
   assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent).catch(() => ''), /^\d+ plants\. Best fit first/, 'the count line, then "Best fit first"');
   assert.equal(await page.$(`${FIND} [data-find-group="outside"]`), null, 'the outside plants are folded in plain Find');
   assert.ok(await page.$(`${FIND} [data-find-outside]`), '"Show N outside their climate range"');
+  const total = await page.$eval(`${FIND} [data-find-group="fits"] h3`, (h) => Number(h.textContent.replace(/[^\d]/g, ' ').trim().split(/\s+/).pop()));
   const shown = await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.length);
-  assert.ok(shown > 0 && shown <= 20, `a screenful at most (${shown})`);
-  const all = await page.$eval(`${FIND} [data-find-group="fits"] [data-find-showall]`, (b) => Number(/\d+/.exec(b.textContent)?.[0])).catch(() => null);
-  assert.ok(all > 20, '"Show all N"');
-  await page.click(`${FIND} [data-find-group="fits"] [data-find-showall]`);
-  assert.equal(await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.length), all, 'it lists them all');
+  assert.equal(shown, total > 12 ? 3 : total, `N4: three rows past 12, else all (${shown} of ${total})`);
+  await expandAll(page);
+  assert.equal(await page.$$eval(`${FIND} [data-find-group="fits"] [data-find-row]`, (els) => els.length), total, 'it lists them all');
 });
 
 // Fix round 1, B1, B5, B13 (boards FindResults, FillHole, AddAnyway; conformance c1 #1, #8, #16): a row

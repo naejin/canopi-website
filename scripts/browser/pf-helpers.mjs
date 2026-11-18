@@ -244,9 +244,49 @@ export async function engineLead(page) {
     all: f.fits.length + f.look.length + f.outside.length + f.unknown.length,
     // BC3: "See all N plants" counts what Find lists first: the fits, the second looks, the unchecked.
     seeAll: f.fits.length + f.look.length + f.unknown.length,
-    // BC11: the second looks the verdict puts near the edge of their range (their chip "Near the edge of its range").
-    lookEdge: sci(f.look.filter((t) => pv.get(t.id)?.level === 'look')),
+    // BC11, PFA-B1: the second looks whose limiting measure is a range side within the margin (their chip
+    // "Near the edge of its range"); any other second look names its own cause.
+    lookEdge: sci(f.look.filter((t) => pv.get(t.id)?.level === 'look' && pv.get(t.id)?.limiting?.confidence?.term === 'edge')),
   };
 }
 // The text of the Next step's card, one line (its heading "Next step" opens it), or ''.
 export const nextText = async (page) => (await sectionText(page, 'Next step')) ?? '';
+
+// Opens every MoreList fold in scope ('dialog[open]' or the Next step card): presses "+ N more" until
+// none is left, so each group lists all its plants (the size rule, A14).
+export async function openMore(page, scope = 'dialog[open]') {
+  await frames(page); // the render the last action asked for
+  for (let i = 0; i < 40; i++) {
+    const hit = await page.evaluate((sc) => {
+      const b = [...document.querySelectorAll(`${sc} button`)].find((x) => /^\+ [\d,]+ more$/.test(x.textContent.trim()));
+      if (b) b.click();
+      return !!b;
+    }, scope);
+    if (!hit) return;
+    await frames(page);
+  }
+}
+// Plants with no climate range recorded (the release's 'not-recorded' case, PFA-B2/B6): the verdict
+// rule wrapped so these plants read 'unknown' ("not checked") and never hold, the rest unchanged.
+export const notRecorded = (page, ids) => page.evaluate((list) => {
+  const st = window.__ctTest.store, rule = st.verdictRule.value, set = new Set(list);
+  st.verdictRule.value = {
+    ...rule,
+    verdicts: (taxa, ctx) => {
+      const m = rule.verdicts(taxa, ctx);
+      for (const id of set) { const v = m.get(id); if (v) m.set(id, { ...v, level: 'unknown', limiting: null, factors: [], notes: [], range: 'not-recorded' }); }
+      return m;
+    },
+    holdsBy: (t, c, p) => !set.has(t.id) && rule.holdsBy(t, c, p),
+  };
+}, ids);
+// The plants on the lists (not in the palette) that fill a hole and need a second look: core fills on
+// the page's own pool and verdicts.
+export async function lookFillers(page, holeId) {
+  const s = await page.evaluate((id) => {
+    const st = window.__ctTest.store, ids = new Set(st.members.value);
+    return { hole: st.openHoles.value.find((h) => h.id === id), pool: (st.offerPool.value ?? []).filter((t) => !ids.has(t.id)), pv: [...(st.poolVerdicts.value ?? new Map())] };
+  }, holeId);
+  const pv = new Map(s.pv);
+  return s.pool.filter((t) => core.fills(s.hole, t) && pv.get(t.id)?.level === 'look').map((t) => t.id);
+}

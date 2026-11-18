@@ -182,9 +182,12 @@ export function nextTarget(holeList: readonly Hole[], thins: readonly Hole[], pu
 
 // The plants a bulk add takes for a target: fits only, in fillers order (best fit first); a hole wants
 // the goal, a thin spot want − have; never more than fit (none: []).
+// How many plants the bulk add aims for (PFA-B3: the figure its note explains): a hole, the Plants per
+// job; a thin job, the plants wanted less those it has. bestToAdd takes up to this many.
+export const addGoal = (target: Hole, goals: PaletteGoals = DEFAULT_GOALS): number =>
+  target.thin ? Math.max(0, target.thin.want - target.thin.have) : goals.plantsPerJob;
 export function bestToAdd(target: Hole, fillers: Fillers, goals: PaletteGoals = DEFAULT_GOALS): PlantId[] {
-  const n = target.thin ? Math.max(0, target.thin.want - target.thin.have) : goals.plantsPerJob;
-  return fillers.fits.slice(0, n).map((t) => t.id);
+  return fillers.fits.slice(0, addGoal(target, goals)).map((t) => t.id);
 }
 
 // What a change did to the open holes, paired by kind and lane (job or light level) and overlapping
