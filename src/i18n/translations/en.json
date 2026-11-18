@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "toxicity not checked for {n} of the {total} plants",
   "consortium.find.hideNoLight": "Hide plants whose light is not checked yet",
   "consortium.find.holesHead": "one: Your palette has # hole | other: Your palette has # holes",
-  "consortium.find.allHoles": "one: The # hole | other: All # holes",
   "consortium.find.holePlants": "one: # plant | other: # plants",
   "consortium.find.sortedFillsFrom": "Sorted: fills this first. Opened from “{lane}, years {from} to {to}”; the filter “Fills a hole or a thin job” is on.",
   "consortium.palette.next.spanFrom": "from year {from} on",

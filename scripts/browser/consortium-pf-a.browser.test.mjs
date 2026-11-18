@@ -298,7 +298,7 @@ test('PFA8 (pf-a FillHole, HoleOpen): Find opened from a hole says "Best fit fir
   await done(page);
 });
 
-test('PFA9 (pf-a Find): Find opened from "Add plants" says "Your palette has N holes" (the engine\'s open holes), a row per hole in one form with its count of plants, and "All N holes" when they do not all show; on an empty palette that line is hidden', async () => {
+test('PFA9 (pf-a Find, C8): Find opened from "Add plants" says "Your palette has N holes" (the engine\'s open holes), a row per hole in one form with its count of plants, every hole while the palette has 40 plants or fewer (the size rule); on an empty palette that line is hidden', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder');
   await says(page, OTHER_HOLES);
   const e = await engineLead(page);
@@ -308,7 +308,10 @@ test('PFA9 (pf-a Find): Find opened from "Add plants" says "Your palette has N h
   const t = await pageText(page) + ' ' + await dialogText(page);
   const rows = t.match(/(?:Full sun|Mostly sun|Part shade|Shade|Feeds you|Feeds the soil|Makes mulch|Covers the ground|Brings helpers|Shelters and protects): nobody[^0-9]*?(?:\d+ plants? not checked)?\s?\d+ plants?\b/g) ?? [];
   assert.ok(rows.length >= Math.min(4, e.open.length), `board: a row per hole with its count of plants ("Shade: nobody, at any time 8 plants"; ${rows.length})`);
-  if (e.open.length > 4) await control(page, 'button', `All ${e.open.length} holes`);
+  // C8, the size rule (A14): a palette of 40 plants or fewer lists every hole, with no other cap (the
+  // board's 4-of-7 fold is a known board difference).
+  assert.equal(await page.$$eval('dialog[open] [data-find-hole]', (r) => r.length), e.open.length, 'C8: every hole is a row');
+  assert.doesNotMatch(await dialogText(page), /All \d+ holes|\+ \d+ more/, 'C8: no fold on a small palette');
   await done(page);
   const empty = await emptyPalette();
   await press(empty, 'button', 'Find plants');
@@ -511,6 +514,11 @@ test('PFA18 (pf-a AddMany, "Find a backup"): Find opened from a thin job reads "
   await press(page, 'button', 'Find a backup');
   assert.ok(await has(page, 'dialog[open]', 10_000), 'Find opens');
   await says(page, 'Sorted: fills this first.');
+  // C7 (board AddMany state 3): the Add sheet keeps its title, "Add plants", beside the visit's count
+  // and Done; where it came from is the "Opened from" line, never the title.
+  assert.equal(await page.evaluate(() => document.querySelector('dialog[open] h2')?.textContent?.trim()), 'Add plants', 'C7: the head reads "Add plants"');
+  const m = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await says(page, `${m} plants in your palette`, { inDialog: true });
   // BC10 (board AddMany state 3): where it was opened from, and each row a backup, never "fills this hole".
   const t = e.lead.target;
   await says(page, `Opened from “${JOB_NAME[t.job]}, years ${t.fromYear} to ${t.toYear}”; the filter “Fills a hole or a thin job” is on.`, { inDialog: true });
@@ -703,7 +711,7 @@ test('PFA25 (pf-a AddMany at 390, BC18, BC19): under 640 px the bulk buttons are
   await done(page);
 });
 
-test('PFA26 (pf-a Find at 390, BC23-BC25): with nothing typed, Find says "<climate> · N of the M plants … fit your place today", its field "Name in any language, or a job", a sliders mark on Filters, no "Show the N plants that fit"; "Your palette has N holes" a small label over dashed hole rows with ochre counts (each the Next step\'s count, or the no-fit words), four before "All N holes"; job chips in the board\'s ink glyphs; the foot "Look in another climate\'s list"', async () => {
+test('PFA26 (pf-a Find at 390, BC23-BC25): with nothing typed, Find says "<climate> · N of the M plants … fit your place today", its field "Name in any language, or a job", a sliders mark on Filters, no "Show the N plants that fit"; "Your palette has N holes" a small label over dashed hole rows with ochre counts (each the Next step\'s count, or the no-fit words), every hole (C8, the size rule); job chips in the board\'s ink glyphs; the foot "Look in another climate\'s list"', async () => {
   const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
   await says(page, OTHER_HOLES);
   const counts = await holeCounts(page);
@@ -717,8 +725,7 @@ test('PFA26 (pf-a Find at 390, BC23-BC25): with nothing typed, Find says "<clima
   assert.ok(!/Show the \d+ plants? that fits?/.test(sub), 'BC23: no "Show the N plants that fit"');
   assert.ok(parseFloat((await style(page, 'dialog[open] #ct-find-holes', ['font-size']))['font-size']) <= 14, 'BC23: "Your palette has N holes" is a small label');
   const rows = await page.$$eval('dialog[open] [data-find-hole]', (bs) => bs.map((b) => ({ id: b.dataset.findHole, dashed: getComputedStyle(b).borderTopStyle, end: b.querySelector('.ct-hole-row-end')?.innerText.trim(), color: getComputedStyle(b.querySelector('.ct-hole-row-end')).color })));
-  assert.equal(rows.length, Math.min(4, counts.length), 'BC23: four holes before "All N holes"');
-  if (counts.length > 4) await control(page, 'button', `All ${counts.length} holes`);
+  assert.equal(rows.length, counts.length, 'C8: every hole on a palette of 40 plants or fewer (the size rule; the board\'s four-of-seven fold is a known board difference)');
   const ochre = [await token(page, '--accent-ink'), await token(page, '--accent')];
   for (const r of rows) {
     assert.equal(r.dashed, 'dashed', 'BC23: dashed hole rows');
@@ -892,6 +899,22 @@ test('PFA34 (pf-a Toasts, DeskStates, BC28): a message shows its words and Undo 
   assert.deepEqual(await visibleButtons(page, '.ct-toast'), ['Undo'], 'BC28: Undo only, as the boards draw it');
   await page.focus(aria('button', 'Dismiss'));
   assert.deepEqual(await visibleButtons(page, '.ct-toast'), ['Undo', 'Dismiss'], 'BC28: Dismiss shows while it has the focus');
+  // H2: its × is drawn in the toast's own light-on-dark colours (never a blank light square), in both themes.
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+    await page.focus(aria('button', 'Dismiss'));
+    const c = await page.evaluate(() => {
+      const card = document.querySelector('.ct-toast'), b = card.querySelector('[aria-label="Dismiss"]');
+      const rgb = (v) => (v.match(/[\d.]+/g) ?? []).map(Number);
+      const lum = ([r, g, b]) => { const f = (x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+      const bg = getComputedStyle(b).backgroundColor, a = rgb(bg)[3];
+      const under = a === 0 || bg === 'transparent' ? getComputedStyle(card).backgroundColor : bg;
+      const fg = getComputedStyle(b.querySelector('svg')).color;
+      const [l1, l2] = [lum(rgb(fg)), lum(rgb(under))].sort((x, y) => y - x);
+      return { fg, under, ratio: (l1 + 0.05) / (l2 + 0.05) };
+    });
+    assert.ok(c.ratio >= 3, `H2 (${theme}): the × stands out on the toast (${JSON.stringify(c)})`);
+  }
   await done(page);
 });
 

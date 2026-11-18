@@ -11,7 +11,6 @@
 .ct .ct-palette-page:has(> .ct-find-head) > h2[data-view-heading] { grid-column: 1; align-self: center; }
 .ct .ct-palette-page > .ct-find-head { grid-column: 2; align-self: center; }
 .ct .ct-find-phonebar { display: none; }
-.ct .ct-find-empty { margin: 0; }
 
 @media (max-width: 639px) {
   .ct .ct-palette-page > .ct-find-head { display: none; }
@@ -252,8 +251,8 @@
 /* Find's start (board Find; BC23): the palette's holes as dashed rows under a small ruled label, then
    "Or look by job" under the same label, then the foot links. */
 .ct .ct-find-holes { display: grid; gap: 6px; }
-.ct .ct-find-holes .ct-rows { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; list-style: none; }
-.ct .ct-find-holes .ct-rows > li { padding: 0; border: 0; }
+.ct .ct-find-holes .ct-more-items { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; list-style: none; }
+.ct .ct-find-holes .ct-more-items > li { padding: 0; border: 0; }
 .ct :is(.ct-find-holes, .ct-find-byjob) > h3 { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
 .ct .ct-find-holes > .text-link { justify-self: start; }
 .ct .ct-find-footlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; margin: 0; font-size: 14px; color: var(--text-secondary); }

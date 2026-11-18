@@ -120,11 +120,11 @@ function Router() {
 
 // The ways into Find the palette page shows (PP-C c1, slices 3.2; boards Palette, Empty, FindDesk):
 // "Add plants" right of the palette's title from 640 px (`head`), the phone's bottom bar with "Add
-// plants" (`bar`, under 640 px; hidden while a sheet is open, the sheet's foot holding its toasts) and
-// the empty palette's first row, "Find plants" (`empty`). Each opens Find through store.openFind().
+// plants" (`bar`, under 640 px; hidden while a sheet is open, the sheet's foot holding its toasts).
+// Each opens Find through store.openFind(); the empty palette's "Find plants" row is NextStep's own.
 // The bar's height is --ct-bar-room (find.css sets it while the bar shows; details.css reads it for
 // the toast offset, the root padding and scroll-padding-bottom).
-export type FindEntryPlace = 'head' | 'bar' | 'empty';
+export type FindEntryPlace = 'head' | 'bar';
 export function FindEntry({ where }: { where: FindEntryPlace }) {
   const open = () => store.openFind();
   if (where === 'bar') {
@@ -134,8 +134,7 @@ export function FindEntry({ where }: { where: FindEntryPlace }) {
       </div>
     );
   }
-  if (where === 'head') return <button type="button" class="button button-secondary ct-find-head" data-find-entry="head" onClick={open}>{T('find.title')}</button>;
-  return <p class="ct-find-empty"><button type="button" class="button button-primary" data-find-entry="empty" onClick={open}>{T('find.findPlants')}</button></p>;
+  return <button type="button" class="button button-secondary ct-find-head" data-find-entry="head" onClick={open}>{T('find.title')}</button>;
 }
 
 // Find at 960 px and wider (board DeskStates, FindDesk; Q5): beside the chart, not a modal: a

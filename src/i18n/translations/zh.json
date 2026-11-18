@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "{total} 种植物中有 {n} 种未核实毒性",
   "consortium.find.hideNoLight": "隐藏光照尚未核实的植物",
   "consortium.find.holesHead": "other: 你的调色板有 # 处空缺",
-  "consortium.find.allHoles": "other: 全部 # 处空缺",
   "consortium.find.holePlants": "other: # 种植物",
   "consortium.find.sortedFillsFrom": "排序：先列出能填补此处的植物。从“{lane}，第 {from} 年到第 {to} 年”打开；筛选条件“填补空缺或薄弱作用”已开启。",
   "consortium.palette.next.spanFrom": "从第 {from} 年起",

@@ -18,7 +18,8 @@
 //   row a checkbox and shows [data-find-bar] with "Add N plants" (its .button-primary);
 // - the names file: [data-find-names="loading|failed"] while it is not used; Find's one polite live
 //   region is [data-find-status] (aria-live="polite");
-// - the entries: [data-find-entry="head|bar|empty"] (Sheets.tsx FindEntry, mounted by commit 0); the
+// - the entries: [data-find-entry="head|bar"] (Sheets.tsx FindEntry) and the empty palette's
+//   [data-find-entry="empty"] (NextStep's Empty card); the
 //   phone bottom bar is [data-find-entry="bar"]'s container .ct-bar.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';

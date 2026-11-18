@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "Giftigkeit bei {n} der {total} Pflanzen nicht geprüft",
   "consortium.find.hideNoLight": "Pflanzen ausblenden, deren Licht noch nicht geprüft ist",
   "consortium.find.holesHead": "one: Ihre Palette hat # Lücke | other: Ihre Palette hat # Lücken",
-  "consortium.find.allHoles": "one: Die # Lücke | other: Alle # Lücken",
   "consortium.find.holePlants": "one: # Pflanze | other: # Pflanzen",
   "consortium.find.sortedFillsFrom": "Sortiert: was das füllt, zuerst. Geöffnet von „{lane}, Jahre {from} bis {to}“; der Filter „Füllt eine Lücke oder eine dünn besetzte Aufgabe“ ist an.",
   "consortium.palette.next.spanFrom": "ab Jahr {from}",

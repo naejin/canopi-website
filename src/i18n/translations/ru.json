@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "токсичность не проверена у {n} из {total} растений",
   "consortium.find.hideNoLight": "Скрыть растения, у которых свет ещё не проверен",
   "consortium.find.holesHead": "one: В палитре # пробел | few: В палитре # пробела | many: В палитре # пробелов | other: В палитре # пробела",
-  "consortium.find.allHoles": "one: # пробел | few: Все # пробела | many: Все # пробелов | other: Все # пробела",
   "consortium.find.holePlants": "one: # растение | few: # растения | many: # растений | other: # растения",
   "consortium.find.sortedFillsFrom": "Порядок: сначала то, что закрывает это место. Открыто из «{lane}, годы с {from} по {to}»; фильтр «Закрывает пробел или слабую роль» включён.",
   "consortium.palette.next.spanFrom": "с {from}-го года",

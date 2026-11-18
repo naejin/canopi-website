@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "giftigheid niet nagegaan voor {n} van de {total} planten",
   "consortium.find.hideNoLight": "Planten verbergen waarvan het licht nog niet is nagegaan",
   "consortium.find.holesHead": "one: Je palet heeft # gat | other: Je palet heeft # gaten",
-  "consortium.find.allHoles": "one: Het # gat | other: Alle # gaten",
   "consortium.find.holePlants": "one: # plant | other: # planten",
   "consortium.find.sortedFillsFrom": "Gesorteerd: wat dit vult eerst. Geopend vanuit “{lane}, jaren {from} tot {to}”; het filter “Vult een gat of een dunne taak” staat aan.",
   "consortium.palette.next.spanFrom": "vanaf jaar {from}",

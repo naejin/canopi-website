@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "toxicidade não verificada para {n} das {total} plantas",
   "consortium.find.hideNoLight": "Ocultar as plantas cuja luz ainda não foi verificada",
   "consortium.find.holesHead": "one: A sua paleta tem # lacuna | other: A sua paleta tem # lacunas",
-  "consortium.find.allHoles": "one: A # lacuna | other: As # lacunas",
   "consortium.find.holePlants": "one: # planta | other: # plantas",
   "consortium.find.sortedFillsFrom": "Ordem: primeiro o que preenche isto. Aberto a partir de “{lane}, anos {from} a {to}”; o filtro “Preenche uma lacuna ou uma função fraca” está ativo.",
   "consortium.palette.next.spanFrom": "a partir do ano {from}",

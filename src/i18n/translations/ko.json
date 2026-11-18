@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "{total}종 중 {n}종은 독성 미확인",
   "consortium.find.hideNoLight": "빛이 아직 확인되지 않은 식물 숨기기",
   "consortium.find.holesHead": "other: 팔레트에 빈자리가 #곳 있습니다",
-  "consortium.find.allHoles": "other: 빈자리 #곳 모두",
   "consortium.find.holePlants": "other: #종",
   "consortium.find.sortedFillsFrom": "정렬: 이곳을 채우는 식물 먼저. \"{lane}, {from}년차부터 {to}년차\"에서 열었습니다. \"빈자리나 약한 역할을 채움\" 필터가 켜져 있습니다.",
   "consortium.palette.next.spanFrom": "{from}년 차부터",

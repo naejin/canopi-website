@@ -25,7 +25,7 @@ import * as store from '../../store.ts';
 import type { AddResult } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Hole, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { fillReasonLine, fills, fitLine, jobIds, jobsOf, periodIds, periodName, laneLine, queryTokens, secondLook, thinTitleLine, uncheckedLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fillReasonLine, fills, fitLine, jobIds, jobsOf, periodIds, periodName, laneLine, queryTokens, secondLook, uncheckedLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
 import { NotChecked, SheetWaiting, type Frame } from '../kit/sheet.tsx';
@@ -113,7 +113,6 @@ const SLIDERS = <svg class="ct-glyph" viewBox="0 0 20 20" aria-hidden="true"><pa
 const CHEVRON = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 
 type Fit = 'fits' | 'inside' | 'all';
-const HOLES_FIRST = 4; // the start's holes before "All N holes" (board Find)
 type BoxKey = 'fills' | 'hideNoSize' | 'hideToxic' | 'hideInvasive' | 'hideNoLight';
 const BOXES: readonly BoxKey[] = ['fills', 'hideNoSize', 'hideToxic', 'hideInvasive', 'hideNoLight'];
 // The boxes that keep plants ("Fills a hole or a thin job"); the others hide them (R6).
@@ -153,7 +152,6 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The plants added in this visit (AddMany state 3), in the order added; the visit's count is derived
   // from it and the palette (visitIn below), never a second copy of the members (R7).
   const [visit, setVisit] = useKept<readonly string[]>(kept, 'visit', () => []);
-  const [allHoles, setAllHoles] = useKept(kept, 'allHoles', () => false); // the start's "All 7 holes" pressed
   // The fit choice (board FindFilters, B8): fits (the outside plants folded behind one counted
   // button, in a hole and in plain Find, B3), well inside its range only, every plant.
   const [fitChoice, setFit] = useKept<Fit>(kept, 'fit', () => 'fits');
@@ -405,7 +403,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // "Fits your place" under these filters: the judged plants only (isFit), as the list it lists.
   const fitsCount = (f: FindFilters) => applyFilters(matched, { ...f, range: false }, ctx).rows.filter(isFit).length;
 
-  const title = hole?.thin ? say(thinTitleLine(hole)) : hole ? holeWords(hole) : T('find.title');
+  // C7 (board AddMany state 3): a thin job opens the Add sheet, titled "Add plants"; where it came from
+  // is the sorted line's "Opened from …". A hole's sheet is titled by its hole.
+  const title = hole && !hole.thin ? holeWords(hole) : T('find.title');
   // The hole's sheet (boards FillHole, HoleOpen; BC9): the intro, the rows that fit, "Needs a second
   // look (n)", then the outside link and Done in the foot; no search, filters or count line (a thin
   // job's sheet is the Add sheet, AddMany state 3, with its search and its filter on).
@@ -720,19 +720,18 @@ export default function Find({ Frame }: { Frame: Frame }) {
             <p class="ct-muted ct-small" data-find-jobwords="">{T('find.jobWordsAll', { words: jobIds.map((j) => jobWords(j)[1] ?? jobWords(j)[0]).join(', ') })}</p>
           )}
           {start && open.length > 0 && members.length > 0 && (
-            // The palette's holes first (board Find): four, then "All 7 holes"; each opens Find for it.
+            // The palette's holes first (board Find); each opens Find for it. C8: the size rule (A14), every
+            // hole while the palette has 40 plants or fewer, else MoreList's fold; the board's 4-of-7 fold is a
+            // known board difference.
             // BC25: each row counts what the Next step counts for that hole (holeFillers: the plants that
             // fit, no second look); none fits, it says how many need a second look, or that none fits.
             <section class="ct-find-holes" data-find-holes="" aria-labelledby="ct-find-holes">
               <h3 id="ct-find-holes">{P('find.holesHead', open.length)}</h3>
-              <ul class="ct-rows">
-                {(allHoles ? open : open.slice(0, HOLES_FIRST)).map((h) => {
-                  const f = holeFillers(h, memberTaxa, open), u = uncheckedLine(h);
-                  const end = f.fits.length ? P('find.holePlants', f.fits.length) : f.look.length ? P('palette.next.countLook', f.look.length) : T('palette.next.holeNoneFits');
-                  return <li key={h.id}><HoleRow h={h} end={end} extra={u ? say(u) : null} onClick={() => openFillers(h)} attrs={{ 'data-find-hole': h.id }} /></li>;
-                })}
-              </ul>
-              {!allHoles && open.length > HOLES_FIRST && <button type="button" class="text-link" data-find-allholes="" onClick={() => setAllHoles(true)}>{P('find.allHoles', open.length)}</button>}
+              <MoreList items={open} keyOf={(h) => h.id} paletteSize={members.length} render={(h) => {
+                const f = holeFillers(h, memberTaxa, open), u = uncheckedLine(h);
+                const end = f.fits.length ? P('find.holePlants', f.fits.length) : f.look.length ? P('palette.next.countLook', f.look.length) : T('palette.next.holeNoneFits');
+                return <HoleRow h={h} end={end} extra={u ? say(u) : null} onClick={() => openFillers(h)} attrs={{ 'data-find-hole': h.id }} />;
+              }} />
             </section>
           )}
           {start && (

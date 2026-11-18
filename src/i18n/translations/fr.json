@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "toxicité non vérifiée pour {n} des {total} plantes",
   "consortium.find.hideNoLight": "Masquer les plantes dont la lumière n’est pas encore vérifiée",
   "consortium.find.holesHead": "one: Votre palette a # trou | other: Votre palette a # trous",
-  "consortium.find.allHoles": "one: Le # trou | other: Les # trous",
   "consortium.find.holePlants": "one: # plante | other: # plantes",
   "consortium.find.sortedFillsFrom": "Tri : ce qui comble ceci d’abord. Ouvert depuis « {lane}, années {from} à {to} » ; le filtre « Comble un trou ou un travail peu assuré » est actif.",
   "consortium.palette.next.spanFrom": "à partir de l’année {from}",

@@ -1281,7 +1281,6 @@
   "consortium.find.toxicUnchecked": "{total} 種のうち {n} 種は毒性未確認",
   "consortium.find.hideNoLight": "光がまだ確認されていない植物を隠す",
   "consortium.find.holesHead": "other: パレットにすき間が # か所あります",
-  "consortium.find.allHoles": "other: すき間 # か所すべて",
   "consortium.find.holePlants": "other: # 種",
   "consortium.find.sortedFillsFrom": "並び順：ここを埋める植物が先。「{lane}、{from}年目から{to}年目」から開きました。フィルター「すき間か手薄な役目を埋める」がオンです。",
   "consortium.palette.next.spanFrom": "{from}年目から",
