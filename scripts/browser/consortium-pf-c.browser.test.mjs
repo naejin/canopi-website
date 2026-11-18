@@ -117,7 +117,7 @@ test('PFC3 (pf-c the climate read, LocStates "read and used at once", Place, Pla
   assert.ok(zone, 'board: the climate read is used at once');
   await says(page, new RegExp(`We read: ${zone} \\([^)]+\\)\\. (?:This climate has its own plant list\\.|No list of its own yet: its plants come from the nearest lists \\([^)]+\\), each marked “estimate”\\.)`));
   assert.ok(!(await buttons(page)).some((b) => /^Use \w+$/.test(b)), 'board: no "Use <climate>" button (v13)');
-  await says(page, /We use this climate from now on; you can change it at any time\. Your place in figures: Köppen class C\w\w; nights in the coldest month average -?[\d.]+ ?°C\. Every figure the checks use is there, and you can change each one\./);
+  await says(page, /We use this climate from now on; you can change it at any time\. Your place in figures: Köppen class C\w\w; nights in the coldest month average [−-]?[\d.]+ ?°C\. Every figure the checks use is there, and you can change each one\./);
   await press(page, 'button', 'Your place in figures');
   assert.ok(await store(page, () => window.__ctTest.store.figureLine.value !== null), 'board: the link opens the figures (store.openFigure)');
   await press(page, 'button', 'Not this climate? Choose another');

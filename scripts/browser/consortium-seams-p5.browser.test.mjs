@@ -47,9 +47,9 @@ test('Item 8: a sheet\'s late close event never closes the next sheet, opened in
     await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 5000 });
     await page.click('#ct-root .ct-chart button[data-plant-id]');
     await page.waitForSelector('dialog.ct-sheet[open]', { timeout: 8000 });
-    assert.ok(await page.$('.ct-next .ct-next-actions .button'), 'a Next step with See all');
+    assert.ok(await page.$('.ct-next [data-next-seeall]'), 'a Next step with See all');
     await page.evaluate(() => {
-      const all = document.querySelector('.ct-next .ct-next-actions .button');
+      const all = document.querySelector('.ct-next [data-next-seeall]');
       document.querySelector('dialog.ct-sheet[open]').close();
       all.click();
     });

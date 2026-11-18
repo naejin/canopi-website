@@ -105,7 +105,7 @@ test('thin words: the strip\'s line and the Next step\'s title', () => {
 
 test('siteEditLines: each edit in words, in the panel\'s order; units from the page language', () => {
   const lines = core.siteEditLines({ nightsShiftC: -2, daysShiftC: 1.5, rainShiftMm: -100, dryMonthsShift: 2, watering: 'first-years', soilPh: 6.8, drainage: 'wet', pots: true });
-  assert.deepEqual(lines.map(say), ['coldest nights 2°C colder', 'hottest days 1.5°C warmer', '100 mm less rain a year', '2 more dry months in a row', 'watering, the first years', 'soil pH 6.8', 'the ground stays wet for days after heavy rain', 'pots or brought-in soil']);
+  assert.deepEqual(lines.map(say), ['coldest nights 2\u202f°C colder', 'hottest days 1.5\u202f°C warmer', '100 mm less rain a year', '2 more dry months in a row', 'watering, the first years', 'soil pH 6.8', 'the ground stays wet for days after heavy rain', 'pots or brought-in soil']);
   assert.deepEqual(core.siteEditLines(core.NO_EDITS), []);
   assert.deepEqual(core.siteEditLines({ pots: false, drainage: 'drains', watering: 'all-year' }).map(say), ['watering, all year', 'the ground drains within a day after heavy rain', 'in the ground']);
 });

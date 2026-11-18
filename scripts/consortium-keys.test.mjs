@@ -120,10 +120,15 @@ test('format.ts measures: the unit in the language\'s own form; a difference is 
   assert.equal(f.formatLength(2.5, 'en'), '2.5 m');
   assert.equal(sp(f.formatLength(2.5, 'fr')), '2,5 m');
   assert.equal(f.formatDepthCm(30.4, 'en'), '30 cm');
-  assert.equal(sp(f.formatTemp(-3.5, 'fr')), '-3,5 °C');
-  assert.match(f.formatTemp(-3.5, 'en'), /^-3\.5 ?°C$/);
-  assert.match(f.formatTempDiff(2, 'en'), /^\+2 ?°C$/, 'a difference is signed');
-  assert.match(f.formatTempDiff(0, 'en'), /^0 ?°C$/, 'no sign on zero');
+  // The boards' form (M21): a true minus sign and a narrow no-break space before °C where Intl puts none.
+  assert.equal(f.formatTemp(-3.5, 'en'), '\u22123.5\u202f°C', 'en: −3.5 °C');
+  assert.equal(f.formatTemp(-3.5, 'fr'), '\u22123,5\u202f°C', 'fr: −3,5 °C');
+  assert.equal(f.formatTemp(-3.5, 'de'), '\u22123,5 °C', 'de: −3,5 °C, its own space');
+  assert.equal(f.formatTemp(-3.5, 'ja'), '\u22123.5\u202f°C', 'ja: −3.5 °C');
+  assert.equal(f.formatTemp(12, 'en'), '12\u202f°C', 'no sign on a warm figure');
+  assert.equal(f.formatTempDiff(2, 'en'), '+2\u202f°C', 'a difference is signed');
+  assert.equal(f.formatTempDiff(-1.5, 'fr'), '\u22121,5\u202f°C', 'a negative difference takes the minus sign');
+  assert.equal(f.formatTempDiff(0, 'en'), '0\u202f°C', 'no sign on zero');
   assert.equal(f.formatArea(1200, 'en'), '1,200 m²');
   assert.equal(sp(f.formatArea(1200, 'fr')), '1 200 m²');
 });
