@@ -2,15 +2,15 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T22:27:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:19Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:d72e50b7c882b162
-    last_modified: 2026-11-18T22:15:30Z
+    digest: sha256:13d771d2d5c86882
+    last_modified: 2026-11-18T18:42:15Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
@@ -64,8 +64,8 @@ sources:
   - id: weigh-view-tsx
     resource: ../../src/islands/consortium/views/palette/Weigh.tsx
     title: src/islands/consortium/views/palette/Weigh.tsx
-    digest: sha256:0bab76330c2ed4a3
-    last_modified: 2026-11-18T21:43:34Z
+    digest: sha256:52688e792a9f120c
+    last_modified: 2026-11-18T17:52:14Z
   - id: jobs-picture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
     title: src/islands/consortium/views/palette/JobsPicture.tsx
@@ -108,7 +108,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 | Next step | `views/palette/NextStep.tsx` | the first open hole in words and years (`holeWords` = lane name + `holeLine`), its best three fillers with fit line and one-tap Add; fillers grouped by fit (fits, "Needs a second look (n)", "Not checked (n)"); the no-fit sentence only when core `noneFits` (no plant fits and none unchecked; pf-a R3); See all whenever there are plants to see, Not now (`store.notNow`, never saved), the other holes with Find; outside-range fillers behind "Show N outside their climate range"; a dry place adds `dryIntroLine` to the why sentence; the room note ("Balcony or pots.") sits above the card, not in it (BC32); the empty palette is a card of three bordered ways with a note under it counting the plants that fit near the place (BC33) |
 | Through the years | `views/palette/Years.tsx`, `rules/picture-years.ts` | one lane per light level (and "not recorded"); phone (max-width 639px): one time step with Earlier / Later writing `store.yearStep` and announcing `changeSummary` |
 | Jobs | `views/palette/JobsPicture.tsx` (reads `store.lanes`: holes.ts laneCounts' `counted` and `outside` per lane) | one lane per job (and "no job recorded") |
-| Your plants | `views/palette/YourPlants.tsx`, `views/plants/` (`model.ts` order, groups, search, fold; `state.ts`; `Small.tsx` at 40 plants or fewer; `Many.tsx` past 40) | v14 pf-e: "Your N plants" with its own "Add plants"; at 40 or fewer one row per plant (name button, its jobs as coloured words with their mark, its fit and warnings in words); past 40 (`SIZE_PALETTE`) a search, Group by (light level, job, fit, family, none; groups start closed, open to 10 then all), sort by column head on the desk table (fit order: outside, a second look, mild, fits, not checked), ticks that survive search, sort and regroup, and one Remove for the ticked plants with Undo; on the desk past 40 the head "Add plants" goes (Your plants carries it) |
+| Your plants | `views/palette/YourPlants.tsx`, core `weigh.ts` `yourPlants`, `sizeLine` | each plant once, warned plants first (owner "warn, never hide"), each warning in words with the warning icon (toxicity by level: Slight the `--warning` token with "Mildly toxic", Moderate and Severe the `--danger` token), its marks, its size ("in the wild": `height_m` is the wild maximum), and Remove (toast with Undo; focus to the next row's Remove, else the heading); then a plain row for each member the page cannot show (its guest list unread: `store.failedMembers`; on none of this climate's lists: `missingMembers.unlisted`; a member the shown plants already hold gets no such row) with why and Remove; `Palette.tsx` builds the rows once and passes them in; above 12 rows the rest fold behind "+ N more", opening it focuses the first row it shows (a plain focus, the toast keeps its opener); nothing at 0 plants |
 | Things to weigh | `views/palette/Weigh.tsx`, core `weigh.ts` `weighLines(members, {lookup, period}, {pending, unchecked})` | one family holding at least 3 plants and a quarter of the palette (neutral hint), and the water line only when needs are mixed ("Needs regular water" beside dry-loving) or under half are recorded ("not enough to judge"); no all-clear line (owner 2026-11-15); with no water line, the plants with no water need recorded still get a line of their own ("Water need not recorded for N plants"); water need read through `factAt('water_need', …)` (ADR-6) and grouped by core `weigh.ts` `waterNeed`; the plants not checked (the rows Your plants shows for them, counted by `Palette.tsx` from the same rows) count in m and are said ("N plants not checked"), never a judgement of part of the palette as the whole; "Checking" while a list loads, never for a list that failed; each line says "estimate" on a borrowed list; nothing at 0 plants |
 | Placeholder | `views/palette/Placeholder.tsx` | a return visit restoring, and the palette page until the plants are read (P2) |
 
@@ -169,14 +169,6 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 - **Copy link** is a disclosure opening Share's panel under it (link from the palette shown, Copy, Include
   my place); closing it returns the focus to Copy link.
 - "How to read this" sits under both picture titles with five paragraphs; a small panel at 960 px and wider.
-
-## Many plants (v14 pf-e, chunk 3, 2026-11-18)
-
-- Paste (`views/find/paste.ts`, `Paste.tsx`) reads every line, no cap; repeats count as read and "listed twice".
-- Groups Recognised / Need a choice / Not found, each closed past 10 rows; a choice is never taken unasked, even a one-plant search guess, unless the plant is already in the palette.
-- Matching ranks a plant's own name first (an English other name counts when the page is not English), then rank, then search order; plurals search the singular too.
-- Layout past 40: phone one column with Your plants last; desk two columns, the chart's column and Your plants' column (Warnings and fit, Balance under it).
-- Tests: `scripts/consortium-pf-e.test.mjs` (model and matcher), `scripts/browser/consortium-pf-e.browser.test.mjs`.
 
 ## Honest states (shell)
 

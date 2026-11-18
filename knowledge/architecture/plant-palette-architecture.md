@@ -6,7 +6,7 @@ tags: [consortium, architecture]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:48Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T22:27:48Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:22Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -437,8 +437,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:d72e50b7c882b162
-    last_modified: 2026-11-18T22:15:30Z
+    digest: sha256:13d771d2d5c86882
+    last_modified: 2026-11-18T18:42:15Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
