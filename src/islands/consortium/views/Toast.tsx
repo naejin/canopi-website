@@ -10,14 +10,23 @@
 // A notice (a line with an action and no Undo: a part that could not load, with Reload) sits in the
 // page's flow at the end of the tool, never over the page (b1a UI hand-off; details.css); it goes as
 // any line does.
+import { computed, signal } from '@preact/signals';
 import * as store from '../store.ts';
 import { hideToast, holdToast, toast, type ToastWhere as Where } from '../store.ts';
 import { T } from '../strings.ts';
 import { focusPlant } from '../focus.ts';
 
-// where: 'page' (shown while no sheet is open) or 'sheet' (inside the open sheet).
+// At 960 px and wider Find is a panel beside the chart, not a modal sheet (board DeskStates, Q5): the
+// page stays usable, so its lines show in the page's region, bottom left (Q4), never in the panel.
+const wideQuery = typeof matchMedia === 'function' ? matchMedia('(min-width: 960px)') : null;
+export const wide = signal(!!wideQuery?.matches);
+wideQuery?.addEventListener('change', (e) => { wide.value = e.matches; });
+export const deskFind = computed(() => wide.value && store.sheet.value?.kind === 'find' && store.step.value === 'palette');
+
+// where: 'page' (shown while no modal sheet is open) or 'sheet' (inside the open sheet).
 export function Toast({ where = 'page' }: { where?: Where }) {
-  const here = (store.sheet.value !== null) === (where === 'sheet');
+  const desk = deskFind.value;
+  const here = (store.sheet.value !== null && !desk) === (where === 'sheet');
   const line = here ? toast.value : null;
   const notice = !!line && !line.undo && !!line.action;
   const card = line && (
@@ -30,12 +39,14 @@ export function Toast({ where = 'page' }: { where?: Where }) {
           {line.action && (
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const { run, keep } = line.action!; if (!keep) hideToast(); run(); }}>{line.action.label}</button>
           )}
-          <button type="button" class="ct-icon-button" aria-label={T('dismiss')} onClick={hideToast}>
+          {/* BC28 (boards Toasts, DeskStates): the card shows its line and Undo only; Dismiss is for the
+              keyboard, shown only while it has the focus (details.css), as the line goes by itself. */}
+          <button type="button" class="ct-icon-button ct-toast-dismiss" aria-label={T('dismiss')} onClick={hideToast}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13" stroke="currentColor" stroke-width="1.8" /></svg>
           </button>
         </div>
   );
-  const heard = line?.where === where;
+  const heard = line?.where === where || (desk && where === 'page');
   return (
     <div class={`ct-toast-region ct-toast-${where}`}>
       <div role="status" aria-live="polite">{heard && card}</div>

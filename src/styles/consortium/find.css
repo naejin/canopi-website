@@ -11,7 +11,6 @@
 .ct .ct-palette-page:has(> .ct-find-head) > h2[data-view-heading] { grid-column: 1; align-self: center; }
 .ct .ct-palette-page > .ct-find-head { grid-column: 2; align-self: center; }
 .ct .ct-find-phonebar { display: none; }
-.ct .ct-find-empty { margin: 0; }
 
 @media (max-width: 639px) {
   .ct .ct-palette-page > .ct-find-head { display: none; }
@@ -44,8 +43,15 @@
 .ct .ct-find-group h3 { font-family: var(--font-sans); font-size: 16px; font-weight: 600; }
 .ct .ct-find-group h3 .ct-muted { font-weight: 400; }
 .ct .ct-find-group .ct-rows > li { content-visibility: auto; contain-intrinsic-size: auto 96px; }
+/* N4: a group is a MoreList; its rows read as the plain list's (details.css .ct-rows). */
+.ct .ct-find-rows-list .ct-more-items { display: grid; gap: 0; border-top: 1px solid var(--border); }
+.ct .ct-find-rows-list .ct-more-count { display: none; } /* the group heading says the count */
+.ct .ct-find-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+  content-visibility: auto; contain-intrinsic-size: auto 96px;
+}
 .ct .ct-find-add { min-width: 96px; justify-content: center; gap: 6px; }
-.ct .ct-find-add.is-added { background: var(--surface-alt); border-color: var(--text); }
 .ct .ct-find-why { color: var(--text); }
 .ct .ct-find-jobs { color: var(--text-secondary); }
 .ct .ct-find-kept { margin: 0; overflow-wrap: anywhere; }
@@ -68,7 +74,6 @@
 .ct .ct-find-slip p { margin: 0; overflow-wrap: anywhere; }
 .ct .ct-find-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .ct .ct-find-others h3 { display: flex; gap: 8px; align-items: baseline; margin: 0; font-family: var(--font-sans); font-size: 16px; font-weight: 600; }
-.ct .ct-find-showall { width: 100%; justify-content: center; }
 .ct .ct-find-pastelink { margin: 0; }
 
 /* ---- the filters (board FindFilters): behind "Filters" on phones and tablets, a column at 960 ---- */
@@ -188,3 +193,166 @@
 }
 /* One clear button in the field: Find's own (B15), not the browser's. */
 .ct .ct-find [data-find-search]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+
+/* The Next step (views/palette/NextStep.tsx, pf-a v14; boards Main, DarkMain, Palette, AddMany): the
+   grid cell holds the card in its ochre frame (BC15, both themes: --accent) and the Other holes card
+   under it (BC21). The head (BC14): the small "Next step" label in ochre small capitals (never
+   text-transform: the words stay as written for every reader), the position at the right of the same
+   line, then the target's title in the display face. */
+.ct .ct-next.ct-next-stack { display: grid; gap: 12px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.ct .ct-next-card { display: grid; gap: 6px; min-width: 0; padding: 12px 14px 4px; border: 1.5px solid var(--accent); border-radius: 14px; background: var(--surface); box-shadow: 0 1px 2px rgba(39, 35, 29, .06), 0 8px 24px rgba(39, 35, 29, .08); }
+.ct .ct-next-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; }
+.ct .ct-next .ct-next-label { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 18px; font-weight: 600; font-variant-caps: all-small-caps; letter-spacing: .04em; color: var(--accent-ink); }
+.ct .ct-next-head .ct-next-count { margin-inline-start: auto; text-align: end; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-next-part { white-space: nowrap; }
+.ct .ct-next-head .text-link { min-height: 0; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ct .ct-next .ct-next-hole { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 600; overflow-wrap: anywhere; }
+/* A MoreList under a heading that already gives its count (BC20): its count cell is not said twice. */
+.ct :is(.ct-next, .ct-other-holes) .ct-more-count { display: none; }
+/* Its rows (BC16): the words at the left, the outline "+ Add" at the right; rows ruled between. */
+.ct .ct-fillers .ct-more-items { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-fillers .ct-more-items > li + li { border-top: 1px solid var(--border); }
+.ct .ct-fillers .ct-filler { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 0; }
+.ct .ct-filler-text { flex: 1; min-width: 0; display: grid; gap: 1px; font-size: 14px; line-height: 19px; overflow-wrap: anywhere; }
+.ct .ct-filler-text .ct-filler-name { font-size: 16px; font-weight: 600; }
+.ct .ct-filler-text .ct-filler-name i { font-weight: 400; color: var(--text-muted); }
+.ct .ct-filler-reason { font-weight: 600; }
+.ct .ct-filler-reason .ct-glyph { color: var(--accent-ink); }
+.ct .ct-fillers [data-filler-meta] { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-filler-add { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; }
+.ct .ct-next .ct-fillers-head { padding-top: 8px; border-top: 1px solid var(--border); font-size: 14px; line-height: 20px; }
+/* The foot (board Main; BC17): the links that open more at the left, one under another when they do
+   not fit; "Not now" at the right of the first line. */
+.ct .ct-next-card .ct-next-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 12px; margin: 0; border-top: 1px solid var(--border); }
+.ct .ct-next-actions-start { display: flex; flex-wrap: wrap; gap: 0 12px; min-width: 0; }
+.ct .ct-next-card .ct-next-link { min-height: 40px; padding: 0 4px; border: 1px solid transparent; background: none; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: normal; text-align: start; }
+.ct .ct-next-card .ct-next-link:hover { border-color: transparent; color: var(--accent); }
+/* Other holes (board Main; BC21): its own card, a dashed box per hole. */
+.ct .ct-other-holes { display: grid; gap: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); }
+.ct .ct-other-holes h3 { margin: 0 0 6px; font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 600; }
+.ct .ct-other-holes h3 .ct-next-count { font-weight: 400; color: var(--text-secondary); }
+.ct .ct-other-holes .ct-more-items { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-other-holes .ct-more-items > li { padding-top: 6px; }
+.ct .ct-hole-fillers { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; padding: 4px 10px 0; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-hole-fillers .ct-hole-filler { min-height: 40px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.ct .ct-find-mark[data-level="soft"] { border-color: var(--border-strong); background: var(--surface-alt); color: var(--text-secondary); }
+/* A hole as a row (Other holes, Find's start; BC21, BC23): the dashed box, the add mark, the lane in
+   bold, what it opens in ochre at the right. */
+.ct .ct-hole-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 4px 10px; border: 1.5px dashed var(--text-secondary); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; line-height: 19px; text-align: start; cursor: pointer; }
+.ct .ct-hole-row:hover { border-color: var(--text); }
+.ct .ct-hole-row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-hole-row-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-hole-row-text b, .ct .ct-hole-row-end { font-weight: 600; }
+.ct .ct-hole-row-end { color: var(--accent-ink); white-space: nowrap; }
+/* The why sentence under the hole title (BC2): why it matters, the counts by fit, what holds. */
+.ct .ct-next-why { margin: 0; color: var(--text-muted); font-size: 14px; }
+.ct .ct-next-bulk { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding-top: 8px; }
+.ct .ct-next-bulk .button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: normal; max-width: 100%; min-height: 44px; padding-block: 8px; text-align: center; }
+/* On the phone the bulk buttons take the card's width, one under the other, above the foot (BC18). */
+@media (max-width: 639px) {
+  .ct .ct-next-bulk { flex-direction: column; align-items: stretch; }
+  .ct .ct-next-bulk .button { width: 100%; }
+}
+
+/* Find's start (board Find; BC23): the palette's holes as dashed rows under a small ruled label, then
+   "Or look by job" under the same label, then the foot links. */
+.ct .ct-find-holes { display: grid; gap: 6px; }
+.ct .ct-find-holes .ct-more-items { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; list-style: none; }
+.ct .ct-find-holes .ct-more-items > li { padding: 0; border: 0; }
+.ct :is(.ct-find-holes, .ct-find-byjob) > h3 { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; }
+.ct .ct-find-holes > .text-link { justify-self: start; }
+.ct .ct-find-footlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; margin: 0; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-find-undo { min-height: 44px; }
+/* An added row (board AddMany state 3; BC27): "✓ Added" in words and its Undo, inline at the row's right. */
+.ct .ct-find-done { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.ct .ct-find-added { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; color: var(--text); }
+.ct .ct-find-done .ct-find-undo { padding: 0 6px; }
+/* The Add sheet's head (BC27): title and this visit's count at the left, Done at the right. */
+.ct .ct-find .ct-sheet-head-main { flex: 1; }
+.ct .ct-find-headrow { display: flex; align-items: center; gap: 8px; }
+.ct .ct-find-headtext { flex: 1; min-width: 0; }
+.ct .ct-find-visit { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-find-visit b { color: var(--text); font-weight: 600; }
+
+/* Find beside the chart at 960 px and wider (board DeskStates, Q5; views/Sheets.tsx FindPanel): a
+   non-modal dialog in the palette grid's right column, the Next step below it while it is open. */
+.ct dialog.ct-sheet.ct-find-panel { position: static; display: block; margin: 0; padding: 0; width: auto; max-width: none; height: auto; max-height: none; overflow: visible; box-shadow: none; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: inherit; min-width: 0; }
+.ct dialog.ct-sheet.ct-find-panel .ct-sheet-inner { display: flex; flex-direction: column; height: auto; }
+.ct dialog.ct-sheet.ct-find-panel .ct-sheet-body { overflow: visible; }
+/* In the page flow the head does not stick: it would sit over the rows the page scrolls to. */
+.ct dialog.ct-sheet.ct-find-panel .ct-sheet-head { position: static; }
+@media (min-width: 960px) {
+  /* Board DeskStates: Find a panel beside the picture (not a modal), wide enough for FindDesk's filter
+     column; the pictures keep the left column, where the bottom-left message sits, never over the panel. */
+  .ct .ct-palette-body:has(> dialog.ct-find-panel) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+  .ct .ct-palette-body > dialog.ct-find-panel { grid-column: 2; grid-row: 1; }
+  .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-next { grid-column: 2; grid-row: 2; }
+  .ct .ct-palette-body[data-pictures]:has(> dialog.ct-find-panel) > .ct-palette-pictures { grid-column: 1; grid-row: 1 / span 2; }
+  /* A hole's panel is one column beside the chart (board HoleOpen; BC13): the chart keeps its width. */
+  .ct .ct-palette-body:has(> dialog.ct-find-panel.ct-find-hole) { grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); }
+  /* Find's filters in the panel (board FindDesk; BC13): checkbox rows, each count at the right. */
+  .ct .ct-find-panel:not(.ct-find-hole) .ct-find-layout { grid-template-columns: 230px minmax(0, 1fr); gap: 20px; }
+}
+.ct .ct-find-rows { display: grid; gap: 2px; }
+.ct .ct-find-rows .ct-find-check { min-height: 32px; font-size: 14px; }
+.ct .ct-find-rows .ct-find-check[data-on] > span:nth-of-type(1) { font-weight: 600; }
+.ct .ct-find-rows .ct-find-check > input { width: 18px; height: 18px; accent-color: var(--accent); }
+.ct .ct-find-local { align-self: center; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-find-filters-btn { display: inline-flex; align-items: center; gap: 6px; }
+.ct .ct-find-otherzones { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.ct .ct-find-otherrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 6px 0; }
+.ct .ct-find-others .ct-more-items { margin: 0; padding: 0; list-style: none; }
+/* The job chips' marks in ink, the word beside each (board Find). N3: the glyphs are the page's one
+   set (palette-page.css --job-mark), so a job reads the same in Find and in the Jobs legend. */
+.ct .ct-find .ct-find-chip .ct-job-icon { color: var(--text); }
+
+/* The empty palette's card (board Empty; BC33): the three ways in as bordered buttons, each with its
+   ochre mark, its label in ink over what it does, and a chevron; the first one's border ochre. The note
+   with the info mark sits under the card. */
+.ct .ct-next-emptycard { gap: 2px; padding: 14px; border: 1px solid var(--border); border-radius: 11px; box-shadow: none; }
+.ct .ct-next-emptycard > h3 { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 600; }
+.ct .ct-next-emptycard > p { margin: 0; padding: 2px 0 10px; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-ways { display: grid; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+.ct .ct-next-way { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface); color: var(--text); font: inherit; text-align: start; cursor: pointer; }
+.ct .ct-next-way.is-first { border: 1.5px solid var(--accent); }
+.ct .ct-next-way:hover { background: var(--surface-alt); }
+.ct .ct-next-way-mark { flex: none; display: flex; color: var(--accent-ink); }
+.ct .ct-next-way .ct-glyph { width: auto; height: auto; flex: none; }
+.ct .ct-next-way-text { flex: 1; min-width: 0; display: grid; }
+.ct .ct-next-way-label { font-size: 16px; line-height: 21px; font-weight: 600; color: var(--text); }
+.ct .ct-next-way-sub { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-next-emptynote { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-emptynote .ct-glyph { width: 14px; height: 14px; vertical-align: -2px; }
+/* The goal's choice the card's "Change" opens (R5, C1): "Plants per job" then four 44 px buttons,
+   the pressed one in ink (its state also said by aria-pressed). */
+.ct .ct-next-goal { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0 0; }
+.ct .ct-next-goal-label { font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-goal-ns { display: flex; gap: 6px; }
+.ct .ct-next-goal-n { min-width: 44px; min-height: 44px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.ct .ct-next-goal-n:hover { background: var(--surface-alt); }
+.ct .ct-next-goal-n[aria-pressed="true"] { border-color: var(--text); background: var(--surface-alt); box-shadow: inset 0 0 0 1px var(--text); font-weight: 600; }
+/* The room note above the Next step card (board Balcony; BC32): the pot mark, then the words. */
+.ct .ct-next-room { display: flex; gap: 8px; margin: 0; padding: 9px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-alt); font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-room b { color: var(--text); font-weight: 600; }
+.ct .ct-next-room-mark { flex: none; padding-top: 1px; }
+.ct .ct-next-room-mark .ct-glyph { width: 18px; height: 18px; }
+
+/* Find's title sits in the sheet's head, beside the close button (BC7; boards Find, FillHole). */
+.ct .ct-find .ct-sheet-head h2 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }
+/* On the phone Find is a bottom sheet over the dimmed page (boards Find, FillHole): a strip of the page
+   left above it, rounded top corners; still the native modal dialog (focus, Escape, inert page). */
+@media (max-width: 639px) {
+  .ct dialog.ct-sheet.ct-find:not(.ct-find-panel) { inset: auto 0 0 0; height: calc(100% - 32px); max-height: calc(100% - 32px); border-top: 1px solid var(--border-strong); border-radius: 14px 14px 0 0; }
+  .ct dialog.ct-sheet.ct-find:not(.ct-find-panel) .ct-sheet-head { border-radius: 14px 14px 0 0; }
+}
+/* A hole's sheet (BC9; boards FillHole, HoleOpen) is one column: its rows, no filter column. */
+.ct .ct-find-hole .ct-find-layout { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 960px) {
+  .ct .ct-sheet.ct-find.ct-find-hole:not(.ct-find-panel) { width: min(560px, 100%); }
+  .ct .ct-find-hole .ct-find-layout { grid-template-columns: minmax(0, 1fr); }
+}
+.ct .ct-find-hole .ct-add-bar { justify-content: space-between; }
+/* The Next step's not-checked line and, past 40 plants, the other holes as one paragraph (BC2, BC5). */
+.ct .ct-next-unchecked { margin: 0; font-size: 14px; color: var(--text); }
+.ct .ct-next-others { margin: 0; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-next-others .text-link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

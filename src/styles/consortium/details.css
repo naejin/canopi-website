@@ -155,10 +155,13 @@
 .ct .ct-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .ct .ct-paste-text { font-family: inherit; }
 
-/* Toast: bottom centre, above the page; always in the DOM so screen readers hear it. While a line
-   shows, the page keeps room for it at its end and around focus (W7): every control can be scrolled
-   or tabbed out from under it, and only the card itself takes clicks. */
-.ct .ct-toast-region { position: fixed; left: 50%; bottom: calc(20px + var(--ct-bar-room)); z-index: 50; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); pointer-events: none; }
+/* Toast: across the width above the bar (phone), bottom left of the window, 420 px wide, at 960 px and
+   wider (Q4, board DeskStates "Messages: bottom left of the window, 420 px"), never over Find's panel
+   on the right; always in the DOM so screen readers hear it. While a line shows, the page keeps room
+   for it at its end and around focus (W7): every control can be scrolled or tabbed out from under it,
+   and only the card itself takes clicks. */
+.ct .ct-toast-region { position: fixed; left: 12px; right: 12px; bottom: calc(20px + var(--ct-bar-room)); z-index: 50; pointer-events: none; }
+@media (min-width: 960px) { .ct .ct-toast-region { left: 24px; right: auto; width: 420px; max-width: calc(100% - 48px); } }
 .ct .ct-toast-region .ct-toast { pointer-events: auto; }
 /* A notice (a part that could not load, with Reload; views/Toast.tsx): in the flow at the end of the
    tool, so it covers nothing at any width (b1a UI hand-off), and no toast room is kept for it. */
@@ -181,6 +184,8 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   background: transparent; color: inherit; font-weight: 600; cursor: pointer;
 }
 .ct .ct-toast .ct-icon-button { color: inherit; }
+/* BC28: drawn only while it has the focus; 0 × 0 (still focusable) so no layout or size check counts an invisible control. */
+.ct .ct-toast .ct-toast-dismiss:not(:focus) { position: absolute; width: 0; height: 0; min-width: 0; min-height: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; padding: 0; margin: 0; }
 .ct .ct-toast svg { width: 16px; height: 16px; }
 /* The region inside an open sheet: in the sheet's foot, above its bar, at the sheet's right edge. In the
    flow, not fixed: it takes its own room, so it covers no control of the bar. */
@@ -247,18 +252,18 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct [data-allelo] .ct-glyph { width: 16px; height: 16px; flex: none; margin-top: 3px; }
 .ct .ct-d-cando { display: grid; gap: 10px; }
 .ct .ct-d-cando h3 { margin: 0; }
-.ct .ct-more { border-top: 1px solid var(--border); }
-.ct .ct-more:last-of-type { border-bottom: 1px solid var(--border); }
-.ct .ct-more > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; cursor: pointer; list-style: none; }
-.ct .ct-more > summary::-webkit-details-marker { display: none; }
-.ct .ct-more > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); flex: none; }
-.ct .ct-more[open] > summary::after { transform: rotate(-135deg); }
+.ct details.ct-more { border-top: 1px solid var(--border); }
+.ct details.ct-more:last-of-type { border-bottom: 1px solid var(--border); }
+.ct details.ct-more > summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; cursor: pointer; list-style: none; }
+.ct details.ct-more > summary::-webkit-details-marker { display: none; }
+.ct details.ct-more > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); flex: none; }
+.ct details.ct-more[open] > summary::after { transform: rotate(-135deg); }
 /* The sections' headings and their subheads in the board's bold sans (DetailsMore, DetailsDesk; round 4 V9). */
-.ct .ct-more > summary h3, .ct .ct-more h4 { font-family: var(--font-sans); font-weight: 600; line-height: 1.3; }
-.ct .ct-more > summary h3 { margin: 0; font-size: 17px; }
-.ct .ct-more > summary h3 .ct-muted { font-weight: 400; font-size: 15px; }
-.ct .ct-more > section { display: grid; gap: 10px; padding-bottom: 16px; }
-.ct .ct-more h4 { font-size: 15px; margin-top: 6px; }
+.ct details.ct-more > summary h3, .ct details.ct-more h4 { font-family: var(--font-sans); font-weight: 600; line-height: 1.3; }
+.ct details.ct-more > summary h3 { margin: 0; font-size: 17px; }
+.ct details.ct-more > summary h3 .ct-muted { font-weight: 400; font-size: 15px; }
+.ct details.ct-more > section { display: grid; gap: 10px; padding-bottom: 16px; }
+.ct details.ct-more h4 { font-size: 15px; margin-top: 6px; }
 .ct .ct-against-lede { margin: -4px 0 4px; font-size: 14px; color: var(--text-secondary); }
 .ct .ct-d-more .ct-correct { margin-top: 16px; }
 /* Today's band per factor (aria-hidden; the line under it is its text form). */

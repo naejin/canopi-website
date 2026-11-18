@@ -9,7 +9,7 @@
 // - The judged window is year 1 to year 60 (owner): a gap that ends by year 1 is 'not-judged' (a thin
 //   line, never a hole); nothing after year 60 is raised; a gap ending at 60 runs "after year n".
 // - While a guest list loads (ctx.pending), every hole is 'pending', never a false hole (marker P11).
-import type { Fillers, Hole, HoleChange, HoleKind, HoleRank, JobGap, JobId, LaneCount, PaletteGoals, PhaseOrd, PlantId, PlantVerdict, Stratum, TargetPosition, Taxon, ThinChange } from './types.ts';
+import type { Fillers, Hole, HoleChange, HoleKind, HoleRank, JobGap, JobId, LaneCount, Level, PaletteGoals, PhaseOrd, PlantId, PlantVerdict, Stratum, TargetPosition, Taxon, ThinChange } from './types.ts';
 import { jobIds, strata } from './types.ts';
 import { jobsOf, phaseSpan } from './jobs.ts';
 import { JUDGED_FROM_YEAR, JUDGED_TO_YEAR, PHASE_YEARS, yearsOf } from './years.ts';
@@ -159,23 +159,35 @@ export function thinTargets(lanes: readonly LaneCount[], pending = false): Hole[
 // spot among the thin spots ("thin spot 1 of 5"). index is 1-based; thinCount the open thin spots.
 const isOpen = (h: Hole): boolean => h.state === 'open';
 const putOffOf = (h: Hole, putOff: ReadonlySet<string>): boolean => putOff.has(h.thin && h.job ? thinKey(h.job) : h.id);
-export function targetPosition(holeList: readonly Hole[], thins: readonly Hole[], target: Hole): TargetPosition {
-  const open = holeList.filter(isOpen), openThins = thins.filter(isOpen);
+export function targetPosition(holeList: readonly Hole[], thins: readonly Hole[], target: Hole, hasFits?: (h: Hole) => boolean): TargetPosition {
+  const open = rankedHoles(holeList, hasFits).filter(isOpen), openThins = thins.filter(isOpen);
   const list = target.thin ? openThins : open;
   return { kind: target.thin ? 'thin' : 'hole', index: list.findIndex((h) => h.id === target.id) + 1, of: list.length, thinCount: openThins.length };
 }
-// The next target: the first open hole not put off, else the first open thin spot whose job is not put
-// off. putOff holds hole ids and thin keys (thinKey).
-export function nextTarget(holeList: readonly Hole[], thins: readonly Hole[], putOff: ReadonlySet<string> = new Set()): (TargetPosition & { target: Hole }) | null {
-  const target = holeList.find((h) => isOpen(h) && !putOffOf(h, putOff)) ?? thins.find((h) => isOpen(h) && !putOffOf(h, putOff));
-  return target ? { target, ...targetPosition(holeList, thins, target) } : null;
+// The holes in the Next step's order (pf-decisions 2026-11-18, v13 ranking change, kept by v14 'Parked'):
+// a cooler-months food hole comes first when plants that fit the place fill it (hasFits), the others
+// keep their rank order. Without hasFits, or with no such hole, the list as it is.
+export const isCoolFoodHole = (h: Hole): boolean => h.kind === 'cool' && (!h.job || h.job === 'feeds_you');
+export function rankedHoles(holeList: readonly Hole[], hasFits?: (h: Hole) => boolean): readonly Hole[] {
+  const cool = hasFits ? holeList.find((h) => isOpen(h) && isCoolFoodHole(h) && hasFits(h)) : undefined;
+  return cool ? [cool, ...holeList.filter((h) => h !== cool)] : holeList;
+}
+// The next target: the first open hole not put off (rankedHoles' order), else the first open thin spot
+// whose job is not put off. putOff holds hole ids and thin keys (thinKey).
+export function nextTarget(holeList: readonly Hole[], thins: readonly Hole[], putOff: ReadonlySet<string> = new Set(), hasFits?: (h: Hole) => boolean): (TargetPosition & { target: Hole }) | null {
+  const ranked = rankedHoles(holeList, hasFits);
+  const target = ranked.find((h) => isOpen(h) && !putOffOf(h, putOff)) ?? thins.find((h) => isOpen(h) && !putOffOf(h, putOff));
+  return target ? { target, ...targetPosition(ranked, thins, target) } : null;
 }
 
 // The plants a bulk add takes for a target: fits only, in fillers order (best fit first); a hole wants
 // the goal, a thin spot want − have; never more than fit (none: []).
+// How many plants the bulk add aims for (PFA-B3: the figure its note explains): a hole, the Plants per
+// job; a thin job, the plants wanted less those it has. bestToAdd takes up to this many.
+export const addGoal = (target: Hole, goals: PaletteGoals = DEFAULT_GOALS): number =>
+  target.thin ? Math.max(0, target.thin.want - target.thin.have) : goals.plantsPerJob;
 export function bestToAdd(target: Hole, fillers: Fillers, goals: PaletteGoals = DEFAULT_GOALS): PlantId[] {
-  const n = target.thin ? Math.max(0, target.thin.want - target.thin.have) : goals.plantsPerJob;
-  return fillers.fits.slice(0, n).map((t) => t.id);
+  return fillers.fits.slice(0, addGoal(target, goals)).map((t) => t.id);
 }
 
 // What a change did to the open holes, paired by kind and lane (job or light level) and overlapping
@@ -231,8 +243,21 @@ export function fills(hole: Hole, taxon: Taxon): boolean {
   return !!y && y.from < hole.toYear && (y.to === null || y.to > from);
 }
 
-// The plants that fill a hole, grouped: fits; needs a second look (level look, or a toxic or invasive
-// warning: never dropped, warn never hide); outside its range; not checked. Members are left out.
+// A plant's group, one ordered rule for the Next step's card (fillers) and Find's sheet (find-query.ts
+// findGroups), so a card and the sheet it opens give the same counts (PFA-R5): outside its range first;
+// then needs a second look (level look, or a toxic or invasive warning whatever the level: never
+// dropped, warn never hide; pf-decisions "Toxic counts as a second look", store.warnedPlant's one
+// second-look rule, so a warned plant with no range recorded keeps its warning heading); then fits;
+// anything else not checked (unknown is never a hole).
+export function fillerGroup(level: Level | undefined, warned: boolean): keyof Fillers {
+  if (level === 'outside') return 'outside';
+  if (level === 'look' || warned) return 'look';
+  if (level === 'fits') return 'fits';
+  return 'unknown';
+}
+
+// The plants that fill a hole, grouped by fillerGroup: fits; needs a second look; outside its range;
+// not checked. Members are left out.
 // Ranked by the open holes filled (of `open`, else this one), then holding to the latest period
 // (holds), then name.
 export function fillers(hole: Hole, pool: readonly Taxon[], verdicts: ReadonlyMap<PlantId, PlantVerdict>,
@@ -243,11 +268,7 @@ export function fillers(hole: Hole, pool: readonly Taxon[], verdicts: ReadonlyMa
   for (const t of pool) {
     if (inPalette.has(t.id) || !fills(hole, t)) continue;
     score.set(t.id, open.filter((h) => h.state === 'open' && fills(h, t)).length);
-    const level = verdicts.get(t.id)?.level ?? 'unknown';
-    if (level === 'outside') out.outside.push(t);
-    else if (level === 'look' || warned.has(t.id)) out.look.push(t);
-    else if (level === 'fits') out.fits.push(t);
-    else out.unknown.push(t);
+    out[fillerGroup(verdicts.get(t.id)?.level, warned.has(t.id))].push(t);
   }
   const rank = (a: Taxon, b: Taxon) => (score.get(b.id)! - score.get(a.id)!)
     || (Number(holds.get(b.id) ?? false) - Number(holds.get(a.id) ?? false))
@@ -255,6 +276,14 @@ export function fillers(hole: Hole, pool: readonly Taxon[], verdicts: ReadonlyMa
   for (const g of Object.values(out)) g.sort(rank);
   return out;
 }
+
+// The no-fit state of a target (R3; board Many, word map row 151): decided by the group counts, never
+// by one group alone. "No plant on your lists fits your place and does this then." only when no plant
+// fits and none is still to be checked: plants not checked were never judged, so they keep the card out
+// of it. Plants that need a second look do not fit (the board's own sentence: "no plant on your lists
+// fits here and does this then; 4 need a second look"), so they stay listed under their own heading
+// below that sentence, with "See all N" leading to them.
+export const noneFits = (f: Pick<Fillers, 'fits' | 'unknown'>): boolean => f.fits.length + f.unknown.length === 0;
 
 const ALL_PHASES: readonly PhaseOrd[] = [0, 1, 2, 3, 4, 5, 6];
 

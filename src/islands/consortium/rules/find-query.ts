@@ -7,19 +7,17 @@
 // Inform, don't block (owner 2026-11-14): no group hides a plant. A plant with a warning (a serious
 // conflict, a site misfit, toxic, recorded as invasive in the country) that fits otherwise needs a
 // second look; a plant with no verdict is "not checked", never a fit.
-import type { JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
-import { jobIds, jobsOf, queryTokens, fold, strata, yearsOf } from '../../../lib/consortium/index.ts';
+import type { Hole, JobId, Level, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';
+import { fillerGroup, fills, jobIds, jobsOf, queryTokens, fold, strata, yearsOf } from '../../../lib/consortium/index.ts';
 
 export interface FindGroups { fits: Taxon[]; look: Taxon[]; outside: Taxon[]; unchecked: Taxon[] }
 export const GROUPS = ['fits', 'look', 'outside', 'unchecked'] as const;
 export type Group = (typeof GROUPS)[number];
 
-// A plant's group: its verdict's level, a warned fit moved to "needs a second look".
+// A plant's group: core fillerGroup, the Next step's own rule (PFA-R5), its "unknown" named "unchecked".
 function groupOf(level: Level | undefined, warned: boolean): Group {
-  if (level === 'outside') return 'outside';
-  if (level === 'look' || (level === 'fits' && warned)) return 'look';
-  if (level === 'fits') return 'fits';
-  return 'unchecked';
+  const g = fillerGroup(level, warned);
+  return g === 'unknown' ? 'unchecked' : g;
 }
 
 // Plants grouped in their order; verdicts null (the rule not loaded or refused): all not checked.
@@ -52,8 +50,6 @@ export const LIGHTS = strata;
 export type Light = (typeof LIGHTS)[number];
 export const SIZES = ['small', 'middle', 'tall'] as const; // under 2 m, 2 to 8 m, over 8 m tall
 export type Size = (typeof SIZES)[number];
-export const LIVES = ['season', 'few', 'long'] as const; // one season, a few years, long-lived
-export type Life = (typeof LIVES)[number];
 // When it stands (board FindFilters "To fill a gap in time"): the years after planting each choice
 // covers, [from, to) (to null: no end); a plant stands in one when its years meet them.
 export const STANDS = { first: [0, 1], early: [1, 15], late: [15, null] } as const satisfies Record<string, readonly [number, number | null]>;
@@ -63,40 +59,34 @@ export interface FindFilters {
   jobs?: readonly JobId[];
   light?: readonly Light[];
   size?: readonly Size[];
-  life?: readonly Life[];
   stands?: readonly Stand[];
-  edible?: boolean;
   range?: boolean; // well inside its range only (needs a location)
   holds?: readonly PeriodId[]; // inside its range in each of these later periods (needs a location)
   hideNoSize?: boolean;
-  hideRepeats?: boolean;
   hideToxic?: boolean;
   hideInvasive?: boolean;
+  hideNoLight?: boolean;
+  fills?: boolean; // fills a hole or a thin job (AddMany: on when Find opens from a thin spot)
 }
-export type FilterId = 'job' | 'light' | 'size' | 'life-cycle' | 'stands' | 'edible' | 'range' | 'holds' | 'no-size' | 'repeats' | 'toxic' | 'invasive';
+export type FilterId = 'job' | 'light' | 'size' | 'stands' | 'range' | 'holds' | 'no-size' | 'toxic' | 'invasive' | 'fills' | 'no-light';
 
 // What the filters read beyond the plant: its verdict, whether it holds in a later period, whether it
-// only repeats jobs the palette has, is toxic or invasive in the country (null: not known).
+// is toxic or invasive in the country (null: not known).
 export interface FilterContext {
   verdicts?: ReadonlyMap<PlantId, PlantVerdict> | null;
   holds?: (t: Taxon, period: PeriodId) => boolean | null;
-  repeats?: (t: Taxon) => boolean | null;
   toxic?: (t: Taxon) => boolean | null;
   invasive?: (t: Taxon) => boolean | null;
+  // The open holes and open thin spots (core holes.ts thinTargets), for "Fills a hole or a thin job".
+  targets?: readonly Hole[];
 }
 // The filters that hide (a plant they cannot judge stays): they say how many they hide.
-const HIDES: ReadonlySet<FilterId> = new Set(['repeats', 'toxic', 'invasive']);
+const HIDES: ReadonlySet<FilterId> = new Set(['toxic', 'invasive']);
 
 const lightOf = (t: Taxon, l: Light): boolean | null => (t.stratum ? t.stratum.value === l : null);
 const sizeOf = (t: Taxon): Size | null => {
   const h = t.traits.height_m?.max;
   return h == null ? null : h < 2 ? 'small' : h <= 8 ? 'middle' : 'tall';
-};
-// One season: annual or grown as one; a few years: a short lifespan; long-lived: moderate or long.
-const lifeOf = (t: Taxon): Life | null => {
-  if (t.traits.is_annual || t.traits.grown_as_annual) return 'season';
-  const span = t.traits.lifespan;
-  return span === 'Short' ? 'few' : span === 'Moderate' || span === 'Long' ? 'long' : null;
 };
 const any = <T>(chosen: readonly T[], test: (x: T) => boolean | null): boolean | null => {
   let unknown = false;
@@ -107,15 +97,14 @@ const any = <T>(chosen: readonly T[], test: (x: T) => boolean | null): boolean |
 // Each active filter's test of one plant: true keeps it, false leaves it out, null cannot judge it.
 function tests(f: FindFilters, ctx: FilterContext): [FilterId, (t: Taxon) => boolean | null][] {
   const out: [FilterId, (t: Taxon) => boolean | null][] = [];
+  if (f.fills) out.push(['fills', (t) => (ctx.targets ?? []).some((h) => fills(h, t))]);
   if (f.jobs?.length) out.push(['job', (t) => { const j = jobsOf(t); return f.jobs!.some((x) => j.includes(x)) ? true : t.functions === null && t.role !== 'crop' ? null : false; }]);
   if (f.light?.length) out.push(['light', (t) => any(f.light!, (l) => lightOf(t, l))]);
   if (f.size?.length) out.push(['size', (t) => { const s = sizeOf(t); return s === null ? null : f.size!.includes(s); }]);
-  if (f.life?.length) out.push(['life-cycle', (t) => { const l = lifeOf(t); return l === null ? null : f.life!.includes(l); }]);
   if (f.stands?.length) out.push(['stands', (t) => {
     const y = yearsOf(t);
     return y === null ? null : f.stands!.some((s) => { const [from, to] = STANDS[s]; return (to === null || y.from < to) && (y.to === null || y.to > from); });
   }]);
-  if (f.edible) out.push(['edible', (t) => (t.traits.edibility_rating == null ? null : t.traits.edibility_rating > 0)]);
   if (f.range) out.push(['range', (t) => {
     const v = ctx.verdicts?.get(t.id);
     if (!v || v.level === 'unknown') return null;
@@ -127,7 +116,7 @@ function tests(f: FindFilters, ctx: FilterContext): [FilterId, (t: Taxon) => boo
     return unknown ? null : true;
   }]);
   if (f.hideNoSize) out.push(['no-size', (t) => sizeOf(t) !== null]);
-  if (f.hideRepeats) out.push(['repeats', (t) => { const x = ctx.repeats?.(t) ?? null; return x === null ? null : !x; }]);
+  if (f.hideNoLight) out.push(['no-light', (t) => !!t.stratum]);
   if (f.hideToxic) out.push(['toxic', (t) => { const x = ctx.toxic?.(t) ?? null; return x === null ? null : !x; }]);
   if (f.hideInvasive) out.push(['invasive', (t) => { const x = ctx.invasive?.(t) ?? null; return x === null ? null : !x; }]);
   return out;
@@ -135,7 +124,7 @@ function tests(f: FindFilters, ctx: FilterContext): [FilterId, (t: Taxon) => boo
 
 // The plants every active filter keeps; per filter the number it could not judge (left out, and said:
 // "12 with no size recorded", never hidden silently) and the number only it left out (the plants it took
-// off the list; a hide filter says it: "12 hidden as toxic"). A hide filter (repeats, toxic, invasive)
+// off the list; a hide filter says it: "12 hidden as toxic"). A hide filter (toxic, invasive)
 // keeps a plant it cannot judge: it hides only what is recorded.
 export function applyFilters(taxa: readonly Taxon[], filters: FindFilters, ctx: FilterContext): { rows: Taxon[]; unknown: Partial<Record<FilterId, number>>; hidden: Partial<Record<FilterId, number>> } {
   const active = tests(filters, ctx), unknown: Partial<Record<FilterId, number>> = {}, hidden: Partial<Record<FilterId, number>> = {};

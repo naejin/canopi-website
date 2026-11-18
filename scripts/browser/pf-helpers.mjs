@@ -186,3 +186,109 @@ export const done = async (...pages) => { for (const p of pages) await p.browser
 export const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
 export const focused = (page) => page.evaluate(() => { const a = document.activeElement; return { body: !a || a === document.body, inTool: !!a?.closest('#ct-root, dialog[open]'), name: (a?.getAttribute('aria-label') ?? a?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) }; });
 export { norm };
+
+// ---- pf-a (chunk 2): a scenario case's palette, and the Next step's figures from the engine ----
+
+const SCENARIOS = JSON.parse(readFileSync(new URL('../fixtures/consortium-scenarios.json', import.meta.url), 'utf8')).cases;
+// A scenario case's palette (its list and members) at a SITES place, through the hook as loadPalette200
+// does (Kiambu borrows the Subtropical list: the place proposes Temperate, the case says Subtropical).
+export async function loadCase(id, { site = 'kiambu', goal = null, ...opts } = {}) {
+  const c = SCENARIOS.find((x) => x.id === id);
+  assert.ok(c, `scenario case ${id}`);
+  const page = await tool(opts);
+  if (site) await atSite(page, site);
+  await page.evaluate(async (list, ids, g) => {
+    const { store } = window.__ctTest;
+    store.climate.value = list;
+    await store.loadPool(list);
+    store.members.value = ids;
+    if (g) store.setPlantsPerJob(g);
+    store.view.value = 'matrix';
+  }, c.input.list, c.input.members, goal ?? c.input.goals?.plantsPerJob ?? null);
+  assert.ok(await page.waitForFunction((k) => window.__ctTest?.store?.members.value.length === k, { timeout: 20_000 }, c.input.members.length).then(() => true, () => false), `the case's ${c.input.members.length} plants`);
+  assert.ok(await verdictsSettled(page, 30_000), 'the verdicts');
+  return page;
+}
+
+// The Next step's figures, computed through the engine (core holes.ts nextTarget, fillers, bestToAdd;
+// the board-figures rule: never a board number) on the page's own state: the palette's holes and thin
+// spots, the plants on its lists with their verdicts, holding to 2071–2099 and warned (store.warnedPlant).
+// untouched: an untouched suggestion shows no thin-spot card (A19), so thin spots are no target then.
+const core = await import('../../src/lib/consortium/holes.ts');
+const { periodIds } = await import('../../src/lib/consortium/types.ts');
+export async function engineLead(page) {
+  const s = await page.evaluate((last) => {
+    const st = window.__ctTest.store;
+    const members = st.memberTaxa.value, ids = new Set(members.map((t) => t.id));
+    const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
+    const rule = st.verdictRule.value, ctx = st.verdictContext.value;
+    return {
+      holes: st.paletteHoles.value, thins: st.thinSpots.value, putOff: [...st.notNow.value], members, pool,
+      pv: [...(st.poolVerdicts.value ?? new Map())], holds: rule ? pool.map((t) => [t.id, rule.holdsBy(t, ctx, last)]) : [],
+      warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id), goal: st.plantsPerJob.value, untouched: st.untouchedSuggestion.value,
+    };
+  }, periodIds[periodIds.length - 1]);
+  const open = s.holes.filter((h) => h.state === 'open'), thins = s.thins.filter((h) => h.state === 'open');
+  // C5: the Next step's ranking reads whether plants that fit fill a hole (a cooler-months food hole leads then).
+  const pv = new Map(s.pv);
+  const hasFits = (h) => s.pool.some((t) => core.fills(h, t) && pv.get(t.id)?.level === 'fits' && !s.warned.includes(t.id));
+  const lead = core.nextTarget(s.holes, s.untouched ? [] : s.thins, new Set(s.putOff), hasFits);
+  if (!lead) return { lead: null, open, thins, untouched: s.untouched };
+  const f = core.fillers(lead.target, s.pool, new Map(s.pv), new Map(s.holds), new Set(s.warned), s.members, open);
+  const sci = (list) => list.map((t) => t.canonical_name);
+  const best = core.bestToAdd(lead.target, f, { plantsPerJob: s.goal });
+  return {
+    lead, open, thins, untouched: s.untouched, goal: s.goal,
+    fits: sci(f.fits), look: sci(f.look), outside: sci(f.outside), unknown: sci(f.unknown),
+    best: best.map((id) => f.fits.find((t) => t.id === id).canonical_name),
+    all: f.fits.length + f.look.length + f.outside.length + f.unknown.length,
+    // BC3: "See all N plants" counts what Find lists first: the fits, the second looks, the unchecked.
+    seeAll: f.fits.length + f.look.length + f.unknown.length,
+    // BC11, PFA-B1: the second looks whose limiting measure is a range side within the margin (their chip
+    // "Near the edge of its range"); any other second look names its own cause.
+    lookEdge: sci(f.look.filter((t) => pv.get(t.id)?.level === 'look' && pv.get(t.id)?.limiting?.confidence?.term === 'edge')),
+  };
+}
+// The text of the Next step's card, one line (its heading "Next step" opens it), or ''.
+export const nextText = async (page) => (await sectionText(page, 'Next step')) ?? '';
+
+// Opens every MoreList fold in scope ('dialog[open]' or the Next step card): presses "+ N more" until
+// none is left, so each group lists all its plants (the size rule, A14).
+export async function openMore(page, scope = 'dialog[open]') {
+  await frames(page); // the render the last action asked for
+  for (let i = 0; i < 40; i++) {
+    const hit = await page.evaluate((sc) => {
+      const b = [...document.querySelectorAll(`${sc} button`)].find((x) => /^\+ [\d,]+ more$/.test(x.textContent.trim()));
+      if (b) b.click();
+      return !!b;
+    }, scope);
+    if (!hit) return;
+    await frames(page);
+  }
+}
+// Plants with no climate range recorded (the release's 'not-recorded' case, PFA-B2/B6): the verdict
+// rule wrapped so these plants read 'unknown' ("not checked") and never hold, the rest unchanged.
+export const notRecorded = (page, ids) => page.evaluate((list) => {
+  const st = window.__ctTest.store, rule = st.verdictRule.value, set = new Set(list);
+  st.verdictRule.value = {
+    ...rule,
+    verdicts: (taxa, ctx) => {
+      const m = rule.verdicts(taxa, ctx);
+      for (const id of set) { const v = m.get(id); if (v) m.set(id, { ...v, level: 'unknown', limiting: null, factors: [], notes: [], range: 'not-recorded' }); }
+      return m;
+    },
+    holdsBy: (t, c, p) => !set.has(t.id) && rule.holdsBy(t, c, p),
+  };
+}, ids);
+// The plants on the lists (not in the palette) that fill a hole and need a second look for their range
+// alone (level look, no warning): core fills on the page's own pool and verdicts. Marked not recorded,
+// they turn "not checked"; a warned plant would stay a second look (PFA-G1, core fillerGroup).
+export async function lookFillers(page, holeId) {
+  const s = await page.evaluate((id) => {
+    const st = window.__ctTest.store, ids = new Set(st.members.value);
+    const pool = (st.offerPool.value ?? []).filter((t) => !ids.has(t.id));
+    return { hole: st.openHoles.value.find((h) => h.id === id), pool, pv: [...(st.poolVerdicts.value ?? new Map())], warned: pool.filter((t) => st.warnedPlant(t)).map((t) => t.id) };
+  }, holeId);
+  const pv = new Map(s.pv), warned = new Set(s.warned);
+  return s.pool.filter((t) => core.fills(s.hole, t) && pv.get(t.id)?.level === 'look' && !warned.has(t.id)).map((t) => t.id);
+}

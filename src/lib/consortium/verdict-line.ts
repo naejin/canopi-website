@@ -79,10 +79,17 @@ export const thinTitleLine = (h: Hole): Line => ({ key: K('thinTitle'), vars: { 
 // hole." / "1 new hole: Shade: nobody after year 25."), each narrowed hole as it is now ("Covers the
 // ground: nobody after year 25."), then how many are left ("7 holes left."); `thins`: the thin spots
 // still thin after it ("Feeds you: still 1 plant in years 25 to 60."), of `jobs` only when given.
-export function holeChangeLines(c: HoleChange, { left = true, thins = null, jobs = null }: { left?: boolean; thins?: ThinChange | null; jobs?: readonly string[] | null } = {}): Line[] {
+// `target`: the hole an add was for (the Next step's card, a hole's sheet): only that hole's change is
+// named, as it is now ("Covers the ground: nobody after year 25."), never the other holes the plants
+// narrowed (boards AddMany, FillHole); the holes-left count still counts them all.
+// target: the hole the change was made for (its narrowed lane only is said), 'none' (an add with no
+// target, plain Find: no narrowed hole is said; board Toasts "Pinto peanut added."), or null (a removal,
+// a site edit: every narrowed hole).
+export function holeChangeLines(c: HoleChange, { left = true, thins = null, jobs = null, target = null }: { left?: boolean; thins?: ThinChange | null; jobs?: readonly string[] | null; target?: Pick<Hole, 'kind' | 'job' | 'stratum' | 'fromYear' | 'toYear'> | 'none' | null } = {}): Line[] {
   const out: Line[] = [];
   out.push(c.added.length ? { key: K('holesNew'), vars: {}, count: c.added.length, parts: { holes: c.added.map(holeTitleLine) } } : { key: K('holesNoNew'), vars: {} });
-  for (const n of c.narrowed) out.push({ key: K('holeNow'), vars: {}, parts: { hole: holeTitleLine(n.after) } });
+  const sameLane = (h: Hole) => target !== 'none' && (!target || (h.kind === target.kind && (h.job ?? h.stratum) === (target.job ?? target.stratum) && h.fromYear < target.toYear && target.fromYear < h.toYear));
+  for (const n of c.narrowed) if (sameLane(n.before)) out.push({ key: K('holeNow'), vars: {}, parts: { hole: holeTitleLine(n.after) } });
   if (left && (c.added.length || c.closed.length || c.narrowed.length)) out.push(c.open.length ? { key: K('holesLeft'), vars: {}, count: c.open.length } : { key: K('holesNoneLeft'), vars: {} });
   for (const t of thins?.still ?? []) {
     if (jobs && !jobs.includes(t.job)) continue;
@@ -137,6 +144,56 @@ export function yearsLine(from: number, to: number | null): Line {
   if (from < 1 && to <= 1) return { key: K('yearsMonths'), vars: { from: monthOf(from), to: monthOf(to) } };
   if (from < 1) return { key: K('yearsMonthTo'), vars: { month: monthOf(from), to } };
   return { key: K('yearsSpan'), vars: { from, to } };
+}
+
+// A span of years as the end of a sentence ("Feeds you from year 3 to year 25", "Planted in full sun
+// from year 3 on", "in the first 3 years"): the candidate rows' fit reason (whenLine), never a label.
+export function whenLine(from: number, to: number | null): Line {
+  if (to === null) return from === 0 ? { key: K('whenAlways'), vars: {} } : from < 1 ? { key: K('whenMonthOn'), vars: { month: monthOf(from) } } : { key: K('whenAfter'), vars: { from } };
+  if (from === 0 && to < 1) return { key: K('whenFirstDays'), vars: { days: Math.round(to * 360) } };
+  if (from === 0) return { key: K('whenFirst'), vars: {}, count: to };
+  if (from < 1 && to <= 1) return { key: K('whenMonths'), vars: { from: monthOf(from), to: monthOf(to) } };
+  if (from < 1) return { key: K('whenMonthTo'), vars: { month: monthOf(from), to } };
+  return { key: K('whenSpan'), vars: { from, to } };
+}
+
+// Why a candidate is offered for a target, its first line (boards Palette, FillHole, Recife, Balcony,
+// SiteMendoza, AddMany): what it does and when, in the target's terms, then how many open holes it
+// fills when more than this one. A job hole: "Covers the ground from month 3 to year 25", or, when it
+// also fills an open light hole, "Covers the ground and is planted in shade: fills 4 holes"; a light
+// hole: "Planted in full sun from year 3 on"; a thin job: "Feeds you from year 3 to year 25: a backup"
+// (word map section 10: never "fills this hole" on a thin job). `light`: the light level of an open
+// light hole it also fills, else null; `holes`: the open holes it fills.
+export function fillReasonLine(target: Pick<Hole, 'kind' | 'job' | 'stratum' | 'thin'>, years: { from: number; to: number | null } | null, { light = null, holes = 1 }: { light?: string | null; holes?: number } = {}): Line {
+  const when = years ? whenLine(years.from, years.to) : null;
+  const job: Line | null = target.kind === 'job' && target.job ? { key: `consortium.job.${target.job}`, vars: {} } : null;
+  const reason: Line = job
+    ? (light && !target.thin ? { key: K(`reasonJobLight_${light}`), vars: {}, parts: { job } } : when ? { key: K('reasonJob'), vars: {}, parts: { job, when } } : job)
+    : when ? { key: K(`reasonLevel_${target.stratum}`), vars: {}, parts: { when } } : { key: `consortium.palette.light_${target.stratum}`, vars: {} };
+  if (target.thin) return { key: K('reasonBackup'), vars: {}, parts: { reason } };
+  return holes > 1 ? { key: K('reasonFills'), vars: {}, count: holes, parts: { reason } } : reason;
+}
+
+// The intro of a target whose candidates carry the dryness note (BC31; board SiteMendoza: "Aquí llueve
+// poco: cada planta dice si puede necesitar riego."), said after the why sentence: only when a listed
+// candidate is limited by dryness and the grower's watering leaves the note on its row (fitLine: all
+// year says none). No verdict, or none dry: no line.
+export function dryIntroLine(verdicts: readonly (PlantVerdict | null | undefined)[]): Line | null {
+  return verdicts.some((v) => v?.limiting?.factor === 'dry' && v.watered !== 'all-year' && (v.level === 'fits' || v.level === 'look')) ? { key: K('dryIntro'), vars: {} } : null;
+}
+
+// The chip of a plant that needs a second look for its range edge (its verdict's level 'look'): "Near
+// the edge of its range" (boards FillHole, Main; BC11), on the candidate rows of the Next step and Find.
+export const edgeChipLine = (): Line => ({ key: K('bandEdge'), vars: {} });
+// A second look's chip on a candidate row (PFA-B1): its own reason, never a borrowed one. A range side
+// passed within the margin (its factor's confidence 'edge') is "Near the edge of its range"; any other
+// cause (a wetter place, a light or water misfit) says that cause (headLine's words). null: not a
+// second look, or no limiting factor named (the row's fit line says it).
+export function lookChipLine(v: PlantVerdict): Line | null {
+  if (v.level !== 'look' || !v.limiting) return null;
+  if (v.limiting.confidence?.term === 'edge') return edgeChipLine();
+  const cause = CAUSE[v.limiting.factor];
+  return cause ? { key: K(cause), vars: {} } : null;
 }
 
 // "+ {n} more" on a folded lane of a picture (ux-inventory E6; plant-palette-architecture 3.4).
@@ -725,7 +782,10 @@ export function siteLines(taxon: Taxon, site: Site, fit: Fit): SiteLine[] {
   return out;
 }
 
-// The room note of a plant against the reader's room ("taller than your room" on a balcony; "grows to
-// … m: prune" in a small garden), or null when it fits the room or its height is not recorded (pf).
-const notYet = (what: string, owner: string): never => { throw new Error(`verdict-line ${what}: not written yet (PP-C ${owner})`); };
-export function roomNote(heightM: number | null, room: Room): Line | null { return notYet(`roomNote(${heightM}, ${room})`, 'pf'); }
+// The room note (Balcony board, #5): in pots, a plant that grows above 6 m says so with what to do
+// ("Grows to 10.7 m: keep it pruned, or pick a smaller plant"); room never hides a plant. null: no
+// note (another room, the height unknown, or small enough).
+export const POT_PRUNE_M = 6;
+export function roomNote(heightM: number | null, room: Room): Line | null {
+  return room === 'pots' && heightM !== null && heightM > POT_PRUNE_M ? { key: K('roomTall'), vars: { len: heightM } } : null;
+}
