@@ -131,3 +131,82 @@ test('BC12: the Reset summary writes the nights with one decimal and the hottest
   const back = words.siteChangeLines(change, {}, { was: { nightsShiftC: -2, daysShiftC: -2 }, inputs: { nights: { value: 12 }, days: { value: 26.1 } }, temp: fmt }).map(say).join(' ');
   assert.match(back, /^Coldest nights and hottest days back to the climate map: 12\.0 °C and 26 °C today\./);
 });
+
+// ---- fix round 1, batch 2 ----
+
+const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'].map((l) => [l, JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'))]);
+const period = (p, o = {}) => ({ period: p, fitIn: 0, fitOut: 0, lookNew: 0, lookGone: 0, members: [], ...o });
+const changeOf = (byPeriod, hintsNew = []) => ({ periods: P.map((p, k) => period(p, byPeriod[k] ?? {})), hintsNew, holes: { added: [], closed: [], narrowed: [], open: [] } });
+
+test('R4: plants that moved in and out in equal numbers are never "no change in what fits"; the moves are said, the hints too', () => {
+  const swap = changeOf([{ fitIn: 30, fitOut: 30 }, { fitIn: 30, fitOut: 30 }, { fitIn: 30, fitOut: 30 }]);
+  const text = words.siteChangeLines(swap, { nightsShiftC: 3 }, { was: {}, size: 5, nameOf: (id) => id }).map(say).join(' ');
+  assert.doesNotMatch(text, /alike|no change in what fits/, `a swap of 30 in, 30 out is a change ("${text}")`);
+  assert.match(text, /Today: 30 more fit and 30 no longer fit; by 2071–2099: 30 more fit and 30 no longer fit\./);
+  const looks = changeOf([{ lookNew: 40 }, {}, { lookNew: 40 }]);
+  const t2 = words.siteChangeLines(looks, { nightsShiftC: 1 }, { was: {}, size: 5 }).map(say).join(' ');
+  assert.doesNotMatch(t2, /alike/, `40 plants moved to a second look ("${t2}")`);
+  assert.match(t2, /Today: 40 now need a second look; by 2071–2099: 40 now need a second look\./);
+  // A net change keeps its board form ("Today: 17 fewer fit") and the new hints stay named.
+  const net = changeOf([{ fitIn: 2, fitOut: 19 }, {}, { fitIn: 4 }], [{ id: 'o', factors: ['drainage'] }]);
+  const t3 = words.siteChangeLines(net, { drainage: 'wet' }, { was: {}, size: 3, nameOf: () => 'Olive' }).map(say).join(' ');
+  assert.match(t3, /Today: 17 fewer fit; by 2071–2099: 4 more fit\. Olive now carries a hint, wants free-draining soil\./, `the hint is kept beside a net change ("${t3}")`);
+  // Nothing moved anywhere: the alike form.
+  const still = words.siteChangeLines(changeOf([]), { drainage: 'wet' }, { was: {}, size: 3 }).map(say).join(' ');
+  assert.match(still, /Today and by 2071–2099 alike \(soil does not change\): no change in what fits\./);
+});
+
+test('R5: one size rule for names (A14): past 40 plants in the palette or 12 in the group, a count, never a run of names', () => {
+  assert.equal(words.named(12, 40), true);
+  assert.equal(words.named(13, 40), false);
+  assert.equal(words.named(3, 41), false);
+  const hinted = Array.from({ length: 90 }, (_, k) => ({ id: `p${k}`, factors: ['drainage'] }));
+  const big = words.siteChangeLines(changeOf([], hinted), { drainage: 'wet' }, { was: {}, size: 200, nameOf: (id) => `Name${id}` }).map(say).join(' ');
+  assert.doesNotMatch(big, /Namep\d/, `no names past the size rule ("${big.slice(0, 160)}")`);
+  assert.match(big, /Today and by 2071–2099 alike \(soil does not change\): 90 of your plants now carry a hint, wants free-draining soil\. Your 200 plants are kept\./);
+  const few = words.siteChangeLines(changeOf([], hinted.slice(0, 2)), { drainage: 'wet' }, { was: {}, size: 200, nameOf: (id) => `Name${id}` }).map(say).join(' ');
+  assert.doesNotMatch(few, /Namep\d/, 'a 200-plant palette never names, even 2');
+  const net = words.siteChangeLines(changeOf([{ fitOut: 3 }], hinted), { drainage: 'wet' }, { was: {}, size: 200, nameOf: (id) => `Name${id}` }).map(say).join(' ');
+  assert.match(net, /90 of your plants now carry a hint, wants free-draining soil\./, `the count beside a net change ("${net}")`);
+});
+
+test('BC19: the opened row\'s paragraph says the board\'s clauses: a second look today only, never "no longer need a second look"; nothing moved, no paragraph; its bold run is the moves', () => {
+  const change = changeOf([{ fitIn: 39, fitOut: 56, lookNew: 58, lookGone: 53 }, { fitIn: 1 }, { fitIn: 50, fitOut: 46, lookNew: 68, lookGone: 24 }]);
+  const lines = words.changeDetailLines(change, 515, { size: 8 });
+  const text = lines.map(say).join(' ');
+  assert.match(text, /^Today: 39 more fit, 56 no longer fit,? and 58 now need a second look; by 2071–2099: 50 more fit and 46 no longer fit, of the 515\. In all, 17 fewer fit today and 4 more fit by 2071–2099\./, `the board's clauses ("${text}")`);
+  assert.doesNotMatch(text, /no longer needs? a second look/);
+  assert.equal(say(lines[0].parts.moves), 'Today: 39 more fit, 56 no longer fit, and 58 now need a second look; by 2071–2099: 50 more fit and 46 no longer fit', 'the bold run');
+  assert.deepEqual(words.changeDetailLines(changeOf([{ lookGone: 4 }]), 515, { size: 8 }), [], 'only a second look gone: nothing the row says');
+  assert.deepEqual(words.changeDetailLines(changeOf([]), 515, { size: 8 }), []);
+});
+
+test('R1: every limiting line has its own row, main-limit lead and meaning (warmth is never read as summer heat), in all 11 languages', () => {
+  const lines = ['nights', 'days', 'warmth', 'rain'];
+  assert.deepEqual(Object.keys(words.LIMIT_LINES).sort(), [...lines].sort());
+  const warm = words.LIMIT_LINES.warmth;
+  assert.equal(warm.row, 'days', 'warmth is said in the Hottest days row (worked out from the two temperature lines)');
+  assert.notEqual(warm.meaning, words.LIMIT_LINES.days.meaning, 'its meaning is not summer heat\'s');
+  for (const l of lines) {
+    const { lead, meaning } = words.LIMIT_LINES[l];
+    for (const [loc, json] of LOCALES) {
+      if (lead) assert.ok(json[`consortium.figures.${lead}`], `${loc} has figures.${lead}`);
+      if (meaning) assert.ok(json[`consortium.figures.${meaning}`], `${loc} has figures.${meaning}`);
+    }
+  }
+  assert.match(en[`consortium.figures.${warm.lead}`], /^The main limit here[.:] /);
+  assert.doesNotMatch(en[`consortium.figures.${warm.lead}`], /smaller limit|Not a limit/);
+  assert.doesNotMatch(en[`consortium.figures.${warm.meaning}`], /Summer heat/);
+  // Kerguelen-like: most of the list is outside on the cool side, few on nights or heat.
+  const list = ['a', 'b', 'c', 'd'].map(t);
+  const today = map({ a: v('outside', [f('cool', 'outside')]), b: v('outside', [f('cool', 'outside')]), c: v('outside', [f('cold', 'outside')]), d: v('fits') });
+  assert.equal(core.limitsOf(core.lineCounts(list, { [P[0]]: today }))[0].line, 'warmth');
+});
+
+test('BC23, BC16: the Water card names its list; Spanish quince agrees ("registrado"); the footnote counts the nearest lists in words', () => {
+  for (const [loc, json] of LOCALES) assert.ok(/\{list\}/.test(json['consortium.figures.waterList']), `${loc} waterList names {list}`);
+  const es = Object.fromEntries(LOCALES)['es'];
+  assert.match(es['consortium.figures.waterNowWhy'], /registrado\.$/);
+  for (const [loc, json] of LOCALES) for (const k of ['countsNearest', 'listsTwo', 'listsThree']) assert.ok(json[`consortium.figures.${k}`], `${loc} has figures.${k}`);
+  assert.match(en['consortium.figures.countsNearest'], /\{n\} plants on the \{k\} nearest lists \(\{lists\}\)/);
+});

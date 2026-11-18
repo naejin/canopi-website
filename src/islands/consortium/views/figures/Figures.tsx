@@ -18,10 +18,11 @@
 import { computed, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import type { ClimateZone, Hole, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon, TextureId } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon, TextureId } from '../../../../lib/consortium/index.ts';
 import {
-  NEAREST_LISTS, NO_EDITS, EDIT_LIMITS, PH_BANDS, changeDetailLines, climateFor, drierOf, hintsOf, holes, lineCounts, limitsOf, periodIds, periodName,
-  phBandOf, rangeMoves, siteChange, siteChangeLines, siteInputsOf, siteSnapshot, textureIds, textureLine, textureNameLine, warmthOf, yearMeanC,
+  LIMIT_LINES, NEAREST_LISTS, NO_EDITS, NO_SITE_CHANGE, EDIT_LIMITS, PH_BANDS, changeDetailLines, checksFailedLine, climateFor, countingLine, drierOf, hintsOf, holes,
+  lineCounts, limitsOf, named, periodIds, periodName, phBandOf, rangeMoves, siteChange, siteChangeLines, siteInputsOf, siteSnapshot, textureIds, textureLine,
+  textureNameLine, warmthOf, yearMeanC,
 } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { P, T, nameOf, pageLang } from '../../strings.ts';
@@ -29,6 +30,8 @@ import { formatMm, formatNumber, formatTemp } from '../../format.ts';
 import { sayAll } from '../../words.ts';
 import { desk } from '../location/shared.ts';
 import { listOf, zoneName } from '../kit/names.ts';
+import { MoreList } from '../kit/more.tsx';
+import { plainList } from '../../rules/picture.ts';
 
 // ---- words ----
 const F = (name: string, vars?: Record<string, string | number>): string => T(`figures.${name}`, vars);
@@ -48,6 +51,8 @@ const tempShift = (c: number): string => spaced(formatTemp(c, lang()));
 const mm = (n: number): string => formatMm(n, lang());
 const n0 = (n: number): string => formatNumber(n, lang(), 0);
 const n1 = (n: number): string => formatNumber(n, lang(), 1);
+// One decimal always (the pH words' bounds: "7.3–8.0", "above 8.0").
+const d1 = (n: number): string => (Number.isInteger(n) ? `${n0(n)}${formatNumber(1.5, lang(), 1).charAt(1)}0` : n1(n));
 const km = (n: number): string => `${formatNumber(n, lang(), 0)} km`;
 // A value without its unit (the unit stands after the number in every page language).
 const bare = (s: string): string => s.replace(/[^\d]+$/u, '');
@@ -91,10 +96,13 @@ const byPeriod = computed(() => {
 });
 const counts = computed(() => (byPeriod.value ? lineCounts(list.value, byPeriod.value) : null));
 const limits = computed(() => (counts.value ? limitsOf(counts.value) : []));
-const mainLimit = computed<ClimateLine | null>(() => {
-  const top = limits.value[0]?.line;
-  return top === 'nights' || top === 'days' || top === 'rain' ? top : top === 'warmth' ? 'days' : null;
-});
+// The line that limits plants most, and the row it is said in (core LIMIT_LINES: warmth over the year
+// is said in the Hottest days row, with its own lead and meaning).
+const topLimit = computed<LimitLine | null>(() => limits.value[0]?.line ?? null);
+const mainLimit = computed<ClimateLine | null>(() => (topLimit.value ? LIMIT_LINES[topLimit.value].row : null));
+// What the checks are doing (one status the limits card renders from, so no claim comes from partial
+// data): ready once the counts are here; failed when the verdict chunk did not load; else counting.
+const checks = computed<'ready' | 'failed' | 'loading'>(() => (counts.value ? 'ready' : store.verdictFailed.value || store.rangeFailed.value ? 'failed' : 'loading'));
 // The plants that would carry the drainage hint were the ground staying wet (one pass, today).
 const drainNeed = computed<number | null>(() => {
   const rule = store.verdictRule.value;
@@ -128,8 +136,14 @@ function commit(line: LineId, next: SiteEdits): void {
   const was = store.siteEdits.peek(), wasInputs = store.siteInputs.peek();
   editing.value = null;
   store.setSiteEdits(next, ({ ready, failed }) => {
+    const members = store.memberTaxa.peek();
+    const names = new Map(members.map((t) => [t.id, nameOf(t)]));
+    const words = (change: SiteChange) => ({ text: sayAll(siteChangeLines(change, store.siteEdits.peek(), { was, inputs: store.siteInputs.peek(), size: members.length, nameOf: (id) => names.get(id) ?? id, temp: TEMPS, texture: texture.peek() })) });
+    // No location climate: the verdicts are not asked for (store start()), so nothing is counted; the
+    // summary says what was set and that the plants are kept, at once.
+    if (!store.siteClimate.peek()) { lastChange.value = null; return words(NO_SITE_CHANGE); }
     if (!ready || failed || !store.verdictRule.peek() || !store.pool.peek()) return 'pending';
-    const members = store.memberTaxa.peek(), taxa = allTaxa.peek(), lst = list.peek();
+    const taxa = allTaxa.peek(), lst = list.peek();
     const snap = (inputs: SiteInputs) => {
       const b = judge(inputs, taxa)!;
       const hs: Hole[] = holes({ members, verdicts: b[store.period.peek()] ?? null, pending: false });
@@ -138,8 +152,7 @@ function commit(line: LineId, next: SiteEdits): void {
     const now = store.siteInputs.peek();
     const change = siteChange(snap(wasInputs), snap(now));
     lastChange.value = { line, change, of: lst.length };
-    const names = new Map(members.map((t) => [t.id, nameOf(t)]));
-    return { text: sayAll(siteChangeLines(change, store.siteEdits.peek(), { was, inputs: now, size: members.length, nameOf: (id) => names.get(id) ?? id, temp: TEMPS, texture: texture.peek() })) };
+    return words(change);
   });
 }
 function reset(line: LineId): void {
@@ -201,7 +214,7 @@ function Bold({ text, runs }: { text: string; runs: string[] }) {
   return <>{out}</>;
 }
 const leadOf = (s: string): string => /^(.+?\s?[:：])/.exec(s)?.[1] ?? '';
-const EFFECT_RUNS = () => [F('mainLimit'), leadOf(F('warmth')), F('notLimitHead')];
+const EFFECT_RUNS = () => [F('mainLimit'), leadOf(F('warmth')), leadOf(F(LIMIT_LINES.warmth.lead!)), F('notLimitHead')];
 function MainLead({ text }: { text: string }) {
   return <Bold text={text} runs={EFFECT_RUNS()} />;
 }
@@ -231,9 +244,10 @@ const resetKey = (line: LineId, i: SiteInputs): string => {
 };
 // One option of a choice line, pressed with a check.
 function Option({ on, onPick, children }: { on: boolean; onPick: () => void; children: ComponentChildren }) {
-  // "Drains within a day · no hint": the answer in bold, its effect after it in small type (board PlaceDesk).
+  // "Drains within a day · no hint": the answer, bold only when chosen, its effect after it in small
+  // regular type (boards PlaceDesk, SiteMendoza).
   const at = typeof children === 'string' ? children.indexOf(' · ') : -1;
-  const label = at < 0 ? children : <><strong>{(children as string).slice(0, at)}</strong><span class="fg-option-tail">{(children as string).slice(at)}</span></>;
+  const label = at < 0 ? children : <>{(children as string).slice(0, at)}<span class="fg-option-tail">{(children as string).slice(at)}</span></>;
   return <button type="button" class="fg-option" aria-pressed={on} onClick={onPick}>{on && <Icon d={CHECK} />}<span>{label}</span></button>;
 }
 
@@ -282,7 +296,9 @@ const drainMap = (line: ChoiceLine, i: SiteInputs): boolean => line === 'drainag
 
 // ---- effects in counts ----
 const frostWord = (i: SiteInputs): string => F((i.nights.value ?? 0) >= 10 ? 'noFrost' : 'frost');
-function effect(line: LineId, i: SiteInputs, main: boolean): string {
+// panel: the line stands in "Your place in figures" (board PlaceDesk: a climate value of yours is a
+// shift, said under rain and dry months), not in the palette's limits card (board SiteMendoza).
+function effect(line: LineId, i: SiteInputs, main: boolean, panel = true): string {
   const c = counts.value, ps = c?.periods ?? [];
   const [a, b, z] = [ps[0], ps[1], ps[2]];
   const lead = main ? `${F('mainLimit')} ` : '';
@@ -300,14 +316,20 @@ function effect(line: LineId, i: SiteInputs, main: boolean): string {
     if (i.days.value === null) return '';
     if (!a || !b || !z) return F('notChecked');
     const take = (p: typeof a) => p.judged - p.sides.hot.outside, sure = (p: typeof a) => take(p) - p.sides.hot.edge;
-    const parts: string[] = [];
+    // This row says two limits (core LIMIT_LINES): summer heat and warmth over the year. The main one
+    // leads with its own lead ("The main limit here." before heat's sentence; warmth's "The main limit
+    // here: … want more warmth"); the other reads as a smaller limit.
+    const top = topLimit.value;
+    const heatMain = main && top === 'days', warmMain = main && top === 'warmth';
     // Heat limits plants when some are outside on the hot side today, or when it is the main limit.
-    const heat = a.sides.hot.outside > 0 || limits.value[0]?.line === 'days';
-    if (heat) parts.push(`${lead}${F('daysTake', { n: n0(take(a)), of: n0(a.of), mid: n0(take(b)), last: n0(take(z)), sa: n0(sure(a)), sb: n0(sure(b)), sz: n0(sure(z)) })}`);
+    const heat = a.sides.hot.outside > 0 || top === 'days';
+    const heatPart = heat ? `${heatMain ? lead : ''}${F('daysTake', { n: n0(take(a)), of: n0(a.of), mid: n0(take(b)), last: n0(take(z)), sa: n0(sure(a)), sb: n0(sure(b)), sz: n0(sure(z)) })}` : '';
     // Warmth over the year: the cool side only (core warmthOf); "with your values" when a shift applies.
     const warm = warmthOf(a), today = climateFor({ inputs: i, scenario: store.scenario.value }, TODAY);
     const yours = i.nights.shift !== 0 || i.days.shift !== 0;
-    if (warm.outside + warm.edge && today) parts.push(`${heat ? '' : lead}${F(yours ? 'warmthYours' : 'warmth', { n: n0(warm.outside + warm.edge), of: n0(a.of), temp: temp(yearMeanC(today)), out: n0(warm.outside), edge: n0(warm.edge) })}`);
+    const warmKey = `${warmMain ? LIMIT_LINES.warmth.lead : 'warmth'}${yours ? 'Yours' : ''}`;
+    const warmPart = warm.outside + warm.edge && today ? F(warmKey, { n: n0(warm.outside + warm.edge), of: n0(a.of), temp: temp(yearMeanC(today)), out: n0(warm.outside), edge: n0(warm.edge) }) : '';
+    const parts = (warmMain ? [warmPart, heatPart] : [heatPart, warmPart]).filter(Boolean);
     if (!heat && a.sides.hot.edge) parts.push(FP('heatEdge', a.sides.hot.edge));
     if (!parts.length) parts.push(F('notLimitDays'));
     return parts.join(' ');
@@ -315,17 +337,21 @@ function effect(line: LineId, i: SiteInputs, main: boolean): string {
   if (line === 'rain') {
     if (i.rain.value === null) return '';
     if (!a || !b || !z) return F('notChecked');
-    if (!a.drier && !b.drier && !z.drier) return F('rainNone');
+    if (!a.drier && !b.drier && !z.drier) return `${F('rainNone')}${panel ? ` ${F('rainShift')}` : ''}`;
     // Board SiteMendoza: "…: the rain stays, the air takes more." when the rain barely moves (under 5 %)
     // and more plants are drier later; then which months are dry, not in our data.
     const s = store.scenario.value, r0 = climateFor({ inputs: i, scenario: s }, TODAY)?.precipMm, r2 = climateFor({ inputs: i, scenario: s }, LAST)?.precipMm;
     const stays = r0 !== undefined && r2 !== undefined && r0 > 0 && Math.abs(r2 - r0) / r0 < 0.05 && z.drier > a.drier;
-    return `${lead || `${F('rainNever')} `}${F(stays ? 'rainDrierStays' : 'rainDrier', { n: n0(a.drier), fit: n0(a.fit), mid: n0(b.drier), last: n0(z.drier) })} ${F('rainDryWhen')}`;
+    return `${lead || `${F('rainNever')} `}${F(stays ? 'rainDrierStays' : 'rainDrier', { n: n0(a.drier), fit: n0(a.fit), mid: n0(b.drier), last: n0(z.drier) })} ${F('rainDryWhen')}${panel ? ` ${F('rainShift')}` : ''}`;
   }
   if (line === 'dry') {
     const m = i.dryMonths.value;
     if (m === null) return '';
-    return `${m >= 12 ? F('dryAll') : m <= 0 ? F('dryNone') : FP('dryRun', m)} ${F('dryReading')}`;
+    // "A 5-month dry run, and it does not get longer" when the three periods hold the same count.
+    const runs = periodIds.map((p) => climateFor({ inputs: i, scenario: store.scenario.value }, p)?.dryMonths);
+    const flat = runs.every((r) => r === m);
+    const run = m >= 12 ? F('dryAll') : m <= 0 ? F('dryNone') : FP(flat ? 'dryRunFlat' : 'dryRun', m);
+    return `${run} ${F('dryReading')}${panel ? ` ${F('dryShift')}` : ''}`;
   }
   if (line === 'soilPh') return i.pots.value ? F('phPots') : i.soilPh.value === null ? F('phNoneNote') : F('phEffect');
   if (line === 'watering') return F('waterEffect');
@@ -443,7 +469,7 @@ function PhEditor({ i }: { i: SiteInputs }) {
       <div class="fg-options" role="group" aria-label={F('phWordsGroup')}>
         {PH_BANDS.map((b) => (
           <Option key={b.word} on={word === b.mid} onPick={() => { setWord(b.mid); setText(''); setError(null); }}>
-            {F(`opt${b.word[0].toUpperCase()}${b.word.slice(1)}`)} <span class="fg-muted">{b.from === null ? F('phBelow', { ph: n1(b.to!) }) : b.to === null ? F('phAbove', { ph: n1(b.from) }) : `${n1(b.from)}–${n1(b.to)}`}</span>
+            {F(`opt${b.word[0].toUpperCase()}${b.word.slice(1)}`)} <span class="fg-muted">{b.from === null ? F('phBelow', { ph: d1(b.to!) }) : b.to === null ? F('phAbove', { ph: d1(b.from) }) : `${d1(b.from)}–${d1(b.to)}`}</span>
           </Option>
         ))}
       </div>
@@ -507,11 +533,21 @@ function ChoiceOpen({ line, i }: { line: ChoiceLine; i: SiteInputs }) {
   const t = texture.value;
   if (drainMap(line, i) && t) return <><p class="fg-value">{textureWords(t)}</p><p class="fg-source"><MapSource text={F('srcSoil')} /></p></>;
   if (line === 'drainage' && i.drainage.source === 'grower' && t) return <p class="fg-source"><Chip kind="yours">{F('srcAnswer')}</Chip> {F('srcInstead', { texture: sayAll([textureNameLine(t)]) })}</p>;
-  return <p class="fg-source">{choiceSource(line, i)} {answerWord(line, i)}{takenAs(line, i) ? `, ${F('alsoTaken')}` : ''}</p>;
+  return <p class="fg-source">{choiceWhere(line, i)}</p>;
+}
+// Where a choice line's answer comes from, open (boards PlaceDesk, SiteKiambu): not answered, "(?) Not
+// answered taken as in the ground"; answered, "(pencil) Your answer Rain only", with ", also what is
+// taken when not answered" when it is the answer taken then; from the room, "From your room" and it.
+const DEFAULT_ANSWER: Record<ChoiceLine, (i: SiteInputs) => boolean> = { watering: (i) => (i.watering.value ?? 'rain') === 'rain', drainage: (i) => i.drainage.value !== 'wet', pots: (i) => !i.pots.value };
+function choiceWhere(line: ChoiceLine, i: SiteInputs, answer = true) {
+  if (i[line].source === 'none') return <>{choiceSource(line, i)} {takenAs(line, i)}</>;
+  if (!answer) return choiceSource(line, i);
+  return <>{choiceSource(line, i)} {answerWord(line, i)}{i[line].source === 'grower' && DEFAULT_ANSWER[line](i) ? `, ${F('alsoTaken')}` : ''}</>;
 }
 
 // ---- one line ----
-function Row({ line, i, always, main }: { line: LineId; i: SiteInputs; always: boolean; main: boolean }) {
+// card: the row stands in the palette's limits card (no shift sentences there: board SiteMendoza).
+function Row({ line, i, always, main, card = false }: { line: LineId; i: SiteInputs; always: boolean; main: boolean; card?: boolean }) {
   const climate = (CLIMATE as readonly string[]).includes(line);
   const cl = line as ClimateLine;
   const known = climate ? i[INPUT[cl]].value !== null : true;
@@ -539,7 +575,11 @@ function Row({ line, i, always, main }: { line: LineId; i: SiteInputs; always: b
       </div>
     </div>
   );
-  const detail = lastChange.value?.line === line && open ? lastChange.value : null;
+  // What the grower's own value changed, said under the row while the row holds it (board SiteKiambu
+  // "The rows with your value"); after Reset only the toast says it; nothing moved, nothing said.
+  const detail = lastChange.value?.line === line && open && grower ? lastChange.value : null;
+  const detailLines = detail ? changeDetailLines(detail.change, detail.of, { size: store.memberTaxa.value.length, nameOf: (id) => { const t = store.memberTaxa.value.find((x) => x.id === id); return t ? nameOf(t) : id; } }) : [];
+  const said = effect(line, i, main, !card);
   return (
     <div role="group" aria-label={name} class={open ? 'fg-line fg-line-open' : 'fg-line'} data-fg-line={line}>
       {head}
@@ -552,11 +592,11 @@ function Row({ line, i, always, main }: { line: LineId; i: SiteInputs; always: b
           {i.soilPh.value !== null && <p class="fg-source">{i.soilPh.source === 'grower' ? <Chip kind="yours">{F('srcYours')}</Chip> : <MapSource text={phSource(i, false)} />}</p>}
         </>
       ) : <ChoiceOpen line={line as ChoiceLine} i={i} />)}
-      {open && known && effect(line, i, main) && <p class="fg-effect"><MainLead text={effect(line, i, main)} /></p>}
+      {open && known && said && <p class="fg-effect"><MainLead text={said} /></p>}
       {open && choice && <ChoiceOptions line={line as ChoiceLine} i={i} />}
       {edit && climate && <ClimateEditor line={cl} i={i} />}
       {edit && line === 'soilPh' && <PhEditor i={i} />}
-      {detail && <p class="fg-detail">{sayAll(changeDetailLines(detail.change, detail.of, { size: store.memberTaxa.value.length, nameOf: (id) => { const t = store.memberTaxa.value.find((x) => x.id === id); return t ? nameOf(t) : id; } }))}</p>}
+      {detailLines.length > 0 && <p class="fg-detail"><Bold text={sayAll(detailLines)} runs={[sayAll([detailLines[0].parts?.moves as Line])]} /></p>}
     </div>
   );
 }
@@ -587,13 +627,17 @@ function Cells({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   );
 }
 
+// A list's name in "the Arid list" ("la lista Árida": the word agrees with the language's "list").
+const listWord = (z: ClimateZone): string => F(`listWord_${z.toLowerCase()}`);
 // The plants counted, said once (the foot and the limits' lede).
 function countsOf(): string {
   const c = store.climate.value, n = list.value.length;
   if (!c || !n) return '';
-  if (store.curatedClimates.value.includes(c)) return F('countsOwn', { list: zoneName(c), n: n0(n) });
+  if (store.curatedClimates.value.includes(c)) return F('countsOwn', { list: listWord(c), n: n0(n) });
   const lists = NEAREST_LISTS[c as ClimateZone].filter((z) => store.curatedClimates.value.includes(z)).map(zoneName);
-  return F('countsNearest', { n: n0(n), lists: listOf(lists), zone: zoneName(c) });
+  // "the 515 plants on the three nearest lists (Mediterranean, Tropical, Temperate)" (board SiteKiambu).
+  const vars = { n: n0(n), lists: plainList(lists, lang()), zone: zoneName(c) };
+  return lists.length === 1 ? F('countsNearestOne', vars) : F('countsNearest', { ...vars, k: F(lists.length === 2 ? 'listsTwo' : 'listsThree') });
 }
 // "What it means for your choice" (boards SiteKiambu, PlaceDesk): heat decides, with the link that shows
 // the palette in 2041–2070; otherwise how many fit in each period, the side most that drop out leave on,
@@ -607,18 +651,21 @@ function seeLater(): void {
 function Meaning({ i }: { i: SiteInputs }) {
   const ps = counts.value?.periods;
   if (!ps || ps.length < 3 || i.nights.value === null) return <>{F('meaningNone')}</>;
-  const m = mainLimit.value;
-  if (m === 'days' && limits.value[0]?.line === 'days') {
+  // Each limiting line's own meaning (core LIMIT_LINES): heat links to the palette in 2041–2070; rain
+  // and warmth say what decides; the nights (and warmth) say how the list moves as it warms.
+  const top = topLimit.value, key = top ? LIMIT_LINES[top].meaning : 'meaningFree';
+  if (key === 'meaningDays') {
     const [before, after = ''] = F('meaningDays').split('{link}');
     return <>{before}<button type="button" class="ct-link-button fg-link" onClick={seeLater}>{F('meaningLink')}</button>{after}</>;
   }
   const parts = [F('meaningFit', { a: n0(ps[0].fit), of: n0(ps[0].of), b: n0(ps[1].fit), c: n0(ps[2].fit) })];
-  if (m === 'nights' || limits.value[0]?.line === 'warmth') {
+  if (key) parts.push(F(key));
+  if (top === 'nights' || top === 'warmth') {
     const mv = moves.value, drop = mv?.dropSide ? DROP[mv.dropSide] : undefined;
     if (drop) parts.push(F(drop));
     const names = (mv?.arrivals ?? []).slice(0, 2).map((id) => list.value.find((t) => t.id === id)).filter((t): t is Taxon => !!t).map(nameOf);
     if (names.length) parts.push(F((i.nights.value ?? 0) >= 10 ? 'arrivalsTropical' : 'arrivalsWarm', { names: listOf(names), period: periodName(MID) }));
-  } else parts.push(F(m === 'rain' ? 'meaningRain' : 'meaningFree'));
+  }
   return <>{parts.join(' ')}</>;
 }
 
@@ -694,7 +741,7 @@ export function PlaceFigures() {
         </div>
       </div>
       {wide && meaningP}
-      <Fold label={F('laterTitle')} start={false}>
+      <Fold label={F('laterTitle')} start={wide}>
         <p><strong>{F('laterLightHead')}</strong> {F('laterLight')}</p>
         <p><strong>{F('laterWindHead')}</strong> {F('laterWind')}</p>
       </Fold>
@@ -702,76 +749,110 @@ export function PlaceFigures() {
         <ul class="fg-list">{['askDay', 'askPests', 'askAnimals', 'askBudget', 'askFire'].map((k) => <li key={k}><Lead text={F(k)} /></li>)}</ul>
       </Fold>
       {!wide && meaningP}
-      <p class="fg-foot">{[wide ? '' : countsOf(), F('footPath'), wide ? '' : F('footMap')].filter(Boolean).join(' ')}</p>
+      {/* The foot on the phone (board SiteKiambu); on the laptop the lede and the group notes say it (PlaceDesk). */}
+      {!wide && <p class="fg-foot">{[countsOf(), F('footPath'), F('footMap')].filter(Boolean).join(' ')}</p>}
     </section>
   );
 }
 
 // ---- the palette: what limits plants here ----
+// Member names under the size rule (A14, core named): every name while the palette has 40 plants or
+// fewer and the group 12 or fewer; past either, the MoreList fold (its count, three names, "+ N more").
+const DROP_ICON = LINE_ICON.dry;
 function MembersDry({ i }: { i: SiteInputs }) {
   const dry = membersDry.value, members = store.memberTaxa.value;
   if (!dry || !members.length) return null;
-  const at = (p: PeriodId) => members.filter((t) => dry.get(t.id) === p).map(nameOf);
-  const today = at(TODAY), later = [MID, LAST].map((p) => [p, at(p)] as const).filter(([, ns]) => ns.length);
-  const others = members.length - dry.size;
-  const parts: string[] = [];
-  if (today.length) parts.push(FP('membersDry', today.length, { size: n0(members.length), names: listOf(today) }));
-  else parts.push(F('membersDryNone', { size: n0(members.length) }));
-  for (const [p, ns] of later) parts.push(F('membersDryLater', { names: listOf(ns), period: periodName(p) }));
-  if (dry.size && others) parts.push(FP('membersDryOther', others));
-  if (i.watering.value === 'all-year') parts.push(F('membersAllYear'));
-  return <p class="fg-effect"><strong>{parts[0]}</strong>{parts.length > 1 ? ` ${parts.slice(1).join(' ')}` : ''}</p>;
+  const size = members.length;
+  const at = (p: PeriodId) => members.filter((t) => dry.get(t.id) === p);
+  const today = at(TODAY), later = [MID, LAST].map((p) => [p, at(p)] as const).filter(([, ts]) => ts.length);
+  const others = size - dry.size;
+  const rest: string[] = [];
+  for (const [p, ts] of later) rest.push(named(ts.length, size) ? F('membersDryLater', { names: listOf(ts.map(nameOf)), period: periodName(p) }) : FP('membersDryLaterMany', ts.length, { period: periodName(p) }));
+  if (dry.size && others) rest.push(FP('membersDryOther', others));
+  if (i.watering.value === 'all-year') rest.push(F('membersAllYear'));
+  rest.push(F('waterEffect'));
+  const tail = ` ${rest.join(' ')}`;
+  // Board SiteMendoza: one paragraph, its first sentence's lead in bold ("1 of your 8 plants may need
+  // watering today:"), then the names, the later periods, the others and what the answer does.
+  if (!today.length) return <p class="fg-effect"><strong>{F('membersDryNone', { size: n0(size) })}</strong>{tail}</p>;
+  if (named(today.length, size)) {
+    const first = FP('membersDry', today.length, { size: n0(size), names: listOf(today.map(nameOf)) });
+    return <p class="fg-effect"><Lead text={first} />{tail}</p>;
+  }
+  return (
+    <div class="fg-effect">
+      <p class="fg-effect"><strong>{FP('membersDryMany', today.length, { size: n0(size) })}</strong></p>
+      <MoreList items={today} keyOf={(t) => t.id} render={nameOf} paletteSize={size} group={FP('membersDryMany', today.length, { size: n0(size) })} class="fg-names" />
+      <p class="fg-effect">{tail.trim()}</p>
+    </div>
+  );
+}
+// "Tu lugar es seco: **237 mm de lluvia al año**." (board SiteMendoza, es): the figure after the colon in bold.
+function DryLede({ text }: { text: string }) {
+  const m = /^(.+?[:：]\s?)(.+?)([.。]?)$/.exec(text);
+  return m ? <>{m[1]}<strong>{m[2]}</strong>{m[3]}</> : <>{text}</>;
 }
 function WaterCard({ i }: { i: SiteInputs }) {
   const dry = membersDry.value, members = store.memberTaxa.value;
   if (!dry || !dry.size || i.watering.value === 'all-year') return null;
   const first = i.watering.value === 'first-years';
+  const size = members.length;
   const today = members.filter((t) => dry.get(t.id) === TODAY), later = members.filter((t) => dry.get(t.id) && dry.get(t.id) !== TODAY);
-  const rest = members.filter((t) => !dry.has(t.id)).map(nameOf);
-  const c = counts.value?.periods[0];
+  const rest = members.filter((t) => !dry.has(t.id));
+  const c = counts.value?.periods[0], z = store.climate.value;
+  const chip = (text: string) => <span class="fg-chip fg-chip-map"><Icon d={DROP_ICON} />{text}</span>;
+  const item = (t: Taxon) => dry.get(t.id) === TODAY
+    ? <>{chip(F(first ? 'waterNowFirst' : 'waterNow'))} {F('waterNowWhy', { name: nameOf(t) })}</>
+    : <>{chip(F('waterLater', { period: periodName(dry.get(t.id)!) }))} {F(first ? 'waterLaterWhyFirst' : 'waterLaterWhy', { name: nameOf(t) })}</>;
+  const lead = FP(first ? 'waterLeadFirst' : 'waterLead', today.length, { size: n0(size), later: n0(later.length), period: periodName(MID) });
+  const restWords = !rest.length ? '' : named(rest.length, size) ? FP('waterRest', rest.length, { names: listOf(rest.map(nameOf)) }) : FP('membersDryOther', rest.length);
   return (
     <section class="fg-panel fg-water" aria-labelledby="fg-water-h">
       <h2 class="fg-h2" id="fg-water-h">{F('waterTitle')}</h2>
-      {i.rain.value !== null && <p class="fg-lede">{F('waterDry', { rain: mm(i.rain.value) })}</p>}
-      <p class="fg-water-lead">{FP(first ? 'waterLeadFirst' : 'waterLead', today.length, { size: n0(members.length), later: n0(later.length), period: periodName(MID) })}</p>
-      <ul class="fg-list fg-water-list">
-        {today.map((t) => <li key={t.id}><span class="fg-chip fg-chip-map">{F(first ? 'waterNowFirst' : 'waterNow')}</span> {F('waterNowWhy', { name: nameOf(t) })}</li>)}
-        {later.map((t) => <li key={t.id}><span class="fg-chip fg-chip-map">{F('waterLater', { period: periodName(dry.get(t.id)!) })}</span> {F(first ? 'waterLaterWhyFirst' : 'waterLaterWhy', { name: nameOf(t) })}</li>)}
-      </ul>
-      <p class="fg-note">{[rest.length ? FP('waterRest', rest.length, { names: listOf(rest) }) : '', F('waterNever'), c ? F('waterList', { fit: n0(c.fit), n: n0(c.drier) }) : ''].filter(Boolean).join(' ')}</p>
+      {i.rain.value !== null && <p class="fg-lede"><DryLede text={F('waterDry', { rain: mm(i.rain.value) })} /></p>}
+      <p class="fg-water-lead">{lead}</p>
+      <MoreList items={[...today, ...later]} keyOf={(t) => t.id} render={item} paletteSize={size} group={lead} class="fg-list fg-water-list" />
+      <p class="fg-note">{[restWords, F('waterNever'), c && z ? F('waterList', { fit: n0(c.fit), n: n0(c.drier), list: listWord(z) }) : ''].filter(Boolean).join(' ')}</p>
     </section>
   );
 }
 export function PaletteLimits() {
   const i = store.siteInputs.value;
   if (!located.value || i.nights.value === null) return null;
+  const status = checks.value;
   // The main limit only (board SiteMendoza: the rain, with the dry months it reads with); the other
-  // climate lines are said in one sentence, "Not a limit here: …".
+  // climate lines are said in one sentence, "Not a limit here: …", built only from the counts: while
+  // the checks are counting or could not run, the card says that instead (no claim from the climate alone).
   const main = mainLimit.value;
-  const lines: ClimateLine[] = main === 'rain' ? ['rain', 'dry'] : main ? [main] : [];
+  const lines: ClimateLine[] = status !== 'ready' ? [] : main === 'rain' ? ['rain', 'dry'] : main ? [main] : [];
   const today = climateFor({ inputs: i, scenario: store.scenario.value }, TODAY), last = climateFor({ inputs: i, scenario: store.scenario.value }, LAST);
   const not: string[] = [];
-  if (today && last && !lines.includes('nights')) not.push(F('notNights', { a: temp(today.tminColdC), b: temp(last.tminColdC), period: periodName(LAST), frost: F(today.tminColdC >= 10 ? 'noFrostLower' : 'frostLower') }));
-  if (today && last && !lines.includes('days')) not.push(F('notDays', { a: temp(today.tmaxWarmC), b: temp(last.tmaxWarmC), period: periodName(LAST) }));
+  if (status === 'ready' && today && last) {
+    if (!lines.includes('nights')) not.push(F('notNights', { a: temp(today.tminColdC), b: temp(last.tminColdC), period: periodName(LAST), frost: F(today.tminColdC >= 10 ? 'noFrostLower' : 'frostLower') }));
+    if (!lines.includes('days')) not.push(F('notDays', { a: temp(today.tmaxWarmC), b: temp(last.tmaxWarmC), period: periodName(LAST) }));
+  }
+  const grower = i.watering.source === 'grower';
   return (
     <>
       <section class="fg-panel fg-limits" aria-labelledby="fg-limits-h">
         <h2 class="fg-h2" id="fg-limits-h">{F('limitsTitle')}</h2>
         <p class="fg-lede">{F('limitsLede')}{countsOf() ? ` ${countsOf()}` : ''}</p>
-        {lines.map((l) => <Row key={l} line={l} i={i} always main={l === main} />)}
-        {!lines.length && counts.value && <p class="fg-effect">{F('limitsNone')}</p>}
+        {status === 'loading' && <p class="fg-effect" role="status">{sayAll([countingLine()])}</p>}
+        {status === 'failed' && <p class="fg-effect" role="status">{sayAll([checksFailedLine()])}</p>}
+        {lines.map((l) => <Row key={l} line={l} i={i} always main={l === main} card />)}
+        {status === 'ready' && !lines.length && <p class="fg-effect">{F('limitsNone')}</p>}
         {not.length > 0 && <p class="fg-note"><Lead text={F('notLimit', { parts: listOf(not) })} /></p>}
         <div role="group" aria-label={F('lineWatering')} class="fg-line fg-line-open" data-fg-line="watering">
           <div class="fg-head">
+            <span class="fg-icon"><Icon d={LINE_ICON.watering} /></span>
             <div class="fg-title"><span class="fg-name">{F('lineWatering')}</span></div>
-            <div class="fg-buttons">{i.watering.source === 'grower' && <ResetButton line="watering" to="resetWatering" />}</div>
+            <div class="fg-buttons">{grower && <ResetButton line="watering" to="resetWatering" />}</div>
           </div>
-          <p class="fg-source">{choiceSource('watering', i)} {answerWord('watering', i)}{takenAs('watering', i) ? `, ${F('alsoTaken')}` : ''}</p>
-          <MembersDry i={i} />
-          <p class="fg-effect">{F('waterEffect')}</p>
+          <p class="fg-source">{choiceWhere('watering', i, false)}</p>
+          {membersDry.value && store.memberTaxa.value.length ? <MembersDry i={i} /> : <p class="fg-effect">{F('waterEffect')}</p>}
           <ChoiceOptions line="watering" i={i} />
         </div>
-        <p class="fg-foot">{F('footPath')} {F('everyFigure')} <button type="button" class="ct-link-button fg-link" onClick={() => store.openFigure(null)}>{F('title')}</button></p>
+        <p class="fg-foot">{F('footPath')} <button type="button" class="ct-link-button fg-link" onClick={() => store.openFigure(null)}>{`${F('everyFigure')} ${F('title')}`}</button></p>
       </section>
       <WaterCard i={i} />
     </>

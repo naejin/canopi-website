@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { useHarness, aria, has } from './helpers.mjs';
 import { control, done, focused, inOrder, pastEdge, press, says, section, sectionText, toastText } from './pf-helpers.mjs';
-import { atBoardPlace, edits, engineCounts, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
+import { atBoardPlace, atPlace, edits, engineCounts, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
 
 useHarness();
 
@@ -62,7 +62,7 @@ test('PFD1 (pf-d SiteKiambu at 390): under the place questions, "Your place in f
   await says(page, `The main limit here. No frost. ${c[0].nights} of the ${c[0].of} plants take these nights today`);
   await says(page, `${c[1].nights} by 2041–2070, ${c[2].nights} by 2071–2099`);
   await says(page, `${c[0].fit} of the ${c[0].of} plants fit today, ${c[1].fit} by 2041–2070, ${c[2].fit} by 2071–2099`);
-  await says(page, `Counts are of the ${c[0].of} plants on the nearest lists (`);
+  await says(page, `Counts are of the ${c[0].of} plants on the three nearest lists (Mediterranean, Tropical, Temperate)`);
   await says(page, 'Later periods follow the middle emissions path (SSP2-4.5).');
   assert.equal(await expanded(page, 'After release: light on your plot, wind and sea'), 'false', 'board: "After release" starts closed');
   assert.equal(await expanded(page, 'Not asked, and why'), 'false', 'board: "Not asked, and why" starts closed on the phone');
@@ -159,7 +159,7 @@ test('PFD5 (pf-d SiteMendoza at 390): "What limits plants here" with only the li
   await says(page, 'Every figure, and yours: Your place in figures');
   await section(page, 'Water');
   await says(page, /With rain only, \d of your 8 plants may need watering today/);
-  await press(page, 'button', 'Your place in figures');
+  await press(page, 'button', 'Every figure, and yours: Your place in figures');
   assert.equal(await page.evaluate(() => window.__ctTest.store.view.value), 'start', 'board: the link opens the Place step');
   await section(page, 'Your place in figures');
   await done(page);
@@ -320,4 +320,173 @@ test('PFD12 (pf-d BC13, BC14; SiteKiambu, PlaceDesk): the nights line says "(low
   await press(sev, 'button', 'look at your palette in 2041–2070');
   assert.equal(await sev.evaluate(() => window.__ctTest.store.period.value), '2041-2070', 'board: the link sets the period');
   await done(sev);
+});
+
+// ---- fix round 1, batch 2 (review findings BC15-BC23, R1-R5) ----
+
+// The text of the first paragraph in a line (role="group" by name) that says `words`, with its bold runs.
+const paraIn = (page, group, words) => page.evaluate((g, w) => {
+  const el = [...document.querySelectorAll(`main [role="group"][aria-label="${g}"] p`)].find((p) => p.innerText.replace(/\s+/g, ' ').includes(w));
+  if (!el) return null;
+  return { text: el.innerText.replace(/\s+/g, ' ').trim(), bold: [...el.querySelectorAll('strong, b')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()), rule: getComputedStyle(el).borderLeftStyle, weight: getComputedStyle(el.querySelector('strong, b') ?? el).fontWeight };
+}, group, words);
+// The section under the heading `h` (an h2), by its own words.
+const sectionBy = (page, h, fn) => page.evaluate((hh, f) => {
+  const s = [...document.querySelectorAll('main section')].find((x) => x.querySelector('h2')?.textContent.trim() === hh);
+  return s ? new Function('s', `return (${f})(s)`)(s) : null;
+}, h, fn.toString());
+
+test('PFD13 (pf-d BC15, BC16, BC18, BC21; PlaceDesk at 1280): rain and dry months say a value of yours is a shift; a flat dry run "does not get longer"; the Pots line "(?) Not answered taken as in the ground" and the board\'s room sentence; pH words "7.3–8.0", "above 8.0"; "After release" open; the SSP line once', async () => {
+  const page = await placeStep('seville-board', { site: 'seville', width: 1280 });
+  await atBoardPlace(page, 'seville-board');
+  await section(page, 'Your place in figures', 20_000);
+  const rain = await lineText(page, 'Rain a year');
+  assert.ok(rain.includes('A value of yours is a shift in mm: “my plot gets about 100 mm less rain a year than the map”.'), `board: the rain line's shift sentence ("${rain}")`);
+  const dry = await lineText(page, 'Dry months in a row');
+  const m = /Today (\d+) 2041–2070 (\d+) 2071–2099 (\d+)/.exec(dry);
+  assert.ok(m, `board: the dry months' three periods ("${dry}")`);
+  const flat = m[1] === m[2] && m[2] === m[3];
+  assert.ok(flat, 'engine: Seville\'s board slots keep the dry run flat');
+  assert.ok(dry.includes(`${m[1]} dry months in a row, and it does not get longer. Shown for your reading: the note on dryness comes from the rain line. A value of yours is a shift in whole months: “about 1 month longer”.`), `board: the dry line ("${dry}")`);
+  const pots = await lineText(page, 'Pots or brought-in soil');
+  assert.ok(pots.includes('Not answered taken as in the ground'), `board: "(?) Not answered taken as in the ground" ("${pots}")`);
+  assert.ok(!pots.includes('also what is taken'), 'board: no "also what is taken" on an unanswered line');
+  assert.ok(pots.includes('“Pots or a balcony” under Room sets this line, with its source and Reset.'), `board: the room sentence ("${pots}")`);
+  await press(page, 'button', 'Change soil pH');
+  const words = await page.evaluate(() => [...document.querySelectorAll('main [role="group"][aria-label="Soil pH in words"] button')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()));
+  assert.deepEqual(words, ['Strongly acid below 5.5', 'Slightly acid 5.5–6.5', 'Neutral 6.5–7.3', 'Slightly alkaline 7.3–8.0', 'Strongly alkaline above 8.0'], 'board: the pH words with one decimal');
+  assert.equal(await expanded(page, 'After release: light on your plot, wind and sea'), 'true', 'board: "After release" open on the laptop');
+  await says(page, 'Wind and sea after release');
+  const panel = await sectionText(page, 'Your place in figures');
+  assert.equal(panel.split('Later periods follow the middle emissions path (SSP2-4.5).').length - 1, 1, 'board: the emissions path said once (in the climate note)');
+  await done(page);
+});
+
+test('PFD14 (pf-d BC16, BC19; SiteKiambu at 390): the foot counts "the three nearest lists (Mediterranean, Tropical, Temperate)"; the opened row\'s paragraph: the moves in bold body text, a second look today only, no quote box; gone after Reset; none where nothing moved', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  const c = await engineCounts(page);
+  await says(page, `Counts are of the ${c[0].of} plants on the three nearest lists (Mediterranean, Tropical, Temperate): Subtropical has no list of its own yet`);
+  await twoColder(page);
+  const d = await paraIn(page, 'Coldest nights', 'Today:');
+  assert.ok(d, 'board: the opened row says what changed');
+  assert.match(d.text, /^Today: .+; by 2071–2099: .+, of the \d+\./, `board: the moves, of the list ("${d.text}")`);
+  assert.ok(!/no longer needs? a second look/.test(d.text), `board: never "no longer need a second look" ("${d.text}")`);
+  const later = d.text.slice(d.text.indexOf('by 2071–2099'), d.text.indexOf(', of the'));
+  assert.ok(!later.includes('second look'), `board: no second look by 2071–2099 ("${later}")`);
+  assert.equal(d.bold.length, 1, `board: one bold run (${JSON.stringify(d.bold)})`);
+  assert.ok(d.bold[0].startsWith('Today:') && d.text.startsWith(`${d.bold[0]}, of the`), `board: the moves in bold, "of the" after ("${d.bold[0]}")`);
+  assert.equal(d.rule, 'none', 'board: no quote box');
+  await press(page, 'button', 'Reset coldest nights to the climate map');
+  await summary(page);
+  assert.equal(await paraIn(page, 'Coldest nights', 'Today:'), null, 'board: after Reset only the toast says it');
+  await press(page, 'button', 'Change the ground after heavy rain');
+  await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
+  await summary(page);
+  assert.equal(await paraIn(page, 'The ground after heavy rain', 'no change in what fits'), null, 'board: nothing moved, no paragraph on the drainage line');
+  await done(page);
+});
+
+test('PFD15 (pf-d BC22, BC23; SiteMendoza at 390): the limits card\'s Watering line with its icon, its first sentence bold in one paragraph, regular option labels but the chosen, the whole ochre link; the Water card\'s drop chips, the bold rain figure and "of the Arid list"', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  assert.equal(await iconBefore(page, 'Watering', 'main [role="group"][aria-label="Watering"]'), true, 'board: the watering-can before "Watering"');
+  const p = await paraIn(page, 'Watering', 'may need watering today');
+  assert.ok(p, 'board: the members sentence');
+  assert.equal(p.bold.length, 1, `board: one bold run (${JSON.stringify(p.bold)})`);
+  assert.match(p.bold[0], /^\d+ of your 8 plants may need watering today:$/, `board: the bold run ("${p.bold[0]}")`);
+  assert.ok(p.text.includes('Dryness never changes a plant’s fit.'), 'board: one paragraph with the dryness sentence');
+  const weights = await page.evaluate(() => [...document.querySelectorAll('main [role="group"][aria-label="Watering"] button[aria-pressed]')].slice(0, 3).map((b) => ({ on: b.getAttribute('aria-pressed') === 'true', w: [...b.querySelectorAll('*')].concat([b]).map((e) => getComputedStyle(e).fontWeight)[0], label: getComputedStyle(b.querySelector('span') ?? b).fontWeight })));
+  for (const w of weights) assert.equal(w.label, w.on ? '600' : '400', `board: option label weight (${JSON.stringify(weights)})`);
+  const link = await lookOf(page, 'button', 'Every figure, and yours: Your place in figures');
+  assert.ok(link && link.color === link.accent, `board: the whole sentence is one ochre link (${JSON.stringify(link)})`);
+  const c = await engineCounts(page);
+  const water = await sectionBy(page, 'Water', (s) => ({
+    text: s.innerText.replace(/\s+/g, ' ').trim(),
+    chips: [...s.querySelectorAll('li')].map((li) => !!li.firstElementChild?.querySelector('svg')),
+    bold: [...s.querySelectorAll('p')][0]?.querySelector('strong, b')?.textContent.trim() ?? null,
+  }));
+  assert.ok(water, 'board: the Water card');
+  assert.ok(water.chips.length && water.chips.every(Boolean), `board: the drop icon on every chip (${JSON.stringify(water.chips)})`);
+  assert.match(water.bold ?? '', /^\d+ mm of rain a year$/, `board: the rain figure in bold ("${water.bold}")`);
+  assert.ok(water.text.includes(`Of the ${c[0].fit} plants of the Arid list that fit your climate`), `board: the list named ("${water.text.slice(-200)}")`);
+  await done(page);
+  const es = await mendoza({ width: 390, lang: 'es' });
+  const agua = await sectionBy(es, 'El agua', (s) => s.innerText.replace(/\s+/g, ' ').trim());
+  assert.ok(agua, 'board: "El agua"');
+  assert.ok(agua.includes('de la lista Árida que entran en tu clima'), `board: "de la lista Árida" ("${agua.slice(-200)}")`);
+  assert.ok(/: tu lugar es más seco que donde está registrado\./.test(agua) && !agua.includes('donde está registrada'), 'board: "donde está registrado"');
+  await done(es);
+});
+
+test('PFD16 (pf-d R2): while the checks are not available, "What limits plants here" says so ("Counting…", "Checks could not run.") and never "Not a limit here"', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  await page.evaluate(() => { const s = window.__ctTest.store; s.verdictRule.value = null; s.verdictFailed.value = true; });
+  const failed = await page.waitForFunction(() => { const s = [...document.querySelectorAll('main section')].find((x) => x.querySelector('h2')?.textContent.trim() === 'What limits plants here'); return s && s.innerText.includes('Checks could not run.') ? s.innerText.replace(/\s+/g, ' ') : null; }, { timeout: 6000 }).then((h) => h.jsonValue(), () => null);
+  assert.ok(failed, 'board: the card says the checks could not run');
+  assert.ok(!failed.includes('Not a limit here'), `board: no claim without counts ("${failed}")`);
+  await page.evaluate(() => { window.__ctTest.store.verdictFailed.value = false; });
+  const counting = await page.waitForFunction(() => { const s = [...document.querySelectorAll('main section')].find((x) => x.querySelector('h2')?.textContent.trim() === 'What limits plants here'); return s && s.innerText.includes('Counting…') ? s.innerText.replace(/\s+/g, ' ') : null; }, { timeout: 6000 }).then((h) => h.jsonValue(), () => null);
+  assert.ok(counting, 'board: the card says it is counting');
+  assert.ok(!counting.includes('Not a limit here'), `board: no claim while counting ("${counting}")`);
+  await done(page);
+});
+
+test('PFD17 (pf-d R3): with no location climate, a soil or water answer gets its summary at once (no "Counting…" that never ends)', async () => {
+  const page = await placeStep('kiambu-8', { site: null, width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await page.evaluate(() => { const s = window.__ctTest.store; s.verdictRule.value = null; s.verdictFailed.value = false; });
+  await press(page, 'button', 'Change pots or brought-in soil');
+  await tapOption(page, 'Pots or brought-in soil', 'Pots or brought-in soil');
+  assert.equal((await edits(page)).pots, true, 'board: the answer is written');
+  assert.match(await summary(page, 3000), /^Pots or brought-in soil set to “Pots or brought-in soil”\. Your 8 plants are kept\./, 'board: the summary arrives');
+  await done(page);
+});
+
+test('PFD18 (pf-d R5): a 60-plant palette in a dry place: the limits card counts the plants that may need watering (no run of names, "+ N more" to show them), the Water card folds its list and counts the rest; the toast counts the hinted plants', async () => {
+  const page = await mendoza({ width: 390 });
+  await page.evaluate(() => { const s = window.__ctTest.store; s.members.value = [...new Set([...s.members.value, ...(s.pool.value ?? []).map((t) => t.id)])].slice(0, 60); });
+  assert.ok(await page.waitForFunction(() => { const s = window.__ctTest.store; return s.memberTaxa.value.length === 60 && !!s.memberVerdicts.value; }, { timeout: 20_000 }).then(() => true, () => false), 'the 60 plants');
+  await section(page, 'What limits plants here', 20_000);
+  const names = await page.evaluate(() => window.__ctTest.store.memberTaxa.value.map((t) => t.names?.en || t.canonical_name));
+  const p = await paraIn(page, 'Watering', 'may need watering today');
+  assert.ok(p, 'board: the members sentence');
+  assert.match(p.bold[0] ?? '', /^\d+ of your 60 plants may need watering today:$/, `board: the count in bold ("${p.bold[0]}")`);
+  const sentence = p.text.slice(0, p.text.indexOf('Dryness never changes'));
+  assert.ok(names.filter((n) => sentence.includes(n)).length <= 3, `board: no run of names past the size rule ("${sentence.slice(0, 300)}")`);
+  const water = await sectionBy(page, 'Water', (s) => ({ items: s.querySelectorAll('li').length, more: [...s.querySelectorAll('button')].some((b) => /^\+ \d+ more/.test(b.textContent.trim())), foot: [...s.querySelectorAll('p')].pop()?.innerText.replace(/\s+/g, ' ').trim() ?? '' }));
+  if (water) {
+    assert.ok(water.items <= 3 || water.more, `board: the Water card folds past the size rule (${JSON.stringify(water)})`);
+    assert.ok(names.filter((n) => water.foot.includes(n)).length === 0, `board: the rest counted, not named ("${water.foot.slice(0, 200)}")`);
+  }
+  await page.evaluate(() => window.__ctTest.store.openFigure(null));
+  await section(page, 'Your place in figures', 20_000);
+  await press(page, 'button', 'Change the ground after heavy rain');
+  await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
+  const toast = await summary(page);
+  assert.ok(names.filter((n) => toast.includes(n)).length === 0, `board: the toast names no plant past the size rule ("${toast.slice(0, 300)}")`);
+  await done(page);
+});
+
+test('PFD19 (pf-d R1): where too little warmth over the year is the main limit (Kerguelen), the Hottest days row leads with it ("The main limit here: … want more warmth"), never "Not a limit" or "Summer heat decides"; the palette shows that row', async () => {
+  const page = await placeStep('kiambu-8', { site: null, width: 390 });
+  await atPlace(page, 'kerguelen');
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 }).then(() => true, () => false), 'the verdicts');
+  await section(page, 'Your place in figures', 20_000);
+  const e = await engineSides(page);
+  const most = (f) => Math.max(...e.sides.map(f));
+  const nights = most((s) => s.cold.outside + s.mild.outside), warm = most((s) => s.cool.outside), heat = most((s) => s.hot.outside);
+  assert.ok(warm > nights && warm > heat, `engine: warmth is the main limit at Kerguelen (warmth ${warm}, nights ${nights}, heat ${heat})`);
+  assert.equal(await expanded(page, 'Hottest days'), 'true', 'board: the main limit\'s row opens first');
+  const row = await lineText(page, 'Hottest days');
+  assert.ok(row.includes('The main limit here: ') && row.includes('want more warmth over the year'), `board: the warmth lead ("${row}")`);
+  assert.ok(!/Not a limit for this list|A smaller limit here/.test(row), `board: the row does not contradict itself ("${row}")`);
+  const text = await sectionText(page, 'Your place in figures');
+  assert.ok(!text.includes('Summer heat decides'), 'board: never summer heat where warmth limits');
+  assert.ok(text.includes('Warmth over the year decides'), 'board: the warmth meaning');
+  await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; });
+  const limits = await section(page, 'What limits plants here', 20_000);
+  assert.ok(limits.includes('The main limit here: ') && !limits.includes('Not a limit for this list'), `board: the palette's limiting row ("${limits.slice(0, 400)}")`);
+  await done(page);
 });

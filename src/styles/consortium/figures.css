@@ -56,7 +56,9 @@
 .ct .fg-value { margin: 0; font-size: 16px; line-height: 21px; font-weight: 600; }
 .ct .fg-source, .ct .fg-effect, .ct .fg-detail, .ct .fg-meaning { margin: 0; font-size: 14px; line-height: 19px; }
 .ct .fg-source { color: var(--text-secondary); }
-.ct .fg-detail { padding: 8px 10px; border-left: 2px solid var(--border-strong); color: var(--text-secondary); }
+/* What the grower's value changed, under its row: body text, the moves in bold ink (board SiteKiambu). */
+.ct .fg-detail { font-size: 13px; color: var(--text-secondary); }
+.ct .fg-detail strong { font-weight: 600; color: var(--text); }
 
 /* Where a value comes from: the grower's (ink, with the pencil), not answered (dashed), a map's. */
 .ct .fg-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 13px; line-height: 19px; font-weight: 600; vertical-align: baseline; }
@@ -71,10 +73,9 @@
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px; min-width: 0;
   border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; line-height: 19px; text-align: start; cursor: pointer;
 }
-.ct .fg-option[aria-pressed="true"] { border: 2px solid var(--text); background: var(--surface-alt); padding: 5px 11px; }
+.ct .fg-option[aria-pressed="true"] { border: 2px solid var(--text); background: var(--surface-alt); padding: 5px 11px; font-weight: 600; }
 .ct .fg-option svg { flex: none; }
-.ct .fg-option strong { font-weight: 600; }
-.ct .fg-option-tail { font-size: 13px; color: var(--text-secondary); }
+.ct .fg-option-tail { font-size: 13px; font-weight: 400; color: var(--text-secondary); }
 
 /* The editor: an ink frame, the shift first, the preview, then "Use my value". */
 .ct .fg-editor { display: grid; gap: 8px; min-width: 0; margin: 4px 0 0; padding: 12px; border: 2px solid var(--text); border-radius: 11px; }
@@ -114,7 +115,11 @@
 .ct .fg-meaning svg { flex: none; width: 16px; height: 16px; margin-top: 2px; }
 .ct .fg-water-lead { margin: 0; font-size: 15px; line-height: 20px; font-weight: 600; }
 .ct .fg-water-list .fg-chip { display: flex; width: fit-content; margin-bottom: 2px; }
-.ct .fg-water-list { padding-inline-start: 0; list-style: none; }
+.ct .fg-water-list .fg-chip svg { width: 14px; height: 14px; }
+.ct .fg-water-list .ct-more-items { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ct .fg-water-list .ct-more-count, .ct .fg-names .ct-more-count { display: none; } /* the sentence above says the count */
+.ct .fg-names .ct-more-items { display: flex; flex-wrap: wrap; gap: 0 4px; margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 19px; }
+.ct .fg-names .ct-more-items > li:not(:last-child)::after { content: ","; }
 @media (max-width: 639px) {
   .ct .fg-panel { padding: 12px; }
   .ct .fg-cell { padding: 6px; }

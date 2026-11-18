@@ -10,7 +10,7 @@
 // second look; by 2071–2099: 50 more fit, 46 no longer fit, of the 515. In all, 17 fewer fit today and 4
 // more fit by 2071–2099." A status message, never a question; the hole words are verdict-line.ts's.
 // A leaf beside verdict-line.ts: keys under consortium.figures.
-import type { MemberChange, PeriodChange, SiteChange } from './site-change.ts';
+import type { LimitLine, MemberChange, PeriodChange, SiteChange } from './site-change.ts';
 import type { Factor, Line, SiteEdits, SiteInputs, TextureId } from './types.ts';
 import { periodIds } from './types.ts';
 import { holeChangeLines, periodName } from './verdict-line.ts';
@@ -81,24 +81,59 @@ export function setLines(was: SiteEdits, now: SiteEdits, inputs: SiteInputs | nu
 
 // ---- how many fit, per period ----
 
+// The size rule (A14), one helper for every list of member names (the toast, the opened row, the
+// limits card, the Water card): names while the palette has 40 plants or fewer and the group 12 or
+// fewer; past either, a count (and, on a screen, the MoreList fold).
+export const NAMED_PALETTE = 40, NAMED_GROUP = 12;
+export const named = (group: number, size: number): boolean => size <= NAMED_PALETTE && group <= NAMED_GROUP;
+
 const net = (p: PeriodChange | undefined): number => (p ? p.fitIn - p.fitOut : 0);
 const netLine = (n: number): Line => (n > 0 ? L('countMore', {}, n) : n < 0 ? L('countFewer', {}, -n) : L('countSame'));
 const periodOf = (c: SiteChange, id: string) => c.periods.find((p) => p.period === id);
+// Whether anything moved in a period (gross moves, never a signed net: 30 in and 30 out is a change).
+const moved = (p: PeriodChange | undefined): boolean => !!p && !!(p.fitIn || p.fitOut || p.lookNew || p.lookGone);
+// A period's moves as listed parts; `looks`: the second-look moves too (the toast), else fits only.
+const movesOf = (p: PeriodChange | undefined, looks: { lookNew: boolean; lookGone: boolean }): Line[] => {
+  if (!p) return [L('countSame')];
+  const parts: Line[] = [];
+  if (p.fitIn) parts.push(L('countMore', {}, p.fitIn));
+  if (p.fitOut) parts.push(L('countOut', {}, p.fitOut));
+  if (looks.lookNew && p.lookNew) parts.push(L('countLookNew', {}, p.lookNew));
+  if (looks.lookGone && p.lookGone) parts.push(L('countLookGone', {}, p.lookGone));
+  return parts.length ? parts : [L('countSame')];
+};
+// The toast's word for one period: the net when the fits moved by a number (board "17 fewer fit"),
+// else the moves themselves ("30 more fit and 30 no longer fit", "40 now need a second look").
+const periodWords = (p: PeriodChange | undefined): Line | Line[] => (net(p) ? netLine(net(p)) : movesOf(p, { lookNew: true, lookGone: true }));
+// The members that newly carry a soil hint: named under the size rule, else counted.
+const hintParts = (c: SiteChange, nameOf: (id: string) => string, size: number) => {
+  const hinted = c.hintsNew;
+  const kinds = [...new Set(hinted.flatMap((h) => h.factors))];
+  return {
+    many: !named(hinted.length, size),
+    parts: {
+      names: hinted.map((h) => ({ key: K('name'), vars: { name: nameOf(h.id) } })),
+      hint: kinds.map((f) => L(f === 'drainage' ? 'hintDrainage' : 'hintPh')),
+    },
+  };
+};
 
-// "Today: 17 fewer fit; by 2071–2099: 4 more fit." Nothing changed in either: the alike form, with the
-// members that newly carry a soil hint ("Olive, Almond and Fig now carry a hint, wants free-draining soil").
-function countLines(c: SiteChange, nameOf: (id: string) => string, soil: boolean): Line[] {
+// "Today: 17 fewer fit; by 2071–2099: 4 more fit." Nothing moved in either period: the alike form, with
+// the members that newly carry a soil hint ("Olive, Almond and Fig now carry a hint, wants
+// free-draining soil"); past the size rule their count ("90 of your plants now carry a hint, …").
+function countLines(c: SiteChange, nameOf: (id: string) => string, soil: boolean, size: number): Line[] {
   const today = periodOf(c, periodIds[0]), last = periodOf(c, LAST);
   if (!today) return [];
-  const a = net(today), b = net(last);
-  if (a || b) return [L('periods', { period: periodName(LAST) }, undefined, { today: netLine(a), later: netLine(b) })];
-  const hinted = c.hintsNew;
-  if (!hinted.length) return [L(soil ? 'alikeSoil' : 'alike', { period: periodName(LAST) })];
-  const kinds = [...new Set(hinted.flatMap((h) => h.factors))];
-  return [L(soil ? 'alikeSoilHints' : 'alikeHints', { period: periodName(LAST) }, hinted.length, {
-    names: hinted.map((h) => ({ key: K('name'), vars: { name: nameOf(h.id) } })),
-    hint: kinds.map((f) => L(f === 'drainage' ? 'hintDrainage' : 'hintPh')),
-  })];
+  const n = c.hintsNew.length;
+  const h = n ? hintParts(c, nameOf, size) : null;
+  if (moved(today) || moved(last)) {
+    const out = [L('periods', { period: periodName(LAST) }, undefined, { today: periodWords(today), later: periodWords(last) })];
+    if (h) out.push(h.many ? L('hintedMany', {}, n, { hint: h.parts.hint }) : L('hinted', {}, n, h.parts));
+    return out;
+  }
+  if (!h) return [L(soil ? 'alikeSoil' : 'alike', { period: periodName(LAST) })];
+  const key = `${soil ? 'alikeSoilHints' : 'alikeHints'}${h.many ? 'Many' : ''}`;
+  return [L(key, { period: periodName(LAST) }, n, h.many ? { hint: h.parts.hint } : h.parts)];
 }
 
 // ---- your plants ----
@@ -113,14 +148,12 @@ export function memberLine(m: MemberChange, name: string): Line {
   if (m.after === 'fits') return L('memberFits', { name });
   return L('memberUnknown', { name });
 }
-// The size rule (A14): names while the palette has 40 plants or fewer and the group 12 or fewer.
-const NAMED_PALETTE = 40, NAMED_GROUP = 12;
 function keptLines(c: SiteChange, size: number, nameOf: (id: string) => string): Line[] {
   if (!size) return [];
   const today = periodOf(c, periodIds[0]);
   const changed = today?.members ?? [];
   if (!changed.length) return [L('kept', {}, size)];
-  if (size > NAMED_PALETTE || changed.length > NAMED_GROUP) return [L('keptChanged', { changed: changed.length }, size)];
+  if (!named(changed.length, size)) return [L('keptChanged', { changed: changed.length }, size)];
   return [L('keptChanges', {}, size, { changes: changed.map((m) => memberLine(m, nameOf(m.id))) })];
 }
 
@@ -137,27 +170,37 @@ export function siteChangeLines(change: SiteChange, edits: SiteEdits, w: ChangeW
   const nameOf = w.nameOf ?? ((id: string) => id);
   const was = w.was ?? edits;
   const soil = (['soilPh', 'drainage', 'pots'] as Key[]).some((k) => differs(was, edits, k));
-  const out = [...setLines(was, edits, w.inputs ?? null, w.temp, w.texture ?? null), ...countLines(change, nameOf, soil), ...keptLines(change, w.size ?? 0, nameOf)];
+  const out = [...setLines(was, edits, w.inputs ?? null, w.temp, w.texture ?? null), ...countLines(change, nameOf, soil, w.size ?? 0), ...keptLines(change, w.size ?? 0, nameOf)];
   if (change.periods.length) out.push(...holeChangeLines(change.holes, { left: false }));
   return out;
 }
 
-// The opened row's parts: each period's moves, of the list, then the net, then the plants and holes.
+// The opened row's parts (board SiteKiambu): each period's moves, of the list (bold up to the list:
+// parts.moves), then the net, then the plants and holes. The board's clauses: a second look newly
+// needed today only, never one no longer needed. Nothing moved: no paragraph (the toast says it).
 export function changeDetailLines(change: SiteChange, of: number, w: ChangeWords = {}): Line[] {
   const nameOf = w.nameOf ?? ((id: string) => id);
   const today = periodOf(change, periodIds[0]), last = periodOf(change, LAST);
   if (!today) return [];
-  const moves = (p: PeriodChange | undefined): Line[] => {
-    if (!p) return [L('countSame')];
-    const parts: Line[] = [];
-    if (p.fitIn) parts.push(L('countMore', {}, p.fitIn));
-    if (p.fitOut) parts.push(L('countOut', {}, p.fitOut));
-    if (p.lookNew) parts.push(L('countLookNew', {}, p.lookNew));
-    if (p.lookGone) parts.push(L('countLookGone', {}, p.lookGone));
-    return parts.length ? parts : [L('countSame')];
-  };
-  const out: Line[] = [L('detailPeriods', { period: periodName(LAST) }, of, { today: moves(today), later: moves(last) })];
+  const todayMoves = movesOf(today, { lookNew: true, lookGone: false }), lastMoves = movesOf(last, { lookNew: false, lookGone: false });
+  const quiet = (ms: Line[]) => ms.length === 1 && ms[0].key === K('countSame');
+  if (quiet(todayMoves) && quiet(lastMoves)) return [];
+  const moves = L('detailMoves', { period: periodName(LAST) }, undefined, { today: todayMoves, later: lastMoves });
+  const out: Line[] = [L('detailPeriods', {}, of, { moves })];
   if (net(today) || net(last)) out.push(L('detailAll', { period: periodName(LAST) }, undefined, { today: netLine(net(today)), later: netLine(net(last)) }));
   out.push(...keptLines(change, w.size ?? 0, nameOf), ...holeChangeLines(change.holes, { left: false }));
   return out;
 }
+
+// What each line that limits plants reads as (spec 3; review R1): the row it is said in, the lead that
+// row takes when it is the main limit (null: "The main limit here." before the row's own sentence),
+// and the "What it means for your choice" sentence (null: how the list moves, core rangeMoves). Warmth
+// over the year is worked out from the two temperature lines and said in the Hottest days row, with its
+// own lead and meaning: never read as summer heat.
+export type LimitRow = 'nights' | 'days' | 'rain';
+export const LIMIT_LINES: Readonly<Record<LimitLine, { row: LimitRow; lead: string | null; meaning: string | null }>> = Object.freeze({
+  nights: { row: 'nights', lead: null, meaning: null },
+  days: { row: 'days', lead: null, meaning: 'meaningDays' },
+  warmth: { row: 'days', lead: 'warmthMain', meaning: 'meaningWarmth' },
+  rain: { row: 'rain', lead: null, meaning: 'meaningRain' },
+});
