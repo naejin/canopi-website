@@ -2,20 +2,20 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:08Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:07Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:15b74990f89ca4fb
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:879a20960c3b9aad
+    last_modified: 2026-11-18T04:57:11Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:cb7e165cdbf709c4
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:6a00f9920ee804c3
+    last_modified: 2026-11-18T12:36:20Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
@@ -69,7 +69,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 | Part | File | What it shows |
 |---|---|---|
 | Header steps | `views/palette/Palette.tsx` | Your place (a button back to Place), Your palette (current), Planting plan (later) |
-| Next step | `views/palette/NextStep.tsx` | the first open hole in words and years (`holeWords` = lane name + `holeLine`), its best three fillers with fit line and one-tap Add, See all (Add preset to the hole), Not now (`store.notNow`, never saved), the other holes with Find; outside-range fillers behind "Show N outside their climate range" |
+| Next step | `views/palette/NextStep.tsx` | the first open hole in words and years (`holeWords` = lane name + `holeLine`), its best three fillers with fit line and one-tap Add; fillers grouped by fit (fits, "Needs a second look (n)", "Not checked (n)"); the no-fit sentence only when core `noneFits` (no plant fits and none unchecked; pf-a R3); See all whenever there are plants to see, Not now (`store.notNow`, never saved), the other holes with Find; outside-range fillers behind "Show N outside their climate range"; a dry place adds `dryIntroLine` to the why sentence; the room note ("Balcony or pots.") sits above the card, not in it (BC32); the empty palette is a card of three bordered ways with a note under it counting the plants that fit near the place (BC33) |
 | Through the years | `views/palette/Years.tsx`, `rules/picture-years.ts` | one lane per light level (and "not recorded"); phone (max-width 639px): one time step with Earlier / Later writing `store.yearStep` and announcing `changeSummary` |
 | Jobs | `views/palette/JobsPicture.tsx`, `rules/picture-jobs.ts` | one lane per job (and "no job recorded") |
 | Your plants | `views/palette/YourPlants.tsx`, core `weigh.ts` `yourPlants`, `sizeLine` | each plant once, warned plants first (owner "warn, never hide"), each warning in words with the warning icon (toxicity by level: Slight the `--warning` token with "Mildly toxic", Moderate and Severe the `--danger` token), its marks, its size ("in the wild": `height_m` is the wild maximum), and Remove (toast with Undo; focus to the next row's Remove, else the heading); then a plain row for each member the page cannot show (its guest list unread: `store.failedMembers`; on none of this climate's lists: `missingMembers.unlisted`; a member the shown plants already hold gets no such row) with why and Remove; `Palette.tsx` builds the rows once and passes them in; above 12 rows the rest fold behind "+ N more", opening it focuses the first row it shows (a plain focus, the toast keeps its opener); nothing at 0 plants |

@@ -14,7 +14,7 @@
 import type { ComponentChildren } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
 import type { Fillers, Hole, JobId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { bestToAdd, edgeChipLine, fillReasonLine, fillers, fills, holeChangeLines, jobsOf, nextTarget, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
+import { bestToAdd, dryIntroLine, edgeChipLine, fillReasonLine, fillers, fills, holeChangeLines, jobsOf, nextTarget, noneFits, periodIds, periodName, roomNote, thinKey, thinTitleLine, uncheckedLine, yearsLine, yearsOf, JUDGED_FROM_YEAR, JUDGED_TO_YEAR, type HoleChange, type ThinChange } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusNextStep, focusSoon } from '../../focus.ts';
 import { formatLength } from '../../format.ts';
@@ -24,7 +24,8 @@ import { FitLine, holeWords, midSentence, say } from '../kit/fit.tsx';
 import { flagLines, invasiveChip, type Line as FlagLine } from '../kit/flags.ts';
 import { WARN } from '../kit/icons.tsx';
 import { MoreList } from '../kit/more.tsx';
-import { countryName } from '../kit/names.ts';
+import { coords, countryName, listName, num } from '../kit/names.ts';
+import { countKind } from '../../rules/suggest-block.ts';
 
 // A plant's short marks as chips (boards Main, Palette, FillHole, FindResults; word map rows 89, 103):
 // the warning icon and a few words ("Mildly toxic", "Recorded invasive in Kenya", "Near the edge of
@@ -101,14 +102,22 @@ const isOpen = (h: Hole) => h.state === 'open';
 function Card({ children, hole, after }: { children: ComponentChildren; hole?: string; after?: ComponentChildren }) {
   return (
     <div class="ct-next ct-next-stack" data-hole={hole}>
+      <RoomNote />
       <section class="ct-next-card" aria-labelledby="ct-next-t">{children}</section>
       {after}
     </div>
   );
 }
-// The room card (board Balcony): with "Balcony or pots", what room does and does not do, first in the
-// card; never a filter (a plant taller than 6 m carries its note on its row).
-const RoomCard = () => (store.room.value === 'pots' ? <p class="ct-next-room" data-next-room="">{T('palette.next.roomPots')}</p> : null);
+// The room note (board Balcony; BC32): with "Balcony or pots", what room does and does not do, a note
+// with the pot mark above the Next step card, never inside it; never a filter (a plant taller than 6 m
+// carries its note on its row).
+const POT = <svg class="ct-glyph" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8h10l-1.3 8H6.3ZM4 8h12M10 8V4.5M10 6c1-2 2.5-2.5 4-2.5M10 6.5C9 5 8 4.5 6.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>;
+const RoomNote = () => (store.room.value === 'pots' ? (
+  <p class="ct-next-room" data-next-room="">
+    <span class="ct-next-room-mark">{POT}</span>
+    <span><b>{T('palette.next.roomPotsTitle')}</b> {T('palette.next.roomPotsLine')} <b>{T('palette.next.roomPotsNoData')}</b> {T('palette.next.roomPotsSoil')}</span>
+  </p>
+) : null);
 // The card's head (BC14): the small "Next step" label, the position on the same line at the right
 // (each part kept whole, so a long language breaks between parts only), then the target's title.
 const Title = ({ count }: { count?: ComponentChildren }) => (
@@ -121,6 +130,37 @@ const Part = ({ children }: { children: ComponentChildren }) => <span class="ct-
 // The add mark (boards Main, FindResults: "+ Add"); the word carries the meaning.
 export const PLUS = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
 const TICK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
+
+// The Empty board's marks (search, page, leaf, info) and the ways' chevron; the words carry the meaning.
+const svg = (d: ComponentChildren, size = 20) => <svg class="ct-glyph" width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{d}</svg>;
+const SEARCH_MARK = svg(<><circle cx="8.5" cy="8.5" r="5" /><path d="M12.3 12.3l4.2 4.2" /></>, 22);
+const PAGE_MARK = svg(<path d="M5.5 3h6l3.5 3.5V17h-9.5ZM11.5 3v3.5H15" />, 22);
+const LEAF_MARK = svg(<path d="M4 16c0-7 4-11 12-12 0 8-4 12-11 12ZM4 16l7-7" />, 22);
+const INFO_MARK = svg(<><circle cx="10" cy="10" r="7" /><path d="M10 9v4.5M10 6.5v.2" /></>, 14);
+const CHEVRON = svg(<path d="M7.5 5l5 5-5 5" />, 16);
+
+// The Empty note's count line (board Empty: "305 of the 515 plants on the three nearest lists fit near
+// Kiambu today."): the place's verdicts over the chosen climate's list (store.countFits), the place
+// named, the period named when it is not today. While the check loads it says so, never "0 of M";
+// refused, how many plants the list holds, no fit claimed; no place with a climate, nothing (no fit
+// can be claimed); none fit or none checked, the place count's own words (rules/suggest-block.ts
+// countKind: never "0 of m").
+function EmptyCount() {
+  const zone = store.climate.value, loc = store.location.value;
+  if (!zone || !loc || !store.siteClimate.value) return null;
+  const n = store.countFits.value, pool = store.pool.value;
+  if (!n) {
+    if (store.verdictFailed.value) return pool ? <> {P('find.lede', pool.length, { list: listName(zone) })}.</> : null;
+    return <> {T('place.count.checking')}</>;
+  }
+  const own = store.curatedClimates.value.includes(zone), p = store.period.value, later = p !== periodIds[0];
+  const vars = { total: num(n.of), list: listName(zone), period: periodName(p), place: (loc.label ?? coords(loc.lat, loc.lon)).split(',')[0].trim() };
+  const kind = countKind(n);
+  const text = kind === 'unchecked' ? P(own ? 'place.count.uncheckedOwn' : 'place.count.unchecked', n.unknown, vars)
+    : kind === 'none' ? T(own ? (later ? 'place.count.noneOwnLater' : 'place.count.noneOwn') : later ? 'place.count.noneLater' : 'place.count.none', vars)
+      : P(own ? (later ? 'palette.next.emptyCountOwnLater' : 'palette.next.emptyCountOwn') : later ? 'palette.next.emptyCountLater' : 'palette.next.emptyCount', n.fits + n.look, vars);
+  return <> {text}</>;
+}
 
 // The plants on the lists that fill a hole (core fillers), with the inputs the Next step reads: the
 // offer list less the palette, the verdicts, holding to the last period, the store's one second-look
@@ -174,22 +214,29 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   // Empty: no member at all; plants of a guest list still loading or that failed are members too, only
   // not read yet (review r2 empty-1), so the branches after this one say so.
   if (!store.members.value.length) {
-    // Empty (board Empty): the three ways in as rows, each with what it does, then when the pictures
-    // come (the place's count line is a hand-off: PFA4/PFA5).
-    const row = (id: string, label: string, sub: string, run: () => void, entry?: string) => (
-      <li><button type="button" class="ct-next-way" data-find-entry={entry} aria-label={label} aria-describedby={`ct-way-${id}`} onClick={run}><span class="ct-next-way-label">{label}</span><span class="ct-next-way-sub" id={`ct-way-${id}`}>{sub}</span></button></li>
+    // Empty (board Empty; BC33): a card with the three ways in as bordered buttons, each with its mark
+    // (search, page, leaf), its label in ink, what it does and a chevron; under the card, a note with
+    // the info mark: when the pictures come, then the place's count line (EmptyCount).
+    const way = (id: string, icon: ComponentChildren, label: string, sub: string, run: () => void, entry?: string, first = false) => (
+      <li><button type="button" class={`ct-next-way${first ? ' is-first' : ''}`} data-find-entry={entry} aria-label={label} aria-describedby={`ct-way-${id}`} onClick={run}>
+        <span class="ct-next-way-mark">{icon}</span>
+        <span class="ct-next-way-text"><span class="ct-next-way-label">{label}</span><span class="ct-next-way-sub" id={`ct-way-${id}`}>{sub}</span></span>
+        {CHEVRON}
+      </button></li>
     );
     return (
-      <section class="ct-next" aria-labelledby="ct-next-t" data-empty="">
-        <h3 id="ct-next-t" tabIndex={-1}>{T('palette.next.emptyTitle')}</h3>
-        <p>{T('palette.next.emptyLine')}</p>
-        <ul class="ct-next-ways">
-          {row('find', T('find.findPlants'), T('palette.next.emptyFindSub'), () => store.openFind(), 'empty')}
-          {row('paste', T('start.paste'), T('palette.next.emptyPasteSub'), () => store.openSheet('paste'))}
-          {row('small', T('palette.next.emptySmall'), T('palette.next.emptySmallSub'), () => requestSuggest())}
-        </ul>
-        <p class="ct-muted ct-small">{T('palette.next.emptyPictures')}</p>
-      </section>
+      <div class="ct-next ct-next-stack" data-empty="">
+        <section class="ct-next-card ct-next-emptycard" aria-labelledby="ct-next-t">
+          <h3 id="ct-next-t" tabIndex={-1}>{T('palette.next.emptyTitle')}</h3>
+          <p>{T('palette.next.emptyLine')}</p>
+          <ul class="ct-next-ways">
+            {way('find', SEARCH_MARK, T('find.findPlants'), T('palette.next.emptyFindSub'), () => store.openFind(), 'empty', true)}
+            {way('paste', PAGE_MARK, T('start.paste'), T('palette.next.emptyPasteSub'), () => store.openSheet('paste'))}
+            {way('small', LEAF_MARK, T('palette.next.emptySmall'), T('palette.next.emptySmallSub'), () => requestSuggest())}
+          </ul>
+        </section>
+        <p class="ct-next-emptynote" data-next-emptynote="">{INFO_MARK} {T('palette.next.emptyPictures')}<EmptyCount /></p>
+      </div>
     );
   }
   // A guest list that could not be read: its plants may fill a hole, so no hole is named (PP-B21).
@@ -203,21 +250,20 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
     return (
       <Card>
         <Title count={openThins.length ? P('palette.next.thinCount', openThins.length) : undefined} />
-        <RoomCard />
         <p>{T('palette.noHoles')}</p>
         {skip.size > 0 && <p><button type="button" class="button button-secondary" onClick={() => { store.notNow.value = new Set(); }}>{T('palette.showPutOff')}</button></p>}
       </Card>
     );
   }
   const thin = !!next.thin;
-  const fits = [...found.fits, ...found.unknown];
   // BC3: "See all N" counts what Find lists before its "Show N outside": fits, second looks, unchecked.
   const all = found.fits.length + found.look.length + found.unknown.length;
   const doing = all + found.outside.length;
-  // BC4 (board Many, word map row 151): the no-fit state when no plant fits; an unchecked plant was
-  // never judged (R3), so it keeps the card out of it. The second looks stay listed under their own
-  // heading (inform, don't block); "See all N" gives way to the outside link, as the board draws it.
-  const noFit = found.fits.length === 0 && found.unknown.length === 0;
+  // R3, BC4 (board Many, word map row 151): the no-fit state is decided by the group counts (core
+  // noneFits): no plant that fits and none still to be checked. Each group has its own heading (fits,
+  // "Needs a second look (n)", "Not checked (n)"), and "See all N" shows whenever N > 0; with none to
+  // see, the outside link takes its place, as the board draws it.
+  const noFit = noneFits(found);
   const others = open.filter((h) => h.id !== next.id && !skip.has(h.id));
   const best = bestToAdd(next, found, store.paletteGoals.value);
   const allFits = found.fits.map((t) => t.id);
@@ -270,7 +316,10 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   const period = periodName(periodIds[periodIds.length - 1]);
   const hold = !found.fits.length || !found.judged ? '' : holding === found.fits.length ? P('palette.next.holdAll', found.fits.length, { period }) : P('palette.next.holdSome', holding, { n: found.fits.length, period });
   // In the no-fit state the no-fit sentence says the counts (board Many).
-  const whySentence = [why, doing && !noFit ? `${P('palette.next.countsHead', doing)} ${counts}.` : '', noFit ? '' : hold].filter(Boolean).join(' ');
+  // BC31 (board SiteMendoza): where the listed candidates carry the dryness note, "Little rain falls
+  // here: each plant says whether it may need watering." (core dryIntroLine, by the grower's watering).
+  const dry = dryIntroLine([...found.fits, ...found.look].map((t) => pv?.get(t.id)));
+  const whySentence = [why, doing && !noFit ? `${P('palette.next.countsHead', doing)} ${counts}.` : '', noFit ? '' : hold, dry && say(dry)].filter(Boolean).join(' ');
   // BC2: the members not checked that stand then, named while they are few (A14: 12 or fewer), so the
   // grower sees why the title says "nobody known" ("1 plant not checked: Napier grass.").
   const unchecked = uncheckedLine(next);
@@ -291,16 +340,22 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
   return (
     <Card hole={next.id} after={otherHoles}>
       <Title count={position} />
-      <RoomCard />
       <h4 class="ct-next-hole" data-next-title="">{thin ? say(thinTitleLine(next)) : holeWords(next)}</h4>
       {uncheckedText && <p class="ct-next-unchecked" data-next-unchecked="">{uncheckedText}</p>}
       {whySentence && <p class="ct-next-why" data-next-why="">{whySentence}</p>}
-      {fits.length > 0 && <MoreList items={fits} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" />}
+      {found.fits.length > 0 && <MoreList items={found.fits} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" />}
       {noFit && <p data-next-nofit="">{T('palette.next.noFit')}{found.outside.length > 0 && <> {P('palette.next.noFitOutside', found.outside.length)}</>}</p>}
       {found.look.length > 0 && (
         <>
           <h4 class="ct-fillers-head">{WARN} {T('palette.secondLook', { n: found.look.length })}</h4>
           <MoreList items={found.look} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} class="ct-fillers" />
+        </>
+      )}
+      {/* R3: plants not checked were never judged, so they are not listed as fitting: their own group. */}
+      {found.unknown.length > 0 && (
+        <>
+          <h4 class="ct-fillers-head" data-next-unchecked-head="">{T('palette.next.notCheckedHead', { n: num(found.unknown.length) })}</h4>
+          <MoreList items={found.unknown} keyOf={(t) => t.id} render={lookFiller} paletteSize={size} class="ct-fillers" />
         </>
       )}
       {found.outside.length > 0 && outsideOpen && <div data-outside=""><MoreList items={found.outside} keyOf={(t) => t.id} render={filler} paletteSize={size} class="ct-fillers" /></div>}
@@ -318,7 +373,7 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
         <span class="ct-next-actions-start">
           {thin
             ? <button type="button" class={link} onClick={() => openFillers(next)}>{T('palette.next.findBackup')}</button>
-            : all > 0 && !noFit && <button type="button" class={link} data-next-seeall="" onClick={() => openFillers(next)}>{P('palette.seeAll', all)}</button>}
+            : all > 0 && <button type="button" class={link} data-next-seeall="" onClick={() => openFillers(next)}>{P('palette.seeAll', all)}</button>}
           {found.outside.length > 0 && !outsideOpen && <button type="button" class={link} onClick={seeOutside}>{noFit ? P('palette.next.seeOutside', found.outside.length) : P('palette.showOutside', found.outside.length)}</button>}
         </span>
         <button type="button" class={link} onClick={putOff}>{T('palette.notNow')}</button>

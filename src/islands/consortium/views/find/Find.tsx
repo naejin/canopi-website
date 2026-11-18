@@ -24,7 +24,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import * as store from '../../store.ts';
 import type { AddResult } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
-import type { ClimateZone, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone, Hole, JobId, Locale, PeriodId, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
 import { fillReasonLine, fills, fitLine, jobIds, jobsOf, periodIds, periodName, laneLine, queryTokens, secondLook, thinTitleLine, uncheckedLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { namesLine, whyLines, type FindHit } from '../../data/search.ts';
 import { applyFilters, bestFirst, findGroups, GROUPS, jobsMatching, LIGHTS, SIZES, STANDS, wellInside, type FilterId, type FindFilters, type Group, type Stand } from '../../rules/find-query.ts';
@@ -96,11 +96,14 @@ function lightWordsOf(t: Taxon): string | null {
 // known: the job the list is filtered by, left out ("Also …") only on a row that does it (c1r5 W3: a
 // searched palette plant or a close spelling may not).
 // to: the last year it stays in its climate range through ("in range to 2099", board FillHole), else null.
-// span: false where the row's reason line already says the years (BC26: one reason line).
-function metaWords(t: Taxon, known: JobId | null, to: string | null = null, span = true): string {
+// reason: the row carries a fit reason (BC26, board FillHole): its light is the reason's (or not said),
+// so no light word here, and the years only where the reason does not say them ("Covers the ground and
+// is planted in shade: fills 4 holes / Also … · month 3 to year 25 · 30 cm wide, 30 cm tall · in range
+// to 2099"); `saysYears`: the reason says them ("Covers the ground from month 3 to year 25").
+function metaWords(t: Taxon, known: JobId | null, to: string | null = null, reason: { saysYears: boolean } | null = null): string {
   const own = jobsOf(t), drop = known && own.includes(known) ? known : null;
   const jobs = rowRoles(own.filter((j) => j !== drop), !!drop);
-  return [jobs, lightWordsOf(t), span && rowSpan(t), rowSize(t), to && T('find.inRangeTo', { year: to })].filter(Boolean).join(' · ');
+  return [jobs, !reason && lightWordsOf(t), !reason?.saysYears && rowSpan(t), rowSize(t), to && T('find.inRangeTo', { year: to })].filter(Boolean).join(' · ');
 }
 // The add button's mark (board FindResults: "+ Add", "✓ Added"); the word carries the meaning.
 const TICK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
@@ -257,15 +260,28 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The query's hits, best first; those in the list, those in other lists, those already in the palette.
   const hits = useMemo(() => (q && search ? search(q) : null), [q, search]);
   const job = useMemo(() => (q ? jobsMatching(q, jobWords)[0] ?? null : null), [q]);
+  // R1: the targets "Fills a hole or a thin job" reads, frozen at the visit's first add (as the order
+  // is, frozenFilled): an add that closes a hole or a thin spot never takes the rows for that job out
+  // from under the reader. A fresh opening of Find reads the targets again.
+  const liveTargets = useMemo(() => [...open, ...thins.filter((h) => h.state === 'open')], [open, thins]);
+  const frozenTargets = useRef<readonly Hole[] | null>(null);
+  const targets = frozenTargets.current ?? liveTargets;
+  // The plants added in this visit stay listed whatever the filters say ("Added" with its Undo; AddMany
+  // state 3): a list snapshot for the visit, so no recompute moves a row the reader just acted on.
+  const keepVisit = (rows: readonly Taxon[], from: readonly Taxon[]): Taxon[] => {
+    if (!visit.length) return [...rows];
+    const kept = new Set(rows.map((t) => t.id));
+    return from.filter((t) => kept.has(t.id) || visit.includes(t.id));
+  };
   const ctx = useMemo(() => {
     return {
       verdicts,
       holds: judging ? (t: Taxon, p: PeriodId) => rule!.holdsBy(t, vctx, p) : undefined,
       toxic: (t: Taxon) => (t.warnings.toxicity ? t.warnings.toxicity.level !== 'None' : null),
       invasive: (t: Taxon) => (flagCtx.countryStatus === 'checked' && flagCtx.country && t.warnings.invasive_in ? t.warnings.invasive_in.some((r) => r.country === flagCtx.country) : null),
-      targets: [...open, ...thins.filter((h) => h.state === 'open')],
+      targets,
     };
-  }, [verdicts, rule, judging, vctx, flagCtx, memberTaxa, open, thins]);
+  }, [verdicts, rule, judging, vctx, flagCtx, memberTaxa, targets]);
   // The plants the filters read: the query's hits in the list (hit order), else the list best first.
   const matched = useMemo(() => {
     if (!hits) return judging || hole ? bestFirst(base, filled, stay, firm, warnCount) : base;
@@ -282,13 +298,14 @@ export default function Find({ Frame }: { Frame: Frame }) {
   // The one count: how many plants the list shows under these filters and this fit choice.
   // (the job card counts the list its "Show these N plants" lists: the whole list, the query gone).
   const count = (f: FindFilters, v: Fit = fit, list = matched, fold = folds(v), drop = drops(v)): number => {
-    const rows = applyFilters(list, { ...f, range: v === 'inside' }, ctx).rows;
+    const rows = keepVisit(applyFilters(list, { ...f, range: v === 'inside' }, ctx).rows, list);
     return rows.filter((t) => !(fold && isOutside(t)) && !(drop && !isFit(t) && !isOutside(t))).length;
   };
   const view = useMemo(() => {
     const hitOf = new Map<PlantId, FindHit>();
     hits?.forEach((h) => hitOf.set(h.id, h));
-    const { rows, unknown, hidden } = applyFilters(matched, filters, ctx);
+    const applied = applyFilters(matched, filters, ctx), { unknown, hidden } = applied;
+    const rows = keepVisit(applied.rows, matched);
     const groups = findGroups(rows, verdicts, warned);
     const inList = new Set(base.map((t) => t.id));
     const own = new Set(pool?.map((t) => t.id) ?? []);
@@ -306,7 +323,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const byFilters = hits ? matched.length - rows.length : 0;
     const outsideHole = hits ? hits.filter((h) => own.has(h.id) && !inList.has(h.id) && !atOpen.has(h.id)).length : 0;
     return { hitOf, groups, unknown, hidden, others, inPalette, byFilters, outsideHole };
-  }, [matched, hits, chosen, fit, judging, ctx, verdicts, warned, pool, members, climate, atOpen, memberTaxa, hole, q, releasePlants.value]);
+  }, [matched, hits, chosen, fit, judging, ctx, verdicts, warned, pool, members, climate, atOpen, memberTaxa, hole, q, releasePlants.value, visit]);
 
   if (!climate) return null;
   if (pasting) return <Paste Frame={Frame} onBack={(name?: string) => batch(() => { setPasting(false); setBackFromPaste(true); if (name) ask(name); })} />;
@@ -336,12 +353,16 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const addOne = (t: Taxon, from?: ClimateZone) => {
     if (added(t.id)) return;
     frozenFilled.current ??= filled;
+    frozenTargets.current ??= targets;
     const text = said(t);
     store.addMembers([t.id], from ? { [t.id]: from } : {}, { warned: warned.has(t.id) ? [t.id] : [], text });
     setVisit((v) => [...v, t.id]);
+    // The Add button is gone with the add: the focus moves to the row's Undo (BC27).
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(`dialog[open] [data-find-row][data-plant-id="${CSS.escape(t.id)}"] [data-find-undo]`)?.focus());
   };
   const addFrom = async (id: PlantId, z: ClimateZone) => {
     frozenFilled.current ??= filled;
+    frozenTargets.current ??= targets;
     const list = await store.loadPool(z);
     const t = list?.find((x) => x.id === id);
     if (t) { store.addMembers([id], { [id]: z }, { warned: store.warnedPlant(t) ? [id] : [], text: said(t) }); setVisit((v) => [...v, id]); }
@@ -408,21 +429,32 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const n = stay.get(t.id) ?? 0, shownV = v && v.level === 'fits' && n > 0 ? { ...v, judged: after[n - 1] } : v;
     const light = hole?.kind === 'job' ? open.find((o) => o.kind === 'light' && fills(o, t))?.stratum ?? null : null;
     const reasonOf = hole && fits?.(t) ? say(fillReasonLine(hole, y, { light, holes: store.holeFillCount(t) })) : null;
+    // The reason says the years unless it names the light hole it also fills (core fillReasonLine).
+    const reason = reasonOf ? { saysYears: !!y && !(hole?.kind === 'job' && light && !hole.thin) } : null;
     return (
       <li key={t.id} data-find-row="" data-plant-id={t.id}>
         <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
-        <button type="button" class={`button button-secondary ct-find-add${done ? ' is-added' : ''}`} data-find-add="" data-added={done ? '' : undefined}
-              aria-disabled={done ? 'true' : undefined} aria-label={done ? T('find.addedName', { name: nameOf(t) }) : T('find.addName', { name: nameOf(t) })} onClick={() => addOne(t)}>
-              {done ? TICK : PLUS} {done ? T('find.added') : outside ? T('addAnyway') : T('find.add')}
-            </button>
-        {done && visit.includes(t.id) && <button type="button" class="text-link ct-find-undo" data-find-undo="" aria-label={T('find.undoAdding', { name: nameOf(t) })} onClick={() => { store.removeMember(t.id); setVisit((v) => v.filter((x) => x !== t.id)); }}>{T('find.undo')}</button>}
+        {/* BC27 (board AddMany state 3): an added row says "✓ Added" in words, with its Undo beside it
+            at the right of the row; the Add button gives way to them, the focus to Undo. */}
+        {done ? (
+          <span class="ct-find-done" data-plant-done="">
+            <span class="ct-find-added" data-find-add="" data-added="">{TICK} {T('find.added')}</span>
+            {visit.includes(t.id) && <button type="button" class="text-link ct-find-undo" data-find-undo="" aria-label={T('find.undoAdding', { name: nameOf(t) })} onClick={() => { store.removeMember(t.id); setVisit((v) => v.filter((x) => x !== t.id)); }}>{T('find.undo')}</button>}
+          </span>
+        ) : (
+          <button type="button" class="button button-secondary ct-find-add" data-find-add="" aria-label={T('find.addName', { name: nameOf(t) })} onClick={() => addOne(t)}>
+            {PLUS} {outside ? T('addAnyway') : T('find.add')}
+          </button>
+        )}
         <div class="ct-row-why">
           {/* BC26, C4: the fit reason, one line, in the target's terms (core fillReasonLine; a thin job's "a backup"). */}
           {reasonOf && <span class="ct-find-fills" data-find-fills="">{TICK} {reasonOf}</span>}
           {why && <span class="ct-find-why" data-find-why="" data-lang={why.lang} data-kind={why.kind}>{why.text}</span>}
-          <span class="ct-find-meta" data-find-meta="">{metaWords(t, hole?.kind === 'job' ? hole.job ?? null : filters.jobs?.length === 1 ? filters.jobs[0] : null, v?.level === 'fits' && after.length && n === after.length ? after[n - 1].split('-')[1] : null, !reasonOf)}</span>
-          {/* BC11: a plant near the edge of its range says so as its chip, not "Needs a second look". */}
-          {v?.level !== 'look' && <FitLine v={shownV} />}
+          <span class="ct-find-meta" data-find-meta="">{metaWords(t, hole?.kind === 'job' ? hole.job ?? null : filters.jobs?.length === 1 ? filters.jobs[0] : null, v?.level === 'fits' && after.length && n === after.length ? after[n - 1].split('-')[1] : null, reason)}</span>
+          {/* BC11: a plant near the edge of its range says so as its chip, not "Needs a second look".
+              BC26: a row with a fit reason that fits says no fit line (its meta ends "in range to 2099");
+              outside, not checked or with the dryness note (0W R2), it still says so in words. */}
+          {v?.level !== 'look' && !(reason && shownV?.level === 'fits' && /\.fits(?:To)?$/.test(fitLine(shownV).key)) && <FitLine v={shownV} />}
           {later && <span class="ct-line" data-find-inrange="">{T('find.inRangeBy', { period: later })}</span>}
           <Marks t={t} lines={lines} country={scene.country} edge={v?.level === 'look'} />
         </div>
@@ -592,14 +624,23 @@ export default function Find({ Frame }: { Frame: Frame }) {
 
   return (
     // BC7: the title sits in the sheet's head, beside its close button (boards Find, FillHole).
-    <Frame titleId="ct-find-title" class={`ct-find${holeSheet ? ' ct-find-hole' : ''}`} head={<h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2>} foot={
-      <div class="ct-add-bar">
-        {holeSheet
-          ? (outsideFolded ? <button type="button" class="text-link" data-find-outside="" onClick={() => setOutsideShown(true)}>{P('palette.showOutside', groups.outside.length)}</button> : <span />)
-          : <span data-find-visit={visit.length ? '' : undefined}>{visit.length ? `${P('find.visit', visit.length)} · ${P('find.visitPalette', members.length)}` : P('find.inPalette', members.length)}</span>}
+    // BC27 (board AddMany state 3): the Add sheet's head holds its title, what this visit added ("2 added
+    // this visit · your palette: 10 plants") and Done, apart from the close button; a hole's sheet keeps
+    // the outside link and Done in its foot (board FillHole).
+    <Frame titleId="ct-find-title" class={`ct-find${holeSheet ? ' ct-find-hole' : ''}`} head={holeSheet ? <h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2> : (
+      <div class="ct-find-headrow">
+        <div class="ct-find-headtext">
+          <h2 id="ct-find-title" tabIndex={-1} data-autofocus>{title}</h2>
+          <p class="ct-find-visit" data-find-visit={visit.length ? '' : undefined}>{visit.length ? <><b>{P('find.visit', visit.length)}</b> · {P('find.visitPalette', members.length)}</> : P('find.inPalette', members.length)}</p>
+        </div>
         <button type="button" class="button button-primary" onClick={() => store.closeSheet()}>{T('find.done')}</button>
       </div>
-    }>
+    )} foot={holeSheet ? (
+      <div class="ct-add-bar">
+        {outsideFolded ? <button type="button" class="text-link" data-find-outside="" onClick={() => setOutsideShown(true)}>{P('palette.showOutside', groups.outside.length)}</button> : <span />}
+        <button type="button" class="button button-primary" onClick={() => store.closeSheet()}>{T('find.done')}</button>
+      </div>
+    ) : null}>
       <div class="ct-find-top">
         <p class="ct-muted" data-find-fitcount="">{subtitle}</p>
         {hole?.thin && <p class="ct-muted ct-small" data-find-sorted="">{T('find.sortedFillsFrom', { lane: say(laneLine(hole)), from: hole.fromYear, to: hole.toYear })}</p>}

@@ -22,7 +22,7 @@
 // toast. Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is inert,
 // Escape closes).
 import { effect } from '@preact/signals';
-import { useMemo } from 'preact/hooks';
+import { useLayoutEffect, useMemo, useRef } from 'preact/hooks';
 import * as store from '../store.ts';
 import { closeSheet, taxonOf, type Sheet as Opened, type SheetKind } from '../store.ts';
 import type { PlantId } from '../../../lib/consortium/index.ts';
@@ -143,11 +143,16 @@ export function FindEntry({ where }: { where: FindEntryPlace }) {
 // `dialog.ct-find` scope as the phone's sheet), placed in the palette grid by
 // views/palette/FindPanelSlot.tsx and find.css. Escape closes it from inside; the focus goes back to
 // the opener (the effect above). Its messages show in the page, bottom left (Toast.tsx deskFind, Q4).
+// R2: a non-modal region takes the focus once, when it opens (mounted per opening: FindPanel's key),
+// never on a re-render, so a page action while it is open (an Add in the Next step, a Remove) keeps
+// the reader's place.
 function PanelFrame({ titleId, head, foot, children, class: cls = '' }: FrameProps) {
+  const inner = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => { inner.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus(); }, []);
   return (
     <dialog open class={`ct-sheet ct-find-panel ${cls}`} aria-labelledby={titleId} data-find-panel=""
       onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeSheet(); } }}>
-      <div class="ct-sheet-inner" ref={(el) => { if (el && !el.contains(document.activeElement)) el.querySelector<HTMLElement>('[data-autofocus]')?.focus(); }}>
+      <div class="ct-sheet-inner" ref={inner}>
         <div class="ct-sheet-head">
           <div class="ct-sheet-head-main">{head}</div>
           <button type="button" class="ct-icon-button" aria-label={T('close')} onClick={closeSheet}>{CLOSE}</button>

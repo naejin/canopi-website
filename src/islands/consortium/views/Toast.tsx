@@ -39,7 +39,9 @@ export function Toast({ where = 'page' }: { where?: Where }) {
           {line.action && (
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const { run, keep } = line.action!; if (!keep) hideToast(); run(); }}>{line.action.label}</button>
           )}
-          <button type="button" class="ct-icon-button" aria-label={T('dismiss')} onClick={hideToast}>
+          {/* BC28 (boards Toasts, DeskStates): the card shows its line and Undo only; Dismiss is for the
+              keyboard, shown only while it has the focus (details.css), as the line goes by itself. */}
+          <button type="button" class="ct-icon-button ct-toast-dismiss" aria-label={T('dismiss')} onClick={hideToast}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13" stroke="currentColor" stroke-width="1.8" /></svg>
           </button>
         </div>

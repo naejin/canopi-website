@@ -6,13 +6,13 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:59Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:48Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:17Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:ae9f25c93cd4a332
-    last_modified: 2026-11-18T06:06:30Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -37,27 +37,27 @@ sources:
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:fdcadd208508d5e3
-    last_modified: 2026-11-18T06:05:25Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
     digest: sha256:121d87b32b4dfb4d
-    last_modified: 2026-11-18T06:05:19Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
     digest: sha256:0c684e2ed3d541ad
-    last_modified: 2026-11-18T06:05:58Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: readme-md
     resource: ../../scripts/fixtures/consortium-v2/README.md
     title: scripts/fixtures/consortium-v2/README.md
     digest: sha256:7fc94a49c94578c1
-    last_modified: 2026-11-18T06:06:03Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
     title: src/data/consortium-index.json
     digest: sha256:b4b79e7df59ce9a2
-    last_modified: 2026-11-18T06:04:13Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -177,7 +177,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:93485b941ab6a2cc
-    last_modified: 2026-11-18T06:06:30Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -202,7 +202,7 @@ sources:
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:9866dcaff6cd42e7
-    last_modified: 2026-11-18T06:04:17Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: country-zones-ts
     resource: ../../src/lib/consortium/country-zones.ts
     title: src/lib/consortium/country-zones.ts
@@ -221,8 +221,8 @@ sources:
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:a27dd2125990ab47
-    last_modified: 2026-11-18T04:32:21Z
+    digest: sha256:ad4f35d943aa0638
+    last_modified: 2026-11-18T12:36:20Z
   - id: verdict-load-ts
     resource: ../../src/lib/consortium/verdict-load.ts
     title: src/lib/consortium/verdict-load.ts

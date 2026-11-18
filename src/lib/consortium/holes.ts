@@ -265,6 +265,14 @@ export function fillers(hole: Hole, pool: readonly Taxon[], verdicts: ReadonlyMa
   return out;
 }
 
+// The no-fit state of a target (R3; board Many, word map row 151): decided by the group counts, never
+// by one group alone. "No plant on your lists fits your place and does this then." only when no plant
+// fits and none is still to be checked: plants not checked were never judged, so they keep the card out
+// of it. Plants that need a second look do not fit (the board's own sentence: "no plant on your lists
+// fits here and does this then; 4 need a second look"), so they stay listed under their own heading
+// below that sentence, with "See all N" leading to them.
+export const noneFits = (f: Pick<Fillers, 'fits' | 'unknown'>): boolean => f.fits.length + f.unknown.length === 0;
+
 const ALL_PHASES: readonly PhaseOrd[] = [0, 1, 2, 3, 4, 5, 6];
 
 // For each job, in order: the members that do it and the phases where none of them grows. A member

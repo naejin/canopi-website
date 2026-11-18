@@ -45,7 +45,6 @@
 .ct .ct-find-group h3 .ct-muted { font-weight: 400; }
 .ct .ct-find-group .ct-rows > li { content-visibility: auto; contain-intrinsic-size: auto 96px; }
 .ct .ct-find-add { min-width: 96px; justify-content: center; gap: 6px; }
-.ct .ct-find-add.is-added { background: var(--surface-alt); border-color: var(--text); }
 .ct .ct-find-why { color: var(--text); }
 .ct .ct-find-jobs { color: var(--text-secondary); }
 .ct .ct-find-kept { margin: 0; overflow-wrap: anywhere; }
@@ -259,6 +258,16 @@
 .ct .ct-find-holes > .text-link { justify-self: start; }
 .ct .ct-find-footlinks { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; margin: 0; font-size: 14px; color: var(--text-secondary); }
 .ct .ct-find-undo { min-height: 44px; }
+/* An added row (board AddMany state 3; BC27): "✓ Added" in words and its Undo, inline at the row's right. */
+.ct .ct-find-done { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.ct .ct-find-added { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; color: var(--text); }
+.ct .ct-find-done .ct-find-undo { padding: 0 6px; }
+/* The Add sheet's head (BC27): title and this visit's count at the left, Done at the right. */
+.ct .ct-find .ct-sheet-head-main { flex: 1; }
+.ct .ct-find-headrow { display: flex; align-items: center; gap: 8px; }
+.ct .ct-find-headtext { flex: 1; min-width: 0; }
+.ct .ct-find-visit { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-find-visit b { color: var(--text); font-weight: 600; }
 
 /* Find beside the chart at 960 px and wider (board DeskStates, Q5; views/Sheets.tsx FindPanel): a
    non-modal dialog in the palette grid's right column, the Next step below it while it is open. */
@@ -297,13 +306,28 @@
 .ct .ct-find .ct-find-chip .ct-job-icon[data-job="helpers"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6'%3E%3Ccircle cx='10' cy='10' r='1.8'/%3E%3Ccircle cx='10' cy='5.2' r='2.4'/%3E%3Ccircle cx='14.8' cy='10' r='2.4'/%3E%3Ccircle cx='10' cy='14.8' r='2.4'/%3E%3Ccircle cx='5.2' cy='10' r='2.4'/%3E%3C/svg%3E"); }
 .ct .ct-find .ct-find-chip .ct-job-icon[data-job="shelter"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7h9a2.5 2.5 0 1 0-2.5-2.5M3 11h12a2.5 2.5 0 1 1-2.5 2.5M3 15h6'/%3E%3C/svg%3E"); }
 
-/* The empty palette's ways in (board Empty): one row-button each, its label over what it does. */
-.ct .ct-next-ways { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
-.ct .ct-next-way { display: grid; gap: 2px; width: 100%; min-height: 44px; padding: 10px 4px; border: 0; border-top: 1px solid var(--border); background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
-.ct .ct-next-ways li:last-child .ct-next-way { border-bottom: 1px solid var(--border); }
-.ct .ct-next-way-label { font-weight: 600; color: var(--accent-strong, var(--accent)); }
-.ct .ct-next-way-sub { font-size: 14px; color: var(--text-secondary); }
-.ct .ct-next-room { margin: 0; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-muted, var(--surface)); border: 1px solid var(--border); font-size: 14px; }
+/* The empty palette's card (board Empty; BC33): the three ways in as bordered buttons, each with its
+   ochre mark, its label in ink over what it does, and a chevron; the first one's border ochre. The note
+   with the info mark sits under the card. */
+.ct .ct-next-emptycard { gap: 2px; padding: 14px; border: 1px solid var(--border); border-radius: 11px; box-shadow: none; }
+.ct .ct-next-emptycard > h3 { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 600; }
+.ct .ct-next-emptycard > p { margin: 0; padding: 2px 0 10px; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-ways { display: grid; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+.ct .ct-next-way { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface); color: var(--text); font: inherit; text-align: start; cursor: pointer; }
+.ct .ct-next-way.is-first { border: 1.5px solid var(--accent); }
+.ct .ct-next-way:hover { background: var(--surface-alt); }
+.ct .ct-next-way-mark { flex: none; display: flex; color: var(--accent-ink); }
+.ct .ct-next-way .ct-glyph { width: auto; height: auto; flex: none; }
+.ct .ct-next-way-text { flex: 1; min-width: 0; display: grid; }
+.ct .ct-next-way-label { font-size: 16px; line-height: 21px; font-weight: 600; color: var(--text); }
+.ct .ct-next-way-sub { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-next-emptynote { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-emptynote .ct-glyph { width: 14px; height: 14px; vertical-align: -2px; }
+/* The room note above the Next step card (board Balcony; BC32): the pot mark, then the words. */
+.ct .ct-next-room { display: flex; gap: 8px; margin: 0; padding: 9px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-alt); font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-next-room b { color: var(--text); font-weight: 600; }
+.ct .ct-next-room-mark { flex: none; padding-top: 1px; }
+.ct .ct-next-room-mark .ct-glyph { width: 18px; height: 18px; }
 
 /* Find's title sits in the sheet's head, beside the close button (BC7; boards Find, FillHole). */
 .ct .ct-find .ct-sheet-head h2 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }

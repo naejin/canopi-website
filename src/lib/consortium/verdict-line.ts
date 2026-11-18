@@ -171,6 +171,14 @@ export function fillReasonLine(target: Pick<Hole, 'kind' | 'job' | 'stratum' | '
   return holes > 1 ? { key: K('reasonFills'), vars: {}, count: holes, parts: { reason } } : reason;
 }
 
+// The intro of a target whose candidates carry the dryness note (BC31; board SiteMendoza: "Aquí llueve
+// poco: cada planta dice si puede necesitar riego."), said after the why sentence: only when a listed
+// candidate is limited by dryness and the grower's watering leaves the note on its row (fitLine: all
+// year says none). No verdict, or none dry: no line.
+export function dryIntroLine(verdicts: readonly (PlantVerdict | null | undefined)[]): Line | null {
+  return verdicts.some((v) => v?.limiting?.factor === 'dry' && v.watered !== 'all-year' && (v.level === 'fits' || v.level === 'look')) ? { key: K('dryIntro'), vars: {} } : null;
+}
+
 // The chip of a plant that needs a second look for its range edge (its verdict's level 'look'): "Near
 // the edge of its range" (boards FillHole, Main; BC11), on the candidate rows of the Next step and Find.
 export const edgeChipLine = (): Line => ({ key: K('bandEdge'), vars: {} });

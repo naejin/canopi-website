@@ -66,3 +66,38 @@ test('BC1, BC26, C4 fit reason: what the candidate does and when, in the target\
   assert.equal(say(core.whenLine(0.25, 3)), 'from month 3 to year 3');
   assert.equal(say(core.whenLine(0, 0.25)), 'in the first 90 days');
 });
+
+// ---- board check b3 (R3, BC29-BC31, BC34) ----
+const locale = (l) => JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
+const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
+
+test('R3 the no-fit state is decided by the group counts: no plant that fits and none still to be checked', () => {
+  const t = { id: 'x' };
+  assert.equal(core.noneFits({ fits: [], look: [], unknown: [] }), true, 'board Many: nothing on the lists does it (outside ones apart)');
+  assert.equal(core.noneFits({ fits: [], look: [], unknown: [t] }), false, 'a grower without a place: the plants were never judged, not found unfit');
+  assert.equal(core.noneFits({ fits: [], look: [t], unknown: [] }), true, 'board Many: "no plant on your lists fits here and does this then; 4 need a second look"');
+  assert.equal(core.noneFits({ fits: [t], look: [], unknown: [] }), false);
+});
+
+test('BC31 the dryness intro: said where a listed candidate carries the dryness note, never with "all year" watering or with no verdict', () => {
+  const dry = { level: 'fits', limiting: { factor: 'dry' }, notes: [] };
+  assert.equal(say(core.dryIntroLine([undefined, dry])), 'Little rain falls here: each plant says whether it may need watering.', 'board SiteMendoza: "Aquí llueve poco: cada planta dice si puede necesitar riego."');
+  assert.equal(core.dryIntroLine([{ ...dry, watered: 'all-year' }]), null, 'watered all year: no note on the rows, no intro');
+  assert.equal(core.dryIntroLine([{ level: 'fits', limiting: { factor: 'cold' }, notes: [] }, null]), null, 'nothing dry: no intro');
+  assert.equal(core.dryIntroLine([{ ...dry, level: 'outside' }]), null, 'an outside plant is not a candidate row');
+  for (const l of LOCALES) assert.ok(locale(l)['consortium.line.dryIntro'], `${l}: the intro`);
+  assert.equal(locale('es')['consortium.line.dryIntro'], 'Aquí llueve poco: cada planta dice si puede necesitar riego.', 'board SiteMendoza, word for word');
+});
+
+test('BC31, BC29, BC30, BC34 the boards\' words: "También te alimenta" with no colon (es, pt), "Recorded invasive in …" (word map row 37), one Spanish second-look word for heading and rows, "falha 1 de 3" (Recife)', () => {
+  assert.equal(locale('es')['consortium.find.also'], 'También {jobs}', 'board SiteMendoza: "También te alimenta, da acolchado, protege"');
+  assert.equal(locale('pt')['consortium.find.also'], 'Também {jobs}');
+  const en = locale('en');
+  assert.equal(en['consortium.find.invasiveShort'], 'Recorded invasive in {country}', 'word map row 37: the chip');
+  assert.equal(en['consortium.find.hideInvasive'], 'Hide plants recorded invasive in {country}', 'word map row 37: the filter');
+  for (const [k, v] of Object.entries(en)) if (k.startsWith('consortium.')) assert.doesNotMatch(v, /[Rr]ecorded as invasive in \{country\}(?!\.)/, `${k}: never "Recorded as invasive in"`);
+  const es = locale('es');
+  assert.equal(es['consortium.palette.secondLook'], `${es['consortium.line.look']} ({n})`, 'es: the group heading reads as the rows ("Conviene mirarla de cerca (6)")');
+  assert.doesNotMatch(JSON.stringify(es), /segunda mirada/, 'es: never "Requiere una segunda mirada"');
+  assert.equal(locale('pt')['consortium.palette.holeOf'], 'falha {i} de {n}', 'board Recife: "falha 1 de 3"');
+});

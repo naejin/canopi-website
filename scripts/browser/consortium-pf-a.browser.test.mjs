@@ -207,7 +207,7 @@ failing('PFA4 (pf-a Empty at 390 and 1280): "Start with the plants you want" and
   }
 });
 
-failing('PFA5 (pf-a Empty count line states, carried from PP-B1): while the fit check loads it says it is checking, never "0 of M"; with the check refused it says how many plants the list holds, never a fit; without a place it claims no fit; for a later period it names the period, never "today"', { owner: 'pf-a', reason: BOARD }, async () => {
+test('PFA5 (pf-a Empty count line states, carried from PP-B1): while the fit check loads it says it is checking, never "0 of M"; with the check refused it says how many plants the list holds, never a fit; without a place it claims no fit; for a later period it names the period, never "today"', async () => {
   const held = await emptyPalette({ block: { verdict: 'hold' } });
   await says(held, 'Start with the plants you want');
   await says(held, 'Checking which plants fit your place…');
@@ -453,7 +453,10 @@ test('PFA16 (pf-a Many, F17, the 200-plant palette): the card leads with the eng
     if (e.outside.length) await control(page, 'button', `See the ${e.outside.length} outside ${e.outside.length === 1 ? 'its' : 'their'} range`);
     await control(page, 'button', 'Not now');
     assert.ok(!(await names(page, 'button')).some((n) => /^Add (?:the|all) /.test(n)), 'board: no bulk button when none fits');
-    assert.ok(!(await names(page, 'button')).some((n) => /^See (?:all \d+ plants|the plant)$/.test(n)), 'BC4: no "See all N plants" in the no-fit state');
+    // R3: "See all N" whenever N plants are to see (second looks); with none, the outside link only (board Many).
+    if (e.seeAll) await control(page, 'button', e.seeAll === 1 ? 'See the plant' : `See all ${e.seeAll} plants`);
+    else assert.ok(!(await names(page, 'button')).some((n) => /^See (?:all \d+ plants|the plant)$/.test(n)), 'BC4: no "See all N plants" with nothing to see');
+    if (e.look.length) assert.ok(card.indexOf('No plant on your lists fits') < card.indexOf(`Needs a second look (${e.look.length})`), 'board Many: the no-fit sentence, then the second looks under their heading');
   } else {
     assert.ok(!card.includes('No plant on your lists fits your place and does this then.'), 'R3: no no-fit sentence while plants fit or are unchecked');
     await control(page, 'button', e.seeAll === 1 ? 'See the plant' : `See all ${e.seeAll} plants`);
@@ -762,5 +765,158 @@ test('PFA28 (pf-a Main in Spanish at 390, BC14): the position line never breaks 
   const parts = await page.$$eval('.ct-next-card .ct-next-part', (ps) => ps.map((p) => ({ t: p.innerText, lines: p.getClientRects().length })));
   assert.ok(parts.length > 0, 'BC14: the position\'s parts');
   for (const p of parts) assert.equal(p.lines, 1, `BC14: "${p.t}" on one line`);
+  await done(page);
+});
+
+// ---- Board check b3 (BC26-BC33) and review R1-R3: the grower's scenarios, each a case.
+// (BC29, BC30, BC31's words and BC34 are word tests in scripts/consortium-pf-a.test.mjs; BC31's rain
+// figure "registrada desde 25 mm" waits for a recorded rain minimum the release does not hold.)
+const visibleButtons = (page, within) => page.evaluate((w) => [...(w ? document.querySelector(w) : document).querySelectorAll('button')]
+  .filter((b) => { const r = b.getBoundingClientRect(); return r.width > 2 && r.height > 2 && getComputedStyle(b).visibility !== 'hidden'; })
+  .map((b) => (b.getAttribute('aria-label') ?? b.textContent).replace(/\s+/g, ' ').trim()), within);
+const boxByName = (page, name) => page.evaluate((n) => {
+  const el = [...document.querySelectorAll('dialog[open] button, dialog[open] span')].find((b) => (b.getAttribute('aria-label') ?? b.textContent).replace(/\s+/g, ' ').trim() === n);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { x: r.left, right: r.right, y: r.top, mid: r.top + r.height / 2 };
+}, name);
+
+test('PFA29 (pf-a R1, AddMany "Find a backup"): with "Fills a hole or a thin job" on, the grower adds the plant that closes the thin spot; its row stays, "Added" with its Undo, and every other row for that job stays listed', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => { const { store } = window.__ctTest; store.notNow.value = new Set(store.openHoles.value.map((h) => h.id)); });
+  const e = await engineLead(page);
+  assert.equal(e.lead?.kind, 'thin', 'the engine leads with a thin spot once the holes are put off');
+  assert.equal(e.lead.target.thin.want - e.lead.target.thin.have, 1, 'one add closes it (have 1, want 2)');
+  await press(page, 'button', 'Find a backup');
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 10_000 });
+  const rows = () => page.$$eval('dialog[open] [data-find-row]', (l) => l.map((r) => r.getAttribute('data-plant-id')));
+  const before = await rows();
+  // The grower's pick: the first row whose years span the thin spot, so its add closes it.
+  const { yearsOf } = await import('../../src/lib/consortium/years.ts');
+  const t = e.lead.target;
+  const taxa = await page.evaluate((ids) => ids.map((id) => window.__ctTest.store.taxonOf(id)), before);
+  const pick = taxa.find((x) => { const y = x && yearsOf(x); return y && y.from <= t.fromYear && (y.to === null || y.to >= t.toYear); });
+  assert.ok(pick, 'a row that does the job through the whole thin spot');
+  const add = await page.$eval(`dialog[open] [data-find-row][data-plant-id="${pick.id}"] [data-find-add]`, (b) => b.getAttribute('aria-label'));
+  const name = add.replace(/^Add /, '');
+  await addInFind(page, add);
+  assert.ok(await until(page, (job) => !window.__ctTest.store.thinSpots.value.some((h) => h.state === 'open' && h.job === job), e.lead.target.job), 'the add closes the thin spot');
+  await frames(page);
+  await control(page, 'button', `Undo adding ${name}`);
+  await says(page, '1 added this visit', { inDialog: true });
+  assert.deepEqual(await rows(), before, 'R1: no row leaves the list when the add closes the thin spot');
+  await done(page);
+});
+
+test('PFA30 (pf-a R2, DeskStates): at 1280 px with Find open beside the chart, a page action while the focus sits outside the panel keeps the focus where it is', async () => {
+  const page = await palette();
+  assert.ok(await verdictsSettled(page), 'the verdicts');
+  await says(page, OTHER_HOLES);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, 'dialog[data-find-panel][open]', 10_000), 'the Find panel');
+  await frames(page);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'ct-find-title', 'the panel takes the focus when it opens');
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#ct-root button')].find((x) => !x.closest('dialog') && x.textContent.trim() === 'Not now');
+    b.setAttribute('data-test-pick', ''); b.focus();
+  });
+  await page.evaluate(() => { const { store } = window.__ctTest, ids = new Set(store.members.value); store.addMembers([store.offerPool.value.find((t) => !ids.has(t.id)).id]); });
+  await frames(page);
+  assert.equal(await page.evaluate(() => document.activeElement?.hasAttribute('data-test-pick') ?? false), true, `R2: the focus stays on the page's control (now on ${await page.evaluate(() => document.activeElement?.id || document.activeElement?.textContent?.slice(0, 40))})`);
+  await done(page);
+});
+
+test('PFA31 (pf-a R3): without a place nothing is judged; the Next step lists the plants under "Not checked (n)", never says "No plant on your lists fits", and keeps "See all N plants"', async () => {
+  const page = await palette({ site: null });
+  await says(page, 'Next step', { timeout: 20_000 });
+  await page.waitForFunction(() => !!document.querySelector('.ct-next[data-hole]'), { timeout: 15_000 }).catch(() => {});
+  const e = await engineLead(page);
+  assert.ok(e.lead, 'the engine names a lead');
+  assert.equal(e.fits.length + e.look.length, 0, 'no place: nothing judged to fit');
+  assert.ok(e.unknown.length > 0, 'the plants that do it are not checked');
+  const card = await nextText(page);
+  assert.ok(!card.includes('No plant on your lists fits your place'), `R3: never "No plant fits" for plants never judged ("${card.slice(0, 300)}")`);
+  assert.ok(card.includes(`Not checked (${e.unknown.length})`), `R3: their own heading "Not checked (${e.unknown.length})"`);
+  assert.ok(!/Fits your place/.test(card), 'R3: no unchecked plant reads as fitting');
+  await control(page, 'button', e.seeAll === 1 ? 'See the plant' : `See all ${e.seeAll} plants`);
+  await done(page);
+});
+
+test('PFA32 (pf-a FillHole at 390, BC26): a hole sheet\'s row says its fit reason (the light in it), then what else it does, its years when the reason does not say them, its size and "in range to 2099"; no "Fits your place by …" line and no light word repeated in the meta', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  const e = await engineLead(page);
+  await press(page, 'button', e.seeAll === 1 ? 'See the plant' : `See all ${e.seeAll} plants`);
+  await page.waitForSelector('dialog[open] [data-find-row] [data-find-fills]', { timeout: 10_000 });
+  const rows = await page.$$eval('dialog[open] [data-find-group="fits"] [data-find-row]', (l) => l.map((r) => ({ reason: r.querySelector('[data-find-fills]')?.textContent.replace(/\s+/g, ' ').trim() ?? '', text: r.textContent.replace(/\s+/g, ' ').trim(), meta: r.querySelector('[data-find-meta]')?.textContent.trim() ?? '' })));
+  assert.ok(rows.length > 0, 'rows that fit');
+  for (const r of rows) {
+    assert.ok(!/Fits your place by/.test(r.text), `BC26: no later-period fit line ("${r.text}")`);
+    assert.ok(!/grows in:/i.test(r.meta), `BC26: no light word in the meta ("${r.meta}")`);
+    if (/is planted in/.test(r.reason)) assert.match(r.meta, /\b(?:month \d+ to year \d+|year \d+ to year \d+|first (?:\d+ )?(?:year|years|days)|from year \d+ on)\b/, `BC26 (board FillHole): the years in the meta when the reason names the light ("${r.meta}")`);
+    else assert.doesNotMatch(r.meta, /\b(?:month \d+ to year \d+|year \d+ to year \d+|from year \d+ on)\b/, `the years only once ("${r.reason}" / "${r.meta}")`);
+  }
+  await done(page);
+});
+
+test('PFA33 (pf-a AddMany state 3 at 390, BC27): after an add the sheet\'s head reads "1 added this visit · your palette: M plants" with Done, above the rows; the row says "Added" with its Undo inline at its right, and the focus is on that Undo', async () => {
+  const page = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  await says(page, OTHER_HOLES);
+  await page.evaluate(() => window.__ctTest.store.openFind());
+  await page.click('dialog[open] [data-job-chip="feeds_you"]');
+  await page.waitForSelector('dialog[open] [data-find-row]', { timeout: 6000 });
+  const before = await members(page);
+  const add = (await findAdds(page))[0], name = add.replace(/^Add /, '');
+  await page.focus(`dialog[open] [data-find-add][aria-label="${add}"]`);
+  await page.keyboard.press('Enter');
+  assert.ok(await until(page, (k) => window.__ctTest.store.members.value.length === k + 1, before), 'one tap adds it');
+  await frames(page);
+  await says(page, `1 added this visit · your palette: ${before + 1} plants`, { inDialog: true });
+  const head = await page.evaluate(() => { const d = document.querySelector('dialog[open]'); const t = d.querySelector('h2').getBoundingClientRect(); const done = [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Done').getBoundingClientRect(); const row = d.querySelector('[data-find-row]').getBoundingClientRect(); return { titleTop: t.top, titleBottom: t.bottom, doneTop: done.top, doneBottom: done.bottom, rowTop: row.top }; });
+  assert.ok(head.doneBottom <= head.rowTop && head.doneTop < head.titleBottom + 30, `BC27: Done in the head beside the title, above the rows (${JSON.stringify(head)})`);
+  const added = await boxByName(page, '✓ Added') ?? await boxByName(page, 'Added');
+  const undo = await boxByName(page, `Undo adding ${name}`);
+  assert.ok(added && undo, 'BC27: "Added" and its Undo');
+  assert.ok(Math.abs(added.mid - undo.mid) <= 8 && undo.x > added.x, `BC27: "Added  Undo" on one line, Undo at the right (${JSON.stringify({ added, undo })})`);
+  assert.ok(!(await names(page, 'button')).includes(`Added ${name}`) && !(await names(page, 'button')).includes(add), 'BC27: "Added" is words, not a boxed button');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), `Undo adding ${name}`, 'BC27: the focus moves to the row\'s Undo');
+  await done(page);
+});
+
+test('PFA34 (pf-a Toasts, DeskStates, BC28): a message shows its words and Undo only, no close button drawn; Dismiss stays for the keyboard and shows once it has the focus', async () => {
+  const page = await palette();
+  assert.ok(await verdictsSettled(page), 'the verdicts');
+  await page.evaluate(() => window.__ctTest.store.showToast('Almond swapped for Pistachio.', () => {}));
+  await page.waitForSelector('.ct-toast', { timeout: 4000 });
+  assert.deepEqual(await visibleButtons(page, '.ct-toast'), ['Undo'], 'BC28: Undo only, as the boards draw it');
+  await page.focus(aria('button', 'Dismiss'));
+  assert.deepEqual(await visibleButtons(page, '.ct-toast'), ['Undo', 'Dismiss'], 'BC28: Dismiss shows while it has the focus');
+  await done(page);
+});
+
+test('PFA35 (pf-a Balcony, BC32): the room note "Balcony or pots. …" is a note above the Next step card, never inside it', async () => {
+  const page = await palette({ site: 'seville', n: 6, room: 'pots' });
+  assert.ok(await verdictsSettled(page), 'the verdicts');
+  await says(page, 'Balcony or pots.');
+  const card = await nextStep(page);
+  assert.ok(!card.includes('Balcony or pots.'), `BC32: not inside the card ("${card.slice(0, 160)}")`);
+  const order = await page.evaluate(() => { const t = document.querySelector('main').innerText; return [t.indexOf('Balcony or pots.'), t.indexOf('Next step')]; });
+  assert.ok(order[0] >= 0 && order[0] < order[1], `BC32: the note before the card (${order})`);
+  await done(page);
+});
+
+test('PFA36 (pf-a Empty at 390, BC33): the three ways are bordered buttons, each with its mark, its label, what it does and a chevron; under the card a note says when the pictures come and "N of the M plants on … fit near <place> today."', async () => {
+  const page = await emptyPalette({ width: 390 });
+  await says(page, 'Start with the plants you want');
+  const card = await section(page, 'Start with the plants you want');
+  assert.ok(!card.includes('The pictures (through the years'), `BC33: the note is under the card, not in it ("${card}")`);
+  const ways = await page.evaluate(() => ['Find plants', 'Paste a list', 'Start from a small palette'].map((n) => { const b = [...document.querySelectorAll('main button')].find((x) => x.getAttribute('aria-label') === n); const cs = b && getComputedStyle(b); return b && { marks: b.querySelectorAll('svg').length, border: parseFloat(cs.borderTopWidth), label: getComputedStyle(b.querySelector('span span') ?? b).color, ink: getComputedStyle(document.querySelector('main')).color }; }));
+  for (const [i, w] of ways.entries()) {
+    assert.ok(w, `way ${i}`);
+    assert.equal(w.marks, 2, `BC33: way ${i} has its mark and a chevron`);
+    assert.ok(w.border >= 1, `BC33: way ${i} is a bordered button`);
+  }
+  await says(page, /The pictures \(through the years, through the year, jobs\) appear with your first plant\. \d+ of the \d+ plants on .+ fit near .+ today\./);
   await done(page);
 });

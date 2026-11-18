@@ -6,7 +6,7 @@ tags: [consortium, architecture]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:54Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:14Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -108,7 +108,7 @@ sources:
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
     digest: sha256:93485b941ab6a2cc
-    last_modified: 2026-11-18T06:06:30Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -232,8 +232,8 @@ sources:
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:6fe76c5fde37b54e
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:dec6849dd2a8f00c
+    last_modified: 2026-11-18T12:36:20Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
@@ -403,7 +403,7 @@ sources:
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:ae9f25c93cd4a332
-    last_modified: 2026-11-18T06:06:30Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -437,8 +437,8 @@ sources:
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:cb7e165cdbf709c4
-    last_modified: 2026-11-17T19:12:16Z
+    digest: sha256:6a00f9920ee804c3
+    last_modified: 2026-11-18T12:36:20Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
