@@ -1,9 +1,10 @@
 /** @jsxImportSource preact */
-// View slot of stream S4, in the palette slot (App.tsx renders it once the plant list is ready; the
-// matrix it followed went in PP-B commit 0a', and b2 hosts it under the palette page): the link
-// notices (§5: plants of a link no longer in the list, a pasted link that changed
-// nothing), then Share, Print and "Download for Canopi", the Share panel and the print sheet (hidden
-// on screen), then the future panel. Nothing here while Start is shown.
+// The palette's foot (v14 board MainMore, S9; App.tsx renders it once the plant list is ready): the link
+// notices (§5: plants of a link no longer in the list, a pasted link that changed nothing), then "Your
+// palette is saved on this device. Copy link · Print · Download for Canopi", and the print sheet (hidden
+// on screen), then the future panel (until the period tabs, PP-E). Copy link writes the page's address
+// (it holds the palette) to the clipboard and says so; where the browser refuses, the Share panel opens
+// with the link to copy by hand. Nothing here while Start is shown.
 import { useEffect, useState } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { climate, memberTaxa, source, view } from '../store.ts';
@@ -104,16 +105,28 @@ async function printNow(): Promise<void> {
 
 function ActionsView() {
   const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState<'' | 'done' | 'refused'>('');
+  const copy = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      setCopied('done');
+    } catch {
+      setCopied('refused');
+    }
+  };
   return (
-    <section class="ct-page-actions" aria-label={T('page.actions')}>
+    <section class="ct-page-actions ct-foot" aria-label={T('page.actions')}>
       <LinkNotices />
-      <div class="ct-action-row">
-        <button type="button" class="button button-secondary ct-small" aria-expanded={sharing ? 'true' : 'false'} onClick={() => setSharing(!sharing)}>{T('share.button')}</button>
-        <button type="button" class="button button-secondary ct-small" onClick={() => void printNow()}>{T('print.button')}</button>
-        <button type="button" class="button button-secondary ct-small" onClick={() => void download()}>{T('download.button')}</button>
-      </div>
+      <p class="ct-foot-line">
+        {T('palette.chart.saved')}{' '}
+        <button type="button" class="link-button ct-link" onClick={() => void copy()}>{T('palette.chart.copyLink')}</button>{' · '}
+        <button type="button" class="link-button ct-link" onClick={() => void printNow()}>{T('print.button')}</button>{' · '}
+        <button type="button" class="link-button ct-link" aria-describedby="ct-download-note" onClick={() => void download()}>{T('download.button')}</button>
+      </p>
+      <p id="ct-download-note" class="visually-hidden">{T('download.note')}</p>
+      <p class="ct-foot-said" role="status">{copied === 'done' ? T('palette.chart.copied') : copied === 'refused' ? T('palette.chart.copyRefused') : ''}</p>
+      {copied === 'refused' && !sharing && <p><button type="button" class="button button-secondary ct-small" aria-expanded="false" onClick={() => setSharing(true)}>{T('share.button')}</button></p>}
       {partFailed.value && <LoadFailed retry={clearFailed} />}
-      <p class="ct-muted ct-small-text">{T('download.note')}</p>
       {sharing && <share.View onClose={() => setSharing(false)} />}
       <PrintHost />
     </section>

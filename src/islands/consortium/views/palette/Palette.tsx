@@ -8,9 +8,9 @@
 // guest list that failed named as missing with its plants not checked, the verdict chunk refused said
 // once with Retry in place, or, offline, "Needs a connection" and a retry once back online (PP-B20;
 // never a page reload, architecture 9; store.ts start() asks again once back online). An empty palette
-// shows no picture of nothing. Then Your plants and Things to weigh (stream b3; weigh "checking" while
-// a list loads; the plants of a list that failed, and those on none of this climate's lists, each with
-// its row and Remove in Your plants, and counted in the palette as not checked from those same rows).
+// shows no picture of nothing. Then Jobs, Warnings (past 40 plants "Warnings and fit"), Balance (v14
+// boards MainMore, Many; "checking" while a list loads; the plants of a list that failed, and those on
+// none of this climate's lists, counted as not checked from Your plants' rows), and Your plants.
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import type { PlantId } from '../../../../lib/consortium/index.ts';
@@ -26,8 +26,8 @@ import { JobsPicture } from './JobsPicture.tsx';
 import { FindEntry } from '../Sheets.tsx';
 import { FindPanelSlot } from './FindPanelSlot.tsx';
 import { NextStep, openFillers } from './NextStep.tsx';
-import { Weigh } from './Weigh.tsx';
-import { Years } from './Years.tsx';
+import { Balance, Warnings, WarningsAndFit, warningGroups } from './Weigh.tsx';
+import { SIZE_PALETTE, Years } from './Years.tsx';
 import { YourPlants } from './YourPlants.tsx';
 import { PaletteLimits } from '../figures/slots.tsx';
 
@@ -89,6 +89,12 @@ export function Palette() {
       verdictOf: (id: PlantId) => verdicts?.get(id),
     };
   }, [members, holes, verdicts]);
+  // The small Warnings card's groups (also "Warnings (N)" under Through the years): today's verdicts and
+  // those of 2041–2070 at a place with projections (the leave-their-range line).
+  const rule = store.verdictRule.value, ctx = store.verdictContext.value, country = store.country.value?.code ?? null;
+  const big = members.length > SIZE_PALETTE;
+  const later = useMemo(() => (!big && rule && ctx.inputs?.periods.some((x) => x.period === '2041-2070') ? rule.verdicts(members, { ...ctx, period: '2041-2070' }) : null), [big, rule, members, ctx]);
+  const groups = useMemo(() => (big ? [] : warningGroups(members, flags, verdicts, later, country)), [big, members, flags, verdicts, later, country]);
   const failedLists = store.failedPools.value;
   const off = store.offline.value;
   // Every member read (none loading, none of a list that failed: review r2 empty-1), so the Next step
@@ -114,14 +120,21 @@ export function Palette() {
         <NextStep holes={holes} members={members} />
         {members.length > 0 && (
           <div class="ct-palette-pictures">
-            <Years {...pic} />
+            <Years {...pic} warnings={groups.length} />
             <JobsPicture {...pic} />
+            {big && <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />}
+            {big && <Balance members={members} pending={loading} unchecked={unchecked} />}
+          </div>
+        )}
+        {members.length > 0 && !big && (
+          <div class="ct-palette-side">
+            <Warnings groups={groups} />
+            <Balance members={members} pending={loading} unchecked={unchecked} />
           </div>
         )}
         <FindPanelSlot />
       </div>
       <YourPlants rows={rows} />
-      <Weigh members={members} pending={loading} unchecked={unchecked} />
       {/* v14 0W-1 item 8: the figures panel's palette place, a stub that renders nothing until pf-d; pf-b places it. */}
       <PaletteLimits />
       <Said />

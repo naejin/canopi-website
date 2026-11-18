@@ -1,71 +1,152 @@
 /** @jsxImportSource preact */
-// One picture on the page (plant-palette-architecture 3.4): the drawing (an SVG, role img, named by the
-// picture's summary, with nothing focusable inside), its key (each main job's colour, icon and word,
-// for the jobs the drawing shows), its lanes in HTML (each plant a button opening Details, with its
-// main job's icon and word, each empty place a button opening its fillers, "+ n more" opening the
-// table), and "Show as a table", the same cells as a table (rules/picture.ts tableOf; P17). Colours from
-// the token block only (palette-page.css): a band carries its job colour and the lane its light level
-// as a filled swatch with its outline, always with the words beside them (colour never alone).
-// Memoised on its props: a re-render of the page with the same picture redraws nothing (perf, 200 plants).
-import { Fragment } from 'preact';
+// The pictures' parts (plant-palette-architecture 3.4; v14 boards Main, Palette, Many, ManyDesk, Toasts):
+// - YearsGrid (Main, a laptop, 40 plants or fewer): a grid headed "Light" and the seven time spans,
+//   one row per light level ("Mostly sun 8 plants"), each plant a bar over its years, a button with its
+//   main job's icon, its name and its warning mark inside; each empty judged place a dashed button
+//   "<level>: nobody … Find" opening its fillers;
+// - StepLevels (Palette, a phone, 40 plants or fewer): the time span the stepper shows, each level its
+//   plants then, or the hole button "<level>: nobody … Find a plant";
+// - CountCells (Many, ManyDesk, past 40 plants at every width; the size rule A14): each level a group
+//   "Full sun: 10 plants", its first names and "+ N more" (views/kit/more.tsx MoreList);
+// - JobKey, HowToRead (the disclosure under a picture's title, Toasts board, A18) and SrTable (the
+//   pictures' screen-reader form, visually hidden, Q8: rules/picture.ts tableOf, the same cells).
+// Colours from the token block only (palette-page.css): a bar carries its main job's colour with its
+// icon and word, a level its icon and words (colour never alone).
+import type { ComponentChildren } from 'preact';
 import { memo } from 'preact/compat';
-import { useEffect, useId, useRef, useState } from 'preact/hooks';
+import { useId, useState } from 'preact/hooks';
 import type { JobId, PlantId, PlantVerdict, Stratum } from '../../../../lib/consortium/index.ts';
 import { fitLine, jobIds, phaseOfYear, strata } from '../../../../lib/consortium/index.ts';
-import { columnOf, tableOf, type Picture } from '../../rules/picture.ts';
-import { T } from '../../strings.ts';
-import { FitLine, JobIcon, jobWord, say, sayAll } from './fit.tsx';
-import { LightIcon } from './icons.tsx';
+import { tableOf, type Picture, type PictureRow } from '../../rules/picture.ts';
+import { P, pageLang, T } from '../../strings.ts';
+import { JobIcon, jobWord, say, sayAll } from './fit.tsx';
+import { LightIcon, WARN } from './icons.tsx';
+import { MoreList } from './more.tsx';
 
-export interface ChartProps {
-  picture: Picture;
-  intro: string;
-  column?: number | null; // one time step only (the phone's stepper)
-  marked?: number | null; // the time step chosen (a laptop's stepper), marked among the others
-  holeWords: (holeId: string) => string; // a hole button's name
+// Plants named in a line, as the boards list them: "Olive, Almond, Fig" (a list of names, not a
+// sentence's "and").
+export const commaList = (items: string[]): string => new Intl.ListFormat(pageLang(), { type: 'unit', style: 'short' }).format(items);
+
+export interface PlantButtons {
+  holeWords: (holeId: string) => string; // a hole's title ("Full sun: nobody in the first 3 years")
   onHole: (holeId: string) => void;
   onPlant: (id: PlantId) => void;
-  // A member's verdict: one outside its range or needing a second look says so on its chip, in words
-  // with an icon (inform, don't block; owner 2026-11-14).
+  // A member's verdict: one outside its range or needing a second look carries the warning mark, its
+  // fit in the button's name (inform, don't block; owner 2026-11-14).
   verdictOf?: (id: PlantId) => PlantVerdict | undefined;
-  // Each chip shows its main job's icon (Through the years, whose lanes are light levels); the jobs
-  // picture's lanes are jobs, so its chips name the job in their accessible name only.
-  chipJobs?: boolean;
 }
 
-const W = 700, BAND = 10, GAP = 4, LANE_PAD = 8, SWATCH = 8;
+// A bar's or hole's first and last time span in the grid (palette-page.css places it by data-from and
+// data-to: no inline style).
+type Span = [number, number];
+const spanAttrs = (s?: Span) => (s ? { 'data-from': s[0], 'data-to': s[1] } : {});
+const isStratum = (k: string): k is Stratum => (strata as readonly string[]).includes(k);
+const isJob = (k: string): k is JobId => (jobIds as readonly string[]).includes(k);
+export const LaneHead = ({ r }: { r: Pick<PictureRow, 'key' | 'head'> }) => (
+  <>{isJob(r.key) ? <JobIcon job={r.key} /> : isStratum(r.key) ? <LightIcon stratum={r.key} /> : <span class="ct-light-swatch" aria-hidden="true" />}{say(r.head)}</>
+);
 
-function Drawing({ p, first }: { p: Picture; first: number }) {
-  const cols = p.columns.length, cw = (W - SWATCH) / cols;
-  let y = 0;
-  const lanes = p.rows.map((r) => {
-    const h = Math.max(1, r.marks.length) * (BAND + GAP) + LANE_PAD * 2, top = y;
-    y += h;
-    return { r, top, h };
-  });
+// One plant as a button: its main job's icon, its name, the warning mark when it warns; its name read
+// as one phrase (the plant, its main job, its fit when it warns).
+export function PlantButton({ id, p, b, cls = 'ct-chip', span }: { id: PlantId; p: Picture; b: PlantButtons; cls?: string; span?: Span }) {
+  const v = b.verdictOf?.(id), job = p.jobs[id] ?? null, warn = !!v && (v.level === 'outside' || v.level === 'look');
+  const label = [p.names[id] ?? id, jobWord(job), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
   return (
-    <svg class="ct-chart-svg" role="img" aria-label={sayAll(p.summary)} viewBox={`0 0 ${W} ${Math.max(y, 1)}`} preserveAspectRatio="none">
-      {/* Flat, no group per lane (200-plant scale: few elements); a light lane's level as its swatch. */}
-      {lanes.map(({ r, top, h }) => (
-        <Fragment key={r.key}>
-          <rect class="ct-chart-lane" data-lane={r.key} x="0" y={top} width={W} height={h} />
-          {!(jobIds as readonly string[]).includes(r.key) && <rect class="ct-chart-swatch" data-lane={r.key} x="0.5" y={top + 0.5} width={SWATCH - 1} height={h - 1} />}
-          {r.cells.map((c, i) => (!c.judged ? <line key={`j${i}`} class="ct-chart-unjudged" x1={SWATCH + i * cw} x2={SWATCH + (i + 1) * cw} y1={top + h / 2} y2={top + h / 2} />
-            : c.hole ? <rect key={`h${i}`} class="ct-chart-hole" x={SWATCH + i * cw + 2} y={top + 2} width={cw - 4} height={h - 4} /> : null))}
-          {r.marks.map((m, i) => {
-            const a = Math.max(phaseOfYear(m.from) - first, 0), b = Math.min(phaseOfYear(m.to, true) - first, cols - 1);
-            return b < a ? null : <rect key={m.id} class="ct-chart-band" data-job={m.job ?? 'none'} x={SWATCH + a * cw + 2} y={top + LANE_PAD + i * (BAND + GAP)} width={(b - a + 1) * cw - 4} height={BAND} rx="2" />;
-          })}
-        </Fragment>
-      ))}
-    </svg>
+    <button type="button" class={cls} {...spanAttrs(span)} data-plant-id={id} data-job={job ?? 'none'} data-level={warn ? v!.level : undefined} aria-label={label} onClick={() => b.onPlant(id)}>
+      <JobIcon job={job} /><span class="ct-bar-name">{p.names[id] ?? id}</span>{warn && WARN}
+    </button>
+  );
+}
+// A hole as a dashed button: its title, then "Find" (a laptop's grid) or "Find a plant".
+export const HoleButton = ({ id, b, find, span }: { id: string; b: PlantButtons; find: string; span?: Span }) => (
+  <button type="button" class="ct-hole-button" {...spanAttrs(span)} data-hole={id} onClick={() => b.onHole(id)}>
+    <span>{b.holeWords(id)}</span> <span class="ct-hole-find">{find}</span>
+  </button>
+);
+
+// The grid's runs of one hole: the columns of each contiguous run of cells that are that hole.
+function holeRuns(r: PictureRow): { id: string; from: number; to: number }[] {
+  const out: { id: string; from: number; to: number }[] = [];
+  r.cells.forEach((c, i) => {
+    const last = out.at(-1);
+    if (!c.hole) return;
+    if (last && last.id === c.hole && last.to === i - 1) last.to = i;
+    else out.push({ id: c.hole, from: i, to: i });
+  });
+  return out;
+}
+
+function YearsGridView({ p, b }: { p: Picture; b: PlantButtons }) {
+  return (
+    <div class="ct-grid">
+      <div class="ct-grid-head">
+        <span class="ct-grid-corner">{T('palette.chart.light')}</span>
+        {p.columns.map((c, i) => <span key={i} class="ct-grid-col">{say(c)}</span>)}
+      </div>
+      {p.rows.map((r) => {
+        const ids = [...new Set(r.cells.flatMap((c) => c.ids))];
+        return (
+          <div key={r.key} class="ct-grid-row" data-lane={r.key} data-state={r.state}>
+            <div class="ct-grid-lane">
+              <span class="ct-grid-level"><LaneHead r={r} /></span>
+              <span class="ct-grid-count">{P('palette.chart.plants', ids.length)}</span>
+            </div>
+            <div class="ct-grid-bars">
+              {r.marks.map((m) => {
+                const a = phaseOfYear(m.from), z = phaseOfYear(m.to, true);
+                return <PlantButton key={m.id} id={m.id} p={p} b={b} cls="ct-bar" span={[a, z]} />;
+              })}
+              {holeRuns(r).map((h) => <HoleButton key={`${h.id}${h.from}`} id={h.id} b={b} find={T('palette.find')} span={[h.from, h.to]} />)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+export const YearsGrid = memo(YearsGridView);
+
+// One time span, each level its plants standing then (or its hole), every name (40 plants or fewer).
+export function StepLevels({ p, column, b }: { p: Picture; column: number; b: PlantButtons }) {
+  return (
+    <ul class="ct-levels">
+      {p.rows.map((r) => {
+        const c = r.cells[column];
+        return (
+          <li key={r.key} class="ct-level" data-lane={r.key}>
+            <span class="ct-level-head"><LaneHead r={r} /></span>
+            {c.ids.length > 0 && <span class="ct-level-plants">{c.ids.map((id) => <PlantButton key={id} id={id} p={p} b={b} />)}</span>}
+            {c.hole && <HoleButton id={c.hole} b={b} find={T('palette.chart.findPlant')} />}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
-// The drawing's key (board Main): "Colour and icon show each plant's main job:", then each job the
-// drawing shows, in jobIds order, with its icon and word (and "No job recorded" when a band has none).
-// Only where the chips show job icons: the jobs picture's lanes are the jobs, each head its icon and word.
-function JobKey({ p }: { p: Picture }) {
+// Past 40 plants: each level a group "Full sun: 10 plants" with its count cell. `standing(key)`: the
+// level's plants standing then that count (not outside their range), in the lane's order.
+export function CountCells({ p, column, size, standing, b }: { p: Picture; column: number; size: number; standing: (r: PictureRow) => PlantId[]; b: PlantButtons }) {
+  return (
+    <div class="ct-cells">
+      {p.rows.map((r) => {
+        const ids = standing(r), hole = r.cells[column].hole;
+        if (!ids.length && !hole) return null;
+        const label = T('palette.chart.levelCount', { level: say(r.head), plants: P('palette.chart.plants', ids.length) });
+        return (
+          <div key={r.key} class="ct-cell" role="group" aria-label={label} data-lane={r.key}>
+            <p class="ct-cell-head"><span class="ct-grid-level"><LaneHead r={r} /></span><span class="ct-grid-count">{P('palette.chart.plants', ids.length)}</span></p>
+            {ids.length > 0 && <MoreList items={ids} keyOf={(id) => id} paletteSize={size} class="ct-cell-names" render={(id) => <button type="button" class="ct-name" onClick={() => b.onPlant(id)}>{p.names[id] ?? id}</button>} />}
+            {hole && <HoleButton id={hole} b={b} find={T('palette.chart.findPlant')} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// The key (board Main): "Colour and icon show each plant's main job:", then each job the bars show.
+export function JobKey({ p }: { p: Picture }) {
   const shown = new Set<JobId | null>(p.rows.flatMap((r) => r.marks.map((m) => m.job)));
   const jobs: (JobId | null)[] = [...jobIds.filter((j) => shown.has(j)), ...(shown.has(null) ? [null] : [])];
   if (!jobs.length) return null;
@@ -77,71 +158,36 @@ function JobKey({ p }: { p: Picture }) {
   );
 }
 
-function ChartView({ picture, intro, column = null, marked = null, holeWords, onHole, onPlant, verdictOf, chipJobs = false }: ChartProps) {
-  // 'more': opened from a lane's "+ n more", so the table's caption takes the focus (the chip is gone).
-  const [table, setTable] = useState<false | true | 'more'>(false);
+// "How to read this" (Toasts board, A18): a closed disclosure under the picture's title.
+export function HowToRead({ children }: { children: ComponentChildren }) {
+  const [open, setOpen] = useState(false);
   const id = useId();
-  const p = column === null ? picture : columnOf(picture, column);
-  const first = column ?? 0;
   return (
-    <section class="ct-chart" aria-labelledby={`${id}-t`}>
-      <h3 id={`${id}-t`}>{T(picture.title.slice('consortium.'.length))}</h3>
-      <p class="ct-chart-intro">{intro}</p>
-      <p><button type="button" class="button button-secondary ct-chart-toggle" aria-pressed={!!table} onClick={() => setTable(table ? false : true)}>{T('palette.showTable')}</button></p>
-      {table ? <ChartTable p={p} holeWords={holeWords} focus={table === 'more'} /> : (
-        <div class="ct-chart-body">
-          <ol class="ct-chart-columns" aria-hidden="true">{p.columns.map((c, i) => <li key={i} data-at={i === marked ? '' : undefined}>{say(c)}</li>)}</ol>
-          <Drawing p={p} first={first} />
-          {chipJobs && <JobKey p={p} />}
-          <ul class="ct-chart-lanes">
-            {p.rows.map((r) => {
-              const ids = [...new Set(r.cells.flatMap((c) => c.ids))];
-              const holes = [...new Set(r.cells.flatMap((c) => (c.hole ? [c.hole] : [])))];
-              return (
-                <li key={r.key} class="ct-chart-row" data-lane={r.key} data-state={r.state}>
-                  <span class="ct-chart-head">{(jobIds as readonly string[]).includes(r.key) ? <JobIcon job={r.key as JobId} /> : (strata as readonly string[]).includes(r.key) ? <LightIcon stratum={r.key as Stratum} /> : <span class="ct-light-swatch" data-lane={r.key} aria-hidden="true" />}{say(r.head)}</span>
-                  {ids.map((pid) => {
-                    const v = verdictOf?.(pid), job = p.jobs[pid] ?? null, warn = !!v && (v.level === 'outside' || v.level === 'look');
-                    // Its name read as one phrase: the plant, its main job, its fit when it warns.
-                    const label = [p.names[pid] ?? pid, jobWord(job), ...(warn && v ? [say(fitLine(v))] : [])].join(', ');
-                    return (
-                      <button key={pid} type="button" class="ct-chip" data-plant-id={pid} aria-label={label} onClick={() => onPlant(pid)}>
-                        {chipJobs && <JobIcon job={job} />}{p.names[pid] ?? pid}
-                        {warn && <> <FitLine v={v} /></>}
-                      </button>
-                    );
-                  })}
-                  {holes.map((h) => <button key={h} type="button" class="ct-hole-button" data-hole={h} onClick={() => onHole(h)}>{holeWords(h)}</button>)}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-    </section>
+    <div class="ct-read">
+      <button type="button" class="ct-read-toggle" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>{T('palette.readTitle')}</button>
+      <div id={id} class="ct-read-body" hidden={!open}>{children}</div>
+    </div>
   );
 }
-export const Chart = memo(ChartView);
 
-function ChartTable({ p, holeWords, focus }: { p: Picture; holeWords: ChartProps['holeWords']; focus: boolean }) {
+// The picture as a table, visually hidden: its screen-reader form (Q8), every plant in its cells.
+function SrTableView({ p, holeWords }: { p: Picture; holeWords: (id: string) => string }) {
   const t = tableOf(p);
   const cols = t.columns.map(say);
-  const caption = useRef<HTMLTableCaptionElement>(null);
-  useEffect(() => { if (focus) caption.current?.focus(); }, []);
   return (
-    <table class="ct-chart-table">
-      <caption ref={caption} tabIndex={-1}>{sayAll(t.summary)}</caption>
+    // Wrapped: a table ignores the 1 px box of .visually-hidden and would widen a phone's page.
+    <div class="visually-hidden"><table>
+      <caption>{sayAll(t.summary)}</caption>
       <thead><tr><td />{cols.map((c, i) => <th key={i} scope="col">{c}</th>)}</tr></thead>
       <tbody>
         {t.rows.map((r) => (
-          <tr key={r.key} data-state={r.state}>
+          <tr key={r.key}>
             <th scope="row">{say(r.head)}</th>
-            {r.cells.map((c, i) => (
-              <td key={i} data-col={cols[i]}>{c.names.length ? c.names.join(', ') : c.hole ? holeWords(c.hole) : c.judged ? T('palette.nobody') : T('palette.notJudged')}</td>
-            ))}
+            {r.cells.map((c, i) => <td key={i}>{c.names.length ? c.names.join(', ') : c.hole ? holeWords(c.hole) : c.judged ? T('palette.nobody') : T('palette.notJudged')}</td>)}
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }
+export const SrTable = memo(SrTableView);

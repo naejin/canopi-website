@@ -6,9 +6,9 @@
 // Owner rules: the light words (Full sun, Mostly sun, Part shade, Shade), never high/medium/low; colour
 // never alone; text at 4.5:1 in both themes; the size rule (A14: every name while the palette has 40
 // plants or fewer and the group 12 or fewer, else the count cell). Every figure is re-derived through the
-// engine at the board's inputs (pf-b-helpers.mjs: the 0W scenario cases), never a board number. Each case
-// is marked expected-fail under pf-b (scripts/expect-fail.mjs failing()), its reason the board's first
-// missing word or element (pf-helpers.mjs BOARD); pf-b removes a marker in the commit that makes it pass.
+// engine at the board's inputs (pf-b-helpers.mjs: the 0W scenario cases), never a board number. Written
+// expected-fail under pf-b in commit 0 (scripts/expect-fail.mjs failing()); every marker is gone since the
+// pictures were built.
 // Parked, neither ported nor tested: Through the year and the cooler months (PP-G), the period tabs and
 // "See 2041–2070" (PP-E), Soil and its links (PP-F), Plan, Print and Share boards (PP-D).
 //
@@ -18,7 +18,7 @@
 //   carries PP-B7 (pp-b2; the phone steps one time span at a time, 44 px targets, the focus stays) -> PFB2
 //   carries PP-B8 (pp-b2; the table is the pictures' screen-reader form, the same plants and spans) -> PFB11
 //   carries PP-B43 (pp-b2; each job in its own colour, always beside its word) -> PFB4
-//   carries PP-B60 (pp-b3; Balance "One family: N of your M are <family>") -> PFB9
+//   carries PP-B60 (pp-b3; F1a-B6 restored: Balance "One family: N of your M are <family>") -> PFB9
 //   carries PP-B63 (pp-b3; water needs not recorded said on the line, "that is not a pass") -> PFB9, PFB10
 //   carries P5-18 (s5d; Warnings "N leave(s) its climate range by 2041–2070"; its "See 2041–2070" is PP-E) -> PFB7
 //   carries P5-19 (s5d; never "fine" for a plant with no future figures) -> PFB7
@@ -36,8 +36,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { aria, has } from './helpers.mjs';
 import { useHarness } from './helpers.mjs';
-import { failing } from '../expect-fail.mjs';
-import { BOARD, JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { JOBS, LIGHT, OLD_LIGHT, control, done, focused, frames, inOrder, names, palette, pastEdge, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { boardPalette, figures, fitOf, laneOf, standing, uncheckedOf } from './pf-b-helpers.mjs';
 
 useHarness();
@@ -53,7 +52,9 @@ const ofStratum = (f, s) => f.ids.filter((id) => f.stratum[id] === s);
 const buttons = async (page) => [...(await names(page, 'button'))];
 
 // Each text element whose contrast with what is behind it falls under 4.5:1 (the first few).
-const lowContrast = (page) => page.evaluate(() => {
+// The colour transitions (0.12 s on buttons) settled first: a colour read mid-transition is neither theme's.
+const lowContrast = (page) => page.evaluate(async () => {
+  await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => null)));
   const rgb = (s) => (s.match(/[\d.]+/g) ?? []).map(Number);
   const lum = ([r, g, b]) => { const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
   const behind = (el) => { for (let e = el; e; e = e.parentElement) { const c = rgb(getComputedStyle(e).backgroundColor); if (c.length >= 3 && (c[3] ?? 1) > 0.5) return c; } return rgb(getComputedStyle(document.body).backgroundColor); };
@@ -73,7 +74,7 @@ const lowContrast = (page) => page.evaluate(() => {
 const boxAt = (page, role, name) => page.$eval(aria(role, name), (e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top + scrollY, w: r.width, h: r.height, right: r.right }; }).catch(() => null);
 const pressed = (page, name) => page.$eval(aria('button', name), (e) => e.getAttribute('aria-pressed')).catch(() => null);
 
-failing('PFB1 (pf-b Main at 1280 and 960): "Through the years" with the board\'s intro, a grid headed "Light" and the seven time spans, one row per light level ("Mostly sun 8 plants": the members planted in it), each plant a button on its bar; each empty judged place a dashed button "<level>: nobody … Find"; the key with the six jobs in order; "Further down this page: Jobs · Warnings (N)" naming only the sections that exist; never high/medium/low', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB1 (pf-b Main at 1280 and 960): "Through the years" with the board\'s intro, a grid headed "Light" and the seven time spans, one row per light level ("Mostly sun 8 plants": the members planted in it), each plant a button on its bar; each empty judged place a dashed button "<level>: nobody … Find"; the key with the six jobs in order; "Further down this page: Jobs · Warnings (N)" naming only the sections that exist; never high/medium/low', async () => {
   for (const width of [1280, 960]) {
     const page = await boardPalette('seville-board', { width });
     const f = await figures(page);
@@ -99,7 +100,7 @@ failing('PFB1 (pf-b Main at 1280 and 960): "Through the years" with the board\'s
   }
 });
 
-failing('PFB2 (pf-b Palette at 390, carried from PP-B7): "Who stands where as the plot grows up. Step through time; an empty light level is a hole."; Earlier and Later (44 px) around "Years 1–3" in the group "Time span 3 of 7"; each level lists the plants standing then, or the hole button "<level>: nobody … Find a plant"; Later steps by one, the focus stays on it', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB2 (pf-b Palette at 390, carried from PP-B7): "Who stands where as the plot grows up. Step through time; an empty light level is a hole."; Earlier and Later (44 px) around "Years 1–3" in the group "Time span 3 of 7"; each level lists the plants standing then, or the hole button "<level>: nobody … Find a plant"; Later steps by one, the focus stays on it', async () => {
   const page = await boardPalette('kiambu-8', { width: 390 });
   const f = await figures(page);
   const chart = await section(page, 'Through the years');
@@ -122,7 +123,7 @@ failing('PFB2 (pf-b Palette at 390, carried from PP-B7): "Who stands where as th
   await done(page);
 });
 
-failing('PFB3 (pf-b Many at 390 and ManyDesk at 1280, A14): past 40 plants Through the years says the board\'s intro, "Years 1–3" with "N of your 200 plants stand then" (the light lanes\' count), each level a group "Full sun: N plants" with three names and "+ M more"; it opens in place to 10 names, then all, with "Show fewer"; "The others are sown or planted in another time span…"', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB3 (pf-b Many at 390 and ManyDesk at 1280, A14): past 40 plants Through the years says the board\'s intro, "Years 1–3" with "N of your 200 plants stand then" (the light lanes\' count), each level a group "Full sun: N plants" with three names and "+ M more"; it opens in place to 10 names, then all, with "Show fewer"; "The others are sown or planted in another time span…"', async () => {
   for (const width of [390, 1280]) {
     const page = await boardPalette('kiambu-200', { width });
     const f = await figures(page);
@@ -148,7 +149,7 @@ failing('PFB3 (pf-b Many at 390 and ManyDesk at 1280, A14): past 40 plants Throu
   }
 });
 
-failing('PFB4 (pf-b MainMore Jobs at 1280 and PaletteMore at 390, carried from PP-B43): the goal sentence "You want 2 plants for each job (Plants per job: 2): N holes come first, then M thin spots…", the legend, the control "Plants per job" 1 2 3 5 (44 px, "2" pressed), each job "<job> N plants" with its names, each thin spot "Thin: 1 plant only from year a to year b. Add a backup." with no button, each job hole "<job>: nobody … Find a plant"', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB4 (pf-b MainMore Jobs at 1280 and PaletteMore at 390, carried from PP-B43): the goal sentence "You want 2 plants for each job (Plants per job: 2): N holes come first, then M thin spots…", the legend, the control "Plants per job" 1 2 3 5 (44 px, "2" pressed), each job "<job> N plants" with its names, each thin spot "Thin: 1 plant only from year a to year b. Add a backup." with no button, each job hole "<job>: nobody … Find a plant"', async () => {
   for (const [id, width] of [['seville-board', 1280], ['kiambu-8', 390]]) {
     const page = await boardPalette(id, { width });
     const f = await figures(page);
@@ -174,7 +175,7 @@ failing('PFB4 (pf-b MainMore Jobs at 1280 and PaletteMore at 390, carried from P
   }
 });
 
-failing('PFB5 (pf-b F16, the goal changed): pressing "3" under "Plants per job" presses it, and the goal sentence says "You want 3 plants for each job (Plants per job: 3)" with the thin spots the engine counts at a goal of 3 (scenario kiambu-8-goal-3)', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB5 (pf-b F16, the goal changed): pressing "3" under "Plants per job" presses it, and the goal sentence says "You want 3 plants for each job (Plants per job: 3)" with the thin spots the engine counts at a goal of 3 (scenario kiambu-8-goal-3)', async () => {
   const page = await boardPalette('kiambu-8', { width: 1280 });
   await section(page, 'Jobs');
   await press(page, 'button', '3');
@@ -192,7 +193,7 @@ failing('PFB5 (pf-b F16, the goal changed): pressing "3" under "Plants per job" 
   await done(page);
 });
 
-failing('PFB6 (pf-b Many and ManyDesk Jobs at 200): "How many of your plants do each job. Each line opens to its first 10 plants, then “+ more”.", the goal explanation, each job a 44 px button "<job> N plants" (" · a hole" when it has one) opening its names and the hole sentence; the foot "Jobs not checked yet: N plants…" (the job lanes\' unchecked)', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB6 (pf-b Many and ManyDesk Jobs at 200): "How many of your plants do each job. Each line opens to its first 10 plants, then “+ more”.", the goal explanation, each job a 44 px button "<job> N plants" (" · a hole" when it has one) opening its names and the hole sentence; the foot "Jobs not checked yet: N plants…" (the job lanes\' unchecked)', async () => {
   const page = await boardPalette('kiambu-200', { width: 1280 });
   const f = await figures(page);
   const jobs = await section(page, 'Jobs', 20_000);
@@ -218,24 +219,31 @@ failing('PFB6 (pf-b Many and ManyDesk Jobs at 200): "How many of your plants do 
   await done(page);
 });
 
-failing('PFB7 (pf-b MainMore Warnings, 40 plants or fewer, carried from P5-18 and P5-19): "Warnings N" (N its groups), "Very toxic" and "Toxic" naming the plants the engine marks Severe and Moderate, "Mildly toxic" with its plants; the leave-their-range line in words; never "fine"; no "Tick these"', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB7 (pf-b MainMore Warnings, 40 plants or fewer, carried from P5-18 and P5-19): "Warnings N" (N its groups), "Very toxic" and "Toxic" naming the plants the engine flags Severe and Moderate (store.flags), "Mildly toxic" with its plants; the leave-their-range line in words; never "fine"; no "Tick these"', async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
-  const f = await figures(page), g = await fitOf(page);
+  const f = await figures(page);
+  // The small card names every member the engine marks at a toxicity level (store.flags), whatever its
+  // fit: an outside plant that is Severe is "Very toxic" too.
+  const tox = await page.evaluate(() => {
+    const s = window.__ctTest.store, fl = s.flags.value;
+    const of = (level) => s.memberTaxa.value.filter((t) => fl.some((x) => x.id === t.id && x.kind === 'toxicity' && x.level === level)).map((t) => t.id);
+    return { severe: of('Severe'), moderate: of('Moderate'), slight: of('Slight') };
+  });
   const w = await section(page, 'Warnings');
   assert.match(w, /^Warnings \d+/, 'board: "Warnings N"');
   const groups = await page.evaluate(() => [...document.querySelectorAll('.ct-warnings h4')].length);
   assert.equal(Number(w.match(/^Warnings (\d+)/)[1]), groups, 'board: N is its groups');
   const say = (head, ids) => { if (ids.length) assert.ok(w.includes(`${head} ${ids.map((id) => f.names[id]).join(', ')}`), `board: "${head}" ${ids.map((id) => f.names[id]).join(', ')}`); };
-  say('Very toxic', g.reasons.severe);
-  say('Toxic', g.reasons.moderate);
-  say('Mildly toxic', g.mild);
+  say('Very toxic', tox.severe);
+  say('Toxic', tox.moderate);
+  say('Mildly toxic', tox.slight);
   if (/climate range by 2041–2070/.test(w)) assert.match(w, /\d+ leaves? (?:its|their) climate range by 2041–2070/, 'board: "1 leaves its climate range by 2041–2070"');
   assert.doesNotMatch(w, /\bfine\b/i, 'board: never "fine"');
   assert.ok(!(await buttons(page)).some((b) => b.startsWith('Tick these')), 'A15: no "Tick these" (pf-e)');
   await done(page);
 });
 
-failing('PFB8 (pf-b Many and ManyDesk "Warnings and fit", F29, A13, R1): "Your 200 plants in N lines that add up.", the closed lines "Fits your place", "Needs a second look", "Outside its climate range", "Not checked" with the engine\'s counts (a line at 0 hidden); "Needs a second look" opens to its reasons; "Toxic or very toxic" to "Very toxic, N: …" and "Toxic, M: …"; "R reasons on the L plants: S carry two."; "Mildly toxic N" its own line, "…K of the N are on the line “Fits your place”"', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB8 (pf-b Many and ManyDesk "Warnings and fit", F29, A13, R1): "Your 200 plants in N lines that add up.", the closed lines "Fits your place", "Needs a second look", "Outside its climate range", "Not checked" with the engine\'s counts (a line at 0 hidden); "Needs a second look" opens to its reasons; "Toxic or very toxic" to "Very toxic, N: …" and "Toxic, M: …"; "R reasons on the L plants: S carry two."; "Mildly toxic N" its own line, "…K of the N are on the line “Fits your place”"', async () => {
   const page = await boardPalette('kiambu-200', { width: 1280 });
   const g = await fitOf(page);
   const w = await section(page, 'Warnings and fit', 20_000);
@@ -275,19 +283,22 @@ failing('PFB8 (pf-b Many and ManyDesk "Warnings and fit", F29, A13, R1): "Your 2
   await done(page);
 });
 
-failing('PFB9 (pf-b MainMore Balance, carried from PP-B60 and PP-B63): "Balance things to weigh, not holes"; a family line in the board\'s words; at a place with a dry summer "Water needs: …" (Seville, Csa); "Soil: N hints on pH" (N the members whose verdict carries a pH hint) naming them', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB9 (pf-b MainMore Balance, carried from PP-B60 and PP-B63): "Balance things to weigh, not holes"; a family line in the board\'s words; at a place with a dry summer "Water needs: …" (Seville, Csa); "Soil: N hints on pH" (N the members whose verdict carries a pH hint) naming them', async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   const f = await figures(page);
   const hinted = await page.evaluate(() => { const s = window.__ctTest.store; return s.memberTaxa.value.filter((t) => s.memberVerdicts.value?.get(t.id)?.factors.some((x) => x.factor === 'soil-ph' && x.level !== 'fits' && x.level !== 'unknown')).map((t) => t.id); });
   const b = await section(page, 'Balance');
   assert.ok(b.startsWith('Balance things to weigh, not holes'), `board: the heading ("${b.slice(0, 60)}")`);
   assert.match(b, /One family: \d+ of your 13 are (?:legumes|[A-Z][a-z]+aceae)/, 'board: "One family: 4 of your 13 are legumes"');
-  assert.match(b, /Water needs: /, 'board: "Water needs:" at a place with a dry summer');
+  // The board's line is "Water needs: all 12 recorded take a dry summer"; the figures are the engine's,
+  // so where a member needs regular water the line says the mix ("Water needs differ: …").
+  assert.match(b, /Water needs(?::| differ:) /, 'board: "Water needs…" at a place with a dry summer');
+  await saysNot(page, 'How much water the sources record each plant as using.', 'no "Water use" card at a place with a dry summer');
   if (hinted.length) assert.ok(b.includes(`Soil: ${hinted.length} hint${hinted.length === 1 ? '' : 's'} on pH ${hinted.map((id) => f.names[id]).join(', ')}`), `board: "Soil: ${hinted.length} hints on pH" with the names`);
   await done(page);
 });
 
-failing('PFB10 (pf-b Kumasi Water use, carried from PP-B63): at a place without a dry summer the card "Water use" says "How much water the sources record each plant as using. No check uses dry months: they are a reading of your place.", then the recorded groups by name, then "N not recorded: …. That is not a pass."', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB10 (pf-b Kumasi Water use, carried from PP-B63): at a place without a dry summer the card "Water use" says "How much water the sources record each plant as using. No check uses dry months: they are a reading of your place.", then the recorded groups by name, then "N not recorded: …. That is not a pass."', async () => {
   const page = await boardPalette('kumasi-today', { width: 1280 });
   const w = await section(page, 'Water use');
   assert.ok(w.includes('How much water the sources record each plant as using. No check uses dry months: they are a reading of your place.'), 'board: the Water use sentence');
@@ -297,7 +308,7 @@ failing('PFB10 (pf-b Kumasi Water use, carried from PP-B63): at a place without 
   await done(page);
 });
 
-failing('PFB11 (pf-b Toasts "How to read this", Q8, A18, carried from PP-B8): under the picture\'s title a closed "How to read this" opens to the board\'s paragraphs (the light levels, the dashed hole, "Your place in figures"); the table stays in the page as the screen-reader form, every member once with its light words; no "Show as a table"', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB11 (pf-b Toasts "How to read this", Q8, A18, carried from PP-B8): under the picture\'s title a closed "How to read this" opens to the board\'s paragraphs (the light levels, the dashed hole, "Your place in figures"); the table stays in the page as the screen-reader form, every member once with its light words; no "Show as a table"', async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   const f = await figures(page);
   await section(page, 'Through the years');
@@ -314,7 +325,7 @@ failing('PFB11 (pf-b Toasts "How to read this", Q8, A18, carried from PP-B8): un
   await done(page);
 });
 
-failing('PFB12 (pf-b DarkMain): in the dark theme the same words and order as Main ("Through the years", the key, "Jobs"), and every text at 4.5:1 against what is behind it, at 1280 and 390 px', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB12 (pf-b DarkMain): in the dark theme the same words and order as Main ("Through the years", the key, "Jobs"), and every text at 4.5:1 against what is behind it, at 1280 and 390 px', async () => {
   for (const [id, width] of [['seville-board', 1280], ['kiambu-8', 390]]) {
     const page = await boardPalette(id, { width, theme: 'dark' });
     await section(page, 'Through the years');
@@ -325,7 +336,7 @@ failing('PFB12 (pf-b DarkMain): in the dark theme the same words and order as Ma
   }
 });
 
-failing('PFB13 (pf-b German, and 320 px, carried from PP-B22 and old PFB11): in German "Pflanzenpalette", "Nächster Schritt", "Hinzufügen", "Später", "Ändern", "Lücke 1 von N", "Alle N Pflanzen ansehen", Jobs "Aufgaben" with "Du willst 2 Pflanzen je Aufgabe (Pflanzen je Aufgabe: 2)" and the legend; long words never pass the right edge at 390 and 320 px, nor in ru and ja at 320', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB13 (pf-b German, and 320 px, carried from PP-B22 and old PFB11): in German "Pflanzenpalette", "Nächster Schritt", "Hinzufügen", "Später", "Ändern", "Lücke 1 von N", "Alle N Pflanzen ansehen", Jobs "Aufgaben" with "Du willst 2 Pflanzen je Aufgabe (Pflanzen je Aufgabe: 2)" and the legend; long words never pass the right edge at 390 and 320 px, nor in ru and ja at 320', async () => {
   const de = await boardPalette('seville-board', { lang: 'de', width: 390 });
   for (const w of ['Pflanzenpalette', 'Nächster Schritt', 'Hinzufügen', 'Später', 'Ändern']) await says(de, w);
   await says(de, /Lücke 1 von \d+/);
@@ -342,7 +353,7 @@ failing('PFB13 (pf-b German, and 320 px, carried from PP-B22 and old PFB11): in 
   }
 });
 
-failing('PFB14 (pf-b MainMore foot, S9): below the pictures "Your palette is saved on this device." with "Copy link", "Print" and "Download for Canopi"; no "Share" button', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB14 (pf-b MainMore foot, S9): below the pictures "Your palette is saved on this device." with "Copy link", "Print" and "Download for Canopi"; no "Share" button', async () => {
   const page = await boardPalette('seville-board', { width: 1280 });
   await says(page, 'Your palette is saved on this device.');
   const all = [...(await buttons(page)), ...(await names(page, 'link'))];
@@ -354,7 +365,7 @@ failing('PFB14 (pf-b MainMore foot, S9): below the pictures "Your palette is sav
   await done(page);
 });
 
-failing('PFB15 (pf-b Toasts, the removed line): removing a plant says "<plant> removed. Its holes are open again."', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB15 (pf-b Toasts, the removed line): removing a plant says "<plant> removed. Its holes are open again."', async () => {
   const page = await boardPalette('kiambu-8', { width: 1280 });
   const f = await figures(page);
   const id = f.ids[0];
@@ -394,7 +405,7 @@ test('PFB16 (pf-b Focus): every control of the pictures, Jobs, Warnings, Balance
   await done(page);
 });
 
-failing('PFB17 (pf-b section 6 neighbours, the goal control): at 1280 px "Plants per job" sits right of the Jobs title, on its line; at 320 px under the intro, nothing past the edge; the legend under the control', { owner: 'pf-b', reason: BOARD }, async () => {
+test('PFB17 (pf-b section 6 neighbours, the goal control): at 1280 px "Plants per job" sits right of the Jobs title, on its line; at 320 px under the intro, nothing past the edge; the legend under the control', async () => {
   for (const width of [1280, 320]) {
     const page = await boardPalette('seville-board', { width });
     await section(page, 'Jobs');

@@ -1,23 +1,33 @@
 /** @jsxImportSource preact */
-// Through the years (boards Main, Palette): who stands where as the plot grows up, by light level.
-// The stepper chooses a time step, the store's yearStep, which print's side drawing reads (PP-B18): on a
-// phone the picture shows that step only (PP-B7); on a laptop it shows every step, the chosen one
-// marked, and the stepper says it is the step printed (review r1 bugs-11). Each step change is announced
-// in words through the page's polite status region (changeSummary; P8). At either end the button stays
-// focusable (aria-disabled), so the keyboard focus never falls to the page (review r1 bugs-7).
+// Through the years (v14 boards Main, Palette, Many, ManyDesk; Toasts "How to read this"): who stands
+// where as the plot grows up, by the light level each plant is planted in.
+// - 40 plants or fewer on a laptop (Main): the grid, every time span at once, its key, and "Further
+//   down this page" naming the sections that exist;
+// - 40 plants or fewer on a phone (Palette): the stepper ("Years 1–3", group "Time span 3 of 7") and
+//   that span's levels, each its plants or its hole;
+// - past 40 plants at every width (Many, ManyDesk; the size rule A14): the stepper with "N of your M
+//   plants stand then", each level a count cell, then who else would stand then.
+// A member stands in a span when its years hold it and it is not outside its climate range (the light
+// lanes' counts, holes.ts laneCounts). The stepper's span is the store's yearStep; each change is
+// announced through the page's status region (changeSummary; P8); at either end its button stays
+// focusable (aria-disabled), so the focus never falls to the page (review r1 bugs-7). The table form
+// stays as the screen-reader form, visually hidden (Q8).
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { Hole, PhaseOrd, PlantId, PlantVerdict, Taxon } from '../../../../lib/consortium/index.ts';
-import { PHASE_YEARS } from '../../../../lib/consortium/index.ts';
+import { PHASE_YEARS, spans } from '../../../../lib/consortium/index.ts';
 import { changeSummary } from '../../rules/change-summary.ts';
-import { columnOf } from '../../rules/picture.ts';
+import { columnOf, type PictureRow } from '../../rules/picture.ts';
 import { yearsPicture } from '../../rules/picture-years.ts';
 import * as store from '../../store.ts';
-import { nameOf, T } from '../../strings.ts';
-import { Chart } from '../kit/chart.tsx';
+import { nameOf, P, T } from '../../strings.ts';
+import { CountCells, HowToRead, JobKey, SrTable, StepLevels, YearsGrid } from '../kit/chart.tsx';
 import { say, sayAll } from '../kit/fit.tsx';
+import { listOf } from '../kit/names.ts';
 
 const PHONE = '(max-width: 639px)';
-function usePhone(): boolean {
+// The size rule's palette threshold (A14): past it, the count cells.
+export const SIZE_PALETTE = 40;
+export function usePhone(): boolean {
   const [phone, setPhone] = useState(() => typeof matchMedia === 'function' && matchMedia(PHONE).matches);
   useEffect(() => {
     if (typeof matchMedia !== 'function') return;
@@ -30,10 +40,32 @@ function usePhone(): boolean {
 
 export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[]; holeWords: (id: string) => string; onHole: (id: string) => void; onPlant: (id: PlantId) => void; announce: (text: string) => void; verdictOf?: (id: PlantId) => PlantVerdict | undefined }
 
-export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf }: PictureProps) {
+// Moves the focus to a section of the page by its id (a link of "Further down this page"; the page's
+// address holds the palette, so no hash is written).
+export const toSection = (id: string) => (e: Event) => {
+  e.preventDefault();
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ block: 'start' });
+  const h = el.querySelector<HTMLElement>('h3');
+  if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+};
+
+// "How to read this" (Toasts board): the light levels, the time spans, the dashed hole; the figures.
+export const ReadYears = () => (
+  <HowToRead>
+    <p>{T('palette.readYears')}</p>
+    <p>{T('palette.readFigures')}</p>
+  </HowToRead>
+);
+
+export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, warnings }: PictureProps & { warnings?: number }) {
   const phone = usePhone();
+  const big = members.length > SIZE_PALETTE;
   const at = store.yearStep.value;
-  const picture = useMemo(() => yearsPicture({ members, holes, nameOf }), [members, holes]);
+  const counts = (t: Taxon) => verdictOf?.(t.id)?.level !== 'outside';
+  const picture = useMemo(() => yearsPicture({ members, holes, nameOf, counts }), [members, holes, verdictOf]);
+  const b = { holeWords, onHole, onPlant, verdictOf };
   const last = PHASE_YEARS.length - 1;
   const was = useRef(at);
   const go = (to: number) => {
@@ -43,15 +75,45 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
     was.current = next;
     store.yearStep.value = next;
   };
-  return (
-    <div class="ct-years" data-phone={phone ? '' : undefined}>
-      <div class="ct-stepper" role="group" aria-label={T('palette.stepperLabel')}>
-        <button type="button" class="button button-secondary" aria-disabled={at === 0 ? 'true' : undefined} onClick={() => go(at - 1)}>{T('palette.earlier')}</button>
-        <span class="ct-stepper-at">{say(picture.columns[at])}</span>
-        <button type="button" class="button button-secondary" aria-disabled={at === last ? 'true' : undefined} onClick={() => go(at + 1)}>{T('palette.later')}</button>
-        {!phone && <span class="ct-stepper-note">{T('palette.stepPrinted')}</span>}
+  const byId = useMemo(() => new Map(members.map((t) => [t.id, t])), [members]);
+  // A level's plants standing in the stepper's span, those outside their range left out (laneCounts).
+  const standing = (r: PictureRow): PlantId[] => r.cells[at].ids.filter((id) => { const t = byId.get(id); return !!t && counts(t); });
+  const stand = big ? picture.rows.reduce((n, r) => n + standing(r).length, 0) : 0;
+  const outsideThen = big ? members.filter((t) => !counts(t) && t.stratum && spans(t, at)) : [];
+  const stepper = (
+    <div class="ct-stepper">
+      <button type="button" class="button button-secondary" aria-disabled={at === 0 ? 'true' : undefined} onClick={() => go(at - 1)}>{T('palette.earlier')}</button>
+      <div class="ct-stepper-at" role="group" aria-label={T('palette.chart.span', { n: at + 1, m: PHASE_YEARS.length })}>
+        <strong>{say(picture.columns[at])}</strong>
+        {big && <span class="ct-stepper-note">{P('palette.chart.standing', stand, { m: members.length })}</span>}
       </div>
-      <Chart picture={picture} intro={T('palette.yearsIntro')} column={phone ? at : null} marked={phone ? null : at} holeWords={holeWords} onHole={onHole} onPlant={onPlant} verdictOf={verdictOf} chipJobs />
+      <button type="button" class="button button-secondary" aria-disabled={at === last ? 'true' : undefined} onClick={() => go(at + 1)}>{T('palette.later')}</button>
     </div>
+  );
+  return (
+    <section class="ct-chart ct-years" id="ct-years" aria-labelledby="ct-years-h" data-mode={big ? 'cells' : phone ? 'step' : 'grid'}>
+      <h3 id="ct-years-h">{T('palette.yearsTitle')}</h3>
+      <ReadYears />
+      <p class="ct-chart-intro">{T(big ? 'palette.yearsIntroMany' : phone ? 'palette.yearsIntroPhone' : 'palette.yearsIntro')}</p>
+      {big ? (
+        <>
+          {stepper}
+          <CountCells p={picture} column={at} size={members.length} standing={standing} b={b} />
+          <p class="ct-chart-note">{T('palette.chart.others')}{outsideThen.length > 0 && <> {P('palette.chart.othersOutside', outsideThen.length, { names: listOf(outsideThen.map(nameOf)) })}</>}</p>
+        </>
+      ) : phone ? (
+        <>
+          {stepper}
+          <StepLevels p={picture} column={at} b={b} />
+        </>
+      ) : (
+        <>
+          <YearsGrid p={picture} b={b} />
+          <JobKey p={picture} />
+          <p class="ct-further">{T('palette.chart.further')} <a href="#ct-jobs" onClick={toSection('ct-jobs')}>{T('palette.jobsTitle')}</a>{warnings ? <> · <a href="#ct-warnings" onClick={toSection('ct-warnings')}>{T('palette.chart.warningsLink', { n: warnings })}</a></> : null}</p>
+        </>
+      )}
+      <SrTable p={picture} holeWords={holeWords} />
+    </section>
   );
 }

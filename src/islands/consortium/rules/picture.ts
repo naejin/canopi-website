@@ -27,7 +27,7 @@ export interface PictureRow {
 }
 // names: each plant's full name; jobs: each plant's main job (the chip's icon and accessible name read
 // it here, so no view works it out again). A band's colour is its Mark's job: the main job in Through
-// the years (with its key), the row's job in the jobs picture (picture-jobs.ts).
+// the years (with its key), the row's job in a job lane.
 export interface Picture { title: string; summary: Line[]; columns: Line[]; rows: PictureRow[]; names: Record<PlantId, string>; jobs: Record<PlantId, JobId | null> }
 
 // A plant's main job: its first in jobIds order, or null.

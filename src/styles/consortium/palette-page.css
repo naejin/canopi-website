@@ -4,7 +4,7 @@
 /* The page: steps, then the Next step, Through the years and the jobs: one column on a phone and a
    tablet; on a laptop the Next step stands beside the pictures, as on the boards (review r1 conformance-7). */
 .ct .ct-palette-page { display: grid; gap: 24px; min-width: 0; }
-.ct .ct-palette-body, .ct .ct-palette-pictures { display: grid; gap: 24px; min-width: 0; align-items: start; }
+.ct .ct-palette-body, .ct .ct-palette-pictures, .ct .ct-palette-side { display: grid; gap: 24px; min-width: 0; align-items: start; }
 .ct .ct-palette-page > h2 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 400; line-height: 1.2; }
 .ct .ct-steps ol { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 15px; }
 .ct .ct-steps li { display: flex; align-items: center; min-width: 0; }
@@ -19,7 +19,7 @@
 .ct .ct-placeholder { opacity: 0.9; }
 
 /* The Next step: the hole in words, its best fillers, See all and Not now. */
-.ct .ct-next { display: grid; gap: 12px; padding: 20px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); min-width: 0; }
+.ct .ct-next { display: grid; grid-template-columns: minmax(0, 1fr); overflow-wrap: anywhere; gap: 12px; padding: 20px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); min-width: 0; }
 .ct .ct-next h3, .ct .ct-chart h3 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 400; line-height: 1.25; }
 .ct .ct-next-count { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); }
 .ct .ct-next-hole { margin: 0; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
@@ -28,7 +28,7 @@
 .ct .ct-filler-name { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
 .ct .ct-next-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
 /* A long label wraps rather than scroll the page sideways ("Start from a small suggested palette" at 320 px). */
-.ct .ct-next-actions .button { white-space: normal; max-width: 100%; padding-block: 8px; text-align: center; }
+.ct .ct-next-actions .button, .ct .ct-next p > .button { white-space: normal; max-width: 100%; padding-block: 8px; text-align: center; }
 .ct .ct-other-holes ul { display: grid; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 .ct .ct-other-holes summary { min-height: 40px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
 /* The warning mark at text size (details.css sizes it in the sheets only). */
@@ -44,34 +44,82 @@
 .ct .ct-fit[data-level="unknown"] { color: var(--level-unknown); }
 .ct .ct-level-icon { flex: none; width: 16px; height: 16px; }
 
-/* A picture: the drawing (decorative to the keyboard), its lanes as buttons, or the table. */
-.ct .ct-chart { display: grid; gap: 10px; min-width: 0; }
-.ct .ct-chart-intro { margin: 0; color: var(--text-secondary); max-width: 62ch; }
-.ct .ct-chart-toggle[aria-pressed="true"] { border-color: var(--accent); }
-.ct .ct-chart-body { display: grid; gap: 8px; min-width: 0; }
-.ct .ct-chart-columns { display: flex; margin: 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--text-secondary); }
-.ct .ct-chart-columns li { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; text-align: center; }
-.ct .ct-chart-svg { display: block; width: 100%; height: auto; min-height: 60px; }
-.ct .ct-chart-lane { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
-/* Light levels: filled swatches with their outline, the level's words beside them (tokens.css rule). */
-.ct .ct-chart-swatch { fill: var(--light-none); stroke: var(--light-outline); stroke-width: 1; }
-.ct .ct-chart-swatch[data-lane="emergent"], .ct .ct-light-swatch[data-lane="emergent"] { fill: var(--light-emergent); background: var(--light-emergent); }
-.ct .ct-chart-swatch[data-lane="high"], .ct .ct-light-swatch[data-lane="high"] { fill: var(--light-high); background: var(--light-high); }
-.ct .ct-chart-swatch[data-lane="medium"], .ct .ct-light-swatch[data-lane="medium"] { fill: var(--light-medium); background: var(--light-medium); }
-.ct .ct-chart-swatch[data-lane="low"], .ct .ct-light-swatch[data-lane="low"] { fill: var(--light-low); background: var(--light-low); }
-.ct .ct-chart-unjudged { stroke: var(--text-secondary); stroke-width: 1; }
-.ct .ct-chart-hole { fill: none; stroke: var(--level-look); stroke-width: 2; stroke-dasharray: 6 4; }
-.ct .ct-chart-band { fill: var(--text-secondary); }
-.ct .ct-chart-band[data-job="feeds_you"] { fill: var(--role-food); }
-.ct .ct-chart-band[data-job="feeds_soil"] { fill: var(--role-soil); }
-.ct .ct-chart-band[data-job="mulch"] { fill: var(--role-mulch); }
-.ct .ct-chart-band[data-job="ground"] { fill: var(--role-ground); }
-.ct .ct-chart-band[data-job="helpers"] { fill: var(--role-helpers); }
-.ct .ct-chart-band[data-job="shelter"] { fill: var(--role-shelter); }
-.ct .ct-chart-lanes { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.ct .ct-chart-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; min-width: 0; }
-.ct .ct-chart-head { flex: 1 0 100%; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
-.ct .ct-light-swatch { flex: none; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--light-outline); background: var(--light-none); }
+/* A picture: its title, "How to read this", its intro, then the grid, the stepper or the cells. */
+.ct .ct-chart { display: grid; gap: 10px; min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.ct .ct-chart .ct-chart { padding: 0; border: 0; }
+.ct .ct-chart-intro { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 20px; max-width: 80ch; }
+.ct .ct-chart-note { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 19px; }
+.ct .ct-light-swatch { flex: none; width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--light-outline); background: var(--light-none); }
+.ct .ct-read { display: grid; gap: 6px; }
+.ct .ct-read-toggle { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ct .ct-read-toggle::after { content: " +" / ""; }
+.ct .ct-read-toggle[aria-expanded="true"]::after { content: " \2212" / ""; }
+.ct .ct-read-body { display: grid; gap: 8px; padding: 10px 12px; border-left: 3px solid var(--border-strong); font-size: 14px; line-height: 20px; color: var(--text-secondary); }
+.ct .ct-read-body p { margin: 0; }
+.ct .ct-read-body[hidden] { display: none; }
+
+/* Through the years on a laptop (board Main): "Light" and the seven time spans, a row per light level,
+   each plant a bar over its years in its main job's colour, with its icon and name inside. A bar's
+   first and last time span: data-from and data-to (no inline style). */
+.ct .ct-grid { --ct-lane: minmax(104px, 164px); display: grid; min-width: 0; font-size: 13px; line-height: 22px; }
+.ct .ct-grid-head { display: grid; grid-template-columns: var(--ct-lane) repeat(7, minmax(0, 1fr)); padding-bottom: 6px; color: var(--text-secondary); font-weight: 600; line-height: 17px; }
+.ct .ct-grid-corner { min-width: 0; }
+.ct .ct-grid-col { min-width: 0; padding-inline-end: 4px; overflow-wrap: anywhere; }
+.ct .ct-grid-col:last-child { font-weight: 400; }
+.ct .ct-grid-row { display: grid; grid-template-columns: var(--ct-lane) minmax(0, 1fr); border-top: 1px solid var(--border); }
+.ct .ct-grid-lane { display: grid; align-content: start; gap: 0; padding: 8px 8px 8px 0; font-size: 14px; }
+.ct .ct-grid-level { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.ct .ct-grid-count { font-weight: 400; color: var(--text-secondary); }
+.ct .ct-grid-lane .ct-grid-count { padding-inline-start: 19px; }
+.ct .ct-grid-bars { display: grid; align-content: start; gap: 4px; padding: 6px 0 6px 1px; min-width: 0; background-image: linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: calc(100% / 7) 100%; }
+.ct .ct-bar { display: flex; align-items: center; gap: 5px; min-width: 0; min-height: 24px; padding: 1px 6px; border: 0; border-radius: 5px; background: var(--text-secondary); color: var(--surface); font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
+.ct .ct-bar .ct-job-icon { color: var(--surface); width: 14px; height: 14px; }
+.ct .ct-bar .ct-glyph { width: 14px; height: 14px; vertical-align: 0; }
+.ct .ct-bar-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ct .ct-bar[data-job="feeds_you"] { background: var(--role-food); }
+.ct .ct-bar[data-job="feeds_soil"] { background: var(--role-soil); }
+.ct .ct-bar[data-job="mulch"] { background: var(--role-mulch); }
+.ct .ct-bar[data-job="ground"] { background: var(--role-ground); }
+.ct .ct-bar[data-job="helpers"] { background: var(--role-helpers); }
+.ct .ct-bar[data-job="shelter"] { background: var(--role-shelter); }
+.ct .ct-grid-bars .ct-hole-button { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 24px; padding: 1px 8px; font-size: 13px; font-weight: 600; }
+.ct .ct-grid-bars [data-from="1"] { margin-inline-start: calc(100% / 7); }
+.ct .ct-grid-bars [data-from="2"] { margin-inline-start: calc(200% / 7); }
+.ct .ct-grid-bars [data-from="3"] { margin-inline-start: calc(300% / 7); }
+.ct .ct-grid-bars [data-from="4"] { margin-inline-start: calc(400% / 7); }
+.ct .ct-grid-bars [data-from="5"] { margin-inline-start: calc(500% / 7); }
+.ct .ct-grid-bars [data-from="6"] { margin-inline-start: calc(600% / 7); }
+.ct .ct-grid-bars [data-to="0"] { margin-inline-end: calc(600% / 7); }
+.ct .ct-grid-bars [data-to="1"] { margin-inline-end: calc(500% / 7); }
+.ct .ct-grid-bars [data-to="2"] { margin-inline-end: calc(400% / 7); }
+.ct .ct-grid-bars [data-to="3"] { margin-inline-end: calc(300% / 7); }
+.ct .ct-grid-bars [data-to="4"] { margin-inline-end: calc(200% / 7); }
+.ct .ct-grid-bars [data-to="5"] { margin-inline-end: calc(100% / 7); }
+.ct .ct-hole-find { color: var(--accent-ink); font-weight: 600; white-space: nowrap; }
+.ct .ct-further { margin: 0; text-align: center; font-size: 14px; color: var(--text-secondary); }
+
+/* One time span on a phone (board Palette): each level its plants standing then, or its hole. */
+.ct .ct-levels { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ct .ct-level { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--border); }
+.ct .ct-level-head { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.ct .ct-level-plants { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Past 40 plants (boards Many, ManyDesk): each level its count, its first names and "+ N more". */
+.ct .ct-cells { display: grid; gap: 0; }
+.ct .ct-cell { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border); }
+.ct .ct-cell-head { display: flex; justify-content: space-between; gap: 8px; margin: 0; font-size: 15px; }
+.ct .ct-cell-head .ct-grid-count { font-size: 14px; }
+.ct .ct-cell-names .ct-more-count { display: none; }
+.ct .ct-more.ct-cell-names { border: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.ct .ct-cell-names .ct-more-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(12em, 1fr)); gap: 0 12px; margin: 0; padding: 0; list-style: none; }
+.ct .ct-cell-names[data-stage="0"] .ct-more-items { display: block; flex: 1 1 12em; }
+.ct .ct-cell-names[data-stage="0"] .ct-more-items > li { display: inline; }
+.ct .ct-cell-names[data-stage="0"] .ct-more-items > li + li::before { content: ", "; }
+.ct .ct-cell-names .ct-more-items { flex: 1 0 100%; }
+.ct .ct-cell-names .ct-more-actions { margin: 0; }
+.ct .ct-name { min-height: 32px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; text-align: start; cursor: pointer; }
+.ct .ct-name:hover { text-decoration: underline; }
+
 /* The key: what colour and icon mean (each main job, its icon and word). */
 .ct .ct-chart-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 14px; color: var(--text-secondary); }
 .ct .ct-chart-key p { margin: 0; }
@@ -87,14 +135,91 @@
 .ct .ct-job-icon[data-job="shelter"] { color: var(--role-shelter); --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 8.5 8 3l6 5.5M4 7.2V13h8V7.2' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .ct .ct-job-icon[data-job="none"] { --job-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .ct .ct-chip { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.ct .ct-chart-columns li[data-at] { color: var(--text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .ct .ct-chip, .ct .ct-hole-button { min-height: 40px; max-width: 100%; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; cursor: pointer; overflow-wrap: anywhere; text-align: start; }
-.ct .ct-chip-more { font-weight: 600; }
 .ct .ct-hole-button { border-style: dashed; border-color: var(--level-look); border-radius: 6px; }
-.ct .ct-chart-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.ct .ct-chart-table caption { text-align: start; padding-bottom: 6px; color: var(--text-secondary); }
-.ct .ct-chart-table th, .ct .ct-chart-table td { padding: 6px 8px; border: 1px solid var(--border); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
-.ct .ct-chart-table th { font-weight: 600; }
+
+/* Jobs (boards MainMore, PaletteMore, Many, ManyDesk): the title with "Plants per job" beside it on a
+   laptop, the goal sentence and the legend; each job its tile, its plants, its strip and its holes. */
+.ct .ct-jobs-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; }
+.ct .ct-jobs-top > h3 { grid-column: 1; grid-row: 1; }
+.ct .ct-jobs-top > .ct-goal { grid-column: 2; grid-row: 1; }
+.ct .ct-jobs-top > .ct-chart-intro, .ct .ct-jobs-top > .ct-jobs-legend { grid-column: 1 / -1; }
+.ct .ct-goal { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.ct .ct-goal-label { white-space: nowrap; }
+.ct .ct-goal-n { min-width: 44px; min-height: 44px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 0; background: var(--surface); color: var(--text); font: inherit; font-weight: 400; cursor: pointer; }
+.ct .ct-goal-n + .ct-goal-n { margin-inline-start: -9px; }
+.ct .ct-goal-label + .ct-goal-n { border-start-start-radius: 8px; border-end-start-radius: 8px; }
+.ct .ct-goal-n:last-child { border-start-end-radius: 8px; border-end-end-radius: 8px; }
+.ct .ct-goal-n[aria-pressed="true"] { position: relative; border: 2px solid var(--text); border-radius: 8px; font-weight: 600; }
+.ct .ct-goal-n[aria-pressed="true"]::before { content: "\2713\00a0" / ""; }
+.ct .ct-jobs-legend { margin: 0; font-size: 13px; line-height: 19px; color: var(--text-secondary); }
+.ct .ct-jobs-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.ct .ct-job { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+.ct .ct-job:first-child { border-top: 0; }
+.ct .ct-jobs[data-mode="rows"] .ct-job { display: block; padding: 0; }
+.ct .ct-job-head { display: flex; align-items: center; gap: 10px; margin: 0; }
+.ct .ct-job-tile { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 7px; background: var(--text-secondary); }
+.ct .ct-job-tile .ct-job-icon { color: var(--surface); }
+.ct .ct-job[data-job="feeds_you"] { --ct-job: var(--role-food); }
+.ct .ct-job[data-job="feeds_soil"] { --ct-job: var(--role-soil); }
+.ct .ct-job[data-job="mulch"] { --ct-job: var(--role-mulch); }
+.ct .ct-job[data-job="ground"] { --ct-job: var(--role-ground); }
+.ct .ct-job[data-job="helpers"] { --ct-job: var(--role-helpers); }
+.ct .ct-job[data-job="shelter"] { --ct-job: var(--role-shelter); }
+.ct .ct-job .ct-job-tile { background: var(--ct-job, var(--text-secondary)); }
+.ct .ct-job-title { display: grid; font-size: 15px; }
+.ct .ct-job-title .ct-grid-count { font-size: 13px; }
+.ct .ct-job-body { display: grid; gap: 6px; min-width: 0; }
+.ct .ct-job-names { margin: 0; font-size: 14px; line-height: 20px; }
+.ct .ct-job-thin { margin: 0; font-size: 13px; line-height: 19px; }
+.ct .ct-job-holes { display: grid; gap: 6px; justify-items: end; }
+.ct .ct-job-holes .ct-hole-button { display: flex; align-items: center; gap: 12px; max-width: 270px; }
+/* A strip: the seven time spans, decorative (its words are the thin lines and the hole buttons). */
+.ct .ct-strip { display: flex; gap: 2px; }
+.ct .ct-strip-cell { display: inline-block; width: 18px; height: 8px; border: 1px solid var(--ct-job, var(--text)); border-radius: 1px; vertical-align: 1px; }
+.ct .ct-strip-cell[data-state="full"] { background: var(--ct-job, var(--text)); }
+.ct .ct-strip-cell[data-state="thin"] { background: linear-gradient(90deg, transparent 40%, var(--ct-job, var(--text)) 40%, var(--ct-job, var(--text)) 60%, transparent 60%); }
+.ct .ct-strip-cell[data-state="hole"] { border-style: dashed; border-color: var(--text-secondary); }
+.ct .ct-strip-cell[data-state="line"] { height: 1px; border-width: 1px 0 0; border-color: var(--text-secondary); vertical-align: 4px; }
+/* Past 40 plants: each job a row button opening its names and its holes in words. */
+.ct .ct-job-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; text-align: start; cursor: pointer; }
+.ct .ct-job-row strong { flex: 1; }
+.ct .ct-job-row .ct-grid-count { color: var(--text); font-weight: 600; }
+.ct .ct-job-row::after { content: ""; flex: none; width: 8px; height: 8px; margin: 0 4px 4px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.ct .ct-job-row[aria-expanded="true"]::after { margin-bottom: 0; margin-top: 4px; transform: rotate(-135deg); }
+.ct .ct-job-row .ct-job-icon { display: none; }
+.ct .ct-jobs[data-mode="rows"] .ct-job, .ct .ct-fit-line { border-top: 1px solid var(--border); }
+.ct .ct-job-open { display: grid; gap: 8px; padding: 0 0 12px; font-size: 14px; }
+.ct .ct-job-open[hidden] { display: none; }
+.ct .ct-job-open p { margin: 0; }
+
+/* Warnings (board MainMore): each group a badge in words, then the plants it names. */
+.ct .ct-warn-group { display: grid; gap: 4px; justify-items: start; }
+.ct .ct-warn-group h4 { margin: 0; padding: 1px 10px; border: 1px solid var(--warning-line); border-radius: 999px; background: var(--warning-bg); color: var(--warning); font-size: 13px; font-weight: 600; line-height: 20px; }
+.ct .ct-warn-group[data-warn="tox_severe"] h4, .ct .ct-warn-group[data-warn="tox_moderate"] h4 { border-color: var(--danger); background: none; color: var(--danger); }
+.ct .ct-warn-line { display: block; }
+.ct .ct-warn-group p { margin: 0; font-size: 14px; line-height: 20px; }
+.ct .ct-warnings h3 .ct-next-count { font-family: var(--font-sans); }
+/* Warnings and fit, past 40 plants: lines that add up, each a row button with its count. */
+.ct .ct-fit-line { padding: 0; }
+.ct .ct-fit-line .ct-fit-line { padding-inline-start: 14px; }
+.ct .ct-fit-line .ct-fit-line .ct-job-row strong { font-weight: 400; }
+.ct .ct-fit-mild { border-top: 2px solid var(--border-strong); }
+.ct .ct-fit-mild .ct-job-row strong { font-weight: 400; }
+
+/* Balance (board MainMore): things to weigh, each a line in bold and the plants it names. */
+.ct .ct-balance-sub { font-family: var(--font-sans); font-size: 15px; color: var(--text-secondary); }
+.ct .ct-balance-lines { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 20px; }
+.ct .ct-balance-lines p, .ct .ct-balance p { margin: 0; }
+
+/* The foot (board MainMore): saved on this device, Copy link · Print · Download. */
+.ct .ct-foot { display: grid; gap: 4px; justify-items: center; text-align: center; font-size: 13px; color: var(--text-secondary); }
+.ct .ct-foot-line { margin: 0; }
+.ct .ct-foot-line .ct-link { min-height: 44px; font-size: inherit; }
+.ct .ct-foot-said { margin: 0; min-height: 1lh; }
+
+/* Focus: a 2 px ring on every control of the pictures. */
+.ct .ct-chart :is(button, a):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Through the years: the time step chosen (on a phone, the one shown), with Earlier and Later. */
 .ct .ct-years { display: grid; gap: 10px; min-width: 0; }
@@ -104,20 +229,23 @@
 .ct .ct-stepper [aria-disabled="true"] { opacity: 0.55; cursor: default; }
 
 @media (min-width: 960px) {
-  .ct .ct-palette-body[data-pictures] { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); }
+  /* Warnings and Balance stand under the Next step, beside the pictures (board MainMore); the last
+     row takes the pictures' extra height, so nothing gapes between them. */
+  .ct .ct-palette-body[data-pictures] { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); grid-template-rows: auto auto 1fr; }
   .ct .ct-palette-body[data-pictures] > .ct-next { grid-column: 2; grid-row: 1; }
-  .ct .ct-palette-body[data-pictures] > .ct-palette-pictures { grid-column: 1; grid-row: 1; }
+  .ct .ct-palette-body[data-pictures] > .ct-palette-pictures { grid-column: 1; grid-row: 1 / span 3; }
+  .ct .ct-palette-body[data-pictures] > .ct-palette-side { grid-column: 2; grid-row: 2; }
 }
 
 @media (max-width: 639px) {
   .ct .ct-next { padding: 16px; }
+  /* The goal control under the intro on a phone (PFB17); the job rows in one column. */
+  .ct .ct-jobs-top { grid-template-columns: minmax(0, 1fr); }
+  .ct .ct-jobs-top > .ct-goal { grid-column: 1; grid-row: auto; flex-wrap: wrap; }
+  .ct .ct-job { grid-template-columns: minmax(0, 1fr); }
+  .ct .ct-job-holes { justify-items: stretch; }
+  .ct .ct-job-holes .ct-hole-button { max-width: none; }
+  .ct .ct-chart { padding: 12px; }
   /* Tap targets of 44 px on a phone (review r1 bugs-14). */
   .ct .ct-chip, .ct .ct-hole-button, .ct .ct-steps .ct-step, .ct .ct-other-holes summary { min-height: 44px; }
-  /* The table as blocks: each row a card, each cell named by its column, so nothing scrolls sideways. */
-  .ct .ct-chart-table, .ct .ct-chart-table tbody, .ct .ct-chart-table tr, .ct .ct-chart-table th, .ct .ct-chart-table td { display: block; width: auto; }
-  .ct .ct-chart-table thead { display: none; }
-  .ct .ct-chart-table tr { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; }
-  .ct .ct-chart-table th, .ct .ct-chart-table td { border: 0; border-top: 1px solid var(--border); }
-  .ct .ct-chart-table tr > :first-child { border-top: 0; }
-  .ct .ct-chart-table td::before { content: attr(data-col); display: block; font-size: 12.5px; color: var(--text-secondary); }
 }
