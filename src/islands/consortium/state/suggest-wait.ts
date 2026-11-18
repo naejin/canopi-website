@@ -100,7 +100,13 @@ export function requestSuggest(): void {
     store.retryVerdict();
   }
   const busy = lookups.peek() && !waited.peek();
-  if (!busy && store.suggestMembers()) { clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView(); return; }
+  if (!busy && store.suggestMembers()) {
+    clearTimeout(cap); unread.value = !!lookups.peek(); waited.value = false; store.view.value = 'matrix'; pendingSuggest.value = false; focusView();
+    // Board Loading "Suggested before the climate was read": the palette page says it (Place's note
+    // is not on screen there).
+    if (unread.peek()) store.showToast(T('location.unread'));
+    return;
+  }
   if (!pendingSuggest.peek()) cap = setTimeout(capped, suggestWaitMs());
   pendingSuggest.value = true;
 }

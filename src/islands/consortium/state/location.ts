@@ -153,12 +153,20 @@ const cellOf = (l: { climate: { cellLat: number; cellLon: number } | null }): st
 // already read stays in use on the page, in storage and as the country's source, and the line names it
 // ("still using …"); with none, the manual climate cards, with the line.
 // Counted in lookups.ts `lookups` (Suggest waits for it), whichever way it started (the map centre too).
+// The climate when the reader's ask began, set by the asks that wait before locate (the device's
+// position, the place search) with their lookup id: read only while that ask is still the live one.
+let asked: { id: number; climate: ReturnType<typeof store.climate.peek> } | null = null;
 export const locate = (lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}, fromTyped = false): Promise<void> =>
   looking(() => locateNow(lat, lon, source, label, extra, fromTyped));
 async function locateNow(lat: number, lon: number, source: LocationSource, label: string | undefined, extra: Partial<Line> = {}, fromTyped = false): Promise<void> {
+  const ask = asked && liveLookup(asked.id) ? asked : null;
+  asked = null;
   const id = nextLookup();
   lastAsk = () => locate(lat, lon, source, label, extra, fromTyped);
   batch(() => { clearStep(); line.value = { state: 'loading', ...extra }; });
+  // The climate when the reader asked (a device position or a search can take seconds before this
+  // read): one chosen since (by hand, or a pasted link's palette) is newer than this read and stays (P5-1c).
+  const before = ask ? ask.climate : store.climate.peek();
   const lookup = await unlessReplaced(read(lat, lon));
   if (!liveLookup(id) || lookup === undefined) return;
   if (!lookup) {
@@ -184,8 +192,8 @@ async function locateNow(lat: number, lon: number, source: LocationSource, label
   }, lookup.regions.isoA2);
   // The climate read is used at once (v13 Place; borderline: its own class's, the other one tap away;
   // polar: none), never over a climate kept for this same cell. A link's location never changes the
-  // link's climate.
-  if (sc.suggested && source !== 'link' && (!store.climate.peek() || !sameCell)) chooseClimate(sc.suggested);
+  // link's climate. Nor over a climate chosen while it was read (by hand, or a link's palette opened meanwhile).
+  if (sc.suggested && source !== 'link' && store.climate.peek() === before && !pendingLinkClimate.peek() && (!store.climate.peek() || !sameCell)) chooseClimate(sc.suggested);
   keepLocation(loc);
 }
 
@@ -235,6 +243,7 @@ export async function devicePosition(): Promise<{ at: Read; seconds: number }> {
 export async function useMyLocation(): Promise<void> {
   const id = nextLookup();
   lastAsk = useMyLocation;
+  asked = { id, climate: store.climate.peek() };
   batch(() => { clearStep(); asking.value = 'geo'; line.value = { state: 'loading' }; });
   const read = await unlessReplaced(devicePosition());
   if (!liveLookup(id) || !read) return;
@@ -265,6 +274,7 @@ export async function searchRead(q: string, read: CoordsRead): Promise<void> {
   if (read === 'bad') { nextLookup(); batch(() => { clearStep(); line.value = null; badCoords.value = query; }); return; }
   if (read) { await locate(read.lat, read.lon, 'map', undefined, {}, true); return; }
   const id = nextLookup();
+  asked = { id, climate: store.climate.peek() };
   lastAsk = () => searchRead(query, null);
   batch(() => { clearStep(); asking.value = 'search'; line.value = { state: 'loading', query }; });
   await unlessReplaced(searcher().search(query));
@@ -277,11 +287,12 @@ export async function searchRead(q: string, read: CoordsRead): Promise<void> {
   if (status === 'error') { line.value = { state: 'offline', query }; return; }
   if (!results.length) { line.value = { state: 'no-result', query, attribution }; return; }
   if (results.length > 1) { batch(() => { line.value = null; choices.value = { query, results, attribution }; }); return; }
-  await choose(results[0], { query, attribution });
+  await take(results[0], { query, attribution });
 }
-// One answer taken (the only one, or the grower's choice among several).
-export const choose = (r: PlaceSearchResult, extra: Partial<Line> = {}): Promise<void> =>
+// One answer taken: the only one (take, the search's ask), or the grower's choice among several (a new ask).
+const take = (r: PlaceSearchResult, extra: Partial<Line> = {}): Promise<void> =>
   locate(r.lat, r.lon, 'search', r.source === 'geocoder' ? placeName(r) : undefined, extra);
+export const choose = (r: PlaceSearchResult, extra: Partial<Line> = {}): Promise<void> => { asked = null; return take(r, extra); };
 
 // "Forget this location": the site, its suggestion, its country and the saved copy go. A link's
 // location goes alone: the reader's own saved location is not the link's to remove.
