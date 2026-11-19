@@ -429,3 +429,12 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-sheet:has(.ct-swap-head) h2 + p { margin: 2px 0 0; font-size: 14px; line-height: 20px; }
 .ct .ct-sheet .ct-swap-head { font-size: 14px; line-height: 20px; }
 .ct .ct-sheet .ct-swap-more { font-size: 13px; line-height: 18px; }
+
+/* The door to Details from a Your plants row (plants/Small.tsx, R14): the button holds only the plant's
+   name, so its accessible name is its text (WCAG 2.5.3); its stretched ::after covers the row
+   (.ct-plant-open is the positioned box), so the whole row stays one tap target, and the focus ring
+   is drawn round the row. Small's own class, kept here beside the sheet it opens. */
+.ct .ct-plant-go { padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ct .ct-plant-go::after { content: ''; position: absolute; inset: 0; }
+.ct .ct-plant-go:focus-visible { outline: none; }
+.ct .ct-plant-go:focus-visible::after { outline: 2px solid var(--focus); outline-offset: 2px; }

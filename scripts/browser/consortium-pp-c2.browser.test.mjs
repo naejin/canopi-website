@@ -394,3 +394,26 @@ test('PP-C47 (c2 h3 M47, pf-e#57, boards Many and ManyDesk): on the 200-plant Ke
   }
   await done(page);
 });
+
+// h3 R14 (axe label-content-name-mismatch, WCAG 2.5.3): a Your plants row's button is named by the words
+// it shows, so a voice user who says "click Chives" presses it. The button holds the plant's name; its
+// scientific name and detail lines follow it in the row as its description, and the whole row still opens Details.
+test('PP-C48 (c2 h3 R14, pf-e Small rows): each row button\'s accessible name is its visible text; its lines describe it; a tap on a line opens Details', async () => {
+  const page = await suggestedAt('seville', 'Mediterranean');
+  const BTN = '#ct-root .ct-plants-small [data-plant-id] button';
+  assert.ok(await has(page, BTN, 8000), 'the premise: Your plants in its small form');
+  const rows = await page.$$(BTN);
+  assert.ok(rows.length > 0);
+  for (const b of rows) {
+    const text = await b.evaluate((e) => e.textContent.replace(/\s+/g, ' ').trim());
+    const ax = await page.accessibility.snapshot({ root: b, interestingOnly: false });
+    assert.equal(ax?.name, text, `the button's name is its text ("${text}")`);
+    assert.ok(ax?.description && /\S/.test(ax.description), `the lines describe it (${ax?.description})`);
+  }
+  const id = await rows[0].evaluate((e) => e.closest('[data-plant-id]').dataset.plantId);
+  const line = `#ct-root .ct-plants-small [data-plant-id="${id}"] .ct-line`;
+  await page.$eval(line, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.click(line);
+  assert.ok(await has(page, DETAILS, 4000), 'a tap on a detail line opens Details');
+  await done(page);
+});
