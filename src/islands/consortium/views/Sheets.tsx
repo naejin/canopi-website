@@ -1,12 +1,17 @@
 /** @jsxImportSource preact */
-// The sheets' router, in the first run (E6 design check §3 K3, A6): store.sheet → the sheet's dialog
-// and frame (views/kit/sheet.tsx SheetDialog and SheetFrame, called only here) with the sheet's part
-// inside, and the toast under the tool. App.tsx renders it always.
+// The sheets' router, in the first run (E6 design check §3 K3, A6): the store's stack of open sheets
+// (store.sheets; store.sheet is its top) → one dialog per sheet, rendered bottom first, each with its
+// frame (views/kit/sheet.tsx SheetDialog and SheetFrame, called only here) and the sheet's part inside;
+// kit/sheet.tsx restacks the dialogs in the store's order. And the toast under the tool. App.tsx
+// renders it always.
 //
-// Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target): 'details'
-// and 'swap' take a plant id; 'find' opens through store.openFind(target?) with what it was opened
-// for (a hole: its job, the Hole and its test); 'paste' ("Paste a list") takes none. Nothing writes
-// store.sheet directly, so what one sheet was opened for never leaks into the next. Whatever had the
+// Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target, from):
+// 'details' and 'swap' take a plant id; 'find' opens through store.openFind(target?) with what it was
+// opened for (a hole: its job, the Hole and its test); 'paste' ("Paste a list") takes none; `from` names
+// the sheet it was opened from (a Details opened from Find's row says "‹ Back to results"). Details and
+// Swap go on top (over their own kind, in its place); Find and Paste replace the stack (store.ts
+// STACKS). Nothing writes store.sheets directly, so what
+// one sheet was opened for never leaks into the next. Whatever had the
 // focus when a sheet opened (a chip) gets it back when the sheet closes (Escape, Close, the backdrop, a
 // part that could not load); a chip that is gone by then is found again by `data-plant-id`, else the
 // toast's Undo takes the focus, else the shown view's heading.

@@ -78,9 +78,49 @@ async function findFromHole(page) {
   await hasFind(page);
 }
 
+// Find closed, then opened again plainly (no target), as a grower does from the palette.
+async function reopenFind(page) {
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  await openFind(page);
+  await hasFind(page);
+}
+
 // Paste (h3 hand-off G3).
 const PASTE = 'dialog[open] #ct-paste-text';
 const ADD_ALL = 'dialog[open] .ct-paste-foot .button-primary';
+// In one task: the box set to `text` (an input event), one frame (well inside the 200 ms pause), then
+// Add's label and aria-disabled and the Recognised head (null with no Recognised group), so no reading
+// lands between them; press: Add is then focused and pressed in the same task; watch (with press): then,
+// still in that task, Add's label in every frame the reading line shows until "N names read" says the
+// long text is read (c4 C2: the polling can never start after the slices land).
+const typeThenRead = (page, text, { press = false, watch = null } = {}) => page.evaluate(async (add, sel, v, go, until) => {
+  const el = document.querySelector(sel);
+  el.value = v;
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  await new Promise((r) => requestAnimationFrame(r));
+  const b = document.querySelector(add);
+  const out = { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled'), head: document.querySelector('dialog[open] [data-paste-group="rec"] .ct-paste-ghead span')?.textContent.trim() ?? null };
+  if (go) { b.focus(); b.click(); }
+  if (until) {
+    out.reading = [];
+    for (let i = 0; i < 1800; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      if (document.querySelector('dialog[open] [data-paste-reading]')) out.reading.push(b.textContent.trim());
+      if (new RegExp(until).test(document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '')) break;
+    }
+  }
+  return out;
+}, ADD_ALL, PASTE, text, press, watch?.source ?? null);
+// Add refused (nothing to add): the focus stays on Add, aria-disabled, never natively disabled; nothing
+// is added and the sheet stays open.
+async function addRefused(page, size) {
+  await frames(page);
+  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, disabled: b.disabled, aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
+  assert.deepEqual(add, { focused: true, disabled: false, aria: 'true' }, 'Add keeps the focus, aria-disabled');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+}
 const nonsense = (n, from = 0) => Array.from({ length: n }, (_, i) => `qzx${from + i}vk`);
 const openPaste = async (page) => {
   await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
@@ -605,10 +645,7 @@ test('PP-C43 (c1 fix B1+B5+B13 row content): fills, light, size, years; Add anyw
   const reason = await page.$eval(`${first} [data-find-fills]`, (e) => e.textContent).catch(() => '');
   assert.match(reason, /year|month|days/i, `its years, in its reason line (${reason})`);
   assert.doesNotMatch(meta, /\byear \d|\bmonth \d|first year/i, `the years said once (${meta})`);
-  await page.evaluate(() => window.__ctTest.store.closeSheet());
-  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-  await openFind(page);
-  await hasFind(page);
+  await reopenFind(page);
   await everyPlant(page);
   const out = `${FIND} [data-find-group="outside"] [data-find-row]`;
   assert.ok(await has(page, out, 4000), 'an outside row');
@@ -776,10 +813,7 @@ test('PP-C50 (c1 r3 T3+T14): the start lists its plants on asking; "Show N plant
   await page.click(`${FIND} [data-find-filters-show]`);
   assert.ok(await visible(page, `${FIND} [data-find-row]`), 'the plants are listed');
   assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${n} plants\\.`), 'the count line says the same');
-  await page.evaluate(() => window.__ctTest.store.closeSheet());
-  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-  await openFind(page);
-  await hasFind(page);
+  await reopenFind(page);
   await page.click('aria/Filters[role="button"]');
   await page.click(`${FIND} [data-find-filters-show]`);
   assert.ok(await visible(page, `${FIND} [data-find-row]`), '"Show N plants" lists them');
@@ -1026,15 +1060,32 @@ test('PP-C60 (c1 h3 M23, pf-e#4): a reading with nothing to add keeps the focus 
   await typeIn(page, PASTE, 'zzqx not a plant');
   await page.$eval(ADD_ALL, (b) => { b.focus(); b.click(); });
   assert.ok(await countSays(page, /^1 name read/), 'the premise: the line is read');
-  await frames(page);
-  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, disabled: b.disabled, aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
-  assert.deepEqual(add, { focused: true, disabled: false, aria: 'true' }, 'Add keeps the focus, aria-disabled');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
-  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+  await addRefused(page, size);
 });
 
-test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the last list\'s answers: the same line asks again, counted in "N to go"', async () => {
-  const page = await suggestedAt('lyon', 'Temperate');
+// The first choice of the question on `line` pressed, then "1 chosen, 1 to go." (`premise`).
+async function answerFirst(page, line, premise) {
+  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), line);
+  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), premise);
+}
+
+// The question on `line` asks again: no choice pressed, "0 chosen, 2 to go." (`counted`).
+async function asksAgain(page, line, why, counted) {
+  assert.deepEqual((await chipsOf(page, line)).filter((c) => c.on).map((c) => c.text), [], `"${line}" asks again${why}`);
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, counted);
+}
+
+// Select all, then one input of `inputType` puts `v` over the whole text (the browser's beforeinput,
+// then input).
+const replaceAll = (page, v, inputType) => page.$eval(PASTE, (el, x, type) => {
+  el.focus(); el.select();
+  el.dispatchEvent(new InputEvent('beforeinput', { inputType: type, bubbles: true, cancelable: true }));
+  el.value = x;
+  el.dispatchEvent(new InputEvent('input', { inputType: type, bubbles: true }));
+}, v, inputType);
+
+// Two genera of two plants or more pasted and read, the first answered ("1 chosen, 1 to go").
+async function genusAnswered(page) {
   const genera = await page.evaluate(() => {
     const s = window.__ctTest.store, m = new Set(s.members.value), by = new Map();
     for (const t of s.pool.value) { const g = t.canonical_name.split(' ')[0]; by.set(g, [...(by.get(g) ?? []), t]); }
@@ -1045,22 +1096,20 @@ test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the l
   await typeIn(page, PASTE, genera.join('\n'));
   await page.click('dialog[open] [data-paste-read]');
   assert.ok(await countSays(page, /^2 names read/), 'the first list read');
-  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
-  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered');
+  await answerFirst(page, genera[0], 'the premise: one answered');
+  return genera;
+}
+
+test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the last list\'s answers: the same line asks again, counted in "N to go"', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const genera = await genusAnswered(page);
   // Select all, paste a second list naming the same genus (the browser's beforeinput, then input).
-  await page.$eval(PASTE, (el, v) => {
-    el.focus(); el.select();
-    el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertFromPaste', bubbles: true, cancelable: true }));
-    el.value = v;
-    el.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', bubbles: true }));
-  }, `${genera[0]}\n${genera[1]}\nzzqx not a plant`);
+  await replaceAll(page, `${genera[0]}\n${genera[1]}\nzzqx not a plant`, 'insertFromPaste');
   assert.ok(await countSays(page, /^3 names read/), 'the second list read');
-  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again: no choice pressed for the new list`);
-  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go"');
+  await asksAgain(page, genera[0], ': no choice pressed for the new list', 'counted in "N to go"');
   // h3 r1 R2: select all, delete, then paste within the 200 ms pause (the paste lands on an empty box):
   // the box went empty, a new list, so the answer is forgotten too.
-  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
-  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered again');
+  await answerFirst(page, genera[0], 'the premise: one answered again');
   await page.$eval(PASTE, (el, v) => {
     el.focus(); el.select();
     el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true }));
@@ -1071,8 +1120,29 @@ test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the l
     el.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', bubbles: true }));
   }, `${genera[0]}\n${genera[1]}`);
   assert.ok(await countSays(page, /^2 names read/), 'the third list read');
-  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again after the delete and the paste`);
-  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go" again');
+  await asksAgain(page, genera[0], ' after the delete and the paste', 'counted in "N to go" again');
+});
+
+test('PP-C61b (c1 h3 M24, c4 C3 r2 R1.1): a new list typed over the whole old one (select all, then keys; an IME composing over it) forgets the last list\'s answers, as a paste does', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const genera = await genusAnswered(page);
+  // Select all, then type the same names by hand: the first key replaces the whole text (insertText),
+  // the box is never empty.
+  await page.$eval(PASTE, (el) => { el.focus(); el.select(); });
+  await page.keyboard.type(`${genera[0]}\n${genera[1]}\nzzqx not a plant`);
+  assert.ok(await countSays(page, /^3 names read/), 'the typed list read');
+  await asksAgain(page, genera[0], ': no choice pressed for the typed list', 'counted in "N to go"');
+  // An IME (or dictation) composing over the whole selection is a new list too.
+  await answerFirst(page, genera[0], 'the premise: one answered again');
+  await replaceAll(page, `${genera[0]}\n${genera[1]}`, 'insertCompositionText');
+  assert.ok(await countSays(page, /^2 names read/), 'the composed list read');
+  await asksAgain(page, genera[0], ' after the composition', 'counted in "N to go" after the composition');
+  // A key typed inside the list (not over all of it) keeps the answers (c4 R2).
+  await answerFirst(page, genera[0], 'the premise: answered once more');
+  await page.$eval(PASTE, (el) => { el.focus(); el.setSelectionRange(el.value.length, el.value.length); });
+  await page.keyboard.type('\nzzqx');
+  assert.ok(await countSays(page, /^3 names read/), 'the edited list read');
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^1 chosen, 1 to go\./, 'a key at the end keeps the answer');
 });
 
 test('PP-C62 (c1 h3 M25, pf-e#51; boards Paste, AddMany): "Which bean?" offers Common bean and Lima bean without their scientific names; a name several plants share ("sword bean": the release\'s two Sword beans, as board AddMany\'s Spanish cedars) gives each its scientific name; no two chips read the same', async () => {
@@ -1141,17 +1211,8 @@ test('PP-C65 (c1 h3 r1 R5, r2 B1, B2, C1, C3): up to 200 names Add counts the bo
   assert.match(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), /^Add 1 plant$/, 'the premise: "Add 1 plant"');
   // C3: the edit, the render (one frame, well inside the 200 ms pause), the label read and the press in
   // one task: the reading cannot land between them, and the count is the box's whichever way it does.
-  const seen = await page.evaluate(async (add, sel, v) => {
-    const el = document.querySelector(sel);
-    el.value = v;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise((r) => requestAnimationFrame(r));
-    const b = document.querySelector(add);
-    const out = { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
-    b.click();
-    return out;
-  }, ADD_ALL, PASTE, `${two[0].name}\n${two[1].name}`);
-  assert.deepEqual(seen, { label: 'Add 2 plants', aria: null }, 'the box\'s count at once (board "Add N plants"), a press that runs');
+  const { label, aria: off } = await typeThenRead(page, `${two[0].name}\n${two[1].name}`, { press: true });
+  assert.deepEqual({ label, aria: off }, { label: 'Add 2 plants', aria: null }, 'the box\'s count at once (board "Add N plants"), a press that runs');
   assert.ok(await page.waitForFunction((ids) => ids.every((id) => window.__ctTest.store.members.value.includes(id)), { timeout: 4000 }, two.map((t) => t.id)).then(() => true, () => false), 'both plants of the box added');
 });
 
@@ -1162,14 +1223,7 @@ test('PP-C66 (c1 h3 r2 B1, B2): up to 200 names a box with nothing new says "Add
   const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await openPaste(page);
   // One task each: the text, a frame, the label (B1: never a press that does nothing unsaid).
-  const at = (v) => page.evaluate(async (add, sel, text) => {
-    const el = document.querySelector(sel);
-    el.value = text;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise((r) => requestAnimationFrame(r));
-    const b = document.querySelector(add);
-    return { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
-  }, ADD_ALL, PASTE, v);
+  const at = async (v) => { const { label, aria: off } = await typeThenRead(page, v); return { label, aria: off }; };
   assert.deepEqual(await at('xyzzy'), { label: 'Add 0 plants', aria: 'true' }, 'a name not found: nothing to add, said at once');
   assert.deepEqual(await at(member), { label: 'Add 0 plants', aria: 'true' }, 'a plant already in: nothing to add, said at once');
   await page.$eval(ADD_ALL, (b) => b.click());
@@ -1194,36 +1248,122 @@ test('PP-C66 (c1 h3 r2 B1, B2): up to 200 names a box with nothing new says "Add
   assert.deepEqual(labels, Array(5).fill('Add 3 plants'), `the label holds while the count holds (${labels.join(' | ')})`);
 });
 
+// T4 (chunk 4; h3 G3#1, G3#2; word-map R14 "the head's new is what Add adds"): up to 200 names the
+// paste is read once, as it is typed: the Recognised head's "N new" and Add's "Add N plants" come from
+// the same reading in every frame, the pause after typing included.
+test('PP-C69 (c1 chunk 4 T4; R14): a fourth name typed under "Recognised: 3 new": in the next frame the head and Add say the same N', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const four = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 4).map((t) => t.canonical_name); });
+  await openPaste(page);
+  await typeIn(page, PASTE, four.slice(0, 3).join('\n'));
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^3 names read/), 'the premise: three names read');
+  const newOf = (head) => Number(/(\d+) new/.exec(head ?? '')?.[1] ?? NaN);
+  const before = await typeThenRead(page, four.slice(0, 3).join('\n'));
+  assert.deepEqual([newOf(before.head), before.label], [3, 'Add 3 plants'], `the premise: "${before.head}" and "${before.label}"`);
+  const seen = await typeThenRead(page, four.join('\n'));
+  assert.equal(`${newOf(seen.head)} new · ${seen.label}`, `4 new · Add 4 plants`, `the head ("${seen.head}") and Add ("${seen.label}") from one reading`);
+  // The other way: a line deleted.
+  const back = await typeThenRead(page, four.slice(0, 2).join('\n'));
+  assert.equal(`${newOf(back.head)} new · ${back.label}`, `2 new · Add 2 plants`, `after a delete, the head ("${back.head}") and Add ("${back.label}") agree`);
+});
+
+// T8 (chunk 4; h3 G4#2): a sheet closed by Escape whose dialog is shown again before its `close` event
+// fires (a part's frame replacing the loading frame in that one-task gap calls showModal) is still
+// closed: only the closes the restack itself makes are not closes.
+test('PP-C70 (c1 chunk 4 T8): Escape on a sheet whose frame re-shows the dialog before "close" fires still closes it; the store forgets the sheet', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await openPaste(page);
+  // Escape closes the dialog at once and queues `close`; the new frame's showModal runs in the same task.
+  await page.$eval('dialog[open]', (d) => { d.close(); d.showModal(); });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheets.value.length === 0 && !document.querySelector('dialog[open]'), { timeout: 3000 }).then(() => true, () => false),
+    `the sheet closed (${await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind).join(', '))} still open)`);
+});
+
 test('PP-C67 (c1 h3 r2 B1, C1): past 200 names Add pressed while the text reads keeps the last reading\'s "Add N plants" (no count-free label); with nothing new it adds nothing, the focus stays on "Add 0 plants" (aria-disabled) and the sheet stays open', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const member = await page.evaluate(() => { const s = window.__ctTest.store; return s.pool.value.find((t) => s.members.value.includes(t.id)).canonical_name; });
   const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await openPaste(page);
-  // The text and the press in one task, then every frame until the reading lands.
-  const seen = await page.evaluate(async (add, sel, v) => {
-    const el = document.querySelector(sel);
-    el.value = v;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise((r) => requestAnimationFrame(r));
-    const b = document.querySelector(add);
-    b.focus(); b.click();
-    const labels = new Set();
-    for (let i = 0; i < 1800; i++) {
-      await new Promise((r) => requestAnimationFrame(r));
-      const reading = document.querySelector('dialog[open] [data-paste-reading]');
-      if (reading) labels.add(b.textContent.trim());
-      if (/^300 names read/.test(document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '')) break;
-    }
-    return [...labels];
-  }, ADD_ALL, PASTE, [...nonsense(299), member].join('\n'));
+  // The text, the press and every frame until the reading lands, in one task (C2).
+  const { reading: seen } = await typeThenRead(page, [...nonsense(299), member].join('\n'), { press: true, watch: /^300 names read/ });
   assert.ok(await countSays(page, /^300 names read/), 'the premise: the 300 names read');
+  assert.ok(seen.length > 0, 'the premise: Add\'s label read in at least one frame while the reading line showed');
   assert.ok(seen.every((l) => /^Add \d+ plants?$/.test(l)), `while it reads, the board's "Add N plants" only (${seen.join(' | ')})`);
-  await frames(page);
   await new Promise((r) => setTimeout(r, 300));
-  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
-  assert.deepEqual(add, { focused: true, label: 'Add 0 plants', aria: 'true' }, 'nothing new: said on Add, which keeps the focus');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
-  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+  await addRefused(page, size);
+  assert.equal(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), 'Add 0 plants', 'nothing new: said on Add');
+});
+
+// Chunk 4 fix round 1 (C3 group): the reading announced once typing pauses (R1), answers kept through
+// a passing edit (R2), the reading just shown kept when the box crosses 200 names (R3).
+test('PP-C71 (c1 c4 R1): five keys typed within 200 ms change the count line on screen at each name, while the sheet\'s live region changes at most once; no heading inside a live region', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const two = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 2).map((t) => t.canonical_name); });
+  await openPaste(page);
+  await typeIn(page, PASTE, `${two.join('\n')}\n`);
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^2 names read/), 'the premise: two names read');
+  await new Promise((r) => setTimeout(r, 400));
+  const out = await page.evaluate(async (sel, base) => {
+    const d = document.querySelector('dialog[open]'), el = document.querySelector(sel);
+    const live = () => [...d.querySelectorAll('[role="status"], [aria-live]:not([aria-live="off"])')];
+    const text = () => live().map((r) => r.textContent.replace(/\s+/g, ' ').trim()).join(' | ');
+    const said = [text()], counts = [];
+    const obs = new MutationObserver(() => { const t = text(); if (t !== said.at(-1)) said.push(t); });
+    obs.observe(d, { subtree: true, childList: true, characterData: true, attributes: true });
+    let v = base;
+    for (const ch of 'a\nb\nc') {
+      v += ch;
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => requestAnimationFrame(r));
+      counts.push(d.querySelector('[data-paste-count] strong')?.textContent.trim());
+    }
+    await new Promise((r) => setTimeout(r, 600));
+    obs.disconnect();
+    return { said, counts: [...new Set(counts)], headings: live().reduce((n, r) => n + r.querySelectorAll('h1, h2, h3, h4, button').length, 0) };
+  }, PASTE, `${two.join('\n')}\n`);
+  assert.ok(out.counts.length >= 3, `the premise: the count line on screen follows each name (${out.counts.join(' | ')})`);
+  assert.ok(out.said.length <= 2, `the live region changes at most once (${out.said.join(' → ')})`);
+  assert.match(out.said.at(-1), /5 names read/, 'what it says is the reading once typing paused');
+  assert.equal(out.headings, 0, 'no heading or button inside a live region (PFC39 R8)');
+});
+
+test('PP-C72 (c1 c4 R2): an answer survives a passing edit: a line merged into the next and restored keeps its choice, "1 chosen, 1 to go" holds', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const genera = await genusAnswered(page);
+  const before = (await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text);
+  // Backspace at the start of the second line (the two lines merge), a frame, then undone.
+  await page.evaluate(async (sel, merged, back) => {
+    const el = document.querySelector(sel);
+    for (const v of [merged, back]) {
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+  }, PASTE, genera.join(''), genera.join('\n'));
+  await frames(page);
+  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), before, `"${genera[0]}" keeps its choice`);
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^1 chosen, 1 to go\./, 'still one chosen');
+});
+
+test('PP-C73 (c1 c4 R3): a 199th name typed, then within 200 ms the box pushed past 200 names: the reading just shown stays (its "Add 1 plant") until the slices land, never an older one', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const plant = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.find((x) => !m.has(x.id)).canonical_name; });
+  await openPaste(page);
+  const base = nonsense(198).join('\n');
+  await typeIn(page, PASTE, base);
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^198 names read/), 'the premise: 198 names read');
+  await new Promise((r) => setTimeout(r, 400));
+  const typed = await typeThenRead(page, `${base}\n${plant}`);
+  assert.equal(typed.label, 'Add 1 plant', 'the premise: the 199th name read at once');
+  const past = await typeThenRead(page, `${base}\n${plant}\n${nonsense(5, 500).join('\n')}`);
+  assert.equal(past.label, 'Add 1 plant', `past 200 names the reading just shown stays (${past.label})`);
+  assert.ok(await countSays(page, /^204 names read/), 'the slices land');
+  assert.equal(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), 'Add 1 plant');
 });
 
 test('PP-C68 (c1 h3 r2 B4; W4): "Add anyway" on the last row shown of a folded Recognised list moves the focus forward to its "Show N more", where the next guest is, never back up the sheet', { timeout: 60_000 }, async () => {

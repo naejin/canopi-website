@@ -42,7 +42,7 @@
 // together), so a hostile link cannot block the page; the rest are counted as unknown. Decoding never
 // throws: a token list that stops mid-token, a guest list given twice or a missing e=1 is a cut link,
 // read as unreadable.
-import type { ClimateZone, DecodedLink, LinkNotice, PeriodId, PlantId, ShareState, SiteEdits, SiteLookup, Watering } from './types.ts';
+import type { ClimateZone, DecodedLink, LinkNotice, PlantId, ShareState, SiteEdits, SiteLookup, Watering } from './types.ts';
 import { TODAY_PERIOD } from './source.ts';
 import { DEFAULT_GOALS, NO_EDITS, plantsPerJobOf, siteEditsOf } from './site-inputs.ts';
 import { periodIds, roomValues } from './types.ts';
