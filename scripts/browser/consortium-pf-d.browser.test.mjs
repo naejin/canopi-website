@@ -1,10 +1,16 @@
 // pf stream d, "Your place in figures" (chunk 3; v14 spec section 2 'pf-d', section 3): the boards
 // SiteKiambu, PlaceDesk and SiteMendoza (the panel, "What limits plants here", the Watering line, the
 // "Water" card) and the change-summary toasts, as tests, with the failure rows F1-F7, F9-F11 and F28
-// (reported only) of section 5 and the section 6 neighbours at 320, 390, 960 and 1280 (PFD31). Each case was opened marked expected-fail under pf-d (scripts/expect-fail.mjs
-// failing(), its reason the board's first missing word, pf-helpers.mjs BOARD) in pf-d's commit 0 and
-// lost its marker in the commit that made it pass (pf-d commit 1: all eight). Board figures come from the engine on the
-// installed release (pf-d-helpers.mjs engineCounts, the store's own inputs), never a board number.
+// (reported only) of section 5 and the section 6 neighbours at 320, 390, 960 and 1280. Board figures
+// come from the engine on the installed release (pf-d-helpers.mjs engineCounts and engineSides call the
+// core's lineCounts, limitStatus and rangeMoves on the page's own verdicts), never a board number.
+// Cases by round (each opened marked expected-fail under pf-d with scripts/expect-fail.mjs failing(),
+// and unmarked in the commit that made it pass):
+//   commit 0 and commit 1: PFD1-PFD8 (the boards);
+//   fix round 1: batch 1 PFD9-PFD14, batch 2 PFD15-PFD19, batch 3 PFD20-PFD31, batch 4 PFD32-PFD36;
+//   fix round 2, batch 1: PFD37-PFD40 (R2/C2, R4, R5, R7).
+// One marker is left: PFD32 is expected-fail until main's chunk-3 hand-off makes state/location.ts read
+// the soil tile ({ soil: true }, review C4); it loses its marker in that merge.
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries none: the panel is new (spec: "Delete: nothing; the 'Soil, likely' card and 'Tell us about
@@ -157,8 +163,8 @@ test('PFD5 (pf-d SiteMendoza at 390): "What limits plants here" with only the li
   for (const w of ['Rain a year', 'Counts are of the Arid list', 'The main limit here.', `${c[0].drier} of the ${c[0].fit} plants that fit your climate are recorded only where it is wetter than here`, 'Watering']) assert.ok(text.includes(w), `board: "What limits plants here" says "${w}"`);
   // Which other lines limit comes from the engine (A5: every line that limits is shown, the others said
   // as "Not a limit here"); the board's Mendoza slots had the rain alone.
-  const e = await engineSides(page), most = (f) => Math.max(...e.sides.map(f));
-  const nights = most((x) => x.cold.outside + x.mild.outside), heat = most((x) => x.hot.outside) + most((x) => x.cool.outside);
+  const { status } = await engineSides(page);
+  const nights = status.nights.n, heat = status.days.n + status.warmth.n;
   const shown = await sectionBy(page, 'What limits plants here', (s) => [...s.querySelectorAll('[role="group"][aria-label]')].map((g) => g.getAttribute('aria-label')));
   assert.equal(shown.includes('Coldest nights'), nights > 0, `A5: the nights line shown only when it limits (${nights} outside; lines ${JSON.stringify(shown)})`);
   assert.equal(shown.includes('Hottest days'), heat > 0, `A5: the hottest days line shown only when it limits (${heat} outside; lines ${JSON.stringify(shown)})`);
@@ -217,7 +223,7 @@ test('PFD8 (pf-d F6): the verdict chunk failed: the edit is kept, the toast read
 
 // ---- fix round 1, batch 1 (review findings BC1-BC14) ----
 
-test('PFD9 (pf-d BC1, BC2, BC7, BC9, BC12; SiteKiambu "The rows with your value" at 390): closed rows "26 → 28 °C · (pin) climate map"; after 2 °C colder the opened Hottest days row says warmth over the year from the cool side only, "with your values", and the heat-edge count, with no take-it sentence; its periods "24 °C" over "map 26"; Reset is the ochre link', async () => {
+test('PFD9 (pf-d BC1, BC2, BC7, BC9, BC12; SiteKiambu "The rows with your value" at 390): closed rows "26 → 28 °C · (pin) climate map"; after 2 °C colder the opened Hottest days row says warmth over the year from the cool side only, "with your values", and the heat-edge count with no take-it sentence, or (heat limiting in a later period, R2) the take-it counts; its periods "24 °C" over "map 26"; Reset is the ochre link', async () => {
   const page = await placeStep('kiambu-8', { width: 390 });
   await section(page, 'Your place in figures', 20_000);
   const i0 = await inputs(page);
@@ -235,12 +241,15 @@ test('PFD9 (pf-d BC1, BC2, BC7, BC9, BC12; SiteKiambu "The rows with your value"
   const e = await engineSides(page);
   const a = e.sides[0];
   const row = await lineText(page, 'Hottest days');
-  assert.ok(!row.includes('take it today'), `board: no take-it sentence where heat is not a limit ("${row}")`);
+  // Heat limits when a plant is outside on the hot side in any period (core limitStatus, R2): then the
+  // row says how many take it in each period; else no take-it sentence (the board's Kiambu rows).
+  if (e.status.days.state === 'limits') assert.match(row, /take it today, \d+ by 2041–2070, \d+ by 2071–2099/, `R2: heat limits by ${e.status.days.period}: the row says the counts ("${row}")`);
+  else assert.ok(!row.includes('take it today'), `board: no take-it sentence where heat is not a limit ("${row}")`);
   const cool = a.cool.outside + a.cool.edge;
   assert.ok(row.includes(`A smaller limit here: ${cool} of the ${e.of} want more warmth over the year`), `board: the cool side only, ${cool} ("${row}")`);
   assert.match(row, /\(\d+\.\d °C today with your values\)/, 'board: "with your values" when shifts apply');
   assert.ok(row.includes(`: ${a.cool.outside} are outside their range, ${a.cool.edge} near its edge.`), `board: ${a.cool.outside} outside, ${a.cool.edge} near the edge ("${row}")`);
-  if (a.hot.edge) assert.ok(row.includes(a.hot.edge === 1 ? '1 is near its heat limit.' : `${a.hot.edge} are near their heat limit.`), `board: the heat-edge count ${a.hot.edge} ("${row}")`);
+  if (a.hot.edge && e.status.days.state !== 'limits') assert.ok(row.includes(a.hot.edge === 1 ? '1 is near its heat limit.' : `${a.hot.edge} are near their heat limit.`), `board: the heat-edge count ${a.hot.edge} ("${row}")`);
   const i = await inputs(page);
   assert.ok(row.includes(`Today ${Math.round(i.days.value)} °C map ${Math.round(i.days.map)}`), `board: "${Math.round(i.days.value)} °C" over "map ${Math.round(i.days.map)}" ("${row}")`);
   await done(page);
@@ -260,7 +269,8 @@ test('PFD10 (pf-d BC3, BC4, BC8; PlaceDesk at 1280, SiteKiambu): the drainage li
   assert.ok((await lineText(page, 'The ground after heavy rain')).includes('Your answer in place of the soil map’s clay loam'), 'board: the answer in place of the texture');
   const bar = await page.evaluate((t) => {
     const panel = document.querySelector('main section[aria-label="Your place in figures"]');
-    const el = [...panel.querySelectorAll('[role="status"]')].find((x) => x.textContent.replace(/\s+/g, ' ').includes(t.slice(0, 40)));
+    const bar = [...panel.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo')?.parentElement;
+    const el = bar && bar.textContent.replace(/\s+/g, ' ').includes(t.slice(0, 40)) ? bar : null;
     if (!el) return null;
     const undo = [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo');
     const probe = document.createElement('span'); probe.style.color = 'var(--text)'; el.appendChild(probe);
@@ -269,7 +279,7 @@ test('PFD10 (pf-d BC3, BC4, BC8; PlaceDesk at 1280, SiteKiambu): the drainage li
   }, text);
   assert.ok(bar, 'board: the summary stands under the panel head');
   assert.ok(bar.undo && bar.headAbove && bar.bg === bar.ink, `board: the dark bar with Undo under the head (${JSON.stringify(bar)})`);
-  await page.evaluate(() => [...document.querySelector('main section[aria-label="Your place in figures"] [role="status"]').querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo').click());
+  await page.evaluate(() => [...document.querySelector('main section[aria-label="Your place in figures"]').querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo').click());
   assert.ok(await page.waitForFunction(() => !window.__ctTest.store.siteEdits.value.drainage, { timeout: 4000 }).then(() => true, () => false), 'board: the bar\'s Undo puts the answer back');
   await done(page);
 });
@@ -310,10 +320,9 @@ test('PFD12 (pf-d BC13, BC14; SiteKiambu, PlaceDesk): the nights line says "(low
   await section(page, 'Your place in figures', 20_000);
   const e = await engineSides(page);
   await says(page, `${e.sides[0].cold.outside} want warmer nights (lowland tropical plants), ${e.sides[0].mild.outside} are recorded only where winters are colder`);
-  const top = Object.entries(e.drops).sort((x, y) => y[1] - x[1])[0]?.[0];
-  assert.equal(top, 'mild', 'engine: at Kiambu most drop out on the mild side');
+  assert.equal(e.moves.dropSide, 'mild', 'engine: at Kiambu most drop out on the mild side');
   await says(page, 'Most that drop out are recorded only where winters are colder.');
-  const names = await namesOf(page, e.arrivals);
+  const names = await namesOf(page, e.moves.arrivals);
   assert.ok(names.length >= 2, 'engine: plants come into range by 2041–2070');
   const m = /Lowland tropical plants that want more warmth, like (.+?) and (.+?), come into range by 2041–2070\./.exec(await sectionText(page, 'Your place in figures'));
   assert.ok(m, 'board: the plants that come into range');
@@ -323,10 +332,10 @@ test('PFD12 (pf-d BC13, BC14; SiteKiambu, PlaceDesk): the nights line says "(low
   await atBoardPlace(sev, 'seville-board');
   await section(sev, 'Your place in figures', 20_000);
   const s = await engineSides(sev);
-  const t0 = s.sides[0], nightsFree = !t0.cold.outside && !t0.mild.outside && !t0.cool.outside;
+  const nightsFree = s.status.nights.state === 'free' && s.status.warmth.state === 'free';
   const nights = await lineText(sev, 'Coldest nights');
   if (nightsFree) assert.ok(nights.includes('Not a limit for this list, nor is warmth over the year, which is worked out from these two lines. Frosts still happen.'), `board: the not-a-limit sentence ("${nights}")`);
-  else assert.ok(!nights.includes('nor is warmth over the year'), 'engine: a plant is outside on the night or warmth side today, so the sentence would be false');
+  else assert.ok(!nights.includes('nor is warmth over the year'), 'engine: the nights or the warmth limit plants in some period, so the sentence would be false');
   assert.ok(!/0 want warmer nights, 0 are recorded/.test(nights), 'board: never zero counts in place of the sentence');
   const meaning = await sectionText(sev, 'Your place in figures');
   assert.ok(meaning.includes('What it means for your choice. Summer heat decides. A tree planted today is still young in 2041: look at your palette in 2041–2070 before you plant the long-lived ones.'), `board: Seville's heat form ("${meaning.slice(meaning.indexOf('What it means'), meaning.indexOf('What it means') + 160)}")`);
@@ -520,7 +529,7 @@ const de = JSON.parse(readFileSync(new URL('../../src/i18n/translations/de.json'
 // The panel's status bar under its head (the change summary with its Undo), its text or null.
 const headSummary = (page) => page.evaluate(() => {
   const panel = document.querySelector('main section[aria-label="Your place in figures"]');
-  const el = panel && [...panel.querySelectorAll('[role="status"]')].find((x) => [...x.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Undo'));
+  const el = panel && [...panel.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo')?.parentElement;
   return el ? el.innerText.replace(/\s+/g, ' ').trim() : null;
 });
 // The toast's Undo, pressed as the grower does (the store's toast line holds it).
@@ -908,6 +917,113 @@ test('PFD36 (pf-d C10, A3, F9; SiteKiambu at 390): the room "Pots or a balcony" 
   assert.equal(await pressed(page, 'Pots or brought-in soil', 'Pots or brought-in soil'), 'true', 'A3: the room\'s answer is pressed in place');
   await tapOption(page, 'Pots or brought-in soil', 'In the ground');
   assert.equal((await edits(page)).pots, false, 'A3: one tap writes the answer');
+  await done(page);
+});
+
+// ---- fix round 2, batch 1 (review findings R2, R4, R5, R7; C2) ----
+
+// Shifts a climate line by the smallest whole or half degree (up to 10 °C) at which the engine says it
+// limits only in a later period (core limitStatus: outside nobody today, someone later); null if none.
+async function laterOnly(page, field, line, sign) {
+  for (let k = 1; k <= 20; k++) {
+    const shift = sign * k / 2;
+    await page.evaluate(([f, v]) => window.__ctTest.store.setSiteEdits({ [f]: v }, 'Edits set'), [field, shift]);
+    await page.waitForFunction(([f, v]) => window.__ctTest.store.siteEdits.value[f] === v && !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 }, [field, shift]);
+    const { status } = await engineSides(page);
+    if (status[line].state === 'limits' && status[line].today === 0) return { shift, status };
+  }
+  return null;
+}
+test('PFD37 (pf-d R2, C2): a line that limits plants only by a later period is listed under "What limits plants here" and its row says why (the later counts), never "Not a limit for this list"; the panel says the same', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  // Mendoza: nobody is outside on the hot side; hotter days put plants past their heat limit later first.
+  const found = await laterOnly(page, 'daysShiftC', 'days', 1);
+  assert.ok(found, 'engine: a warmer-days shift at which the hottest days limit only later');
+  const rows = await sectionBy(page, 'What limits plants here', (s) => [...s.querySelectorAll('[role="group"][aria-label]')].map((g) => g.getAttribute('aria-label')));
+  assert.ok(rows.includes('Hottest days'), `A5: the hottest days limit by ${found.status.days.period}, so the card lists them (${JSON.stringify(rows)})`);
+  const card = await sectionBy(page, 'What limits plants here', (s) => s.querySelector('[role="group"][aria-label="Hottest days"]').innerText.replace(/\s+/g, ' '));
+  assert.ok(!card.includes('Not a limit for this list'), `R2: the listed row never says "Not a limit" ("${card}")`);
+  assert.match(card, /take it today, \d+ by 2041–2070, \d+ by 2071–2099/, `R2: the row says the later counts ("${card}")`);
+  await page.evaluate(() => { window.__ctTest.store.view.value = 'start'; });
+  await section(page, 'Your place in figures', 20_000);
+  if (found.status.days.n >= Math.max(found.status.nights.n, found.status.warmth.n, found.status.rain.n)) assert.equal(await expanded(page, 'Hottest days'), 'true', 'R2: the main limit opens first');
+  else await press(page, 'button', 'Hottest days');
+  const row = await lineText(page, 'Hottest days');
+  assert.ok(!row.includes('Not a limit for this list'), `R2: the panel row agrees ("${row}")`);
+  await done(page);
+});
+
+test('PFD38 (pf-d R4): the summary under the panel head holds the toast while the focus is on its Undo, is no second live region, and after its Undo the focus goes to the edited line\'s Change', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await twoColder(page);
+  // From here the toast runs 300 ms each time it is armed (the test build's hook).
+  await page.evaluate(() => { window.__ctTimeouts = { ...(window.__ctTimeouts ?? {}), toast: 300 }; });
+  const live = await page.evaluate(() => {
+    const panel = document.querySelector('main section[aria-label="Your place in figures"]');
+    const undo = [...panel.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Undo');
+    if (!undo) return null;
+    undo.focus();
+    return !!undo.closest('[role="status"], [aria-live]');
+  });
+  assert.equal(live, false, 'R4: the summary under the head is no live region (the toast announces it once)');
+  // A later text on the same toast re-arms its timer unless the toast is held (store updateToast).
+  await page.evaluate(() => { const t = window.__ctTest.store.toast.value; window.__ctTest.store.updateToast(t.id, t.text); });
+  await new Promise((r) => setTimeout(r, 900));
+  assert.ok(await headSummary(page), 'R4: past the toast\'s time, the summary stays while the focus is on its Undo');
+  assert.ok(await page.evaluate(() => !!window.__ctTest.store.toast.value), 'R4: the toast is held too');
+  await page.keyboard.press('Enter');
+  assert.ok(await page.waitForFunction(() => !window.__ctTest.store.siteEdits.value.nightsShiftC, { timeout: 4000 }).then(() => true, () => false), 'R4: its Undo puts the edit back');
+  assert.ok(await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Change coldest nights', { timeout: 4000 }).then(() => true, () => false), `R4: the focus goes to the line's Change (on ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 80))})`);
+  await done(page);
+});
+
+test('PFD39 (pf-d R5): the Water card\'s lead says only the parts that are there: today only, or none today and the later ones, never "0 more"', async () => {
+  const page = await mendoza({ width: 390 });
+  await section(page, 'What limits plants here', 20_000);
+  // Each member's first period drier here than its recorded band, from the engine (none: never).
+  const firsts = await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, ms = s.memberTaxa.value;
+    const drier = (v) => !!v && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
+    const ps = ['1991-2020', '2041-2070', '2071-2099'], vs = ps.map((p) => rule.verdicts(ms, { ...s.verdictContext.value, period: p }));
+    return ms.map((t) => [t.id, ps[vs.findIndex((m) => drier(m.get(t.id)))] ?? null]);
+  });
+  const now = firsts.find(([, p]) => p === '1991-2020')?.[0], later = firsts.find(([, p]) => p && p !== '1991-2020'), never = firsts.find(([, p]) => !p)?.[0];
+  assert.ok(now && later && never, `engine: Mendoza's members are drier today, later and never (${JSON.stringify(firsts)})`);
+  const lead = async (ids) => {
+    await page.evaluate((x) => { window.__ctTest.store.members.value = x; }, ids);
+    await page.waitForFunction((n) => window.__ctTest.store.memberTaxa.value.length === n && !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 }, ids.length);
+    return page.waitForFunction(() => {
+      const s = [...document.querySelectorAll('main section')].find((x) => x.querySelector('h2')?.textContent.trim() === 'Water');
+      return s ? [...s.querySelectorAll('p')].map((p) => p.innerText.replace(/\s+/g, ' ').trim()).find((t) => t.startsWith('With rain only')) ?? null : null;
+    }, { timeout: 20_000 }).then((h) => h.jsonValue());
+  };
+  assert.equal(await lead([now, never]), 'With rain only, 1 of your 2 plants may need watering today:', 'R5: today only, no "0 more"');
+  assert.equal(await lead([later[0], never]), `With rain only, none of your 2 plants needs watering today; 1 more by ${later[1].replace('-', '–')}:`, 'R5: later only, never "0 of your 2"');
+  await done(page);
+});
+
+test('PFD40 (pf-d R7): two equal shifts set on their own lines are two values: Reset on Hottest days puts back the hottest days only', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await tap(page, 'Change coldest nights');
+  await typeAt(page, '2');
+  await page.evaluate(() => { const c = document.querySelector('main fieldset input[type="checkbox"]'); if (c.checked) c.click(); });
+  await tap(page, 'Use my value');
+  await summary(page);
+  assert.deepEqual(await edits(page), { nightsShiftC: -2 }, 'the tick off: the nights alone');
+  const id = await toastId(page);
+  await tap(page, 'Change hottest days');
+  await typeAt(page, '2');
+  await tap(page, 'Use my value');
+  await nextSummary(page, id);
+  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2 }, 'the days set on their own line');
+  const id2 = await toastId(page);
+  await tap(page, 'Reset hottest days to the climate map');
+  const back = await nextSummary(page, id2);
+  assert.deepEqual(await edits(page), { nightsShiftC: -2 }, 'R7: Reset on Hottest days keeps the nights');
+  assert.match(back, /^Hottest days back to the climate map/, `R7: the summary names the hottest days only ("${back}")`);
   await done(page);
 });
 

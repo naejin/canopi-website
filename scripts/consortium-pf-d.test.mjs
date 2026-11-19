@@ -98,7 +98,7 @@ test('BC1: "want more warmth over the year" counts the cool side only; summer wa
   const today = map({ a: v('outside', [f('cool', 'outside')]), b: v('look', [f('cool', 'look')]), c: v('outside', [f('summer', 'outside')]), d: v('look', [f('summer', 'look')]) });
   const c = core.lineCounts(list, { [P[0]]: today });
   assert.deepEqual(core.warmthOf(c.periods[0]), { outside: 1, edge: 1 });
-  assert.deepEqual(core.limitsOf(c).find((l) => l.line === 'warmth'), { line: 'warmth', n: 1 });
+  assert.deepEqual(core.limitsOf(c).find((l) => l.line === 'warmth'), { line: 'warmth', n: 1, period: P[0] });
 });
 
 test('BC13: rangeMoves: the side most of the dropping plants leave on, and the plants wanting more warmth that come into range by 2041–2070 (crops first)', () => {
@@ -115,11 +115,13 @@ test('BC13: rangeMoves: the side most of the dropping plants leave on, and the p
   assert.equal(core.rangeMoves(list, { [P[0]]: by[P[0]] }).dropSide, null);
 });
 
-test('BC4: the soil map\'s texture reads as likely holding water or likely draining (hydrologic soil groups C/D against A/B), in words', () => {
+test('BC4, C5: the soil map\'s texture reads "Likely holds water" for the clay textures (hydrologic soil groups C/D), the board\'s one form; any other texture gives no reading (never "likely drains")', () => {
   assert.equal(words.textureLine('clay').key, 'consortium.figures.textureHolds');
   assert.equal(words.textureLine('clay_loam').key, 'consortium.figures.textureHolds');
-  assert.equal(words.textureLine('sandy_loam').key, 'consortium.figures.textureDrains');
-  assert.equal(words.textureLine('loam').key, 'consortium.figures.textureDrains');
+  for (const id of ['sandy_loam', 'loam', 'silt_loam', 'silt', 'sand']) assert.equal(words.textureLine(id), null, `${id}: no reading`);
+  assert.equal(words.holdsWater('clay'), true);
+  assert.equal(words.holdsWater('silt_loam'), false);
+  for (const [loc, json] of LOCALES) assert.equal(json['consortium.figures.textureDrains'], undefined, `${loc}: no "likely drains" form`);
   for (const id of core.textureIds) assert.ok(en[`consortium.figures.tex_${id}`], `en names ${id}`);
   assert.equal(say(words.textureLine('clay')), 'Likely holds water: clay');
   assert.equal(say(words.textureLine('clay_loam')), 'Likely holds water: clay loam');
@@ -219,7 +221,7 @@ test('C8: the rain line limits only while a listed plant carries the dryness not
   // Rain only: the verdict rule puts the note on the plants drier here (verdict.ts R2).
   const rain = core.lineCounts(list, { [P[0]]: map({ a: v('fits', [dry], 'judged', ['drier']), b: v('look', [dry], 'judged', ['drier']), c: v('fits') }) });
   assert.deepEqual({ drier: rain.periods[0].drier, noted: rain.periods[0].noted }, { drier: 2, noted: 2 });
-  assert.deepEqual(core.limitsOf(rain), [{ line: 'rain', n: 2 }]);
+  assert.deepEqual(core.limitsOf(rain), [{ line: 'rain', n: 2, period: P[0] }]);
   // Watered all year: the same plants are drier here, and none carries the note.
   const allYear = core.lineCounts(list, { [P[0]]: map({ a: v('fits', [dry]), b: v('look', [dry]), c: v('fits') }) });
   assert.deepEqual({ drier: allYear.periods[0].drier, noted: allYear.periods[0].noted }, { drier: 2, noted: 0 });
@@ -259,4 +261,51 @@ test('C8: the members line\'s words follow the watering answer in all 11 locales
   assert.doesNotMatch(en['consortium.figures.membersDryFirst'], /may need watering/);
   assert.equal(en['consortium.figures.laterChip'], 'after release');
   assert.match(en['consortium.figures.laterWindCount'], /Wind tolerance is recorded for only # plants on the list/);
+});
+
+// ---- fix round 2, batch 1 ----
+
+test('R2, C2: one status per limit line, over every period: a line that limits only by 2071–2099 limits, said with that period\'s count; the card\'s list is the same status', () => {
+  const list = ['a', 'b', 'c', 'd'].map(t);
+  // Today nobody is outside; by 2071–2099 two plants want colder winters (mild) and one is too hot.
+  const by = {
+    [P[0]]: map({ a: v('fits'), b: v('fits'), c: v('fits'), d: v('fits') }),
+    [P[1]]: map({ a: v('outside', [f('mild', 'outside')]), b: v('fits'), c: v('fits'), d: v('fits') }),
+    [P[2]]: map({ a: v('outside', [f('mild', 'outside')]), b: v('outside', [f('mild', 'outside')]), c: v('outside', [f('hot', 'outside')]), d: v('fits') }),
+  };
+  const s = core.limitStatus(core.lineCounts(list, by));
+  assert.deepEqual(s.nights, { line: 'nights', state: 'limits', n: 2, period: P[2], today: 0 }, 'the nights limit by 2071–2099 though nobody is outside today');
+  assert.deepEqual(s.days, { line: 'days', state: 'limits', n: 1, period: P[2], today: 0 });
+  assert.deepEqual(s.warmth, { line: 'warmth', state: 'free', n: 0, period: null, today: 0 });
+  assert.equal(s.rain.state, 'free');
+  // The card lists exactly the lines whose status limits, most first.
+  assert.deepEqual(core.limitsOf(core.lineCounts(list, by)), [{ line: 'nights', n: 2, period: P[2] }, { line: 'days', n: 1, period: P[2] }]);
+  // Nothing counted yet: not checked, and no line listed.
+  for (const l of core.LIMIT_IDS) assert.equal(core.limitStatus(null)[l].state, 'unchecked');
+  assert.deepEqual(core.limitsOf(null), []);
+  // The later forms exist in every locale, with the period and the later counts.
+  for (const [loc, json] of LOCALES) {
+    assert.match(json['consortium.figures.nightsTakeLater'] ?? '', /\{period\}[\s\S]*\{warmer\}[\s\S]*\{colder\}|\{warmer\}[\s\S]*\{colder\}[\s\S]*\{period\}|\{period\}[\s\S]*\{colder\}[\s\S]*\{warmer\}/, `${loc} nightsTakeLater`);
+    assert.match(json['consortium.figures.warmthLater'] ?? '', /\{lead\}[\s\S]*\{period\}|\{period\}[\s\S]*\{lead\}/, `${loc} warmthLater`);
+  }
+});
+
+test('R5: the Water card\'s lead has three forms, never a zero placeholder: today only, later only, both', () => {
+  for (const [loc, json] of LOCALES) {
+    for (const k of ['waterLead', 'waterLeadFirst']) assert.doesNotMatch(json[`consortium.figures.${k}`], /\{later\}/, `${loc} ${k}: today only, no later clause`);
+    for (const k of ['waterLeadBoth', 'waterLeadBothFirst', 'waterLeadLater', 'waterLeadLaterFirst']) assert.match(json[`consortium.figures.${k}`] ?? '', /\{later\}/, `${loc} ${k} says the later members`);
+  }
+  assert.equal(en['consortium.figures.waterLeadLater'], 'With rain only, none of your {size} plants needs watering today; {later}:');
+});
+
+test('R6: every Reset and Change button\'s accessible name contains its visible word, in all 11 locales (WCAG 2.5.3 Label in Name)', () => {
+  for (const [loc, json] of LOCALES) {
+    for (const [word, prefix] of [['reset', 'consortium.figures.reset'], ['change', 'consortium.figures.change']]) {
+      const visible = json[`consortium.figures.${word}`].toLocaleLowerCase(loc);
+      for (const [k, name] of Object.entries(json)) {
+        if (!k.startsWith(prefix) || k === prefix || !/^[A-Z]/.test(k.slice(prefix.length))) continue;
+        assert.ok(name.toLocaleLowerCase(loc).includes(visible), `${loc} ${k}: "${name}" contains the visible "${json[prefix]}"`);
+      }
+    }
+  }
 });

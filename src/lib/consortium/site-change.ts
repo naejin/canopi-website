@@ -156,21 +156,42 @@ export function lineCounts(list: readonly Pick<Taxon, 'id'>[], verdictsByPeriod:
 // plant's range (range.ts 'cool'). Summer warmth is its own side and never joins this count.
 export const warmthOf = (p: PeriodCounts): SideCount => p.sides.cool;
 
-// The line that limits plants most (the panel's "The main limit here"; A5's "What limits plants
-// here" shows every line that limits): a climate line by its outside count in any period (nights:
-// cold and mild; heat: hot; warmth: cool, warmthOf), the rain line by the plants carrying the dryness
-// note (A5: none when watered all year, though they are still drier here); none when nothing is
-// outside and no plant carries the note.
+// The lines that limit plants (the panel's "The main limit here"; A5's "What limits plants here" shows
+// every line that limits). One status per line, decided once here and read by both the limits card and
+// each row's words, so the two never disagree (review R2, C2): a climate line limits when plants are
+// outside on its side in any period (nights: cold and mild; heat: hot; warmth: cool, warmthOf), the
+// rain line when plants carry the dryness note in any period (A5: none when watered all year, though
+// they are still drier here). `n` is the highest count over the periods and `period` the first period
+// that reaches it (a line that limits only later is said with that period's count); `today` is the
+// count today. Not checked: no period counted yet.
 export type LimitLine = 'nights' | 'days' | 'warmth' | 'rain';
-export function limitsOf(c: LineCounts): { line: LimitLine; n: number }[] {
-  const most = (f: (p: PeriodCounts) => number) => Math.max(0, ...c.periods.map(f));
-  const out: { line: LimitLine; n: number }[] = [
-    { line: 'nights', n: most((p) => p.sides.cold.outside + p.sides.mild.outside) },
-    { line: 'days', n: most((p) => p.sides.hot.outside) },
-    { line: 'warmth', n: most((p) => warmthOf(p).outside) },
-    { line: 'rain', n: most((p) => p.noted) },
-  ];
-  return out.filter((l) => l.n > 0).sort((a, b) => b.n - a.n);
+export const LIMIT_IDS: readonly LimitLine[] = Object.freeze(['nights', 'days', 'warmth', 'rain']);
+export type LimitState = 'limits' | 'free' | 'unchecked';
+export interface LimitStatus { line: LimitLine; state: LimitState; n: number; period: PeriodId | null; today: number }
+const LIMIT_COUNT: Readonly<Record<LimitLine, (p: PeriodCounts) => number>> = {
+  nights: (p) => p.sides.cold.outside + p.sides.mild.outside,
+  days: (p) => p.sides.hot.outside,
+  warmth: (p) => warmthOf(p).outside,
+  rain: (p) => p.noted,
+};
+export function limitStatus(c: LineCounts | null | undefined): Record<LimitLine, LimitStatus> {
+  const out = {} as Record<LimitLine, LimitStatus>;
+  const ps = c?.periods ?? [];
+  for (const line of LIMIT_IDS) {
+    if (!ps.length) { out[line] = { line, state: 'unchecked', n: 0, period: null, today: 0 }; continue; }
+    const count = LIMIT_COUNT[line];
+    let n = 0, period: PeriodId | null = null;
+    for (const p of ps) { const k = count(p); if (k > n) { n = k; period = p.period; } }
+    const first = ps.find((p) => p.period === periodIds[0]);
+    out[line] = { line, state: n > 0 ? 'limits' : 'free', n, period, today: first ? count(first) : 0 };
+  }
+  return out;
+}
+// The lines that limit, most first (ties in LIMIT_IDS order); none when nothing is outside and no plant
+// carries the note.
+export function limitsOf(c: LineCounts | null | undefined): { line: LimitLine; n: number; period: PeriodId | null }[] {
+  const s = limitStatus(c);
+  return LIMIT_IDS.map((l) => s[l]).filter((x) => x.state === 'limits').map(({ line, n, period }) => ({ line, n, period })).sort((a, b) => b.n - a.n);
 }
 
 // How the list moves as the climate warms ("What it means for your choice", board SiteKiambu):

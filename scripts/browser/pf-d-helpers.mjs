@@ -32,23 +32,35 @@ export async function placeStep(id, opts = {}) {
   return page;
 }
 
-// The engine's counts for the panel, on the page's own state: the page's verdict rule judges the list
-// for each period (the store's own context), and core site-change.ts lineCounts counts them, the same
-// function the panel calls (never a copy of its arithmetic): per period, the list's plants that take
-// the nights, the fit ones, those drier here than their recorded band, those carrying the dryness note.
-const { lineCounts } = await import('../../src/lib/consortium/site-change.ts');
-export async function engineCounts(page) {
+// The engine's figures for the panel, on the page's own state: the page's verdict rule judges the list
+// for each period (the store's own context), and the core functions the panel calls count them
+// (site-change.ts lineCounts, limitStatus, rangeMoves; never a copy of their arithmetic, C3, C12).
+const { lineCounts, limitStatus, rangeMoves } = await import('../../src/lib/consortium/site-change.ts');
+async function engineVerdicts(page) {
   const { list, byPeriod } = await page.evaluate(() => {
     const s = window.__ctTest.store, rule = s.verdictRule.value, pool = s.pool.value ?? [];
     const out = {};
     for (const p of ['1991-2020', '2041-2070', '2071-2099']) {
       const vs = rule.verdicts(pool, { ...s.verdictContext.value, period: p });
-      out[p] = pool.map((t) => [t.id, vs.get(t.id)]).filter(([, v]) => v).map(([id, v]) => [id, { level: v.level, range: v.range, notes: v.notes, factors: v.factors }]);
+      out[p] = pool.map((t) => [t.id, vs.get(t.id)]).filter(([, v]) => v).map(([id, v]) => [id, { level: v.level, range: v.range, notes: v.notes, factors: v.factors, limiting: v.limiting }]);
     }
-    return { list: pool.map((t) => ({ id: t.id })), byPeriod: out };
+    return { list: pool.map((t) => ({ id: t.id, role: t.role })), byPeriod: out };
   });
-  const c = lineCounts(list, Object.fromEntries(Object.entries(byPeriod).map(([p, rows]) => [p, new Map(rows)])));
-  return c.periods.map(({ period, of, nights, fit, drier, noted }) => ({ period, of, nights, fit, drier, noted }));
+  return { list, byPeriod: Object.fromEntries(Object.entries(byPeriod).map(([p, rows]) => [p, new Map(rows)])) };
+}
+// Per period: the list's plants that take the nights, the fit ones, those drier here than their
+// recorded band, those carrying the dryness note.
+export async function engineCounts(page) {
+  const { list, byPeriod } = await engineVerdicts(page);
+  return lineCounts(list, byPeriod).periods.map(({ period, of, nights, fit, drier, noted }) => ({ period, of, nights, fit, drier, noted }));
+}
+// Per period the range sides (outside and near the edge: core lineCounts sides), each limit line's
+// status (core limitStatus: limits, free or not checked, its highest count and the period it reaches
+// it), and how the list moves as it warms (core rangeMoves: the side most drop out on, the arrivals).
+export async function engineSides(page) {
+  const { list, byPeriod } = await engineVerdicts(page);
+  const c = lineCounts(list, byPeriod);
+  return { sides: c.periods.map((p) => p.sides), status: limitStatus(c), moves: rangeMoves(list, byPeriod), of: list.length };
 }
 
 // The store's edits and today's merged figures.
@@ -72,36 +84,6 @@ export const fieldState = (page) => page.evaluate(() => {
   return { invalid: f.getAttribute('aria-invalid') === 'true', message: msg.replace(/\s+/g, ' ').trim(), focused: document.activeElement === f };
 });
 
-// The engine's range sides on the page's own state, per period (the board-figures rule: the verdict rule
-// over the list, never a board number): for each side (cold, mild, cool, summer, hot) the plants outside
-// and near the edge; the plants that come into range by 2041–2070 wanting more warmth (outside today on
-// the cold or cool side, not outside by 2041–2070); and the plants that drop out (fit today, outside
-// later) by the side that limits them then.
-export const engineSides = (page) => page.evaluate(() => {
-  const s = window.__ctTest.store, rule = s.verdictRule.value, list = s.pool.value ?? [];
-  const periods = ['1991-2020', '2041-2070', '2071-2099'];
-  const vs = periods.map((p) => rule.verdicts(list, { ...s.verdictContext.value, period: p }));
-  const sides = vs.map((m) => {
-    const o = Object.fromEntries(['cold', 'mild', 'cool', 'summer', 'hot'].map((k) => [k, { outside: 0, edge: 0 }]));
-    for (const t of list) {
-      const v = m.get(t.id);
-      if (!v || v.range !== 'judged') continue;
-      for (const f of v.factors) if (o[f.factor]) { if (f.level === 'outside') o[f.factor].outside++; else if (f.level === 'look') o[f.factor].edge++; }
-    }
-    return o;
-  });
-  const out = (m, t) => m.get(t.id)?.level === 'outside';
-  const arrivals = list.filter((t) => out(vs[0], t) && !out(vs[1], t) && ['cold', 'cool'].includes(vs[0].get(t.id)?.limiting?.factor)).map((t) => t.id);
-  const drops = {};
-  for (const t of list) {
-    if (out(vs[0], t) || !vs[0].get(t.id)) continue;
-    const k = [1, 2].find((i) => out(vs[i], t));
-    if (k === undefined) continue;
-    const f = vs[k].get(t.id)?.limiting?.factor ?? 'other';
-    drops[f] = (drops[f] ?? 0) + 1;
-  }
-  return { sides, arrivals, drops, of: list.length };
-});
 // The plant names the page shows for these ids (the store's own naming: the member or pool taxon).
 export const namesOf = (page, ids) => page.evaluate((xs) => {
   const s = window.__ctTest.store, by = new Map((s.pool.value ?? []).map((t) => [t.id, t]));

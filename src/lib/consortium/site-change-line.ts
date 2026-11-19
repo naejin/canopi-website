@@ -36,13 +36,15 @@ export const PH_BANDS = Object.freeze([
 ] as const);
 export const phBandOf = (ph: number) => PH_BANDS.find((b) => (b.to === null || ph < b.to)) ?? PH_BANDS[PH_BANDS.length - 1];
 
-// The soil map's texture as the drainage line reads it (board SiteKiambu "Likely holds water: clay"):
-// a reading of the map, never a hint (A8; the hint comes only from the grower's "Stays wet for days").
-// Textures of the hydrologic soil groups C and D (much clay) likely hold water; A and B (sand, loam,
-// silt) likely drain within a day.
+// The soil map's texture as the drainage line reads it (board SiteKiambu "Likely holds water: clay";
+// word-map.md: the board's one form): a reading of the map, never a hint (A8; the hint comes only from
+// the grower's "Stays wet for days"). Only the textures of the hydrologic soil groups C and D (much
+// clay) give a reading; any other texture gives none (review C5: no "likely drains" claim, which no
+// board or source makes), and the line stays "Not answered".
 const HOLDS: ReadonlySet<TextureId> = new Set<TextureId>(['sandy_clay_loam', 'clay_loam', 'silty_clay_loam', 'sandy_clay', 'silty_clay', 'clay']);
+export const holdsWater = (t: TextureId | null | undefined): boolean => !!t && HOLDS.has(t);
 export const textureNameLine = (t: TextureId): Line => L(`tex_${t}`);
-export const textureLine = (t: TextureId): Line => L(HOLDS.has(t) ? 'textureHolds' : 'textureDrains', {}, undefined, { texture: textureNameLine(t) });
+export const textureLine = (t: TextureId): Line | null => (HOLDS.has(t) ? L('textureHolds', {}, undefined, { texture: textureNameLine(t) }) : null);
 
 // ---- what was set ----
 
