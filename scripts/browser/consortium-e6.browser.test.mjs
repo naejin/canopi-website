@@ -414,8 +414,11 @@ test('E6-27 (K3 hand-off review 2): the idle future part whose prefetch failed s
     await page.locator(aria('button', en['consortium.start.suggest'])).click();
     assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), 'the palette page');
     assert.ok(await waitFor(() => log.length >= 1, 5000), 'the later chunk\'s first request');
-    // Another later part loading (Share; or a sheet chunk's prefetch already) gives it its chance.
-    await page.locator(aria('button', en['consortium.palette.chart.copyLink'])).click();
+    // Another later part loading (Share; or a sheet chunk's prefetch already) gives it its chance. The
+    // press waits for Copy link to be drawn, then presses it in place: the locator's own wait for a
+    // still box timed out while the palette's late parts were still landing (full-gate red on 06e767f7).
+    const copy = await page.waitForFunction((name) => { const b = [...document.querySelectorAll('#ct-root button')].find((x) => x.textContent.trim() === name && x.getClientRects().length); b?.click(); return !!b; }, { timeout: 10_000 }, en['consortium.palette.chart.copyLink']).then(() => true, () => false);
+    assert.ok(copy, 'Copy link, on the palette');
     assert.ok(await waitFor(() => seen.length > 0, 8000), `the future part asks again (${log.join(', ')})`);
   } finally { await page.browserContext().close().catch(() => {}); }
 });

@@ -1275,6 +1275,11 @@ test('PFC50 (pf-c review S6, S7: board Country): "No country." in bold leads the
 test('PFC47 (pf-c one country line at a time, its state its own): on the climate screen with a guessed country, "Change" opens one set of choices, its aria-controls naming them on screen, no id twice; a climate chosen there closes the screen and Place shows its line closed, never a picker it did not open', async () => {
   const page = await guessedKenya(1280);
   await press(page, 'button', 'No location? Choose a climate');
+  // The screen gives the focus to its checked (or first) climate two frames after it opens
+  // (location/shared.ts openClimates): the test moves the focus only once that has landed, else that
+  // late focus takes the Enter meant for "Change", and Enter on a climate closes the screen (full-gate
+  // red on 06e767f7, a race under load).
+  assert.ok(await page.waitForFunction(() => !!document.activeElement?.closest('#ct-climates') && [...document.querySelectorAll('[data-place-hand] [data-ct="country"] button')].some((b) => b.textContent.replace(/\s+/g, ' ').trim() === 'Change' && b.getClientRects().length), { timeout: 5000 }).then(() => true, () => false), 'the climate screen, its climate focused, with its country line');
   await focusCountry(page, 'Change');
   await page.keyboard.press('Enter');
   await frames(page);

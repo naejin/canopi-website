@@ -189,6 +189,10 @@ test('PP-B2 (b1a UI hand-off, failed-chunk notice): a sheet whose chunk fails sa
     const page = await tool({ width, data: 'fixture', block: { find: 404 } }); // Paste is in the find role (PP-C commit 0)
     await openCards(page);
     await page.locator(aria('radio', 'Temperate')).click();
+    // Choosing a climate closes the cards and gives the focus back to Place, which scrolls there smoothly
+    // (global.css scroll-behavior): a press during that scroll lands elsewhere (full-gate red on
+    // 06e767f7), so it waits for the focus and a still page, as a reader's tap does.
+    await page.waitForFunction(() => new Promise((r) => { const y = scrollY; requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => r(scrollY === y && !!document.activeElement?.matches('[data-place-climates], [data-location-search]'))))); }), { timeout: 4000 });
     // "Add a plant" opens Find (the find role, as Paste): on every width (pf-c fix round 1: the phone's
     // Place has no "Paste a list", board Place 390).
     await page.click('[data-place-add]');

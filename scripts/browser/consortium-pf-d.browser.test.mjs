@@ -15,6 +15,10 @@
 //   h3 G1 fix round 1: PFD47-PFD49 (R3; R1, C5; R4, C4), PFD45's focus (R2, C1), PFD18's count cells (C7);
 //   PFD49 unmarked in chunk 4 (C2, T2; fix round 1 R5: the figures slot's own reserve, base.css .fg-slot).
 //   h3 G1 fix round 2: PFD50 (B2.1), PFD51 (B1.1, C2.1), PFD52 (B3.1).
+//   PP-C follow-up F1 (2026-11-19): PFD59 (C2/R1, the card stays under the grower's own edit), PFD60
+//   (RULED (a): the phone's card closed to its head and main limit, "Show the N limits"), PFD61 (C2/R2,
+//   C2/C1: the figures chunk failing says so with Reload and ends the reserve). At 390 px the cases
+//   that read the card open it first (the local section(), as a reader pressing "Show the N limits").
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries none: the panel is new (spec: "Delete: nothing; the 'Soil, likely' card and 'Tell us about
@@ -23,12 +27,30 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { useHarness, aria, has } from './helpers.mjs';
-import { loadCase, control, done, focused, inOrder, pastEdge, press, says, saysNot, section, sectionText, toastText, withStorage } from './pf-helpers.mjs';
+import { loadCase, control, done, focused, frames, inOrder, pastEdge, press, says, saysNot, section as sectionOf, sectionText, toastText, withStorage } from './pf-helpers.mjs';
 import { searchFor } from './pf-c-helpers.mjs';
 import { tool } from './p5-helpers.mjs';
 import { atBoardPlace, atPlace, edits, movedTo, engineCounts, engineDrierFrom, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
 
 useHarness();
+
+const LIMITS = 'What limits plants here';
+// At 390 px "What limits plants here" stands closed to its head and its main limit (RULED (a),
+// pf-decisions 2026-11-19); its disclosure is the card's button with aria-expanded. Pressed, as a
+// reader opens it, it shows every line; wider, there is no disclosure and nothing to press.
+const openLimits = (page) => page.evaluate((h) => {
+  const s = [...document.querySelectorAll('main section')].find((x) => x.querySelector('h2')?.textContent.trim() === h);
+  const b = s && [...s.querySelectorAll('button[aria-expanded="false"][aria-controls]')].find((x) => x.getClientRects().length && s.querySelector(`#${x.getAttribute('aria-controls')}`));
+  b?.click();
+  return !!b;
+}, LIMITS);
+// The board cases read the card open: a closed one is opened first, as by the reader.
+const section = async (page, heading, timeout) => {
+  const text = await sectionOf(page, heading, timeout);
+  if (heading !== LIMITS || !(await openLimits(page))) return text;
+  await page.waitForFunction((h) => [...document.querySelectorAll('main section')].some((x) => x.querySelector('h2')?.textContent.trim() === h && x.querySelector('button[aria-expanded="true"][aria-controls]')), {}, LIMITS);
+  return sectionText(page, heading);
+};
 
 const expanded = (page, words) => page.evaluate((w) => [...document.querySelectorAll('main button[aria-expanded]')].find((b) => b.textContent.replace(/\s+/g, ' ').trim().startsWith(w))?.getAttribute('aria-expanded') ?? null, words);
 const pressed = (page, group, words) => page.evaluate((g, w) => {
@@ -907,8 +929,10 @@ test('PFD34 (pf-d C8): the members line follows the watering answer ("water it t
   await summary(page);
   const card = await section(page, 'What limits plants here');
   const rows = await sectionBy(page, 'What limits plants here', (s) => [...s.querySelectorAll('[role="group"][aria-label]')].map((g) => g.getAttribute('aria-label')));
-  assert.ok(!rows.includes('Rain a year'), `C8: watered all year, no plant carries the note: rain is no limit (${JSON.stringify(rows)})`);
-  assert.ok(!card.includes('The main limit here.') || !rows.includes('Rain a year'), 'C8: rain is not "The main limit here."');
+  // The card keeps, for the visit, the rows it showed (follow-up F1, C2/R1: an edit made in it never
+  // takes a row from under the reader); the rain row then says it no longer limits.
+  const rain = rows.includes('Rain a year') ? await lineText(page, 'Rain a year') : '';
+  assert.ok(!rain.includes('The main limit here') && !/may need watering/.test(rain), `C8: watered all year, no plant carries the note: rain is no limit ("${rain.slice(0, 200)}"; ${JSON.stringify(rows)}; ${card.slice(0, 120)})`);
   const all = await membersLine();
   assert.ok(all.includes('Watered all year: no plant carries the note.'), `C8: the members line says no note ("${all.slice(0, 200)}")`);
   assert.doesNotMatch(all.split('Dryness never changes')[0], /may need watering/, 'C8: no member "may need watering" when watered all year');
@@ -1507,4 +1531,128 @@ test('PFD56 (pf-d, chunk 4 C2 fix round 2 R1.1): in "I know my plot’s figure" 
   await figureOf('hottest days', '28.6');
   assert.deepEqual(await edits(page), { daysShiftC: 1 }, 'R1.1: the shift is taken from the figure as shown');
   await done(page);
+});
+
+// ---- PP-C follow-up F1 (2026-11-19) ----
+
+// Kiambu at 390 px with its list cut to the plants outside on no side in any period, both on the map's
+// figures and 2 °C colder (the nights editor's tick on), plus one plant outside only on the map's: a
+// line limits on the list, and the reader's own 2 °C colder leaves none (PFD59).
+async function kiambuOneColderPlant() {
+  const page = await loadCase('kiambu-8', { width: 390 });
+  await section(page, LIMITS, 20_000);
+  const cut = await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, pool = s.pool.value;
+    const periods = ['1991-2020', '2041-2070', '2071-2099'];
+    const judged = () => { const ctx = s.verdictContext.value; return periods.map((p) => rule.verdicts(pool, { ...ctx, period: p })); };
+    const map = judged();
+    s.siteEdits.value = { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true };
+    const colder = judged();
+    s.siteEdits.value = {};
+    // Outside on a side in some period (what limitStatus counts), or in none.
+    const outside = (by, t) => by.some((vs) => vs.get(t.id)?.factors.some((f) => f.level === 'outside'));
+    const keep = pool.filter((t) => !outside(map, t) && !outside(colder, t));
+    const gain = pool.find((t) => outside(map, t) && !outside(colder, t));
+    if (!gain) return null;
+    s.pools.value = { ...s.pools.value, [s.climate.value]: [...keep, gain] };
+    return { keep: keep.length, gain: gain.id };
+  });
+  assert.ok(cut, 'premise: a plant on the Kiambu list is outside only on the map\'s figures, not 2 °C colder');
+  return { page, cut };
+}
+
+test('PFD59 (pf-d, follow-up F1, chunk 4 C2/R1): "What limits plants here" stays under the grower\'s own edit made in it: an edit that leaves no limiting line keeps the card and its rows, says "No climate line limits plants here." and the row "Not a limit for this list", and the focus stays on the row\'s Change, never on <body>', async () => {
+  const { page, cut } = await kiambuOneColderPlant();
+  const limitingNow = async () => Object.values((await engineSides(page)).status).filter((x) => x.state === 'limits').map((x) => x.line);
+  assert.ok((await limitingNow()).length > 0, `premise: a line limits on the cut list (${JSON.stringify(cut)})`);
+  await section(page, LIMITS, 10_000);
+  assert.ok(await page.waitForFunction((h) => [...document.querySelectorAll('main section')].some((x) => x.querySelector('h2')?.textContent.trim() === h && x.querySelector('[role="group"][aria-label="Coldest nights"]')), { timeout: 10_000 }, LIMITS).then(() => true, () => false), 'premise: the card lists Coldest nights');
+  await press(page, 'button', 'Change coldest nights');
+  await typeIn(page, '2');
+  await press(page, 'button', 'Use my value');
+  await summary(page);
+  assert.deepEqual(await limitingNow(), [], 'premise: 2 °C colder, no line limits');
+  await frames(page);
+  const text = await sectionText(page, LIMITS);
+  assert.ok(text, 'R1: the card the grower edited in is still there');
+  assert.ok(text.includes('No climate line limits plants here.'), `R1: the change is said in words (${text?.slice(0, 300)})`);
+  const row = await lineText(page, 'Coldest nights');
+  assert.ok(row.includes('Not a limit for this list'), `R1: the edited row stays and says it no longer limits ("${row.slice(0, 300)}")`);
+  const f = await focused(page);
+  assert.ok(!f.body && f.inTool, `R1: the focus stays in the card (${JSON.stringify(f)})`);
+  assert.equal(await page.evaluate(() => document.activeElement?.closest('section')?.querySelector('h2')?.textContent.trim()), LIMITS, 'R1: the focus is in "What limits plants here"');
+  // Leaving the palette and coming back: the visit is over, the card follows the answer again.
+  await page.evaluate(() => { window.__ctTest.store.view.value = 'start'; });
+  await frames(page);
+  await page.evaluate(() => { window.__ctTest.store.view.value = 'matrix'; });
+  assert.ok(await page.waitForFunction((h) => !!document.querySelector('main h2[data-view-heading]') && ![...document.querySelectorAll('main section h2')].some((x) => x.textContent.trim() === h), { timeout: 8000 }, LIMITS).then(() => true, () => false), 'a new visit with no limiting line: no card');
+  await done(page);
+});
+
+test('PFD60 (pf-d, follow-up F1, RULED (a) Palette vs SiteMendoza 390): at 390 px "What limits plants here" stands first but closed: its head, the main limit in one line of words, and "Show the N limits"; the Next step is on the first screen; the disclosure opens and closes in place, the focus on it; at 960 and 1280 the card is open with no disclosure', async () => {
+  const page = await loadCase('kiambu-8', { width: 390 });
+  await sectionOf(page, LIMITS, 20_000);
+  const look = () => page.evaluate((h) => {
+    const s = [...document.querySelectorAll('main section')].find((x) => x.querySelector('h2')?.textContent.trim() === h);
+    const b = s && [...s.querySelectorAll('button[aria-expanded][aria-controls]')].find((x) => x.getClientRects().length);
+    const rows = s ? [...s.querySelectorAll('[role="group"][aria-label]')].filter((g) => g.getClientRects().length).map((g) => g.getAttribute('aria-label')) : [];
+    const next = [...document.querySelectorAll('main h2, main h3')].find((x) => /^Next step/.test(x.textContent.trim()) && x.getClientRects().length);
+    return { text: s?.innerText.replace(/\s+/g, ' ').trim() ?? null, button: b ? { name: b.textContent.trim(), expanded: b.getAttribute('aria-expanded'), focused: document.activeElement === b } : null, rows, next: next ? next.getBoundingClientRect().top + scrollY : null };
+  }, LIMITS);
+  const { status } = await engineSides(page);
+  const lines = Object.values(status).filter((x) => x.state === 'limits').map((x) => x.line);
+  assert.ok(lines.length > 0, 'premise: a line limits at Kiambu');
+  assert.ok(await page.waitForFunction((h) => [...document.querySelectorAll('main section')].some((x) => x.querySelector('h2')?.textContent.trim() === h && /The main limit here: /.test(x.innerText)), { timeout: 10_000 }, LIMITS).then(() => true, () => false), 'the main limit, once counted');
+  const closed = await look();
+  assert.ok(closed.button, `RULED (a): a disclosure on the phone (${JSON.stringify(closed)})`);
+  assert.equal(closed.button.expanded, 'false', 'RULED (a): closed at first');
+  assert.deepEqual(closed.rows, [], `RULED (a): closed, no line shows (${JSON.stringify(closed.rows)})`);
+  assert.match(closed.text, /^What limits plants here The main limit here: (Coldest nights|Hottest days|Rain a year|Dry months in a row), \S.*\. Show the (limit|\d+ limits)$/, `RULED (a): the head, the main limit in one line, the disclosure ("${closed.text}")`);
+  assert.ok(closed.next !== null && closed.next < 844, `RULED (a): the Next step on the first screen at 390 (${closed.next})`);
+  await press(page, 'button', closed.button.name);
+  await frames(page);
+  const open = await look();
+  assert.equal(open.button?.expanded, 'true', 'opened');
+  assert.ok(open.button.focused, 'the focus stays on the disclosure');
+  const n = Number(/\d+/.exec(closed.button.name)?.[0] ?? 1);
+  const climateRows = open.rows.filter((r) => r !== 'Watering');
+  const dry = (await engineDrierFrom(page)).filter(([, p]) => p).length;
+  assert.equal(n, climateRows.length + (climateRows.length ? 0 : dry ? 1 : 0), `"Show the N limits" counts the lines shown (${JSON.stringify(open.rows)})`);
+  assert.ok(open.rows.includes('Watering'), `open: every line of the card, the Watering line too (${JSON.stringify(open.rows)})`);
+  assert.equal(open.button.name, 'Hide the limits', 'open: the disclosure closes it again');
+  await press(page, 'button', 'Hide the limits');
+  await frames(page);
+  const again = await look();
+  assert.deepEqual([again.button?.expanded, again.button?.focused, again.rows.length], ['false', true, 0], 'closed again, the focus kept');
+  await done(page);
+  // Wider, its own page (a viewport change from the phone's emulation reloads it).
+  for (const width of [960, 1280]) {
+    const wide = await loadCase('kiambu-8', { width });
+    await sectionOf(wide, LIMITS, 20_000);
+    assert.ok(await wide.waitForFunction((h) => [...document.querySelectorAll('main section')].some((x) => x.querySelector('h2')?.textContent.trim() === h && x.querySelectorAll('[role="group"][aria-label]').length > 1), { timeout: 10_000 }, LIMITS).then(() => true, () => false), `${width}: the lines`);
+    const seen = await wide.evaluate((h) => {
+      const s = [...document.querySelectorAll('main section')].find((x) => x.querySelector('h2')?.textContent.trim() === h);
+      return { button: [...s.querySelectorAll('button[aria-expanded][aria-controls]')].filter((x) => x.getClientRects().length).map((x) => x.textContent.trim()), rows: [...s.querySelectorAll('[role="group"][aria-label]')].filter((g) => g.getClientRects().length).map((g) => g.getAttribute('aria-label')), text: s.innerText.replace(/\s+/g, ' ') };
+    }, LIMITS);
+    assert.deepEqual(seen.button, [], `${width}: no disclosure`);
+    assert.ok(seen.rows.length > 1 && seen.rows.includes('Watering'), `${width}: the card open as on the boards (${JSON.stringify(seen)})`);
+    assert.ok(!/Show the (limit|\d+ limits)/.test(seen.text), `${width}: no "Show the N limits" (${seen.text.slice(0, 200)})`);
+    await done(wide);
+  }
+  const fr = await loadCase('kiambu-8', { width: 390, lang: 'fr' });
+  assert.ok(await fr.waitForFunction(() => [...document.querySelectorAll('main section')].some((x) => x.querySelector('h2')?.textContent.trim() === 'Ce qui limite les plantes ici' && /La principale limite ici : /.test(x.innerText) && /Voir (la limite|les \d+ limites)/.test(x.innerText)), { timeout: 20_000 }).then(() => true, () => false), 'fr: "La principale limite ici : …" and "Voir les N limites"');
+  await done(fr);
+});
+
+test('PFD61 (pf-d, follow-up F1, chunk 4 C2/R2, C2/C1): when the figures chunk does not load, the place says so in place with Reload, and the island keeps no screen-tall reserve for it', async () => {
+  for (const width of [390, 1280]) {
+    const page = await withStorage({ 'canopi-location': JSON.stringify({ lat: -1.1714, lon: 36.8356, source: 'map' }) }, '/palette/', { width, block: { figures: 404 } });
+    assert.ok(await page.waitForFunction(() => window.__ctTest?.store?.load.value.status === 'ready' && !!window.__ctTest.store.location.value?.lookup, { timeout: 30_000 }).then(() => true, () => false), `${width}: the data and the place`);
+    const notice = await page.waitForFunction(() => [...document.querySelectorAll('#ct-root [role="alert"]')].map((n) => n.innerText.replace(/\s+/g, ' ').trim()).find((t) => t.startsWith('This part of the tool could not open.')) ?? null, { timeout: 10_000 }).then((h) => h.jsonValue(), () => null);
+    assert.ok(notice, `${width}: R2: "could not open" where the figures would be`);
+    assert.ok(notice.endsWith('Reload'), `${width}: R2: with Reload ("${notice}")`);
+    const root = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('#ct-root')).minHeight) / innerHeight);
+    assert.ok(root <= 0.61, `${width}: C1: the reserve ends with the failure (${root.toFixed(2)} of the screen)`);
+    await done(page);
+  }
 });

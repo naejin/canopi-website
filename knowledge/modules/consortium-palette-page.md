@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T08:46:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:56:14Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
@@ -20,12 +20,12 @@ sources:
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
     digest: sha256:2f1f47359616befc
-    last_modified: 2026-11-19T08:46:08Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: chart-tsx
     resource: ../../src/islands/consortium/views/kit/chart.tsx
     title: src/islands/consortium/views/kit/chart.tsx
     digest: sha256:8f0324bd61988d5f
-    last_modified: 2026-11-19T08:40:11Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: fit-tsx
     resource: ../../src/islands/consortium/views/kit/fit.tsx
     title: src/islands/consortium/views/kit/fit.tsx
@@ -50,7 +50,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T08:42:31Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -65,12 +65,12 @@ sources:
     resource: ../../src/islands/consortium/views/palette/Weigh.tsx
     title: src/islands/consortium/views/palette/Weigh.tsx
     digest: sha256:bdc17dc0f3947bcf
-    last_modified: 2026-11-19T08:46:08Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: jobs-picture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
     title: src/islands/consortium/views/palette/JobsPicture.tsx
     digest: sha256:23ad0e26719a7027
-    last_modified: 2026-11-19T08:46:08Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -91,6 +91,21 @@ sources:
     title: src/islands/consortium/views/find/Find.tsx
     digest: sha256:668fb618a9d170ed
     last_modified: 2026-11-19T07:06:28Z
+  - id: figures-tsx
+    resource: ../../src/islands/consortium/views/figures/Figures.tsx
+    title: src/islands/consortium/views/figures/Figures.tsx
+    digest: sha256:b9b2e4521253a7ee
+    last_modified: 2026-11-19T10:39:31Z
+  - id: slots-tsx
+    resource: ../../src/islands/consortium/views/figures/slots.tsx
+    title: src/islands/consortium/views/figures/slots.tsx
+    digest: sha256:79f15300e5705e7d
+    last_modified: 2026-11-19T10:23:52Z
+  - id: figures-css
+    resource: ../../src/styles/consortium/figures.css
+    title: src/styles/consortium/figures.css
+    digest: sha256:91a8e9ccd407316c
+    last_modified: 2026-11-19T10:23:52Z
 enforced_by:
   - scripts/browser/consortium-pp-b2.browser.test.mjs
   - scripts/consortium-pf-b.test.mjs
@@ -250,3 +265,10 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 - The missing guest list's notice: "Try again" re-reads the list from the opened database (`store.ts` `retryFailedLists`, `listRetry` busy while it reads); a retry that fails again gives way to Reload, which fetches the database again (the read is local, so no "needs a connection").
 - Past 40 plants a job's hole line uses the Next step's clause order: "no plant on your lists fits here…" only when none is still to be checked (`noneFits`), then the second-look and unchecked counts (`rows.tsx` `holeFillerParts`), then the outside ones.
 - Find's "· N already in your palette" counts the palette's plants that pass the sheet's predicate and filters; a predicate sheet without a hole (Balance's "Find a soil feeder of another family") counts its own listed plants in the subtitle (`find.lede`).
+
+## "What limits plants here" on the palette (follow-up F1, 2026-11-19)
+
+- Drawn first, before the Next step (board SiteMendoza), only where a line limits (an outside count, or a member drier here); `views/figures/Figures.tsx` `PaletteLimits`, mounted through the lazy shell `views/figures/slots.tsx`.
+- Shown state: the current answer once the checks are ready, the last ready answer for this place and list while they count, the counting or failed state before any. Once it has shown a limiting line on this visit (same place key and the same loaded list, `store.pools[climate]`) it stays for the visit with every row it showed, so an edit made in it never removes the card or the focused row; the change is said in words ("No climate line limits plants here.", the row's "Not a limit for this list"). Unmounting the palette ends the visit.
+- Phone (max-width 639px, RULED (a)): closed to its head, the main limit in one line (`figures.limitsSummary`, or `figures.limitsSummaryWater`) and a button with `aria-expanded` ("Show the N limits", `figures.limitsShow`); the Water card is hidden with the body. From 640 px the body is `display: contents` and the button is not drawn (`styles/consortium/figures.css`).
+- The figures parts are not quiet lazy parts: while their chunk loads they render nothing (the slot reserve in `base.css` holds the room); a failed chunk shows the in-place "could not open" notice with Reload, which retries in place, so the reserve ends.

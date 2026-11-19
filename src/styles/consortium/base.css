@@ -62,10 +62,11 @@
 /* While a part is still to land, the island keeps a screen, so the release line and the footer never
    move on screen when it arrives (PFD49): before the island renders where a place, a climate or a
    palette is kept (the head's data-kept, ConsortiumPage.astro), and while the figures panel's slot is
-   empty (the data and its chunk loading: views/figures/slots.tsx). Only then: a fresh Start or a short
+   empty (the data and its chunk loading: views/figures/slots.tsx; a failed chunk fills it with its
+   notice, and a Place form hidden by the climate cards keeps none). Only then: a fresh Start or a short
    state (an error, a terse Place) leaves no screen-tall gap (fix round 1 R5). svh: the small
    viewport, never taller than what a phone shows. */
-.ct #ct-head[data-kept] ~ #ct-root[aria-busy], .ct #ct-root:has(.fg-slot:empty) { min-height: 100svh; }
+.ct #ct-head[data-kept] ~ #ct-root[aria-busy], .ct #ct-root:has(.ct-place-main:not([hidden]) .fg-slot:empty) { min-height: 100svh; }
 .ct .fg-slot { display: contents; }
 /* The site has 400 and 600 only: bold is 600, never a synthesised 700 (W8). */
 .ct strong, .ct b { font-weight: 600; }
