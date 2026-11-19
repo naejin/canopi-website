@@ -119,7 +119,6 @@
 .ct .fg-water-list .fg-chip { display: flex; width: fit-content; margin-bottom: 2px; }
 .ct .fg-water-list .fg-chip svg { width: 14px; height: 14px; }
 .ct .fg-water-list .ct-more-items { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.ct .fg-water-list .ct-more-count, .ct .fg-names .ct-more-count { display: none; } /* the sentence above says the count */
 .ct .fg-names .ct-more-items { display: flex; flex-wrap: wrap; gap: 0 4px; margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 19px; }
 .ct .fg-names .ct-more-items > li:not(:last-child)::after { content: ","; }
 @media (max-width: 639px) {

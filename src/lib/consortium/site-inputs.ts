@@ -112,20 +112,18 @@ function within(v: unknown, lo: number, hi: number, step: number): number | null
   const q = Math.round(n / step) * step;
   return (step < 1 ? Math.round(q * 10) / 10 : Math.round(q)) || 0; // || 0: never -0
 }
-// The two temperature shifts set as one (the nights editor's "the hottest days too" tick; review round 3
-// R2, C5): data in the edits, so it travels with Undo, the save and a link like the values. Kept only
-// beside two equal shifts (a link with one shift, or two that differ, says nothing true). The tick sets
-// it, an edit of either line on its own drops it, and Reset on either line reads it to put both back.
-// Hand-off: the field moves into types.ts SiteEdits (`tempsTogether?: true`); until then this type adds it.
-export type LinkedEdits = SiteEdits & { tempsTogether?: true };
-export const tempsTogether = (e: SiteEdits | null | undefined): boolean => (e as LinkedEdits | null | undefined)?.tempsTogether === true;
+// The two temperature shifts set as one (SiteEdits.tempsTogether; the nights editor's "the hottest days
+// too" tick; review round 3 R2, C5): data in the edits, so it travels with Undo, the save and a link
+// like the values. Kept only beside two equal shifts (a link with one shift, or two that differ, says
+// nothing true).
+export const tempsTogether = (e: SiteEdits | null | undefined): boolean => e?.tempsTogether === true;
 // Any value as edits: each key kept only when it is in range and of its kind, every other key dropped
 // (an unknown key, a wrong type, out of range), so a damaged save or a hand-edited link never crashes
 // and the rest is kept. A zero shift is no edit. light, wind and coldAir (PP-F) are dropped: no save or
 // link holds them until their questions exist (chk #25). Nothing kept: NO_EDITS itself.
 export function siteEditsOf(raw: unknown): SiteEdits {
   if (!raw || typeof raw !== 'object') return NO_EDITS;
-  const r = raw as Record<string, unknown>, out: LinkedEdits = {};
+  const r = raw as Record<string, unknown>, out: SiteEdits = {};
   const L = EDIT_LIMITS;
   const nights = within(r.nightsShiftC, -L.shiftC, L.shiftC, 0.1), days = within(r.daysShiftC, -L.shiftC, L.shiftC, 0.1);
   if (nights) out.nightsShiftC = nights;

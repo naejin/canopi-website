@@ -171,7 +171,7 @@ test('link: an edit out of range, a malformed f or b, or a p other than 1 is dro
   const base = encodeLink(share(), known, { place: true }).replace(/&e=1$/, '');
   const read = (tail) => decodeLink(`${base}${tail}&e=1`, known).state.siteEdits;
   assert.deepEqual(read('&f=..-100&b=68'), { rainShiftMm: -100, soilPh: 6.8 });
-  assert.equal(read('&f=1.2.3.4.5'), null, 'five segments: f dropped whole');
+  assert.equal(read('&f=1.2.3.4.1.6'), null, 'six segments: f dropped whole (the 5th is the temperature link, M1)');
   assert.equal(read('&f=a.b'), null);
   assert.equal(read('&b=6.8'), null);
   assert.equal(read('&b=200'), null, 'pH 20 is out of range');
@@ -207,7 +207,7 @@ test('MoreList\'s fold: whole within the size rule; past it, the count and 3, th
 // ---- site-change stubs (item 9) ----
 test('site-change: typed stubs exported from the core index (pf-d writes them)', () => {
   assert.deepEqual(core.siteChange({}, {}), core.NO_SITE_CHANGE);
-  assert.deepEqual(core.lineCounts([], new Map()), core.NO_LINE_COUNTS);
+  assert.deepEqual(core.lineCounts([], {}), core.NO_LINE_COUNTS);
   assert.deepEqual(core.siteChangeLines(core.NO_SITE_CHANGE, core.NO_EDITS), []);
 });
 

@@ -36,11 +36,12 @@
 //   would be "summer too cool" at Quito (14.1) and Bogotá (14.3), where they are staples; taro (19.9),
 //   ginger (23.7), turmeric (21.2), sweet potato (19.5) and okra (23) keep the side.
 import type { PlantId, SiteInputs, SitePeriod, Taxon } from './types.ts';
-import { siteToday } from './site-today.ts';
+import { siteToday, yearMeanC } from './site-today.ts';
 
 // siteToday lives in its own module so the first run can ask "has the site a climate?" without the
-// rule, which loads with the verdict chunk (verdict-load.ts loadVerdictRule; store.ts verdictRule).
-export { siteToday };
+// rule, which loads with the verdict chunk (verdict-load.ts loadVerdictRule; store.ts verdictRule);
+// yearMeanC too, so the figures panel reads the year's warmth without it (h3 R18).
+export { siteToday, yearMeanC };
 
 export const rangeVerdicts = ['inside', 'edge', 'outside', 'unknown'] as const;
 export type RangeVerdict = (typeof rangeVerdicts)[number];
@@ -106,8 +107,6 @@ export function canNeedChill(taxon: Taxon): boolean {
 
 // HOT_BOUND is named for future.ts (a plain constant: a lookup call at module level would count as a
 // side effect and pull this rule into the island's first chunk).
-// The year's warmth at a slot (header): the mean of its coldest and warmest months' means.
-export const yearMeanC = (p: SitePeriod): number => (p.tmeanColdC + p.tmeanWarmC) / 2;
 export const HOT_BOUND: RangeBound = { side: 'hot', range: 'tmaxWarm', end: 'high', site: (p) => p.tmaxWarmC, applies: () => true };
 export const RANGE_BOUNDS: readonly RangeBound[] = [
   { side: 'cold', range: 'tminCold', end: 'low', site: (p) => p.tminColdC, applies: checksWinter },

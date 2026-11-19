@@ -11,3 +11,7 @@ export const todayOf = (periods: readonly SitePeriod[]): SitePeriod | null =>
 export function siteToday(inputs: SiteInputs | null): SitePeriod | null {
   return inputs ? todayOf(inputs.periods) : null;
 }
+
+// The year's warmth at a slot (range.ts header): the mean of its coldest and warmest months' means. Here,
+// not in range.ts, so the figures panel reads it without pulling the lazy range rule (h3 R18).
+export const yearMeanC = (p: SitePeriod): number => (p.tmeanColdC + p.tmeanWarmC) / 2;

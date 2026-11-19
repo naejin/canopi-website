@@ -531,6 +531,10 @@ export interface Confidence { term: ConfidenceTerm; agree?: number; of?: number 
 // The periods a page can be shown for: the span strings of the climate slots, today first (source.ts
 // TODAY_PERIOD, future.ts futurePeriods repeat them; a period id is never renamed or reused, 8.1).
 export const periodIds = ['1991-2020', '2041-2070', '2071-2099'] as const;
+// The size rule (v14 A14): every name or row while the palette has NAMED_PALETTE plants or fewer and
+// the group NAMED_GROUP or fewer; otherwise a count (site-change-line.ts named, views/kit/more.tsx
+// MoreList's defaults). Here, in the first-run types, so MoreList's lazy users pull no rule in.
+export const NAMED_PALETTE = 40, NAMED_GROUP = 12;
 export type PeriodId = (typeof periodIds)[number];
 
 // The 12 USDA classes of the climate reader (src/lib/climate/soil.ts TextureId; equality checked at
@@ -574,6 +578,10 @@ export type ColdAir = (typeof coldAirs)[number];
 export interface SiteEdits {
   nightsShiftC?: number;
   daysShiftC?: number;
+  // The two temperature shifts set as one (the nights editor's "the hottest days too" tick): kept only
+  // beside two equal shifts (siteEditsOf); travels with Undo, the save and a link (f's 5th segment, 1).
+  // The tick sets it, an edit of either line on its own drops it, Reset on either line reads it.
+  tempsTogether?: true;
   rainShiftMm?: number;
   dryMonthsShift?: number;
   soilPh?: number;

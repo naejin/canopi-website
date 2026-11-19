@@ -16,8 +16,8 @@
 //   (ISO alpha-2, from a chosen, location or link source, never a guess), o the site's climate cell
 //   centre "lat,lon" (never the precise position), n the sender's place name beside it ("Kiambu, Kenya",
 //   pf-decisions D6: the reader sees the name, no lookup on open); the grower's own values (SiteEdits, v14 0W-1 item 5), each only when set: f the climate shifts
-//   `<nights tenths of °C>.<days tenths of °C>.<rain mm>.<dry months>` (integers, an empty segment 0,
-//   trailing empty segments left out), b the soil pH × 10, p=1 pots or brought-in soil (apart from b,
+//   `<nights tenths of °C>.<days tenths of °C>.<rain mm>.<dry months>[.1]` (integers, an empty segment 0,
+//   trailing empty segments left out; the 5th, 1: the two temperature shifts set as one, tempsTogether), b the soil pH × 10, p=1 pots or brought-in soil (apart from b,
 //   so neither answer loses the other), i watering (rain, first, all), d the ground after heavy rain
 //   (drains, wet); then u, the requires key, listing those of f b p i d present. e=1 the end, always
 //   last: a link a mail or chat client cut short lacks it, and is unreadable (v14 0W-2 R4: nothing
@@ -165,7 +165,8 @@ export function linkVersionStatus(v: string | null): LinkVersion {
 function editPairs(raw: SiteEdits | null | undefined): string[] {
   const e = siteEditsOf(raw), out: string[] = [];
   const seg = (n: number | undefined, scale: number): string => (n ? String(Math.round(n * scale)) : '');
-  const f = [seg(e.nightsShiftC, 10), seg(e.daysShiftC, 10), seg(e.rainShiftMm, 1), seg(e.dryMonthsShift, 1)].join('.').replace(/\.+$/, '');
+  // f: nights, days, rain, dry months, then 1 when the two temperature shifts are set as one.
+  const f = [seg(e.nightsShiftC, 10), seg(e.daysShiftC, 10), seg(e.rainShiftMm, 1), seg(e.dryMonthsShift, 1), e.tempsTogether ? '1' : ''].join('.').replace(/\.+$/, '');
   if (f) out.push(`f=${f}`);
   if (e.soilPh !== undefined) out.push(`b=${Math.round(e.soilPh * 10)}`);
   if (e.pots) out.push('p=1');
@@ -182,9 +183,10 @@ function readEdits(q: URLSearchParams): SiteEdits | null {
   const f = q.get('f');
   if (f !== null) {
     const segs = f.split('.');
-    if (segs.length <= 4 && segs.every((x) => x === '' || INT.test(x))) {
+    if (segs.length <= 5 && segs.every((x) => x === '' || INT.test(x))) {
       const [n = '', d = '', r = '', m = ''] = segs.map((x) => (x === '' ? 0 : Number(x)));
-      Object.assign(raw, { nightsShiftC: Number(n) / 10, daysShiftC: Number(d) / 10, rainShiftMm: Number(r), dryMonthsShift: Number(m) });
+      // The 5th segment: the two temperature shifts set as one (kept by siteEditsOf beside two equal shifts only).
+      Object.assign(raw, { nightsShiftC: Number(n) / 10, daysShiftC: Number(d) / 10, rainShiftMm: Number(r), dryMonthsShift: Number(m), tempsTogether: segs[4] === '1' });
     }
   }
   const b = q.get('b');

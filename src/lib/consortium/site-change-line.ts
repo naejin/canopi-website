@@ -13,7 +13,7 @@
 import type { LimitLine, MemberChange, PeriodChange, SiteChange, WarmthView } from './site-change.ts';
 import type { Factor, Line, PeriodId, SiteEdits, SiteInputs, TextureId } from './types.ts';
 import { tempsTogether } from './site-inputs.ts';
-import { periodIds } from './types.ts';
+import { NAMED_GROUP, NAMED_PALETTE, periodIds } from './types.ts';
 import { holeChangeLines, periodName } from './verdict-line.ts';
 
 const K = (name: string): string => `consortium.figures.${name}`;
@@ -41,11 +41,22 @@ export const phBandOf = (ph: number) => PH_BANDS.find((b) => (b.to === null || p
 // word-map.md: the board's one form): a reading of the map, never a hint (A8; the hint comes only from
 // the grower's "Stays wet for days"). Only the textures of the hydrologic soil groups C and D (much
 // clay) give a reading; any other texture gives none (review C5: no "likely drains" claim, which no
-// board or source makes), and the line stays "Not answered".
+// board or source makes), and the line stays "Not answered". holdsWater is the one gate: textureLine
+// says a texture it passed.
 const HOLDS: ReadonlySet<TextureId> = new Set<TextureId>(['sandy_clay_loam', 'clay_loam', 'silty_clay_loam', 'sandy_clay', 'silty_clay', 'clay']);
-export const holdsWater = (t: TextureId | null | undefined): boolean => !!t && HOLDS.has(t);
+export const holdsWater = (t: TextureId | null | undefined): t is TextureId => !!t && HOLDS.has(t);
 export const textureNameLine = (t: TextureId): Line => L(`tex_${t}`);
-export const textureLine = (t: TextureId): Line | null => (HOLDS.has(t) ? L('textureHolds', {}, undefined, { texture: textureNameLine(t) }) : null);
+export const textureLine = (t: TextureId): Line => L('textureHolds', {}, undefined, { texture: textureNameLine(t) });
+
+// The nights' two sides that do not take them, each said only above zero (M3): "21 want warmer nights
+// (lowland tropical plants), 168 are recorded only where winters are colder"; "4 are recorded only where
+// winters are colder". "(lowland tropical plants)" goes with the plants wanting warmer nights where the
+// nights never freeze (frostFree). Both sides 0: null (the nights limit nothing then).
+export function nightsSidesLine(warmer: number, colder: number, frostFree: boolean): Line | null {
+  const w = warmer > 0 ? L('nightsWarmer', frostFree ? {} : { tropical: '' }, warmer, frostFree ? { tropical: L('tropical') } : undefined) : null;
+  const c = colder > 0 ? L('nightsColder', {}, colder) : null;
+  return w && c ? L('nightsSidesBoth', {}, undefined, { warmer: w, colder: c }) : w ?? c;
+}
 
 // ---- what was set ----
 
@@ -86,10 +97,9 @@ export function setLines(was: SiteEdits, now: SiteEdits, inputs: SiteInputs | nu
 
 // ---- how many fit, per period ----
 
-// The size rule (A14), one helper for every list of member names (the toast, the opened row, the
-// limits card, the Water card): names while the palette has 40 plants or fewer and the group 12 or
-// fewer; past either, a count (and, on a screen, the MoreList fold).
-export const NAMED_PALETTE = 40, NAMED_GROUP = 12;
+// The size rule (A14, its numbers in types.ts), one helper for every list of member names (the toast,
+// the opened row, the limits card, the Water card): names while the palette has 40 plants or fewer and
+// the group 12 or fewer; past either, a count (and, on a screen, the MoreList fold).
 export const named = (group: number, size: number): boolean => size <= NAMED_PALETTE && group <= NAMED_GROUP;
 
 const net = (p: PeriodChange | undefined): number => (p ? p.fitIn - p.fitOut : 0);
