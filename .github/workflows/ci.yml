@@ -200,6 +200,15 @@ jobs:
         with:
           name: browser-test-build
           path: .
+      # Japanese, Chinese and Korean faces, as every reader of those pages has (Noto Sans and Serif CJK).
+      # The runner image has none: CJK text drew as missing-glyph boxes whose width follows the Latin
+      # face, so "N2, late fonts" measured a reflow no reader sees (ja 390 px, ko 390 and 960 px; CI fix
+      # 2026-11-19, knowledge/runbooks/ci-and-deploy-gate.md). Fails here when no Korean or Japanese face is found.
+      - name: CJK fonts
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends fonts-noto-cjk
+          fc-list :lang=ja | grep -q . && fc-list :lang=ko | grep -q . && fc-list :lang=zh | grep -q .
       # Chrome from the runner image (/usr/bin/google-chrome); wrangler/workerd from node_modules.
       - run: npm run test:browser:shard -- ${{ matrix.shard }}
       - if: always()

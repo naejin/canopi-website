@@ -907,10 +907,13 @@ test('PP-C54 (c1 r4 U3): a later period without figures: the plain subtitle, no 
 test('PP-C56 (c1 r5 W2): "Fits your place" lists and counts only judged plants; the unchecked ones under "Every plant"', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
-  // Three plants with no climate range recorded (state no control makes): never judged.
+  // Three plants with no climate range recorded (state no control makes): never judged. Plants with
+  // no warning (CI fix 2026-11-19): a warned one (toxic, invasive in the country) keeps its "Needs a
+  // second look" heading whatever its verdict (core fillerGroup), so which three came first made the
+  // case pass or fail by the suggestion and the country.
   const blank = await page.evaluate(() => {
     const { store } = window.__ctTest, m = new Set(store.members.value);
-    const picked = store.pool.value.filter((t) => !m.has(t.id)).slice(0, 3);
+    const picked = store.pool.value.filter((t) => !m.has(t.id) && !store.warnedPlant(t)).slice(0, 3);
     for (const t of picked) t.climate = null;
     store.location.value = { ...store.location.value };
     return picked.map((t) => t.id);
@@ -930,7 +933,7 @@ test('PP-C56 (c1 r5 W2): "Fits your place" lists and counts only judged plants; 
   assert.equal(await page.$(`${FIND} [data-find-group="unchecked"]`), null, 'no "Not checked" group under "Fits your place"');
   assert.ok(blank.every((id) => !rows.includes(id)), 'the unchecked plants are not listed as fitting');
   assert.equal(rows.length, Number(n), 'the rows are the N plants (the outside ones folded)');
-  await page.click(`${FIND} [data-filter="all"]`);
+  await page.$eval(`${FIND} [data-filter="all"]`, (e) => e.click()); // no pointer: a row re-render may detach the box between aim and press (CI fix 2026-11-19)
   await expandAll(page);
   const unchecked = await page.$$eval(`${FIND} [data-find-group="unchecked"] [data-find-row]`, (els) => els.map((e) => e.dataset.plantId));
   assert.deepEqual(unchecked.sort(), [...blank].sort(), 'under "Every plant" they are listed, under "Not checked"');

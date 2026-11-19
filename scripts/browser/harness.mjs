@@ -120,6 +120,11 @@ const roleUrls = (builtDir) => {
   return { ...features, maplibre, maplibreCss, testHook };
 };
 
+// Every page's time zone (open(), page.emulateTimezone): fixed, whatever the machine's TZ (local CET,
+// CI UTC). The locale is left to Chrome (en-US both here and on CI): a --lang=en-US flag made BT-7
+// (consortium-s4) flaky, 2 runs in 3.
+export const TIME_ZONE = 'Europe/Paris';
+
 export async function startHarness({ log = () => {}, dir } = {}) {
   const site = await serve({ log, dir });
   let browser;
@@ -248,6 +253,10 @@ export async function startHarness({ log = () => {}, dir } = {}) {
     page.setDefaultNavigationTimeout(20_000);
     await page.setViewport({ width, height: width < 640 ? 844 : 900, deviceScaleFactor: 1, isMobile: width < 640, hasTouch: width < 640 });
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: theme }]);
+    // The machine's time zone never reaches a page (CI fix 2026-11-19): what a page derives from it
+    // (the country guess, state/arrival.ts) differed between CI's UTC and a local CET, and four tests
+    // with it. A test that needs another zone emulates it in its setup (setup runs after this).
+    await page.emulateTimezone(TIME_ZONE);
     await page.setJavaScriptEnabled(javaScript);
     await page.evaluateOnNewDocument((t, keepWasm, online, keepStorage, hooked, waits) => {
       if (hooked) window.__ctTest = true;

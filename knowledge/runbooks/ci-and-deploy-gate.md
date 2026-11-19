@@ -2,15 +2,15 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:29:02Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T17:12:13Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
 sources:
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
-    digest: sha256:c6346b35ba567147
-    last_modified: 2026-11-17T06:47:08Z
+    digest: sha256:af2644ba6c84cc80
+    last_modified: 2026-11-19T14:11:42Z
   - id: nightly-yml
     resource: ../../.github/workflows/nightly.yml
     title: .github/workflows/nightly.yml
@@ -30,7 +30,7 @@ sources:
     resource: ../../.githooks/pre-push
     title: .githooks/pre-push
     digest: sha256:ff9d7b9815f700a9
-    last_modified: 2026-11-17T06:47:08Z
+    last_modified: 2026-11-17T10:52:11Z
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
@@ -56,6 +56,11 @@ sources:
     title: scripts/browser/serve.mjs
     digest: sha256:2fbd78dfb558f1ec
     last_modified: 2026-11-12T22:04:52Z
+  - id: harness-mjs
+    resource: ../../scripts/browser/harness.mjs
+    title: scripts/browser/harness.mjs
+    digest: sha256:f02082c9d31d1f5a
+    last_modified: 2026-11-19T17:12:11Z
 enforced_by: [.github/workflows/ci.yml, scripts/ci-deploy.test.mjs]
 ---
 
@@ -83,7 +88,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 | `changes` | always | `docs_only=true` when every changed path is `knowledge/**`, `.beads/**`, `docs/**` or a root `*.md` (never `src/data/*.md`). On master the base is the tip of `deploy` (the last commit tested green), not the previous push, so a documentation-only commit after a red code commit (or after a `--no-verify` push) still runs jobs 2–4. It is false when there is no base (no `deploy` yet, new branch, force push, manual run). Tested in `scripts/ci-deploy.test.mjs`. |
 | 1 `unit` | always | climate install, `npm run check`, `npm test` (0 skips), `check:arch`, `check:dup`, `check:dead`, ast-grep, and the zero-marker check on master pushes (`.githooks/zero-markers` says `fail` since the E3/E4/E5a/E6 batch's chunk-5 exit, with 0 markers left: any expected-fail marker blocks a master push and fails the job; `warn` would only report the count; on a master push with `fail`, `npm test` runs with `CANOPI_ZERO_MARKERS=1` since PP-C commit 0). PP-C commit 0 brought markers back on its branch (the c1, c2 and pf tests written first), so PP-C is not pushed to master until its streams remove them |
 | 2 `browser-build` | code ranges | `npm run build:browser-test`; artifact `browser-test-build`: `dist-test/` + `src/data/climate-index.json` (1 day), read by jobs 3 and 4 |
-| 3 `browser` ×4 | code ranges | `npm run test:browser:shard -- N`; results artifact always |
+| 3 `browser` ×4 | code ranges | installs `fonts-noto-cjk` (apt; fails when `fc-list` finds no ja, ko or zh face), then `npm run test:browser:shard -- N`; results artifact always |
 | 4 `site` | code ranges; waits for job 2 (`needs: [changes, browser-build]`) | `npm run build` → `check-built-site` → `test:browser:smoke` → `test:axe` → `test:vectors` with `CANOPI_REQUIRE_VECTORS=1` → downloads job 2's `browser-test-build` artifact → the L11 graph test, `node --test scripts/built-modules.test.mjs` with `CANOPI_REQUIRE_BUILDS=1` (the test build's chunk graph is the production graph plus the test hook's chunk; a missing build fails) |
 | `gate` | always | green when every job is green; jobs 2–4 may be skipped only when `docs_only` is true. **The ruleset requires this name: renaming it blocks every deploy.** |
 | `deploy` | master push, gate green | `contents: write`; concurrency group `deploy`, never cancelled. If `deploy` already contains the sha, it exits 0. If the sha does not descend from `deploy`, it fails naming both. Otherwise `git push origin <sha>:refs/heads/deploy` (never `--force`). It creates `deploy` on the first run. |
@@ -94,6 +99,8 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 - **Permissions:** `contents: read` everywhere except `deploy`. `persist-credentials: false` everywhere except `deploy`. Fork pull requests run jobs 1–4 with a read token. They never deploy, and there is no `pull_request_target`.
 - **Node:** `.node-version` (22.22.0) is read by `actions/setup-node` and by Workers Builds. `/version.json` reports the Node version Cloudflare actually built with.
 - `WRANGLER_SEND_METRICS=false`. Chrome comes from the runner image (`CANOPI_CHROME=/usr/bin/google-chrome`).
+- **Fonts and time zone in the browser job** (CI fix 2026-11-19, run 44535098302): the runner image has no CJK face, so Japanese, Chinese and Korean drew as missing-glyph boxes whose width follows the Latin face; "N2, late fonts" then measured reflows no reader sees (ja 390 px: the place search's privacy line, 4 lines in Source Sans 3 and 5 in its fallback; ko 390 and 960 px: the step's lede). With `fonts-noto-cjk` (Noto Sans and Serif CJK) every locale passes, as on a machine with any CJK face. The runner's time zone is UTC: what a page derives from the time zone (the browser's country guess) differed from a local CET run, which failed PFA6, PFA31, PFA45, PP-C56 and PFE26 on CI only. `scripts/browser/harness.mjs` now gives every page `TIME_ZONE` (`Europe/Paris`) unless its setup emulates another zone, so no test depends on the machine's TZ (the locale stays Chrome's default, en-US on both; a `--lang=en-US` flag made BT-7 flaky).
+- **Reproducing CI's fonts locally:** a `FONTCONFIG_FILE` that lists only `/usr/share/fonts/truetype/{dejavu,liberation}` reproduced the run's CLS figures to the fourth decimal (ja 0.0943, ko 0.1485 at 390 px); adding `/usr/share/fonts/opentype/noto` (the `fonts-noto-cjk` files) made them pass. Pass it to the run with `systemd-run ... -E FONTCONFIG_FILE=<file>`.
 
 ## Version marker
 

@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:25Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T17:12:12Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:21Z }
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:08b2f211a5a8ccf5
-    last_modified: 2026-11-19T12:59:19Z
+    digest: sha256:5125770b396d507b
+    last_modified: 2026-11-19T17:12:11Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -93,13 +93,13 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:7d5dc44dd985ee5b
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:f02082c9d31d1f5a
+    last_modified: 2026-11-19T17:12:11Z
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
     digest: sha256:f508455692c4e406
-    last_modified: 2026-11-19T12:59:19Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: consortium-said-mjs
     resource: ../../scripts/consortium-said.mjs
     title: scripts/consortium-said.mjs
@@ -192,6 +192,7 @@ What the browser specs assume since b1a's Place and b2's palette page meet:
   - `browser/consortium-pp-b1.browser.test.mjs` (P4)
   - `browser/consortium-pp-b2.browser.test.mjs` (A1, A2, S1, P2; owner b2)
   - `vectors/link-v5.json` and `vectors/range-verdicts.json`
+- **harness.mjs time zone:** every page opens with `page.emulateTimezone(TIME_ZONE)` (`Europe/Paris`) before its `setup`, so nothing a page derives from the machine's TZ (the country guess) differs between CI (UTC) and a local run (CI fix 2026-11-19). A test that needs another zone emulates it in `setup`.
 - **harness.mjs:** `database: 'hold'` holds the database request until `page.releaseHeld()`; a `block: { <role>: 'hold' }` chunk is let through by `page.releaseHeld()` or aborted as offline by `page.failHeld()` (PP-C review c0 round 2: a chunk that fails after the page moved on).
 - **Import rules:** the rules are L1–L10. L10 is a warn rule ([island layers](/decisions/consortium-island-layers.md)).
 
