@@ -215,16 +215,18 @@ export function StepLevels({ p, column, b, size }: { p: Picture; column: number;
 
 // Past 40 plants: each level a group "Full sun: 10 plants" with its count cell. `standing(key)`: the
 // level's plants standing then that count (not outside their range).
-export function CountCells({ p, column, size, standing, b }: { p: Picture; column: number; size: number; standing: (r: PictureRow) => PlantId[]; b: PlantButtons }) {
+// loading: a member's list is being read (Years, store.listsLoading): each count reads "Loading…" (F26).
+export function CountCells({ p, column, size, standing, b, loading = false }: { p: Picture; column: number; size: number; standing: (r: PictureRow) => PlantId[]; b: PlantButtons; loading?: boolean }) {
   return (
     <div class="ct-cells">
       {p.rows.map((r) => {
         const ids = standing(r), hole = r.cells[column].hole;
         if (!ids.length && !hole) return null;
-        const label = T('palette.chart.levelCount', { level: say(r.head), plants: P('palette.chart.plants', ids.length) });
+        const count = loading ? T('details.loading') : P('palette.chart.plants', ids.length);
+        const label = T('palette.chart.levelCount', { level: say(r.head), plants: count });
         return (
           <div key={r.key} class="ct-cell" role="group" aria-label={label} data-lane={r.key}>
-            <p class="ct-cell-head"><span class="ct-grid-level">{say(r.head)}</span><span class="ct-grid-count">{P('palette.chart.plants', ids.length)}</span></p>
+            <p class="ct-cell-head"><span class="ct-grid-level">{say(r.head)}</span><span class="ct-grid-count">{count}</span></p>
             <Names ids={ids} name={(id) => p.names[id] ?? id} size={size} render={(id) => <NameButton id={id} p={p} b={b} />} />
             {hole && <HoleButton id={hole} b={b} find={T('palette.chart.findPlant')} />}
           </div>

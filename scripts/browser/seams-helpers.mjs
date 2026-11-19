@@ -129,10 +129,12 @@ export const pasteOne = async (page, name) => {
   await showPalette(page);
 };
 
-// Every visible control in #ct-root (outside an open sheet unless inSheet) with its box.
+// Every visible control in #ct-root (outside an open sheet unless inSheet) with its box: its tap target,
+// so a stretched link (a ::after at inset 0 over its positioned offsetParent, as a Your plants row's name button,
+// R14) is measured by the box it covers (c4 GR-B1).
 export const controls = (page, inSheet = false) => page.$$eval(inSheet ? 'dialog[open] button, dialog[open] a[href], dialog[open] [role="tab"]' : '#ct-root button, #ct-root a[href], #ct-root [role="tab"]', (els, sheet) => els
   .filter((el) => sheet || !el.closest('dialog'))
-  .map((el) => { const r = el.getBoundingClientRect(); return { name: (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 50), h: Math.round(r.height), w: Math.round(r.width), cls: el.className, inline: el.matches('.ct-explain-btn, a.text-link') } ; })
+  .map((el) => { const after = getComputedStyle(el, '::after'); const stretched = after.position === 'absolute' && after.content !== 'none' && ['top', 'right', 'bottom', 'left'].every((k) => after[k] === '0px') && el.offsetParent; const r = (stretched ? el.offsetParent : el).getBoundingClientRect(); return { name: (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 50), h: Math.round(r.height), w: Math.round(r.width), cls: el.className, inline: el.matches('.ct-explain-btn, a.text-link') } ; })
   .filter((c) => c.h > 0 && c.w > 0), inSheet);
 export const small = (list) => list.filter((c) => c.h < (c.inline ? 36 : 40)).map((c) => `${c.name} ${c.w}×${c.h} (${c.cls})`);
 

@@ -153,10 +153,11 @@ export function NextStep({ holes, members }: { holes: readonly Hole[]; members: 
     );
   }
   // A guest list that could not be read: its plants may fill a hole, so no hole is named (PP-B21).
-  if (store.failedMembers.value.length) return <Card><Title /><p class="status-line">{T('palette.holesListMissing')}</p></Card>;
+  const lists = store.listsState.value;
+  if (lists === 'failed') return <Card><Title /><p class="status-line">{T('palette.holesListMissing')}</p></Card>;
   // F18 (first: the check waits, whatever else loads): until the fit check is here no hole is named and no bulk add offered (never named, then flipped).
   if (!store.verdictsReady.value || (!store.memberVerdicts.value && !store.verdictFailed.value)) return <Card><Title /><p class="status-line">{T('palette.next.checking')}</p></Card>;
-  if (store.guestsPending.value.length || store.missingMembers.value.loading.length) {
+  if (lists === 'loading') {
     return <Card><Title /><p class="status-line">{T('palette.holesPending')}</p></Card>;
   }
   if (!next || !found || !lead) {

@@ -182,6 +182,48 @@ export async function loadPalette200(opts = {}) {
   return page;
 }
 
+// A guest plant from a climate list the palette does not use yet (its first plant by id), for the
+// list-state cases: `{ zone, guest }`, or the premise fails. `skip` leaves out zones already taken.
+async function unusedListGuest(page, skip = []) {
+  const zone = await page.evaluate((s) => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !s.includes(z) && !window.__ctTest.store.pools.value[z]), skip);
+  assert.ok(zone, 'the premise: a list the palette does not use');
+  const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
+  return { zone, guest };
+}
+// A guest list refused (PP-B21, h3 R1): a guest of an unused list joins the palette and its list read
+// fails; waits until the store names it in failedMembers. Returns `{ zone, guest }`.
+export async function refuseGuestList(page) {
+  const { zone, guest } = await unusedListGuest(page);
+  await page.evaluate((z, id) => {
+    const { store } = window.__ctTest, src = store.source.value;
+    const pool = src.pool.bind(src);
+    src.pool = (x) => (x === z ? Promise.reject(new Error('refused (test)')) : pool(x));
+    store.guests.value = { ...store.guests.value, [id]: z };
+    store.members.value = [...store.members.value, id];
+  }, zone, guest);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.failedMembers.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'the premise: the list could not be read');
+  await frames(page);
+  return { zone, guest };
+}
+// A guest list held (F26, M17): a guest of an unused list joins the palette and its list read waits
+// until `window.__list.release()`. Returns `{ zone, guest }` once the store says a list is loading.
+export async function holdGuestList(page, skip = []) {
+  const { zone, guest } = await unusedListGuest(page, skip);
+  await page.evaluate((z, id) => {
+    const { store } = window.__ctTest, src = store.source.value;
+    const pool = src.pool.bind(src), rows = src.interactions.bind(src);
+    let release; const wait = new Promise((r) => { release = r; });
+    window.__list = { release };
+    src.pool = (x) => (x === z ? wait.then(() => pool(x)) : pool(x));
+    src.interactions = (x) => (x === z ? wait.then(() => rows(x)) : rows(x));
+    store.guests.value = { ...store.guests.value, [id]: z };
+    store.members.value = [...store.members.value, id];
+  }, zone, guest);
+  assert.ok(await page.waitForFunction((z) => window.__ctTest.store.guestsPending.value.includes(z), { timeout: 5000 }, zone).then(() => true, () => false), 'the premise: the list is being read');
+  await frames(page);
+  return { zone, guest };
+}
+
 export const done = async (...pages) => { for (const p of pages) await p.browserContext().close().catch(() => {}); };
 export const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
 export const focused = (page) => page.evaluate(() => { const a = document.activeElement; return { body: !a || a === document.body, inTool: !!a?.closest('#ct-root, dialog[open]'), name: (a?.getAttribute('aria-label') ?? a?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) }; });

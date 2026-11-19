@@ -48,6 +48,14 @@
   color: inherit; font: inherit; text-align: start; cursor: pointer;
 }
 .ct .ct-plant-open:hover .ct-plant-name strong { text-decoration: underline; }
+/* The door to Details from a Your plants row (plants/Small.tsx, R14): the button holds only the plant's
+   name, so its accessible name is its text (WCAG 2.5.3); its stretched ::after covers the row
+   (.ct-plant-open is the positioned box), so the whole row stays one tap target, and the focus ring
+   is drawn round the row (c4 T11: Small's own class, with the row it covers). */
+.ct .ct-plant-go { padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ct .ct-plant-go::after { content: ''; position: absolute; inset: 0; }
+.ct .ct-plant-go:focus-visible { outline: none; }
+.ct .ct-plant-go:focus-visible::after { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ct .ct-plant-more { display: grid; gap: 2px; }
 .ct .ct-plant-fit { padding-top: 2px; }
 .ct .ct-many-group { min-width: 0; }
@@ -114,7 +122,7 @@
 .ct .ct-many-fitline { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 .ct .ct-many-word { display: block; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
 .ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
-.ct .ct-many-word[data-level="danger"] { color: var(--danger); } /* Very toxic (Severe) only (h3 M47; Many.tsx RowMarks) */
+.ct .ct-many-word[data-level="danger"] { color: var(--danger); } /* Toxic and Very toxic, a serious conflict (h3 M47, c4 T13 (a); Many.tsx manyLevel) */
 .ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
 .ct .ct-many-word .ct-fit { color: inherit; }
 .ct .ct-many-more {
