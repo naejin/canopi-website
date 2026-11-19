@@ -149,7 +149,7 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
 
 // The soil map's reading for a site just read, best effort (R1): "Your place in figures" (pf-d) reads
 // its pH and texture (SiteInputs.soilPh, site-inputs.ts soilTextureOf), and says "not known" while it
-// is missing. Asked after the place is in use, so a slow or failed soil tile (about 60 KB each; up to 8
+// is missing. Asked after the place is in use, so a slow or failed soil tile (about 147 KB each; up to 8
 // neighbours where the point's own cell is empty) never costs the grower the place. The climate and
 // regions tiles it reads again are the tile source's cached ones. Patched in quietly (the page found
 // it, the reader did not act), and only onto the same site's lookup: a newer place drops it.
@@ -314,7 +314,13 @@ export async function searchRead(q: string, read: CoordsRead): Promise<void> {
 // lines say so). The answer names the place where it stands ("Near Kiambu, Kenya"), kept on this
 // device as the location was; none found or no answer is said beside the row (naming). A press while
 // one is asked does nothing (the link is busy); a lookup cut short by another ask (a place search, a
-// new place) is no failure: what replaced it speaks.
+// new place) is no failure: what replaced it speaks. "Still that place" is the same typed, unnamed
+// point, not the same object: the soil reading patched on later (soilLater) copies the place, and must
+// neither drop the name nor be dropped by it (h3 G1 round 2, B1.1, C2.1).
+const stillUnnamed = (l: Place): Place | null => {
+  const now = store.location.peek() as Place | null;
+  return now?.typed && !now.label && now.lat === l.lat && now.lon === l.lon && now.source === l.source ? now : null;
+};
 export async function lookUpName(): Promise<void> {
   const l = store.location.peek() as Place | null;
   if (!l?.typed || l.label || naming.peek() === 'asking') return;
@@ -323,14 +329,15 @@ export async function lookUpName(): Promise<void> {
   naming.value = 'asking';
   try {
     const r = await searcher().nameOf(at.lat, at.lon);
-    if (store.location.peek() !== l) { naming.value = null; return; }
+    const now = stillUnnamed(l);
+    if (!now) { naming.value = null; return; }
     if (!r) { naming.value = 'none'; return; }
-    const next: Place = { ...l, label: placeName(r), ...(r.placeType ? { placeLevel: true as const } : {}) };
+    const next: Place = { ...now, label: placeName(r), ...(r.placeType ? { placeLevel: true as const } : {}) };
     batch(() => { store.location.value = next; naming.value = null; });
     keepLocation(next);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') { if (naming.peek() === 'asking') naming.value = null; return; }
-    if (store.location.peek() === l) naming.value = 'failed';
+    if (stillUnnamed(l)) naming.value = 'failed';
   }
 }
 

@@ -147,7 +147,8 @@ const liveChange = computed<LastChange | null>(() => {
 const openLine = signal<LineId | 'none' | null>(null);
 const editing = signal<LineId | null>(null);
 const focusTo = (id: LineId) => requestAnimationFrame(() => requestAnimationFrame(() => {
-  const el = document.querySelector<HTMLElement>(`[data-fg-change="${id}"]`) ?? document.querySelector<HTMLElement>(`[data-fg-line="${id}"] [aria-pressed]`);
+  // An open choice line has no Change: its chosen option, else its first.
+  const el = document.querySelector<HTMLElement>(`[data-fg-change="${id}"]`) ?? document.querySelector<HTMLElement>(`[data-fg-line="${id}"] [aria-pressed="true"]`) ?? document.querySelector<HTMLElement>(`[data-fg-line="${id}"] [aria-pressed]`);
   el?.focus();
 }));
 
@@ -155,10 +156,13 @@ const focusTo = (id: LineId) => requestAnimationFrame(() => requestAnimationFram
 // the edits (core tempsTogether, round 3 R2, C5): the tick sets it, an edit of either line on its own
 // drops it, Reset on either line reads it, and it travels with Undo like the values.
 function commit(line: LineId, next: SiteEdits): void {
-  const was = store.siteEdits.peek(), wasInputs = store.siteInputs.peek();
-  // From an editor ("Use my value"): it closes, and the focus goes back to the line's Change, as Cancel
-  // and Reset do, whether or not anything changed (R2, C1); an option tapped in place keeps its focus.
-  if (editing.peek() !== null) { editing.value = null; focusTo(line); }
+  const was = store.siteEdits.peek();
+  // From this line's editor ("Use my value"): it closes, and the focus goes back to the line's Change, as
+  // Cancel and Reset do, whether or not anything changed (R2, C1). An option tapped in place keeps its
+  // focus, even while another line's editor is open (that editor only closes; B2.1).
+  const fromEditor = editing.peek() === line;
+  if (editing.peek() !== null) editing.value = null;
+  if (fromEditor) focusTo(line);
   // Nothing changed (the same value used again): no write, no toast (M2).
   if (sameEdits(siteEditsOf(next), was)) return;
   store.setSiteEdits(next, ({ ready, failed }) => {
@@ -177,8 +181,9 @@ function commit(line: LineId, next: SiteEdits): void {
       const hs: Hole[] = holes({ members, verdicts: b[store.period.peek()] ?? null, pending: false });
       return siteSnapshot(lst, members, b, hs);
     };
-    const now = store.siteInputs.peek();
-    const change = siteChange(snap(wasInputs), snap(now));
+    // Only the grower's edit is measured: both sides on the place as it is now, so a reading that landed
+    // meanwhile (the soil map, soilLater) is never counted as their change, nor left out of Undo (B3.1).
+    const change = siteChange(snap(inputsWith(was)), snap(inputsWith(store.siteEdits.peek())));
     lastChange.value = { line, toast, change, of: lst.length };
     return words(change);
   });

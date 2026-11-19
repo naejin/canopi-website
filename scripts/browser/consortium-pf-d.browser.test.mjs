@@ -12,7 +12,10 @@
 //   fix round 3, batch 1: PFD41-PFD43 (R2/C5, R3); R1/C1, R4/C3 are unit cases (consortium-pf-d.test.mjs).
 //   h3 G1 (chunk-3 hand-off): PFD32 and PFD42 unmarked (state/location.ts reads the soil tile, M8; the
 //   tempsTogether link in the save's place and the link's f, M1); PFD44-PFD46 (M2, M4);
-//   h3 G1 fix round 1: PFD47-PFD49 (R3; R1, C5; R4, C4), PFD45's focus (R2, C1), PFD18's count cells (C7).
+//   h3 G1 fix round 1: PFD47-PFD49 (R3; R1, C5; R4, C4), PFD45's focus (R2, C1), PFD18's count cells (C7);
+//   PFD49 marked expected-fail under pf-d, hand-off to main h3 (fix round 2, C1.1: its fix is base.css's #ct-root reserve;
+//   pf-d is still in browser-tests.test.mjs CHUNK_3_OPEN, so a "main" owner is not accepted yet).
+//   h3 G1 fix round 2: PFD50 (B2.1), PFD51 (B1.1, C2.1), PFD52 (B3.1).
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries none: the panel is new (spec: "Delete: nothing; the 'Soil, likely' card and 'Tell us about
@@ -21,8 +24,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { useHarness, aria, has } from './helpers.mjs';
+import { failing } from '../expect-fail.mjs';
 import { loadCase, control, done, focused, inOrder, pastEdge, press, says, saysNot, section, sectionText, toastText, withStorage } from './pf-helpers.mjs';
 import { searchFor } from './pf-c-helpers.mjs';
+import { tool } from './p5-helpers.mjs';
 import { atBoardPlace, atPlace, edits, movedTo, engineCounts, engineDrierFrom, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
 
 useHarness();
@@ -1222,7 +1227,9 @@ test('PFD48 (pf-d R1, C5): the soil tile is optional: with every soil tile faili
 // (The location line's own moves when a saved place is read, ct-country and ct-location-result, are
 // the Place form's: reported, not counted here.)
 const panelMove = (m) => /site-footer|tool-release|fg-/.test(m);
-test('PFD49 (pf-d R4, C4): a Start with a climate kept on this device (the guides\' canopi-climate), or a saved location, does not move when "Your place in figures" arrives: CLS 0.01 or less at 390 and 1280 px', async () => {
+// Expected-fail (C1.1): the fix is the page's #ct-root height reserve in src/styles/consortium/base.css,
+// outside G1's files; hand-off .local/consortium/v2/ppc/pf/c3/handoff/g1-pfd49-ct-root-reserve.md.
+failing('PFD49 (pf-d R4, C4; hand-off main h3: the #ct-root reserve in base.css): a Start with a climate kept on this device (the guides\' canopi-climate), or a saved location, does not move when "Your place in figures" arrives: CLS 0.01 or less at 390 and 1280 px', { owner: 'pf-d', reason: /R4: Start does not move when the figures panel arrives/ }, async () => {
   const over = [];
   const cases = [['kept climate', { 'canopi-climate': 'temperate' }], ['saved location', { 'canopi-location': JSON.stringify({ lat: -1.1714, lon: 36.8356, source: 'map' }) }]];
   for (const [what, entries] of cases) for (const width of [390, 1280]) {
@@ -1262,3 +1269,96 @@ test('PFD46 (pf-d M4): a one-plant palette drier here only later reads "your one
   assert.doesNotMatch(card, /your 1 plants/, 'M4: never "your 1 plants"');
   await done(page);
 });
+
+// ---- h3 G1 fix round 2 ----
+
+test('PFD50 (pf-d B2.1): at 1280, an option picked while another line\'s editor is open keeps the focus on that option (never the group\'s first option)', async () => {
+  const page = await placeStep('kiambu-8', { width: 1280 });
+  await section(page, 'Your place in figures', 20_000);
+  await tap(page, 'Change coldest nights');
+  assert.ok(await has(page, 'main fieldset input[type="text"]', 4000), 'the nights editor is open');
+  // A keyboard grower: the focus on "Stays wet for days", then Space.
+  const ok = await page.evaluate(() => {
+    const g = document.querySelector('main [role="group"][aria-label="The ground after heavy rain"]');
+    const b = [...(g?.querySelectorAll('button[aria-pressed]') ?? [])].find((x) => x.textContent.trim().startsWith('Stays wet for days'));
+    b?.focus();
+    return !!b && document.activeElement === b;
+  });
+  assert.ok(ok, 'board: the option "Stays wet for days" takes the focus');
+  await page.keyboard.press('Space');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.siteEdits.value.drainage === 'wet', { timeout: 4000 }).then(() => true, () => false), 'the answer is written');
+  await new Promise((r) => setTimeout(r, 600));
+  const at = await focused(page);
+  assert.ok(at.name.startsWith('Stays wet for days'), `B2.1: the focus stays on the option picked (${JSON.stringify(at)})`);
+  assert.equal(await pressed(page, 'The ground after heavy rain', 'Stays wet for days'), 'true');
+  await done(page);
+});
+
+// The soil tiles and "Look up its name"'s reverse lookups, each held in the page until released.
+const holdSoilAndName = (pg) => pg.evaluateOnNewDocument(() => {
+  const real = window.fetch.bind(window);
+  const gates = { soil: [], name: [] };
+  window.__held = { soil: 0, name: 0 };
+  window.__release = (k) => { for (const g of gates[k]) g(); gates[k] = []; window.__open = { ...(window.__open ?? {}), [k]: true }; };
+  window.fetch = async (input, init) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    const k = url.hostname === 'nominatim.openstreetmap.org' && url.pathname === '/reverse' ? 'name' : /\/data\/climate\/.+\/soil\//.test(url.pathname) ? 'soil' : null;
+    if (k && !window.__open?.[k]) { window.__held[k]++; await new Promise((r) => { gates[k].push(r); }); }
+    return real(input, init);
+  };
+});
+const heldSoon = (page, k) => page.waitForFunction((x) => window.__held[x] > 0, { timeout: 15_000 }, k).then(() => true, () => false);
+for (const order of ['soil first', 'name first']) {
+  test(`PFD51 (pf-d B1.1, C2.1; ${order}): the soil reading landing while "Look up its name" asks (or after it answers) loses neither: the place is named, kept with its name on this device, and keeps the soil map's reading`, async () => {
+    const page = await tool({ width: 390, nominatim: 'fixture', setup: holdSoilAndName });
+    await searchFor(page, '-1.1714, 36.8356');
+    await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 15_000 });
+    assert.ok(await heldSoon(page, 'soil'), 'the soil tile is asked for after the place');
+    await press(page, 'button', 'Look up its name');
+    assert.ok(await heldSoon(page, 'name'), 'the reverse lookup is asked');
+    const [first, second] = order === 'soil first' ? ['soil', 'name'] : ['name', 'soil'];
+    await page.evaluate((k) => window.__release(k), first);
+    if (first === 'soil') assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup?.soil, { timeout: 15_000 }).then(() => true, () => false), 'the soil lands while the name is asked');
+    else await says(page, /Near Kiambu, Kenya/, { timeout: 10_000 });
+    await page.evaluate((k) => window.__release(k), second);
+    await says(page, /Near Kiambu, Kenya/, { timeout: 10_000 });
+    assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup?.soil, { timeout: 15_000 }).then(() => true, () => false), 'the soil reading stays');
+    const l = await page.evaluate(() => ({ label: window.__ctTest.store.location.value?.label ?? null, kept: JSON.parse(localStorage.getItem('canopi-location') ?? 'null')?.label ?? null }));
+    assert.match(l.label ?? '', /Kiambu/, `B1.1: the place is named (${JSON.stringify(l)})`);
+    assert.equal(l.kept, l.label, 'B1.1: the name is kept on this device');
+    await saysNot(page, 'The place search did not answer, so the place has no name. Try again later.', 'no failure said');
+    await done(page);
+  });
+}
+
+test('PFD52 (pf-d B3.1): a soil reading landing while an edit\'s summary is counting is not counted as the grower\'s change: the summary equals the same edit\'s once the soil is in', async () => {
+  const page = await placeStep('kiambu-8', { site: null, width: 1280, nominatim: 'fixture', setup: holdSoilAndName });
+  await searchFor(page, '-1.1714, 36.8356');
+  await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 15_000 });
+  assert.ok(await heldSoon(page, 'soil'), 'the soil tile is asked for after the place');
+  await section(page, 'Your place in figures', 20_000);
+  assert.ok(await verdictsSettledSoon(page), 'the verdicts');
+  // The verdict rule not there yet (as on a first place: its chunk still loading): the summary waits.
+  await page.evaluate(() => { const s = window.__ctTest.store; window.__rule = s.verdictRule.value; s.verdictRule.value = null; });
+  let id = await toastId(page);
+  await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
+  assert.ok(await page.waitForFunction((k) => { const t = window.__ctTest.store.toast.value; return t && t.id !== k && t.text.includes('Counting'); }, { timeout: 4000 }, id).then(() => true, () => false), 'the summary is counting');
+  id = await toastId(page);
+  await page.evaluate(() => window.__release('soil'));
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup?.soil, { timeout: 15_000 }).then(() => true, () => false), 'the soil lands while it counts');
+  // A soil reading that moves verdicts for sure (as soilLater writes it, the same lookup patched quietly):
+  // pH 3.6, so the race would show in the counts whatever the release's reading at Kiambu.
+  await page.evaluate(() => { const s = window.__ctTest.store, l = s.location.value; s.location.value = { ...l, lookup: { ...l.lookup, soil: { ...l.lookup.soil, phH2o: 3.6 } } }; });
+  await page.evaluate(() => { window.__ctTest.store.verdictRule.value = window.__rule; });
+  const raced = await page.waitForFunction((k) => { const t = window.__ctTest.store.toast.value; return t && t.id === k && !t.text.includes('Counting') ? t.text.replace(/\s+/g, ' ') : null; }, { timeout: 20_000 }, id).then((h) => h.jsonValue());
+  // The same edit again, the soil already in and the rule ready.
+  await undoToast(page);
+  assert.ok(await page.waitForFunction(() => !window.__ctTest.store.siteEdits.value.drainage, { timeout: 4000 }).then(() => true, () => false), 'Undo puts the answer back');
+  id = await toastId(page);
+  await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
+  const plain = await nextSummary(page, id);
+  console.log(`# PFD52: raced "${raced}"; plain "${plain}"`);
+  assert.equal(raced, plain, 'B3.1: the summary counts the grower\'s edit only');
+  await done(page);
+});
+const verdictsSettledSoon = (page) => page.waitForFunction(() => !!window.__ctTest.store.verdictRule.value && !!window.__ctTest.store.pool.value, { timeout: 30_000 }).then(() => true, () => false);
