@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:18Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
 sources:
@@ -15,8 +15,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:2d6f468d17a922a7
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:c4e8c2410220e903
+    last_modified: 2026-11-19T09:07:50Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
@@ -30,8 +30,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:65c143542f9f4e35
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:20cb5074cb42d667
+    last_modified: 2026-11-19T09:14:39Z
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
@@ -40,8 +40,8 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:5e4f54887014f1e1
-    last_modified: 2026-11-18T18:41:19Z
+    digest: sha256:7a085fede4454133
+    last_modified: 2026-11-19T08:22:07Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -55,8 +55,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b59d99cb0816bb6
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:88dcd1f9fa48e570
+    last_modified: 2026-11-19T08:22:07Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -77,6 +77,11 @@ sources:
     title: src/islands/consortium/state/save.ts
     digest: sha256:7a5518810d5d8e3a
     last_modified: 2026-11-18T17:07:24Z
+  - id: place-tsx
+    resource: ../../src/islands/consortium/views/place/Place.tsx
+    title: src/islands/consortium/views/place/Place.tsx
+    digest: sha256:1bc0c7720b8a2a60
+    last_modified: 2026-11-19T08:22:07Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs
@@ -179,6 +184,8 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 - **Back or another link while it waits**: the reader's own spot, soil and country are put back before the next palette applies.
 - **One Undo for Place's moves**: through store.ts `offerUndo`, the same offer as Remove, Swap and Add (Start over: "Your palette was cleared; your place stays."; every suggestion placed, waited or not, from `store.suggestMembers` itself, so no caller can skip it (fix round 4, s-1, s-2); "Show my palette" offers none since fix round 3). Each snapshot is `store.snapshot()`, the schema's plus the save mark, and the Undo goes through `save.ts` `undoSave`. Since the chunk-1 merge draft.ts keeps no Undo of its own; the end of the offer is store.ts's effect, registered by `start()`.
 - **Guide preset over a save**: the preset holds the save (`applyPreset` `holdSave(true)`), so `savedInstead` keeps it one press away ("Open my saved palette instead", `draft.ts openSavedInstead`); `notices.guidePlant` replaces `guideKept`.
+- **A guide plant missing from the list** (chunk-2 M29, chunk 4 T17): `applyPreset` sets `notices.guideMissing` to the plant's common name, read from the release's names file (`restore.ts` `guideName`: `source.names(pageLang)`, the entry whose canonical name is the guide's, through `strings.ts` `nameOf`: the page language, else English, else the scientific name); the guide's own words when the release lacks the plant or its names do not read. The names are read after the pool check, so `applyPreset` checks again afterwards (`stale()`: the reader acted or the climate changed) and never writes a stale notice (C3).
+- **Keep it as mine** (chunk-2 D9, chunk 4 T18): `draft.ts` `keepShownAsMine()` is the store-side action behind Place's "Keep it as mine": the palette on screen (a shared one being looked at) becomes the save now (`holdSave(false)`), with one Undo (`store.offerUndo` over a `store.snapshot()`) that puts the earlier save back and holds it again; the toast says "Your palette: N plants." (`palette.place.keptMine`, D3).
 - **Forget** (`state/location.ts forget`) clears `canopi-location`, `canopi-place` and the palette's own values (`store.siteEdits` to `NO_EDITS`); on a held page `persist.ts` `forgetSavedPlace` scrubs the stored record's place and a location-derived country too (pre-push fix 3), and adopts the scrubbed record as `lastSave` only when the stored one was this page's, so another tab's save stays protected (second-round review 1). The tab counts its Forgets (`save.ts` `forgets`/`noteForget`, sessionStorage `canopi-forget`); `writeAddress` stamps each entry `fg`, and `arrival.ts` `ownOf` keeps only a link's `k` and `o` of an older entry's `pl`, so Back or a reload brings no forgotten answer back (second-round review 2).
 
 ## Store seams added by PP-B b2 (chunk 1)

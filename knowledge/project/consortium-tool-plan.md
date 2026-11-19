@@ -4,42 +4,27 @@ title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
 status: deprecated
 superseded_by: /project/consortium-v2-plan.md
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T03:15:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:21Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-10T15:31:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:36Z }
 sources:
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
-  - id: readme-md
-    resource: ../../scripts/fixtures/consortium/README.md
-    title: scripts/fixtures/consortium/README.md
-    digest: sha256:4aac754db6aab91b
-    last_modified: 2026-11-10T06:50:47Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
-    digest: sha256:ad69909984f46681
-    last_modified: 2026-10-30T11:10:55Z
+    digest: sha256:44c049911b38bbe1
+    last_modified: 2026-11-11T03:28:04Z
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
-    digest: sha256:42b3b2e5b9af2739
-    last_modified: 2026-10-26T23:34:11Z
+    digest: sha256:8bf60353ef1bf24f
+    last_modified: 2026-11-13T03:45:07Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
-    digest: sha256:6efa0ebd6e232793
-    last_modified: 2026-10-28T19:00:25Z
-  - id: consortium-app-js
-    resource: ../../src/scripts/consortium/app.js
-    title: src/scripts/consortium/app.js
-    digest: sha256:82fe21f30fdb3e98
-    last_modified: 2026-11-10T06:50:47Z
-  - id: consortium-css
-    resource: ../../src/styles/consortium.css
-    title: src/styles/consortium.css
-    digest: sha256:42bf1a0578657b37
-    last_modified: 2026-11-10T06:50:47Z
+    digest: sha256:15f1a3ec8774ad24
+    last_modified: 2026-11-18T17:13:28Z
 ---
 
 > **Deprecated.** Superseded by [Consortium v2 plan](/project/consortium-v2-plan.md). P2 commit 0 (consortium/integration) replaced the v1 tool and its format 3 data path; the v2 plan keeps this one for history

@@ -4,7 +4,7 @@ title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 4.7 exports and nothing older: additive-tier checks, the required 4.2 to 4.7 additions (plant_aliases accepted, never read), the light span columns, the AI-estimate kinds on jobs and primary names, and the search names file."
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:33Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:20Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:34Z }
 sources:
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
@@ -29,8 +29,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:91d21007fa090bfc
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:260e0d612a9f4809
+    last_modified: 2026-11-19T04:40:24Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
@@ -39,8 +39,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:163f7a3eecb8a67d
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:e80bca603fcf2579
+    last_modified: 2026-11-19T08:16:50Z
   - id: consortium-source-test-mjs
     resource: ../../scripts/consortium-source.test.mjs
     title: scripts/consortium-source.test.mjs

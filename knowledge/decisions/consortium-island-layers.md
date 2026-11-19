@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:14:58Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:14Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:36Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:7167212cdac6fb15
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:971d4d381e5cbbdc
+    last_modified: 2026-11-19T09:39:01Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -50,13 +50,13 @@ sources:
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:ff8a93245b7a3669
-    last_modified: 2026-11-18T13:15:44Z
+    digest: sha256:397cf5c91deb80d0
+    last_modified: 2026-11-19T08:16:50Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:4bab1793e5e41fae
-    last_modified: 2026-11-17T13:26:50Z
+    digest: sha256:fdf04f4a2b1781a3
+    last_modified: 2026-11-19T08:16:50Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
@@ -123,7 +123,7 @@ dependency-cruiser owns layer direction and cycles; the boundary test owns "core
 - `rules/**` (E6 R2) are pure functions over core types: they import only the core entry, never the store or a view; the store and views pass signals in as arguments (`FlagScene`, `SuggestScene`). `views/kit/flags.ts` renders only: `flagsOfPlant` and `flagScene` live in `store.ts`.
 - Feature code is loaded through core loaders (`loadVerdictRule`, which carries the range checks since PP-C c2 deleted `loadMarkProviders` and `loadRangeRule`; `loadSuggest`), never by state importing a view; where a view owns a chunk, it hands its loader to state (`provideLocationStep` in `state/restore.ts`, given `views/location/load.ts`'s `loadLocationStep` by main.ts before the first render; since E6 S3 no module hands anything over at import).
 - After chunk 2: the cycles C1-C5 are gone (L7 still `warn` until chunk 5), `store.ts` no longer imports `views/pool/pool.tsx`, and `src/lib/location/place-search.ts` imports no `@preact/signals` (plain read-only boxes), so L1 holds although its severity in `.dependency-cruiser.cjs` is still `warn`.
-- After chunk 3 (K3): L5, L6 and L8 have no findings (severities unchanged until chunk 5). The kit is a leaf: `views/kit/sheet.tsx` takes what closes a sheet and its toast region as props (`onClose`, `toast`) from `views/Sheets.tsx`, the only caller of `SheetDialog`/`SheetFrame`, and imports neither `store.ts` nor `Toast.tsx`; its `shared` object reaches `rules/list-query.ts` (L3, allowed). Only `views/Sheets.tsx` reaches `views/details/**`, through `import()`. Only `main.ts` imports `test-hook.ts`. `scripts/quality/baselines/arch.json` still lists the four keys K3 removed (L5 `kit/sheet.tsx` → `store.ts` and → `Toast.tsx`, L8 `views/Details.tsx` and `views/lazy.tsx` → `test-hook.ts`); the ratchet reports them "baseline stale" (never a failure) until the merge agent rewrites the baseline.
+- After chunk 3 (K3): L5, L6 and L8 have no findings (severities unchanged until chunk 5). The kit is a leaf: `views/kit/sheet.tsx` takes what closes a sheet and its toast region as props (`onClose`, `toast`) from `views/Sheets.tsx`, the only caller of `SheetDialog`/`SheetFrame`, and imports neither `store.ts` nor `Toast.tsx`; its `shared` object then reached `rules/list-query.ts` (L3, allowed; since PP-C it is `{ flagLines, unknownWords, FitLine, fold }`, kit modules and core `fold.ts`, and `list-query.ts` is gone). Only `views/Sheets.tsx` reaches `views/details/**`, through `import()`. Only `main.ts` imports `test-hook.ts`. `scripts/quality/baselines/arch.json` still lists the four keys K3 removed (L5 `kit/sheet.tsx` → `store.ts` and → `Toast.tsx`, L8 `views/Details.tsx` and `views/lazy.tsx` → `test-hook.ts`); the ratchet reports them "baseline stale" (never a failure) until the merge agent rewrites the baseline.
 - Since E6 chunk 5 every rule L1–L9 is `error` and `scripts/quality/baselines/arch.json` has no keys; `scripts/quality/arch-rules.test.mjs` asserts each rule's breach is an error and that no `warn` rule is left. A new rule may still land as `warn` with its keys while code catches up (A25). The cycle C5 (`memory.ts` → `views/location/load.ts`) is history: `memory.ts` is deleted.
 - Test faults are globals read under `__CT_TEST_HOOK__` (`globalThis.__ctFaults`, read inline by `views/lazy.tsx` each time a part is used); no production module imports the hook, and `test-hook.ts` no longer exports `testFault`.
 

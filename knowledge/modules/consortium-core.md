@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schema 4.7 (no older schema or minor) that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:01Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:07Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:21Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:91d21007fa090bfc
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:260e0d612a9f4809
+    last_modified: 2026-11-19T04:40:24Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -81,8 +81,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:163f7a3eecb8a67d
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:e80bca603fcf2579
+    last_modified: 2026-11-19T08:16:50Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -91,8 +91,8 @@ sources:
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
-    digest: sha256:87afdfe9588901b8
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:563dd255757eddd8
+    last_modified: 2026-11-19T05:03:52Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -116,8 +116,8 @@ sources:
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
-    digest: sha256:6f8ba673f18a18b8
-    last_modified: 2026-11-18T15:30:23Z
+    digest: sha256:cf24cf35d4d113b5
+    last_modified: 2026-11-19T01:30:29Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
@@ -126,8 +126,8 @@ sources:
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
-    digest: sha256:dd63801d8d01ba5c
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:fd634252aa808345
+    last_modified: 2026-11-19T04:40:24Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -216,18 +216,38 @@ sources:
   - id: verdict-ts
     resource: ../../src/lib/consortium/verdict.ts
     title: src/lib/consortium/verdict.ts
-    digest: sha256:d165b25bd99fe1d0
-    last_modified: 2026-11-18T04:37:58Z
+    digest: sha256:659d609a57947882
+    last_modified: 2026-11-19T04:59:08Z
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:f0a00fd0dd48b252
-    last_modified: 2026-11-18T13:54:27Z
+    digest: sha256:a169b614d21093dd
+    last_modified: 2026-11-19T05:25:31Z
   - id: verdict-load-ts
     resource: ../../src/lib/consortium/verdict-load.ts
     title: src/lib/consortium/verdict-load.ts
-    digest: sha256:389435f08162c76b
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:ff57adaa6726ccbb
+    last_modified: 2026-11-19T04:59:08Z
+  - id: site-change-ts
+    resource: ../../src/lib/consortium/site-change.ts
+    title: src/lib/consortium/site-change.ts
+    digest: sha256:77188e48536af621
+    last_modified: 2026-11-19T04:40:24Z
+  - id: site-change-line-ts
+    resource: ../../src/lib/consortium/site-change-line.ts
+    title: src/lib/consortium/site-change-line.ts
+    digest: sha256:af099a0b86672327
+    last_modified: 2026-11-19T04:40:24Z
+  - id: consortium-said-mjs
+    resource: ../../scripts/consortium-said.mjs
+    title: scripts/consortium-said.mjs
+    digest: sha256:43893d3f05cd8270
+    last_modified: 2026-11-19T05:25:31Z
+  - id: format-ts
+    resource: ../../src/islands/consortium/format.ts
+    title: src/islands/consortium/format.ts
+    digest: sha256:8f5252bea4821008
+    last_modified: 2026-11-19T04:59:08Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs
@@ -395,7 +415,7 @@ This section supersedes the statements above where they disagree.
 - **New modules:**
   - `place.ts` has real bodies: `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`), a minimal `resolveSoil` and `climateFor`. (Replaced 2026-11-18 by the [site-inputs layer](/modules/consortium-site-inputs.md): `siteOf(inputs)`, `climateFor({ inputs, scenario })`; `resolveSoil` and `siteFor` deleted.)
   - `verdict.ts`, `verdict-line.ts`, `verdict-load.ts`, `years.ts`, `holes.ts` and `weigh.ts` are seams tagged `@public`. b2 writes their bodies.
-  - `weigh.ts` (PP-B b3, 2026-11-15, fix rounds 1 and 2): `weighLines(members, ctx, { pending, unchecked })` with `ctx` the `lookup` and `period` of `climateFor`'s context (ignored inside today); family lines at 3 plants and 25 % of m (owner keeps both), m counting the `unchecked` members; the water line from `factAt('water_need', t, ctx.lookup, ctx.period)` grouped by `waterNeed` (exported; drought tolerance High/Medium/Low-None → dry/medium/regular, else moisture use Low/Medium/High; any other value counts as not recorded), only `waterMix` (members: the `vars.regular` plants needing regular water, then the dry) or `waterFew` (under half recorded), else `missing` when any plant has no water need recorded, no all-clear; `'checking'` while a list is pending; `term: 'estimate'` on a borrowed list. `yourPlants` (warned, then the members not shown, then the rest; rows typed `PlantRow`) and `sizeLine`. Constants stay module-private. `site.ts`'s water check reads drought tolerance and moisture use through `factAt('water_need', t, null, TODAY_PERIOD)` (`well_drained` stays a direct read), with its own dry/wet-site mapping (a different question from Things to weigh's grouping), and like `waterNeed` reads a drought value outside High, Medium, Low, None as not recorded; every site-fit verdict of the 515 real plants over every site was byte-identical before and after (b3 fix round 2). `TODAY_PERIOD` is `periodIds[0]`.
+  - `weigh.ts` (PP-B b3, 2026-11-15, fix rounds 1 and 2): `weighLines(members, ctx, { pending, unchecked })` with `ctx` the `lookup` and `period` of `climateFor`'s context (ignored inside today); family lines at 3 plants and 25 % of m (owner keeps both), m counting the `unchecked` members; the water line from `factAt('water_need', t, ctx.lookup, ctx.period)` grouped by `waterNeed` (exported; drought tolerance High/Medium/Low-None → dry/medium/regular, else moisture use Low/Medium/High; any other value counts as not recorded), only `waterMix` (members: the `vars.regular` plants needing regular water, then the dry) or `waterFew` (under half recorded), else `missing` when any plant has no water need recorded, no all-clear; `'checking'` while a list is pending; `term: 'estimate'` on a borrowed list. `yourPlants` (warned, then the members not shown, then the rest; rows typed `PlantRow`); `sizeLine` was deleted in chunk 3 (h3 G4). Constants stay module-private. `site.ts`'s water check reads drought tolerance and moisture use through `factAt('water_need', t, null, TODAY_PERIOD)` (`well_drained` stays a direct read), with its own dry/wet-site mapping (a different question from Things to weigh's grouping), and like `waterNeed` reads a drought value outside High, Medium, Low, None as not recorded; every site-fit verdict of the 515 real plants over every site was byte-identical before and after (b3 fix round 2). `TODAY_PERIOD` is `periodIds[0]`.
   - `conflicts.ts` flags every recorded toxicity level but None, Slight too (owner: mild is a warning, Moderate and above danger); toxicity never makes `warns()` true, so nothing asks. Since v14 0W-2 R1 the flag carries its `level`, and a Slight flag alone is no second look (`secondLook`).
   - `PlantSource.layerValues` is stubbed in `sqlite-source.ts`.
 - **Balance deleted**: `balance.ts`, its types, `BalanceSlot`, `balance.css` and `scripts/consortium-balance.test.mjs` are gone, so the "F1a commit 0 seams" bullet on `balance.ts` above no longer holds.
@@ -444,3 +464,10 @@ Of two candidates that bring the same gain, the suggestion picks the one that is
 | R3 | soil pH and drainage are hints, never a level (`setsLevel` false for `soil-ph`, `drainage` and water/spot); `site-inputs.ts` `soilPhOf` (null in pots) feeds the check from the map or a soil test (basis `soil-map`/`soil-test`); `conflicts.ts` `HINT_KEYS` keep hints out of the misfit flag. |
 | R4 | link v5 drops `l w q r h s` (k and o stay); spot and soil are deleted everywhere; a cut link is unreadable and restores nothing (`cut` only the reason). |
 
+## Chunks 3 and 4 (PP-C pf-d, pf-e, pf-f and h3, 2026-11-18 to 2026-11-19)
+
+- **Figures** (see [figures panel](/modules/consortium-figures.md)): `site-change.ts` `limitStatus` (one status per `LIMIT_IDS` line, `LimitState` limits / free / unchecked, `LimitStatus { line, state, n, period, today }`), `limitsOf` (the limiting lines, most first), `warmthView` (warmth over the year as every row says it), `drierFrom` (each plant's first drier period), `rangeMoves`, `windRecorded`; `site-change-line.ts` `nightsSidesLine` (M3: each side only above zero, keys `nightsWarmer` / `nightsColder` / `nightsSidesBoth`), `warmthLine`, `holdsWater`, `textureLine`, `named` (the size rule over `types.ts` `NAMED_PALETTE` 40 / `NAMED_GROUP` 12), `LIMIT_LINES`.
+- **Hold predicates in `verdict.ts`** (M29, M30): `laterLossOf(now, laters)` (the first later period in which a climate factor is worse than today, factor by factor), `holdStatesOf(rule, taxa, ctx, period)` and `holdCounts(states, ids)`. The views reach them through the loaded rule (`verdict-load.ts` `VerdictRule` gained `holdStates`, `laterLoss`, `holdCounts`, beside `verdicts` and `holdsBy`), so `verdict.ts` stays in its own chunk; `index.ts` does not export `verdict.ts`.
+- **Words in `verdict-line.ts`** (pf-f, h3 G4): `keepLine(now, lost, year)` (counts a later second look as well as outside); `shortWhy` / `shortLine` (`consortium.line.short.*`, Many's rows); `nearness` and `ranged` exported; `drainageLine`; `swapYearsLine` (Swap's years against the member's); `candoLine` (Details' "What you can do" rows); `gapLines` with the `gapLeaves<Form>` spans (Always, First, AfterMonth, After, FromMonth unboarded, Between on the boards: spec A29); `rainFromLine` ("recorded from N mm", one neutral form per language: A30) and `rowRainLine(t, aridityIndex)` (a Find row's rain words, dryland only; `views/rows.tsx` `rowRain`); `holeChangeLines` says a new thin spot (`consortium.line.thinNew`, M44), so a bulk remove names new thin spots only; a serious conflict carries the danger level on its flag line (M31, `views/kit/flags.ts`).
+- **Formats** (`src/islands/consortium/format.ts`): `formatKm` (unit-formatted kilometres, Details' neighbour soil fill).
+- **Tests**: `scripts/consortium-said.mjs` is the shared `said()` helper for the words tests.

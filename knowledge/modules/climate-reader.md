@@ -2,15 +2,15 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:10Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:32Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:9fffb42bb87f69b5
-    last_modified: 2026-11-12T12:34:53Z
+    digest: sha256:888570c5d4211f48
+    last_modified: 2026-11-19T08:16:50Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -74,8 +74,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:2d6f468d17a922a7
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:c4e8c2410220e903
+    last_modified: 2026-11-19T09:07:50Z
   - id: vectors-mjs
     resource: ../../scripts/fixtures/climate/vectors.mjs
     title: scripts/fixtures/climate/vectors.mjs
@@ -101,6 +101,11 @@ sources:
     title: scripts/consortium-p5-ranges.test.mjs
     digest: sha256:ada2fb6322d9da54
     last_modified: 2026-11-18T04:32:21Z
+  - id: location-ts
+    resource: ../../src/islands/consortium/state/location.ts
+    title: src/islands/consortium/state/location.ts
+    digest: sha256:88dcd1f9fa48e570
+    last_modified: 2026-11-19T08:22:07Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
@@ -121,7 +126,7 @@ P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid 
 | `koppen.ts`, `soil.ts`, `regions.ts` | Köppen symbols and the temperature margin in f32 (`Math.fround`), USDA texture classes (soil.ts takes its `SOIL_BAND` order from `model.js`), base-26 region codes |
 | `index.ts` | `siteIndex(json)`, `createTileSource({ index, fetchBytes?, maxTiles = 4 })`, `lookupSite(lat, lon, source)` |
 
-`lookupSite` fetches the point's tile of each layer in parallel (3 requests), then neighbours only when the own cell does not answer and lies within 2 cells of an edge. A tile absent from the index is never requested (no data; a miss would run the Worker). A listed tile that fails rejects with `ClimateTileError` (layer, tile); an invalid coordinate rejects with `RangeError` before any fetch. `lookupSite(lat, lon, source, radius, { soil: false })` reads no soil tile and answers `soil: null`; the consortium location step passes it until P5.2 (soil likely) reads soil (pre-push review 3: each lookup had downloaded about 37 KB of soil nothing used); the installer, `#ct-climate` and `check-built-site` still carry the soil layer. Result: `{ lat, lon, tile, climate | null, soil | null, regions, tilesRead, crossTile }`; `climate.periods[slot]` has `koppen`, `koppenCode`, `koppenTemperatureMarginC`, `tminColdC`, `tmaxWarmC`, `tmeanColdC`, `tmeanWarmC`, `precipMm`, `aridityIndex | null`, `dryMonths`; `soil` has `phH2o`, `sandPct`, `clayPct`, `siltPct`, `texture`, `filled`, `fillDistanceCells`; `regions` always exists, codes null offshore.
+`lookupSite` fetches the point's tile of each layer in parallel (3 requests), then neighbours only when the own cell does not answer and lies within 2 cells of an edge. A tile absent from the index is never requested (no data; a miss would run the Worker). A listed tile that fails rejects with `ClimateTileError` (layer, tile); an invalid coordinate rejects with `RangeError` before any fetch. `lookupSite(lat, lon, source, radius, { soil: false })` reads no soil tile and answers `soil: null`; the consortium location step passes it so a slow or failed soil tile never holds the place, then reads the point again with the soil (`state/location.ts` `soilLater`, h3 G1; the climate and regions tiles come from the tile source's cache) for the figures panel's soil pH and texture; the installer, `#ct-climate` and `check-built-site` still carry the soil layer. Result: `{ lat, lon, tile, climate | null, soil | null, regions, tilesRead, crossTile }`; `climate.periods[slot]` has `koppen`, `koppenCode`, `koppenTemperatureMarginC`, `tminColdC`, `tmaxWarmC`, `tmeanColdC`, `tmeanWarmC`, `precipMm`, `aridityIndex | null`, `dryMonths`; `soil` has `phH2o`, `sandPct`, `clayPct`, `siltPct`, `texture`, `filled`, `fillDistanceCells`; `regions` always exists, codes null offshore.
 
 # Installer and served files
 

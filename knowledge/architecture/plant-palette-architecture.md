@@ -4,9 +4,9 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:19Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:22Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:36Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -24,11 +24,6 @@ sources:
     title: public/_redirects
     digest: sha256:ebe432e54fea2dc8
     last_modified: 2026-11-16T23:43:54Z
-  - id: consortium-f1a-palette-browser-test-mjs
-    resource: ../../scripts/browser/consortium-f1a-palette.browser.test.mjs
-    title: scripts/browser/consortium-f1a-palette.browser.test.mjs
-    digest: sha256:66dd80fab9571457
-    last_modified: 2026-11-13T20:25:47Z
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
@@ -54,11 +49,6 @@ sources:
     title: scripts/check-built-site.mjs
     digest: sha256:8c88beb694518fa1
     last_modified: 2026-11-18T04:25:38Z
-  - id: consortium-balance-test-mjs
-    resource: ../../scripts/consortium-balance.test.mjs
-    title: scripts/consortium-balance.test.mjs
-    digest: sha256:1f0c3404a3d86aea
-    last_modified: 2026-11-13T20:25:47Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -92,8 +82,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:0bc2bf17ed0958f1
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:9b5471db4254810e
+    last_modified: 2026-11-19T05:13:33Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -112,13 +102,13 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:9ee078fc2501059d
-    last_modified: 2026-11-16T21:12:06Z
+    digest: sha256:d65efdcaadb604d5
+    last_modified: 2026-11-19T09:07:50Z
   - id: format-ts
     resource: ../../src/islands/consortium/format.ts
     title: src/islands/consortium/format.ts
-    digest: sha256:348047cc7dabe638
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:8f5252bea4821008
+    last_modified: 2026-11-19T04:59:08Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -142,13 +132,13 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:5e4f54887014f1e1
-    last_modified: 2026-11-18T18:41:19Z
+    digest: sha256:7a085fede4454133
+    last_modified: 2026-11-19T08:22:07Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b59d99cb0816bb6
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:88dcd1f9fa48e570
+    last_modified: 2026-11-19T08:22:07Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
@@ -157,8 +147,8 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:65c143542f9f4e35
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:20cb5074cb42d667
+    last_modified: 2026-11-19T09:14:39Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -172,8 +162,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:2d6f468d17a922a7
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:c4e8c2410220e903
+    last_modified: 2026-11-19T09:07:50Z
   - id: strings-ts
     resource: ../../src/islands/consortium/strings.ts
     title: src/islands/consortium/strings.ts
@@ -182,8 +172,8 @@ sources:
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:86352cfe1a52fb56
-    last_modified: 2026-11-18T08:58:55Z
+    digest: sha256:554bc62276690579
+    last_modified: 2026-11-19T06:34:34Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -199,16 +189,6 @@ sources:
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:7c18172e53e80875
     last_modified: 2026-11-18T14:32:45Z
-  - id: paste-tsx
-    resource: ../../src/islands/consortium/views/Paste.tsx
-    title: src/islands/consortium/views/Paste.tsx
-    digest: sha256:904e8e3e5a71ad0b
-    last_modified: 2026-11-14T22:51:25Z
-  - id: plantmarks-tsx
-    resource: ../../src/islands/consortium/views/PlantMarks.tsx
-    title: src/islands/consortium/views/PlantMarks.tsx
-    digest: sha256:bfe0dfd02be2eeeb
-    last_modified: 2026-11-17T10:52:11Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
@@ -222,33 +202,23 @@ sources:
   - id: stagebar-tsx
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
-    digest: sha256:4f2076886bf0d3a8
-    last_modified: 2026-11-17T15:37:04Z
-  - id: start-tsx
-    resource: ../../src/islands/consortium/views/Start.tsx
-    title: src/islands/consortium/views/Start.tsx
-    digest: sha256:45e569e00714492c
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:6ea4d098d503a2fe
+    last_modified: 2026-11-19T05:25:31Z
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
-    digest: sha256:169e8422114d55ef
-    last_modified: 2026-11-18T15:30:23Z
+    digest: sha256:86cdcc6fd7c86414
+    last_modified: 2026-11-19T06:44:45Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:b951f3a6ffed4d20
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:046945d22adbcc0a
+    last_modified: 2026-11-19T04:59:08Z
   - id: names-ts
     resource: ../../src/islands/consortium/views/kit/names.ts
     title: src/islands/consortium/views/kit/names.ts
     digest: sha256:af0063c7b3398eda
     last_modified: 2026-11-18T04:25:38Z
-  - id: span-ts
-    resource: ../../src/islands/consortium/views/kit/span.ts
-    title: src/islands/consortium/views/kit/span.ts
-    digest: sha256:f681abdf55562572
-    last_modified: 2026-11-13T03:45:14Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -284,11 +254,6 @@ sources:
     title: src/lib/climate/soil.ts
     digest: sha256:412c74305668a696
     last_modified: 2026-11-12T20:26:30Z
-  - id: balance-ts
-    resource: ../../src/lib/consortium/balance.ts
-    title: src/lib/consortium/balance.ts
-    digest: sha256:8fdecbce896d793e
-    last_modified: 2026-11-13T20:25:47Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
@@ -304,11 +269,6 @@ sources:
     title: src/lib/consortium/fold.ts
     digest: sha256:dae939a445a54069
     last_modified: 2026-11-17T11:57:14Z
-  - id: future-marks-ts
-    resource: ../../src/lib/consortium/future-marks.ts
-    title: src/lib/consortium/future-marks.ts
-    digest: sha256:dc7162e2c1e66dbb
-    last_modified: 2026-11-12T11:43:06Z
   - id: future-ts
     resource: ../../src/lib/consortium/future.ts
     title: src/lib/consortium/future.ts
@@ -324,21 +284,6 @@ sources:
     title: src/lib/consortium/jobs.ts
     digest: sha256:97b5290a800f6a3f
     last_modified: 2026-11-14T12:46:39Z
-  - id: mark-providers-ts
-    resource: ../../src/lib/consortium/mark-providers.ts
-    title: src/lib/consortium/mark-providers.ts
-    digest: sha256:a4f658dd31fb03d3
-    last_modified: 2026-11-12T12:34:53Z
-  - id: marks-ts
-    resource: ../../src/lib/consortium/marks.ts
-    title: src/lib/consortium/marks.ts
-    digest: sha256:8a43c201f0c9b5c2
-    last_modified: 2026-11-14T21:28:50Z
-  - id: matrix-ts
-    resource: ../../src/lib/consortium/matrix.ts
-    title: src/lib/consortium/matrix.ts
-    digest: sha256:c948918a08ee50b3
-    last_modified: 2026-11-14T12:12:11Z
   - id: nearest-ts
     resource: ../../src/lib/consortium/nearest.ts
     title: src/lib/consortium/nearest.ts
@@ -354,31 +299,21 @@ sources:
     title: src/lib/consortium/placement.ts
     digest: sha256:8f7a898e3dc4d6ad
     last_modified: 2026-11-13T14:45:08Z
-  - id: range-marks-ts
-    resource: ../../src/lib/consortium/range-marks.ts
-    title: src/lib/consortium/range-marks.ts
-    digest: sha256:3b5dee7987b5cbc0
-    last_modified: 2026-11-17T10:52:11Z
   - id: range-ts
     resource: ../../src/lib/consortium/range.ts
     title: src/lib/consortium/range.ts
-    digest: sha256:87afdfe9588901b8
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:563dd255757eddd8
+    last_modified: 2026-11-19T05:03:52Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
     digest: sha256:eb4395e60994e93b
     last_modified: 2026-11-12T07:59:10Z
-  - id: site-marks-ts
-    resource: ../../src/lib/consortium/site-marks.ts
-    title: src/lib/consortium/site-marks.ts
-    digest: sha256:eedd824ed60b2ff0
-    last_modified: 2026-11-16T18:00:55Z
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
-    digest: sha256:432c3fbf13e13afc
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:d410a7e506adace3
+    last_modified: 2026-11-19T05:03:52Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -392,8 +327,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:163f7a3eecb8a67d
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:e80bca603fcf2579
+    last_modified: 2026-11-19T08:16:50Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -402,18 +337,13 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:91d21007fa090bfc
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:260e0d612a9f4809
+    last_modified: 2026-11-19T04:40:24Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
     digest: sha256:33f34d5c6cad519a
     last_modified: 2026-11-13T07:25:07Z
-  - id: consortium-astro
-    resource: ../../src/pages/[lang]/consortium.astro
-    title: src/pages/[lang]/consortium.astro
-    digest: sha256:7019cdb7e871bfbf
-    last_modified: 2026-10-29T05:02:41Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
@@ -427,18 +357,18 @@ sources:
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:d175afa08bcefaac
-    last_modified: 2026-11-17T17:32:21Z
+    digest: sha256:6a972d90f97afb69
+    last_modified: 2026-11-19T06:44:45Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:fbc06961be857a7f
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:f1a44de7554e891c
+    last_modified: 2026-11-19T08:17:40Z
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:13d771d2d5c86882
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:49df728398240c7b
+    last_modified: 2026-11-19T08:17:40Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -905,3 +835,7 @@ Section 8.1 as built (coordinator review of 0a): any `o` is snapped to its 0.1°
 - **Empty and first view (empty-1):** the Next step is "empty" only with no member (`store.members`); `ct:first-view` waits until no member's list is loading or failed (PP-B44; PP-B26 waits for the fit card itself).
 - **Actions offline (offline-1):** the Print or Download could-not-load line is `lazy.tsx` `LoadFailed` ("Needs a connection" offline, never Reload; the line clears on `online`) (PP-B46).
 - **Print (print-1, hardening):** PP-B47 dispatches `beforeprint` with no print media and counts the sheet's rows in the next microtask.
+
+## As built in PP-C chunks 3 and 4 (2026-11-19)
+
+This plan predates the v14 boards. What PP-C built on top of it lives in the module concepts, which the code keeps true: the [figures panel](/modules/consortium-figures.md) (site counts, limits, the change summary), the [site inputs](/modules/consortium-site-inputs.md) (`tempsTogether`, the link's 5th `f` segment), the [palette page](/modules/consortium-palette-page.md) (Many plants, Paste's single reading, the sheets stack with `openSheet`'s `from` and restacks, `store.listsState` / `listsLoading`), the [state modules](/modules/consortium-state.md) (`keepShownAsMine`, the guide-missing common name) and the [core](/modules/consortium-core.md) (the hold predicates through `VerdictRule`). Files this plan names that PP-B and PP-C deleted (the mark modules, `balance.ts`, `views/Paste.tsx`, the F1a specs) are history here.

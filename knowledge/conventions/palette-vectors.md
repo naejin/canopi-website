@@ -3,7 +3,7 @@ type: Convention
 title: Palette vector files
 description: Every JSON vector file of the Plant palette under scripts/vectors/ uses one envelope, modelled on canopi-data's range-verdict vectors, so the app's Rust code and canopi-data can run the same cases.
 tags: [consortium, tests, vectors]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:05Z }
 sources:
@@ -20,12 +20,12 @@ sources:
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
     digest: sha256:9866dcaff6cd42e7
-    last_modified: 2026-11-18T06:04:17Z
+    last_modified: 2026-11-18T06:34:33Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:04e513850f03dbfe
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:30666970fedbae82
+    last_modified: 2026-11-18T17:29:04Z
 ---
 
 # Palette vector files
@@ -67,11 +67,11 @@ Modelled on canopi-data's `tests/vectors/range_verdicts.json` (sibling repositor
 
 ## Files present (PP-B commit 0a, 2026-11-14)
 
-- `scripts/vectors/link-v5.json` (schema `canopi-palette-link/5`) has five plants and five places.
+- `scripts/vectors/link-v5.json` (schema `canopi-palette-link/5`) has five plants and two places (`lyon_full` and `unsure`; five before v14 0W-2 R4).
   - About 63 named cases: the version-status table, decode cases (expected notice, state, `brings_place` or `same_as`) and encode cases.
   - `scripts/consortium-link-v5.test.mjs` runs it, and `npm run test:vectors` checks the envelope.
 - `scripts/vectors/range-verdicts.json` is the stamped copy of canopi-data's `range_verdicts.json` (release `r-255553893fa4f4b4`, 169 vectors, sha256 `9866dcaf…`; canopi-data `tests/vectors/range_verdicts.json` at `89a99e9`, identical to the copy in the export folder). Its `source.export_raw_sha256` names `d18543cb…`, not the installed core's `92cc136b…`: the test checks the release id only.
   - It stays in canopi-data's own shape, and `install-consortium.test.mjs` checks its sha and release id.
   - b2 reads it from the installed release once the installer carries it.
 
-`link-v5.json` holds 82 cases since the coordinator review of 0a. It adds the privacy snap for encode and decode (with hemisphere, edge and antimeridian points), malformed `o` and `k` values, duplicate keys (the first wins), the `g`/`x` round trip with unknown tokens counted, and the dropped `h` metres. Decode cases may also expect `origin` (the cell read) and `reencoded` (the decoded state written back with the place tick).
+`link-v5.json` held 82 cases from the coordinator review of 0a; v14 pf 0W-2 R4 (the old spot and soil keys `l w q r h s` gone, a cut link unreadable) leaves 70, and `scripts/consortium-link-v5.test.mjs` also covers the 0W keys `f b p i d j`, the requires key `u` and the place name `n` (D6). It adds the privacy snap for encode and decode (with hemisphere, edge and antimeridian points), malformed `o` and `k` values, duplicate keys (the first wins), the `g`/`x` round trip with unknown tokens counted, and the dropped `h` metres. Decode cases may also expect `origin` (the cell read) and `reencoded` (the decoded state written back with the place tick).
