@@ -39,7 +39,7 @@ import assert from 'node:assert/strict';
 import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, tool } from './p5-helpers.mjs';
 import test from 'node:test';
-import { HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, boxOf, engineLead, holeCounts, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { HOLE_TITLE, LIGHT, OLD_LIGHT, JOBS, PALETTE_200, engineLead, holeCounts, loadCase, loadPalette200, nextText, pageText, setPlantsPerJob, setSiteEdits, openMore, notRecorded, lookFillers, control, dialogText, done, emptyPalette, focused, frames, idsInStratum, idsOf, inOrder, linkOf, names, palette, pastEdge, press, says, saysNot, section, sectionBox, sectionText, toastText, verdictsSettled } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -166,33 +166,25 @@ test('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("Nex
   assert.ok(await until(page, () => window.__ctTest.store.sheet.value?.kind === 'find'), 'board: See all opens Find');
   assert.ok(await page.evaluate(() => !!window.__ctTest.store.sheetTarget.value.hole), 'board: Find opens preset to the hole');
   await done(page);
-  // At 390 px the Next step is on the first screen where no limits card stands before it (chunk 4 T15:
-  // the card is drawn only where a line limits; with no place, none). OPEN board conflict (chunk 4 C2,
-  // fix round 1 C1/R6; raised for the coordinator in pf-decisions 2026-11-19): board Palette draws
-  // Kiambu with no card and the Next step on the first screen, but the engine finds limiting lines there
-  // (nights, days, warmth) and board SiteMendoza puts the card first; the build follows SiteMendoza and
-  // the located Kiambu case below reports the Next step's y, so the gap stays visible until the ruling.
-  const phone = await loadCase('kiambu-8-nights-2c-colder', { site: null, width: 390 });
+  // At 390 px the Next step is on the first screen (board Palette), the located Kiambu palette too:
+  // "What limits plants here" stands first there (board SiteMendoza; the engine finds limiting lines at
+  // Kiambu) but closed on the phone to its head and main limit (RULED (a), pf-decisions 2026-11-19), so
+  // the Next step is the first block after it and still on the first screen.
+  const phone = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
   await says(phone, OTHER_HOLES);
-  assert.equal(await phone.$('.fg-limits'), null, 'premise: no limits card');
   const p = await engineLead(phone);
   assert.ok((await nextText(phone)).includes(position(p)), `board: the Palette board's position line "${position(p)}"`);
-  const at = await boxOf(phone, 'Next step');
-  assert.ok(at && at.y < 844, `board: at 390 px the Next step is on the first screen (${at?.y})`);
-  await done(phone);
-  const limited = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
-  assert.ok(await limited.waitForFunction(() => { const c = document.querySelector('.fg-limits'); return !!c && !!c.querySelector('[data-fg-line]:not([data-fg-line="watering"])'); }, { timeout: 20_000 }).then(() => true, () => false), 'premise: a line limits at Kiambu, so the card stands');
-  const order = await limited.evaluate(() => {
+  assert.ok(await phone.waitForFunction(() => { const c = document.querySelector('.fg-limits'); return !!c && /The main limit here: /.test(c.innerText); }, { timeout: 20_000 }).then(() => true, () => false), 'premise: a line limits at Kiambu, so the card stands, closed to its main limit');
+  const order = await phone.evaluate(() => {
     const card = document.querySelector('.fg-limits').getBoundingClientRect();
-    const heads = [...document.querySelectorAll('main h2, main h3')].filter((h) => h.getBoundingClientRect().width).map((h) => ({ t: h.textContent.trim(), y: h.getBoundingClientRect().top }));
+    const heads = [...document.querySelectorAll('main h2, main h3')].filter((h) => h.getBoundingClientRect().width).map((h) => ({ t: h.textContent.trim(), y: h.getBoundingClientRect().top + scrollY }));
     const next = heads.find((h) => /^Next step/.test(h.t));
-    return { top: card.top, bottom: card.bottom, next: next?.y ?? null, between: heads.filter((h) => h.y > card.bottom && next && h.y < next.y).map((h) => h.t) };
+    return { top: card.top + scrollY, bottom: card.bottom + scrollY, next: next?.y ?? null, between: heads.filter((h) => h.y > card.bottom + scrollY && next && h.y < next.y).map((h) => h.t) };
   });
-  // Reported, never failed (open board conflict, C1/R6): board Palette has the Next step under 844 px.
-  console.log(`# PFA1 (reported, open board conflict Palette vs SiteMendoza): Kiambu located at 390 px: limits card ${Math.round(order.top)}-${Math.round(order.bottom)}, Next step at y=${Math.round(order.next ?? -1)} (board Palette: on the first screen, under 844)`);
   assert.ok(order.next !== null && order.next > order.bottom, `board SiteMendoza: the Next step comes after the limits card (${JSON.stringify(order)})`);
   assert.deepEqual(order.between, [], `the Next step is the first block after the limits card (${JSON.stringify(order)})`);
-  await done(limited);
+  assert.ok(order.next < 844, `board Palette: at 390 px the Next step is on the first screen (${JSON.stringify(order)})`);
+  await done(phone);
 });
 
 test('PFA2 (pf-a holes, one form everywhere): the Next step, Other holes, Find\'s hole title and its rows all say "<light or job>: nobody …" with the light words (Full sun, Mostly sun, Part shade, Shade), never "Needs full sun" or high/medium/low; adding a candidate moves the Next step to another hole', async () => {

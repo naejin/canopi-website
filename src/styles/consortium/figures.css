@@ -121,7 +121,16 @@
 .ct .fg-water-list .ct-more-items { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .ct .fg-names .ct-more-items { display: flex; flex-wrap: wrap; gap: 0 4px; margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 19px; }
 .ct .fg-names .ct-more-items > li:not(:last-child)::after { content: ","; }
+/* "What limits plants here" on the phone (RULED (a), pf-decisions 2026-11-19): closed to its head, the
+   main limit in one line and "Show the N limits", the Water card under it with it, so the Next step is
+   on the first screen; from 640 px open, as the boards draw it, with no disclosure. */
+.ct .fg-limits-body { display: contents; }
+.ct .fg-limits-short, .ct .fg-limits-more { display: none; }
 @media (max-width: 639px) {
   .ct .fg-panel { padding: 12px; }
   .ct .fg-cell { padding: 6px; }
+  .ct .fg-limits-short { margin: 0; font-size: 15px; line-height: 20px; }
+  .ct .fg-limits:not([data-open]) .fg-limits-short { display: block; }
+  .ct .fg-limits-more { display: block; justify-self: start; }
+  .ct .fg-limits:not([data-open]) .fg-limits-body, .ct .fg-limits:not([data-open]) + .fg-water { display: none; }
 }

@@ -16,7 +16,7 @@
 //   the list and the members are judged for the three periods with the inputs before and after (six
 //   passes), and core siteChange / siteChangeLines say what changed (toast, with Undo; the line's own
 //   detail under it). Counting… and "Checks could not run" with Retry are the store's (F6, F7).
-import { computed, effect as watch, signal } from '@preact/signals';
+import { computed, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
@@ -291,12 +291,16 @@ function Option({ on, onPick, children }: { on: boolean; onPick: () => void; chi
 }
 
 // ---- the value of a line, short (the closed row) and its source ----
+// A climate line's value today → 2071–2099 (the closed row; the phone's limits card's main limit).
+function climateRange(line: ClimateLine, i: SiteInputs, value: number): string {
+  const last = climateFor({ inputs: i, scenario: store.scenario.value }, LAST);
+  const later = last ? SLOT[line](last) : null;
+  return later === null ? valueOf(line, value) : rangeOf(line, value, later);
+}
 function ClimateShort({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const inp = i[INPUT[line]];
   if (inp.value === null) return <Short value={F(located.value ? 'noneData' : 'noneLocation')} />;
-  const last = climateFor({ inputs: i, scenario: store.scenario.value }, LAST);
-  const later = last ? SLOT[line](last) : null;
-  const v = later === null ? valueOf(line, inp.value) : rangeOf(line, inp.value, later);
+  const v = climateRange(line, i, inp.value);
   return inp.source === 'grower' ? <Short value={v} /> : <Short value={v} source={F('srcClimateShort')} map />;
 }
 function phText(i: SiteInputs): string {
@@ -948,65 +952,112 @@ function WaterCard({ i }: { i: SiteInputs }) {
     </section>
   );
 }
-// Whether "What limits plants here" stands (T15; fix round 1 C2): once a ready count finds no limiting
-// line (an outside count, or a member drier here), it goes. The last ready answer is kept for the place
-// and list it was counted on, so while the checks count again (an edit made in the card) the card
-// stays as it was and the editor in it is not dropped; before any answer for this place and list (the
-// first count, or checks that could not run) the card is drawn in its counting or failed state, never
-// left out (unknown is never a hole).
+// Whether "What limits plants here" stands (T15; fix round 1 C2; follow-up F1, C2/R1, fix round 1 C4):
+// the card's own visit, held in the component (it ends when the palette leaves the screen) and begun
+// again for each place and loaded list. Before a ready count it is drawn in its counting or failed
+// state, never left out (unknown is never a hole); a ready count that finds no limiting line (no
+// outside count, no member drier here) leaves it out. Once a count has found a limiting line, the card
+// stays for the visit with every row it showed: an edit made in it never takes the card, or the row
+// the focus is on, from under the reader; a row that no longer limits says so in its own words, and the
+// card says "No climate line limits plants here." (inform, don't block). If the card goes while it
+// holds the focus, focus.ts's safety net lands it on the palette's heading.
 const placeKey = computed(() => { const l = store.location.value; return `${store.climate.value}|${l ? `${l.lat},${l.lon}` : ''}`; });
 const limiting = computed(() => limits.value.length > 0 || !!membersDry.value?.size);
-const lastAnswer = signal<{ key: string; limiting: boolean } | null>(null);
-watch(() => { if (checks.value === 'ready') lastAnswer.value = { key: placeKey.value, limiting: limiting.value }; });
-const limitShown = computed(() => {
-  if (checks.value === 'ready') return limiting.value;
-  const last = lastAnswer.value;
-  return last?.key === placeKey.value ? last.limiting : true;
+// The rows that limit now (core limitsOf, most first; warmth over the year is said in the Hottest days
+// row, core LIMIT_LINES), the rain with the dry months it reads with (board SiteMendoza).
+const limitRows = computed<ClimateLine[]>(() => {
+  const rows: ClimateLine[] = [];
+  for (const l of limits.value) {
+    const row = LIMIT_LINES[l.line].row;
+    if (!rows.includes(row)) rows.push(row);
+    if (row === 'rain' && !rows.includes('dry')) rows.push('dry');
+  }
+  return rows;
 });
+// The list as loaded (not store.pool, which reads null while the range checks are away).
+const listLoaded = computed(() => { const c = store.climate.value; return c ? store.pools.value[c] ?? null : null; });
+interface Visit { key: string; pool: Taxon[] | null; answered: boolean; limited: boolean; rows: ClimateLine[] }
+// The phone's closed card says the main limit in one line of words, named by the limit itself, not by
+// the row it is said in (fix round 1 R5, C1): warmth over the year with the year's mean (today →
+// 2071–2099, as the Hottest days row's warmth sentence reads it), never the hottest days' figures.
+function limitSummary(top: LimitLine, i: SiteInputs): string | null {
+  if (top === 'warmth') {
+    const s = store.scenario.value, a = climateFor({ inputs: i, scenario: s }, TODAY), b = climateFor({ inputs: i, scenario: s }, LAST);
+    if (!a) return null;
+    const value = b ? `${bare(temp(yearMeanC(a)))} → ${temp(yearMeanC(b))}` : temp(yearMeanC(a));
+    return F('limitsSummary', { line: F('limitsWarmth'), value });
+  }
+  const row = LIMIT_LINES[top].row, v = i[INPUT[row]].value;
+  return v === null ? null : F('limitsSummary', { line: F(NAME[row]), value: climateRange(row, i, v) });
+}
+// "Show the N limits" (RULED (a), pf-decisions 2026-11-19): on the phone (max-width 639px) the card
+// stands closed to its head and the main limit in one line, so the Next step is on the first screen;
+// from 640 px it is open and the disclosure is not drawn (figures.css). N counts the limits that apply
+// now (core limitsOf, and the members drier here); with none, "Show more" (fix round 1 R2, C2). No
+// disclosure before a ready count: the closed card is its head and the counting or failed line (R3).
+// Open for this visit only.
 export function PaletteLimits() {
+  const visit = useRef<Visit | null>(null);
+  const [openFor, setOpenFor] = useState<Visit | null>(null);
+  const status = checks.value, key = placeKey.value, pool = listLoaded.value;
+  let v = visit.current;
+  if (!v || v.key !== key || v.pool !== pool) v = visit.current = { key, pool, answered: false, limited: false, rows: [] };
+  const now = status === 'ready' ? limitRows.value : [];
+  if (status === 'ready') {
+    v.answered = true;
+    if (limiting.value) v.limited = true;
+    for (const r of now) if (!v.rows.includes(r)) v.rows.push(r);
+  }
   const i = store.siteInputs.value;
   if (!located.value || i.nights.value === null) return null;
-  const status = checks.value;
-  // Every line that limits (A5; core limitsOf, most first; warmth over the year is said in the Hottest
-  // days row, core LIMIT_LINES), the rain with the dry months it reads with (board SiteMendoza); the
-  // night and heat lines that limit nothing are said in one sentence, "Not a limit here: …", built only
-  // from the counts: while the checks are counting or could not run, the card says that instead.
+  if (!(v.limited || (status !== 'ready' && !v.answered))) return null;
+  // Every line that limits (A5), and the rows this visit has shown; the night and heat lines that limit
+  // nothing are said in one sentence, "Not a limit here: …", built only from the counts: while the
+  // checks are counting or could not run, the card says that instead (one live line, at every width
+  // and with the phone's card closed, R4).
   const main = mainLimit.value;
-  const lines: ClimateLine[] = [];
-  if (status === 'ready') for (const l of limits.value) {
-    const row = LIMIT_LINES[l.line].row;
-    if (!lines.includes(row)) lines.push(row);
-    if (row === 'rain' && !lines.includes('dry')) lines.push('dry');
-  }
+  const lines: ClimateLine[] = status === 'ready' ? [...now, ...v.rows.filter((r) => !now.includes(r))] : [];
   const today = climateFor({ inputs: i, scenario: store.scenario.value }, TODAY), last = climateFor({ inputs: i, scenario: store.scenario.value }, LAST);
   const not: string[] = [];
   if (status === 'ready' && today && last) {
     if (!lines.includes('nights')) not.push(F('notNights', { a: temp(today.tminColdC), b: temp(last.tminColdC), period: periodName(LAST), frost: F(today.tminColdC >= 10 ? 'noFrostLower' : 'frostLower') }));
     if (!lines.includes('days')) not.push(F('notDays', { a: temp(today.tmaxWarmC), b: temp(last.tmaxWarmC), period: periodName(LAST) }));
   }
-  if (!limitShown.value) return null;
   const grower = i.watering.source === 'grower';
+  const dry = membersDry.value && store.memberTaxa.value.length ? store.memberTaxa.value.filter((t) => membersDry.value!.has(t.id)).length : 0;
+  const top = topLimit.value;
+  const short = (top && limitSummary(top, i)) || (dry ? `${F('limitsNone')} ${FP('limitsDry', dry)}` : F('limitsNone'));
+  const n = limits.value.length + (dry ? 1 : 0);
+  const open = openFor === v;
   return (
     <>
-      <section class="fg-panel fg-limits" aria-labelledby="fg-limits-h">
+      <section class="fg-panel fg-limits" aria-labelledby="fg-limits-h" data-open={open ? '' : undefined}>
         <h2 class="fg-h2" id="fg-limits-h">{F('limitsTitle')}</h2>
-        <p class="fg-lede">{F('limitsLede')}{countsOf() ? ` ${countsOf()}` : ''}</p>
         {status === 'loading' && <p class="fg-effect" role="status">{sayAll([countingLine()])}</p>}
         {status === 'failed' && <p class="fg-effect" role="status">{sayAll([checksFailedLine()])}</p>}
-        {lines.map((l) => <Row key={l} line={l} i={i} always main={l === main} card />)}
-        {status === 'ready' && !lines.length && <p class="fg-effect">{F('limitsNone')}</p>}
-        {not.length > 0 && <p class="fg-note"><Lead text={F('notLimit', { parts: listOf(not) })} /></p>}
-        <div role="group" aria-label={F('lineWatering')} class="fg-line fg-line-open" data-fg-line="watering">
-          <div class="fg-head">
-            <span class="fg-icon"><Icon d={LINE_ICON.watering} /></span>
-            <div class="fg-title"><span class="fg-name">{F('lineWatering')}</span></div>
-            <div class="fg-buttons">{grower && <ResetButton line="watering" to="resetWatering" />}</div>
+        {status === 'ready' && <p class="fg-limits-short">{short}</p>}
+        {(status === 'ready' || open) && (
+          <button type="button" class="ct-link-button fg-link fg-limits-more" aria-expanded={open} aria-controls="fg-limits-body" onClick={() => setOpenFor(open ? null : v)}>
+            {open ? F('limitsHide') : n ? FP('limitsShow', n) : F('limitsShowAll')}
+          </button>
+        )}
+        <div class="fg-limits-body" id="fg-limits-body">
+          <p class="fg-lede">{F('limitsLede')}{countsOf() ? ` ${countsOf()}` : ''}</p>
+          {lines.map((l) => <Row key={l} line={l} i={i} always main={l === main} card />)}
+          {status === 'ready' && !now.length && <p class="fg-effect">{F('limitsNone')}</p>}
+          {not.length > 0 && <p class="fg-note"><Lead text={F('notLimit', { parts: listOf(not) })} /></p>}
+          <div role="group" aria-label={F('lineWatering')} class="fg-line fg-line-open" data-fg-line="watering">
+            <div class="fg-head">
+              <span class="fg-icon"><Icon d={LINE_ICON.watering} /></span>
+              <div class="fg-title"><span class="fg-name">{F('lineWatering')}</span></div>
+              <div class="fg-buttons">{grower && <ResetButton line="watering" to="resetWatering" />}</div>
+            </div>
+            <p class="fg-source">{choiceWhere('watering', i, false)}</p>
+            {membersDry.value && store.memberTaxa.value.length ? <MembersDry i={i} /> : <p class="fg-effect">{F('waterEffect')}</p>}
+            <ChoiceOptions line="watering" i={i} />
           </div>
-          <p class="fg-source">{choiceWhere('watering', i, false)}</p>
-          {membersDry.value && store.memberTaxa.value.length ? <MembersDry i={i} /> : <p class="fg-effect">{F('waterEffect')}</p>}
-          <ChoiceOptions line="watering" i={i} />
+          <p class="fg-foot">{F('footPath')} <button type="button" class="ct-link-button fg-link" onClick={() => store.openFigure(PANEL)}>{`${F('everyFigure')} ${F('title')}`}</button></p>
         </div>
-        <p class="fg-foot">{F('footPath')} <button type="button" class="ct-link-button fg-link" onClick={() => store.openFigure(PANEL)}>{`${F('everyFigure')} ${F('title')}`}</button></p>
       </section>
       <WaterCard i={i} />
     </>

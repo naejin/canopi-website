@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:31:06Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:32:44Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:18Z }
@@ -16,7 +16,7 @@ sources:
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:0b89a2579cb86fe6
-    last_modified: 2026-11-19T11:30:44Z
+    last_modified: 2026-11-19T10:56:43Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -45,8 +45,8 @@ sources:
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
-    digest: sha256:56c4810f679c3279
-    last_modified: 2026-11-19T11:30:44Z
+    digest: sha256:d02c86c1bba5f4a2
+    last_modified: 2026-11-19T11:32:18Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -126,7 +126,7 @@ sources:
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
     digest: sha256:4682ccb2f6cdb00e
-    last_modified: 2026-11-19T11:30:44Z
+    last_modified: 2026-11-19T10:56:43Z
   - id: print-css
     resource: ../../src/styles/consortium/print.css
     title: src/styles/consortium/print.css
@@ -171,7 +171,7 @@ sources:
     resource: ../../scripts/browser/seams-helpers.mjs
     title: scripts/browser/seams-helpers.mjs
     digest: sha256:1f3b95287e5fcf5a
-    last_modified: 2026-11-19T11:30:44Z
+    last_modified: 2026-11-19T10:38:30Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
@@ -271,7 +271,7 @@ sources:
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
     digest: sha256:4503bd9fcfb54986
-    last_modified: 2026-11-19T11:30:44Z
+    last_modified: 2026-11-19T10:56:43Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -300,8 +300,8 @@ sources:
   - id: e6-browser-test-mjs
     resource: ../../scripts/browser/consortium-e6.browser.test.mjs
     title: scripts/browser/consortium-e6.browser.test.mjs
-    digest: sha256:58cba516fb098f37
-    last_modified: 2026-11-19T07:06:28Z
+    digest: sha256:b209a5df912829cc
+    last_modified: 2026-11-19T11:32:18Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json

@@ -7,13 +7,17 @@
 // shells: their content is views/figures/Figures.tsx, its own lazy chunk (role `figures`,
 // scripts/built-modules.mjs), which pf-d fills in chunk 3. Keep this file a shell.
 import { lazyPart } from '../lazy.tsx';
-import { climate, load, location } from '../../store.ts';
+import { climate, load, location, siteInputs } from '../../store.ts';
 import { locationAtStart } from '../../state/restore.ts';
 import { retryableImport } from '../../../../lib/consortium/index.ts';
 
 const figures = () => import('./Figures.tsx');
-const placePart = lazyPart(retryableImport(figures, (m) => m.PlaceFigures), { quiet: true });
-const limits = lazyPart(retryableImport(figures, (m) => m.PaletteLimits), { quiet: true });
+// While the chunk comes, nothing (the slot's reserve holds the room); if it does not come, the part
+// says so in place with Reload, which asks again in place (and by itself once back online), so the
+// slot is never left empty for good and its reserve ends (follow-up F1, chunk 4 C2/R2, C2/C1).
+const Waiting = () => null;
+const placePart = lazyPart(retryableImport(figures, (m) => m.PlaceFigures), { loading: Waiting, retry: true });
+const limits = lazyPart(retryableImport(figures, (m) => m.PaletteLimits), { loading: Waiting, retry: true });
 
 // Asked for only once the data is ready: nothing lazy is fetched before it (L5, E6-2). Drawn only
 // once there is a place to say figures for, a location or a chosen climate (F5: with a climate and no
@@ -22,12 +26,16 @@ const limits = lazyPart(retryableImport(figures, (m) => m.PaletteLimits), { quie
 // The slot stands as soon as the panel is due (a place, a climate, or a kept location still looked
 // up) and stays empty while the data, the place and the panel's chunk come; an empty slot keeps the
 // island a screen tall (base.css), so what follows (the release line, the footer) never moves on screen
-// when the panel lands (PFD49; fix round 1 R5: only while it waits, never on a short state).
+// when the panel lands (PFD49; fix round 1 R5: only while it waits, never on a short state, nor while
+// the climate cards hide the Place form). A failed chunk fills it with its notice (PFD61).
 export function PlaceFigures() {
   const place = location.value || climate.value;
   if (!place && !locationAtStart.value) return null;
   return <div class="fg-slot">{place && load.value.status === 'ready' && <placePart.View />}</div>;
 }
+// The limits card can only stand at a located place with climate figures (PaletteLimits draws nothing
+// elsewhere): only there is its part asked for, so a failed chunk is said where the card would stand,
+// never on a palette with no place or a climate only (fix round 1 R1, C5; PFD61).
 export function PaletteLimits() {
-  return <limits.View />;
+  return location.value?.lookup && siteInputs.value.nights.value !== null ? <limits.View /> : null;
 }
