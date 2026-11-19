@@ -58,9 +58,15 @@
 .ct .tool-lede { max-width: 40em; font-family: var(--font-display); font-size: 20px; line-height: 1.4; color: var(--text-secondary); text-wrap: pretty; }
 .ct .tool-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 15px; color: var(--text-muted); }
 .ct .tool-release { margin-top: 20px; font-size: 13.5px; color: var(--text-muted); overflow-wrap: anywhere; }
-/* A full screen kept for the island, so what follows it (the release line, the footer) never moves on
-   screen when a part lands after the first paint (the figures panel: PFD49). */
-.ct #ct-root { min-height: 100vh; }
+.ct #ct-root { min-height: 60vh; }
+/* While a part is still to land, the island keeps a screen, so the release line and the footer never
+   move on screen when it arrives (PFD49): before the island renders where a place, a climate or a
+   palette is kept (the head's data-kept, ConsortiumPage.astro), and while the figures panel's slot is
+   empty (the data and its chunk loading: views/figures/slots.tsx). Only then: a fresh Start or a short
+   state (an error, a terse Place) leaves no screen-tall gap (fix round 1 R5). svh: the small
+   viewport, never taller than what a phone shows. */
+.ct #ct-head[data-kept] ~ #ct-root[aria-busy], .ct #ct-root:has(.fg-slot:empty) { min-height: 100svh; }
+.ct .fg-slot { display: contents; }
 /* The site has 400 and 600 only: bold is 600, never a synthesised 700 (W8). */
 .ct strong, .ct b { font-weight: 600; }
 /* CJK headings break between phrases, not inside a word (W9): Japanese by phrase where the browser

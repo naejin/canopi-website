@@ -478,17 +478,28 @@ test('R18: the figures panel reads the year\'s warmth without the range rule: ye
   // P5-26e. A source grep of Figures.tsx could not see an import through index.ts; C8.)
 });
 
-// Chunk 4 T19 (owner 2026-11-19, words only): Coldest nights' own figure is the average night of the
-// coolest month, not the coldest night of the year; the editor says so in every locale, in words of
-// its own (never the shared "your plot's figure" form).
-test('chunk 4 T19: the nights own-figure label and help exist in all 11 locales, apart from the shared form', () => {
+// Chunk 4 T19 (owner 2026-11-19, words only) and its fix round 1 (R3, C4): each temperature line's own
+// figure names the exact quantity the engine reads, in one form for label and help: Coldest nights the
+// average night low (mean daily minimum, tminColdC) of the coolest month, never "the average night" or
+// the year's coldest night; Hottest days the average afternoon high (mean daily maximum, tmaxWarmC) of
+// the hottest month, never the year's hottest day. The help gives the map's own value ({map}), so a
+// far-off figure stands out. No shared "your plot's figure" form is left.
+test('chunk 4 T19 (R3, C4): the nights and days own-figure label and help exist in all 11 locales, name the mean low / mean high, and give the map\'s value', () => {
+  const low = { zh: '平均最低气温', ko: '평균 최저 기온', ja: '平均最低気温' };
   for (const l of ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru']) {
     const w = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
-    for (const [own, shared] of [['plotFigureNights', 'plotFigure'], ['figureHelpNights', 'figureHelp']]) {
-      const v = w[`consortium.figures.${own}`];
-      assert.ok(typeof v === 'string' && v.trim(), `${l}: consortium.figures.${own}`);
-      assert.notEqual(v, w[`consortium.figures.${shared}`], `${l}: ${own} has its own words`);
+    for (const k of ['plotFigureNights', 'plotFigureDays', 'figureHelpNights', 'figureHelpDays']) {
+      const v = w[`consortium.figures.${k}`];
+      assert.ok(typeof v === 'string' && v.trim(), `${l}: consortium.figures.${k}`);
     }
+    assert.notEqual(w['consortium.figures.plotFigureNights'], w['consortium.figures.plotFigureDays'], `${l}: nights and days have their own labels`);
+    for (const k of ['figureHelpNights', 'figureHelpDays']) assert.match(w[`consortium.figures.${k}`], /\{map\}/, `${l}: ${k} gives the map's value`);
+    for (const k of ['plotFigure', 'figureHelp']) assert.equal(w[`consortium.figures.${k}`], undefined, `${l}: the shared ${k} form is gone`);
+    if (low[l]) for (const k of ['plotFigureNights', 'figureHelpNights']) assert.ok(w[`consortium.figures.${k}`].includes(low[l]), `${l}: ${k} says the mean minimum (${low[l]})`);
   }
-  assert.match(en['consortium.figures.figureHelpNights'], /coolest month, not its coldest night of the year/);
+  const phrase = (k, re) => assert.match(en[`consortium.figures.${k}`], re, k);
+  phrase('plotFigureNights', /^Average night low of my plot’s coolest month/);
+  phrase('figureHelpNights', /average night low of your plot’s coolest month, not its coldest night of the year/);
+  phrase('plotFigureDays', /^Average afternoon high of my plot’s hottest month/);
+  phrase('figureHelpDays', /average afternoon high of your plot’s hottest month, not its hottest day of the year/);
 });

@@ -16,7 +16,7 @@
 //   the list and the members are judged for the three periods with the inputs before and after (six
 //   passes), and core siteChange / siteChangeLines say what changed (toast, with Undo; the line's own
 //   detail under it). Counting… and "Checks could not run" with Retry are the store's (F6, F7).
-import { computed, signal } from '@preact/signals';
+import { computed, effect as watch, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
@@ -498,14 +498,16 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
     return `${F('previewLead')} ${own}${same}`;
   })() : null;
   const pressedMark = (on: boolean) => (on ? <Icon d={CHECK} /> : null);
-  // The own figure Coldest nights reads is the coolest month's average night, not the year's coldest
-  // night: its label and help say so (owner 2026-11-19, T19); Hottest days keeps the shared words.
-  const ownFigure = (key: string) => (line === 'nights' ? `${key}Nights` : key);
+  // The own figure each temperature line reads, in words of its own (owner 2026-11-19, T19; R3, C4):
+  // Coldest nights the coolest month's average night low (tminColdC), not the year's coldest night;
+  // Hottest days the hottest month's average afternoon high (tmaxWarmC), not the year's hottest day.
+  // The help gives the map's value for that same figure, so a far-off one stands out.
+  const ownFigure = (key: string) => F(`${key}${line === 'nights' ? 'Nights' : 'Days'}`, { map: line === 'nights' ? temp(map) : tempWhole(map) });
   return (
     <fieldset class="fg-editor">
       <legend>{F(`legend${line[0].toUpperCase()}${line.slice(1)}`)}</legend>
       <div class="fg-editor-row">
-        <label for={id}>{F(figure ? ownFigure('plotFigure') : cfg.lead)}</label>
+        <label for={id}>{figure ? ownFigure('plotFigure') : F(cfg.lead)}</label>
         <input ref={field} id={id} type="text" inputMode="decimal" class="fg-number" value={text} aria-invalid={error ? 'true' : 'false'} aria-describedby={error ? `${id}-err` : undefined}
           onInput={(e) => { setText((e.currentTarget as HTMLInputElement).value); setError(null); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); use(); } }} />
         <span class="fg-unit">{F(cfg.unit)}</span>
@@ -518,7 +520,7 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
       )}
       {error && <p id={`${id}-err`} class="fg-error">{error}</p>}
       {(line === 'nights' || line === 'days') && <>
-        <p class="fg-help">{F(figure ? ownFigure('figureHelp') : 'knowHelp')}</p>
+        <p class="fg-help">{figure ? ownFigure('figureHelp') : F('knowHelp')}</p>
         <div><button type="button" class="ct-link-button fg-link" onClick={() => { setFigure(!figure); setText(''); setError(null); }}>{F(figure ? 'useShift' : 'knowFigure')}</button></div>
       </>}
       {line === 'nights' && <>
@@ -941,12 +943,24 @@ function WaterCard({ i }: { i: SiteInputs }) {
     </section>
   );
 }
-// Whether the last counts found a limiting line: while the checks count again (an edit made in the
-// card) or could not run, the card stays as it was, so the editor in it is not dropped (T15).
-let limitShown = false;
+// Whether "What limits plants here" stands (T15; fix round 1 C2): once a ready count finds no limiting
+// line (an outside count, or a member drier here), it goes. The last ready answer is kept for the place
+// and list it was counted on, so while the checks count again (an edit made in the card) the card
+// stays as it was and the editor in it is not dropped; before any answer for this place and list (the
+// first count, or checks that could not run) the card is drawn in its counting or failed state, never
+// left out (unknown is never a hole).
+const placeKey = computed(() => { const l = store.location.value; return `${store.climate.value}|${l ? `${l.lat},${l.lon}` : ''}`; });
+const limiting = computed(() => limits.value.length > 0 || !!membersDry.value?.size);
+const lastAnswer = signal<{ key: string; limiting: boolean } | null>(null);
+watch(() => { if (checks.value === 'ready') lastAnswer.value = { key: placeKey.value, limiting: limiting.value }; });
+const limitShown = computed(() => {
+  if (checks.value === 'ready') return limiting.value;
+  const last = lastAnswer.value;
+  return last?.key === placeKey.value ? last.limiting : true;
+});
 export function PaletteLimits() {
   const i = store.siteInputs.value;
-  if (!located.value || i.nights.value === null) { limitShown = false; return null; }
+  if (!located.value || i.nights.value === null) return null;
   const status = checks.value;
   // Every line that limits (A5; core limitsOf, most first; warmth over the year is said in the Hottest
   // days row, core LIMIT_LINES), the rain with the dry months it reads with (board SiteMendoza); the
@@ -965,8 +979,7 @@ export function PaletteLimits() {
     if (!lines.includes('nights')) not.push(F('notNights', { a: temp(today.tminColdC), b: temp(last.tminColdC), period: periodName(LAST), frost: F(today.tminColdC >= 10 ? 'noFrostLower' : 'frostLower') }));
     if (!lines.includes('days')) not.push(F('notDays', { a: temp(today.tmaxWarmC), b: temp(last.tmaxWarmC), period: periodName(LAST) }));
   }
-  if (status === 'ready') limitShown = lines.length > 0 || !!membersDry.value?.size;
-  if (!limitShown) return null;
+  if (!limitShown.value) return null;
   const grower = i.watering.source === 'grower';
   return (
     <>

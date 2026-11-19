@@ -271,9 +271,15 @@ export async function applyPreset(climate: ClimateZone, plant: string | null): P
   await waitForSource();
   const src = store.source.peek()!;
   const pool = await store.loadPool(climate);
-  if (!pool || actionCount() !== began || store.climate.peek() !== climate) return;
+  const stale = () => actionCount() !== began || store.climate.peek() !== climate;
+  if (!pool || stale()) return;
   const t = pool.find((x) => x.canonical_name === plant);
-  if (!t) { notices.value = { ...notices.peek(), guideMissing: await guideName(src, plant) }; return; }
+  if (!t) {
+    // The names file is read after the check: the reader may have acted meanwhile (C3).
+    const name = await guideName(src, plant);
+    if (!stale()) notices.value = { ...notices.peek(), guideMissing: name };
+    return;
+  }
   // The guide's plant is the guide's choice, not the reader acting.
   quietly(() => batch(() => {
     store.members.value = [...new Set([...store.members.peek(), t.id])];

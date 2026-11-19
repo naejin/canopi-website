@@ -187,3 +187,19 @@ test('chunk 4 T18: keepShownAsMine() makes the palette on screen the save (no lo
   assert.equal(saveM.held.peek(), true, 'Undo holds the save again');
   assert.deepEqual(store.members.peek(), ['p-apple', 'p-fr'], 'the plants on screen stay');
 });
+
+// Chunk 4 C2 fix round 1 (C3): the release names are read after the "has the reader acted" check, so
+// the check runs again once they are in; a reader who picked another climate (or opened the saved
+// palette) meanwhile never gets the stale notice back.
+test('chunk 4 C3: a guide-missing notice whose names arrive after the reader changed the climate is never written', async () => {
+  let release;
+  const held = new Promise((r) => { release = r; });
+  store.source.value = { ...sourceDouble(), names: () => held.then(() => releaseNames) };
+  restoreM.notices.value = restoreM.NO_NOTICES;
+  const run = restoreM.applyPreset('Temperate', 'Malus sieversii');
+  for (let k = 0; k < 20; k++) await new Promise((r) => setTimeout(r, 0));
+  store.climate.value = 'Arid';
+  release();
+  await run;
+  assert.equal(restoreM.notices.peek().guideMissing, null, 'no stale notice over the new climate');
+});

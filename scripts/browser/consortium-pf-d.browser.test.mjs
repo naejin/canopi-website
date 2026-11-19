@@ -13,7 +13,7 @@
 //   h3 G1 (chunk-3 hand-off): PFD32 and PFD42 unmarked (state/location.ts reads the soil tile, M8; the
 //   tempsTogether link in the save's place and the link's f, M1); PFD44-PFD46 (M2, M4);
 //   h3 G1 fix round 1: PFD47-PFD49 (R3; R1, C5; R4, C4), PFD45's focus (R2, C1), PFD18's count cells (C7);
-//   PFD49 unmarked in chunk 4 (C2, T2: base.css's #ct-root reserve is 100vh).
+//   PFD49 unmarked in chunk 4 (C2, T2; fix round 1 R5: the figures slot's own reserve, base.css .fg-slot).
 //   h3 G1 fix round 2: PFD50 (B2.1), PFD51 (B1.1, C2.1), PFD52 (B3.1).
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
@@ -1225,9 +1225,10 @@ test('PFD48 (pf-d R1, C5): the soil tile is optional: with every soil tile faili
 // (The location line's own moves when a saved place is read, ct-country and ct-location-result, are
 // the Place form's: reported, not counted here.)
 const panelMove = (m) => /site-footer|tool-release|fg-/.test(m);
-// The page's #ct-root height reserve (src/styles/consortium/base.css, 100vh) keeps what is under the tool
-// below the first screen, so the panel landing moves nothing on screen (chunk 4, T2).
-test('PFD49 (pf-d R4, C4; the #ct-root reserve in base.css): a Start with a climate kept on this device (the guides\' canopi-climate), or a saved location, does not move when "Your place in figures" arrives: CLS 0.01 or less at 390 and 1280 px', async () => {
+// The figures slot's reserve while its chunk loads (src/styles/consortium/base.css .fg-slot:empty, a
+// small-viewport screen in the slot itself) keeps what is under the tool below the first screen, so the
+// panel landing moves nothing on screen (chunk 4 T2; fix round 1 R5).
+test('PFD49 (pf-d R4, C4; the figures slot\'s reserve in base.css): a Start with a climate kept on this device (the guides\' canopi-climate), or a saved location, does not move when "Your place in figures" arrives: CLS 0.01 or less at 390 and 1280 px', async () => {
   const over = [];
   const cases = [['kept climate', { 'canopi-climate': 'temperate' }], ['saved location', { 'canopi-location': JSON.stringify({ lat: -1.1714, lon: 36.8356, source: 'map' }) }]];
   for (const [what, entries] of cases) for (const width of [390, 1280]) {
@@ -1245,6 +1246,11 @@ test('PFD49 (pf-d R4, C4; the #ct-root reserve in base.css): a Start with a clim
     const ours = moves.filter(panelMove);
     console.log(`# PFD49 (reported): ${what}, ${width} px: CLS ${sum(moves).toFixed(4)}, of it the panel's ${sum(ours).toFixed(4)} (${moves.join('; ') || 'no shift'})`);
     if (sum(ours) > 0.01) over.push({ at: `${what}, ${width} px`, sum: sum(ours).toFixed(3), moves: ours });
+    // R5 (fix round 1): the reserve is the slot's, while it waits; the island itself keeps no full
+    // screen, so a short state never leaves a screen-tall gap before the footer.
+    const kept = await page.evaluate(() => ({ root: parseFloat(getComputedStyle(document.querySelector('#ct-root')).minHeight) / innerHeight, slot: getComputedStyle(document.querySelector('.fg-slot')).display }));
+    assert.ok(kept.root <= 0.61, `R5: #ct-root keeps at most 60% of the screen (${what}, ${width} px: ${kept.root.toFixed(2)})`);
+    assert.equal(kept.slot, 'contents', `R5: the landed panel's slot keeps no room of its own (${what}, ${width} px)`);
     await done(page);
   }
   assert.deepEqual(over, [], 'R4: Start does not move when the figures panel arrives');
@@ -1363,6 +1369,19 @@ const verdictsSettledSoon = (page) => page.waitForFunction(() => !!window.__ctTe
 
 // ---- chunk 4 (C2) ----
 
+// Kiambu at 390 px with its card, then its list cut to the plants that fit in every period with no
+// dryness note: no line limits on that list (PFD53, PFD55).
+async function kiambuCutToFree() {
+  const page = await loadCase('kiambu-8', { width: 390 });
+  assert.ok(await page.waitForFunction(() => !!document.querySelector('.fg-limits'), { timeout: 20_000 }).then(() => true, () => false), 'the whole list: the card');
+  await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, pool = s.pool.value;
+    const by = ['1991-2020', '2041-2070', '2071-2099'].map((p) => rule.verdicts(pool, { ...s.verdictContext.value, period: p }));
+    s.pools.value = { ...s.pools.value, [s.climate.value]: pool.filter((t) => by.every((vs) => { const v = vs.get(t.id); return v && v.level === 'fits' && !v.notes.some((n) => n.startsWith('drier')); })) };
+  });
+  return page;
+}
+
 test('PFD53 (pf-d, chunk 4 T15, A5; boards Palette and Main draw no card, SiteMendoza draws it): "What limits plants here" is on the palette only where a line limits plants here (an outside count above 0, or a member drier here than where it is recorded), by the engine on the page\'s own state', async () => {
   const seen = [];
   for (const [what, open] of [['kiambu-8', () => loadCase('kiambu-8', { width: 390 })], ['kiambu-8-nights-2c-colder', () => loadCase('kiambu-8-nights-2c-colder', { width: 390 })], ['mendoza', () => mendoza({ width: 390 })]]) {
@@ -1381,14 +1400,7 @@ test('PFD53 (pf-d, chunk 4 T15, A5; boards Palette and Main draw no card, SiteMe
   }
   // Every scenario place has a limiting line on its whole list, so the list is cut to the plants that
   // fit in every period with no dryness note: no line limits then, and the card goes.
-  const page = await loadCase('kiambu-8', { width: 390 });
-  assert.ok(await page.waitForFunction(() => !!document.querySelector('.fg-limits'), { timeout: 20_000 }).then(() => true, () => false), 'the whole list: the card');
-  await page.evaluate(() => {
-    const s = window.__ctTest.store, rule = s.verdictRule.value, pool = s.pool.value;
-    const by = ['1991-2020', '2041-2070', '2071-2099'].map((p) => rule.verdicts(pool, { ...s.verdictContext.value, period: p }));
-    const free = pool.filter((t) => by.every((vs) => { const v = vs.get(t.id); return v && v.level === 'fits' && !v.notes.some((n) => n.startsWith('drier')); }));
-    s.pools.value = { ...s.pools.value, [s.climate.value]: free };
-  });
+  const page = await kiambuCutToFree();
   const { status } = await engineSides(page);
   const still = Object.values(status).filter((x) => x.state === 'limits').map((x) => x.line);
   assert.deepEqual(still, [], 'premise: no line limits on the cut list');
@@ -1400,18 +1412,47 @@ test('PFD53 (pf-d, chunk 4 T15, A5; boards Palette and Main draw no card, SiteMe
   console.log(`# PFD53: ${seen.join('; ')}`);
 });
 
-test('PFD54 (pf-d, chunk 4 T19; owner 2026-11-19): "I know my plot’s figure" on Coldest nights asks for the average night of the coolest month, not the coldest night of the year, in its field label and its help; Hottest days keeps its own words', async () => {
+// Chunk 4 C2 fix round 1 (C2): the card's memory of the last ready answer is kept per place and list,
+// in a signal, never written in render: before any ready answer for a place (the first count, checks
+// that could not run) the card says so; it goes only once a ready count finds no limiting line.
+test('PFD55 (pf-d, chunk 4 C2 fix round 1; unknown is never a hole): "What limits plants here" goes only once a ready count finds no limiting line; at a new place whose checks have not counted, or could not run, it says "Counting…" or "Checks could not run." instead of vanishing', async () => {
+  // The list cut to plants that fit everywhere with no dryness note (as PFD53): a ready count with no line.
+  const page = await kiambuCutToFree();
+  assert.ok(await page.waitForFunction(() => !document.querySelector('.fg-limits'), { timeout: 10_000 }).then(() => true, () => false), 'premise: no limiting line, no card');
+  // The checks stop at the same place and list: the last ready answer (no line) holds; no card.
+  await page.evaluate(() => { const s = window.__ctTest.store; window.__rule = s.verdictRule.value; s.verdictRule.value = null; s.verdictFailed.value = true; });
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(await page.$('.fg-limits'), null, 'the same place and list: the answer counted there holds');
+  // Another place before any count there: the card says the checks could not run, never nothing.
+  await page.evaluate(() => { const s = window.__ctTest.store, l = s.location.value; s.location.value = { ...l, lat: l.lat + 0.5, lon: l.lon + 0.5 }; });
+  const said = (w) => page.waitForFunction((x) => { const c = document.querySelector('.fg-limits'); return c && c.innerText.includes(x) ? c.innerText.replace(/\s+/g, ' ') : null; }, { timeout: 6000 }, w).then((h) => h.jsonValue(), () => null);
+  assert.ok(await said('Checks could not run.'), 'C2 (a): a new place whose checks failed: the card says so');
+  await page.evaluate(() => { window.__ctTest.store.verdictFailed.value = false; });
+  assert.ok(await said('Counting…'), 'C2 (b): while it counts, the card says so');
+  await page.evaluate(() => { window.__ctTest.store.verdictRule.value = window.__rule; });
+  await done(page);
+});
+
+test('PFD54 (pf-d, chunk 4 T19, fix round 1 R3/C4; owner 2026-11-19): "I know my plot’s figure" asks for the exact figure the checks read, in one form for label and help, with the map\'s own value beside it: on Coldest nights the average night low of the coolest month (not the coldest night of the year), on Hottest days the average afternoon high of the hottest month (not the hottest day of the year)', async () => {
   const page = await placeStep('kiambu-8', { width: 390 });
   await section(page, 'Your place in figures', 20_000);
+  const read = (line) => page.evaluate((l) => {
+    const f = document.querySelector('main fieldset.fg-editor');
+    return { label: f?.querySelector(`label[for="fg-${l}"]`)?.textContent.trim() ?? null, help: [...(f?.querySelectorAll('.fg-help') ?? [])].map((p) => p.textContent.replace(/\s+/g, ' ').trim()) };
+  }, line);
+  const map = await page.evaluate(() => { const i = window.__ctTest.store.siteInputs.value; return { nights: i.nights.map, days: i.days.map }; });
   await tap(page, 'Change coldest nights');
   await tap(page, 'I know my plot’s figure');
-  const label = await page.evaluate(() => document.querySelector('main fieldset.fg-editor label[for="fg-nights"]')?.textContent.trim() ?? null);
-  assert.equal(label, 'My plot’s average night in the coolest month, today', 'T19: the field names the figure the checks read');
-  await says(page, 'Type the average night of your plot’s coolest month, not its coldest night of the year: it is kept as the shift from the map, the same in every period.');
+  const nights = await read('nights');
+  assert.equal(nights.label, 'Average night low of my plot’s coolest month, today', 'T19, R3: the field names the mean low the checks read');
+  const nightsHelp = `Type the average night low of your plot’s coolest month, not its coldest night of the year (the map says ${map.nights.toFixed(1)} °C): it is kept as the shift from the map, the same in every period.`;
+  assert.ok(nights.help.includes(nightsHelp), `C4: one form, and the map's own figure (${JSON.stringify(nights.help)})`);
   await tap(page, 'Cancel');
   await tap(page, 'Change hottest days');
   await tap(page, 'I know my plot’s figure');
-  const days = await page.evaluate(() => document.querySelector('main fieldset.fg-editor label[for="fg-days"]')?.textContent.trim() ?? null);
-  assert.equal(days, 'My plot’s figure today', 'Hottest days keeps the shared words');
+  const days = await read('days');
+  assert.equal(days.label, 'Average afternoon high of my plot’s hottest month, today', 'R3: Hottest days names the mean high the checks read');
+  const daysHelp = `Type the average afternoon high of your plot’s hottest month, not its hottest day of the year (the map says ${Math.round(map.days)} °C): it is kept as the shift from the map, the same in every period.`;
+  assert.ok(days.help.includes(daysHelp), `R3: never the year's hottest day, and the map's own figure (${JSON.stringify(days.help)})`);
   await done(page);
 });
