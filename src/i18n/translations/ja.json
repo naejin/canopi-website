@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "一方がもう一方の成長を抑えることがあります。",
   "consortium.ctype.alternate_host": "一方がもう一方の害虫や病気の宿主になります。",
   "consortium.ctype.shared_pest": "共通の害虫や病気があります。",
-  "consortium.plants.title": "あなたの植物",
   "consortium.plants.remove": "外す",
   "consortium.plants.removeName": "{name}を外す",
   "consortium.plants.size": "野生では幅 {width}、高さ {height} まで",

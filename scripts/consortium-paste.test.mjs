@@ -4,9 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const paste = await import('../src/islands/consortium/views/find/paste.ts');
 const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader, plan } = await import('../src/islands/consortium/views/find/paste.ts');
-const { oneOff } = await import('../src/islands/consortium/data/search.ts');
+const { oneOff, releaseIndex } = await import('../src/islands/consortium/data/search.ts');
 
 const plant = (id, canonical_name, names = {}) => ({ id, canonical_name, genus: canonical_name.split(' ')[0], names });
 const temperate = [
@@ -156,8 +155,9 @@ test('c1r4 U4 + U6: a close spelling on another list, or already in the palette,
 test('comma or semicolon columns: the same count on every line makes a table; a split cell never goes to the word-prefix search', () => {
   const csv = 'Malus domestica,Tree,Sun\nCastanea sativa,Tree,Sun\n';
   assert.deepEqual([pasteTable(csv).columns, pasteTable(csv).sep], [3, ',']);
-  
   assert.equal(pasteTable('"Malus domestica";"Tree"\n"Rubus idaeus";"Shrub"').columns, 2);
+  assert.deepEqual([...pasteNames('"Malus domestica";"Tree"\n"Rubus idaeus";"Shrub"')], ['Malus domestica', 'Tree', 'Rubus idaeus', 'Shrub'],
+    'a quoted semicolon table: every cell, quotes dropped');
   assert.equal(pasteTable('Apple, Hawthorn\nRaspberry').columns, 1, 'uneven counts stay a list');
   const one = readPaste(pasteNames('Malus domestica,Tree,Sun'), { here: temperate, others: [['Tropical', tropical]], members: [] });
   assert.deepEqual(one.found.map((f) => f.taxon.id), ['t1']);
@@ -173,7 +173,6 @@ test('comma or semicolon columns read every cell; tabs read the first column (no
   assert.deepEqual(r.found.map((f) => f.taxon.id), ['t1', 't2']);
   assert.deepEqual(r.choose, [], 'cells cut from a row skip the word-prefix search');
   assert.deepEqual([...pasteNames('Malus domestica\t3\nCastanea sativa\t1')], ['Malus domestica', 'Castanea sativa'], 'tabs: the first column');
-  assert.equal(paste.pasteColumn, undefined, 'no column picker');
 });
 
 // The cost guard: 500 unmatched lines against a large list. It used to time the read (< 200 ms wall
@@ -220,4 +219,19 @@ test('B10: every reading keeps its line; "beans" asks which bean', () => {
   assert.deepEqual([r.found[0].at, r.none[0].at, r.choose[0].at, r.already[0].at], [0, 1, 2, 3]);
   assert.deepEqual(r.choose[0].taxa.map((t) => t.id).sort(), ['b1', 'b2'], '"beans": which bean?');
   assert.equal(r.choose[0].word, 'bean', 'the question names the singular it matched (K11: "Which bean?")');
+});
+
+// A16 (v14 spec: "maize", "banana" and "beans" give the boards' choices): a plant that carries the pasted
+// word as a whole name, in any language (French plantain is "Banana" in Portuguese), is offered right
+// after the plants whose own name holds it, before a plant where the word is only part of a longer name
+// ("Banana Squash", "Melo cantalupensis nid banana"). Shapes of the installed release's names.
+test('A16: "banana" offers the two bananas first, then the plants where banana is a piece of a longer name', () => {
+  const here = [plant('m1', 'Musa acuminata', { en: 'Banana' }), plant('c1', 'Cucurbita maxima', { en: 'Winter squash' }),
+    plant('m2', 'Musa ×paradisiaca', { en: 'French plantain' }), plant('k1', 'Cucumis melo', { en: 'Melon' })];
+  const other = { c1: [{ lang: 'en', text: 'Banana Squash' }], m2: [{ lang: 'pt', text: 'Banana' }], k1: [{ lang: 'es', text: 'Melo cantalupensis nid banana' }] };
+  const index = releaseIndex({ lang: 'en', names: here.map((t) => ({ id: t.id, canonical: t.canonical_name, names: t.names, other: other[t.id] })) });
+  const r = readPaste(pasteNames('banana'), { here, index, members: ['m2'] });
+  assert.equal(r.choose.length, 1, 'banana asks');
+  assert.deepEqual(r.choose[0].taxa.slice(0, 2).map((t) => t.id), ['m1', 'm2'], 'the two bananas first, the one you have among them');
+  assert.deepEqual(r.choose[0].taxa.slice(2).map((t) => t.id).sort(), ['c1', 'k1'], 'then the rest, none dropped');
 });

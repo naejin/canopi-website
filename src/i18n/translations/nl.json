@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "Een van beide kan de groei van de andere remmen.",
   "consortium.ctype.alternate_host": "Een van beide herbergt een plaag of ziekte van de andere.",
   "consortium.ctype.shared_pest": "Ze delen een plaag of ziekte.",
-  "consortium.plants.title": "Je planten",
   "consortium.plants.remove": "Verwijderen",
   "consortium.plants.removeName": "{name} verwijderen",
   "consortium.plants.size": "Tot {width} breed en {height} hoog in het wild",

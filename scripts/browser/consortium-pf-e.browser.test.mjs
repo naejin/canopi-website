@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { useHarness, has, en, realDb } from './helpers.mjs';
 import { tool, choose, atSite } from './p5-helpers.mjs';
-import { boxOf, control, dialogText, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { boxOf, control, dialogText, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts, typeIn } from './pf-e-helpers.mjs';
 
@@ -91,6 +91,15 @@ test('PFE3 (pf-e F22, PP-B23, PP-B64): ticking 3 plants shows "3 ticked" with "R
   await page.select(`${PLANTS} select[data-plants-group]`, 'none');
   await control(page, 'group', '3 plants ticked');
   await page.select(`${PLANTS} select[data-plants-group]`, 'light');
+  // Ticks stay through a search that hides the ticked rows, and after clearing it.
+  const other = await page.evaluate((ids) => { const t = window.__ctTest.store.memberTaxa.value.find((x) => !ids.includes(x.id)); return t.canonical_name; }, picked.map((r) => r.id));
+  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, other);
+  await frames(page);
+  assert.ok(!(await rowsShown(page)).some((r) => picked.some((p) => p.id === r.id)), 'the premise: the search hides the ticked rows');
+  await control(page, 'group', '3 plants ticked');
+  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, '');
+  await frames(page);
+  await control(page, 'group', '3 plants ticked');
   await press(page, 'button', 'Remove 3 plants');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 197, { timeout: 4000 }).then(() => true, () => false), 'board: Remove takes the 3 out');
   assert.match(await toastText(page), /^3 plants removed\. 197 plants\./, 'board: the toast says how many and the palette after');
@@ -278,6 +287,16 @@ test('PFE11 (pf-e Paste board): every line is read into three groups, Recognised
   await press(page, 'button', choices.find((c) => c.on === 'false' && !/in your palette/.test(c.t)).t);
   await press(page, 'button', 'Add 3 plants');
   assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 3, { timeout: 8000 }, before).then(() => true, () => false), 'board: Add counts the new and the chosen');
+  // A16 (v14 spec: "maize", "banana" and "beans" give the boards' choices; report.md's sample note):
+  // "maize" is Maize itself, in the palette (no question between it and a plant named otherwise);
+  // "banana" asks between the two bananas first, the names the release gives them read off the store.
+  await pasteText(page, 'maize\nbanana');
+  await says(page, '2 names read', { inDialog: true });
+  const maize = await page.evaluate(() => { const t = window.__ctTest.store.memberTaxa.value.find((x) => x.canonical_name === 'Zea mays'); return t && `${t.names?.en ?? t.canonical_name} Zea mays`; });
+  await says(page, `“maize” ${maize} · in your palette`, { inDialog: true });
+  const bananas = await page.$$eval('dialog[open] [role="group"]', (gs) => [...(gs.find((g) => /banana/.test(g.getAttribute('aria-label') ?? ''))?.querySelectorAll('button[aria-pressed]') ?? [])]
+    .map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+  assert.deepEqual(bananas.slice(0, 2).map((t) => t.match(/Musa \S+/)?.[0]), ['Musa acuminata', 'Musa ×paradisiaca'], `A16: the two bananas first: ${bananas.join(' | ')}`);
   await done(page);
 });
 
@@ -1011,5 +1030,76 @@ test('PFE46 (pf-e C9, board PaletteMore): a climber with a height and no width r
   });
   assert.ok(climber, 'the premise: a climber with a height and no width on the list');
   await says(page, new RegExp(`${climber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} .*Climbs to [\\d.,]+ (?:m|cm), no width recorded`));
+  await done(page);
+});
+
+// ---- fix round 1, batch 5 (review C13: section 6 and F30 rows) ----
+
+test('PFE47 (pf-e v14 section 6, board Many at 320): Sort and Group are 44 px and whole inside the card; the tick bar sticks above the bottom bar (its room kept); Paste\'s choice rows are 44 px', async () => {
+  const page = await loadPalette200({ width: 320 });
+  assert.ok(await has(page, `${PLANTS} select[data-plants-group]`, 6000), 'board: Sort and Group in Your plants');
+  const tools = await page.evaluate((sel) => {
+    const card = document.querySelector(sel).getBoundingClientRect();
+    return ['data-plants-sort', 'data-plants-group'].map((a) => {
+      const el = document.querySelector(`${sel} select[${a}]`), r = el.getBoundingClientRect();
+      const ctx = document.createElement('canvas').getContext('2d'); ctx.font = getComputedStyle(el).font;
+      return { a, h: r.height, inside: r.left >= card.left - 0.5 && r.right <= card.right + 0.5, need: ctx.measureText(el.selectedOptions[0].text).width, has: el.clientWidth };
+    });
+  }, PLANTS);
+  for (const t of tools) {
+    assert.ok(t.h >= 44, `board: ${t.a} is 44 px tall (${t.h})`);
+    assert.ok(t.inside, `board: ${t.a} inside Your plants' card`);
+    assert.ok(t.need + 16 <= t.has, `board: ${t.a} shows its choice whole (${Math.round(t.need)} px of text, ${t.has} px)`);
+  }
+  const rows = await openFirstTick3(page);
+  // The open group's first row at the top: the tick bar, after the groups, would be far below; it sticks.
+  await page.$eval(`${PLANTS} [data-plant-id="${rows[0].id}"]`, (e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await frames(page);
+  const at = await page.evaluate(() => {
+    const bar = [...document.querySelectorAll('#ct-root [role="group"]')].find((g) => g.getAttribute('aria-label') === '3 plants ticked');
+    const room = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ct-bar-room')) || 0;
+    // The phone's bottom bar, when it shows: an "Add plants" fixed at the foot of the screen.
+    const phone = [...document.querySelectorAll('#ct-root button')].filter((x) => x.textContent.trim() === 'Add plants' && x.getClientRects().length)
+      .map((x) => x.getBoundingClientRect()).filter((r) => r.bottom <= innerHeight + 1 && r.top >= innerHeight - 100).map((r) => r.top);
+    return { bottom: bar.getBoundingClientRect().bottom, room, vh: innerHeight, phoneTop: phone.length ? Math.min(...phone) : innerHeight };
+  });
+  assert.ok(Math.abs(at.bottom - (at.vh - at.room - 8)) <= 2, `board: the tick bar sticks 8 px above the bottom bar's room (bottom ${Math.round(at.bottom)}, viewport ${at.vh}, room ${at.room})`);
+  assert.ok(at.bottom <= at.phoneTop + 1, `board: the tick bar stays above the bottom bar (${Math.round(at.bottom)} against ${Math.round(at.phoneTop)})`);
+  await done(page);
+  const paste = await boardPastePage(320);
+  await pasteText(paste, SMALL_PASTE);
+  await says(paste, '8 names read', { inDialog: true });
+  const heights = await paste.$$eval('dialog[open] [role="group"] button[aria-pressed]', (bs) => bs.filter((b) => b.getClientRects().length).map((b) => ({ t: b.textContent.replace(/\s+/g, ' ').trim(), h: b.getBoundingClientRect().height })));
+  assert.ok(heights.length >= 3, 'the premise: the choices show');
+  for (const c of heights) assert.ok(c.h >= 44, `board: the choice "${c.t}" is 44 px tall (${c.h})`);
+  await done(paste);
+});
+
+test('PFE48 (pf-e E3, F30, ManyDesk at 1280): Your plants, then Warnings and fit, then Balance stand in the right column; with the search in place, the add toast never covers its Done', async () => {
+  const page = await loadPalette200({ width: 1280 });
+  await section(page, 'Balance');
+  const box = { plants: await sectionBox(page, 'Your 200 plants'), warn: await sectionBox(page, 'Warnings and fit'), bal: await sectionBox(page, 'Balance'), jobs: await sectionBox(page, 'Jobs') };
+  for (const [k, b] of Object.entries(box)) assert.ok(b, `board: a section headed for ${k}`);
+  assert.ok(box.plants.y < box.warn.y && box.warn.y < box.bal.y, `board: Your plants, then Warnings and fit, then Balance (${Math.round(box.plants.y)}, ${Math.round(box.warn.y)}, ${Math.round(box.bal.y)})`);
+  for (const k of ['warn', 'bal']) assert.ok(Math.abs(box[k].x - box.plants.x) <= 2, `board: ${k} in Your plants' column (x ${Math.round(box[k].x)} against ${Math.round(box.plants.x)})`);
+  assert.ok(box.plants.x >= box.jobs.right - 1, `board: the column on the right of the chart's (x ${Math.round(box.plants.x)}, Jobs ends at ${Math.round(box.jobs.right)})`);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'board: the search opens inside Your plants');
+  const pick = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); const t = Object.values(s.pools.value).flat().find((x) => x && !m.has(x.id)); return { id: t.id, q: t.canonical_name }; });
+  await typeIn(page, `${PLANTS} [data-find-search]`, pick.q);
+  const row = `${PLANTS} [data-find-row][data-plant-id="${pick.id}"]`;
+  assert.ok(await has(page, row, 10_000), 'board: the search lists the plant');
+  await page.click(`${row} [data-find-add]`);
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.toast.value?.text, { timeout: 4000 }).then(() => true, () => false), 'the premise: the add toast shows');
+  await frames(page);
+  const hit = await page.evaluate(() => {
+    const done = [...document.querySelectorAll('#ct-root button')].filter((b) => b.textContent.trim() === 'Done' && b.getClientRects().length);
+    const undo = [...document.querySelectorAll('#ct-root button')].find((b) => b.textContent.trim() === 'Undo' && b.getClientRects().length);
+    const card = undo?.parentElement?.getBoundingClientRect();
+    const meet = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    return { done: done.length, card: !!card, over: done.filter((d) => card && meet(d.getBoundingClientRect(), card)).length };
+  });
+  assert.ok(hit.done >= 1 && hit.card, `the premise: Done and the toast show (${hit.done} Done, toast ${hit.card})`);
+  assert.equal(hit.over, 0, 'F30: the toast never covers the search\'s Done');
   await done(page);
 });

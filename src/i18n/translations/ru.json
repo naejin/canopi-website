@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "Одно из них может угнетать рост другого.",
   "consortium.ctype.alternate_host": "Одно из них служит хозяином вредителя или болезни другого.",
   "consortium.ctype.shared_pest": "У них общий вредитель или болезнь.",
-  "consortium.plants.title": "Ваши растения",
   "consortium.plants.remove": "Убрать",
   "consortium.plants.removeName": "Убрать {name}",
   "consortium.plants.size": "В природе до {height} в высоту и {width} в ширину",

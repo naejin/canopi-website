@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "其中一种可能抑制另一种的生长。",
   "consortium.ctype.alternate_host": "其中一种是另一种的害虫或病害的寄主。",
   "consortium.ctype.shared_pest": "它们有共同的害虫或病害。",
-  "consortium.plants.title": "你的植物",
   "consortium.plants.remove": "移除",
   "consortium.plants.removeName": "移除{name}",
   "consortium.plants.size": "野生可达宽 {width}、高 {height}",

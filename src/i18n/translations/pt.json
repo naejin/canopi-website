@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "Uma delas pode travar o crescimento da outra.",
   "consortium.ctype.alternate_host": "Uma delas aloja uma praga ou doença da outra.",
   "consortium.ctype.shared_pest": "Partilham uma praga ou doença.",
-  "consortium.plants.title": "Suas plantas",
   "consortium.plants.remove": "Remover",
   "consortium.plants.removeName": "Remover {name}",
   "consortium.plants.size": "Até {width} de largura e {height} de altura na natureza",

@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "Una delle due può frenare la crescita dell’altra.",
   "consortium.ctype.alternate_host": "Una delle due ospita un parassita o una malattia dell’altra.",
   "consortium.ctype.shared_pest": "Condividono un parassita o una malattia.",
-  "consortium.plants.title": "Le tue piante",
   "consortium.plants.remove": "Togli",
   "consortium.plants.removeName": "Togli {name}",
   "consortium.plants.size": "Fino a {width} di larghezza e {height} di altezza in natura",

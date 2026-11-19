@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "Eine der beiden kann das Wachstum der anderen hemmen.",
   "consortium.ctype.alternate_host": "Eine der beiden beherbergt einen Schädling oder eine Krankheit der anderen.",
   "consortium.ctype.shared_pest": "Sie teilen einen Schädling oder eine Krankheit.",
-  "consortium.plants.title": "Deine Pflanzen",
   "consortium.plants.remove": "Entfernen",
   "consortium.plants.removeName": "{name} entfernen",
   "consortium.plants.size": "Wild bis zu {height} hoch und {width} breit",

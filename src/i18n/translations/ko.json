@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "한쪽이 다른 쪽의 성장을 억누를 수 있습니다.",
   "consortium.ctype.alternate_host": "한쪽이 다른 쪽의 해충이나 병의 숙주가 됩니다.",
   "consortium.ctype.shared_pest": "같은 해충이나 병이 있습니다.",
-  "consortium.plants.title": "내 식물",
   "consortium.plants.remove": "빼기",
   "consortium.plants.removeName": "{name} 빼기",
   "consortium.plants.size": "야생에서 너비 {width}, 높이 {height}까지",

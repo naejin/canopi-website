@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "L’une des deux peut freiner la croissance de l’autre.",
   "consortium.ctype.alternate_host": "L’une des deux héberge un ravageur ou une maladie de l’autre.",
   "consortium.ctype.shared_pest": "Elles partagent un ravageur ou une maladie.",
-  "consortium.plants.title": "Vos plantes",
   "consortium.plants.remove": "Retirer",
   "consortium.plants.removeName": "Retirer {name}",
   "consortium.plants.size": "Jusqu’à {width} de large et {height} de haut dans la nature",

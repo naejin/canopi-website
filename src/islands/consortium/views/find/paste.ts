@@ -317,10 +317,13 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
       share: whole(h) ? share.get(genusOf(h.id)) ?? 0 : 0,
       name: ownName(h) ? fold(h.why.text) : '',
     });
-    const hits = [...best.values()].map((x) => ({ ...x, k: key(x) }))
-      .sort((a, b) => a.k.tier - b.k.tier || a.k.words - b.k.words || b.k.share - a.k.share || (a.k.tier < 2 ? (rank?.(a.h.id) ?? 0) - (rank?.(b.h.id) ?? 0) || (a.k.name < b.k.name ? -1 : a.k.name > b.k.name ? 1 : 0) : 0) || a.at - b.at)
-      .map((x) => lists.taxa.get(x.h.id)!);
-    for (const t of shared?.taxa ?? []) if (!hits.includes(t)) hits.push(t);
+    const sorted = [...best.values()].map((x) => ({ ...x, k: key(x) }))
+      .sort((a, b) => a.k.tier - b.k.tier || a.k.words - b.k.words || b.k.share - a.k.share || (a.k.tier < 2 ? (rank?.(a.h.id) ?? 0) - (rank?.(b.h.id) ?? 0) || (a.k.name < b.k.name ? -1 : a.k.name > b.k.name ? 1 : 0) : 0) || a.at - b.at);
+    // A16: the plants that carry the word as a whole name in another language (French plantain is
+    // "Banana" in Portuguese) come right after the plain names, before a plant where the word is a piece
+    // of a longer name ("Banana Squash").
+    const lead = sorted.filter((x) => x.k.tier === 0).map((x) => lists.taxa.get(x.h.id)!);
+    const hits = [...new Set([...lead, ...(shared?.taxa ?? []), ...sorted.map((x) => lists.taxa.get(x.h.id)!)])];
     // A search guess stays a question, even of one plant (c1r3 T1, "Date" never adds Date plum; v14 spec
     // A26 and the pf-decisions row of 2026-11-19, pf-e C8): "napier", only the start of the one-word name
     // "Napiergrass", asks (board Paste draws it found: a known board difference).

@@ -282,7 +282,6 @@
   "consortium.ctype.allelopathic_harm": "One of them can hold back the other’s growth.",
   "consortium.ctype.alternate_host": "One of them hosts a pest or disease of the other.",
   "consortium.ctype.shared_pest": "They share a pest or disease.",
-  "consortium.plants.title": "Your plants",
   "consortium.plants.remove": "Remove",
   "consortium.plants.removeName": "Remove {name}",
   "consortium.plants.size": "Up to {width} wide, {height} tall in the wild",
