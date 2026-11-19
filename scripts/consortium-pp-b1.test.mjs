@@ -1405,5 +1405,160 @@ test('pre-push saves-1: a page that does not open the save keeps the grower\'s o
     open(arrivalM.arrival({ hash: '', search: '' }, saved(), null), seed);
     await wait(0);
     assert.deepEqual(store.siteEdits.peek(), EDITS, '(c) the next visit after Start over lost the grower\'s values');
+    // (c) and its first plant change keeps them in the save (pre-push re-review).
+    persist.quietly(() => { store.climate.value = 'Temperate'; });
+    store.addMembers([(await realSource.pool('Temperate'))[0].id]);
+    await wait(0);
+    assert.deepEqual(savedEdits(), EDITS, '(c) the first plant change after the next visit wrote the save without the grower\'s values');
   } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
+});
+
+// ---- pre-push re-review of 1e38a289: two data-loss paths through linkPlace.own and canopi-place ----
+const { soilPhOf } = await import('../src/lib/consortium/site-inputs.ts');
+const placeEdits = () => arrivalM.placeOfSeed(kept.get(PLACE_STORE) ?? null)?.siteEdits ?? NO_EDITS;
+const savedPlaceEdits = () => decodeLink(`v=5&${saved()?.place ?? ''}&e=1`, {}).state.siteEdits ?? NO_EDITS;
+const openPage = (how, seed) => {
+  const plan = arrivalM.arrivalPlan(how, { saved: saved(), pref: null, guess: () => null, seed, cell: () => null });
+  arrivalM.openWith({ how, plan, saved: saved(), seed, keptLocation: null });
+};
+// A new page: nothing of this one kept but storage and the tab's address.
+// Held while it is emptied, so the old page writes no save; the tab's address (fakeAddress) as it was.
+const freshPage = () => {
+  const address = globalThis.history ? { hash: location.hash, state: history.state } : null;
+  persist.holdSave(true);
+  persist.linkPlace.value = null;
+  persist.quietly(() => { store.siteEdits.value = NO_EDITS; store.members.value = []; store.removed.value = []; store.view.value = 'start'; store.climate.value = null; store.room.value = 'unsure'; });
+  store.location.value = null;
+  if (address) { location.hash = address.hash; history.state = address.state; }
+  opened(kept.get(STORE) ?? null);
+};
+const untilTrue = async (f) => { for (let i = 0; i < 200 && !f(); i++) await wait(5); };
+const MY_EDITS = Object.freeze({ soilPh: 6.2, drainage: 'wet' });
+
+test('pre-push re-review 1: a reload while a link\'s place notice is open keeps the grower\'s own values (after Start over, from canopi-place)', async () => {
+  const before = restoreM.provideLocationStep(async () => ({ settle: async () => {}, adopt: () => false }));
+  const restoreAddress = fakeAddress();
+  try {
+    await mine(5);
+    store.siteEdits.value = MY_EDITS;
+    await wait(0);
+    draft.startOver();
+    await wait(0);
+    assert.equal(saved(), null, 'premise: Start over removed the save');
+    assert.deepEqual(placeEdits(), MY_EDITS, 'premise: canopi-place keeps the values');
+    // A share link that brings a place: the notice shows.
+    freshPage();
+    const link = await linkWith('Temperate', 3, { siteEdits: SHADE }, { place: true });
+    openPage(arrivalM.arrival({ hash: `#${link}`, search: '' }, saved(), null), kept.get(PLACE_STORE) ?? null);
+    await untilTrue(() => restoreM.linkPlace.peek());
+    assert.ok(restoreM.linkPlace.peek(), 'premise: the notice shows');
+    assert.equal(history.state?.ask, 1, 'premise: the address says the notice waits');
+    // The reload: asked again.
+    const state = history.state;
+    freshPage();
+    const how = arrivalM.arrival({ hash: location.hash, search: '' }, saved(), null, state);
+    assert.equal(how.ask, true, `premise: the reload asks again ${JSON.stringify({ how, hash: location.hash, state })}`);
+    openPage(how, kept.get(PLACE_STORE) ?? null);
+    await untilTrue(() => restoreM.linkPlace.peek());
+    assert.ok(restoreM.linkPlace.peek(), 'asked again after the reload');
+    assert.deepEqual(restoreM.linkPlace.peek().own.siteEdits, MY_EDITS, 'the reload set the grower\'s own values aside as none');
+    assert.deepEqual(placeEdits(), MY_EDITS, 'canopi-place lost the values on the reload');
+    draft.useOwnPlace();
+    assert.deepEqual(store.siteEdits.peek(), MY_EDITS, '"Use my own place" gave no values back');
+    store.removeMember(store.members.peek()[0]);
+    await wait(0);
+    assert.deepEqual(savedPlaceEdits(), MY_EDITS, 'the first plant change saved without the grower\'s values');
+  } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
+});
+
+test('pre-push re-review 2a: "Forget this location" while a link\'s place notice is open: no later room change writes the forgotten values back', async () => {
+  const before = restoreM.provideLocationStep(async () => ({ settle: async () => {}, adopt: () => false }));
+  try {
+    await mine(5);
+    store.siteEdits.value = { soilPh: 6.2 };
+    await wait(0);
+    const link = await linkWith('Temperate', 3, { siteEdits: SHADE }, { place: true });
+    assert.equal(await restoreM.restore(link, { from: 'link' }), true);
+    assert.deepEqual(restoreM.linkPlace.peek()?.own.siteEdits, { soilPh: 6.2 }, 'premise: the notice holds the grower\'s values');
+    locationM.forget();
+    await wait(0);
+    assert.equal(kept.get(PLACE_STORE), undefined, 'premise: Forget removed canopi-place');
+    assert.deepEqual(restoreM.linkPlace.peek()?.own, { ...restoreM.linkPlace.peek()?.own, siteEdits: NO_EDITS, location: null }, 'Forget left the set-aside values or location');
+    store.room.value = 'large';
+    await wait(0);
+    assert.deepEqual(placeEdits(), NO_EDITS, `a room change wrote the forgotten values back: ${kept.get(PLACE_STORE)}`);
+    draft.useOwnPlace();
+    assert.deepEqual(store.siteEdits.peek(), NO_EDITS, '"Use my own place" gave forgotten values back');
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
+});
+
+test('pre-push re-review 2b: a new climate cell while a link\'s place notice is open clears the grower\'s set-aside values, so canopi-place never carries cell A\'s shift to cell B', async () => {
+  const before = restoreM.provideLocationStep(async () => ({ settle: async () => {}, adopt: () => false }));
+  try {
+    await mine(5);
+    store.location.value = { lat: -1.17, lon: 36.83, source: 'map', lookup: null };
+    store.siteEdits.value = { nightsShiftC: -2 };
+    await wait(0);
+    assert.notDeepEqual(placeEdits(), NO_EDITS, 'premise: canopi-place holds the shift');
+    const link = await linkWith('Mediterranean', 3, { siteEdits: SHADE }, { origin: { lat: 37.39, lon: -5.98 }, place: true });
+    assert.equal(await restoreM.restore(link, { from: 'link' }), true);
+    assert.deepEqual(restoreM.linkPlace.peek()?.own.siteEdits, { nightsShiftC: -2 }, 'premise: the notice holds the grower\'s values');
+    // The reader locates cell B (Lyon), as state/location.ts locate does.
+    persist.placeAt({ lat: 45.76, lon: 4.84, source: 'map', lookup: null });
+    await wait(0);
+    assert.deepEqual(store.siteEdits.peek(), NO_EDITS, 'premise: another cell clears the page\'s values');
+    assert.deepEqual(restoreM.linkPlace.peek()?.own.siteEdits, NO_EDITS, 'the set-aside values of cell A stay');
+    assert.deepEqual(placeEdits(), NO_EDITS, `canopi-place keeps cell A's shift: ${kept.get(PLACE_STORE)}`);
+    store.room.value = 'large';
+    await wait(0);
+    assert.deepEqual(placeEdits(), NO_EDITS, `a room change wrote cell A's shift back: ${kept.get(PLACE_STORE)}`);
+  } finally { restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
+});
+
+test('pre-push re-review: a guide preset over the seed keeps the grower\'s values after its first plant change', async () => {
+  await mine(5);
+  store.siteEdits.value = MY_EDITS;
+  await wait(0);
+  draft.startOver();
+  await wait(0);
+  const pool = await realSource.pool('Temperate');
+  freshPage();
+  openPage(arrivalM.arrival({ hash: '', search: `?plant=${encodeURIComponent(pool[3].canonical_name)}&climate=temperate` }, saved(), null), kept.get(PLACE_STORE) ?? null);
+  await untilTrue(() => store.members.peek().length === 1);
+  assert.deepEqual(store.members.peek(), [pool[3].id], 'premise: the guide\'s plant');
+  assert.deepEqual(store.siteEdits.peek(), MY_EDITS, 'the preset dropped the seed\'s values');
+  store.addMembers([pool[4].id]);
+  await wait(0);
+  assert.deepEqual(savedPlaceEdits(), MY_EDITS, 'the first plant change saved without the grower\'s values');
+});
+
+test('pre-push re-review: "In the ground" under "Pots or a balcony" with a soil pH survives a plant change, the save and a reload; and a share link carrying p=0', async () => {
+  const GROUND = Object.freeze({ pots: false, soilPh: 6.2 });
+  const counts = (at) => {
+    const i = store.siteInputs.peek();
+    assert.equal(i.pots.value, false, `${at}: "In the ground" was lost`);
+    assert.equal(soilPhOf(i), 6.2, `${at}: the soil pH no longer counts`);
+  };
+  await mine(5);
+  store.room.value = 'pots';
+  store.siteEdits.value = GROUND;
+  await wait(0);
+  store.removeMember(store.members.peek()[0]);
+  await wait(0);
+  assert.deepEqual(savedPlaceEdits(), GROUND, 'the save lost "In the ground" or the pH');
+  counts('after the plant change');
+  freshPage();
+  openPage(arrivalM.arrival({ hash: '', search: '' }, saved(), null), kept.get(PLACE_STORE) ?? null);
+  await untilTrue(() => store.members.peek().length === 4);
+  assert.equal(store.room.peek(), 'pots', 'premise: the room came back');
+  counts('after the reload');
+  // A share link carrying p=0, opened on a device with nothing kept.
+  const link = await linkWith('Temperate', 3, { room: 'pots', siteEdits: GROUND }, { place: true });
+  assert.match(link, /(^|&)p=0(&|$)/, 'premise: the link says "In the ground" (p=0)');
+  kept.clear();
+  freshPage();
+  openPage(arrivalM.arrival({ hash: `#${link}`, search: '' }, saved(), null), null);
+  await untilTrue(() => store.members.peek().length === 3);
+  counts('through the link');
+  persist.linkPlace.value = null;
 });

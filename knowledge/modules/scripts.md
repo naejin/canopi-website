@@ -8,7 +8,7 @@ status: stable
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:25Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:55:41Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:21Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:e8a8a71a7f394c69
-    last_modified: 2026-11-19T12:54:47Z
+    digest: sha256:08b2f211a5a8ccf5
+    last_modified: 2026-11-19T12:59:19Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -98,8 +98,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:ce296598ad28af2a
-    last_modified: 2026-11-19T12:21:26Z
+    digest: sha256:f508455692c4e406
+    last_modified: 2026-11-19T12:59:19Z
   - id: consortium-said-mjs
     resource: ../../scripts/consortium-said.mjs
     title: scripts/consortium-said.mjs
