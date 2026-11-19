@@ -13,6 +13,7 @@ import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { liveLog, resetLive, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { showPalette } from './seams-helpers.mjs';
+import { loadPalette200, verdictsSettled, HOLE_TITLE } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -481,10 +482,11 @@ test('PP-B48b (b2 review r3 hash-1, no Navigation API): the same, in a browser w
 // navigation → Next step visible 2.5 s; one Add from the Next step → the page updated 300 ms; no long task
 // over LONG_TASK_MS after the page is up; the palette page's DOM at most SCALE_DOM.
 // DOM budget raised at the PP-B exit (2026-11-16, row "Size budgets are a tripwire": no structural
-// cause, so raised by the measured amount): measured 574 and 659 (327 and 385 on 2026-11-14, before b3's
-// Your plants, about 196 elements folded to 12 rows, joined the page); nothing on it is invisible and no
-// list is mounted twice (every element has a box; the two pictures at their PICTURE_LANE_MAX fold, Your
-// plants at its fold). Budget: measured + about 5 %.
+// cause, so raised by the measured amount): measured 574 and 659 (327 and 385 on 2026-11-14). Since
+// pf-e (chunk 3) Your plants past 40 plants is the many form (boards Many, ManyDesk): its groups start
+// closed (a head with its count and "Tick all N" per light level, no row until opened; the old fold to
+// 12 rows, ROWS_MAX, is gone), so the page's elements are the pictures at their fold and those heads;
+// the figures measured in this file's run are reported, against these references.
 const SCALE_DOM = { 390: 600, 1280: 690 };
 // Long-task limit raised at the PP-B exit (2026-11-16, row "Size budgets are a tripwire", coordinator:
 // the long task treated as the DOM budget; the owner's scale row says 200 ms, so the owner confirms or
@@ -556,4 +558,118 @@ test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette
   // Owner, 2026-11-16 (row "No hard limits"): the timings and the DOM count are measured and reported,
   // never a failure; the test fails only if a 200-plant palette does not work (no Next step, no Add).
   if (misses.length) t.diagnostic(`over the reference figures (reported, not a failure): ${misses.join('; ')}`);
+});
+
+// ---- pf-e scale rows (v14 section 5: F26, F27, F28; chunk 3): reported, never failed on time ----
+const throttle = async (page, rate = 4) => { const cdp = await page.createCDPSession(); await cdp.send('Emulation.setCPUThrottlingRate', { rate }); return cdp; };
+
+test('PP-B29b (b2 scale; pf-e row F26: 200 plants from three lists, 4× CPU): while any list loads, no hole and no thin spot is open or said (they are pending), then the restore time (every list read) is reported', { timeout: 180_000 }, async (t) => {
+  const { savedRecord200 } = await import('../palette-200.mjs');
+  const record = await savedRecord200();
+  const page = await h.open('/palette/', { width: 390, hook: true, setup: async (p) => {
+    await throttle(p);
+    await p.evaluateOnNewDocument((rec, holeTitle) => {
+      localStorage.setItem('canopi-consortium', rec);
+      const title = new RegExp(holeTitle, 'm');
+      window.__restore = { pendingFrames: 0, saidWhilePending: [], openWhilePending: 0, doneAt: null };
+      const tick = () => {
+        const s = window.__ctTest?.store;
+        if (s && s.members.value.length) {
+          if (s.holesPending.value) {
+            window.__restore.pendingFrames++;
+            window.__restore.openWhilePending += s.paletteHoles.value.filter((x) => x.state === 'open').length + s.thinSpots.value.filter((x) => x.state === 'open').length;
+            const text = document.querySelector('main')?.innerText ?? '';
+            const said = text.split('\n').filter((l) => title.test(l.trim()) || /^Thin: /.test(l.trim()));
+            if (said.length) window.__restore.saidWhilePending.push(...said.slice(0, 2));
+          } else if (s.memberTaxa.value.length === s.members.value.length && window.__restore.doneAt === null) { window.__restore.doneAt = performance.now(); return; }
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, record, HOLE_TITLE.source);
+  } });
+  try {
+    assert.ok(await page.waitForFunction(() => window.__restore?.doneAt !== null, { timeout: 90_000 }).then(() => true, () => false), 'F26: the 200 plants restored, every list read');
+    const r = await page.evaluate(() => window.__restore);
+    const lists = await page.evaluate(() => new Set(Object.values(window.__ctTest.store.guests.value)).size + 1);
+    assert.equal(lists, 3, 'the premise: plants of three lists');
+    assert.equal(r.openWhilePending, 0, 'F26: no hole or thin spot is open while a list loads (pending, never a false hole)');
+    assert.deepEqual(r.saidWhilePending, [], 'F26: no hole title and no thin spot said while a list loads');
+    t.diagnostic(`F26 restore at 4× CPU, 390 px: every list read at ${Math.round(r.doneAt)} ms after navigation (${r.pendingFrames} frames pending; reported, never a failure)`);
+  } finally { await done(page); }
+});
+
+test('PP-B29c (b2 scale; pf-e row F27): with storage refused, a 200-plant palette keeps working and Copy link says "This browser does not keep your palette; your link does."', { timeout: 120_000 }, async () => {
+  const page = await loadPalette200({ width: 390, storage: false });
+  try {
+    assert.ok(await has(page, '#ct-root [data-many]', 15_000), 'F27: the palette page shows');
+    await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); s.addMembers([(s.pool.value ?? []).find((x) => !m.has(x.id)).id]); });
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 201, { timeout: 8000 }).then(() => true, () => false), 'F27: an add works with no storage');
+    await page.locator('::-p-aria([name="Copy link"][role="button"])').click();
+    assert.ok(await page.waitForFunction(() => (document.querySelector('main')?.innerText ?? '').includes('This browser does not keep your palette; your link does.'), { timeout: 20_000 }).then(() => true, () => false), 'F27: Share\'s words');
+  } finally { await done(page); }
+});
+
+test('PP-B29d (b2 scale; pf-e row F28, 4× CPU): opening a group of the 200 plants, a long list opened whole, and a paste of 205 names; each task over 200 ms reported with its cause, never a failure', { timeout: 240_000 }, async (t) => {
+  const page = await loadPalette200({ width: 390 });
+  const out = [];
+  try {
+    await page.evaluate(() => { window.__long = []; new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__long.push(e.duration); }).observe({ type: 'longtask' }); });
+    // Times from the press to the second frame after it, and the longest task inside.
+    const timed = (sel) => page.evaluate((q) => new Promise((resolve) => {
+      window.__long = [];
+      const t0 = performance.now();
+      document.querySelector(q).click();
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => resolve({ ms: performance.now() - t0, long: Math.max(0, ...window.__long) }), 0)));
+    }), sel);
+    assert.ok(await has(page, '#ct-root .ct-plants button[aria-expanded="false"][data-group]', 15_000), 'Your plants in its many form');
+    await throttle(page);
+    // The largest light group (81 plants on the board's palette).
+    const group = await page.evaluate(() => {
+      const heads = [...document.querySelectorAll('#ct-root .ct-plants button[aria-expanded="false"][data-group]')];
+      const n = (b) => Number(b.textContent.match(/(\d+) plants?/)?.[1] ?? 0);
+      const b = heads.sort((x, y) => n(y) - n(x))[0];
+      return b ? { key: b.dataset.group, n: n(b) } : null;
+    });
+    assert.ok(group, 'a light group of Your plants');
+    const g1 = await timed(`#ct-root .ct-plants button[data-group="${group.key}"]`);
+    const g2 = await page.$(`#ct-root .ct-plants [data-more="${group.key}"]`) ? await timed(`#ct-root .ct-plants [data-more="${group.key}"]`) : null;
+    out.push(`group of ${group.n}: open ${Math.round(g1.ms)} ms (longest task ${Math.round(g1.long)}), all ${g2 ? `${Math.round(g2.ms)} ms (longest task ${Math.round(g2.long)})` : 'n/a'}`);
+    // The longest MoreList on the page, opened to 10 then whole.
+    const list = await page.evaluate(() => {
+      const bs = [...document.querySelectorAll('#ct-root .ct-more')].map((m, i) => { m.dataset.scaleList = String(i); return { i, n: m.querySelectorAll('.ct-more-items > li').length + Number(m.querySelector('.ct-more-open')?.textContent.match(/\d+/)?.[0] ?? 0) }; });
+      return bs.sort((a, b) => b.n - a.n)[0] ?? null;
+    });
+    if (list && list.n > 3) {
+      const sel = `#ct-root [data-scale-list="${list.i}"] .ct-more-open`;
+      await timed(sel);
+      const all = await page.$(sel) ? await timed(sel) : null;
+      out.push(`MoreList of ${list.n} names opened whole: ${all ? `${Math.round(all.ms)} ms (longest task ${Math.round(all.long)})` : 'n/a'}`);
+    } else out.push('MoreList: none folded on this page');
+    // A paste of 205 names (190 plant names and 15 others) on the first 20 plants.
+    await throttle(page, 1);
+    const text = await page.evaluate(() => {
+      const s = window.__ctTest.store, rest = s.memberTaxa.value.slice(20, 210).map((x) => (x.names?.en ?? x.canonical_name).toLowerCase());
+      s.members.value = s.members.value.slice(0, 20);
+      return [...rest, 'beans', 'spanish cedar', 'sword bean', 'sukuma wiki', 'managu', 'terere', 'mrenda', 'kunde', 'nduma', 'mchicha', 'saga', 'mitoo', 'kanzira', 'nderema', 'thabai'].join('\n');
+    });
+    assert.ok(await verdictsSettled(page));
+    await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
+    assert.ok(await has(page, 'dialog[open] #ct-paste-text', 15_000));
+    await page.$eval('dialog[open] #ct-paste-text', (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, text);
+    await new Promise((r) => setTimeout(r, 400));
+    await throttle(page);
+    const paste = await page.evaluate(() => new Promise((resolve) => {
+      window.__long = [];
+      const t0 = performance.now();
+      const before = document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '';
+      document.querySelector('dialog[open] [data-paste-read]').click();
+      const wait = () => { const c = document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? ''; if (/\d+ names read/.test(c) && !document.querySelector('dialog[open] [data-paste-reading]') && (c !== before || performance.now() - t0 > 1000)) resolve({ ms: performance.now() - t0, long: window.__long.map(Math.round), said: c }); else requestAnimationFrame(wait); };
+      requestAnimationFrame(wait);
+    }));
+    out.push(`paste of 205 names: read in ${Math.round(paste.ms)} ms (${paste.said.trim()}), longest task ${Math.max(0, ...paste.long)} ms, tasks over 200 ms: ${paste.long.filter((x) => x > 200).join(', ') || 'none'}`);
+  } finally {
+    t.diagnostic(`F28 at 4× CPU, 390 px (reported, never a failure): ${out.join(' | ')}`);
+    await done(page);
+  }
 });

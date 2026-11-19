@@ -8,13 +8,14 @@
 // - Warnings and fit, past 40 plants (Many, ManyDesk; F29): the palette in lines that add up (weigh.ts
 //   fitGroups: fits, needs a second look, outside its range, not checked; a line at 0 hidden), each
 //   closed, opening to its plants; the second look to its reasons; Mildly toxic its own line (R1).
-//   No "Tick these" (pf-e's, A15).
+//   Each reason ends with "Tick these N" (pf-e, A15) beside its "+ N more", saying where it ticked.
 // - Balance (MainMore): one family, the water line ("Water needs" where the summer is dry), the soil pH
 //   hints (R3). Elsewhere the water line is its own card, "Water use" (Kumasi).
 // Every list of names goes through kit/chart.tsx Names (the size rule A14: every name at 40 plants or
 // fewer and 12 or fewer, else the count cell; review R2, C1): the boards' plain list ("Toxic: Almond,
 // Licorice"), "and" only where the names sit inside a sentence (`and`: "Olive and Almond share
 // Xylella", "Silk oak and Napier grass sit between", the outside-and-toxic sentence; c2 C1).
+import { saidFor, tickAndShow } from '../plants/state.ts';
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
@@ -108,6 +109,24 @@ function Line_({ head, n, children, note, cls = '' }: { head: string; n: number;
 // WarnReason: the room or plot, a serious clash).
 const REASON_WORDS = [['misfit', 'palette.warningsMisfit'], ['clash', 'palette.warningsClash']] as const;
 const OPEN_NAMES = 10; // an open list's names before "+ N more" (BC4)
+// "Tick these N" (board Many, A15): ticks a reason's plants in Your plants, ready for Remove (one Undo
+// there); nothing is removed here. Your plants may be far down the page, so the rows' groups open and
+// the focus goes to the tick bar's Remove (views/plants/state.ts tickAndShow, R2), and the result is
+// said here too (BC10) in word-map's words ("42 ticked", as the tick bar says it), on the reason whose
+// button was pressed only, until the ticks change (state.ts saidFor; round 2 C3). No confirm step.
+function TickThese({ ids, k }: { ids: readonly PlantId[]; k: string }) {
+  return (
+    <>
+      <button type="button" class="ct-tick-these" onClick={() => tickAndShow(ids, k)}>{T('many.tickThese', { n: num(ids.length) })}</button>
+      <p class="ct-tick-said" role="status">{saidFor(k) && P('many.ticked', ids.length)}</p>
+    </>
+  );
+}
+// A reason's names, then its actions on one row (board Many): "+ N more" (the count cell's, MoreList)
+// beside "Tick these N", both 44 px pills; the status under them. k: the reason, for its status.
+function Reason_({ children, ids, k }: { children: ComponentChildren; ids: readonly PlantId[]; k: string }) {
+  return <div class="ct-reason">{children}<TickThese ids={ids} k={k} /></div>;
+}
 
 export function WarningsAndFit({ members, verdicts, flags, country }: { members: readonly Taxon[]; verdicts: ReadonlyMap<PlantId, PlantVerdict> | null; flags: readonly Flag[]; country: string | null }) {
   const g = useMemo(() => fitGroups(members, verdicts, flags), [members, verdicts, flags]);
@@ -130,15 +149,20 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
             {key === 'palette.warningsLook' ? (
               <>
                 <ul class="ct-jobs-list">
-                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}>{list(r.edge)}</Line_>}
+                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}><Reason_ ids={r.edge} k="edge">{list(r.edge)}</Reason_></Line_>}
                   {tox > 0 && (
                     <Line_ head={T('palette.warningsToxic')} n={tox}>
-                      {r.severe.length > 0 && <div><strong>{T('palette.warningsVery', { n: num(r.severe.length) })}</strong> {list(r.severe, Math.min(OPEN_NAMES, r.severe.length))}</div>}
-                      {r.moderate.length > 0 && <div><strong>{T('palette.warningsTox', { n: num(r.moderate.length) })}</strong> {list(r.moderate, OPEN_NAMES - Math.min(OPEN_NAMES - 1, r.severe.length))}</div>}
+                      {/* One paragraph, the labels bold (board Many): "Very toxic, 5: …. Toxic, 37: …". */}
+                      <Reason_ ids={[...r.severe, ...r.moderate]} k="toxic">
+                        <div class="ct-reason-text">
+                          {r.severe.length > 0 && <><strong>{T('palette.warningsVery', { n: num(r.severe.length) })}</strong> {list(r.severe, Math.min(OPEN_NAMES, r.severe.length))}{r.moderate.length > 0 && '. '}</>}
+                          {r.moderate.length > 0 && <><strong>{T('palette.warningsTox', { n: num(r.moderate.length) })}</strong> {list(r.moderate, OPEN_NAMES - Math.min(OPEN_NAMES - 1, r.severe.length))}</>}
+                        </div>
+                      </Reason_>
                     </Line_>
                   )}
-                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}>{list(r.invasive)}</Line_>}
-                  {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}>{list(r[k])}</Line_>)}
+                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}><Reason_ ids={r.invasive} k="invasive">{list(r.invasive)}</Reason_></Line_>}
+                  {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}><Reason_ ids={r[k]} k={k}>{list(r[k])}</Reason_></Line_>)}
                 </ul>
                 {g.several > 0 && <p class="ct-chart-note">{P('palette.warningsReasons', g.reasonCount, { plants: P('palette.warningsReasonsPlants', g.look.length), carry: P('palette.warningsReasonsCarry', g.several) })}</p>}
                 {g.outsideToxic.length > 0 && <div class="ct-chart-note"><Names ids={g.outsideToxic} name={name} size={size} few={3} and text={(w) => P('palette.warningsOutsideToxic', g.outsideToxic.length, { names: w })} lead={<p>{P('palette.warningsOutsideToxicMany', g.outsideToxic.length)}</p>} /></div>}

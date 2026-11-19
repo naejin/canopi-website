@@ -32,3 +32,159 @@
   justify-self: start; padding: 0 6px; border: 1px dashed var(--border-strong); border-radius: 4px;
   font-size: 12.5px; color: var(--text-muted);
 }
+
+/* ---- Your plants, v14 pf-e (boards PaletteMore, Recife, Many, ManyDesk) ---- */
+/* The section is a card, as on the boards. */
+.ct .ct-plants { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 14px; gap: 8px; }
+/* The palette's foot slot (Palette.tsx foot: Actions, boards MainMore, PaletteMore): after Your plants, under Balance. */
+.ct .ct-palette-foot { min-width: 0; }
+.ct .ct-plants h3 { font-weight: 600; font-size: 20px; line-height: 26px; }
+.ct .ct-plants > .ct-muted, .ct .ct-many-titles > .ct-muted { margin: 0; font-size: 14px; line-height: 20px; }
+
+/* The small form: each row opens the plant (a full-width button with a chevron). */
+.ct .ct-plants-small .ct-plant-rows > li { padding: 0; }
+.ct .ct-plant-open {
+  display: grid; gap: 2px; width: 100%; padding: 10px 28px 10px 0; position: relative; border: 0; background: none;
+  color: inherit; font: inherit; text-align: start; cursor: pointer;
+}
+.ct .ct-plant-open:hover .ct-plant-name strong { text-decoration: underline; }
+.ct .ct-plant-more { display: grid; gap: 2px; }
+.ct .ct-plant-fit { padding-top: 2px; }
+.ct .ct-many-group { min-width: 0; }
+.ct .ct-plant-open .ct-plant-name { font-size: 15px; }
+.ct .ct-plant-open .ct-sci, .ct .ct-many .ct-sci { color: var(--text-muted); font-size: 14px; }
+.ct .ct-plant-open .ct-line { font-size: 13.5px; line-height: 19px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ct .ct-plant-open .ct-line svg { flex: none; width: 16px; height: 16px; }
+.ct .ct-plant-marks { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-top: 4px; }
+.ct .ct-plant-marks .ct-find-marks { display: contents; }
+.ct .ct-plant-job { display: inline-flex; align-items: center; gap: 4px; padding: 0 9px 0 0; font-size: 13px; line-height: 26px; font-weight: 600; color: var(--text-secondary); }
+/* Board PaletteMore: each job's word in its plant-data colour, beside its mark (never colour alone). */
+.ct .ct-plant-job[data-job="feeds_you"] { color: var(--role-food); }
+.ct .ct-plant-job[data-job="feeds_soil"] { color: var(--role-soil); }
+.ct .ct-plant-job[data-job="mulch"] { color: var(--role-mulch); }
+.ct .ct-plant-job[data-job="ground"] { color: var(--role-ground); }
+.ct .ct-plant-job[data-job="helpers"] { color: var(--role-helpers); }
+.ct .ct-plant-job[data-job="shelter"] { color: var(--role-shelter); }
+.ct .ct-plant-job .ct-job-icon { width: 14px; height: 14px; }
+.ct .ct-plant-chevron { position: absolute; right: 2px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--text-muted); }
+
+/* The big form: tools, tick bar, groups, rows (phone) or table (desk). */
+.ct .ct-many-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 16px; min-width: 0; }
+.ct .ct-many-titles { flex: 1 1 16em; min-width: 0; display: grid; gap: 2px; }
+/* The tool row wraps before it spills (BC6): on the phone Sort and Group share the row, each shrinking. */
+.ct .ct-many-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; min-width: 0; }
+.ct .ct-many-select { display: flex; align-items: center; gap: 6px; flex: 1 1 9em; min-width: 0; font-size: 14px; color: var(--text-secondary); }
+.ct .ct-many-select select {
+  flex: 1 1 auto; width: 100%; min-width: 0; min-height: 44px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); font: inherit; font-size: 15px; color: var(--text);
+}
+/* At 960 px and wider the select keeps its longest word ("Light level"; BC5). */
+@media (min-width: 960px) { .ct .ct-many-select { flex: 0 1 auto; } .ct .ct-many-select select { width: auto; min-width: max-content; } }
+.ct .ct-many-search {
+  display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border: 1px solid var(--border-strong);
+  border-radius: 8px; background: var(--surface); color: var(--text-muted); flex: 2; min-width: 0;
+}
+.ct .ct-many-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--text); }
+.ct .ct-many-search input:focus { outline: none; }
+.ct .ct-many-search:focus-within { outline: 2px solid var(--focus, var(--text)); outline-offset: 2px; }
+.ct .ct-many-headsearch { margin: 0 0 4px; }
+.ct .ct-many-tickbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 6px 6px 12px; border-radius: 11px; border: 2px solid var(--text);
+  background: var(--surface-alt); font-size: 15px; min-width: 0;
+}
+.ct .ct-many-tickbar b { flex: 1 1 auto; font-weight: 600; }
+.ct .ct-many-tickacts { display: flex; align-items: center; gap: 6px; margin-inline-start: auto; min-width: 0; }
+.ct .ct-many-tickacts .button { padding-inline: 12px; }
+.ct .ct-many-ghead { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; min-width: 0; }
+.ct .ct-many-gtoggle {
+  display: flex; align-items: center; gap: 8px; flex: 1 1 10em; min-width: 0; min-height: 44px; padding: 0 10px; background: var(--surface-alt);
+  border: 1px solid var(--border); border-radius: 8px; font: inherit; font-size: 15px; color: var(--text); text-align: start; cursor: pointer;
+}
+.ct .ct-many-gtoggle b { font-weight: 600; }
+.ct .ct-many-gtoggle b { min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-many-gtoggle span { flex: 1; color: var(--text-secondary); white-space: nowrap; }
+.ct .ct-many-tickall { min-height: 44px; padding: 0 10px; font-size: 14px; white-space: nowrap; }
+.ct .ct-many-rows { list-style: none; margin: 0; padding: 0; font-size: 15px; line-height: 21px; min-width: 0; }
+.ct .ct-many-rows > li { display: flex; align-items: center; min-height: 48px; padding: 4px 0; border-top: 1px solid var(--border); min-width: 0; }
+.ct .ct-many-tick { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; margin-right: 8px; cursor: pointer; }
+.ct .ct-many-tick input { width: 22px; height: 22px; margin: 0; accent-color: var(--text); }
+.ct .ct-many-main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ct .ct-many-name { font-weight: 600; text-decoration: none; }
+.ct .ct-many-sub { display: block; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct .ct-many-fitline { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
+.ct .ct-many-word { display: block; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
+.ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
+.ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
+.ct .ct-many-word .ct-fit { color: inherit; }
+.ct .ct-many-more {
+  justify-self: start; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 999px;
+  background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
+}
+.ct .ct-many-foot { font-size: 13px; line-height: 19px; padding-top: 4px; }
+.ct .ct-many-table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 21px; }
+.ct .ct-many-table thead th { padding: 6px 8px; text-align: start; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary); }
+.ct .ct-many-table .ct-many-tickcell { padding-left: 0; width: 52px; }
+.ct .ct-many-colhead { min-height: 44px; padding: 0; background: none; border: 0; font: inherit; font-weight: 600; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.ct .ct-many-colhead[data-on] { color: var(--text); }
+.ct .ct-many-table tbody td, .ct .ct-many-table tbody th { padding: 1px 8px; border-top: 1px solid var(--border); vertical-align: middle; text-align: start; font-weight: 400; }
+.ct .ct-many-table tbody .ct-many-gcell { padding: 0; border-top: 0; }
+.ct .ct-many-table tbody th { font-weight: 400; }
+.ct .ct-many-table tbody th strong { font-weight: 600; }
+.ct .ct-many-table tbody th .ct-sci { display: inline; }
+.ct .ct-many-table tbody td { padding-top: 5px; padding-bottom: 5px; }
+/* Board ManyDesk's columns: When it stands and Jobs narrow, Fit and warnings wider, Plant the rest. */
+.ct .ct-many-table .ct-many-when { width: 15%; }
+.ct .ct-many-table .ct-many-jobs { width: 18%; }
+.ct .ct-many-table .ct-many-fit { width: 24%; }
+.ct .ct-many-level { display: block; }
+/* A reason of Warnings and fit (board Many): its names as one paragraph, bold labels inline, then one
+   row of 44 px pills, "+ N more" (the count cell's) beside "Tick these N" (BC9); the status under it. */
+.ct .ct-reason { display: block; font-size: 14px; line-height: 20px; }
+.ct .ct-reason .ct-reason-text { display: inline; }
+.ct .ct-reason .ct-more.ct-cell-names, .ct .ct-reason .ct-cell-names .ct-more-items { display: inline; }
+.ct .ct-reason .ct-cell-names .ct-more-items > li { display: inline; }
+.ct .ct-reason .ct-cell-names .ct-more-items > li + li::before { content: ", "; }
+.ct .ct-reason .ct-more.ct-cell-names:last-of-type .ct-more-items::after { content: "\A"; white-space: pre; }
+.ct .ct-reason .ct-cell-names .ct-more-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin: 8px 8px 0 0; vertical-align: top; }
+.ct .ct-reason .ct-cell-names .ct-more-actions button, .ct .ct-tick-these {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; margin-top: 8px; border: 1px solid var(--border-strong);
+  border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; vertical-align: top;
+}
+.ct .ct-reason .ct-cell-names .ct-more-actions button { margin-top: 0; }
+.ct .ct-tick-said { margin: 6px 0 0; font-size: 14px; }
+/* The phone's tick bar comes after the rows and sticks above the bottom bar while the list is on
+   screen (v14 section 6, BC4); the desk's sits in the table's tool row. */
+.ct .ct-many-tickbar { position: sticky; bottom: calc(var(--ct-bar-room, 0px) + 8px); z-index: 2; }
+@media (min-width: 960px) { .ct .ct-many-tickbar { position: static; } }
+
+/* Past 40 plants at 960 px and wider (v14 pf-e E3; board ManyDesk): the chart's column and Your plants'
+   column, the second wider. Each block is mounted once in the phone's order (chart, Warnings and fit with
+   Balance, Your plants, the foot) and placed here (round 3 R4): the chart's column spans the rows, Your
+   plants stands first in the right one, then Warnings and fit with Balance, then the foot; the last row
+   takes the chart's extra height. */
+.ct .ct-many-left, .ct .ct-many-right, .ct .ct-many-weigh { display: grid; gap: 24px; min-width: 0; align-content: start; }
+@media (min-width: 960px) {
+  /* The chart's column keeps at least 380 px (at 960 px the Jobs head and the names; BC5). */
+  .ct .ct-palette-body[data-pictures][data-many] { grid-template-columns: minmax(380px, 1fr) minmax(0, 1.6fr); grid-template-rows: auto auto 1fr; }
+  .ct .ct-palette-body[data-many] > .ct-many-left { grid-column: 1; grid-row: 1 / span 3; }
+  .ct .ct-palette-body[data-many] > .ct-many-right { grid-column: 2; grid-row: 1; }
+  .ct .ct-palette-body[data-many] > .ct-many-weigh { grid-column: 2; grid-row: 2; }
+  .ct .ct-palette-body[data-many] > .ct-palette-foot { grid-column: 2; grid-row: 3; }
+  /* 40 plants or fewer (board MainMore): the foot under Balance in the side column, Your plants across
+     under the pictures; both mounted once, after the side column (round 3 R4). */
+  .ct .ct-palette-body[data-pictures]:not([data-many]) > .ct-palette-foot { grid-column: 2; grid-row: 3; }
+  .ct .ct-palette-body[data-pictures]:not([data-many]) > .ct-plants { grid-column: 1 / -1; grid-row: 4; }
+  .ct .ct-palette-body:not([data-pictures]) > .ct-palette-foot, .ct .ct-palette-body:not([data-pictures]) > .ct-plants { grid-column: 1 / -1; }
+}
+
+/* The light icon and "Planted in" share a line: the words wrap beside the icon, never under it (Recife). */
+.ct .ct-plant-open .ct-line.ct-plant-light { flex-wrap: nowrap; align-items: flex-start; }
+.ct .ct-plant-open .ct-line.ct-plant-light > svg { margin-top: 1.5px; }
+.ct .ct-plant-open .ct-line.ct-plant-light > span { min-width: 0; }
+.ct .ct-plant-open .ct-line.ct-plant-why { color: var(--text); }
+
+/* The palette page's title (Palette.tsx): no board draws it, so it is hidden, but drawn while it has
+   the focus, so a focus landing there is never on an invisible node (R3, WCAG 2.4.7). As a skip link:
+   over the page at its own place, out of the flow, so showing and hiding it never moves the page (a
+   click elsewhere blurs it before the click lands), and clicks pass through it to what it covers. */
+.ct .ct-palette-title.visually-hidden:focus { width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; z-index: 3; margin: 0; padding: 4px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); box-shadow: 0 2px 8px rgb(0 0 0 / 0.12); pointer-events: none; }

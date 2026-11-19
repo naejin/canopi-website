@@ -5,23 +5,22 @@
 //
 // Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target): 'details'
 // and 'swap' take a plant id; 'find' opens through store.openFind(target?) with what it was opened
-// for (a hole: its job, the Hole and its test); 'paste' ("Paste a list") and 'place' (the "Your
-// place" sheet, "Change your place" in the palette's head) take none. Nothing writes
+// for (a hole: its job, the Hole and its test); 'paste' ("Paste a list") takes none. (The old 'place'
+// sheet is gone: Change in the palette's head opens the Place frame; h2 E5.) Nothing writes
 // store.sheet directly, so what one sheet was opened for never leaks into the next. Whatever had the
 // focus when a sheet opened (a chip) gets it back when the sheet closes (Escape, Close, the backdrop, a
 // part that could not load); a chip that is gone by then is found again by `data-plant-id`, else the
 // toast's Undo takes the focus, else the shown view's heading.
 //
-// Each sheet but "Your place" is a part loaded on first use (views/lazy.tsx later(), onFail
-// 'closeSheet'): the plant dialog (views/details/Details.tsx), Swap, Find and Paste. "Your
-// place" is Place's own parts (views/place/Place.tsx PlaceSheet), in the first run with Place. Each is
+// Each sheet is a part loaded on first use (views/lazy.tsx later(), onFail 'closeSheet'): the plant
+// dialog (views/details/Details.tsx), Swap, Find and Paste. Each is
 // prefetched once the data is ready; one opened before its chunk is here opens at once in its frame
 // with a loading line (the dialog with the plant's name), and one whose chunk does not come closes with
 // the toast and Reload. A part draws its sheet inside the frame it is given (`Frame`: the frame bound
 // to this opening's close and the sheet's toast region), so no sheet imports the store's closer or the
 // toast. Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is inert,
 // Escape closes).
-import { effect } from '@preact/signals';
+import { effect, signal } from '@preact/signals';
 import { useLayoutEffect, useMemo, useRef } from 'preact/hooks';
 import * as store from '../store.ts';
 import { closeSheet, taxonOf, type Sheet as Opened, type SheetKind } from '../store.ts';
@@ -33,7 +32,6 @@ import { nameOf } from './kit/names.ts';
 import { deskFind, Toast } from './Toast.tsx';
 import { later } from './lazy.tsx';
 import { focusView } from '../focus.ts';
-import { PlaceSheet } from './place/Place.tsx';
 import { retryableImport } from '../../../lib/consortium/index.ts';
 
 // Focus back to the opener when the last sheet closes.
@@ -101,12 +99,11 @@ function Part({ s, Frame }: { s: Opened; Frame: Frame }) {
     case 'swap': return <swap.View id={s.id!} Frame={Frame} />;
     case 'find': return <find.View Frame={Frame} />;
     case 'paste': return <paste.View Frame={Frame} />;
-    case 'place': return <PlaceSheet Frame={Frame} />;
     default: return null;
   }
 }
 
-const SHEETS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste', 'place'];
+const SHEETS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste'];
 const WITH_PLANT: readonly SheetKind[] = ['details', 'swap'];
 function Router() {
   const s = store.sheet.value;
@@ -162,9 +159,16 @@ function PanelFrame({ titleId, head, foot, children, class: cls = '' }: FramePro
     </dialog>
   );
 }
-export function FindPanel() {
+// Where the desk's panel stands (v14 pf-e F30, A22; board ManyDesk): beside the chart in the palette
+// grid ('grid', FindPanelSlot), or in place of Your plants' table past 40 plants ('list', its "Add
+// plants": the panel stays open while the reader adds, Done brings the table back and the focus to
+// "Add plants" through the opener above). Back to 'grid' once Find closes.
+export const findIn = signal<'grid' | 'list'>('grid');
+export function openFindInList(): void { findIn.value = 'list'; store.openFind(); }
+if (typeof document !== 'undefined') effect(() => { if (store.sheet.value?.kind !== 'find' && findIn.peek() !== 'grid') findIn.value = 'grid'; });
+export function FindPanel({ where = 'grid' }: { where?: 'grid' | 'list' }) {
   const s = store.sheet.value;
-  if (!s || !deskFind.value || store.load.value.status !== 'ready') return null;
+  if (!s || !deskFind.value || store.load.value.status !== 'ready' || findIn.value !== where) return null;
   return <find.View key={s.n} Frame={PanelFrame} />;
 }
 
