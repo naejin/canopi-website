@@ -1,9 +1,10 @@
 /** @jsxImportSource preact */
-// The palette page (plant-palette-slices row b2; boards Main, Palette, MainMore, DeskStates, Empty): the
-// header steps (Your place, Your palette, Planting plan), the Next step, Through the years and the
-// jobs, in its own chunk (role `palette`, App.tsx lazyPart). On a laptop (960 px and wider) the Next
-// step stands beside the pictures. Verdicts come from the core's verdict engine (store.memberVerdicts)
-// and holes from the store's one list (store.paletteHoles, which Find reads too). Honest states: holes "checking" while a
+// The palette page (plant-palette-slices row b2; boards Main, Palette, MainMore, DeskStates, Empty, Many,
+// ManyDesk): under the page head's steps (ConsortiumPage.astro #ct-steps, place/steps.tsx), "What limits
+// plants here" (board SiteMendoza), the Next step, Through the years and the jobs, in its own chunk
+// (role `palette`, App.tsx lazyPart). On a laptop (960 px and wider) the Next step stands beside the
+// pictures. Verdicts come from the core's verdict engine (store.memberVerdicts) and holes from the
+// store's one list (store.paletteHoles, which Find reads too). Honest states: holes "checking" while a
 // list loads, and not named while a guest list could not be read (its plants may fill one: PP-B21), a
 // guest list that failed named as missing with its plants not checked, the verdict chunk refused said
 // once with Retry in place, or, offline, "Needs a connection" and a retry once back online (PP-B20;
@@ -11,18 +12,16 @@
 // shows no picture of nothing. Then Jobs, Warnings (past 40 plants "Warnings and fit"), Balance (v14
 // boards MainMore, Many; "checking" while a list loads; the plants of a list that failed, and those on
 // none of this climate's lists, counted as not checked from Your plants' rows), and Your plants.
-// `foot`: the palette's foot (views/Actions.tsx: "Your palette is saved on this device. Copy link · Print
-// · Download for Canopi"), placed where boards MainMore and PaletteMore draw it: on the phone after Your
-// plants; at 960 px and wider under Balance (the side column at 40 plants or fewer, Your plants' column
-// past 40), by the grid, never by a second mount (round 3 R4). App.tsx passes it
-// (main's hand-off, E4: slot(Actions) moves into this slot in the same merge).
+// `foot`: the palette's foot (App.tsx passes views/Actions.tsx: "Your palette is saved on this device.
+// Copy link · Print · Download for Canopi"), where boards MainMore and PaletteMore draw it: on the phone
+// after Your plants; at 960 px and wider under Balance (the side column at 40 plants or fewer, Your
+// plants' column past 40). Each width puts the blocks in the DOM in the order it draws them (h3 M10).
 import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import type { Flag, PlantId } from '../../../../lib/consortium/index.ts';
 import { yourPlants } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { backToPlace } from '../../state/draft.ts';
 import { P, T } from '../../strings.ts';
 import { markFirstView } from '../kit/start-mark.ts';
 import { prefetchLater } from '../lazy.tsx';
@@ -70,10 +69,6 @@ function FirstView() {
   return null;
 }
 
-// "Your place": back in history past the palette step's entry, and any sheet's above it, when the page
-// pushed it (store.leaveEntry: the next Back then leaves the page), else the step itself.
-const toPlace = (): void => { if (!store.leaveEntry('palette')) backToPlace(); };
-
 export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const members = store.memberTaxa.value;
   const verdicts = store.memberVerdicts.value;
@@ -116,18 +111,19 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   // Every member read (none loading, none of a list that failed: review r2 empty-1), so the Next step
   // shows from the verdicts, or says they failed.
   const shown = (!!verdicts || store.verdictFailed.value) && !pending;
+  const weigh = big && (
+    <div key="weigh" class="ct-many-weigh">
+      <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />
+      <Balance members={members} pending={loading} unchecked={unchecked} />
+    </div>
+  );
+  const footBlock = foot && <div key="foot" class="ct-palette-foot">{foot}</div>;
+  const plantsBlock = <div key="plants" class="ct-many-right"><YourPlants rows={rows} /></div>;
   return (
     <div class="ct-palette-page">
       {/* Past 40 plants on the phone the one search sits directly under the place line (boards Many,
           Main: step bar, title, place line, search; the PP-E period tabs go above it later). */}
       {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
-      <nav class="ct-steps" aria-label={T('palette.stepsLabel')}>
-        <ol>
-          <li><button type="button" class="ct-step ct-step-done" aria-label={T('palette.chart.stepDone', { n: 1, step: T('palette.stepPlace') })} onClick={toPlace}><span class="ct-step-n" aria-hidden="true">{'\u2713'}</span> {T('palette.stepPlace')}</button></li>
-          <li aria-current="step"><span class="ct-step"><span class="ct-step-n">2</span> {T('palette.stepPalette')}</span></li>
-          <li><span class="ct-step ct-step-later"><span class="ct-step-n">3</span> {T('palette.stepPlan')}</span></li>
-        </ol>
-      </nav>
       {/* No board draws a "Your palette" title (v14 pf-e E4): kept for the reader's focus and outline only,
           and drawn while it has the focus (focus.ts lands there when nothing nearer is left; R3, WCAG 2.4.7). */}
       <h2 class="visually-hidden ct-palette-title" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
@@ -139,37 +135,32 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
           ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
           : <button type="button" class="button button-secondary" aria-busy={retry === 'busy' ? 'true' : undefined} aria-disabled={retry === 'busy' ? 'true' : undefined} onClick={() => void store.retryFailedLists()}>{T('load.retry')}</button>}</p>
       )}
+      {/* Board SiteMendoza: "What limits plants here" first, before the Next step and the pictures. */}
+      <PaletteLimits />
       {big ? (
-        // Past 40 plants (v14 pf-e E3; boards Many, ManyDesk): on the phone one column, Your plants
-        // last; at 960 px and wider the chart's column (Next step, Through the years, Jobs) and Your
-        // plants' column (Your plants, then Warnings and fit, Balance and the foot). Each block is
-        // mounted once, in the phone's reading order, and placed by the grid (plants.css), so crossing
-        // 960 px never remounts one: Your plants' search, groups and Find in place (round 2 R1), the
-        // folds opened in Warnings and fit, the foot's status and the focus inside any of them stay
-        // (round 3 R4).
+        // Past 40 plants (v14 pf-e E3; boards Many, ManyDesk). The DOM order is the order the eye reads
+        // (WCAG 1.3.2, 2.4.3; h3 M10): on the phone one column, Your plants last; at 960 px and wider the
+        // chart's column (Next step, Through the years, Jobs), then Your plants' column (Your plants,
+        // Warnings and fit with Balance, the foot), placed by the grid (plants.css). The blocks are keyed,
+        // so crossing 960 px moves Your plants and Warnings and fit rather than remounting them (their
+        // folds, ticks and search in place stay); the focus in a moved block is lost (D1 (a)).
         <div class="ct-palette-body" data-pictures="" data-many="">
-          <div class="ct-many-left">
+          <div key="left" class="ct-many-left">
             <NextStep holes={holes} members={members} />
             <div class="ct-palette-pictures">
               <Years {...pic} warnings={groups.length} />
               <JobsPicture {...pic} />
             </div>
           </div>
-          <div class="ct-many-weigh">
-            <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />
-            <Balance members={members} pending={loading} unchecked={unchecked} />
-          </div>
-          <div class="ct-many-right">
-            <YourPlants rows={rows} />
-          </div>
-          {foot && <div class="ct-palette-foot">{foot}</div>}
-          <FindPanelSlot />
+          {desk ? [plantsBlock, weigh] : [weigh, plantsBlock]}
+          {footBlock}
+          <FindPanelSlot key="panel" />
         </div>
       ) : (
-        // 40 plants or fewer (boards Main, MainMore, PaletteMore): Your plants and the foot sit in the
-        // body after the side column, mounted once and placed by the grid (plants.css): on the phone in
-        // this order; at 960 px and wider the foot under Balance in the side column (board MainMore) and
-        // Your plants across under the pictures, so crossing 960 px remounts nothing (round 3 R4).
+        // 40 or fewer (boards Main, MainMore, PaletteMore), in the order the eye reads: the Next step,
+        // the pictures, the side column (Warnings, Balance; at 960 px and wider the foot under Balance,
+        // board MainMore), then Your plants (across, under the pictures, at 960 px and wider), then on the
+        // phone the foot.
         <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
           <NextStep holes={holes} members={members} />
           {members.length > 0 && (
@@ -182,15 +173,14 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
             <div class="ct-palette-side">
               <Warnings groups={groups} />
               <Balance members={members} pending={loading} unchecked={unchecked} />
+              {desk && footBlock}
             </div>
           )}
           <YourPlants rows={rows} />
-          {foot && <div class="ct-palette-foot">{foot}</div>}
+          {!(desk && members.length > 0) && footBlock}
           <FindPanelSlot />
         </div>
       )}
-      {/* v14 0W-1 item 8: the figures panel's palette place, a stub that renders nothing until pf-d; pf-b places it. */}
-      <PaletteLimits />
       <Said />
       {shown && <FirstView />}
       <FindEntry where="bar" />

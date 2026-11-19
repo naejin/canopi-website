@@ -213,11 +213,12 @@ test('P5-15b (S5c range lines in Details, page language): in French, a plant nea
   // The verdict mark of a one-sided plant carries the same state ('cold'), so the line is the one with values.
   const line = await page.$$eval('[data-against] [data-factor="cold"], [data-against] [data-factor="mild"]', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()).find((t) => /°C/.test(t)) ?? null);
   assert.match(line, /5,8 °C/, `"${line}" writes the number the French way`);
-  // Its edge term says so in French, and "How sure we are" says what the observed ranges include (the
-  // dataset hedge, once per surface: PP-C c2 moved it off the edge mark).
+  // Its edge term says so in French, and the line under the climate bands says what the observed ranges
+  // include (the dataset hedge, once per surface; v14 boards Details, DetailsDesk: "… of where it grows,
+  // … cultivation included", main h3 M20).
   const edges = await page.$$eval('[data-against] [data-conf="edge"]', (els) => els.map((e) => e.textContent));
   assert.ok(edges.some((t) => /en limite de son aire observée/i.test(t)), `the edge term in French (${edges.join(' | ')})`);
-  assert.ok(await page.waitForFunction(() => /cultures comprises/.test(document.querySelector('dialog[open] [data-sure]')?.textContent ?? ''), { timeout: 5000 }).then(() => true, () => false), 'Details says observed ranges include cultivation');
+  assert.ok(await page.waitForFunction(() => /cultures comprises/.test(document.querySelector('dialog[open] [data-records]')?.textContent ?? ''), { timeout: 5000 }).then(() => true, () => false), 'Details says observed ranges include cultivation');
 });
 
 test('P5-17 (S5c estimate label): at Lyon (Subtropical) plants are placed from the nearest list and labelled "estimate"', async () => {
@@ -259,9 +260,12 @@ test('P5-17b (S5c borrowed Details, pre-push review 1): at a Subtropical site a 
   });
   assert.ok(picked, 'a Subtropical member borrowed from a curated list that gives reasons');
   await page.evaluate((id) => window.__ctTest.store.openSheet('details', id), picked.id);
+  // v14 board DetailsMore (main h3 M20): "Names, why it is here, sources" holds the reasons and the
+  // estimate note naming the list the placement comes from (Details.tsx data-why-borrowed).
+  await page.locator('dialog[open] details[data-more="names"] summary').click();
   assert.ok(await has(page, '.ct-details .ct-reasons li', 10_000), 'the Why section lists the source list\'s reasons, not "no source"');
-  const note = await text(page, `.ct-details [data-why-borrowed="${picked.from.toLowerCase()}"]`);
-  assert.match(note ?? '', new RegExp(`come from the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
+  const note = await text(page, '.ct-details [data-why-borrowed]');
+  assert.match(note ?? '', new RegExp(`placed as on the ${picked.from} list`, 'i'), 'the Why section says the reasons come from that list');
   assert.match(await text(page, '.ct-details [data-from-list]') ?? '', new RegExp(picked.from), 'the header names the list the placement is from, never claims the visitor\'s climate');
   // A correction made here names both: the list the placement comes from as `climate`, the visitor's
   // own climate as `site_climate`, and that the placement is an estimate (pre-push item B; the payload

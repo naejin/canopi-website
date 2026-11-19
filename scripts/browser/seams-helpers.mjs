@@ -90,13 +90,12 @@ export const tropicalOnly = () => fixtureDb((db) => db.prepare("SELECT p.canonic
 
 export const param = (fragment, k) => (fragment ? new URLSearchParams(fragment.slice(1)).get(k) : undefined);
 
-// From the palette back to Place: the palette page's step 1, "Your place" (Palette.tsx toPlace; "Change
-// site" went with b1a conformance-4, its "Change your place" is now a sheet that changes the palette
-// in place).
+// From the palette back to Place: the page head's step 1, "Your place" (place/steps.tsx, draft.ts
+// leavePalette; h3 M13).
 export const toPlace = async (page) => {
   // Pressed from the keyboard: a mouse click measures the box, then presses a moment later, and the
   // palette page still settling under it took the click elsewhere now and then (T4 flaked at 02140a5).
-  const step = await page.waitForSelector('button.ct-step', { visible: true, timeout: 4000 });
+  const step = await page.waitForSelector('#ct-steps [data-step-place]', { visible: true, timeout: 4000 });
   await step.focus();
   await page.keyboard.press('Enter');
   assert.ok(await has(page, '[data-place-show]', 4000), 'Place shows');

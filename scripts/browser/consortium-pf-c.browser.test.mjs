@@ -71,7 +71,7 @@ test('PFC1 (pf-c Place, first visit, at 390, 1280 and 320): the steps "1 Your pl
     await inOrder(page, ['Your place', 'Your palette', 'Planting plan', 'Plant palette', 'Data sources',
       'Plants that fit your place and work together, now and as the climate warms. Tell us where your place is, then see your palette. Room and your own plants can wait.',
       '1 Where is your place?', 'A town is enough: the climate is read for a square about 11 km across.']);
-    assert.equal(await page.evaluate(() => document.querySelector('[aria-current="step"]')?.textContent.replace(/\s+/g, ' ').trim()), '1 Your place', 'board: "Your place" is the current step');
+    assert.equal(await page.evaluate(() => document.querySelector('[aria-current="step"]')?.innerText.replace(/\s+/g, ' ').trim()), '1 Your place', 'board: "Your place" is the current step');
     await control(page, 'textbox', FIELD).catch(() => control(page, 'searchbox', FIELD));
     await hasAll(page, ['Search', 'Use my location', 'Pick on a map', 'No location? Choose a climate']);
     for (const gone of ['Your spot', 'How big is the piece', 'Nothing is checked against your place until you confirm the climate.', 'A location suggests your climate']) await saysNot(page, gone, 'v13 removal');
@@ -117,10 +117,27 @@ test('PFC3 (pf-c the climate read, LocStates "read and used at once", Place, Pla
   assert.ok(!(await buttons(page)).some((b) => /^Use \w+$/.test(b)), 'board: no "Use <climate>" button (v13)');
   await says(page, /We use this climate from now on; you can change it at any time\. Your place in figures: Köppen class C\w\w; nights in the coldest month average [−-]?[\d.]+ ?°C\. Every figure the checks use is there, and you can change each one\./);
   await press(page, 'button', 'Your place in figures');
-  assert.ok(await store(page, () => window.__ctTest.store.figureLine.value !== null), 'board: the link opens the figures (store.openFigure)');
+  // The outcome, never the transient signal (the panel resets it on mount; h3 M19): the Coldest nights line opens.
+  assert.ok(await has(page, '[data-fg-line="nights"] button[aria-expanded="true"]', 8000), 'board: the link opens the figures at the Coldest nights line');
   await press(page, 'button', 'Not this climate? Choose another');
   await says(page, 'Choose a climate');
   await says(page, /Tropical Ready/);
+  await done(page);
+});
+
+test('PFC3b (pf-c; main h3 M15; board PlaceDesk at 1280): "Your place in figures" stands before the invasive card ("Invasive warnings for …") on the Place form', async () => {
+  const page = await tool({ width: 1280, nominatim: 'fixture' });
+  await searchFor(page, 'Kiambu');
+  await says(page, 'Invasive warnings for Kenya', { timeout: 10_000 });
+  assert.ok(await page.waitForFunction(() => [...document.querySelectorAll('#ct-root h2')].some((h) => h.textContent.trim() === 'Your place in figures'), { timeout: 15_000 }).then(() => true, () => false), 'the premise: the figures panel on the Place form');
+  const first = await page.evaluate(() => {
+    const fig = [...document.querySelectorAll('#ct-root h2')].find((h) => h.textContent.trim() === 'Your place in figures');
+    let card = null;
+    for (const el of document.querySelectorAll('#ct-root *')) if (el.children.length === 0 && el.textContent.trim().startsWith('Invasive warnings for')) { card = el; break; }
+    if (!card) card = [...document.querySelectorAll('#ct-root p, #ct-root div')].reverse().find((el) => el.textContent.trim().startsWith('Invasive warnings for'));
+    return !!fig && !!card && !!(fig.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  assert.ok(first, 'board PlaceDesk: the figures come before the invasive card');
   await done(page);
 });
 

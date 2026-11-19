@@ -1381,7 +1381,6 @@
   "consortium.palette.next.changeGoal": "更改 {n}",
   "consortium.palette.chart.light": "光照",
   "consortium.palette.chart.plants": "other: # 种植物",
-  "consortium.palette.chart.stepDone": "{n} {step}，已完成",
   "consortium.palette.chart.levelCount": "{level}: {plants}",
   "consortium.palette.chart.findPlant": "找植物",
   "consortium.palette.chart.span": "第 {n} 段，共 {m} 段",

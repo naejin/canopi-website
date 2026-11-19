@@ -5,8 +5,7 @@
 //
 // Every view opens a sheet with the store's one opener, store.openSheet(kind, id, target): 'details'
 // and 'swap' take a plant id; 'find' opens through store.openFind(target?) with what it was opened
-// for (a hole: its job, the Hole and its test); 'paste' ("Paste a list") takes none. (The old 'place'
-// sheet is gone: Change in the palette's head opens the Place frame; h2 E5.) Nothing writes
+// for (a hole: its job, the Hole and its test); 'paste' ("Paste a list") takes none. Nothing writes
 // store.sheet directly, so what one sheet was opened for never leaks into the next. Whatever had the
 // focus when a sheet opened (a chip) gets it back when the sheet closes (Escape, Close, the backdrop, a
 // part that could not load); a chip that is gone by then is found again by `data-plant-id`, else the

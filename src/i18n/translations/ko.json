@@ -1381,7 +1381,6 @@
   "consortium.palette.next.changeGoal": "{n} 변경",
   "consortium.palette.chart.light": "빛",
   "consortium.palette.chart.plants": "other: #종",
-  "consortium.palette.chart.stepDone": "{n} {step}, 완료",
   "consortium.palette.chart.levelCount": "{level}: {plants}",
   "consortium.palette.chart.findPlant": "식물 찾기",
   "consortium.palette.chart.span": "기간 {n}/{m}",

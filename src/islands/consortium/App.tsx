@@ -5,9 +5,8 @@
 // - Place (views/place/Place.tsx; Start until b1a rewrites it): climate, country line, site and the
 //   Suggest / build-your-own start;
 // - Actions (S4): Share, Download for Canopi, Print (the print sheet), the link notices (unknown
-//   plants, cut lists) and the future panel, in the palette slot (the matrix and its views were
-//   deleted in PP-B commit 0a', owner "Delete first"; b2 builds the palette page into the slot and
-//   hosts Actions under it);
+//   plants, cut lists) and the future panel: the palette page's foot (Palette.tsx `foot`, placed where
+//   the boards draw it);
 // - Sheets: the sheets' router and the toast; views/Sheets.tsx routes store.sheet itself (the plant
 //   dialog, Swap, Add, Search, Paste, each loaded on first use) and renders the toast.
 import type { ComponentType } from 'preact';
@@ -19,6 +18,7 @@ import { formatMegabytes, formatNumber } from './format.ts';
 import type { LoadFailure } from '../../lib/consortium/source.ts';
 import { retryableImport } from '../../lib/consortium/index.ts';
 import { Place } from './views/place/Place.tsx';
+import { markStep } from './views/place/steps.tsx';
 import { Actions } from './views/Actions.tsx';
 import { Sheets } from './views/Sheets.tsx';
 import { lazyPart } from './views/lazy.tsx';
@@ -93,7 +93,7 @@ function PlaceOrPlaceholder() {
 // steps and lede (R6: the pre-paint hint is confirmed or undone on every outcome).
 function Failed({ error, guide, onRetry }: AppProps & { error: LoadFailure }) {
   const screen = screens[error];
-  useEffect(() => { const head = document.getElementById('ct-head'); if (head) head.dataset.step = 'place'; }, []);
+  useEffect(() => markStep('place'), []);
   return (
     <div class="callout ct-load-failed" role="alert" data-load-error={error}>
       <p>{T(screen.text)}</p>
@@ -124,8 +124,7 @@ export function App({ guide, onRetry }: AppProps) {
       <LoadingLine />
       {status === 'ready' && (
         <>
-          {onPalette && <PalettePage.View />}
-          {slot(Actions)}
+          {onPalette && <PalettePage.View foot={<Actions />} />}
         </>
       )}
       <Sheets />

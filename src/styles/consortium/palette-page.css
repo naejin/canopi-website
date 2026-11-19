@@ -1,21 +1,11 @@
 /* the Plant palette page (stream b2): page-level, imported by src/components/consortium/ConsortiumPage.astro (PP-B commit 0).
    Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5). */
 
-/* The page: steps, then the Next step, Through the years and the jobs: one column on a phone and a
+/* The page: the Next step, Through the years and the jobs: one column on a phone and a
    tablet; on a laptop the Next step stands beside the pictures, as on the boards (review r1 conformance-7). */
 .ct .ct-palette-page { display: grid; gap: 24px; min-width: 0; }
 .ct .ct-palette-body, .ct .ct-palette-pictures, .ct .ct-palette-side { display: grid; gap: 24px; min-width: 0; align-items: start; }
 .ct .ct-palette-page > h2 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 400; line-height: 1.2; }
-.ct .ct-steps ol { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 15px; }
-.ct .ct-steps li { display: flex; align-items: center; min-width: 0; }
-.ct .ct-steps .ct-step { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; background: none; color: var(--text-secondary); font: inherit; }
-.ct .ct-steps button.ct-step { cursor: pointer; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.ct .ct-steps [aria-current="step"] .ct-step { color: var(--text); font-weight: 600; }
-/* A later step is plain --text-secondary (no opacity: faded, it fell under 4.5:1 in the light theme,
-   axe); it differs from the current step by weight and the filled number, and from a done one by the link. */
-.ct .ct-step-later { color: var(--text-secondary); }
-.ct .ct-step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 13px; font-weight: 600; }
-.ct .ct-steps [aria-current="step"] .ct-step-n { border-color: var(--accent); background: var(--accent); color: var(--surface); }
 .ct .ct-placeholder { opacity: 0.9; }
 
 /* The Next step: the hole in words, its best fillers, See all and Not now. */

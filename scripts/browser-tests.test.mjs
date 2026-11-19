@@ -355,16 +355,13 @@ test('PP-C specs: each test names the stream its file is for, which the owners f
 });
 
 // v14 pf commit 0W (2026-11-18): consortium-pf-d, -pf-e and -pf-f, the chunk-3 streams ("Your place in
-// figures", "Many plants", "One plant"), each open with one board case; a file needs 1 case until its
-// stream's commit 0 (CHUNK_3_OPEN lists the streams still before it) and 5 after.
+// figures", "Many plants", "One plant"). Every pf stream is merged (h3), so each file needs 5 cases.
 // pf commit 0 (2026-11-17): consortium-pf-a, -pf-b and -pf-c hold the boards of pf stream a ("What's
 // missing next"), b ("The pictures and your plants") and c ("Your place") as tests. Each case names
 // its file's stream ("PFA3 (pf-a …)", or "F1a-P2 → PP-C (pf-c …)" for a moved F1a marker) and is
 // marked expected-fail under it until the stream makes it pass; the file's head comment carries the
 // sweep's ledger, one line per old test it carries ("carries <old id>").
 const PF_FILES = files.filter((f) => /^consortium-pf-[a-f]\./.test(f));
-// The pf streams whose commit 0 has not landed: each removes itself here in its commit 0.
-const CHUNK_3_OPEN = new Set(['pf-d', 'pf-e', 'pf-f']);
 test('pf specs: each test names the stream its file is for, which the owners file gives it; each marker names it; the head lists the old tests it carries', async () => {
   const { markers } = await import('./expect-fail.mjs');
   const owners = JSON.parse(readFileSync(new URL('./plan/pp-c-owners.json', import.meta.url), 'utf8'));
@@ -376,14 +373,13 @@ test('pf specs: each test names the stream its file is for, which the owners fil
     const text = read(file);
     assert.ok(owners.chunks.some((c) => c.streams[stream]?.files.some((p) => matches(p, `scripts/browser/${file}`))), `the owners file gives ${file} to ${stream}`);
     const tests = testsOf(text);
-    assert.ok(tests.length >= (CHUNK_3_OPEN.has(stream) ? 1 : 5), `${file} has its board cases`);
+    assert.ok(tests.length >= 5, `${file} has its board cases`);
     for (const { title, marked: isMarked } of tests) {
       const owner = title.match(/^(?:PF[A-F]\d+[a-z]?|F1a-[A-Z]\d+ → PP-C) \((pf-[a-f])\b/)?.[1];
       assert.equal(owner, stream, `${file}: "${title}" names ${stream}: PF<X><n> (${stream} …)`);
-      // A merged stream can no longer remove its markers: they are re-owned to main ("main h2", named
+      // A merged stream can no longer remove its markers: they are re-owned to main ("main h3", named
       // in the title too), which lands them (triage M32).
-      const merged = !CHUNK_3_OPEN.has(stream);
-      if (isMarked) assert.ok(marked.some((m) => m.title === title && (m.owner === owner || (merged && /^main\b/.test(m.owner)))), `"${title}": its marker names ${owner}${merged ? ' or main' : ''}`);
+      if (isMarked) assert.ok(marked.some((m) => m.title === title && (m.owner === owner || /^main\b/.test(m.owner))), `"${title}": its marker names ${owner} or main`);
     }
     const head = text.slice(0, text.search(/^import /m));
     assert.match(head, /carries /, `${file}: the ledger of the old tests it carries is in its head`);

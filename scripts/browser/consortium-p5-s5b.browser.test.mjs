@@ -106,7 +106,7 @@ test('P5-1f (S5b review round 2, 3): tiles that never answer hold Suggest at mos
   await page.evaluate(() => [...document.querySelectorAll('.ct-toast-region button')].find((b) => b.textContent.trim() === 'Undo').click());
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 0, { timeout: 4000 }).then(() => true, () => false), 'Undo takes the suggested palette back');
   // Undo went back to Place (the view is an undo field); else its step.
-  if (!(await has(page, '[data-location-state]', 2000))) assert.ok(await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
+  if (!(await has(page, '[data-location-state]', 2000))) assert.ok(await page.waitForSelector('#ct-steps [data-step-place]', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
   assert.ok(await page.waitForFunction(() => document.querySelector('[data-location-state]')?.getAttribute('data-location-state') === 'failed', { timeout: timeouts.read + 4000 }).then(() => true, () => false), 'the stalled read ends as failed, on Place');
   assert.equal(await page.$('[data-location-unread]'), null, 'review round 3 (3): no "not read" note left beside the failed line');
 });
@@ -156,8 +156,8 @@ test('P5-13d (S5b review round 3, 2): the palette\'s "Your place" step drops a l
   // slot's placeholder while that chunk loads. Pressed earlier, Start over drops the lookup before any
   // read, and no timer is left to fire (seen on CI, push B).
   assert.ok(await page.waitForFunction(() => window.__tileAsks > 0, { timeout: 15_000 }).then(() => true, () => false), 'the stalled read has started');
-  await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).catch(() => null);
-  const started = await page.evaluate(() => { const b = document.querySelector('button.ct-step'); b?.click(); return { clicked: !!b, early: window.__readTimedOut }; });
+  await page.waitForSelector('#ct-steps [data-step-place]', { visible: true, timeout: 5000 }).catch(() => null);
+  const started = await page.evaluate(() => { const b = document.querySelector('#ct-steps [data-step-place]'); b?.click(); return { clicked: !!b, early: window.__readTimedOut }; });
   assert.ok(started.clicked, 'the "Your place" step');
   assert.equal(started.early, false, `pressed while the read was still pending (before its ${READ} ms timer)`);
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start' && window.__ctTest.store.location.value === null, { timeout: 5000 }).then(() => true, () => false), 'Place, the link\'s location gone');
@@ -391,7 +391,7 @@ test('P5-13c (S5b review round 2, 4): a link\'s location goes with its consortiu
   for (const label of ['Your place']) {
     const page = await tool({ hash: link.hash });
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.source === 'link' && window.__ctTest.store.members.value.length > 0, { timeout: 15_000 }).then(() => true, () => false), 'the link opens with its location');
-    assert.ok(await page.evaluate((l) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === l || (x.matches('.ct-step') && x.textContent.trim().endsWith(l))); b?.click(); return !!b; }, label), label);
+    assert.ok(await page.evaluate((l) => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === l || (x.matches('[data-step-place]') && x.textContent.trim().endsWith(l))); b?.click(); return !!b; }, label), label);
     assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value === null, { timeout: 5000 }).then(() => true, () => false), `${label} clears the link's location`);
   }
 });
@@ -493,7 +493,7 @@ test('P5-27k (S5b seam review round 3, 1): the saved site looked up while the sa
   assert.ok(await first.waitForFunction(() => window.__ctTest.store.climate.value === 'Temperate' && window.__ctTest.store.members.value.length === 5, { timeout: 15_000 }).then(() => true, () => false), 'the save opens');
   assert.deepEqual(await climateAsk(first), { climate: 'Temperate', seen: false, shown: false }, 'lookup first: no "Use Mediterranean" over the opening save, no proposal left');
   for (const page of [first]) {
-    assert.ok(await page.waitForSelector('button.ct-step', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
+    assert.ok(await page.waitForSelector('#ct-steps [data-step-place]', { visible: true, timeout: 5000 }).then((b) => b.click()).then(() => true, () => false), 'the "Your place" step');
     await new Promise((r) => setTimeout(r, 300));
     assert.deepEqual(await climateAsk(page), { climate: 'Temperate', seen: false, shown: false }, 'back on Place: no stale proposal');
   }

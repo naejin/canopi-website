@@ -27,7 +27,7 @@ const CHEVRON = <svg class="ct-glyph ct-plant-chevron" viewBox="0 0 16 16" aria-
 
 // Its full-grown size in the boards' words ("Grows to 6 m wide, 6 m tall"; a climber with no width,
 // board PaletteMore: "Climbs to 4 m, no width recorded").
-export function grownSize(t: Pick<Taxon, 'traits'>): string {
+function grownSize(t: Pick<Taxon, 'traits'>): string {
   const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
   const W = w === null ? '' : formatLength(w, lang), H = h === null ? '' : formatLength(h, lang);
   if (w === null && h !== null && t.traits.habit === 'Climber') return T('many.climbTall', { h: H });

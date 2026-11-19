@@ -1381,7 +1381,6 @@
   "consortium.palette.next.changeGoal": "Die {n} ändern",
   "consortium.palette.chart.light": "Licht",
   "consortium.palette.chart.plants": "one: # Pflanze | other: # Pflanzen",
-  "consortium.palette.chart.stepDone": "{n} {step}, erledigt",
   "consortium.palette.chart.levelCount": "{level}: {plants}",
   "consortium.palette.chart.findPlant": "Pflanze finden",
   "consortium.palette.chart.span": "Zeitspanne {n} von {m}",

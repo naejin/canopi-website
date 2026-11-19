@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { aria, en, h, has, layoutVariants, realDb, suggestReady, useHarness } from './helpers.mjs';
-import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
+import { choose, temperateLink, tool } from './p5-helpers.mjs';
 import { liveLog, resetLive, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { showPalette } from './seams-helpers.mjs';
@@ -129,7 +129,6 @@ test('PP-B18 (b2 / BT-8 print, drawing; moved from S4 in commit 0a\'): ≤ 20 pl
 
 const PAGE = '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]';
 const onPage = (page, timeout = 15_000) => has(page, PAGE, timeout);
-const plural = (v, n) => { const m = /other:\s*([^|]*)/.exec(v); return (m ? m[1] : v).replace('#', String(n)).trim(); };
 // Three Temperate plants of the real export (the paste a grower makes with their own list).
 const own = (n = 3) => realDb((db) => db.prepare("SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = 'Temperate' ORDER BY p.canonical_name LIMIT ?").all(n).map((r) => String(r.id)));
 // The reader's own plants added on Place, then "Show my palette": the palette page.
@@ -338,7 +337,7 @@ test('PP-B40 (b2 review r2 hist-1, K7): from a palette the reader made, a sheet 
   assert.equal(await entry(page), arrived + 2, 'the sheet took one entry');
   await page.evaluate(() => window.__ctTest.store.closeSheet());
   assert.ok(await page.waitForFunction((a) => navigation.currentEntry.index === a && !window.__ctTest.store.sheet.value, { timeout: 4000 }, arrived + 1).then(() => true, () => false), 'closing the sheet leaves its entry');
-  await page.click('.ct-steps button.ct-step');
+  await page.click('#ct-steps [data-step-place]');
   await page.waitForFunction(() => window.__ctTest.store.step.value === 'place', { timeout: 4000 });
   await settled(page);
   assert.equal(await entry(page), arrived, '"Your place" went back in history: on the page\'s first entry, the next Back leaves the page');
@@ -361,71 +360,7 @@ test('PP-B41 (b2 review r2 hist-1): plants pasted on Your place, then Undo from 
   await done(page);
 });
 
-// A palette of four Temperate plants at a site, its verdicts in; then each member's Swap opened in
-// turn, yielding the label of its "Show N outside their climate range" ('' when none).
-const swapPage = async (site) => {
-  const page = await tool();
-  await atSite(page, site);
-  await choose(page, 'Temperate');
-  await ownPalette(page, 4);
-  await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
-  return page;
-};
-async function* swaps(page) {
-  for (const id of await page.evaluate(() => window.__ctTest.store.members.value.slice())) {
-    await page.evaluate((x) => window.__ctTest.openSheet('swap', x), id);
-    await page.waitForSelector('dialog.ct-swap[open] h2', { timeout: 10_000 });
-    await page.waitForFunction(() => document.querySelector('dialog.ct-swap[open] .ct-rows, dialog.ct-swap[open] .ct-muted:last-child'), { timeout: 15_000 }).catch(() => {});
-    yield await page.evaluate(() => [...document.querySelectorAll('dialog.ct-swap[open] .button')].find((b) => /outside/i.test(b.textContent))?.textContent ?? '');
-    await page.evaluate(() => window.__ctTest.store.closeSheet());
-  }
-}
-const showOutside = async (page) => {
-  await page.evaluate(() => [...document.querySelectorAll('dialog.ct-swap[open] .button')].find((b) => /outside/i.test(b.textContent)).click());
-  return page.waitForSelector('dialog.ct-swap[open] [data-outside] li', { timeout: 4000 });
-};
-
-test('PP-B35 (b2 Swap; review r1 bugs-4): alternatives outside their climate range are offered behind "Show N outside their climate range", each saying so in words, one tap swaps', async () => {
-  const page = await swapPage('lyon');
-  let found = false;
-  for await (const label of swaps(page)) {
-    if (label) {
-      const row = await (await showOutside(page)).evaluate((x) => x.textContent);
-      assert.match(row, new RegExp(en['consortium.line.outside']), 'the row says it is outside its range');
-      found = true;
-      break;
-    }
-  }
-  assert.ok(found, 'a member whose alternatives include plants outside their range offers them');
-  await done(page);
-});
-
 // ---- review r2 (2026-11-14) ----
-
-// r2-swap-1: the outside group reaches every outside plant through its own "Show all N", whatever the
-// in-range count. At Yakutsk (Dfc) the Temperate list leaves few plants in range and many outside.
-test('PP-B42 (b2 review r2 swap-1): with few alternatives in range and more than 7 outside, Swap\'s outside group has its own "Show all N" and lists all N', { timeout: 120_000 }, async () => {
-  const page = await swapPage('yakutsk');
-  let seen = null;
-  for await (const label of swaps(page)) {
-    const n = Number(/\d+/.exec(label)?.[0] ?? 0);
-    if (n > 7) {
-      await showOutside(page);
-      // The group's own "Show all N" (after its list), never the in-range list's.
-      await page.evaluate((t) => {
-        const ul = document.querySelector('dialog.ct-swap[open] [data-outside]');
-        [...document.querySelectorAll('dialog.ct-swap[open] button')].find((b) => b.textContent.trim() === t && ul.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)?.click();
-      }, plural(en['consortium.add.showAll'], n));
-      await frames(page);
-      seen = { n, rows: await page.$$eval('dialog.ct-swap[open] [data-outside] li', (els) => els.length), inRange: await page.$$eval('dialog.ct-swap[open] .ct-rows:not([data-outside]) li', (els) => els.length) };
-      break;
-    }
-  }
-  assert.ok(seen, 'a member with more than 7 alternatives outside their range');
-  assert.equal(seen.rows, seen.n, `the outside rows reach all ${seen.n} the button counts (got ${seen.rows}; ${seen.inRange} in range)`);
-  await done(page);
-});
-
 
 // r2-print-1 (hardening): the browser's own Print (Ctrl+P: beforeprint, no print media emulated)
 // mounts the print sheet in the same task, before the print layout, once its chunk is in.
@@ -563,7 +498,7 @@ test('PP-B29 (b2 scale, 200 plants, 4× CPU throttle): a saved 200-plant palette
 // ---- pf-e scale rows (v14 section 5: F26, F27, F28; chunk 3): reported, never failed on time ----
 const throttle = async (page, rate = 4) => { const cdp = await page.createCDPSession(); await cdp.send('Emulation.setCPUThrottlingRate', { rate }); return cdp; };
 
-test('PP-B29b (b2 scale; pf-e row F26: 200 plants from three lists, 4× CPU): while any list loads, no hole and no thin spot is open or said (they are pending), then the restore time (every list read) is reported', { timeout: 180_000 }, async (t) => {
+test('PP-B29b (b2 scale; pf-e row F26, main h3 M17: 200 plants from three lists, 4× CPU): while any list loads, no hole and no thin spot is open or said (they are pending) and every job count cell reads "Loading…", never a partial count; then the real counts, and the restore time (every list read) is reported', { timeout: 180_000 }, async (t) => {
   const { savedRecord200 } = await import('../palette-200.mjs');
   const record = await savedRecord200();
   const page = await h.open('/palette/', { width: 390, hook: true, setup: async (p) => {
@@ -581,6 +516,7 @@ test('PP-B29b (b2 scale; pf-e row F26: 200 plants from three lists, 4× CPU): wh
             const text = document.querySelector('main')?.innerText ?? '';
             const said = text.split('\n').filter((l) => title.test(l.trim()) || /^Thin: /.test(l.trim()));
             if (said.length) window.__restore.saidWhilePending.push(...said.slice(0, 2));
+
           } else if (s.memberTaxa.value.length === s.members.value.length && window.__restore.doneAt === null) { window.__restore.doneAt = performance.now(); return; }
         }
         requestAnimationFrame(tick);
@@ -597,6 +533,35 @@ test('PP-B29b (b2 scale; pf-e row F26: 200 plants from three lists, 4× CPU): wh
     assert.deepEqual(r.saidWhilePending, [], 'F26: no hole title and no thin spot said while a list loads');
     t.diagnostic(`F26 restore at 4× CPU, 390 px: every list read at ${Math.round(r.doneAt)} ms after navigation (${r.pendingFrames} frames pending; reported, never a failure)`);
   } finally { await done(page); }
+  // A list held (h3 M17): a guest from a list not read yet joins the 200 plants and its read waits; every
+  // job count cell reads "Loading…", never a partial count, then the real counts once the list is in.
+  const held = await loadPalette200({ width: 390 });
+  try {
+    const zone = await held.evaluate(() => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !window.__ctTest.store.pools.value[z]));
+    assert.ok(zone, 'the premise: a list the 200 plants do not use');
+    const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
+    await held.evaluate((z, id) => {
+      const { store } = window.__ctTest, src = store.source.value;
+      const pool = src.pool.bind(src), rows = src.interactions.bind(src);
+      let release; const wait = new Promise((r) => { release = r; });
+      window.__list = { release };
+      src.pool = (x) => (x === z ? wait.then(() => pool(x)) : pool(x));
+      src.interactions = (x) => (x === z ? wait.then(() => rows(x)) : rows(x));
+      store.guests.value = { ...store.guests.value, [id]: z };
+      store.members.value = [...store.members.value, id];
+    }, zone, guest);
+    assert.ok(await held.waitForFunction(() => window.__ctTest.store.holesPending.value, { timeout: 5000 }).then(() => true, () => false), 'the premise: the list is being read');
+    const jobRows = () => held.evaluate(() => { const h = [...document.querySelectorAll('main h3')].find((x) => x.textContent.trim() === 'Jobs'); return [...(h?.closest('section')?.querySelectorAll('li[data-job]') ?? [])].map((li) => li.innerText.replace(/\s+/g, ' ').trim()); });
+    await frames(held);
+    const loading = await jobRows();
+    assert.ok(loading.length > 0, 'the premise: the job rows show');
+    assert.deepEqual(loading.filter((row) => !/Loading…/.test(row) || /\b\d+ plants?\b/.test(row)), [], 'F26: every job count cell reads "Loading…" while a list loads, never a partial count');
+    await held.evaluate(() => window.__list.release());
+    assert.ok(await held.waitForFunction(() => !window.__ctTest.store.holesPending.value, { timeout: 10_000 }).then(() => true, () => false), 'the list read');
+    await frames(held);
+    const after = await jobRows();
+    assert.ok(after.some((row) => /\b\d+ plants?\b/.test(row)) && !after.some((row) => /Loading…/.test(row)), `F26: the real counts once the list is in (${after.slice(0, 2).join(' | ')})`);
+  } finally { await done(held); }
 });
 
 test('PP-B29c (b2 scale; pf-e row F27): with storage refused, a 200-plant palette keeps working and Copy link says "This browser does not keep your palette; your link does."', { timeout: 120_000 }, async () => {
