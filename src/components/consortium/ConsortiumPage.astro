@@ -129,11 +129,12 @@ setStrings(strings, lang);
             the lede gives way; the inline script below moves aria-current to step 2 with data-step.
             One line in any face and locale (language-robust layout, pf-decisions 2026-11-19): each
             step's words in .ct-steps-w, which the other steps shorten with an ellipsis (shell.css),
-            their full words in the page and in its title; the current step stays whole. */}
+            their full words in the page (the accessible name; no title, R2.0: it only repeated them);
+            the current step stays whole. */}
         <ol class="ct-steps" id="ct-steps" aria-label={tr('palette.stepsLabel')}>
-          <li aria-current="step"><span data-step-place-words><span class="ct-steps-n">1</span> <span class="ct-steps-w" title={tr('palette.stepPlace')}>{tr('palette.stepPlace')}</span></span><button type="button" class="link-button ct-link" data-step-place aria-label={tr('palette.chart.stepDone').replace('{n}', '1').replace('{step}', tr('palette.stepPlace'))}><span class="ct-steps-n" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 20 20"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span> <span class="ct-steps-w" title={tr('palette.stepPlace')}>{tr('palette.stepPlace')}</span></button></li>
-          <li><span data-step-words><span class="ct-steps-n">2</span> <span class="ct-steps-w" title={tr('palette.stepPalette')}>{tr('palette.stepPalette')}</span></span><button type="button" class="link-button ct-link" data-step-palette hidden><span class="ct-steps-n">2</span> <span class="ct-steps-w" title={tr('palette.stepPalette')}>{tr('palette.stepPalette')}</span></button></li>
-          <li><span class="ct-steps-n">3</span> <span class="ct-steps-w" title={tr('palette.stepPlan')}>{tr('palette.stepPlan')}</span></li>
+          <li aria-current="step"><span data-step-place-words><span class="ct-steps-n">1</span> <span class="ct-steps-w">{tr('palette.stepPlace')}</span></span><button type="button" class="link-button ct-link" data-step-place aria-label={tr('palette.chart.stepDone').replace('{n}', '1').replace('{step}', tr('palette.stepPlace'))}><span class="ct-steps-n" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 20 20"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span> <span class="ct-steps-w">{tr('palette.stepPlace')}</span></button></li>
+          <li><span data-step-words><span class="ct-steps-n">2</span> <span class="ct-steps-w">{tr('palette.stepPalette')}</span></span><button type="button" class="link-button ct-link" data-step-palette hidden><span class="ct-steps-n">2</span> <span class="ct-steps-w">{tr('palette.stepPalette')}</span></button></li>
+          <li><span class="ct-steps-n">3</span> <span class="ct-steps-w">{tr('palette.stepPlan')}</span></li>
         </ol>
         <div class="tool-head-row">
           <h1 class="tool-title">{tr('title')}</h1><span class="badge-beta">{tr('beta')}</span>

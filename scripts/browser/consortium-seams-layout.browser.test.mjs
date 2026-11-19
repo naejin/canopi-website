@@ -432,7 +432,7 @@ test('Walk-through 2 N1 (review): with a toast in Find, the last controls tabbed
 // in all 11 locales:
 // - L1 the step bar keeps one line in any face and any locale, 320 to 1280 px: the current step whole,
 //   the other steps' words shortened with an ellipsis (their number stays), their full words in the
-//   page (the accessible name) and in a title;
+//   page (the accessible name), never in a title (R2.0: it repeated the words);
 // - L2 Japanese, Chinese and Korean: phrase-aware breaking, strict line breaks, no Latin tracking, pretty
 //   headings, and the language's own system face after the Latin ones;
 // - L3 long words (German, Dutch, Russian) and CJK runs: no label spills out of its box at 320 px. ----
@@ -454,7 +454,7 @@ const WIDE_FACE = '#ct-steps, #ct-steps * { font-family: "DejaVu Sans Mono", "Li
 
 // The step bar's problems, in words: more than one line, a step outside the bar or the window, a step
 // number cut or gone, the current step's words shortened, words spilling, a shortened step whose full
-// words are neither in its title nor in the page's text.
+// words are not in the page's text, a title on a step (R2.0).
 const stepBar = (page) => page.evaluate(() => {
   const out = [];
   const ol = document.getElementById('ct-steps');
@@ -478,10 +478,12 @@ const stepBar = (page) => page.evaluate(() => {
     if (li.getAttribute('aria-current') === 'step' && clipped.length) out.push(`${step} (current): its words shortened`);
     for (const e of clipped) {
       const words = e.textContent.replace(/\s+/g, ' ').trim();
-      const titled = e.closest('[title]')?.getAttribute('title')?.includes(words);
-      if (!words || !titled) out.push(`${step}: shortened, its full words "${words}" not in its title`);
+      if (!words || /(…|\.\.\.)$/.test(words)) out.push(`${step}: shortened, its full words "${words}" not in the page's text`);
     }
   });
+  // R2.0: no title on the steps; it repeated the visible words (a tooltip on desk, read twice by some
+  // screen readers) and never shows on touch, where words are cut. The words in the page are the name.
+  if (ol.querySelector('[title]')) out.push('a step carries a title that repeats its words');
   return out;
 });
 

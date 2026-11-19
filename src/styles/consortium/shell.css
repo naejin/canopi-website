@@ -103,7 +103,7 @@
    One line in any face and any locale, 320 px up (language-robust layout, pf-decisions 2026-11-19;
    GR-B2: at ja 390 px the fallback face wrapped it, and the page moved when the web fonts came): the
    current step keeps its words whole; the other steps shrink, their words (.ct-steps-w) ending in an
-   ellipsis while their number stays, the full words in the page and in a title. */
+   ellipsis while their number stays, the full words in the page (no title). */
 .ct ol.ct-steps { display: flex; flex-wrap: nowrap; gap: 4px 6px; min-width: 0; margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
 .ct ol.ct-steps > li { display: inline-flex; flex: 0 1 auto; align-items: center; gap: 5px; min-height: 24px; min-width: 0; }
 .ct ol.ct-steps > li:not(:last-child)::after { content: "›"; flex: none; padding-left: 4px; color: var(--text-muted); }
