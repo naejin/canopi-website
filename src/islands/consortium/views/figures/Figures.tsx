@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { ClimateZone, Hole, LimitLine, Line, LinkedEdits, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
 import {
-  LIMIT_LINES, NAMED_GROUP, NAMED_PALETTE, NEAREST_LISTS, NO_EDITS, NO_SITE_CHANGE, EDIT_LIMITS, PH_BANDS, changeDetailLines, checksFailedLine, climateFor, countingLine, drainageLine,
+  LIMIT_LINES, NAMED_GROUP, NAMED_PALETTE, NEAREST_LISTS, NO_EDITS, NO_SITE_CHANGE, EDIT_LIMITS, PH_BANDS, changeDetailLines, checksFailedLine, climateFor, countingLine, drainageAnswerLine,
   drierFrom, hintsOf, holdsWater, holes, isDryland, limitStatus, lineCounts, limitsOf, named, periodIds, periodName, phBandOf, potsLine, rangeMoves, siteChange, siteChangeLines, siteInputsOf, siteSnapshot, soilTextureOf,
   tempsTogether, textureLine, textureNameLine, warmthLine, warmthView, wateringLine, windRecorded, yearMeanC,
 } from '../../../../lib/consortium/index.ts';
@@ -304,7 +304,7 @@ function phSource(i: SiteInputs, short: boolean): string {
 }
 // A choice line's answer (or the one taken while not answered), in the words the summary says it with.
 const answerWord = (line: ChoiceLine, i: SiteInputs): string =>
-  sayAll([line === 'watering' ? wateringLine(i.watering.value ?? 'rain') : line === 'drainage' ? drainageLine(i.drainage.value ?? 'drains') : potsLine(!!i.pots.value)]);
+  sayAll([line === 'watering' ? wateringLine(i.watering.value ?? 'rain') : line === 'drainage' ? drainageAnswerLine(i.drainage.value ?? 'drains') : potsLine(!!i.pots.value)]);
 // The soil map's reading for the drainage line (core soilTextureOf; a reading, never a hint: A8): only a
 // texture that likely holds water reads (board SiteKiambu "Likely holds water: clay", core holdsWater);
 // any other texture gives no reading and the line stays "Not answered" (C5).

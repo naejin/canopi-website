@@ -22,7 +22,7 @@ const LAST = periodIds[periodIds.length - 1];
 
 // The answers' own words (the options of the choice lines).
 export const wateringLine = (w: NonNullable<SiteEdits['watering']>): Line => L(w === 'rain' ? 'waterRain' : w === 'first-years' ? 'waterFirst' : 'waterAll');
-export const drainageLine = (d: NonNullable<SiteEdits['drainage']>): Line => L(d === 'wet' ? 'drainWet' : 'drainDrains');
+export const drainageAnswerLine = (d: NonNullable<SiteEdits['drainage']>): Line => L(d === 'wet' ? 'drainWet' : 'drainDrains');
 export const potsLine = (pots: boolean): Line => L(pots ? 'potsPots' : 'potsGround');
 
 // The soil pH's word band (v14 spec 3.1): below 5.5 strongly acid, to 6.5 slightly acid, to 7.3
@@ -79,7 +79,7 @@ export function setLines(was: SiteEdits, now: SiteEdits, inputs: SiteInputs | nu
     else if (inputs?.soilPh.value != null && inputs.soilPh.source === 'map') out.push(L('backPh', { ph: inputs.soilPh.value }));
     else out.push(L('backPhNone'));
   }
-  if (differs(was, now, 'drainage')) out.push(now.drainage ? L('setAnswer', {}, undefined, { line: L('lineDrainage'), answer: drainageLine(now.drainage) }) : texture ? L('backDrainageMap', {}, undefined, { texture: textureNameLine(texture) }) : L('backDrainage'));
+  if (differs(was, now, 'drainage')) out.push(now.drainage ? L('setAnswer', {}, undefined, { line: L('lineDrainage'), answer: drainageAnswerLine(now.drainage) }) : texture ? L('backDrainageMap', {}, undefined, { texture: textureNameLine(texture) }) : L('backDrainage'));
   if (differs(was, now, 'pots')) out.push(now.pots !== undefined ? L('setAnswer', {}, undefined, { line: L('linePots'), answer: potsLine(now.pots) }) : inputs?.pots.source === 'room' ? L('backPotsRoom') : L('backPots'));
   return out;
 }
