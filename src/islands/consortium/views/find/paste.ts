@@ -241,8 +241,9 @@ export interface PasteResult<T> {
 //              `loose`: no plant has the line as a whole name (a loose word, "beans": board AddMany)
 //   other      only another climate's list has it, one plant: "Add anyway", a guest (A9)
 //   already    in the consortium already
-//   duplicate  a line naming a plant another line matched (a later line; or a choice whose every
-//              plant another line took: "Malus" then "Malus domestica")
+//   duplicate  a line naming a plant another line matched (a later line; a choice whose every plant
+//              another line took: "Malus" then "Malus domestica"; or a close spelling of a plant an
+//              exact line or a choice holds, in any order: "chesnut" then "European chestnut", R2)
 //   none       in no list
 // here: this climate's plants; others: [[climate, plants], …] in the export's order; members: the
 // consortium's ids; index: the page's release-wide search (Find's), else one over these lists.
@@ -264,10 +265,14 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
   const ownName = (h: FindHit): boolean => (h.why.match === 'exact' || h.why.match === 'tokens' || h.why.match === 'prefix') && (h.why.kind === 'name' || (h.why.kind === 'other' && h.why.lang === 'en' && lang !== 'en'));
   const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], duplicate: [], none: [], header: null, twice: names.twice ?? new Set(), repeatsOf: names.repeatsOf ?? new Map() };
   let at = 0;
+  // A plant read exactly claims it in `seen` at once (a later line naming it is listed twice); a close
+  // spelling only offers it, so it waits in `near` and yields in result() to an exact line or a choice
+  // that names the same plant, in whatever order the lines come (R2: exact > choice > close spelling).
+  const near = new Set<PlantId>();
   const one = (name: string, t: T, close: string | null, sci = false) => {
     const climate = lists.climate.get(t.id) ?? null;
-    if (seen.has(t.id)) { out.duplicate.push({ at, name, taxon: t }); return; }
-    seen.add(t.id);
+    if (seen.has(t.id) || (close !== null && near.has(t.id))) { out.duplicate.push({ at, name, taxon: t }); return; }
+    (close === null ? seen : near).add(t.id);
     if (ins.has(t.id)) out.already.push({ at, name, taxon: t, close, climate, sci });
     else if (climate) out.other.push({ at, name, climate, taxon: t, close });
     else out.found.push({ at, name, taxon: t, close, sci });
@@ -341,10 +346,12 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
     for (; next < end; next++) line(next, names[next]);
     return next >= names.length;
   };
-  // Plants another line matched leave the choose groups; a group they leave empty keeps its line, as
-  // covered by another line (a duplicate of the plant it named first); a group left with one plant
-  // stays a question ("Which Malus?" with the wild apple once "Malus domestica" took the apple, c1r4
-  // U1): only a name that has one plant from the start is found.
+  // Every line read, each plant goes to one line by priority, never by reading order (R2): a line that
+  // named it exactly, then a choice that offers it, then a close spelling. Plants read exactly leave the
+  // choose groups; a group they leave empty keeps its line, as covered by another line (a duplicate of
+  // the plant it named first); a group left with one plant stays a question ("Which Malus?" with the
+  // wild apple once "Malus domestica" took the apple, c1r4 U1): only a name that has one plant from the
+  // start is found. A close spelling whose plant an exact line or a choice holds is that line's repeat.
   const result = (): PasteResult<T> => {
     if (sorted) return sorted;
     step(Infinity);
@@ -355,6 +362,13 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
       if (taxa.length) out.choose.push({ ...c, taxa, inside: taxa.filter((t) => ins.has(t.id)).map((t) => t.id) });
       else out.duplicate.push({ at: c.at, name: c.name, taxon: c.taxa[0] });
     }
+    const offered = new Set(out.choose.flatMap((c) => c.taxa.map((t) => t.id)));
+    const yields = (x: { close: string | null; taxon: T }) => x.close !== null && (seen.has(x.taxon.id) || offered.has(x.taxon.id));
+    for (const x of [...out.found, ...out.other, ...out.already].filter(yields)) out.duplicate.push({ at: x.at, name: x.name, taxon: x.taxon });
+    out.found = out.found.filter((x) => !yields(x));
+    out.other = out.other.filter((x) => !yields(x));
+    out.already = out.already.filter((x) => !yields(x));
+    out.duplicate.sort((a, b) => a.at - b.at);
     out.header = names.header ?? null;
     return (sorted = out);
   };
@@ -375,22 +389,25 @@ export function plan<T extends Named>(r: PasteResult<T>, ticked: readonly PlantI
 }
 
 // The counts the sheet says (board Paste: "8 names read: 6 recognised, 1 needs a choice, 1 not found",
-// "Recognised: 3 new, 2 you have, 1 listed twice"), each line of the paste counted once, in the group
-// of its row: a repeated line where its name's first reading went (a name not found twice: 2 not
-// found). fresh: what "Add all" adds unasked (plan, nothing ticked), so the head and the button read
-// one list; other: the plants only another climate's list holds, each added by its own "Add anyway".
-export interface PasteCounts { lines: number; rec: number; choose: number; none: number; fresh: number; other: number; have: number; twice: number }
+// "Recognised: 3 new, 2 you have, 1 listed twice"), one unit a group, the one its head, its rows and its
+// buttons use (R3, C1): Recognised counts its lines (a repeated line is its "listed twice" part, as the
+// board draws it), Need a choice its questions (as "N to go" and "Skip the N left"), Not found its names
+// (as its list and "Copy these N names"); a question or a missing name pasted again is said "listed
+// twice" on its row and counted in `again`, so rec + choose + none + again = lines, every line read.
+// fresh: what "Add all" adds unasked (plan, nothing ticked), so the head and the button read one list;
+// other: the plants only another climate's list holds, each added by its own "Add anyway".
+export interface PasteCounts { lines: number; rec: number; choose: number; none: number; again: number; fresh: number; other: number; have: number; twice: number }
 export function pasteCounts<T extends Named>(r: PasteResult<T>, members: readonly PlantId[]): PasteCounts {
   const rep = (x: { name: string }) => r.repeatsOf.get(x.name) ?? 0;
-  const lines = (rows: readonly { name: string }[]) => rows.reduce((n, x) => n + 1 + rep(x), 0);
+  const repeats = (rows: readonly { name: string }[]) => rows.reduce((n, x) => n + rep(x), 0);
   const recRows = [...r.found.filter((f) => !f.close), ...r.other.filter((o) => !o.close), ...r.already, ...r.duplicate];
   const askRows = [...r.found.filter((f) => f.close), ...r.other.filter((o) => o.close), ...r.choose];
-  const rec = lines(recRows), choose = lines(askRows), none = lines(r.none);
+  const rec = recRows.length + repeats(recRows), choose = askRows.length, none = r.none.length, again = repeats(askRows) + repeats(r.none);
   return {
-    lines: rec + choose + none, rec, choose, none,
+    lines: rec + choose + none + again, rec, choose, none, again,
     fresh: plan(r, [], members).ids.length,
     other: r.other.filter((o) => !o.close).length,
     have: r.already.length,
-    twice: recRows.reduce((n, x) => n + rep(x), 0) + r.duplicate.length,
+    twice: repeats(recRows) + r.duplicate.length,
   };
 }

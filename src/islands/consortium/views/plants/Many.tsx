@@ -255,12 +255,10 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
     was.current = now;
     if (back.size) openFor(back);
   }, [ids]);
-  // The ticks and the search's place belong to this list (R9, R10): when it leaves (40 plants or fewer,
-  // Start over) the ticks go, and a search open in its place moves beside the chart; a palette opened
-  // (a link, a save) starts with none ticked.
-  useEffect(() => { manyShown.value = true; return () => { manyShown.value = false; clearTicks(); if (findIn.peek() === 'list') findIn.value = 'grid'; }; }, []);
-  const opening = store.opening.value;
-  useEffect(() => { if (opening) clearTicks(); }, [opening]);
+  // The search's place belongs to this list (R10): when it leaves (40 plants or fewer, Start over) a
+  // search open in its place moves beside the chart. Palette.tsx keeps this list mounted across 960 px,
+  // and the ticks live by the state (state.ts), never by this mount (round 2 R1).
+  useEffect(() => { manyShown.value = true; return () => { manyShown.value = false; if (findIn.peek() === 'list') findIn.value = 'grid'; }; }, []);
 
   const body = (render: (i: PlantItem) => ComponentChildren, k: string, word: string, list: PlantItem[], stage: 0 | 1 | 2) => {
     const s = searching ? 2 : stage, shown = shownRows(list.length, s);

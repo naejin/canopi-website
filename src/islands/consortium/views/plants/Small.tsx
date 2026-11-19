@@ -82,7 +82,7 @@ export function SmallPlants({ rows: given, children }: { rows: readonly PlantRow
   const failed = store.verdictFailed.value;
   const { rows, rank } = useMemo(() => {
     const rank = new Map(plantItems(members, fitGroups(members, failed ? null : verdicts, flags), nameOf).map((i) => [i.id, i.rank]));
-    return { rows: byFitRank(given, idOf, rank), rank };
+    return { rows: byFitRank(given, idOf, rank, (r) => 'plant' in r && r.warned), rank };
   }, [given, members, verdicts, flags, failed]);
   // Recife: the first toxic row (Moderate or Severe) says why it stays, the first row too tall for the
   // room says the room's rule, once each in the shown order (Inform, don't block).

@@ -1552,7 +1552,6 @@
   "consortium.many.showOtherRows": "{group}のほかの行を表示",
   "consortium.many.foot": "グループは閉じた状態で始まります。検索・並べ替え・再グループ化してもチェックは残ります。「外す」はチェックした植物にまとめて働き、元に戻せます。入れ替えは各植物にあります。",
   "consortium.many.footDesk": "グループは閉じた状態で始まります。見出しのチェックは画面に出ている行だけにチェックを入れます。役割・適合度・科でグループ化するか、グループなしのときは「植える場所」の列が光の段階を示します。検索・並べ替え・再グループ化してもチェックは残ります。「植物を加える」はこの一覧の場所で検索を開き、加えている間は開いたままです。",
-  "consortium.many.tickedThese": "「あなたの植物」で {n} 種にチェックしました。",
   "consortium.many.col_plant": "植物",
   "consortium.many.col_when": "いつ育つか",
   "consortium.many.col_jobs": "役割",

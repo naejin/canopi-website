@@ -126,13 +126,40 @@ test('BC20: a close spelling found only on another list is a choice like any oth
 
 // ---- fix round 1, batch 3 ----
 
-test('R4: a repeated line counts in its own group: a name not found twice is 2 not found, a question twice 2 to choose, and neither is "recognised" or "listed twice"', () => {
+test('R3 C1 (round 2): one unit a group: Recognised counts its lines (a repeat "listed twice" in its head), Need a choice its questions, Not found its names; a repeat of a question or a missing name is a "listed twice" part, so the parts add up to the names read', () => {
   const lost = readPaste(pasteNames('sukuma wiki\nCommon bean\nsukuma wiki'), { here, index });
-  assert.deepEqual(pasteCounts(lost, []), { lines: 3, rec: 1, choose: 0, none: 2, fresh: 1, other: 0, have: 0, twice: 0 });
+  assert.deepEqual(pasteCounts(lost, []), { lines: 3, rec: 1, choose: 0, none: 1, again: 1, fresh: 1, other: 0, have: 0, twice: 0 }, 'Not found counts names, as its list and "Copy this name" do');
   const asked = readPaste(pasteNames('beans\nbeans'), { here, index });
-  assert.deepEqual(pasteCounts(asked, []), { lines: 2, rec: 0, choose: 2, none: 0, fresh: 0, other: 0, have: 0, twice: 0 });
+  assert.deepEqual(pasteCounts(asked, []), { lines: 2, rec: 0, choose: 1, none: 0, again: 1, fresh: 0, other: 0, have: 0, twice: 0 }, 'Need a choice counts questions, as its head and "N to go" do');
   const kept = readPaste(pasteNames('Common bean\ncommon bean\nLima bean'), { here, index });
-  assert.deepEqual(pasteCounts(kept, []), { lines: 3, rec: 3, choose: 0, none: 0, fresh: 2, other: 0, have: 0, twice: 1 }, 'a recognised repeat: recognised, listed twice');
+  assert.deepEqual(pasteCounts(kept, []), { lines: 3, rec: 3, choose: 0, none: 0, again: 0, fresh: 2, other: 0, have: 0, twice: 1 }, 'a recognised repeat: recognised, listed twice (board Paste: "6 recognised … 1 listed twice")');
+  for (const c of [lost, asked, kept].map((r) => pasteCounts(r, []))) assert.equal(c.rec + c.choose + c.none + c.again, c.lines, 'the parts add up to the names read');
+  assert.equal(pasteCounts(asked, []).choose, asked.choose.length + asked.found.filter((f) => f.close).length + asked.other.filter((o) => o.close).length);
+});
+
+test('R2 (round 2): an exact line wins its plant over a close spelling, in any order: "chesnut" then "European chestnut" adds the chestnut, the close spelling listed twice', () => {
+  const chestnut = [plant('c1', 'Castanea sativa', 'European chestnut'), plant('a1', 'Malus domestica', 'Apple')];
+  const idx = releaseIndex({ lang: 'en', names: chestnut.map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+  for (const text of ['chesnut\nEuropean chestnut\nApple', 'European chestnut\nchesnut\nApple']) {
+    const r = readPaste(pasteNames(text), { here: chestnut, index: idx });
+    assert.deepEqual(plan(r, [], []).ids.sort(), ['a1', 'c1'], `${JSON.stringify(text)}: the chestnut typed exactly is added`);
+    assert.deepEqual(r.found.filter((f) => f.close).length, 0, 'no question left for a plant another line named exactly');
+    assert.deepEqual(r.duplicate.map((d) => [d.name, d.taxon.id]), [['chesnut', 'c1']], 'the close spelling is the line listed twice');
+    const c = pasteCounts(r, []);
+    assert.deepEqual([c.fresh, c.twice, c.choose], [2, 1, 0]);
+  }
+});
+
+test('R4 (round 2): the small form puts every warned row first in every verdict state: a Mildly toxic plant with no verdict, or a fits plant with a medium conflict, before plain plants', () => {
+  const ts = ['Apple', 'Bay laurel', 'Cherry', 'Dill'].map((n, i) => taxon(`p${i}`, n));
+  const rows = ts.map((t) => ({ id: t.id, warned: t.id === 'p1' || t.id === 'p3' }));
+  const warnedOf = (r) => r.warned;
+  // Verdicts still loading (or verdictFailed): every plant not checked.
+  const none = new Map(M.plantItems(ts, groups({ unknown: ts.map((t) => t.id) }), (t) => t.names.en).map((i) => [i.id, i.rank]));
+  assert.deepEqual(M.byFitRank(rows, (r) => r.id, none, warnedOf).map((r) => r.id), ['p1', 'p3', 'p0', 'p2'], 'verdicts null: the warned rows first');
+  // Verdicts in: Bay laurel (Mildly toxic, no recorded range) not checked; Dill fits with a medium conflict.
+  const some = new Map(M.plantItems(ts, groups({ fits: ['p0', 'p2', 'p3'], unknown: ['p1'] }), (t) => t.names.en).map((i) => [i.id, i.rank]));
+  assert.deepEqual(M.byFitRank(rows, (r) => r.id, some, warnedOf).map((r) => r.id), ['p1', 'p3', 'p0', 'p2'], 'a warned plant never sits after a plain one');
 });
 
 test('R14: the Recognised head\'s "new" is what Add all adds; plants of another climate\'s list are counted apart', () => {

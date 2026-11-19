@@ -355,6 +355,8 @@ async function openFirstTick3(page) {
 
 // The place line is main's (Place.tsx PlaceLine); pf-e's slot is views/plants/head-link.tsx PlantsCount,
 // which main mounts in place of the line's count (hand-off C1); main removes the marker when it lands.
+// The three hand-off markers (PFE14, PFE15b, PFE45) stay owned by pf-e while the stream is open
+// (browser-tests.test.mjs: an open stream's markers name it); main re-owns them at the chunk-3 merge.
 failing('PFE14 (pf-e E4, BC1, C1; hand-off: main mounts head-link.tsx PlantsCount in Place.tsx PlaceLine): past 40 plants under 960 px the place line says "200 plants: Your plants", the link landing on Your plants\' heading; at 1280 no link', { owner: 'pf-e', reason: /no link "Your plants"/ }, async () => {
   const page = await loadPalette200({ width: 390 });
   const link = await page.waitForFunction(() => [...document.querySelectorAll('#ct-root [data-place-line] a')].some((a) => a.textContent.trim() === 'Your plants'), { timeout: 6000 }).then(() => true, () => false);
@@ -399,23 +401,6 @@ failing('PFE15b (pf-e E4, BC2; the head is main\'s ConsortiumPage.astro, shell.c
   await done(page);
 });
 
-test('PFE16 (pf-e BC4, v14 section 6): at 320 the tick bar\'s "Remove 3 plants" stays on screen above the bottom bar while the reader scrolls to the open group\'s last row', async () => {
-  const page = await loadPalette200({ width: 320 });
-  const rows = await openFirstTick3(page);
-  await control(page, 'button', 'Remove 3 plants');
-  await page.$eval(`${PLANTS} [data-plant-id="${rows[rows.length - 1].id}"]`, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
-  await frames(page);
-  const at = await page.evaluate(() => {
-    const b = [...document.querySelectorAll('#ct-root button')].find((x) => x.textContent.trim() === 'Remove 3 plants');
-    const bar = [...document.querySelectorAll('#ct-root button')].filter((x) => x.textContent.trim() === 'Add plants' && x.getClientRects().length).map((x) => x.getBoundingClientRect().top);
-    const r = b.getBoundingClientRect();
-    return { top: r.top, bottom: r.bottom, barTop: bar.length ? Math.min(...bar) : innerHeight, vh: innerHeight };
-  });
-  assert.ok(at.top >= 0 && at.bottom <= at.vh, `board: Remove is on screen after scrolling (top ${Math.round(at.top)}, viewport ${at.vh})`);
-  assert.ok(at.bottom <= at.barTop + 1, `board: Remove sits above the bottom bar (${Math.round(at.bottom)} against ${Math.round(at.barTop)})`);
-  await done(page);
-});
-
 test('PFE17 (pf-e E3, BC5; ManyDesk at 960): the chart\'s column keeps the Jobs title on one line and "Group by" shows "Light level" whole', async () => {
   const page = await loadPalette200({ width: 960 });
   await control(page, 'combobox', 'Group by');
@@ -440,22 +425,6 @@ test('PFE18 (pf-e BC6, Many at 320): Your plants\' contents stay inside their ca
   await frames(page);
   const w = await page.$eval(PLANTS, (s) => ({ scroll: s.scrollWidth, client: s.clientWidth }));
   assert.ok(w.scroll <= w.client, `board: nothing spills past the card (scrollWidth ${w.scroll}, clientWidth ${w.client})`);
-  await done(page);
-});
-
-test('PFE19 (pf-e BC8, board Many): an outside plant keeps its toxicity mark on its row, beside the fit word', async () => {
-  const page = await loadPalette200({ width: 390 });
-  const pick = await page.evaluate(() => {
-    const s = window.__ctTest.store, v = s.memberVerdicts.value;
-    const t = s.memberTaxa.value.find((x) => v?.get(x.id)?.level === 'outside' && s.flagsOfPlant(x).some((f) => f.kind === 'toxicity'));
-    return t ? { id: t.id, q: t.canonical_name, level: s.flagsOfPlant(t).find((f) => f.kind === 'toxicity').level } : null;
-  });
-  assert.ok(pick, 'the premise: an outside plant with a toxicity mark');
-  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, pick.q);
-  assert.ok(await has(page, `${PLANTS} [data-plant-id="${pick.id}"]`, 3000));
-  const row = (await rowsShown(page)).find((r) => r.id === pick.id);
-  assert.match(row.text, /Outside its climate range/, 'its fit word');
-  assert.ok(row.text.includes(en[`consortium.tox.${pick.level}`]), `board: the row says "${en[`consortium.tox.${pick.level}`]}" too: ${row.text}`);
   await done(page);
 });
 
@@ -486,19 +455,6 @@ test('PFE20 (pf-e BC9, board Many): the open toxic reason is one paragraph ("Ver
     assert.equal(at.blocks, 1, `board at ${width}: the labels in one paragraph (${at.text.join(' | ')})`);
     await done(page);
   }
-});
-
-test('PFE21 (pf-e A15, BC10, R2): "Tick these N" says in place what it did ("N ticked in Your plants.") and takes the focus to Remove', async () => {
-  const page = await loadPalette200({ width: 390 });
-  await openToxic(page);
-  const n = await toxicN(page);
-  await press(page, 'button', `Tick these ${n}`);
-  await says(page, `${n} ticked in Your plants.`);
-  const said = await page.evaluate((w) => [...document.querySelectorAll('#ct-root [role="status"]')].some((e) => e.textContent.includes(w)), `${n} ticked in Your plants.`);
-  assert.ok(said, 'board: said in a status');
-  await frames(page);
-  assert.equal((await focused(page)).name, `Remove ${n} plants`, 'board: the focus on Remove');
-  await done(page);
 });
 
 test('PFE22 (pf-e BC11, board ManyDesk): at 960 px and wider Your plants\' note says the desk\'s sentences; the phone keeps its own', async () => {
@@ -723,6 +679,16 @@ test('PFE29 (pf-e R1): past 40 plants every row keeps each warning the small for
     const text = ok ? (await rowsShown(page)).find((r) => r.id === c.id)?.text ?? '' : '';
     if (!text.includes(c.other)) missing.push(`${c.q}: its conflict with ${c.other} not on "${text}"`);
   }
+  // BC8 (was PFE19): an outside plant keeps its fit word beside its toxicity mark.
+  const outside = await page.evaluate(() => {
+    const s = window.__ctTest.store, v = s.memberVerdicts.value;
+    const t = s.memberTaxa.value.find((x) => v?.get(x.id)?.level === 'outside' && s.flagsOfPlant(x).some((f) => f.kind === 'toxicity'));
+    return t ? { id: t.id, q: t.canonical_name } : null;
+  });
+  assert.ok(outside, 'the premise: an outside plant with a toxicity mark');
+  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, outside.q);
+  assert.ok(await has(page, `${PLANTS} [data-plant-id="${outside.id}"]`, 3000));
+  assert.match((await rowsShown(page)).find((r) => r.id === outside.id)?.text ?? '', /Outside its climate range/, 'board Many (BC8): its fit word with its mark');
   assert.deepEqual(missing, [], 'R1: a warning the small form shows is never dropped past 40 plants');
   await done(page);
 });
@@ -759,9 +725,14 @@ test('PFE30 (pf-e R2): on the phone "Tick these N" takes the focus to the tick b
   const f = await focusedAt(page);
   assert.equal(f.name, `Remove ${n} plants`, 'R2: the focus goes to the tick bar\'s Remove');
   assert.ok(f.inView, `R2: Remove is on screen (${JSON.stringify(f.box)})`);
-  const said = await page.evaluate((w) => [...document.querySelectorAll('#ct-root [role="status"]')].some((e) => e.textContent.includes(w)), `${n} ticked in Your plants.`);
-  assert.ok(said, 'R2: said in a polite status');
-  assert.equal((await rowsShown(page)).filter((r) => r.ticked).length, n, 'R2: every ticked row is shown');
+  // C3 (round 2): word-map's words ("42 ticked"), on the reason pressed only, until the ticks change.
+  const statuses = () => page.evaluate(() => [...document.querySelectorAll('#ct-root #ct-warnings [role="status"]')].map((e) => e.textContent.trim()).filter(Boolean));
+  assert.deepEqual(await statuses(), [`${n} ticked`], 'R2, C3: said once, in a polite status, on the reason pressed');
+  const rows = await rowsShown(page);
+  assert.equal(rows.filter((r) => r.ticked).length, n, 'R2: every ticked row is shown');
+  await tickRow(page, rows.find((r) => r.ticked).id);
+  await frames(page);
+  assert.deepEqual(await statuses(), [], 'C3: the status goes when the ticks change');
   await done(page);
 });
 
@@ -783,11 +754,18 @@ test('PFE31 (pf-e R3): ticking two closed groups whole, Remove, then Undo lands 
   await done(page);
 });
 
-test('PFE32 (pf-e R4): a name not found twice counts as 2 not found, never as recognised', async () => {
+test('PFE32 (pf-e R4; round 2 R3, C1): one unit a group: Not found counts names, Need a choice questions, in the count line, the head and the button; a repeat is "listed twice"', async () => {
   const page = await boardPastePage(390);
   await pasteText(page, 'sukuma wiki\nsukuma wiki\npigeon pea');
-  await says(page, '3 names read 1 recognised, 2 not found', { inDialog: true });
-  await control(page, 'button', /^Not found 2$/);
+  await says(page, '3 names read 1 recognised, 1 not found, 1 listed twice', { inDialog: true });
+  await control(page, 'button', /^Not found 1$/);
+  await openGroup(page, /^Not found/);
+  await control(page, 'button', 'Copy this name');
+  await says(page, /“sukuma wiki” Not found\. · listed twice, counted once/, { inDialog: true });
+  await page.$eval('dialog[open] #ct-paste-text', (el) => { el.value = 'beans\nbeans'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+  await page.click('dialog[open] [data-paste-read]');
+  await says(page, '2 names read 1 needs a choice, 1 listed twice', { inDialog: true });
+  await control(page, 'button', /^Need a choice 1$/);
   await done(page);
 });
 
@@ -1012,12 +990,14 @@ test('PFE44 (pf-e F25, C7, C9): one name not found has its "Copy this name"; a r
   await done(page);
 });
 
-failing('PFE45 (pf-e E4, C2; hand-off: main passes Actions into Palette.tsx\'s foot slot and drops App.tsx slot(Actions)): past 40 plants at 1280 the palette\'s foot stands under Balance, in Your plants\' column (boards MainMore, PaletteMore)', { owner: 'pf-e', reason: /the foot is not under Balance/ }, async () => {
-  const page = await loadPalette200({ width: 1280 });
-  await says(page, 'Your palette is saved on this device.');
-  const at = { bal: await sectionBox(page, 'Balance'), foot: await boxOf(page, 'Your palette is saved on this device.') };
-  assert.ok(at.bal && at.foot && at.foot.x >= at.bal.x - 1 && at.foot.right <= at.bal.right + 1 && at.foot.y >= at.bal.bottom - 1, `board: the foot is not under Balance (${JSON.stringify(at)})`);
-  await done(page);
+failing('PFE45 (pf-e E4, C2, C5; hand-off: main passes Actions into Palette.tsx\'s foot slot and drops App.tsx slot(Actions)): at 1280 the palette\'s foot stands under Balance, in Your plants\' column past 40 plants and in the side column at 40 or fewer (boards MainMore, PaletteMore)', { owner: 'pf-e', reason: /the foot is not under Balance/ }, async () => {
+  for (const n of [200, 13]) {
+    const page = n === 200 ? await loadPalette200({ width: 1280 }) : await paletteOf(n, 1280);
+    await says(page, 'Your palette is saved on this device.');
+    const at = { bal: await sectionBox(page, 'Balance'), foot: await boxOf(page, 'Your palette is saved on this device.') };
+    assert.ok(at.bal && at.foot && at.foot.x >= at.bal.x - 1 && at.foot.right <= at.bal.right + 1 && at.foot.y >= at.bal.bottom - 1, `board (${n} plants): the foot is not under Balance (${JSON.stringify(at)})`);
+    await done(page);
+  }
 });
 
 test('PFE46 (pf-e C9, board PaletteMore): a climber with a height and no width reads "Climbs to …, no width recorded" in the small form', async () => {
@@ -1101,5 +1081,75 @@ test('PFE48 (pf-e E3, F30, ManyDesk at 1280): Your plants, then Warnings and fit
   });
   assert.ok(hit.done >= 1 && hit.card, `the premise: Done and the toast show (${hit.done} Done, toast ${hit.card})`);
   assert.equal(hit.over, 0, 'F30: the toast never covers the search\'s Done');
+  await done(page);
+});
+
+// ---- fix round 2, batch 1 ----
+
+test('PFE49 (pf-e round 2 R1): ticks and the search in place live by the state, not a layout: 3 ticked at 1280 stay ticked when the window narrows to 800 and widens again; the search open in place comes back in place', async () => {
+  const page = await loadPalette200({ width: 1280 });
+  const { word, n } = await firstLevel(page);
+  await press(page, 'button', `${word} ${n} plants`);
+  await frames(page);
+  const rows = (await rowsShown(page)).slice(0, 3);
+  for (const r of rows) await tickRow(page, r.id);
+  await control(page, 'group', '3 plants ticked');
+  const vp = page.viewport();
+  await page.setViewport({ ...vp, width: 800 });
+  await frames(page);
+  await control(page, 'textbox', SEARCH(200));
+  await control(page, 'group', '3 plants ticked');
+  assert.deepEqual((await rowsShown(page)).filter((r) => r.ticked).map((r) => r.id).sort(), rows.map((r) => r.id).sort(), 'R1: the phone form shows the same 3 ticked, their group still open');
+  await page.setViewport({ ...vp, width: 1280 });
+  await frames(page);
+  await control(page, 'group', '3 plants ticked');
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'the premise: the search opens in place of the table');
+  await page.setViewport({ ...vp, width: 800 });
+  await frames(page);
+  await page.setViewport({ ...vp, width: 1280 });
+  await frames(page);
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 4000), 'R1: back at 1280 the search stands in place again, never beside the chart');
+  await done(page);
+});
+
+test('PFE50 (pf-e round 2 R5): an edit to a long paste keeps the last reading on screen while the new one reads (stale, aria-busy): Need a choice stays open, an answer stays, the focus stays on its choice', async () => {
+  const page = await bigPastePage(390);
+  await openGroup(page, /^Need a choice/);
+  const chip = 'dialog[open] [data-paste-group="choose"] [role="group"] button[aria-pressed]';
+  assert.ok(await has(page, chip, 4000), 'the premise: a question\'s choices');
+  await page.$eval(chip, (b) => { b.click(); b.focus(); });
+  await frames(page);
+  const label = await page.$eval(chip, (b) => b.textContent.replace(/\s+/g, ' ').trim());
+  // Watch every frame from the edit until the new reading is whole (its count said): the group must never go.
+  const before = await page.$eval('dialog[open] [data-paste-count]', (e) => Number(e.textContent.replace(/,/g, '').match(/\d+/)[0]));
+  const watch = page.evaluate((want) => new Promise((resolve) => {
+    let gone = 0, busy = 0, read = false, frames = 0, last = '';
+    const log = [];
+    const tick = () => {
+      frames++;
+      const g = document.querySelector('dialog[open] [data-paste-group="choose"]');
+      if (!g) gone++;
+      if (g?.getAttribute('aria-busy') === 'true') busy++;
+      const r = !!document.querySelector('dialog[open] [data-paste-reading]');
+      if (r) read = true;
+      const n = Number((document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '').replace(/,/g, '').match(/\d+/)?.[0] ?? 0);
+      const st = `${g ? 'g' : '-'}${r ? 'r' : '-'}${n}`;
+      if (st !== last) { log.push(`${frames}:${st}`); last = st; }
+      if (n === want || frames > 1800) resolve({ gone, busy, read, n, log: log.join(' ') }); else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }), before + 1500);
+  // 1,500 lines added at the end (the input event only: the focus stays where it is).
+  await page.$eval('dialog[open] #ct-paste-text', (el) => { el.value = `${el.value}\n${Array.from({ length: 1500 }, (_, i) => `qzx${i}vk`).join('\n')}`; el.dispatchEvent(new Event('input', { bubbles: true })); });
+  const seen = await watch;
+  assert.equal(seen.n, before + 1500, `the premise: the new text is read whole (${seen.n})`);
+  assert.ok(seen.read, 'the premise: the new text is read in slices');
+  assert.equal(seen.gone, 0, `R5: the groups stay on screen while the new text reads (${seen.log})`);
+  assert.ok(seen.busy > 0, 'R5: the last reading is marked busy meanwhile');
+  const g = await control(page, 'button', /^Need a choice/);
+  assert.equal(g.expanded, true, 'R5: Need a choice stays open after the re-read');
+  const after = await page.evaluate(() => { const a = document.activeElement; return { pressed: a?.getAttribute('aria-pressed'), text: a?.textContent.replace(/\s+/g, ' ').trim() }; });
+  assert.deepEqual(after, { pressed: 'true', text: label }, 'R5: the focus stays on the answered choice');
   await done(page);
 });

@@ -51,10 +51,15 @@ export function plantItems(members: readonly Taxon[], g: FitGroups, nameOf: (t: 
 
 // The small form's order (boards PaletteMore, Recife: "Plants with a warning come first"): the big
 // list's fit rank (outside its climate range, a second look, marks only, fits, not checked), the
-// palette's order within a rank. A row the page cannot show (no item) is not checked: last.
-export function byFitRank<R>(rows: readonly R[], idOf: (r: R) => PlantId, rankOf: ReadonlyMap<PlantId, number>): R[] {
+// palette's order within a rank. A row the page cannot show (no item) is not checked: last. A warned
+// row (warnedOf: a warning in words, core yourPlants' `warned`) ranks at most as "marks only" (R4), so
+// the lede's promise holds in every verdict state: a Mildly toxic plant with no verdict yet, or a fits
+// plant with a medium conflict, never sits after a plain one.
+const MARKS_ONLY = 2;
+export function byFitRank<R>(rows: readonly R[], idOf: (r: R) => PlantId, rankOf: ReadonlyMap<PlantId, number>, warnedOf: (r: R) => boolean = () => false): R[] {
   const NOT_CHECKED = RANK.unknown;
-  return rows.map((r, at) => ({ r, at, k: rankOf.get(idOf(r)) ?? NOT_CHECKED })).sort((a, b) => a.k - b.k || a.at - b.at).map((x) => x.r);
+  const key = (r: R) => { const k = rankOf.get(idOf(r)) ?? NOT_CHECKED; return warnedOf(r) ? Math.min(k, MARKS_ONLY) : k; };
+  return rows.map((r, at) => ({ r, at, k: key(r) })).sort((a, b) => a.k - b.k || a.at - b.at).map((x) => x.r);
 }
 
 const LIGHT_AT = (s: Stratum | null): number => (s ? strata.indexOf(s) : strata.length);

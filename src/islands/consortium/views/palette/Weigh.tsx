@@ -15,7 +15,7 @@
 // fewer and 12 or fewer, else the count cell; review R2, C1): the boards' plain list ("Toxic: Almond,
 // Licorice"), "and" only where the names sit inside a sentence (`and`: "Olive and Almond share
 // Xylella", "Silk oak and Napier grass sit between", the outside-and-toxic sentence; c2 C1).
-import { isTicked, tickAndShow } from '../plants/state.ts';
+import { saidFor, tickAndShow } from '../plants/state.ts';
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
@@ -112,21 +112,20 @@ const OPEN_NAMES = 10; // an open list's names before "+ N more" (BC4)
 // "Tick these N" (board Many, A15): ticks a reason's plants in Your plants, ready for Remove (one Undo
 // there); nothing is removed here. Your plants may be far down the page, so the rows' groups open and
 // the focus goes to the tick bar's Remove (views/plants/state.ts tickAndShow, R2), and the result is
-// said here too (BC10): a polite status "42 ticked in Your plants." while they all stay ticked. No
-// confirm step.
-function TickThese({ ids }: { ids: readonly PlantId[] }) {
-  const all = ids.length > 0 && ids.every(isTicked);
+// said here too (BC10) in word-map's words ("42 ticked", as the tick bar says it), on the reason whose
+// button was pressed only, until the ticks change (state.ts saidFor; round 2 C3). No confirm step.
+function TickThese({ ids, k }: { ids: readonly PlantId[]; k: string }) {
   return (
     <>
-      <button type="button" class="ct-tick-these" onClick={() => tickAndShow(ids)}>{T('many.tickThese', { n: num(ids.length) })}</button>
-      <p class="ct-tick-said" role="status">{all && T('many.tickedThese', { n: num(ids.length) })}</p>
+      <button type="button" class="ct-tick-these" onClick={() => tickAndShow(ids, k)}>{T('many.tickThese', { n: num(ids.length) })}</button>
+      <p class="ct-tick-said" role="status">{saidFor(k) && P('many.ticked', ids.length)}</p>
     </>
   );
 }
 // A reason's names, then its actions on one row (board Many): "+ N more" (the count cell's, MoreList)
-// beside "Tick these N", both 44 px pills; the status under them.
-function Reason_({ children, ids }: { children: ComponentChildren; ids: readonly PlantId[] }) {
-  return <div class="ct-reason">{children}<TickThese ids={ids} /></div>;
+// beside "Tick these N", both 44 px pills; the status under them. k: the reason, for its status.
+function Reason_({ children, ids, k }: { children: ComponentChildren; ids: readonly PlantId[]; k: string }) {
+  return <div class="ct-reason">{children}<TickThese ids={ids} k={k} /></div>;
 }
 
 export function WarningsAndFit({ members, verdicts, flags, country }: { members: readonly Taxon[]; verdicts: ReadonlyMap<PlantId, PlantVerdict> | null; flags: readonly Flag[]; country: string | null }) {
@@ -150,11 +149,11 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
             {key === 'palette.warningsLook' ? (
               <>
                 <ul class="ct-jobs-list">
-                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}><Reason_ ids={r.edge}>{list(r.edge)}</Reason_></Line_>}
+                  {r.edge.length > 0 && <Line_ head={T('palette.warningsEdge')} n={r.edge.length}><Reason_ ids={r.edge} k="edge">{list(r.edge)}</Reason_></Line_>}
                   {tox > 0 && (
                     <Line_ head={T('palette.warningsToxic')} n={tox}>
                       {/* One paragraph, the labels bold (board Many): "Very toxic, 5: …. Toxic, 37: …". */}
-                      <Reason_ ids={[...r.severe, ...r.moderate]}>
+                      <Reason_ ids={[...r.severe, ...r.moderate]} k="toxic">
                         <div class="ct-reason-text">
                           {r.severe.length > 0 && <><strong>{T('palette.warningsVery', { n: num(r.severe.length) })}</strong> {list(r.severe, Math.min(OPEN_NAMES, r.severe.length))}{r.moderate.length > 0 && '. '}</>}
                           {r.moderate.length > 0 && <><strong>{T('palette.warningsTox', { n: num(r.moderate.length) })}</strong> {list(r.moderate, OPEN_NAMES - Math.min(OPEN_NAMES - 1, r.severe.length))}</>}
@@ -162,8 +161,8 @@ export function WarningsAndFit({ members, verdicts, flags, country }: { members:
                       </Reason_>
                     </Line_>
                   )}
-                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}><Reason_ ids={r.invasive}>{list(r.invasive)}</Reason_></Line_>}
-                  {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}><Reason_ ids={r[k]}>{list(r[k])}</Reason_></Line_>)}
+                  {r.invasive.length > 0 && <Line_ head={T('palette.warningsInvasive', { country: countryName(country ?? '') })} n={r.invasive.length}><Reason_ ids={r.invasive} k="invasive">{list(r.invasive)}</Reason_></Line_>}
+                  {REASON_WORDS.filter(([k]) => r[k].length > 0).map(([k, words]) => <Line_ key={k} head={T(words)} n={r[k].length}><Reason_ ids={r[k]} k={k}>{list(r[k])}</Reason_></Line_>)}
                 </ul>
                 {g.several > 0 && <p class="ct-chart-note">{P('palette.warningsReasons', g.reasonCount, { plants: P('palette.warningsReasonsPlants', g.look.length), carry: P('palette.warningsReasonsCarry', g.several) })}</p>}
                 {g.outsideToxic.length > 0 && <div class="ct-chart-note"><Names ids={g.outsideToxic} name={name} size={size} few={3} and text={(w) => P('palette.warningsOutsideToxic', g.outsideToxic.length, { names: w })} lead={<p>{P('palette.warningsOutsideToxicMany', g.outsideToxic.length)}</p>} /></div>}

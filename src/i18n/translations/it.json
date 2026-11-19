@@ -1552,7 +1552,6 @@
   "consortium.many.showOtherRows": "Mostra le altre righe in {group}",
   "consortium.many.foot": "I gruppi partono chiusi. Le spunte restano quando cerchi, ordini o raggruppi. Togli agisce insieme sulle piante spuntate, con Annulla. Sostituisci resta su ogni pianta.",
   "consortium.many.footDesk": "I gruppi partono chiusi. La spunta dell’intestazione spunta solo le righe sullo schermo. Raggruppato per Ruolo, Adattamento, Famiglia o senza gruppi, una colonna «Piantata in» dice il livello di luce. Le spunte restano quando cerchi, ordini o raggruppi. «Aggiungi piante» apre la ricerca al posto di questo elenco e resta aperta mentre aggiungi.",
-  "consortium.many.tickedThese": "{n} spuntate in Le tue piante.",
   "consortium.many.col_plant": "Pianta",
   "consortium.many.col_when": "Quando c’è",
   "consortium.many.col_jobs": "Ruoli",
