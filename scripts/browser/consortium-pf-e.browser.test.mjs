@@ -930,7 +930,7 @@ test('PFE41 (pf-e C6, board AddMany, word-map 10): a choice already in the palet
   await done(page);
 });
 
-test('PFE42 (pf-e F23, C3): 0 lines and a header alone say "Nothing to read"; 5,000 lines are read in slices with "N of 5,000 read", the page answering meanwhile (the longest task reported)', async (t) => {
+test('PFE42 (pf-e F23, C3, C8): 0 lines and a header alone say "Nothing to read"; 5,000 lines are read in slices with "N of 5,000 read", the page answering meanwhile (the longest task reported); one name fixed in them keeps the last reading (groups, count, Add) on screen until the new one is whole', async (t) => {
   const page = await boardPastePage(390);
   await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
   assert.ok(await has(page, 'dialog[open] #ct-paste-text', 15_000));
@@ -940,8 +940,8 @@ test('PFE42 (pf-e F23, C3): 0 lines and a header alone say "Nothing to read"; 5,
   await pasteText(page, 'Scientific name\tQty\n');
   await says(page, 'Nothing to read.', { inDialog: true });
   await saysNot(page, 'names read', 'F23: the header is skipped, not read as a name');
-  // 5,000 different lines (none a plant: each goes through the whole search).
-  const lines = Array.from({ length: 5000 }, (_, i) => `zq${i.toString(36)}xv`).join('\n');
+  // 5,000 different lines (one plant, the rest none: each goes through the whole search).
+  const lines = ['Persea americana', ...Array.from({ length: 4999 }, (_, i) => `zq${i.toString(36)}xv`)].join('\n');
   await page.evaluate(() => {
     window.__paste = { progress: [], long: [] };
     new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__paste.long.push(Math.round(e.duration)); }).observe({ type: 'longtask' });
@@ -954,6 +954,35 @@ test('PFE42 (pf-e F23, C3): 0 lines and a header alone say "Nothing to read"; 5,
   const seen = await page.evaluate(() => window.__paste);
   assert.ok(seen.progress.some((p) => /^[\d,]+ of 5,000 read$/.test(p)), `F23: the progress line ("N of 5,000 read"): ${seen.progress.slice(0, 3).join(' | ')}`);
   t.diagnostic(`F23 5,000 lines: read in ${ms} ms; progress steps ${seen.progress.length}; longest task ${Math.max(0, ...seen.long)} ms; tasks over 200 ms: ${seen.long.filter((x) => x > 200).length} (reported, never a failure)`);
+  // C8: fix one name in the box. Every frame until the new text is read whole, the last reading stays:
+  // the groups, "5,000 names read" and "Add 1 plant" (never "N of 5,000 read" alone).
+  const addLabel = () => [...document.querySelectorAll('dialog[open] .ct-paste-foot button.button-primary')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()).join('');
+  const addBefore = await page.evaluate(addLabel);
+  assert.match(addBefore, /Add 1 plant$/, `the premise: the plant line is to add (${addBefore})`);
+  const watch = page.evaluate((labelSrc) => new Promise((resolve) => {
+    const label = new Function(`return (${labelSrc})()`);
+    let frames = 0, read = false, last = '', bad = 0, readFrames = 0;
+    const log = [];
+    const tick = () => {
+      frames++;
+      const r = !!document.querySelector('dialog[open] [data-paste-reading]');
+      if (r) { read = true; readFrames++; }
+      const g = document.querySelectorAll('dialog[open] [data-paste-group]').length;
+      const c = (document.querySelector('dialog[open] [data-paste-count] strong')?.textContent ?? '').trim();
+      const a = label();
+      const st = `${r ? 'r' : '-'} g${g} ${c} | ${a}`;
+      if (st !== last) { log.push(`${frames}:${st}`); last = st; }
+      if (!g || c !== '5,000 names read' || !/Add 1 plant$/.test(a)) bad++;
+      if ((read && !r) || frames > 3600) resolve({ read, bad, readFrames, log: log.join(' ; ') }); else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }), addLabel.toString());
+  await page.$eval('dialog[open] #ct-paste-text', (el) => { el.value = el.value.replace('zq0xv', 'zq0xw'); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  const re = await watch;
+  assert.ok(re.read, `the premise: the fixed text is read again in slices (${re.log})`);
+  assert.equal(re.bad, 0, `C8: the last reading (groups, count, Add) stays on screen while the fixed text reads (${re.log})`);
+  await says(page, '5,000 names read', { inDialog: true, timeout: 120_000 });
+  assert.match(await page.evaluate(addLabel), /Add 1 plant$/, 'C8: the new reading adds the plant');
   await done(page);
 });
 
