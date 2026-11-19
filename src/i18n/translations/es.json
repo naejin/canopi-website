@@ -302,6 +302,7 @@
   "consortium.paste.label": "Tu lista de plantas",
   "consortium.paste.close": "Leer como {name}",
   "consortium.paste.addAll": "one: Añadir # planta | other: Añadir # plantas",
+  "consortium.paste.addAllBusy": "Añadir las plantas",
   "consortium.paste.added": "one: # planta añadida y conservada. | other: # plantas añadidas y conservadas.",
   "consortium.paste.empty": "Pega o escribe nombres arriba.",
   "consortium.dismiss": "Cerrar aviso",

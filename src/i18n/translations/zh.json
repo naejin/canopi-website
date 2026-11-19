@@ -302,6 +302,7 @@
   "consortium.paste.label": "你的植物列表",
   "consortium.paste.close": "按 {name} 读取",
   "consortium.paste.addAll": "other: 添加 # 种植物",
+  "consortium.paste.addAllBusy": "添加这些植物",
   "consortium.paste.added": "other: 已添加并保留 # 种植物。",
   "consortium.paste.empty": "在上方粘贴或输入名称。",
   "consortium.dismiss": "关闭",

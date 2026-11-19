@@ -983,8 +983,26 @@ test('PP-C58 (c1 h3 M23, pf-e#1, #4): past 200 names each "Add anyway" adds at o
   await page.click('dialog[open] [data-paste-read]');
   assert.ok(await countSays(page, /^600 names read/), 'the premise: the 600 names read');
   const anyway = (i) => page.evaluate((label, k) => [...document.querySelectorAll('dialog[open] [data-paste-row] button')].filter((b) => b.textContent.trim() === label)[k]?.click(), en['consortium.addAnyway'], i);
+  // h3 r1 R4 (W4): the row turns to "in your palette" as the plant joins, while the re-read of the same
+  // text is still under way: every frame from the add on, no "Add anyway" left on it.
+  await page.evaluate((n, label, k) => {
+    const seen = window.__r4 = { frames: 0, button: 0, text: '' };
+    const tick = () => {
+      if (Object.keys(window.__ctTest.store.guests.value).length >= k) {
+        const r = [...document.querySelectorAll('dialog[open] [data-paste-row]')].find((e) => e.textContent.startsWith(`“${n}”`));
+        seen.frames++; seen.text = r?.textContent ?? '';
+        if ([...(r?.querySelectorAll('button') ?? [])].some((b) => b.textContent.trim() === label)) seen.button++;
+      }
+      if (seen.frames < 30) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, two[0], en['consortium.addAnyway'], guests0 + 1);
   await anyway(0);
   assert.ok(await page.waitForFunction((k) => Object.keys(window.__ctTest.store.guests.value).length === k, { timeout: 8000 }, guests0 + 1).then(() => true, () => false), `"${two[0]}" added`);
+  await page.waitForFunction(() => window.__r4.frames >= 30, { timeout: 8000 });
+  const row0 = await page.evaluate(() => window.__r4);
+  assert.match(row0.text, /in your palette/i, `"${two[0]}" says it is in your palette (${row0.text})`);
+  assert.equal(row0.button, 0, `"${two[0]}" keeps no "Add anyway" in any frame after the add`);
   const next = (name) => page.waitForFunction((label, n) => { const a = document.activeElement; return a?.textContent.trim() === label && a.closest('[data-paste-row]')?.textContent.startsWith(`“${n}”`); }, { timeout: 4000 }, en['consortium.addAnyway'], name).then(() => true, () => false);
   assert.ok(await next(two[1]), `the focus on "${two[1]}"'s "Add anyway"`);
   // The grower presses it at once (the re-read the first add started still under way).
@@ -1039,6 +1057,22 @@ test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the l
   assert.ok(await countSays(page, /^3 names read/), 'the second list read');
   assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again: no choice pressed for the new list`);
   assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go"');
+  // h3 r1 R2: select all, delete, then paste within the 200 ms pause (the paste lands on an empty box):
+  // the box went empty, a new list, so the answer is forgotten too.
+  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
+  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered again');
+  await page.$eval(PASTE, (el, v) => {
+    el.focus(); el.select();
+    el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true }));
+    el.value = '';
+    el.dispatchEvent(new InputEvent('input', { inputType: 'deleteContentBackward', bubbles: true }));
+    el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertFromPaste', bubbles: true, cancelable: true }));
+    el.value = v;
+    el.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', bubbles: true }));
+  }, `${genera[0]}\n${genera[1]}`);
+  assert.ok(await countSays(page, /^2 names read/), 'the third list read');
+  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again after the delete and the paste`);
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go" again');
 });
 
 test('PP-C62 (c1 h3 M25, pf-e#51; boards Paste, AddMany): "Which bean?" offers Common bean and Lima bean without their scientific names; a name several plants share ("sword bean": the release\'s two Sword beans, as board AddMany\'s Spanish cedars) gives each its scientific name; no two chips read the same', async () => {
@@ -1055,4 +1089,59 @@ test('PP-C62 (c1 h3 M25, pf-e#51; boards Paste, AddMany): "Which bean?" offers C
   assert.ok(named.length >= 2, `the premise: several Sword beans (${swords.map((c) => c.text).join(' | ')})`);
   assert.ok(named.every((c) => c.sci), 'board AddMany: each with its scientific name');
   chipRule(swords);
+});
+
+// ---- h3 fix round 1 (G3: R1, R3, R5) ----
+
+test('PP-C63 (c1 h3 r1 R1): "Add" pressed while a long list reads, then one more line typed: the press is cancelled, nothing is added and the sheet stays open', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const plant = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value), t = s.pool.value.find((x) => !m.has(x.id)); return { id: t.id, name: t.canonical_name }; });
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await openPaste(page);
+  const list = [...nonsense(299), plant.name].join('\n');
+  await typeIn(page, PASTE, list);
+  // The grower edits before the reading lands (in the same task as the press, so it cannot land
+  // between them): any edit after the press cancels it.
+  await page.evaluate((add, sel, v) => {
+    document.querySelector(add).click();
+    const el = document.querySelector(sel);
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }, ADD_ALL, PASTE, `${list}\nzzqx one more line`);
+  assert.ok(await countSays(page, /^301 names read/), 'the edited list read');
+  await frames(page);
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  assert.ok(await has(page, PASTE, 500), 'the sheet stays open, the text kept');
+  assert.match(await page.$eval(PASTE, (e) => e.value), /zzqx one more line$/, 'the paste is still in the box');
+});
+
+test('PP-C64 (c1 h3 r1 R3; W4, M23): after "Add anyway" the focus goes to the next "Add anyway", past a close spelling between them (a question, no button)', async () => {
+  const page = await tool({ data: 'fixture' });
+  await choose(page, 'Temperate');
+  await openPaste(page);
+  await page.locator(PASTE).fill('Carica papaya\nrosmary\nMangifera indica');
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^3 names read/), 'the list read');
+  const rows = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => [e.textContent.match(/^“([^”]+)”/)?.[1], e.closest('[data-paste-group]')?.dataset.pasteGroup]));
+  assert.deepEqual(rows, [['Carica papaya', 'rec'], ['Mangifera indica', 'rec'], ['rosmary', 'choose']], 'the premise: two plants of another list, a close spelling asking');
+  const press = (n) => page.evaluate((name, label) => [...document.querySelectorAll('dialog[open] [data-paste-row]')].find((e) => e.textContent.startsWith(`“${name}”`))?.querySelectorAll('button').forEach((b) => { if (b.textContent.trim() === label) { b.focus(); b.click(); } }), n, en['consortium.addAnyway']);
+  await press('Carica papaya');
+  const on = (name) => page.waitForFunction((label, n) => { const a = document.activeElement; return a?.textContent.trim() === label && a.closest('[data-paste-row]')?.textContent.startsWith(`“${n}”`); }, { timeout: 4000 }, en['consortium.addAnyway'], name).then(() => true, () => false);
+  assert.ok(await on('Mangifera indica'), 'the focus on Mangifera indica\'s "Add anyway", not the count line');
+});
+
+test('PP-C65 (c1 h3 r1 R5): Add pressed at once after a short list is replaced reads the box then and adds its plants; while the box is unread its label has no stale count and it is not aria-disabled', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const two = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 2).map((t) => ({ id: t.id, name: t.canonical_name })); });
+  await openPaste(page);
+  await typeIn(page, PASTE, two[0].name);
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^1 name read/), 'the first list read');
+  assert.match(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), /^Add 1 plant$/, 'the premise: "Add 1 plant"');
+  await typeIn(page, PASTE, `${two[0].name}\n${two[1].name}`);
+  const busy = await page.$eval(ADD_ALL, (b) => ({ label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') }));
+  assert.deepEqual(busy, { label: en['consortium.paste.addAllBusy'], aria: null }, 'no stale count, a press that runs');
+  await page.$eval(ADD_ALL, (b) => b.click());
+  assert.ok(await page.waitForFunction((ids) => ids.every((id) => window.__ctTest.store.members.value.includes(id)), { timeout: 4000 }, two.map((t) => t.id)).then(() => true, () => false), 'both plants of the box added');
 });

@@ -120,11 +120,13 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // null for "None" and "Skip the N left" (a name you leave is not added). Keyed by name, an edit
   // elsewhere in the paste keeps them (R5), and two questions offering the same plants keep their own
   // answers (round 3 R5). Each fresh reading keeps only the answers of its own questions (keepAnswers,
-  // M24), and a paste over the whole text is a new list: it forgets them all (onBeforeInput below).
+  // M24). The answers belong to a list: a paste over the whole text, or the box emptied, starts a new
+  // one and forgets them all (onBeforeInput and onInput below; h3 r1 R2).
   const [answers, setAnswers] = useState<Answers>(new Map());
-  // "Add all" pressed while the box's text is not read yet (the 200 ms pause, or a long text read in
-  // slices): the add runs once the reading of the box lands (M23), never lost and never on an old text.
-  const pendingAdd = useRef(false);
+  // "Add all" pressed while a long text (past SLICE names) is not read yet: the text it was pressed on.
+  // The add runs once the reading of that text lands with the box still holding it (M23); any edit after
+  // the press cancels it (h3 r1 R1), so it never closes the sheet in the middle of an edit.
+  const pendingAdd = useRef<string | null>(null);
   const addNow = useRef<() => void>(() => {});
   const [copied, setCopied] = useState<'done' | 'hand' | null>(null);
   // The names to copy by hand take the focus once, when they show (never on a re-render: R5).
@@ -159,7 +161,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // emptied paste asks none (C4: an earlier paste never answers a new one).
   useEffect(() => { setCopied(null); }, [settled]);
   useEffect(() => { if (reading && reading.src === settled) setAnswers((a) => keepAnswers(a, questionsOf(reading.result))); }, [reading]);
-  useEffect(() => { if (pendingAdd.current && reading?.src === text) { pendingAdd.current = false; addNow.current(); } }, [reading, text]);
+  useEffect(() => { const p = pendingAdd.current; if (p !== null && reading?.src === p && text === p) { pendingAdd.current = null; addNow.current(); } }, [reading, text]);
   if (!climate) return null;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
   const result: PasteResult<Named> = reading?.result ?? readPaste<Named>(pasteNames(''), opts!);
@@ -176,21 +178,28 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   const lines = counts.lines;
   // Busy: the reading on screen is not the box's text (the pause after typing, or a changed long text
   // read in slices: R5, M23). A re-read of the same text (members or verdicts changed) is not busy: the
-  // shown reading still names the text, and plan() leaves out the plants already in. The actions wait
-  // for the new reading (round 3 R3, C3): Add anyway, "Copy these N names" and "Skip the N left" are
-  // aria-disabled (still focusable, so the focus kept by R5 stays), described by the reading line; Add
-  // all, pressed meanwhile, adds once it lands. Add all is aria-disabled with nothing to add too, never
-  // natively disabled (that would drop its focus as a reading lands).
+  // shown reading still names the text, the rows take their state from the live members (R4), and
+  // plan() leaves out the plants already in. The actions wait for the new reading (round 3 R3, C3): Add
+  // anyway, "Copy these N names" and "Skip the N left" are aria-disabled (still focusable, so the focus
+  // kept by R5 stays), described by the reading line. Add all, pressed meanwhile, runs (h3 r1 R5): it
+  // reads the box at once up to SLICE names, else adds once the slices land; until then it says no
+  // count ("Add the plants"). It is aria-disabled only for a reading with nothing to add, never natively
+  // disabled (that would drop its focus as a reading lands).
   const busy = reading?.src !== text;
   const waiting = busy ? { 'aria-disabled': 'true' as const, 'aria-describedby': readAt ? 'ct-paste-reading' : undefined } : {};
   // A plant's warnings once its list is read (another list's plant: after its pool loads on add).
   const warnedNow = (id: PlantId) => { const t = store.taxonOf(id); return !!t && store.warnedPlant(t); };
   const addAll = async () => {
-    // The text as it is in the box now, not as it was at the last render: read at once (a long one in
-    // slices, F23, C3), and added when its reading lands.
+    // The text as it is in the box now, not as it was at the last render: read at once up to SLICE
+    // names (as Find reads), a longer one in slices (F23, C3) and added when its reading lands.
     const current = box.current?.value ?? text;
-    if (current !== reading?.src) { pendingAdd.current = true; setSettled(current); return; }
-    const { ids, climateOf } = plan(result, answered(result, answers), members);
+    let read = result;
+    if (current !== reading?.src) {
+      const names = pasteNames(current);
+      if (names.length > SLICE) { pendingAdd.current = current; setSettled(current); return; }
+      read = readPaste(names, opts!);
+    }
+    const { ids, climateOf } = plan(read, answered(read, answers), members);
     if (!ids.length) return;
     const from: Partial<Record<PlantId, ClimateZone>> = {};
     for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
@@ -201,13 +210,16 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     addMembers(ids, from, { warned: ids.filter(warnedNow), text: (r) => `${P('paste.addedN', r.added.length)} ${P('paste.yourPalette', r.size)}` });
   };
   addNow.current = () => void addAll();
-  // The row turns to "in your palette" as the plant joins, and the focus moves on (W4): to the next
-  // row's "Add anyway" (next: its plant, else the row before's), else the count line.
-  const addGuest = async (t: Named, from: ClimateZone, next?: Named) => {
+  // The row turns to "in your palette" as the plant joins (otherRow reads members), and the focus moves
+  // on (W4): to the next "Add anyway" in the sheet's order, else the one before, else the count line (a
+  // close spelling between them asks, with no such button: h3 r1 R3).
+  const addGuest = async (t: Named, from: ClimateZone, pressed: HTMLElement) => {
     if (busy) return;
+    const all = [...(pressed.closest('dialog') ?? document).querySelectorAll<HTMLElement>('[data-guest-add]')];
+    const i = all.indexOf(pressed), near = [all[i + 1], all[i - 1]].map((b) => b?.dataset.guestAdd).filter(Boolean);
     await store.loadPool(from);
     addMembers([t.id], { [t.id]: from }, { warned: warnedNow(t.id) ? [t.id] : [] });
-    focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`[data-guest-add="${next.id}"]`)) || document.getElementById('ct-p-count'));
+    focusAfterAdd(() => near.map((id) => document.querySelector<HTMLElement>(`[data-guest-add="${id}"]`)).find(Boolean) ?? document.getElementById('ct-p-count'));
   };
   // A question's answer: pressing its chosen plant again takes the answer back.
   const choose = (line: string, id: PlantId | null) => setAnswers((a) => {
@@ -259,14 +271,19 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
       after: guests[a.taxon.id] && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[a.taxon.id]!) })}</span> })),
     ...result.duplicate.map((d): Row => ({ at: d.at, name: d.name, status: 'duplicate', line: <>{named(d.taxon)} · {T('paste.twice')}</> })),
   ].sort((a, b) => a.at - b.at);
+  // Another list's plant: its state from the live members, so it reads "in your palette" as it joins,
+  // even while a re-read of the same text still lists it as another list's (h3 r1 R4).
   function otherRow(o: PasteResult<Named>['other'][number]): Pick<Row, 'line' | 'after'> {
-    const i = result!.other.indexOf(o);
+    if (members.includes(o.taxon.id)) return {
+      line: <>{named(o.taxon)} · {midSentence(T('inConsortium'))}{twice(o.name)}{o.close && <> · {T('paste.close', { name: o.close })}</>}</>,
+      after: <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(guests[o.taxon.id] ?? o.climate) })}</span>,
+    };
     return {
       line: <>{named(o.taxon)} · {T('otherLists')}{twice(o.name)}{o.close && <> · {T('paste.close', { name: o.close })}</>} {warnings(o.taxon)}</>,
       after: <>
         <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate!) })}</span>
         <button type="button" class="button button-secondary" data-guest-add={o.taxon.id} aria-describedby={busy && readAt ? `ct-p-o-${o.taxon.id} ct-paste-reading` : `ct-p-o-${o.taxon.id}`} aria-disabled={busy ? 'true' : undefined}
-          onClick={() => void addGuest(o.taxon, o.climate, (result!.other[i + 1] ?? result!.other[i - 1])?.taxon)}>{T('addAnyway')}</button></>,
+          onClick={(e) => void addGuest(o.taxon, o.climate, e.currentTarget)}>{T('addAnyway')}</button></>,
     };
   }
   // A choice: its name, its fit in words; the pressed one carries a tick (board Paste: "Common bean |
@@ -283,8 +300,8 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
       return <button type="button" class="ct-paste-choice" aria-pressed={on ? 'true' : 'false'} onClick={() => choose(line, t.id)}>{pressed(on)}{nameOf(t)}{shared && <> {sci(t)}</>}{fit && <span class="ct-paste-fit"> · {fit}</span>}</button>;
     };
   };
-  const questions: (Row & { ids: PlantId[] })[] = [
-    ...result.found.filter((f) => f.close).map((f) => ({ at: f.at, name: f.name, status: 'choose' as Status, ids: [f.taxon.id],
+  const questions: Row[] = [
+    ...result.found.filter((f) => f.close).map((f) => ({ at: f.at, name: f.name, status: 'choose' as Status,
       line: <>{named(f.taxon)} · {T('paste.isNew')}{twice(f.name)} {warnings(f.taxon)}</>,
       after: <>
         <span class="ct-paste-choices">
@@ -293,14 +310,14 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         {rangeWarn(f.taxon)}</> })),
     // A close spelling found only on another list asks like any close spelling (BC20): its choice adds
     // it from that list, so every question is answered the same way and counted once.
-    ...result.other.filter((o) => o.close).map((o) => ({ at: o.at, name: o.name, status: 'choose' as Status, ids: [o.taxon.id],
+    ...result.other.filter((o) => o.close).map((o) => ({ at: o.at, name: o.name, status: 'choose' as Status,
       line: <>{named(o.taxon)} · {T('otherLists')}{twice(o.name)} {warnings(o.taxon)}</>,
       after: <>
         <span>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate!) })}</span>
         <span class="ct-paste-choices">
           <button type="button" class="ct-paste-choice" aria-pressed={isPick(o.name, o.taxon.id) ? 'true' : 'false'} onClick={() => choose(o.name, o.taxon.id)}>{pressed(isPick(o.name, o.taxon.id))}{T('paste.close', { name: o.close! })}</button>
         </span></> })),
-    ...result.choose.map((c) => ({ at: c.at, name: c.name, status: 'choose' as Status, ids: c.taxa.map((t) => t.id),
+    ...result.choose.map((c) => ({ at: c.at, name: c.name, status: 'choose' as Status,
       line: <>{c.taxa.length > 1 && <><strong>{T('paste.whichWord', { word: c.word })}</strong> </>}{P('paste.called', c.taxa.length, { word: c.word })}{twice(c.name)}</>,
       after: <>
         {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}
@@ -349,11 +366,21 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     counts.twice > 0 && P('paste.recTwice', counts.twice),
   ].filter(Boolean).join(', ') });
   const back = () => (onBack ? onBack() : closeSheet());
-  // A paste (or a replacement) over the whole text is a new list: no answer of the last list answers it,
-  // even for a line both lists name (M24).
+  // A paste, a drop or a replacement over the whole text is a new list: no answer of the last list
+  // answers it, even for a line both lists name (M24). The box emptied is one too (onInput: select all,
+  // delete, then paste, whatever the pause; h3 r1 R2).
+  const NEW_LIST = new Set(['insertFromPaste', 'insertFromDrop', 'insertReplacementText']);
   const forgetOnNewList = (e: InputEvent) => {
     const el = e.currentTarget as HTMLTextAreaElement;
-    if ((e.inputType === 'insertFromPaste' || e.inputType === 'insertReplacementText') && el.value && el.selectionStart === 0 && el.selectionEnd === el.value.length) setAnswers(new Map());
+    if (NEW_LIST.has(e.inputType) && el.value && el.selectionStart === 0 && el.selectionEnd === el.value.length) setAnswers(new Map());
+  };
+  // Any edit after "Add all" cancels a press still waiting on its reading (R1).
+  const onInput = (e: Event) => {
+    const value = (e.target as HTMLTextAreaElement).value;
+    pendingAdd.current = null;
+    if (!value) setAnswers(new Map());
+    setAsked(false);
+    setText(value);
   };
   const copy = async () => {
     if (busy) return;
@@ -370,13 +397,13 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     } foot={
       <div class="ct-add-bar ct-paste-foot">
         <button type="button" class="button button-secondary" data-paste-cancel="" onClick={back}>{T('paste.cancel')}</button>
-        <button type="button" class="button button-primary" aria-disabled={busy || !toAdd.length ? 'true' : undefined} aria-describedby={waiting['aria-describedby']} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
+        <button type="button" class="button button-primary" aria-disabled={!busy && !toAdd.length ? 'true' : undefined} aria-describedby={waiting['aria-describedby']} onClick={() => void addAll()}>{PLUS} {busy ? T('paste.addAllBusy') : P('paste.addAll', toAdd.length)}</button>
       </div>
     }>
       <p class="ct-paste-intro">{T('find.pasteIntro')}</p>
       <div class="ct-field">
         <label for="ct-paste-text" class="visually-hidden">{T('paste.label')}</label>
-        <textarea ref={box} id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onBeforeInput={forgetOnNewList} onInput={(e) => { setAsked(false); setText((e.target as HTMLTextAreaElement).value); }} />
+        <textarea ref={box} id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onBeforeInput={forgetOnNewList} onInput={onInput} />
       </div>
       <p class="ct-muted ct-paste-sheet">{T('paste.sheetHelp')}</p>
       <button type="button" class="button button-secondary ct-paste-read" data-paste-read="" onClick={() => { setAsked(true); setSettled(box.current?.value ?? text); }}>{T('find.readList')}</button>

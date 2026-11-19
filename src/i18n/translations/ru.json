@@ -302,6 +302,7 @@
   "consortium.paste.label": "Ваш список растений",
   "consortium.paste.close": "Читать как {name}",
   "consortium.paste.addAll": "one: Добавить # растение | few: Добавить # растения | many: Добавить # растений | other: Добавить # растения",
+  "consortium.paste.addAllBusy": "Добавить растения",
   "consortium.paste.added": "one: Добавлено и оставлено # растение. | few: Добавлено и оставлено # растения. | many: Добавлено и оставлено # растений. | other: Добавлено и оставлено # растения.",
   "consortium.paste.empty": "Вставьте или введите названия выше.",
   "consortium.dismiss": "Скрыть",
