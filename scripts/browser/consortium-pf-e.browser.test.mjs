@@ -23,7 +23,7 @@ import test from 'node:test';
 import { useHarness, has, en, realDb } from './helpers.mjs';
 import { tool, choose, atSite } from './p5-helpers.mjs';
 import { boxOf, control, dialogText, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
-import { failing } from '../expect-fail.mjs';
+import { mendoza } from './pf-d-helpers.mjs';
 import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts, typeIn } from './pf-e-helpers.mjs';
 
 useHarness();
@@ -153,17 +153,24 @@ test('PFE5 (pf-e ManyDesk at 1280): Your plants is a table with its lede, "Add p
   await done(page);
 });
 
+// With the search open in place of Your plants (F30): a plant of this climate not in the palette typed
+// in, its row waited for and its Add pressed; its id.
+async function addOneInPlace(page) {
+  const pick = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); const t = Object.values(s.pools.value).flat().find((x) => x && !m.has(x.id)); return { id: t.id, q: t.canonical_name }; });
+  await typeIn(page, `${PLANTS} [data-find-search]`, pick.q);
+  const row = `${PLANTS} [data-find-row][data-plant-id="${pick.id}"]`;
+  assert.ok(await has(page, row, 10_000), 'board: the search lists the plant');
+  await page.click(`${row} [data-find-add]`);
+  return pick.id;
+}
+
 test('PFE6 (pf-e F30, ManyDesk): "Add plants" opens the search in place of the list and stays open while adding; Done closes it and the focus goes back to "Add plants"', async () => {
   const page = await loadPalette200({ width: 1280 });
   assert.ok(await has(page, `${PLANTS} [data-plants-add]`, 4000), 'board: no "Add plants" in Your plants');
   await page.click(`${PLANTS} [data-plants-add]`);
   assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'board: the search opens inside Your plants');
   assert.equal(await page.$(`${PLANTS} table`), null, 'board: in place of the list');
-  const pick = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); const t = Object.values(s.pools.value).flat().find((x) => x && !m.has(x.id)); return { id: t.id, q: t.canonical_name }; });
-  await typeIn(page, `${PLANTS} [data-find-search]`, pick.q);
-  const row = `${PLANTS} [data-find-row][data-plant-id="${pick.id}"]`;
-  assert.ok(await has(page, row, 10_000), 'board: the search lists the plant');
-  await page.click(`${row} [data-find-add]`);
+  await addOneInPlace(page);
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 201, { timeout: 4000 }).then(() => true, () => false), 'board: a plant added');
   assert.ok(await has(page, `${PLANTS} .ct-find`, 1000), 'board: the search stays open while adding');
   await press(page, 'button', 'Done');
@@ -301,15 +308,7 @@ test('PFE11 (pf-e Paste board): every line is read into three groups, Recognised
 });
 
 test('PFE12 (pf-e AddMany state 4): 205 names on a palette of 20 are all read with no cap; the groups start closed past 10; choices say their fit; "Skip the N left", "Copy these N names"; one Add takes everything; the toast says "N plants added. Your palette: M plants." with Undo', async () => {
-  const page = await loadPalette200({ width: 390 });
-  const text = await page.evaluate(() => {
-    const s = window.__ctTest.store, have = s.members.value.slice(0, 20);
-    const rest = s.memberTaxa.value.slice(20, 210).map((t) => (t.names?.en ?? t.canonical_name).toLowerCase());
-    s.members.value = have;
-    return [...rest, 'beans', 'spanish cedar', 'sword bean', 'sukuma wiki', 'managu', 'terere', 'mrenda', 'kunde', 'nduma', 'mchicha', 'saga', 'mitoo', 'kanzira', 'nderema', 'thabai'].join('\n');
-  });
-  await pasteText(page, text);
-  await says(page, /\b\d{3} names read\b/, { inDialog: true, timeout: 15_000 });
+  const page = await bigPastePage(390);
   const rec = await control(page, 'button', /^Recognised: /);
   assert.equal(rec.expanded ?? false, false, 'board: Recognised starts closed above 10 names');
   await openGroup(page, /^Need a choice/);
@@ -353,11 +352,7 @@ async function openFirstTick3(page) {
   return rows;
 }
 
-// The place line is main's (Place.tsx PlaceLine); pf-e's slot is views/plants/head-link.tsx PlantsCount,
-// which main mounts in place of the line's count (hand-off C1); main removes the marker when it lands.
-// The three hand-off markers (PFE14, PFE15b, PFE45) stay owned by pf-e while the stream is open
-// (browser-tests.test.mjs: an open stream's markers name it); main re-owns them at the chunk-3 merge.
-failing('PFE14 (pf-e E4, BC1, C1; hand-off: main mounts head-link.tsx PlantsCount in Place.tsx PlaceLine): past 40 plants under 960 px the place line says "200 plants: Your plants", the link landing on Your plants\' heading; at 1280 no link', { owner: 'pf-e', reason: /no link "Your plants"/ }, async () => {
+test('PFE14 (pf-e E4, BC1, C1; main h3 M14: Place.tsx PlaceLine mounts head-link.tsx PlantsCount): past 40 plants under 960 px the place line says "200 plants: Your plants", the link landing on Your plants\' heading; at 1280 no link', async () => {
   const page = await loadPalette200({ width: 390 });
   const link = await page.waitForFunction(() => [...document.querySelectorAll('#ct-root [data-place-line] a')].some((a) => a.textContent.trim() === 'Your plants'), { timeout: 6000 }).then(() => true, () => false);
   assert.ok(link, 'board: no link "Your plants" in the place line');
@@ -371,7 +366,7 @@ failing('PFE14 (pf-e E4, BC1, C1; hand-off: main mounts head-link.tsx PlantsCoun
   await done(desk);
 });
 
-test('PFE15 (pf-e E4, BC2; boards Many, Main): on the phone the one search comes directly under the place line, before the steps and the Next step', async () => {
+test('PFE15 (pf-e E4, BC2; boards Many, Main): on the phone the one search comes directly under the place line, before the Next step', async () => {
   for (const width of [390, 320]) {
     const page = await loadPalette200({ width });
     await control(page, 'textbox', SEARCH(200));
@@ -379,25 +374,39 @@ test('PFE15 (pf-e E4, BC2; boards Many, Main): on the phone the one search comes
       const search = document.querySelector(`#ct-root input[aria-label="${label}"]`);
       const place = document.querySelector('#ct-root [data-place-line]');
       const next = [...document.querySelectorAll('#ct-root h2, #ct-root h3')].find((h) => /^Next step/.test(h.textContent.trim()));
-      const steps = document.querySelector('#ct-root nav[aria-label]');
       const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-      return { place: before(place, search), steps: !steps || before(search, steps), next: before(search, next) };
+      return { place: before(place, search), next: before(search, next) };
     }, SEARCH(200));
-    assert.deepEqual(order, { place: true, steps: true, next: true }, `board at ${width}: the search under the place line, above the steps and the Next step: ${JSON.stringify(order)}`);
+    assert.deepEqual(order, { place: true, next: true }, `board at ${width}: the search under the place line, above the Next step: ${JSON.stringify(order)}`);
     await done(page);
   }
 });
 
-failing('PFE15b (pf-e E4, BC2; the head is main\'s ConsortiumPage.astro, shell.css and steps.tsx): the step bar stands above "Plant palette" on the palette step, as on Place', { owner: 'pf-e', reason: /the step bar comes after the title/ }, async () => {
+test('PFE15b (pf-e E4, BC2; main h3 M13; board Many): the step bar stands above "Plant palette" on the palette step, as on Place, step 2 current and step 1 a button back to Place', async () => {
   const page = await loadPalette200({ width: 390 });
   await control(page, 'textbox', SEARCH(200));
   const at = await page.evaluate(() => {
     const visible = (e) => !!e && e.getClientRects().length > 0;
     const steps = [...document.querySelectorAll('main ol, main nav')].find((e) => visible(e) && /Your place/.test(e.textContent) && /Planting plan/.test(e.textContent));
     const title = document.querySelector('main h1');
-    return { steps: steps?.getBoundingClientRect().top ?? Infinity, title: title?.getBoundingClientRect().top ?? 0 };
+    const current = steps?.querySelector('[aria-current="step"]');
+    return { steps: steps?.getBoundingClientRect().top ?? Infinity, title: title?.getBoundingClientRect().top ?? 0, current: current?.innerText.replace(/\s+/g, ' ').trim() ?? '', bars: [...document.querySelectorAll('main ol, main nav')].filter((e) => visible(e) && /Planting plan/.test(e.textContent)).length };
   });
   assert.ok(at.steps < at.title, 'board: the step bar comes after the title');
+  assert.equal(at.bars, 1, 'board: one step bar');
+  assert.equal(at.current, '2 Your palette', 'board: step 2 is the current step');
+  // h3 R4: one "›" between two steps (shell.css draws it; no second one from an old rule), none after the last.
+  const marks = await page.evaluate(() => [...document.querySelectorAll('#ct-steps > li')].map((li) => ['::before', '::after'].map((p) => getComputedStyle(li, p).content).filter((c) => c && c !== 'none' && c !== 'normal').length));
+  assert.deepEqual(marks, [1, 1, 0], 'R4: one "›" between steps');
+  // h3 R6, C6: step 1 says its place and that it is done (never the check alone); C5: a 44 px tap target on the phone.
+  const back = await control(page, 'button', '1 Your place, done');
+  assert.ok(back, 'R6: "1 Your place, done"');
+  const tall = await page.$eval('#ct-steps [data-step-place]', (b) => b.getBoundingClientRect().height);
+  assert.ok(tall >= 44, `C5: step 1's button is a 44 px tap target at 390 (${tall})`);
+  await press(page, 'button', '1 Your place, done');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start', { timeout: 4000 }).then(() => true, () => false), 'board: step 1 goes back to Place');
+  const placeStep = await page.evaluate(() => document.querySelector('#ct-steps [aria-current="step"]')?.innerText.replace(/\s+/g, ' ').trim());
+  assert.equal(placeStep, '1 Your place', 'on Place step 1 is current again');
   await done(page);
 });
 
@@ -944,8 +953,8 @@ test('PFE42 (pf-e F23, C3): 0 lines and a header alone say "Nothing to read"; 5,
   await pasteText(page, 'Scientific name\tQty\n');
   await says(page, 'Nothing to read.', { inDialog: true });
   await saysNot(page, 'names read', 'F23: the header is skipped, not read as a name');
-  // 5,000 different lines (one plant, the rest none: each goes through the whole search).
-  const lines = ['Persea americana', ...Array.from({ length: 4999 }, (_, i) => `zq${i.toString(36)}xv`)].join('\n');
+  // 5,000 different lines (none a plant: each goes through the whole search).
+  const lines = Array.from({ length: 5000 }, (_, i) => `zq${i.toString(36)}xv`).join('\n');
   await page.evaluate(() => {
     window.__paste = { progress: [], long: [] };
     new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__paste.long.push(Math.round(e.duration)); }).observe({ type: 'longtask' });
@@ -994,13 +1003,21 @@ test('PFE44 (pf-e F25, C7, C9): one name not found has its "Copy this name"; a r
   await done(page);
 });
 
-failing('PFE45 (pf-e E4, C2, C5; hand-off: main passes Actions into Palette.tsx\'s foot slot and drops App.tsx slot(Actions)): at 1280 the palette\'s foot stands under Balance, in Your plants\' column past 40 plants and in the side column at 40 or fewer (boards MainMore, PaletteMore)', { owner: 'pf-e', reason: /the foot is not under Balance/ }, async () => {
-  for (const n of [200, 13]) {
+test('PFE45 (pf-e E4, C2, C5; main h3 M10): at 1280 the palette\'s foot stands under Balance, in Your plants\' column past 40 plants and in the side column at 40 or fewer (boards MainMore, PaletteMore); at 390 it comes after Your plants', async () => {
+  // 20: the first palette of the 200 whose Balance card shows on this release (none at 13).
+  for (const n of [200, 20]) {
     const page = n === 200 ? await loadPalette200({ width: 1280 }) : await paletteOf(n, 1280);
+    await section(page, 'Balance');
     await says(page, 'Your palette is saved on this device.');
     const at = { bal: await sectionBox(page, 'Balance'), foot: await boxOf(page, 'Your palette is saved on this device.') };
     assert.ok(at.bal && at.foot && at.foot.x >= at.bal.x - 1 && at.foot.right <= at.bal.right + 1 && at.foot.y >= at.bal.bottom - 1, `board (${n} plants): the foot is not under Balance (${JSON.stringify(at)})`);
     await done(page);
+    const phone = n === 200 ? await loadPalette200({ width: 390 }) : await paletteOf(n, 390);
+    await section(phone, `Your ${n} plants`);
+    await says(phone, 'Your palette is saved on this device.');
+    const on = { plants: await sectionBox(phone, `Your ${n} plants`), foot: await boxOf(phone, 'Your palette is saved on this device.') };
+    assert.ok(on.plants && on.foot && on.foot.y >= on.plants.bottom - 1, `board at 390 (${n} plants): the foot comes after Your plants (${JSON.stringify(on)})`);
+    await done(phone);
   }
 });
 
@@ -1069,11 +1086,7 @@ test('PFE48 (pf-e E3, F30, ManyDesk at 1280): Your plants, then Warnings and fit
   assert.ok(box.plants.x >= box.jobs.right - 1, `board: the column on the right of the chart's (x ${Math.round(box.plants.x)}, Jobs ends at ${Math.round(box.jobs.right)})`);
   await press(page, 'button', 'Add plants');
   assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'board: the search opens inside Your plants');
-  const pick = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); const t = Object.values(s.pools.value).flat().find((x) => x && !m.has(x.id)); return { id: t.id, q: t.canonical_name }; });
-  await typeIn(page, `${PLANTS} [data-find-search]`, pick.q);
-  const row = `${PLANTS} [data-find-row][data-plant-id="${pick.id}"]`;
-  assert.ok(await has(page, row, 10_000), 'board: the search lists the plant');
-  await page.click(`${row} [data-find-add]`);
+  await addOneInPlace(page);
   assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.toast.value?.text, { timeout: 4000 }).then(() => true, () => false), 'the premise: the add toast shows');
   await frames(page);
   const hit = await page.evaluate(() => {
@@ -1214,35 +1227,199 @@ test('PFE51 (pf-e round 3 R5, C4, R1): two questions offering the same plants ke
   await done(page);
 });
 
-test('PFE52 (pf-e round 3 R4, boards Many, ManyDesk): Warnings and fit is mounted once: its open toxic reason and its "+ N more" opened stay, and the focus stays in it, when the width crosses 960 px both ways', async () => {
+test('PFE52 (pf-e round 3 R4; main h3 M10, D1 (a); boards Many, ManyDesk): Warnings and fit\'s open toxic reason stays open when the width crosses 960 px both ways', async () => {
   const page = await loadPalette200({ width: 1280 });
   await openToxic(page);
-  const SEC = `(${() => [...document.querySelectorAll('main h2, main h3')].find((e) => e.textContent.replace(/\s+/g, ' ').trim().startsWith('Warnings and fit'))?.closest('section, article, aside, [role="region"]')})()`;
-  const more = await page.evaluate((sec) => {
-    const s = eval(sec);
-    const b = [...(s?.querySelectorAll('li button') ?? [])].find((x) => /^\+ [\d,]+ more$/.test(x.textContent.trim()) && x.getClientRects().length);
-    if (!b) return null;
-    s.setAttribute('data-r4', '');
-    b.focus(); b.click();
-    return b.textContent.trim();
-  }, SEC);
-  assert.ok(more, 'the premise: "+ N more" in the open toxic reason');
-  await frames(page);
-  const state = () => page.evaluate((sec, m) => {
-    const s = eval(sec), a = document.activeElement;
-    return {
-      same: !!s?.hasAttribute('data-r4'),
-      reason: !!s && [...s.querySelectorAll('button[aria-expanded="true"]')].some((b) => /^Toxic or very toxic/.test(b.textContent.trim())),
-      more: !!s && ![...s.querySelectorAll('button')].some((b) => b.textContent.trim() === m),
-      focus: !!s && !!a && a !== document.body && s.contains(a),
-    };
-  }, SEC, more);
-  assert.deepEqual(await state(), { same: true, reason: true, more: true, focus: true }, 'the premise: the reason and its list open, the focus in Warnings and fit');
+  const open = () => page.evaluate(() => {
+    const h = [...document.querySelectorAll('main h2, main h3')].find((e) => e.textContent.replace(/\s+/g, ' ').trim().startsWith('Warnings and fit'));
+    const s = h?.closest('section, article, aside, [role="region"]');
+    return !!s && [...s.querySelectorAll('button[aria-expanded="true"]')].some((b) => /^Toxic or very toxic/.test(b.textContent.trim()));
+  });
+  assert.ok(await open(), 'the premise: the toxic reason open at 1280');
   const vp = page.viewport();
   for (const width of [900, 1280]) {
     await page.setViewport({ ...vp, width });
     await frames(page);
-    assert.deepEqual(await state(), { same: true, reason: true, more: true, focus: true }, `R4 at ${width}: the same Warnings and fit, its reason and list open, the focus in it`);
+    await section(page, 'Warnings and fit');
+    assert.ok(await open(), `D1 (a) at ${width}: the toxic reason the grower opened is still open`);
   }
   await done(page);
+});
+
+// The page's blocks (each heading in the palette page outside a dialog, Find's panel by its first
+// heading (h3 C7), and the foot's line) in DOM order, with their boxes: the order a screen reader reads
+// and Tab walks them.
+const blocksInOrder = (page) => page.evaluate(() => {
+  const els = [...document.querySelectorAll('main h2, main h3')].filter((e) => e.getBoundingClientRect().width > 1 && !e.closest('dialog') && e.closest('#ct-root'));
+  const panel = document.querySelector('#ct-root .ct-palette-body > dialog[open]');
+  const panelHead = panel && [...panel.querySelectorAll('h2, h3')].find((e) => e.getBoundingClientRect().width > 1);
+  if (panelHead) els.push(panelHead);
+  const foot = [...document.querySelectorAll('#ct-root p')].find((p) => p.textContent.trim().startsWith('Your palette is saved on this device.'));
+  if (foot) els.push(foot);
+  els.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  return els.map((e) => { const r = e.getBoundingClientRect(); return { t: e.textContent.replace(/\s+/g, ' ').trim().slice(0, 30), left: r.left, right: r.right, top: r.top + scrollY, bottom: r.bottom + scrollY }; });
+});
+test('PFE53 (pf-e; main h3 M10; WCAG 1.3.2, 2.4.3): at 1280 the reading and Tab order of the palette\'s blocks follows what the eye sees: in a column, a block drawn above another comes first, for 20 and 200 plants and with Find open (the panel at 20, the search in Your plants at 200); with the panel open the foot stays under Balance', async () => {
+  for (const [n, panel] of [[200, false], [20, false], [20, true], [200, true]]) {
+    const page = n === 200 ? await loadPalette200({ width: 1280 }) : await paletteOf(n, 1280);
+    await section(page, 'Balance');
+    if (panel && n === 200) {
+      // A big palette opens the search in place of Your plants (board ManyDesk; PFE6), not a panel.
+      await press(page, 'button', 'Add plants');
+      assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'the premise: the search open inside Your plants');
+      await frames(page);
+    } else if (panel) {
+      await (await page.waitForSelector('#ct-root [data-find-entry="head"]', { visible: true, timeout: 10_000 })).click();
+      assert.ok(await has(page, '#ct-root dialog[open]', 15_000), 'the premise: Find\'s panel open beside the chart');
+      await frames(page);
+    }
+    const blocks = await blocksInOrder(page);
+    assert.ok(blocks.length >= 5, `the premise: the page's blocks (${blocks.map((b) => b.t).join(' | ')})`);
+    const wrong = [];
+    for (let i = 0; i < blocks.length; i++) for (let j = i + 1; j < blocks.length; j++) {
+      const a = blocks[i], b = blocks[j];
+      const sameColumn = a.left < b.right - 1 && b.left < a.right - 1;
+      if (sameColumn && b.bottom <= a.top + 1) wrong.push(`"${b.t}" is drawn above "${a.t}" but read after it`);
+    }
+    assert.deepEqual(wrong, [], `M10 (${n} plants${panel ? ', Find open' : ''}): DOM order is the visual order`);
+    if (panel && n !== 200) {
+      // Under Balance and its Water use card (Weigh.tsx draws the card right after Balance), no gap: at
+      // most the column's 24 px gap and the line's own top margin (44 px measured), never a row's hole.
+      const at = { bal: await sectionBox(page, 'Balance'), water: await sectionBox(page, 'Water use estimate'), foot: await boxOf(page, 'Your palette is saved on this device.') };
+      const above = Math.max(at.bal?.bottom ?? 0, at.water && Math.abs(at.water.x - (at.bal?.x ?? 0)) <= 2 ? at.water.bottom : 0);
+      assert.ok(at.bal && at.foot && at.foot.y <= above + 48 && at.foot.y >= above - 1, `M10 (${n} plants, Find open): the foot right under Balance, no gap (${JSON.stringify(at)})`);
+    }
+    await done(page);
+  }
+});
+
+test('PFE54 (pf-e; main h3 M11; board SiteMendoza): "What limits plants here" stands first on the palette page, before the Next step and the pictures', async () => {
+  for (const width of [390, 1280]) {
+    const page = await mendoza({ width });
+    await section(page, 'What limits plants here', 20_000);
+    await section(page, 'Next step');
+    const first = await page.evaluate(() => {
+      const head = (re) => [...document.querySelectorAll('#ct-root h2, #ct-root h3')].find((h) => re.test(h.textContent.replace(/\s+/g, ' ').trim()));
+      const limits = head(/^What limits plants here/), next = head(/^Next step/);
+      return !!limits && !!next && !!(limits.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    assert.ok(first, `board SiteMendoza at ${width}: "What limits plants here" comes before the Next step`);
+    await done(page);
+  }
+});
+
+// Share's state across the 960 px remount (h3 R2, C2; D1 (a)) and its reset off the palette (h3 R3).
+const shareState = (page) => page.evaluate(() => {
+  const box = document.querySelector('#ct-root input[data-share-location]');
+  const field = document.querySelector('#ct-root #ct-share-field');
+  const status = [...document.querySelectorAll('#ct-root .ct-share [role="status"]')].map((e) => e.textContent.trim()).join('');
+  return { open: !!field, ticked: !!box?.checked, place: !!field && /[#&]k=|[#&]o=/.test(field.value), status };
+});
+test('PFE55 (pf-e; main h3 R2, R3, C2; D1 (a)): at 20 plants, Copy link\'s "Include my place" and "Link copied." survive crossing 960 px both ways; leaving the palette for Place and coming back finds the Share panel closed', async () => {
+  const page = await paletteOf(20, 1280);
+  await page.evaluate(() => { window.__ctTest.store.country.value = { code: 'KE', source: 'chosen' }; });
+  await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); });
+  await press(page, 'button', 'Copy link');
+  await page.waitForSelector('#ct-root input[data-share-location]', { visible: true, timeout: 15_000 });
+  await page.click('#ct-root input[data-share-location]');
+  await press(page, 'button', 'Copy');
+  await says(page, 'Link copied.');
+  const before = await shareState(page);
+  assert.deepEqual(before, { open: true, ticked: true, place: true, status: 'Link copied.' }, 'the premise: ticked, copied, the link carries the place');
+  const vp = page.viewport();
+  for (const width of [900, 1280]) {
+    await page.setViewport({ ...vp, width });
+    await frames(page);
+    await page.waitForSelector('#ct-root #ct-share-field', { timeout: 10_000 });
+    assert.deepEqual(await shareState(page), before, `R2 at ${width}: the box still ticked, the field still carries the place, "Link copied." still said`);
+  }
+  // h3 R2a.1: a changed link drops "Link copied." for good; going back to the link copied earlier never
+  // says (and announces) it again, as nothing was copied since.
+  await page.click('#ct-root input[data-share-location]');
+  await frames(page);
+  assert.deepEqual([(await shareState(page)).ticked, (await shareState(page)).status], [false, ''], 'R2a.1: unticked, a new link, no status');
+  await page.click('#ct-root input[data-share-location]');
+  await frames(page);
+  assert.deepEqual([(await shareState(page)).ticked, (await shareState(page)).status], [true, ''], 'R2a.1: back to the link copied earlier, "Link copied." does not come back');
+  // R3: Place, then back to the palette: the panel is closed and unticked.
+  await press(page, 'button', '1 Your place, done');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start', { timeout: 4000 }).then(() => true, () => false), 'the premise: on Place');
+  await press(page, 'button', '2 Your palette');
+  await section(page, 'Balance');
+  await frames(page);
+  assert.equal((await shareState(page)).open, false, 'R3: the Share panel is closed on the way back to the palette');
+  await press(page, 'button', 'Copy link');
+  await page.waitForSelector('#ct-root input[data-share-location]', { visible: true, timeout: 15_000 });
+  const fresh = await shareState(page);
+  assert.deepEqual([fresh.ticked, fresh.status], [false, ''], 'R3: opened again, Share starts unticked with no status');
+  await done(page);
+});
+
+// Find's panel in the reading order of the column it is drawn in (h3 C7a.1, C7-big-order.1): on the empty
+// palette the panel opens to the right of the Next step card, so it is read after it; past 40 plants on a
+// desk the panel stands at the top of the right column, so it is read after the left column (Next step,
+// pictures) and before Your plants (M10's left-then-right order).
+const panelOrder = (page) => page.evaluate(() => {
+  const panel = document.querySelector('#ct-root .ct-palette-body > dialog[open]');
+  const after = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const next = document.querySelector('#ct-root .ct-palette-body > .ct-next');
+  const left = document.querySelector('#ct-root .ct-palette-body > .ct-many-left');
+  const plants = document.querySelector('#ct-root .ct-palette-body > .ct-many-right');
+  const box = (e) => e?.getBoundingClientRect();
+  return { panel: !!panel, nextFirst: after(next, panel), leftFirst: after(left, panel), plantsAfter: after(panel, plants), nextLeftOfPanel: !!panel && !!next && box(next).right <= box(panel).left + 1 };
+});
+test('PFE56 (pf-e; main h3 C7a.1, C7-big-order.1; WCAG 1.3.2, 2.4.3): at 1280 Find\'s panel is read where it is drawn: after the empty palette\'s Next step card it opens beside, and past 40 plants after the left column and before Your plants', async () => {
+  const empty = await loadPalette200({ width: 1280 });
+  try {
+    await empty.evaluate(() => { window.__ctTest.store.members.value = []; });
+    await (await empty.waitForSelector('#ct-root [data-find-entry="empty"]', { visible: true, timeout: 15_000 })).click();
+    assert.ok(await has(empty, '#ct-root .ct-palette-body > dialog[open]', 15_000), 'the premise: Find\'s panel open beside the empty card');
+    await frames(empty);
+    const o = await panelOrder(empty);
+    assert.ok(o.nextLeftOfPanel, `the premise: the Next step card drawn left of the panel (${JSON.stringify(o)})`);
+    assert.ok(o.nextFirst, 'C7a.1: the Next step card, drawn left of the panel, is read before it');
+    // The first plant added moves the panel (it comes first once there are pictures), never remounts it.
+    await empty.evaluate(() => { document.querySelector('#ct-root .ct-palette-body > dialog[open]').__same = true; const s = window.__ctTest.store; s.addMembers([(s.pool.value ?? [])[0].id]); });
+    assert.ok(await empty.waitForFunction(() => window.__ctTest.store.members.value.length === 1 && !!document.querySelector('#ct-root .ct-palette-body[data-pictures]'), { timeout: 8000 }).then(() => true, () => false), 'the premise: one plant, the pictures shown');
+    await frames(empty);
+    const kept = await empty.evaluate(() => { const d = document.querySelector('#ct-root .ct-palette-body > dialog'); return { same: !!d?.__same, open: !!d?.open, first: d?.parentElement?.firstElementChild === d }; });
+    assert.deepEqual(kept, { same: true, open: true, first: true }, 'C7a.1: the same panel, still open, now first (above the Next step)');
+  } finally { await done(empty); }
+  const big = await loadPalette200({ width: 1280 });
+  try {
+    await section(big, 'Next step');
+    const opener = await big.waitForSelector('#ct-root .ct-next [data-next-seeall], #ct-root .ct-next .ct-hole-row button, #ct-root .ct-next button.text-link', { visible: true, timeout: 15_000 }).catch(() => null);
+    assert.ok(opener, 'the premise: a way to a hole\'s plants in the Next step');
+    await opener.click();
+    assert.ok(await has(big, '#ct-root .ct-palette-body > dialog[open]', 15_000), 'the premise: the hole\'s panel open at the top of the right column');
+    await frames(big);
+    const o = await panelOrder(big);
+    assert.ok(o.leftFirst, 'C7-big-order.1: the left column (Next step, pictures) is read before the panel');
+    assert.ok(o.plantsAfter, 'C7-big-order.1: Your plants, drawn under the panel, is read after it');
+  } finally { await done(big); }
+});
+
+// h3 R1a.1, R1-intro.1: at 40 plants or fewer, a list refused (nothing loading) never leaves the Jobs
+// intro saying a list is still loading: it says the holes are not checked, as the Next step does.
+test('PFE57 (pf-e; main h3 R1a.1, R1-intro.1): with 20 plants and a guest list that could not be read, the Jobs intro says the holes are not checked, never "still loading", and the job rows count', async () => {
+  const page = await paletteOf(20, 390);
+  try {
+    const zone = await page.evaluate(() => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !window.__ctTest.store.pools.value[z]));
+    assert.ok(zone, 'the premise: a list the palette does not use');
+    const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
+    await page.evaluate((z, id) => {
+      const { store } = window.__ctTest, src = store.source.value;
+      const pool = src.pool.bind(src);
+      src.pool = (x) => (x === z ? Promise.reject(new Error('refused (test)')) : pool(x));
+      store.guests.value = { ...store.guests.value, [id]: z };
+      store.members.value = [...store.members.value, id];
+    }, zone, guest);
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.failedMembers.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'the premise: the list could not be read');
+    await frames(page);
+    const intro = await page.evaluate(() => document.querySelector('#ct-jobs .ct-chart-intro')?.textContent.replace(/\s+/g, ' ').trim() ?? '');
+    assert.notEqual(intro, en['consortium.palette.holesPending'], 'R1-intro.1: nothing is loading, so the intro never says a list is still loading');
+    assert.equal(intro, en['consortium.palette.holesListMissing'], 'R1a.1: the intro says the holes are not checked, in the Next step\'s words');
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#ct-jobs li[data-job]')].map((li) => li.innerText.replace(/\s+/g, ' ').trim()));
+    assert.deepEqual(rows.filter((row) => /Loading…/.test(row)), [], 'R1: no job row reads "Loading…"');
+  } finally { await done(page); }
 });

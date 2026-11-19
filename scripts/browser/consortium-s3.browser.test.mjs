@@ -91,15 +91,22 @@ async function pressSend(page) {
 }
 // Opens the correction form, picks the height, writes, consents and sends.
 async function sendCorrection(page, text) {
-  await page.locator(aria('button', 'Suggest a correction')).click();
+  // Pressed from the keyboard: the names section just opened above it still moves the sheet, and a
+  // mouse click measured a moment earlier landed on a Swap button at 390 px.
+  const open_ = await page.waitForSelector(aria('button', 'Suggest a correction'));
+  await open_.focus();
+  await page.keyboard.press('Enter');
   await page.waitForSelector('dialog select');
   await page.select('dialog select', 'height_m');
   await page.locator('::-p-aria([role="textbox"])').fill(text);
-  await page.locator(aria('checkbox', 'I agree my suggestion is published under CC BY-SA 4.0')).click();
+  // The consent pressed from the keyboard too: the opening form still moves the sheet at 390 px.
+  const consent = await page.waitForSelector(aria('checkbox', 'I agree my suggestion is published under CC BY-SA 4.0'));
+  await consent.focus();
+  await page.keyboard.press('Space');
   await pressSend(page);
 }
 
-test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and credit, placement, warning, estimates, sources and a correction form posting the release id; Escape returns focus', async (t) => {
+test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and credit, placement, warning, sources and a correction form posting the release id; Escape returns focus', async (t) => {
   await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture', photos: true, correction: 'ok' });
     await start(page);
@@ -111,11 +118,13 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     assert.ok(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"], dialog')), 'focus moves into the dialog');
     assert.ok(await findAx(page, { role: 'img', name: `Photo of ${names['Castanea sativa']}` }), 'the photo, with its alt text');
     assert.ok(await findAx(page, { name: /Wikimedia Commons|iNaturalist|CC/ }), 'the photo credit');
-    // PP-C c2 (boards Details, DetailsMore): the list the plant is placed from is named under its name,
-    // the warnings and the sources are sections of their own.
+    // v14 boards Details, DetailsMore (main h3 M20): the list the plant is placed from is named under its
+    // name; the warnings sit in "With your other plants and warnings", the sources in "Names, why it is
+    // here, sources", which the reader opens before "Suggest a correction".
     assert.match(await page.$eval('dialog[open] .ct-d-name', (e) => e.textContent), /Castanea sativa · Temperate list/, 'placed from the Temperate list');
-    assert.ok(await findAx(page, { role: 'heading', name: /^Warnings/ }), 'the warning section');
-    assert.ok(await findAx(page, { role: 'heading', name: /sources/i }), 'the sources');
+    assert.ok(await findAx(page, { role: 'heading', name: /^With your other plants and warnings/ }), 'the warning section');
+    await page.locator('dialog[open] details[data-more="names"] summary').click();
+    assert.ok(await findAx(page, { role: 'heading', name: /^Sources and how sure we are/ }), 'the sources');
     await sendCorrection(page, 'The height looks wrong.');
     assert.ok(await findAx(page, { name: /^Thank you/ }), 'sent');
     assert.equal(page.correctionPosts.length, 1, 'one POST to /api/correction');
@@ -131,15 +140,7 @@ test('BT-5 (S3 details): a chip opens a dialog with focus inside, photo and cred
     await page.waitForFunction(() => !document.querySelector('dialog.ct-sheet'));
     await page.waitForFunction((name) => (document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent) === name, { timeout: 2000 }, chip.name).catch(() => {});
     assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent), chip.name, 'focus returns to the chip');
-    // Estimates: Apple's flowering months are derived for latitude bands.
-    await hooked(page, () => { const { store, openSheet } = window.__ctTest; openSheet('details', store.pool.value.find((t) => t.canonical_name === 'Malus domestica').id); });
-    // The sheet renders after openSheet returns (its chunk may still load). PP-C c2 (board DetailsMore):
-    // the layer values sit in the closed "Light, time and size" section; the reader opens it.
-    await page.locator('dialog[open] summary ::-p-text(Light, time and size)').click();
-    let estimate = null;
-    for (let i = 0; i < 20 && !estimate; i++) { estimate = await findAx(page, { name: /^estimate$/ }); if (!estimate) await new Promise((r) => setTimeout(r, 200)); }
-    assert.ok(estimate, 'an estimate tag on a layer value');
-    await page.keyboard.press('Escape');
+    // (The estimate tag on derived flowering months is pf-f's PFF10, on the v14 Flowers row; main h3 M20.)
     await page.close();
   }, { phone: true });
 });
@@ -156,32 +157,11 @@ test('BT-5 (S3 details, offline): a correction sent offline says "Not sent" and 
   await page.close();
 });
 
-test('BT-6 (S3 adjust; PP-C c2 merge): Swap ("Find one that holds") shows "Also fills…", an invasive warning adds in one tap, Remove then Undo, Find adds a plant of another list, its Details naming the list', async (t) => {
+test('BT-6 (S3 adjust; PP-C c2 merge; main h3 M20): an invasive warning adds in one tap, Remove then Undo, Find adds a plant of another list, its Details naming the list', async (t) => {
   await behaviour(t, async (v) => {
     const page = await open({ ...v, data: 'fixture' });
     await start(page);
-    // Swap: the first member whose alternatives also fill a cell (the fixture's Temperate list has one).
-    // The members' names from the store; each chip is found where the reader would find it (on a phone, its stage).
-    // PP-C c2 (board Swap): Details' "Find one that holds" opens Swap.
-    const memberNames = await hooked(page, () => window.__ctTest.store.memberTaxa.value.map((t) => t.names.en ?? t.canonical_name));
-    let fills = null;
-    for (const n of memberNames) {
-      const c = await chipOf(page, n);
-      if (!c) continue;
-      await page.locator(aria('button', c.name)).click();
-      if (!(await has(page, aria('button', 'Find one that holds'), 1000))) { // not a member's Details
-        await page.keyboard.press('Escape');
-        await page.waitForFunction(() => !document.querySelector('dialog[open]'));
-        continue;
-      }
-      await page.locator(aria('button', 'Find one that holds')).click();
-      fills = await findAx(page, { name: /^Also fills/ }, 1500);
-      await page.keyboard.press('Escape');
-      await page.waitForFunction(() => !document.querySelector('dialog[open]'));
-      if (fills) break;
-    }
-    assert.ok(fills, 'Swap shows "Also fills…"');
-
+    // (v14 board Swap has no "Also fills…": that part went with the old Swap, main h3 M20.)
     // The Add sheet's conflict row and its ticks went with Add (PP-C commit 0); Find's are c1's cases.
     for (const c of ['Juglans regia', 'Robinia pseudoacacia']) if (await isMember(page, c)) await dropMember(page, c);
     if (!(await isMember(page, 'Malus domestica'))) await addPlant(page, 'Malus domestica');

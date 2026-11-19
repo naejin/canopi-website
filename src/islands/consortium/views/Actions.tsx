@@ -6,10 +6,12 @@
 // Copy link is a disclosure (board DeskStates, C3, review R4, R5): it opens the Share panel under it,
 // at every width, with the link built from the palette shown (Share.tsx: the link field, Copy, Include
 // my place; its status cleared when the palette changes); it stays in place, so the focus never falls
-// to the page, and closing the panel puts the focus back on it. Nothing here while Start is shown.
-import { useEffect, useRef, useState } from 'preact/hooks';
-import { signal } from '@preact/signals';
-import { climate, memberTaxa, source, view } from '../store.ts';
+// to the page, and closing the panel puts the focus back on it. App.tsx mounts it on the palette page only.
+import { useEffect, useRef } from 'preact/hooks';
+import { batch, effect, signal, untracked } from '@preact/signals';
+import type { ShareState } from './Share.tsx';
+import { climate, country, location as site, memberTaxa, source, step } from '../store.ts';
+import { shownFragment } from '../state/persist.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
@@ -105,21 +107,40 @@ async function printNow(): Promise<void> {
   }
 }
 
+// The Share panel open, its "Include my place" tick and its copy status: in signals, so they survive
+// the foot's remount when the palette page crosses 960 px (h3 M10, R2, D1 (a)). Closing the panel, and
+// view going back to 'start' (Your place, Start over, Set my own value), clears them all, so the panel
+// never opens again unasked (h3 R3). A load failure shows the Failed screen with view unchanged, so it
+// clears nothing.
+const sharing = signal(false);
+const shareState: ShareState = { withPlace: signal(false), copied: signal(null) };
+function closeShare(): void {
+  batch(() => { sharing.value = false; shareState.withPlace.value = false; shareState.copied.value = null; });
+}
+effect(() => { if (step.value !== 'palette') untracked(closeShare); });
+// "Link copied." is a transient flag: any change to what the link is made of (the palette shown, the
+// tick, the place, the country) drops it for good, so going back to a link copied earlier never says
+// (and announces) it again (h3 R2a.1). Read only while the panel is open (closing it clears the flag),
+// so the link is never computed early, on Start.
+effect(() => {
+  if (!sharing.value) return;
+  void shownFragment.value; void shareState.withPlace.value; void site.value; void country.value;
+  untracked(() => { shareState.copied.value = null; });
+});
 function ActionsView() {
-  const [sharing, setSharing] = useState(false);
   const copyButton = useRef<HTMLButtonElement>(null);
-  const close = (): void => { setSharing(false); copyButton.current?.focus(); };
+  const close = (): void => { closeShare(); copyButton.current?.focus(); };
   return (
     <section class="ct-page-actions ct-foot" aria-label={T('page.actions')}>
       <LinkNotices />
       <p class="ct-foot-line">
         {T('palette.chart.saved')}{' '}
-        <button ref={copyButton} type="button" class="link-button ct-link" aria-expanded={sharing} aria-controls="ct-share-panel" onClick={() => setSharing(!sharing)}>{T('palette.chart.copyLink')}</button>{' · '}
+        <button ref={copyButton} type="button" class="link-button ct-link" aria-expanded={sharing.value} aria-controls="ct-share-panel" onClick={() => { if (sharing.peek()) closeShare(); else sharing.value = true; }}>{T('palette.chart.copyLink')}</button>{' · '}
         <button type="button" class="link-button ct-link" onClick={() => void printNow()}>{T('print.button')}</button>{' · '}
         <button type="button" class="link-button ct-link" aria-describedby="ct-download-note" onClick={() => void download()}>{T('download.button')}</button>
       </p>
       <p id="ct-download-note" class="visually-hidden">{T('download.note')}</p>
-      <div id="ct-share-panel" class="ct-share-panel">{sharing && <share.View onClose={close} />}</div>
+      <div id="ct-share-panel" class="ct-share-panel">{sharing.value && <share.View onClose={close} state={shareState} />}</div>
       {partFailed.value && <LoadFailed retry={clearFailed} />}
       <PrintHost />
     </section>
@@ -128,5 +149,5 @@ function ActionsView() {
 
 // (ct:first-view is the palette page's: views/palette/Palette.tsx, once its Next step shows.)
 export function Actions() {
-  return view.value === 'start' ? null : <><ActionsView /><future.View /></>;
+  return <><ActionsView /><future.View /></>;
 }

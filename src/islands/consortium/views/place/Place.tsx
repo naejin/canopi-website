@@ -10,13 +10,15 @@
 //   used at once, with "Not this climate? Choose another" and "Your place in figures" (store.openFigure);
 //   the country line; "2 How much room do you have?"; "3 What grows there already…" with "Show my
 //   palette" and "No plants in mind? Start from a small suggested palette". On the laptop question 1
-//   stands left, 2 and 3 right; the figures (PlaceFigures, pf-d's panel) under the questions.
+//   stands left, 2 and 3 right; the figures (PlaceFigures, pf-d's panel) under the questions, then on
+//   the laptop the country line (board PlaceDesk).
 // - The frame (SiteKiambu: Place again from the palette, with plants): the place row with its ways
 //   out, question 2, the country line, the figures, then "Start over" and "Back to my palette".
 // - The climate cards (ClimateHand), one link away: what a grower without a location loses, each
 //   climate with its state and its list, Polar with "Ask for this climate".
 // - On the palette step, Place is its place line (PlaceLine): "Near … · <list> · <room> · <your
-//   values> · N plants · Change", the once-said "Your own values were for your old place: cleared", and
+//   values> · N plants · Change" (past 40 plants under 960 px "200 plants: Your plants", a link to the
+//   list: plants/head-link.tsx PlantsCount), the once-said "Your own values were for your old place: cleared", and
 //   the place banner of a borrowed climate (Oulu).
 import { signal } from '@preact/signals';
 import { Fragment, type ComponentChildren } from 'preact';
@@ -43,6 +45,7 @@ import { countryName, nameOf, num, zoneName } from '../kit/names.ts';
 import { cardsAsked, closeClimates, desk, focusField, openClimates, placeWords, shortPlace } from '../location/shared.ts';
 import { koppenWordsKey } from '../location/koppen-words.ts';
 import { Steps } from './steps.tsx';
+import { PlantsCount } from '../plants/head-link.tsx';
 import { enterCountry, findCountries } from './country-search.ts';
 
 const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
@@ -668,18 +671,19 @@ function PlaceLine() {
   const n = members.value.length, z = climate.value, loc = siteLocation.value, r = room.value;
   const why = z ? suggestBlock(z) : null;
   const own = z ? curatedClimates.value.includes(z) : true;
-  const parts: string[] = [];
-  if (z) parts.push(own ? T('place.line.list', { climate: zoneName(z) }) : T('place.line.borrowed', { climate: zoneName(z) }));
-  if (r !== 'unsure') parts.push(T(`place.line.room.${r}`));
+  const parts: ComponentChildren[] = [];
+  if (z) parts.push(<span>{own ? T('place.line.list', { climate: zoneName(z) }) : T('place.line.borrowed', { climate: zoneName(z) })}</span>);
+  if (r !== 'unsure') parts.push(<span>{T(`place.line.room.${r}`)}</span>);
   const values = siteEditLines(siteEdits.value).map(say).join(', ');
-  if (values) parts.push(values);
-  parts.push(P('start.count', n));
+  if (values) parts.push(<span>{values}</span>);
+  // The count: "200 plants: Your plants" (a link to the list) under 960 px past 40 plants (board Many, BC1).
+  parts.push(<PlantsCount n={n} />);
   return (
     <div class="ct-result-head">
       <p class="ct-place-line" data-place-line>
         {/* Board Oulu, Main: the pin and the place in bold lead the line (BC11). */}
         {loc && <><svg aria-hidden="true" class="ct-ico" width="16" height="16" viewBox="0 0 20 20"><path d="M10 17.5s5.5-5.2 5.5-9.3a5.5 5.5 0 0 0-11 0c0 4.1 5.5 9.3 5.5 9.3Z" /><circle cx="10" cy="8.2" r="1.9" /></svg><strong>{placeWords(loc)}</strong>{parts.length > 0 && sep}</>}
-        {parts.map((p, i) => <>{i > 0 && sep}<span>{p}</span></>)}
+        {parts.map((p, i) => <>{i > 0 && sep}{p}</>)}
         {sep}<button type="button" class="link-button ct-link" onClick={backToPlace}>{T('place.change')}</button>
       </p>
       {editsCleared.value && <p class="ct-muted ct-small-text" data-edits-cleared>{T('place.editsCleared')}</p>}
@@ -732,8 +736,10 @@ function PlaceForm() {
     <div class="ct-start ct-place">
       <div class="ct-place-main" hidden={cardsAsked.value}>
         <div class="ct-place-grid"><Questions /></div>
-        {desk.value && <MainCountry />}
+        {/* Board PlaceDesk: the figures, then the invasive card (h3 M15). The frame keeps board SiteKiambu's
+            order: the invasive card, then the figures. */}
         <PlaceFigures />
+        {desk.value && <MainCountry />}
       </div>
       {/* After the questions, so the view's first heading (focus.ts) is question 1 while it is hidden. */}
       <ClimateHand open={cardsAsked.value} />
@@ -760,10 +766,6 @@ function Frame() {
     </div>
   );
 }
-
-// The "Your place" sheet went with v13 (Change opens Place); views/Sheets.tsx still names it until its
-// route goes (hand-off): it shows the frame.
-export function PlaceSheet(_: { Frame?: unknown }) { return <Frame />; }
 
 export function Place() {
   const waiting = pendingSuggest.value || restoring.value;

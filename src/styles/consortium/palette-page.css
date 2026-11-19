@@ -1,21 +1,11 @@
 /* the Plant palette page (stream b2): page-level, imported by src/components/consortium/ConsortiumPage.astro (PP-B commit 0).
    Colours only from the token block of src/styles/tokens.css (plant-palette-architecture 3.5). */
 
-/* The page: steps, then the Next step, Through the years and the jobs: one column on a phone and a
+/* The page: the Next step, Through the years and the jobs: one column on a phone and a
    tablet; on a laptop the Next step stands beside the pictures, as on the boards (review r1 conformance-7). */
 .ct .ct-palette-page { display: grid; gap: 24px; min-width: 0; }
 .ct .ct-palette-body, .ct .ct-palette-pictures, .ct .ct-palette-side { display: grid; gap: 24px; min-width: 0; align-items: start; }
 .ct .ct-palette-page > h2 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 400; line-height: 1.2; }
-.ct .ct-steps ol { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 15px; }
-.ct .ct-steps li { display: flex; align-items: center; min-width: 0; }
-.ct .ct-steps .ct-step { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; background: none; color: var(--text-secondary); font: inherit; }
-.ct .ct-steps button.ct-step { cursor: pointer; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.ct .ct-steps [aria-current="step"] .ct-step { color: var(--text); font-weight: 600; }
-/* A later step is plain --text-secondary (no opacity: faded, it fell under 4.5:1 in the light theme,
-   axe); it differs from the current step by weight and the filled number, and from a done one by the link. */
-.ct .ct-step-later { color: var(--text-secondary); }
-.ct .ct-step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 13px; font-weight: 600; }
-.ct .ct-steps [aria-current="step"] .ct-step-n { border-color: var(--accent); background: var(--accent); color: var(--surface); }
 .ct .ct-placeholder { opacity: 0.9; }
 
 /* The Next step: the hole in words, its best fillers, See all and Not now. */
@@ -304,7 +294,7 @@
   .ct .ct-job-holes .ct-hole-button { max-width: none; }
   .ct .ct-chart { padding: 12px; }
   /* Tap targets of 44 px on a phone (review r1 bugs-14). */
-  .ct .ct-chip, .ct .ct-hole-button, .ct .ct-steps .ct-step, .ct .ct-other-holes summary { min-height: 44px; }
+  .ct .ct-chip, .ct .ct-hole-button, .ct .ct-other-holes summary { min-height: 44px; }
 }
 
 /* fix round 1 (v14 pf-b, 2026-11-18) */
@@ -362,12 +352,6 @@
 .ct .ct-side-card .ct-balance-sub { font-size: 14px; font-weight: 400; }
 .ct .ct-water-lead { font-size: 14px; line-height: 20px; color: var(--text); }
 .ct .ct-balance > div, .ct .ct-balance > p { font-size: 14px; line-height: 20px; }
-/* The header steps (BC21): the done step a check, "›" between steps, one line at 390 px. */
-.ct .ct-steps ol { gap: 4px; font-size: 14px; } /* one line from 390 px; wraps only where it cannot fit (320) */
-.ct .ct-steps li + li::before { content: "\203A" / ""; margin-inline: 2px 6px; color: var(--text-secondary); }
-.ct .ct-steps .ct-step { gap: 6px; white-space: nowrap; }
-.ct .ct-step-n { width: 22px; height: 22px; }
-.ct .ct-step-done .ct-step-n { border-color: var(--text); }
 /* The share panel under Copy link (board DeskStates, C3). */
 .ct .ct-share-panel:empty { display: none; }
 .ct .ct-share-panel { justify-self: stretch; text-align: start; }

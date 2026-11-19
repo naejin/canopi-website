@@ -114,6 +114,7 @@
 .ct .ct-many-fitline { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 .ct .ct-many-word { display: block; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
 .ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
+.ct .ct-many-word[data-level="danger"] { color: var(--danger); } /* Very toxic (Severe) only (h3 M47; Many.tsx RowMarks) */
 .ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
 .ct .ct-many-word .ct-fit { color: inherit; }
 .ct .ct-many-more {
@@ -158,10 +159,9 @@
 @media (min-width: 960px) { .ct .ct-many-tickbar { position: static; } }
 
 /* Past 40 plants at 960 px and wider (v14 pf-e E3; board ManyDesk): the chart's column and Your plants'
-   column, the second wider. Each block is mounted once in the phone's order (chart, Warnings and fit with
-   Balance, Your plants, the foot) and placed here (round 3 R4): the chart's column spans the rows, Your
-   plants stands first in the right one, then Warnings and fit with Balance, then the foot; the last row
-   takes the chart's extra height. */
+   column, the second wider. Palette.tsx puts the blocks in the DOM in the order drawn (h3 M10): the
+   chart's column spans the rows; Your plants, Warnings and fit with Balance, then the foot stand in the
+   right one; the last row takes the chart's extra height. */
 .ct .ct-many-left, .ct .ct-many-right, .ct .ct-many-weigh { display: grid; gap: 24px; min-width: 0; align-content: start; }
 @media (min-width: 960px) {
   /* The chart's column keeps at least 380 px (at 960 px the Jobs head and the names; BC5). */
@@ -170,9 +170,8 @@
   .ct .ct-palette-body[data-many] > .ct-many-right { grid-column: 2; grid-row: 1; }
   .ct .ct-palette-body[data-many] > .ct-many-weigh { grid-column: 2; grid-row: 2; }
   .ct .ct-palette-body[data-many] > .ct-palette-foot { grid-column: 2; grid-row: 3; }
-  /* 40 plants or fewer (board MainMore): the foot under Balance in the side column, Your plants across
-     under the pictures; both mounted once, after the side column (round 3 R4). */
-  .ct .ct-palette-body[data-pictures]:not([data-many]) > .ct-palette-foot { grid-column: 2; grid-row: 3; }
+  /* 40 plants or fewer (board MainMore): Your plants across under the pictures (the foot is in the side
+     column, under Balance). */
   .ct .ct-palette-body[data-pictures]:not([data-many]) > .ct-plants { grid-column: 1 / -1; grid-row: 4; }
   .ct .ct-palette-body:not([data-pictures]) > .ct-palette-foot, .ct .ct-palette-body:not([data-pictures]) > .ct-plants { grid-column: 1 / -1; }
 }

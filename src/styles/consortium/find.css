@@ -415,8 +415,5 @@
   .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-right { grid-column: 2; grid-row: 2; }
   .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-weigh { grid-column: 2; grid-row: 3; }
   .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-palette-foot { grid-column: 2; grid-row: 4; }
-  /* 40 plants or fewer with the panel open: the foot under the side column, Your plants across below. */
-  .ct .ct-palette-body[data-pictures]:not([data-many]):has(> dialog.ct-find-panel) > .ct-palette-foot { grid-column: 2; grid-row: 4; }
-  .ct .ct-palette-body[data-pictures]:not([data-many]):has(> dialog.ct-find-panel) > .ct-plants { grid-column: 1 / -1; grid-row: 5; }
   .ct .ct-plants > dialog.ct-find-panel { border: 0; border-radius: 0; background: none; }
 }

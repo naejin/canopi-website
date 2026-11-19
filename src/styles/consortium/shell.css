@@ -10,7 +10,6 @@
 .ct :where(input, select, button, a):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .ct .ct-start { display: grid; gap: 18px; }
-.ct .ct-step { margin: 0; min-width: 0; border: 0; padding: 0; }
 .ct .ct-step-title { font-family: var(--font-display); font-size: 24px; font-weight: 400; line-height: 1.2; padding: 0; }
 .ct .ct-step-lede { margin: 4px 0 12px; font-size: 15px; }
 .ct .ct-panel { padding: 20px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
@@ -99,9 +98,8 @@
 .ct .ct-offline { margin: 0; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface-alt); font-size: 15px; }
 .ct .ct-offline:empty { padding: 0; border: 0; }
 
-/* The page head on Place (pf-c; v14 boards Place, PlaceDesk, SiteKiambu): three steps above the title,
-   step 1 current in ink, the others outlined; the lede under the title. On the palette step the head
-   carries data-step="palette" and the palette's own head takes over (the steps and the lede go). */
+/* The page head (pf-c; v14 boards Place, PlaceDesk, SiteKiambu, Many): three steps above the title, the
+   current step in ink, the others outlined; on Place the lede under the title. */
 .ct ol.ct-steps { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; line-height: 18px; color: var(--text-secondary); }
 .ct ol.ct-steps > li { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; min-width: 0; }
 .ct ol.ct-steps > li:not(:last-child)::after { content: "›"; padding-left: 4px; color: var(--text-muted); }
@@ -110,11 +108,20 @@
 .ct .ct-steps-n { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border-strong); font-size: 12px; font-weight: 600; line-height: 1; color: var(--text-secondary); }
 .ct ol.ct-steps > li[aria-current="step"] .ct-steps-n { border-color: var(--text); background: var(--text); color: var(--surface); }
 .ct .tool-head-links { display: inline-flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
-.ct #ct-head[data-step="palette"] :is(ol.ct-steps, .tool-lede) { display: none; }
+/* On the palette step (board Many) the steps stay, step 1 done (its check and button back to Place, in
+   place of its words), and the lede goes. The page's inline script, steps.tsx and a failure screen keep
+   data-step true, so the head paints right before the island runs. */
+.ct #ct-head[data-step="palette"] .tool-lede { display: none; }
+.ct #ct-head[data-step="palette"] [data-step-place-words], .ct #ct-head:not([data-step="palette"]) [data-step-place] { display: none; }
 #ct-head:not([data-step="palette"]) .tool-lede { font-family: inherit; font-size: 17px; line-height: 1.45; max-width: none; }
 @media (max-width: 639px) {
   #ct-head:not([data-step="palette"]) .tool-lede { font-size: 15px; }
 }
 .ct ol.ct-steps [hidden] { display: none; }
+/* The steps' buttons (step 1 back to Place, step 2 to the palette): 44 px tap targets on the phone
+   (review r1 bugs-14; h3 C5). */
+@media (max-width: 639px) {
+  .ct ol.ct-steps .ct-link { min-height: 44px; }
+}
 /* The failure screens' actions (board Loading): the button, then "Read the guides" beside it. */
 .ct .ct-load-acts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }

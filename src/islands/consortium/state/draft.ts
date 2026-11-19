@@ -1,9 +1,7 @@
 // Place and the reader's moves around it (stream S4; E6 S2 split it out of memory.ts): the climate
-// card and the country the reader picks, backToPlace (the palette's step 1), Start over (with one
-// Undo), Show my palette and Add a plant; the answers to the arrival notices (PP-B b1a): "Use it" /
-// "Use my own place" for a link's place and "Open my saved palette instead". (The palette's place also
-// changes in place in the "Your place" sheet, views/place/Place.tsx PlaceSheet: b1a review r1
-// conformance-4.)
+// card and the country the reader picks, leavePalette and backToPlace (the head's step 1), Start over
+// (with one Undo), Show my palette and Add a plant; the answers to the arrival notices (PP-B b1a):
+// "Use it" / "Use my own place" for a link's place and "Open my saved palette instead".
 // Place and the palette page show one palette: Place's answers and plants change it as they are given,
 // saved at once while the page owns the save (state/save.ts held; owner 2026-11-15).
 import { batch, signal } from '@preact/signals';
@@ -68,6 +66,13 @@ export function chooseCountry(code: string | null): void {
 // Back to Place, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
 const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
+// "Your place" from the palette step (the head's step 1): back in history past the palette step's
+// entry, and any sheet's above it, when the page pushed it (store.leaveEntry: the next Back then leaves
+// the page), else the step itself.
+export function leavePalette(): void {
+  if (!store.leaveEntry('palette')) backToPlace();
+}
+
 // Back to Place from the palette (its "Your place" step, the phone's Back): the same palette, on Place.
 export function backToPlace(): void {
   placeSaid.value = '';
