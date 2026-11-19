@@ -413,8 +413,9 @@ test('M39: formatKm writes kilometres in the language\'s unit form', async () =>
   assert.equal(formatKm(1250, 'en'), '1,250 km');
 });
 
-// M38: Details opened from Find keeps the way back to the results; opened from the palette, none.
-test('M38: openSheet from Find records sheetBack (the opening and its target); from the palette it stays null', async () => {
+// M38, h3 R1-R4: a plant's sheet opened from a sheet stacks over it (store.sheets); the sheet under it
+// is the way back (sheetBack), and closing the top one shows the one under as it was (same opening).
+test('M38, h3 R1-R4: Details from Find stacks over it; Swap from Details stacks too; the same kind replaces the top; each back pops one level, Find and its target kept', async () => {
   const store = await import('../src/islands/consortium/store.ts');
   store.closeSheet();
   store.openSheet('details', 5);
@@ -424,9 +425,32 @@ test('M38: openSheet from Find records sheetBack (the opening and its target); f
   store.openSheet('find', null, job);
   const n = store.sheet.peek().n;
   store.openSheet('details', 5);
-  assert.deepEqual(store.sheetBack.peek(), { kind: 'find', target: job, n });
+  assert.deepEqual(store.sheets.peek().map((s) => s.kind), ['find', 'details'], 'Details over Find');
+  assert.deepEqual([store.sheetBack.peek().kind, store.sheetBack.peek().n], ['find', n]);
+  assert.equal(store.findSheet.peek().n, n, 'Find keeps its own opening while Details is on top');
+  assert.equal(store.sheetTarget.peek().job, 'feeds_soil', 'and its target');
+  // R4: Details → Swap → "Back to" Details keeps Find under Details.
+  const dn = store.sheet.peek().n;
+  store.openSheet('swap', 5);
+  assert.deepEqual(store.sheets.peek().map((s) => s.kind), ['find', 'details', 'swap']);
+  store.backToSheet();
+  assert.deepEqual([store.sheet.peek().kind, store.sheet.peek().n], ['details', dn], 'back to the same Details');
+  assert.equal(store.sheetBack.peek().kind, 'find', 'still over Find');
   store.backToSheet();
   assert.deepEqual([store.sheet.peek().kind, store.sheet.peek().n, store.sheetTarget.peek().job], ['find', n, 'feeds_soil'], 'back to the same opening of Find');
   assert.equal(store.sheetBack.peek(), null);
+  // Over its own kind a plant's sheet takes the top one's place, the one under kept.
+  store.openSheet('details', 5);
+  store.openSheet('details', 6);
+  assert.deepEqual(store.sheets.peek().map((s) => [s.kind, s.id]), [['find', null], ['details', 6]], 'Details over Details: replaced');
+  store.backToSheet();
+  // Find and Paste replace the stack (Paste's "Search by hand" opens Find in its place).
+  store.openSheet('paste');
+  assert.deepEqual(store.sheets.peek().map((s) => s.kind), ['paste']);
+  store.openSheet('details', 5);
   store.closeSheet();
+  assert.deepEqual(store.sheets.peek(), [], 'closeSheet closes every level');
+  store.openSheet('details', 5);
+  store.backToSheet();
+  assert.equal(store.sheet.peek(), null, 'back with nothing under: closed');
 });

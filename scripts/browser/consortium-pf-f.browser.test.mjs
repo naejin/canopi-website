@@ -21,7 +21,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { aria, en, has, useHarness } from './helpers.mjs';
 import { boardPalette } from './pf-b-helpers.mjs';
-import { LIGHT, dialogText, done, frames, says, setSiteEdits } from './pf-helpers.mjs';
+import { LIGHT, dialogText, done, frames, openMore, says, setSiteEdits } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -970,9 +970,11 @@ test('PFF33 (pf-f M30, What you can do and Swap): 3 judged to fail and the rest 
   assert.ok(cando.includes('None of the 3 hold by 2041–2070.'), `Details says how many fail (${cando.slice(0, 300)})`);
   assert.ok(cando.includes('Not checked for 2041–2070'), 'and that the rest is not checked');
   assert.doesNotMatch(cando, /holds in 2041–2070/, 'never "holds in"');
-  await open(page, 'swap', id);
-  await says(page, 'None of the 3 hold by 2041–2070.', { inDialog: true });
-  await says(page, `0 of ${n} · ${n - 3} not checked`, { inDialog: true });
+  await open(page, 'swap', id); // stacked over Details (h3 R4): read the Swap dialog
+  assert.ok(await has(page, 'dialog.ct-swap[open] [data-swap-head]', 10_000), 'Swap');
+  const swapText = await page.waitForFunction((w) => { const t = document.querySelector('dialog.ct-swap[open]')?.innerText.replace(/\s+/g, ' ') ?? ''; return w.every((x) => t.includes(x)) ? t : null; }, { timeout: 8000 }, ['None of the 3 hold by 2041–2070.', `0 of ${n} · ${n - 3} not checked`]).then((h) => h.jsonValue(), () => page.$eval('dialog.ct-swap[open]', (d) => d.innerText.replace(/\s+/g, ' ')));
+  assert.ok(swapText.includes('None of the 3 hold by 2041–2070.'), `Swap says how many fail (${swapText.slice(0, 300)})`);
+  assert.ok(swapText.includes(`0 of ${n} · ${n - 3} not checked`), 'and the count with the rest not checked');
   await done(page);
 });
 
@@ -1036,9 +1038,85 @@ test('PFF36 (pf-f M38, Find and Details): a Find row\'s name opens Details with 
   const name = await page.$eval('dialog[open] [data-find-open]', (b) => b.textContent.trim());
   await page.click('dialog[open] [data-find-open]');
   assert.ok(await page.waitForFunction((n) => document.querySelector('dialog[open] #ct-d-title')?.textContent.trim() === n, { timeout: 8000 }, name).then(() => true, () => false), `Details of ${name}`);
-  await says(page, 'Back to results', { inDialog: true });
-  await page.click('dialog[open] [data-sheet-back]');
+  assert.ok(await has(page, 'dialog.ct-details[open] [data-sheet-back]', 4000), 'Details says "Back to results"');
+  await page.click('dialog.ct-details[open] [data-sheet-back]');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog.ct-details[open]'), { timeout: 4000 }).then(() => true, () => false), 'Details closed');
   assert.ok(await has(page, 'dialog[open] input[type="search"]', 8000), 'back in Find');
   assert.equal(await page.$eval('dialog[open] input[type="search"]', (i) => i.value), 'fig', 'the search as the grower left it');
+  await done(page);
+});
+
+// h3 R1, R3, R4: Details opened from Find stacks over it, so Find stays as the grower left it: back
+// (its link, Escape, the phone's Back) returns to the same row, its fold open, its scroll and the focus
+// on the name pressed; a round trip through Swap keeps the way back.
+const FIND = 'dialog.ct-find[open]', TOP_D = 'dialog.ct-details[open]';
+const backNamed = (page) => page.waitForFunction(() => !document.querySelector('dialog.ct-details[open]'), { timeout: 4000 }).then(() => true, () => false);
+test('PFF36b (pf-f h3 R1, R3, R4): back from a Find row\'s Details keeps Find\'s fold, scroll and focus on that name; the phone\'s Back closes Details only; Swap\'s back keeps "Back to results"', async () => {
+  const page = await boardPalette('seville-board', { width: 390, height: 900 });
+  await page.evaluate(() => window.__ctTest.openFind());
+  assert.ok(await has(page, `${FIND} input[type="search"]`, 10_000), 'Find');
+  // The filters' "Show N plants" lists the plants (the grower's "Show the N plants that fit").
+  await page.click('aria/Filters[role="button"]');
+  await page.click(`${FIND} [data-find-filters-show]`);
+  assert.ok(await has(page, `${FIND} [data-find-row]`, 10_000), 'the plants are listed');
+  await openMore(page, FIND);
+  const rows = await page.$$eval(`${FIND} [data-find-open]`, (bs) => bs.length);
+  assert.ok(rows >= 30, `the folds open (${rows} rows)`);
+  const nth = 29;
+  const at = (pg) => pg.evaluate((f, i) => {
+    const b = document.querySelectorAll(`${f} [data-find-open]`)[i];
+    return { name: b?.textContent.trim(), top: Math.round(b?.getBoundingClientRect().top ?? -1), focus: document.activeElement === b, rows: document.querySelectorAll(`${f} [data-find-open]`).length };
+  }, FIND, nth);
+  await page.evaluate((f, i) => document.querySelectorAll(`${f} [data-find-open]`)[i].scrollIntoView({ block: 'center' }), FIND, nth);
+  await frames(page);
+  const before = await at(page);
+  await (await page.$$(`${FIND} [data-find-open]`))[nth].click(); // a real click: the button takes the focus
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details with "Back to results"');
+  // R1: the link back.
+  await page.click(`${TOP_D} [data-sheet-back]`);
+  assert.ok(await backNamed(page), 'Details closed');
+  await frames(page);
+  let now = await at(page);
+  assert.equal(now.rows, before.rows, 'R1: the folds stay open');
+  assert.equal(now.name, before.name, 'R1: the same row');
+  assert.ok(Math.abs(now.top - before.top) <= 4, `R1: the same scroll (${before.top} → ${now.top})`);
+  assert.ok(now.focus, 'R1: the focus back on the name pressed');
+  // Escape closes the top sheet only.
+  await page.keyboard.press('Enter');
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Enter opens it again');
+  await page.keyboard.press('Escape');
+  assert.ok(await backNamed(page), 'Escape closes Details');
+  await frames(page);
+  now = await at(page);
+  assert.ok(now.focus && now.rows === before.rows, 'Escape: back on the name, the folds open');
+  // R3: the phone's Back closes Details only (one history entry per sheet level).
+  await (await page.$$(`${FIND} [data-find-open]`))[nth].click(); // a real click: the button takes the focus
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details again');
+  await page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.back(); }));
+  assert.ok(await backNamed(page), 'R3: Back closes Details');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind)), ['find'], 'R3: Find stays');
+  now = await at(page);
+  assert.equal(now.rows, before.rows, 'R3: the folds stay open');
+  await page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.back(); }));
+  assert.equal(await page.evaluate(() => window.__ctTest.store.sheet.value), null, 'R3: a second Back closes Find');
+  // R4: Find → a member's Details → Swap → "Back to" Details keeps "Back to results".
+  await page.evaluate(() => window.__ctTest.openFind());
+  assert.ok(await has(page, `${FIND} input[type="search"]`, 10_000), 'Find again');
+  await page.type(`${FIND} input[type="search"]`, 'almond');
+  const member = await page.waitForFunction((f) => {
+    const m = new Set(window.__ctTest.store.members.value);
+    return [...document.querySelectorAll(`${f} [data-plant-id]`)].find((r) => m.has(r.dataset.plantId) && r.querySelector('[data-find-open]'))?.dataset.plantId ?? null;
+  }, { timeout: 8000 }, FIND).then((h) => h.jsonValue(), () => null);
+  assert.ok(member, 'a palette member in Find\'s answers');
+  await page.click(`${FIND} [data-plant-id="${member}"] [data-find-open]`);
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'its Details over Find');
+  await page.evaluate((d) => [...document.querySelectorAll(`${d} button`)].find((b) => b.textContent.trim() === 'Find one that holds').click(), TOP_D);
+  assert.ok(await has(page, 'dialog.ct-swap[open] .ct-back', 8000), 'Swap');
+  await page.click('dialog.ct-swap[open] .ct-back');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog.ct-swap[open]'), { timeout: 4000 }).then(() => true, () => false), 'Swap closed');
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 4000), 'R4: Details still says "Back to results"');
+  await page.click(`${TOP_D} [data-sheet-back]`);
+  assert.ok(await backNamed(page), 'R4: back to Find');
+  assert.equal(await page.$eval(`${FIND} input[type="search"]`, (i) => i.value), 'almond', 'R4: Find\'s search kept');
   await done(page);
 });

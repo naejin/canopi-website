@@ -6,7 +6,7 @@
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
 // plants share: how many of a member's jobs a candidate does (doesWords).
 import type { ComponentChildren } from 'preact';
-import type { Hole, JobId, Level, Line, Measure, PlantVerdict, RowBand, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
+import type { Hole, JobId, Level, Measure, PlantVerdict, RowBand, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
 import { fitLine, headLine, holeLine, levelLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { formatDepthCm, formatLength } from '../../format.ts';
 import { pageLang, T } from '../../strings.ts';

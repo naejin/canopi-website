@@ -86,11 +86,19 @@ const paste = later(retryableImport(findChunk, (m) => m.Paste), { ...sheet, find
 // (Escape fires `close` a task later, maybe once another sheet opened), and the frame its part draws
 // in, with the sheet's toast region in its foot. A part that arrives replaces its loading frame
 // inside the same dialog.
+// Its ×, Escape and the backdrop close this sheet only, the top one (store.backToSheet): a sheet under it
+// (Find under Details, h3 R1) shows again as it was, and the focus goes back to what opened this one
+// (the Find row's name), found when it opened; the last sheet's close is the effect above.
 function Opening({ s }: { s: Opened }) {
-  const [onClose, Frame] = useMemo<[() => void, Frame]>(() => {
-    const close = () => { if (store.sheet.peek() === s) closeSheet(); };
-    return [close, (p: FrameProps) => <SheetFrame {...p} onClose={close} toast={<Toast where="sheet" />} />];
+  const [onClose, Frame, opened, under] = useMemo<[() => void, Frame, Element | null, Opened | null]>(() => {
+    const close = () => { if (store.sheet.peek() === s) store.backToSheet(); };
+    const open = store.sheets.peek();
+    return [close, (p: FrameProps) => <SheetFrame {...p} onClose={close} toast={<Toast where="sheet" of={s} />} />, document.activeElement, open[open.indexOf(s) - 1] ?? null];
   }, [s]);
+  useLayoutEffect(() => () => {
+    if (!under || store.sheet.peek() !== under || !(opened instanceof HTMLElement)) return;
+    requestAnimationFrame(() => { if (opened.isConnected) opened.focus(); });
+  }, []);
   return <SheetDialog onClose={onClose}><Part s={s} Frame={Frame} /></SheetDialog>;
 }
 function Part({ s, Frame }: { s: Opened; Frame: Frame }) {
@@ -103,16 +111,15 @@ function Part({ s, Frame }: { s: Opened; Frame: Frame }) {
   }
 }
 
-const SHEETS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste'];
 const WITH_PLANT: readonly SheetKind[] = ['details', 'swap'];
 function Router() {
-  const s = store.sheet.value;
-  if (!s || store.load.value.status !== 'ready') return null;
-  // Keyed by opening: every sheet opened (details → Swap, one plant → another) mounts a fresh dialog
-  // whose close listener knows its own sheet.
-  if (!SHEETS.includes(s.kind) || (WITH_PLANT.includes(s.kind) && !s.id)) return null; // share and download are not sheets
-  if (deskFind.value) return null; // Find is the panel beside the chart (FindPanel)
-  return <Opening key={`${s.kind}:${s.n}`} s={s} />;
+  const open = store.sheets.value;
+  if (!open.length || store.load.value.status !== 'ready') return null;
+  // One dialog per open sheet, bottom first, so each one opened stacks over the last (showModal order)
+  // and the ones under stay mounted (h3 R1). Keyed by opening: every sheet opened mounts a fresh dialog
+  // whose close listener knows its own sheet. At 960 px Find is the panel beside the chart (FindPanel).
+  const desk = deskFind.value;
+  return <>{open.filter((s) => !(WITH_PLANT.includes(s.kind) && !s.id) && !(desk && s.kind === 'find')).map((s) => <Opening key={`${s.kind}:${s.n}`} s={s} />)}</>;
 }
 
 // The ways into Find the palette page shows (PP-C c1, slices 3.2; boards Palette, Empty, FindDesk):
@@ -165,9 +172,10 @@ function PanelFrame({ titleId, head, foot, children, class: cls = '' }: FramePro
 // "Add plants" through the opener above). Back to 'grid' once Find closes.
 export const findIn = signal<'grid' | 'list'>('grid');
 export function openFindInList(): void { findIn.value = 'list'; store.openFind(); }
-if (typeof document !== 'undefined') effect(() => { if (store.sheet.value?.kind !== 'find' && findIn.peek() !== 'grid') findIn.value = 'grid'; });
+// Find under a plant's Details (h3 R2) is still open, so the panel keeps its place.
+if (typeof document !== 'undefined') effect(() => { if (!store.findSheet.value && findIn.peek() !== 'grid') findIn.value = 'grid'; });
 export function FindPanel({ where = 'grid' }: { where?: 'grid' | 'list' }) {
-  const s = store.sheet.value;
+  const s = store.findSheet.value;
   if (!s || !deskFind.value || store.load.value.status !== 'ready' || findIn.value !== where) return null;
   return <find.View key={s.n} Frame={PanelFrame} />;
 }

@@ -116,7 +116,7 @@ const KEEPS: readonly BoxKey[] = ['fills'];
 type Option = { key: string; label: string; on: boolean; toggle: () => void; count: number };
 
 // R9: what the grower set in one opening of Find (its search, filters, the visit's adds, the frozen
-// order) lives here, keyed by that opening (store.sheet's n), not in the component: crossing 960 px
+// order) lives here, keyed by that opening (store.findSheet's n), not in the component: crossing 960 px
 // swaps the panel for the sheet (or back), which mounts Find again in the other frame, and the new
 // mount reads the same opening's state. A new opening starts afresh.
 type Kept = Record<string, unknown>;
@@ -137,7 +137,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
   const climate = store.climate.value;
   const { hole, fits, title: asked } = store.sheetTarget.value;
   // R9: this opening's state, kept across a remount in the other frame (keptFor).
-  const kept = keptFor(store.sheet.value?.n ?? 0);
+  const kept = keptFor(store.findSheet.value?.n ?? 0);
   // The members when Find opened: listed apart ("In your palette"); a plant added here keeps its row,
   // its button turned to "Added".
   const [atOpen] = useKept(kept, 'atOpen', () => new Set(store.members.peek()));
@@ -476,7 +476,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
     return (
       <Tag key={t.id} class={as === 'div' ? 'ct-find-row' : undefined} data-find-row="" data-plant-id={t.id}>
         {/* The name opens the plant's Details (board FindResults: the name is a link; board Details then
-            says "‹ Back to results", store.sheetBack, M38). */}
+            says "‹ Back to results", stacked over Find: store.sheets, M38, h3 R1). */}
         <div class="ct-row-main"><button type="button" class="ct-link-button ct-name-open" data-find-open="" aria-haspopup="dialog" onClick={() => store.openSheet('details', t.id)}>{nameOf(t)}</button> <i class="ct-sci">{t.canonical_name}</i></div>
         {/* BC27 (board AddMany state 3): an added row says "✓ Added" in words, with its Undo beside it
             at the right of the row; the Add button gives way to them, the focus to Undo. */}

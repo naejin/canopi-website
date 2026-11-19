@@ -30,11 +30,12 @@ export type View = 'start' | 'matrix';
 // its page). Read from `view` until its writers (state/draft.ts, restore.ts, suggest-wait.ts) take the
 // step values: 'start' is the place, 'matrix' the palette page (b2, additive seam).
 export type Step = 'place' | 'palette';
-// The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
-export type SheetKind = 'details' | 'swap' | 'find' | 'paste' | 'share' | 'download';
+// An open sheet: what it shows and for which plant (null for sheets about no one plant).
+export type SheetKind = 'details' | 'swap' | 'find' | 'paste';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
 // sheet only, never one opened since (Escape closes the <dialog> at once and fires `close` a task later).
-export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
+// target: what it was opened for (Find's SheetFor; FOR_NOTHING for the others).
+export interface Sheet { kind: SheetKind; id: PlantId | null; n: number; target: SheetFor }
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed';
 export interface Load { status: LoadStatus; error: LoadFailure | null }
 
@@ -62,7 +63,16 @@ export const loadProgress = signal<{ got: number; total: number } | null>(null);
 export const opening = signal(false);
 // The holes put off with "Not now" (this page only, never saved).
 export const notNow = signal<ReadonlySet<string>>(new Set());
-export const sheet = signal<Sheet | null>(null);
+// The open sheets, bottom first (h3 R1, R3, R4): a plant's sheet opened from a sheet (Details from
+// Find, Swap from Details, Details from Swap's or a toast's link) stacks over it, so the sheet under
+// stays mounted with its scroll, its folds and its focus, and closing the top one shows it again.
+export const sheets = signal<readonly Sheet[]>([]);
+// The sheet on top (what the views read), and the one under it (the way back: board Details "‹ Back to
+// results", Swap's "‹ Back to" Details), null for none.
+export const sheet = computed<Sheet | null>(() => sheets.value[sheets.value.length - 1] ?? null);
+export const sheetBack = computed<Sheet | null>(() => sheets.value[sheets.value.length - 2] ?? null);
+// Find's opening wherever it is in the stack (Find reads its own opening and target, not the top's).
+export const findSheet = computed<Sheet | null>(() => sheets.value.find((s) => s.kind === 'find') ?? null);
 // When the save last changed (pf hand-off; owner answer Q3): the save as this page last read or wrote
 // it (state/save.ts lastSave; arrival.ts reads it at opening), its ISO date, or null with no save. The
 // return-visit line reads it ("Your palette is back: 8 plants near Kiambu, last changed …").
@@ -630,7 +640,7 @@ export function suggestMembers(note: { text: string; action: ToastAction | null 
 // "Find a soil feeder of another family"): Find lists only the plants it passes, under `title`.
 export interface SheetFor { job: JobId | null; hole: Hole | null; fits: ((t: Taxon) => boolean) | null; title?: string | null }
 export const FOR_NOTHING: SheetFor = { job: null, hole: null, fits: null, title: null };
-export const sheetTarget = signal<SheetFor>(FOR_NOTHING);
+export const sheetTarget = computed<SheetFor>(() => findSheet.value?.target ?? FOR_NOTHING);
 
 // ---- browser history (coordinator row 2026-11-14, "Sheets and browser history", inventory K7) ----
 // A sheet (full screen on a phone) and the step from Your place to Your palette each push one history
@@ -669,15 +679,28 @@ function pushEntry(kind: Entry): void {
   try { history.pushState({ ...(history.state ?? {}), pp, ...(st ? { st } : {}) }, '', globalThis.location.href); } catch { return; }
   shown = pp;
 }
-const onEntry = (kind: Entry): boolean => shown[shown.length - 1] === kind;
-// Leaves the entry `kind` pushed and every entry above it in one move (the move then closes the sheet
-// or shows Place): false when the page has no such entry. `leaving` remembers the page asked for it,
-// so a sheet opened again before it lands (Swap's "Back to" Details) is not closed by it.
+// The sheet entries on top of the page's entries: one per open sheet (h3 R3: one history step per
+// sheet level, so the phone's Back closes the top sheet only, as its "‹ Back to results" does).
+const sheetEntries = (pp: readonly Entry[]): number => {
+  let k = 0;
+  while (k < pp.length && pp[pp.length - 1 - k] === 'sheet') k++;
+  return k;
+};
+// Leaves the entry `kind` pushed and every entry above it in one move (the move then shows Place):
+// false when the page has no such entry. `leaving` remembers the page asked for it, so a sheet opened
+// again before it lands is not closed by it.
 let leaving: Entry | null = null;
 export function leaveEntry(kind: Entry): boolean {
   const i = shown.lastIndexOf(kind);
-  if (i < 0 || (kind === 'sheet' && i !== shown.length - 1)) return false;
+  if (i < 0) return false;
   try { history.go(i - shown.length); leaving = kind; return true; } catch { return false; }
+}
+// Leaves the sheet entries above `depth` open sheets (a sheet closed by the page: Close, Back to
+// results, an action that ends it), in one move.
+function leaveSheetsTo(depth: number): void {
+  const k = sheetEntries(shown) - depth;
+  if (k <= 0) return;
+  try { history.go(-k); leaving = 'sheet'; } catch { /* no history: nothing pushed */ }
 }
 // A Back or Forward (popstate) onto `state`: what main.ts does, `place` (back past the palette step:
 // Your place shows), then the rewrite of the entry landed on with the current link (`force`: even with
@@ -693,7 +716,8 @@ export function historyMoved(state: unknown): { place: boolean; force: boolean; 
   shown = now;
   if (landed) st = landed;
   if (away) return { place: false, force: false, away };
-  if (asked !== 'sheet' && sheet.peek() && !now.includes('sheet')) sheet.value = null;
+  // A Back past sheet entries closes as many sheets (the top one first); a Forward reopens none.
+  if (asked !== 'sheet' && sheets.peek().length > sheetEntries(now)) sheets.value = sheets.peek().slice(0, sheetEntries(now));
   const place = !paletteWaits && was.includes('palette') && !now.includes('palette') && step.peek() === 'palette';
   return { place, force: !(asked === 'palette' && step.peek() === 'place'), away };
 }
@@ -704,7 +728,7 @@ let paletteWaits = false;
 export function pushWaiting(): void {
   if (paletteWaits && step.peek() === 'palette' && !shown.includes('palette')) pushEntry('palette');
   paletteWaits = false;
-  if (sheet.peek() && !onEntry('sheet') && SHEET_KINDS.includes(sheet.peek()!.kind)) pushEntry('sheet');
+  while (sheetEntries(shown) < sheets.peek().length && shown.length < 64) pushEntry('sheet');
 }
 // A link opened in the tab: its entry is a new start (state/arrival.ts restores it).
 export function forgetEntries(): void { shown = []; leaving = null; paletteWaits = false; st = newStart(); }
@@ -736,7 +760,7 @@ export function watchSteps(): () => void {
       paletteWaits = false;
       // A sheet open over the palette (an Undo pressed in its foot) closes in the same update: its
       // entry goes with the palette's (fix round 1, b1a2-6).
-      if (sheet.peek()) sheet.value = null;
+      if (sheets.peek().length) sheets.value = [];
       if (!leaving) untracked(() => leaveEntry('palette')); // false once a move back already left it
     }
     was = now;
@@ -744,27 +768,28 @@ export function watchSteps(): () => void {
 }
 
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
-// Share and Download are not sheets (no entry).
-const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste'];
+// A plant's sheet (Details, Swap) opened over another kind of sheet stacks over it, with a history
+// entry of its own (h3 R1, R3, R4: Details from Find, Swap from Details); over its own kind it takes the
+// top one's place (a toast's Show in Details opens that plant's Details). Find and Paste replace the
+// stack (Paste's "Search by hand" opens Find in its place).
+const STACKS: readonly SheetKind[] = ['details', 'swap'];
 let opened = 0;
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
-  if (SHEET_KINDS.includes(kind) && !onEntry('sheet')) pushEntry('sheet');
-  const from = sheet.peek();
-  batch(() => {
-    sheetBack.value = from?.kind === 'find' && kind === 'details' ? { kind: 'find', target: sheetTarget.peek(), n: from.n } : null;
-    sheetTarget.value = { ...FOR_NOTHING, ...target };
-    sheet.value = { kind, id, n: ++opened };
-  });
+  const open = sheets.peek();
+  const under = !STACKS.includes(kind) ? [] : open[open.length - 1]?.kind === kind ? open.slice(0, -1) : open;
+  const next: Sheet = { kind, id, n: ++opened, target: { ...FOR_NOTHING, ...target } };
+  if (sheetEntries(shown) <= under.length) pushEntry('sheet');
+  sheets.value = [...under, next];
 }
-// The sheet a plant's Details was opened from (M38; board Details "‹ Back to results"): Find, with what
-// it was opened for and its opening (n), so its search and filters come back as the grower left them
-// (Find keeps them per opening). null when Details was opened from anywhere else.
-export interface SheetBack { kind: 'find'; target: SheetFor; n: number }
-export const sheetBack = signal<SheetBack | null>(null);
+// Closes the top sheet only (its ×, Escape, the backdrop, board Details' "‹ Back to results", Swap's
+// "‹ Back to" Details): the sheet under it shows again as the grower left it (it stayed mounted: its
+// search, filters, folds and scroll), the focus back on what opened the top one (views/Sheets.tsx). With
+// nothing under it, the same as closeSheet.
 export function backToSheet(): void {
-  const b = sheetBack.peek();
-  if (!b) return;
-  batch(() => { sheetBack.value = null; sheetTarget.value = b.target; sheet.value = { kind: b.kind, id: null, n: b.n }; });
+  const open = sheets.peek();
+  if (open.length < 2) { closeSheet(); return; }
+  sheets.value = open.slice(0, -1);
+  leaveSheetsTo(open.length - 1);
 }
 // Find (PP-C c1; boards Find, FillHole): the one route into it, from "Add plants", "Find plants",
 // "See all N plants", a hole's Find and Place's "Add a plant by name"; a hole's opener passes the
@@ -772,18 +797,20 @@ export function backToSheet(): void {
 // It asks for the verdict rule too (pf hand-off): opened from Place before the palette page ever
 // showed, Find would otherwise wait for verdicts that nobody asked for (verdictsReady).
 export const openFind = (target: SheetFor = FOR_NOTHING): void => { wantVerdict(); openSheet('find', null, target); };
-// Close (its button, Escape, the backdrop, an action that ends it): the sheet goes at once, and its
-// history entry with history.back() (main.ts then rewrites the entry under it with the current link).
+// Closes every open sheet (an action that ends them: Find's Done, a swap, a remove, a part that could
+// not load): they go at once, and their history entries in one move back (main.ts then rewrites the
+// entry under them with the current link).
 export const closeSheet = (): void => {
-  const had = sheet.peek() !== null;
-  batch(() => { sheet.value = null; sheetBack.value = null; });
-  if (had) leaveEntry('sheet');
+  if (!sheets.peek().length) return;
+  sheets.value = [];
+  leaveSheetsTo(0);
 };
 
 // ---- the toast (one short line under the tool, with Undo when the change can be taken back) ----
 
-// keep: the action leaves the toast up (a summary's Retry keeps its Undo, v14 F6).
-export interface ToastAction { label: string; run: () => void; keep?: boolean }
+// keep: the action leaves the toast up (a summary's Retry keeps its Undo, v14 F6). name: its accessible
+// name when the word alone does not say what it does, starting with the word (WCAG 2.4.6, 2.5.3).
+export interface ToastAction { label: string; run: () => void; keep?: boolean; name?: string }
 export type ToastWhere = 'page' | 'sheet';
 // focus: the plants Undo brings back; the first one's control takes the focus after Undo (W4), in
 // `from`, the region of the control that raised the toast, when it is still there (focus.ts focusPlant).
@@ -945,11 +972,12 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
     }
   });
   const flagged = warned.filter((id) => fresh.includes(id));
-  // Board Toasts: one wording whatever was flagged; Show (then Undo) opens the first flagged plant.
+  // Board Toasts: one wording whatever was flagged; Show (then Undo) opens the first flagged plant, and
+  // is named for its warning ("Show the warning for Comfrey"; h3 R6), so a screen reader hears it.
   const text = typeof said === 'function' && was
     ? said({ added: fresh, size: members.peek().length, holeChange: holeChange(was.holes, paletteHoles.peek()), thinChange: thinChange(was.thins, thinSpots.peek()) })
     : typeof said === 'string' ? said : P('paste.added', fresh.length);
-  offerUndo(text, before, flagged.length ? { label: T('paste.show'), run: () => openSheet('details', flagged[0]) } : null);
+  offerUndo(text, before, flagged.length ? { label: T('paste.show'), name: T('paste.showWarned', { name: nameById(flagged[0]) }), run: () => openSheet('details', flagged[0]) } : null);
 }
 
 // Several plants removed at once (v14 0W-1 item 6; pf-e's ticks): one snapshot and one Undo, which puts

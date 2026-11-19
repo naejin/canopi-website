@@ -26,7 +26,7 @@ import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { Alternative, PlantId, Taxon } from '../../../lib/consortium/index.ts';
 import { gapLines, jobsOf, periodIds, periodName, rowBandOf, swapYearsLine, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
-import { addMembers, closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
+import { addMembers, closeSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { AltRow, doesWords, FitLine, jobList, lightWords, RowBandLine, say, sizeShort, SWAP, yearsWords } from './kit/fit.tsx';
 import { countryName, nameOf } from './kit/names.ts';
@@ -129,7 +129,7 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
 
   return (
     <Frame titleId="ct-sw-title" class="ct-swap" head={
-      <button type="button" class="button-quiet ct-back" onClick={() => openSheet('details', id)}>{BACK}<span class="ct-back-name">{T('swap.back', { name: nameOf(t) })}</span></button>
+      <button type="button" class="button-quiet ct-back" onClick={store.backToSheet}>{BACK}<span class="ct-back-name">{T('swap.back', { name: nameOf(t) })}</span></button>
     } foot={
       <div class="ct-add-bar ct-swap-foot">
         <button type="button" class="ct-link-button" onClick={() => { closeSheet(); removeMember(id); }}>{T('swap.remove')}</button>

@@ -341,6 +341,14 @@ test('PP-C45 (c2 h3 M45, pf-e BC21, board Toasts, word map "A pasted list added"
   await frames(page);
   const buttons = await page.$$eval('.ct-toast button:not(.ct-toast-dismiss)', (bs) => bs.map((b) => b.textContent.trim()));
   assert.deepEqual(buttons, ['Show', 'Undo'], 'board Toasts: Show, then Undo');
+  // h3 R5: only Undo carries ct-toast-undo, the class the focus moves look for; Show has its own.
+  assert.deepEqual(await page.$$eval('.ct-toast .ct-toast-undo', (bs) => bs.map((b) => b.textContent.trim())), ['Undo'], 'the focus\'s Undo is Undo');
+  assert.equal(await page.$$eval('.ct-toast .ct-toast-action', (bs) => bs.length), 1, 'Show has its own class');
+  // h3 R6: Show is named for the warned plant's warning, starting with its visible word (WCAG 2.4.6, 2.5.3).
+  const showName = await page.$eval('.ct-toast .ct-toast-action', (b) => b.getAttribute('aria-label'));
+  const warned = await page.evaluate((sci) => { const t = window.__ctTest.store.memberTaxa.value.find((x) => x.canonical_name === sci); return t.common_name ?? t.canonical_name; }, names[0]);
+  assert.match(showName, /^Show the warning for /, `Show names the warning (${showName})`);
+  assert.ok(showName.length > 'Show the warning for '.length, `and the plant (${showName}; ${warned})`);
   await done(page);
 });
 
@@ -415,5 +423,33 @@ test('PP-C48 (c2 h3 R14, pf-e Small rows): each row button\'s accessible name is
   await page.$eval(line, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
   await page.click(line);
   assert.ok(await has(page, DETAILS, 4000), 'a tap on a detail line opens Details');
+  await done(page);
+});
+
+// h3 R2: past 40 plants on the desk, Find opened from Your plants stands in place of the table; a
+// result's Details opens over it and "Back to results" brings the panel back where it was, not beside
+// the chart (the panel stays open under Details: store.sheets).
+test('PP-C49 (c2 h3 R2, ManyDesk): Find opened in Your plants keeps its place through a result\'s Details and "Back to results"', async () => {
+  const { PLANTS, typeIn } = await import('./pf-e-helpers.mjs');
+  const page = await loadPalette200({ width: 1280 });
+  assert.ok(await has(page, `${PLANTS} [data-plants-add]`, 4000), 'Your plants\' "Add plants"');
+  await page.click(`${PLANTS} [data-plants-add]`);
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'Find in place of the table');
+  const pick = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); const t = Object.values(s.pools.value).flat().find((x) => x && !m.has(x.id)); return { id: t.id, q: t.canonical_name }; });
+  await typeIn(page, `${PLANTS} [data-find-search]`, pick.q);
+  const row = `${PLANTS} [data-find-row][data-plant-id="${pick.id}"]`;
+  assert.ok(await has(page, row, 10_000), 'the search lists the plant');
+  await page.click(`${row} [data-find-open]`);
+  assert.ok(await has(page, 'dialog.ct-details[open] [data-sheet-back]', 8000), 'Details with "Back to results"');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 1000), 'Find stays in Your plants under Details');
+  await page.click('dialog.ct-details[open] [data-sheet-back]');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog.ct-details[open]'), { timeout: 4000 }).then(() => true, () => false), 'Details closed');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 2000), 'Find back in place of the table');
+  assert.equal(await page.$(`${PLANTS} table`), null, 'the table not back');
+  assert.equal(await page.$$eval('[data-find-panel]', (ps) => ps.length), 1, 'one Find panel, not one beside the chart');
+  assert.equal(await page.$eval(`${PLANTS} [data-find-search]`, (i) => i.value), pick.q, 'the search kept');
+  assert.equal(await page.evaluate((id) => document.activeElement?.closest('[data-plant-id]')?.dataset.plantId ?? null, pick.id), pick.id, 'the focus back on the row\'s name');
+  await press(page, 'button', 'Done');
+  assert.ok(await has(page, `${PLANTS} table`, 3000), 'Done brings the table back');
   await done(page);
 });

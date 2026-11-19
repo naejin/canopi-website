@@ -114,8 +114,6 @@
 .ct .ct-many-fitline { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 .ct .ct-many-word { display: block; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
 .ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
-/* Very toxic and a serious conflict: the danger colour, with the icon and the word (boards Many, ManyDesk; M47). */
-.ct .ct-many-word[data-level="danger"] { color: var(--danger); }
 .ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
 .ct .ct-many-word .ct-fit { color: inherit; }
 .ct .ct-many-more {

@@ -751,7 +751,7 @@ test('M44 (BC22 thin spot after a bulk Remove): holeChangeLines names each new t
 // short form per cause, in every language; no cause (a fit, unknown): null, the row keeps its fit line.
 test('M46 (BC7 short cause): shortWhy gives one short Line per cause, said in every locale; null with no cause', () => {
   const v = (level, factor) => ({ level, judged: core.TODAY_PERIOD, notes: [], limiting: factor ? { factor } : null, factors: [] });
-  const WANT = { cold: 'winters too cold', mild: 'winters too mild', cool: 'the year too cool', summer: 'summers too cool', hot: 'summers too hot', dry: 'too wet', light: 'the wrong light', water: 'the wrong water', 'soil-ph': 'soil pH out of range' };
+  const WANT = { cold: 'nights too cold', mild: 'nights too warm', cool: 'the year too cool', summer: 'summers too cool', hot: 'summers too hot', dry: 'too wet', light: 'the wrong light', water: 'the wrong water', 'soil-ph': 'soil pH out of range' };
   for (const [factor, want] of Object.entries(WANT)) {
     const l = line.shortWhy(v('outside', factor));
     assert.ok(l, `${factor}: a short cause`);

@@ -196,7 +196,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   display: flex; align-items: center; gap: 6px 12px; padding: 6px 6px 6px 16px; border-radius: 10px;
   background: var(--text); color: var(--surface); box-shadow: var(--shadow); font-size: 15.5px;
 }
-.ct .ct-toast-undo {
+.ct .ct-toast-undo, .ct .ct-toast-action {
   min-height: 44px; padding: 0 12px; border: 1px solid currentColor; border-radius: var(--radius);
   background: transparent; color: inherit; font-weight: 600; cursor: pointer;
 }
