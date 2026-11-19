@@ -534,19 +534,21 @@ test('c2 fix C5 + R6 + K7: Sources names every range source and every source tha
   // A dispute row's source is named too (K7), each name once.
   const dispute = { field: 'tmin_cold.low', kind: 'range', value: '-10', unit: 'C', derived: false, scope: null, source: 'treegoer_ranges' };
   assert.deepEqual(line.rangeSources({ climate: { ...t.climate, tminCold: range() } }, [dispute]).map((x) => x.name), ['GBIF', 'TreeGOER']);
+  // pf-f fix round 1 BC5: label and value rows (board DetailsMore), Life and Size a catalogue value when no row says otherwise.
   const w = { list: 'Tropical', estimate: true, listSources: [], disputes: [], release: 'r-1' };
-  const lines = line.sureLines(t, w).map(say);
-  assert.deepEqual(lines, [
-    'Jobs, light need and years: Canopi’s Tropical list, an estimate for your climate, not reviewed.',
-    'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.',
-    'Warmth over the year: its sources disagree; the looser limit is kept and drawn dashed.',
-    'Data release r-1.',
+  const rows = (x, o) => line.sureRows(x, o).map((r) => `${say(r.label)}: ${say(r.value)}`);
+  assert.deepEqual(rows(t, w), [
+    'Jobs, light, time: Canopi’s Tropical list · estimate, not reviewed',
+    'Climate range: records in 872 map squares (GBIF, TreeGOER) · estimate',
+    'Warmth over the year: its sources disagree, both shown',
+    'Life: Catalogue value', 'Size: Catalogue value',
+    'Data release: r-1',
   ]);
   // Every disputed limit named, the weak row and the dispute row alike (R6: true for both rows).
-  const both = line.sureLines(t, { ...w, estimate: false, listSources: ['Canopi sample review'], disputes: [dispute], release: '' }).map(say);
-  assert.deepEqual(both, ['Jobs, light need and years: Canopi’s Tropical list, from Canopi sample review.', 'Climate range: records in 872 map squares (GBIF, TreeGOER), an estimate.', 'Warmth over the year and Coldest nights: its sources disagree; the looser limit is kept and drawn dashed.']);
-  assert.deepEqual(line.sureLines({ climate: null }, { ...w, estimate: false }).map(say), ['Jobs, light need and years: Canopi’s Tropical list.', 'Climate range: not recorded.', 'Data release r-1.']);
-  for (const [lang, wd] of Object.entries(words)) for (const k of ['sureListFrom', 'sureDisputed']) assert.ok(wd[`consortium.details.${k}`]?.includes(k === 'sureDisputed' ? '{limits}' : '{sources}'), `${lang}: ${k}`);
+  const both = rows(t, { ...w, estimate: false, listSources: ['Canopi sample review'], disputes: [dispute], release: '' });
+  assert.deepEqual(both.slice(0, 3), ['Jobs, light, time: Canopi’s Tropical list, from Canopi sample review', 'Climate range: records in 872 map squares (GBIF, TreeGOER) · estimate', 'Warmth over the year and Coldest nights: its sources disagree, both shown']);
+  assert.deepEqual(rows({ climate: null }, { ...w, estimate: false }), ['Jobs, light, time: Canopi’s Tropical list', 'Climate range: Not recorded', 'Life: Catalogue value', 'Size: Catalogue value', 'Data release: r-1']);
+  for (const [lang, wd] of Object.entries(words)) for (const k of ['sureJobsFrom', 'sureDisputedLabel']) assert.ok(wd[`consortium.details.${k}`]?.includes(k === 'sureDisputedLabel' ? '{limits}' : '{sources}'), `${lang}: ${k}`);
 });
 
 // Fix round 2 K6 + K12: the headline of "Against your place" (and Swap's header) names what causes a
@@ -612,7 +614,13 @@ test('c2 fix K19 + T1 (keep it a fair bet): the years to the first later period 
   assert.equal(mNow.level, 'outside');
   assert.equal(line.keepLine(mNow, mLater, 2026), null, 'outside now: today\'s lines say it, no fair bet');
   assert.match(en['consortium.line.keepFairBet'], /fair bet for its first # years: plant its successor beside it now/);
-  assert.equal(line.keepLine(now, [vOf({ judged: '2041-2070', level: 'look' }), vOf({ judged: '2071-2099' })], 2026), null, 'it holds then');
+  // pf-f fix round 1 BC11 (board DetailsDesk, Almond at Seville): a later second look counts too, when
+  // its climate fits today (round 2 R1: a later climate worse than today's; chestnut's look stays a look).
+  const hot = { factor: 'hot', basis: 'range', level: 'fits', place: 36.2, low: 20, high: 38 };
+  const fitsNow = vOf({ factors: [hot] });
+  assert.equal(line.keepLine(fitsNow, [vOf({ judged: '2041-2070', level: 'look', factors: [{ ...hot, level: 'look', place: 38.4 }] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026).count, 15, 'a second look by 2041–2070: 15 years');
+  assert.equal(line.keepLine(fitsNow, [vOf({ judged: '2041-2070', factors: [hot] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026), null, 'it fits then');
+  assert.equal(line.keepLine(now, [{ ...laters[0], level: 'look', factors: now.factors }], 2026), null, 'a look today that stays the same look: no fair bet');
   assert.equal(line.keepLine(null, [], 2026), null);
 });
 
@@ -712,20 +720,12 @@ test('c2 fix T10 (disputing source named): a weak low names TreeGOER in Sources 
   const range = (o = {}) => ({ low: 1, median: 5, high: 10, count: 9, basis: 'gbif', blocks: null, lowSource: null, highSource: null, weak: false, ...o });
   const t = { climate: { source: 'gbif_occurrences', tminCold: range({ weak: true }), tmaxWarm: range(), tmeanYear: range({ weak: true }), tmeanWarm: null, aridity: null, cells: 22, nativeShare: null } };
   assert.deepEqual(line.rangeSources(t).map((x) => x.name), ['GBIF', 'TreeGOER']);
-  const lines = line.sureLines(t, { list: 'Arid', estimate: true, listSources: [], disputes: [], release: '' }).map(say);
-  assert.equal(lines[0], 'Jobs, light need and years: Canopi’s Arid list, an estimate for your climate, not reviewed.');
-  assert.equal(lines[1], 'Climate range: records in 22 map squares (GBIF, TreeGOER), an estimate.');
+  const lines = line.sureRows(t, { list: 'Arid', estimate: true, listSources: [], disputes: [], release: '' }).map((r) => `${say(r.label)}: ${say(r.value)}`);
+  assert.equal(lines[0], 'Jobs, light, time: Canopi’s Arid list · estimate, not reviewed');
+  assert.equal(lines[1], 'Climate range: records in 22 map squares (GBIF, TreeGOER) · estimate');
   assert.deepEqual(line.rangeSources({ climate: { ...t.climate, tminCold: range(), tmeanYear: range() } }).map((x) => x.name), ['GBIF'], 'no TreeGOER when nothing is disputed');
 });
 
-// Fix round 3 T12 (Chrome K11): the desk's soil line as board DetailsDesk: "recorded on pH 3.5–7.3.
-// Not judged." (the soil map's value is PP-F's); with the reader's own test, the check's status.
-test('c2 fix T12 (desk soil line): "recorded on pH …" then "Not judged" without a test', async () => {
-  const { taxon } = await import('./consortium-p5-fixtures.mjs');
-  const t = taxon({ id: 'chestnut', canonical_name: 'Castanea sativa', traits: { soil_ph: { min: 3.5, max: 7.3 } } });
-  const v = verdict(t, { inputs: core.NO_INPUTS, period: '1991-2020', scenario: 'ssp245', canopy: null });
-  assert.equal(say(line.soilCheckLine(t, v, null)), 'recorded on pH 3.5–7.3. Not judged.');
-  assert.equal(say(line.soilCheckLine(t, null, 6)), 'recorded on pH 3.5–7.3. Not judged.');
-  assert.equal(say(line.soilCheckLine(taxon({ id: 'x', traits: { soil_ph: null } }), v, null)), 'no pH recorded.');
-});
+// Fix round 3 T12 (the desk soil line) went in pf-f commit 0: board DetailsDesk v14 says the soil map's
+// value on the Niche row (Details.tsx), and the phone's soil card replaces the line (Against.tsx SoilCard).
 
