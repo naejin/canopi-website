@@ -466,3 +466,14 @@ test('M4: the Water lead for a one-plant palette says "your one plant", never "y
   assert.equal(en['consortium.figures.waterLeadOneLater'], 'With rain only, your one plant needs no watering today; it may by {period}:');
   assert.equal(en['consortium.figures.waterLeadOneLaterFirst'], 'Watered the first years: your one plant does not need it today; it may by {period}:');
 });
+
+test('R18: the figures panel reads the year\'s warmth without the range rule: yearMeanC lives in site-today.ts, range.ts only re-exports it', async () => {
+  const today = await import('../src/lib/consortium/site-today.ts');
+  assert.equal(today.yearMeanC({ tmeanColdC: 17.6, tmeanWarmC: 21.1 }), 19.35, 'Nairobi (17.6 + 21.1) / 2');
+  assert.equal(core.yearMeanC, today.yearMeanC, 'the core index hands out the one function');
+  const strip = (s) => s.replace(/\/\/.*$/gm, '');
+  const range = strip(readFileSync(new URL('../src/lib/consortium/range.ts', import.meta.url), 'utf8'));
+  assert.doesNotMatch(range, /export\s+(const|function)\s+yearMeanC\b/, 'range.ts does not define it');
+  const figures = strip(readFileSync(new URL('../src/islands/consortium/views/figures/Figures.tsx', import.meta.url), 'utf8'));
+  assert.doesNotMatch(figures, /from ['"][^'"]*\/range(\.ts)?['"]/, 'the figures view names no range module');
+});
