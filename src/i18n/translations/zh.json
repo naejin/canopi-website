@@ -1596,6 +1596,8 @@
   "consortium.paste.reading": "已读取 {done} / {total}",
   "consortium.paste.groupChoose": "需要选择",
   "consortium.paste.groupNone": "未找到",
+  "consortium.paste.groupChooseParts": "需要选择：{parts}",
+  "consortium.paste.groupNoneParts": "未找到：{parts}",
   "consortium.paste.groupRec": "已识别：{parts}",
   "consortium.paste.isNewSci": "新的，按学名找到",
   "consortium.paste.otherChoices": "显示其他叫“{name}”的植物",

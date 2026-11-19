@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const M = await import('../src/islands/consortium/views/plants/model.ts');
-const { pasteNames, pasteReader, readPaste, plan, pasteCounts } = await import('../src/islands/consortium/views/find/paste.ts');
+const { pasteNames, pasteReader, readPaste, plan, pasteCounts, answered, questionsOf } = await import('../src/islands/consortium/views/find/paste.ts');
 const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
 
 const taxon = (id, name, { stratum = null, family = null, functions = [], years = null } = {}) => ({
@@ -126,15 +126,19 @@ test('BC20: a close spelling found only on another list is a choice like any oth
 
 // ---- fix round 1, batch 3 ----
 
-test('R3 C1 (round 2): one unit a group: Recognised counts its lines (a repeat "listed twice" in its head), Need a choice its questions, Not found its names; a repeat of a question or a missing name is a "listed twice" part, so the parts add up to the names read', () => {
+test('R2 C2 (round 3): the count line splits the lines by group (the board\'s "N names read: a recognised, b need a choice, c not found", adding up); "listed twice" is said only in a group\'s head, of that group\'s repeated lines', () => {
   const lost = readPaste(pasteNames('sukuma wiki\nCommon bean\nsukuma wiki'), { here, index });
-  assert.deepEqual(pasteCounts(lost, []), { lines: 3, rec: 1, choose: 0, none: 1, again: 1, fresh: 1, other: 0, have: 0, twice: 0 }, 'Not found counts names, as its list and "Copy this name" do');
+  assert.deepEqual(pasteCounts(lost, []), { lines: 3, rec: 1, choose: 0, none: 2, fresh: 1, other: 0, have: 0, twice: 0, askTwice: 0, noneTwice: 1, names: 1 }, 'Not found: 2 lines, 1 of them listed twice; one name to copy');
   const asked = readPaste(pasteNames('beans\nbeans'), { here, index });
-  assert.deepEqual(pasteCounts(asked, []), { lines: 2, rec: 0, choose: 1, none: 0, again: 1, fresh: 0, other: 0, have: 0, twice: 0 }, 'Need a choice counts questions, as its head and "N to go" do');
+  assert.deepEqual(pasteCounts(asked, []), { lines: 2, rec: 0, choose: 2, none: 0, fresh: 0, other: 0, have: 0, twice: 0, askTwice: 1, noneTwice: 0, names: 0 }, 'Need a choice: 2 lines, 1 listed twice (one question, as "N to go" counts)');
   const kept = readPaste(pasteNames('Common bean\ncommon bean\nLima bean'), { here, index });
-  assert.deepEqual(pasteCounts(kept, []), { lines: 3, rec: 3, choose: 0, none: 0, again: 0, fresh: 2, other: 0, have: 0, twice: 1 }, 'a recognised repeat: recognised, listed twice (board Paste: "6 recognised … 1 listed twice")');
-  for (const c of [lost, asked, kept].map((r) => pasteCounts(r, []))) assert.equal(c.rec + c.choose + c.none + c.again, c.lines, 'the parts add up to the names read');
-  assert.equal(pasteCounts(asked, []).choose, asked.choose.length + asked.found.filter((f) => f.close).length + asked.other.filter((o) => o.close).length);
+  assert.deepEqual(pasteCounts(kept, []), { lines: 3, rec: 3, choose: 0, none: 0, fresh: 2, other: 0, have: 0, twice: 1, askTwice: 0, noneTwice: 0, names: 0 }, 'a recognised repeat: recognised, listed twice (board Paste: "6 recognised … 1 listed twice")');
+  // The reviewer\'s case: Apple, apple, Castanea, Castanea: two lines repeated, one in each group\'s head.
+  const both = readPaste(pasteNames('Apple\napple\nCastanea\nCastanea'), { here: [plant('a1', 'Malus domestica', 'Apple'), plant('c1', 'Castanea sativa', 'European chestnut'), plant('c2', 'Castanea dentata', 'American chestnut')] });
+  const b = pasteCounts(both, []);
+  assert.deepEqual([b.lines, b.rec, b.choose, b.none, b.twice, b.askTwice], [4, 2, 2, 0, 1, 1]);
+  for (const c of [lost, asked, kept, both].map((r) => pasteCounts(r, []))) assert.equal(c.rec + c.choose + c.none, c.lines, 'the parts add up to the names read');
+  assert.equal(questionsOf(asked).length, 1, 'one question for the two lines');
 });
 
 test('R2 (round 2): an exact line wins its plant over a close spelling, in any order: "chesnut" then "European chestnut" adds the chestnut, the close spelling listed twice', () => {
@@ -193,4 +197,39 @@ test('F23: a header alone reads no name (the sheet says "Nothing to read"); blan
   assert.deepEqual([[...head], head.header], [[], 'Scientific name']);
   assert.deepEqual([...pasteNames('  \n\n ')], []);
   assert.deepEqual([...pasteNames('Malus domestica')], ['Malus domestica'], 'a plant on its own is read');
+});
+
+// ---- fix round 3, batch 1 ----
+
+const chestnuts = [plant('c1', 'Castanea sativa', 'European chestnut'), plant('c2', 'Castanea dentata', 'American chestnut'), plant('c3', 'Castanea mollissima', 'Chinese chestnut')];
+const chestnutIndex = releaseIndex({ lang: 'en', names: chestnuts.map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+
+test('R1 C1 (round 3): a close spelling yields only to a line naming its plant exactly, never to a choice that also offers it: "European chesnut" and "Castanea" are two questions, and each answer is added', () => {
+  for (const text of ['European chesnut\nCastanea', 'Castanea\nEuropean chesnut']) {
+    const r = readPaste(pasteNames(text), { here: chestnuts, index: chestnutIndex });
+    assert.deepEqual(r.duplicate, [], `${JSON.stringify(text)}: no line listed twice`);
+    assert.deepEqual(questionsOf(r).map((q) => q.name).sort(), ['Castanea', 'European chesnut'].sort(), 'two questions');
+    assert.deepEqual(plan(r, ['c2'], []).ids, ['c2'], 'American chestnut for Castanea: only it, the close spelling unticked');
+    assert.deepEqual(plan(r, ['c2', 'c1'], []).ids.sort(), ['c1', 'c2'], 'the close spelling ticked: European chestnut too');
+    assert.deepEqual(pasteCounts(r, []).twice, 0, 'the Recognised head says nothing listed twice');
+  }
+  const two = [chestnuts[0], chestnuts[1]];
+  const idx = releaseIndex({ lang: 'en', names: two.map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+  for (const text of ['chestnut\neuropean chesnut', 'european chesnut\nchestnut']) {
+    const r = readPaste(pasteNames(text), { here: two, index: idx });
+    assert.deepEqual(r.duplicate, [], `${JSON.stringify(text)}: no line listed twice`);
+    assert.equal(questionsOf(r).length, 2, 'two questions');
+    const a = answered(r, new Map([['chestnut', 'c2'], ['european chesnut', 'c1']]));
+    assert.deepEqual(plan(r, a, []).ids.sort(), ['c1', 'c2'], 'American chestnut for "chestnut" still lets the close spelling add European chestnut');
+  }
+});
+
+test('R5 (round 3): answers are kept a question each: "Castanea" and "chestnut" answered with two chestnuts add both; a None answer adds nothing; an answer of a line no longer pasted is dropped', () => {
+  const r = readPaste(pasteNames('Castanea\nchestnut'), { here: chestnuts, index: chestnutIndex });
+  assert.equal(questionsOf(r).length, 2, 'the premise: two questions offering the same plants');
+  assert.deepEqual(answered(r, new Map([['Castanea', 'c1'], ['chestnut', 'c3']])).sort(), ['c1', 'c3'], 'each question its own answer');
+  assert.deepEqual(plan(r, answered(r, new Map([['Castanea', 'c1'], ['chestnut', 'c3']])), []).ids.sort(), ['c1', 'c3']);
+  assert.deepEqual(answered(r, new Map([['Castanea', null], ['chestnut', 'c3']])), ['c3'], 'None answers its question with nothing');
+  assert.deepEqual(answered(r, new Map([['gone', 'c2'], ['chestnut', 'c3']])), ['c3'], 'the answer of a line no longer pasted adds nothing');
+  assert.deepEqual(answered(r, new Map([['Castanea', 'zz']])), [], 'an answer the question does not offer adds nothing');
 });

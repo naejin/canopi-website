@@ -1596,6 +1596,8 @@
   "consortium.paste.reading": "{total}개 중 {done}개 읽음",
   "consortium.paste.groupChoose": "선택 필요",
   "consortium.paste.groupNone": "찾지 못함",
+  "consortium.paste.groupChooseParts": "선택 필요: {parts}",
+  "consortium.paste.groupNoneParts": "찾지 못함: {parts}",
   "consortium.paste.groupRec": "인식됨: {parts}",
   "consortium.paste.isNewSci": "새 식물, 학명으로 찾음",
   "consortium.paste.otherChoices": "“{name}”(이)라 불리는 다른 식물 보기",

@@ -14,7 +14,7 @@
 // `foot`: the palette's foot (views/Actions.tsx: "Your palette is saved on this device. Copy link · Print
 // · Download for Canopi"), placed where boards MainMore and PaletteMore draw it: on the phone after Your
 // plants; at 960 px and wider under Balance (the side column at 40 plants or fewer, Your plants' column
-// past 40). App.tsx passes it
+// past 40), by the grid, never by a second mount (round 3 R4). App.tsx passes it
 // (main's hand-off, E4: slot(Actions) moves into this slot in the same merge).
 import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo } from 'preact/hooks';
@@ -142,52 +142,52 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
       {big ? (
         // Past 40 plants (v14 pf-e E3; boards Many, ManyDesk): on the phone one column, Your plants
         // last; at 960 px and wider the chart's column (Next step, Through the years, Jobs) and Your
-        // plants' column (with Warnings and fit and Balance under it), in the DOM in reading order. Your
-        // plants has one place in the tree at every width (the right column, after the left on the
-        // phone), so crossing 960 px never remounts it: its search, groups and Find in place stay
-        // (round 2 R1); only Warnings and fit and Balance change column.
+        // plants' column (Your plants, then Warnings and fit, Balance and the foot). Each block is
+        // mounted once, in the phone's reading order, and placed by the grid (plants.css), so crossing
+        // 960 px never remounts one: Your plants' search, groups and Find in place (round 2 R1), the
+        // folds opened in Warnings and fit, the foot's status and the focus inside any of them stay
+        // (round 3 R4).
         <div class="ct-palette-body" data-pictures="" data-many="">
           <div class="ct-many-left">
             <NextStep holes={holes} members={members} />
             <div class="ct-palette-pictures">
               <Years {...pic} warnings={groups.length} />
               <JobsPicture {...pic} />
-              {!desk && <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />}
-              {!desk && <Balance members={members} pending={loading} unchecked={unchecked} />}
             </div>
+          </div>
+          <div class="ct-many-weigh">
+            <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />
+            <Balance members={members} pending={loading} unchecked={unchecked} />
           </div>
           <div class="ct-many-right">
             <YourPlants rows={rows} />
-            {desk && <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />}
-            {desk && <Balance members={members} pending={loading} unchecked={unchecked} />}
-            {foot && <div class="ct-palette-foot">{foot}</div>}
           </div>
+          {foot && <div class="ct-palette-foot">{foot}</div>}
           <FindPanelSlot />
         </div>
       ) : (
-        <>
-          <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
-            <NextStep holes={holes} members={members} />
-            {members.length > 0 && (
-              <div class="ct-palette-pictures">
-                <Years {...pic} warnings={groups.length} />
-                <JobsPicture {...pic} />
-              </div>
-            )}
-            {members.length > 0 && (
-              <div class="ct-palette-side">
-                <Warnings groups={groups} />
-                <Balance members={members} pending={loading} unchecked={unchecked} />
-                {/* Board MainMore: at 960 px and wider the foot stands in the side column under Balance. */}
-                {desk && foot && <div class="ct-palette-foot">{foot}</div>}
-              </div>
-            )}
-            <FindPanelSlot />
-          </div>
+        // 40 plants or fewer (boards Main, MainMore, PaletteMore): Your plants and the foot sit in the
+        // body after the side column, mounted once and placed by the grid (plants.css): on the phone in
+        // this order; at 960 px and wider the foot under Balance in the side column (board MainMore) and
+        // Your plants across under the pictures, so crossing 960 px remounts nothing (round 3 R4).
+        <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
+          <NextStep holes={holes} members={members} />
+          {members.length > 0 && (
+            <div class="ct-palette-pictures">
+              <Years {...pic} warnings={groups.length} />
+              <JobsPicture {...pic} />
+            </div>
+          )}
+          {members.length > 0 && (
+            <div class="ct-palette-side">
+              <Warnings groups={groups} />
+              <Balance members={members} pending={loading} unchecked={unchecked} />
+            </div>
+          )}
           <YourPlants rows={rows} />
-          {/* Board PaletteMore: on the phone (or with no side column, at 0 plants) after Your plants. */}
-          {(!desk || !members.length) && foot && <div class="ct-palette-foot">{foot}</div>}
-        </>
+          {foot && <div class="ct-palette-foot">{foot}</div>}
+          <FindPanelSlot />
+        </div>
       )}
       {/* v14 0W-1 item 8: the figures panel's palette place, a stub that renders nothing until pf-d; pf-b places it. */}
       <PaletteLimits />

@@ -1596,6 +1596,8 @@
   "consortium.paste.reading": "{done} van {total} gelezen",
   "consortium.paste.groupChoose": "Te kiezen",
   "consortium.paste.groupNone": "Niet gevonden",
+  "consortium.paste.groupChooseParts": "Te kiezen: {parts}",
+  "consortium.paste.groupNoneParts": "Niet gevonden: {parts}",
   "consortium.paste.groupRec": "Herkend: {parts}",
   "consortium.paste.isNewSci": "nieuw, gevonden op wetenschappelijke naam",
   "consortium.paste.otherChoices": "De andere planten met de naam ‘{name}’ tonen",

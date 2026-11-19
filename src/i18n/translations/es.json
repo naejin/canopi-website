@@ -1596,6 +1596,8 @@
   "consortium.paste.reading": "{done} de {total} leídos",
   "consortium.paste.groupChoose": "Por elegir",
   "consortium.paste.groupNone": "No encontrados",
+  "consortium.paste.groupChooseParts": "Por elegir: {parts}",
+  "consortium.paste.groupNoneParts": "No encontrados: {parts}",
   "consortium.paste.groupRec": "Reconocidos: {parts}",
   "consortium.paste.isNewSci": "nueva, encontrada por su nombre científico",
   "consortium.paste.otherChoices": "Ver las otras plantas llamadas «{name}»",

@@ -223,6 +223,8 @@
 /* The field is light, as the board draws it (BC17); the foot's two buttons share the width. */
 .ct textarea.ct-paste-text { background: var(--surface); }
 .ct .ct-paste-foot > .button { flex: 1 1 0; justify-content: center; }
+/* While a changed long paste reads, the last reading's actions wait (round 3 R3): drawn as disabled, still focusable. */
+.ct :is(.ct-paste-foot, .ct-paste-group) :is(.button, .ct-paste-skip)[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
 .ct .ct-paste-choices { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
 .ct .ct-paste-choice {
   display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 44px; padding: 4px 12px; border-radius: 22px; text-align: start;
@@ -408,7 +410,13 @@
 @media (min-width: 960px) {
   /* Past 40 plants (v14 pf-e; board ManyDesk): Find from the page head stands over Your plants' column;
      from Your plants' "Add plants" it stands in place of the table (F30), inside the section. */
-  .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-left { grid-column: 1; grid-row: 1 / span 2; }
+  .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) { grid-template-rows: auto auto auto 1fr; }
+  .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-left { grid-column: 1; grid-row: 1 / span 4; }
   .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-right { grid-column: 2; grid-row: 2; }
+  .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-many-weigh { grid-column: 2; grid-row: 3; }
+  .ct .ct-palette-body[data-many]:has(> dialog.ct-find-panel) > .ct-palette-foot { grid-column: 2; grid-row: 4; }
+  /* 40 plants or fewer with the panel open: the foot under the side column, Your plants across below. */
+  .ct .ct-palette-body[data-pictures]:not([data-many]):has(> dialog.ct-find-panel) > .ct-palette-foot { grid-column: 2; grid-row: 4; }
+  .ct .ct-palette-body[data-pictures]:not([data-many]):has(> dialog.ct-find-panel) > .ct-plants { grid-column: 1 / -1; grid-row: 5; }
   .ct .ct-plants > dialog.ct-find-panel { border: 0; border-radius: 0; background: none; }
 }

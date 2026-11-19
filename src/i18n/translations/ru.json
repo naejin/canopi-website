@@ -1596,6 +1596,8 @@
   "consortium.paste.reading": "Прочитано {done} из {total}",
   "consortium.paste.groupChoose": "Нужен выбор",
   "consortium.paste.groupNone": "Не найдено",
+  "consortium.paste.groupChooseParts": "Нужен выбор: {parts}",
+  "consortium.paste.groupNoneParts": "Не найдено: {parts}",
   "consortium.paste.groupRec": "Распознано: {parts}",
   "consortium.paste.isNewSci": "новое, найдено по научному названию",
   "consortium.paste.otherChoices": "Показать другие растения с названием «{name}»",

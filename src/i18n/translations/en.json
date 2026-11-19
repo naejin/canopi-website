@@ -1596,6 +1596,8 @@
   "consortium.paste.reading": "{done} of {total} read",
   "consortium.paste.groupChoose": "Need a choice",
   "consortium.paste.groupNone": "Not found",
+  "consortium.paste.groupChooseParts": "Need a choice: {parts}",
+  "consortium.paste.groupNoneParts": "Not found: {parts}",
   "consortium.paste.groupRec": "Recognised: {parts}",
   "consortium.paste.isNewSci": "new, found by its scientific name",
   "consortium.paste.otherChoices": "Show the other plants called “{name}”",

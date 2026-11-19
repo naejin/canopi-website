@@ -588,8 +588,10 @@ test('PFE27 (pf-e BC17-BC20, boards Paste and AddMany): 215 names: the Need a ch
   const page = await bigPastePage(390);
   await openGroup(page, /^Need a choice/);
   await says(page, 'Each choice shows its fit, or says it is in your palette. A loose word (“beans”) asks too: nothing is added unasked.', { inDialog: true });
-  const head = await control(page, 'button', /^Need a choice \d+$/);
-  const n = Number(head.name.match(/\d+$/)[0]);
+  // The head counts the group's lines, its repeated ones said "listed twice" (round 3 R2); "N to go"
+  // counts the questions: the lines less the repeats.
+  const head = await control(page, 'button', /^Need a choice(: [\d,]+ listed twice)? [\d,]+$/);
+  const n = Number(head.name.match(/\d+$/)[0]) - Number(head.name.match(/([\d,]+) listed twice/)?.[1] ?? 0);
   await says(page, `0 chosen, ${n} to go. A name you leave is not added.`, { inDialog: true });
   await control(page, 'button', `Skip the ${n} left`);
   const more = await page.evaluate(() => {
@@ -754,18 +756,20 @@ test('PFE31 (pf-e R3): ticking two closed groups whole, Remove, then Undo lands 
   await done(page);
 });
 
-test('PFE32 (pf-e R4; round 2 R3, C1): one unit a group: Not found counts names, Need a choice questions, in the count line, the head and the button; a repeat is "listed twice"', async () => {
+test('PFE32 (pf-e R4; round 3 R2, C2): the count line splits the lines by group, adding up to the names read; "listed twice" is said only in a group\'s head, of its own repeated lines', async () => {
   const page = await boardPastePage(390);
   await pasteText(page, 'sukuma wiki\nsukuma wiki\npigeon pea');
-  await says(page, '3 names read 1 recognised, 1 not found, 1 listed twice', { inDialog: true });
-  await control(page, 'button', /^Not found 1$/);
+  await says(page, '3 names read 1 recognised, 2 not found', { inDialog: true });
+  await saysNot(page, '3 names read 1 recognised, 2 not found, 1 listed twice', 'R2: no second "listed twice" in the count line');
+  await control(page, 'button', /^Not found: 1 listed twice 2$/);
   await openGroup(page, /^Not found/);
   await control(page, 'button', 'Copy this name');
   await says(page, /“sukuma wiki” Not found\. · listed twice, counted once/, { inDialog: true });
-  await page.$eval('dialog[open] #ct-paste-text', (el) => { el.value = 'beans\nbeans'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+  await page.$eval('dialog[open] #ct-paste-text', (el) => { el.value = 'beans\nbeans\npigeon pea\nPigeon pea'; el.dispatchEvent(new Event('input', { bubbles: true })); });
   await page.click('dialog[open] [data-paste-read]');
-  await says(page, '2 names read 1 needs a choice, 1 listed twice', { inDialog: true });
-  await control(page, 'button', /^Need a choice 1$/);
+  await says(page, '4 names read 2 recognised, 2 need a choice', { inDialog: true });
+  await control(page, 'button', /^Need a choice: 1 listed twice 2$/);
+  await control(page, 'button', /^Recognised: .*1 listed twice 2$/);
   await done(page);
 });
 
@@ -930,7 +934,7 @@ test('PFE41 (pf-e C6, board AddMany, word-map 10): a choice already in the palet
   await done(page);
 });
 
-test('PFE42 (pf-e F23, C3, C8): 0 lines and a header alone say "Nothing to read"; 5,000 lines are read in slices with "N of 5,000 read", the page answering meanwhile (the longest task reported); one name fixed in them keeps the last reading (groups, count, Add) on screen until the new one is whole', async (t) => {
+test('PFE42 (pf-e F23, C3): 0 lines and a header alone say "Nothing to read"; 5,000 lines are read in slices with "N of 5,000 read", the page answering meanwhile (the longest task reported)', async (t) => {
   const page = await boardPastePage(390);
   await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
   assert.ok(await has(page, 'dialog[open] #ct-paste-text', 15_000));
@@ -954,35 +958,6 @@ test('PFE42 (pf-e F23, C3, C8): 0 lines and a header alone say "Nothing to read"
   const seen = await page.evaluate(() => window.__paste);
   assert.ok(seen.progress.some((p) => /^[\d,]+ of 5,000 read$/.test(p)), `F23: the progress line ("N of 5,000 read"): ${seen.progress.slice(0, 3).join(' | ')}`);
   t.diagnostic(`F23 5,000 lines: read in ${ms} ms; progress steps ${seen.progress.length}; longest task ${Math.max(0, ...seen.long)} ms; tasks over 200 ms: ${seen.long.filter((x) => x > 200).length} (reported, never a failure)`);
-  // C8: fix one name in the box. Every frame until the new text is read whole, the last reading stays:
-  // the groups, "5,000 names read" and "Add 1 plant" (never "N of 5,000 read" alone).
-  const addLabel = () => [...document.querySelectorAll('dialog[open] .ct-paste-foot button.button-primary')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()).join('');
-  const addBefore = await page.evaluate(addLabel);
-  assert.match(addBefore, /Add 1 plant$/, `the premise: the plant line is to add (${addBefore})`);
-  const watch = page.evaluate((labelSrc) => new Promise((resolve) => {
-    const label = new Function(`return (${labelSrc})()`);
-    let frames = 0, read = false, last = '', bad = 0, readFrames = 0;
-    const log = [];
-    const tick = () => {
-      frames++;
-      const r = !!document.querySelector('dialog[open] [data-paste-reading]');
-      if (r) { read = true; readFrames++; }
-      const g = document.querySelectorAll('dialog[open] [data-paste-group]').length;
-      const c = (document.querySelector('dialog[open] [data-paste-count] strong')?.textContent ?? '').trim();
-      const a = label();
-      const st = `${r ? 'r' : '-'} g${g} ${c} | ${a}`;
-      if (st !== last) { log.push(`${frames}:${st}`); last = st; }
-      if (!g || c !== '5,000 names read' || !/Add 1 plant$/.test(a)) bad++;
-      if ((read && !r) || frames > 3600) resolve({ read, bad, readFrames, log: log.join(' ; ') }); else requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }), addLabel.toString());
-  await page.$eval('dialog[open] #ct-paste-text', (el) => { el.value = el.value.replace('zq0xv', 'zq0xw'); el.dispatchEvent(new Event('input', { bubbles: true })); });
-  const re = await watch;
-  assert.ok(re.read, `the premise: the fixed text is read again in slices (${re.log})`);
-  assert.equal(re.bad, 0, `C8: the last reading (groups, count, Add) stays on screen while the fixed text reads (${re.log})`);
-  await says(page, '5,000 names read', { inDialog: true, timeout: 120_000 });
-  assert.match(await page.evaluate(addLabel), /Add 1 plant$/, 'C8: the new reading adds the plant');
   await done(page);
 });
 
@@ -1142,43 +1117,132 @@ test('PFE49 (pf-e round 2 R1): ticks and the search in place live by the state, 
   await done(page);
 });
 
-test('PFE50 (pf-e round 2 R5): an edit to a long paste keeps the last reading on screen while the new one reads (stale, aria-busy): Need a choice stays open, an answer stays, the focus stays on its choice', async () => {
+test('PFE50 (pf-e round 2 R5, C8; round 3 R3, C3): an edit to a long paste keeps the last reading on screen while the new one reads (stale, aria-busy): Need a choice stays open, an answer stays, the focus stays on its choice; the count and "Add N plants" stay, and Add, "Copy these N names" and "Skip the N left" wait (aria-disabled, pressing Add adds nothing) until the new reading is whole', async () => {
   const page = await bigPastePage(390);
+  await openGroup(page, /^Not found/);
   await openGroup(page, /^Need a choice/);
   const chip = 'dialog[open] [data-paste-group="choose"] [role="group"] button[aria-pressed]';
   assert.ok(await has(page, chip, 4000), 'the premise: a question\'s choices');
   await page.$eval(chip, (b) => { b.click(); b.focus(); });
   await frames(page);
   const label = await page.$eval(chip, (b) => b.textContent.replace(/\s+/g, ' ').trim());
-  // Watch every frame from the edit until the new reading is whole (its count said): the group must never go.
+  const add = await control(page, 'button', /^Add \d+ plants?$/);
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  // Watch every frame from the edit until the new reading is whole (its count said): the group must
+  // never go; while the reading line shows, the count line, the Add label stay the last reading's and
+  // its actions wait (pressed once, Add adds nothing).
   const before = await page.$eval('dialog[open] [data-paste-count]', (e) => Number(e.textContent.replace(/,/g, '').match(/\d+/)[0]));
-  const watch = page.evaluate((want) => new Promise((resolve) => {
-    let gone = 0, busy = 0, read = false, frames = 0, last = '';
+  const watch = page.evaluate((want, addName) => new Promise((resolve) => {
+    let gone = 0, busy = 0, read = false, frames = 0, last = '', stale = 0, live = 0, pressed = false;
     const log = [];
+    const q = (sel) => document.querySelector(sel);
+    const button = (re) => [...document.querySelectorAll('dialog[open] button')].find((b) => re.test(b.textContent.replace(/\s+/g, ' ').trim()));
     const tick = () => {
       frames++;
-      const g = document.querySelector('dialog[open] [data-paste-group="choose"]');
+      const g = q('dialog[open] [data-paste-group="choose"]');
       if (!g) gone++;
       if (g?.getAttribute('aria-busy') === 'true') busy++;
-      const r = !!document.querySelector('dialog[open] [data-paste-reading]');
-      if (r) read = true;
-      const n = Number((document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '').replace(/,/g, '').match(/\d+/)?.[0] ?? 0);
+      const r = !!q('dialog[open] [data-paste-reading]');
+      const n = Number((q('dialog[open] [data-paste-count]')?.textContent ?? '').replace(/,/g, '').match(/\d+/)?.[0] ?? 0);
+      if (r) {
+        read = true;
+        const a = button(/^\+? ?Add \d+ plants?$/), copy = button(/^Copy (this name|these [\d,]+ names)$/), skip = button(/^Skip the [\d,]+ left$/);
+        const waits = (b) => !!b && b.getAttribute('aria-disabled') === 'true';
+        if (n !== want - 1500 || a?.textContent.replace(/\s+/g, ' ').trim().replace(/^\+ ?/, '') !== addName) stale++;
+        if (!waits(a) || !waits(copy) || !waits(skip)) live++;
+        if (!pressed && a) { pressed = true; a.click(); }
+      }
       const st = `${g ? 'g' : '-'}${r ? 'r' : '-'}${n}`;
       if (st !== last) { log.push(`${frames}:${st}`); last = st; }
-      if (n === want || frames > 1800) resolve({ gone, busy, read, n, log: log.join(' ') }); else requestAnimationFrame(tick);
+      if ((n === want && !r) || frames > 1800) resolve({ gone, busy, read, n, stale, live, pressed, log: log.join(' ') }); else requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }), before + 1500);
+  }), before + 1500, add.name);
   // 1,500 lines added at the end (the input event only: the focus stays where it is).
   await page.$eval('dialog[open] #ct-paste-text', (el) => { el.value = `${el.value}\n${Array.from({ length: 1500 }, (_, i) => `qzx${i}vk`).join('\n')}`; el.dispatchEvent(new Event('input', { bubbles: true })); });
   const seen = await watch;
+  assert.ok(seen.read && seen.pressed, 'the premise: the new text is read in slices, and Add was pressed meanwhile');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'R3 C3: Add pressed during the re-read adds nothing');
+  assert.equal(seen.live, 0, 'R3 C3: Add, "Copy these N names" and "Skip the N left" wait (aria-disabled) while the new text reads');
   assert.equal(seen.n, before + 1500, `the premise: the new text is read whole (${seen.n})`);
-  assert.ok(seen.read, 'the premise: the new text is read in slices');
   assert.equal(seen.gone, 0, `R5: the groups stay on screen while the new text reads (${seen.log})`);
   assert.ok(seen.busy > 0, 'R5: the last reading is marked busy meanwhile');
+  assert.equal(seen.stale, 0, `C8: the count line and "${add.name}" stay the last reading's while the new text reads (${seen.log})`);
+  assert.ok(await has(page, 'dialog[open] #ct-paste-text', 1000), 'and the sheet stays open');
   const g = await control(page, 'button', /^Need a choice/);
   assert.equal(g.expanded, true, 'R5: Need a choice stays open after the re-read');
   const after = await page.evaluate(() => { const a = document.activeElement; return { pressed: a?.getAttribute('aria-pressed'), text: a?.textContent.replace(/\s+/g, ' ').trim() }; });
   assert.deepEqual(after, { pressed: 'true', text: label }, 'R5: the focus stays on the answered choice');
+  const ready = await control(page, 'button', /^Add \d+ plants?$/);
+  assert.equal(ready.name, add.name, 'the new reading adds what the last one did (the new lines are not found)');
+  assert.notEqual(await page.$eval('dialog[open] .ct-paste-foot .button-primary', (b) => b.getAttribute('aria-disabled')), 'true', 'Add is live again once the new reading is whole');
+  await done(page);
+});
+
+// ---- fix round 3, batch 1 ----
+
+test('PFE51 (pf-e round 3 R5, C4, R1): two questions offering the same plants keep their own answers and both are added; an emptied paste forgets its answers; a close spelling stays its own question beside a choice that offers its plant', async () => {
+  const page = await boardPastePage(390);
+  // Two questions sharing plants: the genus "Phaseolus" and the loose word "beans".
+  await pasteText(page, 'Phaseolus\nbeans');
+  await says(page, '2 names read 2 need a choice', { inDialog: true });
+  const chips = (name) => page.$$eval('dialog[open] [role="group"]', (gs, n) => [...(gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`))?.querySelectorAll('button[aria-pressed]') ?? [])]
+    .map((b) => ({ t: b.textContent.replace(/\s+/g, ' ').trim(), on: b.getAttribute('aria-pressed') === 'true' })), name);
+  // Two plants both questions offer, one not in the palette first (a plant you have answers and adds nothing).
+  const beansChoices = (await chips('beans')).map((c) => c.t);
+  const shared = (await chips('Phaseolus')).map((c) => c.t).filter((t) => /Phaseolus/.test(t) && beansChoices.includes(t))
+    .sort((x, y) => Number(/in your palette/.test(x)) - Number(/in your palette/.test(y)));
+  assert.ok(shared.length >= 2 && !/in your palette/.test(shared[0]), `the premise: two Phaseolus plants offered by both questions (${shared.join(' | ')})`);
+  const adds = shared.slice(0, 2).filter((t) => !/in your palette/.test(t)).length;
+  const pick = (name, t) => page.$$eval('dialog[open] [role="group"]', (gs, n, x) => { const g = gs.find((y) => (y.getAttribute('aria-label') ?? '').includes(`“${n}”`)); [...g.querySelectorAll('button[aria-pressed]')].find((b) => b.textContent.replace(/\s+/g, ' ').trim() === x).click(); }, name, t);
+  const add0 = (await control(page, 'button', /^Add \d+ plants?$/)).name;
+  await pick('Phaseolus', shared[0]);
+  await frames(page);
+  await pick('beans', shared[1]);
+  await frames(page);
+  assert.deepEqual((await chips('Phaseolus')).filter((c) => c.on).map((c) => c.t), [shared[0]], 'R5: "Phaseolus" keeps its own answer');
+  assert.deepEqual((await chips('beans')).filter((c) => c.on).map((c) => c.t), [shared[1]], 'R5: "beans" has its own');
+  const n0 = Number(add0.match(/\d+/)[0]);
+  await control(page, 'button', `Add ${n0 + adds} plant${n0 + adds === 1 ? '' : 's'}`);
+  await says(page, '2 chosen, 0 to go.', { inDialog: true });
+  // C4: emptied, then a new paste: nothing answered for it.
+  await typeIn(page, 'dialog[open] #ct-paste-text', '');
+  await says(page, 'Paste or type names above.', { inDialog: true });
+  await pasteText(page, 'Phaseolus\npigeon pea');
+  await says(page, '2 names read', { inDialog: true });
+  assert.deepEqual((await chips('Phaseolus')).filter((c) => c.on).map((c) => c.t), [], 'C4: an earlier paste\'s answer never answers the new one');
+  await done(page);
+});
+
+test('PFE52 (pf-e round 3 R4, boards Many, ManyDesk): Warnings and fit is mounted once: its open toxic reason and its "+ N more" opened stay, and the focus stays in it, when the width crosses 960 px both ways', async () => {
+  const page = await loadPalette200({ width: 1280 });
+  await openToxic(page);
+  const SEC = `(${() => [...document.querySelectorAll('main h2, main h3')].find((e) => e.textContent.replace(/\s+/g, ' ').trim().startsWith('Warnings and fit'))?.closest('section, article, aside, [role="region"]')})()`;
+  const more = await page.evaluate((sec) => {
+    const s = eval(sec);
+    const b = [...(s?.querySelectorAll('li button') ?? [])].find((x) => /^\+ [\d,]+ more$/.test(x.textContent.trim()) && x.getClientRects().length);
+    if (!b) return null;
+    s.setAttribute('data-r4', '');
+    b.focus(); b.click();
+    return b.textContent.trim();
+  }, SEC);
+  assert.ok(more, 'the premise: "+ N more" in the open toxic reason');
+  await frames(page);
+  const state = () => page.evaluate((sec, m) => {
+    const s = eval(sec), a = document.activeElement;
+    return {
+      same: !!s?.hasAttribute('data-r4'),
+      reason: !!s && [...s.querySelectorAll('button[aria-expanded="true"]')].some((b) => /^Toxic or very toxic/.test(b.textContent.trim())),
+      more: !!s && ![...s.querySelectorAll('button')].some((b) => b.textContent.trim() === m),
+      focus: !!s && !!a && a !== document.body && s.contains(a),
+    };
+  }, SEC, more);
+  assert.deepEqual(await state(), { same: true, reason: true, more: true, focus: true }, 'the premise: the reason and its list open, the focus in Warnings and fit');
+  const vp = page.viewport();
+  for (const width of [900, 1280]) {
+    await page.setViewport({ ...vp, width });
+    await frames(page);
+    assert.deepEqual(await state(), { same: true, reason: true, more: true, focus: true }, `R4 at ${width}: the same Warnings and fit, its reason and list open, the focus in it`);
+  }
   await done(page);
 });

@@ -158,13 +158,23 @@
 @media (min-width: 960px) { .ct .ct-many-tickbar { position: static; } }
 
 /* Past 40 plants at 960 px and wider (v14 pf-e E3; board ManyDesk): the chart's column and Your plants'
-   column, the second wider. */
-.ct .ct-many-left, .ct .ct-many-right { display: grid; gap: 24px; min-width: 0; align-content: start; }
+   column, the second wider. Each block is mounted once in the phone's order (chart, Warnings and fit with
+   Balance, Your plants, the foot) and placed here (round 3 R4): the chart's column spans the rows, Your
+   plants stands first in the right one, then Warnings and fit with Balance, then the foot; the last row
+   takes the chart's extra height. */
+.ct .ct-many-left, .ct .ct-many-right, .ct .ct-many-weigh { display: grid; gap: 24px; min-width: 0; align-content: start; }
 @media (min-width: 960px) {
   /* The chart's column keeps at least 380 px (at 960 px the Jobs head and the names; BC5). */
-  .ct .ct-palette-body[data-pictures][data-many] { grid-template-columns: minmax(380px, 1fr) minmax(0, 1.6fr); grid-template-rows: auto; }
-  .ct .ct-palette-body[data-many] > .ct-many-left { grid-column: 1; grid-row: 1; }
+  .ct .ct-palette-body[data-pictures][data-many] { grid-template-columns: minmax(380px, 1fr) minmax(0, 1.6fr); grid-template-rows: auto auto 1fr; }
+  .ct .ct-palette-body[data-many] > .ct-many-left { grid-column: 1; grid-row: 1 / span 3; }
   .ct .ct-palette-body[data-many] > .ct-many-right { grid-column: 2; grid-row: 1; }
+  .ct .ct-palette-body[data-many] > .ct-many-weigh { grid-column: 2; grid-row: 2; }
+  .ct .ct-palette-body[data-many] > .ct-palette-foot { grid-column: 2; grid-row: 3; }
+  /* 40 plants or fewer (board MainMore): the foot under Balance in the side column, Your plants across
+     under the pictures; both mounted once, after the side column (round 3 R4). */
+  .ct .ct-palette-body[data-pictures]:not([data-many]) > .ct-palette-foot { grid-column: 2; grid-row: 3; }
+  .ct .ct-palette-body[data-pictures]:not([data-many]) > .ct-plants { grid-column: 1 / -1; grid-row: 4; }
+  .ct .ct-palette-body:not([data-pictures]) > .ct-palette-foot, .ct .ct-palette-body:not([data-pictures]) > .ct-plants { grid-column: 1 / -1; }
 }
 
 /* The light icon and "Planted in" share a line: the words wrap beside the icon, never under it (Recife). */

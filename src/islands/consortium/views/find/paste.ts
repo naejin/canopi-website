@@ -242,8 +242,10 @@ export interface PasteResult<T> {
 //   other      only another climate's list has it, one plant: "Add anyway", a guest (A9)
 //   already    in the consortium already
 //   duplicate  a line naming a plant another line matched (a later line; a choice whose every plant
-//              another line took: "Malus" then "Malus domestica"; or a close spelling of a plant an
-//              exact line or a choice holds, in any order: "chesnut" then "European chestnut", R2)
+//              another line took: "Malus" then "Malus domestica"; or a close spelling of a plant a line
+//              names exactly, in any order: "chesnut" then "European chestnut", R2). A close spelling
+//              whose plant a choice only offers stays its own question ("Did you mean …?"): only a
+//              line naming the plant exactly answers it (round 3 R1, C1)
 //   none       in no list
 // here: this climate's plants; others: [[climate, plants], …] in the export's order; members: the
 // consortium's ids; index: the page's release-wide search (Find's), else one over these lists.
@@ -266,8 +268,8 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
   const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], duplicate: [], none: [], header: null, twice: names.twice ?? new Set(), repeatsOf: names.repeatsOf ?? new Map() };
   let at = 0;
   // A plant read exactly claims it in `seen` at once (a later line naming it is listed twice); a close
-  // spelling only offers it, so it waits in `near` and yields in result() to an exact line or a choice
-  // that names the same plant, in whatever order the lines come (R2: exact > choice > close spelling).
+  // spelling only offers it, so it waits in `near` and yields in result() to a line that names the same
+  // plant exactly, in whatever order the lines come (R2), never to a choice that also offers it (R1).
   const near = new Set<PlantId>();
   const one = (name: string, t: T, close: string | null, sci = false) => {
     const climate = lists.climate.get(t.id) ?? null;
@@ -346,12 +348,12 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
     for (; next < end; next++) line(next, names[next]);
     return next >= names.length;
   };
-  // Every line read, each plant goes to one line by priority, never by reading order (R2): a line that
-  // named it exactly, then a choice that offers it, then a close spelling. Plants read exactly leave the
-  // choose groups; a group they leave empty keeps its line, as covered by another line (a duplicate of
+  // Every line read, a plant named exactly goes to that line, never by reading order (R2): it leaves the
+  // choose groups; a group it leaves empty keeps its line, as covered by another line (a duplicate of
   // the plant it named first); a group left with one plant stays a question ("Which Malus?" with the
   // wild apple once "Malus domestica" took the apple, c1r4 U1): only a name that has one plant from the
-  // start is found. A close spelling whose plant an exact line or a choice holds is that line's repeat.
+  // start is found. A close spelling whose plant a line names exactly is that line's repeat; one whose
+  // plant a choice only offers stays its own question, each answered on its own (round 3 R1).
   const result = (): PasteResult<T> => {
     if (sorted) return sorted;
     step(Infinity);
@@ -362,8 +364,7 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
       if (taxa.length) out.choose.push({ ...c, taxa, inside: taxa.filter((t) => ins.has(t.id)).map((t) => t.id) });
       else out.duplicate.push({ at: c.at, name: c.name, taxon: c.taxa[0] });
     }
-    const offered = new Set(out.choose.flatMap((c) => c.taxa.map((t) => t.id)));
-    const yields = (x: { close: string | null; taxon: T }) => x.close !== null && (seen.has(x.taxon.id) || offered.has(x.taxon.id));
+    const yields = (x: { close: string | null; taxon: T }) => x.close !== null && seen.has(x.taxon.id);
     for (const x of [...out.found, ...out.other, ...out.already].filter(yields)) out.duplicate.push({ at: x.at, name: x.name, taxon: x.taxon });
     out.found = out.found.filter((x) => !yields(x));
     out.other = out.other.filter((x) => !yields(x));
@@ -373,6 +374,27 @@ export function pasteReader<T extends Named>(names: PastedNames, { here, others 
     return (sorted = out);
   };
   return { total: names.length, read: () => next, step, result };
+}
+
+// The questions of a reading, in the paste's order: a close spelling (one plant: "Read as …"), found
+// here or only on another list (BC20), and each choose group. Each is answered on its own, by its line's
+// name (round 3 R5: two questions offering the same plants can take different answers).
+export interface Question { at: number; name: string; ids: PlantId[] }
+export function questionsOf<T extends Named>(r: PasteResult<T>): Question[] {
+  return [
+    ...r.found.filter((f) => f.close).map((f) => ({ at: f.at, name: f.name, ids: [f.taxon.id] })),
+    ...r.other.filter((o) => o.close).map((o) => ({ at: o.at, name: o.name, ids: [o.taxon.id] })),
+    ...r.choose.map((c) => ({ at: c.at, name: c.name, ids: c.taxa.map((t) => t.id) })),
+  ].sort((a, b) => a.at - b.at);
+}
+// The grower's answers, a question each: its line's name to the plant chosen, or null for "None" (and
+// "Skip the N left"). The plants they choose in this reading, for plan: an answer of a line no longer
+// pasted, or of a plant its question no longer offers, chooses nothing.
+export type Answers = ReadonlyMap<string, PlantId | null>;
+export function answered<T extends Named>(r: PasteResult<T>, answers: Answers): PlantId[] {
+  const ids: PlantId[] = [];
+  for (const q of questionsOf(r)) { const id = answers.get(q.name); if (id && q.ids.includes(id)) ids.push(id); }
+  return [...new Set(ids)];
 }
 
 // What "Add all" adds from a reading: the found plants (a close spelling only once ticked: "chesnut"
@@ -389,25 +411,28 @@ export function plan<T extends Named>(r: PasteResult<T>, ticked: readonly PlantI
 }
 
 // The counts the sheet says (board Paste: "8 names read: 6 recognised, 1 needs a choice, 1 not found",
-// "Recognised: 3 new, 2 you have, 1 listed twice"), one unit a group, the one its head, its rows and its
-// buttons use (R3, C1): Recognised counts its lines (a repeated line is its "listed twice" part, as the
-// board draws it), Need a choice its questions (as "N to go" and "Skip the N left"), Not found its names
-// (as its list and "Copy these N names"); a question or a missing name pasted again is said "listed
-// twice" on its row and counted in `again`, so rec + choose + none + again = lines, every line read.
+// "Recognised: 3 new, 2 you have, 1 listed twice"). The count line splits the lines by group (rec +
+// choose + none = lines, every line read); "listed twice" is said only in a group's head, of that group's
+// own repeated lines (round 3 R2, C2: one meaning): `twice` Recognised's (a repeated line, or a line
+// naming a plant another line has), `askTwice` Need a choice's, `noneTwice` Not found's. `names`: the
+// names Not found lists and "Copy these N names" copies (each once).
 // fresh: what "Add all" adds unasked (plan, nothing ticked), so the head and the button read one list;
 // other: the plants only another climate's list holds, each added by its own "Add anyway".
-export interface PasteCounts { lines: number; rec: number; choose: number; none: number; again: number; fresh: number; other: number; have: number; twice: number }
+export interface PasteCounts { lines: number; rec: number; choose: number; none: number; fresh: number; other: number; have: number; twice: number; askTwice: number; noneTwice: number; names: number }
 export function pasteCounts<T extends Named>(r: PasteResult<T>, members: readonly PlantId[]): PasteCounts {
   const rep = (x: { name: string }) => r.repeatsOf.get(x.name) ?? 0;
   const repeats = (rows: readonly { name: string }[]) => rows.reduce((n, x) => n + rep(x), 0);
   const recRows = [...r.found.filter((f) => !f.close), ...r.other.filter((o) => !o.close), ...r.already, ...r.duplicate];
   const askRows = [...r.found.filter((f) => f.close), ...r.other.filter((o) => o.close), ...r.choose];
-  const rec = recRows.length + repeats(recRows), choose = askRows.length, none = r.none.length, again = repeats(askRows) + repeats(r.none);
+  const rec = recRows.length + repeats(recRows), choose = askRows.length + repeats(askRows), none = r.none.length + repeats(r.none);
   return {
-    lines: rec + choose + none + again, rec, choose, none, again,
+    lines: rec + choose + none, rec, choose, none,
     fresh: plan(r, [], members).ids.length,
     other: r.other.filter((o) => !o.close).length,
     have: r.already.length,
     twice: repeats(recRows) + r.duplicate.length,
+    askTwice: repeats(askRows),
+    noneTwice: repeats(r.none),
+    names: r.none.length,
   };
 }

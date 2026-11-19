@@ -1596,6 +1596,8 @@
   "consortium.paste.reading": "{total} 件中 {done} 件を読み取り",
   "consortium.paste.groupChoose": "選択が必要",
   "consortium.paste.groupNone": "見つかりません",
+  "consortium.paste.groupChooseParts": "選択が必要：{parts}",
+  "consortium.paste.groupNoneParts": "見つかりません：{parts}",
   "consortium.paste.groupRec": "認識済み：{parts}",
   "consortium.paste.isNewSci": "新規、学名で見つかりました",
   "consortium.paste.otherChoices": "「{name}」と呼ばれる他の植物を表示",
