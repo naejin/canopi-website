@@ -5,7 +5,7 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:12Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:30Z }
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:7da4c769caa1f265
-    last_modified: 2026-11-18T18:49:49Z
+    digest: sha256:5fdfa4dec14ed1d4
+    last_modified: 2026-11-19T09:39:01Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -100,6 +100,31 @@ sources:
     title: scripts/consortium-pp-b1.test.mjs
     digest: sha256:5e7a858ba4881946
     last_modified: 2026-11-18T18:42:15Z
+  - id: consortium-said-mjs
+    resource: ../../scripts/consortium-said.mjs
+    title: scripts/consortium-said.mjs
+    digest: sha256:43893d3f05cd8270
+    last_modified: 2026-11-19T05:25:31Z
+  - id: browser-tests-test-mjs
+    resource: ../../scripts/browser-tests.test.mjs
+    title: scripts/browser-tests.test.mjs
+    digest: sha256:fddc89a90d44ad59
+    last_modified: 2026-11-19T05:13:33Z
+  - id: pf-helpers-mjs
+    resource: ../../scripts/browser/pf-helpers.mjs
+    title: scripts/browser/pf-helpers.mjs
+    digest: sha256:bf7b2cd637b7b170
+    last_modified: 2026-11-19T09:07:50Z
+  - id: pf-d-helpers-mjs
+    resource: ../../scripts/browser/pf-d-helpers.mjs
+    title: scripts/browser/pf-d-helpers.mjs
+    digest: sha256:b258b7dc5d7029a6
+    last_modified: 2026-11-19T00:34:24Z
+  - id: consortium-pf-env-mjs
+    resource: ../../scripts/consortium-pf-env.mjs
+    title: scripts/consortium-pf-env.mjs
+    digest: sha256:686961f8967e3525
+    last_modified: 2026-11-18T15:30:23Z
 ---
 
 # Responsibility
@@ -169,3 +194,11 @@ What the browser specs assume since b1a's Place and b2's palette page meet:
   - `vectors/link-v5.json` and `vectors/range-verdicts.json`
 - **harness.mjs:** `database: 'hold'` holds the database request until `page.releaseHeld()`; a `block: { <role>: 'hold' }` chunk is let through by `page.releaseHeld()` or aborted as offline by `page.failHeld()` (PP-C review c0 round 2: a chunk that fails after the page moved on).
 - **Import rules:** the rules are L1–L10. L10 is a warn rule ([island layers](/decisions/consortium-island-layers.md)).
+
+## PP-C pf streams and chunks 3-4 (2026-11-17 to 2026-11-19)
+
+- **One unit file and one browser spec per pf stream**: `consortium-pf-a` … `consortium-pf-f` (`.test.mjs` and `browser/*.browser.test.mjs`), plus `consortium-pf-0w.test.mjs` (the 0W seams) and `consortium-pp-c1` / `-pp-c2` (Find, One plant). Each browser case is titled `PF<stream letter><n> (pf-x …)`; `browser-tests.test.mjs` holds the file list. Shared steps: `browser/pf-helpers.mjs` (with `refuseGuestList` / `holdGuestList` for list failures, chunk 4 T3) and one `pf-<x>-helpers.mjs` per stream (`pf-d-helpers.mjs` `engineCounts` re-derives every board figure from the engine). `consortium-pf-env.mjs` sets up the Node environment the unit files share.
+- **`consortium-said.mjs`**: the locale files and a core `Line` said in them, shared by the words tests (`consortium-pf-f.test.mjs`, `consortium-pp-c2.test.mjs`; check:dup, M43).
+- **The scenario file** `fixtures/consortium-scenarios.json` (44 cases on 13 places) is recorded by `consortium-scenarios.mjs --record` and run by `consortium-scenarios.test.mjs` ([site inputs](/modules/consortium-site-inputs.md)).
+- `browser/seams-helpers.mjs` `controls()` measures a stretched `::after` target by its offset parent (chunk 4 T11, W6).
+

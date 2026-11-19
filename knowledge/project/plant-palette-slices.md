@@ -4,9 +4,9 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:51Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:21Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:26Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:38Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -56,38 +56,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:933ef22ce988c201
-    last_modified: 2026-11-18T15:27:38Z
-  - id: consortium-f1a-a11y-browser-test-mjs
-    resource: ../../scripts/browser/consortium-f1a-a11y.browser.test.mjs
-    title: scripts/browser/consortium-f1a-a11y.browser.test.mjs
-    digest: sha256:3c4351711e4409d5
-    last_modified: 2026-11-13T20:25:47Z
-  - id: consortium-f1a-balance-browser-test-mjs
-    resource: ../../scripts/browser/consortium-f1a-balance.browser.test.mjs
-    title: scripts/browser/consortium-f1a-balance.browser.test.mjs
-    digest: sha256:c6b5a8a51d9cc960
-    last_modified: 2026-11-13T20:25:47Z
-  - id: consortium-f1a-confidence-browser-test-m
-    resource: ../../scripts/browser/consortium-f1a-confidence.browser.test.mjs
-    title: scripts/browser/consortium-f1a-confidence.browser.test.mjs
-    digest: sha256:ba2a3009fd2751c4
-    last_modified: 2026-11-13T19:32:13Z
-  - id: consortium-f1a-filters-browser-test-mjs
-    resource: ../../scripts/browser/consortium-f1a-filters.browser.test.mjs
-    title: scripts/browser/consortium-f1a-filters.browser.test.mjs
-    digest: sha256:7dbe78bf45462094
-    last_modified: 2026-11-13T20:25:47Z
-  - id: consortium-f1a-palette-browser-test-mjs
-    resource: ../../scripts/browser/consortium-f1a-palette.browser.test.mjs
-    title: scripts/browser/consortium-f1a-palette.browser.test.mjs
-    digest: sha256:66dd80fab9571457
-    last_modified: 2026-11-13T20:25:47Z
-  - id: consortium-f1a-perf-browser-test-mjs
-    resource: ../../scripts/browser/consortium-f1a-perf.browser.test.mjs
-    title: scripts/browser/consortium-f1a-perf.browser.test.mjs
-    digest: sha256:055884901d9f38d1
-    last_modified: 2026-11-13T19:32:13Z
+    digest: sha256:fddc89a90d44ad59
+    last_modified: 2026-11-19T05:13:33Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
@@ -108,31 +78,16 @@ sources:
     title: scripts/check-built-site.mjs
     digest: sha256:8c88beb694518fa1
     last_modified: 2026-11-18T04:25:38Z
-  - id: consortium-balance-test-mjs
-    resource: ../../scripts/consortium-balance.test.mjs
-    title: scripts/consortium-balance.test.mjs
-    digest: sha256:1f0c3404a3d86aea
-    last_modified: 2026-11-13T20:25:47Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
     digest: sha256:213bc47007f2b373
     last_modified: 2026-11-11T04:54:12Z
-  - id: consortium-confidence-test-mjs
-    resource: ../../scripts/consortium-confidence.test.mjs
-    title: scripts/consortium-confidence.test.mjs
-    digest: sha256:807eeb2fe9a1172e
-    last_modified: 2026-11-13T19:32:13Z
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:853938d7571921fa
     last_modified: 2026-11-18T04:32:21Z
-  - id: consortium-palette-test-mjs
-    resource: ../../scripts/consortium-palette.test.mjs
-    title: scripts/consortium-palette.test.mjs
-    digest: sha256:e794c81a66f37dc9
-    last_modified: 2026-11-13T19:32:13Z
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
@@ -176,8 +131,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:0bc2bf17ed0958f1
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:9b5471db4254810e
+    last_modified: 2026-11-19T05:13:33Z
   - id: load-ts
     resource: ../../src/islands/consortium/data/load.ts
     title: src/islands/consortium/data/load.ts
@@ -196,8 +151,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:9ee078fc2501059d
-    last_modified: 2026-11-16T21:12:06Z
+    digest: sha256:d65efdcaadb604d5
+    last_modified: 2026-11-19T09:07:50Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -216,13 +171,13 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b59d99cb0816bb6
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:88dcd1f9fa48e570
+    last_modified: 2026-11-19T08:22:07Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:2d6f468d17a922a7
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:c4e8c2410220e903
+    last_modified: 2026-11-19T09:07:50Z
   - id: correction-tsx
     resource: ../../src/islands/consortium/views/Correction.tsx
     title: src/islands/consortium/views/Correction.tsx
@@ -233,31 +188,21 @@ sources:
     title: src/islands/consortium/views/FutureSlot.tsx
     digest: sha256:0ae13573d9f7e790
     last_modified: 2026-11-14T21:28:50Z
-  - id: paste-tsx
-    resource: ../../src/islands/consortium/views/Paste.tsx
-    title: src/islands/consortium/views/Paste.tsx
-    digest: sha256:904e8e3e5a71ad0b
-    last_modified: 2026-11-14T22:51:25Z
-  - id: plantmarks-tsx
-    resource: ../../src/islands/consortium/views/PlantMarks.tsx
-    title: src/islands/consortium/views/PlantMarks.tsx
-    digest: sha256:bfe0dfd02be2eeeb
-    last_modified: 2026-11-17T10:52:11Z
   - id: sheets-tsx
     resource: ../../src/islands/consortium/views/Sheets.tsx
     title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:ff8a93245b7a3669
-    last_modified: 2026-11-18T13:15:44Z
+    digest: sha256:397cf5c91deb80d0
+    last_modified: 2026-11-19T08:16:50Z
   - id: flags-ts
     resource: ../../src/islands/consortium/views/kit/flags.ts
     title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:b951f3a6ffed4d20
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:046945d22adbcc0a
+    last_modified: 2026-11-19T04:59:08Z
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:4bab1793e5e41fae
-    last_modified: 2026-11-17T13:26:50Z
+    digest: sha256:fdf04f4a2b1781a3
+    last_modified: 2026-11-19T08:16:50Z
   - id: later-ts
     resource: ../../src/islands/consortium/views/later.ts
     title: src/islands/consortium/views/later.ts
@@ -268,16 +213,11 @@ sources:
     title: src/islands/consortium/views/layers.ts
     digest: sha256:7252e2bc066e5305
     last_modified: 2026-11-11T09:49:44Z
-  - id: paste-ts
-    resource: ../../src/islands/consortium/views/paste.ts
-    title: src/islands/consortium/views/paste.ts
-    digest: sha256:e5ac19644e8ab579
-    last_modified: 2026-11-11T09:55:29Z
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:9fffb42bb87f69b5
-    last_modified: 2026-11-12T12:34:53Z
+    digest: sha256:888570c5d4211f48
+    last_modified: 2026-11-19T08:16:50Z
   - id: model-js
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
@@ -298,11 +238,6 @@ sources:
     title: src/lib/consortium/conflicts.ts
     digest: sha256:aceaab4e54f45431
     last_modified: 2026-11-18T04:37:58Z
-  - id: future-marks-ts
-    resource: ../../src/lib/consortium/future-marks.ts
-    title: src/lib/consortium/future-marks.ts
-    digest: sha256:dc7162e2c1e66dbb
-    last_modified: 2026-11-12T11:43:06Z
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
@@ -313,41 +248,16 @@ sources:
     title: src/lib/consortium/jobs.ts
     digest: sha256:97b5290a800f6a3f
     last_modified: 2026-11-14T12:46:39Z
-  - id: mark-providers-ts
-    resource: ../../src/lib/consortium/mark-providers.ts
-    title: src/lib/consortium/mark-providers.ts
-    digest: sha256:a4f658dd31fb03d3
-    last_modified: 2026-11-12T12:34:53Z
-  - id: marks-ts
-    resource: ../../src/lib/consortium/marks.ts
-    title: src/lib/consortium/marks.ts
-    digest: sha256:8a43c201f0c9b5c2
-    last_modified: 2026-11-14T21:28:50Z
-  - id: matrix-ts
-    resource: ../../src/lib/consortium/matrix.ts
-    title: src/lib/consortium/matrix.ts
-    digest: sha256:c948918a08ee50b3
-    last_modified: 2026-11-14T12:12:11Z
-  - id: range-marks-ts
-    resource: ../../src/lib/consortium/range-marks.ts
-    title: src/lib/consortium/range-marks.ts
-    digest: sha256:3b5dee7987b5cbc0
-    last_modified: 2026-11-17T10:52:11Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
     digest: sha256:eb4395e60994e93b
     last_modified: 2026-11-12T07:59:10Z
-  - id: site-marks-ts
-    resource: ../../src/lib/consortium/site-marks.ts
-    title: src/lib/consortium/site-marks.ts
-    digest: sha256:eedd824ed60b2ff0
-    last_modified: 2026-11-16T18:00:55Z
   - id: site-today-ts
     resource: ../../src/lib/consortium/site-today.ts
     title: src/lib/consortium/site-today.ts
-    digest: sha256:432c3fbf13e13afc
-    last_modified: 2026-11-18T00:51:57Z
+    digest: sha256:d410a7e506adace3
+    last_modified: 2026-11-19T05:03:52Z
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
@@ -778,3 +688,7 @@ The implementing agent (Opus 5.5 medium; Fable 5.2 only advises) gets, and needs
 - **Left after 0a:**
   - The 31 v4-literal tests in `consortium-core`, `consortium-memory` and `consortium-p5-seams-s5b` were rewritten to v5 in chunk 0 (362fe3f); 0a' removes what is left in them about kept, crops, stage and the views.
   - The later part is 0.7 KB over its 8 KB cap through the shared `tracks.ts` chunk ([chunk budgets](/decisions/consortium-chunk-budgets.md)); not raised, since 0a' deletes `tracks.ts` (owner "Delete first"); re-measured after 0a'.
+
+## As built in PP-C chunks 3 and 4 (2026-11-19)
+
+This plan predates the v14 boards. What PP-C built on top of it lives in the module concepts, which the code keeps true: the [figures panel](/modules/consortium-figures.md) (site counts, limits, the change summary), the [site inputs](/modules/consortium-site-inputs.md) (`tempsTogether`, the link's 5th `f` segment), the [palette page](/modules/consortium-palette-page.md) (Many plants, Paste's single reading, the sheets stack with `openSheet`'s `from` and restacks, `store.listsState` / `listsLoading`), the [state modules](/modules/consortium-state.md) (`keepShownAsMine`, the guide-missing common name) and the [core](/modules/consortium-core.md) (the hold predicates through `VerdictRule`). Files this plan names that PP-B and PP-C deleted (the mark modules, `balance.ts`, `views/Paste.tsx`, the F1a specs) are history here.

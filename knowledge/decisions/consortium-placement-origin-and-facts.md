@@ -5,13 +5,13 @@ description: One placement origin on guest and borrowed plants replaces three fi
 tags: [consortium, architecture]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:14:59Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:31Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:34Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:91d21007fa090bfc
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:260e0d612a9f4809
+    last_modified: 2026-11-19T04:40:24Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -25,8 +25,8 @@ sources:
   - id: details-tsx
     resource: ../../src/islands/consortium/views/details/Details.tsx
     title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:cc34d260b6465c09
-    last_modified: 2026-11-18T04:37:58Z
+    digest: sha256:0e28aa912e5a06f3
+    last_modified: 2026-11-19T07:06:28Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
@@ -35,8 +35,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:2d6f468d17a922a7
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:c4e8c2410220e903
+    last_modified: 2026-11-19T09:07:50Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
@@ -45,8 +45,8 @@ sources:
   - id: verdict-line-ts
     resource: ../../src/lib/consortium/verdict-line.ts
     title: src/lib/consortium/verdict-line.ts
-    digest: sha256:f0a00fd0dd48b252
-    last_modified: 2026-11-18T13:54:27Z
+    digest: sha256:a169b614d21093dd
+    last_modified: 2026-11-19T05:25:31Z
 ---
 
 ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).

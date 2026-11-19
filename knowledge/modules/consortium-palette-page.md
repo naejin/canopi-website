@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T08:46:43Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:06Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
@@ -20,12 +20,12 @@ sources:
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
     digest: sha256:2f1f47359616befc
-    last_modified: 2026-11-19T08:46:08Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: chart-tsx
     resource: ../../src/islands/consortium/views/kit/chart.tsx
     title: src/islands/consortium/views/kit/chart.tsx
     digest: sha256:8f0324bd61988d5f
-    last_modified: 2026-11-19T08:40:11Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: fit-tsx
     resource: ../../src/islands/consortium/views/kit/fit.tsx
     title: src/islands/consortium/views/kit/fit.tsx
@@ -50,7 +50,7 @@ sources:
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
     digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T08:42:31Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -65,12 +65,12 @@ sources:
     resource: ../../src/islands/consortium/views/palette/Weigh.tsx
     title: src/islands/consortium/views/palette/Weigh.tsx
     digest: sha256:bdc17dc0f3947bcf
-    last_modified: 2026-11-19T08:46:08Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: jobs-picture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
     title: src/islands/consortium/views/palette/JobsPicture.tsx
     digest: sha256:23ad0e26719a7027
-    last_modified: 2026-11-19T08:46:08Z
+    last_modified: 2026-11-19T09:07:50Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -91,6 +91,71 @@ sources:
     title: src/islands/consortium/views/find/Find.tsx
     digest: sha256:668fb618a9d170ed
     last_modified: 2026-11-19T07:06:28Z
+  - id: paste-tsx
+    resource: ../../src/islands/consortium/views/find/Paste.tsx
+    title: src/islands/consortium/views/find/Paste.tsx
+    digest: sha256:3b336d1a022c5ad6
+    last_modified: 2026-11-19T08:59:33Z
+  - id: paste-ts
+    resource: ../../src/islands/consortium/views/find/paste.ts
+    title: src/islands/consortium/views/find/paste.ts
+    digest: sha256:682d6e0249b5041f
+    last_modified: 2026-11-19T08:41:16Z
+  - id: many-tsx
+    resource: ../../src/islands/consortium/views/plants/Many.tsx
+    title: src/islands/consortium/views/plants/Many.tsx
+    digest: sha256:9d8c3a1d3368bf2b
+    last_modified: 2026-11-19T08:17:40Z
+  - id: small-tsx
+    resource: ../../src/islands/consortium/views/plants/Small.tsx
+    title: src/islands/consortium/views/plants/Small.tsx
+    digest: sha256:737bfb8391b57a4a
+    last_modified: 2026-11-19T05:46:59Z
+  - id: state-ts
+    resource: ../../src/islands/consortium/views/plants/state.ts
+    title: src/islands/consortium/views/plants/state.ts
+    digest: sha256:317973d344dc6d16
+    last_modified: 2026-11-19T05:13:33Z
+  - id: model-ts
+    resource: ../../src/islands/consortium/views/plants/model.ts
+    title: src/islands/consortium/views/plants/model.ts
+    digest: sha256:4a8d15d447ede38d
+    last_modified: 2026-11-19T02:51:06Z
+  - id: head-link-tsx
+    resource: ../../src/islands/consortium/views/plants/head-link.tsx
+    title: src/islands/consortium/views/plants/head-link.tsx
+    digest: sha256:9ba5bb9aaff8b88c
+    last_modified: 2026-11-19T01:52:11Z
+  - id: steps-tsx
+    resource: ../../src/islands/consortium/views/place/steps.tsx
+    title: src/islands/consortium/views/place/steps.tsx
+    digest: sha256:3448a53f9ebb4e85
+    last_modified: 2026-11-19T05:13:33Z
+  - id: sheet-tsx
+    resource: ../../src/islands/consortium/views/kit/sheet.tsx
+    title: src/islands/consortium/views/kit/sheet.tsx
+    digest: sha256:fdf04f4a2b1781a3
+    last_modified: 2026-11-19T08:16:50Z
+  - id: sheets-tsx
+    resource: ../../src/islands/consortium/views/Sheets.tsx
+    title: src/islands/consortium/views/Sheets.tsx
+    digest: sha256:397cf5c91deb80d0
+    last_modified: 2026-11-19T08:16:50Z
+  - id: toast-tsx
+    resource: ../../src/islands/consortium/views/Toast.tsx
+    title: src/islands/consortium/views/Toast.tsx
+    digest: sha256:86cdcc6fd7c86414
+    last_modified: 2026-11-19T06:44:45Z
+  - id: flags-ts
+    resource: ../../src/islands/consortium/views/kit/flags.ts
+    title: src/islands/consortium/views/kit/flags.ts
+    digest: sha256:046945d22adbcc0a
+    last_modified: 2026-11-19T04:59:08Z
+  - id: yourplants-tsx
+    resource: ../../src/islands/consortium/views/palette/YourPlants.tsx
+    title: src/islands/consortium/views/palette/YourPlants.tsx
+    digest: sha256:b8b3cecd165b9428
+    last_modified: 2026-11-18T21:43:34Z
 enforced_by:
   - scripts/browser/consortium-pp-b2.browser.test.mjs
   - scripts/consortium-pf-b.test.mjs
@@ -104,11 +169,11 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 
 | Part | File | What it shows |
 |---|---|---|
-| Header steps | `views/palette/Palette.tsx` | Your place (a button back to Place), Your palette (current), Planting plan (later) |
+| Header steps | page head (`ConsortiumPage.astro` `#ct-steps`), `views/place/steps.tsx` | Your place, Your palette, Planting plan: static markup that shows before the island, never rendered again by it (h3 M13, BC1: no second render root over static markup); `markStep` sets the head's `data-step` and `aria-current`, and `state/draft.ts` `leavePalette` / `showPalette` move between the steps |
 | Next step | `views/palette/NextStep.tsx` | the first open hole in words and years (`holeWords` = lane name + `holeLine`), its best three fillers with fit line and one-tap Add; fillers grouped by fit (fits, "Needs a second look (n)", "Not checked (n)"); the no-fit sentence only when core `noneFits` (no plant fits and none unchecked; pf-a R3); See all whenever there are plants to see, Not now (`store.notNow`, never saved), the other holes with Find; outside-range fillers behind "Show N outside their climate range"; a dry place adds `dryIntroLine` to the why sentence; the room note ("Balcony or pots.") sits above the card, not in it (BC32); the empty palette is a card of three bordered ways with a note under it counting the plants that fit near the place (BC33) |
 | Through the years | `views/palette/Years.tsx`, `rules/picture-years.ts` | one lane per light level (and "not recorded"); phone (max-width 639px): one time step with Earlier / Later writing `store.yearStep` and announcing `changeSummary` |
 | Jobs | `views/palette/JobsPicture.tsx` (reads `store.lanes`: holes.ts laneCounts' `counted` and `outside` per lane) | one lane per job (and "no job recorded") |
-| Your plants | `views/palette/YourPlants.tsx`, core `weigh.ts` `yourPlants`, `sizeLine` | each plant once, warned plants first (owner "warn, never hide"), each warning in words with the warning icon (toxicity by level: Slight the `--warning` token with "Mildly toxic", Moderate and Severe the `--danger` token), its marks, its size ("in the wild": `height_m` is the wild maximum), and Remove (toast with Undo; focus to the next row's Remove, else the heading); then a plain row for each member the page cannot show (its guest list unread: `store.failedMembers`; on none of this climate's lists: `missingMembers.unlisted`; a member the shown plants already hold gets no such row) with why and Remove; `Palette.tsx` builds the rows once and passes them in; above 12 rows the rest fold behind "+ N more", opening it focuses the first row it shows (a plain focus, the toast keeps its opener); nothing at 0 plants |
+| Your plants | `views/palette/YourPlants.tsx` (up to 40 plants `views/plants/Small.tsx`, past 40 `views/plants/Many.tsx`: see "Many plants" below), core `weigh.ts` `yourPlants` | each plant once, warned plants first (owner "warn, never hide"), each warning in words with the warning icon (toxicity by level: Slight the `--warning` token with "Mildly toxic", Moderate and Severe the `--danger` token), its marks, its size ("in the wild": `height_m` is the wild maximum), and Remove (toast with Undo; focus to the next row's Remove, else the heading); then a plain row for each member the page cannot show (its guest list unread: `store.failedMembers`; on none of this climate's lists: `missingMembers.unlisted`; a member the shown plants already hold gets no such row) with why and Remove; `Palette.tsx` builds the rows once and passes them in; above 12 rows the rest fold behind "+ N more", opening it focuses the first row it shows (a plain focus, the toast keeps its opener); nothing at 0 plants |
 | Things to weigh | `views/palette/Weigh.tsx`, core `weigh.ts` `weighLines(members, {lookup, period}, {pending, unchecked})` | one family holding at least 3 plants and a quarter of the palette (neutral hint), and the water line only when needs are mixed ("Needs regular water" beside dry-loving) or under half are recorded ("not enough to judge"); no all-clear line (owner 2026-11-15); with no water line, the plants with no water need recorded still get a line of their own ("Water need not recorded for N plants"); water need read through `factAt('water_need', …)` (ADR-6) and grouped by core `weigh.ts` `waterNeed`; the plants not checked (the rows Your plants shows for them, counted by `Palette.tsx` from the same rows) count in m and are said ("N plants not checked"), never a judgement of part of the palette as the whole; "Checking" while a list loads, never for a list that failed; each line says "estimate" on a borrowed list; nothing at 0 plants |
 | Placeholder | `views/palette/Placeholder.tsx` | a return visit restoring, and the palette page until the plants are read (P2) |
 
@@ -204,6 +269,31 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 - Place's head on the palette step is a plain place line (count and climate, `.ct-result-sub`), not a
   heading, so the step has one "Your palette" heading (pre-push fix 7).
 - The sqlite wasm is preloaded with `crossorigin` by `astro.config.mjs` (one wasm, checked at build).
+
+## Many plants (chunk 3 pf-e, h3 and chunk 4; boards Many, ManyDesk, PaletteMore, Recife, AddMany, Paste)
+
+- **Your plants** (`views/palette/YourPlants.tsx`): up to 40 plants (`SIZE_PALETTE`) the small form `views/plants/Small.tsx` (every row shown, warned first by `model.ts` `byFitRank`, each row opening the plant's Details, which keeps Remove and Swap; A21: the boards' folds are a known difference); past 40 `views/plants/Many.tsx`: a compact list on the phone, a table at 960 px and wider, grouped (light level by default) with each group closed until opened (10 rows, "+ N more", all, "Show fewer"), sorted by fit unless the reader sorts otherwise, filtered by the search (the phone's under the palette's head, `PlantSearch`). `views/plants/model.ts` is pure (items, sort, group, search; Node-tested by `scripts/consortium-pf-e.test.mjs`); its groups and reasons are core `weigh.ts` `fitGroups`'s, so a row and the Warnings line it is counted on agree.
+- **Ticks** (`views/plants/state.ts`, signals, never saved): they stay through a search, sort, regroup or a layout crossing 960 px, are pruned to the members, and go when the palette falls to 40 plants or fewer or another palette opens. "Remove N plants" removes the ticked plants at once with one Undo (`store.removeMembers`: the toast names only new thin spots); the focus goes to the next row or its group's head. "Tick these N" on Warnings and fit (`Weigh.tsx`) ticks a reason's plants and shows them (`tickAndShow`), with "N ticked" said under the reason until the ticks change.
+- **Many rows' marks** (M47, chunk 4 T13 (a)): plain words, no pill, through `rows.tsx` `markWords`; each takes its flag line's own level (`kit/flags.ts`: Toxic and Very toxic, and a serious conflict, are danger; Mildly toxic warning; a line with no level, a misfit or an invasive record, warning), so one level has one colour on every surface.
+- **The head's count** (`views/plants/head-link.tsx` `PlantsCount`, M14): under 960 px while the many form shows, "200 plants: Your plants" with a link that focuses the list's heading; otherwise the plain count. It is a slot in Place's place line (first run).
+- **At 960 px and wider "Add plants"** opens Find in place of the table (`Sheets.tsx` `findIn('list')`), open while the reader adds; Done brings the table back with the focus on "Add plants".
+- **The foot and DOM order** (h3 M10, D1 (a)): `Palette.tsx` takes a `foot` prop (`App.tsx` passes `views/Actions.tsx`) placed where the boards draw it: on the phone after Your plants, at 960 px and wider under Balance. Each width puts the blocks in the DOM in the order it draws them, so crossing 960 px remounts them: Weigh's open reason and Actions' sharing state (panel, tick, copy status; cleared when the panel closes or the step leaves the palette) live in signals and survive; MoreList folds close again and the focus is lost. Find's panel comes first in the palette body's DOM.
+- **Lists in the two counts** (chunk 4 T3): `store.listsState` words the holes answer and `store.listsLoading` holds every count (see Honest states); the palette passes no `loading` of its own.
+
+## Paste (`views/find/Paste.tsx`, `paste.ts`; chunk 3 pf-e, h3 G3, chunk 4 C3)
+
+- **Every line is read, no cap.** Up to `SLICE` (200) names the box is read as it is typed, synchronously, as Find reads: one reading for the rows, the count line, the Recognised head's "N new" and Add's "Add N plants" (chunk 4 T4; the old second read path `boxRead` is gone). A longer text is read once typing has stopped for the settle pause (at once on "Read the list" or "Add all"), a slice a task of about 40 ms ("1,200 of 5,000 read"), the last reading staying on screen until the new one lands, so crossing 200 names keeps the reading just shown. Names are parsed once, in `onInput`.
+- **Busy**: the reading on screen is not the box's text (a long text before its slices land). Add all, "Add anyway", "Copy these N names" and "Skip the N left" are then `aria-disabled` (still focusable), never natively disabled. "Add all" pressed on an unread long text is held (`pendingAdd`) and runs once that text's reading lands with the box unchanged; any edit cancels it.
+- **Answers**: one answer per question, keyed by the line's name; an answer counts only for a question the current reading asks (`paste.ts` `isPicked`, `isAnswered` over `questionsOf`), so a line edited away and back keeps its answer. Any input over the whole non-empty text (paste, drop, select-all then typing, an IME composing over it) or the box emptied starts a new list and forgets every answer (`forgetOnNewList`).
+- **Matching** (A16, A26): a line is taken unasked only when it is a whole name of one plant (scientific name, binomial, a genus of one, a common name in any language); a search guess stays a question even when it finds one plant, unless that plant is already in the palette. A choice shows its scientific name only beside another choice with the same name. A close spelling is offered ("Read as …") and added only once ticked.
+- **Groups**: Recognised, Need a choice, Not found, each a MoreList fold by the size rule; a group of 10 rows or fewer opens by itself; a repeated name is counted once and said "listed twice" on its row and in its group's head. Another climate's plants are counted apart and added one by one ("Add anyway").
+- **One live region** (`PasteStatus`): a visually hidden status says the reading once it has held still for the settle pause, so typing is not buried under announcements.
+- A warned plant gives the toast its "Show the warning for …" (store `addMembers`); the toast's action button is `ct-toast-action`, Undo `ct-toast-undo`.
+
+## Sheets (h3 R1-R4, chunk 4 T7, T8)
+
+- `store.sheets` holds the open sheets bottom first; `sheet` is the top, `sheetBack` the one under it, `findSheet` Find wherever it is, and `sheetTarget` reads Find's target. `openSheet(kind, id, target, from)`: a plant's sheet (Details, Swap) opened over another kind stacks over it with its own history entry; over its own kind it takes the top one's place and keeps that one's `from` (so "‹ Back to results" stays while Find is under it, c4 T7); Find and Paste replace the stack. `from` is `'find'` only when a Find row's name opened the sheet. `backToSheet` closes the top sheet only (its ×, Escape, the backdrop, "‹ Back to results", Swap's "‹ Back to"); `closeSheet` closes all.
+- The sheet under stays mounted (its search, filters, folds, scroll and focus). `views/kit/sheet.tsx` brings a dialog back on top by closing and re-showing it (`restack`); those closes are counted per dialog in a `WeakMap` (`restacking`), so their late `close` events are ignored and any other close, Escape included, reaches the store (c4 T8).
 
 ## Tests
 

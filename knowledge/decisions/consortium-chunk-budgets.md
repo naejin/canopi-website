@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
 sources:
@@ -25,13 +25,13 @@ sources:
   - id: sheet-tsx
     resource: ../../src/islands/consortium/views/kit/sheet.tsx
     title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:4bab1793e5e41fae
-    last_modified: 2026-11-17T13:26:50Z
+    digest: sha256:fdf04f4a2b1781a3
+    last_modified: 2026-11-19T08:16:50Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:ef7536bd28f46910
-    last_modified: 2026-11-14T14:41:58Z
+    digest: sha256:6346b81af8801e47
+    last_modified: 2026-11-18T15:30:23Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -45,8 +45,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:ca29813fffe9f702
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:9b5471db4254810e
+    last_modified: 2026-11-19T05:13:33Z
 enforced_by: [scripts/check-built-site.mjs, scripts/built-modules.test.mjs]
 ---
 
@@ -122,3 +122,10 @@ Coordinator row "F1a design-check choices" in [the decisions](/decisions/consort
 
 - **Measured after PP-B b2 chunk 1** (gzip -9, 2026-11-14): first run 35.0 KB of 38 KB (kit/fit.tsx held there through kit/sheet.tsx `shared`, which Add reads); palette 5.2 of 12.0 KB; verdict 2.3 of 12.0 KB; later 5.3 of 8.0; sheets 5.7 of 6.3; details 6.3 of 6.7. The palette page is a retryable part (`lazyPart(..., { retry: true, page: true })`); `page` keeps the later test faults off it.
 - **Owner call 2026-11-14 (PP-B, revertible):** `FIRST_RUN_BUDGET` 38 → 40 KB, the ADR-2 ceiling. Measured 38.9 KB (gzip -9) after the simplify pass (39.5 KB at the b2 merge: Place's location step +2.8 KB from b1a, the palette shell +3.5 KB from b2, over 33.2 KB at 0a′). Above 40 KB needs an ADR-2 change.
+
+## PP-C chunks 3 and 4 (2026-11-18 to 2026-11-19)
+
+- **Role `figures`** (v14 pf commit 0W, chk #39): `ROLE_ENTRIES` has `figures` (`views/figures/Figures.tsx`, one chunk), behind the shells in `views/figures/slots.tsx`; `ROLE_CAPS` keeps it at 1 KB, the stub's reference from 0W. The panel's real size is reported, never a failure (owner row "No hard limits", 2026-11-16); its stylesheet `figures.css` is page-level (no late stylesheet).
+- **First-run kit**: `views/kit/sheet.tsx` `shared` is `{ flagLines, unknownWords, FitLine, fold }`; core `fold.ts` rides the first run because Find and Your plants' search (the palette chunk) both fold names (h3 R12, about 0.4 KB gzip). `astro.config.mjs` `FIRST_RUN_KIT` builds `views/rows.tsx` and `views/kit/more.tsx` untreeshaken in the first run (K3).
+- Sizes stay reported only until the speed step after PP-G (owner rows "No hard limits" and "Optimise speed last"); the M14 head-link chain and the site-change barrel re-export are its first candidates.
+

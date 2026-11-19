@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:15Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:35Z }
@@ -51,8 +51,8 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:480f352e8d208411
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:2042e1e1472ad8ea
+    last_modified: 2026-11-19T09:14:39Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -84,7 +84,7 @@ enforced_by: [scripts/homepage.test.mjs, scripts/check-built-site.mjs]
 - **Footer**: "Plant palette" (`nav.consortium.full`, the same key as the Menu line) after the bibliography and data sources links (`Footer.astro` order: Docs if set, source code, Discord, Guides, bibliography, Data sources, Plant palette, Donate, Contact).
 - **Footer, data sources**: "Data sources" (`dataSources.title`) sits right after the bibliography link, before the consortium tool, in the footer only, not the header or the phone Menu; the consortium tool's head also links it. Measured 2026-11-06 in headless Chrome, all 11 locales, at 320, 360, 414, 500, 639, 640, 768, 959 and 1200 px: links wrap with 20 px between them in a row, no overlap, no horizontal scroll. The extra link adds at most one row (29 px); the tallest is Japanese at 320 px, five rows, 348 px of footer.
 - **One name per locale**: `nav.consortium.full` is the tool's name in the Menu, the footer and the home card's title, and `learn.consortium.link` starts with it, and it equals the tool page's title (`consortium.title`). Since PP-B commit 0b the name is a noun, "Plant palette" (fr Palette végétale, es Paleta vegetal, pt Paleta de plantas, it Palette vegetale, de Pflanzenpalette, nl Plantenpalet, ru Палитра растений, zh 植物搭配, ja 植栽パレット, ko 식물 팔레트), no longer a verb phrase ("Design a consortium"). The full name contains the header word; `homepage.test.mjs` checks this.
-- **Consortium on the home page** (`src/components/LearnAndTry.astro`), the first card of the section: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: curated lists for tropical, Mediterranean and temperate so far, other climates borrowing the nearest list checked against the reader's location; reworded at P5, 2026-11-12, when location-based ranges covered every climate) and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `src/data/consortium-index.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
+- **Consortium on the home page** (`src/components/LearnAndTry.astro`), the first card of the section: title (`nav.consortium.full`) with a Beta mark, a one-paragraph promise, the beta's coverage (`home.consortium.note`: curated lists for four climates so far, tropical, arid, Mediterranean and temperate (arid since the D9a list), other climates borrowing the nearest list checked against the reader's location; reworded at P5, 2026-11-12, when location-based ranges covered every climate) and one action to the tool. The note spells the climates out in each locale, with no region; `homepage.test.mjs` fails when `src/data/consortium-index.json` lists other climates, so a new climate means rewriting the note in all 11 locales. No photos and no strata colours (the tool's drawing keeps those); styles scoped in the component.
 - **Entry guides** (`src/components/LearnAndTry.astro`), the second card: three guides (food-forest, living-soil, landrace-gardening) from frontmatter, en or fr by locale, English with an "in English" note elsewhere, the topics with their counts, plus "All field guides".
 
 # Settled choices

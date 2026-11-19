@@ -4,7 +4,7 @@ title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:17Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:04Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:35Z }
 sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
@@ -54,13 +54,13 @@ sources:
   - id: climate-index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:9fffb42bb87f69b5
-    last_modified: 2026-11-12T12:34:53Z
+    digest: sha256:888570c5d4211f48
+    last_modified: 2026-11-19T08:16:50Z
   - id: consortium-state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:163f7a3eecb8a67d
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:e80bca603fcf2579
+    last_modified: 2026-11-19T08:16:50Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
@@ -76,8 +76,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b59d99cb0816bb6
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:88dcd1f9fa48e570
+    last_modified: 2026-11-19T08:22:07Z
 enforced_by:
   - scripts/consortium-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs
