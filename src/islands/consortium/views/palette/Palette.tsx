@@ -73,7 +73,6 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const members = store.memberTaxa.value;
   const verdicts = store.memberVerdicts.value;
   const missing = store.missingMembers.value;
-  const loading = store.guestsPending.value.length > 0 || missing.loading.length > 0;
   const pending = store.holesPending.value;
   const holes = store.paletteHoles.value;
   // Your plants' rows, the members the page cannot show among them: Things to weigh counts those rows
@@ -114,7 +113,7 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const weigh = big && (
     <div key="weigh" class="ct-many-weigh">
       <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />
-      <Balance members={members} pending={loading} unchecked={unchecked} />
+      <Balance members={members} unchecked={unchecked} />
     </div>
   );
   const footBlock = foot && <div key="foot" class="ct-palette-foot">{foot}</div>;
@@ -151,8 +150,8 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
           <div key="left" class="ct-many-left">
             <NextStep holes={holes} members={members} />
             <div class="ct-palette-pictures">
-              <Years {...pic} warnings={groups.length} loading={loading} />
-              <JobsPicture {...pic} loading={loading} />
+              <Years {...pic} warnings={groups.length} />
+              <JobsPicture {...pic} />
             </div>
           </div>
           <FindPanelSlot key="panel" />
@@ -173,14 +172,14 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
           {members.length === 0 && <FindPanelSlot key="panel" />}
           {members.length > 0 && (
             <div class="ct-palette-pictures">
-              <Years {...pic} warnings={groups.length} loading={loading} />
-              <JobsPicture {...pic} loading={loading} />
+              <Years {...pic} warnings={groups.length} />
+              <JobsPicture {...pic} />
             </div>
           )}
           {members.length > 0 && (
             <div class="ct-palette-side">
               <Warnings groups={groups} />
-              <Balance members={members} pending={loading} unchecked={unchecked} />
+              <Balance members={members} unchecked={unchecked} />
               {desk && footBlock}
             </div>
           )}

@@ -13,7 +13,7 @@ import { choose, temperateLink, tool } from './p5-helpers.mjs';
 import { liveLog, resetLive, saidTwice, watchLiveRegions } from './f1a-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 import { showPalette } from './seams-helpers.mjs';
-import { loadPalette200, verdictsSettled, HOLE_TITLE } from './pf-helpers.mjs';
+import { holdGuestList, loadPalette200, refuseGuestList, verdictsSettled, HOLE_TITLE } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -536,25 +536,16 @@ test('PP-B29b (b2 scale; pf-e row F26, main h3 M17: 200 plants from three lists,
   // job count cell reads "Loading…", never a partial count, then the real counts once the list is in.
   const held = await loadPalette200({ width: 390 });
   try {
-    const zone = await held.evaluate(() => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !window.__ctTest.store.pools.value[z]));
-    assert.ok(zone, 'the premise: a list the 200 plants do not use');
-    const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
-    await held.evaluate((z, id) => {
-      const { store } = window.__ctTest, src = store.source.value;
-      const pool = src.pool.bind(src), rows = src.interactions.bind(src);
-      let release; const wait = new Promise((r) => { release = r; });
-      window.__list = { release };
-      src.pool = (x) => (x === z ? wait.then(() => pool(x)) : pool(x));
-      src.interactions = (x) => (x === z ? wait.then(() => rows(x)) : rows(x));
-      store.guests.value = { ...store.guests.value, [id]: z };
-      store.members.value = [...store.members.value, id];
-    }, zone, guest);
-    assert.ok(await held.waitForFunction(() => window.__ctTest.store.holesPending.value, { timeout: 5000 }).then(() => true, () => false), 'the premise: the list is being read');
+    await holdGuestList(held);
     const jobRows = () => held.evaluate(() => { const h = [...document.querySelectorAll('main h3')].find((x) => x.textContent.trim() === 'Jobs'); return [...(h?.closest('section')?.querySelectorAll('li[data-job]') ?? [])].map((li) => li.innerText.replace(/\s+/g, ' ').trim()); });
     await frames(held);
     const loading = await jobRows();
     assert.ok(loading.length > 0, 'the premise: the job rows show');
     assert.deepEqual(loading.filter((row) => !/Loading…/.test(row) || /\b\d+ plants?\b/.test(row)), [], 'F26: every job count cell reads "Loading…" while a list loads, never a partial count');
+    // Through the years' count cells too (h3 G2#6, c4 T3: one list state for every count).
+    const cells = await held.evaluate(() => [...document.querySelectorAll('#ct-years .ct-cell .ct-grid-count')].map((c) => c.textContent.trim()));
+    assert.ok(cells.length > 0, 'the premise: Through the years shows its count cells');
+    assert.deepEqual(cells.filter((c) => c !== 'Loading…'), [], 'F26: every Through the years count cell reads "Loading…" while a list loads, never a partial count');
     await held.evaluate(() => window.__list.release());
     assert.ok(await held.waitForFunction(() => !window.__ctTest.store.holesPending.value, { timeout: 10_000 }).then(() => true, () => false), 'the list read');
     await frames(held);
@@ -565,22 +556,14 @@ test('PP-B29b (b2 scale; pf-e row F26, main h3 M17: 200 plants from three lists,
   // were read (the failed list's plants are said as not checked), and so does Through the years' note.
   const refused = await loadPalette200({ width: 390 });
   try {
-    const zone = await refused.evaluate(() => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !window.__ctTest.store.pools.value[z]));
-    const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
-    await refused.evaluate((z, id) => {
-      const { store } = window.__ctTest, src = store.source.value;
-      const pool = src.pool.bind(src);
-      src.pool = (x) => (x === z ? Promise.reject(new Error('refused (test)')) : pool(x));
-      store.guests.value = { ...store.guests.value, [id]: z };
-      store.members.value = [...store.members.value, id];
-    }, zone, guest);
-    assert.ok(await refused.waitForFunction(() => window.__ctTest.store.failedMembers.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'the premise: the list could not be read');
-    await frames(refused);
+    await refuseGuestList(refused);
     const rows = await refused.evaluate(() => { const h = [...document.querySelectorAll('main h3')].find((x) => x.textContent.trim() === 'Jobs'); return [...(h?.closest('section')?.querySelectorAll('li[data-job]') ?? [])].map((li) => li.innerText.replace(/\s+/g, ' ').trim()); });
     assert.ok(rows.length > 0 && rows.some((row) => /\b\d+ plants?\b/.test(row)), `R1: the counted plants' counts show with a list refused (${rows.slice(0, 2).join(' | ')})`);
     assert.deepEqual(rows.filter((row) => /Loading…/.test(row)), [], 'R1: no job row reads "Loading…" when nothing is loading');
     const note = await refused.evaluate(() => document.querySelector('#ct-years .ct-stepper-note')?.textContent.trim() ?? '');
     assert.match(note, /^\d+ of your \d+ plants/, 'R1: Through the years\' note counts, never "Loading…"');
+    const cells = await refused.evaluate(() => [...document.querySelectorAll('#ct-years .ct-cell .ct-grid-count')].map((c) => c.textContent.trim()));
+    assert.ok(cells.length > 0 && cells.every((c) => /^\d+ plants?$/.test(c)), `R1: Through the years' count cells count with a list refused (${cells.slice(0, 3).join(' | ')})`);
   } finally { await done(refused); }
 });
 

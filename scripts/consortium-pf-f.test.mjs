@@ -477,18 +477,31 @@ test('B2.1 (h3): pushWaiting returns when pushState throws, with sheets above th
 });
 
 // h3 fix round 2, B4.1: "‹ Back to results" only on a Details opened from a Find row (board Details),
-// never on one opened from the page while the desk's Find panel is open, nor on one a toast's Show
-// opened over that Details.
-test('B4.1 (h3): a sheet records where it was opened from; only a Find row\'s Details shows the way back', async () => {
+// never on one opened from the page while the desk's Find panel is open. A toast's Show over a Details
+// takes its place and keeps where it was opened from (c4 T7, h3 G4#1); a warned add's Show for the
+// plant already on top changes nothing (its warning is on screen).
+test('B4.1 (h3; c4 T7): a sheet records where it was opened from; a Details replacing one keeps it; Show for the Details on top is a no-op', async () => {
   const store = await import('../src/islands/consortium/store.ts');
   store.closeSheet();
   store.openFind();
   store.openSheet('details', 5);
   assert.equal(store.sheet.peek().from, null, 'from the page over the Find panel: from nowhere');
+  store.openSheet('details', 8);
+  assert.equal(store.sheet.peek().from, null, 'a toast\'s Show over it: still from nowhere');
   store.openSheet('details', 6, {}, 'find');
   assert.equal(store.sheet.peek().from, 'find', 'from a Find row');
   store.openSheet('details', 7);
-  assert.equal(store.sheet.peek().from, null, 'a toast\'s Show over it: from nowhere');
+  assert.equal(store.sheet.peek().from, 'find', 'a toast\'s Show over it keeps the way back to results');
+  assert.deepEqual(store.sheets.peek().map((x) => x.kind), ['find', 'details'], 'it takes the top one\'s place');
+  const top = store.sheet.peek();
+  store.addMembers(['7'], {}, { warned: ['7'], text: 'Added' });
+  store.openSheet('details', '7', {}, 'find');
+  const read = store.sheet.peek();
+  store.toast.peek().action.run();
+  assert.equal(store.sheet.peek(), read, 'Show for the plant on top: the same sheet, not remounted');
+  assert.notEqual(read, top);
+  store.toast.peek()?.undo?.();
+  store.hideToast();
   store.closeSheet();
   const src = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
   assert.match(src('../src/islands/consortium/views/find/Find.tsx'), /openSheet\('details', t\.id, \{\}, 'find'\)/, 'Find\'s row says it opened Details');

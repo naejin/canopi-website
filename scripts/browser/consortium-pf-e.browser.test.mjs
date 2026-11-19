@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { useHarness, has, en, realDb } from './helpers.mjs';
 import { tool, choose, atSite } from './p5-helpers.mjs';
-import { boxOf, control, dialogText, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { boxOf, control, dialogText, done, focused, frames, holdGuestList, loadCase, loadPalette200, names, press, refuseGuestList, says, saysNot, section, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { mendoza } from './pf-d-helpers.mjs';
 import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts, typeIn } from './pf-e-helpers.mjs';
 
@@ -822,19 +822,20 @@ test('PFE34 (pf-e R6, R12, C5): Not found folds by the size rule (MoreList): thr
   await done(page);
 });
 
-test('PFE35 (pf-e R8): a Toxic (Moderate) plant\'s mark is in the danger colour past 40 plants as at 40 or fewer', async () => {
+test('PFE35 (pf-e R8; c4 T13 (a)): a Toxic (Moderate) plant\'s mark is at the danger level past 40 plants as at 40 or fewer', async () => {
   const page = await loadPalette200({ width: 390 });
   const q = await page.evaluate(() => { const s = window.__ctTest.store; return s.memberTaxa.value.find((t) => t.warnings?.toxicity?.level === 'Moderate')?.canonical_name ?? null; });
   assert.ok(q, 'the premise: a Moderate plant among the 200');
   await control(page, 'textbox', SEARCH(200));
   await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, q);
   assert.ok(await has(page, `${PLANTS} [data-kind="toxicity"]`, 3000));
-  const many = await page.$eval(`${PLANTS} [data-kind="toxicity"]`, (el) => [el.dataset.level, getComputedStyle(el).borderTopColor]);
+  const many = await page.$eval(`${PLANTS} [data-kind="toxicity"]`, (el) => el.dataset.level);
   await page.evaluate((name) => { const s = window.__ctTest.store; s.members.value = s.memberTaxa.value.filter((t) => t.canonical_name === name).map((t) => t.id); }, q);
   assert.ok(await has(page, `${PLANTS} [data-kind="toxicity"]`, 3000));
-  const small = await page.$eval(`${PLANTS} [data-kind="toxicity"]`, (el) => [el.dataset.level, getComputedStyle(el).borderTopColor]);
-  assert.deepEqual(many, small, 'R8: one level-to-colour map in both forms');
-  assert.equal(many[0], 'danger');
+  const small = await page.$eval(`${PLANTS} [data-kind="toxicity"]`, (el) => el.dataset.level);
+  // One level, one colour: the Many form draws a plain word (M47) and the small form a pill, both danger.
+  assert.equal(many, 'danger', 'R8: Toxic is danger in the Many form');
+  assert.equal(small, 'danger', 'R8: Toxic is danger in the small form');
   await done(page);
 });
 
@@ -1397,25 +1398,22 @@ test('PFE56 (pf-e; main h3 C7a.1, C7-big-order.1; WCAG 1.3.2, 2.4.3): at 1280 Fi
 
 // h3 R1a.1, R1-intro.1: at 40 plants or fewer, a list refused (nothing loading) never leaves the Jobs
 // intro saying a list is still loading: it says the holes are not checked, as the Next step does.
-test('PFE57 (pf-e; main h3 R1a.1, R1-intro.1): with 20 plants and a guest list that could not be read, the Jobs intro says the holes are not checked, never "still loading", and the job rows count', async () => {
+test('PFE57 (pf-e; main h3 R1a.1, R1-intro.1; c4 T3): with 20 plants and a guest list that could not be read, the Jobs intro says the holes are not checked, never "still loading", and the job rows count; with a second list still loading, the intro and the Next step still give one answer', async () => {
   const page = await paletteOf(20, 390);
   try {
-    const zone = await page.evaluate(() => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !window.__ctTest.store.pools.value[z]));
-    assert.ok(zone, 'the premise: a list the palette does not use');
-    const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
-    await page.evaluate((z, id) => {
-      const { store } = window.__ctTest, src = store.source.value;
-      const pool = src.pool.bind(src);
-      src.pool = (x) => (x === z ? Promise.reject(new Error('refused (test)')) : pool(x));
-      store.guests.value = { ...store.guests.value, [id]: z };
-      store.members.value = [...store.members.value, id];
-    }, zone, guest);
-    assert.ok(await page.waitForFunction(() => window.__ctTest.store.failedMembers.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'the premise: the list could not be read');
-    await frames(page);
-    const intro = await page.evaluate(() => document.querySelector('#ct-jobs .ct-chart-intro')?.textContent.replace(/\s+/g, ' ').trim() ?? '');
-    assert.notEqual(intro, en['consortium.palette.holesPending'], 'R1-intro.1: nothing is loading, so the intro never says a list is still loading');
-    assert.equal(intro, en['consortium.palette.holesListMissing'], 'R1a.1: the intro says the holes are not checked, in the Next step\'s words');
+    const { zone } = await refuseGuestList(page);
+    const intro = () => page.evaluate(() => document.querySelector('#ct-jobs .ct-chart-intro')?.textContent.replace(/\s+/g, ' ').trim() ?? '');
+    assert.notEqual(await intro(), en['consortium.palette.holesPending'], 'R1-intro.1: nothing is loading, so the intro never says a list is still loading');
+    assert.equal(await intro(), en['consortium.palette.holesListMissing'], 'R1a.1: the intro says the holes are not checked, in the Next step\'s words');
     const rows = await page.evaluate(() => [...document.querySelectorAll('#ct-jobs li[data-job]')].map((li) => li.innerText.replace(/\s+/g, ' ').trim()));
     assert.deepEqual(rows.filter((row) => /Loading…/.test(row)), [], 'R1: no job row reads "Loading…"');
+    assert.ok(rows.some((row) => /\b\d+ plants?\b/.test(row)), `R1: the job rows count the plants that were read (${rows.slice(0, 2).join(' | ')})`);
+    // A second guest list held while the first stays refused (h3 G2#1): the page gives one answer about
+    // the holes, the Next step's (a list could not be read), never "still loading" beside it.
+    await holdGuestList(page, [zone]);
+    const next = await page.evaluate(() => document.querySelector('.ct-next .status-line')?.textContent.replace(/\s+/g, ' ').trim() ?? '');
+    assert.equal(next, en['consortium.palette.holesListMissing'], 'the premise: the Next step says a list could not be read');
+    assert.equal(await intro(), next, 'G2#1: the Jobs intro gives the Next step\'s answer, never "still loading" beside it');
+    await page.evaluate(() => window.__list.release());
   } finally { await done(page); }
 });

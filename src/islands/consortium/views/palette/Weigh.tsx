@@ -289,8 +289,10 @@ function WaterUse({ w, name, size }: { w: WeighLine; name: NameOf; size: number 
   );
 }
 
-export function Balance({ members, pending, unchecked }: { members: readonly Taxon[]; pending: boolean; unchecked: number }) {
+export function Balance({ members, unchecked }: { members: readonly Taxon[]; unchecked: number }) {
   const { inputs, period } = store.verdictContext.value;
+  // While a list is read (store.listsState) the lines wait; a list that failed is counted as unchecked.
+  const pending = store.listsState.value === 'loading';
   const verdicts = store.memberVerdicts.value;
   const out = useMemo(() => weighLines(members, { inputs, period }, { pending, unchecked, verdicts }), [members, pending, unchecked, inputs, period, verdicts]);
   const byId = useMemo(() => new Map(members.map((t) => [t.id, t])), [members]);

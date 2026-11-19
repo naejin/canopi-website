@@ -458,7 +458,14 @@ export function invasiveCountries(t: Taxon): number {
 // change, so the palette page (pictures, Next step) and Find (best first, "fills N holes", "lacks N")
 // read one list. Pending while a member's list is read or could not be read: every hole is 'pending'
 // then, never a false hole (its plants may fill one, PP-B21).
-export const holesPending = computed(() => guestsPending.value.length > 0 || missingMembers.value.loading.length > 0 || failedMembers.value.length > 0);
+// The members' lists in one state (c4 T3), read by every part that says it (the Next step, the Jobs
+// intro and counts, Through the years' counts, Things to weigh): 'failed' while a guest list could not
+// be read (first: its plants stay not checked whatever else loads, so the page gives one answer),
+// 'loading' while a list is read, else 'ready'.
+export type ListsState = 'ready' | 'loading' | 'failed';
+export const listsState = computed<ListsState>(() => (failedMembers.value.length ? 'failed'
+  : guestsPending.value.length || missingMembers.value.loading.length ? 'loading' : 'ready'));
+export const holesPending = computed(() => listsState.value !== 'ready');
 export const paletteHoles = computed<Hole[]>(() => holes({ members: memberTaxa.value, verdicts: memberVerdicts.value, pending: holesPending.value }));
 // The holes open now, in rank order (not judged and pending ones left out).
 export const openHoles = computed<Hole[]>(() => paletteHoles.value.filter((h) => h.state === 'open'));
@@ -775,15 +782,18 @@ export function watchSteps(): () => void {
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
 // A plant's sheet (Details, Swap) opened over another kind of sheet stacks over it, with a history
 // entry of its own (h3 R1, R3, R4: Details from Find, Swap from Details); over its own kind it takes the
-// top one's place (a toast's Show in Details opens that plant's Details). Find and Paste replace the
+// top one's place and keeps where that one was opened from (a toast's Show in Details opens that
+// plant's Details; "‹ Back to results" stays while Find is under it: c4 T7). Find and Paste replace the
 // stack (Paste's "Search by hand" opens Find in its place).
 const STACKS: readonly SheetKind[] = ['details', 'swap'];
 let opened = 0;
 // from: the sheet whose control opens this one ('find' from a Find row), null from the page or a toast.
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}, from: SheetKind | null = null): void {
   const open = sheets.peek();
-  const under = !STACKS.includes(kind) ? [] : open[open.length - 1]?.kind === kind ? open.slice(0, -1) : open;
-  const next: Sheet = { kind, id, n: ++opened, target: { ...FOR_NOTHING, ...target }, from };
+  const top = open[open.length - 1];
+  const replaces = STACKS.includes(kind) && top?.kind === kind;
+  const under = !STACKS.includes(kind) ? [] : replaces ? open.slice(0, -1) : open;
+  const next: Sheet = { kind, id, n: ++opened, target: { ...FOR_NOTHING, ...target }, from: from ?? (replaces ? top.from : null) };
   if (sheetEntries(shown) <= under.length) pushEntry('sheet');
   sheets.value = [...under, next];
 }
@@ -983,7 +993,10 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
   const text = typeof said === 'function' && was
     ? said({ added: fresh, size: members.peek().length, holeChange: holeChange(was.holes, paletteHoles.peek()), thinChange: thinChange(was.thins, thinSpots.peek()) })
     : typeof said === 'string' ? said : P('paste.added', fresh.length);
-  offerUndo(text, before, flagged.length ? { label: T('paste.show'), name: T('paste.showWarned', { name: nameById(flagged[0]) }), run: () => openSheet('details', flagged[0]) } : null);
+  // Show for the plant whose Details is on top does nothing: its warning is on screen, and the sheet the
+  // grower reads keeps its scroll and focus (c4 T7).
+  const show = (id: PlantId) => { const top = sheet.peek(); if (top?.kind !== 'details' || top.id !== id) openSheet('details', id); };
+  offerUndo(text, before, flagged.length ? { label: T('paste.show'), name: T('paste.showWarned', { name: nameById(flagged[0]) }), run: () => show(flagged[0]) } : null);
 }
 
 // Several plants removed at once (v14 0W-1 item 6; pf-e's ticks): one snapshot and one Undo, which puts

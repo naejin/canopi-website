@@ -38,10 +38,7 @@ function usePhone(): boolean {
   return phone;
 }
 
-export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[]; holeWords: (id: string) => string; onHole: (id: string) => void; onPlant: (id: PlantId) => void; announce: (text: string) => void; verdictOf?: (id: PlantId) => PlantVerdict | undefined; flagsOf?: (id: PlantId) => readonly Flag[]; invasiveWord?: string;
-  // A member's list is being read (Palette.tsx `loading`): the counts read "Loading…" (F26), never while
-  // a list has failed, whose plants are said as not checked (h3 R1: one flag per state).
-  loading?: boolean }
+export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[]; holeWords: (id: string) => string; onHole: (id: string) => void; onPlant: (id: PlantId) => void; announce: (text: string) => void; verdictOf?: (id: PlantId) => PlantVerdict | undefined; flagsOf?: (id: PlantId) => readonly Flag[]; invasiveWord?: string }
 
 // Moves the focus to a section of the page by its id (a link of "Further down this page"; the page's
 // address holds the palette, so no hash is written).
@@ -68,7 +65,10 @@ export const ReadPictures = () => (
   </HowToRead>
 );
 
-export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, flagsOf, invasiveWord, warnings, loading = false }: PictureProps & { warnings?: number }) {
+export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, flagsOf, invasiveWord, warnings }: PictureProps & { warnings?: number }) {
+  // A member's list being read (store.listsState): the counts read "Loading…" (F26), never while a list
+  // has failed, whose plants are said as not checked (h3 R1).
+  const loading = store.listsState.value === 'loading';
   const phone = usePhone();
   const big = members.length > SIZE_PALETTE;
   const at = store.yearStep.value;
@@ -110,7 +110,7 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
       {big ? (
         <>
           {stepper}
-          <CountCells p={picture} column={at} size={members.length} standing={standing} b={b} />
+          <CountCells p={picture} column={at} size={members.length} standing={standing} b={b} loading={loading} />
           {/* Those outside their range standing then: a handful named in the others paragraph, in the
               board's sentence (c2 C2: "1 more plant … (Cashew): not counted here…"); more, the count cell. */}
           {outsideThen.length <= FEW_OUTSIDE

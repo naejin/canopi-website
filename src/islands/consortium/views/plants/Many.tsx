@@ -61,14 +61,15 @@ function Reason({ i, range }: { i: PlantItem; range: (v: PlantVerdict | undefine
 }
 // The phone's whole line (board Many: "Outside its climate range: the year too cool"; core shortLine).
 const wholeLine = (v: PlantVerdict | undefined) => (v ? say(shortLine(v)) : T('palette.warningsUnknown'));
-// A row's warnings as plain words with the icon, 13 px, weight 600 (boards Many, ManyDesk; M47): the
-// warning colour, the danger colour for Very toxic and a serious conflict only (the small form and Find
+// A row's warnings as plain words with the icon, 13 px, weight 600 (boards Many, ManyDesk; M47), at the
+// line's own level (kit/flags.ts flagLines), as in the small form and Find: one level, one colour
+// (word-map rows 87/103, c4 T13 (a)): Toxic and Very toxic and a serious conflict in the danger colour.
+// A line with no level (a misfit, invasive) is in the warning colour here (M47; the small form and Find
 // keep their pills, rows.tsx Marks). The words are the marks' own (markWords: one owner).
-const manyLevel = (t: PlantItem['t'], l: FlagLine): 'warning' | 'danger' =>
-  l.kind === 'toxicity' ? (t.warnings.toxicity?.level === 'Severe' ? 'danger' : 'warning') : l.kind === 'invasive' ? 'warning' : (l.level ?? 'warning');
+const manyLevel = (l: FlagLine): 'warning' | 'danger' => l.level ?? 'warning';
 function RowMarks({ i }: { i: PlantItem }) {
   const scene = store.flagScene.value;
-  return <>{flagLines(i.t, store.flagsOfPlant(i.t), scene).map((l) => <span class="ct-many-word" data-kind={l.kind} data-level={manyLevel(i.t, l)}>{WARN} {markWords(i.t, l, scene.country)}</span>)}</>;
+  return <>{flagLines(i.t, store.flagsOfPlant(i.t), scene).map((l) => <span class="ct-many-word" data-kind={l.kind} data-level={manyLevel(l)}>{WARN} {markWords(i.t, l, scene.country)}</span>)}</>;
 }
 function FitWord({ i }: { i: PlantItem }) {
   return <span class="ct-many-fitline"><Reason i={i} range={wholeLine} /><RowMarks i={i} /></span>;

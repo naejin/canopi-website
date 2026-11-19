@@ -21,7 +21,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { aria, en, has, useHarness } from './helpers.mjs';
 import { boardPalette } from './pf-b-helpers.mjs';
-import { LIGHT, dialogText, done, frames, openMore, says, setSiteEdits } from './pf-helpers.mjs';
+import { LIGHT, dialogText, done, frames, loadPalette200, openMore, says, setSiteEdits } from './pf-helpers.mjs';
 
 useHarness();
 
@@ -1118,6 +1118,43 @@ test('PFF36b (pf-f h3 R1, R3, R4): back from a Find row\'s Details keeps Find\'s
   await page.click(`${TOP_D} [data-sheet-back]`);
   assert.ok(await backNamed(page), 'R4: back to Find');
   assert.equal(await page.$eval(`${FIND} input[type="search"]`, (i) => i.value), 'almond', 'R4: Find\'s search kept');
+  await done(page);
+});
+
+// c4 T7 (h3 G4#1): a Find row's Details adds a plant with a warning; the toast's Show in its foot keeps
+// that same Details (no remount), its "‹ Back to results" and Find under it.
+test('PFF36d (pf-f h3 G4#1, c4 T7): Find row, Details, Add (warned), Show: the same Details stays with "Back to results"', async () => {
+  // The 200-plant Kiambu palette: a member whose flags warn on an add (a site misfit or a serious
+  // conflict, the rule Details' Add follows) is taken out, then found and added again.
+  const page = await loadPalette200({ width: 390, height: 900 });
+  const pick = await page.evaluate(() => {
+    const s = window.__ctTest.store;
+    const t = s.memberTaxa.value.find((x) => s.flagsOfPlant(x).some((f) => f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high')));
+    if (!t) return null;
+    s.members.value = s.members.value.filter((id) => id !== t.id);
+    return { id: t.id, sci: t.canonical_name };
+  });
+  assert.ok(pick, 'the premise: a plant with a warning');
+  await frames(page);
+  await page.evaluate(() => window.__ctTest.openFind());
+  assert.ok(await has(page, `${FIND} input[type="search"]`, 10_000), 'Find');
+  await page.type(`${FIND} input[type="search"]`, pick.sci);
+  const ROW = `${FIND} [data-plant-id="${pick.id}"] [data-find-open]`;
+  assert.ok(await has(page, ROW, 10_000), `its row (${pick.sci})`);
+  await page.click(ROW);
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details with "Back to results"');
+  const before = await page.evaluate(() => window.__ctTest.store.sheet.value);
+  await page.$eval(`${TOP_D} [data-add]`, (b) => b.scrollIntoView({ block: 'center' }));
+  await page.click(`${TOP_D} [data-add]`);
+  assert.ok(await page.waitForFunction((id) => window.__ctTest.store.members.value.includes(id), { timeout: 4000 }, pick.id).then(() => true, () => false), 'added');
+  assert.ok(await has(page, `${TOP_D} .ct-toast-action`, 4000), 'the toast in Details\' foot offers Show');
+  await page.click(`${TOP_D} .ct-toast-action`);
+  await frames(page);
+  const after = await page.evaluate(() => window.__ctTest.store.sheet.value);
+  assert.equal(after.n, before.n, 'Show for the plant on top: the same Details, not remounted');
+  assert.equal(after.from, 'find', 'it still comes from Find');
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 2000), '"Back to results" stays');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind)), ['find', 'details'], 'Find stays under it');
   await done(page);
 });
 

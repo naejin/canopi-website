@@ -285,6 +285,7 @@ const toastOf = (page) => page.evaluate(() => window.__ctTest?.store?.toast.valu
 // Tick one plant of the 200 as a grower does: search its name, tick its row, clear the search.
 async function tickByName(page, id) {
   const sci = await page.evaluate((pid) => window.__ctTest.store.taxonOf(pid).canonical_name, id);
+  await page.waitForSelector(`${PLANTS} input[type="search"], #ct-root input[aria-label^="Search your"]`, { timeout: 8000 });
   const box = await page.$eval(`${PLANTS} input[type="search"], #ct-root input[aria-label^="Search your"]`, (e) => e.getAttribute('aria-label'));
   await typeIn(page, `#ct-root input[aria-label="${box}"]`, sci);
   assert.ok(await has(page, `${PLANTS} [data-plant-id="${id}"] input[type="checkbox"]`, 3000), `the search shows ${sci}`);
@@ -360,6 +361,8 @@ test('PP-C45 (c2 h3 M45, pf-e BC21, board Toasts, word map "A pasted list added"
 // A member's Many row opened by its name (the search shows the matching rows), and its fit words.
 async function manyRow(page, id) {
   const sci = await page.evaluate((pid) => window.__ctTest.store.taxonOf(pid).canonical_name, id);
+  // Past 40 plants the in-place search is drawn by the lazy palette part once the verdicts settle (c4 T16).
+  await page.waitForSelector('#ct-root input[aria-label^="Search your"]', { timeout: 8000 });
   const box = await page.$eval('#ct-root input[aria-label^="Search your"]', (e) => e.getAttribute('aria-label'));
   await typeIn(page, `#ct-root input[aria-label="${box}"]`, sci);
   assert.ok(await has(page, `${PLANTS} [data-plant-id="${id}"]`, 3000), `the search shows ${sci}`);
@@ -390,11 +393,11 @@ for (const width of [390, 1280]) {
   });
 }
 
-test('PP-C47 (c2 h3 M47, pf-e#57, boards Many and ManyDesk): on the 200-plant Kenya palette a "Toxic" mark is a plain word in the warning colour, "Very toxic" in the danger colour, 13 px weight 600 with the icon, no pill border', async () => {
+test('PP-C47 (c2 h3 M47, pf-e#57, c4 T13 (a), word-map rows 87/103): on the 200-plant Kenya palette "Toxic" and "Very toxic" are both plain words in the danger colour, as in the small form and Find, 13 px weight 600 with the icon, no pill border', async () => {
   const page = await loadPalette200({ width: 390 });
   const tox = await page.evaluate(() => { const s = window.__ctTest.store, by = (lv) => s.memberTaxa.value.find((t) => t.warnings.toxicity?.level === lv && s.flagsOfPlant(t).some((f) => f.kind === 'toxicity'))?.id ?? null; return { Moderate: by('Moderate'), Severe: by('Severe') }; });
   assert.ok(tox.Moderate, 'the premise: a Toxic (Moderate) member');
-  for (const [lv, word, level] of [['Moderate', 'Toxic', 'warning'], ['Severe', 'Very toxic', 'danger']]) {
+  for (const [lv, word, level] of [['Moderate', 'Toxic', 'danger'], ['Severe', 'Very toxic', 'danger']]) {
     if (!tox[lv]) continue;
     const mark = (await manyRow(page, tox[lv])).find((w) => w.kind === 'toxicity');
     assert.ok(mark, `${word}: a toxicity word on the row`);

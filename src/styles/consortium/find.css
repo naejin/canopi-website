@@ -52,6 +52,9 @@
   content-visibility: auto; contain-intrinsic-size: auto 96px;
 }
 .ct .ct-find-add { min-width: 96px; justify-content: center; gap: 6px; }
+/* A row's name that opens its Details (Find; board FindResults; c4 T11: Find's own class): the name in ink and weight 600, no underline. */
+.ct :where(.ct-sheet) .ct-row-main .ct-name-open { font-weight: 600; font-size: 16px; color: var(--text); text-decoration: none; }
+.ct :where(.ct-sheet) .ct-row-main .ct-name-open:hover { color: var(--accent-ink); text-decoration: underline; }
 .ct .ct-find-why { color: var(--text); }
 .ct .ct-find-jobs { color: var(--text-secondary); }
 .ct .ct-find-kept { margin: 0; overflow-wrap: anywhere; }
