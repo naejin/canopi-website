@@ -1,9 +1,10 @@
 // Stream S5e (native here, soil likely) moved to P5.2 (decision row "P5 ships without S5e"). Pre-push
-// review 3: P5 ships none of its stubs, and the location step reads no soil tile. P5.2 restores, from
+// review 3: P5 ships none of its stubs (the soil tile is read again since the chunk-3 hand-off, M8: the
+// figures panel reads its pH and texture). P5.2 restores, from
 // commit 0801024: core native.ts (nativeHere), native-marks.ts (nativeMarks, third in mark-providers.ts),
 // soil-likely.ts (likelyFor), views/NativeSlot.tsx (under the name in Details), views/LikelySlot.tsx (in
-// each site question on Start), PlantSource.nativeIn (sqlite-source.ts, plant_areas), MarkContext.source,
-// and lookupSite without { soil: false } in state/location.ts. Replace these tests with its rules'.
+// each site question on Start), PlantSource.nativeIn (sqlite-source.ts, plant_areas) and MarkContext.source.
+// Replace these tests with its rules'.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -26,9 +27,3 @@ test('S5e ships nothing in P5: no native or soil-likely module, slot or reader',
   assert.equal('loadMarkProviders' in core, false);
 });
 
-test('the location step reads no soil tile until P5.2 (soil likely) uses it', () => {
-  // The lookup (state/location.ts), in code (comments left out), not in a comment.
-  const code = ['state/location.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
-    .map((u) => readFileSync(u, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')).join('\n');
-  assert.match(code, /lookupSite\(lat, lon, tileSource\(\), DEFAULT_RADIUS, \{ soil: false \}\)/);
-});

@@ -212,9 +212,9 @@ export function drierFrom(list: readonly Pick<Taxon, 'id'>[], verdictsByPeriod: 
 
 // The lines that limit, most first (ties in LIMIT_IDS order); none when nothing is outside and no plant
 // carries the note.
-export function limitsOf(c: LineCounts | null | undefined): { line: LimitLine; n: number; period: PeriodId | null }[] {
+export function limitsOf(c: LineCounts | null | undefined): { line: LimitLine; n: number }[] {
   const s = limitStatus(c);
-  return LIMIT_IDS.map((l) => s[l]).filter((x) => x.state === 'limits').map(({ line, n, period }) => ({ line, n, period })).sort((a, b) => b.n - a.n);
+  return LIMIT_IDS.map((l) => s[l]).filter((x) => x.state === 'limits').map(({ line, n }) => ({ line, n })).sort((a, b) => b.n - a.n);
 }
 
 // How the list moves as the climate warms ("What it means for your choice", board SiteKiambu):

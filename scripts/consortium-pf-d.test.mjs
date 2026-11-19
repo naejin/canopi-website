@@ -4,7 +4,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { failing } from './expect-fail.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const words = await import('../src/lib/consortium/site-change-line.ts');
@@ -99,7 +98,7 @@ test('BC1: "want more warmth over the year" counts the cool side only; summer wa
   const today = map({ a: v('outside', [f('cool', 'outside')]), b: v('look', [f('cool', 'look')]), c: v('outside', [f('summer', 'outside')]), d: v('look', [f('summer', 'look')]) });
   const c = core.lineCounts(list, { [P[0]]: today });
   assert.deepEqual(core.warmthOf(c.periods[0]), { outside: 1, edge: 1 });
-  assert.deepEqual(core.limitsOf(c).find((l) => l.line === 'warmth'), { line: 'warmth', n: 1, period: P[0] });
+  assert.deepEqual(core.limitsOf(c).find((l) => l.line === 'warmth'), { line: 'warmth', n: 1 }, 'no period field: nothing reads it (M6)');
 });
 
 test('BC13: rangeMoves: the side most of the dropping plants leave on, and the plants wanting more warmth that come into range by 2041–2070 (crops first)', () => {
@@ -119,7 +118,7 @@ test('BC13: rangeMoves: the side most of the dropping plants leave on, and the p
 test('BC4, C5: the soil map\'s texture reads "Likely holds water" for the clay textures (hydrologic soil groups C/D), the board\'s one form; any other texture gives no reading (never "likely drains")', () => {
   assert.equal(words.textureLine('clay').key, 'consortium.figures.textureHolds');
   assert.equal(words.textureLine('clay_loam').key, 'consortium.figures.textureHolds');
-  for (const id of ['sandy_loam', 'loam', 'silt_loam', 'silt', 'sand']) assert.equal(words.textureLine(id), null, `${id}: no reading`);
+  for (const id of ['sandy_loam', 'loam', 'silt_loam', 'silt', 'sand']) assert.equal(words.holdsWater(id), false, `${id}: no reading (holdsWater, the one gate: M6)`);
   assert.equal(words.holdsWater('clay'), true);
   assert.equal(words.holdsWater('silt_loam'), false);
   for (const [loc, json] of LOCALES) assert.equal(json['consortium.figures.textureDrains'], undefined, `${loc}: no "likely drains" form`);
@@ -222,7 +221,7 @@ test('C8: the rain line limits only while a listed plant carries the dryness not
   // Rain only: the verdict rule puts the note on the plants drier here (verdict.ts R2).
   const rain = core.lineCounts(list, { [P[0]]: map({ a: v('fits', [dry], 'judged', ['drier']), b: v('look', [dry], 'judged', ['drier']), c: v('fits') }) });
   assert.deepEqual({ drier: rain.periods[0].drier, noted: rain.periods[0].noted }, { drier: 2, noted: 2 });
-  assert.deepEqual(core.limitsOf(rain), [{ line: 'rain', n: 2, period: P[0] }]);
+  assert.deepEqual(core.limitsOf(rain), [{ line: 'rain', n: 2 }]);
   // Watered all year: the same plants are drier here, and none carries the note.
   const allYear = core.lineCounts(list, { [P[0]]: map({ a: v('fits', [dry]), b: v('look', [dry]), c: v('fits') }) });
   assert.deepEqual({ drier: allYear.periods[0].drier, noted: allYear.periods[0].noted }, { drier: 2, noted: 0 });
@@ -280,13 +279,13 @@ test('R2, C2: one status per limit line, over every period: a line that limits o
   assert.deepEqual(s.warmth, { line: 'warmth', state: 'free', n: 0, period: null, today: 0 });
   assert.equal(s.rain.state, 'free');
   // The card lists exactly the lines whose status limits, most first.
-  assert.deepEqual(core.limitsOf(core.lineCounts(list, by)), [{ line: 'nights', n: 2, period: P[2] }, { line: 'days', n: 1, period: P[2] }]);
+  assert.deepEqual(core.limitsOf(core.lineCounts(list, by)), [{ line: 'nights', n: 2 }, { line: 'days', n: 1 }]);
   // Nothing counted yet: not checked, and no line listed.
   for (const l of core.LIMIT_IDS) assert.equal(core.limitStatus(null)[l].state, 'unchecked');
   assert.deepEqual(core.limitsOf(null), []);
   // The later forms exist in every locale, with the period and the later counts.
   for (const [loc, json] of LOCALES) {
-    assert.match(json['consortium.figures.nightsTakeLater'] ?? '', /\{period\}[\s\S]*\{warmer\}[\s\S]*\{colder\}|\{warmer\}[\s\S]*\{colder\}[\s\S]*\{period\}|\{period\}[\s\S]*\{colder\}[\s\S]*\{warmer\}/, `${loc} nightsTakeLater`);
+    assert.match(json['consortium.figures.nightsTakeLater'] ?? '', /\{period\}[\s\S]*\{sides\}|\{sides\}[\s\S]*\{period\}/, `${loc} nightsTakeLater`);
     assert.match(json['consortium.figures.warmthLater'] ?? '', /\{lead\}[\s\S]*\{period\}|\{period\}[\s\S]*\{lead\}/, `${loc} warmthLater`);
   }
 });
@@ -327,7 +326,7 @@ test('R1, C1: warmth over the year is said from its one status: plants only near
     const line = words.warmthLine(view, { main, yours, temp });
     const text = say(line);
     assert.doesNotMatch(text, /limit/i, `R1: edge only is never called a limit ("${text}")`);
-    assert.equal(text, '3 want a little more warmth over the year, near their range edge.');
+    assert.equal(text, '3 are near the edge of their range for warmth over the year.');
   }
   // Outside today: the limit forms, main or smaller, with "with your values" when a shift applies.
   const out = map({ a: v('outside', [f('cool', 'outside')]), b: v('look', [f('cool', 'look')]), c: v('fits'), d: v('fits'), e: v('fits') });
@@ -342,8 +341,11 @@ test('R1, C1: warmth over the year is said from its one status: plants only near
   assert.equal(words.warmthLine(core.warmthView(core.lineCounts(list, { [P[0]]: fine })), { main: false, yours: false, temp }), null);
   assert.equal(core.warmthView(null).state, 'unchecked');
   assert.equal(words.warmthLine(core.warmthView(null), { main: false, yours: false, temp }), null);
+  assert.equal(say(words.warmthLine({ state: 'free', period: P[0], later: false, outside: 0, edge: 1, of: 5 }, { main: false, yours: false, temp })), '1 is near the edge of its range for warmth over the year.', 'M5');
+  assert.equal(say(words.warmthLine({ state: 'free', period: P[0], later: false, outside: 0, edge: 3, of: 5 }, { main: false, yours: false, temp })), '3 are near the edge of their range for warmth over the year.', 'M5');
   for (const [loc, json] of LOCALES) {
     assert.ok(json['consortium.figures.warmthEdge'], `${loc} has figures.warmthEdge`);
+    assert.doesNotMatch(json['consortium.figures.warmthEdge'], /a little more|un peu plus|un poco más|um pouco mais|un po’ più|稍多|etwas mehr|もう少し|조금 더|iets meer|чуть больше/, `${loc} warmthEdge: on the heatEdge pattern, no "a little more warmth" (M5)`);
     assert.equal(json['consortium.figures.leadWarmth'], leadOfText(json['consortium.figures.warmth']), `${loc} leadWarmth is warmth's lead`);
     assert.equal(json['consortium.figures.leadWarmthMain'], leadOfText(json['consortium.figures.warmthMain']), `${loc} leadWarmthMain is warmthMain's lead`);
   }
@@ -379,10 +381,23 @@ test('R2, C5: the two temperature shifts set as one are data in the edits (temps
   assert.equal(core.sameEdits(core.siteEditsOf({ nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }), { nightsShiftC: -2, daysShiftC: -2 }), false, 'the link is part of the edits');
 });
 
-failing('R2, C5 (pf-d; waits for the hand-off: state.ts carries the link in the save\'s place and the link\'s f): the link travels with the save and "Include my place"', { owner: 'pf-d', reason: /the link travels/ }, () => {
+test('R2, C5, M1: the link travels with the save and "Include my place" (a 5th f segment, 1), so a grower opening their own link or save is not asked about "the sender\'s own values"', () => {
+  const placeOf = (e) => core.encodePlace({ country: null, siteEdits: e });
+  const back = (e) => core.decodeLink('v=5&c=temperate&m=small&a=&e=1', {}, placeOf(e)).state.siteEdits;
   const e = core.siteEditsOf({ nightsShiftC: -2, daysShiftC: -2, tempsTogether: true });
-  const back = core.decodeLink('v=5&c=temperate&m=small&a=&e=1', {}, core.encodePlace({ country: null, siteEdits: e })).state.siteEdits;
-  assert.deepEqual(back, e, 'the link travels with the save\'s place');
+  assert.equal(placeOf(e), 'f=-20.-20...1', 'the link\'s f carries the tick as its 5th segment');
+  assert.deepEqual(back(e), e, 'the link travels with the save\'s place');
+  // restore.ts samePlace reads sameEdits: the grower's own linked edits against their decoded link are the same place (no question).
+  assert.equal(core.sameEdits(core.siteEditsOf(e), back(e)), true, 'own link: the same edits, no "sender\'s own values" question');
+  // Two equal shifts set apart stay apart; a 5th segment beside unequal or single shifts says nothing true and is dropped.
+  assert.equal(placeOf({ nightsShiftC: -2, daysShiftC: -2 }), 'f=-20.-20');
+  assert.deepEqual(back({ nightsShiftC: -2, daysShiftC: -2 }), { nightsShiftC: -2, daysShiftC: -2 });
+  const read = (f) => core.decodeLink('v=5&c=temperate&m=small&a=&e=1', {}, `f=${f}`).state.siteEdits;
+  assert.deepEqual(read('-20.-10...1'), { nightsShiftC: -2, daysShiftC: -1 }, 'unequal: no link');
+  assert.deepEqual(read('-20....1'), { nightsShiftC: -2 }, 'one shift: no link');
+  assert.deepEqual(read('-20.-20.50.1.1'), { nightsShiftC: -2, daysShiftC: -2, rainShiftMm: 50, dryMonthsShift: 1, tempsTogether: true }, 'with rain and dry months');
+  assert.deepEqual(read('-20.-20...2'), { nightsShiftC: -2, daysShiftC: -2 }, 'a 5th segment other than 1: no link');
+  assert.equal(read('-20.-20....1'), null, 'six segments: f dropped whole');
 });
 
 test('R3: the summary\'s head says the two set together from the link, whichever field happened to differ; equal numbers set apart are two lines', () => {
@@ -414,4 +429,40 @@ test('C4: each member\'s first period drier here than its recorded band is the c
     [P[2]]: map({ a: v('look', [dry(0.2)]), b: v('look', [dry(0.3)]), c: v('look', [dry(0.5)]) }),
   };
   assert.deepEqual([...core.drierFrom(['a', 'b', 'c'].map(t), by)], [['a', P[0]], ['b', P[1]]], 'c is not drier (0.5 is inside its band): never');
+});
+
+// ---- h3 G1 (chunk-3 hand-off) ----
+
+test('M3: the nights sentence names only the sides above zero, never "0 want warmer nights"; "(lowland tropical plants)" only beside plants that want warmer nights; SiteKiambu\'s wording kept when both sides count', () => {
+  const sides = (w, c, frostFree = false) => { const l = words.nightsSidesLine(w, c, frostFree); return l && say(l); };
+  assert.equal(sides(0, 4), '4 are recorded only where winters are colder');
+  assert.equal(sides(21, 168, true), '21 want warmer nights (lowland tropical plants), 168 are recorded only where winters are colder', 'board SiteKiambu, byte for byte');
+  assert.equal(sides(21, 168), '21 want warmer nights, 168 are recorded only where winters are colder');
+  assert.equal(sides(1, 0), '1 wants warmer nights');
+  assert.equal(sides(0, 1), '1 is recorded only where winters are colder');
+  assert.equal(sides(0, 5, true), '5 are recorded only where winters are colder', 'frost-free with nobody wanting warmer nights: no "(lowland tropical plants)"');
+  assert.equal(sides(0, 0), null, 'both sides 0: no clause');
+  for (const [loc, json] of LOCALES) {
+    for (const k of ['nightsTake', 'nightsTakeLater']) {
+      assert.ok(json[`consortium.figures.${k}`].includes('{sides}'), `${loc} ${k} takes {sides}`);
+      assert.doesNotMatch(json[`consortium.figures.${k}`], /\{warmer\}|\{colder\}|\{tropical\}/, `${loc} ${k}: the side counts come only through {sides}`);
+    }
+    for (const k of ['nightsWarmer', 'nightsColder']) assert.match(json[`consortium.figures.${k}`] ?? '', /#/, `${loc} ${k} is a count form`);
+    assert.ok(json['consortium.figures.nightsWarmer'].includes('{tropical}'), `${loc} nightsWarmer carries {tropical}`);
+    assert.match(json['consortium.figures.nightsSidesBoth'] ?? '', /\{warmer\}[\s\S]*\{colder\}/, `${loc} nightsSidesBoth`);
+  }
+  const take = say({ key: 'consortium.figures.nightsTake', vars: { n: 300, of: 515, mid: 280, last: 250, sides: sides(21, 168, true) } });
+  assert.equal(take, '300 of the 515 plants take these nights today: 21 want warmer nights (lowland tropical plants), 168 are recorded only where winters are colder. 280 by 2041–2070, 250 by 2071–2099.');
+});
+
+test('M4: the Water lead for a one-plant palette says "your one plant", never "your 1 plants"', () => {
+  for (const [loc, json] of LOCALES) for (const k of ['waterLeadOne', 'waterLeadOneFirst', 'waterLeadOneLater', 'waterLeadOneLaterFirst']) {
+    assert.ok(json[`consortium.figures.${k}`], `${loc} has figures.${k}`);
+    assert.doesNotMatch(json[`consortium.figures.${k}`], /\{size\}|#/, `${loc} ${k}: no count of one`);
+  }
+  for (const [loc, json] of LOCALES) for (const k of ['waterLeadOneLater', 'waterLeadOneLaterFirst']) assert.ok(json[`consortium.figures.${k}`].includes('{period}'), `${loc} ${k} says the later period`);
+  assert.equal(en['consortium.figures.waterLeadOne'], 'With rain only, your one plant may need watering today:');
+  assert.equal(en['consortium.figures.waterLeadOneFirst'], 'Watered the first years: your one plant needs it today:');
+  assert.equal(en['consortium.figures.waterLeadOneLater'], 'With rain only, your one plant needs no watering today; it may by {period}:');
+  assert.equal(en['consortium.figures.waterLeadOneLaterFirst'], 'Watered the first years: your one plant does not need it today; it may by {period}:');
 });

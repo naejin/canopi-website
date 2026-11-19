@@ -137,8 +137,9 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { read?: number } }).__ctTimeouts?.read) || READ_TIMEOUT_MS : READ_TIMEOUT_MS;
   try {
     return await Promise.race([
-      // No soil tile until something reads it (P5.2's soil likely restores { soil: true }).
-      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false }),
+      // The soil tile too: "Your place in figures" (pf-d) reads its pH and texture (SiteInputs.soilPh,
+      // site-inputs.ts soilTextureOf).
+      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: true }),
       new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${ms / 1000} s`)), ms); }),
     ]);
   } catch (err) {

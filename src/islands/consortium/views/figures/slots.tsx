@@ -7,16 +7,19 @@
 // shells: their content is views/figures/Figures.tsx, its own lazy chunk (role `figures`,
 // scripts/built-modules.mjs), which pf-d fills in chunk 3. Keep this file a shell.
 import { lazyPart } from '../lazy.tsx';
-import { load } from '../../store.ts';
+import { climate, load, location } from '../../store.ts';
 import { retryableImport } from '../../../../lib/consortium/index.ts';
 
 const figures = () => import('./Figures.tsx');
 const place = lazyPart(retryableImport(figures, (m) => m.PlaceFigures), { quiet: true });
 const limits = lazyPart(retryableImport(figures, (m) => m.PaletteLimits), { quiet: true });
 
-// Asked for only once the data is ready: nothing lazy is fetched before it (L5, E6-2).
+// Asked for only once the data is ready: nothing lazy is fetched before it (L5, E6-2). Drawn only
+// once there is a place to say figures for, a location or a chosen climate (F5: with a climate and no
+// location its soil and water lines can still be set): on Start before either, the panel would only
+// arrive after the first paint and push the page down (gate red R16, N2 layout stability).
 export function PlaceFigures() {
-  return load.value.status === 'ready' ? <place.View /> : null;
+  return load.value.status === 'ready' && (location.value || climate.value) ? <place.View /> : null;
 }
 export function PaletteLimits() {
   return <limits.View />;

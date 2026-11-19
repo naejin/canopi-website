@@ -5,11 +5,11 @@
 // and "Show fewer"; then all, with "Show fewer" (the arithmetic: views/kit/fold.ts). The first item
 // newly shown takes the focus, so a keyboard or screen-reader user lands on what opened; "Show fewer"
 // gives the focus back to "+ N more". No other list cap: 200 plants show as 200 rows once opened. The
-// thresholds come as props (the size rule's numbers live with their callers: pf-a's groups, pf-b's
-// count cells, pf-e's lists).
+// thresholds default to the core's size rule (NAMED_PALETTE, NAMED_GROUP); a caller may pass others.
+// `count={false}`: no count cell, where the sentence above the list already says the count.
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { moreLine } from '../../../../lib/consortium/index.ts';
+import { NAMED_GROUP, NAMED_PALETTE, moreLine } from '../../../../lib/consortium/index.ts';
 import { T } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { foldOf, type FoldStage } from './fold.ts';
@@ -18,18 +18,19 @@ export interface MoreListProps<I> {
   items: readonly I[];
   keyOf: (item: I) => string;
   render: (item: I) => ComponentChildren;
-  // The size rule: the palette's size, and the folds' thresholds (defaults: 40 plants, 12 items).
+  // The size rule: the palette's size, and the folds' thresholds (defaults: the core's NAMED_PALETTE, NAMED_GROUP).
   paletteSize?: number;
   maxPalette?: number;
   maxGroup?: number;
   closed?: number; // items shown closed (3)
   step?: number; // items shown once opened (10)
+  count?: boolean; // the count cell while folded (default true; false where a sentence says the count)
   label?: string; // the list's name, before its count and as the list's aria-label
   group?: string; // the list's name for "+ N more" alone (several on one page must not sound alike), never drawn
   class?: string;
 }
 
-export function MoreList<I>({ items, keyOf, render, paletteSize = 0, maxPalette = 40, maxGroup = 12, closed = 3, step = 10, label, group, class: cls }: MoreListProps<I>) {
+export function MoreList<I>({ items, keyOf, render, paletteSize = 0, maxPalette = NAMED_PALETTE, maxGroup = NAMED_GROUP, closed = 3, step = 10, count = true, label, group, class: cls }: MoreListProps<I>) {
   const [stage, setStage] = useState<FoldStage>(0);
   const firstNew = useRef<HTMLLIElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
@@ -45,7 +46,7 @@ export function MoreList<I>({ items, keyOf, render, paletteSize = 0, maxPalette 
   const fewer = () => { focusNext.current = 'opener'; setStage(0); };
   return (
     <div class={`ct-more${cls ? ` ${cls}` : ''}`} data-stage={f.whole ? 'whole' : stage}>
-      {!f.whole && stage === 0 && <span class="ct-more-count">{label ? `${label} ` : ''}{items.length}</span>}
+      {count && !f.whole && stage === 0 && <span class="ct-more-count">{label ? `${label} ` : ''}{items.length}</span>}
       <ul class="ct-more-items" aria-label={label}>
         {items.slice(0, f.shown).map((item, i) => (
           <li key={keyOf(item)} ref={i === f.firstNew ? firstNew : undefined} tabIndex={i === f.firstNew ? -1 : undefined}>{render(item)}</li>
