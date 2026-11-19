@@ -122,14 +122,15 @@ export function looksLikeHeader(cell: string | undefined): boolean {
 // header: the first row, when it holds column names; split: the names cut out of a longer cell
 // (never sent to the word-prefix search: "Malus domestica,Tree,Sun" does not offer trees); twice: the
 // names pasted more than once (one row, "listed twice, counted once", board Paste).
-export type PastedNames = string[] & { header?: string | null; split?: ReadonlySet<string>; twice?: ReadonlySet<string>; repeats?: number };
-// repeats: the lines that repeat a name already read (board Paste: "8 names read" counts every line).
+export type PastedNames = string[] & { header?: string | null; split?: ReadonlySet<string>; twice?: ReadonlySet<string>; repeats?: number; repeatsOf?: ReadonlyMap<string, number> };
+// repeats: the lines that repeat a name already read (board Paste: "8 names read" counts every line);
+// repeatsOf: those lines by the name first read (each counts in that name's group: pasteCounts).
 // The names of a paste, every line read (no cap: v14 pf-e, F23): a spreadsheet's first column, a cell
 // split on commas and semicolons (unless they separate the columns, when every cell is a name), each
 // name once (folded; a repeat marks the first as `twice`). A first row that looks like column names
 // (in a paste of two rows or more) is left out and kept as `header`.
 export function pasteNames(text: string): PastedNames {
-  const out: PastedNames = [], seen = new Map<string, string>(), split = new Set<string>(), twice = new Set<string>(), table = pasteTable(text);
+  const out: PastedNames = [], seen = new Map<string, string>(), split = new Set<string>(), twice = new Set<string>(), repeatsOf = new Map<string, number>(), table = pasteTable(text);
   let repeats = 0;
   const column = table.sep === ',' || table.sep === ';' ? EVERY_CELL : 0;
   const every = column === EVERY_CELL;
@@ -147,7 +148,7 @@ export function pasteNames(text: string): PastedNames {
       if ((name.match(/"/g) ?? []).length === 1 && /^"|"$/.test(name)) name = name.replace(/^"|"$/, '').trim();
       const key = fold(name);
       if (!name) continue;
-      if (seen.has(key)) { twice.add(seen.get(key)!); repeats++; continue; }
+      if (seen.has(key)) { const first = seen.get(key)!; twice.add(first); repeatsOf.set(first, (repeatsOf.get(first) ?? 0) + 1); repeats++; continue; }
       seen.set(key, name);
       out.push(name);
       if (parts.length > 1 && machine) split.add(name);
@@ -157,6 +158,7 @@ export function pasteNames(text: string): PastedNames {
   Object.defineProperty(out, 'split', { value: split, enumerable: false });
   Object.defineProperty(out, 'twice', { value: twice, enumerable: false });
   Object.defineProperty(out, 'repeats', { value: repeats, enumerable: false });
+  Object.defineProperty(out, 'repeatsOf', { value: repeatsOf, enumerable: false });
   return out;
 }
 
@@ -225,6 +227,7 @@ export interface PasteResult<T> {
   none: { at: number; name: string }[];
   header: string | null;
   twice: ReadonlySet<string>;
+  repeatsOf: ReadonlyMap<string, number>;
 }
 // A whole paste, sorted into the groups the sheet shows, each plant once:
 //   found      one plant of this climate's list (added by "Add the N found")
@@ -249,7 +252,7 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
   const lists = pasteLists(here, others, index), ins = new Set(members), seen = new Set<PlantId>();
   // A hit on the plant's own name (the page's language, or English) holding the query's words whole.
   const ownName = (h: FindHit): boolean => (h.why.match === 'exact' || h.why.match === 'tokens' || h.why.match === 'prefix') && (h.why.kind === 'name' || (h.why.kind === 'other' && h.why.lang === 'en' && lang !== 'en'));
-  const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], duplicate: [], none: [], header: null, twice: names.twice ?? new Set() };
+  const out: PasteResult<T> = { found: [], choose: [], other: [], already: [], duplicate: [], none: [], header: null, twice: names.twice ?? new Set(), repeatsOf: names.repeatsOf ?? new Map() };
   let at = 0;
   const one = (name: string, t: T, close: string | null, sci = false) => {
     const climate = lists.climate.get(t.id) ?? null;
@@ -345,4 +348,25 @@ export function plan<T extends Named>(r: PasteResult<T>, ticked: readonly PlantI
   const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)) || r.found.some((f) => f.close && f.taxon.id === id) || r.other.some((o) => o.close && o.taxon.id === id));
   const ids = [...new Set([...r.found.filter((f) => !f.close).map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
   return { ids, climateOf };
+}
+
+// The counts the sheet says (board Paste: "8 names read: 6 recognised, 1 needs a choice, 1 not found",
+// "Recognised: 3 new, 2 you have, 1 listed twice"), each line of the paste counted once, in the group
+// of its row: a repeated line where its name's first reading went (a name not found twice: 2 not
+// found). fresh: what "Add all" adds unasked (plan, nothing ticked), so the head and the button read
+// one list; other: the plants only another climate's list holds, each added by its own "Add anyway".
+export interface PasteCounts { lines: number; rec: number; choose: number; none: number; fresh: number; other: number; have: number; twice: number }
+export function pasteCounts<T extends Named>(r: PasteResult<T>, members: readonly PlantId[]): PasteCounts {
+  const rep = (x: { name: string }) => r.repeatsOf.get(x.name) ?? 0;
+  const lines = (rows: readonly { name: string }[]) => rows.reduce((n, x) => n + 1 + rep(x), 0);
+  const recRows = [...r.found.filter((f) => !f.close), ...r.other.filter((o) => !o.close), ...r.already, ...r.duplicate];
+  const askRows = [...r.found.filter((f) => f.close), ...r.other.filter((o) => o.close), ...r.choose];
+  const rec = lines(recRows), choose = lines(askRows), none = lines(r.none);
+  return {
+    lines: rec + choose + none, rec, choose, none,
+    fresh: plan(r, [], members).ids.length,
+    other: r.other.filter((o) => !o.close).length,
+    have: r.already.length,
+    twice: recRows.reduce((n, x) => n + rep(x), 0) + r.duplicate.length,
+  };
 }

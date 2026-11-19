@@ -15,7 +15,7 @@
 // fewer and 12 or fewer, else the count cell; review R2, C1): the boards' plain list ("Toxic: Almond,
 // Licorice"), "and" only where the names sit inside a sentence (`and`: "Olive and Almond share
 // Xylella", "Silk oak and Napier grass sit between", the outside-and-toxic sentence; c2 C1).
-import { isTicked, tickIds } from '../plants/state.ts';
+import { isTicked, tickAndShow } from '../plants/state.ts';
 import { useMemo, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { Flag, Line, PlantId, PlantVerdict, Taxon, WeighLine } from '../../../../lib/consortium/index.ts';
@@ -110,19 +110,16 @@ function Line_({ head, n, children, note, cls = '' }: { head: string; n: number;
 const REASON_WORDS = [['misfit', 'palette.warningsMisfit'], ['clash', 'palette.warningsClash']] as const;
 const OPEN_NAMES = 10; // an open list's names before "+ N more" (BC4)
 // "Tick these N" (board Many, A15): ticks a reason's plants in Your plants, ready for Remove (one Undo
-// there); nothing is removed here. Your plants may be far down the page, so the result is said in place
-// (BC10): a polite status "42 ticked in Your plants" while they all stay ticked, with "Go to Remove",
-// which takes the focus to the tick bar's Remove. No confirm step.
-const goRemove = (): void => {
-  const b = document.querySelector<HTMLElement>('#ct-root [data-plants-remove]');
-  if (b) { b.focus(); b.scrollIntoView({ block: 'nearest' }); }
-};
+// there); nothing is removed here. Your plants may be far down the page, so the rows' groups open and
+// the focus goes to the tick bar's Remove (views/plants/state.ts tickAndShow, R2), and the result is
+// said here too (BC10): a polite status "42 ticked in Your plants." while they all stay ticked. No
+// confirm step.
 function TickThese({ ids }: { ids: readonly PlantId[] }) {
   const all = ids.length > 0 && ids.every(isTicked);
   return (
     <>
-      <button type="button" class="ct-tick-these" onClick={() => tickIds(ids)}>{T('many.tickThese', { n: num(ids.length) })}</button>
-      <p class="ct-tick-said" role="status">{all && <>{T('many.tickedThese', { n: num(ids.length) })} <button type="button" class="link-button ct-link" onClick={goRemove}>{T('many.goRemove')}</button></>}</p>
+      <button type="button" class="ct-tick-these" onClick={() => tickAndShow(ids)}>{T('many.tickThese', { n: num(ids.length) })}</button>
+      <p class="ct-tick-said" role="status">{all && T('many.tickedThese', { n: num(ids.length) })}</p>
     </>
   );
 }

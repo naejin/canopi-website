@@ -10,11 +10,11 @@
 // (views/Sheets.tsx findIn 'list'), open while the reader adds; Done brings the table back and the
 // focus to "Add plants".
 import type { ComponentChildren } from 'preact';
-import { useMemo, useRef } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'preact/hooks';
 import type { PlantId, PlantRow, PlantVerdict } from '../../../../lib/consortium/index.ts';
 import { fitGroups, fitLine, headLine, jobIds, moreLine } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { focusAfterAdd } from '../../focus.ts';
+import { focusAfterAdd, focusSoon } from '../../focus.ts';
 import { nameOf, P, T, pageLang } from '../../strings.ts';
 import { say } from '../kit/fit.tsx';
 import { collatorFor } from '../kit/names.ts';
@@ -24,7 +24,7 @@ import { flagLines } from '../kit/flags.ts';
 import { FindPanel, findIn, openFindInList } from '../Sheets.tsx';
 import { deskFind } from '../Toast.tsx';
 import { GROUPS, groupItems, plantItems, searchItems, shownRows, SORTS, sortItems, type GroupKey, type PlantItem, type SortKey } from './model.ts';
-import { clearTicks, groupKey, isTicked, query, removeTicked, setGroup, setStage, setTick, sortKey, stages, tickIds, ticked, wide } from './state.ts';
+import { clearTicks, groupKey, isTicked, query, removeTicked, reveal, setGroup, setStage, setTick, sortKey, stages, tickIds, ticked, wide } from './state.ts';
 import { Missing } from './Small.tsx';
 
 const CHEVRON = (up: boolean) => <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d={up ? 'm4 10 4-4 4 4' : 'm4 6 4 4 4-4'} fill="none" stroke="currentColor" stroke-width="1.6" /></svg>;
@@ -138,10 +138,12 @@ const focusRow = (id: PlantId | undefined) => {
   requestAnimationFrame(() => document.querySelector<HTMLElement>(`#ct-root .ct-plants [data-plant-id="${CSS.escape(id)}"] input`)?.focus());
 };
 
+// Its spoken name starts with its visible words (WCAG 2.5.3): "+ 12 more (Show the other plants in Full sun)".
 function MoreButton({ k, word, rest, firstNew, desk }: { k: string; word: string; rest: number; firstNew?: PlantId; desk: boolean }) {
   return (
-    <button type="button" class="ct-many-more" aria-expanded="false" aria-label={T(desk ? 'many.showOtherRows' : 'many.showOther', { group: word })}
-      onClick={() => { setStage(k, 2); focusRow(firstNew); }}>{say(moreLine(rest))}</button>
+    <button type="button" class="ct-many-more" aria-expanded="false" onClick={() => { setStage(k, 2); focusRow(firstNew); }}>
+      {say(moreLine(rest))}<span class="visually-hidden"> ({T(desk ? 'many.showOtherRows' : 'many.showOther', { group: word })})</span>
+    </button>
   );
 }
 
@@ -209,6 +211,47 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
   const n = new Set([...members.map((t) => t.id), ...missing.map((r) => r.id)]).size;
   const inList = desk && deskFind.value && findIn.value === 'list';
   const removeOne = (id: PlantId) => { store.removeMember(id); focusAfterAdd(() => heading.current); };
+  // A group's fold stage: all while searching; "No groups" starts open, any other group closed.
+  const stageOf = (key: string, m: ReadonlyMap<string, 0 | 1 | 2> = st): 0 | 1 | 2 => (searching ? 2 : m.get(key) ?? (gk === 'none' ? 1 : 0));
+  // Opens the groups that hold these plants far enough to show each (its first 10, else all).
+  const openFor = (ids: ReadonlySet<PlantId>) => {
+    const m = new Map(stages.peek());
+    let changed = false;
+    for (const g of groups) {
+      let last = -1;
+      g.items.forEach((i, k) => { if (ids.has(i.id)) last = k; });
+      if (last < 0) continue;
+      const need = last < shownRows(g.items.length, 1) ? 1 : 2;
+      if (stageOf(g.key, m) < need) { m.set(g.key, need); changed = true; }
+    }
+    if (changed) stages.value = m;
+  };
+  // "Tick these" (R2): the ticked rows shown, then the focus on the tick bar's Remove (on screen), else
+  // this section's heading. In a layout effect, so the rows are there before the focus moves.
+  const want = reveal.value;
+  useLayoutEffect(() => {
+    if (!want) return;
+    reveal.value = null;
+    openFor(new Set(want.ids));
+    if (want.focus) focusSoon(() => document.querySelector<HTMLElement>('#ct-root .ct-plants [data-plants-remove]') ?? heading.current, (el) => el.scrollIntoView({ block: 'nearest' }));
+  }, [want]);
+  // Plants that come back (an Undo of a Remove here or in the plant dialog) have their groups opened,
+  // so the Undo's focus lands on the restored row, never on a hidden title (R3).
+  const ids = store.members.value;
+  const was = useRef<ReadonlySet<PlantId>>(new Set(ids)), gone = useRef(new Set<PlantId>());
+  useLayoutEffect(() => {
+    const now = new Set(ids), back = new Set<PlantId>();
+    for (const id of was.current) if (!now.has(id)) gone.current.add(id);
+    for (const id of now) if (!was.current.has(id) && gone.current.delete(id)) back.add(id);
+    was.current = now;
+    if (back.size) openFor(back);
+  }, [ids]);
+  // The ticks and the search's place belong to this list (R9, R10): when it leaves (40 plants or fewer,
+  // Start over) the ticks go, and a search open in its place moves beside the chart; a palette opened
+  // (a link, a save) starts with none ticked.
+  useEffect(() => () => { clearTicks(); if (findIn.peek() === 'list') findIn.value = 'grid'; }, []);
+  const opening = store.opening.value;
+  useEffect(() => { if (opening) clearTicks(); }, [opening]);
 
   const body = (render: (i: PlantItem) => ComponentChildren, k: string, word: string, list: PlantItem[], stage: 0 | 1 | 2) => {
     const s = searching ? 2 : stage, shown = shownRows(list.length, s);
@@ -219,8 +262,10 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
     const on = sk === SORT_OF_COLUMN[col];
     return <th scope="col" class={`ct-many-${col}`} aria-sort={on ? 'ascending' : undefined}><button type="button" class="ct-many-colhead" data-on={on ? '' : undefined} onClick={() => { sortKey.value = SORT_OF_COLUMN[col]; }}>{word}{on && CHEVRON(true)}</button></th>;
   };
-  const screen = desk ? groups.flatMap((g) => { const s = searching ? 2 : (gk === 'none' ? (st.get(g.key) ?? 1) : st.get(g.key) ?? 0); return g.items.slice(0, shownRows(g.items.length, s)); }) : [];
-  const allScreen = screen.length > 0 && screen.every((i) => isTicked(i.id));
+  // The head tick (R11): bound to the rows shown; off while none shows, part-ticked when some are.
+  const screen = desk ? groups.flatMap((g) => g.items.slice(0, shownRows(g.items.length, stageOf(g.key)))) : [];
+  const onScreen = screen.filter((i) => isTicked(i.id)).length;
+  const allScreen = screen.length > 0 && onScreen === screen.length;
 
   return (
     <section class="ct-plants ct-many" id="your-plants" aria-labelledby="ct-plants-t" data-many="">
@@ -245,7 +290,7 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
         {desk ? (
           <table class="ct-many-table">
             <thead><tr>
-              <th scope="col" class="ct-many-tickcell"><label class="ct-many-tick"><input type="checkbox" checked={allScreen} aria-label={T('many.tickScreen')} onChange={(e) => tickIds(screen.map((i) => i.id), (e.target as HTMLInputElement).checked)} /></label></th>
+              <th scope="col" class="ct-many-tickcell"><label class="ct-many-tick"><input type="checkbox" checked={allScreen} indeterminate={onScreen > 0 && !allScreen} disabled={!screen.length} aria-label={T('many.tickScreen')} onChange={(e) => tickIds(screen.map((i) => i.id), (e.target as HTMLInputElement).checked)} /></label></th>
               {colHead('plant', T('many.col_plant'))}
               {light && colHead('light', T('many.col_light'))}
               {colHead('when', T('many.col_when'))}
@@ -253,7 +298,7 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
               {colHead('fit', T('many.col_fit'))}
             </tr></thead>
             {groups.map((g) => {
-              const word = groupWord(gk, g.key), stage = gk === 'none' ? (st.get(g.key) ?? 1) : st.get(g.key) ?? 0;
+              const word = groupWord(gk, g.key), stage = stageOf(g.key);
               const b = body((i) => <DeskRow key={i.id} i={i} light={light} />, g.key, word, g.items, stage);
               return (
                 <tbody key={g.key}>
@@ -265,7 +310,7 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
             })}
           </table>
         ) : groups.map((g) => {
-          const word = groupWord(gk, g.key), stage = gk === 'none' ? (st.get(g.key) ?? 1) : st.get(g.key) ?? 0;
+          const word = groupWord(gk, g.key), stage = stageOf(g.key);
           const b = body((i) => <PhoneRow key={i.id} i={i} />, g.key, word, g.items, stage);
           return (
             <div class="ct-many-group" key={g.key}>

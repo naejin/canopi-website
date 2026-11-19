@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const M = await import('../src/islands/consortium/views/plants/model.ts');
-const { pasteNames, readPaste, plan } = await import('../src/islands/consortium/views/find/paste.ts');
+const { pasteNames, readPaste, plan, pasteCounts } = await import('../src/islands/consortium/views/find/paste.ts');
 const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
 
 const taxon = (id, name, { stratum = null, family = null, functions = [], years = null } = {}) => ({
@@ -122,4 +122,24 @@ test('BC20: a close spelling found only on another list is a choice like any oth
   assert.deepEqual(plan(r, [], []).ids, [], 'never added unasked');
   const p = plan(r, ['t1'], []);
   assert.deepEqual([p.ids, p.climateOf.get('t1')], [['t1'], 'Tropical']);
+});
+
+// ---- fix round 1, batch 3 ----
+
+test('R4: a repeated line counts in its own group: a name not found twice is 2 not found, a question twice 2 to choose, and neither is "recognised" or "listed twice"', () => {
+  const lost = readPaste(pasteNames('sukuma wiki\nCommon bean\nsukuma wiki'), { here, index });
+  assert.deepEqual(pasteCounts(lost, []), { lines: 3, rec: 1, choose: 0, none: 2, fresh: 1, other: 0, have: 0, twice: 0 });
+  const asked = readPaste(pasteNames('beans\nbeans'), { here, index });
+  assert.deepEqual(pasteCounts(asked, []), { lines: 2, rec: 0, choose: 2, none: 0, fresh: 0, other: 0, have: 0, twice: 0 });
+  const kept = readPaste(pasteNames('Common bean\ncommon bean\nLima bean'), { here, index });
+  assert.deepEqual(pasteCounts(kept, []), { lines: 3, rec: 3, choose: 0, none: 0, fresh: 2, other: 0, have: 0, twice: 1 }, 'a recognised repeat: recognised, listed twice');
+});
+
+test('R14: the Recognised head\'s "new" is what Add all adds; plants of another climate\'s list are counted apart', () => {
+  const tropical = [plant('t1', 'Musa acuminata', 'Banana'), plant('t2', 'Carica papaya', 'Papaya')];
+  const idx = releaseIndex({ lang: 'en', names: [...here, ...tropical].map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+  const r = readPaste(pasteNames('Common bean\nLima bean\nBanana\nPapaya'), { here, others: [['Tropical', tropical]], index: idx });
+  const c = pasteCounts(r, []);
+  assert.equal(c.fresh, plan(r, [], []).ids.length, 'the head and Add all read one list');
+  assert.deepEqual([c.fresh, c.other, c.rec], [2, 2, 4]);
 });

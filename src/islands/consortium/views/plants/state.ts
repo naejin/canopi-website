@@ -1,8 +1,10 @@
 // Your plants' own state at scale (v14 pf-e; boards Many, ManyDesk): the ticks, the search, the sort,
-// the grouping and each group's fold, as signals, for the page's life (never saved). Ticks stay when
-// the reader searches, sorts or regroups (board Many's foot); a tick on a plant no longer in the palette
-// is dropped (ticked() prunes to the members). "Tick these" on Warnings and fit (Weigh.tsx) ticks a
-// reason's plants here. Remove acts on the ticked plants at once (store.removeMembers: one Undo).
+// the grouping and each group's fold, as signals (never saved). Ticks stay when the reader searches,
+// sorts or regroups (board Many's foot); a tick on a plant no longer in the palette is dropped (ticked()
+// prunes to the members). The ticks belong to the many form: ManyPlants clears them when it leaves (the
+// palette at 40 plants or fewer, Start over) and when a palette is opened (R9). "Tick these" on Warnings
+// and fit (Weigh.tsx) ticks a reason's plants here and shows them (tickAndShow). Remove acts on the
+// ticked plants at once (store.removeMembers: one Undo).
 import { computed, signal } from '@preact/signals';
 import type { PlantId } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
@@ -22,7 +24,15 @@ export function tickIds(ids: readonly PlantId[], on = true): void {
   for (const id of ids) if (on) next.add(id); else next.delete(id);
   ticks.value = next;
 }
-export const clearTicks = (): void => { ticks.value = new Set(); };
+export const clearTicks = (): void => { if (ticks.peek().size) ticks.value = new Set(); };
+// Plants to show in Your plants: ManyPlants opens the groups that hold them, then (focus) moves the
+// focus to the tick bar's Remove, as a mail client's bulk select hands it to the list's toolbar (R2).
+export const reveal = signal<{ ids: readonly PlantId[]; focus: boolean } | null>(null);
+// "Tick these N" (Weigh.tsx): the plants ticked, their rows shown, the focus on Remove.
+export function tickAndShow(ids: readonly PlantId[]): void {
+  tickIds(ids);
+  reveal.value = { ids, focus: true };
+}
 // Remove the ticked plants (one Undo); the ticks go with them.
 export function removeTicked(): void {
   const ids = ticked.peek();

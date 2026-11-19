@@ -122,8 +122,9 @@ export function Palette() {
           <li><span class="ct-step ct-step-later"><span class="ct-step-n">3</span> {T('palette.stepPlan')}</span></li>
         </ol>
       </nav>
-      {/* No board draws a "Your palette" title (v14 pf-e E4): kept for the reader's focus and outline only. */}
-      <h2 class="visually-hidden" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
+      {/* No board draws a "Your palette" title (v14 pf-e E4): kept for the reader's focus and outline only,
+          and drawn while it has the focus (focus.ts lands there when nothing nearer is left; R3, WCAG 2.4.7). */}
+      <h2 class="visually-hidden ct-palette-title" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
       {/* Past 40 plants on a desk "Add plants" is Your plants' own, opening the search in place (board ManyDesk). */}
       {!(big && desk) && <FindEntry where="head" />}
       {store.verdictFailed.value && <VerdictNotice />}

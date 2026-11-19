@@ -170,3 +170,9 @@
 .ct .ct-plant-open .ct-line.ct-plant-light > svg { margin-top: 1.5px; }
 .ct .ct-plant-open .ct-line.ct-plant-light > span { min-width: 0; }
 .ct .ct-plant-open .ct-line.ct-plant-why { color: var(--text); }
+
+/* The palette page's title (Palette.tsx): no board draws it, so it is hidden, but drawn while it has
+   the focus, so a focus landing there is never on an invisible node (R3, WCAG 2.4.7). As a skip link:
+   over the page at its own place, out of the flow, so showing and hiding it never moves the page (a
+   click elsewhere blurs it before the click lands), and clicks pass through it to what it covers. */
+.ct .ct-palette-title.visually-hidden:focus { width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; z-index: 3; margin: 0; padding: 4px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); box-shadow: 0 2px 8px rgb(0 0 0 / 0.12); pointer-events: none; }

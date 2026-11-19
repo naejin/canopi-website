@@ -21,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { pasteNames, plan, readPaste, type Named, type PasteResult } from './paste.ts';
+import { pasteCounts, pasteNames, plan, readPaste, type Named, type PasteResult } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
@@ -54,12 +54,35 @@ function PasteGroup({ id, head, n, openAt, children }: { id: string; head: strin
 }
 // The first `closed` of a long run, then "+ N more" (past `max`); `list`: the items are <li>s.
 // pill: the "+ N more" as a small pill under the list (board AddMany's questions), else an ochre link.
+// Its spoken name starts with its visible words (WCAG 2.5.3): "+ 30 more (Show the other questions)".
+// Pressed, it leaves, and the focus goes to the first item it showed (never <body>).
 function Folded({ items, max, closed, list = false, label, pill = false }: { items: ComponentChildren[]; max: number; closed: number; list?: boolean; label: string; pill?: boolean }) {
   const [all, setAll] = useState(false);
+  const rows = useRef<HTMLUListElement>(null);
+  // Where the first new item will stand: the list's row `closed`, else the place the button held
+  // among its siblings (the items before it, as `closed` shown ones).
+  const at = useRef<{ parent: Element; index: number } | null>(null);
+  useEffect(() => {
+    const was = at.current;
+    if (!all || !was) return;
+    at.current = null;
+    const first = (list ? rows.current?.children[closed] : was.parent.children[was.index]) as HTMLElement | undefined;
+    const to = first && (first.matches('button, a[href]') ? first : first.querySelector<HTMLElement>('button, a[href]'));
+    to?.focus();
+  }, [all]);
   const cut = !all && items.length > max;
   const shown = cut ? items.slice(0, closed) : items;
-  const more = cut && <button type="button" class={pill ? 'ct-paste-morepill' : 'ct-more-open text-link'} aria-expanded="false" aria-label={label} onClick={() => setAll(true)}>{say(moreLine(items.length - closed))}</button>;
-  return list ? <><ul class="ct-rows ct-paste-rows">{shown}</ul>{more}</> : <>{shown}{more}</>;
+  const open = (e: Event) => {
+    const b = e.currentTarget as HTMLElement;
+    at.current = { parent: b.parentElement!, index: [...b.parentElement!.children].indexOf(b) };
+    setAll(true);
+  };
+  const more = cut && (
+    <button type="button" class={pill ? 'ct-paste-morepill' : 'ct-more-open text-link'} aria-expanded="false" onClick={open}>
+      {say(moreLine(items.length - closed))}<span class="visually-hidden"> ({label})</span>
+    </button>
+  );
+  return list ? <><ul class="ct-rows ct-paste-rows" ref={rows}>{shown}</ul>{more}</> : <>{shown}{more}</>;
 }
 
 // onBack: opened from Find, Paste is drawn in Find's sheet and Cancel or an add goes back to it (B11);
@@ -77,6 +100,11 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // The questions answered "None" or skipped (by line); a name you leave is not added.
   const [nope, setNope] = useState<ReadonlySet<number>>(new Set());
   const [copied, setCopied] = useState<'done' | 'hand' | null>(null);
+  // The names to copy by hand take the focus once, when they show (never on a re-render: R5).
+  const byHandBox = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { if (copied === 'hand') { byHandBox.current?.focus(); byHandBox.current?.select(); } }, [copied]);
+  // "Skip the N left" leaves as it answers the last questions: the focus goes to the progress line.
+  const progress = useRef<HTMLParagraphElement>(null);
   const zones = store.curatedClimates.value;
   const release = releasePlants.value;
   const source = store.source.value, index = finder.value ?? undefined;
@@ -92,10 +120,13 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     }
     return zones.flatMap((z) => (by.has(z) ? [[z, by.get(z)!] as [ClimateZone, Named[]]] : []));
   }, [release, pool, climate, zones]);
-  // A guess's choices after the name rule (A16): fits, a second look, outside, not checked.
-  const fitRank = (id: PlantId) => { const l = store.poolVerdicts.peek()?.get(id)?.level; return l === 'fits' ? 0 : l === 'look' ? 1 : l === 'outside' ? 2 : 3; };
+  // A guess's choices after the name rule (A16): fits, a second look, outside, not checked. The reading
+  // depends on the verdicts it ranks by (R13: one read before they settle, or before they change, takes
+  // their order once they do).
+  const verdicts = store.poolVerdicts.value;
+  const fitRank = (id: PlantId) => { const l = verdicts?.get(id)?.level; return l === 'fits' ? 0 : l === 'look' ? 1 : l === 'outside' ? 2 : 3; };
   const read = (src: string) => { const names = pasteNames(src); return { names, result: pool ? readPaste<Named>(names, { here: pool, others: lists, members, index, rank: fitRank, lang: pageLang() }) : null }; };
-  const { result, names: settledNames } = useMemo(() => read(settled), [settled, pool, members, lists, index]);
+  const { result } = useMemo(() => read(settled), [settled, pool, members, lists, index, verdicts]);
   useEffect(() => { setNope(new Set()); setCopied(null); }, [settled]);
   if (!climate) return null;
   if (!pool || !result) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
@@ -209,7 +240,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
           <button type="button" class="ct-paste-choice" aria-pressed={ticked.includes(o.taxon.id) ? 'true' : 'false'} onClick={() => toggle(o.taxon.id, [o.taxon.id], o.at)}>{pressed(ticked.includes(o.taxon.id))}{T('paste.close', { name: o.close! })}</button>
         </span></> })),
     ...result.choose.map((c) => ({ at: c.at, name: c.name, status: 'choose' as Status, ids: c.taxa.map((t) => t.id),
-      line: <>{c.taxa.length > 1 && <><strong>{T('paste.whichWord', { word: c.word })}</strong> </>}{P('paste.called', c.taxa.length, { word: c.word })}</>,
+      line: <>{c.taxa.length > 1 && <><strong>{T('paste.whichWord', { word: c.word })}</strong> </>}{P('paste.called', c.taxa.length, { word: c.word })}{twice(c.name)}</>,
       after: <>
         {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}
         <span class="ct-paste-choices" role="group" aria-label={T('paste.whichLabel', { name: c.name })}>
@@ -227,7 +258,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // line no plant has as a whole name; none, the lede's general form.
   const loose = result.choose.find((c) => c.loose && c.word !== c.name) ?? result.choose.find((c) => c.loose) ?? null;
   const missing: Row[] = result.none.map((x) => ({ at: x.at, name: x.name, status: 'none',
-    line: <><strong>{T('paste.notFound')}</strong> <button type="button" class="text-link" data-paste-byhand="" onClick={() => byHand(x.name)}>{T('paste.byHand')}</button></> }));
+    line: <><strong>{T('paste.notFound')}</strong>{twice(x.name)} <button type="button" class="text-link" data-paste-byhand="" onClick={() => byHand(x.name)}>{T('paste.byHand')}</button></> }));
   const MARK: Record<Status, ComponentChildren> = {
     found: OK, other: OK, already: OK, duplicate: OK,
     choose: INFO,
@@ -239,19 +270,22 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
       <span class="ct-paste-body"><span class="ct-paste-line"><span class="ct-paste-q">“{r.name}”</span> {r.line}</span>{r.after && <span class="ct-paste-after">{r.after}</span>}</span>
     </li>
   );
-  // Every line of the paste, a repeat included (board Paste: "8 names read").
-  const lines = recognised.length + questions.length + missing.length + (result.twice.size ? (settledNames.repeats ?? 0) : 0);
-  const recCount = recognised.length + (settledNames.repeats ?? 0);
-  const newCount = result.found.filter((f) => !f.close).length + result.other.filter((o) => !o.close).length;
+  // Every line of the paste, a repeat counted in its own name's group (board Paste: "8 names read";
+  // paste.ts pasteCounts). The head's "new" is what "Add all" adds; another list's plants apart (R14).
+  // Need a choice's head counts its questions, as "N to go" and "Skip the N left" do (BC20): a question
+  // pasted twice is one question, said "listed twice" on its row.
+  const counts = pasteCounts(result, members);
+  const lines = counts.lines;
   const sum = [
-    recCount > 0 && P('paste.sumRec', recCount),
-    questions.length > 0 && P('paste.sumChoose', questions.length),
-    missing.length > 0 && P('paste.sumNone', missing.length),
+    counts.rec > 0 && P('paste.sumRec', counts.rec),
+    counts.choose > 0 && P('paste.sumChoose', counts.choose),
+    counts.none > 0 && P('paste.sumNone', counts.none),
   ].filter(Boolean).join(', ');
   const recHead = T('paste.groupRec', { parts: [
-    newCount > 0 && P('paste.recNew', newCount),
-    result.already.length > 0 && P('paste.sumHave', result.already.length),
-    (settledNames.repeats ?? 0) + result.duplicate.length > 0 && P('paste.recTwice', (settledNames.repeats ?? 0) + result.duplicate.length),
+    counts.fresh > 0 && P('paste.recNew', counts.fresh),
+    counts.other > 0 && P('paste.recOther', counts.other),
+    counts.have > 0 && P('paste.sumHave', counts.have),
+    counts.twice > 0 && P('paste.recTwice', counts.twice),
   ].filter(Boolean).join(', ') });
   const back = () => (onBack ? onBack() : closeSheet());
   const copy = async () => {
@@ -283,7 +317,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         {lines > 0 && <h3 id="ct-p-count" class="ct-paste-count" tabIndex={-1} data-paste-count=""><strong>{P('paste.read', lines)}</strong>{sum && <span class="ct-muted"> {sum}</span>}</h3>}
       </div>
       {recognised.length > 0 && (
-        <PasteGroup id="rec" head={recHead} n={recCount} openAt={settled}>
+        <PasteGroup id="rec" head={recHead} n={counts.rec} openAt={settled}>
           <ul class="ct-rows ct-paste-rows">{recognised.map(rowOf)}</ul>
         </PasteGroup>
       )}
@@ -291,18 +325,18 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         <PasteGroup id="choose" head={T('paste.groupChoose')} n={questions.length} openAt={settled}>
           {questions.length > 10 && <p class="ct-muted">{loose ? T('paste.chooseNoteLoose', { word: loose.name }) : T('paste.chooseNote')}</p>}
           <Folded items={questions.map(rowOf)} max={10} closed={5} list pill label={T('paste.otherQuestions')} />
-          {asking.length > 1 && <p class="ct-paste-progress">{T('paste.progress', { chosen: num(chosen), left: num(left) })}
-            {left > 0 && <> <button type="button" class="text-link ct-paste-skip" onClick={() => setNope((n) => { const m = new Set(n); for (const q of asking) if (!answered(q)) m.add(q.at); return m; })}>{P('paste.skip', left)}</button></>}</p>}
+          {asking.length > 1 && <p class="ct-paste-progress" ref={progress} tabIndex={-1}>{T('paste.progress', { chosen: num(chosen), left: num(left) })}
+            {left > 0 && <> <button type="button" class="text-link ct-paste-skip" onClick={() => { setNope((n) => { const m = new Set(n); for (const q of asking) if (!answered(q)) m.add(q.at); return m; }); requestAnimationFrame(() => progress.current?.focus()); }}>{P('paste.skip', left)}</button></>}</p>}
         </PasteGroup>
       )}
       {missing.length > 0 && (
-        <PasteGroup id="none" head={T('paste.groupNone')} n={missing.length} openAt={settled}>
+        <PasteGroup id="none" head={T('paste.groupNone')} n={counts.none} openAt={settled}>
           <Folded items={missing.map(rowOf)} max={10} closed={10} list label={T('paste.otherNames')} />
           {missing.length > 1 && <button type="button" class="button button-secondary" onClick={() => void copy()}>{P('paste.copy', missing.length)}</button>}
           {copied === 'done' && <p class="ct-muted" role="status">{T('paste.copied')}</p>}
           {copied === 'hand' && <>
             <p class="ct-muted" role="status">{T('paste.copyByHand')}</p>
-            <textarea class="ct-paste-text" readOnly rows={Math.min(6, missing.length)} aria-label={P('paste.copy', missing.length)} ref={(el) => { if (el) { el.focus(); el.select(); } }} value={result.none.map((x) => x.name).join('\n')} />
+            <textarea class="ct-paste-text" readOnly rows={Math.min(6, missing.length)} aria-label={P('paste.copy', missing.length)} ref={byHandBox} value={result.none.map((x) => x.name).join('\n')} />
           </>}
         </PasteGroup>
       )}

@@ -59,7 +59,7 @@ test('PFE2 (pf-e Many, PP-B23): a group opens to its first 10 rows sorted by fit
   await frames(page);
   const rows = await rowsShown(page);
   assert.equal(rows.length, Math.min(10, n), `board: ${word} opens to its first 10 rows`);
-  if (n > 10) await control(page, 'button', `Show the other plants in ${word}`);
+  if (n > 10) await control(page, 'button', `+ ${n - 10} more (Show the other plants in ${word})`);
   const rank = await fitRanks(page);
   const ranks = rows.map((r) => rank[r.id]);
   assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b), `board: sorted by fit (outside, second look, a mark, fits, not checked): ${ranks.join(' ')}`);
@@ -69,7 +69,7 @@ test('PFE2 (pf-e Many, PP-B23): a group opens to its first 10 rows sorted by fit
   assert.ok(rows[0].text.includes(first.canonical_name), 'board: the row names the plant\'s scientific name');
   assert.match(rows.map((r) => r.text).join(' | '), /year \d+ to year \d+|from year \d+ on|first year|first \d+/, 'board: rows say when each plant stands');
   if (n > 10) {
-    await press(page, 'button', `Show the other plants in ${word}`);
+    await press(page, 'button', `+ ${n - 10} more (Show the other plants in ${word})`);
     await frames(page);
     assert.equal((await rowsShown(page)).length, n, `board: "+ more" shows all ${n}`);
     const f = await focused(page);
@@ -466,7 +466,7 @@ test('PFE20 (pf-e BC9, board Many): the open toxic reason is one paragraph ("Ver
   }
 });
 
-test('PFE21 (pf-e A15, BC10): "Tick these N" says in place what it did ("N ticked in Your plants."), and "Go to Remove" takes the focus to Remove', async () => {
+test('PFE21 (pf-e A15, BC10, R2): "Tick these N" says in place what it did ("N ticked in Your plants.") and takes the focus to Remove', async () => {
   const page = await loadPalette200({ width: 390 });
   await openToxic(page);
   const n = await toxicN(page);
@@ -474,7 +474,6 @@ test('PFE21 (pf-e A15, BC10): "Tick these N" says in place what it did ("N ticke
   await says(page, `${n} ticked in Your plants.`);
   const said = await page.evaluate((w) => [...document.querySelectorAll('#ct-root [role="status"]')].some((e) => e.textContent.includes(w)), `${n} ticked in Your plants.`);
   assert.ok(said, 'board: said in a status');
-  await press(page, 'button', 'Go to Remove');
   await frames(page);
   assert.equal((await focused(page)).name, `Remove ${n} plants`, 'board: the focus on Remove');
   await done(page);
@@ -613,7 +612,7 @@ test('PFE27 (pf-e BC17-BC20, boards Paste and AddMany): 215 names: the Need a ch
   await says(page, `0 chosen, ${n} to go. A name you leave is not added.`, { inDialog: true });
   await control(page, 'button', `Skip the ${n} left`);
   const more = await page.evaluate(() => {
-    const b = document.querySelector('dialog[open] button[aria-label="Show the other questions"]');
+    const b = [...document.querySelectorAll('dialog[open] button')].find((x) => /^\+ \d+ more \(Show the other questions\)$/.test(x.textContent.replace(/\s+/g, ' ').trim()));
     if (!b) return null;
     const r = b.getBoundingClientRect(), s = getComputedStyle(b);
     return { w: r.width, h: r.height, radius: parseFloat(s.borderTopLeftRadius), border: s.borderTopStyle, sheet: b.closest('dialog').getBoundingClientRect().width };
@@ -700,5 +699,193 @@ test('PFE29 (pf-e R1): past 40 plants every row keeps each warning the small for
     if (!text.includes(c.other)) missing.push(`${c.q}: its conflict with ${c.other} not on "${text}"`);
   }
   assert.deepEqual(missing, [], 'R1: a warning the small form shows is never dropped past 40 plants');
+  await done(page);
+});
+
+// ---- fix round 1, batch 3 (review R2 to R14) ----
+
+// The reader's own reading of what has the focus: its row's plant, whether it is drawn (not a 1 px box).
+const focusedAt = (page) => page.evaluate(() => {
+  const a = document.activeElement, r = a?.getBoundingClientRect();
+  return { body: !a || a === document.body, plant: a?.closest('[data-plant-id]')?.dataset.plantId ?? null, drawn: !!r && r.width > 2 && r.height > 2,
+    inView: !!r && r.bottom > 0 && r.top < innerHeight, box: r ? [Math.round(r.top), Math.round(r.bottom), innerHeight, Math.round(scrollY)] : null, name: (a?.getAttribute('aria-label') ?? a?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80) };
+});
+// The page's (smooth) scroll come to rest.
+const scrolled = (page) => page.evaluate(() => new Promise((done) => {
+  let last = -1, still = 0;
+  const tick = () => { if (scrollY === last) still++; else { still = 0; last = scrollY; } if (still > 5) done(); else requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}));
+// The palette cut to its first n plants (the 200-plant case's), verdicts settled.
+async function paletteOf(n, width) {
+  const page = await loadPalette200({ width });
+  await page.evaluate((k) => { const s = window.__ctTest.store; s.members.value = s.members.value.slice(0, k); }, n);
+  assert.ok(await verdictsSettled(page));
+  return page;
+}
+
+test('PFE30 (pf-e R2): on the phone "Tick these N" takes the focus to the tick bar\'s Remove, on screen, says it in a status, and opens the groups so every ticked row shows', async () => {
+  const page = await loadPalette200({ width: 390 });
+  await openToxic(page);
+  const n = await toxicN(page);
+  await press(page, 'button', `Tick these ${n}`);
+  await frames(page);
+  await scrolled(page);
+  const f = await focusedAt(page);
+  assert.equal(f.name, `Remove ${n} plants`, 'R2: the focus goes to the tick bar\'s Remove');
+  assert.ok(f.inView, `R2: Remove is on screen (${JSON.stringify(f.box)})`);
+  const said = await page.evaluate((w) => [...document.querySelectorAll('#ct-root [role="status"]')].some((e) => e.textContent.includes(w)), `${n} ticked in Your plants.`);
+  assert.ok(said, 'R2: said in a polite status');
+  assert.equal((await rowsShown(page)).filter((r) => r.ticked).length, n, 'R2: every ticked row is shown');
+  await done(page);
+});
+
+test('PFE31 (pf-e R3): ticking two closed groups whole, Remove, then Undo lands the focus on a restored row that is drawn, never on a hidden title; a focused palette title is drawn', async () => {
+  const page = await loadPalette200({ width: 390 });
+  const counts = await strataCounts(page);
+  const two = Object.entries(LIGHT_OF).filter(([s]) => counts[s]).sort((a, b) => counts[a[0]] - counts[b[0]]).slice(0, 2);
+  for (const [s, word] of two) await press(page, 'button', `Tick all ${counts[s]} in ${word}`);
+  const n = counts[two[0][0]] + counts[two[1][0]];
+  await press(page, 'button', `Remove ${n} plants`);
+  assert.ok(await page.waitForFunction((k) => window.__ctTest.store.members.value.length === 200 - k, { timeout: 4000 }, n).then(() => true, () => false));
+  await page.click('.ct-toast-page .ct-toast-undo');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 200, { timeout: 4000 }).then(() => true, () => false));
+  await frames(page);
+  const f = await focusedAt(page);
+  assert.ok(f.plant && f.drawn, `R3: the focus on a restored row, drawn (${JSON.stringify(f)})`);
+  await page.evaluate(() => document.querySelector('#ct-root [data-view-heading]').focus());
+  assert.ok((await focusedAt(page)).drawn, 'R3: the palette title shows while it has the focus');
+  await done(page);
+});
+
+test('PFE32 (pf-e R4): a name not found twice counts as 2 not found, never as recognised', async () => {
+  const page = await boardPastePage(390);
+  await pasteText(page, 'sukuma wiki\nsukuma wiki\npigeon pea');
+  await says(page, '3 names read 1 recognised, 2 not found', { inDialog: true });
+  await control(page, 'button', /^Not found 2$/);
+  await done(page);
+});
+
+test('PFE33 (pf-e R5): with the clipboard refused, typing in the paste box keeps the focus there while the names to copy by hand show', async () => {
+  const page = await boardPastePage(390);
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('denied')) } }));
+  await pasteText(page, 'qxzvka\nqxzvkb\nqxzvkc');
+  await openGroup(page, /^Not found/);
+  await press(page, 'button', 'Copy these 3 names');
+  assert.ok(await has(page, 'dialog[open] textarea[readonly]', 3000), 'the names to copy by hand');
+  await page.focus('dialog[open] #ct-paste-text');
+  await page.keyboard.type('zz');
+  const at = await page.evaluate(() => document.activeElement?.id ?? '');
+  assert.equal(at, 'ct-paste-text', 'R5: the focus stays in the paste box while typing');
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(await page.evaluate(() => document.activeElement?.id ?? ''), 'ct-paste-text', 'R5: and after the reading settles');
+  assert.match(await page.$eval('dialog[open] #ct-paste-text', (el) => el.value), /qxzvkczz$/);
+  await done(page);
+});
+
+test('PFE34 (pf-e R6, R12): "+ N more" in Not found says its count first and hands the focus to the first name it shows; "Skip the N left" hands it to the progress line', async () => {
+  const page = await boardPastePage(390);
+  const lost = Array.from({ length: 12 }, (_, i) => `qxzvk${'abcdefghijkl'[i]}`);
+  await pasteText(page, [...lost, 'beans', 'napier'].join('\n'));
+  await openGroup(page, /^Not found/);
+  const more = await control(page, 'button', /^\+ 2 more\b/);
+  await press(page, 'button', more.name);
+  await frames(page);
+  const f = await page.evaluate(() => document.activeElement?.closest('[data-paste-row]')?.textContent ?? '');
+  assert.ok(f.includes(lost[10]), `R6: the focus on the first name "+ 2 more" showed (${f})`);
+  await openGroup(page, /^Need a choice/);
+  await press(page, 'button', 'Skip the 2 left');
+  await frames(page);
+  assert.match((await focusedAt(page)).name, /^0 chosen, 0 to go\./, 'R6: the focus on the progress line after Skip');
+  await done(page);
+});
+
+test('PFE35 (pf-e R8): a Toxic (Moderate) plant\'s mark is in the danger colour past 40 plants as at 40 or fewer', async () => {
+  const page = await loadPalette200({ width: 390 });
+  const q = await page.evaluate(() => { const s = window.__ctTest.store; return s.memberTaxa.value.find((t) => t.warnings?.toxicity?.level === 'Moderate')?.canonical_name ?? null; });
+  assert.ok(q, 'the premise: a Moderate plant among the 200');
+  await control(page, 'textbox', SEARCH(200));
+  await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, q);
+  assert.ok(await has(page, `${PLANTS} [data-kind="toxicity"]`, 3000));
+  const many = await page.$eval(`${PLANTS} [data-kind="toxicity"]`, (el) => [el.dataset.level, getComputedStyle(el).borderTopColor]);
+  await page.evaluate((name) => { const s = window.__ctTest.store; s.members.value = s.memberTaxa.value.filter((t) => t.canonical_name === name).map((t) => t.id); }, q);
+  assert.ok(await has(page, `${PLANTS} [data-kind="toxicity"]`, 3000));
+  const small = await page.$eval(`${PLANTS} [data-kind="toxicity"]`, (el) => [el.dataset.level, getComputedStyle(el).borderTopColor]);
+  assert.deepEqual(many, small, 'R8: one level-to-colour map in both forms');
+  assert.equal(many[0], 'danger');
+  await done(page);
+});
+
+test('PFE36 (pf-e R9): ticks belong to the many form: at 40 or fewer they go, and past 40 again no old "Remove N plants" comes back', async () => {
+  const page = await paletteOf(45, 390);
+  const { word, n } = await firstLevel(page);
+  await press(page, 'button', `${word} ${n} plants`);
+  const rows = (await rowsShown(page)).slice(0, 3);
+  for (const r of rows) await page.click(`${PLANTS} [data-plant-id="${r.id}"] input[type="checkbox"]`);
+  await control(page, 'group', '3 plants ticked');
+  const ticked = rows.map((r) => r.id);
+  await page.evaluate((keep) => { const s = window.__ctTest.store; for (const id of s.members.value.filter((x) => !keep.includes(x)).slice(0, 6)) s.removeMember(id); }, ticked);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 39, { timeout: 4000 }).then(() => true, () => false));
+  await frames(page);
+  await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); s.addMembers(s.pool.value.filter((t) => !m.has(t.id)).slice(0, 5).map((t) => t.id)); });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 44, { timeout: 4000 }).then(() => true, () => false));
+  await frames(page);
+  assert.ok(!(await names(page, 'button')).some((x) => /^Remove \d+ plants?$/.test(x)), 'R9: no old "Remove 3 plants" back');
+  await done(page);
+});
+
+test('PFE37 (pf-e R10, ManyDesk): with the search open in place of the table, Undo back to 40 or fewer keeps the search open beside the chart', async () => {
+  const page = await paletteOf(43, 1280);
+  await press(page, 'button', 'Add plants');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'the search opens inside Your plants');
+  await page.evaluate(() => { const s = window.__ctTest.store; s.members.value = s.members.value.slice(0, 38); });
+  await frames(page);
+  assert.ok(await has(page, '#ct-root [data-find-panel]', 3000), 'R10: the search stays open (beside the chart)');
+  await done(page);
+});
+
+test('PFE38 (pf-e R11, ManyDesk): the head tick is off while no row shows, and part-ticked when some shown rows are ticked', async () => {
+  const page = await loadPalette200({ width: 1280 });
+  const head = await control(page, 'checkbox', 'Tick the rows on screen');
+  assert.ok(head.disabled, 'R11: no rows on screen: the head tick is off');
+  const { word, n } = await firstLevel(page);
+  await press(page, 'button', `${word} ${n} plants`);
+  const first = (await rowsShown(page))[0];
+  await page.click(`${PLANTS} [data-plant-id="${first.id}"] input[type="checkbox"]`);
+  const state = await page.$eval(`${PLANTS} thead input[type="checkbox"]`, (el) => ({ ind: el.indeterminate, on: el.checked, off: el.disabled }));
+  assert.deepEqual(state, { ind: true, on: false, off: false }, 'R11: some shown rows ticked: part-ticked');
+  await done(page);
+});
+
+test('PFE39 (pf-e R12): Your plants\' "+ N more" starts its spoken name with its visible words', async () => {
+  const page = await loadPalette200({ width: 390 });
+  const counts = await strataCounts(page);
+  const [s, word] = Object.entries(LIGHT_OF).find(([k]) => (counts[k] ?? 0) > 10);
+  await press(page, 'button', `${word} ${counts[s]} plants`);
+  await control(page, 'button', new RegExp(`^\\+ ${counts[s] - 10} more\\b.*${word}`));
+  await done(page);
+});
+
+test('PFE40 (pf-e R13): an open reading follows the verdicts: when they change (a verdict chunk loaded late, another place) its choices take the fresh reading\'s fit order', async () => {
+  const page = await loadPalette200({ width: 390 });
+  await page.evaluate(() => { const s = window.__ctTest.store; s.members.value = s.members.value.slice(0, 20); });
+  const order = () => page.$$eval('dialog[open] [role="group"] .ct-paste-choice', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim().replace(/ ·.*$/, '')));
+  await pasteText(page, 'beans');
+  await says(page, /“beans” Which bean\?/, { inDialog: true });
+  const before = await order();
+  // The verdicts change under the open reading: Common bean now needs a second look (a rule whose
+  // verdicts say so; every other verdict as the engine gives it).
+  await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value;
+    s.verdictRule.value = { ...rule, verdicts: (ts, ctx) => { const m = rule.verdicts(ts, ctx); for (const t of ts) if (t.canonical_name === 'Phaseolus vulgaris' && m.get(t.id)) m.set(t.id, { ...m.get(t.id), level: 'look' }); return m; } };
+  });
+  await frames(page);
+  const late = await order();
+  await pasteText(page, 'beans');
+  await says(page, /“beans” Which bean\?/, { inDialog: true });
+  await frames(page);
+  const fresh = await order();
+  assert.notDeepEqual(before, fresh, `the premise: the new verdicts change the beans' fit order (${fresh.slice(0, 3).join(' | ')})`);
+  assert.deepEqual(late, fresh, 'R13: the open reading in the fresh reading\'s order');
   await done(page);
 });
