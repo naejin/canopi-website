@@ -23,10 +23,11 @@
 //   phone bottom bar is [data-find-entry="bar"]'s container .ct-bar.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { aria, en, has, useHarness } from './helpers.mjs';
+import { aria, en, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { suggestedAt } from './f1a-helpers.mjs';
-import { openMore } from './pf-helpers.mjs';
+import { frames, loadCase, openMore } from './pf-helpers.mjs';
+import { typeIn } from './pf-e-helpers.mjs';
 
 useHarness();
 
@@ -76,6 +77,36 @@ async function findFromHole(page) {
   await page.click('.ct-next [data-next-seeall]');
   await hasFind(page);
 }
+
+// Paste (h3 hand-off G3).
+const PASTE = 'dialog[open] #ct-paste-text';
+const ADD_ALL = 'dialog[open] .ct-paste-foot .button-primary';
+const nonsense = (n, from = 0) => Array.from({ length: n }, (_, i) => `qzx${from + i}vk`);
+const openPaste = async (page) => {
+  await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
+  assert.ok(await has(page, PASTE, 15_000), 'Paste opens');
+};
+const countSays = (page, re, timeout = 20_000) => page.waitForFunction((r) => new RegExp(r).test(document.querySelector('dialog[open] [data-paste-count]')?.textContent.replace(/\s+/g, ' ') ?? ''), { timeout }, re.source).then(() => true, () => false);
+// A question's choices (its [role="group"], by the line's name): each chip's words, its common name
+// (the chip less its tick, scientific name and fit) and whether it shows the scientific name.
+const chipsOf = (page, line) => page.$$eval('dialog[open] [role="group"]', (gs, n) => {
+  const g = gs.find((x) => (x.getAttribute('aria-label') ?? '').includes(`“${n}”`));
+  return [...(g?.querySelectorAll('button[aria-pressed]') ?? [])].map((b) => {
+    const c = b.cloneNode(true);
+    for (const x of c.querySelectorAll('.ct-sci, .ct-paste-fit, svg')) x.remove();
+    return { text: b.textContent.replace(/\s+/g, ' ').trim(), name: c.textContent.replace(/\s+/g, ' ').trim(), sci: !!b.querySelector('.ct-sci'), on: b.getAttribute('aria-pressed') === 'true' };
+  });
+}, line);
+// M25: a chip shows its scientific name only when another choice of its question has the same name;
+// two chips of one question never read the same.
+const chipRule = (chips) => {
+  const plants = chips.filter((c) => c.name !== en['consortium.paste.choiceNone']);
+  for (const c of plants) {
+    const shared = plants.filter((x) => x.name === c.name).length > 1;
+    assert.equal(c.sci, shared, `"${c.text}": the scientific name ${shared ? 'beside a shared name' : 'left out of a name of its own'}`);
+  }
+  assert.equal(new Set(plants.map((c) => c.text)).size, plants.length, `no two chips read the same (${plants.map((c) => c.text).join(' | ')})`);
+};
 
 // ---- F1a filters restored (P5.1) ----
 
@@ -691,11 +722,12 @@ test('PP-C46 (c1 fix B14 typo rows; the B9 switch went with "Select several", pf
   assert.ok(await page.$(`${row} [data-find-add]`), 'with Add');
 });
 
-// Fix round 1, B10 and B11 (board Paste; conformance c1 #13, #14): Paste opened from Find reads the
-// paste in its order with the count of names read, a plural common name asks "Which …?", a plant outside
-// its range says so on its row, the note says plants come with their warnings, and Cancel goes back to
-// Find with the focus on "Paste a list".
-test('PP-C47 (c1 fix B10+B11 Paste as the board): pasted order, count, Which …?, range warning, note, Cancel back to Find', async () => {
+// Fix round 1, B10 and B11 (board Paste; conformance c1 #13, #14), retargeted on the v14 three-group
+// Paste (h3 M26): Paste opened from Find reads the paste into Recognised, Need a choice and Not found,
+// each group in the paste's order, with "N names read" and its parts; a plural common name asks
+// "Which …?" ("N plants are called …"), a plant outside its range says so on its row, the note says
+// plants come with their warnings, and Cancel goes back to Find with the focus on "Paste a list".
+test('PP-C47 (c1 fix B10+B11 Paste as the board, v14 groups): the three groups in pasted order, "N names read" and its parts, Which …?, range warning, note, Cancel back to Find', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   const pick = await page.evaluate(() => {
@@ -712,13 +744,16 @@ test('PP-C47 (c1 fix B10+B11 Paste as the board): pasted order, count, Which …
   assert.ok(await has(page, 'dialog[open] #ct-paste-text', 3000), 'Paste opens in the sheet');
   await page.locator('dialog[open] #ct-paste-text').fill([pick.member, 'zzqx not a plant', pick.plural, pick.outside].join('\n'));
   await page.waitForFunction(() => document.querySelectorAll('dialog[open] [data-paste-row]').length === 4, { timeout: 4000 });
-  const lines = [pick.member, 'zzqx not a plant', pick.plural, pick.outside];
-  const texts = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => e.textContent));
-  assert.deepEqual(texts.map((t) => lines.findIndex((l) => t.startsWith(`“${l}”`))), [0, 1, 2, 3], 'the paste in its order, each line by its name');
-  assert.match(texts[1], /Not found/i, 'the line no plant answers says so');
-  assert.match(await page.$eval('dialog[open] [data-paste-count]', (e) => e.textContent), /4 names read/, 'the count of names read');
-  assert.match(texts[2], new RegExp(`Which ${pick.plural.slice(0, -1)}\\? \\d+ plants match`), `"${pick.plural}": Which …? (its singular)`);
-  assert.match(texts[3], /Outside its climate range/, 'the range warning on its row');
+  const group = (id) => page.$$eval(`dialog[open] [data-paste-group="${id}"] [data-paste-row]`, (els) => els.map((e) => e.textContent));
+  const rec = await group('rec'), ask = await group('choose'), none = await group('none');
+  assert.deepEqual(rec.map((t) => [pick.member, pick.outside].findIndex((l) => t.startsWith(`“${l}”`))), [0, 1], 'Recognised: the palette\'s plant, then the outside one, in the paste\'s order');
+  assert.match(rec[0], /in your palette/, 'the palette\'s plant says so');
+  assert.match(rec[1], /Outside its climate range/, 'the range warning on its row');
+  assert.equal(ask.length, 1);
+  assert.match(ask[0], new RegExp(`^“${pick.plural}” Which ${pick.plural.slice(0, -1)}\\? \\d+ plants are called ${pick.plural.slice(0, -1)}\\.`), `"${pick.plural}": Which …? (its singular)`);
+  assert.equal(none.length, 1);
+  assert.match(none[0], /^“zzqx not a plant” Not found\./, 'the line no plant answers says so');
+  assert.match(await page.$eval('dialog[open] [data-paste-count]', (e) => e.textContent.replace(/\s+/g, ' ').trim()), /^4 names read 2 recognised, 1 needs a choice, 1 not found$/, 'the count of names read and its parts');
   assert.ok((await page.$eval('dialog[open]', (e) => e.textContent)).includes(en['consortium.paste.note']), 'added as they are, with their warnings');
   await page.click('dialog[open] [data-paste-cancel]');
   assert.ok(await has(page, `${FIND} [data-find-paste]`, 3000), 'Cancel goes back to Find');
@@ -753,7 +788,7 @@ test('PP-C50 (c1 r3 T3+T14): the start lists its plants on asking; "Show N plant
 // c1r3 T2, T12, T13, T16 (review c1r3-02; Chrome K11, K12, K17): Paste reads the list at once on "Read the
 // list"; a choice names each plant with its scientific name; a name pasted twice is one row, said so; a
 // mark is Find's short pill.
-test('PP-C51 (c1 r3 T2+T12+T13+T16): Paste: Read the list, choices with their scientific names, listed twice, short marks', async () => {
+test('PP-C51 (c1 r3 T2+T12+T13+T16; h3 M25, M26): Paste: Read the list, choices with a scientific name only where two share a name, listed twice, short marks', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   await page.waitForFunction(() => window.__ctTest.store.poolVerdicts.value, { timeout: 10_000 });
   const pick = await page.evaluate(() => {
@@ -768,7 +803,9 @@ test('PP-C51 (c1 r3 T2+T12+T13+T16): Paste: Read the list, choices with their sc
   await hasFind(page);
   await page.click(`${FIND} [data-find-paste]`);
   assert.ok(await has(page, 'dialog[open] #ct-paste-text', 3000), 'Paste opens');
-  assert.match(await page.$eval('dialog[open]', (e) => e.textContent), /The first 200 lines are read, on your device; nothing is sent\./, 'the board\'s intro');
+  const intro = await page.$eval('dialog[open]', (e) => e.textContent);
+  assert.ok(intro.includes(en['consortium.find.pasteIntro']), 'the board\'s intro (v14: every line is read)');
+  assert.doesNotMatch(intro, /first 200 lines/, 'no cap said (v14 pf-e)');
   await page.$eval('dialog[open] #ct-paste-text', (t, v) => { t.value = v; t.dispatchEvent(new Event('input', { bubbles: true })); }, [pick.tox, pick.plural, pick.tox.toLowerCase()].join('\n'));
   await page.click('dialog[open] [data-paste-read]');
   const rows = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => e.textContent));
@@ -776,9 +813,10 @@ test('PP-C51 (c1 r3 T2+T12+T13+T16): Paste: Read the list, choices with their sc
   assert.match(rows[0], /listed twice, counted once/, 'said on its row');
   assert.match(rows[0], /toxic/i, 'its toxic mark');
   assert.doesNotMatch(rows[0], /toxicity records/, 'the short pill, not the sentence');
-  const chips = await page.$$eval('dialog[open] [data-paste-row] button[aria-pressed]', (els) => els.map((b) => b.textContent));
-  const sci = await page.evaluate(() => window.__ctTest.store.pool.value.map((t) => t.canonical_name));
-  assert.ok(chips.filter((c) => c !== 'None').every((c) => sci.some((s) => c.endsWith(s))), `each choice names its scientific name (${chips.join(' | ')})`);
+  await openMore(page);
+  const chips = await chipsOf(page, pick.plural);
+  assert.ok(chips.length >= 2, 'the premise: a question with its choices');
+  chipRule(chips);
 });
 
 // c1r4 U5 (Chrome T6, board FindResults): at phone width the "Needs a second look" heading is one line
@@ -879,7 +917,7 @@ test('PP-C57 (c1 r5 W3): a searched palette plant that does not do the filtered 
 
 // c1r4 U4 + U6 (Chrome T21): a close spelling says how it was read wherever the plant is: on another
 // climate's list (with the question mark, "Add anyway" adds that reading) and already in the palette.
-test('PP-C53 (c1 r4 U4+U6): Paste: "rosmary" on another list and "chesnut" already in the palette say "Read as …"', async () => {
+test('PP-C53 (c1 r4 U4+U6; v14, h3 M26): Paste: "chesnut", in the palette, leads Recognised as "in your palette · Read as …"; "rosmary" on another list asks as a close spelling', async () => {
   const page = await tool({ data: 'fixture' });
   await choose(page, 'Temperate');
   await page.evaluate(() => { const { store } = window.__ctTest; store.addMembers([store.pool.value.find((t) => t.canonical_name === 'Castanea sativa').id]); });
@@ -888,11 +926,12 @@ test('PP-C53 (c1 r4 U4+U6): Paste: "rosmary" on another list and "chesnut" alrea
   await page.locator('#ct-paste-text').fill('rosmary\nchesnut');
   await page.click('dialog[open] [data-paste-read]');
   assert.ok(await has(page, 'dialog[open] [data-paste-row]', 4000), 'the list is read');
-  const rows = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => ({ text: e.textContent, mark: e.querySelector('[data-status]')?.dataset.status })));
-  assert.match(rows[0].text, /Read as Rosemary/, `on another list, the reading said (${rows[0].text})`);
-  assert.equal(rows[0].mark, 'choose', 'with the question mark (ⓘ), not ✓');
-  assert.match(rows[1].text, /in your palette/i, 'European chestnut is in the palette');
-  assert.match(rows[1].text, /Read as European chestnut/, `already in the palette, the reading said (${rows[1].text})`);
+  const rows = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => ({ text: e.textContent, mark: e.querySelector('[data-status]')?.dataset.status, group: e.closest('[data-paste-group]')?.dataset.pasteGroup })));
+  assert.deepEqual(rows.map((r) => [r.text.match(/^“([^”]+)”/)?.[1], r.group, r.mark]), [['chesnut', 'rec', 'already'], ['rosmary', 'choose', 'choose']], 'Recognised first, then Need a choice (the question mark ⓘ, not ✓)');
+  assert.match(rows[0].text, /in your palette/i, 'European chestnut is in the palette');
+  assert.match(rows[0].text, /Read as European chestnut/, `already in the palette, the reading said (${rows[0].text})`);
+  assert.match(rows[1].text, /Read as Rosemary/, `on another list, the close spelling asked (${rows[1].text})`);
+  assert.ok(await page.$$eval('dialog[open] [data-paste-group="choose"] button[aria-pressed]', (bs) => bs.some((b) => /Read as Rosemary/.test(b.textContent))), 'its choice "Read as Rosemary" to press');
 });
 
 // c1r3 T6, T18, T20 (Chrome K1, N4, N6): a job list names the palette's plants that do the job with
@@ -931,4 +970,279 @@ test('PP-C48 (c1 fix B17): the palette page at 320 px, the Find bar showing, scr
     return { scroll: document.documentElement.scrollWidth, w, over };
   });
   assert.ok(wide.scroll <= wide.w, `scrollWidth ${wide.scroll} > ${wide.w}: ${wide.over.join(' | ')}`);
+});
+
+// ---- h3 hand-off (G3: M23, M24, M25) ----
+
+test('PP-C58 (c1 h3 M23, pf-e#1, #4): past 200 names each "Add anyway" adds at once: two plants of another list are both added in turn, the focus on the next row\'s "Add anyway"', { timeout: 120_000 }, async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const two = await realDb((db) => db.prepare("SELECT p.canonical_name c FROM plants p WHERE EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Tropical') AND NOT EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Temperate') ORDER BY p.canonical_name LIMIT 2").all().map((r) => r.c));
+  const guests0 = await page.evaluate(() => Object.keys(window.__ctTest.store.guests.value).length);
+  await openPaste(page);
+  await typeIn(page, PASTE, [...nonsense(299), two[0], ...nonsense(299, 299), two[1]].join('\n'));
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^600 names read/), 'the premise: the 600 names read');
+  const anyway = (i) => page.evaluate((label, k) => [...document.querySelectorAll('dialog[open] [data-paste-row] button')].filter((b) => b.textContent.trim() === label)[k]?.click(), en['consortium.addAnyway'], i);
+  // h3 r1 R4 (W4): the row turns to "in your palette" as the plant joins, while the re-read of the same
+  // text is still under way: every frame from the add on, no "Add anyway" left on it.
+  await page.evaluate((n, label, k) => {
+    const seen = window.__r4 = { frames: 0, button: 0, text: '' };
+    const tick = () => {
+      if (Object.keys(window.__ctTest.store.guests.value).length >= k) {
+        const r = [...document.querySelectorAll('dialog[open] [data-paste-row]')].find((e) => e.textContent.startsWith(`“${n}”`));
+        seen.frames++; seen.text = r?.textContent ?? '';
+        if ([...(r?.querySelectorAll('button') ?? [])].some((b) => b.textContent.trim() === label)) seen.button++;
+      }
+      if (seen.frames < 30) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, two[0], en['consortium.addAnyway'], guests0 + 1);
+  await anyway(0);
+  assert.ok(await page.waitForFunction((k) => Object.keys(window.__ctTest.store.guests.value).length === k, { timeout: 8000 }, guests0 + 1).then(() => true, () => false), `"${two[0]}" added`);
+  await page.waitForFunction(() => window.__r4.frames >= 30, { timeout: 8000 });
+  const row0 = await page.evaluate(() => window.__r4);
+  assert.match(row0.text, /in your palette/i, `"${two[0]}" says it is in your palette (${row0.text})`);
+  assert.equal(row0.button, 0, `"${two[0]}" keeps no "Add anyway" in any frame after the add`);
+  const next = (name) => page.waitForFunction((label, n) => { const a = document.activeElement; return a?.textContent.trim() === label && a.closest('[data-paste-row]')?.textContent.startsWith(`“${n}”`); }, { timeout: 4000 }, en['consortium.addAnyway'], name).then(() => true, () => false);
+  assert.ok(await next(two[1]), `the focus on "${two[1]}"'s "Add anyway"`);
+  // The grower presses it at once (the re-read the first add started still under way).
+  await page.evaluate(() => document.activeElement.click());
+  assert.ok(await page.waitForFunction((k) => Object.keys(window.__ctTest.store.guests.value).length === k, { timeout: 8000 }, guests0 + 2).then(() => true, () => false), `"${two[1]}" added too: no add waits on a re-read of the same text`);
+});
+
+test('PP-C59 (c1 h3 M23, pf-e#6): "Add" pressed within 200 ms of an edit adds once the reading lands (300 names, read in slices); nothing is lost', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const plant = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value), t = s.pool.value.find((x) => !m.has(x.id)); return { id: t.id, name: t.canonical_name }; });
+  await openPaste(page);
+  await typeIn(page, PASTE, [...nonsense(299), plant.name].join('\n'));
+  await page.$eval(ADD_ALL, (b) => b.click());
+  assert.ok(await page.waitForFunction((id) => window.__ctTest.store.members.value.includes(id), { timeout: 20_000 }, plant.id).then(() => true, () => false), `"${plant.name}" added once its reading lands`);
+});
+
+test('PP-C60 (c1 h3 M23, pf-e#4): a reading with nothing to add keeps the focus on Add (aria-disabled, never a native disabled that drops it)', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await openPaste(page);
+  await typeIn(page, PASTE, 'zzqx not a plant');
+  await page.$eval(ADD_ALL, (b) => { b.focus(); b.click(); });
+  assert.ok(await countSays(page, /^1 name read/), 'the premise: the line is read');
+  await frames(page);
+  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, disabled: b.disabled, aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
+  assert.deepEqual(add, { focused: true, disabled: false, aria: 'true' }, 'Add keeps the focus, aria-disabled');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+});
+
+test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the last list\'s answers: the same line asks again, counted in "N to go"', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const genera = await page.evaluate(() => {
+    const s = window.__ctTest.store, m = new Set(s.members.value), by = new Map();
+    for (const t of s.pool.value) { const g = t.canonical_name.split(' ')[0]; by.set(g, [...(by.get(g) ?? []), t]); }
+    return [...by].filter(([, ts]) => ts.length >= 2 && ts.every((t) => !m.has(t.id))).map(([g]) => g).slice(0, 2);
+  });
+  assert.equal(genera.length, 2, 'the premise: two genera of two plants or more');
+  await openPaste(page);
+  await typeIn(page, PASTE, genera.join('\n'));
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^2 names read/), 'the first list read');
+  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
+  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered');
+  // Select all, paste a second list naming the same genus (the browser's beforeinput, then input).
+  await page.$eval(PASTE, (el, v) => {
+    el.focus(); el.select();
+    el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertFromPaste', bubbles: true, cancelable: true }));
+    el.value = v;
+    el.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', bubbles: true }));
+  }, `${genera[0]}\n${genera[1]}\nzzqx not a plant`);
+  assert.ok(await countSays(page, /^3 names read/), 'the second list read');
+  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again: no choice pressed for the new list`);
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go"');
+  // h3 r1 R2: select all, delete, then paste within the 200 ms pause (the paste lands on an empty box):
+  // the box went empty, a new list, so the answer is forgotten too.
+  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
+  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered again');
+  await page.$eval(PASTE, (el, v) => {
+    el.focus(); el.select();
+    el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true }));
+    el.value = '';
+    el.dispatchEvent(new InputEvent('input', { inputType: 'deleteContentBackward', bubbles: true }));
+    el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertFromPaste', bubbles: true, cancelable: true }));
+    el.value = v;
+    el.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', bubbles: true }));
+  }, `${genera[0]}\n${genera[1]}`);
+  assert.ok(await countSays(page, /^2 names read/), 'the third list read');
+  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again after the delete and the paste`);
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go" again');
+});
+
+test('PP-C62 (c1 h3 M25, pf-e#51; boards Paste, AddMany): "Which bean?" offers Common bean and Lima bean without their scientific names; a name several plants share ("sword bean": the release\'s two Sword beans, as board AddMany\'s Spanish cedars) gives each its scientific name; no two chips read the same', async () => {
+  const page = await loadCase('kiambu-8', { width: 390 });
+  await openPaste(page);
+  await typeIn(page, PASTE, 'beans\nsword bean');
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^2 names read/), 'the list read');
+  await openMore(page);
+  const beans = await chipsOf(page, 'beans'), swords = await chipsOf(page, 'sword bean');
+  for (const n of ['Common bean', 'Lima bean']) assert.deepEqual(beans.filter((c) => c.name === n).map((c) => c.sci), [false], `board Paste: "${n}" alone`);
+  chipRule(beans);
+  const named = swords.filter((c) => c.name === 'Sword bean');
+  assert.ok(named.length >= 2, `the premise: several Sword beans (${swords.map((c) => c.text).join(' | ')})`);
+  assert.ok(named.every((c) => c.sci), 'board AddMany: each with its scientific name');
+  chipRule(swords);
+});
+
+// ---- h3 fix round 1 (G3: R1, R3, R5) ----
+
+test('PP-C63 (c1 h3 r1 R1): "Add" pressed while a long list reads, then one more line typed: the press is cancelled, nothing is added and the sheet stays open', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const plant = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value), t = s.pool.value.find((x) => !m.has(x.id)); return { id: t.id, name: t.canonical_name }; });
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await openPaste(page);
+  const list = [...nonsense(299), plant.name].join('\n');
+  await typeIn(page, PASTE, list);
+  // The grower edits before the reading lands (in the same task as the press, so it cannot land
+  // between them): any edit after the press cancels it.
+  await page.evaluate((add, sel, v) => {
+    document.querySelector(add).click();
+    const el = document.querySelector(sel);
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }, ADD_ALL, PASTE, `${list}\nzzqx one more line`);
+  assert.ok(await countSays(page, /^301 names read/), 'the edited list read');
+  await frames(page);
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  assert.ok(await has(page, PASTE, 500), 'the sheet stays open, the text kept');
+  assert.match(await page.$eval(PASTE, (e) => e.value), /zzqx one more line$/, 'the paste is still in the box');
+});
+
+test('PP-C64 (c1 h3 r1 R3; W4, M23): after "Add anyway" the focus goes to the next "Add anyway", past a close spelling between them (a question, no button)', async () => {
+  const page = await tool({ data: 'fixture' });
+  await choose(page, 'Temperate');
+  await openPaste(page);
+  await page.locator(PASTE).fill('Carica papaya\nrosmary\nMangifera indica');
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^3 names read/), 'the list read');
+  const rows = await page.$$eval('dialog[open] [data-paste-row]', (els) => els.map((e) => [e.textContent.match(/^“([^”]+)”/)?.[1], e.closest('[data-paste-group]')?.dataset.pasteGroup]));
+  assert.deepEqual(rows, [['Carica papaya', 'rec'], ['Mangifera indica', 'rec'], ['rosmary', 'choose']], 'the premise: two plants of another list, a close spelling asking');
+  const press = (n) => page.evaluate((name, label) => [...document.querySelectorAll('dialog[open] [data-paste-row]')].find((e) => e.textContent.startsWith(`“${name}”`))?.querySelectorAll('button').forEach((b) => { if (b.textContent.trim() === label) { b.focus(); b.click(); } }), n, en['consortium.addAnyway']);
+  await press('Carica papaya');
+  const on = (name) => page.waitForFunction((label, n) => { const a = document.activeElement; return a?.textContent.trim() === label && a.closest('[data-paste-row]')?.textContent.startsWith(`“${n}”`); }, { timeout: 4000 }, en['consortium.addAnyway'], name).then(() => true, () => false);
+  assert.ok(await on('Mangifera indica'), 'the focus on Mangifera indica\'s "Add anyway", not the count line');
+});
+
+test('PP-C65 (c1 h3 r1 R5, r2 B1, B2, C1, C3): up to 200 names Add counts the box as it is, at once: pressed within the 200 ms pause after a short list is replaced it reads the box then and adds its plants; its label is the board\'s "Add N plants" with the box\'s count, never a stale one or a count-free one', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const two = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 2).map((t) => ({ id: t.id, name: t.canonical_name })); });
+  await openPaste(page);
+  await typeIn(page, PASTE, two[0].name);
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^1 name read/), 'the first list read');
+  assert.match(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), /^Add 1 plant$/, 'the premise: "Add 1 plant"');
+  // C3: the edit, the render (one frame, well inside the 200 ms pause), the label read and the press in
+  // one task: the reading cannot land between them, and the count is the box's whichever way it does.
+  const seen = await page.evaluate(async (add, sel, v) => {
+    const el = document.querySelector(sel);
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(r));
+    const b = document.querySelector(add);
+    const out = { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
+    b.click();
+    return out;
+  }, ADD_ALL, PASTE, `${two[0].name}\n${two[1].name}`);
+  assert.deepEqual(seen, { label: 'Add 2 plants', aria: null }, 'the box\'s count at once (board "Add N plants"), a press that runs');
+  assert.ok(await page.waitForFunction((ids) => ids.every((id) => window.__ctTest.store.members.value.includes(id)), { timeout: 4000 }, two.map((t) => t.id)).then(() => true, () => false), 'both plants of the box added');
+});
+
+test('PP-C66 (c1 h3 r2 B1, B2): up to 200 names a box with nothing new says "Add 0 plants", aria-disabled, at once; typing that leaves the count alone leaves the label alone, keystroke by keystroke', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const three = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 3).map((t) => t.canonical_name); });
+  const member = await page.evaluate(() => { const s = window.__ctTest.store; return s.pool.value.find((t) => s.members.value.includes(t.id)).canonical_name; });
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await openPaste(page);
+  // One task each: the text, a frame, the label (B1: never a press that does nothing unsaid).
+  const at = (v) => page.evaluate(async (add, sel, text) => {
+    const el = document.querySelector(sel);
+    el.value = text;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(r));
+    const b = document.querySelector(add);
+    return { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
+  }, ADD_ALL, PASTE, v);
+  assert.deepEqual(await at('xyzzy'), { label: 'Add 0 plants', aria: 'true' }, 'a name not found: nothing to add, said at once');
+  assert.deepEqual(await at(member), { label: 'Add 0 plants', aria: 'true' }, 'a plant already in: nothing to add, said at once');
+  await page.$eval(ADD_ALL, (b) => b.click());
+  await frames(page);
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  // B2: a 3-name list, then a fourth line not found typed one key at a time, a newline first: the
+  // label reads "Add 3 plants" after every key, so the foot bar never moves.
+  const list = three.join('\n');
+  assert.deepEqual(await at(list), { label: 'Add 3 plants', aria: null }, 'the premise: three to add');
+  const labels = await page.evaluate(async (add, sel, base) => {
+    const el = document.querySelector(sel), out = [];
+    let v = base;
+    for (const ch of '\nzzqx') {
+      v += ch;
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => requestAnimationFrame(r));
+      out.push(document.querySelector(add).textContent.trim());
+    }
+    return out;
+  }, ADD_ALL, PASTE, list);
+  assert.deepEqual(labels, Array(5).fill('Add 3 plants'), `the label holds while the count holds (${labels.join(' | ')})`);
+});
+
+test('PP-C67 (c1 h3 r2 B1, C1): past 200 names Add pressed while the text reads keeps the last reading\'s "Add N plants" (no count-free label); with nothing new it adds nothing, the focus stays on "Add 0 plants" (aria-disabled) and the sheet stays open', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const member = await page.evaluate(() => { const s = window.__ctTest.store; return s.pool.value.find((t) => s.members.value.includes(t.id)).canonical_name; });
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await openPaste(page);
+  // The text and the press in one task, then every frame until the reading lands.
+  const seen = await page.evaluate(async (add, sel, v) => {
+    const el = document.querySelector(sel);
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(r));
+    const b = document.querySelector(add);
+    b.focus(); b.click();
+    const labels = new Set();
+    for (let i = 0; i < 1800; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      const reading = document.querySelector('dialog[open] [data-paste-reading]');
+      if (reading) labels.add(b.textContent.trim());
+      if (/^300 names read/.test(document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '')) break;
+    }
+    return [...labels];
+  }, ADD_ALL, PASTE, [...nonsense(299), member].join('\n'));
+  assert.ok(await countSays(page, /^300 names read/), 'the premise: the 300 names read');
+  assert.ok(seen.every((l) => /^Add \d+ plants?$/.test(l)), `while it reads, the board's "Add N plants" only (${seen.join(' | ')})`);
+  await frames(page);
+  await new Promise((r) => setTimeout(r, 300));
+  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
+  assert.deepEqual(add, { focused: true, label: 'Add 0 plants', aria: 'true' }, 'nothing new: said on Add, which keeps the focus');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+});
+
+test('PP-C68 (c1 h3 r2 B4; W4): "Add anyway" on the last row shown of a folded Recognised list moves the focus forward to its "Show N more", where the next guest is, never back up the sheet', { timeout: 60_000 }, async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const guests = await realDb((db) => db.prepare("SELECT p.canonical_name c FROM plants p WHERE EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Tropical') AND NOT EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Temperate') ORDER BY p.canonical_name LIMIT 2").all().map((r) => r.c));
+  const here = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 12).map((t) => t.canonical_name); });
+  const guests0 = await page.evaluate(() => Object.keys(window.__ctTest.store.guests.value).length);
+  await openPaste(page);
+  // Recognised: two plants of this list, a guest, a second guest, then ten more of this list (14 rows,
+  // folded to its first three).
+  await typeIn(page, PASTE, [here[0], here[1], guests[0], guests[1], ...here.slice(2)].join('\n'));
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^14 names read/), 'the premise: the 14 names read');
+  const head = 'dialog[open] [data-paste-group="rec"] .ct-paste-ghead';
+  if (await page.$eval(head, (b) => b.getAttribute('aria-expanded')) !== 'true') await page.click(head);
+  const shown = await page.$$eval('dialog[open] [data-paste-group="rec"] [data-paste-row]', (els) => els.map((e) => e.textContent.match(/^“([^”]+)”/)?.[1]));
+  assert.deepEqual(shown, [here[0], here[1], guests[0]], 'the premise: folded, the first guest the last row shown');
+  await page.evaluate((name, label) => [...document.querySelectorAll('dialog[open] [data-paste-row]')].find((e) => e.textContent.startsWith(`“${name}”`))?.querySelectorAll('button').forEach((b) => { if (b.textContent.trim() === label) { b.focus(); b.click(); } }), guests[0], en['consortium.addAnyway']);
+  assert.ok(await page.waitForFunction((k) => Object.keys(window.__ctTest.store.guests.value).length === k, { timeout: 8000 }, guests0 + 1).then(() => true, () => false), `"${guests[0]}" added`);
+  assert.ok(await page.waitForFunction(() => document.activeElement?.matches('[data-paste-group="rec"] .ct-more-open'), { timeout: 4000 }).then(() => true, () => false),
+    `the focus on Recognised's "Show N more" (${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120))})`);
 });

@@ -241,7 +241,10 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
       assert.ok(await has(page, '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]', 8000), `${at}: the palette page`);
       bad.push(...await within(page, '.ct-palette-page'));
       await settled(page, '#ct-root .ct-chart button[data-plant-id]');
-      await page.click('#ct-root .ct-chart button[data-plant-id]');
+      // The suggestion's toast can cover the chart's first plant at 320 px (h3 M28): dismissed, and the
+      // plant pressed in the page, centred, which no overlay can take.
+      await page.$eval('.ct-toast-dismiss', (b) => b.click()).catch(() => {});
+      await page.$eval('#ct-root .ct-chart button[data-plant-id]', (b) => { b.scrollIntoView({ block: 'center' }); b.click(); });
       assert.ok(await has(page, 'dialog[open]', 8000), `${at}: a plant's dialog`);
       bad.push(...(await page.evaluate(() => { const d = document.querySelector('dialog[open]'); return d && d.scrollWidth > d.clientWidth + 0.5 ? [`dialog ${d.scrollWidth} px wide in ${d.clientWidth}`] : []; })));
       await page.keyboard.press('Escape');

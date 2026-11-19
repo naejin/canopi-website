@@ -359,7 +359,10 @@ test('PFB8 (pf-b Many and ManyDesk "Warnings and fit", F29, A13, R1): "Your 200 
     await says(page, `${g.mildFits} of the ${g.mild.length} ${g.mildFits === 1 ? 'is' : 'are'} on the line “Fits your place”.`);
     assert.equal(await page.$eval(aria('button', b), (e) => e.getAttribute('aria-expanded')), 'false', 'BC14: said while the line is closed');
   }
-  assert.ok(!(await buttons(page)).some((x) => x.startsWith('Tick these')), 'A15: no "Tick these" (pf-e)');
+  // A15 (pf-e; h3 M27): past 40 plants a reason carries "Tick these N", its plants (the toxic reason opened above).
+  const toxN = g.reasons.severe.length + g.reasons.moderate.length;
+  assert.ok(toxN > 0, 'the premise: toxic plants on the second look');
+  assert.ok(await page.$$eval('.ct-warnings .ct-reason .ct-tick-these', (bs, want) => bs.some((b) => b.textContent.replace(/\s+/g, ' ').trim() === want), `Tick these ${toxN}`), `A15: "Tick these ${toxN}" under the toxic reason`);
   await done(page);
 });
 
