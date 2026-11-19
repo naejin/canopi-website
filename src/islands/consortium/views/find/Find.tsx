@@ -37,7 +37,7 @@ import { formatLength } from '../../format.ts';
 import { page } from '../kit/page.ts';
 import { finder, finderFailed, namesState, releasePlants, wantNames } from './names.ts';
 import Paste from './Paste.tsx';
-import { addedWords, holeEndWords, holeFillers, HoleRow, Marks, openFillers, PLUS, rowRoles, rowSize, rowSpan } from '../rows.tsx';
+import { addedWords, holeEndWords, holeFillers, HoleRow, Marks, openFillers, PLUS, rowRain, rowRoles, rowSize, rowSpan } from '../rows.tsx';
 import { deskFind } from '../Toast.tsx';
 
 // The later periods "Holds by …" offers (types.ts periodIds), named by verdict-line.ts periodName
@@ -99,7 +99,7 @@ function lightWordsOf(t: Taxon): string | null {
 function metaWords(t: Taxon, known: JobId | null, to: string | null = null, reason: { saysYears: boolean } | null = null): string {
   const own = jobsOf(t), drop = known && own.includes(known) ? known : null;
   const jobs = rowRoles(own.filter((j) => j !== drop), !!drop);
-  return [jobs, !reason && lightWordsOf(t), !reason?.saysYears && rowSpan(t), rowSize(t), to && T('find.inRangeTo', { year: to })].filter(Boolean).join(' · ');
+  return [jobs, !reason && lightWordsOf(t), !reason?.saysYears && rowSpan(t), rowSize(t), to && T('find.inRangeTo', { year: to }), rowRain(t)].filter(Boolean).join(' · ');
 }
 // The add button's mark (board FindResults: "+ Add", "✓ Added"); the word carries the meaning.
 const TICK = <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.2 3L13 4.5" stroke="currentColor" stroke-width="1.8" fill="none" /></svg>;
@@ -475,7 +475,9 @@ export default function Find({ Frame }: { Frame: Frame }) {
     const chip = v ? lookChipLine(v) : null;
     return (
       <Tag key={t.id} class={as === 'div' ? 'ct-find-row' : undefined} data-find-row="" data-plant-id={t.id}>
-        <div class="ct-row-main"><strong>{nameOf(t)}</strong> <i class="ct-sci">{t.canonical_name}</i></div>
+        {/* The name opens the plant's Details (board FindResults: the name is a link; board Details then
+            says "‹ Back to results", store.sheetBack, M38). */}
+        <div class="ct-row-main"><button type="button" class="ct-link-button ct-name-open" data-find-open="" aria-haspopup="dialog" onClick={() => store.openSheet('details', t.id)}>{nameOf(t)}</button> <i class="ct-sci">{t.canonical_name}</i></div>
         {/* BC27 (board AddMany state 3): an added row says "✓ Added" in words, with its Undo beside it
             at the right of the row; the Add button gives way to them, the focus to Undo. */}
         {done ? (

@@ -25,7 +25,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import * as store from '../store.ts';
 import { P, T } from '../strings.ts';
 import type { Alternative, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { gapLines, holdStatesOf, jobsOf, periodIds, periodName, rowBandOf, swapYearsLine, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
+import { gapLines, jobsOf, periodIds, periodName, rowBandOf, swapYearsLine, whenLine, yearsOf } from '../../../lib/consortium/index.ts';
 import { addMembers, closeSheet, openSheet, removeMember, swapMember, taxonOf } from '../store.ts';
 import { BACK, NotChecked, SheetWaiting, WARN, shared, type Frame } from './kit/sheet.tsx';
 import { AltRow, doesWords, FitLine, jobList, lightWords, RowBandLine, say, sizeShort, SWAP, yearsWords } from './kit/fit.tsx';
@@ -67,11 +67,11 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const offer = useMemo(() => store.alternativesFor(id), [algo, id, store.offerPool.value, store.memberTaxa.value, store.flagContext.value, store.removed.value, verdicts]);
   const alts = offer?.fit ?? [], outsideAlts = offer?.outside ?? [];
   // Each candidate at the hold period: 'holds', 'not' (judged outside then), or 'unknown' (nothing to
-  // compare: no place, no projection, no range recorded); core holdStatesOf, which Details reads too.
+  // compare: no place, no projection, no range recorded); the rule's holdStates, which Details reads too.
   const rule = store.verdictRule.value, ctx = store.verdictContext.value;
   const holdOf = useMemo(() => {
     const p = store.pool.peek();
-    return holdStatesOf(rule, p ? alts.map((a) => p.find((x) => x.id === a.id)).filter((x): x is Taxon => !!x) : [], ctx, HOLD_PERIOD);
+    return rule?.holdStates(p ? alts.map((a) => p.find((x) => x.id === a.id)).filter((x): x is Taxon => !!x) : [], ctx, HOLD_PERIOD) ?? new Map<PlantId, 'unknown'>();
   }, [rule, ctx, alts]);
   // The range rule (store.pool) or the suggestion's chunk (store.suggestRule) still loading.
   if (!pool || (!algo && !(asked && store.suggestFailed.value) && !stalled)) return <SheetWaiting Frame={Frame} />;
@@ -79,11 +79,13 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const byId = new Map(pool.map((x) => [x.id, x]));
   // The hold filter (engine: the verdict rule's holdsBy at the period it names, on the page's context),
   // offered only when at least one candidate can be judged then.
+  // One count for the period (M30, the rule's holdCounts, as Details counts): hold, fail, not judged.
   const stateOf = (a: Alternative) => holdOf.get(a.id) ?? 'unknown';
-  const canJudge = alts.some((a) => stateOf(a) !== 'unknown');
-  const holding = alts.filter((a) => stateOf(a) === 'holds');
-  const unjudged = canJudge ? alts.filter((a) => stateOf(a) === 'unknown').length : 0;
+  const counts = rule?.holdCounts(holdOf, alts.map((a) => a.id)) ?? { holds: 0, not: 0, unknown: alts.length };
+  const canJudge = counts.unknown < alts.length;
   const filterOn = holdOnly && canJudge;
+  // None holds (M30): how many are judged to fail then, beside the rows that cannot be judged.
+  const noneHold = filterOn && counts.holds === 0 && counts.not > 0;
   const filtered = filterOn ? alts.filter((a) => stateOf(a) !== 'not') : alts;
   // Core's order as it is (closest first, warned ones after; nothing asks).
   const shown = all ? filtered : filtered.slice(0, SHOWN);
@@ -150,15 +152,16 @@ export default function Swap({ id, Frame }: { id: PlantId; Frame: Frame }) {
         <label class="ct-check ct-swap-hold">
           <input type="checkbox" checked={holdOnly} onChange={(e) => setHoldOnly((e.target as HTMLInputElement).checked)} />
           <span>{T('swap.holdsOnly', { period: periodName(HOLD_PERIOD) })}</span>
-          <span class="ct-muted ct-swap-hold-count">{T('swap.holdsCount', { n: holding.length, m: alts.length })}{unjudged > 0 && <> · {P('swap.holdsUnknownCount', unjudged)}</>}</span>
+          <span class="ct-muted ct-swap-hold-count">{T('swap.holdsCount', { n: counts.holds, m: alts.length })}{counts.unknown > 0 && <> · {P('swap.holdsUnknownCount', counts.unknown)}</>}</span>
         </label>
       )}
+      {algo && noneHold && <p class="ct-muted" data-swap-none data-hold-none>{P('swap.noneHold', counts.not, { period: periodName(HOLD_PERIOD) })}</p>}
       {!algo ? <LoadFailed /> : shown.length || already.length ? (
         <ul class="ct-rows">
           {shown.map((a) => row(a))}
           {already.map((m) => <li data-swap-already data-plant-id={m.id}><div class="ct-swap-text"><div class="ct-row-main"><strong>{nameOf(m)}</strong> <i class="ct-sci">{m.canonical_name}</i></div><p class="ct-swap-does">{yearsOf(m)?.to != null ? P('swap.alreadyTo', memberJobs.length, { to: yearsOf(m)!.to! }) : T('swap.already', { span: yearsWords(m) })}</p></div></li>)}
         </ul>
-      ) : <p class="ct-muted" data-swap-none>{filterOn && alts.length ? P('swap.noneHold', alts.length, { period: periodName(HOLD_PERIOD) }) : T('swap.none')}</p>}
+      ) : !noneHold && <p class="ct-muted" data-swap-none>{T('swap.none')}</p>}
       {algo && (
         <p class="ct-small ct-swap-more">
           {T('swap.closestFirst')}

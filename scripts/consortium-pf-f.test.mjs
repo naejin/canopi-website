@@ -15,6 +15,10 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 
 const line = await import('../src/lib/consortium/verdict-line.ts');
+// The hold predicates live beside holdsBy in the verdict rule (M29), not in the words module.
+const vd = await import('../src/lib/consortium/verdict.ts');
+// The keep line on a member's verdicts today and later: the rule's laterLoss, then the words.
+const keep = (now, laters, year) => line.keepLine(now, vd.laterLossOf(now, laters), year);
 const { formatMm } = await import('../src/islands/consortium/format.ts');
 const dir = new URL('../src/i18n/translations/', import.meta.url);
 const words = Object.fromEntries(readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(f, dir), 'utf8'))]));
@@ -124,7 +128,6 @@ test('BC4 (pf-f What you can do): the measure that limits the member, as how far
 test('BC7 (pf-f Swap rows): the gap words in the row\'s sentence, one hole named, more counted', () => {
   const h = (fromYear, toYear) => ({ kind: 'job', job: 'feeds_soil', fromYear, toYear, state: 'open' });
   assert.equal(said(line.gapLines([h(15, 60)], []).fills, 'en'), 'also fills the hole after year 15');
-  assert.equal(said(line.gapLines([], [h(3, 15)]).leaves, 'en'), 'leaves years 3 to 15 empty');
   assert.equal(said(line.gapLines([h(0, 3), h(15, 60)], []).fills, 'en'), 'also fills 2 holes');
   assert.deepEqual(line.gapLines([], []), { fills: null, leaves: null }, 'no hole changes: no words');
   for (const lang of Object.keys(words)) assert.match(words[lang]['consortium.line.gapFillsOne'], /\{span\}/, `${lang} gapFillsOne`);
@@ -133,9 +136,9 @@ test('BC7 (pf-f Swap rows): the gap words in the row\'s sentence, one hole named
 test('BC11 (pf-f keep line): a later second look counts, as the board\'s 15 years for Almond at Seville', () => {
   const hot = fv({ factor: 'hot', level: 'fits', place: 36.2, low: 20, high: 38 });
   const now = pv({ factors: [hot] }), look = pv({ judged: '2041-2070', level: 'look', factors: [fv({ ...hot, level: 'look', place: 38.4 })] }), fits = pv({ judged: '2071-2099', factors: [hot] });
-  assert.equal(line.keepLine(now, [look, fits], 2026)?.count, 15);
-  assert.equal(said(line.keepLine(now, [look, fits], 2026), 'en'), 'Keeping it is a fair bet for its first 15 years: plant its successor beside it now.');
-  assert.equal(line.keepLine(now, [pv({ judged: '2041-2070', factors: [hot] }), fits], 2026), null, 'fits through: no line');
+  assert.equal(keep(now, [look, fits], 2026)?.count, 15);
+  assert.equal(said(keep(now, [look, fits], 2026), 'en'), 'Keeping it is a fair bet for its first 15 years: plant its successor beside it now.');
+  assert.equal(keep(now, [pv({ judged: '2041-2070', factors: [hot] }), fits], 2026), null, 'fits through: no line');
 });
 
 // ---- fix round 1, batch 2 ----
@@ -218,8 +221,8 @@ test('R1 (pf-f period edge): hazel in full sun at Seville, a second look for lig
   const hot = fv({ factor: 'hot', level: 'fits', place: 33, low: 20, high: 38 });
   const now = pv({ level: 'look', factors: [light, cold, hot], limiting: light });
   const laters = [pv({ judged: '2041-2070', level: 'look', factors: [light, cold, fv({ ...hot, place: 35 })], limiting: light }), pv({ judged: '2071-2099', level: 'look', factors: [light, cold, fv({ ...hot, place: 36.5 })], limiting: light })];
-  assert.equal(line.laterLossOf(now, laters), null, 'light stays the same: no loss by any later period');
-  assert.equal(line.keepLine(now, laters, 2026), null, 'no "plant its successor beside it now"');
+  assert.equal(vd.laterLossOf(now, laters), null, 'light stays the same: no loss by any later period');
+  assert.equal(keep(now, laters, 2026), null, 'no "plant its successor beside it now"');
 });
 
 test('R1 (pf-f period edge): a climate edge today that stays an edge is no loss; an outside today is never "outside by"; a new climate limit is', () => {
@@ -228,19 +231,19 @@ test('R1 (pf-f period edge): a climate edge today that stays an edge is no loss;
   const hotFits = fv({ factor: 'hot', level: 'fits', place: 33, low: 20, high: 38 });
   const at = (judged, level, f) => pv({ judged, level, factors: [f], limiting: f });
   // Already a second look at its hot edge today, still one by 2041–2070: nothing new.
-  assert.equal(line.laterLossOf(at('1991-2020', 'look', hotLook), [at('2041-2070', 'look', fv({ ...hotLook, place: 38.8 }))]), null);
+  assert.equal(vd.laterLossOf(at('1991-2020', 'look', hotLook), [at('2041-2070', 'look', fv({ ...hotLook, place: 38.8 }))]), null);
   // Outside today, outside then: no "Outside its range by".
-  assert.equal(line.laterLossOf(at('1991-2020', 'outside', hotOut), [at('2041-2070', 'outside', hotOut)]), null);
+  assert.equal(vd.laterLossOf(at('1991-2020', 'outside', hotOut), [at('2041-2070', 'outside', hotOut)]), null);
   // An edge today that is outside by 2071–2099: a loss then, said as outside, on heat.
-  const worse = line.laterLossOf(at('1991-2020', 'look', hotLook), [at('2041-2070', 'look', hotLook), at('2071-2099', 'outside', hotOut)]);
+  const worse = vd.laterLossOf(at('1991-2020', 'look', hotLook), [at('2041-2070', 'look', hotLook), at('2071-2099', 'outside', hotOut)]);
   assert.deepEqual([worse?.verdict.judged, worse?.level, worse?.factor], ['2071-2099', 'outside', 'hot']);
   // Fits today, a second look on heat by 2041–2070 (board DetailsDesk, Almond at Seville): the loss and its keep line.
-  const almond = line.laterLossOf(at('1991-2020', 'fits', hotFits), [at('2041-2070', 'look', hotLook)]);
+  const almond = vd.laterLossOf(at('1991-2020', 'fits', hotFits), [at('2041-2070', 'look', hotLook)]);
   assert.deepEqual([almond?.verdict.judged, almond?.level, almond?.factor], ['2041-2070', 'look', 'hot']);
-  assert.equal(line.keepLine(at('1991-2020', 'fits', hotFits), [at('2041-2070', 'look', hotLook)], 2026)?.count, 15);
+  assert.equal(keep(at('1991-2020', 'fits', hotFits), [at('2041-2070', 'look', hotLook)], 2026)?.count, 15);
   // A light second look today and a new heat edge then: the climate change is a loss (read from climate only).
   const light = { factor: 'light', basis: 'spot', level: 'look', place: null, low: null, high: null };
-  const both = line.laterLossOf(pv({ level: 'look', factors: [light, hotFits], limiting: light }), [pv({ judged: '2041-2070', level: 'look', factors: [light, hotLook], limiting: light })]);
+  const both = vd.laterLossOf(pv({ level: 'look', factors: [light, hotFits], limiting: light }), [pv({ judged: '2041-2070', level: 'look', factors: [light, hotLook], limiting: light })]);
   assert.deepEqual([both?.level, both?.factor], ['look', 'hot']);
 });
 
@@ -251,9 +254,9 @@ test('R3 (pf-f hold states): one core function says holds, not or unknown at the
     verdicts: (ts) => new Map(ts.map((t) => [t.id, { range: t.id === 3 ? 'not-recorded' : 'judged' }])),
     holdsBy: (t) => t.id === 1,
   };
-  const states = line.holdStatesOf(rule, taxa, { period: '1991-2020' }, '2041-2070');
+  const states = vd.holdStatesOf(rule, taxa, { period: '1991-2020' }, '2041-2070');
   assert.deepEqual([...states], [[1, 'holds'], [2, 'not'], [3, 'unknown']]);
-  assert.deepEqual([...line.holdStatesOf(null, taxa, {}, '2041-2070')], [], 'no rule yet: no state');
+  assert.deepEqual([...vd.holdStatesOf(null, taxa, {}, '2041-2070')], [], 'no rule yet: no state');
 });
 
 // C1: "On its cool edge today" (at its bound, a level-setting second look) apart from "Near its cool edge today" (a fit hedged edge).
@@ -275,6 +278,23 @@ test('C2 (pf-f Swap rows, pattern): "leaves years 3 to 15 empty" and the other s
   assert.equal(said(line.gapLines([], [h(3, 15)]).leaves, 'en'), 'leaves years 3 to 15 empty');
   assert.equal(said(line.gapLines([], [h(0, 3)]).leaves, 'en'), 'leaves the first 3 years empty');
   assert.equal(said(line.gapLines([], [h(15, 60)]).leaves, 'en'), 'leaves every year after year 15 empty');
+  // M33: the month forms, as the grower reads them (the boards draw only Between; v14-spec-update A29).
+  assert.equal(said(line.gapLines([], [h(0.25, 60)]).leaves, 'en'), 'leaves it empty after month 3');
+  assert.equal(said(line.gapLines([], [h(0.25, 15)]).leaves, 'en'), 'leaves it empty from month 3 to year 15');
+  assert.equal(said(line.gapLines([], [h(0, 60)]).leaves, 'en'), 'leaves every year empty');
+  const monthForms = {
+    fr: ['laisse un vide après le mois 3', 'laisse un vide du mois 3 à l’année 15'],
+    de: ['lässt es nach Monat 3 leer', 'lässt es von Monat 3 bis Jahr 15 leer'],
+    es: ['deja vacío después del mes 3', 'deja vacío del mes 3 al año 15'],
+    pt: ['deixa vazio depois do mês 3', 'deixa vazio do mês 3 ao ano 15'],
+    it: ['lascia vuoto dopo il mese 3', 'lascia vuoto dal mese 3 all’anno 15'],
+    nl: ['laat het leeg na maand 3', 'laat het leeg van maand 3 tot jaar 15'],
+    ru: ['оставляет пустым время после 3-го месяца', 'оставляет пустым время с 3-го месяца по 15-й год'],
+  };
+  for (const [lang, [after, from]] of Object.entries(monthForms)) {
+    assert.equal(said(line.gapLines([], [h(0.25, 60)]).leaves, lang), after, `${lang} AfterMonth`);
+    assert.equal(said(line.gapLines([], [h(0.25, 15)]).leaves, lang), from, `${lang} FromMonth`);
+  }
   for (const lang of Object.keys(words)) for (const [f, t] of [[3, 15], [0, 3], [0, 60], [15, 60], [0.25, 60], [0.25, 15]]) assert.ok(said(line.gapLines([], [h(f, t)]).leaves, lang), `${lang} leaves ${f}-${t}`);
 });
 
@@ -322,11 +342,11 @@ test('R4 C5 (pf-f period edge): a second look on cold today that fits by 2041–
   const hotLook = fv({ ...hotFits, level: 'look', place: 38.4 });
   const now = pv({ level: 'look', factors: [coldLook, hotFits], limiting: coldLook });
   const later = pv({ judged: '2041-2070', level: 'look', factors: [coldFits, hotLook], limiting: hotLook });
-  const loss = line.laterLossOf(now, [later]);
+  const loss = vd.laterLossOf(now, [later]);
   assert.deepEqual([loss?.verdict.judged, loss?.level, loss?.factor], ['2041-2070', 'look', 'hot'], 'the new heat limit, not today\'s cold');
-  assert.equal(line.keepLine(now, [later], 2026)?.count, 15, 'and the keep line counts to it');
+  assert.equal(keep(now, [later], 2026)?.count, 15, 'and the keep line counts to it');
   // The same factor at the same rank is still no loss; a recovering factor alone is none.
-  assert.equal(line.laterLossOf(now, [pv({ judged: '2041-2070', level: 'fits', factors: [coldFits, hotFits] })]), null);
+  assert.equal(vd.laterLossOf(now, [pv({ judged: '2041-2070', level: 'fits', factors: [coldFits, hotFits] })]), null);
 });
 
 // R5: every (today, then) pair of standings has its words; outside today and near its edge then says so.
@@ -338,4 +358,90 @@ test('R5 (pf-f Swap rows): outside its range today, near its edge by 2041–2070
   assert.equal(said(line.rowBandOf(pv({ level: 'outside', factors: [coldOut], limiting: coldOut }), on, period).line, 'en'), 'Outside its range today; near the edge by 2041–2070');
   const inRange = pv({ judged: '2041-2070', factors: [fv({ ...coldOut, level: 'fits', place: 2 })] });
   assert.equal(said(line.rowBandOf(pv({ level: 'outside', factors: [coldOut], limiting: coldOut }), inRange, period).line, 'en'), 'Outside its range today; in range by 2041–2070');
+});
+
+// ---- h3 G4 batch 1 (chunk 3 hand-off triage M29 to M39) ----
+
+// M29: the hold predicates sit beside holdsBy in the verdict rule; the views reach them through the
+// loaded rule (the rule's own chunk), and the words module no longer holds them.
+test('M29: holdStatesOf, laterLossOf and holdCounts are the verdict rule\'s, reached through loadVerdictRule; the words module has none', async () => {
+  for (const k of ['holdStatesOf', 'laterLossOf', 'holdCounts']) {
+    assert.equal(typeof vd[k], 'function', `verdict.ts ${k}`);
+    assert.equal(line[k], undefined, `verdict-line.ts has no ${k}`);
+  }
+  const { loadVerdictRule } = await import('../src/lib/consortium/verdict-load.ts');
+  const rule = await loadVerdictRule();
+  for (const k of ['holdStates', 'laterLoss', 'holdCounts']) assert.equal(typeof rule[k], 'function', `rule.${k}`);
+});
+
+// M30: one count for the hold period: 3 "not" and 2 "unknown" say both, never only the unknown.
+test('M30: holdCounts counts holds, not and unknown over the given ids; an id with no state is unknown', () => {
+  const states = new Map([[1, 'not'], [2, 'not'], [3, 'not'], [4, 'unknown'], [5, 'unknown'], [6, 'holds']]);
+  assert.deepEqual(vd.holdCounts(states, [1, 2, 3, 4, 5]), { holds: 0, not: 3, unknown: 2 });
+  assert.deepEqual(vd.holdCounts(states, [6, 7]), { holds: 1, not: 0, unknown: 1 });
+  assert.deepEqual(vd.holdCounts(new Map(), []), { holds: 0, not: 0, unknown: 0 });
+});
+
+// M31: a serious conflict carries its seriousness on the line itself, so every surface (Details, Swap,
+// Find, the Next step) draws it in the danger colour with the word.
+test('M31: flagLines gives a high conflict the danger level and a chip ending "(serious)"; a medium one stays a warning', async () => {
+  const strings = await import('../src/islands/consortium/strings.ts');
+  strings.setStrings(Object.fromEntries(Object.entries(words.en).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice(11), v])), 'en');
+  const { flagLines } = await import('../src/islands/consortium/views/kit/flags.ts');
+  const olive = { id: 9, names: { en: 'Olive' }, canonical_name: 'Olea europaea' };
+  const scene = { site: core.UNSURE_SITE, members: [], country: null, taxonOf: (id) => (id === 9 ? olive : null) };
+  const t = drainPlant(true);
+  const [high, medium] = flagLines(t, [
+    { id: 1, kind: 'conflict', severity: 'high', other: 9, type: 'shared_pest', agent: null },
+    { id: 1, kind: 'conflict', severity: 'medium', other: 9, type: 'shared_pest', agent: null },
+  ], scene);
+  assert.equal(high.level, 'danger');
+  assert.equal(high.chip, 'With Olive: a shared pest or disease (serious)');
+  assert.equal(medium.level ?? 'warning', 'warning');
+  assert.doesNotMatch(medium.chip, /serious/);
+});
+
+// M32: no place set, a bloom row scoped to a country and a latitude band: setting a place could select
+// it, so "set a place", never "no months recorded near your place"; at a set place elsewhere: none.
+test('M32 (Flowers): a GB-scoped row with a hemisphere and a latitude band says no-place without a place, none at a place in FR', () => {
+  const gb = [row(['Apr', 'May'], { country: 'GB', hemisphere: 'N', latitude: '50..60' })];
+  assert.deepEqual(bloom.bloomNear(gb, { lat: null, country: null, zone: 'Temperate' }), { state: 'no-place' });
+  assert.deepEqual(bloom.bloomNear(gb, { lat: null, country: 'FR', zone: 'Temperate' }), { state: 'no-place' });
+  assert.deepEqual(bloom.bloomNear(gb, { lat: 48.8, country: 'FR', zone: 'Temperate' }), { state: 'none' });
+});
+
+// M36: the rain a plant is recorded from, on a row, only at a dryland and only when the release has it.
+test('M36: rowRainLine says "recorded from N mm" at a dryland with a rain range, nothing at a humid place or without one', () => {
+  const t = (low) => ({ climate: { precip: low === undefined ? undefined : { low, high: 900 } } });
+  assert.equal(said(line.rowRainLine(t(24.6), 0.12), 'en'), 'recorded from 25 mm');
+  assert.equal(said(line.rowRainLine(t(24.6), 0.12), 'es'), 'con registros desde 25 mm');
+  assert.equal(line.rowRainLine(t(undefined), 0.12), null, 'dryland, no rain range: no line');
+  assert.equal(line.rowRainLine(t(24.6), 1.2), null, 'humid: no line');
+  assert.equal(line.rowRainLine(t(24.6), null), null, 'no aridity known: no line');
+});
+
+// M39: the soil card's distance in each language's own kilometre form.
+test('M39: formatKm writes kilometres in the language\'s unit form', async () => {
+  const { formatKm } = await import('../src/islands/consortium/format.ts');
+  assert.equal(formatKm(12, 'en'), '12 km');
+  assert.equal(formatKm(12, 'ja'), new Intl.NumberFormat('ja', { style: 'unit', unit: 'kilometer', unitDisplay: 'short', maximumFractionDigits: 0 }).format(12));
+  assert.equal(formatKm(1250, 'en'), '1,250 km');
+});
+
+// M38: Details opened from Find keeps the way back to the results; opened from the palette, none.
+test('M38: openSheet from Find records sheetBack (the opening and its target); from the palette it stays null', async () => {
+  const store = await import('../src/islands/consortium/store.ts');
+  store.closeSheet();
+  store.openSheet('details', 5);
+  assert.equal(store.sheetBack.peek(), null, 'from the palette: no way back');
+  store.closeSheet();
+  const job = { job: 'feeds_soil', hole: null, fits: null, title: null };
+  store.openSheet('find', null, job);
+  const n = store.sheet.peek().n;
+  store.openSheet('details', 5);
+  assert.deepEqual(store.sheetBack.peek(), { kind: 'find', target: job, n });
+  store.backToSheet();
+  assert.deepEqual([store.sheet.peek().kind, store.sheet.peek().n, store.sheetTarget.peek().job], ['find', n, 'feeds_soil'], 'back to the same opening of Find');
+  assert.equal(store.sheetBack.peek(), null);
+  store.closeSheet();
 });

@@ -4,7 +4,7 @@
 // StageBar.tsx rather than in views/kit/ (L5: the kit is a leaf). The first run imports this module
 // (App.tsx), so the lazy Find chunk and the lazy palette chunk both reach it without importing each other.
 import type { Fillers, Hole, JobId, Line, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { fillers, fills, holeChangeLines, periodIds, yearsLine, yearsOf, type HoleChange, type ThinChange } from '../../../lib/consortium/index.ts';
+import { fillers, fills, holeChangeLines, periodIds, rowRainLine, siteToday, yearsLine, yearsOf, type HoleChange, type ThinChange } from '../../../lib/consortium/index.ts';
 import * as store from '../store.ts';
 import { formatLength } from '../format.ts';
 import { P, pageLang, T } from '../strings.ts';
@@ -56,6 +56,14 @@ export function rowSize(t: Taxon): string {
   const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
   const W = w === null ? '' : formatLength(w, lang), H = h === null ? '' : formatLength(h, lang);
   return w !== null && h !== null ? T('find.sizeBoth', { w: W, h: H }) : h !== null ? T('find.sizeTall', { h: H }) : w !== null ? T('find.sizeWide', { w: W }) : T('find.sizeNone');
+}
+
+// The rain a row's plant is recorded from (M36; board SiteMendoza: "… · registrada desde 25 mm"), at a
+// dryland only (core rowRainLine on today's aridity index, the grower's edits applied); the Next step's
+// rows and Find's rows end their meta with it. null elsewhere, and when the release has no rain range.
+export function rowRain(t: Taxon): string | null {
+  const l = rowRainLine(t, siteToday(store.siteInputs.value)?.aridityIndex);
+  return l ? say(l) : null;
 }
 
 // A row's years in the boards' words ("first year", "month 3 to year 3", "year 1 to year 25", "from

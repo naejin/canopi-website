@@ -1349,3 +1349,26 @@ test('PFA49 (pf-a PFA-R2, PFA-G1, G2, AddMany state 2): "Find a backup" opens th
   assert.equal(await fitsChoice(), k, 'PFA-G1: the "Fits your place" choice says the same figure');
   await done(page);
 });
+
+// M36 (board SiteMendoza: a Next step row ends "· registrada desde 25 mm"; C11: one form, "con registros
+// desde"): at a dryland each row's meta ends with the rain its plant is recorded from, the figure from the
+// release (TaxonClimate.precip's low end, core rowRainLine); a row whose plant has no rain range says none.
+test('PFA52 (pf-a M36, SiteMendoza in es): at Mendoza a Next step row ends "· con registros desde N mm", N from the release', { timeout: 120_000 }, async () => {
+  const { mendoza } = await import('./pf-d-helpers.mjs');
+  const { formatMm } = await import('../../src/islands/consortium/format.ts');
+  const { readFileSync } = await import('node:fs');
+  const es = JSON.parse(readFileSync(new URL('../../src/i18n/translations/es.json', import.meta.url), 'utf8'));
+  const page = await mendoza({ width: 390, lang: 'es' });
+  assert.ok(await has(page, '[aria-labelledby="ct-next-t"] [data-filler-id]', 20_000), 'the Next step lists plants');
+  const rows = await page.$$eval('[aria-labelledby="ct-next-t"] [data-filler-id]', (rs) => rs.map((r) => {
+    const t = window.__ctTest.store.taxonOf(r.dataset.fillerId);
+    return { id: r.dataset.fillerId, low: t?.climate?.precip?.low ?? null, meta: r.querySelector('[data-filler-meta]')?.textContent ?? '' };
+  }));
+  assert.ok(rows.some((r) => r.low !== null), 'a row whose plant has a rain range');
+  for (const r of rows) {
+    const tail = r.low === null ? null : ` · ${es['consortium.line.rainFrom'].replace('{rainMm}', formatMm(Math.round(r.low), 'es'))}`;
+    if (tail) assert.ok(r.meta.endsWith(tail), `row ${r.id}: "${r.meta}" ends "${tail}"`);
+    else assert.doesNotMatch(r.meta, /con registros desde/, `row ${r.id}: no rain range, no rain words`);
+  }
+  await done(page);
+});

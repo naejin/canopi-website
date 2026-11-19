@@ -534,6 +534,7 @@
   "consortium.details.misfit": "你的场地：{why}",
   "consortium.details.conflict": "与{other}：{text}",
   "consortium.details.serious": "严重",
+  "consortium.details.backResults": "返回结果",
   "consortium.details.tox": "毒性记录：{level}。食用任何部分前请先核实，并让儿童和动物远离。",
   "consortium.details.invNotChecked": "在 {country} 未检查：此版本没有来源评估过当地的入侵性。",
   "consortium.details.invNotHere": "在 {country} 未记录为入侵植物（GRIIS）。",

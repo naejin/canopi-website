@@ -534,6 +534,7 @@
   "consortium.details.misfit": "당신의 터: {why}",
   "consortium.details.conflict": "{other}와(과): {text}",
   "consortium.details.serious": "심각",
+  "consortium.details.backResults": "결과로 돌아가기",
   "consortium.details.tox": "독성 기록: {level}. 어느 부분이든 먹기 전에 확인하고, 아이와 동물에게서 멀리 두세요.",
   "consortium.details.invNotChecked": "{country}에서는 확인 안 됨: 이 릴리스에는 그곳의 침입성을 평가한 출처가 없습니다.",
   "consortium.details.invNotHere": "{country}에서는 침입종으로 기록되지 않았습니다(GRIIS).",

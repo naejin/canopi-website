@@ -36,7 +36,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const line = await import('../src/lib/consortium/verdict-line.ts');
-const { verdict } = await import('../src/lib/consortium/verdict.ts');
+const { verdict, laterLossOf } = await import('../src/lib/consortium/verdict.ts');
+// The keep line on a member's verdicts today and later: the rule's laterLoss (M29), then the words.
+const keep = (now, laters, year) => line.keepLine(now, laterLossOf(now, laters), year);
 const { confidenceTerms } = core;
 const dir = new URL('../src/i18n/translations/', import.meta.url);
 const words = Object.fromEntries(readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(f, dir), 'utf8'))]));
@@ -607,21 +609,21 @@ test('c2 fix K19 + T1 (keep it a fair bet): the years to the first later period 
   const chestnut = taxon({ id: 'chestnut', canonical_name: 'Castanea sativa', phases: { start: 'secondary_i', end: 'climax', sources: [] }, climate: { source: 'gbif_occurrences', cells: 16445, nativeShare: null, tminCold: r(-7.2, 9.4), tmaxWarm: r(17.4, 33.7), tmeanYear: r(8.8, 17.6), tmeanWarm: r(14.5, 25.7), aridity: r(0.67, 2.67) } });
   const [now, ...laters] = periods(chestnut, seville);
   assert.deepEqual([now.level, ...laters.map((v) => v.level)], ['look', 'outside', 'outside']);
-  assert.equal(line.keepLine(now, laters, 2026).count, 15, 'to 2041, the first period it is outside, not 2071');
+  assert.equal(keep(now, laters, 2026).count, 15, 'to 2041, the first period it is outside, not 2071');
   const lyon = at({ '1991-2020': { tminColdC: 0.1, tmaxWarmC: 26.6, tmeanColdC: 4.3, tmeanWarmC: 22.4, aridityIndex: 1.1 }, '2041-2070': { tminColdC: 1.3, tmaxWarmC: 28.8, tmeanColdC: 5.5, tmeanWarmC: 24.6, aridityIndex: 0.99 }, '2071-2099': { tminColdC: 1.8, tmaxWarmC: 29.6, tmeanColdC: 6, tmeanWarmC: 25.4, aridityIndex: 0.95 } });
   const macauba = taxon({ id: 'macauba', canonical_name: 'Acrocomia aculeata', phases: { start: 'secondary_i', end: 'secondary_iii', sources: [] }, climate: { source: 'gbif_occurrences', cells: 1029, nativeShare: null, tminCold: r(12.5, 24.1), tmaxWarm: r(26, 37.6), tmeanYear: r(20.1, 27.5), tmeanWarm: r(22.3, 29.1), aridity: r(0.66, 2.09) } });
   const [mNow, ...mLater] = periods(macauba, lyon);
   assert.equal(mNow.level, 'outside');
-  assert.equal(line.keepLine(mNow, mLater, 2026), null, 'outside now: today\'s lines say it, no fair bet');
+  assert.equal(keep(mNow, mLater, 2026), null, 'outside now: today\'s lines say it, no fair bet');
   assert.match(en['consortium.line.keepFairBet'], /fair bet for its first # years: plant its successor beside it now/);
   // pf-f fix round 1 BC11 (board DetailsDesk, Almond at Seville): a later second look counts too, when
   // its climate fits today (round 2 R1: a later climate worse than today's; chestnut's look stays a look).
   const hot = { factor: 'hot', basis: 'range', level: 'fits', place: 36.2, low: 20, high: 38 };
   const fitsNow = vOf({ factors: [hot] });
-  assert.equal(line.keepLine(fitsNow, [vOf({ judged: '2041-2070', level: 'look', factors: [{ ...hot, level: 'look', place: 38.4 }] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026).count, 15, 'a second look by 2041–2070: 15 years');
-  assert.equal(line.keepLine(fitsNow, [vOf({ judged: '2041-2070', factors: [hot] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026), null, 'it fits then');
-  assert.equal(line.keepLine(now, [{ ...laters[0], level: 'look', factors: now.factors }], 2026), null, 'a look today that stays the same look: no fair bet');
-  assert.equal(line.keepLine(null, [], 2026), null);
+  assert.equal(keep(fitsNow, [vOf({ judged: '2041-2070', level: 'look', factors: [{ ...hot, level: 'look', place: 38.4 }] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026).count, 15, 'a second look by 2041–2070: 15 years');
+  assert.equal(keep(fitsNow, [vOf({ judged: '2041-2070', factors: [hot] }), vOf({ judged: '2071-2099', factors: [hot] })], 2026), null, 'it fits then');
+  assert.equal(keep(now, [{ ...laters[0], level: 'look', factors: now.factors }], 2026), null, 'a look today that stays the same look: no fair bet');
+  assert.equal(keep(null, [], 2026), null);
 });
 
 // Fix round 3 T2 (c2r3-03): the place's dot on a band says when it is: "today" on today's verdict, the

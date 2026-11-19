@@ -45,6 +45,8 @@ import { futurePeriod } from './future.ts';
 import { fits, misfitsBeside, shadedBy, tallerThanRoom } from './site.ts';
 import { climateFor, siteOf } from './place.ts';
 import { soilPhOf } from './site-inputs.ts';
+import { nearness, ranged } from './verdict-line.ts';
+import type { VerdictRule } from './verdict-load.ts';
 
 const TODAY: PeriodId = periodIds[0];
 const FEW_RECORDS = 300;
@@ -198,4 +200,54 @@ export function holdsBy(taxon: Taxon, ctx: VerdictContext, period: PeriodId): bo
   const judged = judgedPeriod(taxon, period);
   const c = climateFactors(taxon, ctx, judged, ctx.scenario);
   return !!c && c.factors.length > 0 && !c.factors.some((f) => f.level === 'outside');
+}
+
+// ---- the hold predicates (M29: beside holdsBy, apart from the words in verdict-line.ts). The views
+// reach them through the loaded rule (verdict-load.ts VerdictRule: holdStates, laterLoss, holdCounts),
+// as they reach verdicts and holdsBy, so this file stays in its own chunk.
+
+// What a later period's climate takes from a plant (fix round 2 R1, round 3 R4 C5): the first later
+// period in which some climate factor is worse than the same factor today, read factor by factor from
+// the climate factors alone (the ranged ones with a measure, each at the level it gives the verdict:
+// types.ts setsLevel), so a light or wind misfit that stays the same in every period is never a loss, an
+// edge today that stays an edge is none, a new limit on another measure at today's rank is one (a cold
+// edge today, a heat edge by 2041–2070), and a plant outside today is never "outside by". `level`: what
+// that factor becomes then; `factor`: the worsened factor (the worst level, then the nearest its bound).
+// null when its climate holds through them (or nothing compares). One predicate for Details'
+// period-edge chip, its keep line (verdict-line.ts keepLine) and What you can do's limiting measure.
+export interface LaterLoss { verdict: PlantVerdict; level: 'look' | 'outside'; factor: Factor }
+const LOSS_RANK: Record<Level, number> = { fits: 0, unknown: 0, look: 1, outside: 2 };
+const climateRank = (f: FactorVerdict): number => (ranged(f) && setsLevel(f) ? LOSS_RANK[f.level] : 0);
+export function laterLossOf(now: PlantVerdict | null, laters: readonly PlantVerdict[]): LaterLoss | null {
+  if (!now || now.factors.some((f) => climateRank(f) === 2)) return null;
+  const today = new Map(now.factors.map((f) => [f.factor, climateRank(f)]));
+  for (const l of laters) {
+    const worse = l.factors.filter((f) => climateRank(f) > (today.get(f.factor) ?? 0));
+    if (!worse.length) continue;
+    const f = worse.sort((a, b) => climateRank(b) - climateRank(a) || nearness(a) - nearness(b))[0];
+    return { verdict: l, level: climateRank(f) === 2 ? 'outside' : 'look', factor: f.factor };
+  }
+  return null;
+}
+
+// Whether each candidate holds by a later period (fix round 2 R3; Swap's hold filter and Details' What
+// you can do read this one function, so the two never drift): 'holds' (holdsBy), 'not' (judged outside
+// its range then), or 'unknown' (nothing to compare at that period: no place, no projection, no range
+// recorded; unknown is never a hole and never "not"). No rule yet: no state.
+export type HoldState = 'holds' | 'not' | 'unknown';
+export function holdStatesOf(rule: Pick<VerdictRule, 'verdicts' | 'holdsBy'> | null, taxa: readonly Taxon[], ctx: VerdictContext, period: PeriodId): Map<PlantId, HoldState> {
+  const out = new Map<PlantId, HoldState>();
+  if (!rule || !taxa.length) return out;
+  const then = rule.verdicts(taxa, { ...ctx, period });
+  for (const t of taxa) out.set(t.id, then.get(t.id)?.range !== 'judged' ? 'unknown' : rule.holdsBy(t, ctx, period) ? 'holds' : 'not');
+  return out;
+}
+
+// How many of the candidates hold, fail and cannot be judged (M30): Details' What you can do and Swap
+// count one period one way. An id without a state is unknown.
+export interface HoldCounts { holds: number; not: number; unknown: number }
+export function holdCounts(states: ReadonlyMap<PlantId, HoldState>, ids: readonly PlantId[]): HoldCounts {
+  const out: HoldCounts = { holds: 0, not: 0, unknown: 0 };
+  for (const id of ids) out[states.get(id) ?? 'unknown'] += 1;
+  return out;
 }

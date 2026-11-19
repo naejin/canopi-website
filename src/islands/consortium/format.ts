@@ -31,6 +31,8 @@ function unitFormat(lang: string, unit: string, max: number, signed = false): In
 export const formatLength = (m: number, lang: string, max = 1): string => unitFormat(lang, 'meter', max).format(m);
 /** @public Rain in millimetres ("540 mm"); the grower's rain values (0W siteEditLines) are its first reader. */
 export const formatMm = (mm: number, lang: string): string => unitFormat(lang, 'millimeter', 0).format(mm);
+/** A distance in whole kilometres ("12 km", ja "12 km" in its own form); the soil card's "the soil map's nearest reading" (M39) is its reader. */
+export const formatKm = (km: number, lang: string): string => unitFormat(lang, 'kilometer', 0).format(km);
 /** A file size in megabytes ("1.4 MB"); the loading line's progress (M28) is its reader. */
 export const formatMegabytes = (mb: number, lang: string): string => unitFormat(lang, 'megabyte', 1).format(mb);
 /** @public A soil depth in centimetres ("30 cm"); PP-F's soil lines are its first reader. */

@@ -534,6 +534,7 @@
   "consortium.details.misfit": "あなたの場所：{why}",
   "consortium.details.conflict": "{other}と：{text}",
   "consortium.details.serious": "重大",
+  "consortium.details.backResults": "結果に戻る",
   "consortium.details.tox": "毒性の記録：{level}。どの部分も食べる前に確認し、子どもや動物から遠ざけてください。",
   "consortium.details.invNotChecked": "{country}では未確認：このリリースにはその国で侵略性を評価した情報源がありません。",
   "consortium.details.invNotHere": "{country}では侵略的と記録されていません（GRIIS）。",

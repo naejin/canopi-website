@@ -21,7 +21,7 @@ import * as store from '../../store.ts';
 import { closeSheet, openSheet, removeMember, taxonOf } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Details as PlantFacts, JobId, Labels, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { TODAY_PERIOD, borrowedFrom, candoLine, drainageLine, factAt, fills, guestOf, holdStatesOf, invasiveLines, jobsOf, keepLine, laterLossOf, locales, measureOf, pairings, periodIds, periodName, placementZone, rowBandOf, siteIdOf, sourceTitle, spanOf, sureRows, warns, yearsLine, whenLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { TODAY_PERIOD, borrowedFrom, candoLine, drainageLine, factAt, fills, guestOf, invasiveLines, jobsOf, keepLine, locales, measureOf, pairings, periodIds, periodName, placementZone, rowBandOf, siteIdOf, sourceTitle, spanOf, sureRows, warns, yearsLine, whenLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import type { Factor, PlantVerdict, SureRow } from '../../../../lib/consortium/index.ts';
 import { bloomNear, monthsLong } from './bloom.ts';
 import { safeHref } from '../../../../lib/safe-href.js';
@@ -30,7 +30,7 @@ import { Against, SoilCard, soilSayOf } from './Against.tsx';
 import { AltRow, FitLine, JobIcon, jobList, MeasureGlyph, midSentence, nicheLight, RowBandLine, say, sizeShort, SWAP } from '../kit/fit.tsx';
 import { shared, type Frame } from '../kit/sheet.tsx';
 import { countryName, layerName, listOf, nameOf, num, phaseTerm, spanWords, zoneName } from '../kit/names.ts';
-import { WARN } from '../kit/icons.tsx';
+import { BACK, WARN } from '../kit/icons.tsx';
 import { drafts, type CorrectionField } from '../kit/correction.ts';
 import { pageData } from '../kit/page.ts';
 import { later } from '../lazy.tsx';
@@ -334,10 +334,6 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const others = store.memberTaxa.value.filter((o) => o.id !== id);
   const pairs = pairings(t, others, store.flagContext.value.interactions);
   const conflictCount = conflicts.filter((l) => l.kind === 'conflict').length;
-  // A serious conflict's chip carries its seriousness in colour and word (fix round 3 R1): flagLines
-  // gives one line per conflict flag, in the flags' order (low ones kept), so line i is flag i.
-  const conflictFlags = flags.filter((f) => f.kind === 'conflict');
-  const serious = new Set(conflicts.filter((_, i) => conflictFlags[i]?.severity === 'high'));
   const allelo = t.warnings.allelopathic;
   const notAllChecked = t.warnings.toxicity === null || t.warnings.allelopathic === null || (facts?.invasiveIn ?? t.warnings.invasive_in) === null;
   const jobs = jobsOf(t);
@@ -361,26 +357,28 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   // A member's later periods (core keepLine, the period-edge chip, What you can do): the first later
   // period whose climate is worse than today's (core laterLossOf: climate factors only, fix round 2 R1),
   // and the climate measure that limits it then, else today's when it is a climate one.
+  const rule = store.verdictRule.value, ctx = store.verdictContext.value;
   const [now = null, ...laters] = member ? store.periodVerdictsOf(t) : [];
-  const loss = laterLossOf(now, laters);
+  const loss = rule?.laterLoss(now, laters) ?? null;
   const nowFactor = now?.limiting?.factor ?? null;
   const lossFactor: Factor | null = loss?.factor ?? (nowFactor && measureOf(nowFactor) ? nowFactor : null);
-  const keep = keepLine(now, laters, new Date().getFullYear());
+  const keep = keepLine(now, loss, new Date().getFullYear());
   // What you can do (board DetailsDesk; fix round 1 BC4, C9; round 2 R3): the two closest alternatives
-  // that hold by the later period, read from core holdStatesOf as Swap's hold filter reads it, each in the
-  // board's words (core candoLine: same years, what it does not do, what it adds, "holds in 2041–2070")
+  // that hold by the later period, read from the rule's holdStates as Swap's hold filter reads it, each in
+  // the board's words (core candoLine: same years, what it does not do, what it adds, "holds in 2041–2070")
   // in Swap's row frame (kit/fit.tsx AltRow), and how far it is recorded on the measure that limits this
-  // member. When none can be judged then (no place, no projection, no range recorded), the two closest
-  // without "holds in" and "Not checked for 2041–2070"; when every judged one fails, how many fail.
-  const rule = store.verdictRule.value, ctx = store.verdictContext.value;
+  // member. When none holds (M30, the rule's holdCounts, as Swap counts): how many are judged to fail
+  // then, and "Not checked for 2041–2070" when some cannot be judged (no place, no projection, no range
+  // recorded), those listed without "holds in".
   const holdPeriod = periodIds[1];
   const fitAlts = member ? (store.alternativesFor(id)?.fit ?? []) : [];
-  const holdStates = holdStatesOf(rule, fitAlts.map((a) => taxonOf(a.id)).filter((x): x is Taxon => !!x), ctx, holdPeriod);
+  const holdStates = rule?.holdStates(fitAlts.map((a) => taxonOf(a.id)).filter((x): x is Taxon => !!x), ctx, holdPeriod) ?? new Map<PlantId, 'unknown'>();
+  const counts = rule?.holdCounts(holdStates, fitAlts.map((a) => a.id)) ?? { holds: 0, not: 0, unknown: fitAlts.length };
   const stateOf = (pid: PlantId) => holdStates.get(pid) ?? 'unknown';
   const holding = fitAlts.filter((a) => stateOf(a.id) === 'holds');
   const unjudged = fitAlts.filter((a) => stateOf(a.id) === 'unknown');
   const alts = (holding.length ? holding : unjudged).slice(0, 2);
-  const altsHold = holding.length > 0;
+  const altsHold = counts.holds > 0;
   const bandOf = (x: Taxon) => {
     const v: PlantVerdict | null = store.poolVerdicts.value?.get(x.id) ?? store.verdictOf(x);
     return v ? rowBandOf(v, store.laterVerdictOf(x, v), periodName, lossFactor) : null;
@@ -406,9 +404,11 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const toxUnk = t.warnings.toxicity === null;
   const siteUnknown = unknownWords(t, scene.site);
   const spreads = t.warnings.weed_potential;
+  const back = store.sheetBack.value;
 
   return (
     <Frame titleId="ct-d-title" class="ct-details"
+      head={/* Opened from Find (board Details: "‹ Back to results"; M38): the way back to the same results. */ back && <button type="button" class="button-quiet ct-back" data-sheet-back onClick={store.backToSheet}>{BACK}<span class="ct-back-name">{T('details.backResults')}</span></button>}
       foot={member
         // Phones: the member's two actions stay at hand; the desk has them in What you can do.
         ? <div class="ct-add-bar ct-d-foot ct-d-foot-member"><button type="button" class="button button-secondary" onClick={findOne}>{SEARCH}{T('details.findHolds')}</button><button type="button" class="ct-link-button" onClick={remove}>{T('details.remove')}</button></div>
@@ -438,7 +438,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           <ul class="ct-marks">
             {/* A member whose climate a later period puts near the edge of its range, or outside it (board DetailsDesk; fix round 1 BC10, round 2 R1); the board's range-edge mark, the thermometer (C5). */}
             {loss && <li class="ct-flag" data-level="warning" data-chip="period-edge"><MeasureGlyph m="tmeanYear" />{T(loss.level === 'outside' ? 'details.chipOutsideBy' : 'details.chipEdgeBy', { period: periodName(loss.verdict.judged) })}</li>}
-            {chips.map((l) => <li class="ct-flag" data-level={serious.has(l) ? 'danger' : l.level ?? 'warning'} data-chip={l.kind}>{WARN}{l.chip ?? l.text}{serious.has(l) && ` (${T('details.serious')})`}</li>)}
+            {/* A serious conflict's chip carries its seriousness in colour and word on the line itself (flagLines; M31). */}
+            {chips.map((l) => <li class="ct-flag" data-level={l.level ?? 'warning'} data-chip={l.kind}>{WARN}{l.chip ?? l.text}</li>)}
             {toxUnk && <li class="ct-tag" data-conf="not-checked">{INFO}{T('details.toxUnkChip')}</li>}
             {(borrowed || guest) && <li class="ct-tag" data-conf="estimate" data-estimate-chip>{WAVE}{T('details.estimateChip', { list: T(`list.${(guest ?? borrowed)!.toLowerCase()}`) })}</li>}
           </ul>
@@ -471,8 +472,8 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
               </ul>
             )}
             {/* Unknown is never a hole (R3): nothing judged by the period says so; every judged one failing says how many. */}
-            {!altsHold && unjudged.length > 0 && <p class="ct-muted ct-small" data-conf="not-checked" data-hold-unknown>{INFO} {T('swap.holdUnknown', { period: periodName(holdPeriod) })}</p>}
-            {!altsHold && !unjudged.length && fitAlts.length > 0 && <p class="ct-muted ct-small" data-hold-none>{P('swap.noneHold', fitAlts.length, { period: periodName(holdPeriod) })}</p>}
+            {!altsHold && counts.not > 0 && <p class="ct-muted ct-small" data-hold-none>{P('swap.noneHold', counts.not, { period: periodName(holdPeriod) })}</p>}
+            {!altsHold && counts.unknown > 0 && <p class="ct-muted ct-small" data-conf="not-checked" data-hold-unknown>{INFO} {T('swap.holdUnknown', { period: periodName(holdPeriod) })}</p>}
             <div class="ct-actions ct-d-cando-actions">
               <button type="button" class="button button-secondary" onClick={findOne}>{SEARCH}{T('details.findHolds')}</button>
               <button type="button" class="ct-link-button" onClick={remove}>{T('details.remove')}</button>

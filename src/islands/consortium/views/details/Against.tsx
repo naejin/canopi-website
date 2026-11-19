@@ -18,7 +18,7 @@ import { againstLines, bandsOf, datasetLines, drainageLine, levelLine, limitOf, 
 import { LevelIcon, MEASURE_GLYPH, midSentence, say } from '../kit/fit.tsx';
 import { WARN } from '../kit/icons.tsx';
 import { coords } from '../kit/names.ts';
-import { formatNumber, formatTemp } from '../../format.ts';
+import { formatKm, formatNumber, formatTemp } from '../../format.ts';
 import { pageLang } from '../../strings.ts';
 
 // The disputed bound each band can carry (Dispute.field).
@@ -207,8 +207,6 @@ export function Against({ t, disputes = [], subject = null, gbifRecords = null }
 // "your test", "the soil map" (with its texture word when the map has one), or pots. A map value from a
 // neighbouring square says how far, in kilometres: "a weaker guess" (F10).
 export interface SoilSay { ranged: boolean; level: Level; status: string; line: string; near: string | null; niche: string | null; map: number | null; own: number | null }
-// Kilometres, whole (format.ts has no kilometre unit yet): the number in the page's language, then "km".
-const km = (n: number, lang: string): string => `${formatNumber(n, lang, 0)}\u00a0km`;
 export function soilSayOf(t: Taxon): SoilSay {
   const lang = pageLang();
   const inputs = store.siteInputs.value;
@@ -231,7 +229,7 @@ export function soilSayOf(t: Taxon): SoilSay {
     : map !== null ? (texture ? T('details.soilLineMapTexture', { ...range, ph: n(map), texture: T(`details.texture.${texture}`) }) : T('details.soilLineMap', { ...range, ph: n(map) }))
     : T('details.soilLineNone', range);
   const nearKm = input?.nearKm ?? null;
-  const near = nearKm !== null && own === null && map !== null ? T('details.soilNear', { dist: km(Math.round(nearKm), lang) }) : null;
+  const near = nearKm !== null && own === null && map !== null ? T('details.soilNear', { dist: formatKm(Math.round(nearKm), lang) }) : null;
   const fit = T(level === 'fits' ? 'details.phFits' : level === 'unknown' ? 'details.phNotChecked' : 'details.phOff');
   // No value to judge (F10): "not known … not checked on soil pH", never silence.
   const niche = !ranged ? null : pots ? T('details.phPots') : own !== null ? T('details.phTestSays', { ph: n(own), fit }) : map !== null ? T('details.phMapSays', { ph: n(map), fit }) : T('details.phNoData');

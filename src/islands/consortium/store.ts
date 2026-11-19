@@ -751,7 +751,22 @@ const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste', '
 let opened = 0;
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
   if (SHEET_KINDS.includes(kind) && !onEntry('sheet')) pushEntry('sheet');
-  batch(() => { sheetTarget.value = { ...FOR_NOTHING, ...target }; sheet.value = { kind, id, n: ++opened }; });
+  const from = sheet.peek();
+  batch(() => {
+    sheetBack.value = from?.kind === 'find' && kind === 'details' ? { kind: 'find', target: sheetTarget.peek(), n: from.n } : null;
+    sheetTarget.value = { ...FOR_NOTHING, ...target };
+    sheet.value = { kind, id, n: ++opened };
+  });
+}
+// The sheet a plant's Details was opened from (M38; board Details "‹ Back to results"): Find, with what
+// it was opened for and its opening (n), so its search and filters come back as the grower left them
+// (Find keeps them per opening). null when Details was opened from anywhere else.
+export interface SheetBack { kind: 'find'; target: SheetFor; n: number }
+export const sheetBack = signal<SheetBack | null>(null);
+export function backToSheet(): void {
+  const b = sheetBack.peek();
+  if (!b) return;
+  batch(() => { sheetBack.value = null; sheetTarget.value = b.target; sheet.value = { kind: b.kind, id: null, n: b.n }; });
 }
 // Find (PP-C c1; boards Find, FillHole): the one route into it, from "Add plants", "Find plants",
 // "See all N plants", a hole's Find and Place's "Add a plant by name"; a hole's opener passes the
@@ -763,7 +778,7 @@ export const openFind = (target: SheetFor = FOR_NOTHING): void => { wantVerdict(
 // history entry with history.back() (main.ts then rewrites the entry under it with the current link).
 export const closeSheet = (): void => {
   const had = sheet.peek() !== null;
-  sheet.value = null;
+  batch(() => { sheet.value = null; sheetBack.value = null; });
   if (had) leaveEntry('sheet');
 };
 

@@ -13,10 +13,13 @@
 }
 .ct .ct-sheet::backdrop { background: var(--backdrop, rgba(22, 21, 16, 0.42)); }
 .ct .ct-sheet-inner { display: flex; flex-direction: column; min-height: 100%; }
+/* The sheet's top row (boards Details, Swap, Correction): "‹ Back to …" and a plain × on one row, no rule
+   under it and no box round the × (M37); it stays at the top on the surface colour as the sheet scrolls. */
 .ct .ct-sheet-head {
   position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 10px 12px 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 12px 10px 24px; background: var(--surface);
 }
+.ct .ct-sheet-head .ct-icon-button { border: 0; background: none; }
 .ct .ct-sheet-head-main { min-width: 0; font-size: 15px; }
 .ct .ct-sheet-body { display: grid; gap: 22px; padding: 20px 24px 28px; align-content: start; flex: 1; }
 .ct .ct-sheet h2 { font-size: 30px; letter-spacing: -0.015em; }
@@ -122,6 +125,9 @@
 }
 .ct :where(.ct-sheet) .ct-rows > li.is-on { background: var(--surface-alt); box-shadow: -12px 0 0 var(--surface-alt), 12px 0 0 var(--surface-alt); }
 .ct :where(.ct-sheet) .ct-row-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+/* A row's name that opens its Details (Find; board FindResults): the name in ink and weight 600, no underline. */
+.ct :where(.ct-sheet) .ct-row-main .ct-name-open { font-weight: 600; font-size: 16px; color: var(--text); text-decoration: none; }
+.ct :where(.ct-sheet) .ct-row-main .ct-name-open:hover { color: var(--accent-ink); text-decoration: underline; }
 .ct :where(.ct-sheet) .ct-row-why { grid-column: 1 / -1; display: grid; gap: 3px; font-size: 14.5px; color: var(--text-secondary); }
 .ct :where(.ct-sheet) .ct-line { display: block; }
 .ct :where(.ct-sheet) strong.ct-line { color: var(--text); font-weight: 600; }
