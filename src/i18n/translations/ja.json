@@ -1076,7 +1076,7 @@
   "consortium.line.causeWater": "ここの水分は必要な条件と合わない",
   "consortium.line.causeSoil": "ここの土壌 pH は耐えられる範囲の外",
   "consortium.line.short.cold": "夜が寒すぎる",
-  "consortium.line.short.mild": "夜が暖かすぎる",
+  "consortium.line.short.mild": "冬が暖かすぎる",
   "consortium.line.short.cool": "年間を通して涼しすぎる",
   "consortium.line.short.summer": "夏が涼しすぎる",
   "consortium.line.short.hot": "夏が暑すぎる",

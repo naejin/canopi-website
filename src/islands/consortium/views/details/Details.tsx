@@ -289,9 +289,10 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0); // Try again: the details query asked once more
   const [labels, setLabels] = useState<Labels>({});
-  // The sheet under this one when it opened (store.sheets): Find's, for "‹ Back to results" (M38). It
-  // stays for the dialog's life (h3 R4: a round trip through Swap keeps the way back).
-  const [under] = useState(() => store.sheetBack.peek());
+  // This sheet and the one under it when it opened (store.sheets), for "‹ Back to results" (M38): only
+  // a Details a Find row opened, over that Find (h3 B4.1; not one opened from the page beside the desk's
+  // Find panel). It stays for the dialog's life (h3 R4: a round trip through Swap keeps the way back).
+  const [[mine, under]] = useState(() => [store.sheet.peek(), store.sheetBack.peek()] as const);
   // A plant with a draft (closed by Escape or the backdrop) opens with its form and text back.
   const [correcting, setCorrecting] = useState(() => drafts.has(id));
   const openButton = useRef<HTMLButtonElement>(null);
@@ -407,7 +408,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const toxUnk = t.warnings.toxicity === null;
   const siteUnknown = unknownWords(t, scene.site);
   const spreads = t.warnings.weed_potential;
-  const back = under?.kind === 'find';
+  const back = mine?.from === 'find' && under?.kind === 'find';
 
   return (
     <Frame titleId="ct-d-title" class="ct-details"

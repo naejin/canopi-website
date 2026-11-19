@@ -303,7 +303,7 @@ test('E6-3d (K3 lazy sheets): Find, Paste and Swap opened while the range rule l
       const close = d.querySelector('.ct-sheet-head button[aria-label]');
       return name && close && d.contains(document.getElementById(d.getAttribute('aria-labelledby'))) ? 'named' : `empty (name: ${name ?? 'none'}, close: ${!!close})`;
     })}`);
-    await page.evaluate(() => window.__ctTest.store.closeSheet?.() ?? (window.__ctTest.store.sheet.value = null));
+    await page.evaluate(() => window.__ctTest.store.closeSheet());
     await new Promise((r) => setTimeout(r, 100));
   }
   assert.equal(await page.evaluate(() => window.__ctTest.store.pool.value), null, 'the pool was null throughout (the rule held)');

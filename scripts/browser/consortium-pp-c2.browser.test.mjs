@@ -346,9 +346,14 @@ test('PP-C45 (c2 h3 M45, pf-e BC21, board Toasts, word map "A pasted list added"
   assert.equal(await page.$$eval('.ct-toast .ct-toast-action', (bs) => bs.length), 1, 'Show has its own class');
   // h3 R6: Show is named for the warned plant's warning, starting with its visible word (WCAG 2.4.6, 2.5.3).
   const showName = await page.$eval('.ct-toast .ct-toast-action', (b) => b.getAttribute('aria-label'));
-  const warned = await page.evaluate((sci) => { const t = window.__ctTest.store.memberTaxa.value.find((x) => x.canonical_name === sci); return t.common_name ?? t.canonical_name; }, names[0]);
-  assert.match(showName, /^Show the warning for /, `Show names the warning (${showName})`);
-  assert.ok(showName.length > 'Show the warning for '.length, `and the plant (${showName}; ${warned})`);
+  // The warned plant: the only one of the three the engine flags (the premise above), names[0].
+  const warnedId = await page.evaluate((sci) => window.__ctTest.store.memberTaxa.value.find((x) => x.canonical_name === sci).id, names[0]);
+  await page.click('.ct-toast .ct-toast-action');
+  assert.ok(await page.waitForFunction((id) => window.__ctTest.store.sheet.value?.kind === 'details' && window.__ctTest.store.sheet.value.id === id, { timeout: 5000 }, warnedId).then(() => true, () => false), 'Show opens the warned plant');
+  await page.waitForSelector('dialog.ct-details[open] #ct-d-title');
+  const warned = await page.$eval('dialog.ct-details[open] #ct-d-title', (h) => h.textContent.trim());
+  assert.ok(warned, 'the plant has a name');
+  assert.equal(showName, `Show the warning for ${warned}`, 'Show is named for the warned plant, by the name its Details shows');
   await done(page);
 });
 

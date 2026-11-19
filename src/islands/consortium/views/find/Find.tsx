@@ -477,7 +477,7 @@ export default function Find({ Frame }: { Frame: Frame }) {
       <Tag key={t.id} class={as === 'div' ? 'ct-find-row' : undefined} data-find-row="" data-plant-id={t.id}>
         {/* The name opens the plant's Details (board FindResults: the name is a link; board Details then
             says "‹ Back to results", stacked over Find: store.sheets, M38, h3 R1). */}
-        <div class="ct-row-main"><button type="button" class="ct-link-button ct-name-open" data-find-open="" aria-haspopup="dialog" onClick={() => store.openSheet('details', t.id)}>{nameOf(t)}</button> <i class="ct-sci">{t.canonical_name}</i></div>
+        <div class="ct-row-main"><button type="button" class="ct-link-button ct-name-open" data-find-open="" aria-haspopup="dialog" onClick={() => store.openSheet('details', t.id, {}, 'find')}>{nameOf(t)}</button> <i class="ct-sci">{t.canonical_name}</i></div>
         {/* BC27 (board AddMany state 3): an added row says "✓ Added" in words, with its Undo beside it
             at the right of the row; the Add button gives way to them, the focus to Undo. */}
         {done ? (

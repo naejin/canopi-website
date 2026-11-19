@@ -35,7 +35,9 @@ export type SheetKind = 'details' | 'swap' | 'find' | 'paste';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
 // sheet only, never one opened since (Escape closes the <dialog> at once and fires `close` a task later).
 // target: what it was opened for (Find's SheetFor; FOR_NOTHING for the others).
-export interface Sheet { kind: SheetKind; id: PlantId | null; n: number; target: SheetFor }
+// from: the sheet whose own control opened it ('find': a Find row's name), null when opened from the
+// page or a toast, so Details says "‹ Back to results" only when a Find row opened it (h3 B4.1).
+export interface Sheet { kind: SheetKind; id: PlantId | null; n: number; target: SheetFor; from: SheetKind | null }
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'failed';
 export interface Load { status: LoadStatus; error: LoadFailure | null }
 
@@ -674,10 +676,13 @@ let shown: Entry[] = []; // read from the entry shown when watchSteps starts (af
 let st = ''; // the start of the entry shown ('' until watchSteps reads it)
 // The start persist.ts writeAddress stamps on every entry it writes.
 export const startId = (): string => st;
-function pushEntry(kind: Entry): void {
+// False when the browser refused the push (no history, Safari's SecurityError past 100 calls, Firefox's
+// rate limit): the caller stops asking (h3 B2.1).
+function pushEntry(kind: Entry): boolean {
   const pp = [...shown, kind];
-  try { history.pushState({ ...(history.state ?? {}), pp, ...(st ? { st } : {}) }, '', globalThis.location.href); } catch { return; }
+  try { history.pushState({ ...(history.state ?? {}), pp, ...(st ? { st } : {}) }, '', globalThis.location.href); } catch { return false; }
   shown = pp;
+  return true;
 }
 // The sheet entries on top of the page's entries: one per open sheet (h3 R3: one history step per
 // sheet level, so the phone's Back closes the top sheet only, as its "‹ Back to results" does).
@@ -728,7 +733,7 @@ let paletteWaits = false;
 export function pushWaiting(): void {
   if (paletteWaits && step.peek() === 'palette' && !shown.includes('palette')) pushEntry('palette');
   paletteWaits = false;
-  while (sheetEntries(shown) < sheets.peek().length && shown.length < 64) pushEntry('sheet');
+  while (sheetEntries(shown) < sheets.peek().length) if (!pushEntry('sheet')) break;
 }
 // A link opened in the tab: its entry is a new start (state/arrival.ts restores it).
 export function forgetEntries(): void { shown = []; leaving = null; paletteWaits = false; st = newStart(); }
@@ -774,10 +779,11 @@ export function watchSteps(): () => void {
 // stack (Paste's "Search by hand" opens Find in its place).
 const STACKS: readonly SheetKind[] = ['details', 'swap'];
 let opened = 0;
-export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
+// from: the sheet whose control opens this one ('find' from a Find row), null from the page or a toast.
+export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}, from: SheetKind | null = null): void {
   const open = sheets.peek();
   const under = !STACKS.includes(kind) ? [] : open[open.length - 1]?.kind === kind ? open.slice(0, -1) : open;
-  const next: Sheet = { kind, id, n: ++opened, target: { ...FOR_NOTHING, ...target } };
+  const next: Sheet = { kind, id, n: ++opened, target: { ...FOR_NOTHING, ...target }, from };
   if (sheetEntries(shown) <= under.length) pushEntry('sheet');
   sheets.value = [...under, next];
 }

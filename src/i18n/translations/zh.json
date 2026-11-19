@@ -1076,7 +1076,7 @@
   "consortium.line.causeWater": "这里的水分不合它的需要",
   "consortium.line.causeSoil": "这里的土壤 pH 超出它能耐受的范围",
   "consortium.line.short.cold": "夜间太冷",
-  "consortium.line.short.mild": "夜间太暖",
+  "consortium.line.short.mild": "冬季太温和",
   "consortium.line.short.cool": "全年太凉",
   "consortium.line.short.summer": "夏季太凉",
   "consortium.line.short.hot": "夏季太热",

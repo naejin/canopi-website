@@ -60,7 +60,9 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
   useLayoutEffect(() => {
     const d = ref.current;
     if (!d) return;
-    const closed = () => close.current();
+    // A dialog closed only to be shown again on top (restack below) is open again when its `close`
+    // fires (a task later): not a close.
+    const closed = () => { if (!d.open) close.current(); };
     d.addEventListener('close', closed);
     return () => { d.removeEventListener('close', closed); if (d.open) d.close(); };
   }, []);
@@ -71,6 +73,20 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
       {children}
     </dialog>
   );
+}
+
+// Modal dialogs stack in the order showModal is called (the top layer), not in the DOM order, which is
+// the store's order (views/Sheets.tsx renders one dialog per open sheet, bottom first). A sheet whose
+// dialog opens under sheets already open (Find coming back as a sheet under its Details when the window
+// narrows past 960 px; h3 B1.1, C1.1) shows each dialog after it again, in order, so the store's top
+// sheet stays on top and its ×, Escape and backdrop stay its own. The focus goes back where it was in
+// them (`focus`: the element focused before this dialog opened).
+function restack(d: HTMLDialogElement, focus: Element | null): void {
+  const above = [...document.querySelectorAll<HTMLDialogElement>('dialog.ct-sheet')]
+    .filter((x) => x !== d && x.matches(':modal') && d.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING);
+  if (!above.length) return;
+  for (const x of above) { x.close(); x.showModal(); }
+  if (focus instanceof HTMLElement && above.some((x) => x.contains(focus))) focus.focus();
 }
 
 // A sheet whose part is not ready to draw (its chunk, or the pool while the range rule loads): its
@@ -106,8 +122,10 @@ export function SheetFrame({ titleId, head, foot, children, class: cls = '', onC
     room.observe(foot);
     // Opened before the browser paints, named first; a frame replacing the loading frame in the open
     // dialog takes the focus too.
-    if (!d.open) d.showModal();
+    const opening = !d.open, was = document.activeElement;
+    if (opening) d.showModal();
     ref.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    if (opening) restack(d, was);
     return () => {
       room.disconnect();
       d.classList.remove(...own);

@@ -176,9 +176,6 @@ test('BT-6 (S3 adjust; PP-C c2 merge): Swap ("Find one that holds") shows "Also 
       }
       await page.locator(aria('button', 'Find one that holds')).click();
       fills = await findAx(page, { name: /^Also fills/ }, 1500);
-      // Swap is stacked over Details (h3 R4): Escape closes Swap, a second one Details.
-      await page.keyboard.press('Escape');
-      await page.waitForFunction(() => !document.querySelector('dialog.ct-swap[open]'));
       await page.keyboard.press('Escape');
       await page.waitForFunction(() => !document.querySelector('dialog[open]'));
       if (fills) break;
@@ -305,7 +302,7 @@ test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its wa
   assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical', 'the guest joins at once');
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
   assert.ok(await sheetOpen(page), 'the Paste sheet stays');
-  assert.ok(await findAx(page, { name: /^Show the warning for / }), 'the toast\'s Show names the warning (h3 M45, R6)');
+  assert.ok(await findAx(page, { name: /1 added with a warning/ }), 'the toast names the warning');
   assert.ok(await has(page, aria('button', 'Undo')), 'the toast is reachable over the sheet');
 
   // Pear (a member of the suggestion) is taken out, then pasted back in deep shade: it misfits.
@@ -313,8 +310,8 @@ test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its wa
   await page.locator('::-p-aria([role="textbox"])').fill('Pyrus communis');
   await page.locator(aria('button', 'Add 1 plant')).click();
   await pasteDone(page);
-  assert.ok(await findAx(page, { name: /^Show the warning for / }), 'Show names the warning (h3 M45, R6)');
-  await page.locator('.ct-toast .ct-toast-action').click();
+  assert.ok(await findAx(page, { name: /1 added with a warning/ }), '"added with a warning"');
+  await page.locator(aria('button', 'Show')).click();
   assert.ok(await findAx(page, { role: 'dialog' }), 'Show opens the plant');
   await page.close();
 });

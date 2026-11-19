@@ -1076,7 +1076,7 @@
   "consortium.line.causeWater": "이곳의 물이 필요한 조건과 맞지 않습니다",
   "consortium.line.causeSoil": "이곳 토양 pH가 견딜 수 있는 범위를 벗어납니다",
   "consortium.line.short.cold": "밤이 너무 추움",
-  "consortium.line.short.mild": "밤이 너무 따뜻함",
+  "consortium.line.short.mild": "겨울이 너무 따뜻함",
   "consortium.line.short.cool": "연중 너무 서늘함",
   "consortium.line.short.summer": "여름이 너무 서늘함",
   "consortium.line.short.hot": "여름이 너무 더움",

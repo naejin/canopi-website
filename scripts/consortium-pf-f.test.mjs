@@ -454,3 +454,43 @@ test('M38, h3 R1-R4: Details from Find stacks over it; Swap from Details stacks 
   store.backToSheet();
   assert.equal(store.sheet.peek(), null, 'back with nothing under: closed');
 });
+
+// h3 fix round 2, B2.1: a history that refuses pushState (Safari's SecurityError past 100 calls,
+// Firefox's rate limit) never hangs the page: pushWaiting stops at the first refused push.
+test('B2.1 (h3): pushWaiting returns when pushState throws, with sheets above the entries', async () => {
+  const store = await import('../src/islands/consortium/store.ts');
+  const had = Object.getOwnPropertyDescriptor(globalThis, 'history');
+  let calls = 0;
+  Object.defineProperty(globalThis, 'history', { configurable: true, value: { state: null, pushState() { calls++; throw new Error('SecurityError'); }, go() {} } });
+  try {
+    store.closeSheet();
+    store.openFind();
+    store.openSheet('details', 5);
+    assert.equal(store.sheets.peek().length, 2, 'two sheets, no entry pushed');
+    calls = 0;
+    store.pushWaiting(); // a hang here is the bug
+    assert.ok(calls <= 2, `at most one refused push per missing level (${calls})`);
+  } finally {
+    store.closeSheet();
+    if (had) Object.defineProperty(globalThis, 'history', had); else delete globalThis.history;
+  }
+});
+
+// h3 fix round 2, B4.1: "‹ Back to results" only on a Details opened from a Find row (board Details),
+// never on one opened from the page while the desk's Find panel is open, nor on one a toast's Show
+// opened over that Details.
+test('B4.1 (h3): a sheet records where it was opened from; only a Find row\'s Details shows the way back', async () => {
+  const store = await import('../src/islands/consortium/store.ts');
+  store.closeSheet();
+  store.openFind();
+  store.openSheet('details', 5);
+  assert.equal(store.sheet.peek().from, null, 'from the page over the Find panel: from nowhere');
+  store.openSheet('details', 6, {}, 'find');
+  assert.equal(store.sheet.peek().from, 'find', 'from a Find row');
+  store.openSheet('details', 7);
+  assert.equal(store.sheet.peek().from, null, 'a toast\'s Show over it: from nowhere');
+  store.closeSheet();
+  const src = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+  assert.match(src('../src/islands/consortium/views/find/Find.tsx'), /openSheet\('details', t\.id, \{\}, 'find'\)/, 'Find\'s row says it opened Details');
+  assert.match(src('../src/islands/consortium/views/details/Details.tsx'), /from === 'find' && \w+\?\.kind === 'find'/, 'Details shows the link only from Find, over Find');
+});

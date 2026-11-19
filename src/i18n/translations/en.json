@@ -1076,7 +1076,7 @@
   "consortium.line.causeWater": "the water here is not what it needs",
   "consortium.line.causeSoil": "the soil pH here is outside what it takes",
   "consortium.line.short.cold": "nights too cold",
-  "consortium.line.short.mild": "nights too warm",
+  "consortium.line.short.mild": "winters too mild",
   "consortium.line.short.cool": "the year too cool",
   "consortium.line.short.summer": "summers too cool",
   "consortium.line.short.hot": "summers too hot",

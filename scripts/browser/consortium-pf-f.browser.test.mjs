@@ -1120,3 +1120,65 @@ test('PFF36b (pf-f h3 R1, R3, R4): back from a Find row\'s Details keeps Find\'s
   assert.equal(await page.$eval(`${FIND} input[type="search"]`, (i) => i.value), 'almond', 'R4: Find\'s search kept');
   await done(page);
 });
+
+// h3 fix round 2, B1.1 and C1.1: the sheets stack in the store's order whatever order their dialogs
+// open in. Details over the desk's Find panel, then the window narrows past 960 px: Find comes back as
+// a sheet under Details, which stays on top with its "Back to results" and its × working. B4.1: a member's
+// name on the page, while the desk's Find panel is open, opens Details with no way back to results.
+const topSheet = (page) => page.evaluate(() => {
+  const d = document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('dialog');
+  return d ? (d.classList.contains('ct-details') ? 'details' : d.classList.contains('ct-find') ? 'find' : d.className) : null;
+});
+test('PFF36c (pf-f h3 B1.1, C1.1, B4.1): Details over the desk Find panel, then 390 px: Details on top, its back link and × work, Find then shows and answers', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 900 });
+  await page.evaluate(() => window.__ctTest.openFind());
+  const PANEL = 'dialog[data-find-panel]';
+  assert.ok(await has(page, `${PANEL} input[type="search"]`, 10_000), 'the desk Find panel');
+  // B4.1: from the page, no "Back to results".
+  const member = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#ct-root button[data-plant-id]')].find((x) => !x.closest('dialog') && x.getClientRects().length && x.textContent.trim());
+    b?.setAttribute('data-test-member', '');
+    return b?.textContent.trim() ?? null;
+  });
+  assert.ok(member, 'a member\'s name on the page');
+  await page.click('[data-test-member]');
+  assert.ok(await has(page, `${TOP_D} #ct-d-title`, 8000), `Details of ${member}`);
+  await frames(page);
+  assert.equal(await page.$(`${TOP_D} [data-sheet-back]`), null, 'B4.1: opened from the page, no "Back to results"');
+  await page.keyboard.press('Escape');
+  assert.ok(await backNamed(page), 'Escape closes it');
+  assert.ok(await has(page, `${PANEL} input[type="search"]`, 4000), 'the panel stays');
+  // A Find row's Details, then the window narrows.
+  await page.type(`${PANEL} input[type="search"]`, 'fig');
+  assert.ok(await has(page, `${PANEL} [data-find-open]`, 10_000), 'a row to open');
+  await page.click(`${PANEL} [data-find-open]`);
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details over the panel, with "Back to results"');
+  await page.setViewport({ ...page.viewport(), width: 390, height: 800 });
+  assert.ok(await has(page, 'dialog.ct-find:modal', 8000), 'Find is a sheet again');
+  await frames(page);
+  assert.equal(await topSheet(page), 'details', 'C1.1: Details stays on top of Find');
+  await page.click(`${TOP_D} [data-sheet-back]`); // a real click: lands on whatever is on top
+  assert.ok(await backNamed(page), 'its "Back to results" closes it');
+  await frames(page);
+  assert.equal(await topSheet(page), 'find', 'Find shows');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind)), ['find'], 'Find kept in the store');
+  assert.equal(await page.$eval('dialog.ct-find:modal input[type="search"]', (i) => i.value), 'fig', 'its search kept');
+  // Again with the ×: Details from a row at 390, wide then narrow again.
+  await page.click('dialog.ct-find:modal [data-find-open]');
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details again');
+  await page.setViewport({ ...page.viewport(), width: 1280, height: 900 });
+  assert.ok(await has(page, `${PANEL} input[type="search"]`, 8000), 'Find is the panel');
+  await page.setViewport({ ...page.viewport(), width: 390, height: 800 });
+  assert.ok(await has(page, 'dialog.ct-find:modal', 8000), 'Find is a sheet again');
+  await frames(page);
+  assert.equal(await topSheet(page), 'details', 'Details on top again');
+  await page.click(`${TOP_D} .ct-sheet-head .ct-icon-button[aria-label="Close"]`);
+  assert.ok(await backNamed(page), 'its × closes it');
+  await frames(page);
+  assert.equal(await topSheet(page), 'find', 'Find shows');
+  await page.type('dialog.ct-find:modal input[type="search"]', 's');
+  assert.equal(await page.$eval('dialog.ct-find:modal input[type="search"]', (i) => i.value), 'figs', 'and answers the keyboard');
+  await page.click('dialog.ct-find:modal .ct-sheet-head .ct-icon-button[aria-label="Close"]');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog[open]') && !window.__ctTest.store.sheets.value.length, { timeout: 4000 }).then(() => true, () => false), 'Find\'s × closes it: no sheet in the store, no dialog');
+  await done(page);
+});
