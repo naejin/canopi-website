@@ -474,6 +474,6 @@ test('R18: the figures panel reads the year\'s warmth without the range rule: ye
   const strip = (s) => s.replace(/\/\/.*$/gm, '');
   const range = strip(readFileSync(new URL('../src/lib/consortium/range.ts', import.meta.url), 'utf8'));
   assert.doesNotMatch(range, /export\s+(const|function)\s+yearMeanC\b/, 'range.ts does not define it');
-  const figures = strip(readFileSync(new URL('../src/islands/consortium/views/figures/Figures.tsx', import.meta.url), 'utf8'));
-  assert.doesNotMatch(figures, /from ['"][^'"]*\/range(\.ts)?['"]/, 'the figures view names no range module');
+  // (Whether the built figures chunk pulls the range rule in is the browser gates' to say: P5-14g,
+  // P5-26e. A source grep of Figures.tsx could not see an import through index.ts; C8.)
 });

@@ -137,9 +137,8 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   const ms = typeof __CT_TEST_HOOK__ !== 'undefined' && __CT_TEST_HOOK__ ? Number((globalThis as { __ctTimeouts?: { read?: number } }).__ctTimeouts?.read) || READ_TIMEOUT_MS : READ_TIMEOUT_MS;
   try {
     return await Promise.race([
-      // The soil tile too: "Your place in figures" (pf-d) reads its pH and texture (SiteInputs.soilPh,
-      // site-inputs.ts soilTextureOf).
-      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: true }),
+      // No soil here: the place never waits on an optional layer (R1); soilLater() adds it.
+      lookupSite(lat, lon, tileSource(), DEFAULT_RADIUS, { soil: false }),
       new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error(`no answer in ${ms / 1000} s`)), ms); }),
     ]);
   } catch (err) {
@@ -148,6 +147,21 @@ async function read(lat: number, lon: number): Promise<SiteLookup | null> {
   } finally { clearTimeout(timer); }
 }
 
+// The soil map's reading for a site just read, best effort (R1): "Your place in figures" (pf-d) reads
+// its pH and texture (SiteInputs.soilPh, site-inputs.ts soilTextureOf), and says "not known" while it
+// is missing. Asked after the place is in use, so a slow or failed soil tile (about 60 KB each; up to 8
+// neighbours where the point's own cell is empty) never costs the grower the place. The climate and
+// regions tiles it reads again are the tile source's cached ones. Patched in quietly (the page found
+// it, the reader did not act), and only onto the same site's lookup: a newer place drops it.
+function soilLater(site: SiteLocation): void {
+  const was = site.lookup;
+  if (!was) return;
+  lookupSite(site.lat, site.lon, tileSource(), DEFAULT_RADIUS, { soil: true }).then((l) => {
+    const now = store.location.peek();
+    if (!l.soil || !now || now.lookup !== was) return;
+    quietly(() => { store.location.value = { ...now, lookup: { ...was, soil: l.soil } }; });
+  }, (err: unknown) => { console.error(`Consortium: the site's soil could not be read: ${(err as Error).message}`); });
+}
 
 // A position the reader gave (device, search, map): looked up, then the site, its suggestion and its
 // country, in one batch. A failed read or a point at sea changes nothing (seam review 2, 3): a site
@@ -198,6 +212,7 @@ async function locateNow(lat: number, lon: number, source: LocationSource, name:
   // link's climate. Nor over a climate chosen while it was read (by hand, or a link's palette opened meanwhile).
   if (sc.suggested && source !== 'link' && store.climate.peek() === before && !pendingLinkClimate.peek() && (!store.climate.peek() || !sameCell)) chooseClimate(sc.suggested);
   keepLocation(loc);
+  soilLater(loc);
 }
 
 // A location the page brings (restore.ts): a link's `o=` (already in store.location, its lookup to
@@ -229,6 +244,7 @@ export async function settle(how: 'link' | 'saved', savedText: string | null): P
   // The saved place's climate is used at once while none is chosen (not under a link's climate still
   // opening: seam review 5); quiet, as its country: the page brought it, the reader did not act.
   if (how === 'saved' && sc.suggested && !store.climate.peek() && !pendingLinkClimate.peek()) { const z = sc.suggested; quietly(() => chooseClimate(z)); }
+  soilLater(loc);
 }
 
 // ---- the three ways ----

@@ -156,7 +156,9 @@ const focusTo = (id: LineId) => requestAnimationFrame(() => requestAnimationFram
 // drops it, Reset on either line reads it, and it travels with Undo like the values.
 function commit(line: LineId, next: SiteEdits): void {
   const was = store.siteEdits.peek(), wasInputs = store.siteInputs.peek();
-  editing.value = null;
+  // From an editor ("Use my value"): it closes, and the focus goes back to the line's Change, as Cancel
+  // and Reset do, whether or not anything changed (R2, C1); an option tapped in place keeps its focus.
+  if (editing.peek() !== null) { editing.value = null; focusTo(line); }
   // Nothing changed (the same value used again): no write, no toast (M2).
   if (sameEdits(siteEditsOf(next), was)) return;
   store.setSiteEdits(next, ({ ready, failed }) => {
@@ -441,9 +443,10 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const [text, setText] = useState(inp.shift ? editable(Math.abs(inp.shift)) : '');
   const [down, setDown] = useState(inp.shift ? inp.shift < 0 : true);
   const [figure, setFigure] = useState(false);
-  // The tick starts from the stored state: on for a linked pair, or while the days have no value of
-  // their own; a Hottest days value set on its own is never overwritten unasked (M2).
-  const [both, setBoth] = useState(() => { const e = store.siteEdits.peek(); return tempsTogether(e) || e.daysShiftC === undefined; });
+  // The tick starts from the stored state: on for a linked pair, or while neither shift is set; a
+  // Hottest days value set on its own (M2), or Coldest nights set on purpose without the days (R3), is
+  // never overwritten unasked.
+  const [both, setBoth] = useState(() => { const e = store.siteEdits.peek(); return tempsTogether(e) || (e.nightsShiftC === undefined && e.daysShiftC === undefined); });
   const [error, setError] = useState<string | null>(null);
   const field = useRef<HTMLInputElement>(null);
   const id = `fg-${line}`;

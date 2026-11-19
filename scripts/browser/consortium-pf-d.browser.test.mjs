@@ -11,7 +11,8 @@
 //   fix round 2, batch 1: PFD37-PFD40 (R2/C2, R4, R5, R7);
 //   fix round 3, batch 1: PFD41-PFD43 (R2/C5, R3); R1/C1, R4/C3 are unit cases (consortium-pf-d.test.mjs).
 //   h3 G1 (chunk-3 hand-off): PFD32 and PFD42 unmarked (state/location.ts reads the soil tile, M8; the
-//   tempsTogether link in the save's place and the link's f, M1); PFD44-PFD46 (M2, M4).
+//   tempsTogether link in the save's place and the link's f, M1); PFD44-PFD46 (M2, M4);
+//   h3 G1 fix round 1: PFD47-PFD49 (R3; R1, C5; R4, C4), PFD45's focus (R2, C1), PFD18's count cells (C7).
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries none: the panel is new (spec: "Delete: nothing; the 'Soil, likely' card and 'Tell us about
@@ -237,7 +238,9 @@ test('PFD9 (pf-d BC1, BC2, BC7, BC9, BC12; SiteKiambu "The rows with your value"
   const reset = await lookOf(page, 'button', 'Reset coldest nights to the climate map');
   assert.ok(reset, 'board: Reset on the grower\'s value');
   assert.ok(reset.underline && reset.border && reset.color === reset.accent, `board: Reset is the ochre underlined link (${JSON.stringify(reset)})`);
-  await press(page, 'button', 'Hottest days');
+  // Centred first: the focus back on "Change coldest nights" (R2) scrolls the page, and the toast at the
+  // foot of the window can cover a row a plain click would aim at.
+  await tap(page, 'Hottest days');
   const e = await engineSides(page);
   const a = e.sides[0];
   const row = await lineText(page, 'Hottest days');
@@ -478,6 +481,10 @@ test('PFD18 (pf-d R5): a 60-plant palette in a dry place: the limits card counts
   const sentence = p.text.slice(0, p.text.indexOf('Dryness never changes'));
   assert.ok(names.filter((n) => sentence.includes(n)).length <= 3, `board: no run of names past the size rule ("${sentence.slice(0, 300)}")`);
   const water = await sectionBy(page, 'Water', (s) => ({ items: s.querySelectorAll('li').length, more: [...s.querySelectorAll('button')].some((b) => /^\+ \d+ more/.test(b.textContent.trim())), foot: [...s.querySelectorAll('p')].pop()?.innerText.replace(/\s+/g, ' ').trim() ?? '' }));
+  // C7: the folded lists under a sentence that says the count draw no count cell of their own (MoreList count={false}).
+  const cells = await page.evaluate(() => ({ folded: document.querySelectorAll('.fg-names[data-stage="0"], .fg-water-list[data-stage="0"]').length, counts: document.querySelectorAll('.fg-names .ct-more-count, .fg-water-list .ct-more-count').length }));
+  assert.ok(cells.folded >= 1, `C7: a figures list folds past the size rule (${JSON.stringify(cells)})`);
+  assert.equal(cells.counts, 0, 'C7: no MoreList count cell in the figures lists');
   if (water) {
     assert.ok(water.items <= 3 || water.more, `board: the Water card folds past the size rule (${JSON.stringify(water)})`);
     assert.ok(names.filter((n) => water.foot.includes(n)).length === 0, `board: the rest counted, not named ("${water.foot.slice(0, 200)}")`);
@@ -859,6 +866,8 @@ test('PFD32 (pf-d C5, M8): after a real lookup (typed coordinates at Kiambu) the
   const page = await placeStep('kiambu-8', { site: null, width: 390 });
   await searchFor(page, '-1.1714, 36.8356');
   assert.ok(await page.waitForFunction(() => Math.abs((window.__ctTest.store.location.value?.lat ?? 0) + 1.1714) < 0.01 && !!window.__ctTest.store.location.value?.lookup, { timeout: 20_000 }).then(() => true, () => false), 'the typed place is read');
+  // The soil reading follows the place (R1: an optional layer that never holds the place back).
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup?.soil, { timeout: 20_000 }).then(() => true, () => false), 'the soil map\'s reading arrives');
   await section(page, 'Your place in figures', 20_000);
   const drain = await lineText(page, 'The ground after heavy rain');
   assert.match(drain, /^The ground after heavy rain Likely holds water: clay · soil map/, `the soil map's reading after a real lookup ("${drain}")`);
@@ -1141,6 +1150,9 @@ test('PFD45 (pf-d M2): "Use my value" on an unchanged linked Hottest days change
   await tap(page, 'Change hottest days');
   await tap(page, 'Use my value');
   await new Promise((r) => setTimeout(r, 600));
+  // R2, C1: the editor closed with nothing changed gives the focus back to the line's Change (as Cancel does).
+  const at = await focused(page);
+  assert.equal(at.name, 'Change hottest days', `R2/C1: the focus is back on the line's Change (${JSON.stringify(at)})`);
   assert.deepEqual(await edits(page), before, 'M2: the edits are the same, the link kept');
   assert.equal(await page.evaluate(() => window.__ctTest.store.toast.value?.text ?? null), null, 'M2: no toast for no change');
   await says(page, '2 °C warmer, set with coldest nights');
@@ -1148,6 +1160,89 @@ test('PFD45 (pf-d M2): "Use my value" on an unchanged linked Hottest days change
   await tap(page, 'Change coldest nights');
   assert.equal(await tickOn(page), true, 'M2: the linked pair: the tick on');
   await done(page);
+});
+
+test('PFD47 (pf-d R3): Coldest nights set on their own (the tick off) stay on their own: the nights editor opens again with the tick off, and a new nights value leaves the hottest days unset and unlinked', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  let id = await toastId(page);
+  await tap(page, 'Change coldest nights');
+  assert.equal(await tickOn(page), true, 'nothing set yet: the tick starts on');
+  await page.evaluate(() => document.querySelector('main fieldset input[type="checkbox"]')?.click());
+  assert.equal(await tickOn(page), false, 'the grower unticks it');
+  await typeAt(page, '2');
+  await tap(page, 'Use my value');
+  await nextSummary(page, id);
+  assert.deepEqual(await edits(page), { nightsShiftC: -2 }, 'the nights alone');
+  id = await toastId(page);
+  await tap(page, 'Change coldest nights');
+  assert.equal(await tickOn(page), false, 'R3: the nights set on their own: the tick starts off');
+  await typeAt(page, '3');
+  await tap(page, 'Use my value');
+  await nextSummary(page, id);
+  assert.deepEqual(await edits(page), { nightsShiftC: -3 }, 'R3: the days still unset, no link');
+  await done(page);
+});
+
+test('PFD48 (pf-d R1, C5): the soil tile is optional: with every soil tile failing, typed coordinates at Kiambu are still read (climate, place) and Soil pH says the map\'s value is not known; the soil tile\'s bytes and the lookup time are reported', async () => {
+  // The cost of the soil layer on one real lookup (C5; reported, never a gate): bytes and ms with the
+  // soil tiles, then with them blocked.
+  const tiles = async (page) => page.evaluate(() => performance.getEntriesByType('resource').filter((e) => /\/data\/climate\//.test(e.name)).map((e) => ({ layer: e.name.split('/').at(-2), bytes: e.encodedBodySize || e.transferSize })));
+  const lookup = async (page) => {
+    const t0 = Date.now();
+    await searchFor(page, '-1.1714, 36.8356');
+    const read = await page.waitForFunction(() => Math.abs((window.__ctTest.store.location.value?.lat ?? 0) + 1.1714) < 0.01 && !!window.__ctTest.store.location.value?.lookup, { timeout: 20_000 }).then(() => true, () => false);
+    return { read, ms: Date.now() - t0 };
+  };
+  const ok = await placeStep('kiambu-8', { site: null, width: 390 });
+  const a = await lookup(ok);
+  assert.ok(a.read, 'the typed place is read');
+  const t1 = Date.now();
+  assert.ok(await ok.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup?.soil, { timeout: 20_000 }).then(() => true, () => false), 'the soil reading arrives after the place');
+  const soil = (await tiles(ok)).filter((x) => x.layer === 'soil');
+  console.log(`# PFD48 (C5, reported): soil tiles ${soil.length}, ${soil.reduce((n, x) => n + x.bytes, 0)} bytes; place read in ${a.ms} ms, its soil ${Date.now() - t1} ms after`);
+  await done(ok);
+
+  const page = await placeStep('kiambu-8', { site: null, width: 390 });
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setBlockedURLs', { urls: ['*/data/climate/*/soil/*'] });
+  const b = await lookup(page);
+  assert.ok(b.read, 'R1: the place is read with every soil tile failing');
+  console.log(`# PFD48 (C5, reported): place read without soil in ${b.ms} ms`);
+  assert.notEqual(await page.evaluate(() => document.querySelector('.ct-location [data-location-state]')?.getAttribute('data-location-state') ?? null), 'failed', 'R1: the location line does not say the place could not be read');
+  await section(page, 'Your place in figures', 20_000);
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(await page.evaluate(() => window.__ctTest.store.location.value?.lookup?.soil ?? null), null, 'no soil reading');
+  assert.doesNotMatch(await lineText(page, 'Soil pH'), /soil map/, 'R1: Soil pH has no map value');
+  await done(page);
+});
+
+// The page's own shifts when the panel lands: the release line and the footer under it, or the panel.
+// (The location line's own moves when a saved place is read, ct-country and ct-location-result, are
+// the Place form's: reported, not counted here.)
+const panelMove = (m) => /site-footer|tool-release|fg-/.test(m);
+test('PFD49 (pf-d R4, C4): a Start with a climate kept on this device (the guides\' canopi-climate), or a saved location, does not move when "Your place in figures" arrives: CLS 0.01 or less at 390 and 1280 px', async () => {
+  const over = [];
+  const cases = [['kept climate', { 'canopi-climate': 'temperate' }], ['saved location', { 'canopi-location': JSON.stringify({ lat: -1.1714, lon: 36.8356, source: 'map' }) }]];
+  for (const [what, entries] of cases) for (const width of [390, 1280]) {
+    const page = await withStorage(entries, '/palette/', { width });
+    // Each layout shift after the first paint, with the nodes it moved (a warm load: the page reloaded).
+    await page.evaluateOnNewDocument(() => {
+      window.__moves = [];
+      new PerformanceObserver((l) => window.__moves.push(...l.getEntries().map((e) => `${e.value.toFixed(3)} at ${Math.round(e.startTime)} ms by ${e.sources?.map((x) => x.node?.className || x.node?.nodeName).join(', ')}`))).observe({ type: 'layout-shift', buffered: true });
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await section(page, 'Your place in figures', 20_000);
+    await new Promise((r) => setTimeout(r, 800));
+    const moves = await page.evaluate(() => window.__moves);
+    const sum = (ms) => ms.reduce((n, m) => n + Number(m.split(' ')[0]), 0);
+    const ours = moves.filter(panelMove);
+    console.log(`# PFD49 (reported): ${what}, ${width} px: CLS ${sum(moves).toFixed(4)}, of it the panel's ${sum(ours).toFixed(4)} (${moves.join('; ') || 'no shift'})`);
+    if (sum(ours) > 0.01) over.push({ at: `${what}, ${width} px`, sum: sum(ours).toFixed(3), moves: ours });
+    await done(page);
+  }
+  assert.deepEqual(over, [], 'R4: Start does not move when the figures panel arrives');
 });
 
 test('PFD46 (pf-d M4): a one-plant palette drier here only later reads "your one plant", never "your 1 plants"', async () => {
