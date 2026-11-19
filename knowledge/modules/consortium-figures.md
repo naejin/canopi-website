@@ -3,18 +3,18 @@ type: Module
 title: Plant palette figures panel
 description: The PP-C pf-d panel that shows every site input the Plant palette checks read, what limits plants at a place, and the summary of what an edit changed.
 tags: [consortium, module]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:08:19Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:21Z }
 sources:
   - id: figures-tsx
     resource: ../../src/islands/consortium/views/figures/Figures.tsx
     title: src/islands/consortium/views/figures/Figures.tsx
-    digest: sha256:b9d99261f4a1d46d
-    last_modified: 2026-11-19T09:31:51Z
+    digest: sha256:73df3b0ef8b5c317
+    last_modified: 2026-11-19T11:24:03Z
   - id: slots-tsx
     resource: ../../src/islands/consortium/views/figures/slots.tsx
     title: src/islands/consortium/views/figures/slots.tsx
-    digest: sha256:39f84bf5b5f32d6c
-    last_modified: 2026-11-19T09:14:39Z
+    digest: sha256:7c68ea9bff16f064
+    last_modified: 2026-11-19T11:24:03Z
   - id: site-change-ts
     resource: ../../src/lib/consortium/site-change.ts
     title: src/lib/consortium/site-change.ts
@@ -33,18 +33,18 @@ sources:
   - id: figures-css
     resource: ../../src/styles/consortium/figures.css
     title: src/styles/consortium/figures.css
-    digest: sha256:ebe1bdc97292a5bc
-    last_modified: 2026-11-19T04:40:24Z
+    digest: sha256:91a8e9ccd407316c
+    last_modified: 2026-11-19T10:56:24Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
-    digest: sha256:4a06fb6b7b9ebd0b
-    last_modified: 2026-11-19T09:14:39Z
+    digest: sha256:59ecfbc3a59f1adf
+    last_modified: 2026-11-19T11:54:48Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:1a26e12f3f5b35d0
-    last_modified: 2026-11-19T09:14:39Z
+    digest: sha256:0b89a2579cb86fe6
+    last_modified: 2026-11-19T10:56:43Z
   - id: consortium-pf-d-test-mjs
     resource: ../../scripts/consortium-pf-d.test.mjs
     title: scripts/consortium-pf-d.test.mjs
@@ -53,8 +53,8 @@ sources:
   - id: consortium-pf-d-browser-test-mjs
     resource: ../../scripts/browser/consortium-pf-d.browser.test.mjs
     title: scripts/browser/consortium-pf-d.browser.test.mjs
-    digest: sha256:ef669de98d91fa9a
-    last_modified: 2026-11-19T09:31:51Z
+    digest: sha256:88adafe0ef4833ca
+    last_modified: 2026-11-19T11:24:03Z
 ---
 
 # Plant palette figures panel (PP-C pf-d)
@@ -77,8 +77,9 @@ the h3 fix rounds and chunk 4 (C2). Related: [Site inputs](/modules/consortium-s
 
 ## When the panels stand
 - **Your place in figures** (`slots.tsx` `PlaceFigures`, R16): only once there is a place to say figures for, a location or a chosen climate (spec F5: with a climate and no location its soil and water lines can still be set). On Start before either, nothing is drawn, so the panel never lands after the first paint and pushes the page down.
-- **The slot reserve** (PFD49; chunk 4 C2 R5): the slot (`.fg-slot`, `display: contents`) stands as soon as the panel is due (a place, a climate, or a kept location still being looked up, `locationAtStart`) and stays empty while the data, the place and the chunk come. `base.css` keeps `#ct-root` a small-viewport screen tall (`100svh`) while `.fg-slot` is empty, and before the island renders when the head carries `data-kept` (set by the inline head script in `ConsortiumPage.astro` when `persist.ts` `LOCATION_STORE` or `SITE_CLIMATE` is in localStorage, or the page opens as a palette), so the release line and the footer never move when the panel lands. A fresh Start or a short state keeps no screen-tall gap.
-- **What limits plants here** (chunk 4 T15, ruling GR-B7 vs T15): drawn only where a line limits (`limitsOf` not empty) or a member is drier here than where it is recorded (`drierFrom`); boards Palette and Main draw no card. Its memory is a module signal `lastAnswer` (`{ key, limiting }`), written by an effect each time the checks are ready, keyed by climate and location (`placeKey`); `limitShown` is computed: the live answer when ready, else the last answer for the same key, else shown. So while the checks count again after an edit made in the card, the card and its open editor stay; before any answer (the first count, or checks that could not run) the card shows its counting or failed state, never left out (unknown is never a hole).
+- **The slot reserve** (PFD49; chunk 4 C2 R5): the slot (`.fg-slot`, `display: contents`) stands as soon as the panel is due (a place, a climate, or a kept location still being looked up, `locationAtStart`) and stays empty while the data, the place and the chunk come. `base.css` keeps `#ct-root` a small-viewport screen tall (`100svh`) while `.fg-slot` is empty, and before the island renders when the head carries `data-kept` (set by the inline head script in `ConsortiumPage.astro` when `persist.ts` `LOCATION_STORE` or `SITE_CLIMATE` is in localStorage, or the page opens as a palette), so the release line and the footer never move when the panel lands. A fresh Start or a short state keeps no screen-tall gap. If the `figures` chunk does not load, each part says so in place with Reload (`retryableImport`, `lazyPart` `retry`), which asks again in place (and by itself once back online), so a slot is never left empty for good and its reserve ends (PFD61).
+- **What limits plants here** (chunk 4 T15, ruling GR-B7 vs T15; follow-up F1): `slots.tsx` asks for its part only at a located place with climate figures (`location.lookup` and a nights value), so a failed chunk is said where the card would stand. Its memory is the card's own **visit** (`PaletteLimits`, a `useRef` `Visit` `{ key, pool, answered, limited, rows }`), begun again for each place (`placeKey`, climate and location) and loaded list, and ended when the palette leaves the screen (the component unmounts). Before a ready count it shows its counting or failed line (never left out: unknown is never a hole); a ready count with no limiting line (`limitsOf` empty, no member drier here, `drierFrom`) leaves it out (boards Palette and Main draw no card). Once a count found a limiting line the card stays for the visit with every row it showed: a row that no longer limits says "Not a limit for this list." (`notLimitNights` / `notLimitDays` / `notLimitHead`), and with none left the card says "No climate line limits plants here." (`limitsNone`), so an edit made in the card never takes it, or the focused row, from under the reader.
+- **The phone's closed card** (RULED (a), pf-decisions 2026-11-19, Palette vs SiteMendoza 390): below 640 px the card stands closed to its head and one line (`.fg-limits-short`): the main limit (`limitSummary`, `figures.limitsSummary`; warmth over the year by the year's mean, today → 2071–2099, `limitsWarmth`), else "No climate line limits plants here." with the members drier here (`limitsDry`); the disclosure says "Show the N limits" (`limitsShow`, N = `limitsOf` plus one for the drier members), "Show more" (`limitsShowAll`) with none now, "Hide the limits" open; the Water card closes with it (`figures.css`). Open for this visit only; from 640 px the card is open and the disclosure is not drawn.
 
 ## Rules
 - Every count comes from the verdict engine on the store's inputs, never a board number (browser helpers `scripts/browser/pf-d-helpers.mjs` `engineCounts`).
@@ -106,4 +107,4 @@ the h3 fix rounds and chunk 4 (C2). Related: [Site inputs](/modules/consortium-s
 - The soil pH and texture come from the soil tile read after the place (`state/location.ts` `soilLater`, h3 G1); a failed or slow soil tile leaves them "not known".
 
 ## Tests
-`scripts/consortium-pf-d.test.mjs` (core counts and words), `scripts/browser/consortium-pf-d.browser.test.mjs` (boards SiteKiambu, PlaceDesk, SiteMendoza; PFD49 the slot reserve).
+`scripts/consortium-pf-d.test.mjs` (core counts and words), `scripts/browser/consortium-pf-d.browser.test.mjs` (boards SiteKiambu, PlaceDesk, SiteMendoza; PFD49 the slot reserve; PFD53, PFD55, PFD59 the limits card's visit; PFD60, PFD62, PFD63 the phone's closed card; PFD61 a failed chunk).

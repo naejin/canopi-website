@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:32:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:25Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:17Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:18Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:a538a910e23fe773
-    last_modified: 2026-11-19T11:32:18Z
+    digest: sha256:0cefe18b949ed6ef
+    last_modified: 2026-11-19T11:54:48Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -119,7 +119,7 @@ sources:
     resource: ../../scripts/browser/pf-d-helpers.mjs
     title: scripts/browser/pf-d-helpers.mjs
     digest: sha256:0bfaee57e84a649d
-    last_modified: 2026-11-19T11:32:18Z
+    last_modified: 2026-11-19T11:24:03Z
   - id: consortium-pf-env-mjs
     resource: ../../scripts/consortium-pf-env.mjs
     title: scripts/consortium-pf-env.mjs

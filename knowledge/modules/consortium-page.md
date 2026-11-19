@@ -2,7 +2,7 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:32:44Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:22Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:18Z }
@@ -45,8 +45,8 @@ sources:
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
-    digest: sha256:d02c86c1bba5f4a2
-    last_modified: 2026-11-19T11:32:18Z
+    digest: sha256:59ecfbc3a59f1adf
+    last_modified: 2026-11-19T11:54:48Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -270,8 +270,8 @@ sources:
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
-    digest: sha256:4503bd9fcfb54986
-    last_modified: 2026-11-19T10:56:43Z
+    digest: sha256:8e5de3eb8b4c7b69
+    last_modified: 2026-11-19T11:54:48Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts
@@ -301,7 +301,7 @@ sources:
     resource: ../../scripts/browser/consortium-e6.browser.test.mjs
     title: scripts/browser/consortium-e6.browser.test.mjs
     digest: sha256:b209a5df912829cc
-    last_modified: 2026-11-19T11:32:18Z
+    last_modified: 2026-11-19T11:24:03Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -520,7 +520,8 @@ Place no longer asks the spot questions (light, soil, water; dormant until PP-F,
 ## Chunks 3 and 4 (PP-C, 2026-11-18 to 2026-11-19)
 
 - **Every palette stylesheet is page-level** (chunk-3 M12): `ConsortiumPage.astro` imports `palette-page.css`, `place.css`, `plants.css`, `find.css` and `figures.css` (the [figures panel](/modules/consortium-figures.md)), besides `base.css`, `details.css`, `shell.css`, `print.css` and the P5 sheets; no stylesheet loads with a lazy chunk (check-built-site A14). `.ct-plant-go` lives in `plants.css` and `.ct-name-open` in `find.css` (chunk 4 T11).
-- **The head script's `data-kept`** (chunk 4 C2 R5): the inline script in the page head sets `#ct-head[data-kept]` when `persist.ts` `LOCATION_STORE` or `SITE_CLIMATE` is in localStorage, or the page opens as a palette; `base.css` then keeps `#ct-root` a screen tall (`100svh`) until the island renders, and while the figures slot (`.fg-slot`) is empty, so the release line and the footer never move when a late part lands (PFD49). Otherwise `#ct-root` keeps `min-height: 60vh`.
+- **The head script's `data-kept`** (chunk 4 C2 R5): the inline script in the page head sets `#ct-head[data-kept]` when `persist.ts` `LOCATION_STORE` or `SITE_CLIMATE` is in localStorage, or the page opens as a palette; `base.css` then keeps `#ct-root` a screen tall (`100svh`) until the island renders, and while the figures slot (`.fg-slot`) inside the shown Place is empty, so the release line and the footer never move when a late part lands (PFD49). Otherwise `#ct-root` keeps `min-height: 60vh`.
+- **Language-robust layout** (2026-11-19, follow-up F2; [convention](/conventions/palette-language-robust-layout.md)): the page head's step bar (`#ct-steps`, `shell.css`) keeps one line from 320 px, the other steps' words ending in an ellipsis, with no `title` (the words stay in the page, so the accessible name is whole); `base.css` holds the `.ct:lang(ja|zh|ko)` breaking rules and system faces, `hyphens: auto` for de, nl and ru, and `hyphens: manual` on every scientific name (`.ct-sci`, `:lang(la)`). Checked by `consortium-seams-layout.browser.test.mjs` L1-L3 and N2 late fonts in all 11 locales.
 - **Sheets stack** (h3 R1-R4, chunk 4 T7, T8): `store.sheets` (bottom first), `sheet`, `sheetBack`, `findSheet`, `sheetTarget`; `openSheet(kind, id, target, from)` stacks a plant's sheet over another kind and keeps `from` when it replaces its own kind; `views/kit/sheet.tsx` ignores the `close` events of its own restacks (`restacking` WeakMap). Details in the [palette page](/modules/consortium-palette-page.md) "Sheets" section.
 - **Toast buttons** (h3 R5, M45): the action (Show) comes before Undo; the action is `.ct-toast-action`, Undo alone `.ct-toast-undo` (`views/Toast.tsx`).
 - **Browser test helpers**: `scripts/browser/seams-helpers.mjs` `controls()` measures a stretched `::after` target by its offset parent (chunk 4 T11, W6); `scripts/browser/pf-helpers.mjs` holds the shared list-refusal helpers (`refuseGuestList`, `holdGuestList`).

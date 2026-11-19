@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:32:46Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:24Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
@@ -160,17 +160,17 @@ sources:
     resource: ../../src/islands/consortium/views/figures/Figures.tsx
     title: src/islands/consortium/views/figures/Figures.tsx
     digest: sha256:73df3b0ef8b5c317
-    last_modified: 2026-11-19T11:32:18Z
+    last_modified: 2026-11-19T11:24:03Z
   - id: slots-tsx
     resource: ../../src/islands/consortium/views/figures/slots.tsx
     title: src/islands/consortium/views/figures/slots.tsx
     digest: sha256:7c68ea9bff16f064
-    last_modified: 2026-11-19T11:32:18Z
+    last_modified: 2026-11-19T11:24:03Z
   - id: figures-css
     resource: ../../src/styles/consortium/figures.css
     title: src/styles/consortium/figures.css
     digest: sha256:91a8e9ccd407316c
-    last_modified: 2026-11-19T11:32:18Z
+    last_modified: 2026-11-19T10:56:24Z
 enforced_by:
   - scripts/browser/consortium-pp-b2.browser.test.mjs
   - scripts/consortium-pf-b.test.mjs
@@ -184,7 +184,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 
 | Part | File | What it shows |
 |---|---|---|
-| Header steps | page head (`ConsortiumPage.astro` `#ct-steps`), `views/place/steps.tsx` | Your place, Your palette, Planting plan: static markup that shows before the island, never rendered again by it (h3 M13, BC1: no second render root over static markup); `markStep` sets the head's `data-step` and `aria-current`, and `state/draft.ts` `leavePalette` / `showPalette` move between the steps |
+| Header steps | page head (`ConsortiumPage.astro` `#ct-steps`), `views/place/steps.tsx` | Your place, Your palette, Planting plan: static markup that shows before the island, never rendered again by it (h3 M13, BC1: no second render root over static markup); `markStep` sets the head's `data-step` and `aria-current`, and `state/draft.ts` `leavePalette` / `showPalette` move between the steps; one line from 320 px, the other steps' words cut with an ellipsis ([language-robust layout](/conventions/palette-language-robust-layout.md)) |
 | Next step | `views/palette/NextStep.tsx` | the first open hole in words and years (`holeWords` = lane name + `holeLine`), its best three fillers with fit line and one-tap Add; fillers grouped by fit (fits, "Needs a second look (n)", "Not checked (n)"); the no-fit sentence only when core `noneFits` (no plant fits and none unchecked; pf-a R3); See all whenever there are plants to see, Not now (`store.notNow`, never saved), the other holes with Find; outside-range fillers behind "Show N outside their climate range"; a dry place adds `dryIntroLine` to the why sentence; the room note ("Balcony or pots.") sits above the card, not in it (BC32); the empty palette is a card of three bordered ways with a note under it counting the plants that fit near the place (BC33) |
 | Through the years | `views/palette/Years.tsx`, `rules/picture-years.ts` | one lane per light level (and "not recorded"); phone (max-width 639px): one time step with Earlier / Later writing `store.yearStep` and announcing `changeSummary` |
 | Jobs | `views/palette/JobsPicture.tsx` (reads `store.lanes`: holes.ts laneCounts' `counted` and `outside` per lane) | one lane per job (and "no job recorded") |
