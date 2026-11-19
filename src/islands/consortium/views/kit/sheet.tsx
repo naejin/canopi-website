@@ -1,18 +1,16 @@
 /** @jsxImportSource preact */
 // The parts every sheet shares (moved from Details.tsx; E6 design check §3 K1), so the sheets loaded
 // on first use (Swap, Paste, Correction; Find from PP-C c1) import the kit and not the plant dialog's module (cycle
-// C4): the sheet frame, the stage bar of a sheet row, and "Not checked in
+// C4): the sheet frame and "Not checked in
 // {country}". Sheets are native <dialog>s opened with showModal (focus moves in, the page behind is
 // inert, Escape closes). A leaf (E6 design check L5): what closes a sheet and its toast region come
 // in as props from views/Sheets.tsx, the only caller of SheetDialog and SheetFrame, which hands each
 // sheet part its frame.
 import type { ComponentChildren, ComponentType } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import type { Taxon } from '../../../../lib/consortium/index.ts';
-import { phases, spanOf } from '../../../../lib/consortium/index.ts';
 import { T } from '../../strings.ts';
 import { CLOSE } from './icons.tsx';
-import { countryName, spanWords } from './names.ts';
+import { countryName } from './names.ts';
 // The modules every sheet chunk shares, imported through here so they ship in the first run (review
 // 2, E6-5d): a sheet chunk's retry (core retry-import.ts) mends the chunk itself only, and a shared
 // chunk whose first fetch failed would stay failed for the page's life (Chromium's module map), and
@@ -21,26 +19,18 @@ import { countryName, spanWords } from './names.ts';
 // leaves it in a chunk of its own (1.2 KB gzip moved to the first run). Object.freeze keeps every
 // property (Rollup drops the properties of a plain object literal that no module reads, and the sheets
 // read these from their modules, not from here), so check-built-site's K3 rule finds no sheet chunk
-// importing them. The search (data/search.ts and core fold.ts) is not here: Find and Paste are one
-// chunk (views/find/, PP-C c1), the only readers of it, so it ships with them and never in the first
-// run (design check c1 6.2).
+// importing them. The search (data/search.ts) is not here: Find and Paste are one chunk (views/find/,
+// PP-C c1), its only readers, so it ships with them (design check c1 6.2). Core fold.ts is: Your
+// plants' search (the palette chunk, views/plants/model.ts) folds names too, and a module two lazy
+// chunks share would otherwise be split into a lazy chunk of its own that Find imports (K3; about
+// 0.4 KB gzip moved to the first run, reported).
+import { fold } from '../../../../lib/consortium/index.ts';
 import { flagLines, unknownWords } from './flags.ts';
 // The fit line (kit/fit.tsx), read by the sheets and the palette page (inform, don't block; owner 2026-11-14).
 import { FitLine } from './fit.tsx';
-export const shared = Object.freeze({ flagLines, unknownWords, FitLine });
+export const shared = Object.freeze({ flagLines, unknownWords, FitLine, fold });
 
 export { BACK, WARN } from './icons.tsx';
-
-// The seven-segment stage bar, its span filled, with the span words as its name (mockup 05).
-// run: the stages a sheet was opened for (a run of cells), marked `cur` (X2).
-export function Bar({ taxon, run = null }: { taxon: Taxon; run?: { from: number; to: number } | null }) {
-  const s = spanOf(taxon);
-  return (
-    <span class="ct-bar" role="img" aria-label={spanWords(taxon)}>
-      {phases.map((_, i) => <i class={`${s && s.from <= i && i <= s.to ? 'on' : ''}${run && run.from <= i && i <= run.to ? ' cur' : ''}`} />)}
-    </span>
-  );
-}
 
 // "Not checked in {country}": once per view (the Find and Swap sheets' top line, the dialog).
 // ctx: the store's flag context (store.flagContext).
@@ -70,7 +60,9 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
   useLayoutEffect(() => {
     const d = ref.current;
     if (!d) return;
-    const closed = () => close.current();
+    // A dialog closed only to be shown again on top (restack below) is open again when its `close`
+    // fires (a task later): not a close.
+    const closed = () => { if (!d.open) close.current(); };
     d.addEventListener('close', closed);
     return () => { d.removeEventListener('close', closed); if (d.open) d.close(); };
   }, []);
@@ -81,6 +73,20 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
       {children}
     </dialog>
   );
+}
+
+// Modal dialogs stack in the order showModal is called (the top layer), not in the DOM order, which is
+// the store's order (views/Sheets.tsx renders one dialog per open sheet, bottom first). A sheet whose
+// dialog opens under sheets already open (Find coming back as a sheet under its Details when the window
+// narrows past 960 px; h3 B1.1, C1.1) shows each dialog after it again, in order, so the store's top
+// sheet stays on top and its ×, Escape and backdrop stay its own. The focus goes back where it was in
+// them (`focus`: the element focused before this dialog opened).
+function restack(d: HTMLDialogElement, focus: Element | null): void {
+  const above = [...document.querySelectorAll<HTMLDialogElement>('dialog.ct-sheet')]
+    .filter((x) => x !== d && x.matches(':modal') && d.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING);
+  if (!above.length) return;
+  for (const x of above) { x.close(); x.showModal(); }
+  if (focus instanceof HTMLElement && above.some((x) => x.contains(focus))) focus.focus();
 }
 
 // A sheet whose part is not ready to draw (its chunk, or the pool while the range rule loads): its
@@ -116,8 +122,10 @@ export function SheetFrame({ titleId, head, foot, children, class: cls = '', onC
     room.observe(foot);
     // Opened before the browser paints, named first; a frame replacing the loading frame in the open
     // dialog takes the focus too.
-    if (!d.open) d.showModal();
+    const opening = !d.open, was = document.activeElement;
+    if (opening) d.showModal();
     ref.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    if (opening) restack(d, was);
     return () => {
       room.disconnect();
       d.classList.remove(...own);

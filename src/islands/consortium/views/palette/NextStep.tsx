@@ -26,7 +26,7 @@ import { WARN } from '../kit/icons.tsx';
 import { MoreList } from '../kit/more.tsx';
 import { coords, listName, num } from '../kit/names.ts';
 import { countKind } from '../../rules/suggest-block.ts';
-import { addedWords, HoleRow, holeFillerParts, holeFillers, Marks, openFillers, PLUS, rowRoles, rowSize, sentenceCase } from '../rows.tsx';
+import { addedWords, HoleRow, holeFillerParts, holeFillers, Marks, openFillers, PLUS, rowRain, rowRoles, rowSize, sentenceCase } from '../rows.tsx';
 
 // The double tap (F19): a second tap within the window adds nothing, whatever the card shows by then.
 const TAP_MS = 800;
@@ -371,7 +371,7 @@ function Filler({ t, v, hole, open, look = false }: { t: Taxon; v: PlantVerdict 
   const light = hole.kind === 'job' ? open.find((h) => h.kind === 'light' && fills(h, t))?.stratum ?? null : null;
   const reason = say(fillReasonLine(hole, yearsOf(t), { light, holes: store.holeFillCount(t) }));
   const own = jobsOf(t), drop = hole.job && own.includes(hole.job) ? hole.job : null;
-  const meta = [rowRoles(own.filter((j) => j !== drop), !!drop), rowSize(t)].filter(Boolean).join(' · ');
+  const meta = [rowRoles(own.filter((j) => j !== drop), !!drop), rowSize(t), rowRain(t)].filter(Boolean).join(' · ');
   const room = roomNote(t.traits.height_m?.max ?? null, store.room.value);
   // BC16 (boards Main, Palette): the row's words at the left, its outline "+ Add" at the right.
   return (

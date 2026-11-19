@@ -41,9 +41,11 @@ function Row({ t, note }: { t: Taxon; note?: string }) {
   const span = rowSpan(t), jobs = jobsOf(t);
   return (
     <li data-plant-id={t.id}>
-      {/* Its name names the button; the lines under it describe it (a short name to find and press). */}
-      <button type="button" class="ct-plant-open" aria-label={nameOf(t)} aria-describedby={`ct-pr-${t.id}`} onClick={() => store.openSheet('details', t.id)}>
-        <span class="ct-plant-name"><strong>{nameOf(t)}</strong> <i lang="la" class="ct-sci">{t.canonical_name}</i></span>
+      {/* The button holds the plant's name only, so its accessible name is the text it shows (R14, WCAG
+          2.5.3); the scientific name and the lines after it describe it, and the button's stretched
+          ::after (details.css .ct-plant-go) keeps the whole row one tap target. */}
+      <div class="ct-plant-open">
+        <span class="ct-plant-name"><button type="button" class="ct-plant-go" aria-describedby={`ct-ps-${t.id} ct-pr-${t.id}`} onClick={() => store.openSheet('details', t.id)}><strong>{nameOf(t)}</strong></button> <i lang="la" class="ct-sci" id={`ct-ps-${t.id}`}>{t.canonical_name}</i></span>
         <span class="ct-plant-more" id={`ct-pr-${t.id}`}>
           {/* The icon and its words never part: the words wrap beside the icon, not under it (Recife). */}
           <span class="ct-line ct-plant-light">{t.stratum && <LightIcon stratum={t.stratum.value} />}<span>{lightWords(t).plantedIn}{span ? ` · ${span}` : ''}</span></span>
@@ -57,7 +59,7 @@ function Row({ t, note }: { t: Taxon; note?: string }) {
           {note && <span class="ct-line ct-plant-why">{note}</span>}
         </span>
         {CHEVRON}
-      </button>
+      </div>
     </li>
   );
 }

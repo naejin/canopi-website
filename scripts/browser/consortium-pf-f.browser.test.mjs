@@ -21,12 +21,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { aria, en, has, useHarness } from './helpers.mjs';
 import { boardPalette } from './pf-b-helpers.mjs';
-import { LIGHT, dialogText, done, frames, says, setSiteEdits } from './pf-helpers.mjs';
+import { LIGHT, dialogText, done, frames, openMore, says, setSiteEdits } from './pf-helpers.mjs';
 
 useHarness();
 
 const core = await import('../../src/lib/consortium/holes.ts');
-const { gapLines, jobsOf, laterLossOf, rowBandOf, yearsOf } = await import('../../src/lib/consortium/index.ts');
+const { gapLines, jobsOf, rowBandOf, yearsOf } = await import('../../src/lib/consortium/index.ts');
+// The hold predicates are the verdict rule's (M29), beside holdsBy.
+const { laterLossOf } = await import('../../src/lib/consortium/verdict.ts');
 // A core Line in the en words (strings.ts P for a count: its plural form, # the number; then the vars and parts).
 function sayEn(l) {
   let text = en[l.key];
@@ -113,6 +115,24 @@ const drainSay = (d) => { const w = DRAIN_EN(d); return `Drainage: ${w.charAt(0)
 // A plant's data changed in place for a fixture case (the taxon the store hands out), then the verdicts
 // asked again (a site edit), so every part reads the changed plant.
 const patchTaxon = (page, id, patch) => page.evaluate((pid, p) => { const s = window.__ctTest.store, t = s.taxonOf(pid); for (const [k, v] of Object.entries(p)) t[k] = typeof v === 'object' && v && !Array.isArray(v) && t[k] && typeof t[k] === 'object' ? { ...t[k], ...v } : v; }, id, patch);
+
+// M40: what "Set my own soil pH" leads to, as the grower sees it: the figures' soil pH line open on the
+// page (never store.figureLine, which the panel resets once it has opened the line).
+const soilLineOpen = (page) => page.waitForFunction(() => document.querySelector('[data-fg-line="soilPh"]')?.classList.contains('fg-line-open') ?? false, { timeout: 8000 }).then(() => true, () => false);
+const bloomM = await import('../../src/islands/consortium/views/details/bloom.ts');
+const { placementZone } = await import('../../src/lib/consortium/index.ts');
+
+// A serious shared pest between a member and another member with no conflict yet (one flag per other
+// member: its worst row), added to the page's interaction list as a fixture row, so it is the one said.
+// Returns the other member's name.
+const seriousConflict = (page, id) => page.evaluate((pid) => {
+  const s = window.__ctTest.store, a = s.taxonOf(pid), z = s.climate.value;
+  const taken = new Set(s.flagsOfPlant(a).filter((f) => f.kind === 'conflict').map((f) => f.other));
+  const o = s.memberTaxa.value.find((t) => t.id !== pid && !taken.has(t.id));
+  const row = { subject: { name: a.canonical_name, rank: 'species' }, object: { name: o.canonical_name, rank: 'species' }, type: 'shared_pest', climate_zone: null, agent: null, agent_names: null, severity: 'high', note: { en: 'Fixture note: both carry the same canker' }, sources: [] };
+  s.interactionSets.value = { ...s.interactionSets.peek(), [z]: [...(s.interactionSets.peek()[z] ?? []), row] };
+  return o.names.en || o.canonical_name;
+}, id);
 
 // ---- Details (boards Details 390, DarkDetails, DetailsMore) ----
 
@@ -209,7 +229,7 @@ test('PFF6 (pf-f soil card, F10): the map\'s pH as a ring, the grower\'s test as
   await setSiteEdits(page, {});
   // Set my own soil pH: the figures panel at its soil line.
   await page.click(`${DETAILS} [data-set-ph]`);
-  assert.equal(await page.evaluate(() => window.__ctTest.store.figureLine.value), 'soilPh', 'board: "Set my own soil pH" opens the figures at the soil line');
+  assert.ok(await soilLineOpen(page), 'board: "Set my own soil pH" opens the figures at the soil line (M40: the line itself, open)');
   // F10: no soil value here or next door.
   await page.evaluate(() => { const s = window.__ctTest.store, l = s.location.value; s.location.value = { ...l, lookup: { ...l.lookup, soil: null } }; });
   await open(page, 'details', id);
@@ -448,10 +468,13 @@ test('PFF11 (pf-f BC3, BC10, BC11, round 2 R1 R2 C5, DetailsDesk): Almond at Sev
   const LACKS = { feeds_you: 'grows no food', feeds_soil: 'does not feed the soil', mulch: 'makes no mulch', ground: 'does not cover the ground', helpers: 'brings no helpers', shelter: 'gives no shelter' };
   const DOES = { feeds_you: 'feeds you', feeds_soil: 'feeds the soil', mulch: 'makes mulch', ground: 'covers the ground', helpers: 'brings helpers', shelter: 'shelters' };
   const jobs = await page.evaluate((pid) => { const s = window.__ctTest.store; return Object.fromEntries([pid, ...s.alternativesFor(pid).fit.map((a) => a.id)].map((x) => [x, s.taxonOf(x)])); }, id);
-  for (const c of cando) {
+  // M42 (board DetailsDesk): the period is said once, on the first row only.
+  assert.ok(cando.length >= 2, `two holding rows, so the second one shows the period is said once (${cando.length})`);
+  for (const [i, c] of cando.entries()) {
     assert.ok(c.holds, `a row that holds by 2041–2070 (${c.does})`);
     // C9 (board DetailsDesk): "Feeds you in the same years, brings no helpers; holds in 2041–2070".
-    assert.match(c.does, /; holds in 2041–2070$/, 'the board\'s words, then "holds in 2041–2070"');
+    if (i === 0) assert.match(c.does, /; holds in 2041–2070$/, 'the board\'s words, then "holds in 2041–2070"');
+    else assert.doesNotMatch(c.does, /holds in/, `M42: "holds in 2041–2070" on the first row only (row ${i + 1}: ${c.does})`);
     assert.doesNotMatch(c.does, /^Does \d+ of its|\(no /, `the board's words, not Swap's count (${c.does})`);
     const mine = jobsOf(jobs[id]), theirs = jobsOf(jobs[c.id]);
     for (const j of mine.filter((x) => !theirs.includes(x))) assert.ok(c.does.includes(LACKS[j]), `"${LACKS[j]}" (${c.does})`);
@@ -696,7 +719,7 @@ test('PFF21 (pf-f R3, DetailsDesk soil): with a soil test the Niche row names th
   await says(page, `(your test says 9.4: ${lvl === 'fits' ? 'fits' : lvl === 'unknown' || lvl === null ? 'not checked' : 'outside its range'})`, { inDialog: true });
   assert.doesNotMatch(await dialogText(page), /the soil map says [\d.]+ here: /, 'never the map value beside a fit judged on the test');
   await page.click(`${DETAILS} [data-niche] [data-set-ph]`);
-  assert.equal(await page.evaluate(() => window.__ctTest.store.figureLine.value), 'soilPh', 'the desk: "Set my own soil pH" opens the figures at the soil line');
+  assert.ok(await soilLineOpen(page), 'the desk: "Set my own soil pH" opens the figures at the soil line (M40: the line itself, open)');
   await setSiteEdits(page, { pots: true });
   await open(page, 'details', id);
   await says(page, '(in pots: not checked)', { inDialog: true });
@@ -859,9 +882,18 @@ test('PFF30 (pf-f round 2 R3 R4, no place): a member on the desk before a locati
   if (fit > 0) assert.equal(cando.rows, Math.min(fit, 2), 'the closest rows, without "holds in"');
   assert.doesNotMatch(cando.text, /holds in 2041–2070/, 'never "holds in" when nothing was compared');
   // R4: the Flowers row asks for a place instead of claiming none near it.
+  // M35: Almond's own state through the engine (bloomNear on its bloom rows, no latitude), then its exact words.
+  const at = await page.evaluate(async (pid) => {
+    const s = window.__ctTest.store, t = s.taxonOf(pid);
+    const d = await s.source.value.details(pid, s.climate.value, 'en');
+    return { t, values: d.layerValues, country: s.flagContext.value.country ?? null, climate: s.climate.value };
+  }, id);
+  const state = bloomM.bloomNear(at.values, { lat: null, country: at.country, zone: placementZone(at.t, at.climate) }).state;
+  assert.equal(state, 'no-place', 'Almond\'s bloom rows ask for a latitude: no place set is "set a place"');
+  await says(page, en['consortium.details.flowersNoPlace'], { inDialog: true });
   const flowers = await page.$eval(`${DETAILS} [data-niche-row="flowers"]`, (e) => e.textContent);
+  assert.ok(flowers.includes('set a place to see when it flowers here'), flowers);
   assert.doesNotMatch(flowers, /near your place/, flowers);
-  assert.match(flowers, /set a place to see when it flowers here|[A-Z][a-z]+–/, flowers);
   await done(page);
 });
 
@@ -875,15 +907,7 @@ test('PFF31 (pf-f round 3 R1 C2, serious conflict): Almond beside another member
   for (const width of [1280, 390]) {
     const page = await boardPalette('seville-board', { width, height: 1000 });
     const id = await idOf(page, 'Prunus dulcis');
-    const other = await page.evaluate((pid) => {
-      // A member with no conflict yet (one flag per other member: its worst row), so the fixture row is the one said.
-      const s = window.__ctTest.store, a = s.taxonOf(pid), z = s.climate.value;
-      const taken = new Set(s.flagsOfPlant(a).filter((f) => f.kind === 'conflict').map((f) => f.other));
-      const o = s.memberTaxa.value.find((t) => t.id !== pid && !taken.has(t.id));
-      const row = { subject: { name: a.canonical_name, rank: 'species' }, object: { name: o.canonical_name, rank: 'species' }, type: 'shared_pest', climate_zone: null, agent: null, agent_names: null, severity: 'high', note: { en: 'Fixture note: both carry the same canker' }, sources: [] };
-      s.interactionSets.value = { ...s.interactionSets.peek(), [z]: [...(s.interactionSets.peek()[z] ?? []), row] };
-      return o.names.en || o.canonical_name;
-    }, id);
+    const other = await seriousConflict(page, id);
     await frames(page);
     await open(page, 'details', id);
     await says(page, 'In your palette.', { inDialog: true });
@@ -923,5 +947,238 @@ test('PFF32 (pf-f round 3 R2, Flowers): loading says "Loading…" busy; a failed
   const failed = await page.$eval(`${DETAILS} [data-niche-row="flowers"]`, (e) => e.textContent);
   assert.match(failed, /not checked yet/, failed);
   assert.doesNotMatch(failed, /no months|set a place/, failed);
+  await done(page);
+});
+
+// ---- h3 G4 batch 1 (chunk 3 hand-off triage M30, M31, M37, M38) ----
+
+// M30: none of the alternatives holds by 2041–2070, three are judged to fail and the rest cannot be
+// judged: Details and Swap both say how many fail, and that the rest is not checked. The hold states
+// are set on the page's rule (the engine's counts are pf-f.test M30); the words are the views'.
+test('PFF33 (pf-f M30, What you can do and Swap): 3 judged to fail and the rest not checked: both say "None of the 3 hold by 2041–2070." and "Not checked for 2041–2070"', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
+  const id = await idOf(page, 'Prunus dulcis');
+  const n = await page.evaluate((pid) => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value;
+    const fit = (s.alternativesFor(pid)?.fit ?? []).map((a) => a.id);
+    s.verdictRule.value = { ...rule, holdStates: (taxa) => new Map(taxa.map((t) => [t.id, fit.indexOf(t.id) < 3 ? 'not' : 'unknown'])) };
+    return fit.length;
+  }, id);
+  assert.ok(n > 3, `more than 3 alternatives that fit (${n})`);
+  await open(page, 'details', id);
+  const cando = await page.$eval(`${DETAILS} [data-cando]`, (e) => e.textContent.replace(/\s+/g, ' '));
+  assert.ok(cando.includes('None of the 3 hold by 2041–2070.'), `Details says how many fail (${cando.slice(0, 300)})`);
+  assert.ok(cando.includes('Not checked for 2041–2070'), 'and that the rest is not checked');
+  assert.doesNotMatch(cando, /holds in 2041–2070/, 'never "holds in"');
+  await open(page, 'swap', id); // stacked over Details (h3 R4): read the Swap dialog
+  assert.ok(await has(page, 'dialog.ct-swap[open] [data-swap-head]', 10_000), 'Swap');
+  const swapText = await page.waitForFunction((w) => { const t = document.querySelector('dialog.ct-swap[open]')?.innerText.replace(/\s+/g, ' ') ?? ''; return w.every((x) => t.includes(x)) ? t : null; }, { timeout: 8000 }, ['None of the 3 hold by 2041–2070.', `0 of ${n} · ${n - 3} not checked`]).then((h) => h.jsonValue(), () => page.$eval('dialog.ct-swap[open]', (d) => d.innerText.replace(/\s+/g, ' ')));
+  assert.ok(swapText.includes('None of the 3 hold by 2041–2070.'), `Swap says how many fail (${swapText.slice(0, 300)})`);
+  assert.ok(swapText.includes(`0 of ${n} · ${n - 3} not checked`), 'and the count with the rest not checked');
+  await done(page);
+});
+
+// M31: a serious conflict reads the same in Swap as in Details: the danger chip with the word.
+test('PFF34 (pf-f M31, Swap and Details): a serious conflict with another member is the same danger chip ending "(serious)" in both', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 1000 });
+  const id = await idOf(page, 'Prunus dulcis');
+  const other = await seriousConflict(page, id);
+  await frames(page);
+  const chipIn = (sel) => page.$$eval(sel, (els, name) => els.filter((e) => e.textContent.includes(name)).map((e) => {
+    const p = document.createElement('span'); p.style.color = 'var(--danger)'; e.parentElement.append(p); const want = getComputedStyle(p).color; p.remove();
+    return { level: e.dataset.level, text: e.textContent.trim(), danger: getComputedStyle(e).color === want };
+  }), other);
+  await open(page, 'details', id);
+  await says(page, 'In your palette.', { inDialog: true });
+  const inDetails = await chipIn(`${DETAILS} [data-summary] [data-chip="conflict"]`);
+  await open(page, 'swap', id);
+  assert.ok(await has(page, `${DETAILS} [data-swap-head]`, 10_000), 'Swap');
+  const inSwap = await chipIn(`${DETAILS} [data-swap-head] .ct-flag`);
+  assert.equal(inSwap.length, 1, `Swap names the conflict with ${other} once`);
+  assert.deepEqual(inSwap, inDetails, 'Swap draws the same chip as Details');
+  assert.deepEqual([inSwap[0].level, inSwap[0].danger], ['danger', true], 'the danger level, in --danger');
+  assert.match(inSwap[0].text, /\(serious\)$/, `the word, never colour alone (${inSwap[0].text})`);
+  await done(page);
+});
+
+// M37: the sheet's top row (boards Details, Swap, Correction): "‹ Back to …" and a plain × on one row,
+// no rule under it.
+test('PFF35 (pf-f M37, Swap head): the back link and a plain × share the top row; no box round the ×, no rule under the head', async () => {
+  for (const width of [390, 1280]) {
+    const page = await boardPalette('seville-board', { width, height: 900 });
+    const id = await idOf(page, 'Prunus dulcis');
+    await open(page, 'swap', id);
+    const head = await page.waitForFunction(() => {
+      const d = document.querySelector('dialog[open]'), back = d?.querySelector('.ct-sheet-head .ct-back'), x = d?.querySelector('.ct-sheet-head button[aria-label="Close"]');
+      if (!back || !x) return null;
+      const h = d.querySelector('.ct-sheet-head');
+      return { backTop: back.getBoundingClientRect().top, xTop: x.getBoundingClientRect().top, xBorder: getComputedStyle(x).borderTopWidth, xBg: getComputedStyle(x).backgroundColor, headRule: getComputedStyle(h).borderBottomWidth };
+    }, { timeout: 8000 }).then((h) => h.jsonValue());
+    assert.ok(Math.abs(head.backTop - head.xTop) <= 4, `${width}: one row (${head.backTop} / ${head.xTop})`);
+    assert.equal(head.xBorder, '0px', `${width}: the × has no box`);
+    assert.equal(head.headRule, '0px', `${width}: no rule under the head`);
+    await done(page);
+  }
+});
+
+// M38: Details opened from Find (board Details: "‹ Back to results"); the back link returns to the same
+// results, the search as the grower left it. Opened from the palette, no such link.
+test('PFF36 (pf-f M38, Find and Details): a Find row\'s name opens Details with "Back to results", which returns to Find with its search; from the palette no back link', async () => {
+  const page = await boardPalette('seville-board', { width: 390, height: 900 });
+  const id = await idOf(page, 'Prunus dulcis');
+  await open(page, 'details', id);
+  await says(page, 'In your palette.', { inDialog: true });
+  assert.ok(!(await dialogText(page)).includes('Back to results'), 'from the palette: no "Back to results"');
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await frames(page);
+  await page.evaluate(() => window.__ctTest.openFind());
+  assert.ok(await has(page, 'dialog[open] input[type="search"]', 10_000), 'Find');
+  await page.type('dialog[open] input[type="search"]', 'fig');
+  assert.ok(await has(page, 'dialog[open] [data-find-open]', 10_000), 'a row with its name to open');
+  const name = await page.$eval('dialog[open] [data-find-open]', (b) => b.textContent.trim());
+  await page.click('dialog[open] [data-find-open]');
+  assert.ok(await page.waitForFunction((n) => document.querySelector('dialog[open] #ct-d-title')?.textContent.trim() === n, { timeout: 8000 }, name).then(() => true, () => false), `Details of ${name}`);
+  assert.ok(await has(page, 'dialog.ct-details[open] [data-sheet-back]', 4000), 'Details says "Back to results"');
+  await page.click('dialog.ct-details[open] [data-sheet-back]');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog.ct-details[open]'), { timeout: 4000 }).then(() => true, () => false), 'Details closed');
+  assert.ok(await has(page, 'dialog[open] input[type="search"]', 8000), 'back in Find');
+  assert.equal(await page.$eval('dialog[open] input[type="search"]', (i) => i.value), 'fig', 'the search as the grower left it');
+  await done(page);
+});
+
+// h3 R1, R3, R4: Details opened from Find stacks over it, so Find stays as the grower left it: back
+// (its link, Escape, the phone's Back) returns to the same row, its fold open, its scroll and the focus
+// on the name pressed; a round trip through Swap keeps the way back.
+const FIND = 'dialog.ct-find[open]', TOP_D = 'dialog.ct-details[open]';
+const backNamed = (page) => page.waitForFunction(() => !document.querySelector('dialog.ct-details[open]'), { timeout: 4000 }).then(() => true, () => false);
+test('PFF36b (pf-f h3 R1, R3, R4): back from a Find row\'s Details keeps Find\'s fold, scroll and focus on that name; the phone\'s Back closes Details only; Swap\'s back keeps "Back to results"', async () => {
+  const page = await boardPalette('seville-board', { width: 390, height: 900 });
+  await page.evaluate(() => window.__ctTest.openFind());
+  assert.ok(await has(page, `${FIND} input[type="search"]`, 10_000), 'Find');
+  // The filters' "Show N plants" lists the plants (the grower's "Show the N plants that fit").
+  await page.click('aria/Filters[role="button"]');
+  await page.click(`${FIND} [data-find-filters-show]`);
+  assert.ok(await has(page, `${FIND} [data-find-row]`, 10_000), 'the plants are listed');
+  await openMore(page, FIND);
+  const rows = await page.$$eval(`${FIND} [data-find-open]`, (bs) => bs.length);
+  assert.ok(rows >= 30, `the folds open (${rows} rows)`);
+  const nth = 29;
+  const at = (pg) => pg.evaluate((f, i) => {
+    const b = document.querySelectorAll(`${f} [data-find-open]`)[i];
+    return { name: b?.textContent.trim(), top: Math.round(b?.getBoundingClientRect().top ?? -1), focus: document.activeElement === b, rows: document.querySelectorAll(`${f} [data-find-open]`).length };
+  }, FIND, nth);
+  await page.evaluate((f, i) => document.querySelectorAll(`${f} [data-find-open]`)[i].scrollIntoView({ block: 'center' }), FIND, nth);
+  await frames(page);
+  const before = await at(page);
+  await (await page.$$(`${FIND} [data-find-open]`))[nth].click(); // a real click: the button takes the focus
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details with "Back to results"');
+  // R1: the link back.
+  await page.click(`${TOP_D} [data-sheet-back]`);
+  assert.ok(await backNamed(page), 'Details closed');
+  await frames(page);
+  let now = await at(page);
+  assert.equal(now.rows, before.rows, 'R1: the folds stay open');
+  assert.equal(now.name, before.name, 'R1: the same row');
+  assert.ok(Math.abs(now.top - before.top) <= 4, `R1: the same scroll (${before.top} → ${now.top})`);
+  assert.ok(now.focus, 'R1: the focus back on the name pressed');
+  // Escape closes the top sheet only.
+  await page.keyboard.press('Enter');
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Enter opens it again');
+  await page.keyboard.press('Escape');
+  assert.ok(await backNamed(page), 'Escape closes Details');
+  await frames(page);
+  now = await at(page);
+  assert.ok(now.focus && now.rows === before.rows, 'Escape: back on the name, the folds open');
+  // R3: the phone's Back closes Details only (one history entry per sheet level).
+  await (await page.$$(`${FIND} [data-find-open]`))[nth].click(); // a real click: the button takes the focus
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details again');
+  await page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.back(); }));
+  assert.ok(await backNamed(page), 'R3: Back closes Details');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind)), ['find'], 'R3: Find stays');
+  now = await at(page);
+  assert.equal(now.rows, before.rows, 'R3: the folds stay open');
+  await page.evaluate(() => new Promise((r) => { addEventListener('popstate', () => setTimeout(r, 50), { once: true }); history.back(); }));
+  assert.equal(await page.evaluate(() => window.__ctTest.store.sheet.value), null, 'R3: a second Back closes Find');
+  // R4: Find → a member's Details → Swap → "Back to" Details keeps "Back to results".
+  await page.evaluate(() => window.__ctTest.openFind());
+  assert.ok(await has(page, `${FIND} input[type="search"]`, 10_000), 'Find again');
+  await page.type(`${FIND} input[type="search"]`, 'almond');
+  const member = await page.waitForFunction((f) => {
+    const m = new Set(window.__ctTest.store.members.value);
+    return [...document.querySelectorAll(`${f} [data-plant-id]`)].find((r) => m.has(r.dataset.plantId) && r.querySelector('[data-find-open]'))?.dataset.plantId ?? null;
+  }, { timeout: 8000 }, FIND).then((h) => h.jsonValue(), () => null);
+  assert.ok(member, 'a palette member in Find\'s answers');
+  await page.click(`${FIND} [data-plant-id="${member}"] [data-find-open]`);
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'its Details over Find');
+  await page.evaluate((d) => [...document.querySelectorAll(`${d} button`)].find((b) => b.textContent.trim() === 'Find one that holds').click(), TOP_D);
+  assert.ok(await has(page, 'dialog.ct-swap[open] .ct-back', 8000), 'Swap');
+  await page.click('dialog.ct-swap[open] .ct-back');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog.ct-swap[open]'), { timeout: 4000 }).then(() => true, () => false), 'Swap closed');
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 4000), 'R4: Details still says "Back to results"');
+  await page.click(`${TOP_D} [data-sheet-back]`);
+  assert.ok(await backNamed(page), 'R4: back to Find');
+  assert.equal(await page.$eval(`${FIND} input[type="search"]`, (i) => i.value), 'almond', 'R4: Find\'s search kept');
+  await done(page);
+});
+
+// h3 fix round 2, B1.1 and C1.1: the sheets stack in the store's order whatever order their dialogs
+// open in. Details over the desk's Find panel, then the window narrows past 960 px: Find comes back as
+// a sheet under Details, which stays on top with its "Back to results" and its × working. B4.1: a member's
+// name on the page, while the desk's Find panel is open, opens Details with no way back to results.
+const topSheet = (page) => page.evaluate(() => {
+  const d = document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('dialog');
+  return d ? (d.classList.contains('ct-details') ? 'details' : d.classList.contains('ct-find') ? 'find' : d.className) : null;
+});
+test('PFF36c (pf-f h3 B1.1, C1.1, B4.1): Details over the desk Find panel, then 390 px: Details on top, its back link and × work, Find then shows and answers', async () => {
+  const page = await boardPalette('seville-board', { width: 1280, height: 900 });
+  await page.evaluate(() => window.__ctTest.openFind());
+  const PANEL = 'dialog[data-find-panel]';
+  assert.ok(await has(page, `${PANEL} input[type="search"]`, 10_000), 'the desk Find panel');
+  // B4.1: from the page, no "Back to results".
+  const member = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#ct-root button[data-plant-id]')].find((x) => !x.closest('dialog') && x.getClientRects().length && x.textContent.trim());
+    b?.setAttribute('data-test-member', '');
+    return b?.textContent.trim() ?? null;
+  });
+  assert.ok(member, 'a member\'s name on the page');
+  await page.click('[data-test-member]');
+  assert.ok(await has(page, `${TOP_D} #ct-d-title`, 8000), `Details of ${member}`);
+  await frames(page);
+  assert.equal(await page.$(`${TOP_D} [data-sheet-back]`), null, 'B4.1: opened from the page, no "Back to results"');
+  await page.keyboard.press('Escape');
+  assert.ok(await backNamed(page), 'Escape closes it');
+  assert.ok(await has(page, `${PANEL} input[type="search"]`, 4000), 'the panel stays');
+  // A Find row's Details, then the window narrows.
+  await page.type(`${PANEL} input[type="search"]`, 'fig');
+  assert.ok(await has(page, `${PANEL} [data-find-open]`, 10_000), 'a row to open');
+  await page.click(`${PANEL} [data-find-open]`);
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details over the panel, with "Back to results"');
+  await page.setViewport({ ...page.viewport(), width: 390, height: 800 });
+  assert.ok(await has(page, 'dialog.ct-find:modal', 8000), 'Find is a sheet again');
+  await frames(page);
+  assert.equal(await topSheet(page), 'details', 'C1.1: Details stays on top of Find');
+  await page.click(`${TOP_D} [data-sheet-back]`); // a real click: lands on whatever is on top
+  assert.ok(await backNamed(page), 'its "Back to results" closes it');
+  await frames(page);
+  assert.equal(await topSheet(page), 'find', 'Find shows');
+  assert.deepEqual(await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind)), ['find'], 'Find kept in the store');
+  assert.equal(await page.$eval('dialog.ct-find:modal input[type="search"]', (i) => i.value), 'fig', 'its search kept');
+  // Again with the ×: Details from a row at 390, wide then narrow again.
+  await page.click('dialog.ct-find:modal [data-find-open]');
+  assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 8000), 'Details again');
+  await page.setViewport({ ...page.viewport(), width: 1280, height: 900 });
+  assert.ok(await has(page, `${PANEL} input[type="search"]`, 8000), 'Find is the panel');
+  await page.setViewport({ ...page.viewport(), width: 390, height: 800 });
+  assert.ok(await has(page, 'dialog.ct-find:modal', 8000), 'Find is a sheet again');
+  await frames(page);
+  assert.equal(await topSheet(page), 'details', 'Details on top again');
+  await page.click(`${TOP_D} .ct-sheet-head .ct-icon-button[aria-label="Close"]`);
+  assert.ok(await backNamed(page), 'its × closes it');
+  await frames(page);
+  assert.equal(await topSheet(page), 'find', 'Find shows');
+  await page.type('dialog.ct-find:modal input[type="search"]', 's');
+  assert.equal(await page.$eval('dialog.ct-find:modal input[type="search"]', (i) => i.value), 'figs', 'and answers the keyboard');
+  await page.click('dialog.ct-find:modal .ct-sheet-head .ct-icon-button[aria-label="Close"]');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog[open]') && !window.__ctTest.store.sheets.value.length, { timeout: 4000 }).then(() => true, () => false), 'Find\'s × closes it: no sheet in the store, no dialog');
   await done(page);
 });

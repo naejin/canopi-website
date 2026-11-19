@@ -259,7 +259,8 @@ test('store: removeMembers takes one snapshot and one Undo, puts the plants back
   const gone = [before[3], before[150], before[7], 'not-a-member'];
   store.removeMembers(gone);
   assert.equal(store.members.value.length, 197);
-  assert.match(store.toast.value.text, /^3 plants removed\. 197 plants\. (?:No new hole\.|\d+ new holes?: .+\.)$/);
+  // M44: then each new thin spot ("Feeds the soil: now only 1 plant in years 25 to 60.").
+  assert.match(store.toast.value.text, /^3 plants removed\. 197 plants\. (?:No new hole\.|\d+ new holes?: .+?\.)(?: [^.]+: now only \d+ plants? in years \d+ to \d+\.)*$/);
   assert.ok(store.toast.value.undo, 'Undo offered');
   store.toast.value.undo();
   store.hideToast();

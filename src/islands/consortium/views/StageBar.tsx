@@ -3,7 +3,7 @@
 // each other in a cycle: the future panel's Details opener (future.tsx), the plant order and print's
 // side drawing key (SideView.tsx Marks, byName), and a verdict's short row form (RowNotes: Your plants,
 // Swap, print and the side view's key, through Marks). Store-free words are in views/kit/ (names.ts,
-// fit.tsx doesWords and sizeWords, icons.tsx). The stage bar, the popovers and the matrix views went in
+// fit.tsx doesWords, icons.tsx). The stage bar, the popovers and the matrix views went in
 // PP-B commit 0a'.
 import { computed } from '@preact/signals';
 import type { PlantVerdict, Taxon } from '../../../lib/consortium/index.ts';

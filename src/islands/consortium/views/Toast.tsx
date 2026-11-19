@@ -21,23 +21,28 @@ import { focusPlant } from '../focus.ts';
 const wideQuery = typeof matchMedia === 'function' ? matchMedia('(min-width: 960px)') : null;
 const wide = signal(!!wideQuery?.matches);
 wideQuery?.addEventListener('change', (e) => { wide.value = e.matches; });
-export const deskFind = computed(() => wide.value && store.sheet.value?.kind === 'find' && store.step.value === 'palette');
+// Find stays the panel while a plant's Details is stacked over it (h3 R1, R2).
+export const deskFind = computed(() => wide.value && !!store.findSheet.value && store.step.value === 'palette');
 
-// where: 'page' (shown while no modal sheet is open) or 'sheet' (inside the open sheet).
-export function Toast({ where = 'page' }: { where?: Where }) {
-  const desk = deskFind.value;
-  const here = (store.sheet.value !== null && !desk) === (where === 'sheet');
+// where: 'page' (shown while no modal sheet is on top) or 'sheet' (inside the top sheet, `of`: each
+// stacked sheet has a region, and only the top one shows the line).
+export function Toast({ where = 'page', of = null }: { where?: Where; of?: store.Sheet | null }) {
+  const top = store.sheet.value;
+  const desk = deskFind.value && top?.kind === 'find';
+  const here = where === 'sheet' ? top !== null && !desk && top === of : top === null || desk;
   const line = here ? toast.value : null;
   const notice = !!line && !line.undo && !!line.action;
   const card = line && (
         <div class={notice ? 'ct-toast ct-toast-notice' : 'ct-toast'} key={line.id} onPointerEnter={() => holdToast(true)} onPointerLeave={() => holdToast(false)}
           onFocusIn={() => holdToast(true)} onFocusOut={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) holdToast(false); }}>
           <span class="ct-toast-text">{line.text}</span>
+          {/* Board Toasts: the action (Show), then Undo. Undo alone has the class ct-toast-undo, which the
+              focus moves look for (h3 R5); the action's own name starts with its word (WCAG 2.5.3). */}
+          {line.action && (
+            <button type="button" class="button button-secondary ct-toast-action" aria-label={line.action.name} onClick={() => { const { run, keep } = line.action!; if (!keep) hideToast(); run(); }}>{line.action.label}</button>
+          )}
           {line.undo && (
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0], line.from); }}>{T('undo')}</button>
-          )}
-          {line.action && (
-            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const { run, keep } = line.action!; if (!keep) hideToast(); run(); }}>{line.action.label}</button>
           )}
           {/* BC28 (boards Toasts, DeskStates): the card shows its line and Undo only; Dismiss is for the
               keyboard, shown only while it has the focus (details.css), as the line goes by itself. */}

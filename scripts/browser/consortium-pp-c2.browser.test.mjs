@@ -29,6 +29,10 @@ import { aria, has, realDb, useHarness } from './helpers.mjs';
 import { atSite, choose, temperateLink, tool } from './p5-helpers.mjs';
 import { suggestedAt } from './f1a-helpers.mjs';
 import { showPalette } from './seams-helpers.mjs';
+import { control, done, frames, loadPalette200, press } from './pf-helpers.mjs';
+import { said } from '../consortium-said.mjs';
+
+const core = await import('../../src/lib/consortium/index.ts');
 
 useHarness();
 
@@ -272,3 +276,185 @@ test('PP-C21 (c2 invasive scope, 3.5 / schema 4.3): with Spain as the country, T
 
 
 
+
+// ---- h3 G4 batch 2 (chunk 3 hand-off triage M44 to M47; Many plants, boards Many, ManyDesk, Toasts) ----
+
+const PLANTS = '#ct-root .ct-plants';
+const typeIn = (page, sel, v) => page.$eval(sel, (el, x) => { el.value = x; el.dispatchEvent(new Event('input', { bubbles: true })); }, v);
+const toastOf = (page) => page.evaluate(() => window.__ctTest?.store?.toast.value?.text ?? '');
+// Tick one plant of the 200 as a grower does: search its name, tick its row, clear the search.
+async function tickByName(page, id) {
+  const sci = await page.evaluate((pid) => window.__ctTest.store.taxonOf(pid).canonical_name, id);
+  const box = await page.$eval(`${PLANTS} input[type="search"], #ct-root input[aria-label^="Search your"]`, (e) => e.getAttribute('aria-label'));
+  await typeIn(page, `#ct-root input[aria-label="${box}"]`, sci);
+  assert.ok(await has(page, `${PLANTS} [data-plant-id="${id}"] input[type="checkbox"]`, 3000), `the search shows ${sci}`);
+  await page.$eval(`${PLANTS} [data-plant-id="${id}"] input[type="checkbox"]`, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.click(`${PLANTS} [data-plant-id="${id}"] input[type="checkbox"]`);
+  await typeIn(page, `#ct-root input[aria-label="${box}"]`, '');
+}
+
+test('PP-C44 (c2 h3 M44, pf-e BC22, Many\'s bulk Remove): removing the plant that held a job up to the goal names the new thin spot after "No new hole."', async () => {
+  const page = await loadPalette200({ width: 390 });
+  // The engine on the installed release: the first member whose removal opens no hole and leaves one
+  // job held by fewer plants than "Plants per job" over a stretch where it was not thin.
+  const state = await page.evaluate(() => { const s = window.__ctTest.store; return { taxa: s.memberTaxa.value, verdicts: [...s.memberVerdicts.value], goals: s.paletteGoals.value }; });
+  const verdicts = new Map(state.verdicts);
+  const at = (taxa) => { const ctx = { members: taxa, verdicts, pending: false }; return { holes: core.holes(ctx), thins: core.thinTargets(core.laneCounts(ctx, state.goals)) }; };
+  const before = at(state.taxa);
+  let pick = null;
+  for (const t of state.taxa) {
+    const after = at(state.taxa.filter((x) => x.id !== t.id));
+    const hc = core.holeChange(before.holes, after.holes);
+    const added = core.thinChange(before.thins, after.thins).added;
+    if (!hc.added.length && added.length) { pick = { id: t.id, hc, thins: { added, ended: [], still: [] } }; break; }
+  }
+  assert.ok(pick, 'the premise: a member whose removal leaves a new thin spot and no new hole');
+  const want = core.holeChangeLines(pick.hc, { left: false, thins: pick.thins }).map((l) => said(l, 'en'));
+  assert.ok(want.length >= 2 && want[0] === 'No new hole.', `the engine's words (${want.join(' ')})`);
+  await tickByName(page, pick.id);
+  await press(page, 'button', 'Remove 1 plant');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 199, { timeout: 4000 }).then(() => true, () => false), 'Remove takes it out');
+  const text = await toastOf(page);
+  assert.ok(text.startsWith('1 plant removed. 199 plants. '), `the count first (${text})`);
+  assert.ok(text.endsWith(want.join(' ')), `the toast names the new thin spot after "No new hole." (${text}; want ${want.join(' ')})`);
+  await done(page);
+});
+
+test('PP-C45 (c2 h3 M45, pf-e BC21, board Toasts, word map "A pasted list added"): a pasted list with a warned plant says one wording, "N plants added. Your palette: M plants.", with Show, then Undo', async () => {
+  const page = await loadPalette200({ width: 390 });
+  // Two plants with no warning and one whose flags ask a second look (the engine's warnedPlant), taken
+  // out, then pasted back by name.
+  const names = await page.evaluate(() => {
+    const s = window.__ctTest.store, taxa = s.memberTaxa.value;
+    const warned = taxa.find((t) => s.warnedPlant(t)), plain = taxa.filter((t) => !s.warnedPlant(t)).slice(0, 2);
+    if (!warned) return null;
+    const out = [warned, ...plain];
+    s.members.value = s.members.value.filter((id) => !out.some((t) => t.id === id));
+    return out.map((t) => t.canonical_name);
+  });
+  assert.ok(names, 'the premise: a warned plant among the 200');
+  const { pasteText } = await import('./pf-e-helpers.mjs');
+  await pasteText(page, names.join('\n'));
+  await press(page, 'button', 'Add 3 plants', 15_000);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.members.value.length === 200, { timeout: 8000 }).then(() => true, () => false), 'the 3 added');
+  assert.equal(await toastOf(page), '3 plants added. Your palette: 200 plants.', 'board Toasts: one wording, no warned clause');
+  await frames(page);
+  const buttons = await page.$$eval('.ct-toast button:not(.ct-toast-dismiss)', (bs) => bs.map((b) => b.textContent.trim()));
+  assert.deepEqual(buttons, ['Show', 'Undo'], 'board Toasts: Show, then Undo');
+  // h3 R5: only Undo carries ct-toast-undo, the class the focus moves look for; Show has its own.
+  assert.deepEqual(await page.$$eval('.ct-toast .ct-toast-undo', (bs) => bs.map((b) => b.textContent.trim())), ['Undo'], 'the focus\'s Undo is Undo');
+  assert.equal(await page.$$eval('.ct-toast .ct-toast-action', (bs) => bs.length), 1, 'Show has its own class');
+  // h3 R6: Show is named for the warned plant's warning, starting with its visible word (WCAG 2.4.6, 2.5.3).
+  const showName = await page.$eval('.ct-toast .ct-toast-action', (b) => b.getAttribute('aria-label'));
+  // The warned plant: the only one of the three the engine flags (the premise above), names[0].
+  const warnedId = await page.evaluate((sci) => window.__ctTest.store.memberTaxa.value.find((x) => x.canonical_name === sci).id, names[0]);
+  await page.click('.ct-toast .ct-toast-action');
+  assert.ok(await page.waitForFunction((id) => window.__ctTest.store.sheet.value?.kind === 'details' && window.__ctTest.store.sheet.value.id === id, { timeout: 5000 }, warnedId).then(() => true, () => false), 'Show opens the warned plant');
+  await page.waitForSelector('dialog.ct-details[open] #ct-d-title');
+  const warned = await page.$eval('dialog.ct-details[open] #ct-d-title', (h) => h.textContent.trim());
+  assert.ok(warned, 'the plant has a name');
+  assert.equal(showName, `Show the warning for ${warned}`, 'Show is named for the warned plant, by the name its Details shows');
+  await done(page);
+});
+
+// A member's Many row opened by its name (the search shows the matching rows), and its fit words.
+async function manyRow(page, id) {
+  const sci = await page.evaluate((pid) => window.__ctTest.store.taxonOf(pid).canonical_name, id);
+  const box = await page.$eval('#ct-root input[aria-label^="Search your"]', (e) => e.getAttribute('aria-label'));
+  await typeIn(page, `#ct-root input[aria-label="${box}"]`, sci);
+  assert.ok(await has(page, `${PLANTS} [data-plant-id="${id}"]`, 3000), `the search shows ${sci}`);
+  await frames(page);
+  return page.$eval(`${PLANTS} [data-plant-id="${id}"]`, (r) => [...r.querySelectorAll('.ct-many-word')].map((w) => {
+    const probe = document.createElement('span');
+    probe.style.color = w.dataset.level === 'danger' ? 'var(--danger)' : 'var(--warning)';
+    w.parentElement.append(probe);
+    const want = getComputedStyle(probe).color;
+    probe.remove();
+    const cs = getComputedStyle(w);
+    return { text: w.textContent.replace(/\s+/g, ' ').trim(), kind: w.dataset.kind ?? null, level: w.dataset.level, color: cs.color, want, border: cs.borderTopStyle === 'none' || parseFloat(cs.borderTopWidth) === 0 ? 'none' : cs.borderTopStyle, weight: cs.fontWeight, size: cs.fontSize };
+  }));
+}
+
+for (const width of [390, 1280]) {
+  test(`PP-C46 (c2 h3 M46, pf-e BC7, board ${width === 390 ? 'Many' : 'ManyDesk'} at ${width}): a row outside its range says its cause short, "${width === 390 ? 'Outside its climate range: the year too cool' : 'the year too cool'}", from the engine`, async () => {
+    const page = await loadPalette200({ width });
+    // The engine on the installed release: the members outside their range with a cause.
+    const outs = await page.evaluate(() => { const s = window.__ctTest.store; return [...s.memberVerdicts.value].filter(([, v]) => v.level === 'outside' && v.limiting).map(([id, v]) => ({ id, v })); });
+    const pick = outs.find((o) => core.shortWhy(o.v));
+    assert.ok(pick, `the premise: a member outside its range with a cause (${outs.length} outside)`);
+    const want = said(width === 390 ? core.shortLine(pick.v) : core.shortWhy(pick.v), 'en');
+    const words = await manyRow(page, pick.id);
+    assert.ok(words.some((w) => w.text === want), `the row says "${want}" (${JSON.stringify(words.map((w) => w.text))})`);
+    assert.ok(!words.some((w) => / here than where it is recorded/.test(w.text)), 'never the cause in full');
+    await done(page);
+  });
+}
+
+test('PP-C47 (c2 h3 M47, pf-e#57, boards Many and ManyDesk): on the 200-plant Kenya palette a "Toxic" mark is a plain word in the warning colour, "Very toxic" in the danger colour, 13 px weight 600 with the icon, no pill border', async () => {
+  const page = await loadPalette200({ width: 390 });
+  const tox = await page.evaluate(() => { const s = window.__ctTest.store, by = (lv) => s.memberTaxa.value.find((t) => t.warnings.toxicity?.level === lv && s.flagsOfPlant(t).some((f) => f.kind === 'toxicity'))?.id ?? null; return { Moderate: by('Moderate'), Severe: by('Severe') }; });
+  assert.ok(tox.Moderate, 'the premise: a Toxic (Moderate) member');
+  for (const [lv, word, level] of [['Moderate', 'Toxic', 'warning'], ['Severe', 'Very toxic', 'danger']]) {
+    if (!tox[lv]) continue;
+    const mark = (await manyRow(page, tox[lv])).find((w) => w.kind === 'toxicity');
+    assert.ok(mark, `${word}: a toxicity word on the row`);
+    assert.equal(mark.text, word);
+    assert.equal(mark.level, level, `${word}: the ${level} level`);
+    assert.equal(mark.color, mark.want, `${word}: the --${level} colour`);
+    assert.equal(mark.border, 'none', `${word}: a plain word, no pill border`);
+    assert.equal(mark.weight, '600');
+    assert.equal(mark.size, '13px');
+  }
+  await done(page);
+});
+
+// h3 R14 (axe label-content-name-mismatch, WCAG 2.5.3): a Your plants row's button is named by the words
+// it shows, so a voice user who says "click Chives" presses it. The button holds the plant's name; its
+// scientific name and detail lines follow it in the row as its description, and the whole row still opens Details.
+test('PP-C48 (c2 h3 R14, pf-e Small rows): each row button\'s accessible name is its visible text; its lines describe it; a tap on a line opens Details', async () => {
+  const page = await suggestedAt('seville', 'Mediterranean');
+  const BTN = '#ct-root .ct-plants-small [data-plant-id] button';
+  assert.ok(await has(page, BTN, 8000), 'the premise: Your plants in its small form');
+  const rows = await page.$$(BTN);
+  assert.ok(rows.length > 0);
+  for (const b of rows) {
+    const text = await b.evaluate((e) => e.textContent.replace(/\s+/g, ' ').trim());
+    const ax = await page.accessibility.snapshot({ root: b, interestingOnly: false });
+    assert.equal(ax?.name, text, `the button's name is its text ("${text}")`);
+    assert.ok(ax?.description && /\S/.test(ax.description), `the lines describe it (${ax?.description})`);
+  }
+  const id = await rows[0].evaluate((e) => e.closest('[data-plant-id]').dataset.plantId);
+  const line = `#ct-root .ct-plants-small [data-plant-id="${id}"] .ct-line`;
+  await page.$eval(line, (e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.click(line);
+  assert.ok(await has(page, DETAILS, 4000), 'a tap on a detail line opens Details');
+  await done(page);
+});
+
+// h3 R2: past 40 plants on the desk, Find opened from Your plants stands in place of the table; a
+// result's Details opens over it and "Back to results" brings the panel back where it was, not beside
+// the chart (the panel stays open under Details: store.sheets).
+test('PP-C49 (c2 h3 R2, ManyDesk): Find opened in Your plants keeps its place through a result\'s Details and "Back to results"', async () => {
+  const { PLANTS, typeIn } = await import('./pf-e-helpers.mjs');
+  const page = await loadPalette200({ width: 1280 });
+  assert.ok(await has(page, `${PLANTS} [data-plants-add]`, 4000), 'Your plants\' "Add plants"');
+  await page.click(`${PLANTS} [data-plants-add]`);
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 15_000), 'Find in place of the table');
+  const pick = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); const t = Object.values(s.pools.value).flat().find((x) => x && !m.has(x.id)); return { id: t.id, q: t.canonical_name }; });
+  await typeIn(page, `${PLANTS} [data-find-search]`, pick.q);
+  const row = `${PLANTS} [data-find-row][data-plant-id="${pick.id}"]`;
+  assert.ok(await has(page, row, 10_000), 'the search lists the plant');
+  await page.click(`${row} [data-find-open]`);
+  assert.ok(await has(page, 'dialog.ct-details[open] [data-sheet-back]', 8000), 'Details with "Back to results"');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 1000), 'Find stays in Your plants under Details');
+  await page.click('dialog.ct-details[open] [data-sheet-back]');
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog.ct-details[open]'), { timeout: 4000 }).then(() => true, () => false), 'Details closed');
+  assert.ok(await has(page, `${PLANTS} .ct-find`, 2000), 'Find back in place of the table');
+  assert.equal(await page.$(`${PLANTS} table`), null, 'the table not back');
+  assert.equal(await page.$$eval('[data-find-panel]', (ps) => ps.length), 1, 'one Find panel, not one beside the chart');
+  assert.equal(await page.$eval(`${PLANTS} [data-find-search]`, (i) => i.value), pick.q, 'the search kept');
+  assert.equal(await page.evaluate((id) => document.activeElement?.closest('[data-plant-id]')?.dataset.plantId ?? null, pick.id), pick.id, 'the focus back on the row\'s name');
+  await press(page, 'button', 'Done');
+  assert.ok(await has(page, `${PLANTS} table`, 3000), 'Done brings the table back');
+  await done(page);
+});

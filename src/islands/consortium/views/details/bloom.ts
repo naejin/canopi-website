@@ -19,8 +19,10 @@ function holdsPlace(v: Pick<LayerValue, 'climate' | 'scope'>, at: BloomPlace, an
   const s = v.scope;
   if (!s) return true;
   if (s.climate && at.zone !== null && s.climate !== at.zone) return false;
+  // No place yet (M32): a row a latitude would select may also name a country; the place a grower sets
+  // brings both, so the row counts before the country is checked. A country-only row asks no latitude.
+  if (anyLat && at.lat === null) return !!(s.hemisphere || s.latitude);
   if (s.country && s.country.toUpperCase() !== (at.country ?? '').toUpperCase()) return false;
-  if (anyLat && at.lat === null) return true;
   if (s.hemisphere) {
     if (at.lat === null) return false;
     if ((s.hemisphere === 'S') !== (at.lat < 0)) return false;

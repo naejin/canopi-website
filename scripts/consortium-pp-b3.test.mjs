@@ -92,7 +92,7 @@ test('site.ts water check: an unexpected drought value (\'\' or a new word) coun
 });
 
 // ---- Your plants (new form of the deleted F1a-P10: each plant once, warnings first) ----
-const { yourPlants, sizeLine } = await import('../src/lib/consortium/weigh.ts');
+const { yourPlants } = await import('../src/lib/consortium/weigh.ts');
 
 test('Your plants lists each plant once, warnings first (a Slight or Moderate toxic, an invasive, a misfit, a high or medium conflict), then the plants it cannot show (a list unread, on no list of this climate), then the rest, in palette order within each group; a low conflict alone does not lead', () => {
   const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -110,25 +110,6 @@ test('Your plants lists each plant once, warnings first (a Slight or Moderate to
   // A guest of a list that failed which the chosen list holds too is shown (review b3f-1): no row of
   // its own, so not counted as not checked.
   assert.deepEqual(yourPlants([a, b], [], { failed: ['b', 'x'], unlisted: ['a'] }).map((r) => r.plant?.id ?? `${r.id}:${r.missing}`), ['x:failed', 'a', 'b']);
-});
-
-test('size line words: the height is the wild maximum (types.ts Traits.height_m), so each size line with a height says "in the wild", in every locale', async () => {
-  const fs = await import('node:fs');
-  // The words Details uses for the same fact (consortium.details.heightV).
-  const WILD = { en: /in the wild/, fr: /dans la nature/, es: /en estado silvestre/, pt: /na natureza/, it: /in natura/, zh: /野生/, de: /wild/i, ja: /野生/, ko: /야생/, nl: /in het wild/, ru: /в природе/i };
-  for (const [lang, wild] of Object.entries(WILD)) {
-    const t = JSON.parse(fs.readFileSync(new URL(`../src/i18n/translations/${lang}.json`, import.meta.url), 'utf8'));
-    for (const k of ['size', 'sizeTall']) assert.match(t[`consortium.plants.${k}`], wild, `${lang} ${k}: "${t[`consortium.plants.${k}`]}"`);
-  }
-});
-
-test('size line: full-grown width and height through formatLength; height without width says the width is not recorded (135 of 600 placements), and the reverse; neither is "No size recorded"', () => {
-  const s = (traits) => sizeLine(plant({ traits }));
-  assert.deepEqual(s({ height_m: { min: 2, max: 12 }, width_max_m: 8 }), { key: 'consortium.plants.size', vars: { width: 8, height: 12 } });
-  assert.deepEqual(s({ height_m: { min: null, max: 4 }, width_max_m: null }), { key: 'consortium.plants.sizeTall', vars: { height: 4 } });
-  assert.deepEqual(s({ height_m: null, width_max_m: 0.5 }), { key: 'consortium.plants.sizeWide', vars: { width: 0.5 } });
-  assert.deepEqual(s({ height_m: { min: 1, max: null }, width_max_m: null }), { key: 'consortium.plants.sizeNone', vars: {} });
-  assert.deepEqual(s({}), { key: 'consortium.plants.sizeNone', vars: {} });
 });
 
 // ---- toxicity levels (inventory F5; owner: mild = warning, moderate and above = danger, words and icon) ----

@@ -17,8 +17,9 @@ const words = ({ line }: SiteLine): string => T(line.key.slice('consortium.'.len
 // What the site check could not decide, said aloud (never a silent fit, A7); the members do not change it.
 export const unknownWords = (t: Taxon, site: Site): string[] => unknownsOf(siteFit(t, site, [])).map(words);
 
-// level: a toxicity line's colour (inventory F5, owner: Slight the warning token, Moderate and Severe
-// the danger token; words and icon always). Your plants and Details colour by it; other lines are warnings.
+// level: a line's colour (inventory F5, owner: Slight the warning token, Moderate and Severe the danger
+// token; a serious (high) conflict the danger token too, M31; words and icon always). Every surface
+// colours by it; other lines are warnings.
 // chip: the line in a few words, for Details' summary chips ("Invasive in Argentina"; K17).
 export interface Line { text: string; kind: Flag['kind'] | 'soft'; level?: 'warning' | 'danger'; chip?: string }
 // A plant's flags as lines: misfits, conflicts (high ones "serious"), invasive here, toxicity.
@@ -39,8 +40,10 @@ export function flagLines(t: Taxon, flags: Flag[], scene: FlagScene, { low = fal
       if (serious) text += ` (${T('details.serious')})`;
       // The chip in the board's few words ("With Olive: a shared pest or disease (Xylella)"); the note stays in the text.
       const name = other ? nameOf(other) : '?', kindWords = f.type ? T(`details.chipType.${f.type}`) : note;
-      const chip = f.agent ? T('details.chipConflictAgent', { other: name, text: kindWords, agent: f.agent }) : T('details.chipConflict', { other: name, text: kindWords });
-      out.push({ text, kind: f.severity === 'low' ? 'soft' : 'conflict', chip });
+      let chip = f.agent ? T('details.chipConflictAgent', { other: name, text: kindWords, agent: f.agent }) : T('details.chipConflict', { other: name, text: kindWords });
+      // A serious conflict says so on every surface (M31): the danger level and the word, on the line itself.
+      if (serious) chip += ` (${T('details.serious')})`;
+      out.push({ text, kind: f.severity === 'low' ? 'soft' : 'conflict', chip, ...(serious ? { level: 'danger' as const } : {}) });
     } else if (f.kind === 'invasive') {
       out.push({ text: T('d.invHere', { country: countryName(scene.country ?? '') }), kind: 'invasive', chip: T('details.chipInvasive', { country: countryName(scene.country ?? '') }) });
     } else if (f.kind === 'toxicity' && t.warnings.toxicity) {

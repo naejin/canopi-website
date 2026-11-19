@@ -13,10 +13,13 @@
 }
 .ct .ct-sheet::backdrop { background: var(--backdrop, rgba(22, 21, 16, 0.42)); }
 .ct .ct-sheet-inner { display: flex; flex-direction: column; min-height: 100%; }
+/* The sheet's top row (boards Details, Swap, Correction): "‹ Back to …" and a plain × on one row, no rule
+   under it and no box round the × (M37); it stays at the top on the surface colour as the sheet scrolls. */
 .ct .ct-sheet-head {
   position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 10px 12px 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 12px 10px 24px; background: var(--surface);
 }
+.ct .ct-sheet-head .ct-icon-button { border: 0; background: none; }
 .ct .ct-sheet-head-main { min-width: 0; font-size: 15px; }
 .ct .ct-sheet-body { display: grid; gap: 22px; padding: 20px 24px 28px; align-content: start; flex: 1; }
 .ct .ct-sheet h2 { font-size: 30px; letter-spacing: -0.015em; }
@@ -122,6 +125,9 @@
 }
 .ct :where(.ct-sheet) .ct-rows > li.is-on { background: var(--surface-alt); box-shadow: -12px 0 0 var(--surface-alt), 12px 0 0 var(--surface-alt); }
 .ct :where(.ct-sheet) .ct-row-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+/* A row's name that opens its Details (Find; board FindResults): the name in ink and weight 600, no underline. */
+.ct :where(.ct-sheet) .ct-row-main .ct-name-open { font-weight: 600; font-size: 16px; color: var(--text); text-decoration: none; }
+.ct :where(.ct-sheet) .ct-row-main .ct-name-open:hover { color: var(--accent-ink); text-decoration: underline; }
 .ct :where(.ct-sheet) .ct-row-why { grid-column: 1 / -1; display: grid; gap: 3px; font-size: 14.5px; color: var(--text-secondary); }
 .ct :where(.ct-sheet) .ct-line { display: block; }
 .ct :where(.ct-sheet) strong.ct-line { color: var(--text); font-weight: 600; }
@@ -190,7 +196,7 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
   display: flex; align-items: center; gap: 6px 12px; padding: 6px 6px 6px 16px; border-radius: 10px;
   background: var(--text); color: var(--surface); box-shadow: var(--shadow); font-size: 15.5px;
 }
-.ct .ct-toast-undo {
+.ct .ct-toast-undo, .ct .ct-toast-action {
   min-height: 44px; padding: 0 12px; border: 1px solid currentColor; border-radius: var(--radius);
   background: transparent; color: inherit; font-weight: 600; cursor: pointer;
 }
@@ -423,3 +429,12 @@ html:has(.ct .ct-toast-page .ct-toast:not(.ct-toast-notice)) { scroll-padding-bo
 .ct .ct-sheet:has(.ct-swap-head) h2 + p { margin: 2px 0 0; font-size: 14px; line-height: 20px; }
 .ct .ct-sheet .ct-swap-head { font-size: 14px; line-height: 20px; }
 .ct .ct-sheet .ct-swap-more { font-size: 13px; line-height: 18px; }
+
+/* The door to Details from a Your plants row (plants/Small.tsx, R14): the button holds only the plant's
+   name, so its accessible name is its text (WCAG 2.5.3); its stretched ::after covers the row
+   (.ct-plant-open is the positioned box), so the whole row stays one tap target, and the focus ring
+   is drawn round the row. Small's own class, kept here beside the sheet it opens. */
+.ct .ct-plant-go { padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.ct .ct-plant-go::after { content: ''; position: absolute; inset: 0; }
+.ct .ct-plant-go:focus-visible { outline: none; }
+.ct .ct-plant-go:focus-visible::after { outline: 2px solid var(--focus); outline-offset: 2px; }
