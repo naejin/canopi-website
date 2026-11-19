@@ -388,13 +388,22 @@ export function questionsOf<T extends Named>(r: PasteResult<T>): Question[] {
   ].sort((a, b) => a.at - b.at);
 }
 // The grower's answers, a question each: its line's name to the plant chosen, or null for "None" (and
-// "Skip the N left"). The plants they choose in this reading, for plan: an answer of a line no longer
-// pasted, or of a plant its question no longer offers, chooses nothing.
+// "Skip the N left"). The one definition of an answer (M22): the sheet's "N chosen, N to go" and "Skip
+// the N left" and plan's "Add N plants" all read isPicked / isAnswered over questionsOf. An answer of a
+// line no longer pasted, or of a plant its question no longer offers, is no answer.
 export type Answers = ReadonlyMap<string, PlantId | null>;
+export const isPicked = (q: Question, answers: Answers): boolean => { const a = answers.get(q.name); return !!a && q.ids.includes(a); };
+export const isAnswered = (q: Question, answers: Answers): boolean => answers.get(q.name) === null || isPicked(q, answers);
+// The plants they choose in this reading, for plan.
 export function answered<T extends Named>(r: PasteResult<T>, answers: Answers): PlantId[] {
-  const ids: PlantId[] = [];
-  for (const q of questionsOf(r)) { const id = answers.get(q.name); if (id && q.ids.includes(id)) ids.push(id); }
-  return [...new Set(ids)];
+  return [...new Set(questionsOf(r).filter((q) => isPicked(q, answers)).map((q) => answers.get(q.name)!))];
+}
+// The answers a fresh reading keeps (M24): only those of its questions that still answer them (a plant
+// the question offers, or None); nothing dropped, the same map.
+export function keepAnswers(answers: Answers, questions: readonly Question[]): Answers {
+  const by = new Map(questions.map((q) => [q.name, q]));
+  const kept = new Map([...answers].filter(([name]) => { const q = by.get(name); return !!q && isAnswered(q, answers); }));
+  return kept.size === answers.size ? answers : kept;
 }
 
 // What "Add all" adds from a reading: the found plants (a close spelling only once ticked: "chesnut"

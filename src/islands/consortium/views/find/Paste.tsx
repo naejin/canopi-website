@@ -25,7 +25,7 @@ import { MoreList } from '../kit/more.tsx';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { answered, pasteCounts, pasteNames, pasteReader, plan, readPaste, type Answers, type Named, type PasteOptions, type PasteResult, type PastedNames } from './paste.ts';
+import { answered, isAnswered, isPicked, keepAnswers, pasteCounts, pasteNames, pasteReader, plan, questionsOf, readPaste, type Answers, type Named, type PasteOptions, type PasteResult, type PastedNames } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
@@ -119,8 +119,13 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // The grower's answers, a question each, by its line's name (paste.ts Answers): the plant chosen, or
   // null for "None" and "Skip the N left" (a name you leave is not added). Keyed by name, an edit
   // elsewhere in the paste keeps them (R5), and two questions offering the same plants keep their own
-  // answers (round 3 R5).
+  // answers (round 3 R5). Each fresh reading keeps only the answers of its own questions (keepAnswers,
+  // M24), and a paste over the whole text is a new list: it forgets them all (onBeforeInput below).
   const [answers, setAnswers] = useState<Answers>(new Map());
+  // "Add all" pressed while the box's text is not read yet (the 200 ms pause, or a long text read in
+  // slices): the add runs once the reading of the box lands (M23), never lost and never on an old text.
+  const pendingAdd = useRef(false);
+  const addNow = useRef<() => void>(() => {});
   const [copied, setCopied] = useState<'done' | 'hand' | null>(null);
   // The names to copy by hand take the focus once, when they show (never on a re-render: R5).
   const byHandBox = useRef<HTMLTextAreaElement>(null);
@@ -149,10 +154,12 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   const fitRank = (id: PlantId) => { const l = verdicts?.get(id)?.level; return l === 'fits' ? 0 : l === 'look' ? 1 : l === 'outside' ? 2 : 3; };
   const opts: PasteOptions<Named> | null = pool ? { here: pool, others: lists, members, index, rank: fitRank, lang: pageLang() } : null;
   const { reading, progress: readAt } = useReading(settled, opts, [pool, members, lists, index, verdicts]);
-  // The copy state belongs to a text; the answers (by name) stay when the reading refreshes (an edit,
-  // the names file arriving, new verdicts: F24, R5), and go when the paste is emptied (C4: an earlier
-  // paste never answers a new one).
-  useEffect(() => { setCopied(null); if (!settled.trim()) setAnswers(new Map()); }, [settled]);
+  // The copy state belongs to a text. The answers (by name) stay when the reading refreshes (an edit,
+  // the names file arriving, new verdicts: F24, R5) as long as their question is still asked; an
+  // emptied paste asks none (C4: an earlier paste never answers a new one).
+  useEffect(() => { setCopied(null); }, [settled]);
+  useEffect(() => { if (reading && reading.src === settled) setAnswers((a) => keepAnswers(a, questionsOf(reading.result))); }, [reading]);
+  useEffect(() => { if (pendingAdd.current && reading?.src === text) { pendingAdd.current = false; addNow.current(); } }, [reading, text]);
   if (!climate) return null;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
   const result: PasteResult<Named> = reading?.result ?? readPaste<Named>(pasteNames(''), opts!);
@@ -167,25 +174,23 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // folds its lists; one of 8 shows them whole).
   const counts = pasteCounts(result, members);
   const lines = counts.lines;
-  // The reading on screen is the last one while a changed long text reads (R5); its actions wait for
-  // the new one (round 3 R3, C3): Add all, Add anyway, "Copy these N names" and "Skip the N left" are
-  // aria-disabled (still focusable, so the focus kept by R5 stays), described by the reading line.
-  const busy = !!readAt;
-  const waiting = busy ? { 'aria-disabled': 'true' as const, 'aria-describedby': 'ct-paste-reading' } : {};
+  // Busy: the reading on screen is not the box's text (the pause after typing, or a changed long text
+  // read in slices: R5, M23). A re-read of the same text (members or verdicts changed) is not busy: the
+  // shown reading still names the text, and plan() leaves out the plants already in. The actions wait
+  // for the new reading (round 3 R3, C3): Add anyway, "Copy these N names" and "Skip the N left" are
+  // aria-disabled (still focusable, so the focus kept by R5 stays), described by the reading line; Add
+  // all, pressed meanwhile, adds once it lands. Add all is aria-disabled with nothing to add too, never
+  // natively disabled (that would drop its focus as a reading lands).
+  const busy = reading?.src !== text;
+  const waiting = busy ? { 'aria-disabled': 'true' as const, 'aria-describedby': readAt ? 'ct-paste-reading' : undefined } : {};
   // A plant's warnings once its list is read (another list's plant: after its pool loads on add).
   const warnedNow = (id: PlantId) => { const t = store.taxonOf(id); return !!t && store.warnedPlant(t); };
   const addAll = async () => {
-    if (busy) return;
-    // The text as it is now, not as it was a moment ago; a long one is read in slices first, never in
-    // one go (F23, C3): Add waits for that reading.
+    // The text as it is in the box now, not as it was at the last render: read at once (a long one in
+    // slices, F23, C3), and added when its reading lands.
     const current = box.current?.value ?? text;
-    let now = result;
-    if (!reading || current !== reading.src) {
-      const names = pasteNames(current);
-      if (names.length > SLICE) { setSettled(current); return; }
-      now = readPaste<Named>(names, opts!);
-    }
-    const { ids, climateOf } = plan(now, answered(now, answers), members);
+    if (current !== reading?.src) { pendingAdd.current = true; setSettled(current); return; }
+    const { ids, climateOf } = plan(result, answered(result, answers), members);
     if (!ids.length) return;
     const from: Partial<Record<PlantId, ClimateZone>> = {};
     for (const id of ids) { const z = climateOf.get(id); if (z) from[id] = z; }
@@ -195,13 +200,14 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     // Board Toasts: "174 plants added. Your palette: 194 plants." with Undo (and Show for a warning).
     addMembers(ids, from, { warned: ids.filter(warnedNow), text: (r) => `${P('paste.addedN', r.added.length)} ${P('paste.yourPalette', r.size)}` });
   };
+  addNow.current = () => void addAll();
   // The row turns to "in your palette" as the plant joins, and the focus moves on (W4): to the next
   // row's "Add anyway" (next: its plant, else the row before's), else the count line.
   const addGuest = async (t: Named, from: ClimateZone, next?: Named) => {
     if (busy) return;
     await store.loadPool(from);
     addMembers([t.id], { [t.id]: from }, { warned: warnedNow(t.id) ? [t.id] : [] });
-    focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`button[aria-describedby="ct-p-o-${next.id}"]`)) || document.getElementById('ct-p-count'));
+    focusAfterAdd(() => (next && document.querySelector<HTMLElement>(`[data-guest-add="${next.id}"]`)) || document.getElementById('ct-p-count'));
   };
   // A question's answer: pressing its chosen plant again takes the answer back.
   const choose = (line: string, id: PlantId | null) => setAnswers((a) => {
@@ -259,19 +265,22 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
       line: <>{named(o.taxon)} · {T('otherLists')}{twice(o.name)}{o.close && <> · {T('paste.close', { name: o.close })}</>} {warnings(o.taxon)}</>,
       after: <>
         <span id={`ct-p-o-${o.taxon.id}`}>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate!) })}</span>
-        <button type="button" class="button button-secondary" aria-describedby={busy ? `ct-p-o-${o.taxon.id} ct-paste-reading` : `ct-p-o-${o.taxon.id}`} aria-disabled={busy ? 'true' : undefined}
+        <button type="button" class="button button-secondary" data-guest-add={o.taxon.id} aria-describedby={busy && readAt ? `ct-p-o-${o.taxon.id} ct-paste-reading` : `ct-p-o-${o.taxon.id}`} aria-disabled={busy ? 'true' : undefined}
           onClick={() => void addGuest(o.taxon, o.climate, (result!.other[i + 1] ?? result!.other[i - 1])?.taxon)}>{T('addAnyway')}</button></>,
     };
   }
-  // A choice: its name and scientific name (two plants may share a name), its fit in words; the
-  // pressed one carries a tick (board Paste).
+  // A choice: its name, its fit in words; the pressed one carries a tick (board Paste: "Common bean |
+  // Lima bean | Sword bean"). Its scientific name only when another choice of the question has the same
+  // name (board AddMany: the three Spanish cedars, M25), so two chips of a question never read the same.
   const pressed = (on: boolean) => (on ? <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7" stroke="currentColor" stroke-width="1.8" fill="none" /></svg> : null);
-  const chip = (line: string) => {
+  const chip = (line: string, taxa: readonly Named[]) => {
+    const names = new Map<string, number>();
+    for (const t of taxa) names.set(nameOf(t), (names.get(nameOf(t)) ?? 0) + 1);
     return (t: Named) => {
-      const fit = choiceFit(t), on = isPick(line, t.id);
+      const fit = choiceFit(t), on = isPick(line, t.id), shared = (names.get(nameOf(t)) ?? 0) > 1;
       // A plant you have is a choice like any other (board AddMany "Taro · in your palette"): pressed, it
       // answers the question and adds nothing (plan leaves members out).
-      return <button type="button" class="ct-paste-choice" aria-pressed={on ? 'true' : 'false'} onClick={() => choose(line, t.id)}>{pressed(on)}{nameOf(t)} {sci(t)}{fit && <span class="ct-paste-fit"> · {fit}</span>}</button>;
+      return <button type="button" class="ct-paste-choice" aria-pressed={on ? 'true' : 'false'} onClick={() => choose(line, t.id)}>{pressed(on)}{nameOf(t)}{shared && <> {sci(t)}</>}{fit && <span class="ct-paste-fit"> · {fit}</span>}</button>;
     };
   };
   const questions: (Row & { ids: PlantId[] })[] = [
@@ -296,19 +305,16 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
       after: <>
         {c.climate && <span class="ct-tag ct-tag-guest">{T('details.fromList', { climate: zoneName(c.climate) })}</span>}
         <div class="ct-paste-choices" role="group" aria-label={T('paste.whichLabel', { name: c.name })}>
-          <MoreList items={c.taxa} keyOf={(t) => t.id} render={chip(c.name)} paletteSize={lines} group={T('paste.otherChoices', { name: c.name })} class="ct-paste-chips" />
+          <MoreList items={c.taxa} keyOf={(t) => t.id} render={chip(c.name, c.taxa)} paletteSize={lines} group={T('paste.otherChoices', { name: c.name })} class="ct-paste-chips" />
           <button type="button" class="ct-paste-choice" aria-pressed={answers.get(c.name) === null ? 'true' : 'false'} onClick={() => choose(c.name, null)}>{pressed(answers.get(c.name) === null)}{T('paste.choiceNone')}</button>
         </div>
         {c.taxa.filter((t) => isPick(c.name, t.id)).map((t) => <>{rangeWarn(t)}{warnings(t)}</>)}</> })),
   ].sort((a, b) => a.at - b.at);
-  // A question is answered by its own entry: a plant it offers, or None (an answer of a plant it no
-  // longer offers is no answer).
-  const picked = (q: { name: string; ids: PlantId[] }) => { const a = answers.get(q.name); return !!a && q.ids.includes(a); };
-  const isAnswered = (q: { name: string; ids: PlantId[] }) => answers.get(q.name) === null || picked(q);
-  // Every question is a choice (BC20): "N to go" and "Skip the N left" count the questions.
-  const asking = questions;
-  const chosen = asking.filter(picked).length;
-  const left = asking.filter((q) => !isAnswered(q)).length;
+  // Every question is a choice (BC20): "N to go" and "Skip the N left" count paste.ts's questions, with
+  // its one definition of an answer, as "Add N plants" does (M22).
+  const asking = questionsOf(result);
+  const chosen = asking.filter((q) => isPicked(q, answers)).length;
+  const left = asking.filter((q) => !isAnswered(q, answers)).length;
   // The lede's loose word (board AddMany: "A loose word (“beans”) asks too"): a plural first, else any
   // line no plant has as a whole name; none, the lede's general form.
   const loose = result.choose.find((c) => c.loose && c.word !== c.name) ?? result.choose.find((c) => c.loose) ?? null;
@@ -343,6 +349,12 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     counts.twice > 0 && P('paste.recTwice', counts.twice),
   ].filter(Boolean).join(', ') });
   const back = () => (onBack ? onBack() : closeSheet());
+  // A paste (or a replacement) over the whole text is a new list: no answer of the last list answers it,
+  // even for a line both lists name (M24).
+  const forgetOnNewList = (e: InputEvent) => {
+    const el = e.currentTarget as HTMLTextAreaElement;
+    if ((e.inputType === 'insertFromPaste' || e.inputType === 'insertReplacementText') && el.value && el.selectionStart === 0 && el.selectionEnd === el.value.length) setAnswers(new Map());
+  };
   const copy = async () => {
     if (busy) return;
     const names = result.none.map((x) => x.name).join('\n');
@@ -358,13 +370,13 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     } foot={
       <div class="ct-add-bar ct-paste-foot">
         <button type="button" class="button button-secondary" data-paste-cancel="" onClick={back}>{T('paste.cancel')}</button>
-        <button type="button" class="button button-primary" disabled={!busy && !toAdd.length} {...waiting} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
+        <button type="button" class="button button-primary" aria-disabled={busy || !toAdd.length ? 'true' : undefined} aria-describedby={waiting['aria-describedby']} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
       </div>
     }>
       <p class="ct-paste-intro">{T('find.pasteIntro')}</p>
       <div class="ct-field">
         <label for="ct-paste-text" class="visually-hidden">{T('paste.label')}</label>
-        <textarea ref={box} id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onInput={(e) => { setAsked(false); setText((e.target as HTMLTextAreaElement).value); }} />
+        <textarea ref={box} id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onBeforeInput={forgetOnNewList} onInput={(e) => { setAsked(false); setText((e.target as HTMLTextAreaElement).value); }} />
       </div>
       <p class="ct-muted ct-paste-sheet">{T('paste.sheetHelp')}</p>
       <button type="button" class="button button-secondary ct-paste-read" data-paste-read="" onClick={() => { setAsked(true); setSettled(box.current?.value ?? text); }}>{T('find.readList')}</button>
@@ -387,7 +399,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
           {questions.length > 10 && <p class="ct-muted">{loose ? T('paste.chooseNoteLoose', { word: loose.name }) : T('paste.chooseNote')}</p>}
           {rowList(questions, T('paste.otherQuestions'), ' ct-paste-qs')}
           {asking.length > 1 && <p class="ct-paste-progress" ref={progress} tabIndex={-1}>{T('paste.progress', { chosen: num(chosen), left: num(left) })}
-            {left > 0 && <> <button type="button" class="text-link ct-paste-skip" {...waiting} onClick={() => { if (busy) return; setAnswers((a) => { const m = new Map(a); for (const q of asking) if (!isAnswered(q)) m.set(q.name, null); return m; }); requestAnimationFrame(() => progress.current?.focus()); }}>{P('paste.skip', left)}</button></>}</p>}
+            {left > 0 && <> <button type="button" class="text-link ct-paste-skip" {...waiting} onClick={() => { if (busy) return; setAnswers((a) => { const m = new Map(a); for (const q of asking) if (!isAnswered(q, m)) m.set(q.name, null); return m; }); requestAnimationFrame(() => progress.current?.focus()); }}>{P('paste.skip', left)}</button></>}</p>}
         </PasteGroup>
       )}
       {missing.length > 0 && (

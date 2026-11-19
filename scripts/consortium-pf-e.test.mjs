@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const M = await import('../src/islands/consortium/views/plants/model.ts');
-const { pasteNames, pasteReader, readPaste, plan, pasteCounts, answered, questionsOf } = await import('../src/islands/consortium/views/find/paste.ts');
+const { pasteNames, pasteReader, readPaste, plan, pasteCounts, answered, questionsOf, isAnswered, isPicked, keepAnswers } = await import('../src/islands/consortium/views/find/paste.ts');
 const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
 
 const taxon = (id, name, { stratum = null, family = null, functions = [], years = null } = {}) => ({
@@ -232,4 +232,37 @@ test('R5 (round 3): answers are kept a question each: "Castanea" and "chestnut" 
   assert.deepEqual(answered(r, new Map([['Castanea', null], ['chestnut', 'c3']])), ['c3'], 'None answers its question with nothing');
   assert.deepEqual(answered(r, new Map([['gone', 'c2'], ['chestnut', 'c3']])), ['c3'], 'the answer of a line no longer pasted adds nothing');
   assert.deepEqual(answered(r, new Map([['Castanea', 'zz']])), [], 'an answer the question does not offer adds nothing');
+});
+
+// ---- h3 hand-off (G3: M22, M24) ----
+
+// A mixed reading: a genus ("Castanea"), a guess ("chestnut"), a loose word ("beans") and a close spelling
+// ("European chesnut"), four questions.
+const mixedPlants = [...chestnuts, ...here];
+const mixedIndex = releaseIndex({ lang: 'en', names: mixedPlants.map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+const mixed = () => readPaste(pasteNames('Castanea\nchestnut\nbeans\nEuropean chesnut\nCommon bean'), { here: mixedPlants, index: mixedIndex });
+
+test('M22 (h3): one definition of the questions and their answers: what "Add N plants" adds and what "N chosen, N to go" and "Skip the N left" count read the same questions', () => {
+  const r = mixed(), qs = questionsOf(r);
+  assert.deepEqual(qs.map((q) => q.name), ['Castanea', 'chestnut', 'beans', 'European chesnut'], 'the premise: four questions, in the paste\'s order');
+  // Castanea answered with a chestnut, chestnut with None, beans with a plant it does not offer (no answer).
+  const a = new Map([['Castanea', 'c1'], ['chestnut', null], ['beans', 'zz'], ['gone', 'c2']]);
+  const chosen = qs.filter((q) => isPicked(q, a)), left = qs.filter((q) => !isAnswered(q, a)), none = qs.filter((q) => a.get(q.name) === null);
+  assert.deepEqual([chosen.length, left.length, none.length], [1, 2, 1]);
+  assert.equal(chosen.length + left.length + none.length, qs.length, 'every question is chosen, left or answered None');
+  assert.deepEqual(answered(r, a), chosen.map((q) => a.get(q.name)), 'answered() is the picked answers');
+  const b = new Map([['beans', 'b2'], ['European chesnut', 'c1']]);
+  const picked = qs.filter((q) => isPicked(q, b)).length, open = qs.filter((q) => !isAnswered(q, b)).length;
+  assert.equal(picked + open, qs.length, 'with no None: chosen + left = the questions');
+  assert.deepEqual(answered(r, b).sort(), ['b2', 'c1']);
+  assert.deepEqual(plan(r, answered(r, b), []).ids.sort(), ['b1', 'b2', 'c1'], 'Add adds the found plant and the two picked');
+});
+
+test('M24 (h3): keepAnswers keeps an answer only while its question is pasted and still offers it; nothing to drop keeps the same map', () => {
+  const qs = questionsOf(mixed());
+  const a = new Map([['Castanea', 'c1'], ['chestnut', null], ['beans', 'zz'], ['gone', 'c2']]);
+  assert.deepEqual([...keepAnswers(a, qs)], [['Castanea', 'c1'], ['chestnut', null]], 'a line no longer pasted, and a plant its question no longer offers, are dropped');
+  const kept = new Map([['Castanea', 'c1'], ['chestnut', null]]);
+  assert.equal(keepAnswers(kept, qs), kept, 'nothing dropped: the same map (no re-render)');
+  assert.deepEqual([...keepAnswers(a, [])], [], 'an emptied paste keeps no answer');
 });
