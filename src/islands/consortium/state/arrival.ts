@@ -144,13 +144,13 @@ export function guessCountry(codes: readonly string[], { zone, languages = [], z
 
 // ---- the place seed ----
 
-// The canopi-place seed (`m z`, persist.ts placeSeed) as the place fields' values, or null
+// The canopi-place seed (`m z f b p i d`, persist.ts placeSeed) as the place fields' values, or null
 // when there is none: read through the link decoder (a v5 fragment of the place keys alone), so a seed
 // follows the link's words and fallbacks.
-export function placeOfSeed(seed: string | null): Pick<ReturnType<typeof schema.peek<'room' | 'plot'>>, 'room' | 'plot'> | null {
+export function placeOfSeed(seed: string | null): Pick<ReturnType<typeof schema.peek<'room' | 'plot' | 'siteEdits'>>, 'room' | 'plot' | 'siteEdits'> | null {
   if (!seed || seed.length > 2_000) return null;
   const d = decodeLink(`v=5&${seed}&e=1`, {});
-  return { room: d.state.room, plot: d.state.plot };
+  return { room: d.state.room, plot: d.state.plot, siteEdits: d.state.siteEdits ?? NO_EDITS };
 }
 // Writes the seed into the place fields (not the reader acting: no save, no seed written back).
 function seedPlace(seed: string | null): void {

@@ -175,8 +175,9 @@ test('arrival: a v4 or v6 link in the fragment is a link (restore gives its noti
   assert.deepEqual(arrival({ hash: '', search: '' }, old, 'temperate'), { kind: 'start', climate: 'Temperate' });
 });
 
-test('a place seed (canopi-place) reads back room and plot size (old spot and soil keys ignored); nothing on damage', () => {
-  assert.deepEqual(placeOfSeed('m=pots&z=6&l=shade&s=pots'), { room: 'pots', plot: 6 });
+test('a place seed (canopi-place) reads back room, plot size and the grower\'s own values (old spot and soil keys ignored); nothing on damage', () => {
+  assert.deepEqual(placeOfSeed('m=pots&z=6&l=shade&s=pots'), { room: 'pots', plot: 6, siteEdits: core.NO_EDITS });
+  assert.deepEqual(placeOfSeed('m=pots&z=6&b=62&p=0&d=wet'), { room: 'pots', plot: 6, siteEdits: { soilPh: 6.2, pots: false, drainage: 'wet' } });
   assert.equal(placeOfSeed(null), null);
 });
 
@@ -246,4 +247,19 @@ test('climateFor: today is the historical slot; another period takes the context
   assert.deepEqual(climateFor({ inputs, scenario: 'ssp585' }, '2041-2070'), slot('2041-2070', 'ssp585'));
   assert.equal(climateFor({ inputs, scenario: 'ssp245' }, '2071-2099'), null);
   assert.equal(climateFor({ inputs: NO_INPUTS, scenario: 'ssp245' }, '1991-2020'), null);
+});
+
+// Pre-push saves-3 / verdicts-1: the "In the ground" answer (pots: false) is written as p=0 and read back,
+// so under the room "Pots or a balcony" the soil test still counts after a save, a reload or a link.
+test('the "In the ground" answer round-trips (p=0), so a soil pH under the pots room survives a reload', () => {
+  const place = core.encodePlace({ country: null, siteEdits: { pots: false, soilPh: 8.2 } });
+  assert.equal(place, 'b=82&p=0');
+  const back = decodeLink(`v=5&${place}&e=1`, {}).state.siteEdits;
+  assert.deepEqual(back, { soilPh: 8.2, pots: false });
+  const inputs = siteInputsOf({ room: 'pots', edits: back });
+  assert.deepEqual(inputs.pots, { value: false, source: 'grower' });
+  assert.equal(core.soilPhOf(inputs), 8.2);
+  assert.equal(core.encodePlace({ country: null, siteEdits: { pots: true } }), 'p=1');
+  assert.deepEqual(decodeLink('v=5&p=1&e=1', {}).state.siteEdits, { pots: true });
+  assert.equal(decodeLink('v=5&p=2&e=1', {}).state.siteEdits ?? null, null, 'an unreadable p is dropped');
 });

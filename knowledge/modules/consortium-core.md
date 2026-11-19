@@ -6,7 +6,7 @@ resource: ../../src/lib/consortium
 tags: [module, consortium]
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:07Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:21Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:11Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
@@ -81,8 +81,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:e80bca603fcf2579
-    last_modified: 2026-11-19T08:16:50Z
+    digest: sha256:023783ecbccd0096
+    last_modified: 2026-11-19T12:06:03Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -191,13 +191,13 @@ sources:
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
-    digest: sha256:d1d18c16964693d2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:db579831b2a93c65
+    last_modified: 2026-11-19T12:05:40Z
   - id: consortium-link-v5-test-mjs
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
-    digest: sha256:30666970fedbae82
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:a77ed58ac9d2af62
+    last_modified: 2026-11-19T12:06:27Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json

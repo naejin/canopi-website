@@ -3,7 +3,7 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:08Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
 sources:
@@ -25,8 +25,8 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:07f9775e9c850dec
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:3f8624af8c10e132
+    last_modified: 2026-11-19T12:06:03Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -35,13 +35,13 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:ba01c67cc05e48f2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:406d9721a14011fa
+    last_modified: 2026-11-19T12:06:03Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:7a085fede4454133
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:9c3a0fb17eddf50b
+    last_modified: 2026-11-19T12:06:10Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts
@@ -194,7 +194,7 @@ Declare it in `CONSORTIUM_FIELDS` or `STATE_FIELDS` with its options; Undo, the 
 
 ## Spot and soil answers removed (v14 pf 0W-2 R4, 2026-11-18)
 
-The spot and soil schema fields, `emptyPlace` and the spot and soil link keys are deleted. `persist.ts` `palette()` is the saved fields as they are; the save's `place` and the address's `pl` carry the grower's own values (`store.siteEdits`, saved since 0W-1); the `canopi-place` seed (`placeSeed()`) is room and plot only. While a link's place waits, the save keeps the reader's own country and own values (`linkPlace.own`), never the link's. A link brings a place with its cell (`o`) or the grower's values (`f b p i d`); `k` alone does not. A cut link (no `e=1`) is refused as unreadable and restores nothing (restore.ts; the "cut" notice and its strings are gone).
+The spot and soil schema fields, `emptyPlace` and the spot and soil link keys are deleted. `persist.ts` `palette()` is the saved fields as they are; the save's `place` and the address's `pl` carry the grower's own values (`store.siteEdits`, saved since 0W-1); the `canopi-place` seed (`placeSeed()`) is room, plot and the grower's own values (`m z f b p i d`; pre-push saves-1: a page that does not open the save, such as a link, a guide preset or the visit after Start over, starts from it, so its first plant change never writes the save with no values); while a link's place waits it seeds the reader's own values (`linkPlace.own`), and `useLinkPlace` ends the notice before reseeding so the link's values, chosen, seed it. The pots answer is written both ways (`p=1` pots, `p=0` in the ground, pre-push saves-3), so under the room "Pots or a balcony" a ground answer and its soil test survive a save, reload or link. While a link's place waits, the save keeps the reader's own country and own values (`linkPlace.own`), never the link's. A link brings a place with its cell (`o`) or the grower's values (`f b p i d`); `k` alone does not. A cut link (no `e=1`) is refused as unreadable and restores nothing (restore.ts; the "cut" notice and its strings are gone).
 
 ## Main h2 hand-off (2026-11-18)
 

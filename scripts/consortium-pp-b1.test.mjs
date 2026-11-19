@@ -87,8 +87,9 @@ test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the
   assert.deepEqual(arrivalM.arrival({ hash: '#v=5&c=temperate&a=&e=1', search: '' }, rec, null, { ct: 'v=5&c=temperate&a=&e=1', src: 'link', pl: 'k=FR&l=sun', ask: 1 }), { kind: 'saved', fragment: 'v=5&c=temperate&a=&e=1', at: '', src: 'link', place: 'k=FR&l=sun', ask: true, hold: true });
   // A save with no v, and v4 / v6 saves: not a record.
   for (const f of ['c=temperate&a=&e=1', 'v=4&c=temperate&a=&e=1', 'v=6&c=temperate&a=&e=1']) assert.equal(readRecord(saveRecord(f, 'x', null)), null, f);
-  // The seed: room and plot read through the link's words (old spot and soil keys ignored, R4).
-  assert.deepEqual(arrivalM.placeOfSeed('m=pots&z=40&l=shade&q=windy&s=own.acid.-'), { room: 'pots', plot: 40 });
+  // The seed: room, plot and the grower's own values read through the link's words (old spot and soil
+  // keys ignored, R4).
+  assert.deepEqual(arrivalM.placeOfSeed('m=pots&z=40&l=shade&q=windy&s=own.acid.-'), { room: 'pots', plot: 40, siteEdits: NO_EDITS });
   assert.equal(arrivalM.placeOfSeed(null), null);
 });
 
@@ -561,8 +562,7 @@ test('b1a bugs-10: "Use my own place" pressed while "Use it" is still working ch
     await wait(0);
     const chosen = kept.get(COUNTRY_STORE) ?? null;
     assert.equal(chosen === null || chosen === store.country.peek().code, true, `half-way: the page shows ${store.country.peek().code} but the device keeps ${chosen}`);
-    const seed = kept.get(PLACE_STORE) ?? '';
-    assert.doesNotMatch(seed, /b=/, 'canopi-place holds room and plot only');
+    assert.deepEqual(arrivalM.placeOfSeed(kept.get(PLACE_STORE) ?? null)?.siteEdits, store.siteEdits.peek(), 'half-way: canopi-place holds other values than the page');
   } finally { restoreM.provideLocationStep(slow); restoreM.provideLocationStep(before); store.location.value = null; }
 });
 
@@ -945,7 +945,7 @@ test('save model link place (b): "Use it" keeps the save R; the link\'s values (
     assert.ok(loc && Math.abs(loc.lat - 37.35) < 0.051 && Math.abs(loc.lon - -5.95) < 0.051, `the link's cell in canopi-location (${kept.get(LOCATION_STORE)})`);
     assert.notEqual(loc.source, 'link', 'kept as the reader\'s own');
     assert.equal(kept.get(COUNTRY_STORE), 'ES', 'the link\'s country kept');
-    assert.doesNotMatch(kept.get(PLACE_STORE) ?? '', /b=/, 'canopi-place holds room and plot only');
+    assert.match(kept.get(PLACE_STORE) ?? '', /b=50/, 'the link\'s values, used, seed canopi-place');
     store.removeMember(store.members.peek()[0]);
     await wait(0);
     assert.equal(saved()?.place, 'b=50', 'the link\'s values, used, reach the save with the plant change');
@@ -1345,4 +1345,65 @@ test('save model invariants over random sequences: the save, the flag and every 
     persist.linkPlace.value = null;
     persist.quietly(() => { store.climate.value = 'Temperate'; store.guests.value = {}; });
   }
+});
+
+// ---- pre-push saves-1: the grower's own values carried by canopi-place ----
+// A page that does not open the save (a link, Start over then a new visit) starts from the seed, so the
+// grower's own values (soil test, wet soil, a nights shift) are never replaced by none on its first
+// plant change, and "Use my own place" gives them back.
+test('pre-push saves-1: a page that does not open the save keeps the grower\'s own values from canopi-place', async () => {
+  const EDITS = { nightsShiftC: -2, soilPh: 6.2, drainage: 'wet' };
+  const before = restoreM.provideLocationStep(async () => ({ settle: async () => {}, adopt: () => false }));
+  const restoreAddress = fakeAddress();
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await wait(5); };
+  const savedEdits = () => decodeLink(`v=5&${saved()?.place ?? ''}&e=1`, {}).state.siteEdits ?? NO_EDITS;
+  // The grower's save with their values, then a new tab: nothing of the page kept but storage.
+  const newTab = async () => {
+    await mine(5);
+    store.siteEdits.value = EDITS;
+    await wait(0);
+    assert.deepEqual(savedEdits(), EDITS, 'the save holds the values');
+    persist.holdSave(true);
+    persist.quietly(() => { store.siteEdits.value = NO_EDITS; store.members.value = []; store.removed.value = []; store.view.value = 'start'; store.climate.value = null; });
+    opened(kept.get(STORE));
+    return kept.get(PLACE_STORE) ?? null;
+  };
+  const open = (how, seed) => {
+    const plan = arrivalM.arrivalPlan(how, { saved: saved(), pref: null, guess: () => null, seed, cell: () => null });
+    arrivalM.openWith({ how, plan, saved: saved(), seed, keptLocation: null });
+  };
+  try {
+    // (a) A default share link (no place): the values stay, and the first plant change keeps them in the save.
+    let seed = await newTab();
+    const plain = await linkWith('Temperate', 3);
+    open(arrivalM.arrival({ hash: `#${plain}`, search: '' }, saved(), null), seed);
+    await until(() => store.members.peek().length === 3);
+    assert.deepEqual(store.siteEdits.peek(), EDITS, '(a) a link with no place dropped the grower\'s values');
+    store.removeMember(store.members.peek()[0]);
+    await wait(0);
+    assert.deepEqual(savedEdits(), EDITS, '(a) the first plant change wrote the save without the grower\'s values');
+    // (b) A link that brings a place: "Use my own place" gives the grower's values back.
+    seed = await newTab();
+    const withPlace = await linkWith('Temperate', 3, { siteEdits: SHADE }, { place: true });
+    open(arrivalM.arrival({ hash: `#${withPlace}`, search: '' }, saved(), null), seed);
+    await until(() => restoreM.linkPlace.peek());
+    assert.ok(restoreM.linkPlace.peek(), '(b) no link-place notice');
+    draft.useOwnPlace();
+    assert.deepEqual(store.siteEdits.peek(), EDITS, '(b) "Use my own place" did not give the grower\'s values back');
+    store.removeMember(store.members.peek()[0]);
+    await wait(0);
+    assert.deepEqual(savedEdits(), EDITS, '(b) the save lost the grower\'s values');
+    // (c) Start over removes the save; the next visit starts with the values ("Your place is kept").
+    await mine(5);
+    store.siteEdits.value = EDITS;
+    await wait(0);
+    draft.startOver();
+    await wait(0);
+    seed = kept.get(PLACE_STORE) ?? null;
+    persist.quietly(() => { store.siteEdits.value = NO_EDITS; });
+    opened(kept.get(STORE) ?? null);
+    open(arrivalM.arrival({ hash: '', search: '' }, saved(), null), seed);
+    await wait(0);
+    assert.deepEqual(store.siteEdits.peek(), EDITS, '(c) the next visit after Start over lost the grower\'s values');
+  } finally { restoreAddress(); restoreM.provideLocationStep(before); store.location.value = null; persist.linkPlace.value = null; }
 });

@@ -123,8 +123,10 @@ export async function useLinkPlace(): Promise<void> {
     if (linkPlace.peek() !== pending) return;
     const c = store.country.peek();
     if (c.code && c.source === 'link') chooseCountry(c.code);
-    const seeded = memory.write(PLACE_STORE, placeSeed());
+    // The notice ends first, so the seed takes the link's place now the reader's (placeSeed writes the
+    // reader's own values while a link's place waits).
     linkPlace.value = null;
+    const seeded = memory.write(PLACE_STORE, placeSeed());
     answered(T(kept && seeded ? 'place.usedLink' : 'place.usedLinkUnkept'));
   } finally { answering.value = false; }
 }

@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:19Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:36Z }
 sources:
@@ -127,13 +127,13 @@ sources:
   - id: arrival-ts
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
-    digest: sha256:ba01c67cc05e48f2
-    last_modified: 2026-11-18T04:51:36Z
+    digest: sha256:406d9721a14011fa
+    last_modified: 2026-11-19T12:06:03Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:7a085fede4454133
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:9c3a0fb17eddf50b
+    last_modified: 2026-11-19T12:06:10Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -142,8 +142,8 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:07f9775e9c850dec
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:3f8624af8c10e132
+    last_modified: 2026-11-19T12:06:03Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -327,8 +327,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:e80bca603fcf2579
-    last_modified: 2026-11-19T08:16:50Z
+    digest: sha256:023783ecbccd0096
+    last_modified: 2026-11-19T12:06:03Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts
@@ -747,7 +747,7 @@ Not unreadable: an empty `a` (a valid empty palette); tokens that parse but are 
 | Key | Value after | Change |
 |---|---|---|
 | `canopi-consortium` | `{ fragment, place, at, src, country? }`: `fragment` the public v5 form (room `m` and plot `z` live there, always public); `place` the palette's private place answers `l w q r h s` (no `k`, no `o`); `country` the location country kept beside the fragment when `src` is `'location'`, never in it (as today, `persist.ts:86-90`) | v4 records read as older; records without `place` read with every answer `unsure` |
-| `canopi-place` (new, PP-B) | the reader's last place answers `m z l w q r h s` | **only seeds a new palette** (owner wording of `privacy.tool.device`, 2026-11-14: "Your last spot answers are also kept to start your next palette"): written on every place change; read only when a palette starts with no place of its own (no save, or an arrival that brings no place and no open palette); cleared by "Forget this location"; named on the privacy page |
+| `canopi-place` (new, PP-B) | the reader's last place answers `m z f b p i d` (room, plot and the grower's own values since v14 0W-2 R4 and pre-push saves-1) | **only seeds a new palette** (owner wording of `privacy.tool.device`, 2026-11-14: "Your last spot answers are also kept to start your next palette"): written on every place change; read only when a palette starts with no place of its own (no save, or an arrival that brings no place and no open palette); cleared by "Forget this location"; named on the privacy page |
 | `canopi-location` | as today, per device | the one location store; "Use it" writes a link's cell into it (below) |
 | `canopi-country`, `canopi-climate` | as today | none |
 
