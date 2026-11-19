@@ -2,7 +2,7 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:56:14Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:21:02Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
@@ -94,18 +94,18 @@ sources:
   - id: figures-tsx
     resource: ../../src/islands/consortium/views/figures/Figures.tsx
     title: src/islands/consortium/views/figures/Figures.tsx
-    digest: sha256:b9b2e4521253a7ee
-    last_modified: 2026-11-19T10:39:31Z
+    digest: sha256:73df3b0ef8b5c317
+    last_modified: 2026-11-19T11:10:00Z
   - id: slots-tsx
     resource: ../../src/islands/consortium/views/figures/slots.tsx
     title: src/islands/consortium/views/figures/slots.tsx
-    digest: sha256:79f15300e5705e7d
-    last_modified: 2026-11-19T10:23:52Z
+    digest: sha256:7c68ea9bff16f064
+    last_modified: 2026-11-19T11:06:28Z
   - id: figures-css
     resource: ../../src/styles/consortium/figures.css
     title: src/styles/consortium/figures.css
     digest: sha256:91a8e9ccd407316c
-    last_modified: 2026-11-19T10:23:52Z
+    last_modified: 2026-11-19T10:56:24Z
 enforced_by:
   - scripts/browser/consortium-pp-b2.browser.test.mjs
   - scripts/consortium-pf-b.test.mjs
@@ -268,7 +268,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 
 ## "What limits plants here" on the palette (follow-up F1, 2026-11-19)
 
-- Drawn first, before the Next step (board SiteMendoza), only where a line limits (an outside count, or a member drier here); `views/figures/Figures.tsx` `PaletteLimits`, mounted through the lazy shell `views/figures/slots.tsx`.
-- Shown state: the current answer once the checks are ready, the last ready answer for this place and list while they count, the counting or failed state before any. Once it has shown a limiting line on this visit (same place key and the same loaded list, `store.pools[climate]`) it stays for the visit with every row it showed, so an edit made in it never removes the card or the focused row; the change is said in words ("No climate line limits plants here.", the row's "Not a limit for this list"). Unmounting the palette ends the visit.
-- Phone (max-width 639px, RULED (a)): closed to its head, the main limit in one line (`figures.limitsSummary`, or `figures.limitsSummaryWater`) and a button with `aria-expanded` ("Show the N limits", `figures.limitsShow`); the Water card is hidden with the body. From 640 px the body is `display: contents` and the button is not drawn (`styles/consortium/figures.css`).
-- The figures parts are not quiet lazy parts: while their chunk loads they render nothing (the slot reserve in `base.css` holds the room); a failed chunk shows the in-place "could not open" notice with Reload, which retries in place, so the reserve ends.
+- Drawn first, before the Next step (board SiteMendoza), only where a line limits (an outside count, or a member drier here); `views/figures/Figures.tsx` `PaletteLimits`, mounted through the lazy shell `views/figures/slots.tsx`, which asks for the part only at a located place with climate figures (fix round 1 R1, C5), so a failed chunk is never said on a palette with no place or a climate only.
+- Shown state, held in the component (`useRef`, one visit per place key and loaded list `store.pools[climate]`; no module state, it ends when the palette unmounts; fix round 1 C4, the leftovers' per-view latch): the counting or failed state before any ready count; a ready count that finds no limiting line leaves it out; once a count found one, the card stays for the visit with every row it showed, so an edit made in it never removes the card or the focused row, and the change is said in words ("No climate line limits plants here.", the row's "Not a limit for this list"). If the card goes while it holds the focus, `focus.ts`'s safety net lands it on the palette's heading.
+- Phone (max-width 639px, RULED (a)): closed to its head and, once counted, the main limit in one line, named by the limit (`figures.limitsSummary`; warmth over the year as `figures.limitsWarmth` with the year's mean, never the Hottest days row it is shown in), or "No climate line limits plants here." with `figures.limitsDry` when only members are drier; and a button with `aria-expanded` ("Show the N limits", `figures.limitsShow`: N = core `limitsOf` entries, plus 1 when members are drier; with none, `figures.limitsShowAll`). No button before a ready count; open is per visit, so a new place opens closed. The counting and failed lines are one `role="status"` line outside the body, shown at every width. The Water card is hidden with the body. From 640 px the body is `display: contents` and the button is not drawn (`styles/consortium/figures.css`).
+- The figures parts are not quiet lazy parts: while their chunk loads they render nothing (the slot reserve in `base.css` holds the room); a failed chunk shows the in-place "could not open" notice with Reload, which retries in place, so the reserve ends. Measured (fix round 1 C6): when the chunk lands late at a limited place, the card pushes the Next step down (695 px at 1280, 141 px at 390, Kiambu); normally the chunk is already loaded by the Place step's panel.

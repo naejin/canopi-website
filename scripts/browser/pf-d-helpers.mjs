@@ -35,7 +35,7 @@ export async function placeStep(id, opts = {}) {
 // The engine's figures for the panel, on the page's own state: the page's verdict rule judges the list
 // for each period (the store's own context), and the core functions the panel calls count them
 // (site-change.ts lineCounts, limitStatus, rangeMoves; never a copy of their arithmetic, C3, C12).
-const { drierFrom, lineCounts, limitStatus, rangeMoves } = await import('../../src/lib/consortium/site-change.ts');
+const { drierFrom, lineCounts, limitStatus, limitsOf, rangeMoves } = await import('../../src/lib/consortium/site-change.ts');
 // of: 'pool' (the list) or 'members' (the palette's plants).
 async function engineVerdicts(page, of = 'pool') {
   const { list, byPeriod } = await page.evaluate((which) => {
@@ -62,6 +62,13 @@ export async function engineSides(page) {
   const { list, byPeriod } = await engineVerdicts(page);
   const c = lineCounts(list, byPeriod);
   return { sides: c.periods.map((p) => p.sides), status: limitStatus(c), moves: rangeMoves(list, byPeriod), of: list.length };
+}
+
+// The lines that limit on the list, most first (core limitsOf: the limits card's "Show the N limits"
+// and its main limit, topLimit, the first).
+export async function engineLimits(page) {
+  const { list, byPeriod } = await engineVerdicts(page);
+  return limitsOf(lineCounts(list, byPeriod)).map((l) => l.line);
 }
 
 // Each plant's first period drier here than its recorded band (core drierFrom over drierOf, the rule the

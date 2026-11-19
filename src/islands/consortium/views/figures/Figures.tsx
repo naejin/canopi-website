@@ -16,7 +16,7 @@
 //   the list and the members are judged for the three periods with the inputs before and after (six
 //   passes), and core siteChange / siteChangeLines say what changed (toast, with Undo; the line's own
 //   detail under it). Counting… and "Checks could not run" with Retry are the store's (F6, F7).
-import { computed, effect as watch, signal } from '@preact/signals';
+import { computed, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
@@ -952,14 +952,15 @@ function WaterCard({ i }: { i: SiteInputs }) {
     </section>
   );
 }
-// Whether "What limits plants here" stands (T15; fix round 1 C2; follow-up F1, C2/R1): the card follows
-// the checks' answer, once a count is ready the current one, and while they count, the last ready one
-// for this place and list; before any (the first count, or checks that could not run) it is drawn in
-// its counting or failed state, never left out (unknown is never a hole). Once it has shown a limiting
-// line on this visit of the palette, for this place and list, it stays for the visit with every row
-// it showed: an edit made in it never takes the card, or the row the focus is on, from under the
-// reader; a row that no longer limits says so in its own words, and the card says "No climate line
-// limits plants here." (inform, don't block). Leaving the palette ends the visit.
+// Whether "What limits plants here" stands (T15; fix round 1 C2; follow-up F1, C2/R1, fix round 1 C4):
+// the card's own visit, held in the component (it ends when the palette leaves the screen) and begun
+// again for each place and loaded list. Before a ready count it is drawn in its counting or failed
+// state, never left out (unknown is never a hole); a ready count that finds no limiting line (no
+// outside count, no member drier here) leaves it out. Once a count has found a limiting line, the card
+// stays for the visit with every row it showed: an edit made in it never takes the card, or the row
+// the focus is on, from under the reader; a row that no longer limits says so in its own words, and the
+// card says "No climate line limits plants here." (inform, don't block). If the card goes while it
+// holds the focus, focus.ts's safety net lands it on the palette's heading.
 const placeKey = computed(() => { const l = store.location.value; return `${store.climate.value}|${l ? `${l.lat},${l.lon}` : ''}`; });
 const limiting = computed(() => limits.value.length > 0 || !!membersDry.value?.size);
 // The rows that limit now (core limitsOf, most first; warmth over the year is said in the Hottest days
@@ -973,78 +974,75 @@ const limitRows = computed<ClimateLine[]>(() => {
   }
   return rows;
 });
-// What this visit's card has answered: the place and list it was counted on (the list as loaded, not
-// store.pool, which reads null while the range checks are away), whether a ready count found a
-// limiting line there, and the rows it has shown.
-interface Seen { key: string; pool: Taxon[] | null; limited: boolean; rows: ClimateLine[] }
+// The list as loaded (not store.pool, which reads null while the range checks are away).
 const listLoaded = computed(() => { const c = store.climate.value; return c ? store.pools.value[c] ?? null : null; });
-const seen = signal<Seen | null>(null);
-let visits = 0; // PaletteLimits mounted (the palette on screen)
-function noteAnswer(): void {
-  if (checks.value !== 'ready') return;
-  const key = placeKey.value, pool = listLoaded.value, lim = limiting.value, rows = limitRows.value;
-  if (!visits) return;
-  const was = seen.peek();
-  if (!was || was.key !== key || was.pool !== pool) { seen.value = { key, pool, limited: lim, rows }; return; }
-  const more = rows.filter((r) => !was.rows.includes(r));
-  if ((lim && !was.limited) || more.length) seen.value = { ...was, limited: was.limited || lim, rows: [...was.rows, ...more] };
+interface Visit { key: string; pool: Taxon[] | null; answered: boolean; limited: boolean; rows: ClimateLine[] }
+// The phone's closed card says the main limit in one line of words, named by the limit itself, not by
+// the row it is said in (fix round 1 R5, C1): warmth over the year with the year's mean (today →
+// 2071–2099, as the Hottest days row's warmth sentence reads it), never the hottest days' figures.
+function limitSummary(top: LimitLine, i: SiteInputs): string | null {
+  if (top === 'warmth') {
+    const s = store.scenario.value, a = climateFor({ inputs: i, scenario: s }, TODAY), b = climateFor({ inputs: i, scenario: s }, LAST);
+    if (!a) return null;
+    const value = b ? `${bare(temp(yearMeanC(a)))} → ${temp(yearMeanC(b))}` : temp(yearMeanC(a));
+    return F('limitsSummary', { line: F('limitsWarmth'), value });
+  }
+  const row = LIMIT_LINES[top].row, v = i[INPUT[row]].value;
+  return v === null ? null : F('limitsSummary', { line: F(NAME[row]), value: climateRange(row, i, v) });
 }
-watch(noteAnswer);
-const seenHere = computed(() => { const s = seen.value; return s && s.key === placeKey.value && s.pool === listLoaded.value ? s : null; });
-const limitShown = computed(() => {
-  const s = seenHere.value;
-  if (s?.limited) return true;
-  if (checks.value === 'ready') return limiting.value;
-  return s ? s.limited : true;
-});
 // "Show the N limits" (RULED (a), pf-decisions 2026-11-19): on the phone (max-width 639px) the card
 // stands closed to its head and the main limit in one line, so the Next step is on the first screen;
-// from 640 px it is open and the disclosure is not drawn (figures.css). Open for the visit.
-const limitsOpen = signal(false);
+// from 640 px it is open and the disclosure is not drawn (figures.css). N counts the limits that apply
+// now (core limitsOf, and the members drier here); with none, "Show more" (fix round 1 R2, C2). No
+// disclosure before a ready count: the closed card is its head and the counting or failed line (R3).
+// Open for this visit only.
 export function PaletteLimits() {
-  useEffect(() => {
-    visits++;
-    noteAnswer();
-    return () => { visits--; if (!visits) { seen.value = null; limitsOpen.value = false; } };
-  }, []);
+  const visit = useRef<Visit | null>(null);
+  const [openFor, setOpenFor] = useState<Visit | null>(null);
+  const status = checks.value, key = placeKey.value, pool = listLoaded.value;
+  let v = visit.current;
+  if (!v || v.key !== key || v.pool !== pool) v = visit.current = { key, pool, answered: false, limited: false, rows: [] };
+  const now = status === 'ready' ? limitRows.value : [];
+  if (status === 'ready') {
+    v.answered = true;
+    if (limiting.value) v.limited = true;
+    for (const r of now) if (!v.rows.includes(r)) v.rows.push(r);
+  }
   const i = store.siteInputs.value;
   if (!located.value || i.nights.value === null) return null;
-  const status = checks.value;
+  if (!(v.limited || (status !== 'ready' && !v.answered))) return null;
   // Every line that limits (A5), and the rows this visit has shown; the night and heat lines that limit
   // nothing are said in one sentence, "Not a limit here: …", built only from the counts: while the
-  // checks are counting or could not run, the card says that instead.
+  // checks are counting or could not run, the card says that instead (one live line, at every width
+  // and with the phone's card closed, R4).
   const main = mainLimit.value;
-  const now = status === 'ready' ? limitRows.value : [];
-  const kept = seenHere.value?.limited ? seenHere.value.rows : [];
-  const lines: ClimateLine[] = status === 'ready' ? [...now, ...kept.filter((r) => !now.includes(r))] : [];
+  const lines: ClimateLine[] = status === 'ready' ? [...now, ...v.rows.filter((r) => !now.includes(r))] : [];
   const today = climateFor({ inputs: i, scenario: store.scenario.value }, TODAY), last = climateFor({ inputs: i, scenario: store.scenario.value }, LAST);
   const not: string[] = [];
   if (status === 'ready' && today && last) {
     if (!lines.includes('nights')) not.push(F('notNights', { a: temp(today.tminColdC), b: temp(last.tminColdC), period: periodName(LAST), frost: F(today.tminColdC >= 10 ? 'noFrostLower' : 'frostLower') }));
     if (!lines.includes('days')) not.push(F('notDays', { a: temp(today.tmaxWarmC), b: temp(last.tmaxWarmC), period: periodName(LAST) }));
   }
-  if (!limitShown.value) return null;
   const grower = i.watering.source === 'grower';
-  // The phone's closed card: the main limit in one line of words, and how many lines opening shows.
   const dry = membersDry.value && store.memberTaxa.value.length ? store.memberTaxa.value.filter((t) => membersDry.value!.has(t.id)).length : 0;
-  const mainValue = main ? i[INPUT[main]].value : null;
-  const short = status === 'loading' ? sayAll([countingLine()]) : status === 'failed' ? sayAll([checksFailedLine()])
-    : main && mainValue !== null ? F('limitsSummary', { line: F(NAME[main]), value: climateRange(main, i, mainValue) })
-      : !now.length && dry ? FP('limitsSummaryWater', dry) : F('limitsNone');
-  const n = lines.length || (dry ? 1 : 0);
-  const open = limitsOpen.value;
+  const top = topLimit.value;
+  const short = (top && limitSummary(top, i)) || (dry ? `${F('limitsNone')} ${FP('limitsDry', dry)}` : F('limitsNone'));
+  const n = limits.value.length + (dry ? 1 : 0);
+  const open = openFor === v;
   return (
     <>
       <section class="fg-panel fg-limits" aria-labelledby="fg-limits-h" data-open={open ? '' : undefined}>
         <h2 class="fg-h2" id="fg-limits-h">{F('limitsTitle')}</h2>
-        <p class="fg-limits-short">{short}</p>
-        <button type="button" class="ct-link-button fg-link fg-limits-more" aria-expanded={open} aria-controls="fg-limits-body" onClick={() => { limitsOpen.value = !open; }}>
-          {open ? F('limitsHide') : n ? FP('limitsShow', n) : F('limitsShowAll')}
-        </button>
+        {status === 'loading' && <p class="fg-effect" role="status">{sayAll([countingLine()])}</p>}
+        {status === 'failed' && <p class="fg-effect" role="status">{sayAll([checksFailedLine()])}</p>}
+        {status === 'ready' && <p class="fg-limits-short">{short}</p>}
+        {(status === 'ready' || open) && (
+          <button type="button" class="ct-link-button fg-link fg-limits-more" aria-expanded={open} aria-controls="fg-limits-body" onClick={() => setOpenFor(open ? null : v)}>
+            {open ? F('limitsHide') : n ? FP('limitsShow', n) : F('limitsShowAll')}
+          </button>
+        )}
         <div class="fg-limits-body" id="fg-limits-body">
           <p class="fg-lede">{F('limitsLede')}{countsOf() ? ` ${countsOf()}` : ''}</p>
-          {status === 'loading' && <p class="fg-effect" role="status">{sayAll([countingLine()])}</p>}
-          {status === 'failed' && <p class="fg-effect" role="status">{sayAll([checksFailedLine()])}</p>}
           {lines.map((l) => <Row key={l} line={l} i={i} always main={l === main} card />)}
           {status === 'ready' && !now.length && <p class="fg-effect">{F('limitsNone')}</p>}
           {not.length > 0 && <p class="fg-note"><Lead text={F('notLimit', { parts: listOf(not) })} /></p>}

@@ -7,7 +7,7 @@
 // shells: their content is views/figures/Figures.tsx, its own lazy chunk (role `figures`,
 // scripts/built-modules.mjs), which pf-d fills in chunk 3. Keep this file a shell.
 import { lazyPart } from '../lazy.tsx';
-import { climate, load, location } from '../../store.ts';
+import { climate, load, location, siteInputs } from '../../store.ts';
 import { locationAtStart } from '../../state/restore.ts';
 import { retryableImport } from '../../../../lib/consortium/index.ts';
 
@@ -33,6 +33,9 @@ export function PlaceFigures() {
   if (!place && !locationAtStart.value) return null;
   return <div class="fg-slot">{place && load.value.status === 'ready' && <placePart.View />}</div>;
 }
+// The limits card can only stand at a located place with climate figures (PaletteLimits draws nothing
+// elsewhere): only there is its part asked for, so a failed chunk is said where the card would stand,
+// never on a palette with no place or a climate only (fix round 1 R1, C5; PFD61).
 export function PaletteLimits() {
-  return <limits.View />;
+  return location.value?.lookup && siteInputs.value.nights.value !== null ? <limits.View /> : null;
 }
