@@ -134,7 +134,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // elsewhere in the paste keeps them (R5), and two questions offering the same plants keep their own
   // answers (round 3 R5). An answer counts only for a question the reading asks (paste.ts isPicked,
   // isAnswered), so a line edited away and back, or moved, keeps its answer (c4 R2). The answers belong
-  // to a list: a paste over the whole text, or the box emptied, starts a new one and forgets them all
+  // to a list: any input over the whole text, or the box emptied, starts a new one and forgets them all
   // (onBeforeInput and onInput below; M24, h3 r1 R2).
   const [answers, setAnswers] = useState<Answers>(new Map());
   // "Add all" pressed while a long text (past SLICE names) is not read yet: the text it was pressed on.
@@ -393,13 +393,13 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // screen reader hears the reading once typing pauses, never a line per keystroke.
   const namesNote = lines > 0 && names === 'loading' ? T('find.namesLoading') : lines > 0 && (names === 'failed' || names === 'dropped') ? T('find.namesFailed') : '';
   const sayNow = nothing ? T('paste.nothing') : lines > 0 ? [P('paste.read', lines), sum, namesNote].filter(Boolean).join(' ') : '';
-  // A paste, a drop or a replacement over the whole text is a new list: no answer of the last list
-  // answers it, even for a line both lists name (M24). The box emptied is one too (onInput: select all,
-  // delete, then paste, whatever the pause; h3 r1 R2).
-  const NEW_LIST = new Set(['insertFromPaste', 'insertFromDrop', 'insertReplacementText']);
+  // Any input over the whole text is a new list, whatever its kind (a paste, a drop, a key typed over a
+  // select-all, an IME or dictation composing over it): no answer of the last list answers it, even for
+  // a line both lists name (M24, c4 r2 R1.1). A deletion over the whole text empties the box, which is
+  // one too (onInput: select all, delete, then paste or type, whatever the pause; h3 r1 R2).
   const forgetOnNewList = (e: InputEvent) => {
     const el = e.currentTarget as HTMLTextAreaElement;
-    if (NEW_LIST.has(e.inputType) && el.value && el.selectionStart === 0 && el.selectionEnd === el.value.length) setAnswers(new Map());
+    if (el.value && el.selectionStart === 0 && el.selectionEnd === el.value.length) setAnswers(new Map());
   };
   // The text to read now (a short one as it is typed, "Read the list", Add on a long one).
   function readNow(value: string, names = pasteNames(value)) {

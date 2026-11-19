@@ -1063,6 +1063,27 @@ test('PP-C60 (c1 h3 M23, pf-e#4): a reading with nothing to add keeps the focus 
   await addRefused(page, size);
 });
 
+// The first choice of the question on `line` pressed, then "1 chosen, 1 to go." (`premise`).
+async function answerFirst(page, line, premise) {
+  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), line);
+  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), premise);
+}
+
+// The question on `line` asks again: no choice pressed, "0 chosen, 2 to go." (`counted`).
+async function asksAgain(page, line, why, counted) {
+  assert.deepEqual((await chipsOf(page, line)).filter((c) => c.on).map((c) => c.text), [], `"${line}" asks again${why}`);
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, counted);
+}
+
+// Select all, then one input of `inputType` puts `v` over the whole text (the browser's beforeinput,
+// then input).
+const replaceAll = (page, v, inputType) => page.$eval(PASTE, (el, x, type) => {
+  el.focus(); el.select();
+  el.dispatchEvent(new InputEvent('beforeinput', { inputType: type, bubbles: true, cancelable: true }));
+  el.value = x;
+  el.dispatchEvent(new InputEvent('input', { inputType: type, bubbles: true }));
+}, v, inputType);
+
 // Two genera of two plants or more pasted and read, the first answered ("1 chosen, 1 to go").
 async function genusAnswered(page) {
   const genera = await page.evaluate(() => {
@@ -1075,8 +1096,7 @@ async function genusAnswered(page) {
   await typeIn(page, PASTE, genera.join('\n'));
   await page.click('dialog[open] [data-paste-read]');
   assert.ok(await countSays(page, /^2 names read/), 'the first list read');
-  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
-  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered');
+  await answerFirst(page, genera[0], 'the premise: one answered');
   return genera;
 }
 
@@ -1084,19 +1104,12 @@ test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the l
   const page = await suggestedAt('lyon', 'Temperate');
   const genera = await genusAnswered(page);
   // Select all, paste a second list naming the same genus (the browser's beforeinput, then input).
-  await page.$eval(PASTE, (el, v) => {
-    el.focus(); el.select();
-    el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'insertFromPaste', bubbles: true, cancelable: true }));
-    el.value = v;
-    el.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', bubbles: true }));
-  }, `${genera[0]}\n${genera[1]}\nzzqx not a plant`);
+  await replaceAll(page, `${genera[0]}\n${genera[1]}\nzzqx not a plant`, 'insertFromPaste');
   assert.ok(await countSays(page, /^3 names read/), 'the second list read');
-  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again: no choice pressed for the new list`);
-  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go"');
+  await asksAgain(page, genera[0], ': no choice pressed for the new list', 'counted in "N to go"');
   // h3 r1 R2: select all, delete, then paste within the 200 ms pause (the paste lands on an empty box):
   // the box went empty, a new list, so the answer is forgotten too.
-  await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
-  assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered again');
+  await answerFirst(page, genera[0], 'the premise: one answered again');
   await page.$eval(PASTE, (el, v) => {
     el.focus(); el.select();
     el.dispatchEvent(new InputEvent('beforeinput', { inputType: 'deleteContentBackward', bubbles: true, cancelable: true }));
@@ -1107,8 +1120,29 @@ test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the l
     el.dispatchEvent(new InputEvent('input', { inputType: 'insertFromPaste', bubbles: true }));
   }, `${genera[0]}\n${genera[1]}`);
   assert.ok(await countSays(page, /^2 names read/), 'the third list read');
-  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), [], `"${genera[0]}" asks again after the delete and the paste`);
-  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^0 chosen, 2 to go\./, 'counted in "N to go" again');
+  await asksAgain(page, genera[0], ' after the delete and the paste', 'counted in "N to go" again');
+});
+
+test('PP-C61b (c1 h3 M24, c4 C3 r2 R1.1): a new list typed over the whole old one (select all, then keys; an IME composing over it) forgets the last list\'s answers, as a paste does', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const genera = await genusAnswered(page);
+  // Select all, then type the same names by hand: the first key replaces the whole text (insertText),
+  // the box is never empty.
+  await page.$eval(PASTE, (el) => { el.focus(); el.select(); });
+  await page.keyboard.type(`${genera[0]}\n${genera[1]}\nzzqx not a plant`);
+  assert.ok(await countSays(page, /^3 names read/), 'the typed list read');
+  await asksAgain(page, genera[0], ': no choice pressed for the typed list', 'counted in "N to go"');
+  // An IME (or dictation) composing over the whole selection is a new list too.
+  await answerFirst(page, genera[0], 'the premise: one answered again');
+  await replaceAll(page, `${genera[0]}\n${genera[1]}`, 'insertCompositionText');
+  assert.ok(await countSays(page, /^2 names read/), 'the composed list read');
+  await asksAgain(page, genera[0], ' after the composition', 'counted in "N to go" after the composition');
+  // A key typed inside the list (not over all of it) keeps the answers (c4 R2).
+  await answerFirst(page, genera[0], 'the premise: answered once more');
+  await page.$eval(PASTE, (el) => { el.focus(); el.setSelectionRange(el.value.length, el.value.length); });
+  await page.keyboard.type('\nzzqx');
+  assert.ok(await countSays(page, /^3 names read/), 'the edited list read');
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^1 chosen, 1 to go\./, 'a key at the end keeps the answer');
 });
 
 test('PP-C62 (c1 h3 M25, pf-e#51; boards Paste, AddMany): "Which bean?" offers Common bean and Lima bean without their scientific names; a name several plants share ("sword bean": the release\'s two Sword beans, as board AddMany\'s Spanish cedars) gives each its scientific name; no two chips read the same', async () => {
