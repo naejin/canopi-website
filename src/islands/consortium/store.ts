@@ -15,7 +15,7 @@ import { P, T, nameOf } from './strings.ts';
 import { say, sayAll } from './words.ts';
 import { state } from './state/schema.ts';
 import { changedOf, held, lastSave, markSave, undoSave } from './state/save.ts';
-import { focusAfterToast, noteToastOpener } from './focus.ts';
+import { focusAfterToast, focusWarning, noteToastOpener } from './focus.ts';
 
 // Where the country came from: the reader chose it, a link carried it, the page guessed it from
 // the browser's language (shown as a guess, never assumed), or (P5 S5b) the site location gave it
@@ -458,13 +458,16 @@ export function invasiveCountries(t: Taxon): number {
 // change, so the palette page (pictures, Next step) and Find (best first, "fills N holes", "lacks N")
 // read one list. Pending while a member's list is read or could not be read: every hole is 'pending'
 // then, never a false hole (its plants may fill one, PP-B21).
-// The members' lists in one state (c4 T3), read by every part that says it (the Next step, the Jobs
-// intro and counts, Through the years' counts, Things to weigh): 'failed' while a guest list could not
-// be read (first: its plants stay not checked whatever else loads, so the page gives one answer),
-// 'loading' while a list is read, else 'ready'.
+// Whether a member's list is still being read: the counts and figures (the Jobs rows, Through the
+// years' counts, Things to weigh) wait, whatever has failed, so no partial count shows (F26; c4 R1).
+export const listsLoading = computed(() => guestsPending.value.length > 0 || missingMembers.value.loading.length > 0);
+// The members' lists in one state for the holes answer (c4 T3: the Next step and the Jobs intro):
+// 'failed' while a guest list could not be read (first: its plants stay not checked whatever else
+// loads, so the wording gives one answer), 'loading' while a list is read, else 'ready'. Counts read
+// listsLoading instead.
 export type ListsState = 'ready' | 'loading' | 'failed';
 export const listsState = computed<ListsState>(() => (failedMembers.value.length ? 'failed'
-  : guestsPending.value.length || missingMembers.value.loading.length ? 'loading' : 'ready'));
+  : listsLoading.value ? 'loading' : 'ready'));
 export const holesPending = computed(() => listsState.value !== 'ready');
 export const paletteHoles = computed<Hole[]>(() => holes({ members: memberTaxa.value, verdicts: memberVerdicts.value, pending: holesPending.value }));
 // The holes open now, in rank order (not judged and pending ones left out).
@@ -993,9 +996,14 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
   const text = typeof said === 'function' && was
     ? said({ added: fresh, size: members.peek().length, holeChange: holeChange(was.holes, paletteHoles.peek()), thinChange: thinChange(was.thins, thinSpots.peek()) })
     : typeof said === 'string' ? said : P('paste.added', fresh.length);
-  // Show for the plant whose Details is on top does nothing: its warning is on screen, and the sheet the
-  // grower reads keeps its scroll and focus (c4 T7).
-  const show = (id: PlantId) => { const top = sheet.peek(); if (top?.kind !== 'details' || top.id !== id) openSheet('details', id); };
+  // Show, read at the press: for the plant whose Details is on top, that sheet stays (c4 T7) and its
+  // warning comes on screen with the focus (c4 R2: an action always shows its effect); else the plant's
+  // Details opens, from Find when Find is on top (its "‹ Back to results", c4 C2).
+  const show = (id: PlantId) => {
+    const top = sheet.peek();
+    if (top?.kind === 'details' && top.id === id) focusWarning();
+    else openSheet('details', id, {}, top?.kind === 'find' ? 'find' : null);
+  };
   offerUndo(text, before, flagged.length ? { label: T('paste.show'), name: T('paste.showWarned', { name: nameById(flagged[0]) }), run: () => show(flagged[0]) } : null);
 }
 

@@ -66,9 +66,9 @@ export const ReadPictures = () => (
 );
 
 export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, flagsOf, invasiveWord, warnings }: PictureProps & { warnings?: number }) {
-  // A member's list being read (store.listsState): the counts read "Loading…" (F26), never while a list
-  // has failed, whose plants are said as not checked (h3 R1).
-  const loading = store.listsState.value === 'loading';
+  // A member's list being read (store.listsLoading, whatever has failed): the counts read "Loading…"
+  // (F26, c4 R1); once every list is read, a failed list's plants are said as not checked (h3 R1).
+  const loading = store.listsLoading.value;
   const phone = usePhone();
   const big = members.length > SIZE_PALETTE;
   const at = store.yearStep.value;

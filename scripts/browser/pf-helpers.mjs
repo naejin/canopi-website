@@ -184,7 +184,7 @@ export async function loadPalette200(opts = {}) {
 
 // A guest plant from a climate list the palette does not use yet (its first plant by id), for the
 // list-state cases: `{ zone, guest }`, or the premise fails. `skip` leaves out zones already taken.
-export async function unusedListGuest(page, skip = []) {
+async function unusedListGuest(page, skip = []) {
   const zone = await page.evaluate((s) => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !s.includes(z) && !window.__ctTest.store.pools.value[z]), skip);
   assert.ok(zone, 'the premise: a list the palette does not use');
   const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));

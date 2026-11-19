@@ -479,8 +479,9 @@ test('B2.1 (h3): pushWaiting returns when pushState throws, with sheets above th
 // h3 fix round 2, B4.1: "‹ Back to results" only on a Details opened from a Find row (board Details),
 // never on one opened from the page while the desk's Find panel is open. A toast's Show over a Details
 // takes its place and keeps where it was opened from (c4 T7, h3 G4#1); a warned add's Show for the
-// plant already on top changes nothing (its warning is on screen).
-test('B4.1 (h3; c4 T7): a sheet records where it was opened from; a Details replacing one keeps it; Show for the Details on top is a no-op', async () => {
+// plant already on top keeps that sheet (its warning takes the focus, c4 R2); one raised in Find opens
+// Details from Find (c4 C2).
+test('B4.1 (h3; c4 T7): a sheet records where it was opened from; a Details replacing one keeps it; Show for the Details on top keeps it; Show raised in Find comes from Find', async () => {
   const store = await import('../src/islands/consortium/store.ts');
   store.closeSheet();
   store.openFind();
@@ -498,8 +499,17 @@ test('B4.1 (h3; c4 T7): a sheet records where it was opened from; a Details repl
   store.openSheet('details', '7', {}, 'find');
   const read = store.sheet.peek();
   store.toast.peek().action.run();
-  assert.equal(store.sheet.peek(), read, 'Show for the plant on top: the same sheet, not remounted');
+  assert.equal(store.sheet.peek(), read, 'Show for the plant on top: the same sheet, not remounted (its warning takes the focus: PFF36d)');
   assert.notEqual(read, top);
+  store.toast.peek()?.undo?.();
+  store.hideToast();
+  // c4 C2 (h3 G4#1): a warned add from Find's own row, then Show: Details over Find keeps the way back.
+  store.closeSheet();
+  store.openFind();
+  store.addMembers(['9'], {}, { warned: ['9'], text: 'Added' });
+  store.toast.peek().action.run();
+  assert.deepEqual(store.sheets.peek().map((x) => [x.kind, x.id]), [['find', null], ['details', '9']], 'Show opens the plant\'s Details over Find');
+  assert.equal(store.sheet.peek().from, 'find', 'a toast\'s Show raised in Find: Details with "‹ Back to results"');
   store.toast.peek()?.undo?.();
   store.hideToast();
   store.closeSheet();

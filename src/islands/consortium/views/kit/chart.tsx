@@ -215,7 +215,7 @@ export function StepLevels({ p, column, b, size }: { p: Picture; column: number;
 
 // Past 40 plants: each level a group "Full sun: 10 plants" with its count cell. `standing(key)`: the
 // level's plants standing then that count (not outside their range).
-// loading: a member's list is being read (Years, store.listsState): each count reads "Loading…" (F26).
+// loading: a member's list is being read (Years, store.listsLoading): each count reads "Loading…" (F26).
 export function CountCells({ p, column, size, standing, b, loading = false }: { p: Picture; column: number; size: number; standing: (r: PictureRow) => PlantId[]; b: PlantButtons; loading?: boolean }) {
   return (
     <div class="ct-cells">

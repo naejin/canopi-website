@@ -132,7 +132,8 @@ export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdic
   const name = useMemo(() => byName(members), [members]);
   const goal = store.plantsPerJob.value;
   const lanes = store.lanes.value;
-  const lists = store.listsState.value, pending = lists !== 'ready', loading = lists === 'loading';
+  // The row counts wait while any list is read (store.listsLoading, c4 R1); the intro reads listsState.
+  const lists = store.listsState.value, pending = lists !== 'ready', loading = store.listsLoading.value;
   const open = holes.filter((h) => h.state === 'open');
   const thins = store.thinSpots.value;
   const thin = thins.filter((h) => h.state === 'open').length;

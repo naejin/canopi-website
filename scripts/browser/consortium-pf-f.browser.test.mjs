@@ -1122,8 +1122,9 @@ test('PFF36b (pf-f h3 R1, R3, R4): back from a Find row\'s Details keeps Find\'s
 });
 
 // c4 T7 (h3 G4#1): a Find row's Details adds a plant with a warning; the toast's Show in its foot keeps
-// that same Details (no remount), its "‹ Back to results" and Find under it.
-test('PFF36d (pf-f h3 G4#1, c4 T7): Find row, Details, Add (warned), Show: the same Details stays with "Back to results"', async () => {
+// that same Details (no remount), its "‹ Back to results" and Find under it; Show brings its warning
+// on screen and gives it the focus (c4 R2).
+test('PFF36d (pf-f h3 G4#1, c4 T7): Find row, Details, Add (warned), Show: the same Details stays with "Back to results", its warning on screen and focused', async () => {
   // The 200-plant Kiambu palette: a member whose flags warn on an add (a site misfit or a serious
   // conflict, the rule Details' Add follows) is taken out, then found and added again.
   const page = await loadPalette200({ width: 390, height: 900 });
@@ -1152,6 +1153,10 @@ test('PFF36d (pf-f h3 G4#1, c4 T7): Find row, Details, Add (warned), Show: the s
   await frames(page);
   const after = await page.evaluate(() => window.__ctTest.store.sheet.value);
   assert.equal(after.n, before.n, 'Show for the plant on top: the same Details, not remounted');
+  // c4 R2: an action always has a visible effect: the Details' warning comes on screen and takes the focus.
+  assert.ok(await page.waitForFunction((d) => { const a = document.activeElement; return !!a && a.closest(d) && a.matches('[data-summary] .ct-flag'); }, { timeout: 3000 }, TOP_D).then(() => true, () => false), 'R2: Show moves the focus to the Details\' warning');
+  const seen = await page.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
+  assert.ok(seen, 'R2: the warning is on screen');
   assert.equal(after.from, 'find', 'it still comes from Find');
   assert.ok(await has(page, `${TOP_D} [data-sheet-back]`, 2000), '"Back to results" stays');
   assert.deepEqual(await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind)), ['find', 'details'], 'Find stays under it');

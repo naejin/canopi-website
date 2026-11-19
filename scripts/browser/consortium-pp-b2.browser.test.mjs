@@ -556,7 +556,7 @@ test('PP-B29b (b2 scale; pf-e row F26, main h3 M17: 200 plants from three lists,
   // were read (the failed list's plants are said as not checked), and so does Through the years' note.
   const refused = await loadPalette200({ width: 390 });
   try {
-    await refuseGuestList(refused);
+    const { zone } = await refuseGuestList(refused);
     const rows = await refused.evaluate(() => { const h = [...document.querySelectorAll('main h3')].find((x) => x.textContent.trim() === 'Jobs'); return [...(h?.closest('section')?.querySelectorAll('li[data-job]') ?? [])].map((li) => li.innerText.replace(/\s+/g, ' ').trim()); });
     assert.ok(rows.length > 0 && rows.some((row) => /\b\d+ plants?\b/.test(row)), `R1: the counted plants' counts show with a list refused (${rows.slice(0, 2).join(' | ')})`);
     assert.deepEqual(rows.filter((row) => /Loading…/.test(row)), [], 'R1: no job row reads "Loading…" when nothing is loading');
@@ -564,6 +564,29 @@ test('PP-B29b (b2 scale; pf-e row F26, main h3 M17: 200 plants from three lists,
     assert.match(note, /^\d+ of your \d+ plants/, 'R1: Through the years\' note counts, never "Loading…"');
     const cells = await refused.evaluate(() => [...document.querySelectorAll('#ct-years .ct-cell .ct-grid-count')].map((c) => c.textContent.trim()));
     assert.ok(cells.length > 0 && cells.every((c) => /^\d+ plants?$/.test(c)), `R1: Through the years' count cells count with a list refused (${cells.slice(0, 3).join(' | ')})`);
+    // A second list held while the first stays refused (c4 R1, C1): the holes answer stays "could not be
+    // read", but every count waits, never a partial count that leaves out the plants still loading.
+    await holdGuestList(refused, [zone]);
+    const mixed = await refused.evaluate(() => {
+      const h = [...document.querySelectorAll('main h3')].find((x) => x.textContent.trim() === 'Jobs');
+      return {
+        rows: [...(h?.closest('section')?.querySelectorAll('li[data-job]') ?? [])].map((li) => li.innerText.replace(/\s+/g, ' ').trim()),
+        note: document.querySelector('#ct-years .ct-stepper-note')?.textContent.trim() ?? '',
+        cells: [...document.querySelectorAll('#ct-years .ct-cell .ct-grid-count')].map((c) => c.textContent.trim()),
+        balance: document.querySelector('#ct-balance')?.innerText.replace(/\s+/g, ' ').trim() ?? '',
+        water: !!document.querySelector('#ct-water-h'),
+      };
+    });
+    assert.deepEqual(mixed.rows.filter((row) => !/Loading…/.test(row) || /\b\d+ plants?\b/.test(row)), [], 'R1/C1: with one list refused and one loading, every job count cell reads "Loading…"');
+    assert.equal(mixed.note, 'Loading…', 'R1/C1: Through the years\' note reads "Loading…" while a list loads, whatever has failed');
+    assert.ok(mixed.cells.length > 0 && mixed.cells.every((c) => c === 'Loading…'), `R1/C1: every Through the years count cell reads "Loading…" (${mixed.cells.slice(0, 3).join(' | ')})`);
+    assert.match(mixed.balance, /Checking while your plant lists load…/, 'R1/C1: Things to weigh says it is checking, never final figures over part of the plants');
+    assert.equal(mixed.water, false, 'R1/C1: no water-use figure while a list loads');
+    await refused.evaluate(() => window.__list.release());
+    assert.ok(await refused.waitForFunction(() => !window.__ctTest.store.listsLoading.value, { timeout: 10_000 }).then(() => true, () => false), 'the held list read');
+    await frames(refused);
+    const back = await refused.evaluate(() => document.querySelector('#ct-years .ct-stepper-note')?.textContent.trim() ?? '');
+    assert.match(back, /^\d+ of your \d+ plants/, 'R1/C1: the counts come back once every list that can be read is in');
   } finally { await done(refused); }
 });
 

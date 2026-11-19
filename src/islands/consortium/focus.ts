@@ -5,10 +5,12 @@
 // tool's first heading (Start's, after an Undo back to Start).
 import type { PlantId } from '../../lib/consortium/index.ts';
 
+// The top sheet: the last open dialog (views/Sheets.tsx renders them bottom first), the only one not inert.
+const topSheet = (): HTMLDialogElement | null => [...document.querySelectorAll<HTMLDialogElement>('dialog[open]')].pop() ?? null;
 // Focuses el (within an open sheet, else the sheet's [data-autofocus] heading; with nothing, the
 // tool's first heading); returns what took the focus.
 function land(found: HTMLElement | null): HTMLElement | null {
-  const sheet = document.querySelector<HTMLDialogElement>('dialog[open]');
+  const sheet = topSheet();
   let el = found;
   if (sheet && el && !sheet.contains(el)) el = null;
   el ??= sheet ? sheet.querySelector<HTMLElement>('[data-autofocus]') : document.querySelector<HTMLElement>('#ct-root h2');
@@ -130,4 +132,12 @@ export function focusAfterToast(): void {
   const back = opener;
   opener = null;
   focusSoon(() => (back?.isConnected && back.getClientRects().length && !(back as HTMLButtonElement).disabled ? back : viewHeading()));
+}
+
+// A toast's Show for the plant whose Details is on top (store.addMembers; c4 R2): its first warning
+// chip in the summary comes on screen and takes the focus, so a screen reader hears it; with none, the
+// summary.
+export function focusWarning(): void {
+  if (typeof document === 'undefined') return;
+  focusSoon(() => { const d = topSheet(); return d?.querySelector<HTMLElement>('[data-summary] .ct-flag') ?? d?.querySelector<HTMLElement>('[data-summary]') ?? null; });
 }

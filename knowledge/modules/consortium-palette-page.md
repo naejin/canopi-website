@@ -2,35 +2,35 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:19Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T08:46:43Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:13d771d2d5c86882
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:49df728398240c7b
+    last_modified: 2026-11-19T08:17:40Z
   - id: nextstep-tsx
     resource: ../../src/islands/consortium/views/palette/NextStep.tsx
     title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:fbc06961be857a7f
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:f1a44de7554e891c
+    last_modified: 2026-11-19T08:17:40Z
   - id: years-tsx
     resource: ../../src/islands/consortium/views/palette/Years.tsx
     title: src/islands/consortium/views/palette/Years.tsx
-    digest: sha256:d95ac5253a5e56ae
-    last_modified: 2026-11-18T14:24:53Z
+    digest: sha256:2f1f47359616befc
+    last_modified: 2026-11-19T08:46:08Z
   - id: chart-tsx
     resource: ../../src/islands/consortium/views/kit/chart.tsx
     title: src/islands/consortium/views/kit/chart.tsx
-    digest: sha256:261c878e6287fd22
-    last_modified: 2026-11-18T17:07:24Z
+    digest: sha256:8f0324bd61988d5f
+    last_modified: 2026-11-19T08:40:11Z
   - id: fit-tsx
     resource: ../../src/islands/consortium/views/kit/fit.tsx
     title: src/islands/consortium/views/kit/fit.tsx
-    digest: sha256:e23c1a3626eea7cf
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:14964280ae358d64
+    last_modified: 2026-11-19T06:44:45Z
   - id: picture-ts
     resource: ../../src/islands/consortium/rules/picture.ts
     title: src/islands/consortium/rules/picture.ts
@@ -39,8 +39,8 @@ sources:
   - id: app-tsx
     resource: ../../src/islands/consortium/App.tsx
     title: src/islands/consortium/App.tsx
-    digest: sha256:0bc2bf17ed0958f1
-    last_modified: 2026-11-18T17:40:12Z
+    digest: sha256:9b5471db4254810e
+    last_modified: 2026-11-19T05:13:33Z
   - id: lazy-tsx
     resource: ../../src/islands/consortium/views/lazy.tsx
     title: src/islands/consortium/views/lazy.tsx
@@ -49,8 +49,8 @@ sources:
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
-    digest: sha256:2d6f468d17a922a7
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:c4e8c2410220e903
+    last_modified: 2026-11-19T08:42:31Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -59,28 +59,28 @@ sources:
   - id: weigh-ts
     resource: ../../src/lib/consortium/weigh.ts
     title: src/lib/consortium/weigh.ts
-    digest: sha256:a946f135d90a0e95
-    last_modified: 2026-11-18T17:14:50Z
+    digest: sha256:6942a56137019e61
+    last_modified: 2026-11-19T05:25:31Z
   - id: weigh-view-tsx
     resource: ../../src/islands/consortium/views/palette/Weigh.tsx
     title: src/islands/consortium/views/palette/Weigh.tsx
-    digest: sha256:52688e792a9f120c
-    last_modified: 2026-11-18T17:52:14Z
+    digest: sha256:bdc17dc0f3947bcf
+    last_modified: 2026-11-19T08:46:08Z
   - id: jobs-picture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
     title: src/islands/consortium/views/palette/JobsPicture.tsx
-    digest: sha256:16cf075b0795055f
-    last_modified: 2026-11-18T18:39:03Z
+    digest: sha256:23ad0e26719a7027
+    last_modified: 2026-11-19T08:46:08Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
-    digest: sha256:86352cfe1a52fb56
-    last_modified: 2026-11-18T08:58:55Z
+    digest: sha256:554bc62276690579
+    last_modified: 2026-11-19T06:34:34Z
   - id: palette-page-css
     resource: ../../src/styles/consortium/palette-page.css
     title: src/styles/consortium/palette-page.css
-    digest: sha256:80ff777396f91fa1
-    last_modified: 2026-11-18T18:10:16Z
+    digest: sha256:7b3b161a4bbec2cf
+    last_modified: 2026-11-19T06:07:14Z
   - id: pf-b-test
     resource: ../../scripts/consortium-pf-b.test.mjs
     title: scripts/consortium-pf-b.test.mjs
@@ -89,8 +89,8 @@ sources:
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx
-    digest: sha256:b496ee089ca809b4
-    last_modified: 2026-11-18T18:40:07Z
+    digest: sha256:668fb618a9d170ed
+    last_modified: 2026-11-19T07:06:28Z
 enforced_by:
   - scripts/browser/consortium-pp-b2.browser.test.mjs
   - scripts/consortium-pf-b.test.mjs
@@ -187,6 +187,13 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   every locale's template carries its own "list" word); only the chosen climate's list failing is the
   tool's failure screen. A Suggest pressed or waiting then suggests around the plants at hand and keeps
   the failed list's plants (P5-27n; core `suggest()` keeps unread seeds).
+- Two list facts, never folded into one (PP-C c4 R1): `store.listsState` ('failed' first, then 'loading',
+  else 'ready') words the holes answer (the Next step, the Jobs intro); `store.listsLoading` makes every count
+  wait (the Jobs rows, Through the years' cells and note, Things to weigh say "Loading…" or "checking")
+  while any list is read, whatever has failed, so no partial count shows (F26; browser PP-B29b).
+- A warned add's toast Show (`store.addMembers`): for the plant whose Details is on top, that sheet stays
+  and its first warning chip takes the focus (`focus.ts` `focusWarning`); else the plant's Details opens,
+  from Find when Find is on top, so it keeps "‹ Back to results" (c4 R2, C2; unit B4.1, browser PFF36d).
 - The verdict chunk refused: `store.verdictFailed`, one alert with Reload; every fit line says "Not checked".
 - Toasts wait under pointer or focus (`store.holdToast`) and return focus to the control that raised them
   (`focus.ts` `noteToastOpener`, `focusAfterToast`). Pre-push fix 6: an own plant's × on Place hands the focus to
