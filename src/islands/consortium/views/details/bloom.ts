@@ -1,9 +1,11 @@
 // The Niche block's Flowers row (boards Details, DetailsDesk; fix round 1 BC2): the bloom months that
 // hold near the place, merged into one span. A bloom row is scoped (a climate, a country, a hemisphere
 // and a latitude band): only the rows whose scope holds the place count, so months recorded in one
-// hemisphere are never shown for the other. Three states (fix round 2 R4): 'found' (the months), 'none'
-// (a place is set and no row holds it: "no months recorded near your place"), 'no-place' (no latitude
-// and no row that holds everywhere: "set a place to see when it flowers here", never a claim of none).
+// hemisphere are never shown for the other. One state for every case (fix round 2 R4, round 3 R2 R3):
+// 'loading' and 'failed' (the details query still out, or failed: never a claim of none), 'unrecorded'
+// (no bloom row at all: "no months recorded", place or not), 'found' (the months), 'no-place' (no
+// latitude, and a row a latitude would select: "set a place to see when it flowers here"), 'none' (no
+// row holds the place: "no months recorded near your place").
 // Pure: no DOM, no store (scripts/consortium-pf-f.test.mjs tests it).
 import type { ClimateZone, LayerValue, Month } from '../../../../lib/consortium/types.ts';
 import { months as MONTHS } from '../../../../lib/consortium/types.ts';
@@ -11,13 +13,14 @@ import { monthRuns } from '../layers.ts';
 
 export interface BloomPlace { lat: number | null; country: string | null; zone: ClimateZone | null }
 
-// Whether a bloom row's scope holds the place.
-function holdsPlace(v: Pick<LayerValue, 'climate' | 'scope'>, at: BloomPlace): boolean {
+// Whether a bloom row's scope holds the place; `anyLat`: as if the place had the latitude the row asks.
+function holdsPlace(v: Pick<LayerValue, 'climate' | 'scope'>, at: BloomPlace, anyLat = false): boolean {
   if (v.climate !== null && at.zone !== null && v.climate !== at.zone) return false;
   const s = v.scope;
   if (!s) return true;
   if (s.climate && at.zone !== null && s.climate !== at.zone) return false;
   if (s.country && s.country.toUpperCase() !== (at.country ?? '').toUpperCase()) return false;
+  if (anyLat && at.lat === null) return true;
   if (s.hemisphere) {
     if (at.lat === null) return false;
     if ((s.hemisphere === 'S') !== (at.lat < 0)) return false;
@@ -34,10 +37,14 @@ function holdsPlace(v: Pick<LayerValue, 'climate' | 'scope'>, at: BloomPlace): b
 }
 
 // The bloom months near the place, merged (in calendar order), and whether any of them is an estimate.
-export type Bloom = { state: 'found'; months: Month[]; estimate: boolean } | { state: 'none' } | { state: 'no-place' };
-export function bloomNear(values: readonly LayerValue[], at: BloomPlace): Bloom {
-  const rows = values.filter((v) => v.field === 'bloom_months' && v.months?.length && holdsPlace(v, at));
-  if (!rows.length) return { state: at.lat === null ? 'no-place' : 'none' };
+// `values`: the details' layer values, or 'loading' / 'failed' while they are not here.
+export type Bloom = { state: 'found'; months: Month[]; estimate: boolean } | { state: 'none' | 'no-place' | 'unrecorded' | 'loading' | 'failed' };
+export function bloomNear(values: readonly LayerValue[] | 'loading' | 'failed', at: BloomPlace): Bloom {
+  if (values === 'loading' || values === 'failed') return { state: values };
+  const all = values.filter((v) => v.field === 'bloom_months' && v.months?.length);
+  if (!all.length) return { state: 'unrecorded' };
+  const rows = all.filter((v) => holdsPlace(v, at));
+  if (!rows.length) return { state: at.lat === null && all.some((v) => holdsPlace(v, at, true)) ? 'no-place' : 'none' };
   const on = new Set(rows.flatMap((r) => r.months!));
   return { state: 'found', months: MONTHS.filter((m) => on.has(m)), estimate: rows.some((r) => r.kind !== 'recorded') };
 }

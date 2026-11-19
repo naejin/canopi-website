@@ -451,7 +451,16 @@ const ranged = (f: FactorVerdict | undefined): f is FactorVerdict & { place: num
 // hedged "edge": "Near its cool edge today"), or in range.
 type Standing = 'out' | 'on' | 'near' | 'in';
 const standing = (f: FactorVerdict): Standing => (f.level === 'outside' && setsLevel(f) ? 'out' : (f.level === 'look' && setsLevel(f)) || endAt(f) ? 'on' : f.confidence?.term === 'edge' ? 'near' : 'in');
-const atEdge = (s: Standing): boolean => s === 'on' || s === 'near';
+// The then-line for each pair of standings (today, the later period; fix round 3 R5), one table so a
+// missing pair shows: 'out' "outside its range by", 'in' "in range by", 'near' "near the edge by",
+// 'move' safer or nearer along the same edge, null nothing to add.
+type Then = 'out' | 'in' | 'near' | 'move' | null;
+const THEN: Record<Standing, Record<Standing, Then>> = {
+  out: { out: null, on: 'near', near: 'near', in: 'in' },
+  on: { out: 'out', on: 'move', near: 'move', in: 'in' },
+  near: { out: 'out', on: 'move', near: 'move', in: 'in' },
+  in: { out: 'out', on: 'near', near: 'near', in: null },
+};
 export function rowBandOf(v: PlantVerdict, later: PlantVerdict | null, period: (p: PeriodId) => string, factor: Factor | null = null): RowBand | null {
   const pool = v.factors.filter(ranged);
   const f = factor ? pool.find((x) => x.factor === factor) : [...pool].sort((a, b) => (RANK[setsLevel(a) ? a.level : 'fits'] - RANK[setsLevel(b) ? b.level : 'fits']) || nearness(a) - nearness(b))[0];
@@ -469,10 +478,10 @@ export function rowBandOf(v: PlantVerdict, later: PlantVerdict | null, period: (
   let next: Line | null = null;
   if (then) {
     const at = { period: period(later!.judged) }, after = standing(then);
-    if (after === 'out' && now !== 'out') next = L('rowOutsideBy', at);
-    else if (after === 'in' && now !== 'in') next = L('thenInRange', at);
-    else if (atEdge(after) && now === 'in') next = L('thenNear', at);
-    else if (atEdge(after) && atEdge(now)) next = nearness(then) > nearness(f) ? (RAISES[f.factor] ? L('thenSafer') : L('thenSaferBy', at)) : nearness(then) < nearness(f) ? L('thenNearer', at) : null;
+    const kind = THEN[now][after];
+    next = kind === 'out' ? L('rowOutsideBy', at) : kind === 'in' ? L('thenInRange', at) : kind === 'near' ? L('thenNear', at)
+      : kind === 'move' ? (nearness(then) > nearness(f) ? (RAISES[f.factor] ? L('thenSafer') : L('thenSaferBy', at)) : nearness(then) < nearness(f) ? L('thenNearer', at) : null)
+      : null;
   }
   return { ...base, line: next ? { key: K('edgeThen'), vars: {}, parts: { today, then: next } } : today };
 }
@@ -630,25 +639,26 @@ export function rowLines(v: PlantVerdict, later: PlantVerdict | null, w: Against
 // nearest list can name: nearest.ts NEAREST_LISTS).
 export const borrowedLine = (zone: ClimateZone): Line => L(`borrowed${zone}`);
 
-// What a later period's climate takes from a plant (fix round 2 R1): the first later period whose climate
-// is worse than today's, read from the climate factors alone (the ranged ones with a measure, each at
-// the level it gives the verdict: types.ts setsLevel), so a light or wind misfit that stays the same in
-// every period is never a loss, an edge today that stays an edge is none, and an outside today is never
-// "outside by". `level`: what it becomes then; `factor`: the climate factor that worsens most (the worst
-// level, then the nearest its bound). null when its climate holds through them (or nothing compares).
-// One predicate for Details' period-edge chip, its keep line and What you can do's limiting measure.
+// What a later period's climate takes from a plant (fix round 2 R1, round 3 R4 C5): the first later
+// period in which some climate factor is worse than the same factor today, read factor by factor from
+// the climate factors alone (the ranged ones with a measure, each at the level it gives the verdict:
+// types.ts setsLevel), so a light or wind misfit that stays the same in every period is never a loss, an
+// edge today that stays an edge is none, a new limit on another measure at today's rank is one (a cold
+// edge today, a heat edge by 2041–2070), and a plant outside today is never "outside by". `level`: what
+// that factor becomes then; `factor`: the worsened factor (the worst level, then the nearest its bound).
+// null when its climate holds through them (or nothing compares). One predicate for Details'
+// period-edge chip, its keep line and What you can do's limiting measure.
 export interface LaterLoss { verdict: PlantVerdict; level: 'look' | 'outside'; factor: Factor }
 const LOSS_RANK: Record<Level, number> = { fits: 0, unknown: 0, look: 1, outside: 2 };
 const climateRank = (f: FactorVerdict): number => (ranged(f) && setsLevel(f) ? LOSS_RANK[f.level] : 0);
-const worstClimate = (v: PlantVerdict): number => v.factors.reduce((m, f) => Math.max(m, climateRank(f)), 0);
 export function laterLossOf(now: PlantVerdict | null, laters: readonly PlantVerdict[]): LaterLoss | null {
-  if (!now) return null;
-  const base = worstClimate(now);
+  if (!now || now.factors.some((f) => climateRank(f) === 2)) return null;
+  const today = new Map(now.factors.map((f) => [f.factor, climateRank(f)]));
   for (const l of laters) {
-    const r = worstClimate(l);
-    if (r <= base) continue;
-    const f = l.factors.filter((x) => climateRank(x) === r).sort((a, b) => nearness(a) - nearness(b))[0];
-    return { verdict: l, level: r === 2 ? 'outside' : 'look', factor: f.factor };
+    const worse = l.factors.filter((f) => climateRank(f) > (today.get(f.factor) ?? 0));
+    if (!worse.length) continue;
+    const f = worse.sort((a, b) => climateRank(b) - climateRank(a) || nearness(a) - nearness(b))[0];
+    return { verdict: l, level: climateRank(f) === 2 ? 'outside' : 'look', factor: f.factor };
   }
   return null;
 }

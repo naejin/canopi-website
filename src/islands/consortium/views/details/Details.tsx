@@ -230,9 +230,10 @@ function Syntropic({ role, text }: { role: string; text: (role: string) => strin
 
 // The Niche block (v13/v14 boards): Light live (the span, today the single level, and "found mostly in"
 // once the release has it); Soil pH's recorded range live with "best pH" after release; Moisture and
-// Root depth after release; Flowers from the bloom months near the place, "no months recorded near your
-// place", or, with no place set, "set a place to see when it flowers here" (fix round 2 R4).
-function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; zone: ClimateZone; desk: boolean }) {
+// Root depth after release; Flowers from the bloom months near the place in every state core bloomNear
+// gives (fix round 2 R4, round 3 R2 R3): loading and failed as the Sources section says them, "no months
+// recorded", "no months recorded near your place", or "set a place to see when it flowers here".
+function Niche({ t, facts, failed, zone, desk }: { t: Taxon; facts: PlantFacts | null; failed: boolean; zone: ClimateZone; desk: boolean }) {
   const after = <span class="ct-after" data-after-release>{T('details.afterRelease')}</span>;
   const r = t.traits.soil_ph;
   // The desk's say on soil (fix round 1 R3): the soil card's own judgement (soilSayOf: the value it
@@ -240,7 +241,7 @@ function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; z
   const soil = desk ? soilSayOf(t) : null;
   // The bloom rows whose scope holds the place, as one span (fix round 1 BC2: never another hemisphere's months).
   const loc = store.location.value;
-  const bloom = bloomNear(facts?.layerValues ?? [], { lat: loc?.lat ?? null, country: store.flagContext.value.country ?? null, zone });
+  const bloom = bloomNear(facts ? facts.layerValues : failed ? 'failed' : 'loading', { lat: loc?.lat ?? null, country: store.flagContext.value.country ?? null, zone });
   return (
     <div class="ct-niche" data-niche>
       <h4>{T('details.niche')}</h4>
@@ -253,13 +254,17 @@ function Niche({ t, facts, zone, desk }: { t: Taxon; facts: PlantFacts | null; z
           {desk && <> · <button type="button" class="ct-link-button" data-set-ph onClick={() => store.openFigure('soilPh')}>{T('details.setOwnPh')}</button></>}</li>
         <li data-niche-row="moisture"><strong>{T('details.nicheMoisture')}</strong> {after}</li>
         <li data-niche-row="root"><strong>{T('details.nicheRoot')}</strong> {after}</li>
-        <li data-niche-row="flowers"><strong>{T('details.nicheFlowers')}</strong> {bloom.state === 'found' ? monthsLong(bloom.months, lang(), T('t.allYear')) : T(bloom.state === 'none' ? 'details.flowersNone' : 'details.flowersNoPlace')}{bloom.state === 'found' && bloom.estimate && <> <span class="ct-est">{T('est.word')}</span></>}</li>
+        <li data-niche-row="flowers" aria-busy={bloom.state === 'loading' ? 'true' : undefined}><strong>{T('details.nicheFlowers')}</strong> {bloom.state === 'found' ? monthsLong(bloom.months, lang(), T('t.allYear')) : T(BLOOM_WORDS[bloom.state])}{bloom.state === 'found' && bloom.estimate && <> <span class="ct-est">{T('est.word')}</span></>}</li>
       </ul>
       {/* Months worked out by a rule (dated photos, a text): the row's one "estimate" tag, and its legend in words. */}
       {bloom.state === 'found' && bloom.estimate && <p class="ct-muted ct-small" data-est-legend>{capital(T('est.word'))}: {T('est.legend')}</p>}
     </div>
   );
 }
+
+// The Flowers row's words for each state without months (core bloomNear); a failed query says "not
+// checked yet" here, its message and Try again stand above the closed sections.
+const BLOOM_WORDS = { loading: 'details.loading', failed: 'details.notCheckedYet', unrecorded: 'details.flowersUnrecorded', none: 'details.flowersNone', 'no-place': 'details.flowersNoPlace' } as const;
 
 // The desk layout (min-width 960px, the project's desktop breakpoint).
 const DESK = '(min-width: 960px)';
@@ -329,8 +334,10 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const others = store.memberTaxa.value.filter((o) => o.id !== id);
   const pairs = pairings(t, others, store.flagContext.value.interactions);
   const conflictCount = conflicts.filter((l) => l.kind === 'conflict').length;
-  // The desk's summary chip names each hard conflict (chips below): its list says only the soft ones.
-  const listed = desk ? conflicts.filter((l) => l.kind === 'soft') : conflicts;
+  // A serious conflict's chip carries its seriousness in colour and word (fix round 3 R1): flagLines
+  // gives one line per conflict flag, in the flags' order (low ones kept), so line i is flag i.
+  const conflictFlags = flags.filter((f) => f.kind === 'conflict');
+  const serious = new Set(conflicts.filter((_, i) => conflictFlags[i]?.severity === 'high'));
   const allelo = t.warnings.allelopathic;
   const notAllChecked = t.warnings.toxicity === null || t.warnings.allelopathic === null || (facts?.invasiveIn ?? t.warnings.invasive_in) === null;
   const jobs = jobsOf(t);
@@ -395,7 +402,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
   const remove = () => { closeSheet(); removeMember(id); };
   const sizeText = sizeShort(t);
   const standsWords = y ? midSentence(say(yearsLine(y.from, y.to))) : null;
-  const niche = <Niche t={t} facts={facts} zone={zone} desk={desk} />;
+  const niche = <Niche t={t} facts={facts} failed={failed} zone={zone} desk={desk} />;
   const toxUnk = t.warnings.toxicity === null;
   const siteUnknown = unknownWords(t, scene.site);
   const spreads = t.warnings.weed_potential;
@@ -431,7 +438,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
           <ul class="ct-marks">
             {/* A member whose climate a later period puts near the edge of its range, or outside it (board DetailsDesk; fix round 1 BC10, round 2 R1); the board's range-edge mark, the thermometer (C5). */}
             {loss && <li class="ct-flag" data-level="warning" data-chip="period-edge"><MeasureGlyph m="tmeanYear" />{T(loss.level === 'outside' ? 'details.chipOutsideBy' : 'details.chipEdgeBy', { period: periodName(loss.verdict.judged) })}</li>}
-            {chips.map((l) => <li class="ct-flag" data-level={l.level ?? 'warning'} data-chip={l.kind}>{WARN}{l.chip ?? l.text}</li>)}
+            {chips.map((l) => <li class="ct-flag" data-level={serious.has(l) ? 'danger' : l.level ?? 'warning'} data-chip={l.kind}>{WARN}{l.chip ?? l.text}{serious.has(l) && ` (${T('details.serious')})`}</li>)}
             {toxUnk && <li class="ct-tag" data-conf="not-checked">{INFO}{T('details.toxUnkChip')}</li>}
             {(borrowed || guest) && <li class="ct-tag" data-conf="estimate" data-estimate-chip>{WAVE}{T('details.estimateChip', { list: T(`list.${(guest ?? borrowed)!.toLowerCase()}`) })}</li>}
           </ul>
@@ -501,10 +508,11 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
               <Row k={T('details.rootPartners')}>{labelOf(labels, 'mycorrhizal_type', t.traits.mycorrhizal_type)}</Row>
             </dl>
           </More>
-          {/* One Warnings section in both layouts (fix round 2 R2: never different safety facts on phone and
-              desk); only the conflict list the summary's chip repeats goes on the desk (BC12), soft ones stay. */}
+          {/* One Warnings section in both layouts (fix round 2 R2, round 3 R1: never different safety facts on
+              phone and desk): every conflict's full line (its note, agent and "serious") on both, though the
+              summary's chip names it in a few words; the hint counts what the list says (C2). */}
           <More k="pairs" title={T('details.secOthersWarn')} hint={[conflictCount ? P('details.conflictCount', conflictCount) : T('details.noConflict'), ...(notAllChecked ? [T('details.notAllChecked')] : [])].join(' · ')}>
-            {listed.length > 0 && <ul class="ct-warnlist">{listed.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-conflict>{l.text}</li>)}</ul>}
+            {conflicts.length > 0 && <ul class="ct-warnlist">{conflicts.map((l) => <li class={l.kind === 'soft' ? 'soft' : ''} data-conflict>{l.text}</li>)}</ul>}
             {!conflicts.length && !pairs.length && <p class="ct-d-ok">{CHECK} {P('details.noConflictWith', others.length)}</p>}
             {pairs.length > 0 && <ul class="ct-oklist">{pairs.map((p) => <li>{T('details.pairing', { other: nameOf(p.other) })}</li>)}</ul>}
             {conflicts.length > 0 && !pairs.length && <p class="ct-muted">{T('details.noPairing')}</p>}

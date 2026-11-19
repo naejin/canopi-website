@@ -1534,6 +1534,7 @@
   "consortium.details.bestPh": "best pH",
   "consortium.details.afterRelease": "after release",
   "consortium.details.flowersNone": "no months recorded near your place",
+  "consortium.details.flowersUnrecorded": "no months recorded",
   "consortium.details.flowersNoPlace": "set a place to see when it flowers here",
   "consortium.details.notCheckedYet": "not checked yet",
   "consortium.details.growsIn": "grows in {a} – {b}",

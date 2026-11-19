@@ -26,7 +26,18 @@ import { LIGHT, dialogText, done, frames, says, setSiteEdits } from './pf-helper
 useHarness();
 
 const core = await import('../../src/lib/consortium/holes.ts');
-const { jobsOf, laterLossOf, yearsOf } = await import('../../src/lib/consortium/index.ts');
+const { gapLines, jobsOf, laterLossOf, rowBandOf, yearsOf } = await import('../../src/lib/consortium/index.ts');
+// A core Line in the en words (strings.ts P for a count: its plural form, # the number; then the vars and parts).
+function sayEn(l) {
+  let text = en[l.key];
+  assert.ok(text, `en has ${l.key}`);
+  if (typeof l.count === 'number') {
+    const forms = Object.fromEntries(text.split(' | ').map((f) => { const i = f.indexOf(': '); return [f.slice(0, i), f.slice(i + 2)]; }));
+    text = (forms[new Intl.PluralRules('en').select(l.count)] ?? forms.other).replace('#', String(l.count));
+  }
+  const parts = Object.fromEntries(Object.entries(l.parts ?? {}).map(([k, p]) => [k, sayEn(p)]));
+  return text.replace(/\{(\w+)\}/g, (_, k) => (k in parts ? parts[k] : k.startsWith('temp') ? `${l.vars[k]} °C` : String(l.vars[k])));
+}
 // A member's verdicts today and at each later period (store periodVerdictsOf), for core's laterLossOf.
 const periodVerdicts = (page, id) => page.evaluate((pid) => { const s = window.__ctTest.store; return s.periodVerdictsOf(s.taxonOf(pid)); }, id);
 const DETAILS = 'dialog.ct-sheet[open]';
@@ -420,14 +431,14 @@ test('PFF11 (pf-f BC3, BC10, BC11, round 2 R1 R2 C5, DetailsDesk): Almond at Sev
   // BC12: Find one that holds carries the search glyph.
   assert.ok(await page.$eval(`${DETAILS} [data-cando] .ct-d-cando-actions button.button-secondary`, (b) => /Find one that holds/.test(b.textContent) && !!b.querySelector('svg circle')), 'Find one that holds with the search glyph');
   // R2 (round 2): the desk keeps "With your other plants and warnings" (toxicity, allelopathy, the
-  // liability notice), as the phone does; only the conflict list the summary chip repeats goes.
+  // liability notice), as the phone does; round 3 R1: with every conflict's full line (PFF31).
   assert.ok(await has(page, `${DETAILS} details[data-more="pairs"]`, 2000), 'the desk keeps "With your other plants and warnings"');
   await openAll(page);
   await says(page, 'Check with a local expert', { inDialog: true });
   assert.ok(await has(page, `${DETAILS} [data-allelo]`, 1000), 'the allelopathy line on the desk');
   assert.ok(await has(page, `${DETAILS} [data-warnings] [data-row="toxicity"]`, 1000), 'the toxicity row on the desk');
-  const hard = await page.evaluate((pid) => { const s = window.__ctTest.store; return s.flagsOfPlant(s.taxonOf(pid)).length; }, id);
-  if (hard) assert.equal(await page.$$eval(`${DETAILS} [data-conflict]:not(.soft)`, (e) => e.length), 0, 'no hard conflict list beside its chip');
+  const hard = await page.evaluate((pid) => { const s = window.__ctTest.store; return s.flagsOfPlant(s.taxonOf(pid)).filter((f) => f.kind === 'conflict' && f.severity !== 'low').length; }, id);
+  assert.equal(await page.$$eval(`${DETAILS} [data-conflict]:not(.soft)`, (e) => e.length), hard, 'each hard conflict\'s full line on the desk too (round 3 R1)');
   // BC4: What you can do: each row holds by 2041–2070 (the engine), "holds in 2041–2070", and how far it is recorded on the member's limiting measure.
   const cando = await page.evaluate((pid) => {
     const s = window.__ctTest.store, rule = s.verdictRule.value, ctx = s.verdictContext.value;
@@ -503,6 +514,31 @@ test('PFF15 (pf-f BC7, BC8, BC9, Swap): rows as one sentence with the mini band,
     if (r.band) assert.ok(r.mini && /today/.test(r.band), `the mini band and edge words (${r.band})`);
   }
   assert.ok(rows.some((r) => r.band), 'at least one row with its edge words');
+  // Round 3 C4: the board's row words ("Near its cool edge today; safer as it warms", "On its cool edge
+  // today; in range by 2041–2070", "to year 3 only: leaves years 3 to 15 empty") re-derived through the
+  // engine on the installed release at kiambu-8 for every row shown: core rowBandOf on the page's verdicts
+  // today and by the later period, core gapLines on the swap's own holes. The board's own plants (Ice
+  // cream bean, Egyptian sesban) are named with what the engine gives them here, never their board words.
+  const engine = await page.evaluate((pid) => {
+    const s = window.__ctTest.store, out = {};
+    for (const a of s.alternativesFor(pid)?.fit ?? []) {
+      const t = s.taxonOf(a.id), v = s.poolVerdicts.value?.get(a.id) ?? s.verdictOf(t);
+      out[String(a.id)] = { sci: t.canonical_name, v, later: v ? s.laterVerdictOf(t, v) : null, fills: a.fills, leaves: a.leaves };
+    }
+    return out;
+  }, id);
+  const shown = await page.$$eval(`${DETAILS} [data-swap-row]`, (els) => els.map((e) => ({ id: e.dataset.plantId, band: e.querySelector('[data-row-band]')?.textContent.replace(/\s+/g, ' ').trim() ?? null, does: e.querySelector('[data-swap-does]').textContent.replace(/\s+/g, ' ').trim() })));
+  const bandWords = (e) => { const b = e?.v ? rowBandOf(e.v, e.later, (p) => p.replace('-', '–')) : null; return b ? sayEn(b.line) : null; };
+  for (const r of shown) {
+    const e = engine[r.id];
+    assert.ok(e, `a shown row is one of the swap's candidates (${r.id})`);
+    assert.equal(r.band, bandWords(e), `${e.sci}: the engine's edge words`);
+    const gap = gapLines(e.fills, e.leaves).leaves;
+    if (gap) assert.ok(r.does.includes(sayEn(gap)), `${e.sci}: the engine's "leaves" words (${r.does})`);
+  }
+  assert.ok(shown.some((r) => /^(On|Near) its /.test(r.band ?? '')), `at least one row on or near its edge, as the board (${shown.map((r) => r.band).join(' | ')})`);
+  const board = Object.values(engine).filter((e) => /^(Inga edulis|Sesbania sesban)\b/.test(e.sci)).map((e) => `${e.sci}: ${bandWords(e)}${shown.some((r) => engine[r.id] === e) ? '' : ' (not among the rows shown)'}`);
+  console.log(`PFF15 board rows through the engine at kiambu-8: ${board.join(' ; ')}`);
   // BC8: the invasive head chip, when the engine flags it invasive at the page's country.
   const inv = await page.evaluate((pid) => { const s = window.__ctTest.store; return s.flagsOfPlant(s.taxonOf(pid)).some((f) => f.kind === 'invasive') && !!s.flagContext.value.country; }, id);
   if (inv) {
@@ -826,5 +862,66 @@ test('PFF30 (pf-f round 2 R3 R4, no place): a member on the desk before a locati
   const flowers = await page.$eval(`${DETAILS} [data-niche-row="flowers"]`, (e) => e.textContent);
   assert.doesNotMatch(flowers, /near your place/, flowers);
   assert.match(flowers, /set a place to see when it flowers here|[A-Z][a-z]+–/, flowers);
+  await done(page);
+});
+
+// ---- fix round 3, batch 1 (review findings R1, R2, C2, C4) ----
+
+// R1, C2: a serious conflict reads the same safety facts on the phone and the desk: the chip in the
+// danger colour with the word "serious", the full line (the data's note, "serious") in the section, and
+// the section's count matching the conflicts it names. The conflict row is a fixture (an interaction
+// added to the page's list between Almond and another member at Seville), the words its own.
+test('PFF31 (pf-f round 3 R1 C2, serious conflict): Almond beside another member with a serious shared pest: the danger chip says "serious", the full line with its note in both layouts, the count matches the list', async () => {
+  for (const width of [1280, 390]) {
+    const page = await boardPalette('seville-board', { width, height: 1000 });
+    const id = await idOf(page, 'Prunus dulcis');
+    const other = await page.evaluate((pid) => {
+      // A member with no conflict yet (one flag per other member: its worst row), so the fixture row is the one said.
+      const s = window.__ctTest.store, a = s.taxonOf(pid), z = s.climate.value;
+      const taken = new Set(s.flagsOfPlant(a).filter((f) => f.kind === 'conflict').map((f) => f.other));
+      const o = s.memberTaxa.value.find((t) => t.id !== pid && !taken.has(t.id));
+      const row = { subject: { name: a.canonical_name, rank: 'species' }, object: { name: o.canonical_name, rank: 'species' }, type: 'shared_pest', climate_zone: null, agent: null, agent_names: null, severity: 'high', note: { en: 'Fixture note: both carry the same canker' }, sources: [] };
+      s.interactionSets.value = { ...s.interactionSets.peek(), [z]: [...(s.interactionSets.peek()[z] ?? []), row] };
+      return o.names.en || o.canonical_name;
+    }, id);
+    await frames(page);
+    await open(page, 'details', id);
+    await says(page, 'In your palette.', { inDialog: true });
+    const chip = await page.$$eval(`${DETAILS} [data-summary] [data-chip="conflict"]`, (els, name) => els.filter((e) => e.textContent.includes(name)).map((e) => {
+      const p = document.createElement('span'); p.style.color = 'var(--danger)'; e.parentElement.append(p); const want = getComputedStyle(p).color; p.remove();
+      return { level: e.dataset.level, text: e.textContent.trim(), got: getComputedStyle(e).color, want };
+    }), other);
+    assert.equal(chip.length, 1, `${width}: one chip for the conflict with ${other}`);
+    assert.equal(chip[0].level, 'danger', `${width}: the serious conflict's chip is a danger chip`);
+    assert.equal(chip[0].got, chip[0].want, `${width}: in --danger`);
+    assert.match(chip[0].text, /\(serious\)$/, `${width}: the word, never colour alone (${chip[0].text})`);
+    const hint = await page.$eval(`${DETAILS} details[data-more="pairs"] summary`, (e) => e.textContent);
+    await openAll(page);
+    const lines = await page.$$eval(`${DETAILS} [data-conflict]:not(.soft)`, (els) => els.map((e) => e.textContent.trim()));
+    const n = Number(/(\d+) conflicts?/.exec(hint)?.[1] ?? 0);
+    assert.equal(n, lines.length, `${width}: the hint counts the conflicts the section names (${hint} / ${lines.length})`);
+    assert.ok(lines.some((l) => l.includes(other) && l.includes('Fixture note: both carry the same canker') && /\(serious\)/.test(l)), `${width}: the full line with its note and "serious" (${JSON.stringify(lines)})`);
+    await done(page);
+  }
+});
+
+// R2: the Flowers row while the details query is out, and after it failed: never "no months recorded".
+test('PFF32 (pf-f round 3 R2, Flowers): loading says "Loading…" busy; a failed details query says "not checked yet", never "no months recorded near your place"', async () => {
+  const page = await boardPalette('kiambu-8', { width: 390 });
+  const id = await idOf(page, 'Arachis pintoi');
+  assert.ok(id, 'Pinto peanut in kiambu-8');
+  await page.evaluate(() => { const src = window.__ctTest.store.source.value; src.details = () => new Promise(() => {}); });
+  await open(page, 'details', id);
+  const loading = await page.waitForFunction(() => { const e = document.querySelector('dialog[open] [data-niche-row="flowers"]'); return e ? { text: e.textContent, busy: e.getAttribute('aria-busy') } : null; }, { timeout: 6000 }).then((h) => h.jsonValue());
+  assert.match(loading.text, /Loading…/, loading.text);
+  assert.equal(loading.busy, 'true');
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await frames(page);
+  await page.evaluate(() => { const src = window.__ctTest.store.source.value; src.details = () => Promise.reject(new Error('test: offline')); });
+  await open(page, 'details', id);
+  assert.ok(await has(page, `${DETAILS} [data-details-failed]`, 6000), 'the failed message');
+  const failed = await page.$eval(`${DETAILS} [data-niche-row="flowers"]`, (e) => e.textContent);
+  assert.match(failed, /not checked yet/, failed);
+  assert.doesNotMatch(failed, /no months|set a place/, failed);
   await done(page);
 });

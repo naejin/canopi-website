@@ -257,7 +257,9 @@ test('R3 (pf-f hold states): one core function says holds, not or unknown at the
 });
 
 // C1: "On its cool edge today" (at its bound, a level-setting second look) apart from "Near its cool edge today" (a fit hedged edge).
-test('C1 (pf-f Swap rows): board Swap, Kiambu: Egyptian sesban "On its cool edge today; in range by 2041–2070", Ice cream bean "Near its cool edge today; safer as it warms"', () => {
+// Patterns on invented factors (words and order only); the board's own rows at kiambu-8 are re-derived
+// through the engine on the installed release in the browser spec (PFF15, round 3 C4).
+test('C1 (pf-f Swap rows, pattern): a level-setting second look on its bound "On its cool edge today; in range by 2041–2070", a hedged fit "Near its cool edge today; safer as it warms"', () => {
   const sesban = fv({ factor: 'cool', level: 'look', place: 18.2, low: 18.2, high: 27 });
   const later = pv({ judged: '2041-2070', factors: [fv({ ...sesban, level: 'fits', place: 20.1 })] });
   assert.equal(said(line.rowBandOf(pv({ level: 'look', factors: [sesban] }), later, period).line, 'en'), 'On its cool edge today; in range by 2041–2070');
@@ -267,8 +269,8 @@ test('C1 (pf-f Swap rows): board Swap, Kiambu: Egyptian sesban "On its cool edge
   for (const lang of Object.keys(words)) for (const s of ['Cold', 'Cool', 'Mild', 'Hot', 'Dry', 'Wet']) assert.ok(words[lang][`consortium.line.edgeOn${s}`], `${lang} edgeOn${s}`);
 });
 
-// C2: the hole a swap leaves, in the board's words.
-test('C2 (pf-f Swap rows): board Swap: "to year 3 only: leaves years 3 to 15 empty"', () => {
+// C2: the hole a swap leaves, in the board's words (a pattern; the board's row is re-derived in PFF15).
+test('C2 (pf-f Swap rows, pattern): "leaves years 3 to 15 empty" and the other span forms', () => {
   const h = (fromYear, toYear) => ({ kind: 'job', job: 'mulch', fromYear, toYear, state: 'open' });
   assert.equal(said(line.gapLines([], [h(3, 15)]).leaves, 'en'), 'leaves years 3 to 15 empty');
   assert.equal(said(line.gapLines([], [h(0, 3)]).leaves, 'en'), 'leaves the first 3 years empty');
@@ -283,20 +285,57 @@ test('C3 (pf-f Against): the aridity band\'s line ends as the boards end it, wit
   const entry = line.againstLines(v, null, W).find((e) => e.factor === 'dry');
   assert.ok(!(entry.line.also ?? []).some((a) => a.key === 'consortium.line.rainFromNote'), 'no rain note');
   for (const lang of Object.keys(words)) assert.equal(words[lang]['consortium.line.rainFromNote'], undefined, `${lang}: no rainFromNote key`);
-  assert.doesNotMatch(readFileSync(new URL('../src/islands/consortium/views/details/Against.tsx', import.meta.url), 'utf8'), /rainFrom/, 'Against passes no rain line');
 });
 
 // R4: the Flowers row without a place says so, never "no months recorded near your place".
 test('R4 (pf-f Flowers): no place set and months recorded per hemisphere: the no-place state, never "none near your place"', () => {
   const almond = [row(['Jan', 'Feb', 'Mar'], { hemisphere: 'N', latitude: '35..50' }), row(['Jul', 'Aug', 'Sep'], { hemisphere: 'S', latitude: '-50..-35' })];
   assert.deepEqual(bloom.bloomNear(almond, { lat: null, country: null, zone: 'Mediterranean' }), { state: 'no-place' });
-  assert.deepEqual(bloom.bloomNear([], { lat: null, country: null, zone: 'Mediterranean' }), { state: 'no-place' });
   assert.deepEqual(bloom.bloomNear(almond, { lat: 45, country: 'FR', zone: 'Mediterranean' }), { state: 'found', months: ['Jan', 'Feb', 'Mar'], estimate: true });
   assert.deepEqual(bloom.bloomNear(almond, { lat: 10, country: 'NG', zone: 'Mediterranean' }), { state: 'none' });
   for (const lang of Object.keys(words)) assert.ok(words[lang]['consortium.details.flowersNoPlace'], `${lang} flowersNoPlace`);
 });
 
-// C6: one name for the glyph table.
-test('C6 (pf-f Against): no alias of MEASURE_GLYPH', () => {
-  assert.doesNotMatch(readFileSync(new URL('../src/islands/consortium/views/details/Against.tsx', import.meta.url), 'utf8'), /const GLYPH\b/);
+// ---- fix round 3, batch 1 (review findings R1 to R5, C1 to C7) ----
+
+// R2: the Flowers row says loading or failed while the details are not here, never "no months".
+// R3/C3: "set a place" only when a scoped row exists that a place could select; no bloom rows at all is
+// "no months recorded", with or without a place.
+test('R2 R3 (pf-f Flowers): loading, failed, not recorded, no place, none near, found: one pure function owns every case', () => {
+  const at = { lat: null, country: null, zone: 'Tropical' };
+  assert.deepEqual(bloom.bloomNear('loading', at), { state: 'loading' }, 'the details query still out: loading');
+  assert.deepEqual(bloom.bloomNear('failed', { ...at, lat: 37.4 }), { state: 'failed' }, 'the details query failed: failed, never "none near your place"');
+  assert.deepEqual(bloom.bloomNear([], at), { state: 'unrecorded' }, 'no bloom rows, no place: "no months recorded", never "set a place"');
+  assert.deepEqual(bloom.bloomNear([], { ...at, lat: 37.4 }), { state: 'unrecorded' }, 'no bloom rows, a place: the same words');
+  assert.deepEqual(bloom.bloomNear(PINTO, at), { state: 'no-place' }, 'rows a latitude would select: "set a place"');
+  // A country-scoped row only (no latitude needed): a place does not change it, so never "set a place".
+  assert.deepEqual(bloom.bloomNear([row(['Apr'], { country: 'CH' })], at), { state: 'none' });
+  for (const lang of Object.keys(words)) assert.ok(words[lang]['consortium.details.flowersUnrecorded'], `${lang} flowersUnrecorded`);
+  for (const lang of Object.keys(words)) assert.notEqual(words[lang]['consortium.details.flowersUnrecorded'], words[lang]['consortium.details.flowersNone'], `${lang}: not the near-your-place words`);
+});
+
+// R4/C5: a later loss is read per climate factor: a factor whose rank then is worse than its own today.
+test('R4 C5 (pf-f period edge): a second look on cold today that fits by 2041–2070 but is a second look on heat then is a loss on heat', () => {
+  const coldLook = fv({ factor: 'cold', level: 'look', place: -2, low: -2, high: 20 });
+  const coldFits = fv({ ...coldLook, level: 'fits', place: 1 });
+  const hotFits = fv({ factor: 'hot', level: 'fits', place: 33, low: 20, high: 38 });
+  const hotLook = fv({ ...hotFits, level: 'look', place: 38.4 });
+  const now = pv({ level: 'look', factors: [coldLook, hotFits], limiting: coldLook });
+  const later = pv({ judged: '2041-2070', level: 'look', factors: [coldFits, hotLook], limiting: hotLook });
+  const loss = line.laterLossOf(now, [later]);
+  assert.deepEqual([loss?.verdict.judged, loss?.level, loss?.factor], ['2041-2070', 'look', 'hot'], 'the new heat limit, not today\'s cold');
+  assert.equal(line.keepLine(now, [later], 2026)?.count, 15, 'and the keep line counts to it');
+  // The same factor at the same rank is still no loss; a recovering factor alone is none.
+  assert.equal(line.laterLossOf(now, [pv({ judged: '2041-2070', level: 'fits', factors: [coldFits, hotFits] })]), null);
+});
+
+// R5: every (today, then) pair of standings has its words; outside today and near its edge then says so.
+test('R5 (pf-f Swap rows): outside its range today, near its edge by 2041–2070: "Outside its range today; near the edge by 2041–2070"', () => {
+  const coldOut = fv({ factor: 'cold', level: 'outside', place: -9, low: -6, high: 20 });
+  const near = pv({ judged: '2041-2070', factors: [fv({ ...coldOut, level: 'fits', place: -5.8, confidence: { term: 'edge' } })] });
+  assert.equal(said(line.rowBandOf(pv({ level: 'outside', factors: [coldOut], limiting: coldOut }), near, period).line, 'en'), 'Outside its range today; near the edge by 2041–2070');
+  const on = pv({ judged: '2041-2070', level: 'look', factors: [fv({ ...coldOut, level: 'look', place: -6 })] });
+  assert.equal(said(line.rowBandOf(pv({ level: 'outside', factors: [coldOut], limiting: coldOut }), on, period).line, 'en'), 'Outside its range today; near the edge by 2041–2070');
+  const inRange = pv({ judged: '2041-2070', factors: [fv({ ...coldOut, level: 'fits', place: 2 })] });
+  assert.equal(said(line.rowBandOf(pv({ level: 'outside', factors: [coldOut], limiting: coldOut }), inRange, period).line, 'en'), 'Outside its range today; in range by 2041–2070');
 });

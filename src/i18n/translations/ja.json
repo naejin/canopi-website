@@ -1534,6 +1534,7 @@
   "consortium.details.bestPh": "最適 pH",
   "consortium.details.afterRelease": "リリース後",
   "consortium.details.flowersNone": "あなたの場所の近くでは月の記録なし",
+  "consortium.details.flowersUnrecorded": "月の記録なし",
   "consortium.details.flowersNoPlace": "場所を設定すると、そこでの開花時期がわかります",
   "consortium.details.notCheckedYet": "まだ確認していません",
   "consortium.details.growsIn": "{a} – {b}で育つ",

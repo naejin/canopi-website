@@ -1534,6 +1534,7 @@
   "consortium.details.bestPh": "최적 pH",
   "consortium.details.afterRelease": "출시 후",
   "consortium.details.flowersNone": "근처에서 기록된 달 없음",
+  "consortium.details.flowersUnrecorded": "기록된 달 없음",
   "consortium.details.flowersNoPlace": "장소를 정하면 그곳에서 언제 꽃이 피는지 볼 수 있음",
   "consortium.details.notCheckedYet": "아직 확인 안 됨",
   "consortium.details.growsIn": "{a} – {b}에서 자람",

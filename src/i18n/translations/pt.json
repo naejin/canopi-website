@@ -1534,6 +1534,7 @@
   "consortium.details.bestPh": "pH ideal",
   "consortium.details.afterRelease": "após o lançamento",
   "consortium.details.flowersNone": "nenhum mês registrado perto de você",
+  "consortium.details.flowersUnrecorded": "nenhum mês registrado",
   "consortium.details.flowersNoPlace": "informe um lugar para ver quando ela floresce aí",
   "consortium.details.notCheckedYet": "ainda não verificado",
   "consortium.details.growsIn": "cresce em {a} – {b}",

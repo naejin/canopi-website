@@ -1534,6 +1534,7 @@
   "consortium.details.bestPh": "beste pH",
   "consortium.details.afterRelease": "na de release",
   "consortium.details.flowersNone": "geen maanden vastgelegd bij jouw plek",
+  "consortium.details.flowersUnrecorded": "geen maanden vastgelegd",
   "consortium.details.flowersNoPlace": "geef een plek op om te zien wanneer ze daar bloeit",
   "consortium.details.notCheckedYet": "nog niet gecontroleerd",
   "consortium.details.growsIn": "groeit in {a} – {b}",

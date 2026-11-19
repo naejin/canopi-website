@@ -1534,6 +1534,7 @@
   "consortium.details.bestPh": "лучший pH",
   "consortium.details.afterRelease": "после выпуска",
   "consortium.details.flowersNone": "рядом с вами месяцы не отмечены",
+  "consortium.details.flowersUnrecorded": "месяцы не отмечены",
   "consortium.details.flowersNoPlace": "укажите место, чтобы увидеть, когда оно там цветёт",
   "consortium.details.notCheckedYet": "ещё не проверено",
   "consortium.details.growsIn": "растёт: {a} – {b}",

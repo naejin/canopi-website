@@ -1534,6 +1534,7 @@
   "consortium.details.bestPh": "最适 pH",
   "consortium.details.afterRelease": "发布后",
   "consortium.details.flowersNone": "你附近没有记录到月份",
+  "consortium.details.flowersUnrecorded": "没有记录到月份",
   "consortium.details.flowersNoPlace": "设置地点即可查看它在当地何时开花",
   "consortium.details.notCheckedYet": "尚未核对",
   "consortium.details.growsIn": "生长于{a} – {b}",
