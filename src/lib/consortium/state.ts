@@ -169,7 +169,9 @@ function editPairs(raw: SiteEdits | null | undefined): string[] {
   const f = [seg(e.nightsShiftC, 10), seg(e.daysShiftC, 10), seg(e.rainShiftMm, 1), seg(e.dryMonthsShift, 1), e.tempsTogether ? '1' : ''].join('.').replace(/\.+$/, '');
   if (f) out.push(`f=${f}`);
   if (e.soilPh !== undefined) out.push(`b=${Math.round(e.soilPh * 10)}`);
-  if (e.pots) out.push('p=1');
+  // p: the grower's pots answer either way (1 in pots, 0 in the ground: under the room "Pots or a
+  // balcony" the ground answer is what lets the soil test count, pre-push saves-3).
+  if (e.pots !== undefined) out.push(`p=${e.pots ? 1 : 0}`);
   if (e.watering) out.push(`i=${WATERING_CODE[e.watering]}`);
   if (e.drainage) out.push(`d=${e.drainage}`);
   return out;
@@ -191,7 +193,8 @@ function readEdits(q: URLSearchParams): SiteEdits | null {
   }
   const b = q.get('b');
   if (b !== null && /^\d{2,3}$/.test(b)) raw.soilPh = Number(b) / 10;
-  if (q.get('p') === '1') raw.pots = true;
+  const p = q.get('p');
+  if (p === '1' || p === '0') raw.pots = p === '1';
   const i = q.get('i');
   const watering = (Object.keys(WATERING_CODE) as Watering[]).find((w) => WATERING_CODE[w] === i);
   if (watering) raw.watering = watering;

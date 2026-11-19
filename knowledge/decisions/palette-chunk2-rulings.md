@@ -4,7 +4,7 @@ title: Plant palette chunk-2 hand-off rulings (D1-D10)
 description: The agent rulings of 2026-11-18 on the PP-C chunk-2 hand-offs, as auto-approved under the owner's autonomy rule, and where each lives in the code.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:31:04Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:16Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:10Z }
 sources:
   - id: jobspicture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
@@ -19,8 +19,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:e80bca603fcf2579
-    last_modified: 2026-11-19T08:16:50Z
+    digest: sha256:023783ecbccd0096
+    last_modified: 2026-11-19T12:06:03Z
   - id: place-search-ts
     resource: ../../src/lib/location/place-search.ts
     title: src/lib/location/place-search.ts
@@ -30,7 +30,7 @@ sources:
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:0b89a2579cb86fe6
-    last_modified: 2026-11-19T11:30:44Z
+    last_modified: 2026-11-19T10:56:43Z
   - id: holes-ts
     resource: ../../src/lib/consortium/holes.ts
     title: src/lib/consortium/holes.ts
@@ -44,8 +44,8 @@ sources:
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
-    digest: sha256:07f9775e9c850dec
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:3f8624af8c10e132
+    last_modified: 2026-11-19T12:06:03Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -59,8 +59,8 @@ sources:
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
-    digest: sha256:7a085fede4454133
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:9c3a0fb17eddf50b
+    last_modified: 2026-11-19T12:06:10Z
 ---
 
 # Plant palette chunk-2 hand-off rulings

@@ -4,7 +4,7 @@ title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 4.7 exports and nothing older: additive-tier checks, the required 4.2 to 4.7 additions (plant_aliases accepted, never read), the light span columns, the AI-estimate kinds on jobs and primary names, and the search names file."
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:33Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:34Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:16Z }
 sources:
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
@@ -39,8 +39,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:e80bca603fcf2579
-    last_modified: 2026-11-19T08:16:50Z
+    digest: sha256:023783ecbccd0096
+    last_modified: 2026-11-19T12:06:03Z
   - id: consortium-source-test-mjs
     resource: ../../scripts/consortium-source.test.mjs
     title: scripts/consortium-source.test.mjs

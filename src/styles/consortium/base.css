@@ -97,6 +97,9 @@
    else broken where a word alone would overflow its line (the last resort; break-word, unlike the
    narrow labels' own anywhere, leaves every box's size as it was). */
 .ct:is(:lang(de), :lang(nl), :lang(ru)) { hyphens: auto; overflow-wrap: break-word; }
+/* Scientific names are Latin and never take a hyphen, whatever the page's language (a split binomial
+   reads as a different name). */
+.ct .ct-sci, .ct :lang(la) { hyphens: manual; }
 .ct .status-line { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--text-secondary); }
 .ct .callout { display: grid; gap: 14px; padding: 28px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); max-width: 720px; }
 .ct .callout > p { font-size: 16.5px; color: var(--text-secondary); }

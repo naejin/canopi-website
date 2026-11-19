@@ -5,10 +5,10 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:32:47Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:25Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:17Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:13Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +23,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:a538a910e23fe773
-    last_modified: 2026-11-19T11:32:18Z
+    digest: sha256:724c3d836160770f
+    last_modified: 2026-11-19T12:07:53Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -98,8 +98,8 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:5e7a858ba4881946
-    last_modified: 2026-11-18T18:42:15Z
+    digest: sha256:ce296598ad28af2a
+    last_modified: 2026-11-19T12:06:27Z
   - id: consortium-said-mjs
     resource: ../../scripts/consortium-said.mjs
     title: scripts/consortium-said.mjs
@@ -119,7 +119,7 @@ sources:
     resource: ../../scripts/browser/pf-d-helpers.mjs
     title: scripts/browser/pf-d-helpers.mjs
     digest: sha256:0bfaee57e84a649d
-    last_modified: 2026-11-19T11:32:18Z
+    last_modified: 2026-11-19T11:24:03Z
   - id: consortium-pf-env-mjs
     resource: ../../scripts/consortium-pf-env.mjs
     title: scripts/consortium-pf-env.mjs

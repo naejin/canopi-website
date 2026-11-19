@@ -12,9 +12,9 @@
 //   that label; a visit with no link opens it. A guide preset (?plant=&climate=, A5) wins over it. A
 //   save readRecord cannot read (the old beta tool's, a newer or unreadable one) opens nothing and is
 //   left untouched; the next change overwrites it (owner 2026-11-17: no backward compatibility work).
-// - PLACE_STORE (canopi-place): the reader's last place answers `m z l w q r h s`, written on every
+// - PLACE_STORE (canopi-place): the reader's last place answers `m z f b p i d`, written on every
 //   place change the reader makes, read only to seed a palette that starts with no place of its own
-//   (arrival.ts startMemory).
+//   (arrival.ts startMemory), so a page that does not open the save keeps the grower's own values.
 // - The page's own address: replaceState writes history.state { ct: fragment, src, pl: place }, so a
 //   reload of the page's own link opens as the save (its country label and this tab's place kept),
 //   not as a link someone shared (v1 bca954c). A link pasted into the open tab (hashchange) is opened
@@ -222,10 +222,13 @@ function addressPlace(): string {
   const o = linkPlace.peek() && at?.source === 'link' ? { lat: at.lat, lon: at.lon } : null;
   return joined(encodePlace({ ...shareState(now, { place: true }), country: now.country.source === 'link' ? now.country.code : null }, o), suggestedPart());
 }
-// The canopi-place seed: room and plot size (`m z`), without the country.
+// The canopi-place seed: room and plot size (`m z`) and the grower's own values (`f b p i d`, core
+// encodePlace), without the country. While a link's place waits on the reader, their own values, never
+// the link's (8.3: the link's place is for this page only; pre-push saves-1).
 export function placeSeed(): string {
   const s = schema.peek(['room', 'plot']);
-  return [`m=${s.room}`, ...(s.plot !== null ? [`z=${s.plot}`] : [])].join('&');
+  const siteEdits = linkPlace.peek()?.own.siteEdits ?? store.siteEdits.peek();
+  return joined(`m=${s.room}`, s.plot !== null ? `z=${s.plot}` : '', encodePlace({ country: null, siteEdits }));
 }
 
 // ---- a link that brings a place, and the save held until the reader acts (plant-palette-architecture 8.3) ----
@@ -368,11 +371,11 @@ export function watchStore(): void {
     void held.value;
     untracked(persist);
   });
-  // canopi-place follows the room and plot the reader gives (a restore applying a link's or a save's
-  // place is not the reader: it seeds nothing).
+  // canopi-place follows the room, plot and own values the reader gives (a restore applying a link's or
+  // a save's place is not the reader: it seeds nothing).
   let firstPlace = true;
   effect(() => {
-    void schema.track(['room', 'plot']);
+    void schema.track(['room', 'plot', 'siteEdits']);
     if (firstPlace) { firstPlace = false; return; }
     if (quiet) return;
     untracked(() => memory.write(PLACE_STORE, placeSeed()));

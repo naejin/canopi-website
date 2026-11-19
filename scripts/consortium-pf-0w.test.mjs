@@ -166,7 +166,7 @@ test('link: the edits travel with the place only (f b p i d, listed in u=), j on
   assert.match(encodeLink(share({ siteEdits: { soilPh: 5.5 } }), known, { place: true }), /&b=55&u=b&e=1$/);
 });
 
-test('link: an edit out of range, a malformed f or b, or a p other than 1 is dropped; the rest is read', () => {
+test('link: an edit out of range, a malformed f or b, or a p other than 1 or 0 is dropped; the rest is read', () => {
   const known = { Temperate: PLANTS };
   const base = encodeLink(share(), known, { place: true }).replace(/&e=1$/, '');
   const read = (tail) => decodeLink(`${base}${tail}&e=1`, known).state.siteEdits;
@@ -175,7 +175,8 @@ test('link: an edit out of range, a malformed f or b, or a p other than 1 is dro
   assert.equal(read('&f=a.b'), null);
   assert.equal(read('&b=6.8'), null);
   assert.equal(read('&b=200'), null, 'pH 20 is out of range');
-  assert.equal(read('&p=0'), null);
+  assert.equal(read('&p=2'), null);
+  assert.deepEqual(read('&p=0'), { pots: false }, 'p=0: the grower\'s "In the ground" answer (pre-push saves-3)');
   assert.deepEqual(read('&i=rain&d=muddy'), { watering: 'rain' }, 'i is the watering, d the drainage');
 });
 

@@ -573,7 +573,7 @@ const spills = (page) => page.evaluate(() => {
   return [...new Set(out)];
 });
 
-test('Layout stability, language-robust (L3): long German, Dutch and Russian words and CJK runs never spill out of their box at 320 px, on Place and on the palette; German, Dutch and Russian hyphenate', { timeout: 120_000 }, async () => {
+test('Layout stability, language-robust (L3): long German, Dutch and Russian words and CJK runs never spill out of their box at 320 px, on Place and on the palette; German, Dutch and Russian hyphenate, scientific names never', { timeout: 120_000 }, async () => {
   const bad = [];
   for (const lang of ['de', 'nl', 'ru', 'ja', 'zh', 'ko']) {
     for (const [step, query] of [['Place', ''], ['palette', PALETTE]]) {
@@ -585,6 +585,10 @@ test('Layout stability, language-robust (L3): long German, Dutch and Russian wor
       if (['de', 'nl', 'ru'].includes(lang)) {
         const hy = await page.evaluate(() => getComputedStyle(document.querySelector('#ct-root p, #ct-root li')).hyphens);
         if (hy !== 'auto') bad.push(`${lang} ${step}: hyphens ${hy}`);
+        // Scientific names never hyphenate (Latin, whatever the page's language).
+        const sci = await page.evaluate(() => [...document.querySelectorAll('#ct-root .ct-sci, #ct-root [lang="la"]')].filter((e) => getComputedStyle(e).hyphens !== 'manual').map((e) => e.textContent.trim()));
+        if (sci.length) bad.push(`${lang} ${step}: scientific names hyphenate: ${sci.slice(0, 3).join(', ')}`);
+        if (step === 'palette' && !(await page.$('#ct-root .ct-sci, #ct-root [lang="la"]'))) bad.push(`${lang} palette: no scientific name shown to check`);
       }
       await done(page);
     }
