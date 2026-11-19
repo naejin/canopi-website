@@ -1445,14 +1445,66 @@ test('PFD54 (pf-d, chunk 4 T19, fix round 1 R3/C4; owner 2026-11-19): "I know my
   await tap(page, 'I know my plot’s figure');
   const nights = await read('nights');
   assert.equal(nights.label, 'Average night low of my plot’s coolest month, today', 'T19, R3: the field names the mean low the checks read');
-  const nightsHelp = `Type the average night low of your plot’s coolest month, not its coldest night of the year (the map says ${map.nights.toFixed(1)} °C): it is kept as the shift from the map, the same in every period.`;
+  const nightsHelp = `Type the average night low of your plot’s coolest month, not its coldest night of the year (the map says ${tempEn(map.nights)}): it is kept as the shift from the map, the same in every period.`;
   assert.ok(nights.help.includes(nightsHelp), `C4: one form, and the map's own figure (${JSON.stringify(nights.help)})`);
   await tap(page, 'Cancel');
   await tap(page, 'Change hottest days');
   await tap(page, 'I know my plot’s figure');
   const days = await read('days');
   assert.equal(days.label, 'Average afternoon high of my plot’s hottest month, today', 'R3: Hottest days names the mean high the checks read');
-  const daysHelp = `Type the average afternoon high of your plot’s hottest month, not its hottest day of the year (the map says ${Math.round(map.days)} °C): it is kept as the shift from the map, the same in every period.`;
+  const daysHelp = `Type the average afternoon high of your plot’s hottest month, not its hottest day of the year (the map says ${tempEn(map.days)}): it is kept as the shift from the map, the same in every period.`;
   assert.ok(days.help.includes(daysHelp), `R3: never the year's hottest day, and the map's own figure (${JSON.stringify(days.help)})`);
+  await done(page);
+});
+
+// Chunk 4 C2 fix round 2 (R1.1): the figure the help quotes is the field's own: one decimal on both
+// temperature lines, and the shift is worked out against that shown figure. Typing it back means "no
+// change": the editor closes with no error and no toast, or the line's shift is cleared if one is set.
+test('PFD56 (pf-d, chunk 4 C2 fix round 2 R1.1): in "I know my plot’s figure" the help quotes the map at the field\'s 0.1 step on both lines; typing that figure back is "no change" (the editor closes, nothing written, no range error), or clears a shift already set; a figure 1.0 above it is a 1 °C shift', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  // The map's figures off the 0.1 grid: 27.64 shows as 27.6 °C (once "28 °C"), 3.46 as 3.5 °C.
+  await page.evaluate(() => {
+    const s = window.__ctTest.store, l = s.location.value;
+    const periods = l.lookup.climate.periods.map((p) => (p.scenario === 'historical' ? { ...p, tmaxWarmC: 27.64, tminColdC: 3.46 } : p));
+    s.location.value = { ...l, lookup: { ...l.lookup, climate: { ...l.lookup.climate, periods } } };
+  });
+  const map = await inputs(page);
+  assert.deepEqual([map.days.map, map.nights.map], [27.64, 3.46], 'premise: the map off the 0.1 grid');
+  const helpOf = () => page.evaluate(() => [...document.querySelectorAll('main fieldset.fg-editor .fg-help')].map((p) => p.textContent.replace(/\s+/g, ' ').trim()).join(' | '));
+  const open = () => page.evaluate(() => !!document.querySelector('main fieldset.fg-editor'));
+  const error = () => page.evaluate(() => document.querySelector('main fieldset.fg-editor .fg-error')?.textContent ?? null);
+  const toast = () => page.evaluate(() => window.__ctTest.store.toast.value?.text ?? null);
+  const figureOf = async (line, value) => {
+    await tap(page, `Change ${line}`);
+    await tap(page, 'I know my plot’s figure');
+    const help = await helpOf();
+    await typeAt(page, value);
+    await tap(page, 'Use my value');
+    return help;
+  };
+  // Hottest days: the help quotes 27.6 °C; typing 27.6 is no change.
+  const days = await figureOf('hottest days', '27.6');
+  assert.ok(days.includes('(the map says 27.6 °C)'), `R1.1: the days help at the field's precision (${days})`);
+  assert.equal(await error(), null, 'R1.1: never a range error for the quoted figure');
+  assert.equal(await open(), false, 'R1.1: the map\'s own figure closes the editor');
+  assert.deepEqual(await edits(page), {}, 'R1.1: no phantom shift');
+  assert.equal(await toast(), null, 'R1.1: no change, no toast');
+  // Coldest nights: the help quotes 3.5 °C; typing 3.5 (the tick on) is no change either.
+  const nights = await figureOf('coldest nights', '3.5');
+  assert.ok(nights.includes('(the map says 3.5 °C)'), `R1.1: the nights help (${nights})`);
+  assert.equal(await error(), null, 'R1.1: no self-contradicting range error on the nights');
+  assert.equal(await open(), false, 'R1.1: the nights editor closes');
+  assert.deepEqual(await edits(page), {}, 'R1.1: nothing written for the nights');
+  // A shift already set: typing the map's figure clears it.
+  await page.evaluate(() => { window.__ctTest.store.siteEdits.value = { daysShiftC: 2 }; });
+  await figureOf('hottest days', '27.6');
+  assert.equal(await error(), null, 'R1.1: clearing is no error');
+  assert.deepEqual(await edits(page), {}, 'R1.1: the map\'s figure clears the days shift');
+  await summary(page);
+  // A figure 1.0 above the shown one is a whole 1 °C shift, never 0.96 or 1.04.
+  await page.evaluate(() => { window.__ctTest.store.hideToast(); });
+  await figureOf('hottest days', '28.6');
+  assert.deepEqual(await edits(page), { daysShiftC: 1 }, 'R1.1: the shift is taken from the figure as shown');
   await done(page);
 });

@@ -445,7 +445,10 @@ const SHIFT: Record<ClimateLine, () => ShiftConfig> = {
 function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const cfg = SHIFT[line]();
   const inp = i[INPUT[line]];
-  const map = inp.map ?? 0;
+  const step = (n: number) => (cfg.step < 1 ? Math.round(n * 10) / 10 : Math.round(n));
+  // The map's figure as the field shows it (its 0.1 step): the help quotes it, and an own figure is
+  // measured from it, so typing it back is no change (R1.1).
+  const map = step(inp.map ?? 0);
   const [text, setText] = useState(inp.shift ? editable(Math.abs(inp.shift)) : '');
   const [down, setDown] = useState(inp.shift ? inp.shift < 0 : true);
   const [figure, setFigure] = useState(false);
@@ -460,7 +463,6 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const raw = parseNumber(text);
   // The shift the field makes (null: not a value the line takes), and the range to say.
   const range = figure ? { min: map - cfg.max, max: map + cfg.max } : { min: 0, max: line === 'rain' && down ? Math.min(cfg.max, map) : cfg.max };
-  const step = (n: number) => (cfg.step < 1 ? Math.round(n * 10) / 10 : Math.round(n));
   const shift: number | null = raw === null || (cfg.step >= 1 && !Number.isInteger(raw)) ? null
     : figure ? (raw < range.min || raw > range.max ? null : step(raw - map))
     : raw <= 0 || raw > range.max ? null : step(down ? -raw : raw);
@@ -469,7 +471,9 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   // pair is hidden, so the figure decides, R8); before, the pair's choice.
   const tickColder = shift !== null && shift !== 0 ? shift < 0 : figure ? true : down;
   const use = () => {
-    if (shift === null || shift === 0) { setError(rangeWords); field.current?.focus(); return; }
+    // The map's own figure typed back means "no change": the editor closes, or the line's shift set
+    // before is cleared (the same-value path, M2), never a range error (R1.1).
+    if (shift === null || (shift === 0 && !figure)) { setError(rangeWords); field.current?.focus(); return; }
     commit(line, edited(shift));
   };
   // The edits "Use my value" would write (the tick: the hottest days too).
@@ -501,8 +505,9 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   // The own figure each temperature line reads, in words of its own (owner 2026-11-19, T19; R3, C4):
   // Coldest nights the coolest month's average night low (tminColdC), not the year's coldest night;
   // Hottest days the hottest month's average afternoon high (tmaxWarmC), not the year's hottest day.
-  // The help gives the map's value for that same figure, so a far-off one stands out.
-  const ownFigure = (key: string) => F(`${key}${line === 'nights' ? 'Nights' : 'Days'}`, { map: line === 'nights' ? temp(map) : tempWhole(map) });
+  // The help gives the map's value for that same figure at the field's precision (one decimal, R1.1), so
+  // a far-off one stands out.
+  const ownFigure = (key: string) => F(`${key}${line === 'nights' ? 'Nights' : 'Days'}`, { map: temp(map) });
   return (
     <fieldset class="fg-editor">
       <legend>{F(`legend${line[0].toUpperCase()}${line.slice(1)}`)}</legend>
