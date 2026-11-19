@@ -11,7 +11,7 @@
 import type { ComponentChildren } from 'preact';
 import { useMemo } from 'preact/hooks';
 import type { PlantId, PlantRow, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitGroups, jobsOf } from '../../../../lib/consortium/index.ts';
+import { fitGroups, jobsOf, ROOM_LIMIT_M } from '../../../../lib/consortium/index.ts';
 import { byFitRank, plantItems } from './model.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
@@ -32,7 +32,7 @@ function grownSize(t: Taxon): string {
   return w !== null && h !== null ? T('many.sizeBoth', { w: W, h: H }) : h !== null ? T('many.sizeTall', { h: H }) : w !== null ? T('many.sizeWide', { w: W }) : T('find.sizeNone');
 }
 
-function Row({ t }: { t: Taxon }) {
+function Row({ t, note }: { t: Taxon; note?: string }) {
   const scene = store.flagScene.value;
   const lines = flagLines(t, store.flagsOfPlant(t), scene);
   const v = store.memberVerdicts.value?.get(t.id);
@@ -43,7 +43,8 @@ function Row({ t }: { t: Taxon }) {
       <button type="button" class="ct-plant-open" aria-label={nameOf(t)} aria-describedby={`ct-pr-${t.id}`} onClick={() => store.openSheet('details', t.id)}>
         <span class="ct-plant-name"><strong>{nameOf(t)}</strong> <i lang="la" class="ct-sci">{t.canonical_name}</i></span>
         <span class="ct-plant-more" id={`ct-pr-${t.id}`}>
-          <span class="ct-line">{t.stratum && <LightIcon stratum={t.stratum.value} />}{lightWords(t).plantedIn}{span ? ` · ${span}` : ''}</span>
+          {/* The icon and its words never part: the words wrap beside the icon, not under it (Recife). */}
+          <span class="ct-line ct-plant-light">{t.stratum && <LightIcon stratum={t.stratum.value} />}<span>{lightWords(t).plantedIn}{span ? ` · ${span}` : ''}</span></span>
           <span class="ct-line">{grownSize(t)}</span>
           <span class="ct-plant-marks">
             {t.functions === null && !jobs.length ? <span class="ct-line">{T('many.jobsNoneLong')}</span>
@@ -51,6 +52,7 @@ function Row({ t }: { t: Taxon }) {
             <Marks t={t} lines={lines} country={scene.country} />
           </span>
           {v && <span class="ct-line ct-plant-fit" data-level={v.level}>{v.level !== 'fits' && <FitLine v={v} />}<RowNotes t={t} v={v} /></span>}
+          {note && <span class="ct-line ct-plant-why">{note}</span>}
         </span>
         {CHEVRON}
       </button>
@@ -80,6 +82,20 @@ export function SmallPlants({ rows: given, children }: { rows: readonly PlantRow
     const rank = new Map(plantItems(members, fitGroups(members, failed ? null : verdicts, flags), nameOf).map((i) => [i.id, i.rank]));
     return { rows: byFitRank(given, idOf, rank), rank };
   }, [given, members, verdicts, flags, failed]);
+  // Recife: the first toxic row (Moderate or Severe) says why it stays, the first row too tall for the
+  // room says the room's rule, once each in the shown order (Inform, don't block).
+  const room = store.room.value;
+  const notes = useMemo(() => {
+    const out = new Map<PlantId, string>(), lang = pageLang();
+    const shown = rows.flatMap((r) => ('plant' in r ? [r.plant] : []));
+    const toxic = shown.find((t) => t.warnings.toxicity?.level === 'Moderate' || t.warnings.toxicity?.level === 'Severe');
+    if (toxic) out.set(toxic.id, T('many.toxicNote'));
+    const limit = ROOM_LIMIT_M[room];
+    const tall = Number.isFinite(limit) && (room === 'small' || room === 'large' || room === 'pots')
+      ? shown.find((t) => verdicts?.get(t.id)?.notes.includes('room-tall')) : undefined;
+    if (tall) out.set(tall.id, [out.get(tall.id), T(`many.roomNote_${room}`, { len: formatLength(limit, lang) })].filter(Boolean).join(' '));
+    return out;
+  }, [rows, verdicts, room]);
   // A warning: a flag in words, or a fit outside its range or needing a second look (rank 0 to 2).
   const warned = rows.some((r) => 'plant' in r && (r.warned || (rank.get(r.plant.id) ?? 4) < 3));
   const remove = (id: PlantId) => {
@@ -96,7 +112,7 @@ export function SmallPlants({ rows: given, children }: { rows: readonly PlantRow
       {warned && <p class="ct-muted">{T('many.warnedFirst')}</p>}
       {children}
       <ul class="ct-plant-rows">{rows.map((r) => ('plant' in r
-        ? <Row key={r.plant.id} t={r.plant} />
+        ? <Row key={r.plant.id} t={r.plant} note={notes.get(r.plant.id)} />
         : <Missing key={r.id} id={r.id} why={r.missing} onRemove={remove} />))}</ul>
     </section>
   );

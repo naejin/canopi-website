@@ -27,7 +27,7 @@ import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
 import { flagLines } from '../kit/flags.ts';
 import { Marks, PLUS } from '../rows.tsx';
-import { FitLine, say } from '../kit/fit.tsx';
+import { FitLine, midSentence, say } from '../kit/fit.tsx';
 import { moreLine } from '../../../../lib/consortium/index.ts';
 import { nameOf, num, zoneName } from '../kit/names.ts';
 import { finder, releasePlants, wantNames } from './names.ts';
@@ -53,11 +53,12 @@ function PasteGroup({ id, head, n, openAt, children }: { id: string; head: strin
   );
 }
 // The first `closed` of a long run, then "+ N more" (past `max`); `list`: the items are <li>s.
-function Folded({ items, max, closed, list = false, label }: { items: ComponentChildren[]; max: number; closed: number; list?: boolean; label: string }) {
+// pill: the "+ N more" as a small pill under the list (board AddMany's questions), else an ochre link.
+function Folded({ items, max, closed, list = false, label, pill = false }: { items: ComponentChildren[]; max: number; closed: number; list?: boolean; label: string; pill?: boolean }) {
   const [all, setAll] = useState(false);
   const cut = !all && items.length > max;
   const shown = cut ? items.slice(0, closed) : items;
-  const more = cut && <button type="button" class="ct-more-open text-link" aria-expanded="false" aria-label={label} onClick={() => setAll(true)}>{say(moreLine(items.length - closed))}</button>;
+  const more = cut && <button type="button" class={pill ? 'ct-paste-morepill' : 'ct-more-open text-link'} aria-expanded="false" aria-label={label} onClick={() => setAll(true)}>{say(moreLine(items.length - closed))}</button>;
   return list ? <><ul class="ct-rows ct-paste-rows">{shown}</ul>{more}</> : <>{shown}{more}</>;
 }
 
@@ -186,7 +187,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     return taxa.map((t) => {
       const fit = choiceFit(t), on = ticked.includes(t.id);
       return members.includes(t.id)
-        ? <span class="ct-paste-choice is-in">{nameOf(t)} {sci(t)} <span class="ct-tag">{T('inConsortium')}</span></span>
+        ? <span class="ct-paste-choice is-in">{nameOf(t)} {sci(t)}<span class="ct-paste-fit"> · {midSentence(T('inConsortium'))}</span></span>
         : <button type="button" class="ct-paste-choice" aria-pressed={on ? 'true' : 'false'} onClick={() => toggle(t.id, ids, at)}>{pressed(on)}{nameOf(t)} {sci(t)}{fit && <span class="ct-paste-fit"> · {fit}</span>}</button>;
     });
   };
@@ -198,7 +199,15 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
           <button type="button" class="ct-paste-choice" aria-pressed={ticked.includes(f.taxon.id) ? 'true' : 'false'} onClick={() => toggle(f.taxon.id, [f.taxon.id], f.at)}>{pressed(ticked.includes(f.taxon.id))}{T('paste.close', { name: f.close! })}</button>
         </span>
         {rangeWarn(f.taxon)}</> })),
-    ...result.other.filter((o) => o.close).map((o) => ({ at: o.at, name: o.name, status: 'choose' as Status, ids: [] as PlantId[], ...otherRow(o) })),
+    // A close spelling found only on another list asks like any close spelling (BC20): its choice adds
+    // it from that list, so every question is answered the same way and counted once.
+    ...result.other.filter((o) => o.close).map((o) => ({ at: o.at, name: o.name, status: 'choose' as Status, ids: [o.taxon.id],
+      line: <>{named(o.taxon)} · {T('otherLists')}{twice(o.name)} {warnings(o.taxon)}</>,
+      after: <>
+        <span>{T('add.otherLine', { other: zoneName(o.climate), climate: zoneName(climate!) })}</span>
+        <span class="ct-paste-choices">
+          <button type="button" class="ct-paste-choice" aria-pressed={ticked.includes(o.taxon.id) ? 'true' : 'false'} onClick={() => toggle(o.taxon.id, [o.taxon.id], o.at)}>{pressed(ticked.includes(o.taxon.id))}{T('paste.close', { name: o.close! })}</button>
+        </span></> })),
     ...result.choose.map((c) => ({ at: c.at, name: c.name, status: 'choose' as Status, ids: c.taxa.map((t) => t.id),
       line: <>{c.taxa.length > 1 && <><strong>{T('paste.whichWord', { word: c.word })}</strong> </>}{P('paste.called', c.taxa.length, { word: c.word })}</>,
       after: <>
@@ -210,9 +219,13 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         {c.taxa.filter((t) => ticked.includes(t.id)).map((t) => <>{rangeWarn(t)}{warnings(t)}</>)}</> })),
   ].sort((a, b) => a.at - b.at);
   const answered = (q: { at: number; ids: PlantId[] }) => nope.has(q.at) || q.ids.some((id) => ticked.includes(id));
-  const asking = questions.filter((q) => q.ids.length > 0);
+  // Every question is a choice (BC20): the head, "N to go" and "Skip the N left" count the same lines.
+  const asking = questions;
   const chosen = asking.filter((q) => q.ids.some((id) => ticked.includes(id))).length;
   const left = asking.filter((q) => !answered(q)).length;
+  // The lede's loose word (board AddMany: "A loose word (“beans”) asks too"): a plural first, else any
+  // line no plant has as a whole name; none, the lede's general form.
+  const loose = result.choose.find((c) => c.loose && c.word !== c.name) ?? result.choose.find((c) => c.loose) ?? null;
   const missing: Row[] = result.none.map((x) => ({ at: x.at, name: x.name, status: 'none',
     line: <><strong>{T('paste.notFound')}</strong> <button type="button" class="text-link" data-paste-byhand="" onClick={() => byHand(x.name)}>{T('paste.byHand')}</button></> }));
   const MARK: Record<Status, ComponentChildren> = {
@@ -247,16 +260,17 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   };
 
   return (
-    <Frame titleId="ct-paste-title" class="ct-paste" foot={
-      <div class="ct-add-bar">
-        <button type="button" class="button button-secondary" data-paste-cancel="" onClick={back}>{T('paste.cancel')}</button>
-        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
-      </div>
-    }>
+    <Frame titleId="ct-paste-title" class="ct-paste" head={
       <div>
         <h2 id="ct-paste-title" tabIndex={-1} data-autofocus>{T('paste.title')}</h2>
         <p class="ct-muted">{T('paste.lede')}</p>
       </div>
+    } foot={
+      <div class="ct-add-bar ct-paste-foot">
+        <button type="button" class="button button-secondary" data-paste-cancel="" onClick={back}>{T('paste.cancel')}</button>
+        <button type="button" class="button button-primary" disabled={!toAdd.length} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
+      </div>
+    }>
       <p class="ct-paste-intro">{T('find.pasteIntro')}</p>
       <div class="ct-field">
         <label for="ct-paste-text" class="visually-hidden">{T('paste.label')}</label>
@@ -275,16 +289,15 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
       )}
       {questions.length > 0 && (
         <PasteGroup id="choose" head={T('paste.groupChoose')} n={questions.length} openAt={settled}>
-          {questions.length > 10 && <p class="ct-muted">{T('paste.chooseNote')}</p>}
-          <Folded items={questions.map(rowOf)} max={12} closed={5} list label={T('paste.otherQuestions')} />
-          {asking.length > 1 && <p class="ct-paste-progress">{T('paste.progress', { chosen: num(chosen), left: num(left) })}</p>}
-          {asking.length > 1 && left > 0 && <button type="button" class="button button-secondary" onClick={() => setNope((n) => { const m = new Set(n); for (const q of asking) if (!answered(q)) m.add(q.at); return m; })}>{P('paste.skip', left)}</button>}
+          {questions.length > 10 && <p class="ct-muted">{loose ? T('paste.chooseNoteLoose', { word: loose.name }) : T('paste.chooseNote')}</p>}
+          <Folded items={questions.map(rowOf)} max={10} closed={5} list pill label={T('paste.otherQuestions')} />
+          {asking.length > 1 && <p class="ct-paste-progress">{T('paste.progress', { chosen: num(chosen), left: num(left) })}
+            {left > 0 && <> <button type="button" class="text-link ct-paste-skip" onClick={() => setNope((n) => { const m = new Set(n); for (const q of asking) if (!answered(q)) m.add(q.at); return m; })}>{P('paste.skip', left)}</button></>}</p>}
         </PasteGroup>
       )}
       {missing.length > 0 && (
         <PasteGroup id="none" head={T('paste.groupNone')} n={missing.length} openAt={settled}>
           <Folded items={missing.map(rowOf)} max={10} closed={10} list label={T('paste.otherNames')} />
-          <p class="ct-muted">{T('paste.noneText')}</p>
           {missing.length > 1 && <button type="button" class="button button-secondary" onClick={() => void copy()}>{P('paste.copy', missing.length)}</button>}
           {copied === 'done' && <p class="ct-muted" role="status">{T('paste.copied')}</p>}
           {copied === 'hand' && <>

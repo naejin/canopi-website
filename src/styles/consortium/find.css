@@ -177,7 +177,8 @@
 /* The reading in three groups (board Paste, AddMany state 4): the count line under a rule; each group a
    44 px head (its words, its count, a chevron) over its rows; a row is its mark and one flowing line
    ("corn" Maize Zea mays · in your palette), with its choices or button under it. */
-.ct .ct-paste-count { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; }
+/* The count line: one line of small type (board Paste, BC17), beating the sheet's h3. */
+.ct .ct-paste-count[data-paste-count] { margin: 0; padding: 8px 0 2px; border-top: 1.5px solid var(--text-secondary); font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; text-wrap: wrap; }
 .ct .ct-paste-count > .ct-muted { color: var(--text-secondary); }
 .ct .ct-paste-count > strong { font-weight: 600; }
 .ct .ct-paste-sheet { margin: 0; font-size: 13px; line-height: 18px; }
@@ -203,13 +204,23 @@
 .ct .ct-paste-body { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
 .ct .ct-paste-line { color: var(--text); }
 .ct .ct-paste-line > strong { font-weight: 600; }
-.ct .ct-paste-line .ct-find-mark { vertical-align: baseline; }
+/* The marks flow on the line, after "· new ·" (board Paste, BC17). */
+.ct .ct-paste-line .ct-find-marks { display: inline; }
+.ct .ct-paste-line .ct-find-mark { vertical-align: baseline; margin-inline-end: 4px; }
 .ct .ct-paste-line > .text-link { min-height: 0; display: inline; }
 .ct .ct-paste-q { color: var(--text-secondary); }
 .ct .ct-paste-after { display: grid; gap: 6px; justify-items: start; }
 .ct .ct-paste-mark { display: flex; padding-top: 2px; color: var(--text-secondary); }
 .ct .ct-paste-mark[data-status="choose"], .ct .ct-paste-mark[data-status="none"] { color: var(--warning); }
 .ct .ct-paste-progress { font-size: 14px; line-height: 20px; }
+/* "Skip the N left": an ochre text link after the progress words (board AddMany). */
+.ct .ct-paste-progress > .ct-paste-skip { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* "+ N more" questions: a small pill (board AddMany). */
+.ct .ct-paste-morepill { justify-self: start; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.ct .ct-paste-morepill:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* The field is light, as the board draws it (BC17); the foot's two buttons share the width. */
+.ct textarea.ct-paste-text { background: var(--surface); }
+.ct .ct-paste-foot > .button { flex: 1 1 0; justify-content: center; }
 .ct .ct-paste-choices { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
 .ct .ct-paste-choice {
   display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 44px; padding: 4px 12px; border-radius: 22px; text-align: start;

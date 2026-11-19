@@ -218,7 +218,7 @@ export function matchName<T extends Named>(name: string, lists: PasteLists<T>): 
 // `at`: the reading's line in the paste (the sheet lists the paste in its order, board Paste).
 export interface PasteResult<T> {
   found: { at: number; name: string; taxon: T; close: string | null; sci?: boolean }[];
-  choose: { at: number; name: string; word: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null; guess: boolean }[];
+  choose: { at: number; name: string; word: string; taxa: T[]; inside: PlantId[]; climate: ClimateZone | null; guess: boolean; loose: boolean }[];
   other: { at: number; name: string; climate: ClimateZone; taxon: T; close: string | null }[];
   already: { at: number; name: string; taxon: T; close: string | null; climate: ClimateZone | null; sci?: boolean }[];
   duplicate: { at: number; name: string; taxon: T }[];
@@ -234,7 +234,8 @@ export interface PasteResult<T> {
 //              plants another line matched are left out; `climate` names another climate's list when
 //              only that list has them, null for this one. A name that matches one plant from the start (a
 //              genus of one) is no question: that plant is found (or other, already…); a guess, or a
-//              group the other lines left with one plant, stays a question (never added unasked)
+//              group the other lines left with one plant, stays a question (never added unasked);
+//              `loose`: no plant has the line as a whole name (a loose word, "beans": board AddMany)
 //   other      only another climate's list has it, one plant: "Add anyway", a guest (A9)
 //   already    in the consortium already
 //   duplicate  a line naming a plant another line matched (a later line; or a choice whose every
@@ -260,11 +261,11 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
   };
   // A choose group from one list: this climate's plants when it has any, else the first other list's;
   // a name's one plant is no question (board Paste: a found line), a guess's is.
-  const group = (name: string, taxa: T[], guess: boolean, word = name, sci = false) => {
+  const group = (name: string, taxa: T[], guess: boolean, word = name, sci = false, loose = false) => {
     const z = taxa.some((t) => lists.climate.get(t.id) === null) ? null : lists.climate.get(taxa[0].id) ?? null;
     const own = taxa.filter((t) => (lists.climate.get(t.id) ?? null) === z);
     if (own.length === 1 && !guess) one(name, own[0], null, sci);
-    else out.choose.push({ at, name, word, taxa: own, inside: [], climate: z, guess });
+    else out.choose.push({ at, name, word, taxa: own, inside: [], climate: z, guess, loose });
   };
   for (const [i, name] of names.entries()) {
     at = i;
@@ -288,16 +289,34 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
     if (shared && !found.some((h) => ownName(h))) { group(name, shared.taxa, false); continue; }
     const best = new Map<PlantId, { h: FindHit; at: number }>();
     found.forEach((h, k) => { const had = best.get(h.id); if (!had || (ownName(h) && !ownName(had.h))) best.set(h.id, { h, at: had?.at ?? k }); });
-    const hits = [...best.values()].sort((a, b) => Number(ownName(b.h)) - Number(ownName(a.h)) || (rank?.(a.h.id) ?? 0) - (rank?.(b.h.id) ?? 0) || a.at - b.at).map((x) => lists.taxa.get(x.h.id)!);
+    // BC15, A16: the plain names first. A plant's own name holding the word whole ("Common bean") before
+    // one where it only begins the name; among them the fewest words ("Lima bean" before "Scarlet runner
+    // bean"), then the genus most of the whole-word names share (the beans of Phaseolus before a lone
+    // Castor bean), then its fit (the caller's rank), then by name; every other match after, in the
+    // search's order. A plant you have stays among them, said to be in your palette.
+    const whole = (h: FindHit) => ownName(h) && h.why.match !== 'prefix';
+    const genusOf = (id: PlantId) => fold(lists.taxa.get(id)!.genus ?? lists.taxa.get(id)!.canonical_name.split(' ')[0]);
+    const share = new Map<string, number>();
+    for (const { h } of best.values()) if (whole(h)) share.set(genusOf(h.id), (share.get(genusOf(h.id)) ?? 0) + 1);
+    const key = ({ h }: { h: FindHit }) => ({
+      tier: whole(h) ? 0 : ownName(h) ? 1 : 2,
+      words: ownName(h) ? fold(h.why.text).split(' ').filter(Boolean).length : 0,
+      share: whole(h) ? share.get(genusOf(h.id)) ?? 0 : 0,
+      name: ownName(h) ? fold(h.why.text) : '',
+    });
+    const hits = [...best.values()].map((x) => ({ ...x, k: key(x) }))
+      .sort((a, b) => a.k.tier - b.k.tier || a.k.words - b.k.words || b.k.share - a.k.share || (a.k.tier < 2 ? (rank?.(a.h.id) ?? 0) - (rank?.(b.h.id) ?? 0) || (a.k.name < b.k.name ? -1 : a.k.name > b.k.name ? 1 : 0) : 0) || a.at - b.at)
+      .map((x) => lists.taxa.get(x.h.id)!);
     for (const t of shared?.taxa ?? []) if (!hits.includes(t)) hits.push(t);
     // A search guess stays a question, even of one plant (c1r3 T1; pf decisions 2026-11-18: Paste never
-    // takes a plant unasked): "napier" asks about Napier grass (board Paste draws it found).
+    // takes a plant unasked): "napier" asks about Napiergrass (board Paste draws it found: a known board
+    // difference, v14 spec A26).
     // A guess of one plant you already have asks nothing (nothing would be added): you have it.
     if (hits.length === 1 && ins.has(hits[0].id)) { one(name, hits[0], null); continue; }
-    if (hits.length) { group(name, hits, true, word); continue; }
+    if (hits.length) { group(name, hits, true, word, false, !m); continue; }
     const close = lists.index.close(name, true).filter((h) => lists.taxa.has(h.id));
     if (close.length === 1) one(name, lists.taxa.get(close[0].id)!, close[0].why.text);
-    else if (close.length) group(name, close.map((h) => lists.taxa.get(h.id)!), true);
+    else if (close.length) group(name, close.map((h) => lists.taxa.get(h.id)!), true, name, false, true);
     else out.none.push({ at, name });
   }
   // Plants another line matched leave the choose groups; a group they leave empty keeps its line, as
@@ -316,12 +335,14 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
 }
 
 // What "Add all" adds from a reading: the found plants (a close spelling only once ticked: "chesnut"
-// is read as European chestnut, offered, never added unasked) and the ticked choices, each once, none
-// already in the palette; climateOf names the other list a ticked choice comes from.
+// is read as European chestnut, offered, never added unasked; one found only on another list too, BC20)
+// and the ticked choices, each once, none already in the palette; climateOf names the other list a
+// ticked choice comes from.
 export function plan<T extends Named>(r: PasteResult<T>, ticked: readonly PlantId[], members: readonly PlantId[]): { ids: PlantId[]; climateOf: Map<PlantId, ClimateZone> } {
   const climateOf = new Map<PlantId, ClimateZone>();
   for (const c of r.choose) if (c.climate) for (const t of c.taxa) climateOf.set(t.id, c.climate);
-  const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)) || r.found.some((f) => f.close && f.taxon.id === id));
+  for (const o of r.other) if (o.close) climateOf.set(o.taxon.id, o.climate);
+  const chosen = ticked.filter((id) => r.choose.some((c) => c.taxa.some((t) => t.id === id)) || r.found.some((f) => f.close && f.taxon.id === id) || r.other.some((o) => o.close && o.taxon.id === id));
   const ids = [...new Set([...r.found.filter((f) => !f.close).map((f) => f.taxon.id), ...chosen])].filter((id) => !members.includes(id));
   return { ids, climateOf };
 }

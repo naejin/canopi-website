@@ -111,7 +111,6 @@
 .ct .ct-many-sub { display: block; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
 .ct .ct-many-fitline { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 .ct .ct-many-word { display: block; min-width: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--warning); }
-.ct .ct-many-word[data-level="danger"] { color: var(--danger); }
 .ct .ct-many-word[data-level="plain"] { color: var(--text-secondary); font-weight: 400; }
 .ct .ct-many-word .ct-glyph { width: 13px; height: 13px; vertical-align: -2px; }
 .ct .ct-many-word .ct-fit { color: inherit; }
@@ -119,13 +118,6 @@
   justify-self: start; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 999px;
   background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
 }
-.ct .ct-many-pill {
-  display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border: 1px solid var(--warning-line); border-radius: 999px;
-  background: var(--warning-bg); color: var(--warning); font-size: 13px; line-height: 20px; font-weight: 600; white-space: nowrap;
-}
-/* A plant's other mark beside its fit word (BC8): Toxic and Very toxic in the danger colour. */
-.ct .ct-many-pill[data-level="danger"] { border-color: var(--danger); background: transparent; color: var(--danger); }
-.ct .ct-many-pill .ct-glyph { width: 13px; height: 13px; }
 .ct .ct-many-foot { font-size: 13px; line-height: 19px; padding-top: 4px; }
 .ct .ct-many-table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 21px; }
 .ct .ct-many-table thead th { padding: 6px 8px; text-align: start; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-secondary); }
@@ -172,3 +164,9 @@
   .ct .ct-palette-body[data-many] > .ct-many-left { grid-column: 1; grid-row: 1; }
   .ct .ct-palette-body[data-many] > .ct-many-right { grid-column: 2; grid-row: 1; }
 }
+
+/* The light icon and "Planted in" share a line: the words wrap beside the icon, never under it (Recife). */
+.ct .ct-plant-open .ct-line.ct-plant-light { flex-wrap: nowrap; align-items: flex-start; }
+.ct .ct-plant-open .ct-line.ct-plant-light > svg { margin-top: 1.5px; }
+.ct .ct-plant-open .ct-line.ct-plant-light > span { min-width: 0; }
+.ct .ct-plant-open .ct-line.ct-plant-why { color: var(--text); }

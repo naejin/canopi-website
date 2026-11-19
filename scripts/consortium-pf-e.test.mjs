@@ -43,15 +43,6 @@ test('BC3 small form order: outside, a second look, marks only (Mildly toxic), f
   assert.ok(order.indexOf('p2') > order.indexOf('p3'), 'a Mildly-toxic-only row never comes before a second look');
 });
 
-test('BC8 a row says the marks its reason does not: an outside plant keeps its toxicity, a second look its other mark', () => {
-  const ts = ['Tamarind', 'Cashew', 'Lantana', 'Mango'].map((n, i) => taxon(`p${i}`, n));
-  const g = groups({ outside: ['p0', 'p1'], look: ['p2'], fits: ['p3'], mild: ['p0', 'p3'] });
-  g.reasons.severe = ['p2']; g.reasons.invasive = ['p2'];
-  const flags = { p0: [{ kind: 'toxicity', level: 'Slight' }], p1: [{ kind: 'toxicity', level: 'Moderate' }], p2: [{ kind: 'toxicity', level: 'Severe' }, { kind: 'invasive' }], p3: [{ kind: 'toxicity', level: 'Slight' }] };
-  const items = M.plantItems(ts, g, (t) => t.names.en, (id) => flags[id] ?? []);
-  assert.deepEqual(items.map((i) => M.extraMarks(i)), [['Slight'], ['Moderate'], ['invasive'], []]);
-});
-
 test('groups: light levels sunniest first, the plants with none last; one group for "No groups"', () => {
   const ts = [taxon('a', 'A', { stratum: 'low' }), taxon('b', 'B', { stratum: 'emergent' }), taxon('c', 'C'), taxon('d', 'D', { stratum: 'low' })];
   const items = M.plantItems(ts, groups({ fits: ['a', 'b', 'c', 'd'] }), (t) => t.names.en);
@@ -101,4 +92,34 @@ test('a search guess of one plant asks, unless you already have it', () => {
 test('a hand-typed comma list is read word by word; a scientific name says so', () => {
   const r = readPaste(pasteNames('Phaseolus vulgaris, lima bean'), { here, index });
   assert.deepEqual(r.found.map((f) => [f.taxon.id, !!f.sci]), [['b1', true], ['b2', false]]);
+});
+
+// ---- fix round 1, batch 2 ----
+
+test('BC15 A16: "beans" ranks the plain names first (fewest words), then the genus most of them share, then by name; a plant you have stays a choice', () => {
+  const beans = [
+    plant('c1', 'Canavalia ensiformis', 'Sword bean'), plant('c2', 'Canavalia gladiata', 'Sword bean'),
+    plant('i1', 'Inga edulis', 'Ice Cream Bean'), plant('p3', 'Phaseolus coccineus', 'Scarlet runner bean'),
+    plant('p2', 'Phaseolus lunatus', 'Lima bean'), plant('p1', 'Phaseolus vulgaris', 'Common bean'),
+    plant('r1', 'Ricinus communis', 'Castor bean'), plant('v1', 'Vicia faba', 'Fava bean'),
+    plant('g1', 'Beanus grandis', 'Giant shrub'),
+  ];
+  const idx = releaseIndex({ lang: 'en', names: beans.map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+  const r = readPaste(pasteNames('beans'), { here: beans, index: idx, members: ['p1'] });
+  assert.equal(r.choose.length, 1);
+  assert.deepEqual(r.choose[0].taxa.map((t) => t.names.en), ['Common bean', 'Lima bean', 'Sword bean', 'Sword bean', 'Castor bean', 'Fava bean', 'Scarlet runner bean', 'Ice Cream Bean', 'Giant shrub']);
+  assert.deepEqual(r.choose[0].inside, ['p1'], 'Common bean, in the palette, stays offered and is said to be in it');
+  assert.ok(r.choose[0].loose, 'a loose word: no plant has "beans" as a whole name');
+  assert.equal(readPaste(pasteNames('sword bean'), { here: beans, index: idx }).choose[0].loose, false, 'a name two plants share is no loose word');
+});
+
+test('BC20: a close spelling found only on another list is a choice like any other: ticked, it is added from that list', () => {
+  const here0 = [plant('h1', 'Malus domestica', 'Apple')];
+  const tropical = [plant('t1', 'Musa acuminata', 'Banana')];
+  const idx = releaseIndex({ lang: 'en', names: [...here0, ...tropical].map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+  const r = readPaste(pasteNames('Bananna'), { here: here0, others: [['Tropical', tropical]], index: idx });
+  assert.deepEqual(r.other.map((o) => [o.taxon.id, !!o.close]), [['t1', true]]);
+  assert.deepEqual(plan(r, [], []).ids, [], 'never added unasked');
+  const p = plan(r, ['t1'], []);
+  assert.deepEqual([p.ids, p.climateOf.get('t1')], [['t1'], 'Tropical']);
 });

@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { useHarness, has, en, realDb } from './helpers.mjs';
 import { tool, choose, atSite } from './p5-helpers.mjs';
-import { control, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { control, dialogText, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts, typeIn } from './pf-e-helpers.mjs';
 
@@ -269,10 +269,12 @@ test('PFE11 (pf-e Paste board): every line is read into three groups, Recognised
   await says(page, '“avocado” Avocado Persea americana · new', { inDialog: true });
   await says(page, /“beans” Which bean\? \d+ plants are called bean\./, { inDialog: true });
   await says(page, '“sukuma wiki” Not found. Search by hand', { inDialog: true });
-  const choices = await page.$$eval('dialog[open] [role="group"] button[aria-pressed]', (bs) => bs.map((b) => ({ t: b.textContent.replace(/\s+/g, ' ').trim(), on: b.getAttribute('aria-pressed') })));
+  // The beans question's choices (Common bean, in the palette, is said but not pressable: nothing to add).
+  const choices = await page.$$eval('dialog[open] [role="group"]', (gs) => [...gs.find((g) => /beans/.test(g.getAttribute('aria-label') ?? '')).children]
+    .map((b) => ({ t: b.textContent.replace(/\s+/g, ' ').trim(), on: b.getAttribute('aria-pressed') })));
   assert.ok(choices.slice(0, 3).every((c) => /\bbean\b/i.test(c.t)), `board: the plants named bean come first (A16): ${choices.slice(0, 3).map((c) => c.t)}`);
-  assert.ok(choices.every((c) => c.on === 'false'), 'board: nothing chosen for the grower');
-  await press(page, 'button', choices[0].t);
+  assert.ok(choices.every((c) => c.on !== 'true'), 'board: nothing chosen for the grower');
+  await press(page, 'button', choices.find((c) => c.on === 'false').t);
   await press(page, 'button', 'Add 3 plants');
   assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 3, { timeout: 8000 }, before).then(() => true, () => false), 'board: Add counts the new and the chosen');
   await done(page);
@@ -494,5 +496,209 @@ test('PFE23 (pf-e A22, BC12; F30, ManyDesk): while the search stands in place of
   await press(page, 'button', 'Done');
   await says(page, en['consortium.many.ledeDesk']);
   assert.equal((await focused(page)).name, 'Add plants', 'board: the focus goes back to "Add plants"');
+  await done(page);
+});
+
+// ---- fix round 1, batch 2 (board check findings BC13 to BC24, review R1) ----
+
+// Board Paste's palette: kiambu-8 less avocado, grevillea and napier (corn, common bean and pigeon pea in it).
+async function boardPastePage(width) {
+  const page = await loadCase('kiambu-8', { width });
+  await page.evaluate(() => {
+    const s = window.__ctTest.store, out = new Set(['Persea americana', 'Grevillea robusta', 'Cenchrus purpureus']);
+    s.members.value = s.memberTaxa.value.filter((t) => !out.has(t.canonical_name)).map((t) => t.id);
+  });
+  return page;
+}
+// The 215-name paste of PFE12 (AddMany state 4) on the 200-plant case's first 20 plants.
+async function bigPastePage(width) {
+  const page = await loadPalette200({ width });
+  const text = await page.evaluate(() => {
+    const s = window.__ctTest.store, have = s.members.value.slice(0, 20);
+    const rest = s.memberTaxa.value.slice(20, 210).map((t) => (t.names?.en ?? t.canonical_name).toLowerCase());
+    s.members.value = have;
+    return [...rest, 'beans', 'spanish cedar', 'sword bean', 'sukuma wiki', 'managu', 'terere', 'mrenda', 'kunde', 'nduma', 'mchicha', 'saga', 'mitoo', 'kanzira', 'nderema', 'thabai'].join('\n');
+  });
+  await pasteText(page, text);
+  await says(page, /\b\d{3} names read\b/, { inDialog: true, timeout: 15_000 });
+  return page;
+}
+// The box of the smallest element in the open dialog whose text is exactly `words` (or starts with it).
+const dialogBox = (page, words, starts = false) => page.evaluate((w, s) => {
+  let best = null;
+  for (const el of document.querySelectorAll('dialog[open] *')) {
+    const t = el.textContent.replace(/\s+/g, ' ').trim();
+    if (!(s ? t.startsWith(w) : t === w)) continue;
+    const r = el.getBoundingClientRect();
+    if (!r.width) continue;
+    if (!best || r.width * r.height < best.width * best.height) best = { top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height };
+  }
+  return best;
+}, words, starts);
+
+test('PFE24 (pf-e BC13, board Paste): the title "Paste a list" and its subtitle share the head row with ×', async () => {
+  for (const width of [390, 1280]) {
+    const page = await boardPastePage(width);
+    await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
+    assert.ok(await has(page, 'dialog[open] #ct-paste-text', 15_000));
+    const at = await page.evaluate(() => {
+      const d = document.querySelector('dialog[open]'), h = [...d.querySelectorAll('h2')].find((x) => x.textContent.trim() === 'Paste a list');
+      const x = d.querySelector('button[aria-label="Close"]');
+      const r = (e) => e.getBoundingClientRect();
+      return { title: { top: r(h).top, bottom: r(h).bottom }, close: { top: r(x).top, bottom: r(x).bottom } };
+    });
+    assert.ok(at.close.top < at.title.bottom && at.close.bottom > at.title.top, `board at ${width}: × on the title's row (title ${Math.round(at.title.top)}-${Math.round(at.title.bottom)}, × ${Math.round(at.close.top)}-${Math.round(at.close.bottom)})`);
+    await done(page);
+  }
+});
+
+test('PFE25 (pf-e BC15, A16, board Paste): "beans" offers Common bean, Lima bean, Sword bean first; Common bean says "in your palette"; the count is the choices offered', async () => {
+  for (const width of [390, 1280]) {
+    const page = await boardPastePage(width);
+    await pasteText(page, SMALL_PASTE);
+    await says(page, /“beans” Which bean\? \d+ plants are called bean\./, { inDialog: true });
+    const choices = () => page.$$eval('dialog[open] [role="group"]', (gs) => {
+      const g = gs.find((x) => /beans/.test(x.getAttribute('aria-label') ?? ''));
+      return [...g.children].map((c) => c.textContent.replace(/\s+/g, ' ').trim());
+    });
+    const first = await choices();
+    assert.deepEqual(first.slice(0, 3).map((t) => t.replace(/ [A-Z][a-z]+ [a-z].*$/, '')), ['Common bean', 'Lima bean', 'Sword bean'], `board: the beans in the board's order (A16): ${first.slice(0, 4).join(' | ')}`);
+    assert.match(first[0], /· in your palette$/, 'board AddMany: a plant you have says "· in your palette"');
+    await page.$$eval('dialog[open] [role="group"] button[aria-expanded="false"]', (bs) => bs.forEach((b) => b.click()));
+    await frames(page);
+    const all = (await choices()).filter((t) => t !== 'None');
+    const n = Number((await dialogText(page)).match(/(\d+) plants are called bean\./)[1]);
+    assert.equal(all.length, n, `the count says the choices offered (${n} said, ${all.length} offered)`);
+    await done(page);
+  }
+});
+
+test('PFE26 (pf-e BC17, board Paste at 390): marks inline after "· new"; "8 names read" on one small line; a light field; equal foot buttons; "Skip the N left" a text link', async () => {
+  const page = await boardPastePage(390);
+  await pasteText(page, SMALL_PASTE);
+  await says(page, '8 names read', { inDialog: true });
+  const q = await dialogBox(page, '“avocado”'), tox = await dialogBox(page, 'Toxic');
+  assert.ok(Math.abs(tox.top + tox.height / 2 - (q.top + q.height / 2)) < 8, `board: "Toxic" sits on the line of “avocado” · new (${Math.round(tox.top)} against ${Math.round(q.top)})`);
+  const at = await page.evaluate(() => {
+    const d = document.querySelector('dialog[open]');
+    const h = [...d.querySelectorAll('h3')].find((x) => x.textContent.trim().startsWith('8 names read'));
+    const field = d.querySelector('#ct-paste-text');
+    const probe = document.createElement('div'); probe.style.background = 'var(--surface)'; field.parentElement.append(probe);
+    const surface = getComputedStyle(probe).backgroundColor; probe.remove();
+    const btn = (w) => [...d.querySelectorAll('button')].find((b) => b.textContent.trim().startsWith(w));
+    const skip = btn('Skip the');
+    return {
+      lines: (() => { const r = document.createRange(); r.selectNodeContents(h); return new Set([...r.getClientRects()].filter((x) => x.width > 4).map((x) => Math.round(x.bottom))).size; })(), size: getComputedStyle(h).fontSize,
+      field: getComputedStyle(field).backgroundColor, surface,
+      cancel: btn('Cancel').getBoundingClientRect().width, add: btn('Add').getBoundingClientRect().width,
+      skipLink: skip && { deco: getComputedStyle(skip).textDecorationLine, border: getComputedStyle(skip).borderTopColor, bg: getComputedStyle(skip).backgroundColor },
+    };
+  });
+  assert.equal(at.lines, 1, 'board: "8 names read …" on one line');
+  assert.equal(at.size, '14px', 'board: the summary line in small type');
+  assert.equal(at.field, at.surface, 'board: the field is light (the surface)');
+  assert.ok(Math.abs(at.cancel - at.add) <= 2, `board: Cancel and Add of one width (${Math.round(at.cancel)}, ${Math.round(at.add)})`);
+  assert.ok(at.skipLink, 'board: "Skip the N left"');
+  assert.match(at.skipLink.deco, /underline/, 'board: Skip is a text link');
+  assert.match(at.skipLink.bg, /rgba\(0, 0, 0, 0\)|transparent/, 'board: Skip has no button face');
+  await done(page);
+});
+
+test('PFE27 (pf-e BC17-BC20, boards Paste and AddMany): 215 names: the Need a choice lede in the board\'s words with a loose word of the list; the head counts what the foot counts; "+ N more" a pill; the Not found row and the closing note in the board\'s words', async () => {
+  const page = await bigPastePage(390);
+  await openGroup(page, /^Need a choice/);
+  await says(page, 'Each choice shows its fit, or says it is in your palette. A loose word (“beans”) asks too: nothing is added unasked.', { inDialog: true });
+  const head = await control(page, 'button', /^Need a choice \d+$/);
+  const n = Number(head.name.match(/\d+$/)[0]);
+  await says(page, `0 chosen, ${n} to go. A name you leave is not added.`, { inDialog: true });
+  await control(page, 'button', `Skip the ${n} left`);
+  const more = await page.evaluate(() => {
+    const b = document.querySelector('dialog[open] button[aria-label="Show the other questions"]');
+    if (!b) return null;
+    const r = b.getBoundingClientRect(), s = getComputedStyle(b);
+    return { w: r.width, h: r.height, radius: parseFloat(s.borderTopLeftRadius), border: s.borderTopStyle, sheet: b.closest('dialog').getBoundingClientRect().width };
+  });
+  assert.ok(more, 'board AddMany: "+ N more" questions');
+  assert.ok(more.w < more.sheet / 3 && more.h >= 44 && more.radius >= 20 && more.border === 'solid', `board AddMany: "+ N more" a small pill (${JSON.stringify(more)})`);
+  await openGroup(page, /^Not found/);
+  await says(page, '“sukuma wiki” Not found. Search by hand', { inDialog: true });
+  await saysNot(page, 'No climate list in Canopi has these names');
+  await says(page, 'A name that fits one plant is taken as that plant, in your palette or not; a name that fits several asks, and each choice says if you have it. The Add button counts what is recognised and new, and what you have chosen. Plants are added as they are, with their warnings. Nothing in your palette is replaced.', { inDialog: true });
+  await done(page);
+});
+
+test('PFE28 (pf-e BC24, board Recife pt at 390): the first toxic row says why it is kept, the first tall row the small-garden rule; the light icon stays with "Plantada em"', async () => {
+  const page = await loadCase('recife-today', { site: 'manaus', lang: 'pt', width: 390 });
+  await page.evaluate(() => { window.__ctTest.store.room.value = 'small'; });
+  await verdictsSettled(page);
+  assert.ok(await has(page, `${PLANTS} [data-note="room-tall"]`, 8000), 'the premise: a tall plant in a small garden');
+  const rows = await rowsShown(page);
+  const TOX = 'Registrada como tóxica. Nós avisamos; a escolha é sua.';
+  const ROOM = 'Num quintal pequeno, avisamos acima de 6 m. A planta fica na lista: a escolha é sua. Alturas são máximas na natureza.';
+  const toxic = rows.filter((r) => / Tóxica\b| Muito tóxica\b/.test(r.text));
+  assert.ok(toxic.length > 0, 'the premise: a toxic row');
+  assert.ok(toxic[0].text.includes(TOX), `board: the first toxic row says "${TOX}": ${toxic[0].text}`);
+  assert.equal(rows.filter((r) => r.text.includes(TOX)).length, 1, 'board: said once');
+  const tallId = await page.$eval(`${PLANTS} [data-plant-id]:has([data-note="room-tall"])`, (e) => e.dataset.plantId);
+  assert.ok(rows.find((r) => r.id === tallId).text.includes(ROOM), 'board: the first tall row says the small-garden rule');
+  assert.equal(rows.filter((r) => r.text.includes(ROOM)).length, 1, 'board: said once');
+  const apart = await page.$$eval(`${PLANTS} [data-plant-id]`, (els) => els.map((li) => {
+    const icon = li.querySelector('svg[data-light]');
+    const walk = document.createTreeWalker(li, NodeFilter.SHOW_TEXT);
+    let text = null;
+    while (walk.nextNode()) if (/^\s*Plantada em/.test(walk.currentNode.textContent)) { text = walk.currentNode; break; }
+    if (!icon || !text) return null;
+    const range = document.createRange(); range.selectNodeContents(text);
+    const first = range.getClientRects()[0], i = icon.getBoundingClientRect();
+    return Math.abs((i.top + i.bottom) / 2 - (first.top + first.bottom) / 2) < 8 ? null : li.dataset.plantId;
+  }).filter(Boolean));
+  assert.deepEqual(apart, [], 'board: the light icon on the line of "Plantada em", never alone above it');
+  await done(page);
+});
+
+test('PFE29 (pf-e R1): past 40 plants every row keeps each warning the small form shows (toxicity, invasive, a site misfit, a serious conflict), whatever its main reason', { timeout: 300_000 }, async () => {
+  const page = await loadPalette200({ width: 390 });
+  const all = await page.evaluate(() => window.__ctTest.store.members.value.slice());
+  // The small form's marks of each plant, 40 plants at a time (the site and country stay; conflicts
+  // depend on the palette, so they are left out).
+  const small = {};
+  for (let k = 0; k < all.length; k += 40) {
+    await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, all.slice(k, k + 40));
+    await verdictsSettled(page);
+    assert.ok(await has(page, `${PLANTS} [data-plant-id="${all[k]}"]`, 8000));
+    Object.assign(small, await page.$$eval(`${PLANTS} [data-plant-id]`, (els) => Object.fromEntries(els.map((e) => [e.dataset.plantId,
+      [...e.querySelectorAll('[data-kind="toxicity"], [data-kind="invasive"], [data-kind="misfit"]')].map((m) => m.textContent.replace(/\s+/g, ' ').trim())]))));
+  }
+  await page.evaluate((ids) => { window.__ctTest.store.members.value = ids; }, all);
+  await verdictsSettled(page);
+  await page.select('#ct-root select[data-plants-group]', 'none').catch(() => {});
+  await control(page, 'textbox', SEARCH(200));
+  const missing = [];
+  for (const [id, marks] of Object.entries(small)) {
+    if (!marks.length) continue;
+    const q = await page.evaluate((x) => window.__ctTest.store.memberTaxa.value.find((t) => t.id === x).canonical_name, id);
+    await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, q);
+    const ok = await has(page, `${PLANTS} [data-plant-id="${id}"]`, 3000);
+    const text = ok ? (await rowsShown(page)).find((r) => r.id === id)?.text ?? '' : '';
+    for (const m of marks) if (!text.includes(m)) missing.push(`${q}: "${m}" not on "${text}"`);
+  }
+  // A serious conflict between two of the 200 (the small form's Marks say it with the other plant's name).
+  const clashes = await page.evaluate(() => {
+    const s = window.__ctTest.store, out = [];
+    for (const t of s.memberTaxa.value) for (const f of s.flagsOfPlant(t)) {
+      if (f.kind !== 'conflict' || f.severity !== 'high' || !f.other) continue;
+      const o = s.taxonOf(f.other);
+      if (o) out.push({ id: t.id, q: t.canonical_name, other: o.names?.en ?? o.canonical_name });
+    }
+    return out;
+  });
+  assert.ok(clashes.length > 0, 'the premise: a serious conflict among the 200');
+  for (const c of clashes) {
+    await typeIn(page, `#ct-root input[aria-label="${SEARCH(200)}"]`, c.q);
+    const ok = await has(page, `${PLANTS} [data-plant-id="${c.id}"]`, 3000);
+    const text = ok ? (await rowsShown(page)).find((r) => r.id === c.id)?.text ?? '' : '';
+    if (!text.includes(c.other)) missing.push(`${c.q}: its conflict with ${c.other} not on "${text}"`);
+  }
+  assert.deepEqual(missing, [], 'R1: a warning the small form shows is never dropped past 40 plants');
   await done(page);
 });

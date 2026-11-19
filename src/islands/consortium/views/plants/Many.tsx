@@ -11,18 +11,19 @@
 // focus to "Add plants".
 import type { ComponentChildren } from 'preact';
 import { useMemo, useRef } from 'preact/hooks';
-import type { Flag, PlantId, PlantRow, PlantVerdict } from '../../../../lib/consortium/index.ts';
+import type { PlantId, PlantRow, PlantVerdict } from '../../../../lib/consortium/index.ts';
 import { fitGroups, fitLine, headLine, jobIds, moreLine } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { nameOf, P, T, pageLang } from '../../strings.ts';
 import { say } from '../kit/fit.tsx';
-import { collatorFor, countryName } from '../kit/names.ts';
+import { collatorFor } from '../kit/names.ts';
 import { WARN, CLOSE } from '../kit/icons.tsx';
-import { rowSpan, PLUS } from '../rows.tsx';
+import { Marks, rowSpan, PLUS } from '../rows.tsx';
+import { flagLines } from '../kit/flags.ts';
 import { FindPanel, findIn, openFindInList } from '../Sheets.tsx';
 import { deskFind } from '../Toast.tsx';
-import { extraMarks, GROUPS, groupItems, plantItems, searchItems, shownRows, SORTS, sortItems, type GroupKey, type Mark, type PlantItem, type SortKey } from './model.ts';
+import { GROUPS, groupItems, plantItems, searchItems, shownRows, SORTS, sortItems, type GroupKey, type PlantItem, type SortKey } from './model.ts';
 import { clearTicks, groupKey, isTicked, query, removeTicked, setGroup, setStage, setTick, sortKey, stages, tickIds, ticked, wide } from './state.ts';
 import { Missing } from './Small.tsx';
 
@@ -38,20 +39,6 @@ function jobsShort(i: Pick<PlantItem, 'jobs' | 'jobsKnown'>): string {
 const LOWER = new Set(['en', 'fr', 'es', 'pt', 'it', 'nl', 'ru']);
 const lowerMid = (s: string): string => (LOWER.has(pageLang()) ? s.charAt(0).toLocaleLowerCase(pageLang()) + s.slice(1) : s);
 
-// The row's word on its fit (board Many): outside with its cause, the second look's first reason, a
-// mark (Mildly toxic), or nothing for a plain fit; "Not checked" without a verdict.
-function reasonWords(i: PlantItem): string | null {
-  const country = store.country.value?.code ?? null;
-  switch (i.reason) {
-    case 'severe': return T('tox.Severe');
-    case 'moderate': return T('tox.Moderate');
-    case 'mild': return T('tox.Slight');
-    case 'invasive': return country ? T('palette.warningsInvasive', { country: countryName(country) }) : T('many.invasive');
-    case 'misfit': return T('palette.warningsMisfit');
-    case 'clash': return T('palette.warningsClash');
-    default: return null;
-  }
-}
 const LEVEL_KEY = { outside: 'palette.warningsOutside', look: 'palette.warningsLook', fits: 'palette.warningsFits', unknown: 'palette.warningsUnknown' } as const;
 
 // What sets a range line, in words ("cooler over the year here than where it is recorded"; the
@@ -62,36 +49,27 @@ function rangeWhy(v: PlantVerdict | undefined): string {
   return why && !Array.isArray(why) ? say(why) : say(fitLine(v));
 }
 const isRange = (i: PlantItem) => i.level === 'outside' || (i.level === 'look' && (i.reason === 'edge' || !i.reason));
-// A row's reason (board Many): Mildly toxic a pill (a mark, not a second look, R1); a range line or a
-// second look's reason in the warning colour with the icon, Very toxic in the danger colour; not checked
-// plain. `range`: the range line's words (the phone says the whole line, the desk its cause under the
-// level word).
+// A row's range line (board Many): outside its climate range, or a second look at its range's edge, in
+// the warning colour with the icon; "Not checked" plain without a verdict. Its warnings are the small
+// form's (rows.tsx Marks over flagLines, one owner, R1), so past 40 plants no row drops one.
+// `range`: the range line's words (the phone says the whole line, the desk its cause under the level word).
 function Reason({ i, range }: { i: PlantItem; range: (v: PlantVerdict | undefined) => string }) {
-  const w = isRange(i) ? range(store.memberVerdicts.value?.get(i.id)) : i.level === 'unknown' ? T('palette.warningsUnknown') : reasonWords(i);
+  const w = isRange(i) ? range(store.memberVerdicts.value?.get(i.id)) : i.level === 'unknown' ? T('palette.warningsUnknown') : null;
   if (!w) return null;
-  const level = i.level === 'unknown' ? 'plain' : i.reason === 'mild' ? 'mild' : i.reason === 'severe' ? 'danger' : 'warning';
-  return <span class="ct-many-word" data-level={level}>{level === 'mild' ? <span class="ct-many-pill">{WARN}{w}</span> : <>{level !== 'plain' && WARN} {w}</>}</span>;
+  const level = i.level === 'unknown' ? 'plain' : 'warning';
+  return <span class="ct-many-word" data-level={level}>{level !== 'plain' && WARN} {w}</span>;
 }
 const wholeLine = (v: PlantVerdict | undefined) => (v ? say(headLine(v)) : T('palette.warningsUnknown'));
-// The plant's own marks its reason does not say (board Many: each mark its own chip, as on Mango and
-// Silk oak): an outside plant's toxicity, a second look's other mark. Mildly toxic and recorded
-// invasive in the warning colour, Toxic and Very toxic in the danger colour; always in words.
-function markWord(m: Mark): string {
-  if (m !== 'invasive') return T(`tox.${m}`);
-  const country = store.country.value?.code ?? null;
-  return country ? T('palette.warningsInvasive', { country: countryName(country) }) : T('many.invasive');
-}
-function Marks({ i }: { i: PlantItem }) {
-  const marks = extraMarks(i);
-  if (!marks.length) return null;
-  return <>{marks.map((m) => <span key={m} class="ct-many-pill" data-mark={m} data-level={m === 'Moderate' || m === 'Severe' ? 'danger' : 'warning'}>{WARN}{markWord(m)}</span>)}</>;
+function RowMarks({ i }: { i: PlantItem }) {
+  const scene = store.flagScene.value;
+  return <Marks t={i.t} lines={flagLines(i.t, store.flagsOfPlant(i.t), scene)} country={scene.country} />;
 }
 function FitWord({ i }: { i: PlantItem }) {
-  return <span class="ct-many-fitline"><Reason i={i} range={wholeLine} /><Marks i={i} /></span>;
+  return <span class="ct-many-fitline"><Reason i={i} range={wholeLine} /><RowMarks i={i} /></span>;
 }
-// The desk's fit cell (board ManyDesk): the line's words, then its reason ("Needs a second look / ⚠ Toxic").
+// The desk's fit cell (board ManyDesk): the line's words, then its range cause and its warnings.
 function FitCell({ i }: { i: PlantItem }) {
-  return <><span class="ct-many-level" data-level={i.level}>{T(LEVEL_KEY[i.level])}</span><span class="ct-many-fitline">{i.level !== 'unknown' && <Reason i={i} range={rangeWhy} />}<Marks i={i} /></span></>;
+  return <><span class="ct-many-level" data-level={i.level}>{T(LEVEL_KEY[i.level])}</span><span class="ct-many-fitline">{i.level !== 'unknown' && <Reason i={i} range={rangeWhy} />}<RowMarks i={i} /></span></>;
 }
 
 const groupWord = (key: GroupKey, k: string): string => {
@@ -222,11 +200,7 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
   const lang = pageLang();
   const cmp = useMemo(() => collatorFor(lang).compare, [lang]);
   const failed = store.verdictFailed.value;
-  const all = useMemo(() => {
-    const byId = new Map<PlantId, Flag[]>();
-    for (const f of flags) { const l = byId.get(f.id); if (l) l.push(f); else byId.set(f.id, [f]); }
-    return plantItems(members, fitGroups(members, failed ? null : verdicts, flags), nameOf, (id) => byId.get(id) ?? []);
-  }, [members, verdicts, flags, failed]);
+  const all = useMemo(() => plantItems(members, fitGroups(members, failed ? null : verdicts, flags), nameOf), [members, verdicts, flags, failed]);
   const q = query.value, sk = sortKey.value, gk = groupKey.value, st = stages.value, desk = wide.value;
   const found = useMemo(() => sortItems(searchItems(all, q), sk, cmp, jobIds), [all, q, sk, cmp]);
   const groups = useMemo(() => groupItems(found, gk, cmp, jobIds), [found, gk, cmp]);
