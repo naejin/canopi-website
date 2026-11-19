@@ -1,7 +1,7 @@
 {
   "format": "canopi-consortium-scenarios",
   "format_version": 2,
-  "note": ["Golden file recorded from the engine at HEAD (src/lib/consortium) by scripts/consortium-scenarios.mjs --record; scripts/consortium-scenarios.test.mjs runs every case.", "The contract for a later Rust port of the engine: the same inputs must give the same outputs.", "places: each place's climate slots (today and the 8 future slots) and its soil reading (phH2o, texture, filled, fillDistanceCells, distanceCells; null: no soil value) as the climate and soil grid reader answers them at its coordinates. seville-board and mendoza-board are seville and mendoza with the v14 boards' values in the historical and SSP2-4.5 slots (aridity scaled with rain).", "Inputs: the list, the place (a name in places, or null: no location), the period, the scenario (default ssp245), the room (default unsure), the palette goals (default plantsPerJob 2), the grower edits (SiteEdits: climate shifts applied to every slot, soil test pH, answers), pots (the grower's answer: pots or brought-in soil) and the member plant ids of the release.", "Outputs, keys and codes only: fit (member ids by level), why (the limiting factor of each member that does not fit), holes (id, rank, state, unchecked members), lanes (each job and light level: plant counts per time step of years.ts PHASE_YEARS, thin year spans below the goal plantsPerJob, default 2, and the count of members not checked), jobs (jobGapsByPhase), next (the lead hole and its fillers: count and first five ids per group, with no country warning), second (members that need a second look: conflicts.ts secondLook, no country), notes (each member's dryness notes), thin (thin targets: id, have, want), best (the lead target, hole or thin spot, and bestToAdd's ids for it), hints (each member's soil hint factors that are not fits: soil-ph, drainage).", "Watering sets the dryness note (v14 0W-2 R2): rain or no answer and first-years give drier / drier-later (first-years in other words, not in these codes); all-year gives none. Dryness never changes a fit."],
+  "note": ["Golden file recorded from the engine at HEAD (src/lib/consortium) by scripts/consortium-scenarios.mjs --record; scripts/consortium-scenarios.test.mjs runs every case.", "The contract for a later Rust port of the engine: the same inputs must give the same outputs.", "places: each place's climate slots (today and the 8 future slots) and its soil reading (phH2o, texture, filled, fillDistanceCells, distanceCells; null: no soil value) as the climate and soil grid reader answers them at its coordinates. seville-board and mendoza-board are seville and mendoza with the v14 boards' values in the historical and SSP2-4.5 slots (aridity scaled with rain).", "Inputs: the list, the place (a name in places, or null: no location), the period, the scenario (default ssp245), the room (default unsure), the palette goals (default plantsPerJob 2), the grower edits (SiteEdits: climate shifts applied to every slot, soil test pH, answers), pots (the grower's answer: pots or brought-in soil) and the member plant ids of the release.", "Outputs, keys and codes only: fit (member ids by level), why (the limiting factor of each member that does not fit), holes (id, rank, state, unchecked members), lanes (each job and light level: plant counts per time step of years.ts PHASE_YEARS, thin year spans below the goal plantsPerJob, default 2, and the count of members not checked), jobs (jobGapsByPhase), next (the lead hole and its fillers: count and first five ids per group, with no country warning), second (members that need a second look: conflicts.ts secondLook, no country), notes (each member's dryness notes), thin (thin targets: id, have, want), best (the lead target, hole or thin spot, and bestToAdd's ids for it), hints (each member's soil hint factors that are not fits: soil-ph, drainage), change (cases with edits only, else null: core site-change.ts siteChange of the case without its edits against it, over the whole list: per period in, out, lookNew, lookGone and the members whose level changed as [id, before, after, limiting factor]; hintsNew; holes added, closed, narrowed as [before, after], open count).", "Watering sets the dryness note (v14 0W-2 R2): rain or no answer and first-years give drier / drier-later (first-years in other words, not in these codes); all-year gives none. Dryness never changes a fit."],
   "release_id": "r-255553893fa4f4b4",
   "climate_grid": "04ec85f4603f29c5add8eada88c79599d044a61732b518a095f91b68e64b0e4c",
   "places": {
@@ -2022,7 +2022,8 @@
         "hints": {
           "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
           "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -2236,7 +2237,8 @@
         "hints": {
           "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
           "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -2450,7 +2452,8 @@
         "hints": {
           "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
           "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -2667,7 +2670,8 @@
         "hints": {
           "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
           "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -2891,6 +2895,41 @@
         "hints": {
           "036a5bcd-9682-4611-9a12-3a81a715c2c4": ["soil-ph"],
           "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 6
+          }
         }
       }
     },
@@ -3092,7 +3131,8 @@
           "target": "job:feeds_soil:0-60",
           "ids": []
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -3324,7 +3364,8 @@
         "hints": {
           "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
           "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -3506,7 +3547,8 @@
           "target": "job:feeds_soil:0-60",
           "ids": []
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -3679,7 +3721,8 @@
           "target": "job:feeds_you:0-60",
           "ids": ["8ffdfc3f-f33b-4061-9816-ed9cb055534b", "e5136478-000a-49a9-9c81-b0503b487acd"]
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -3894,6 +3937,41 @@
         },
         "hints": {
           "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 7
+          }
         }
       }
     },
@@ -4104,6 +4182,41 @@
         },
         "hints": {
           "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 7
+          }
         }
       }
     },
@@ -4318,6 +4431,41 @@
         },
         "hints": {
           "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 7
+          }
         }
       }
     },
@@ -4541,7 +4689,8 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -4733,7 +4882,8 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -4925,7 +5075,8 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -5135,7 +5286,8 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["57903ece-83a5-4519-9ba1-5520e5d99e7e", "60ff31d9-f43a-48b2-bf98-ae7d54700113"]
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -5341,7 +5493,8 @@
         "hints": {
           "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
           "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -5547,7 +5700,8 @@
         "hints": {
           "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
           "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -5753,7 +5907,8 @@
         "hints": {
           "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
           "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -5959,7 +6114,8 @@
         "hints": {
           "046ee7ba-a1be-48fc-ac20-0e25ddc08f36": ["soil-ph"],
           "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -6166,7 +6322,8 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["77018861-ed74-4389-915a-d6b1338eb3e3", "a353dcd7-e14b-4ffb-b6f1-f50c59b93aa4"]
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -6357,7 +6514,8 @@
           "target": "job:ground:0-3",
           "ids": ["7065f1b9-b178-42fd-8c55-4517deae30e9", "10d38928-e86d-48d6-9553-ef94995bc605"]
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -6541,7 +6699,8 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -6731,6 +6890,43 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 2,
+              "lookGone": 1,
+              "members": [
+                ["db4dc58b-b6a8-4b00-9788-03e72815451d", "fits", "look", "cold"]
+              ]
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 4,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 4,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 5
+          }
         }
       }
     },
@@ -6919,6 +7115,43 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 2,
+              "lookGone": 1,
+              "members": [
+                ["db4dc58b-b6a8-4b00-9788-03e72815451d", "fits", "look", "cold"]
+              ]
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 4,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 4,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 5
+          }
         }
       }
     },
@@ -7106,6 +7339,41 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 5
+          }
         }
       }
     },
@@ -7294,6 +7562,50 @@
         "hints": {
           "0b1a9cca-a421-4621-9d04-64b1f2455647": ["soil-ph"],
           "0bb55123-127a-4c90-98e4-da34dd9bfb76": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [
+            {
+              "id": "0b1a9cca-a421-4621-9d04-64b1f2455647",
+              "factors": ["soil-ph"]
+            },
+            {
+              "id": "0bb55123-127a-4c90-98e4-da34dd9bfb76",
+              "factors": ["soil-ph"]
+            }
+          ],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 5
+          }
         }
       }
     },
@@ -7485,6 +7797,41 @@
           "03b0beef-5472-4cda-a45b-aa5f9aaa5a88": ["drainage"],
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"],
           "db4dc58b-b6a8-4b00-9788-03e72815451d": ["drainage"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 5
+          }
         }
       }
     },
@@ -7672,6 +8019,41 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 5
+          }
         }
       }
     },
@@ -7865,7 +8247,8 @@
         },
         "hints": {
           "08b5e06e-31c0-4d16-93c9-43ad9080f2d5": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -8141,7 +8524,8 @@
           "efd8aa4d-72bf-413f-8be2-414c31f3589c": ["soil-ph"],
           "f51c97d7-801e-4583-8f35-64530b0578ca": ["soil-ph"],
           "fc345e8f-254b-4857-835c-a6eddaed189a": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -8328,7 +8712,8 @@
           "target": "job:ground:0-3",
           "ids": []
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -8519,7 +8904,8 @@
           "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"],
           "fc345e8f-254b-4857-835c-a6eddaed189a": ["soil-ph"],
           "f51c97d7-801e-4583-8f35-64530b0578ca": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -8715,6 +9101,41 @@
         "hints": {
           "deaed607-a07b-44b2-879e-2c5c344ae802": ["soil-ph"],
           "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 3
+          }
         }
       }
     },
@@ -8911,6 +9332,41 @@
         "hints": {
           "deaed607-a07b-44b2-879e-2c5c344ae802": ["soil-ph"],
           "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 3
+          }
         }
       }
     },
@@ -9103,6 +9559,41 @@
         "hints": {
           "deaed607-a07b-44b2-879e-2c5c344ae802": ["soil-ph"],
           "1d7370f9-1751-4d62-b340-85e2d9221fe6": ["soil-ph"]
+        },
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 3
+          }
         }
       }
     },
@@ -9292,7 +9783,8 @@
           "target": "job:ground:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "fff25fa5-d8dd-48e7-81a0-3f6ae0109cdb"]
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -9486,7 +9978,48 @@
           "target": "job:ground:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "67bed372-4d1c-41b2-9c2c-1c336493faca"]
         },
-        "hints": {}
+        "hints": {},
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 39,
+              "out": 26,
+              "lookNew": 25,
+              "lookGone": 53,
+              "members": [
+                ["5006ed90-fe3e-4208-a817-4c322aa04c98", "fits", "look", "cold"]
+              ]
+            },
+            {
+              "period": "2041-2070",
+              "in": 50,
+              "out": 23,
+              "lookNew": 35,
+              "lookGone": 24,
+              "members": [
+                ["5006ed90-fe3e-4208-a817-4c322aa04c98", "fits", "look", "cold"]
+              ]
+            },
+            {
+              "period": "2071-2099",
+              "in": 50,
+              "out": 23,
+              "lookNew": 34,
+              "lookGone": 24,
+              "members": [
+                ["5006ed90-fe3e-4208-a817-4c322aa04c98", "fits", "look", "cold"]
+              ]
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 6
+          }
+        }
       }
     },
     {
@@ -9678,7 +10211,8 @@
           "target": "job:ground:0-60",
           "ids": ["766828b6-fe91-4704-a923-b8079e98fc9f", "fff25fa5-d8dd-48e7-81a0-3f6ae0109cdb", "a1e8be51-4978-4503-b04f-ae0bed9b90a8"]
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -9859,7 +10393,8 @@
           "7f67fde6-f8f0-494a-ba34-78a677d9a4ed": ["soil-ph"],
           "04c9c6ed-2b1a-44f5-9bee-3d61e3bc5caa": ["soil-ph"],
           "6087251b-1d72-4d99-b02e-cc4efb163afc": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -10086,7 +10621,8 @@
         },
         "hints": {
           "0453d2c4-d13b-44cc-92df-c2396cf885e6": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -10291,7 +10827,8 @@
         },
         "hints": {
           "08dd7b9f-d16a-492f-a3ee-ba0f2defac27": ["soil-ph"]
-        }
+        },
+        "change": null
       }
     },
     {
@@ -10516,7 +11053,8 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["57903ece-83a5-4519-9ba1-5520e5d99e7e", "60ff31d9-f43a-48b2-bf98-ae7d54700113"]
         },
-        "hints": {}
+        "hints": {},
+        "change": null
       }
     },
     {
@@ -10742,7 +11280,42 @@
           "target": "job:feeds_soil:0-60",
           "ids": ["c9cd5825-1b6b-4ef2-a361-8918686710b0", "bcd91ad3-08c4-46bb-bd0c-844729646a58"]
         },
-        "hints": {}
+        "hints": {},
+        "change": {
+          "periods": [
+            {
+              "period": "1991-2020",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2041-2070",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            },
+            {
+              "period": "2071-2099",
+              "in": 0,
+              "out": 0,
+              "lookNew": 0,
+              "lookGone": 0,
+              "members": []
+            }
+          ],
+          "hintsNew": [],
+          "holes": {
+            "added": [],
+            "closed": [],
+            "narrowed": [],
+            "open": 6
+          }
+        }
       }
     }
   ],

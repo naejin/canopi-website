@@ -11,7 +11,7 @@ import { FILE, consortiumIndex, releaseFile, run } from './consortium-scenarios.
 
 const file = JSON.parse(readFileSync(FILE, 'utf8'));
 const KEYS = new Set(['list', 'place', 'period', 'scenario', 'room', 'edits', 'goals', 'pots', 'members']);
-const OUTPUTS = ['fit', 'why', 'holes', 'lanes', 'jobs', 'next', 'second', 'notes', 'thin', 'best', 'hints'];
+const OUTPUTS = ['fit', 'why', 'holes', 'lanes', 'jobs', 'next', 'second', 'notes', 'thin', 'best', 'hints', 'change'];
 
 test('the scenario file: format 2, 40 to 50 cases, plain JSON inputs with keys and codes, the places named with their soil', () => {
   assert.equal(file.format, 'canopi-consortium-scenarios');
@@ -70,5 +70,14 @@ test('the file states the rules it shows: watering sets the dryness note only, a
     if (c.output.best) assert.ok(c.output.best.ids.length <= (c.output.best.target.startsWith('thin:') ? 99 : (c.input.goals?.plantsPerJob ?? 2)), `${c.id}: best takes no more than the goal`);
   }
   assert.ok(out('kiambu-8-goal-3').best.ids.length > out('kiambu-8').best.ids.length || out('kiambu-8').best.ids.length === 0, 'a higher goal takes more for a hole');
+  // The change summary (pf-d, core site-change.ts): only a case with edits has one; watering and soil
+  // never change a fit (R2, R3); a climate shift does, period by period (board Toasts: Kiambu's 8, nights
+  // 2 °C colder, "Today: 13 more fit; by 2071–2099: 27 more fit" on r-4db8).
+  for (const c of file.cases) assert.equal(c.output.change === null, !c.input.edits && !('pots' in c.input), `${c.id}: a change only for a case with edits`);
+  const still = (id) => out(id).change.periods.every((p) => !p.in && !p.out && !p.lookNew && !p.lookGone);
+  for (const id of ['mendoza-rain-only', 'mendoza-watered-all-year', 'mendoza-board-first-years', 'lyon-soil-test-chalky', 'lyon-wet-ground', 'soil-map-ph-pots']) assert.ok(still(id), `${id}: no fit changes`);
+  assert.ok(out('lyon-soil-test-chalky').change.hintsNew.length > 0, 'a soil test brings hints');
+  assert.ok(!still('kiambu-8-nights-2c-colder'), 'a nights shift changes fits');
+  assert.deepEqual(out('kiambu-8-nights-2c-colder').change.periods.map((p) => p.period), ['1991-2020', '2041-2070', '2071-2099']);
   assert.deepEqual(out('no-location').fit.unknown.length, file.cases.find((c) => c.id === 'no-location').input.members.length, 'no location: every member unknown');
 });

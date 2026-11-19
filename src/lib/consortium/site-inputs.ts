@@ -23,7 +23,8 @@
 // panel, the save or a link is made safe once by siteEditsOf. The old spot and soil answers are gone
 // (v14 0W-2 R4).
 import type { ClimateInput, PaletteGoals, Room, SiteEdits, SiteInput, SiteInputs, SiteLookup, SitePeriod, SoilPhInput } from './types.ts';
-import { drainages, waterings } from './types.ts';
+import { drainages, textureIds, waterings } from './types.ts';
+import type { TextureId } from './types.ts';
 import { todayOf } from './site-today.ts';
 
 // No grower edit: the map as it is (the page today).
@@ -111,17 +112,25 @@ function within(v: unknown, lo: number, hi: number, step: number): number | null
   const q = Math.round(n / step) * step;
   return (step < 1 ? Math.round(q * 10) / 10 : Math.round(q)) || 0; // || 0: never -0
 }
+// The two temperature shifts set as one (the nights editor's "the hottest days too" tick; review round 3
+// R2, C5): data in the edits, so it travels with Undo, the save and a link like the values. Kept only
+// beside two equal shifts (a link with one shift, or two that differ, says nothing true). The tick sets
+// it, an edit of either line on its own drops it, and Reset on either line reads it to put both back.
+// Hand-off: the field moves into types.ts SiteEdits (`tempsTogether?: true`); until then this type adds it.
+export type LinkedEdits = SiteEdits & { tempsTogether?: true };
+export const tempsTogether = (e: SiteEdits | null | undefined): boolean => (e as LinkedEdits | null | undefined)?.tempsTogether === true;
 // Any value as edits: each key kept only when it is in range and of its kind, every other key dropped
 // (an unknown key, a wrong type, out of range), so a damaged save or a hand-edited link never crashes
 // and the rest is kept. A zero shift is no edit. light, wind and coldAir (PP-F) are dropped: no save or
 // link holds them until their questions exist (chk #25). Nothing kept: NO_EDITS itself.
 export function siteEditsOf(raw: unknown): SiteEdits {
   if (!raw || typeof raw !== 'object') return NO_EDITS;
-  const r = raw as Record<string, unknown>, out: SiteEdits = {};
+  const r = raw as Record<string, unknown>, out: LinkedEdits = {};
   const L = EDIT_LIMITS;
   const nights = within(r.nightsShiftC, -L.shiftC, L.shiftC, 0.1), days = within(r.daysShiftC, -L.shiftC, L.shiftC, 0.1);
   if (nights) out.nightsShiftC = nights;
   if (days) out.daysShiftC = days;
+  if (r.tempsTogether === true && nights && nights === days) out.tempsTogether = true;
   const rain = within(r.rainShiftMm, -L.rainMm, L.rainMm, 1), dry = within(r.dryMonthsShift, -L.dryMonths, L.dryMonths, 1);
   if (rain) out.rainShiftMm = rain;
   if (dry) out.dryMonthsShift = dry;
@@ -146,6 +155,22 @@ const SOIL_CELL_KM = 0.05 * 111.32;
 // in pots or brought-in soil, none (the ground's pH says nothing about the pot's). A hint, never a level
 // (types.ts setsLevel).
 export const soilPhOf = (inputs: SiteInputs | null): number | null => (!inputs || inputs.pots.value === true ? null : inputs.soilPh.value);
+
+// The soil map's texture at the place (lookup.ts textureClass, one of the 12 USDA classes), or null: no
+// soil read, or a class the core does not name. A reading the drainage line shows while unanswered,
+// and names once answered ("in place of the soil map's clay loam"); never a hint and never a drainage
+// answer (v14 A8: the hint comes only from the grower's "Stays wet for days").
+export function soilTextureOf(lookup: SiteLookup | null): TextureId | null {
+  const t = lookup?.soil?.texture ?? null;
+  return t !== null && (textureIds as readonly string[]).includes(t) ? (t as TextureId) : null;
+}
+
+// A dry place: a dryland in the UNCCD sense, the aridity index (rain over potential evapotranspiration)
+// under 0.65 (hyper-arid, arid, semi-arid and dry sub-humid; UNEP 1992). The Water card says "Your
+// place is dry" only there; a member drier than its band at a humid place is said without it. null
+// (on ice, not known): never dry.
+export const DRYLAND_AI = 0.65;
+export const isDryland = (aridityIndex: number | null | undefined): boolean => typeof aridityIndex === 'number' && aridityIndex < DRYLAND_AI;
 
 // ---- Palette goals: read beside the site inputs, never a site fact ----
 

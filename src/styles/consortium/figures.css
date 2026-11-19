@@ -1,0 +1,128 @@
+/* "Your place in figures" and "What limits plants here" (pf-d; v14 boards SiteKiambu, PlaceDesk,
+   SiteMendoza): imported page-level by ConsortiumPage.astro (no stylesheet loads with a lazy chunk:
+   check-built-site A14). Colours only from the tokens (ochre and ink chrome, no green); Source Sans 3 /
+   Literata at 400 and 600; breakpoints max-width 639px and min-width 960px only; nothing wider than
+   the page at 320 px. */
+.ct .fg-panel { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.ct .fg-panel :is(h2, h3, p, li, label, legend, button, span) { overflow-wrap: anywhere; }
+.ct .fg-h2 { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 26px; font-weight: 400; }
+.ct .fg-h3 { margin: 10px 0 0; font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.ct .fg-h3-tail { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.ct .fg-lede, .ct .fg-note, .ct .fg-foot, .ct .fg-help { margin: 0; font-size: 14px; line-height: 19px; color: var(--text-secondary); }
+.ct .fg-foot { font-size: 13px; }
+.ct .fg-muted { color: var(--text-muted); }
+/* The change summary under the panel head: the toast's dark bar (its tokens), with its own Undo. */
+.ct .fg-summary { display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 6px 6px 12px; border-radius: 11px; background: var(--text); color: var(--surface); font-size: 14px; line-height: 19px; }
+.ct .fg-summary-text { flex: 1 1 auto; min-width: 0; }
+.ct .fg-summary-undo { flex: none; min-height: 44px; padding: 0 12px; border: 1px solid currentColor; border-radius: var(--radius); background: transparent; color: inherit; font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer; }
+/* A map source with its pin ("(pin) From the climate map"). */
+.ct .fg-map { display: inline; }
+.ct .fg-map-pin { white-space: nowrap; }
+.ct .fg-map svg { display: inline-block; width: 14px; height: 14px; margin-inline-end: 4px; vertical-align: -2px; }
+.ct .fg-chip-none svg { width: 13px; height: 13px; }
+/* Reset and the editor's links: the ochre underlined link. */
+.ct .fg-reset { min-height: 44px; margin: 0; padding: 0 6px; color: var(--accent-ink); font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; }
+.ct .fg-link { color: var(--accent-ink); }
+
+/* Columns: one on the phone; Climate and Water, then Soil, from 960 px. */
+.ct .fg-cols { display: grid; gap: 4px; min-width: 0; }
+.ct .fg-col { display: grid; gap: 6px; align-content: start; min-width: 0; }
+@media (min-width: 960px) {
+  .ct .fg-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+}
+
+/* A line: 48 px at least, its name, its short value or its periods, its source, its effect. */
+.ct .fg-line { display: grid; gap: 6px; min-width: 0; padding: 8px 0; border-top: 1px solid var(--border); }
+.ct .fg-head { display: flex; align-items: center; gap: 10px; min-height: 48px; min-width: 0; }
+.ct .fg-icon { display: inline-flex; flex: none; align-self: flex-start; margin-top: 14px; color: var(--text-secondary); }
+.ct .fg-icon svg { width: 16px; height: 16px; }
+.ct .fg-answer { display: block; color: var(--text); }
+.ct .fg-short strong { font-weight: 600; color: var(--text); }
+.ct .fg-title { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+.ct .fg-name { font-weight: 600; font-size: 16px; line-height: 21px; }
+.ct button.fg-name { align-self: flex-start; padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: start; cursor: pointer; min-height: 32px; }
+.ct button.fg-name:hover { text-decoration: underline; }
+.ct .fg-sub, .ct .fg-short { font-size: 14px; line-height: 19px; color: var(--text-secondary); }
+.ct .fg-buttons { display: flex; gap: 6px; flex: none; }
+.ct .fg-change { min-height: 44px; padding: 0 14px; font-size: 15px; }
+.ct .fg-cells { display: flex; gap: 6px; min-width: 0; }
+.ct .fg-cell { display: grid; gap: 2px; flex: 1 1 0; min-width: 0; padding: 6px 8px; border-radius: 8px; font-size: 13px; line-height: 17px; }
+.ct .fg-cell-today { background: var(--surface-alt); }
+.ct .fg-cell { text-align: center; }
+.ct .fg-head > .fg-cells { flex: 0 1 300px; }
+.ct .fg-cell-p { color: var(--text-muted); }
+.ct .fg-cell-v { font-size: 16px; line-height: 21px; }
+.ct .fg-cell-today .fg-cell-v { font-weight: 600; }
+.ct .fg-cell-map { color: var(--text-muted); font-size: 12px; }
+.ct .fg-value { margin: 0; font-size: 16px; line-height: 21px; font-weight: 600; }
+.ct .fg-source, .ct .fg-effect, .ct .fg-detail, .ct .fg-meaning { margin: 0; font-size: 14px; line-height: 19px; }
+.ct .fg-source { color: var(--text-secondary); }
+/* What the grower's value changed, under its row: body text, the moves in bold ink (board SiteKiambu). */
+.ct .fg-detail { font-size: 13px; color: var(--text-secondary); }
+.ct .fg-detail strong { font-weight: 600; color: var(--text); }
+
+/* Where a value comes from: the grower's (ink, with the pencil), not answered (dashed), a map's. */
+.ct .fg-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 13px; line-height: 19px; font-weight: 600; vertical-align: baseline; }
+.ct .fg-chip-yours { background: var(--text); color: var(--bg); }
+.ct .fg-chip-yours svg { width: 14px; height: 14px; }
+.ct .fg-chip-none { border: 1px dashed var(--border-strong); color: var(--text-secondary); }
+.ct .fg-chip-map { border: 1px solid var(--border); color: var(--text-secondary); }
+.ct .fg-later { display: inline-block; padding: 0 6px; border: 1px dashed var(--border-strong); border-radius: 4px; font-size: 12px; line-height: 17px; color: var(--text-secondary); white-space: nowrap; font-weight: 400; }
+
+/* The choices, changed in place with one tap: 44 px, the pressed one framed in ink with a check. */
+.ct .fg-options { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.ct .fg-option {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 12px; min-width: 0;
+  border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; line-height: 19px; text-align: start; cursor: pointer;
+}
+.ct .fg-option[aria-pressed="true"] { border: 2px solid var(--text); background: var(--surface-alt); padding: 5px 11px; font-weight: 600; }
+.ct .fg-option svg { flex: none; }
+.ct .fg-option-tail { font-size: 13px; font-weight: 400; color: var(--text-secondary); }
+
+/* The editor: an ink frame, the shift first, the preview, then "Use my value". */
+.ct .fg-editor { display: grid; gap: 8px; min-width: 0; margin: 4px 0 0; padding: 12px; border: 2px solid var(--text); border-radius: 11px; }
+.ct .fg-editor legend { padding: 0 4px; font-weight: 600; }
+.ct .fg-editor-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.ct .fg-number { width: 5.5em; min-height: 44px; padding: 0 10px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; }
+.ct .fg-number[aria-invalid="true"] { border: 2px solid var(--danger); }
+.ct .fg-error { margin: 0; font-size: 14px; line-height: 19px; color: var(--danger); font-weight: 600; }
+/* colder | warmer: one segmented pair on its own row, the pressed half framed with a check. */
+.ct .fg-segment { display: inline-flex; gap: 2px; width: fit-content; max-width: 100%; padding: 2px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface-alt); }
+.ct .fg-seg { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1 1 auto; min-height: 44px; padding: 0 10px; border: 1.5px solid transparent; border-radius: 7px; background: none; color: var(--text-secondary); font: inherit; font-size: 15px; white-space: nowrap; cursor: pointer; }
+.ct .fg-seg[aria-pressed="true"] { background: var(--surface); border-color: var(--text-secondary); color: var(--text); font-weight: 600; }
+.ct .fg-seg svg { width: 14px; height: 14px; }
+.ct .fg-use svg { width: 18px; height: 18px; }
+@media (max-width: 639px) { .ct .fg-actions .fg-use { flex: 1 1 auto; } }
+.ct .fg-tick { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 19px; }
+.ct .fg-tick input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--accent); }
+.ct .fg-tick .fg-muted { display: block; }
+.ct .fg-preview:empty { display: none; }
+.ct .fg-preview strong { font-weight: 600; color: var(--text); }
+.ct .fg-preview { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--surface-alt); font-size: 14px; line-height: 19px; }
+.ct .fg-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ct .fg-actions .button { min-height: 44px; }
+.ct .fg-link { min-height: 32px; font-size: inherit; }
+
+/* The folds, the lists, the meaning. */
+.ct .fg-fold { border-top: 1px solid var(--border); }
+.ct .fg-fold-button {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 48px; padding: 0;
+  border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; text-align: start; cursor: pointer;
+}
+.ct .fg-fold-button svg { flex: none; }
+.ct .fg-fold-body { display: grid; gap: 8px; padding-bottom: 8px; font-size: 14px; line-height: 19px; }
+.ct .fg-fold-body p { margin: 0; }
+.ct .fg-list { display: grid; gap: 6px; margin: 0; padding-inline-start: 0; list-style: none; font-size: 14px; line-height: 19px; }
+.ct .fg-meaning { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: var(--surface-alt); }
+.ct .fg-meaning svg { flex: none; width: 16px; height: 16px; margin-top: 2px; }
+.ct .fg-water-lead { margin: 0; font-size: 15px; line-height: 20px; font-weight: 600; }
+.ct .fg-water-list .fg-chip { display: flex; width: fit-content; margin-bottom: 2px; }
+.ct .fg-water-list .fg-chip svg { width: 14px; height: 14px; }
+.ct .fg-water-list .ct-more-items { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ct .fg-water-list .ct-more-count, .ct .fg-names .ct-more-count { display: none; } /* the sentence above says the count */
+.ct .fg-names .ct-more-items { display: flex; flex-wrap: wrap; gap: 0 4px; margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 19px; }
+.ct .fg-names .ct-more-items > li:not(:last-child)::after { content: ","; }
+@media (max-width: 639px) {
+  .ct .fg-panel { padding: 12px; }
+  .ct .fg-cell { padding: 6px; }
+}

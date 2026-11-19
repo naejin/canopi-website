@@ -108,6 +108,32 @@ export async function run(input, places) {
     second, notes,
     thin: thins.map((h) => ({ id: h.id, have: h.thin.have, want: h.thin.want })),
     best, hints,
+    change: await changeOf(input, places, list, members, hs),
+  };
+}
+
+// What the case's grower edits changed (pf-d, core site-change.ts siteChange): the same case without
+// its edits (and pots) against it, over the whole list, per period; null for a case with no edits.
+// Ids and codes only: per period the plants that now fit, no longer fit, now need a second look, no
+// longer do, and each member whose level changed ([id, before, after, limiting factor]); the members
+// that newly carry a soil hint; the holes added, closed and narrowed ([before, after]) and how many stay open.
+async function changeOf(input, places, list, members, holesAfter) {
+  if (!input.edits && !('pots' in input)) return null;
+  const plain = { ...input };
+  delete plain.edits;
+  delete plain.pots;
+  const snap = (inp, hs) => {
+    const inputs = inputsOf(inp, places);
+    const taxa = [...new Map([...list, ...members].map((t) => [t.id, t])).values()];
+    const byPeriod = Object.fromEntries(core.periodIds.map((p) => [p, verdicts(taxa, { inputs, period: p, scenario: inp.scenario ?? core.DEFAULT_SCENARIO, canopy: core.canopyOf(members) })]));
+    const holes = hs ?? core.holes({ members, verdicts: verdicts(members, { inputs, period: inp.period, scenario: inp.scenario ?? core.DEFAULT_SCENARIO, canopy: core.canopyOf(members) }), pending: false });
+    return core.siteSnapshot(list, members, byPeriod, holes);
+  };
+  const c = core.siteChange(snap(plain, null), snap(input, holesAfter));
+  return {
+    periods: c.periods.map((p) => ({ period: p.period, in: p.fitIn, out: p.fitOut, lookNew: p.lookNew, lookGone: p.lookGone, members: p.members.map((m) => [m.id, m.before, m.after, m.limiting]) })),
+    hintsNew: c.hintsNew,
+    holes: { added: ids(c.holes.added), closed: ids(c.holes.closed), narrowed: c.holes.narrowed.map((n) => [n.before.id, n.after.id]), open: c.holes.open.length },
   };
 }
 
@@ -247,6 +273,8 @@ const CASES = [
 ];
 
 const fail = (message) => { throw new Error(message); };
+// Two-space JSON with every array of numbers or strings on one line (readable diffs, a small file).
+const layout = (file) => JSON.stringify(file, null, 2).replace(/\[\n\s*((?:-?[\d.]+|"[^"\n]*")(?:,\n\s*(?:-?[\d.]+|"[^"\n]*"))*)\n\s*\]/g, (_, items) => `[${items.split(/,\n\s*/).join(', ')}]`);
 async function record() {
   const C = await import('../src/lib/climate/index.ts');
   const climateIndex = JSON.parse(readFileSync(new URL('src/data/climate-index.json', ROOT), 'utf8'));
@@ -280,7 +308,7 @@ async function record() {
       'The contract for a later Rust port of the engine: the same inputs must give the same outputs.',
       'places: each place\'s climate slots (today and the 8 future slots) and its soil reading (phH2o, texture, filled, fillDistanceCells, distanceCells; null: no soil value) as the climate and soil grid reader answers them at its coordinates. seville-board and mendoza-board are seville and mendoza with the v14 boards\' values in the historical and SSP2-4.5 slots (aridity scaled with rain).',
       'Inputs: the list, the place (a name in places, or null: no location), the period, the scenario (default ssp245), the room (default unsure), the palette goals (default plantsPerJob 2), the grower edits (SiteEdits: climate shifts applied to every slot, soil test pH, answers), pots (the grower\'s answer: pots or brought-in soil) and the member plant ids of the release.',
-      'Outputs, keys and codes only: fit (member ids by level), why (the limiting factor of each member that does not fit), holes (id, rank, state, unchecked members), lanes (each job and light level: plant counts per time step of years.ts PHASE_YEARS, thin year spans below the goal plantsPerJob, default 2, and the count of members not checked), jobs (jobGapsByPhase), next (the lead hole and its fillers: count and first five ids per group, with no country warning), second (members that need a second look: conflicts.ts secondLook, no country), notes (each member\'s dryness notes), thin (thin targets: id, have, want), best (the lead target, hole or thin spot, and bestToAdd\'s ids for it), hints (each member\'s soil hint factors that are not fits: soil-ph, drainage).',
+      'Outputs, keys and codes only: fit (member ids by level), why (the limiting factor of each member that does not fit), holes (id, rank, state, unchecked members), lanes (each job and light level: plant counts per time step of years.ts PHASE_YEARS, thin year spans below the goal plantsPerJob, default 2, and the count of members not checked), jobs (jobGapsByPhase), next (the lead hole and its fillers: count and first five ids per group, with no country warning), second (members that need a second look: conflicts.ts secondLook, no country), notes (each member\'s dryness notes), thin (thin targets: id, have, want), best (the lead target, hole or thin spot, and bestToAdd\'s ids for it), hints (each member\'s soil hint factors that are not fits: soil-ph, drainage), change (cases with edits only, else null: core site-change.ts siteChange of the case without its edits against it, over the whole list: per period in, out, lookNew, lookGone and the members whose level changed as [id, before, after, limiting factor]; hintsNew; holes added, closed, narrowed as [before, after], open count).',
       'Watering sets the dryness note (v14 0W-2 R2): rain or no answer and first-years give drier / drier-later (first-years in other words, not in these codes); all-year gives none. Dryness never changes a fit.',
     ],
     release_id: consortiumIndex.release_id,
@@ -291,9 +319,18 @@ async function record() {
     plants: Object.fromEntries(Object.entries(plants).filter(([pid]) => named.has(pid)).sort(([, a], [, b]) => (a < b ? -1 : a > b ? 1 : 0))),
   };
   // Two-space JSON with every array of numbers or strings on one line (readable diffs, a small file).
-  const text = JSON.stringify(file, null, 2).replace(/\[\n\s*((?:-?[\d.]+|"[^"\n]*")(?:,\n\s*(?:-?[\d.]+|"[^"\n]*"))*)\n\s*\]/g, (_, items) => `[${items.split(/,\n\s*/).join(', ')}]`);
-  writeFileSync(FILE, text + '\n');
+  writeFileSync(FILE, layout(file) + '\n');
   console.log(`Recorded ${cases.length} cases for ${consortiumIndex.release_id}.`);
 }
 
+// Every case's output again from the file's own places (no climate tiles needed): for an engine change
+// that leaves the places as they are (pf-d's `change` output). Same layout as record().
+async function rerun() {
+  const file = JSON.parse(readFileSync(FILE, 'utf8'));
+  for (const c of file.cases) c.output = await run(c.input, file.places);
+  writeFileSync(FILE, layout(file) + '\n');
+  console.log(`Re-ran ${file.cases.length} cases on ${file.release_id}.`);
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url) && process.argv.includes('--record')) await record();
+if (process.argv[1] === fileURLToPath(import.meta.url) && process.argv.includes('--outputs')) await rerun();
