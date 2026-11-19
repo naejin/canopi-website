@@ -621,9 +621,12 @@ test('PFB19 (pf-b fix round 1, BC1, C5; c2 H1): every toxic plant carries its to
     }
     assert.ok(marks.some((m) => f.tox[m.id]), `${id}: a toxic member shown`);
     // BC21: the header steps on one line, the done step a check, "›" between them.
-    const steps = await page.$$eval('nav[aria-label="Steps"] li', (ls) => ls.map((l) => ({ top: Math.round(l.getBoundingClientRect().top), text: l.innerText.replace(/\s+/g, ' ').trim() })));
+    // M13: the steps are the page head's one bar (ConsortiumPage.astro #ct-steps); the done step's check
+    // is drawn (an svg in its button back to Place), its words beside it.
+    const steps = await page.$$eval('#ct-steps > li', (ls) => ls.map((l) => ({ top: Math.round(l.getBoundingClientRect().top), text: l.innerText.replace(/\s+/g, ' ').trim(), check: !!l.querySelector('[data-step-place] svg')?.checkVisibility() })));
+    assert.equal(steps.length, 3, 'BC21: the three steps');
     assert.equal(new Set(steps.map((x) => x.top)).size, 1, `BC21: the steps on one line at ${width} px`);
-    assert.equal(steps[0].text, '\u2713 Your place', 'BC21: the done step a check');
+    assert.deepEqual([steps[0].text, steps[0].check], ['Your place', true], 'BC21: the done step a check');
     // Round 2 R5: the done step says its place and that it is done, as the later steps say theirs.
     assert.ok(await has(page, aria('button', '1 Your place, done'), 2000), 'R5: "1 Your place, done"');
     await done(page);

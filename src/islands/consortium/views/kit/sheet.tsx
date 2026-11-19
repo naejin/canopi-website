@@ -60,9 +60,10 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
   useLayoutEffect(() => {
     const d = ref.current;
     if (!d) return;
-    // A dialog closed only to be shown again on top (restack below) is open again when its `close`
-    // fires (a task later): not a close.
-    const closed = () => { if (!d.open) close.current(); };
+    // A dialog closed only to be shown again on top (restack below) is not closed: its `close` (fired a
+    // task later, once per close()) is used up here. Any other close, Escape included, reaches the
+    // store, even when a frame has shown the dialog again before it fires (chunk 4 T8).
+    const closed = () => { if (!restacked(d)) close.current(); };
     d.addEventListener('close', closed);
     return () => { d.removeEventListener('close', closed); if (d.open) d.close(); };
   }, []);
@@ -81,11 +82,18 @@ export function SheetDialog({ onClose, children }: { onClose: () => void; childr
 // narrows past 960 px; h3 B1.1, C1.1) shows each dialog after it again, in order, so the store's top
 // sheet stays on top and its ×, Escape and backdrop stay its own. The focus goes back where it was in
 // them (`focus`: the element focused before this dialog opened).
+// restacking counts each dialog's closes made here, whose `close` events are not closes.
+const restacking = new WeakMap<HTMLDialogElement, number>();
+function restacked(d: HTMLDialogElement): boolean {
+  const n = restacking.get(d) ?? 0;
+  if (n > 1) restacking.set(d, n - 1); else restacking.delete(d);
+  return n > 0;
+}
 function restack(d: HTMLDialogElement, focus: Element | null): void {
   const above = [...document.querySelectorAll<HTMLDialogElement>('dialog.ct-sheet')]
     .filter((x) => x !== d && x.matches(':modal') && d.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING);
   if (!above.length) return;
-  for (const x of above) { x.close(); x.showModal(); }
+  for (const x of above) { restacking.set(x, (restacking.get(x) ?? 0) + 1); x.close(); x.showModal(); }
   if (focus instanceof HTMLElement && above.some((x) => x.contains(focus))) focus.focus();
 }
 

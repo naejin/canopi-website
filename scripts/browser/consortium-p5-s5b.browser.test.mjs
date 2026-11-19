@@ -21,16 +21,29 @@ useHarness();
 
 // ---- S5b: Where is your site? ----
 
-test('P5-1 (S5b location granted): "Use my location" fills the result line and uses the climate read at once', async () => {
+test('P5-1 (S5b location granted): "Use my location" fills the result line and uses the climate read at once; the soil map is asked only once the place is in use', async () => {
   const [lat, lon] = SITES.seville;
   const page = await tool({ geolocation: { lat, lon } });
   const tileRequests = [];
   page.on('request', (r) => { if (/\/data\/climate\//.test(r.url())) tileRequests.push(new URL(r.url()).pathname); });
   await locationControls(page);
+  // When the place is in use (the store's location with its lookup), on the page's clock.
+  await page.evaluate(() => {
+    performance.setResourceTimingBufferSize(5000);
+    window.__placeAt = null;
+    window.__ctTest.store.location.subscribe((v) => { if (v?.lookup && window.__placeAt === null) window.__placeAt = performance.now(); });
+  });
   await page.click('[data-location-action="geo"]');
   assert.equal(await locationState(page), 'ready');
   assert.ok(tileRequests.some((u) => /\/tiles\//.test(u)), `the climate tile was read (${tileRequests.join(', ')})`);
-  assert.deepEqual(tileRequests.filter((u) => /\/soil\//.test(u)), [], 'no soil tile is fetched until something uses it (pre-push review 3; P5.2)');
+  // M8, h3 G1 R1 (location.ts soilLater): "Your place in figures" reads the soil map, asked after the
+  // place is in use, so a slow or failed soil tile never holds the place.
+  const soilAt = () => page.evaluate(() => performance.getEntriesByType('resource').filter((e) => /\/soil\//.test(e.name)).map((e) => e.startTime));
+  for (const end = Date.now() + 10_000; Date.now() < end && !(await soilAt()).length;) await new Promise((r) => setTimeout(r, 100));
+  const soil = await soilAt();
+  assert.ok(soil.length > 0, `the soil map is read for the figures (${tileRequests.join(', ')})`);
+  const order = { place: await page.evaluate(() => window.__placeAt), soil: Math.min(...soil) };
+  assert.ok(order.place !== null && order.soil >= order.place, `the place in use (${order.place} ms) before any soil tile is asked (${order.soil} ms)`);
   const loc = await page.evaluate(() => window.__ctTest.store.location.value);
   assert.equal(loc.source, 'geo');
   assert.equal(loc.lookup.climate.periods[0].koppen, 'Csa');

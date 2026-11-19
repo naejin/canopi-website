@@ -266,7 +266,7 @@ test('BT-6 (S3 review): Undo goes away when the consortium changes another way; 
   await page.close();
 });
 
-test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its warning in words, no confirm step; the toast is heard over a sheet; "Add all" says "added with a warning" with Show', async () => {
+test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its warning in words, no confirm step; the toast is heard over a sheet; after "Add all" its "Show the warning for …" opens the plant', async () => {
   const page = await open({ width: 1280, data: 'fixture' });
   await start(page);
   // The Add sheet's ticks and its 8-row query went with Add (PP-C commit 0); Find's are c1's cases.
@@ -282,7 +282,7 @@ test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its wa
   assert.equal(await guestFrom(page, 'Inga edulis'), 'Tropical', 'the guest joins at once');
   assert.equal(await page.$('dialog[role="alertdialog"]'), null, 'no confirm step');
   assert.ok(await sheetOpen(page), 'the Paste sheet stays');
-  assert.ok(await findAx(page, { name: /1 added with a warning/ }), 'the toast names the warning');
+  assert.ok(await findAx(page, { name: /^Show the warning for / }), 'the toast names the warning: its Show the warning for the plant (board Toasts, M45, R6)');
   assert.ok(await has(page, aria('button', 'Undo')), 'the toast is reachable over the sheet');
 
   // Pear (a member of the suggestion) is taken out, then pasted back in deep shade: it misfits.
@@ -290,8 +290,8 @@ test('BT-6 (S3 review): a pasted guest that misfits joins in one tap with its wa
   await page.locator('::-p-aria([role="textbox"])').fill('Pyrus communis');
   await page.locator(aria('button', 'Add 1 plant')).click();
   await pasteDone(page);
-  assert.ok(await findAx(page, { name: /1 added with a warning/ }), '"added with a warning"');
-  await page.locator(aria('button', 'Show')).click();
+  assert.ok(await findAx(page, { name: /^Show the warning for / }), '"Show the warning for Pear"');
+  await page.locator('.ct-toast .ct-toast-action').click();
   assert.ok(await findAx(page, { role: 'dialog' }), 'Show opens the plant');
   await page.close();
 });

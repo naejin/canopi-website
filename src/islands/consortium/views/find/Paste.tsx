@@ -11,10 +11,11 @@
 // warning stays on its row in words, a plant outside its range says so. Owner row "Inform, don't block"
 // (2026-11-14, knowledge/decisions/consortium-user-decisions.md): nothing asks first. A row's "Add
 // anyway" (a guest, labelled "From the {climate} list", A9) adds it in one tap and "Add all" adds the
-// found and ticked plants; a plant with a warning (store.warnedPlant, as in Find) makes the toast say
-// "n added with a warning" with Show. Each added plant is kept. The text is read a moment after typing
-// stops (at once on "Read the list" and on "Add all"), every line (no cap, v14 pf-e); a long paste is
-// read a slice a task (F23: "1,200 of 5,000 read", the page responsive). A close spelling ("chesnut")
+// found and ticked plants; a plant with a warning (store.warnedPlant, as in Find) gives the toast its
+// "Show the warning for …". Each added plant is kept. Every line is read (no cap, v14 pf-e): up to
+// SLICE names as it is typed, one reading for the rows, the head and Add (chunk 4 T4); a longer paste a
+// moment after typing stops (at once on "Read the list" and on "Add all"), a slice a task (F23: "1,200
+// of 5,000 read", the page responsive). A close spelling ("chesnut")
 // is offered, "Read as European chestnut", and added only once ticked. Each list (Recognised, the
 // questions, a question's choices, Not found) folds by the size rule (views/kit/more.tsx MoreList), the
 // paste's names read standing for the palette's size.
@@ -113,6 +114,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   const guests = store.guests.value;
   const [text, setText] = useState('');
   const box = useRef<HTMLTextAreaElement>(null);
+  // A long text (past SLICE names) as it was when typing stopped; a shorter one is read as it is typed.
   const [settled, setSettled] = useState('');
   // "Read the list" pressed on this text: an empty reading then says "Nothing to read" (F23).
   const [asked, setAsked] = useState(false);
@@ -155,30 +157,26 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   const verdicts = store.poolVerdicts.value;
   const fitRank = (id: PlantId) => { const l = verdicts?.get(id)?.level; return l === 'fits' ? 0 : l === 'look' ? 1 : l === 'outside' ? 2 : 3; };
   const opts: PasteOptions<Named> | null = pool ? { here: pool, others: lists, members, index, rank: fitRank, lang: pageLang() } : null;
-  const { reading, progress: readAt } = useReading(settled, opts, [pool, members, lists, index, verdicts]);
-  // The box as it is now, read at once up to SLICE names while the reading on screen is another text's
-  // (the 200 ms pause only redraws the rows): Add counts and adds what the box holds, so its label
-  // changes only when that count does (h3 r2 B1, B2). null: the box holds no new text, or a longer
-  // one, read in slices (useReading).
-  const boxRead = useMemo(() => {
-    if (!opts || text === reading?.src) return null;
-    const names = pasteNames(text);
-    return names.length <= SLICE ? readPaste(names, opts) : null;
-  }, [text, reading, pool, members, lists, index, verdicts]);
+  // Read once (chunk 4 T4): up to SLICE names the box is read as it is (synchronously, as Find reads),
+  // so the rows, the count line, the head's "N new" and Add's "Add N plants" are one reading in every
+  // frame (R14) and Add's label changes only when its count does (h3 r2 B1, B2); a longer text is read
+  // once typing stops, in slices (useReading).
+  const short = useMemo(() => pasteNames(text).length <= SLICE, [text]);
+  const src = short ? text : settled;
+  const { reading, progress: readAt } = useReading(src, opts, [pool, members, lists, index, verdicts]);
   // The copy state belongs to a text. The answers (by name) stay when the reading refreshes (an edit,
   // the names file arriving, new verdicts: F24, R5) as long as their question is still asked; an
   // emptied paste asks none (C4: an earlier paste never answers a new one).
-  useEffect(() => { setCopied(null); }, [settled]);
-  useEffect(() => { if (reading && reading.src === settled) setAnswers((a) => keepAnswers(a, questionsOf(reading.result))); }, [reading]);
+  useEffect(() => { setCopied(null); }, [src]);
+  useEffect(() => { if (reading && reading.src === src) setAnswers((a) => keepAnswers(a, questionsOf(reading.result))); }, [reading]);
   useEffect(() => { const p = pendingAdd.current; if (p !== null && reading?.src === p && text === p) { pendingAdd.current = null; addNow.current(); } }, [reading, text]);
   if (!climate) return null;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
   const result: PasteResult<Named> = reading?.result ?? readPaste<Named>(pasteNames(''), opts!);
 
-  // What Add all adds: the box's reading (the shown one, else the box read at once); none while a long
-  // text reads in slices, when Add keeps the last reading's count, as the rows on screen do (C8).
-  const addRead = text === reading?.src ? result : boxRead;
-  const toAdd = plan(addRead ?? result, answered(addRead ?? result, answers), members).ids;
+  // What Add all adds: the reading on screen, the box's own up to SLICE names; while a long text reads in
+  // slices Add keeps the last reading's count, as the rows on screen do (C8).
+  const toAdd = plan(result, answered(result, answers), members).ids;
   // Every line of the paste (board Paste: "8 names read"; paste.ts pasteCounts): the count line and
   // each group's count split the lines by group, adding up to the names read; a group's repeated lines
   // are its head's "N listed twice" part, the one place repeats are counted (round 3 R2, C2), and each
@@ -193,9 +191,9 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // shown reading still names the text, the rows take their state from the live members (R4), and
   // plan() leaves out the plants already in. The actions wait for the new reading (round 3 R3, C3): Add
   // anyway, "Copy these N names" and "Skip the N left" are aria-disabled (still focusable, so the focus
-  // kept by R5 stays), described by the reading line. Add all is not one of them: up to SLICE names it
-  // counts and adds the box as it is (boxRead); past that, pressed meanwhile, it adds once the slices
-  // land (h3 r1 R5), described by the reading line, its label the last reading's like the rows (C8).
+  // kept by R5 stays), described by the reading line. Add all is not one of them: up to SLICE names the
+  // box is never busy (read as typed); past that, pressed meanwhile, it adds once the slices land (h3 r1
+  // R5), described by the reading line, its label the last reading's like the rows (C8).
   // It is aria-disabled only when the box's reading has nothing to add, never natively disabled (that
   // would drop its focus as a reading lands); with nothing to add once a long text lands, the focus
   // stays on its "Add 0 plants" and the count line says what was read (h3 r2 B1).
@@ -207,7 +205,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     // The text as it is in the box now, not as it was at the last render: read at once up to SLICE
     // names (as Find reads), a longer one in slices (F23, C3) and added when its reading lands.
     const current = box.current?.value ?? text;
-    let read = current === reading?.src ? reading.result : current === text ? boxRead : null;
+    let read = current === reading?.src ? reading.result : null;
     if (!read) {
       const names = pasteNames(current);
       if (names.length > SLICE) { pendingAdd.current = current; setSettled(current); return; }
@@ -253,8 +251,8 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     return t ? <Marks t={t} lines={flagLines(t, flagsOfPlant(t), scene)} country={scene.country} /> : null;
   };
   // Nothing typed: the hint; a text (or "Read the list") with no name in it, a header alone: F23.
-  const nothing = !readAt && !!reading && reading.names.length === 0 && (asked || settled.trim().length > 0);
-  const hint = !readAt && !nothing && settled.trim().length === 0;
+  const nothing = !readAt && !!reading && reading.names.length === 0 && (asked || src.trim().length > 0);
+  const hint = !readAt && !nothing && src.trim().length === 0;
   const names = namesState.value;
 
   // The paste in three groups (board Paste, AddMany state 4): Recognised (new, you have, listed twice),
@@ -414,7 +412,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     } foot={
       <div class="ct-add-bar ct-paste-foot">
         <button type="button" class="button button-secondary" data-paste-cancel="" onClick={back}>{T('paste.cancel')}</button>
-        <button type="button" class="button button-primary" aria-disabled={addRead && !toAdd.length ? 'true' : undefined} aria-describedby={waiting['aria-describedby']} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
+        <button type="button" class="button button-primary" aria-disabled={!busy && !toAdd.length ? 'true' : undefined} aria-describedby={waiting['aria-describedby']} onClick={() => void addAll()}>{PLUS} {P('paste.addAll', toAdd.length)}</button>
       </div>
     }>
       <p class="ct-paste-intro">{T('find.pasteIntro')}</p>

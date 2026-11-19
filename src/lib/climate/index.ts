@@ -146,8 +146,9 @@ const LAYER_IDS: LayerId[] = ['climate', 'soil', 'regions'];
  * Looks a point up: climate within `radius` cells (default 2, the crate's), soil and regions within
  * 2 layer cells (the CLI's fixed LAYER_LOOKUP_RADIUS). Rejects with a RangeError for an invalid
  * coordinate (latitude outside [-90, 90], non-finite) and with ClimateTileError when a listed tile
- * cannot be read. `{ soil: false }` reads no soil tile (soil null): the consortium's location step uses
- * nothing from soil until P5.2 (soil likely), so it does not download it.
+ * cannot be read. `{ soil: false }` reads no soil tile (soil null): the consortium puts a place in use
+ * without it, so a slow or failed soil tile never holds the place, then reads it again with the soil
+ * for its figures (islands/consortium/state/location.ts soilLater).
  */
 export async function lookupSite(lat: number, lon: number, source: TileSource, radius = DEFAULT_RADIUS, { soil: withSoil = true }: { soil?: boolean } = {}): Promise<SiteLookup> {
   if (!validCoordinate(lat, lon)) throw new RangeError(`invalid coordinate ${lat}, ${lon}`);

@@ -78,9 +78,39 @@ async function findFromHole(page) {
   await hasFind(page);
 }
 
+// Find closed, then opened again plainly (no target), as a grower does from the palette.
+async function reopenFind(page) {
+  await page.evaluate(() => window.__ctTest.store.closeSheet());
+  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
+  await openFind(page);
+  await hasFind(page);
+}
+
 // Paste (h3 hand-off G3).
 const PASTE = 'dialog[open] #ct-paste-text';
 const ADD_ALL = 'dialog[open] .ct-paste-foot .button-primary';
+// In one task: the box set to `text` (an input event), one frame (well inside the 200 ms pause), then
+// Add's label and aria-disabled and the Recognised head (null with no Recognised group), so no reading
+// lands between them; press: Add is then focused and pressed in the same task.
+const typeThenRead = (page, text, { press = false } = {}) => page.evaluate(async (add, sel, v, go) => {
+  const el = document.querySelector(sel);
+  el.value = v;
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  await new Promise((r) => requestAnimationFrame(r));
+  const b = document.querySelector(add);
+  const out = { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled'), head: document.querySelector('dialog[open] [data-paste-group="rec"] .ct-paste-ghead span')?.textContent.trim() ?? null };
+  if (go) { b.focus(); b.click(); }
+  return out;
+}, ADD_ALL, PASTE, text, press);
+// Add refused (nothing to add): the focus stays on Add, aria-disabled, never natively disabled; nothing
+// is added and the sheet stays open.
+async function addRefused(page, size) {
+  await frames(page);
+  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, disabled: b.disabled, aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
+  assert.deepEqual(add, { focused: true, disabled: false, aria: 'true' }, 'Add keeps the focus, aria-disabled');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+}
 const nonsense = (n, from = 0) => Array.from({ length: n }, (_, i) => `qzx${from + i}vk`);
 const openPaste = async (page) => {
   await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
@@ -605,10 +635,7 @@ test('PP-C43 (c1 fix B1+B5+B13 row content): fills, light, size, years; Add anyw
   const reason = await page.$eval(`${first} [data-find-fills]`, (e) => e.textContent).catch(() => '');
   assert.match(reason, /year|month|days/i, `its years, in its reason line (${reason})`);
   assert.doesNotMatch(meta, /\byear \d|\bmonth \d|first year/i, `the years said once (${meta})`);
-  await page.evaluate(() => window.__ctTest.store.closeSheet());
-  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-  await openFind(page);
-  await hasFind(page);
+  await reopenFind(page);
   await everyPlant(page);
   const out = `${FIND} [data-find-group="outside"] [data-find-row]`;
   assert.ok(await has(page, out, 4000), 'an outside row');
@@ -776,10 +803,7 @@ test('PP-C50 (c1 r3 T3+T14): the start lists its plants on asking; "Show N plant
   await page.click(`${FIND} [data-find-filters-show]`);
   assert.ok(await visible(page, `${FIND} [data-find-row]`), 'the plants are listed');
   assert.match(await page.$eval(`${FIND} [data-find-count]`, (e) => e.textContent), new RegExp(`^${n} plants\\.`), 'the count line says the same');
-  await page.evaluate(() => window.__ctTest.store.closeSheet());
-  await page.waitForFunction(() => !document.querySelector('dialog[open]'), { timeout: 4000 });
-  await openFind(page);
-  await hasFind(page);
+  await reopenFind(page);
   await page.click('aria/Filters[role="button"]');
   await page.click(`${FIND} [data-find-filters-show]`);
   assert.ok(await visible(page, `${FIND} [data-find-row]`), '"Show N plants" lists them');
@@ -1026,11 +1050,7 @@ test('PP-C60 (c1 h3 M23, pf-e#4): a reading with nothing to add keeps the focus 
   await typeIn(page, PASTE, 'zzqx not a plant');
   await page.$eval(ADD_ALL, (b) => { b.focus(); b.click(); });
   assert.ok(await countSays(page, /^1 name read/), 'the premise: the line is read');
-  await frames(page);
-  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, disabled: b.disabled, aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
-  assert.deepEqual(add, { focused: true, disabled: false, aria: 'true' }, 'Add keeps the focus, aria-disabled');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
-  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+  await addRefused(page, size);
 });
 
 test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the last list\'s answers: the same line asks again, counted in "N to go"', async () => {
@@ -1141,17 +1161,8 @@ test('PP-C65 (c1 h3 r1 R5, r2 B1, B2, C1, C3): up to 200 names Add counts the bo
   assert.match(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), /^Add 1 plant$/, 'the premise: "Add 1 plant"');
   // C3: the edit, the render (one frame, well inside the 200 ms pause), the label read and the press in
   // one task: the reading cannot land between them, and the count is the box's whichever way it does.
-  const seen = await page.evaluate(async (add, sel, v) => {
-    const el = document.querySelector(sel);
-    el.value = v;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise((r) => requestAnimationFrame(r));
-    const b = document.querySelector(add);
-    const out = { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
-    b.click();
-    return out;
-  }, ADD_ALL, PASTE, `${two[0].name}\n${two[1].name}`);
-  assert.deepEqual(seen, { label: 'Add 2 plants', aria: null }, 'the box\'s count at once (board "Add N plants"), a press that runs');
+  const { label, aria: off } = await typeThenRead(page, `${two[0].name}\n${two[1].name}`, { press: true });
+  assert.deepEqual({ label, aria: off }, { label: 'Add 2 plants', aria: null }, 'the box\'s count at once (board "Add N plants"), a press that runs');
   assert.ok(await page.waitForFunction((ids) => ids.every((id) => window.__ctTest.store.members.value.includes(id)), { timeout: 4000 }, two.map((t) => t.id)).then(() => true, () => false), 'both plants of the box added');
 });
 
@@ -1162,14 +1173,7 @@ test('PP-C66 (c1 h3 r2 B1, B2): up to 200 names a box with nothing new says "Add
   const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await openPaste(page);
   // One task each: the text, a frame, the label (B1: never a press that does nothing unsaid).
-  const at = (v) => page.evaluate(async (add, sel, text) => {
-    const el = document.querySelector(sel);
-    el.value = text;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise((r) => requestAnimationFrame(r));
-    const b = document.querySelector(add);
-    return { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
-  }, ADD_ALL, PASTE, v);
+  const at = async (v) => { const { label, aria: off } = await typeThenRead(page, v); return { label, aria: off }; };
   assert.deepEqual(await at('xyzzy'), { label: 'Add 0 plants', aria: 'true' }, 'a name not found: nothing to add, said at once');
   assert.deepEqual(await at(member), { label: 'Add 0 plants', aria: 'true' }, 'a plant already in: nothing to add, said at once');
   await page.$eval(ADD_ALL, (b) => b.click());
@@ -1194,19 +1198,47 @@ test('PP-C66 (c1 h3 r2 B1, B2): up to 200 names a box with nothing new says "Add
   assert.deepEqual(labels, Array(5).fill('Add 3 plants'), `the label holds while the count holds (${labels.join(' | ')})`);
 });
 
+// T4 (chunk 4; h3 G3#1, G3#2; word-map R14 "the head's new is what Add adds"): up to 200 names the
+// paste is read once, as it is typed: the Recognised head's "N new" and Add's "Add N plants" come from
+// the same reading in every frame, the pause after typing included.
+test('PP-C69 (c1 chunk 4 T4; R14): a fourth name typed under "Recognised: 3 new": in the next frame the head and Add say the same N', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const four = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 4).map((t) => t.canonical_name); });
+  await openPaste(page);
+  await typeIn(page, PASTE, four.slice(0, 3).join('\n'));
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^3 names read/), 'the premise: three names read');
+  const newOf = (head) => Number(/(\d+) new/.exec(head ?? '')?.[1] ?? NaN);
+  const before = await typeThenRead(page, four.slice(0, 3).join('\n'));
+  assert.deepEqual([newOf(before.head), before.label], [3, 'Add 3 plants'], `the premise: "${before.head}" and "${before.label}"`);
+  const seen = await typeThenRead(page, four.join('\n'));
+  assert.equal(`${newOf(seen.head)} new · ${seen.label}`, `4 new · Add 4 plants`, `the head ("${seen.head}") and Add ("${seen.label}") from one reading`);
+  // The other way: a line deleted.
+  const back = await typeThenRead(page, four.slice(0, 2).join('\n'));
+  assert.equal(`${newOf(back.head)} new · ${back.label}`, `2 new · Add 2 plants`, `after a delete, the head ("${back.head}") and Add ("${back.label}") agree`);
+});
+
+// T8 (chunk 4; h3 G4#2): a sheet closed by Escape whose dialog is shown again before its `close` event
+// fires (a part's frame replacing the loading frame in that one-task gap calls showModal) is still
+// closed: only the closes the restack itself makes are not closes.
+test('PP-C70 (c1 chunk 4 T8): Escape on a sheet whose frame re-shows the dialog before "close" fires still closes it; the store forgets the sheet', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  await openPaste(page);
+  // Escape closes the dialog at once and queues `close`; the new frame's showModal runs in the same task.
+  await page.$eval('dialog[open]', (d) => { d.close(); d.showModal(); });
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.sheets.value.length === 0 && !document.querySelector('dialog[open]'), { timeout: 3000 }).then(() => true, () => false),
+    `the sheet closed (${await page.evaluate(() => window.__ctTest.store.sheets.value.map((x) => x.kind).join(', '))} still open)`);
+});
+
 test('PP-C67 (c1 h3 r2 B1, C1): past 200 names Add pressed while the text reads keeps the last reading\'s "Add N plants" (no count-free label); with nothing new it adds nothing, the focus stays on "Add 0 plants" (aria-disabled) and the sheet stays open', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const member = await page.evaluate(() => { const s = window.__ctTest.store; return s.pool.value.find((t) => s.members.value.includes(t.id)).canonical_name; });
   const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await openPaste(page);
   // The text and the press in one task, then every frame until the reading lands.
-  const seen = await page.evaluate(async (add, sel, v) => {
-    const el = document.querySelector(sel);
-    el.value = v;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise((r) => requestAnimationFrame(r));
+  await typeThenRead(page, [...nonsense(299), member].join('\n'), { press: true });
+  const seen = await page.evaluate(async (add) => {
     const b = document.querySelector(add);
-    b.focus(); b.click();
     const labels = new Set();
     for (let i = 0; i < 1800; i++) {
       await new Promise((r) => requestAnimationFrame(r));
@@ -1215,15 +1247,12 @@ test('PP-C67 (c1 h3 r2 B1, C1): past 200 names Add pressed while the text reads 
       if (/^300 names read/.test(document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '')) break;
     }
     return [...labels];
-  }, ADD_ALL, PASTE, [...nonsense(299), member].join('\n'));
+  }, ADD_ALL);
   assert.ok(await countSays(page, /^300 names read/), 'the premise: the 300 names read');
   assert.ok(seen.every((l) => /^Add \d+ plants?$/.test(l)), `while it reads, the board's "Add N plants" only (${seen.join(' | ')})`);
-  await frames(page);
   await new Promise((r) => setTimeout(r, 300));
-  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
-  assert.deepEqual(add, { focused: true, label: 'Add 0 plants', aria: 'true' }, 'nothing new: said on Add, which keeps the focus');
-  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
-  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+  await addRefused(page, size);
+  assert.equal(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), 'Add 0 plants', 'nothing new: said on Add');
 });
 
 test('PP-C68 (c1 h3 r2 B4; W4): "Add anyway" on the last row shown of a folded Recognised list moves the focus forward to its "Show N more", where the next guest is, never back up the sheet', { timeout: 60_000 }, async () => {
