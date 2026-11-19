@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const M = await import('../src/islands/consortium/views/plants/model.ts');
-const { pasteNames, pasteReader, readPaste, plan, pasteCounts, answered, questionsOf, isAnswered, isPicked, keepAnswers } = await import('../src/islands/consortium/views/find/paste.ts');
+const { pasteNames, pasteReader, readPaste, plan, pasteCounts, answered, questionsOf, isAnswered, isPicked } = await import('../src/islands/consortium/views/find/paste.ts');
 const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
 
 const taxon = (id, name, { stratum = null, family = null, functions = [], years = null } = {}) => ({
@@ -270,11 +270,12 @@ test('M22 (h3): one definition of the questions and their answers: what "Add N p
   assert.deepEqual(plan(r, answered(r, b), []).ids.sort(), ['b1', 'b2', 'c1'], 'Add adds the found plant and the two picked');
 });
 
-test('M24 (h3): keepAnswers keeps an answer only while its question is pasted and still offers it; nothing to drop keeps the same map', () => {
-  const qs = questionsOf(mixed());
-  const a = new Map([['Castanea', 'c1'], ['chestnut', null], ['beans', 'zz'], ['gone', 'c2']]);
-  assert.deepEqual([...keepAnswers(a, qs)], [['Castanea', 'c1'], ['chestnut', null]], 'a line no longer pasted, and a plant its question no longer offers, are dropped');
-  const kept = new Map([['Castanea', 'c1'], ['chestnut', null]]);
-  assert.equal(keepAnswers(kept, qs), kept, 'nothing dropped: the same map (no re-render)');
-  assert.deepEqual([...keepAnswers(a, [])], [], 'an emptied paste keeps no answer');
+test('M24 (h3; c4 R2): an answer of a line no longer pasted counts for nothing, and counts again once the line is back (no pruning)', () => {
+  const r = mixed(), qs = questionsOf(r);
+  const a = new Map([['Castanea', 'c1'], ['gone', 'c2']]);
+  assert.deepEqual(answered(r, a), ['c1'], 'the line no longer pasted adds nothing');
+  const without = { ...r, choose: r.choose.filter((c) => c.name !== 'Castanea') };
+  assert.ok(!answered(without, a).includes('c1'), 'Castanea edited away: its answer adds nothing');
+  assert.deepEqual(answered(r, a), ['c1'], 'Castanea back: the same answer, kept');
+  assert.equal(qs.filter((q) => isPicked(q, a)).length, 1);
 });

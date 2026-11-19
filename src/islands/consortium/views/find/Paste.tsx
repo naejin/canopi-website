@@ -26,7 +26,7 @@ import { MoreList } from '../kit/more.tsx';
 import * as store from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import type { ClimateZone, Locale, PlantId, Taxon } from '../../../../lib/consortium/index.ts';
-import { answered, isAnswered, isPicked, keepAnswers, pasteCounts, pasteNames, pasteReader, plan, questionsOf, readPaste, type Answers, type Named, type PasteOptions, type PasteResult, type PastedNames } from './paste.ts';
+import { answered, isAnswered, isPicked, pasteCounts, pasteNames, pasteReader, plan, questionsOf, readPaste, type Answers, type Named, type PasteOptions, type PasteResult, type PastedNames } from './paste.ts';
 import { addMembers, closeSheet, flagsOfPlant } from '../../store.ts';
 import { focusAfterAdd } from '../../focus.ts';
 import { SheetWaiting, type Frame } from '../kit/sheet.tsx';
@@ -58,6 +58,13 @@ function PasteGroup({ id, head, n, busy, children }: { id: string; head: string;
     </section>
   );
 }
+// The sheet's one live region (c4 R1): a visually hidden status line saying `text` once it has held
+// still for SETTLE_MS, so typing is never buried under a reading a key.
+function PasteStatus({ text }: { text: string }) {
+  const [said, setSaid] = useState('');
+  useEffect(() => { const id = setTimeout(() => setSaid(text), SETTLE_MS); return () => clearTimeout(id); }, [text]);
+  return <p role="status" class="visually-hidden" data-paste-status="">{said}</p>;
+}
 // A paste of more than SLICE names is read in tasks of about TASK_MS (BATCH names at a time between
 // clock reads), yielding between them (F23); a shorter one at once.
 const SLICE = 200, BATCH = 5, TASK_MS = 40;
@@ -65,13 +72,13 @@ const yieldTask = (): Promise<void> => {
   const sched = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
   return sched?.yield ? sched.yield() : new Promise((r) => setTimeout(r, 0));
 };
-type Reading = { src: string; names: PastedNames; result: PasteResult<Named> };
-// The reading of `src`: at once up to SLICE names; past that a task at a time, `progress` saying how far
+type Text = { src: string; names: PastedNames };
+type Reading = Text & { result: PasteResult<Named> };
+// The reading of a text (its names parsed once, in onInput): at once up to SLICE names; past that a task at a time, `progress` saying how far
 // ("1,200 of 5,000 read"), the last reading kept on screen, whatever its text, until the new one is
 // whole (stale while it reads: R5), so the groups, their open state and the focus inside them stay. A
 // newer text, or new verdicts, members or lists, drops a reading under way.
-function useReading(src: string, opts: PasteOptions<Named> | null, deps: readonly unknown[]): { reading: Reading | null; progress: { done: number; total: number } | null } {
-  const names = useMemo(() => pasteNames(src), [src]);
+function useReading({ src, names }: Text, opts: PasteOptions<Named> | null, deps: readonly unknown[]): { reading: Reading | null; progress: { done: number; total: number } | null } {
   const now = useMemo(() => (opts && names.length <= SLICE ? { src, names, result: readPaste(names, opts) } : null), [names, ...deps]);
   const [late, setLate] = useState<Reading | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -114,16 +121,21 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   const guests = store.guests.value;
   const [text, setText] = useState('');
   const box = useRef<HTMLTextAreaElement>(null);
-  // A long text (past SLICE names) as it was when typing stopped; a shorter one is read as it is typed.
-  const [settled, setSettled] = useState('');
+  // The text read: up to SLICE names the box as it is (read as it is typed); a long text (past SLICE
+  // names) as it was when typing stopped, so crossing SLICE keeps the reading just shown until the
+  // slices land (R3). Its names are parsed once, in onInput.
+  const [settled, setSettled] = useState<Text>(() => ({ src: '', names: pasteNames('') }));
+  const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(settle.current), []);
   // "Read the list" pressed on this text: an empty reading then says "Nothing to read" (F23).
   const [asked, setAsked] = useState(false);
   // The grower's answers, a question each, by its line's name (paste.ts Answers): the plant chosen, or
   // null for "None" and "Skip the N left" (a name you leave is not added). Keyed by name, an edit
   // elsewhere in the paste keeps them (R5), and two questions offering the same plants keep their own
-  // answers (round 3 R5). Each fresh reading keeps only the answers of its own questions (keepAnswers,
-  // M24). The answers belong to a list: a paste over the whole text, or the box emptied, starts a new
-  // one and forgets them all (onBeforeInput and onInput below; h3 r1 R2).
+  // answers (round 3 R5). An answer counts only for a question the reading asks (paste.ts isPicked,
+  // isAnswered), so a line edited away and back, or moved, keeps its answer (c4 R2). The answers belong
+  // to a list: a paste over the whole text, or the box emptied, starts a new one and forgets them all
+  // (onBeforeInput and onInput below; M24, h3 r1 R2).
   const [answers, setAnswers] = useState<Answers>(new Map());
   // "Add all" pressed while a long text (past SLICE names) is not read yet: the text it was pressed on.
   // The add runs once the reading of that text lands with the box still holding it (M23); any edit after
@@ -140,7 +152,6 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   const release = releasePlants.value;
   const source = store.source.value, index = finder.value ?? undefined;
   useEffect(() => { if (source) wantNames(source, pageLang() as Locale); }, [source]);
-  useEffect(() => { const id = setTimeout(() => setSettled(text), SETTLE_MS); return () => clearTimeout(id); }, [text]);
 
   // The plants only other lists hold, each under its first list in the export's order.
   const lists = useMemo(() => {
@@ -161,14 +172,10 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // so the rows, the count line, the head's "N new" and Add's "Add N plants" are one reading in every
   // frame (R14) and Add's label changes only when its count does (h3 r2 B1, B2); a longer text is read
   // once typing stops, in slices (useReading).
-  const short = useMemo(() => pasteNames(text).length <= SLICE, [text]);
-  const src = short ? text : settled;
-  const { reading, progress: readAt } = useReading(src, opts, [pool, members, lists, index, verdicts]);
-  // The copy state belongs to a text. The answers (by name) stay when the reading refreshes (an edit,
-  // the names file arriving, new verdicts: F24, R5) as long as their question is still asked; an
-  // emptied paste asks none (C4: an earlier paste never answers a new one).
+  const src = settled.src;
+  const { reading, progress: readAt } = useReading(settled, opts, [pool, members, lists, index, verdicts]);
+  // The copy state belongs to a text.
   useEffect(() => { setCopied(null); }, [src]);
-  useEffect(() => { if (reading && reading.src === src) setAnswers((a) => keepAnswers(a, questionsOf(reading.result))); }, [reading]);
   useEffect(() => { const p = pendingAdd.current; if (p !== null && reading?.src === p && text === p) { pendingAdd.current = null; addNow.current(); } }, [reading, text]);
   if (!climate) return null;
   if (!pool) return <SheetWaiting Frame={Frame} />; // the range rule still loading (store.pool)
@@ -186,8 +193,8 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
   // folds its lists; one of 8 shows them whole).
   const counts = pasteCounts(result, members);
   const lines = counts.lines;
-  // Busy: the reading on screen is not the box's text (the pause after typing, or a changed long text
-  // read in slices: R5, M23). A re-read of the same text (members or verdicts changed) is not busy: the
+  // Busy: the reading on screen is not the box's text (a long text, past SLICE names, during the pause
+  // after typing or while it is read in slices: R5, M23). A re-read of the same text (members or verdicts changed) is not busy: the
   // shown reading still names the text, the rows take their state from the live members (R4), and
   // plan() leaves out the plants already in. The actions wait for the new reading (round 3 R3, C3): Add
   // anyway, "Copy these N names" and "Skip the N left" are aria-disabled (still focusable, so the focus
@@ -208,7 +215,7 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     let read = current === reading?.src ? reading.result : null;
     if (!read) {
       const names = pasteNames(current);
-      if (names.length > SLICE) { pendingAdd.current = current; setSettled(current); return; }
+      if (names.length > SLICE) { pendingAdd.current = current; readNow(current, names); return; }
       read = readPaste(names, opts!);
     }
     const { ids, climateOf } = plan(read, answered(read, answers), members);
@@ -381,6 +388,11 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     counts.twice > 0 && P('paste.recTwice', counts.twice),
   ].filter(Boolean).join(', ') });
   const back = () => (onBack ? onBack() : closeSheet());
+  // What the status line says (c4 R1): the count line, "Nothing to read" and the names-file note, once
+  // the reading has held still for SETTLE_MS. The lines on screen follow the box at every key (R14); a
+  // screen reader hears the reading once typing pauses, never a line per keystroke.
+  const namesNote = lines > 0 && names === 'loading' ? T('find.namesLoading') : lines > 0 && (names === 'failed' || names === 'dropped') ? T('find.namesFailed') : '';
+  const sayNow = nothing ? T('paste.nothing') : lines > 0 ? [P('paste.read', lines), sum, namesNote].filter(Boolean).join(' ') : '';
   // A paste, a drop or a replacement over the whole text is a new list: no answer of the last list
   // answers it, even for a line both lists name (M24). The box emptied is one too (onInput: select all,
   // delete, then paste, whatever the pause; h3 r1 R2).
@@ -389,13 +401,22 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
     const el = e.currentTarget as HTMLTextAreaElement;
     if (NEW_LIST.has(e.inputType) && el.value && el.selectionStart === 0 && el.selectionEnd === el.value.length) setAnswers(new Map());
   };
-  // Any edit after "Add all" cancels a press still waiting on its reading (R1).
+  // The text to read now (a short one as it is typed, "Read the list", Add on a long one).
+  function readNow(value: string, names = pasteNames(value)) {
+    clearTimeout(settle.current);
+    setSettled({ src: value, names });
+  }
+  // Any edit after "Add all" cancels a press still waiting on its reading (R1). Up to SLICE names the
+  // text is read as it is; a longer one once typing stops for SETTLE_MS (C3: only a long text waits).
   const onInput = (e: Event) => {
     const value = (e.target as HTMLTextAreaElement).value;
     pendingAdd.current = null;
     if (!value) setAnswers(new Map());
     setAsked(false);
     setText(value);
+    const names = pasteNames(value);
+    if (names.length <= SLICE) readNow(value, names);
+    else { clearTimeout(settle.current); settle.current = setTimeout(() => setSettled({ src: value, names }), SETTLE_MS); }
   };
   const copy = async () => {
     if (busy) return;
@@ -421,16 +442,15 @@ export default function Paste({ Frame, onBack }: { Frame: Frame; onBack?: (name?
         <textarea ref={box} id="ct-paste-text" class="ct-paste-text" rows={6} value={text} onBeforeInput={forgetOnNewList} onInput={onInput} />
       </div>
       <p class="ct-muted ct-paste-sheet">{T('paste.sheetHelp')}</p>
-      <button type="button" class="button button-secondary ct-paste-read" data-paste-read="" onClick={() => { setAsked(true); setSettled(box.current?.value ?? text); }}>{T('find.readList')}</button>
+      <button type="button" class="button button-secondary ct-paste-read" data-paste-read="" onClick={() => { setAsked(true); readNow(box.current?.value ?? text); }}>{T('find.readList')}</button>
       {readAt && <p id="ct-paste-reading" class="ct-muted ct-paste-reading" data-paste-reading="">{T('paste.reading', { done: num(readAt.done), total: num(readAt.total) })}</p>}
-      <div aria-live="polite">
-        {hint && <p class="ct-muted">{T('paste.empty')}</p>}
-        {nothing && <p class="ct-muted" data-paste-nothing="">{T('paste.nothing')}</p>}
-        {lines > 0 && <h3 id="ct-p-count" class="ct-paste-count" tabIndex={-1} data-paste-count=""><strong>{P('paste.read', lines)}</strong>{sum && <span class="ct-muted"> {sum}</span>}</h3>}
-        {/* F24: until the names file is in, names are matched on the plants' own names, said so. */}
-        {lines > 0 && names === 'loading' && <p class="ct-muted" data-paste-names="loading">{T('find.namesLoading')}</p>}
-        {lines > 0 && (names === 'failed' || names === 'dropped') && <p class="ct-muted" data-paste-names="failed">{T('find.namesFailed')}</p>}
-      </div>
+      <PasteStatus text={sayNow} />
+      {hint && <p class="ct-muted">{T('paste.empty')}</p>}
+      {nothing && <p class="ct-muted" data-paste-nothing="">{T('paste.nothing')}</p>}
+      {lines > 0 && <h3 id="ct-p-count" class="ct-paste-count" tabIndex={-1} data-paste-count=""><strong>{P('paste.read', lines)}</strong>{sum && <span class="ct-muted"> {sum}</span>}</h3>}
+      {/* F24: until the names file is in, names are matched on the plants' own names, said so. */}
+      {lines > 0 && names === 'loading' && <p class="ct-muted" data-paste-names="loading">{T('find.namesLoading')}</p>}
+      {lines > 0 && (names === 'failed' || names === 'dropped') && <p class="ct-muted" data-paste-names="failed">{T('find.namesFailed')}</p>}
       {recognised.length > 0 && (
         <PasteGroup id="rec" head={recHead} n={counts.rec} busy={busy}>
           {rowList(recognised, T('paste.otherRecognised'))}

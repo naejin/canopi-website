@@ -91,8 +91,10 @@ const PASTE = 'dialog[open] #ct-paste-text';
 const ADD_ALL = 'dialog[open] .ct-paste-foot .button-primary';
 // In one task: the box set to `text` (an input event), one frame (well inside the 200 ms pause), then
 // Add's label and aria-disabled and the Recognised head (null with no Recognised group), so no reading
-// lands between them; press: Add is then focused and pressed in the same task.
-const typeThenRead = (page, text, { press = false } = {}) => page.evaluate(async (add, sel, v, go) => {
+// lands between them; press: Add is then focused and pressed in the same task; watch (with press): then,
+// still in that task, Add's label in every frame the reading line shows until "N names read" says the
+// long text is read (c4 C2: the polling can never start after the slices land).
+const typeThenRead = (page, text, { press = false, watch = null } = {}) => page.evaluate(async (add, sel, v, go, until) => {
   const el = document.querySelector(sel);
   el.value = v;
   el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -100,8 +102,16 @@ const typeThenRead = (page, text, { press = false } = {}) => page.evaluate(async
   const b = document.querySelector(add);
   const out = { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled'), head: document.querySelector('dialog[open] [data-paste-group="rec"] .ct-paste-ghead span')?.textContent.trim() ?? null };
   if (go) { b.focus(); b.click(); }
+  if (until) {
+    out.reading = [];
+    for (let i = 0; i < 1800; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      if (document.querySelector('dialog[open] [data-paste-reading]')) out.reading.push(b.textContent.trim());
+      if (new RegExp(until).test(document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '')) break;
+    }
+  }
   return out;
-}, ADD_ALL, PASTE, text, press);
+}, ADD_ALL, PASTE, text, press, watch?.source ?? null);
 // Add refused (nothing to add): the focus stays on Add, aria-disabled, never natively disabled; nothing
 // is added and the sheet stays open.
 async function addRefused(page, size) {
@@ -1053,8 +1063,8 @@ test('PP-C60 (c1 h3 M23, pf-e#4): a reading with nothing to add keeps the focus 
   await addRefused(page, size);
 });
 
-test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the last list\'s answers: the same line asks again, counted in "N to go"', async () => {
-  const page = await suggestedAt('lyon', 'Temperate');
+// Two genera of two plants or more pasted and read, the first answered ("1 chosen, 1 to go").
+async function genusAnswered(page) {
   const genera = await page.evaluate(() => {
     const s = window.__ctTest.store, m = new Set(s.members.value), by = new Map();
     for (const t of s.pool.value) { const g = t.canonical_name.split(' ')[0]; by.set(g, [...(by.get(g) ?? []), t]); }
@@ -1067,6 +1077,12 @@ test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the l
   assert.ok(await countSays(page, /^2 names read/), 'the first list read');
   await page.$$eval('dialog[open] [role="group"]', (gs, n) => gs.find((g) => (g.getAttribute('aria-label') ?? '').includes(`“${n}”`)).querySelector('button[aria-pressed]').click(), genera[0]);
   assert.ok(await page.waitForFunction(() => /^1 chosen, 1 to go\./.test(document.querySelector('dialog[open] .ct-paste-progress')?.textContent ?? ''), { timeout: 4000 }).then(() => true, () => false), 'the premise: one answered');
+  return genera;
+}
+
+test('PP-C61 (c1 h3 M24, pf-e#3): a select-all paste of a new list forgets the last list\'s answers: the same line asks again, counted in "N to go"', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const genera = await genusAnswered(page);
   // Select all, paste a second list naming the same genus (the browser's beforeinput, then input).
   await page.$eval(PASTE, (el, v) => {
     el.focus(); el.select();
@@ -1235,24 +1251,85 @@ test('PP-C67 (c1 h3 r2 B1, C1): past 200 names Add pressed while the text reads 
   const member = await page.evaluate(() => { const s = window.__ctTest.store; return s.pool.value.find((t) => s.members.value.includes(t.id)).canonical_name; });
   const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
   await openPaste(page);
-  // The text and the press in one task, then every frame until the reading lands.
-  await typeThenRead(page, [...nonsense(299), member].join('\n'), { press: true });
-  const seen = await page.evaluate(async (add) => {
-    const b = document.querySelector(add);
-    const labels = new Set();
-    for (let i = 0; i < 1800; i++) {
-      await new Promise((r) => requestAnimationFrame(r));
-      const reading = document.querySelector('dialog[open] [data-paste-reading]');
-      if (reading) labels.add(b.textContent.trim());
-      if (/^300 names read/.test(document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '')) break;
-    }
-    return [...labels];
-  }, ADD_ALL);
+  // The text, the press and every frame until the reading lands, in one task (C2).
+  const { reading: seen } = await typeThenRead(page, [...nonsense(299), member].join('\n'), { press: true, watch: /^300 names read/ });
   assert.ok(await countSays(page, /^300 names read/), 'the premise: the 300 names read');
+  assert.ok(seen.length > 0, 'the premise: Add\'s label read in at least one frame while the reading line showed');
   assert.ok(seen.every((l) => /^Add \d+ plants?$/.test(l)), `while it reads, the board's "Add N plants" only (${seen.join(' | ')})`);
   await new Promise((r) => setTimeout(r, 300));
   await addRefused(page, size);
   assert.equal(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), 'Add 0 plants', 'nothing new: said on Add');
+});
+
+// Chunk 4 fix round 1 (C3 group): the reading announced once typing pauses (R1), answers kept through
+// a passing edit (R2), the reading just shown kept when the box crosses 200 names (R3).
+test('PP-C71 (c1 c4 R1): five keys typed within 200 ms change the count line on screen at each name, while the sheet\'s live region changes at most once; no heading inside a live region', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const two = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 2).map((t) => t.canonical_name); });
+  await openPaste(page);
+  await typeIn(page, PASTE, `${two.join('\n')}\n`);
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^2 names read/), 'the premise: two names read');
+  await new Promise((r) => setTimeout(r, 400));
+  const out = await page.evaluate(async (sel, base) => {
+    const d = document.querySelector('dialog[open]'), el = document.querySelector(sel);
+    const live = () => [...d.querySelectorAll('[role="status"], [aria-live]:not([aria-live="off"])')];
+    const text = () => live().map((r) => r.textContent.replace(/\s+/g, ' ').trim()).join(' | ');
+    const said = [text()], counts = [];
+    const obs = new MutationObserver(() => { const t = text(); if (t !== said.at(-1)) said.push(t); });
+    obs.observe(d, { subtree: true, childList: true, characterData: true, attributes: true });
+    let v = base;
+    for (const ch of 'a\nb\nc') {
+      v += ch;
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => requestAnimationFrame(r));
+      counts.push(d.querySelector('[data-paste-count] strong')?.textContent.trim());
+    }
+    await new Promise((r) => setTimeout(r, 600));
+    obs.disconnect();
+    return { said, counts: [...new Set(counts)], headings: live().reduce((n, r) => n + r.querySelectorAll('h1, h2, h3, h4, button').length, 0) };
+  }, PASTE, `${two.join('\n')}\n`);
+  assert.ok(out.counts.length >= 3, `the premise: the count line on screen follows each name (${out.counts.join(' | ')})`);
+  assert.ok(out.said.length <= 2, `the live region changes at most once (${out.said.join(' → ')})`);
+  assert.match(out.said.at(-1), /5 names read/, 'what it says is the reading once typing paused');
+  assert.equal(out.headings, 0, 'no heading or button inside a live region (PFC39 R8)');
+});
+
+test('PP-C72 (c1 c4 R2): an answer survives a passing edit: a line merged into the next and restored keeps its choice, "1 chosen, 1 to go" holds', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const genera = await genusAnswered(page);
+  const before = (await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text);
+  // Backspace at the start of the second line (the two lines merge), a frame, then undone.
+  await page.evaluate(async (sel, merged, back) => {
+    const el = document.querySelector(sel);
+    for (const v of [merged, back]) {
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+  }, PASTE, genera.join(''), genera.join('\n'));
+  await frames(page);
+  assert.deepEqual((await chipsOf(page, genera[0])).filter((c) => c.on).map((c) => c.text), before, `"${genera[0]}" keeps its choice`);
+  assert.match(await page.$eval('dialog[open] .ct-paste-progress', (e) => e.textContent), /^1 chosen, 1 to go\./, 'still one chosen');
+});
+
+test('PP-C73 (c1 c4 R3): a 199th name typed, then within 200 ms the box pushed past 200 names: the reading just shown stays (its "Add 1 plant") until the slices land, never an older one', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const plant = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.find((x) => !m.has(x.id)).canonical_name; });
+  await openPaste(page);
+  const base = nonsense(198).join('\n');
+  await typeIn(page, PASTE, base);
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^198 names read/), 'the premise: 198 names read');
+  await new Promise((r) => setTimeout(r, 400));
+  const typed = await typeThenRead(page, `${base}\n${plant}`);
+  assert.equal(typed.label, 'Add 1 plant', 'the premise: the 199th name read at once');
+  const past = await typeThenRead(page, `${base}\n${plant}\n${nonsense(5, 500).join('\n')}`);
+  assert.equal(past.label, 'Add 1 plant', `past 200 names the reading just shown stays (${past.label})`);
+  assert.ok(await countSays(page, /^204 names read/), 'the slices land');
+  assert.equal(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), 'Add 1 plant');
 });
 
 test('PP-C68 (c1 h3 r2 B4; W4): "Add anyway" on the last row shown of a folded Recognised list moves the focus forward to its "Show N more", where the next guest is, never back up the sheet', { timeout: 60_000 }, async () => {

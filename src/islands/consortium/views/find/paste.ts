@@ -398,13 +398,6 @@ export const isAnswered = (q: Question, answers: Answers): boolean => answers.ge
 export function answered<T extends Named>(r: PasteResult<T>, answers: Answers): PlantId[] {
   return [...new Set(questionsOf(r).filter((q) => isPicked(q, answers)).map((q) => answers.get(q.name)!))];
 }
-// The answers a fresh reading keeps (M24): only those of its questions that still answer them (a plant
-// the question offers, or None); nothing dropped, the same map.
-export function keepAnswers(answers: Answers, questions: readonly Question[]): Answers {
-  const by = new Map(questions.map((q) => [q.name, q]));
-  const kept = new Map([...answers].filter(([name]) => { const q = by.get(name); return !!q && isAnswered(q, answers); }));
-  return kept.size === answers.size ? answers : kept;
-}
 
 // What "Add all" adds from a reading: the found plants (a close spelling only once ticked: "chesnut"
 // is read as European chestnut, offered, never added unasked; one found only on another list too, BC20)
