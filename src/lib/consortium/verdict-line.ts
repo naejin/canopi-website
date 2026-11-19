@@ -43,6 +43,27 @@ export function headLine(v: PlantVerdict): Line {
   return { key: K('levelWhy'), vars: {}, parts: { level, why: L(cause) }, ...(also?.length && { also }) };
 }
 
+// A Many row's cause in short (boards Many, ManyDesk: "the year too cool"; M46): the headline's cause in
+// the board's few words, for a second look or outside with a limiting factor, else null (a fit, unknown:
+// the row keeps its fit line). shortLine: the phone's whole line ("Outside its climate range: the year
+// too cool"), the fit line when there is no cause.
+// The keys in full, so the keys test (H9) finds each one written here.
+const SHORT: Partial<Record<Factor, string>> = {
+  cold: 'line.short.cold', mild: 'line.short.mild', cool: 'line.short.cool', summer: 'line.short.summer', hot: 'line.short.hot',
+  dry: 'line.short.wetter', light: 'line.short.light', water: 'line.short.water', 'soil-ph': 'line.short.soil',
+};
+const SHORT_LEVEL = 'line.short.level';
+export function shortWhy(v: PlantVerdict): Line | null {
+  const s = (v.level === 'look' || v.level === 'outside') && v.limiting ? SHORT[v.limiting.factor] : undefined;
+  return s ? { key: `consortium.${s}`, vars: {} } : null;
+}
+export function shortLine(v: PlantVerdict): Line {
+  const why = shortWhy(v), fit = fitLine(v);
+  if (!why) return fit;
+  const { also, ...level } = fit;
+  return { key: `consortium.${SHORT_LEVEL}`, vars: {}, parts: { level, why }, ...(also?.length && { also }) };
+}
+
 // The years of a hole, in words: who is missing and when. A pending hole waits for a list; a gap under
 // a year is not judged (drawn as a thin line, never a hole).
 export function holeLine(h: Hole): Line {
@@ -93,6 +114,13 @@ export function holeChangeLines(c: HoleChange, { left = true, thins = null, jobs
   const sameLane = (h: Hole) => target !== 'none' && (!target || (h.kind === target.kind && (h.job ?? h.stratum) === (target.job ?? target.stratum) && h.fromYear < target.toYear && target.fromYear < h.toYear));
   for (const n of c.narrowed) if (sameLane(n.before)) out.push({ key: K('holeNow'), vars: {}, parts: { hole: holeTitleLine(n.after) } });
   if (left && (c.added.length || c.closed.length || c.narrowed.length)) out.push(c.open.length ? { key: K('holesLeft'), vars: {}, count: c.open.length } : { key: K('holesNoneLeft'), vars: {} });
+  // A job newly thin (a bulk Remove: "Feeds the soil: now only 1 plant in years 25 to 60."); one where a
+  // hole closed or narrowed is that hole's change (an add), not a new thin spot.
+  const wasHole = (h: Hole) => [...c.closed, ...c.narrowed.map((n) => n.before)].some((b) => b.kind === 'job' && b.job === h.job && b.fromYear < h.toYear && h.fromYear < b.toYear);
+  for (const h of thins?.added ?? []) {
+    if ((jobs && !jobs.includes(h.job!)) || wasHole(h)) continue;
+    out.push({ key: K('thinNew'), vars: { from: h.fromYear, to: h.toYear }, count: h.thin?.have ?? 0, parts: { lane: laneLine(h) } });
+  }
   for (const t of thins?.still ?? []) {
     if (jobs && !jobs.includes(t.job)) continue;
     out.push({ key: K('thinStill'), vars: { from: t.fromYear, to: t.toYear }, count: t.have, parts: { lane: laneLine({ kind: 'job', job: t.job }) } });

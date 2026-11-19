@@ -31,9 +31,7 @@ export type View = 'start' | 'matrix';
 // step values: 'start' is the place, 'matrix' the palette page (b2, additive seam).
 export type Step = 'place' | 'palette';
 // The open dialog, if any: what it shows and for which plant (null for sheets about no one plant).
-// 'place': the "Your place" sheet (views/place/Place.tsx PlaceSheet), which changes the palette's place
-// in place.
-export type SheetKind = 'details' | 'swap' | 'find' | 'paste' | 'place' | 'share' | 'download';
+export type SheetKind = 'details' | 'swap' | 'find' | 'paste' | 'share' | 'download';
 // n: which opening this is (openSheet counts them), so a dialog's late close event closes its own
 // sheet only, never one opened since (Escape closes the <dialog> at once and fires `close` a task later).
 export interface Sheet { kind: SheetKind; id: PlantId | null; n: number }
@@ -747,7 +745,7 @@ export function watchSteps(): () => void {
 
 // Every sheet opens through here, so what the last one was opened for never leaks into the next.
 // Share and Download are not sheets (no entry).
-const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste', 'place'];
+const SHEET_KINDS: readonly SheetKind[] = ['details', 'swap', 'find', 'paste'];
 let opened = 0;
 export function openSheet(kind: SheetKind, id: PlantId | null = null, target: Partial<SheetFor> = {}): void {
   if (SHEET_KINDS.includes(kind) && !onEntry('sheet')) pushEntry('sheet');
@@ -919,13 +917,13 @@ export function swapMember(oldId: PlantId, newId: PlantId): void {
 }
 // Add: plants chosen by hand join (a new suggestion is built around them). from: guests, each with
 // the climate whose list it comes from ("Add anyway", A9). warned: plants added that carry a misfit or
-// a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the toast says "n added
-// with a warning" with Show (the first one's details).
+// a serious conflict ("Add all" from a paste, 2026-10-28 "Scale build" row): the toast keeps its one
+// wording and offers Show (the first one's details) before Undo (board Toasts; M45).
 // On Place, an add (search or paste) leaves the view alone and is saved at once (owner 2026-11-15).
 // Each of the three is a plant change: the page owns the save from here (state/save.ts).
 // text: the toast's own words (the Next step names the plant it added), or a function of what the add
 // did, called after the state changed (v14 0W-1 item 6: the bulk add's "2 plants added: … Covers the
-// ground: nobody after year 25. 7 holes left."), else paste.added's count; the warned count follows.
+// ground: nobody after year 25. 7 holes left."), else paste.added's count.
 export interface AddResult { added: PlantId[]; size: number; holeChange: HoleChange; thinChange: ThinChange }
 export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, ClimateZone>> = {}, { warned = [], text: said }: { warned?: PlantId[]; text?: string | ((r: AddResult) => string) } = {}): void {
   const before = snapshot();
@@ -947,21 +945,23 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
     }
   });
   const flagged = warned.filter((id) => fresh.includes(id));
-  const own = typeof said === 'function' && was
+  // Board Toasts: one wording whatever was flagged; Show (then Undo) opens the first flagged plant.
+  const text = typeof said === 'function' && was
     ? said({ added: fresh, size: members.peek().length, holeChange: holeChange(was.holes, paletteHoles.peek()), thinChange: thinChange(was.thins, thinSpots.peek()) })
-    : said;
-  const text = (own ?? P('paste.added', fresh.length)) + (flagged.length ? ` ${P('paste.addedWarn', flagged.length)}` : '');
+    : typeof said === 'string' ? said : P('paste.added', fresh.length);
   offerUndo(text, before, flagged.length ? { label: T('paste.show'), run: () => openSheet('details', flagged[0]) } : null);
 }
 
 // Several plants removed at once (v14 0W-1 item 6; pf-e's ticks): one snapshot and one Undo, which puts
 // them back in their order; the toast says how many, the palette after it and what it did to the holes
-// ("3 plants removed. 197 plants. No new hole."). Ids not in the palette are left out; none: nothing.
+// and the thin spots ("3 plants removed. 197 plants. No new hole. Feeds the soil: now only 1 plant in
+// years 25 to 60."; M44: the new thin spots only, not every one still thin). Ids not in the palette
+// are left out; none: nothing.
 export function removeMembers(ids: readonly PlantId[]): void {
   const before = snapshot();
   const gone = before.members.filter((id) => ids.includes(id));
   if (!gone.length) return;
-  const was = paletteHoles.peek();
+  const was = paletteHoles.peek(), wasThins = thinSpots.peek();
   batch(() => {
     held.value = false;
     suggestedIds.value = [];
@@ -969,7 +969,7 @@ export function removeMembers(ids: readonly PlantId[]): void {
     removed.value = [...without(before.removed, gone), ...gone];
     if (gone.some((id) => before.guests[id])) { const g = { ...before.guests }; for (const id of gone) delete g[id]; guests.value = g; }
   });
-  const lines: Line[] = [removedManyLine(gone.length), paletteSizeLine(members.peek().length), ...holeChangeLines(holeChange(was, paletteHoles.peek()), { left: false })];
+  const lines: Line[] = [removedManyLine(gone.length), paletteSizeLine(members.peek().length), ...holeChangeLines(holeChange(was, paletteHoles.peek()), { left: false, thins: { ...thinChange(wasThins, thinSpots.peek()), still: [] } })];
   offerUndo(sayAll(lines), before, null, gone);
 }
 

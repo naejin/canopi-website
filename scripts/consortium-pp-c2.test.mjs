@@ -32,7 +32,6 @@
 //                    invasiveness there") false gives "not checked", true with no row "not recorded".
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const line = await import('../src/lib/consortium/verdict-line.ts');
@@ -40,8 +39,7 @@ const { verdict, laterLossOf } = await import('../src/lib/consortium/verdict.ts'
 // The keep line on a member's verdicts today and later: the rule's laterLoss (M29), then the words.
 const keep = (now, laters, year) => line.keepLine(now, laterLossOf(now, laters), year);
 const { confidenceTerms } = core;
-const dir = new URL('../src/i18n/translations/', import.meta.url);
-const words = Object.fromEntries(readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(f, dir), 'utf8'))]));
+const { words, said } = await import('./consortium-said.mjs');
 const en = words.en;
 // A Line in English words, its {vars} filled (enough for these cases: no plural forms), its parts (a
 // Line, or Lines said as a list) in words, then the sentences it carries (`also`), as kit/fit.tsx says it.
@@ -731,3 +729,40 @@ test('c2 fix T10 (disputing source named): a weak low names TreeGOER in Sources 
 // Fix round 3 T12 (the desk soil line) went in pf-f commit 0: board DetailsDesk v14 says the soil map's
 // value on the Niche row (Details.tsx), and the phone's soil card replaces the line (Against.tsx SoilCard).
 
+
+// M44 (pf-e BC22, Many's bulk Remove): a remove that leaves a job held by fewer plants than the goal
+// names the new thin spot after "No new hole." (one line per thin spot, in every language); a thin spot
+// where a hole was (an add that filled it) is the hole's change, not a new thin spot.
+test('M44 (BC22 thin spot after a bulk Remove): holeChangeLines names each new thin spot after "No new hole."', () => {
+  const lane = (job, thin) => ({ kind: 'job', job, counts: [2, 2, 2, 2, 2, 2, 2], thin });
+  const thins = core.thinChange([], core.thinTargets([lane('feeds_soil', [{ fromYear: 25, toYear: 60, have: 1, want: 2 }])]));
+  const lines = core.holeChangeLines(core.holeChange([], []), { left: false, thins });
+  assert.deepEqual(lines.map((l) => said(l, 'en')), ['No new hole.', 'Feeds the soil: now only 1 plant in years 25 to 60.']);
+  assert.equal(said(lines[1], 'fr'), 'Nourrit le sol : désormais 1 plante seulement des années 25 à 60.');
+  for (const lang of Object.keys(words)) assert.match(said(lines[1], lang), /25.*60/, `${lang} names the years`);
+  // An add that filled the hole of years 25 to 60 with one plant: the hole's change, never "now only".
+  const hole = { id: 'job:feeds_soil:25-60', kind: 'job', rank: 1, job: 'feeds_soil', fromYear: 25, toYear: 60, state: 'open' };
+  const filled = core.holeChangeLines(core.holeChange([hole], []), { left: false, thins });
+  assert.ok(!filled.some((l) => l.key.endsWith('.thinNew')), `no new thin spot where a hole was (${filled.map((l) => l.key)})`);
+});
+
+// M46 (pf-e BC7, boards Many and ManyDesk): a Many row says the cause short ("Outside its climate
+// range: the year too cool" on the phone, "the year too cool" under the level word on the desk), one
+// short form per cause, in every language; no cause (a fit, unknown): null, the row keeps its fit line.
+test('M46 (BC7 short cause): shortWhy gives one short Line per cause, said in every locale; null with no cause', () => {
+  const v = (level, factor) => ({ level, judged: core.TODAY_PERIOD, notes: [], limiting: factor ? { factor } : null, factors: [] });
+  const WANT = { cold: 'winters too cold', mild: 'winters too mild', cool: 'the year too cool', summer: 'summers too cool', hot: 'summers too hot', dry: 'too wet', light: 'the wrong light', water: 'the wrong water', 'soil-ph': 'soil pH out of range' };
+  for (const [factor, want] of Object.entries(WANT)) {
+    const l = line.shortWhy(v('outside', factor));
+    assert.ok(l, `${factor}: a short cause`);
+    assert.equal(said(l, 'en'), want, factor);
+    for (const lang of Object.keys(words)) assert.ok(said(l, lang).length > 0, `${lang} ${factor}`);
+    assert.equal(said(line.shortWhy(v('look', factor)), 'en'), want, `${factor}: a second look says the same cause`);
+  }
+  assert.equal(said(line.shortLine(v('outside', 'cool')), 'en'), 'Outside its climate range: the year too cool', 'board Many: the phone\'s whole line');
+  assert.equal(said(line.shortLine(v('outside', 'cool')), 'fr'), 'Hors de son aire climatique : l’année trop fraîche');
+  assert.equal(line.shortWhy(v('fits', 'cool')), null, 'a fit has no cause');
+  assert.equal(line.shortWhy(v('unknown', null)), null, 'unknown has no cause (the row says "Not checked")');
+  assert.equal(line.shortWhy(v('outside', null)), null, 'no limiting factor: no cause');
+  assert.equal(line.shortLine(v('fits', null)).key, line.fitLine(v('fits', null)).key, 'no cause: the fit line');
+});

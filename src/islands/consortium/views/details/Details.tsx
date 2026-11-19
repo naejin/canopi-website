@@ -199,9 +199,9 @@ function SummaryLine({ t, jobs, member }: { t: Taxon; jobs: JobId[]; member: boo
 // "Sources and how sure we are" (board DetailsMore; core sureRows): label and value rows, each value
 // starting with a capital as the board writes them ("Estimate, from PFAF").
 const capital = (x: string): string => x.charAt(0).toLocaleUpperCase(lang()) + x.slice(1);
-// Its accessible name, "Sources": each row names where one fact comes from.
+// Named by its visible heading (ct-d-sure-head): each row names where one fact comes from.
 function SureTable({ rows }: { rows: readonly SureRow[] }) {
-  return <div role="group" aria-label={T('sources')}><dl class="ct-traits" data-sure-rows>{rows.map((r) => <><dt>{say(r.label)}</dt><dd data-sure-fact={r.about} data-dispute={r.dispute} data-audience={r.audience}>{capital(say(r.value))}</dd></>)}</dl></div>;
+  return <div role="group" aria-labelledby="ct-d-sure-head"><dl class="ct-traits" data-sure-rows>{rows.map((r) => <><dt>{say(r.label)}</dt><dd data-sure-fact={r.about} data-dispute={r.dispute} data-audience={r.audience}>{capital(say(r.value))}</dd></>)}</dl></div>;
 }
 
 // A closed section that says what it holds (board DetailsMore). A component of its own (fix round 1
@@ -454,13 +454,14 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             <h3 id="ct-d-cando">{T('details.canDo')}</h3>
             {alts.length > 0 && (
               <ul class="ct-rows">
-                {alts.map((a) => {
+                {alts.map((a, i) => {
                   const x = taxonOf(a.id);
                   if (!x) return null;
                   const warn = flagLines(x, a.flags, scene);
                   const band = bandOf(x);
-                  // Board DetailsDesk: "Feeds you in the same years, brings no helpers; holds in 2041–2070" (core candoLine).
-                  const does = capital(say(candoLine(jobs, y, jobsOf(x), yearsOf(x), altsHold ? periodName(holdPeriod) : null)));
+                  // Board DetailsDesk: "Feeds you in the same years, brings no helpers; holds in 2041–2070" (core
+                  // candoLine), the period on the first row only (M42).
+                  const does = capital(say(candoLine(jobs, y, jobsOf(x), yearsOf(x), altsHold && i === 0 ? periodName(holdPeriod) : null)));
                   return (
                     <AltRow key={a.id} t={x} name={nameOf(x)} flagged={a.flags.length > 0} does={<span class="ct-d-cando-does">{CHECK} {does}</span>}
                       actions={<button type="button" class="button button-secondary" aria-label={T('swap.for', { name: nameOf(x) })} onClick={() => { closeSheet(); store.swapMember(id, x.id); }}>{SWAP}{T('details.swap')}</button>}>
@@ -549,7 +550,7 @@ export function PlantDetails({ id, Frame }: { id: PlantId; Frame: Frame }) {
             {borrowed && <p class="ct-small" data-why-borrowed={siteIdOf(borrowed)}>{T('details.whyEstimate', { list: zoneName(borrowed) })}</p>}
             {!borrowed && t.origin && <p class="ct-muted ct-small">{T('details.fromListNote')}</p>}
             <div data-sure>
-              <h4>{T('details.secSources')}</h4>
+              <h4 id="ct-d-sure-head">{T('details.secSources')}</h4>
               {failed
                 ? <p class="ct-muted">{T('details.failed')}</p>
                 : !facts ? <p class="ct-muted" aria-busy="true">{T('details.loading')}</p>

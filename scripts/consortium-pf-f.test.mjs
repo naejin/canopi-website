@@ -12,29 +12,14 @@
 //   limiting measure's "Recorded up to"; BC11 the keep line counts a later second look.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 const line = await import('../src/lib/consortium/verdict-line.ts');
 // The hold predicates live beside holdsBy in the verdict rule (M29), not in the words module.
 const vd = await import('../src/lib/consortium/verdict.ts');
 // The keep line on a member's verdicts today and later: the rule's laterLoss, then the words.
 const keep = (now, laters, year) => line.keepLine(now, vd.laterLossOf(now, laters), year);
-const { formatMm } = await import('../src/islands/consortium/format.ts');
-const dir = new URL('../src/i18n/translations/', import.meta.url);
-const words = Object.fromEntries(readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(f, dir), 'utf8'))]));
-
-// A Line in a language's words as the island says it (strings.ts P for a count, words.ts for a
-// millimetre variable and a list of Lines): the plural form for the count, # the number, then the {vars}.
-function said(l, lang) {
-  let text = words[lang][l.key];
-  assert.ok(text, `${lang} has ${l.key}`);
-  if (typeof l.count === 'number') {
-    const forms = Object.fromEntries(text.split(' | ').map((f) => { const i = f.indexOf(': '); return [f.slice(0, i), f.slice(i + 2)]; }));
-    text = (forms[new Intl.PluralRules(lang).select(l.count)] ?? forms.other).replace('#', String(l.count));
-  }
-  const parts = Object.fromEntries(Object.entries(l.parts ?? {}).map(([k, p]) => [k, Array.isArray(p) ? new Intl.ListFormat(lang, { type: 'conjunction' }).format(p.map((x) => said(x, lang))) : said(p, lang)]));
-  return text.replace(/\{(\w+)\}/g, (_, k) => (k in parts ? parts[k] : k.endsWith('Mm') ? formatMm(l.vars[k], lang) : k.startsWith('temp') ? `${l.vars[k]} °C` : String(l.vars[k])));
-}
+const { words, said } = await import('./consortium-said.mjs');
 
 test('F2 (pf-f): the German thin spot opens as board German, then the backup prompt (A20; C5; C13 the full value)', () => {
   const one = line.thinLine({ have: 1, fromYear: 1, toYear: 15 });

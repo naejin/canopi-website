@@ -35,7 +35,7 @@ export const reveal = signal<{ ids: readonly PlantId[]; focus: boolean } | null>
 // "Tick these N" (Weigh.tsx): the plants ticked, their rows shown, the focus on Remove. `pressed` names
 // the reason whose button did it, with the ticks it left: its status shows on that reason only, until
 // the ticks change (any tick, Remove, Undo; round 2 C3).
-export const pressed = signal<{ key: string; at: ReadonlySet<PlantId> } | null>(null);
+const pressed = signal<{ key: string; at: ReadonlySet<PlantId> } | null>(null);
 export function tickAndShow(ids: readonly PlantId[], key = ''): void {
   tickIds(ids);
   pressed.value = { key, at: ticks.peek() };

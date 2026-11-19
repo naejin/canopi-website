@@ -4,10 +4,10 @@
 // core's verdict-line.ts (plant-palette-architecture 3.2): no view writes its own. Numbers are
 // formatted for the page language (words.ts says a Line). Unknown is never drawn as a fit: "Not checked"
 // has its own icon and the plain text colour. Also the store-free row words Swap, Details and Your
-// plants share: how many of a member's jobs a candidate does (doesWords) and a plant's size (sizeWords).
+// plants share: how many of a member's jobs a candidate does (doesWords).
 import type { ComponentChildren } from 'preact';
 import type { Hole, JobId, Level, Line, Measure, PlantVerdict, RowBand, Stratum, Taxon } from '../../../../lib/consortium/index.ts';
-import { fitLine, headLine, holeLine, levelLine, sizeLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
+import { fitLine, headLine, holeLine, levelLine, yearsLine, yearsOf } from '../../../../lib/consortium/index.ts';
 import { formatDepthCm, formatLength } from '../../format.ts';
 import { pageLang, T } from '../../strings.ts';
 import { listOf, say } from '../../words.ts';
@@ -86,12 +86,6 @@ export function doesWords(memberJobs: readonly string[], shared: readonly string
   if (missing.length === memberJobs.length) return T('swap.doesNone', { missing: listOf(missing.map((j) => midSentence(T(`job.${j}`)))) });
   if (missing.length === 1) return T('swap.doesAllBut', { n: shared.length, m: memberJobs.length, missing: T(`swap.no.${missing[0]}`) });
   return T('swap.doesSome', { n: shared.length, m: memberJobs.length, jobs: listOf(memberJobs.filter((j) => shared.includes(j)).map((j) => midSentence(T(`job.${j}`)))) });
-}
-
-// A plant's size in words, its measures through format.ts (Your plants, Swap, Details).
-export function sizeWords(t: Taxon): string {
-  const l = sizeLine(t), name = l.key.slice('consortium.plants.'.length);
-  return T(`plants.${name}`, Object.fromEntries(Object.entries(l.vars).map(([k, v]) => [k, formatLength(Number(v), pageLang())])));
 }
 
 // A plant's light on the Niche row (boards Details, DetailsDesk), lower case after its label: "grows in

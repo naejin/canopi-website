@@ -23,7 +23,7 @@ const NONE: readonly Taxon[] = [];
 // everywhere. A site misfit or a conflict keeps its sentence: it names its reason. `look`: why the plant needs a second look (core lookChipLine, PFA-B1): "Near the edge of
 // its range" for a range edge only (BC11), else the cause itself ("Wetter here than where it is
 // recorded"), the group heading already saying "Needs a second look".
-const markWords = (t: Taxon, l: FlagLine, country: string | null): string =>
+export const markWords = (t: Taxon, l: FlagLine, country: string | null): string =>
   l.kind === 'toxicity' && t.warnings.toxicity ? T(`tox.${t.warnings.toxicity.level}`)
     : l.kind === 'invasive' && country ? T('find.invasiveShort', { country: countryName(country) })
       : l.text;

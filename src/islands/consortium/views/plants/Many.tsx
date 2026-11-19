@@ -12,15 +12,15 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'preact/hooks';
 import type { PlantId, PlantRow, PlantVerdict } from '../../../../lib/consortium/index.ts';
-import { fitGroups, fitLine, headLine, jobIds, moreLine } from '../../../../lib/consortium/index.ts';
+import { fitGroups, fitLine, jobIds, moreLine, shortLine, shortWhy } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { focusAfterAdd, focusSoon } from '../../focus.ts';
 import { nameOf, P, T, pageLang } from '../../strings.ts';
 import { say } from '../kit/fit.tsx';
 import { collatorFor } from '../kit/names.ts';
 import { WARN, CLOSE } from '../kit/icons.tsx';
-import { Marks, rowSpan, PLUS } from '../rows.tsx';
-import { flagLines } from '../kit/flags.ts';
+import { markWords, rowSpan, PLUS } from '../rows.tsx';
+import { flagLines, type Line as FlagLine } from '../kit/flags.ts';
 import { FindPanel, findIn, openFindInList } from '../Sheets.tsx';
 import { deskFind } from '../Toast.tsx';
 import { GROUPS, groupItems, plantItems, searchItems, shownRows, SORTS, sortItems, type GroupKey, type PlantItem, type SortKey } from './model.ts';
@@ -41,17 +41,17 @@ const lowerMid = (s: string): string => (LOWER.has(pageLang()) ? s.charAt(0).toL
 
 const LEVEL_KEY = { outside: 'palette.warningsOutside', look: 'palette.warningsLook', fits: 'palette.warningsFits', unknown: 'palette.warningsUnknown' } as const;
 
-// What sets a range line, in words ("cooler over the year here than where it is recorded"; the
-// verdict's headline cause, verdict-line.ts headLine), else the short fit line.
+// What sets a range line, in the boards' few words (desk "the year too cool", core shortWhy; M46), else
+// the short fit line.
 function rangeWhy(v: PlantVerdict | undefined): string {
   if (!v) return T('palette.warningsUnknown');
-  const why = headLine(v).parts?.why;
-  return why && !Array.isArray(why) ? say(why) : say(fitLine(v));
+  const why = shortWhy(v);
+  return say(why ?? fitLine(v));
 }
 const isRange = (i: PlantItem) => i.level === 'outside' || (i.level === 'look' && (i.reason === 'edge' || !i.reason));
 // A row's range line (board Many): outside its climate range, or a second look at its range's edge, in
 // the warning colour with the icon; "Not checked" plain without a verdict. Its warnings are the small
-// form's (rows.tsx Marks over flagLines, one owner, R1), so past 40 plants no row drops one.
+// form's words (rows.tsx markWords over flagLines, one owner, R1), so past 40 plants no row drops one.
 // `range`: the range line's words (the phone says the whole line, the desk its cause under the level word).
 function Reason({ i, range }: { i: PlantItem; range: (v: PlantVerdict | undefined) => string }) {
   const w = isRange(i) ? range(store.memberVerdicts.value?.get(i.id)) : i.level === 'unknown' ? T('palette.warningsUnknown') : null;
@@ -59,10 +59,16 @@ function Reason({ i, range }: { i: PlantItem; range: (v: PlantVerdict | undefine
   const level = i.level === 'unknown' ? 'plain' : 'warning';
   return <span class="ct-many-word" data-level={level}>{level !== 'plain' && WARN} {w}</span>;
 }
-const wholeLine = (v: PlantVerdict | undefined) => (v ? say(headLine(v)) : T('palette.warningsUnknown'));
+// The phone's whole line (board Many: "Outside its climate range: the year too cool"; core shortLine).
+const wholeLine = (v: PlantVerdict | undefined) => (v ? say(shortLine(v)) : T('palette.warningsUnknown'));
+// A row's warnings as plain words with the icon, 13 px, weight 600 (boards Many, ManyDesk; M47): the
+// warning colour, the danger colour for Very toxic and a serious conflict only (the small form and Find
+// keep their pills, rows.tsx Marks). The words are the marks' own (markWords: one owner).
+const manyLevel = (t: PlantItem['t'], l: FlagLine): 'warning' | 'danger' =>
+  l.kind === 'toxicity' ? (t.warnings.toxicity?.level === 'Severe' ? 'danger' : 'warning') : l.kind === 'invasive' ? 'warning' : (l.level ?? 'warning');
 function RowMarks({ i }: { i: PlantItem }) {
   const scene = store.flagScene.value;
-  return <Marks t={i.t} lines={flagLines(i.t, store.flagsOfPlant(i.t), scene)} country={scene.country} />;
+  return <>{flagLines(i.t, store.flagsOfPlant(i.t), scene).map((l) => <span class="ct-many-word" data-kind={l.kind} data-level={manyLevel(i.t, l)}>{WARN} {markWords(i.t, l, scene.country)}</span>)}</>;
 }
 function FitWord({ i }: { i: PlantItem }) {
   return <span class="ct-many-fitline"><Reason i={i} range={wholeLine} /><RowMarks i={i} /></span>;

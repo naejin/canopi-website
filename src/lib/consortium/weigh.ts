@@ -242,13 +242,3 @@ export function yourPlants(members: readonly Taxon[], flags: readonly Flag[], mi
   return [...first, ...gone, ...rest];
 }
 
-// Its full-grown size: width and height when both are recorded, else the one recorded and that the
-// other is not, else "No size recorded" (lengths in metres; the view formats them). The height is the
-// wild maximum (types.ts Traits.height_m), so the words say "in the wild".
-export function sizeLine(t: Taxon): Line {
-  const height = t.traits.height_m?.max ?? null, width = t.traits.width_max_m ?? null;
-  if (height !== null && width !== null) return { key: K('size'), vars: { width, height } };
-  if (height !== null) return { key: K('sizeTall'), vars: { height } };
-  if (width !== null) return { key: K('sizeWide'), vars: { width } };
-  return { key: K('sizeNone'), vars: {} };
-}

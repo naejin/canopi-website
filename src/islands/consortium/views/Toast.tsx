@@ -33,11 +33,12 @@ export function Toast({ where = 'page' }: { where?: Where }) {
         <div class={notice ? 'ct-toast ct-toast-notice' : 'ct-toast'} key={line.id} onPointerEnter={() => holdToast(true)} onPointerLeave={() => holdToast(false)}
           onFocusIn={() => holdToast(true)} onFocusOut={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) holdToast(false); }}>
           <span class="ct-toast-text">{line.text}</span>
-          {line.undo && (
-            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0], line.from); }}>{T('undo')}</button>
-          )}
+          {/* Board Toasts: the action (Show), then Undo. */}
           {line.action && (
             <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const { run, keep } = line.action!; if (!keep) hideToast(); run(); }}>{line.action.label}</button>
+          )}
+          {line.undo && (
+            <button type="button" class="button button-secondary ct-toast-undo" onClick={() => { const undo = line.undo; hideToast(); undo?.(); focusPlant(line.focus[0], line.from); }}>{T('undo')}</button>
           )}
           {/* BC28 (boards Toasts, DeskStates): the card shows its line and Undo only; Dismiss is for the
               keyboard, shown only while it has the focus (details.css), as the line goes by itself. */}

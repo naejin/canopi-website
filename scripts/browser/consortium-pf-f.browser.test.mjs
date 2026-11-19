@@ -468,10 +468,13 @@ test('PFF11 (pf-f BC3, BC10, BC11, round 2 R1 R2 C5, DetailsDesk): Almond at Sev
   const LACKS = { feeds_you: 'grows no food', feeds_soil: 'does not feed the soil', mulch: 'makes no mulch', ground: 'does not cover the ground', helpers: 'brings no helpers', shelter: 'gives no shelter' };
   const DOES = { feeds_you: 'feeds you', feeds_soil: 'feeds the soil', mulch: 'makes mulch', ground: 'covers the ground', helpers: 'brings helpers', shelter: 'shelters' };
   const jobs = await page.evaluate((pid) => { const s = window.__ctTest.store; return Object.fromEntries([pid, ...s.alternativesFor(pid).fit.map((a) => a.id)].map((x) => [x, s.taxonOf(x)])); }, id);
-  for (const c of cando) {
+  // M42 (board DetailsDesk): the period is said once, on the first row only.
+  assert.ok(cando.length >= 2, `two holding rows, so the second one shows the period is said once (${cando.length})`);
+  for (const [i, c] of cando.entries()) {
     assert.ok(c.holds, `a row that holds by 2041–2070 (${c.does})`);
     // C9 (board DetailsDesk): "Feeds you in the same years, brings no helpers; holds in 2041–2070".
-    assert.match(c.does, /; holds in 2041–2070$/, 'the board\'s words, then "holds in 2041–2070"');
+    if (i === 0) assert.match(c.does, /; holds in 2041–2070$/, 'the board\'s words, then "holds in 2041–2070"');
+    else assert.doesNotMatch(c.does, /holds in/, `M42: "holds in 2041–2070" on the first row only (row ${i + 1}: ${c.does})`);
     assert.doesNotMatch(c.does, /^Does \d+ of its|\(no /, `the board's words, not Swap's count (${c.does})`);
     const mine = jobsOf(jobs[id]), theirs = jobsOf(jobs[c.id]);
     for (const j of mine.filter((x) => !theirs.includes(x))) assert.ok(c.does.includes(LACKS[j]), `"${LACKS[j]}" (${c.does})`);

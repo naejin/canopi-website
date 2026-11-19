@@ -14,7 +14,6 @@
     "exports|src/data/consortium-credits.ts|GRID_SOURCES",
     "exports|src/data/consortium-credits.ts|MAP_CREDITS",
     "exports|src/data/consortium-credits.ts|SERVED_ONLY",
-    "exports|src/data/consortium-guides.ts|jobGuides",
     "exports|src/data/release.ts|CANOPI_DOWNLOAD_BASE_URL",
     "exports|src/data/release.ts|CANOPI_RELEASE_TAG",
     "exports|src/i18n/utils.ts|isLocale",
