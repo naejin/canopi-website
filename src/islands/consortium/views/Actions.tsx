@@ -8,8 +8,9 @@
 // my place; its status cleared when the palette changes); it stays in place, so the focus never falls
 // to the page, and closing the panel puts the focus back on it. App.tsx mounts it on the palette page only.
 import { useEffect, useRef } from 'preact/hooks';
-import { signal } from '@preact/signals';
-import { climate, memberTaxa, source } from '../store.ts';
+import { batch, effect, signal, untracked } from '@preact/signals';
+import type { ShareState } from './Share.tsx';
+import { climate, memberTaxa, source, step } from '../store.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
@@ -105,23 +106,30 @@ async function printNow(): Promise<void> {
   }
 }
 
-// The Share panel open: in state, so it stays open when the palette page remounts its blocks across
-// 960 px (h3 M10, D1 (a)).
+// The Share panel open, its "Include my place" tick and its copy status: in signals, so they survive
+// the foot's remount when the palette page crosses 960 px (h3 M10, R2, D1 (a)). Closing the panel, and
+// leaving the palette step (Your place, Start over, a failure), clears them all, so the panel never
+// opens again unasked (h3 R3).
 const sharing = signal(false);
+const shareState: ShareState = { withPlace: signal(false), copied: signal(null) };
+function closeShare(): void {
+  batch(() => { sharing.value = false; shareState.withPlace.value = false; shareState.copied.value = null; });
+}
+effect(() => { if (step.value !== 'palette') untracked(closeShare); });
 function ActionsView() {
   const copyButton = useRef<HTMLButtonElement>(null);
-  const close = (): void => { sharing.value = false; copyButton.current?.focus(); };
+  const close = (): void => { closeShare(); copyButton.current?.focus(); };
   return (
     <section class="ct-page-actions ct-foot" aria-label={T('page.actions')}>
       <LinkNotices />
       <p class="ct-foot-line">
         {T('palette.chart.saved')}{' '}
-        <button ref={copyButton} type="button" class="link-button ct-link" aria-expanded={sharing.value} aria-controls="ct-share-panel" onClick={() => { sharing.value = !sharing.peek(); }}>{T('palette.chart.copyLink')}</button>{' · '}
+        <button ref={copyButton} type="button" class="link-button ct-link" aria-expanded={sharing.value} aria-controls="ct-share-panel" onClick={() => { if (sharing.peek()) closeShare(); else sharing.value = true; }}>{T('palette.chart.copyLink')}</button>{' · '}
         <button type="button" class="link-button ct-link" onClick={() => void printNow()}>{T('print.button')}</button>{' · '}
         <button type="button" class="link-button ct-link" aria-describedby="ct-download-note" onClick={() => void download()}>{T('download.button')}</button>
       </p>
       <p id="ct-download-note" class="visually-hidden">{T('download.note')}</p>
-      <div id="ct-share-panel" class="ct-share-panel">{sharing.value && <share.View onClose={close} />}</div>
+      <div id="ct-share-panel" class="ct-share-panel">{sharing.value && <share.View onClose={close} state={shareState} />}</div>
       {partFailed.value && <LoadFailed retry={clearFailed} />}
       <PrintHost />
     </section>

@@ -524,9 +524,11 @@ test('PFC22 (pf-c fix round 1 BC1, R16, C14: the steps): at 390 and 1280, once a
     await done(page);
   }
   const save = await savedPalette('Temperate', 8);
-  const back = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((v) => { localStorage.setItem('canopi-consortium', v); document.addEventListener('DOMContentLoaded', () => { window.__stepAtLoad = document.getElementById('ct-head')?.dataset.step ?? ''; }); }, save) });
+  const back = await h.open('/palette/', { hook: true, mapTiles: 'stub', setup: (pg) => pg.evaluateOnNewDocument((v) => { localStorage.setItem('canopi-consortium', v); document.addEventListener('DOMContentLoaded', () => { window.__stepAtLoad = document.getElementById('ct-head')?.dataset.step ?? ''; window.__currentAtLoad = [...document.querySelectorAll('#ct-steps > li')].map((li) => li.getAttribute('aria-current') ?? ''); }); }, save) });
   await back.waitForFunction(() => window.__stepAtLoad !== undefined, { timeout: 10_000 });
   assert.equal(await back.evaluate(() => window.__stepAtLoad), 'palette', 'R16: a return visit paints the palette head first (no shift)');
+  // h3 R5, C6: before the island runs, the current step is step 2 too (one source, set with data-step).
+  assert.deepEqual(await back.evaluate(() => window.__currentAtLoad), ['', 'step', ''], 'R5: step 2 current before the island runs');
   await done(back);
 });
 

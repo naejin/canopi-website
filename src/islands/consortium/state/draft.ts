@@ -66,7 +66,6 @@ export function chooseCountry(code: string | null): void {
 // Back to Place, Start over, Start empty: the "not read" note goes, and a link's location goes with
 // its consortium (review round 2, 4), its lookup dropped (round 3, 2: no line, hold or later write).
 const dropLinkLocation = () => { const link = store.location.peek()?.source === 'link'; letGo(link); if (link) store.location.value = null; };
-// Back to Place from the palette (its "Your place" step, the phone's Back): the same palette, on Place.
 // "Your place" from the palette step (the head's step 1): back in history past the palette step's
 // entry, and any sheet's above it, when the page pushed it (store.leaveEntry: the next Back then leaves
 // the page), else the step itself.
@@ -74,6 +73,7 @@ export function leavePalette(): void {
   if (!store.leaveEntry('palette')) backToPlace();
 }
 
+// Back to Place from the palette (its "Your place" step, the phone's Back): the same palette, on Place.
 export function backToPlace(): void {
   placeSaid.value = '';
   batch(() => {

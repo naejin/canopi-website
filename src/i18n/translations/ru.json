@@ -1381,6 +1381,7 @@
   "consortium.palette.next.changeGoal": "Изменить {n}",
   "consortium.palette.chart.light": "Свет",
   "consortium.palette.chart.plants": "one: # растение | few: # растения | many: # растений | other: # растения",
+  "consortium.palette.chart.stepDone": "{n} {step}, готово",
   "consortium.palette.chart.levelCount": "{level}: {plants}",
   "consortium.palette.chart.findPlant": "Найти растение",
   "consortium.palette.chart.span": "Период {n} из {m}",

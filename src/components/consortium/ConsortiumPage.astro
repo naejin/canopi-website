@@ -124,9 +124,10 @@ setStrings(strings, lang);
             island, and the island never renders them again (BC1): views/place/steps.tsx marks the
             current step and shows step 2's button in place of its words once there is a palette. On the
             palette step (#ct-head[data-step="palette"], shell.css) step 1 is done, a check and a button
-            back to Place in place of its words, and the lede gives way. */}
+            back to Place in place of its words, named "1 Your place, done" (never the check alone), and
+            the lede gives way; the inline script below moves aria-current to step 2 with data-step. */}
         <ol class="ct-steps" id="ct-steps" aria-label={tr('palette.stepsLabel')}>
-          <li aria-current="step"><span data-step-place-words><span class="ct-steps-n">1</span> {tr('palette.stepPlace')}</span><button type="button" class="link-button ct-link" data-step-place><span class="ct-steps-n" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 20 20"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span> {tr('palette.stepPlace')}</button></li>
+          <li aria-current="step"><span data-step-place-words><span class="ct-steps-n">1</span> {tr('palette.stepPlace')}</span><button type="button" class="link-button ct-link" data-step-place aria-label={tr('palette.chart.stepDone').replace('{n}', '1').replace('{step}', tr('palette.stepPlace'))}><span class="ct-steps-n" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 20 20"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></span> {tr('palette.stepPlace')}</button></li>
           <li><span data-step-words><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</span><button type="button" class="link-button ct-link" data-step-palette hidden><span class="ct-steps-n">2</span> {tr('palette.stepPalette')}</button></li>
           <li><span class="ct-steps-n">3</span> {tr('palette.stepPlan')}</li>
         </ol>
@@ -159,6 +160,7 @@ setStrings(strings, lang);
         try { saved = JSON.parse(localStorage.getItem(saveStore) || 'null'); } catch (e) {}
         var save = !!saved && typeof saved.fragment === 'string' && saved.fragment.length < saveMax && typeof saved.at === 'string' && readable(saved.fragment);
         h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
+        if (h.dataset.step === 'palette') { var li = h.querySelectorAll('#ct-steps > li'); li[0].removeAttribute('aria-current'); li[1].setAttribute('aria-current', 'step'); }
       } catch (e) {}</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
       {/* The release line (base.css .tool-release), the one tests and check-built-site read. The long

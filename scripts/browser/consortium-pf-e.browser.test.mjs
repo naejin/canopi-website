@@ -395,10 +395,18 @@ test('PFE15b (pf-e E4, BC2; main h3 M13; board Many): the step bar stands above 
   assert.ok(at.steps < at.title, 'board: the step bar comes after the title');
   assert.equal(at.bars, 1, 'board: one step bar');
   assert.equal(at.current, '2 Your palette', 'board: step 2 is the current step');
-  await press(page, 'button', 'Your place');
+  // h3 R4: one "›" between two steps (shell.css draws it; no second one from an old rule), none after the last.
+  const marks = await page.evaluate(() => [...document.querySelectorAll('#ct-steps > li')].map((li) => ['::before', '::after'].map((p) => getComputedStyle(li, p).content).filter((c) => c && c !== 'none' && c !== 'normal').length));
+  assert.deepEqual(marks, [1, 1, 0], 'R4: one "›" between steps');
+  // h3 R6, C6: step 1 says its place and that it is done (never the check alone); C5: a 44 px tap target on the phone.
+  const back = await control(page, 'button', '1 Your place, done');
+  assert.ok(back, 'R6: "1 Your place, done"');
+  const tall = await page.$eval('#ct-steps [data-step-place]', (b) => b.getBoundingClientRect().height);
+  assert.ok(tall >= 44, `C5: step 1's button is a 44 px tap target at 390 (${tall})`);
+  await press(page, 'button', '1 Your place, done');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start', { timeout: 4000 }).then(() => true, () => false), 'board: step 1 goes back to Place');
-  const back = await page.evaluate(() => document.querySelector('#ct-steps [aria-current="step"]')?.innerText.replace(/\s+/g, ' ').trim());
-  assert.equal(back, '1 Your place', 'on Place step 1 is current again');
+  const placeStep = await page.evaluate(() => document.querySelector('#ct-steps [aria-current="step"]')?.innerText.replace(/\s+/g, ' ').trim());
+  assert.equal(placeStep, '1 Your place', 'on Place step 1 is current again');
   await done(page);
 });
 
@@ -1238,10 +1246,14 @@ test('PFE52 (pf-e round 3 R4; main h3 M10, D1 (a); boards Many, ManyDesk): Warni
   await done(page);
 });
 
-// The page's blocks (each heading in the palette page outside a dialog, and the foot's line) in DOM
-// order, with their boxes: the order a screen reader reads and Tab walks them.
+// The page's blocks (each heading in the palette page outside a dialog, Find's panel by its first
+// heading (h3 C7), and the foot's line) in DOM order, with their boxes: the order a screen reader reads
+// and Tab walks them.
 const blocksInOrder = (page) => page.evaluate(() => {
   const els = [...document.querySelectorAll('main h2, main h3')].filter((e) => e.getBoundingClientRect().width > 1 && !e.closest('dialog') && e.closest('#ct-root'));
+  const panel = document.querySelector('#ct-root .ct-palette-body > dialog[open]');
+  const panelHead = panel && [...panel.querySelectorAll('h2, h3')].find((e) => e.getBoundingClientRect().width > 1);
+  if (panelHead) els.push(panelHead);
   const foot = [...document.querySelectorAll('#ct-root p')].find((p) => p.textContent.trim().startsWith('Your palette is saved on this device.'));
   if (foot) els.push(foot);
   els.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
@@ -1294,4 +1306,43 @@ test('PFE54 (pf-e; main h3 M11; board SiteMendoza): "What limits plants here" st
     assert.ok(first, `board SiteMendoza at ${width}: "What limits plants here" comes before the Next step`);
     await done(page);
   }
+});
+
+// Share's state across the 960 px remount (h3 R2, C2; D1 (a)) and its reset off the palette (h3 R3).
+const shareState = (page) => page.evaluate(() => {
+  const box = document.querySelector('#ct-root input[data-share-location]');
+  const field = document.querySelector('#ct-root #ct-share-field');
+  const status = [...document.querySelectorAll('#ct-root .ct-share [role="status"]')].map((e) => e.textContent.trim()).join('');
+  return { open: !!field, ticked: !!box?.checked, place: !!field && /[#&]k=|[#&]o=/.test(field.value), status };
+});
+test('PFE55 (pf-e; main h3 R2, R3, C2; D1 (a)): at 20 plants, Copy link\'s "Include my place" and "Link copied." survive crossing 960 px both ways; leaving the palette for Place and coming back finds the Share panel closed', async () => {
+  const page = await paletteOf(20, 1280);
+  await page.evaluate(() => { window.__ctTest.store.country.value = { code: 'KE', source: 'chosen' }; });
+  await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.resolve() } }); });
+  await press(page, 'button', 'Copy link');
+  await page.waitForSelector('#ct-root input[data-share-location]', { visible: true, timeout: 15_000 });
+  await page.click('#ct-root input[data-share-location]');
+  await press(page, 'button', 'Copy');
+  await says(page, 'Link copied.');
+  const before = await shareState(page);
+  assert.deepEqual(before, { open: true, ticked: true, place: true, status: 'Link copied.' }, 'the premise: ticked, copied, the link carries the place');
+  const vp = page.viewport();
+  for (const width of [900, 1280]) {
+    await page.setViewport({ ...vp, width });
+    await frames(page);
+    await page.waitForSelector('#ct-root #ct-share-field', { timeout: 10_000 });
+    assert.deepEqual(await shareState(page), before, `R2 at ${width}: the box still ticked, the field still carries the place, "Link copied." still said`);
+  }
+  // R3: Place, then back to the palette: the panel is closed and unticked.
+  await press(page, 'button', '1 Your place, done');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start', { timeout: 4000 }).then(() => true, () => false), 'the premise: on Place');
+  await press(page, 'button', '2 Your palette');
+  await section(page, 'Balance');
+  await frames(page);
+  assert.equal((await shareState(page)).open, false, 'R3: the Share panel is closed on the way back to the palette');
+  await press(page, 'button', 'Copy link');
+  await page.waitForSelector('#ct-root input[data-share-location]', { visible: true, timeout: 15_000 });
+  const fresh = await shareState(page);
+  assert.deepEqual([fresh.ticked, fresh.status], [false, ''], 'R3: opened again, Share starts unticked with no status');
+  await done(page);
 });

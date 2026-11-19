@@ -38,7 +38,10 @@ function usePhone(): boolean {
   return phone;
 }
 
-export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[]; holeWords: (id: string) => string; onHole: (id: string) => void; onPlant: (id: PlantId) => void; announce: (text: string) => void; verdictOf?: (id: PlantId) => PlantVerdict | undefined; flagsOf?: (id: PlantId) => readonly Flag[]; invasiveWord?: string }
+export interface PictureProps { members: readonly Taxon[]; holes: readonly Hole[]; holeWords: (id: string) => string; onHole: (id: string) => void; onPlant: (id: PlantId) => void; announce: (text: string) => void; verdictOf?: (id: PlantId) => PlantVerdict | undefined; flagsOf?: (id: PlantId) => readonly Flag[]; invasiveWord?: string;
+  // A member's list is being read (Palette.tsx `loading`): the counts read "Loading…" (F26), never while
+  // a list has failed, whose plants are said as not checked (h3 R1: one flag per state).
+  loading?: boolean }
 
 // Moves the focus to a section of the page by its id (a link of "Further down this page"; the page's
 // address holds the palette, so no hash is written).
@@ -65,7 +68,7 @@ export const ReadPictures = () => (
   </HowToRead>
 );
 
-export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, flagsOf, invasiveWord, warnings }: PictureProps & { warnings?: number }) {
+export function Years({ members, holes, holeWords, onHole, onPlant, announce, verdictOf, flagsOf, invasiveWord, warnings, loading = false }: PictureProps & { warnings?: number }) {
   const phone = usePhone();
   const big = members.length > SIZE_PALETTE;
   const at = store.yearStep.value;
@@ -93,7 +96,7 @@ export function Years({ members, holes, holeWords, onHole, onPlant, announce, ve
       <button type="button" class="button button-secondary ct-step-btn" data-dir="back" aria-disabled={at === 0 ? 'true' : undefined} onClick={() => go(at - 1)}><span class="visually-hidden">{T('palette.earlier')}</span></button>
       <div class="ct-stepper-at" role="group" aria-label={T('palette.chart.span', { n: at + 1, m: PHASE_YEARS.length })}>
         <strong>{say(picture.columns[at])}</strong>
-        {big ? <span class="ct-stepper-note">{store.holesPending.value ? T('details.loading') : P('palette.chart.standing', stand, { m: members.length })}</span>
+        {big ? <span class="ct-stepper-note">{loading ? T('details.loading') : P('palette.chart.standing', stand, { m: members.length })}</span>
           : <span class="ct-stepper-dots" aria-hidden="true">{PHASE_YEARS.map((_, i) => <span key={i} data-on={i === at ? '' : undefined} />)}</span>}
       </div>
       <button type="button" class="button button-secondary ct-step-btn" data-dir="next" aria-disabled={at === last ? 'true' : undefined} onClick={() => go(at + 1)}><span class="visually-hidden">{T('palette.later')}</span></button>

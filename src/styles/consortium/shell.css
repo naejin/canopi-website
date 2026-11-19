@@ -10,7 +10,6 @@
 .ct :where(input, select, button, a):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .ct .ct-start { display: grid; gap: 18px; }
-.ct .ct-step { margin: 0; min-width: 0; border: 0; padding: 0; }
 .ct .ct-step-title { font-family: var(--font-display); font-size: 24px; font-weight: 400; line-height: 1.2; padding: 0; }
 .ct .ct-step-lede { margin: 4px 0 12px; font-size: 15px; }
 .ct .ct-panel { padding: 20px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
@@ -119,5 +118,10 @@
   #ct-head:not([data-step="palette"]) .tool-lede { font-size: 15px; }
 }
 .ct ol.ct-steps [hidden] { display: none; }
+/* The steps' buttons (step 1 back to Place, step 2 to the palette): 44 px tap targets on the phone
+   (review r1 bugs-14; h3 C5). */
+@media (max-width: 639px) {
+  .ct ol.ct-steps .ct-link { min-height: 44px; }
+}
 /* The failure screens' actions (board Loading): the button, then "Read the guides" beside it. */
 .ct .ct-load-acts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }

@@ -142,31 +142,35 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
         // (WCAG 1.3.2, 2.4.3; h3 M10): on the phone one column, Your plants last; at 960 px and wider the
         // chart's column (Next step, Through the years, Jobs), then Your plants' column (Your plants,
         // Warnings and fit with Balance, the foot), placed by the grid (plants.css). The blocks are keyed,
-        // so crossing 960 px moves Your plants and Warnings and fit rather than remounting them (their
-        // folds, ticks and search in place stay); the focus in a moved block is lost (D1 (a)).
+        // so crossing 960 px moves Your plants and Warnings and fit rather than remounting them: Weigh's
+        // open reason (D1 (a)), and with it their folds, ticks and search, stay by the move, not a signal
+        // (G5 records it); the focus in a moved block is lost. Find's
+        // panel (960 px and wider) comes first: find.css draws it at the top of the right-hand column (h3 C7).
         <div class="ct-palette-body" data-pictures="" data-many="">
+          <FindPanelSlot key="panel" />
           <div key="left" class="ct-many-left">
             <NextStep holes={holes} members={members} />
             <div class="ct-palette-pictures">
-              <Years {...pic} warnings={groups.length} />
-              <JobsPicture {...pic} />
+              <Years {...pic} warnings={groups.length} loading={loading} />
+              <JobsPicture {...pic} loading={loading} />
             </div>
           </div>
           {desk ? [plantsBlock, weigh] : [weigh, plantsBlock]}
           {footBlock}
-          <FindPanelSlot key="panel" />
         </div>
       ) : (
         // 40 or fewer (boards Main, MainMore, PaletteMore), in the order the eye reads: the Next step,
         // the pictures, the side column (Warnings, Balance; at 960 px and wider the foot under Balance,
         // board MainMore), then Your plants (across, under the pictures, at 960 px and wider), then on the
-        // phone the foot.
+        // phone the foot (it changes parent there, so it remounts: Actions keeps Share's state in signals,
+        // h3 R2). Find's panel (960 px and wider) first, as find.css draws it above the Next step (h3 C7).
         <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
+          <FindPanelSlot />
           <NextStep holes={holes} members={members} />
           {members.length > 0 && (
             <div class="ct-palette-pictures">
-              <Years {...pic} warnings={groups.length} />
-              <JobsPicture {...pic} />
+              <Years {...pic} warnings={groups.length} loading={loading} />
+              <JobsPicture {...pic} loading={loading} />
             </div>
           )}
           {members.length > 0 && (
@@ -178,7 +182,6 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
           )}
           <YourPlants rows={rows} />
           {!(desk && members.length > 0) && footBlock}
-          <FindPanelSlot />
         </div>
       )}
       <Said />

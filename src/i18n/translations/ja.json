@@ -1381,6 +1381,7 @@
   "consortium.palette.next.changeGoal": "{n}を変更",
   "consortium.palette.chart.light": "光",
   "consortium.palette.chart.plants": "other: #種",
+  "consortium.palette.chart.stepDone": "{n} {step}、完了",
   "consortium.palette.chart.levelCount": "{level}：{plants}",
   "consortium.palette.chart.findPlant": "植物を探す",
   "consortium.palette.chart.span": "期間 {n}/{m}",

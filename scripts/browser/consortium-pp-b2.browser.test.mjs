@@ -516,7 +516,6 @@ test('PP-B29b (b2 scale; pf-e row F26, main h3 M17: 200 plants from three lists,
             const text = document.querySelector('main')?.innerText ?? '';
             const said = text.split('\n').filter((l) => title.test(l.trim()) || /^Thin: /.test(l.trim()));
             if (said.length) window.__restore.saidWhilePending.push(...said.slice(0, 2));
-
           } else if (s.memberTaxa.value.length === s.members.value.length && window.__restore.doneAt === null) { window.__restore.doneAt = performance.now(); return; }
         }
         requestAnimationFrame(tick);
@@ -562,6 +561,27 @@ test('PP-B29b (b2 scale; pf-e row F26, main h3 M17: 200 plants from three lists,
     const after = await jobRows();
     assert.ok(after.some((row) => /\b\d+ plants?\b/.test(row)) && !after.some((row) => /Loading…/.test(row)), `F26: the real counts once the list is in (${after.slice(0, 2).join(' | ')})`);
   } finally { await done(held); }
+  // A list refused (h3 R1): nothing is loading, so no "Loading…": the job rows count the plants that
+  // were read (the failed list's plants are said as not checked), and so does Through the years' note.
+  const refused = await loadPalette200({ width: 390 });
+  try {
+    const zone = await refused.evaluate(() => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !window.__ctTest.store.pools.value[z]));
+    const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
+    await refused.evaluate((z, id) => {
+      const { store } = window.__ctTest, src = store.source.value;
+      const pool = src.pool.bind(src);
+      src.pool = (x) => (x === z ? Promise.reject(new Error('refused (test)')) : pool(x));
+      store.guests.value = { ...store.guests.value, [id]: z };
+      store.members.value = [...store.members.value, id];
+    }, zone, guest);
+    assert.ok(await refused.waitForFunction(() => window.__ctTest.store.failedMembers.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'the premise: the list could not be read');
+    await frames(refused);
+    const rows = await refused.evaluate(() => { const h = [...document.querySelectorAll('main h3')].find((x) => x.textContent.trim() === 'Jobs'); return [...(h?.closest('section')?.querySelectorAll('li[data-job]') ?? [])].map((li) => li.innerText.replace(/\s+/g, ' ').trim()); });
+    assert.ok(rows.length > 0 && rows.some((row) => /\b\d+ plants?\b/.test(row)), `R1: the counted plants' counts show with a list refused (${rows.slice(0, 2).join(' | ')})`);
+    assert.deepEqual(rows.filter((row) => /Loading…/.test(row)), [], 'R1: no job row reads "Loading…" when nothing is loading');
+    const note = await refused.evaluate(() => document.querySelector('#ct-years .ct-stepper-note')?.textContent.trim() ?? '');
+    assert.match(note, /^\d+ of your \d+ plants/, 'R1: Through the years\' note counts, never "Loading…"');
+  } finally { await done(refused); }
 });
 
 test('PP-B29c (b2 scale; pf-e row F27): with storage refused, a 200-plant palette keeps working and Copy link says "This browser does not keep your palette; your link does."', { timeout: 120_000 }, async () => {

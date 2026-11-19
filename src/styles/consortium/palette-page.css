@@ -294,7 +294,7 @@
   .ct .ct-job-holes .ct-hole-button { max-width: none; }
   .ct .ct-chart { padding: 12px; }
   /* Tap targets of 44 px on a phone (review r1 bugs-14). */
-  .ct .ct-chip, .ct .ct-hole-button, .ct .ct-steps .ct-step, .ct .ct-other-holes summary { min-height: 44px; }
+  .ct .ct-chip, .ct .ct-hole-button, .ct .ct-other-holes summary { min-height: 44px; }
 }
 
 /* fix round 1 (v14 pf-b, 2026-11-18) */
@@ -352,12 +352,6 @@
 .ct .ct-side-card .ct-balance-sub { font-size: 14px; font-weight: 400; }
 .ct .ct-water-lead { font-size: 14px; line-height: 20px; color: var(--text); }
 .ct .ct-balance > div, .ct .ct-balance > p { font-size: 14px; line-height: 20px; }
-/* The header steps (BC21): the done step a check, "›" between steps, one line at 390 px. */
-.ct .ct-steps ol { gap: 4px; font-size: 14px; } /* one line from 390 px; wraps only where it cannot fit (320) */
-.ct .ct-steps li + li::before { content: "\203A" / ""; margin-inline: 2px 6px; color: var(--text-secondary); }
-.ct .ct-steps .ct-step { gap: 6px; white-space: nowrap; }
-.ct .ct-step-n { width: 22px; height: 22px; }
-.ct .ct-step-done .ct-step-n { border-color: var(--text); }
 /* The share panel under Copy link (board DeskStates, C3). */
 .ct .ct-share-panel:empty { display: none; }
 .ct .ct-share-panel { justify-self: stretch; text-align: start; }

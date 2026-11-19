@@ -8,31 +8,36 @@
 // when there is a place to include (a location, a country the reader gave): ticked, the link also
 // carries the climate-grid square's centre (`o=`, never the precise position), its town-level name
 // (`n=`, persist.ts linkName), the country (`k=`) and the grower's own values (`f b p i d`); unticked, none of `k o f b p i d`. The sheet says both in words.
-import { useEffect, useRef, useState } from 'preact/hooks';
+// The tick and the copy status are Actions.tsx's signals (ShareState), so they survive the foot's
+// remount across 960 px (h3 R2, D1 (a)); Actions clears them when the panel closes or the palette
+// page goes. "Link copied." holds for the link it copied only: a new link (the consortium changed) drops it.
+import { useRef } from 'preact/hooks';
+import type { Signal } from '@preact/signals';
 import { cellCentre, isLongLink } from '../../../lib/consortium/index.ts';
 import { T } from '../strings.ts';
 import { country, location as site } from '../store.ts';
 import { currentFragment, linkName, shareUrl, shownFragment, storageWorks } from '../state/persist.ts';
 
-export function Share({ onClose }: { onClose: () => void }) {
+export interface ShareState { withPlace: Signal<boolean>; copied: Signal<{ url: string; ok: boolean } | null> }
+
+export function Share({ onClose, state }: { onClose: () => void; state: ShareState }) {
   const shown = shownFragment.value;
-  const [withPlace, setWithPlace] = useState(false);
+  const withPlace = state.withPlace.value;
   const origin = cellCentre(site.value?.lookup ?? null);
   const c = country.value;
   const hasPlace = origin !== null || (c.code !== null && c.source !== 'guess');
   const fragment = withPlace && hasPlace ? currentFragment({ origin, place: true, name: linkName(site.value) }) ?? shown : shown;
   const url = fragment ? shareUrl(location.href, fragment) : location.href;
-  const [copied, setCopied] = useState<'yes' | 'no' | null>(null);
+  const said = state.copied.value;
+  const copied = said?.url === url ? (said.ok ? 'yes' : 'no') : null;
   const field = useRef<HTMLInputElement>(null);
-  // A new link (the consortium changed): "Link copied." no longer holds.
-  useEffect(() => { setCopied(null); }, [url]);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
-      setCopied('yes');
+      state.copied.value = { url, ok: true };
     } catch {
       field.current?.select();
-      setCopied('no');
+      state.copied.value = { url, ok: false };
     }
   };
   return (
@@ -45,7 +50,7 @@ export function Share({ onClose }: { onClose: () => void }) {
       </p>
       {hasPlace && (
         <p class="ct-share-location">
-          <label><input type="checkbox" data-share-location checked={withPlace} onChange={(e) => setWithPlace((e.currentTarget as HTMLInputElement).checked)} /> {T('share.location')}</label>
+          <label><input type="checkbox" data-share-location checked={withPlace} onChange={(e) => { state.withPlace.value = (e.currentTarget as HTMLInputElement).checked; }} /> {T('share.location')}</label>
           {' '}<span class="ct-muted ct-small-text">{T('share.locationNote')}</span>
         </p>
       )}
