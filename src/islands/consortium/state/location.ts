@@ -34,7 +34,7 @@ import { currentPosition, queryGeolocationPermission, PROMPT_CAP_MS, SITE_POSITI
 import type { Country } from '../store.ts';
 import * as store from '../store.ts';
 import { pageLang } from '../strings.ts';
-import { forgetSavedPlace, memory, pendingLinkClimate, quietly, LOCATION_STORE, PLACE_STORE } from './persist.ts';
+import { changeOwnPlace, forgetSavedPlace, memory, pendingLinkClimate, placeAt, quietly, LOCATION_STORE, PLACE_STORE } from './persist.ts';
 import { chooseClimate } from './draft.ts';
 import { locationAtStart } from './restore.ts';
 import { noteForget } from './save.ts';
@@ -202,8 +202,9 @@ async function locateNow(lat: number, lon: number, source: LocationSource, name:
   const was = store.location.peek();
   const sameCell = !!was?.lookup && was.source !== 'link' && store.cellKey(was.lookup.climate) === store.cellKey(lookup.climate);
   siteFound(() => {
-    // Another climate cell clears the grower's own values (A7: store.placeAt).
-    store.placeAt(loc);
+    // Another climate cell clears the grower's own values (A7: store.placeAt), the ones a link's
+    // waiting place set aside too (persist.ts placeAt).
+    placeAt(loc);
     acts.value++;
     line.value = { state: sc.state, ...extra };
   }, lookup.regions.isoA2);
@@ -372,6 +373,8 @@ export function forget(): void {
     if (own) locationCountry(null, true);
     // The grower's own values are of that place: they go with it, as the save's place does.
     store.siteEdits.value = NO_EDITS;
+    // And the reader's own place a link's waiting place set aside: no later write brings it back.
+    changeOwnPlace({ siteEdits: NO_EDITS, location: null });
   });
   if (own) { keepLocation(null); locationAtStart.value = false; }
   memory.remove(PLACE_STORE);

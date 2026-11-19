@@ -41,9 +41,9 @@
 // Also here, below restore.ts and the location step so that neither imports the other: the restore
 // in flight (what Start shows while a link opens) and the count of the reader's actions, which the
 // store watcher (watchStore) keeps.
-import { computed, effect, signal, untracked } from '@preact/signals';
+import { batch, computed, effect, signal, untracked } from '@preact/signals';
 import type { ClimateZone, LinkOrigin, PlantId, ShareState, SiteEdits, SiteLocation } from '../../../lib/consortium/index.ts';
-import { encodeLink, encodePlace, linkVersionStatus } from '../../../lib/consortium/index.ts';
+import { encodeLink, encodePlace, linkVersionStatus, NO_EDITS } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
 import { state as schema } from './schema.ts';
@@ -239,6 +239,22 @@ export function placeSeed(): string {
 // keeps them until the reader chooses.
 export interface OwnPlace { siteEdits: SiteEdits; country: Country; location: LinkOrigin | null }
 export const linkPlace = signal<{ own: OwnPlace } | null>(null);
+// The reader's own place set aside while a link's place waits follows what the reader does to their
+// own place meanwhile (placeSeed writes it into canopi-place; pre-push re-review 2): Forget empties it
+// (state/location.ts forget), another climate cell drops its values (placeAt). Nothing waiting: nothing.
+export function changeOwnPlace(patch: Partial<OwnPlace>): void {
+  const w = linkPlace.peek();
+  if (w) linkPlace.value = { own: { ...w.own, ...patch } };
+}
+// The reader's new location (state/location.ts locate): store.placeAt, and when another cell clears
+// the page's values, the set-aside ones too, in the same batch, so canopi-place never keeps the old
+// cell's shifts for the new one (A7).
+export function placeAt(loc: SiteLocation): void {
+  batch(() => {
+    store.placeAt(loc);
+    if (store.editsCleared.peek()) changeOwnPlace({ siteEdits: NO_EDITS });
+  });
+}
 // What the last answer to an arrival notice did, for Place's status line (draft.ts answered: the
 // notice's button leaves the page with its line, so the focus moves on and this says what happened:
 // A25). '' for nothing. Kept here, below restore.ts, so the reader's next action (watchStore) and the

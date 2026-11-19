@@ -812,6 +812,7 @@
   "consortium.location.choose": "Kiezen",
   "consortium.location.chooseName": "{name} kiezen",
   "consortium.location.noneOfThese": "Geen van deze? Probeer de dichtstbijzijnde plaats, of {map}. Plaatsnamen © {osm}-bijdragers.",
+  "consortium.location.placeCredit": "Plaatsnamen © {osm}-bijdragers.",
   "consortium.location.mapLower": "kies op een kaart",
   "consortium.location.near": "Bij {place}",
   "consortium.location.nearLower": "bij {place}",

@@ -812,6 +812,7 @@
   "consortium.location.choose": "Elegir",
   "consortium.location.chooseName": "Elegir {name}",
   "consortium.location.noneOfThese": "¿Ninguno? Prueba la ciudad más cercana, o {map}. Nombres de lugares © colaboradores de {osm}.",
+  "consortium.location.placeCredit": "Nombres de lugares © colaboradores de {osm}.",
   "consortium.location.mapLower": "elige en un mapa",
   "consortium.location.near": "Cerca de {place}",
   "consortium.location.nearLower": "cerca de {place}",

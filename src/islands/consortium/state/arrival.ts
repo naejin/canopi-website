@@ -185,7 +185,9 @@ export function arrivalPlan(how: Arrival, { saved, pref, guess, seed, cell }: Ar
   const country = linkK ? countryAtStart({ link: linkK, ...countries }) : own;
   const linkCell = how.kind === 'link' ? linkOrigin(how.fragment) : how.kind === 'saved' && how.ask ? linkOrigin(how.place) : null;
   if (how.kind !== 'saved' || !how.ask) return { country, own, linkCell };
-  const kept = saved?.place && saved.place.length <= 2_000 ? decodeLink(`v=5&${saved.place}&e=1`, {}).state.siteEdits : null;
+  // The reader's own values: the held save's place, else the seed (canopi-place): a save removed by
+  // Start over leaves its values only there (pre-push re-review 1).
+  const kept = saved?.place && saved.place.length <= 2_000 ? decodeLink(`v=5&${saved.place}&e=1`, {}).state.siteEdits : placeOfSeed(seed)?.siteEdits ?? null;
   return { country, own, linkCell, ask: { siteEdits: kept ?? NO_EDITS, country, location: cell() } };
 }
 

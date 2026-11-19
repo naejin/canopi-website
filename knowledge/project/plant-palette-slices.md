@@ -6,7 +6,7 @@ tags: [consortium]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:21Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:38Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:19Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -171,8 +171,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:88dcd1f9fa48e570
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:5cfe9d29fed62a99
+    last_modified: 2026-11-19T12:59:38Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts

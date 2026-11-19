@@ -5,7 +5,7 @@ description: "The consortium v2 page in 11 locales: the static Astro shell, the 
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:22Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:18Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:13Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -46,7 +46,7 @@ sources:
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
     digest: sha256:59ecfbc3a59f1adf
-    last_modified: 2026-11-19T11:54:48Z
+    last_modified: 2026-11-19T11:59:54Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
@@ -205,8 +205,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:7c18172e53e80875
-    last_modified: 2026-11-18T14:32:45Z
+    digest: sha256:65e8eb00f8a4ee77
+    last_modified: 2026-11-19T12:24:35Z
   - id: p5-helpers-mjs
     resource: ../../scripts/browser/p5-helpers.mjs
     title: scripts/browser/p5-helpers.mjs
@@ -225,8 +225,8 @@ sources:
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:0697d0d5383c5a16
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:342093afa0ffb607
+    last_modified: 2026-11-19T12:24:54Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts
@@ -271,7 +271,7 @@ sources:
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
     digest: sha256:8e5de3eb8b4c7b69
-    last_modified: 2026-11-19T11:54:48Z
+    last_modified: 2026-11-19T11:59:54Z
   - id: suggest-block-ts
     resource: ../../src/islands/consortium/rules/suggest-block.ts
     title: src/islands/consortium/rules/suggest-block.ts

@@ -812,6 +812,7 @@
   "consortium.location.choose": "선택",
   "consortium.location.chooseName": "{name} 선택",
   "consortium.location.noneOfThese": "해당 없음? 가장 가까운 도시를 시도하거나 {map}. 장소 이름 © {osm} 기여자.",
+  "consortium.location.placeCredit": "장소 이름 © {osm} 기여자.",
   "consortium.location.mapLower": "지도에서 고르세요",
   "consortium.location.near": "{place} 근처",
   "consortium.location.nearLower": "{place} 근처",

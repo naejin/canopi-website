@@ -235,6 +235,8 @@
 .ct .ct-place-row > p { margin: 0; grid-column: 2; }
 .ct .ct-place-row > svg { grid-row: 1 / span 2; margin-top: 2px; }
 .ct .ct-place-row-text { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+/* The place search's credit under a named place (privacy-2): small and quiet, as the answers' line. */
+.ct .ct-place-row > .ct-place-credit { font-size: 13px; line-height: 18px; color: var(--text-secondary); }
 
 /* LocDesk: answers as whole buttons; privacy lines with a lock. */
 .ct-answers .ct-answer { display: block; padding: 0; }
@@ -244,6 +246,10 @@
 .ct-answer-text { display: grid; flex: 1 1 auto; min-width: 0; }
 .ct-answer-go { display: inline-flex; gap: 2px; align-items: center; flex: none; color: var(--accent-ink); font-weight: 600; }
 .ct-privacy { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: 13px; color: var(--text-secondary); }
+/* The field's privacy line (privacy-1): a reading measure, which also keeps its line count the same in the
+   fallback and the web font in every locale and width (late fonts, N2; 40em measured clean, the column's
+   own width breaks pt at 1280). */
+.ct .ct-location > .ct-privacy { max-width: 40em; }
 .ct-map-foot { border-top: 1px solid var(--border); padding-top: 12px; }
 .ct-map-foot .button { gap: 6px; }
 .ct-map-said:empty { display: none; }
