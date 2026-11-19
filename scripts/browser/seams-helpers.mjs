@@ -168,7 +168,22 @@ export const STRINGS = Object.fromEntries(['en', 'fr', 'ja'].map((l) => [l, JSON
 // the layout-shift entries (PerformanceObserver, buffered) add up to 0.01 at most.
 export const STABLE = ['[data-location-action="geo"]', 'input[data-location-search]', '[data-location-action="map"]', '[data-climate-row]:first-of-type', '[data-climate-polar]'];
 
-export const MISMATCH = { en: { languages: ['en-US', 'en'], zone: 'Africa/Bangui', guess: 'CF' }, fr: { languages: ['fr-FR', 'fr'], zone: 'America/St_Vincent', guess: 'VC' }, ja: { languages: ['ja-JP', 'ja'], zone: 'America/Puerto_Rico', guess: 'PR' } };
+// Every locale of the site (language-robust layout, pf-decisions 2026-11-19): its browser languages
+// and a time zone of one other country (the page's build-time zone table), so the guess is refined.
+export const MISMATCH = {
+  en: { languages: ['en-US', 'en'], zone: 'Africa/Bangui', guess: 'CF' },
+  fr: { languages: ['fr-FR', 'fr'], zone: 'America/St_Vincent', guess: 'VC' },
+  es: { languages: ['es-ES', 'es'], zone: 'Africa/Malabo', guess: 'GQ' },
+  pt: { languages: ['pt-BR', 'pt'], zone: 'Asia/Dili', guess: 'TL' },
+  it: { languages: ['it-IT', 'it'], zone: 'Africa/Mogadishu', guess: 'SO' },
+  zh: { languages: ['zh-CN', 'zh'], zone: 'Asia/Ulaanbaatar', guess: 'MN' },
+  de: { languages: ['de-DE', 'de'], zone: 'Africa/Windhoek', guess: 'NA' },
+  ja: { languages: ['ja-JP', 'ja'], zone: 'America/Puerto_Rico', guess: 'PR' },
+  ko: { languages: ['ko-KR', 'ko'], zone: 'Pacific/Majuro', guess: 'MH' },
+  nl: { languages: ['nl-NL', 'nl'], zone: 'America/Paramaribo', guess: 'SR' },
+  ru: { languages: ['ru-RU', 'ru'], zone: 'Asia/Bishkek', guess: 'KG' },
+};
+export const LOCALES = Object.keys(MISMATCH);
 
 export async function stableStart(lang, width) {
   const { languages, zone } = MISMATCH[lang];

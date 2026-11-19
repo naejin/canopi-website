@@ -4,7 +4,7 @@ title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:53:18Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T00:16:02Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:15Z }
 sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
@@ -29,8 +29,8 @@ sources:
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:163f7a3eecb8a67d
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:e80bca603fcf2579
+    last_modified: 2026-11-19T08:16:50Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -64,8 +64,8 @@ sources:
   - id: share-tsx
     resource: ../../src/islands/consortium/views/Share.tsx
     title: src/islands/consortium/views/Share.tsx
-    digest: sha256:999e00a13dc79cee
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:64add8412f5965b6
+    last_modified: 2026-11-19T06:07:14Z
   - id: s5b-css
     resource: ../../src/styles/consortium/p5/s5b.css
     title: src/styles/consortium/p5/s5b.css
@@ -74,8 +74,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:ad1f20b4731a86a1
-    last_modified: 2026-11-18T17:07:24Z
+    digest: sha256:1bc0c7720b8a2a60
+    last_modified: 2026-11-19T08:22:07Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -84,8 +84,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b59d99cb0816bb6
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:88dcd1f9fa48e570
+    last_modified: 2026-11-19T08:22:07Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -94,13 +94,13 @@ sources:
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
-    digest: sha256:65c143542f9f4e35
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:20cb5074cb42d667
+    last_modified: 2026-11-19T09:14:39Z
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
-    digest: sha256:d71ea659bdd2bfba
-    last_modified: 2026-11-18T17:07:24Z
+    digest: sha256:56c4810f679c3279
+    last_modified: 2026-11-19T10:16:07Z
 enforced_by:
   - scripts/consortium-p5-seams-s5b.test.mjs
   - scripts/browser/consortium-p5-s5b.browser.test.mjs

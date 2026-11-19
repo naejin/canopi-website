@@ -3,9 +3,9 @@ type: Architecture Decision
 title: Metric-matched fallback fonts
 description: Local Arial and Times New Roman (or their metric twins) scaled to Source Sans 3's and Literata's metrics come first in the fallback stacks, so the late web-font swap does not shift the layout on slow phones.
 tags: [fonts, performance, layout]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:14Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-18T08:58:14Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:18Z }
 sources:
   - id: fonts-css
     resource: ../../src/styles/fonts.css
@@ -25,8 +25,8 @@ sources:
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
-    digest: sha256:dc06143038723a59
-    last_modified: 2026-11-18T16:00:39Z
+    digest: sha256:aa9be61b497a36c2
+    last_modified: 2026-11-19T10:28:13Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -35,8 +35,8 @@ sources:
   - id: base-css
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
-    digest: sha256:d71ea659bdd2bfba
-    last_modified: 2026-11-18T17:07:24Z
+    digest: sha256:56c4810f679c3279
+    last_modified: 2026-11-19T10:16:07Z
 enforced_by: [scripts/browser/consortium-seams-layout.browser.test.mjs]
 ---
 
@@ -55,7 +55,7 @@ Source Sans 3 (body) and Literata (display) are self-hosted woff2 files with `fo
 
 # Consequences
 
-- The late-font swap moves text by at most about 1% of a string's width, not to the pixel: a paragraph whose last word sits at the edge can still gain or lose a line (Start's lede at en 320 px: CLS 0.0102). The spec "Layout stability (N2, late fonts)" in [consortium-seams-layout.browser.test.mjs](../../scripts/browser/consortium-seams-layout.browser.test.mjs) holds every `/fonts/*.woff2` request 800 ms, asserts the first paint came before any font, and allows CLS 0.015 at 320, 390, 700, 960 and 1280 px in en, fr and ja (N2's own budget is 0.01). Since E6 S2 it also checks sizes (`sized`): no control on Start resizes when the fonts swap; every height and the place-search input's width hold to the pixel, a button's width within 2 % (`LABEL_SLACK`; French labels change about 2 px, 158 → 160), and a control whose top did not move keeps its left within 2 %. Vertical moves are left to the CLS budget.
+- The late-font swap moves text by at most about 1% of a string's width, not to the pixel: a paragraph whose last word sits at the edge can still gain or lose a line (Start's lede at en 320 px: CLS 0.0102). The spec "Layout stability (N2, late fonts)" in [consortium-seams-layout.browser.test.mjs](../../scripts/browser/consortium-seams-layout.browser.test.mjs) holds every `/fonts/*.woff2` request 800 ms, asserts the first paint came before any font, and allows CLS 0.015 at 320, 390, 960 and 1280 px in all 11 locales (since 2026-11-19, language-robust layout; two loads at a time; it prints the CLS per locale at its worst width; N2's own budget is 0.01). Since E6 S2 it also checks sizes (`sized`): no control on Start resizes when the fonts swap; every height holds to the pixel, a button's width within 2 % and so the place-search input's (it fills its row beside the search button: es, it, ru 1-2 px) (`LABEL_SLACK`; French labels change about 2 px, 158 → 160), and a control whose top did not move keeps its left within 2 %. Vertical moves are left to the CLS budget.
 
 # Known gaps
 

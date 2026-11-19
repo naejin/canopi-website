@@ -3,22 +3,24 @@ type: Architecture Decision
 title: Plant palette chunk-2 hand-off rulings (D1-D10)
 description: The agent rulings of 2026-11-18 on the PP-C chunk-2 hand-offs, as auto-approved under the owner's autonomy rule, and where each lives in the code.
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:52:20Z }
+verified:
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:38:16Z }
 sources:
   - id: jobspicture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
     title: src/islands/consortium/views/palette/JobsPicture.tsx
-    digest: sha256:16cf075b0795055f
-    last_modified: 2026-11-18T18:39:03Z
+    digest: sha256:23ad0e26719a7027
+    last_modified: 2026-11-19T09:07:50Z
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx
-    digest: sha256:b496ee089ca809b4
-    last_modified: 2026-11-18T18:40:07Z
+    digest: sha256:668fb618a9d170ed
+    last_modified: 2026-11-19T07:06:28Z
   - id: state-ts
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
-    digest: sha256:163f7a3eecb8a67d
-    last_modified: 2026-11-18T17:29:04Z
+    digest: sha256:e80bca603fcf2579
+    last_modified: 2026-11-19T08:16:50Z
   - id: place-search-ts
     resource: ../../src/lib/location/place-search.ts
     title: src/lib/location/place-search.ts
@@ -27,8 +29,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:8ca1dfbc9aa3a25a
-    last_modified: 2026-11-18T17:23:44Z
+    digest: sha256:24edd37178030d9e
+    last_modified: 2026-11-19T10:13:14Z
   - id: holes-ts
     resource: ../../src/lib/consortium/holes.ts
     title: src/lib/consortium/holes.ts
@@ -37,8 +39,8 @@ sources:
   - id: place-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:ad1f20b4731a86a1
-    last_modified: 2026-11-18T17:07:24Z
+    digest: sha256:1bc0c7720b8a2a60
+    last_modified: 2026-11-19T08:22:07Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
@@ -47,8 +49,8 @@ sources:
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
-    digest: sha256:6b59d99cb0816bb6
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:88dcd1f9fa48e570
+    last_modified: 2026-11-19T08:22:07Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts

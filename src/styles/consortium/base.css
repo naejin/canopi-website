@@ -69,10 +69,33 @@
 .ct .fg-slot { display: contents; }
 /* The site has 400 and 600 only: bold is 600, never a synthesised 700 (W8). */
 .ct strong, .ct b { font-weight: 600; }
-/* CJK headings break between phrases, not inside a word (W9): Japanese by phrase where the browser
-   can (auto-phrase), Korean at its spaces, Chinese kept whole unless a run cannot fit. */
-.ct :is(h1, h2, h3):is(:lang(ja), :lang(zh), :lang(ko)) { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
-.ct :is(h1, h2, h3):lang(ja) { word-break: auto-phrase; }
+/* Language-robust layout (pf-decisions 2026-11-19; W9), the palette's parts only (the site header keeps
+   the site's faces). Japanese, Chinese and Korean: lines break between phrases where the browser
+   can (auto-phrase; where it cannot, normal breaking, never keep-all, which leaves a run with no
+   spaces unbroken until it overflows), Korean at its spaces (keep-all), strictly (no small kana or
+   closing mark at a line start); headings wrap pretty; no Latin tracking (the !important outranks
+   each part's own letter-spacing, set for Latin); and the language's own system face after the Latin
+   ones, so Japanese is never drawn with Chinese glyphs (the site stack names Noto Sans SC first). */
+.ct:is(:lang(ja), :lang(zh), :lang(ko)) { font-family: var(--font-sans); word-break: auto-phrase; line-break: strict; }
+.ct:lang(ko) { word-break: keep-all; }
+.ct:is(:lang(ja), :lang(zh), :lang(ko)) :is(h1, h2, h3, h4) { text-wrap: pretty; overflow-wrap: anywhere; }
+.ct:is(:lang(ja), :lang(zh), :lang(ko)) * { letter-spacing: normal !important; }
+.ct:lang(ja) {
+  --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Yu Gothic', Meiryo, 'Noto Sans CJK JP', 'Noto Sans JP', sans-serif;
+  --font-display: 'Literata', 'Literata Fallback', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif CJK JP', 'Noto Serif JP', serif;
+}
+.ct:lang(zh) {
+  --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif;
+  --font-display: 'Literata', 'Literata Fallback', 'Songti SC', SimSun, 'Noto Serif CJK SC', 'Noto Serif SC', serif;
+}
+.ct:lang(ko) {
+  --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans CJK KR', 'Noto Sans KR', sans-serif;
+  --font-display: 'Literata', 'Literata Fallback', AppleMyungjo, Batang, 'Noto Serif CJK KR', 'Noto Serif KR', serif;
+}
+/* Long words (German, Dutch, Russian): hyphenated where the browser has the language's dictionary,
+   else broken where a word alone would overflow its line (the last resort; break-word, unlike the
+   narrow labels' own anywhere, leaves every box's size as it was). */
+.ct:is(:lang(de), :lang(nl), :lang(ru)) { hyphens: auto; overflow-wrap: break-word; }
 .ct .status-line { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--text-secondary); }
 .ct .callout { display: grid; gap: 14px; padding: 28px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); max-width: 720px; }
 .ct .callout > p { font-size: 16.5px; color: var(--text-secondary); }
