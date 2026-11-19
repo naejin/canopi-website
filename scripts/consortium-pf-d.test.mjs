@@ -4,6 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { failing } from './expect-fail.mjs';
 
 const core = await import('../src/lib/consortium/index.ts');
 const words = await import('../src/lib/consortium/site-change-line.ts');
@@ -65,12 +66,12 @@ const say = (l) => {
 
 test('siteChangeLines: "Coldest nights and hottest days set 2 °C colder. Today: … ; by 2071–2099: … Your 8 plants are kept: …"', () => {
   const change = { periods: [{ period: P[0], fitIn: 39, fitOut: 56, lookNew: 58, lookGone: 0, members: [{ id: 'cal', before: 'fits', after: 'look', limiting: 'cold' }] }, { period: P[1], fitIn: 0, fitOut: 0, lookNew: 0, lookGone: 0, members: [] }, { period: P[2], fitIn: 50, fitOut: 46, lookNew: 0, lookGone: 0, members: [] }], hintsNew: [], holes: { added: [], closed: [], narrowed: [], open: [] } };
-  const lines = words.siteChangeLines(change, { nightsShiftC: -2, daysShiftC: -2 }, { was: {}, size: 8, nameOf: () => 'Calliandra' });
+  const lines = words.siteChangeLines(change, { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }, { was: {}, size: 8, nameOf: () => 'Calliandra' });
   const text = lines.map(say).join(' ');
   assert.match(text, /^Coldest nights and hottest days set 2 °C colder\. Today: 17 fewer fit; by 2071–2099: 4 more fit\. Your 8 plants are kept: Calliandra needs a second look, near its cold limit\. /);
   const detail = words.changeDetailLines(change, 515, { size: 8, nameOf: () => 'Calliandra' }).map(say).join(' ');
   assert.match(detail, /^Today: 39 more fit, 56 no longer fit,? and 58 now need a second look; by 2071–2099: 50 more fit and 46 no longer fit, of the 515\. In all, 17 fewer fit today and 4 more fit by 2071–2099\./);
-  const back = words.siteChangeLines(change, {}, { was: { nightsShiftC: -2, daysShiftC: -2 }, inputs: { nights: { value: 12 }, days: { value: 26 } } }).map(say).join(' ');
+  const back = words.siteChangeLines(change, {}, { was: { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }, inputs: { nights: { value: 12 }, days: { value: 26 } } }).map(say).join(' ');
   assert.match(back, /^Coldest nights and hottest days back to the climate map: 12 °C and 26 °C today\./);
 });
 
@@ -308,4 +309,109 @@ test('R6: every Reset and Change button\'s accessible name contains its visible 
       }
     }
   }
+});
+
+// Fix round 3, batch 1.
+const leadOfText = (s) => /^(.+?\s?[:：])/.exec(s)?.[1] ?? '';
+test('R1, C1: warmth over the year is said from its one status: plants only near the edge are a count, never "a smaller limit"; the nights row and the card read the same status', () => {
+  const list = ['a', 'b', 'c', 'd', 'e'].map(t);
+  // Edge only, in every period: three near the edge of their annual warmth range, nobody outside.
+  const edge = map({ a: v('look', [f('cool', 'look')]), b: v('look', [f('cool', 'look')]), c: v('look', [f('cool', 'look')]), d: v('fits'), e: v('fits') });
+  const c = core.lineCounts(list, { [P[0]]: edge, [P[1]]: edge, [P[2]]: edge });
+  assert.equal(core.limitStatus(c).warmth.state, 'free', 'nobody outside: warmth is no limit');
+  assert.ok(!core.limitsOf(c).some((l) => l.line === 'warmth'), 'the card leaves warmth out');
+  const view = core.warmthView(c);
+  assert.deepEqual(view, { state: 'free', period: P[0], later: false, outside: 0, edge: 3, of: 5 });
+  const temp = () => '9.0 °C';
+  for (const main of [false, true]) for (const yours of [false, true]) {
+    const line = words.warmthLine(view, { main, yours, temp });
+    const text = say(line);
+    assert.doesNotMatch(text, /limit/i, `R1: edge only is never called a limit ("${text}")`);
+    assert.equal(text, '3 want a little more warmth over the year, near their range edge.');
+  }
+  // Outside today: the limit forms, main or smaller, with "with your values" when a shift applies.
+  const out = map({ a: v('outside', [f('cool', 'outside')]), b: v('look', [f('cool', 'look')]), c: v('fits'), d: v('fits'), e: v('fits') });
+  const c2 = core.lineCounts(list, { [P[0]]: out, [P[1]]: out, [P[2]]: out });
+  const w2 = core.warmthView(c2);
+  assert.deepEqual(w2, { state: 'limits', period: P[0], later: false, outside: 1, edge: 1, of: 5 });
+  assert.equal(words.warmthLine(w2, { main: false, yours: false, temp }).key, 'consortium.figures.warmth');
+  assert.equal(words.warmthLine(w2, { main: true, yours: true, temp }).key, 'consortium.figures.warmthMainYours');
+  assert.match(say(words.warmthLine(w2, { main: false, yours: true, temp })), /^A smaller limit here: 2 of the 5 want more warmth over the year, .*\(9\.0 °C today with your values\): 1 are outside their range, 1 near its edge\.$/);
+  // Nothing outside or near: no sentence. Not counted yet: not checked, no sentence.
+  const fine = map(Object.fromEntries(list.map((x) => [x.id, v('fits')])));
+  assert.equal(words.warmthLine(core.warmthView(core.lineCounts(list, { [P[0]]: fine })), { main: false, yours: false, temp }), null);
+  assert.equal(core.warmthView(null).state, 'unchecked');
+  assert.equal(words.warmthLine(core.warmthView(null), { main: false, yours: false, temp }), null);
+  for (const [loc, json] of LOCALES) {
+    assert.ok(json['consortium.figures.warmthEdge'], `${loc} has figures.warmthEdge`);
+    assert.equal(json['consortium.figures.leadWarmth'], leadOfText(json['consortium.figures.warmth']), `${loc} leadWarmth is warmth's lead`);
+    assert.equal(json['consortium.figures.leadWarmthMain'], leadOfText(json['consortium.figures.warmthMain']), `${loc} leadWarmthMain is warmthMain's lead`);
+  }
+});
+
+test('R4, C3: warmth that limits only later says "then with your values" when a shift applies, like the today form; the lead is the row\'s', () => {
+  const list = ['a', 'b', 'c'].map(t);
+  const fine = map({ a: v('fits'), b: v('fits'), c: v('fits') });
+  const later = map({ a: v('outside', [f('cool', 'outside')]), b: v('look', [f('cool', 'look')]), c: v('fits') });
+  const c = core.lineCounts(list, { [P[0]]: fine, [P[1]]: fine, [P[2]]: later });
+  const view = core.warmthView(c);
+  assert.deepEqual(view, { state: 'limits', period: P[2], later: true, outside: 1, edge: 1, of: 3 });
+  const temp = (p) => (p === P[2] ? '9.0 °C' : null);
+  const yours = say(words.warmthLine(view, { main: false, yours: true, temp }));
+  assert.equal(yours, 'A smaller limit here: by 2071–2099, 2 of the 3 want more warmth over the year, the average of the coolest and the warmest month (9.0 °C then with your values): 1 are outside their range, 1 near its edge.');
+  const map0 = say(words.warmthLine(view, { main: true, yours: false, temp }));
+  assert.match(map0, /^The main limit here: by 2071–2099, .*\(9\.0 °C then\):/);
+  for (const [loc, json] of LOCALES) {
+    const k = json['consortium.figures.warmthLaterYours'] ?? '';
+    for (const slot of ['{lead}', '{period}', '{n}', '{of}', '{temp}', '{out}', '{edge}']) assert.ok(k.includes(slot), `${loc} warmthLaterYours has ${slot}`);
+    assert.notEqual(k, json['consortium.figures.warmthLater'], `${loc}: the "with your values" form differs from the map's`);
+  }
+});
+
+test('R2, C5: the two temperature shifts set as one are data in the edits (tempsTogether), kept by siteEditsOf only beside two equal shifts', () => {
+  assert.deepEqual(core.siteEditsOf({ nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }), { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true });
+  assert.deepEqual(core.siteEditsOf({ nightsShiftC: -2, daysShiftC: -1, tempsTogether: true }), { nightsShiftC: -2, daysShiftC: -1 }, 'unequal shifts: no link');
+  assert.deepEqual(core.siteEditsOf({ nightsShiftC: -2, tempsTogether: true }), { nightsShiftC: -2 }, 'one shift: no link');
+  assert.deepEqual(core.siteEditsOf({ nightsShiftC: -2, daysShiftC: -2, tempsTogether: 'yes' }), { nightsShiftC: -2, daysShiftC: -2 }, 'only true');
+  assert.equal(core.siteEditsOf({ tempsTogether: true }), core.NO_EDITS);
+  assert.equal(core.tempsTogether({ nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }), true);
+  assert.equal(core.tempsTogether({ nightsShiftC: -2, daysShiftC: -2 }), false);
+  assert.equal(core.sameEdits(core.siteEditsOf({ nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }), { nightsShiftC: -2, daysShiftC: -2 }), false, 'the link is part of the edits');
+});
+
+failing('R2, C5 (pf-d; waits for the hand-off: state.ts carries the link in the save\'s place and the link\'s f): the link travels with the save and "Include my place"', { owner: 'pf-d', reason: /the link travels/ }, () => {
+  const e = core.siteEditsOf({ nightsShiftC: -2, daysShiftC: -2, tempsTogether: true });
+  const back = core.decodeLink('v=5&c=temperate&m=small&a=&e=1', {}, core.encodePlace({ country: null, siteEdits: e })).state.siteEdits;
+  assert.deepEqual(back, e, 'the link travels with the save\'s place');
+});
+
+test('R3: the summary\'s head says the two set together from the link, whichever field happened to differ; equal numbers set apart are two lines', () => {
+  const head = (was, now) => words.setLines(was, now, null).map(say).join(' ');
+  // Nights +2 alone, days +1 alone; then the tick with 2: only the days value changes, both are named.
+  assert.equal(head({ nightsShiftC: 2, daysShiftC: 1 }, { nightsShiftC: 2, daysShiftC: 2, tempsTogether: true }), 'Coldest nights and hottest days set 2 °C warmer.');
+  // Both already at 2, set apart; the tick links them: still the pair.
+  assert.equal(head({ nightsShiftC: 2, daysShiftC: 2 }, { nightsShiftC: 2, daysShiftC: 2, tempsTogether: true }), 'Coldest nights and hottest days set 2 °C warmer.');
+  // Equal numbers set on their own lines: each line, never "set both".
+  assert.equal(head({ nightsShiftC: 2 }, { nightsShiftC: 2, daysShiftC: 2 }), 'Hottest days set 2 °C warmer.');
+  assert.equal(head({}, { nightsShiftC: 2, daysShiftC: 2 }), 'Coldest nights set 2 °C warmer. Hottest days set 2 °C warmer.');
+  // Another line edited while linked: nothing said about the temperatures.
+  assert.equal(head({ nightsShiftC: 2, daysShiftC: 2, tempsTogether: true }, { nightsShiftC: 2, daysShiftC: 2, tempsTogether: true, soilPh: 6.5 }), 'Soil pH set to 6.5.');
+});
+
+test('C2: the Water card\'s later-only lead counts each later period with no "more" after "none"; ja and ko keep the board\'s conditional "With rain only"', () => {
+  for (const [loc, json] of LOCALES) assert.ok(json['consortium.figures.waterByPeriod'], `${loc} has figures.waterByPeriod`);
+  assert.equal(en['consortium.figures.waterByPeriod'], 'one: # by {period} | other: # by {period}');
+  const ja = Object.fromEntries(LOCALES)['ja'], ko = Object.fromEntries(LOCALES)['ko'];
+  assert.ok(ja['consortium.figures.waterLeadLater'].startsWith('雨だけでは'), 'ja: 雨だけでは, as waterLead');
+  assert.ok(ko['consortium.figures.waterLeadLater'].startsWith('빗물만으로는'), 'ko: 빗물만으로는, as waterLead');
+});
+
+test('C4: each member\'s first period drier here than its recorded band is the core\'s (drierFrom over drierOf), for the Water card and its tests alike', () => {
+  const dry = (place) => f('dry', 'look', { place, low: 0.4 });
+  const by = {
+    [P[0]]: map({ a: v('look', [dry(0.2)]), b: v('fits'), c: v('fits') }),
+    [P[1]]: map({ a: v('look', [dry(0.2)]), b: v('look', [dry(0.3)]), c: v('fits') }),
+    [P[2]]: map({ a: v('look', [dry(0.2)]), b: v('look', [dry(0.3)]), c: v('look', [dry(0.5)]) }),
+  };
+  assert.deepEqual([...core.drierFrom(['a', 'b', 'c'].map(t), by)], [['a', P[0]], ['b', P[1]]], 'c is not drier (0.5 is inside its band): never');
 });

@@ -8,9 +8,12 @@
 // and unmarked in the commit that made it pass):
 //   commit 0 and commit 1: PFD1-PFD8 (the boards);
 //   fix round 1: batch 1 PFD9-PFD14, batch 2 PFD15-PFD19, batch 3 PFD20-PFD31, batch 4 PFD32-PFD36;
-//   fix round 2, batch 1: PFD37-PFD40 (R2/C2, R4, R5, R7).
-// One marker is left: PFD32 is expected-fail until main's chunk-3 hand-off makes state/location.ts read
-// the soil tile ({ soil: true }, review C4); it loses its marker in that merge.
+//   fix round 2, batch 1: PFD37-PFD40 (R2/C2, R4, R5, R7);
+//   fix round 3, batch 1: PFD41-PFD43 (R2/C5, R3); R1/C1, R4/C3 are unit cases (consortium-pf-d.test.mjs).
+// Two markers are left: PFD32 is expected-fail until main's chunk-3 hand-off makes state/location.ts read
+// the soil tile ({ soil: true }, review C4); PFD42 until main's hand-off makes state.ts carry the
+// tempsTogether link in the save's place and the link's f (round 3 R2, C5). Each loses its marker in
+// that merge.
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
 //   carries none: the panel is new (spec: "Delete: nothing; the 'Soil, likely' card and 'Tell us about
@@ -22,7 +25,7 @@ import { useHarness, aria, has } from './helpers.mjs';
 import { loadCase, control, done, focused, inOrder, pastEdge, press, says, saysNot, section, sectionText, toastText, withStorage } from './pf-helpers.mjs';
 import { searchFor } from './pf-c-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
-import { atBoardPlace, atPlace, edits, movedTo, engineCounts, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
+import { atBoardPlace, atPlace, edits, movedTo, engineCounts, engineDrierFrom, engineSides, fieldState, iconBefore, inputs, lookOf, mendoza, namesOf, placeStep, summary, tempEn } from './pf-d-helpers.mjs';
 
 useHarness();
 
@@ -94,7 +97,7 @@ test('PFD2 (pf-d SiteKiambu temperature editor, Toasts): Change opens "Coldest n
   const i = await inputs(page);
   await says(page, `With your value: nights ${await tempEn(i.nights.value - 2)} today`);
   await press(page, 'button', 'Use my value');
-  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2 }, 'board: both shifts written, as the tick says');
+  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }, 'board: both shifts written, as the tick says, set together (R2)');
   const toast = await summary(page);
   assert.match(toast, /^Coldest nights and hottest days set 2 °C colder\. Today: (\d+ (more|fewer) fit|no change in what fits); by 2071–2099: /, `board: the summary's head and periods ("${toast}")`);
   assert.match(toast, /Your 8 plants are kept/, 'board: the summary names the plants');
@@ -560,7 +563,7 @@ test('PFD20 (pf-d F3, R6, R7, C2): Undo puts the edits and the counts back and e
   await tapOption(page, 'Watering', 'Watered all year');
   await nextSummary(page, first);
   await undoToast(page);
-  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2 }, 'F3: Undo takes back the second edit only');
+  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }, 'F3: Undo takes back the second edit only');
   // R7: another toast with Undo (a plant removed) is never the change summary.
   await tap(page, 'Change the ground after heavy rain');
   await tapOption(page, 'The ground after heavy rain', 'Stays wet for days');
@@ -588,7 +591,7 @@ test('PFD21 (pf-d R8): in "I know my plot’s figure" the tick follows the figur
   await says(page, 'Make the hottest days 3 °C warmer too');
   await saysNot(page, 'Make the hottest days 3 °C colder too', 'R8: never "colder" for a warmer figure');
   await tap(page, 'Use my value');
-  assert.deepEqual(await edits(page), { nightsShiftC: 3, daysShiftC: 3 }, 'R8: the days warmer, as the tick says');
+  assert.deepEqual(await edits(page), { nightsShiftC: 3, daysShiftC: 3, tempsTogether: true }, 'R8: the days warmer, as the tick says');
   await done(page);
 });
 
@@ -655,15 +658,8 @@ test('PFD25 (pf-d R13): the Water card\'s lead counts the later members by the p
   const page = await mendoza({ width: 390 });
   await section(page, 'What limits plants here', 20_000);
   // From the engine: list plants by the first period they are drier than their band in (never a board figure).
-  const firsts = await page.evaluate(() => {
-    const s = window.__ctTest.store, rule = s.verdictRule.value, list = s.pool.value ?? [];
-    const periods = ['1991-2020', '2041-2070', '2071-2099'];
-    const drier = (v) => !!v && (v.level === 'fits' || v.level === 'look') && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
-    const vs = periods.map((p) => rule.verdicts(list, { ...s.verdictContext.value, period: p }));
-    const out = {};
-    for (const t of list) { const k = vs.findIndex((m) => drier(m.get(t.id))); if (k >= 0) (out[periods[k]] ??= []).push(t.id); }
-    return out;
-  });
+  const firsts = {};
+  for (const [id, p] of await engineDrierFrom(page, 'pool')) if (p) (firsts[p] ??= []).push(id);
   const lastOnly = firsts['2071-2099'] ?? [];
   if (!lastOnly.length) { await done(page); return; }
   const mid = (firsts['2041-2070'] ?? []).slice(0, 1), today = (firsts['1991-2020'] ?? []).slice(0, 1);
@@ -777,6 +773,8 @@ test('PFD29 (pf-d F4, F7): while the checks are counting the toast reads "Counti
   await done(page);
 });
 
+// The grower's values without the link between the two shifts (PFD41, PFD42 test the link).
+const valuesOf = ({ tempsTogether, ...rest }) => rest;
 test('PFD30 (pf-d F11): a save with grower values comes back after a reload, marked "Your value"; a value it cannot read is dropped and the rest kept', async () => {
   const page = await placeStep('kiambu-8', { width: 390 });
   await section(page, 'Your place in figures', 20_000);
@@ -790,7 +788,7 @@ test('PFD30 (pf-d F11): a save with grower values comes back after a reload, mar
   assert.ok(await page.waitForFunction(() => (localStorage.getItem('canopi-consortium') ?? '').includes('b=65'), { timeout: 6000 }).then(() => true, () => false), 'the save holds the values');
   await page.reload();
   assert.ok(await page.waitForFunction(() => !!window.__ctTest?.store, { timeout: 20_000 }).then(() => true, () => false), 'the reloaded page');
-  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2, soilPh: 6.5 }, 'F11: the values come back');
+  assert.deepEqual(valuesOf(await edits(page)), { nightsShiftC: -2, daysShiftC: -2, soilPh: 6.5 }, 'F11: the values come back');
   // The test's place came through the hook (no saved location): set it again; the values stay (same cell).
   await atPlace(page, 'kiambu');
   await page.evaluate(() => { window.__ctTest.store.view.value = 'start'; });
@@ -802,7 +800,7 @@ test('PFD30 (pf-d F11): a save with grower values comes back after a reload, mar
   await done(page);
   const again = await withStorage({ 'canopi-consortium': bad });
   assert.ok(await again.waitForFunction(() => (window.__ctTest?.store?.members.value.length ?? 0) > 0, { timeout: 20_000 }).then(() => true, () => false), 'the saved palette opens');
-  assert.deepEqual(await edits(again), { nightsShiftC: -2, daysShiftC: -2 }, 'F11: the bad pH and the unknown answer dropped, the shifts kept');
+  assert.deepEqual(valuesOf(await edits(again)), { nightsShiftC: -2, daysShiftC: -2 }, 'F11: the bad pH and the unknown answer dropped, the shifts kept');
   await done(again);
 });
 
@@ -979,16 +977,11 @@ test('PFD38 (pf-d R4): the summary under the panel head holds the toast while th
   await done(page);
 });
 
-test('PFD39 (pf-d R5): the Water card\'s lead says only the parts that are there: today only, or none today and the later ones, never "0 more"', async () => {
+test('PFD39 (pf-d R5, C2, C4): the Water card\'s lead says only the parts that are there: today only, or none today and the later ones, never "0 more" nor "none … 1 more"; the members\' first drier period is the core\'s', async () => {
   const page = await mendoza({ width: 390 });
   await section(page, 'What limits plants here', 20_000);
   // Each member's first period drier here than its recorded band, from the engine (none: never).
-  const firsts = await page.evaluate(() => {
-    const s = window.__ctTest.store, rule = s.verdictRule.value, ms = s.memberTaxa.value;
-    const drier = (v) => !!v && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
-    const ps = ['1991-2020', '2041-2070', '2071-2099'], vs = ps.map((p) => rule.verdicts(ms, { ...s.verdictContext.value, period: p }));
-    return ms.map((t) => [t.id, ps[vs.findIndex((m) => drier(m.get(t.id)))] ?? null]);
-  });
+  const firsts = await engineDrierFrom(page, 'members');
   const now = firsts.find(([, p]) => p === '1991-2020')?.[0], later = firsts.find(([, p]) => p && p !== '1991-2020'), never = firsts.find(([, p]) => !p)?.[0];
   assert.ok(now && later && never, `engine: Mendoza's members are drier today, later and never (${JSON.stringify(firsts)})`);
   const lead = async (ids) => {
@@ -1000,7 +993,7 @@ test('PFD39 (pf-d R5): the Water card\'s lead says only the parts that are there
     }, { timeout: 20_000 }).then((h) => h.jsonValue());
   };
   assert.equal(await lead([now, never]), 'With rain only, 1 of your 2 plants may need watering today:', 'R5: today only, no "0 more"');
-  assert.equal(await lead([later[0], never]), `With rain only, none of your 2 plants needs watering today; 1 more by ${later[1].replace('-', '–')}:`, 'R5: later only, never "0 of your 2"');
+  assert.equal(await lead([later[0], never]), `With rain only, none of your 2 plants needs watering today; 1 by ${later[1].replace('-', '–')}:`, 'R5, C2: later only, never "0 of your 2" nor "1 more" after "none"');
   await done(page);
 });
 
@@ -1030,15 +1023,9 @@ test('PFD40 (pf-d R7): two equal shifts set on their own lines are two values: R
 // Kiambu's 8 plants, plus (when none is drier) a plant of the list first drier later, so the Water card
 // shows; the members' first drier period from the engine.
 async function memberFirsts(page) {
-  return page.evaluate(() => {
-    const s = window.__ctTest.store, rule = s.verdictRule.value, ms = s.memberTaxa.value;
-    const periods = ['1991-2020', '2041-2070', '2071-2099'];
-    const drier = (v) => !!v && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
-    const vs = periods.map((p) => rule.verdicts(ms, { ...s.verdictContext.value, period: p }));
-    const out = {};
-    for (const t of ms) { const k = vs.findIndex((m) => drier(m.get(t.id))); if (k >= 0) out[periods[k]] = (out[periods[k]] ?? 0) + 1; }
-    return out;
-  });
+  const out = {};
+  for (const [, p] of await engineDrierFrom(page, 'members')) if (p) out[p] = (out[p] ?? 0) + 1;
+  return out;
 }
 async function loadKiambuWater() {
   const page = await loadCase('kiambu-8', { width: 390 });
@@ -1046,15 +1033,63 @@ async function loadKiambuWater() {
   await section(page, 'What limits plants here', 20_000);
   assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.memberVerdicts.value && window.__ctTest.store.siteInputs.value.rain.shift === -250, { timeout: 20_000 }).then(() => true, () => false), 'the rain cut is read');
   if (Object.keys(await memberFirsts(page)).length) return page;
-  const drierOne = await page.evaluate(() => {
-    const s = window.__ctTest.store, rule = s.verdictRule.value, list = s.pool.value ?? [];
-    const drier = (v) => !!v && v.factors.some((f) => f.factor === 'dry' && f.level === 'look' && f.place !== null && f.low !== null && f.place < f.low);
-    const vs = ['2071-2099', '2041-2070', '1991-2020'].map((p) => rule.verdicts(list, { ...s.verdictContext.value, period: p }));
-    return list.find((t) => vs.some((m) => drier(m.get(t.id))))?.id ?? null;
-  });
+  const drierOne = (await engineDrierFrom(page, 'pool')).find(([, p]) => p)?.[0] ?? null;
   assert.ok(drierOne, 'engine: a plant of Kiambu\'s lists is drier here with 250 mm less rain');
   const ids = await page.evaluate(() => window.__ctTest.store.members.value);
   await page.evaluate((x) => { window.__ctTest.store.members.value = x; }, [...ids, drierOne]);
   assert.ok(await page.waitForFunction((n) => window.__ctTest.store.memberTaxa.value.length === n && !!window.__ctTest.store.memberVerdicts.value, { timeout: 20_000 }, ids.length + 1).then(() => true, () => false), 'the members');
   return page;
 }
+
+test('PFD41 (pf-d R2, C5): the two shifts set as one with the tick are data in the edits: the days row says "set with coldest nights", an edit of the days alone ends it, Undo brings it back with the values, and Reset on Coldest nights puts both back', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await colder(page);
+  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }, 'R2: the tick is stored with the values');
+  await says(page, '2 °C colder, set with coldest nights');
+  const id = await toastId(page);
+  await tap(page, 'Change hottest days');
+  await typeAt(page, '1');
+  await tap(page, 'Use my value');
+  await nextSummary(page, id);
+  assert.deepEqual(await edits(page), { nightsShiftC: -2, daysShiftC: -1 }, 'R2: the days set on their own end the link');
+  await saysNot(page, 'set with coldest nights', 'R2: the days row no longer says it');
+  await undoToast(page);
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.siteEdits.value.tempsTogether === true && window.__ctTest.store.siteEdits.value.daysShiftC === -2, { timeout: 6000 }).then(() => true, () => false), 'R2: Undo brings the link back with the values');
+  await says(page, '2 °C colder, set with coldest nights');
+  const id2 = await toastId(page);
+  await tap(page, 'Reset coldest nights to the climate map');
+  const back = await nextSummary(page, id2);
+  assert.deepEqual(await edits(page), {}, 'R2: Reset on Coldest nights puts both back');
+  assert.match(back, /^Coldest nights and hottest days back to the climate map/, `R2: the summary names both ("${back}")`);
+  await done(page);
+});
+
+failing('PFD42 (pf-d R2, C5; waits for the hand-off: state.ts carries the link in the save\'s place): the two shifts set as one stay one after a reload: the days row still says "set with coldest nights" and Reset on Coldest nights puts both back', { owner: 'pf-d', reason: /the link comes back after a reload/ }, async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await page.evaluate(() => { const s = window.__ctTest.store; s.removeMember(s.members.value[0]); s.hideToast(); });
+  await colder(page);
+  assert.ok(await page.waitForFunction(() => /f=-20\.-20/.test(localStorage.getItem('canopi-consortium') ?? ''), { timeout: 6000 }).then(() => true, () => false), 'the save holds the values');
+  await page.reload();
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest?.store, { timeout: 20_000 }).then(() => true, () => false), 'the reloaded page');
+  const e = await edits(page);
+  await done(page);
+  assert.deepEqual(e, { nightsShiftC: -2, daysShiftC: -2, tempsTogether: true }, 'R2: the link comes back after a reload');
+});
+
+test('PFD43 (pf-d R3): the tick names both lines in the summary, whichever value changed: nights +2 and days +1 set apart, then the tick at 2 warmer says "Coldest nights and hottest days set 2 °C warmer"', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await page.evaluate(() => window.__ctTest.store.setSiteEdits({ nightsShiftC: 2, daysShiftC: 1 }, 'Edits set'));
+  await page.waitForFunction(() => window.__ctTest.store.siteEdits.value.daysShiftC === 1, { timeout: 6000 });
+  const id = await toastId(page);
+  await tap(page, 'Change coldest nights');
+  assert.equal(await page.evaluate(() => document.querySelector('main fieldset input[type="checkbox"]')?.checked ?? null), true, 'the tick starts on');
+  await typeAt(page, '2');
+  await tap(page, 'Use my value');
+  const toast = await nextSummary(page, id);
+  assert.deepEqual(await edits(page), { nightsShiftC: 2, daysShiftC: 2, tempsTogether: true });
+  assert.match(toast, /^Coldest nights and hottest days set 2 °C warmer\./, `R3: the summary names both lines ("${toast}")`);
+  await done(page);
+});

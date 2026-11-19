@@ -187,6 +187,29 @@ export function limitStatus(c: LineCounts | null | undefined): Record<LimitLine,
   }
   return out;
 }
+// Warmth over the year as every row says it (review round 3 R1, C1, R4): one view, built from its
+// status, so no row decides "limits" from raw counts. Limits (plants outside in some period): the counts
+// of the period it is said for, today when anyone is outside today, else the first period it reaches its
+// highest count (`later`). Free: today's plants near the edge only (a count, never a limit). Not counted
+// yet: unchecked, no counts.
+export interface WarmthView { state: LimitState; period: PeriodId | null; later: boolean; outside: number; edge: number; of: number }
+export function warmthView(c: LineCounts | null | undefined): WarmthView {
+  const st = limitStatus(c).warmth, ps = c?.periods ?? [];
+  const today = ps.find((p) => p.period === periodIds[0]);
+  if (st.state === 'unchecked' || !today) return { state: 'unchecked', period: null, later: false, outside: 0, edge: 0, of: 0 };
+  if (st.state === 'free') return { state: 'free', period: today.period, later: false, outside: 0, edge: warmthOf(today).edge, of: today.of };
+  const p = st.today ? today : ps.find((x) => x.period === st.period) ?? today;
+  return { state: 'limits', period: p.period, later: p !== today, outside: warmthOf(p).outside, edge: warmthOf(p).edge, of: p.of };
+}
+
+// Each plant's first period drier here than its recorded band (drierOf), in period order; a plant never
+// drier is not in the map. The Water card's "today", "by 2041–2070" and "by 2071–2099" read it.
+export function drierFrom(list: readonly Pick<Taxon, 'id'>[], verdictsByPeriod: Partial<Record<PeriodId, ReadonlyMap<PlantId, PlantVerdict>>>): Map<PlantId, PeriodId> {
+  const first = new Map<PlantId, PeriodId>();
+  for (const t of list) for (const p of periodIds) if (drierOf(verdictsByPeriod[p]?.get(t.id))) { first.set(t.id, p); break; }
+  return first;
+}
+
 // The lines that limit, most first (ties in LIMIT_IDS order); none when nothing is outside and no plant
 // carries the note.
 export function limitsOf(c: LineCounts | null | undefined): { line: LimitLine; n: number; period: PeriodId | null }[] {

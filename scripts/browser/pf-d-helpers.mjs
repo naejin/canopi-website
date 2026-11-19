@@ -35,17 +35,18 @@ export async function placeStep(id, opts = {}) {
 // The engine's figures for the panel, on the page's own state: the page's verdict rule judges the list
 // for each period (the store's own context), and the core functions the panel calls count them
 // (site-change.ts lineCounts, limitStatus, rangeMoves; never a copy of their arithmetic, C3, C12).
-const { lineCounts, limitStatus, rangeMoves } = await import('../../src/lib/consortium/site-change.ts');
-async function engineVerdicts(page) {
-  const { list, byPeriod } = await page.evaluate(() => {
-    const s = window.__ctTest.store, rule = s.verdictRule.value, pool = s.pool.value ?? [];
+const { drierFrom, lineCounts, limitStatus, rangeMoves } = await import('../../src/lib/consortium/site-change.ts');
+// of: 'pool' (the list) or 'members' (the palette's plants).
+async function engineVerdicts(page, of = 'pool') {
+  const { list, byPeriod } = await page.evaluate((which) => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, pool = (which === 'members' ? s.memberTaxa.value : s.pool.value) ?? [];
     const out = {};
     for (const p of ['1991-2020', '2041-2070', '2071-2099']) {
       const vs = rule.verdicts(pool, { ...s.verdictContext.value, period: p });
       out[p] = pool.map((t) => [t.id, vs.get(t.id)]).filter(([, v]) => v).map(([id, v]) => [id, { level: v.level, range: v.range, notes: v.notes, factors: v.factors, limiting: v.limiting }]);
     }
     return { list: pool.map((t) => ({ id: t.id, role: t.role })), byPeriod: out };
-  });
+  }, of);
   return { list, byPeriod: Object.fromEntries(Object.entries(byPeriod).map(([p, rows]) => [p, new Map(rows)])) };
 }
 // Per period: the list's plants that take the nights, the fit ones, those drier here than their
@@ -61,6 +62,14 @@ export async function engineSides(page) {
   const { list, byPeriod } = await engineVerdicts(page);
   const c = lineCounts(list, byPeriod);
   return { sides: c.periods.map((p) => p.sides), status: limitStatus(c), moves: rangeMoves(list, byPeriod), of: list.length };
+}
+
+// Each plant's first period drier here than its recorded band (core drierFrom over drierOf, the rule the
+// Water card counts with; never a copy of it, C4), as [id, period or null for never], in list order.
+export async function engineDrierFrom(page, of = 'members') {
+  const { list, byPeriod } = await engineVerdicts(page, of);
+  const first = drierFrom(list, byPeriod);
+  return list.map((t) => [t.id, first.get(t.id) ?? null]);
 }
 
 // The store's edits and today's merged figures.

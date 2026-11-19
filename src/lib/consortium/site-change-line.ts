@@ -10,8 +10,9 @@
 // second look; by 2071–2099: 50 more fit, 46 no longer fit, of the 515. In all, 17 fewer fit today and 4
 // more fit by 2071–2099." A status message, never a question; the hole words are verdict-line.ts's.
 // A leaf beside verdict-line.ts: keys under consortium.figures.
-import type { LimitLine, MemberChange, PeriodChange, SiteChange } from './site-change.ts';
-import type { Factor, Line, SiteEdits, SiteInputs, TextureId } from './types.ts';
+import type { LimitLine, MemberChange, PeriodChange, SiteChange, WarmthView } from './site-change.ts';
+import type { Factor, Line, PeriodId, SiteEdits, SiteInputs, TextureId } from './types.ts';
+import { tempsTogether } from './site-inputs.ts';
 import { periodIds } from './types.ts';
 import { holeChangeLines, periodName } from './verdict-line.ts';
 
@@ -60,7 +61,10 @@ export function setLines(was: SiteEdits, now: SiteEdits, inputs: SiteInputs | nu
   const dir = (n: number, less: string, more: string) => (n < 0 ? less : more);
   const nights = differs(was, now, 'nightsShiftC'), days = differs(was, now, 'daysShiftC');
   const n = now.nightsShiftC, d = now.daysShiftC;
-  if (nights && days && n !== undefined && n === d) out.push(L(dir(n, 'setBothColder', 'setBothWarmer'), { tempShift: Math.abs(n) }));
+  // Set as one (the tick, stored as tempsTogether: R3): the pair is named whichever value happened to
+  // differ, and when the tick links two values already equal; never read from equal numbers.
+  const together = tempsTogether(now) && n !== undefined && (nights || days || !tempsTogether(was));
+  if (together) out.push(L(dir(n, 'setBothColder', 'setBothWarmer'), { tempShift: Math.abs(n) }));
   else if (nights && days && n === undefined && d === undefined) out.push(L('backBoth', { tempNights: tn(inputs?.nights.value ?? 0), tempDays: td(inputs?.days.value ?? 0) }));
   else {
     if (nights) out.push(n === undefined ? L('backNights', { temp: tn(inputs?.nights.value ?? 0) }) : L(dir(n, 'setNightsColder', 'setNightsWarmer'), { tempShift: Math.abs(n) }));
@@ -205,3 +209,20 @@ export const LIMIT_LINES: Readonly<Record<LimitLine, { row: LimitRow; lead: stri
   warmth: { row: 'days', lead: 'warmthMain', meaning: 'meaningWarmth' },
   rain: { row: 'rain', lead: null, meaning: 'meaningRain' },
 });
+
+// The warmth part of the Hottest days row (review round 3 R1, C1, R4, C3), from core warmthView: a limit
+// only when its status limits (the main limit's lead or "A smaller limit here:"), today or by the period
+// it first limits in, "with your values" in either when a shift applies (`yours`); plants only near the
+// edge, a count with no limit lead (as the heat side's "near their heat limit"); else nothing. `temp`
+// gives the year's mean for a period in the view's form (null: no climate slot, no sentence).
+export interface WarmthWords { main: boolean; yours: boolean; temp: (p: PeriodId) => string | null }
+export function warmthLine(w: WarmthView, o: WarmthWords): Line | null {
+  if (w.state === 'free') return w.edge ? L('warmthEdge', {}, w.edge) : null;
+  if (w.state !== 'limits' || !w.period) return null;
+  const temp = o.temp(w.period);
+  if (temp === null) return null;
+  const vars = { n: w.outside + w.edge, of: w.of, temp, out: w.outside, edge: w.edge };
+  const yours = o.yours ? 'Yours' : '';
+  if (!w.later) return L(`${o.main ? LIMIT_LINES.warmth.lead : 'warmth'}${yours}`, vars);
+  return L(`warmthLater${yours}`, { ...vars, period: periodName(w.period) }, undefined, { lead: L(o.main ? 'leadWarmthMain' : 'leadWarmth') });
+}

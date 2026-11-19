@@ -18,11 +18,11 @@
 import { computed, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
+import type { ClimateZone, Hole, LimitLine, Line, LinkedEdits, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
 import {
   LIMIT_LINES, NAMED_GROUP, NAMED_PALETTE, NEAREST_LISTS, NO_EDITS, NO_SITE_CHANGE, EDIT_LIMITS, PH_BANDS, changeDetailLines, checksFailedLine, climateFor, countingLine, drainageLine,
-  drierOf, hintsOf, holdsWater, holes, isDryland, limitStatus, lineCounts, limitsOf, named, periodIds, periodName, phBandOf, potsLine, rangeMoves, siteChange, siteChangeLines, siteInputsOf, siteSnapshot, soilTextureOf,
-  textureLine, textureNameLine, warmthOf, wateringLine, windRecorded, yearMeanC,
+  drierFrom, hintsOf, holdsWater, holes, isDryland, limitStatus, lineCounts, limitsOf, named, periodIds, periodName, phBandOf, potsLine, rangeMoves, siteChange, siteChangeLines, siteInputsOf, siteSnapshot, soilTextureOf,
+  tempsTogether, textureLine, textureNameLine, warmthLine, warmthView, wateringLine, windRecorded, yearMeanC,
 } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { P, T, nameOf, pageLang } from '../../strings.ts';
@@ -115,13 +115,7 @@ const drainNeed = computed<number | null>(() => {
   return list.value.filter((t) => hintsOf(vs.get(t.id)).includes('drainage')).length;
 });
 // The members drier here than where they are recorded, by the first period they are.
-const membersDry = computed(() => {
-  const b = byPeriod.value;
-  if (!b) return null;
-  const first = new Map<PlantId, PeriodId>();
-  for (const t of store.memberTaxa.value) for (const p of periodIds) if (drierOf(b[p]?.get(t.id))) { first.set(t.id, p); break; }
-  return first;
-});
+const membersDry = computed(() => (byPeriod.value ? drierFrom(store.memberTaxa.value, byPeriod.value) : null));
 const located = computed(() => !!store.location.value?.lookup);
 // The listed plants with a recorded wind tolerance (core windRecorded over the source's layer values):
 // "recorded for only N plants on the list" once the source reads them; until then (the PP-G source
@@ -157,17 +151,12 @@ const focusTo = (id: LineId) => requestAnimationFrame(() => requestAnimationFram
   el?.focus();
 }));
 
-// The two temperature shifts set as one (the nights editor's "the hottest days too" tick), stored as a
-// link, never read from equal numbers (R7): the edits in which they were set together, and those an
-// edit of another line made from them (Undo goes back to one of these, so the link comes back with it).
-// An edit of either line on its own ends it. Reset on either line puts both back only while it holds.
-// The link lives with the session (a save keeps the values; after a reload Reset puts back its own line).
-const linked = new WeakSet<SiteEdits>();
-const isLinked = (e: SiteEdits): boolean => linked.has(e);
-function commit(line: LineId, next: SiteEdits, link = false): void {
+// The two temperature shifts set as one (the nights editor's "the hottest days too" tick) are data in
+// the edits (core tempsTogether, round 3 R2, C5): the tick sets it, an edit of either line on its own
+// drops it, Reset on either line reads it, and it travels with Undo like the values.
+function commit(line: LineId, next: SiteEdits): void {
   const was = store.siteEdits.peek(), wasInputs = store.siteInputs.peek();
   editing.value = null;
-  const keep = line === 'nights' || line === 'days' ? link : isLinked(was);
   store.setSiteEdits(next, ({ ready, failed }) => {
     // The toast this summary speaks on (setSiteEdits shows it before it asks for the words).
     const toast = store.toast.peek()?.id ?? -1;
@@ -189,12 +178,12 @@ function commit(line: LineId, next: SiteEdits, link = false): void {
     lastChange.value = { line, toast, change, of: lst.length };
     return words(change);
   });
-  if (keep) linked.add(store.siteEdits.peek());
 }
 function reset(line: LineId): void {
-  const next: SiteEdits = { ...store.siteEdits.peek() };
+  const next: LinkedEdits = { ...store.siteEdits.peek() };
   // Set as one with the tick: both go back together (board Toasts "Coldest nights and hottest days back").
-  if ((line === 'nights' || line === 'days') && isLinked(store.siteEdits.peek())) { delete next.nightsShiftC; delete next.daysShiftC; }
+  if ((line === 'nights' || line === 'days') && tempsTogether(next)) { delete next.nightsShiftC; delete next.daysShiftC; }
+  if (line === 'nights' || line === 'days') delete next.tempsTogether;
   if (line === 'soilPh') delete next.soilPh;
   else if (line === 'watering' || line === 'drainage' || line === 'pots') delete next[line];
   else delete next[FIELD[line]];
@@ -254,7 +243,7 @@ function Bold({ text, runs }: { text: string; runs: string[] }) {
   return <>{out}</>;
 }
 const leadOf = (s: string): string => /^(.+?\s?[:：])/.exec(s)?.[1] ?? '';
-const EFFECT_RUNS = () => [F('mainLimit'), leadOf(F('warmth')), leadOf(F(LIMIT_LINES.warmth.lead!)), F('notLimitHead')];
+const EFFECT_RUNS = () => [F('mainLimit'), F('leadWarmth'), F('leadWarmthMain'), F('notLimitHead')];
 function MainLead({ text }: { text: string }) {
   return <Bold text={text} runs={EFFECT_RUNS()} />;
 }
@@ -370,16 +359,13 @@ function effect(line: LineId, i: SiteInputs, main: boolean, panel = true): strin
     const st = status.value;
     const heat = st.days.state === 'limits';
     const heatPart = heat ? `${heatMain ? lead : ''}${F('daysTake', { n: n0(take(a)), of: n0(a.of), mid: n0(take(b)), last: n0(take(z)), sa: n0(sure(a)), sb: n0(sure(b)), sz: n0(sure(z)) })}` : '';
-    // Warmth over the year: the cool side only (core warmthOf); "with your values" when a shift applies.
-    const warm = warmthOf(a), today = climateFor({ inputs: i, scenario: store.scenario.value }, TODAY);
+    // Warmth over the year (the cool side only), from its one view (core warmthView, warmthLine): a limit
+    // only when its status limits, today or by the period it first limits in, "with your values" in both
+    // when a shift applies; plants only near the edge, a count with no limit lead (R1, C1, R4, C3).
     const yours = i.nights.shift !== 0 || i.days.shift !== 0;
-    const warmKey = `${warmMain ? LIMIT_LINES.warmth.lead : 'warmth'}${yours ? 'Yours' : ''}`;
-    // Warmth limits only later (nobody outside on the cool side today): that period's counts and mean.
-    const wp = st.warmth.state === 'limits' && !st.warmth.today ? ps.find((x) => x.period === st.warmth.period) : undefined;
-    const wSlot = wp && climateFor({ inputs: i, scenario: store.scenario.value }, wp.period);
-    const warmPart = wp && wSlot
-      ? F('warmthLater', { lead: leadOf(F(warmKey)), period: periodName(wp.period), n: n0(warmthOf(wp).outside + warmthOf(wp).edge), of: n0(wp.of), temp: temp(yearMeanC(wSlot)), out: n0(warmthOf(wp).outside), edge: n0(warmthOf(wp).edge) })
-      : warm.outside + warm.edge && today ? F(warmKey, { n: n0(warm.outside + warm.edge), of: n0(a.of), temp: temp(yearMeanC(today)), out: n0(warm.outside), edge: n0(warm.edge) }) : '';
+    const slotTemp = (p: PeriodId) => { const slot = climateFor({ inputs: i, scenario: store.scenario.value }, p); return slot ? temp(yearMeanC(slot)) : null; };
+    const warmLine = warmthLine(warmthView(c), { main: warmMain, yours, temp: slotTemp });
+    const warmPart = warmLine ? sayAll([warmLine]) : '';
     const parts = (warmMain ? [warmPart, heatPart] : [heatPart, warmPart]).filter(Boolean);
     if (!heat && a.sides.hot.edge) parts.push(FP('heatEdge', a.sides.hot.edge));
     if (!parts.length) parts.push(F('notLimitDays'));
@@ -470,12 +456,14 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const tickColder = shift !== null && shift !== 0 ? shift < 0 : figure ? true : down;
   const use = () => {
     if (shift === null || shift === 0) { setError(rangeWords); field.current?.focus(); return; }
-    commit(line, edited(shift), line === 'nights' && both);
+    commit(line, edited(shift));
   };
   // The edits "Use my value" would write (the tick: the hottest days too).
   const edited = (s: number): SiteEdits => {
-    const next: SiteEdits = { ...store.siteEdits.peek(), [FIELD[line]]: s };
-    if (line === 'nights' && both) next.daysShiftC = s;
+    const next: LinkedEdits = { ...store.siteEdits.peek(), [FIELD[line]]: s };
+    // The tick sets both as one; either line set on its own ends the link (R2).
+    if (line === 'nights' && both) Object.assign(next, { daysShiftC: s, tempsTogether: true });
+    else if (line === 'nights' || line === 'days') delete next.tempsTogether;
     return next;
   };
   // The preview: the figures the checks would read with these edits, through the engine's own inputs.
@@ -692,7 +680,7 @@ const yoursText = (line: ClimateLine, i: SiteInputs): string => {
   const s = i[INPUT[line]].shift;
   const v = line === 'rain' ? mm(Math.abs(s)) : line === 'dry' ? FP('months', Math.abs(s)) : tempShift(Math.abs(s));
   // "with the nights" only where the two were set as one (the link, R7), never from equal numbers.
-  const key = line === 'days' && isLinked(store.siteEdits.value) ? (s < 0 ? 'yoursLessWithNights' : 'yoursMoreWithNights') : s < 0 ? 'yoursLess' : 'yoursMore';
+  const key = line === 'days' && tempsTogether(store.siteEdits.value) ? (s < 0 ? 'yoursLessWithNights' : 'yoursMoreWithNights') : s < 0 ? 'yoursLess' : 'yoursMore';
   return F(`${key}${line === 'rain' ? 'Rain' : line === 'dry' ? 'Dry' : ''}`, { shift: v });
 };
 function Cells({ line, i }: { line: ClimateLine; i: SiteInputs }) {
@@ -914,11 +902,12 @@ function WaterCard({ i }: { i: SiteInputs }) {
   const item = (t: Taxon) => dry.get(t.id) === TODAY
     ? <>{chip(F(first ? 'waterNowFirst' : 'waterNow'))} {F('waterNowWhy', { name: nameOf(t) })}</>
     : <>{chip(F('waterLater', { period: periodName(dry.get(t.id)!) }))} {F(first ? 'waterLaterWhyFirst' : 'waterLaterWhy', { name: nameOf(t) })}</>;
-  // The later members by the first period they are drier in (R13): "1 more by 2041–2070, 2 more by 2071–2099".
+  // The later members by the first period they are drier in (R13).
   const perPeriod = [MID, LAST].map((p) => [p, later.filter((t) => dry.get(t.id) === p).length] as const).filter(([, n]) => n);
   // Three forms built from the parts that are there, never a zero placeholder (R5): today only, later
-  // only ("none … today; 2 more by 2041–2070"), both.
-  const laterWords = listOf(perPeriod.map(([p, n]) => FP('membersDryLaterMany', n, { period: periodName(p) }).replace(/[.。]$/u, '')));
+  // only ("none … today; 2 by 2041–2070"), both ("…, and 2 more by 2041–2070").
+  // "and 1 more by 2041–2070" after today's count; "none … today; 1 by 2041–2070" alone (C2: no "more" after "none").
+  const laterWords = listOf(perPeriod.map(([p, n]) => (today.length ? FP('membersDryLaterMany', n, { period: periodName(p) }).replace(/[.。]$/u, '') : FP('waterByPeriod', n, { period: periodName(p) }))));
   const vars = { size: n0(size), later: laterWords }, f = first ? 'First' : '';
   const lead = !perPeriod.length ? FP(`waterLead${f}`, today.length, vars) : today.length ? FP(`waterLeadBoth${f}`, today.length, vars) : F(`waterLeadLater${f}`, vars);
   const restWords = !rest.length ? '' : named(rest.length, size) ? FP('waterRest', rest.length, { names: listOf(rest.map(nameOf)) }) : FP('membersDryOther', rest.length);
