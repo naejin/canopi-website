@@ -141,3 +141,49 @@ test('pf-c country field: Enter takes the one match or an exact name (page langu
   assert.equal(at('Kenia', 'es'), 'KE', 'the exact page-language name');
   assert.equal(at('zqx'), null, 'no match');
 });
+
+// ---- chunk 4 (C2): the guide's missing plant named (T17, chunk-2 M29) and "Keep it as mine" as one
+// store-side action (T18, chunk-2 D9). The state modules in Node with a source double. ----
+const store = await import('../src/islands/consortium/store.ts');
+const restoreM = await import('../src/islands/consortium/state/restore.ts');
+const draftM = await import('../src/islands/consortium/state/draft.ts');
+const saveM = await import('../src/islands/consortium/state/save.ts');
+
+// A release of three plants, none on the Temperate list: an apple with an English name, a plant with
+// a French name only, one with no common name.
+const releaseNames = [
+  { plant: 1, id: 'p-apple', canonical: 'Malus sieversii', names: { en: 'Wild apple', fr: 'Pommier sauvage' }, lists: ['Arid'] },
+  { plant: 2, id: 'p-fr', canonical: 'Plantus gallicus', names: { fr: 'Plante gauloise' }, lists: ['Tropical'] },
+  { plant: 3, id: 'p-none', canonical: 'Plantus nudus', names: {}, lists: ['Tropical'] },
+];
+const sourceDouble = () => ({
+  info: () => ({ releaseId: 'r-test', climates: ['Temperate', 'Arid', 'Tropical'] }),
+  pool: async () => [],
+  interactions: async () => [],
+  names: async () => releaseNames,
+});
+const missingFor = async (plant) => {
+  store.source.value = sourceDouble();
+  restoreM.notices.value = restoreM.NO_NOTICES;
+  await restoreM.applyPreset('Temperate', plant);
+  return restoreM.notices.peek().guideMissing;
+};
+
+test('chunk 4 T17: a guide\'s plant missing from the chosen list is named by its common name in the page language, else English, else its scientific name; one the release lacks keeps the guide\'s words', async () => {
+  assert.equal(await missingFor('Malus sieversii'), 'Wild apple', 'the common name (English page)');
+  assert.equal(await missingFor('Plantus gallicus'), 'Plantus gallicus', 'no name in the page language or English: the scientific name');
+  assert.equal(await missingFor('Plantus nudus'), 'Plantus nudus', 'no common name: the scientific name');
+  assert.equal(await missingFor('Nothingus fakeus'), 'Nothingus fakeus', 'not in the release: the guide\'s own words');
+});
+
+test('chunk 4 T18: keepShownAsMine() makes the palette on screen the save (no longer held) and offers one Undo that holds it again', () => {
+  saveM.held.value = true;
+  store.members.value = ['p-apple', 'p-fr'];
+  draftM.keepShownAsMine();
+  assert.equal(saveM.held.peek(), false, 'the palette on screen is the save now');
+  const line = store.toast.peek();
+  assert.ok(line && typeof line.undo === 'function', 'one toast with its Undo');
+  line.undo();
+  assert.equal(saveM.held.peek(), true, 'Undo holds the save again');
+  assert.deepEqual(store.members.peek(), ['p-apple', 'p-fr'], 'the plants on screen stay');
+});

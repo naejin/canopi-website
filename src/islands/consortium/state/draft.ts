@@ -155,6 +155,14 @@ export async function openSavedInstead(): Promise<void> {
   notices.value = { ...notices.peek(), guidePlant: null, guideMissing: null, newer: false, unreadable: false };
   if (await restore(saved.fragment, { from: 'saved', src: saved.src, place: saved.place })) answered(T('place.openedSaved'));
 }
+// "Keep it as mine" (chunk-2 D9): the palette on screen (a shared one being looked at) becomes the save
+// now, with one Undo that puts the earlier save back and holds it again; the toast says the palette
+// that is now yours (D3: "Your palette: N plants.").
+export function keepShownAsMine(): void {
+  const before = store.snapshot();
+  holdSave(false);
+  store.offerUndo(P('palette.place.keptMine', store.members.peek().length), before);
+}
 // An answer given: said on Place's status line, the focus on the view (never on <body>).
 function answered(line: string): void {
   placeSaid.value = line;

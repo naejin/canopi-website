@@ -8,9 +8,10 @@
 //   on the grower's own value only, Reset. Phone: one line open at a time (the main limit first);
 //   laptop (960 px): every line open, in two columns. Then the two folds, "What it means for your
 //   choice" and the foot.
-// - PaletteLimits: only the lines that limit plants here, the "Not a limit here" sentence, the Watering
-//   line with the members it notes, the link to the panel, and the Water card (the members drier here
-//   than where they are recorded, by period; only when one is).
+// - PaletteLimits: drawn only where a line limits plants here (A5: an outside count above 0, or a
+//   member drier here than where it is recorded; boards Palette and Main draw no card): those lines,
+//   the "Not a limit here" sentence, the Watering line with the members it notes, the link to the
+//   panel, and the Water card (the members drier here, by period; only when one is).
 // - Every edit goes through store.setSiteEdits with a summary function: when the verdicts are settled,
 //   the list and the members are judged for the three periods with the inputs before and after (six
 //   passes), and core siteChange / siteChangeLines say what changed (toast, with Undo; the line's own
@@ -497,11 +498,14 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
     return `${F('previewLead')} ${own}${same}`;
   })() : null;
   const pressedMark = (on: boolean) => (on ? <Icon d={CHECK} /> : null);
+  // The own figure Coldest nights reads is the coolest month's average night, not the year's coldest
+  // night: its label and help say so (owner 2026-11-19, T19); Hottest days keeps the shared words.
+  const ownFigure = (key: string) => (line === 'nights' ? `${key}Nights` : key);
   return (
     <fieldset class="fg-editor">
       <legend>{F(`legend${line[0].toUpperCase()}${line.slice(1)}`)}</legend>
       <div class="fg-editor-row">
-        <label for={id}>{F(figure ? 'plotFigure' : cfg.lead)}</label>
+        <label for={id}>{F(figure ? ownFigure('plotFigure') : cfg.lead)}</label>
         <input ref={field} id={id} type="text" inputMode="decimal" class="fg-number" value={text} aria-invalid={error ? 'true' : 'false'} aria-describedby={error ? `${id}-err` : undefined}
           onInput={(e) => { setText((e.currentTarget as HTMLInputElement).value); setError(null); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); use(); } }} />
         <span class="fg-unit">{F(cfg.unit)}</span>
@@ -514,7 +518,7 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
       )}
       {error && <p id={`${id}-err`} class="fg-error">{error}</p>}
       {(line === 'nights' || line === 'days') && <>
-        <p class="fg-help">{F(figure ? 'figureHelp' : 'knowHelp')}</p>
+        <p class="fg-help">{F(figure ? ownFigure('figureHelp') : 'knowHelp')}</p>
         <div><button type="button" class="ct-link-button fg-link" onClick={() => { setFigure(!figure); setText(''); setError(null); }}>{F(figure ? 'useShift' : 'knowFigure')}</button></div>
       </>}
       {line === 'nights' && <>
@@ -937,9 +941,12 @@ function WaterCard({ i }: { i: SiteInputs }) {
     </section>
   );
 }
+// Whether the last counts found a limiting line: while the checks count again (an edit made in the
+// card) or could not run, the card stays as it was, so the editor in it is not dropped (T15).
+let limitShown = false;
 export function PaletteLimits() {
   const i = store.siteInputs.value;
-  if (!located.value || i.nights.value === null) return null;
+  if (!located.value || i.nights.value === null) { limitShown = false; return null; }
   const status = checks.value;
   // Every line that limits (A5; core limitsOf, most first; warmth over the year is said in the Hottest
   // days row, core LIMIT_LINES), the rain with the dry months it reads with (board SiteMendoza); the
@@ -958,6 +965,8 @@ export function PaletteLimits() {
     if (!lines.includes('nights')) not.push(F('notNights', { a: temp(today.tminColdC), b: temp(last.tminColdC), period: periodName(LAST), frost: F(today.tminColdC >= 10 ? 'noFrostLower' : 'frostLower') }));
     if (!lines.includes('days')) not.push(F('notDays', { a: temp(today.tmaxWarmC), b: temp(last.tmaxWarmC), period: periodName(LAST) }));
   }
+  if (status === 'ready') limitShown = lines.length > 0 || !!membersDry.value?.size;
+  if (!limitShown) return null;
   const grower = i.watering.source === 'grower';
   return (
     <>

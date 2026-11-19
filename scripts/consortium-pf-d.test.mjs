@@ -477,3 +477,18 @@ test('R18: the figures panel reads the year\'s warmth without the range rule: ye
   // (Whether the built figures chunk pulls the range rule in is the browser gates' to say: P5-14g,
   // P5-26e. A source grep of Figures.tsx could not see an import through index.ts; C8.)
 });
+
+// Chunk 4 T19 (owner 2026-11-19, words only): Coldest nights' own figure is the average night of the
+// coolest month, not the coldest night of the year; the editor says so in every locale, in words of
+// its own (never the shared "your plot's figure" form).
+test('chunk 4 T19: the nights own-figure label and help exist in all 11 locales, apart from the shared form', () => {
+  for (const l of ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru']) {
+    const w = JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'));
+    for (const [own, shared] of [['plotFigureNights', 'plotFigure'], ['figureHelpNights', 'figureHelp']]) {
+      const v = w[`consortium.figures.${own}`];
+      assert.ok(typeof v === 'string' && v.trim(), `${l}: consortium.figures.${own}`);
+      assert.notEqual(v, w[`consortium.figures.${shared}`], `${l}: ${own} has its own words`);
+    }
+  }
+  assert.match(en['consortium.figures.figureHelpNights'], /coolest month, not its coldest night of the year/);
+});

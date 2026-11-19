@@ -166,13 +166,29 @@ test('PFA1 (pf-a Main at 1280 and 960, Palette at 390): the Next step card ("Nex
   assert.ok(await until(page, () => window.__ctTest.store.sheet.value?.kind === 'find'), 'board: See all opens Find');
   assert.ok(await page.evaluate(() => !!window.__ctTest.store.sheetTarget.value.hole), 'board: Find opens preset to the hole');
   await done(page);
-  const phone = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  // At 390 px the Next step is on the first screen where no limits card stands before it (chunk 4 T15:
+  // the card is drawn only where a line limits; with no place, none). Known board conflict (chunk 4
+  // C2): board Palette draws Kiambu with no card, but the engine finds limiting lines there (nights,
+  // days, warmth) and board SiteMendoza puts the card first; there the Next step comes right after it.
+  const phone = await loadCase('kiambu-8-nights-2c-colder', { site: null, width: 390 });
   await says(phone, OTHER_HOLES);
+  assert.equal(await phone.$('.fg-limits'), null, 'premise: no limits card');
   const p = await engineLead(phone);
   assert.ok((await nextText(phone)).includes(position(p)), `board: the Palette board's position line "${position(p)}"`);
   const at = await boxOf(phone, 'Next step');
   assert.ok(at && at.y < 844, `board: at 390 px the Next step is on the first screen (${at?.y})`);
   await done(phone);
+  const limited = await loadCase('kiambu-8-nights-2c-colder', { width: 390 });
+  assert.ok(await limited.waitForFunction(() => !!document.querySelector('.fg-limits'), { timeout: 20_000 }).then(() => true, () => false), 'premise: a line limits at Kiambu, so the card stands');
+  const order = await limited.evaluate(() => {
+    const card = document.querySelector('.fg-limits').getBoundingClientRect();
+    const heads = [...document.querySelectorAll('main h2, main h3')].filter((h) => h.getBoundingClientRect().width).map((h) => ({ t: h.textContent.trim(), y: h.getBoundingClientRect().top }));
+    const next = heads.find((h) => /^Next step/.test(h.t));
+    return { bottom: card.bottom, next: next?.y ?? null, between: heads.filter((h) => h.y > card.bottom && next && h.y < next.y).map((h) => h.t) };
+  });
+  assert.ok(order.next !== null && order.next > order.bottom, `board SiteMendoza: the Next step comes after the limits card (${JSON.stringify(order)})`);
+  assert.deepEqual(order.between, [], `the Next step is the first block after the limits card (${JSON.stringify(order)})`);
+  await done(limited);
 });
 
 test('PFA2 (pf-a holes, one form everywhere): the Next step, Other holes, Find\'s hole title and its rows all say "<light or job>: nobody …" with the light words (Full sun, Mostly sun, Part shade, Shade), never "Needs full sun" or high/medium/low; adding a candidate moves the Next step to another hole', async () => {

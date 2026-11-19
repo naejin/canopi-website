@@ -1404,3 +1404,62 @@ test('PFC55 (pf-c, main h2 R4): a place search answer names a town-level place o
   assert.equal(await store(page, () => !!window.__ctTest.store.location.value.placeLevel), true, 'a town: may travel');
   await done(page);
 });
+
+// ---- chunk 4 (C2) ----
+
+// "Look up its name"'s reverse lookups held until window.__releaseReverse(), each ending at once with
+// an AbortError when its ask is cut short (as a real fetch does), so an overtaken ask ends while the
+// newer one still waits.
+const holdReverseAbortable = (pg) => pg.evaluateOnNewDocument(() => {
+  const real = window.fetch.bind(window);
+  let gates = [];
+  window.__reverseAsks = 0;
+  window.__releaseReverse = () => { for (const g of gates) g(); gates = []; };
+  window.fetch = (input, init) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    if (url.hostname !== 'nominatim.openstreetmap.org' || url.pathname !== '/reverse') return real(input, init);
+    window.__reverseAsks++;
+    return new Promise((resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(new DOMException('The ask was cut short', 'AbortError')));
+      gates.push(() => resolve(real(input, init)));
+    });
+  };
+});
+const lookUpBusy = (page) => page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Look up its name')?.getAttribute('aria-busy') ?? null);
+
+test('PFC56 (pf-c, chunk 4 T1, h3 G1#1): an earlier "Look up its name" cut short by a newer one for another typed point leaves the newer one asking: the link stays busy, and the newer answer names the new point', async () => {
+  const page = await tool({ width: 390, nominatim: 'fixture', setup: holdReverseAbortable });
+  await searchFor(page, '-1.171234, 36.834567');
+  await says(page, /Read on this device\. Nothing was sent, so the place has no name\./, { timeout: 10_000 });
+  await press(page, 'button', 'Look up its name');
+  assert.ok(await page.waitForFunction(() => window.__reverseAsks === 1, { timeout: 5000 }).then(() => true, () => false), 'ask 1 is sent');
+  // The grower moves on: a second typed point, then its own lookup (ask 2 cuts ask 1 short).
+  await searchFor(page, '-1.05, 37.05');
+  assert.ok(await page.waitForFunction(() => window.__ctTest.store.location.value?.lat === -1.05, { timeout: 10_000 }).then(() => true, () => false), 'the second point is in use');
+  await press(page, 'button', 'Look up its name');
+  assert.ok(await page.waitForFunction(() => window.__reverseAsks === 2, { timeout: 5000 }).then(() => true, () => false), 'ask 2 is sent');
+  await new Promise((r) => setTimeout(r, 500));
+  assert.equal(await lookUpBusy(page), 'true', 'T1: ask 1 ending (cut short) leaves ask 2 busy');
+  await page.evaluate(() => window.__releaseReverse());
+  assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.location.value?.label, { timeout: 10_000 }).then(() => true, () => false), 'ask 2 names the new point');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.location.value.lat), -1.05, 'the name is the new point\'s');
+  await saysNot(page, 'The place search did not answer, so the place has no name. Try again later.', 'no failure said');
+  await done(page);
+});
+
+test('PFC57 (pf-c, chunk 4 T17, chunk-2 M29): a guide link whose plant is in the release but not in the chosen climate\'s list names it by its common name in the notice, never by its scientific name', async () => {
+  const pick = await tool({});
+  assert.ok(await pick.waitForFunction(() => !!window.__ctTest?.store?.source.value, { timeout: 20_000 }).then(() => true, () => false), 'the data is open');
+  const { canonical, common } = await pick.evaluate(async () => {
+    const t = window.__ctTest, src = t.store.source.value;
+    const temperate = new Set((await src.pool('Temperate')).map((x) => x.canonical_name));
+    const p = (await src.names('en')).find((x) => !temperate.has(x.canonical) && x.names.en && x.names.en !== x.canonical);
+    return { canonical: p?.canonical ?? null, common: p?.names.en ?? null };
+  });
+  await done(pick);
+  assert.ok(canonical && common, 'premise: a plant of the release outside the Temperate list, with an English common name');
+  const page = await withStorage({}, `/palette/?plant=${encodeURIComponent(canonical)}&climate=temperate`);
+  await says(page, `${common} is not in the Temperate list, so the guide’s plant could not be kept.`, { timeout: 15_000 });
+  await saysNot(page, canonical, `T17: the notice never names "${canonical}"`);
+  await done(page);
+});

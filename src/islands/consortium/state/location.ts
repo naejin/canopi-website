@@ -321,14 +321,20 @@ const stillUnnamed = (l: Place): Place | null => {
   const now = store.location.peek() as Place | null;
   return now?.typed && !now.label && now.lat === l.lat && now.lon === l.lon && now.source === l.source ? now : null;
 };
+// Each ask is numbered (nameAsk): only the latest ask writes `naming`, so an earlier one answered or
+// cut short after the grower moved on never clears a newer ask's busy state (h3 G1#1).
+let nameAsk = 0;
 export async function lookUpName(): Promise<void> {
   const l = store.location.peek() as Place | null;
   if (!l?.typed || l.label || naming.peek() === 'asking') return;
   const at = snapOrigin({ lat: l.lat, lon: l.lon });
   if (!at) return;
+  const ask = ++nameAsk;
+  const mine = () => ask === nameAsk;
   naming.value = 'asking';
   try {
     const r = await searcher().nameOf(at.lat, at.lon);
+    if (!mine()) return;
     const now = stillUnnamed(l);
     if (!now) { naming.value = null; return; }
     if (!r) { naming.value = 'none'; return; }
@@ -336,7 +342,8 @@ export async function lookUpName(): Promise<void> {
     batch(() => { store.location.value = next; naming.value = null; });
     keepLocation(next);
   } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') { if (naming.peek() === 'asking') naming.value = null; return; }
+    if (!mine()) return;
+    if (err instanceof DOMException && err.name === 'AbortError') { naming.value = null; return; }
     if (stillUnnamed(l)) naming.value = 'failed';
   }
 }

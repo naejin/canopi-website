@@ -4,8 +4,8 @@
 // (reported only) of section 5 and the section 6 neighbours at 320, 390, 960 and 1280. Board figures
 // come from the engine on the installed release (pf-d-helpers.mjs engineCounts and engineSides call the
 // core's lineCounts, limitStatus and rangeMoves on the page's own verdicts), never a board number.
-// Cases by round (each opened marked expected-fail under pf-d with scripts/expect-fail.mjs failing(),
-// and unmarked in the commit that made it pass):
+// Cases by round (each opened marked expected-fail with scripts/expect-fail.mjs failing(), and
+// unmarked in the commit that made it pass):
 //   commit 0 and commit 1: PFD1-PFD8 (the boards);
 //   fix round 1: batch 1 PFD9-PFD14, batch 2 PFD15-PFD19, batch 3 PFD20-PFD31, batch 4 PFD32-PFD36;
 //   fix round 2, batch 1: PFD37-PFD40 (R2/C2, R4, R5, R7);
@@ -13,8 +13,7 @@
 //   h3 G1 (chunk-3 hand-off): PFD32 and PFD42 unmarked (state/location.ts reads the soil tile, M8; the
 //   tempsTogether link in the save's place and the link's f, M1); PFD44-PFD46 (M2, M4);
 //   h3 G1 fix round 1: PFD47-PFD49 (R3; R1, C5; R4, C4), PFD45's focus (R2, C1), PFD18's count cells (C7);
-//   PFD49 marked expected-fail under pf-d, hand-off to main h3 (fix round 2, C1.1: its fix is base.css's #ct-root reserve;
-//   pf-d is still in browser-tests.test.mjs CHUNK_3_OPEN, so a "main" owner is not accepted yet).
+//   PFD49 unmarked in chunk 4 (C2, T2: base.css's #ct-root reserve is 100vh).
 //   h3 G1 fix round 2: PFD50 (B2.1), PFD51 (B1.1, C2.1), PFD52 (B3.1).
 //
 // Sweep ledger (the old screen-level tests this file carries, each a case below or a line of one):
@@ -24,7 +23,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { useHarness, aria, has } from './helpers.mjs';
-import { failing } from '../expect-fail.mjs';
 import { loadCase, control, done, focused, inOrder, pastEdge, press, says, saysNot, section, sectionText, toastText, withStorage } from './pf-helpers.mjs';
 import { searchFor } from './pf-c-helpers.mjs';
 import { tool } from './p5-helpers.mjs';
@@ -1227,9 +1225,9 @@ test('PFD48 (pf-d R1, C5): the soil tile is optional: with every soil tile faili
 // (The location line's own moves when a saved place is read, ct-country and ct-location-result, are
 // the Place form's: reported, not counted here.)
 const panelMove = (m) => /site-footer|tool-release|fg-/.test(m);
-// Expected-fail (C1.1): the fix is the page's #ct-root height reserve in src/styles/consortium/base.css,
-// outside G1's files; hand-off .local/consortium/v2/ppc/pf/c3/handoff/g1-pfd49-ct-root-reserve.md.
-failing('PFD49 (pf-d R4, C4; hand-off main h3: the #ct-root reserve in base.css): a Start with a climate kept on this device (the guides\' canopi-climate), or a saved location, does not move when "Your place in figures" arrives: CLS 0.01 or less at 390 and 1280 px', { owner: 'pf-d', reason: /R4: Start does not move when the figures panel arrives/ }, async () => {
+// The page's #ct-root height reserve (src/styles/consortium/base.css, 100vh) keeps what is under the tool
+// below the first screen, so the panel landing moves nothing on screen (chunk 4, T2).
+test('PFD49 (pf-d R4, C4; the #ct-root reserve in base.css): a Start with a climate kept on this device (the guides\' canopi-climate), or a saved location, does not move when "Your place in figures" arrives: CLS 0.01 or less at 390 and 1280 px', async () => {
   const over = [];
   const cases = [['kept climate', { 'canopi-climate': 'temperate' }], ['saved location', { 'canopi-location': JSON.stringify({ lat: -1.1714, lon: 36.8356, source: 'map' }) }]];
   for (const [what, entries] of cases) for (const width of [390, 1280]) {
@@ -1362,3 +1360,58 @@ test('PFD52 (pf-d B3.1): a soil reading landing while an edit\'s summary is coun
   await done(page);
 });
 const verdictsSettledSoon = (page) => page.waitForFunction(() => !!window.__ctTest.store.verdictRule.value && !!window.__ctTest.store.pool.value, { timeout: 30_000 }).then(() => true, () => false);
+
+// ---- chunk 4 (C2) ----
+
+test('PFD53 (pf-d, chunk 4 T15, A5; boards Palette and Main draw no card, SiteMendoza draws it): "What limits plants here" is on the palette only where a line limits plants here (an outside count above 0, or a member drier here than where it is recorded), by the engine on the page\'s own state', async () => {
+  const seen = [];
+  for (const [what, open] of [['kiambu-8', () => loadCase('kiambu-8', { width: 390 })], ['kiambu-8-nights-2c-colder', () => loadCase('kiambu-8-nights-2c-colder', { width: 390 })], ['mendoza', () => mendoza({ width: 390 })]]) {
+    const page = await open();
+    assert.ok(await page.waitForFunction(() => !!window.__ctTest.store.location.value?.lookup && !!window.__ctTest.store.verdictRule.value, { timeout: 30_000 }).then(() => true, () => false), `${what}: the place and the checks`);
+    const { status } = await engineSides(page);
+    const lines = Object.values(status).filter((s) => s.state === 'limits').map((s) => s.line);
+    const dry = (await engineDrierFrom(page)).filter(([, p]) => p).length;
+    const limiting = lines.length > 0 || dry > 0;
+    // The lazy figures part lands after the verdicts: wait for the card where it is due, else give the
+    // part the same time to land before saying it is absent.
+    const card = await page.waitForFunction(() => !!document.querySelector('.fg-limits'), { timeout: limiting ? 20_000 : 5000 }).then(() => true, () => false);
+    seen.push(`${what}: lines [${lines.join(', ')}], ${dry} drier, card ${card}`);
+    assert.equal(card, limiting, `T15: the card is drawn exactly where a line limits (${seen.at(-1)})`);
+    await done(page);
+  }
+  // Every scenario place has a limiting line on its whole list, so the list is cut to the plants that
+  // fit in every period with no dryness note: no line limits then, and the card goes.
+  const page = await loadCase('kiambu-8', { width: 390 });
+  assert.ok(await page.waitForFunction(() => !!document.querySelector('.fg-limits'), { timeout: 20_000 }).then(() => true, () => false), 'the whole list: the card');
+  await page.evaluate(() => {
+    const s = window.__ctTest.store, rule = s.verdictRule.value, pool = s.pool.value;
+    const by = ['1991-2020', '2041-2070', '2071-2099'].map((p) => rule.verdicts(pool, { ...s.verdictContext.value, period: p }));
+    const free = pool.filter((t) => by.every((vs) => { const v = vs.get(t.id); return v && v.level === 'fits' && !v.notes.some((n) => n.startsWith('drier')); }));
+    s.pools.value = { ...s.pools.value, [s.climate.value]: free };
+  });
+  const { status } = await engineSides(page);
+  const still = Object.values(status).filter((x) => x.state === 'limits').map((x) => x.line);
+  assert.deepEqual(still, [], 'premise: no line limits on the cut list');
+  assert.equal((await engineDrierFrom(page)).filter(([, p]) => p).length, 0, 'premise: no member drier here');
+  const gone = await page.waitForFunction(() => !document.querySelector('.fg-limits'), { timeout: 10_000 }).then(() => true, () => false);
+  seen.push(`kiambu-8 cut to ${await page.evaluate(() => window.__ctTest.store.pool.value.length)} free plants: card ${!gone}`);
+  assert.ok(gone, 'T15: no limiting line, no card');
+  await done(page);
+  console.log(`# PFD53: ${seen.join('; ')}`);
+});
+
+test('PFD54 (pf-d, chunk 4 T19; owner 2026-11-19): "I know my plot’s figure" on Coldest nights asks for the average night of the coolest month, not the coldest night of the year, in its field label and its help; Hottest days keeps its own words', async () => {
+  const page = await placeStep('kiambu-8', { width: 390 });
+  await section(page, 'Your place in figures', 20_000);
+  await tap(page, 'Change coldest nights');
+  await tap(page, 'I know my plot’s figure');
+  const label = await page.evaluate(() => document.querySelector('main fieldset.fg-editor label[for="fg-nights"]')?.textContent.trim() ?? null);
+  assert.equal(label, 'My plot’s average night in the coolest month, today', 'T19: the field names the figure the checks read');
+  await says(page, 'Type the average night of your plot’s coolest month, not its coldest night of the year: it is kept as the shift from the map, the same in every period.');
+  await tap(page, 'Cancel');
+  await tap(page, 'Change hottest days');
+  await tap(page, 'I know my plot’s figure');
+  const days = await page.evaluate(() => document.querySelector('main fieldset.fg-editor label[for="fg-days"]')?.textContent.trim() ?? null);
+  assert.equal(days, 'My plot’s figure today', 'Hottest days keeps the shared words');
+  await done(page);
+});

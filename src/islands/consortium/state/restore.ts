@@ -5,7 +5,8 @@
 // Saving never waits for it: the store watcher saves every change (persist.ts watchStore), so nothing
 // has to be cleared on the way out for saving to work again.
 import { batch, effect, signal } from '@preact/signals';
-import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, PlantId, Taxon } from '../../../lib/consortium/index.ts';
+import type { ClimateZone, DecodedLink, Interaction, LinkNotice, LinkOrigin, Locale, PlantId, PlantSource, Taxon } from '../../../lib/consortium/index.ts';
+import { nameOf, pageLang } from '../strings.ts';
 import { bringsPlace, decodeLink, linkClimates, linkOrigin, linkPlaceName, linkVersionStatus, NO_EDITS, sameEdits, snapOrigin, zoneOf } from '../../../lib/consortium/index.ts';
 import type { Country, CountrySource } from '../store.ts';
 import * as store from '../store.ts';
@@ -250,6 +251,14 @@ function samePlace(mine: OwnPlace, d: DecodedLink, origin: LinkOrigin | null): b
   return sameCell && sameEdits(s.siteEdits ?? NO_EDITS, mine.siteEdits) && (!s.country || s.country === mine.country.code);
 }
 
+// The guide's plant as the notice names it when the list lacks it (chunk-2 M29): its common name from
+// the release's names (nameOf: the page language, else English, else the scientific name); the guide's
+// own words when the release lacks it or its names do not read.
+async function guideName(src: PlantSource, plant: string): Promise<string> {
+  const p = await src.names(pageLang() as Locale).then((all) => all.find((x) => x.canonical === plant), () => undefined);
+  return p ? nameOf({ names: p.names, canonical_name: p.canonical }) : plant;
+}
+
 // A guide preset: the climate for this consortium only (never the shared site climate), and the
 // guide's plant: a member (plant-palette-architecture 8.3: a preset gives members == [id] and holds the
 // save until a plant change; a new suggestion is built around it). The plant applies only if the reader
@@ -260,10 +269,11 @@ export async function applyPreset(climate: ClimateZone, plant: string | null): P
   if (!plant) return;
   const began = actionCount();
   await waitForSource();
+  const src = store.source.peek()!;
   const pool = await store.loadPool(climate);
   if (!pool || actionCount() !== began || store.climate.peek() !== climate) return;
   const t = pool.find((x) => x.canonical_name === plant);
-  if (!t) { notices.value = { ...notices.peek(), guideMissing: plant }; return; }
+  if (!t) { notices.value = { ...notices.peek(), guideMissing: await guideName(src, plant) }; return; }
   // The guide's plant is the guide's choice, not the reader acting.
   quietly(() => batch(() => {
     store.members.value = [...new Set([...store.members.peek(), t.id])];
