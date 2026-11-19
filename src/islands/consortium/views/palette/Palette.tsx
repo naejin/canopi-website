@@ -144,10 +144,10 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
         // Warnings and fit with Balance, the foot), placed by the grid (plants.css). The blocks are keyed,
         // so crossing 960 px moves Your plants and Warnings and fit rather than remounting them: Weigh's
         // open reason (D1 (a)), and with it their folds, ticks and search, stay by the move, not a signal
-        // (G5 records it); the focus in a moved block is lost. Find's
-        // panel (960 px and wider) comes first: find.css draws it at the top of the right-hand column (h3 C7).
+        // (G5 records it); the focus in a moved block is lost. Find's panel (960 px and wider; a hole's
+        // plants) comes after the left column and before Your plants: find.css draws it at the top of
+        // the right-hand column (h3 C7, C7-big-order.1).
         <div class="ct-palette-body" data-pictures="" data-many="">
-          <FindPanelSlot key="panel" />
           <div key="left" class="ct-many-left">
             <NextStep holes={holes} members={members} />
             <div class="ct-palette-pictures">
@@ -155,6 +155,7 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
               <JobsPicture {...pic} loading={loading} />
             </div>
           </div>
+          <FindPanelSlot key="panel" />
           {desk ? [plantsBlock, weigh] : [weigh, plantsBlock]}
           {footBlock}
         </div>
@@ -163,10 +164,13 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
         // the pictures, the side column (Warnings, Balance; at 960 px and wider the foot under Balance,
         // board MainMore), then Your plants (across, under the pictures, at 960 px and wider), then on the
         // phone the foot (it changes parent there, so it remounts: Actions keeps Share's state in signals,
-        // h3 R2). Find's panel (960 px and wider) first, as find.css draws it above the Next step (h3 C7).
+        // h3 R2). Find's panel (960 px and wider) first, as find.css draws it above the Next step (h3 C7);
+        // on the empty palette it is drawn to the right of the Next step card, so it comes after it (h3
+        // C7a.1). Keyed, so the first plant added from it moves the panel, never remounts it.
         <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
-          <FindPanelSlot />
-          <NextStep holes={holes} members={members} />
+          {members.length > 0 && <FindPanelSlot key="panel" />}
+          <NextStep key="next" holes={holes} members={members} />
+          {members.length === 0 && <FindPanelSlot key="panel" />}
           {members.length > 0 && (
             <div class="ct-palette-pictures">
               <Years {...pic} warnings={groups.length} loading={loading} />

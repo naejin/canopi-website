@@ -10,7 +10,8 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { batch, effect, signal, untracked } from '@preact/signals';
 import type { ShareState } from './Share.tsx';
-import { climate, memberTaxa, source, step } from '../store.ts';
+import { climate, country, location as site, memberTaxa, source, step } from '../store.ts';
+import { shownFragment } from '../state/persist.ts';
 import { P, T } from '../strings.ts';
 import { notices } from '../state/restore.ts';
 import { zoneName } from './kit/names.ts';
@@ -108,14 +109,24 @@ async function printNow(): Promise<void> {
 
 // The Share panel open, its "Include my place" tick and its copy status: in signals, so they survive
 // the foot's remount when the palette page crosses 960 px (h3 M10, R2, D1 (a)). Closing the panel, and
-// leaving the palette step (Your place, Start over, a failure), clears them all, so the panel never
-// opens again unasked (h3 R3).
+// view going back to 'start' (Your place, Start over, Set my own value), clears them all, so the panel
+// never opens again unasked (h3 R3). A load failure shows the Failed screen with view unchanged, so it
+// clears nothing.
 const sharing = signal(false);
 const shareState: ShareState = { withPlace: signal(false), copied: signal(null) };
 function closeShare(): void {
   batch(() => { sharing.value = false; shareState.withPlace.value = false; shareState.copied.value = null; });
 }
 effect(() => { if (step.value !== 'palette') untracked(closeShare); });
+// "Link copied." is a transient flag: any change to what the link is made of (the palette shown, the
+// tick, the place, the country) drops it for good, so going back to a link copied earlier never says
+// (and announces) it again (h3 R2a.1). Read only while the panel is open (closing it clears the flag),
+// so the link is never computed early, on Start.
+effect(() => {
+  if (!sharing.value) return;
+  void shownFragment.value; void shareState.withPlace.value; void site.value; void country.value;
+  untracked(() => { shareState.copied.value = null; });
+});
 function ActionsView() {
   const copyButton = useRef<HTMLButtonElement>(null);
   const close = (): void => { closeShare(); copyButton.current?.focus(); };

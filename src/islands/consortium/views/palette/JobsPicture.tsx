@@ -151,8 +151,11 @@ export function JobsPicture({ members, holes, holeWords, onHole, onPlant, verdic
   // The intro around its goal phrase: plain words at 960 px and wider, the link below (D1; CSS shows one).
   const goalWords = T('palette.goalLink', { n: goal });
   const [before, after = ''] = P('palette.jobsIntro', goal, { goal: '\u0000' }).split('\u0000');
+  // The intro in the list's own state (h3 R1a.1): a list being read says so; a list that could not be
+  // read says the holes are not checked (as the Next step does), never "still loading" for good.
   const intro = big ? T('palette.jobsIntroMany')
-    : pending ? T('palette.holesPending')
+    : loading ? T('palette.holesPending')
+    : pending ? T('palette.holesListMissing')
     : <>{before}<span class="ct-goal-say">{goalWords}</span><button type="button" class="link-button ct-goal-link" aria-expanded={goalOpen} aria-controls={GOAL_ID} onClick={() => setGoalOpen(!goalOpen)}>{goalWords}</button>{after} {P('palette.goalHoles', open.length)}{goal > 1 && thin > 0 ? P('palette.goalThin', thin, { held }) : '.'}</>;
   return (
     <section class="ct-chart ct-jobs" id="ct-jobs" aria-labelledby="ct-jobs-h" data-mode={big ? 'rows' : 'strips'}>

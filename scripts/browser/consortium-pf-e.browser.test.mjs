@@ -1333,6 +1333,14 @@ test('PFE55 (pf-e; main h3 R2, R3, C2; D1 (a)): at 20 plants, Copy link\'s "Incl
     await page.waitForSelector('#ct-root #ct-share-field', { timeout: 10_000 });
     assert.deepEqual(await shareState(page), before, `R2 at ${width}: the box still ticked, the field still carries the place, "Link copied." still said`);
   }
+  // h3 R2a.1: a changed link drops "Link copied." for good; going back to the link copied earlier never
+  // says (and announces) it again, as nothing was copied since.
+  await page.click('#ct-root input[data-share-location]');
+  await frames(page);
+  assert.deepEqual([(await shareState(page)).ticked, (await shareState(page)).status], [false, ''], 'R2a.1: unticked, a new link, no status');
+  await page.click('#ct-root input[data-share-location]');
+  await frames(page);
+  assert.deepEqual([(await shareState(page)).ticked, (await shareState(page)).status], [true, ''], 'R2a.1: back to the link copied earlier, "Link copied." does not come back');
   // R3: Place, then back to the palette: the panel is closed and unticked.
   await press(page, 'button', '1 Your place, done');
   assert.ok(await page.waitForFunction(() => window.__ctTest.store.view.value === 'start', { timeout: 4000 }).then(() => true, () => false), 'the premise: on Place');
@@ -1345,4 +1353,73 @@ test('PFE55 (pf-e; main h3 R2, R3, C2; D1 (a)): at 20 plants, Copy link\'s "Incl
   const fresh = await shareState(page);
   assert.deepEqual([fresh.ticked, fresh.status], [false, ''], 'R3: opened again, Share starts unticked with no status');
   await done(page);
+});
+
+// Find's panel in the reading order of the column it is drawn in (h3 C7a.1, C7-big-order.1): on the empty
+// palette the panel opens to the right of the Next step card, so it is read after it; past 40 plants on a
+// desk the panel stands at the top of the right column, so it is read after the left column (Next step,
+// pictures) and before Your plants (M10's left-then-right order).
+const panelOrder = (page) => page.evaluate(() => {
+  const panel = document.querySelector('#ct-root .ct-palette-body > dialog[open]');
+  const after = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const next = document.querySelector('#ct-root .ct-palette-body > .ct-next');
+  const left = document.querySelector('#ct-root .ct-palette-body > .ct-many-left');
+  const plants = document.querySelector('#ct-root .ct-palette-body > .ct-many-right');
+  const box = (e) => e?.getBoundingClientRect();
+  return { panel: !!panel, nextFirst: after(next, panel), leftFirst: after(left, panel), plantsAfter: after(panel, plants), nextLeftOfPanel: !!panel && !!next && box(next).right <= box(panel).left + 1 };
+});
+test('PFE56 (pf-e; main h3 C7a.1, C7-big-order.1; WCAG 1.3.2, 2.4.3): at 1280 Find\'s panel is read where it is drawn: after the empty palette\'s Next step card it opens beside, and past 40 plants after the left column and before Your plants', async () => {
+  const empty = await loadPalette200({ width: 1280 });
+  try {
+    await empty.evaluate(() => { window.__ctTest.store.members.value = []; });
+    await (await empty.waitForSelector('#ct-root [data-find-entry="empty"]', { visible: true, timeout: 15_000 })).click();
+    assert.ok(await has(empty, '#ct-root .ct-palette-body > dialog[open]', 15_000), 'the premise: Find\'s panel open beside the empty card');
+    await frames(empty);
+    const o = await panelOrder(empty);
+    assert.ok(o.nextLeftOfPanel, `the premise: the Next step card drawn left of the panel (${JSON.stringify(o)})`);
+    assert.ok(o.nextFirst, 'C7a.1: the Next step card, drawn left of the panel, is read before it');
+    // The first plant added moves the panel (it comes first once there are pictures), never remounts it.
+    await empty.evaluate(() => { document.querySelector('#ct-root .ct-palette-body > dialog[open]').__same = true; const s = window.__ctTest.store; s.addMembers([(s.pool.value ?? [])[0].id]); });
+    assert.ok(await empty.waitForFunction(() => window.__ctTest.store.members.value.length === 1 && !!document.querySelector('#ct-root .ct-palette-body[data-pictures]'), { timeout: 8000 }).then(() => true, () => false), 'the premise: one plant, the pictures shown');
+    await frames(empty);
+    const kept = await empty.evaluate(() => { const d = document.querySelector('#ct-root .ct-palette-body > dialog'); return { same: !!d?.__same, open: !!d?.open, first: d?.parentElement?.firstElementChild === d }; });
+    assert.deepEqual(kept, { same: true, open: true, first: true }, 'C7a.1: the same panel, still open, now first (above the Next step)');
+  } finally { await done(empty); }
+  const big = await loadPalette200({ width: 1280 });
+  try {
+    await section(big, 'Next step');
+    const opener = await big.waitForSelector('#ct-root .ct-next [data-next-seeall], #ct-root .ct-next .ct-hole-row button, #ct-root .ct-next button.text-link', { visible: true, timeout: 15_000 }).catch(() => null);
+    assert.ok(opener, 'the premise: a way to a hole\'s plants in the Next step');
+    await opener.click();
+    assert.ok(await has(big, '#ct-root .ct-palette-body > dialog[open]', 15_000), 'the premise: the hole\'s panel open at the top of the right column');
+    await frames(big);
+    const o = await panelOrder(big);
+    assert.ok(o.leftFirst, 'C7-big-order.1: the left column (Next step, pictures) is read before the panel');
+    assert.ok(o.plantsAfter, 'C7-big-order.1: Your plants, drawn under the panel, is read after it');
+  } finally { await done(big); }
+});
+
+// h3 R1a.1, R1-intro.1: at 40 plants or fewer, a list refused (nothing loading) never leaves the Jobs
+// intro saying a list is still loading: it says the holes are not checked, as the Next step does.
+test('PFE57 (pf-e; main h3 R1a.1, R1-intro.1): with 20 plants and a guest list that could not be read, the Jobs intro says the holes are not checked, never "still loading", and the job rows count', async () => {
+  const page = await paletteOf(20, 390);
+  try {
+    const zone = await page.evaluate(() => ['Tropical', 'Subtropical', 'Mediterranean', 'Temperate', 'Arid'].find((z) => !window.__ctTest.store.pools.value[z]));
+    assert.ok(zone, 'the premise: a list the palette does not use');
+    const guest = await realDb((db) => String(db.prepare('SELECT p.id FROM placements x JOIN plants p USING (plant) WHERE x.climate_zone = ? ORDER BY 1 LIMIT 1').get(zone).id));
+    await page.evaluate((z, id) => {
+      const { store } = window.__ctTest, src = store.source.value;
+      const pool = src.pool.bind(src);
+      src.pool = (x) => (x === z ? Promise.reject(new Error('refused (test)')) : pool(x));
+      store.guests.value = { ...store.guests.value, [id]: z };
+      store.members.value = [...store.members.value, id];
+    }, zone, guest);
+    assert.ok(await page.waitForFunction(() => window.__ctTest.store.failedMembers.value.length > 0, { timeout: 8000 }).then(() => true, () => false), 'the premise: the list could not be read');
+    await frames(page);
+    const intro = await page.evaluate(() => document.querySelector('#ct-jobs .ct-chart-intro')?.textContent.replace(/\s+/g, ' ').trim() ?? '');
+    assert.notEqual(intro, en['consortium.palette.holesPending'], 'R1-intro.1: nothing is loading, so the intro never says a list is still loading');
+    assert.equal(intro, en['consortium.palette.holesListMissing'], 'R1a.1: the intro says the holes are not checked, in the Next step\'s words');
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#ct-jobs li[data-job]')].map((li) => li.innerText.replace(/\s+/g, ' ').trim()));
+    assert.deepEqual(rows.filter((row) => /Loading…/.test(row)), [], 'R1: no job row reads "Loading…"');
+  } finally { await done(page); }
 });
