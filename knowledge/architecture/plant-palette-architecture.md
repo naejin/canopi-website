@@ -6,7 +6,7 @@ tags: [consortium, architecture]
 status: draft
 generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:05Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:36Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:10Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -128,12 +128,12 @@ sources:
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:406d9721a14011fa
-    last_modified: 2026-11-19T12:06:03Z
+    last_modified: 2026-11-19T12:21:26Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
     digest: sha256:9c3a0fb17eddf50b
-    last_modified: 2026-11-19T12:06:10Z
+    last_modified: 2026-11-19T12:21:26Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
@@ -143,7 +143,7 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:3f8624af8c10e132
-    last_modified: 2026-11-19T12:06:03Z
+    last_modified: 2026-11-19T12:21:26Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -187,8 +187,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:7c18172e53e80875
-    last_modified: 2026-11-18T14:32:45Z
+    digest: sha256:65e8eb00f8a4ee77
+    last_modified: 2026-11-19T12:24:35Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
@@ -328,7 +328,7 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:06:03Z
+    last_modified: 2026-11-19T12:21:26Z
   - id: suggest-ts
     resource: ../../src/lib/consortium/suggest.ts
     title: src/lib/consortium/suggest.ts

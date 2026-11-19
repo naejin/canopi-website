@@ -2,20 +2,25 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:21Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:08Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:14Z }
 sources:
+  - id: location-privacy-tsx
+    resource: ../../src/islands/consortium/views/location/privacy.tsx
+    title: src/islands/consortium/views/location/privacy.tsx
+    digest: sha256:cd3c9e941a9646eb
+    last_modified: 2026-11-19T12:27:26Z
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:7c18172e53e80875
-    last_modified: 2026-11-18T14:32:45Z
+    digest: sha256:65e8eb00f8a4ee77
+    last_modified: 2026-11-19T12:24:35Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:0697d0d5383c5a16
-    last_modified: 2026-11-18T18:38:12Z
+    digest: sha256:342093afa0ffb607
+    last_modified: 2026-11-19T12:24:54Z
   - id: load-ts
     resource: ../../src/islands/consortium/views/location/load.ts
     title: src/islands/consortium/views/location/load.ts
@@ -30,7 +35,7 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:06:03Z
+    last_modified: 2026-11-19T12:21:26Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -133,6 +138,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 ## Rules
 
 - **Nothing third-party before a click.** Geolocation on the button only (low accuracy, 10 min cache, 15 s timeout); Nominatim on Enter only (limit 5, `accept-language` = page language, no email, 1.1 s pacing, an in-memory cache per query, attribution shown); MapLibre and OpenFreeMap (positron or dark by theme) when the map opens. Climate tiles are the site's own (`#ct-climate` names them).
+- **Privacy line and place-name credit (PP-C pre-push privacy-1, privacy-2; master's behaviour kept).** `views/location/privacy.tsx` (first run) draws the place search's privacy line (`[data-location-privacy]`: lock, `consortium.location.searchPrivacy`, the `/privacy/` link). `LocationSlot` shows it under the field from the first render, before any search and beside "Look up its name" before its press; while the answers to choose from are shown (`choices`), their own line (`Answers`) replaces it, so it is said once per screen. A place row whose name came from Nominatim (any `label`: one search answer, a reverse lookup, a link's `n`) ends with `[data-location-credit]`, `consortium.location.placeCredit` ("Place names © OpenStreetMap contributors.", linked to openstreetmap.org/copyright), plus the search's own attribution when it names someone else. Pinned by `consortium-pf-c.browser.test.mjs` PFC58, PFC59.
 - **Used at once (v13/v14 boards; the v12 proposal and its `[data-location-confirm]` are gone).** A `ready`, `coast` or `borderline` site's climate is chosen at once (`locate` → `chooseClimate`); borderline takes the class's own climate, the other one tap away; polar chooses none. Never over a climate kept for the same cell, never by a link's location, and never over a climate chosen while the read ran: `useMyLocation` and the place search note the climate when the reader's ask began (with its lookup id), and a climate chosen since, by hand or by a link's palette pasted meanwhile, stands (P5-1c). `store.proposedClimate`, `proposedFromSave` and `persist.ts climateShown` are dead (triage M9).
 - **Borderline** (`BORDERLINE_C` 0.5 °C): the class disagrees with its means (`koppenTemperatureMarginC` > 0), or a monthly mean lies within 0.5 °C of a bound that changes the zone: coldest month 18 °C (A/C) or 0 °C (C/D), warmest 22 °C only where it changes the zone (Cfa Subtropical / Cfb Temperate; Da/Db), warmest 10 °C (tundra). `near` names the zone across; from an A class it is the C class it would be (Aw → Cw, As → Cs, Af/Am → Cf, summer letter a if the warmest month ≥ 22 °C, else b: a highland Af is Cfb, Temperate). B classes are rainfall-set: never borderline on temperature. Lyon (Cfa, warmest 22.4 °C) is borderline with Temperate. **Class from the means** (decision row "Climate ranges fixed before the P5 push"): when `koppenTemperatureMarginC` > 0 and `meansKoppen(today)` (main group A/C/D from the coldest-month mean, 18 °C and > 0 °C; C/D summer letter from the warmest, 22 °C; dry letter kept; B and E unchanged) gives another zone, `siteClimate` proposes that zone (`koppen` = the means class, `mapKoppen` = the stored one); within `MEANS_MARGIN_C` 2 °C (the margin itself) it is borderline with the stored class's zone, further out a plain suggestion. The line names the means class in `location.why`, adds `location.means` ("The climate map gives {map} here, but this area’s own average temperatures give {koppen}.") and, borderline, `location.meansNear` ({margin}) instead of `location.state.borderline`. Nairobi's cell (stored Aw, margin 0.4, coldest-month mean 17.6 °C) proposes Subtropical (Cwb), between Subtropical and Tropical. A disagreement that changes no zone keeps the old rule (borderline, nothing across).
 - **Sea** (no climate cell): "pick a point on land"; the store is left alone, and with a site already read the line names it: "… Still using {place}." (`location.state.seaKept`). **Coast** (a climate but no country): the nearest cell's climate, no country or soil. **Tiles failed**: a site already read stays in use everywhere (store, `canopi-location`, its location country) and the line says so (`location.state.failedKept`, "… Still using {place}."), so a reload agrees with the page; with none, or a link's location not read yet, location and proposal cleared, manual cards with a note (`location.state.failed`). Invariant (seam review 2, 3): whenever a site drives the pool, marks and future, the panel names it; `stateText` in views/location/location.tsx writes these lines, in the result line and the map dialog.

@@ -812,6 +812,7 @@
   "consortium.location.choose": "選ぶ",
   "consortium.location.chooseName": "{name} を選ぶ",
   "consortium.location.noneOfThese": "該当なし？最寄りの町を試すか、{map}。地名 © {osm} 寄稿者。",
+  "consortium.location.placeCredit": "地名 © {osm} 寄稿者。",
   "consortium.location.mapLower": "地図で選んでください",
   "consortium.location.near": "{place}付近",
   "consortium.location.nearLower": "{place}付近",

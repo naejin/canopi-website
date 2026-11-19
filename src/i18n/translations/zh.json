@@ -812,6 +812,7 @@
   "consortium.location.choose": "选择",
   "consortium.location.chooseName": "选择 {name}",
   "consortium.location.noneOfThese": "都不是？试试最近的城镇，或{map}。地名 © {osm} 贡献者。",
+  "consortium.location.placeCredit": "地名 © {osm} 贡献者。",
   "consortium.location.mapLower": "在地图上选择",
   "consortium.location.near": "{place}附近",
   "consortium.location.nearLower": "{place}附近",

@@ -21,6 +21,7 @@ import { lookingThrough } from '../state/lookups.ts';
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { desk } from './location/shared.ts';
+import { SearchPrivacy } from './location/privacy.tsx';
 
 const broken = signal(false);
 // The whole step, chunk load included, counts as a lookup in flight (state/lookups.ts `lookups`).
@@ -102,6 +103,9 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
           {children}
         </p>
       )}
+      {/* The place search's privacy line under the field, before any press (privacy-1, as on master);
+          once per screen: the answers to choose from carry their own. */}
+      {!m?.choices.value && <SearchPrivacy />}
       {broken.value && <p class="ct-notice" role="alert">{T('details.loadFailed')}</p>}
       {/* Always on the page (A25): a status region is there before its message, words only (R7). */}
       <p class="ct-sr" role="status">{m ? m.said() : loc && !loc.lookup ? T('location.state.loading') : ''}</p>

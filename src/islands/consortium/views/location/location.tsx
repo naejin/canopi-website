@@ -35,32 +35,34 @@ import { readCoords } from './coords.ts';
 import { coords, zoneName } from '../kit/names.ts';
 import { page } from '../kit/page.ts';
 import { desk, openClimates, focusField, placeWords } from './shared.ts';
+import { SearchPrivacy, privacy } from './privacy.tsx';
 
 export { settle, useMyLocation, stop, adoptLinkLocation as adopt } from '../../state/location.ts';
 // The place field's Search: coordinates are read on this device (coords.ts); a second Search on text
 // that could not be read as coordinates sends the words as a name (the name path never takes a
 // coordinate reading: state/location.ts searchRead, R2).
 export const searchPlace = (q: string, asName = badCoords.peek() === q.trim()): Promise<void> => searchRead(q, asName ? null : readCoords(q.trim()));
-export { acts, asking, typed } from '../../state/location.ts';
+export { acts, asking, choices, typed } from '../../state/location.ts';
 
 // The map dialog is open (LocationSlot's "Pick on a map", "Adjust on the map").
 export const mapOpen = signal(false);
 export function openMap(): void { mapOpen.value = true; }
 
-const privacyHref = () => `${pageLang() === 'en' ? '' : `/${pageLang()}`}/privacy/`;
 // A sentence with links in it: {name} placeholders become the given nodes.
 function linked(text: string, parts: Record<string, ComponentChildren>): ComponentChildren[] {
   return text.split(/(\{\w+\})/).map((bit) => { const m = /^\{(\w+)\}$/.exec(bit); return m && m[1] in parts ? parts[m[1]] : bit; });
 }
 const btn = (label: string, run: () => unknown, attrs: Record<string, string> = {}) => <button type="button" class="button button-secondary ct-small" onClick={() => void run()} {...attrs}>{label}</button>;
 const link = (label: string, run: () => unknown, attrs: Record<string, string> = {}) => <button type="button" class="link-button ct-link" onClick={() => void run()} {...attrs}>{label}</button>;
+// The OpenStreetMap credit's link (the answers' line, a named place's row: privacy-2).
+const osm = () => <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a>;
+// A place search's own attribution, said after the OpenStreetMap credit when it names someone else.
+const otherCredit = (a: string | null | undefined) => (a && !/OpenStreetMap/.test(a) ? ` ${a}` : '');
 const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
-// Board icons (LocDesk, LocMap): the pin of a place, the lock of a privacy line, the check of "Use this point".
+// Board icons (LocDesk, LocMap): the pin of a place, the check of "Use this point" (the lock: privacy.tsx).
 const pin = (size = 18) => <svg aria-hidden="true" width={size} height={size} viewBox="0 0 20 20" class="ct-ico"><path d="M10 17.5s5.5-5.2 5.5-9.3a5.5 5.5 0 0 0-11 0c0 4.1 5.5 9.3 5.5 9.3Z" /><circle cx="10" cy="8.2" r="1.9" /></svg>;
-const lock = <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" class="ct-ico"><rect x="4.5" y="9" width="11" height="8" rx="1.5" /><path d="M7 9V6.5a3 3 0 0 1 6 0V9" /></svg>;
 const check = <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" class="ct-ico"><path d="M4.5 10.5l3.5 3.5 7.5-8" /></svg>;
 const chevron = <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" class="ct-ico"><path d="M7.5 5l5 5-5 5" /></svg>;
-const privacy = (text: ComponentChildren) => <p class="ct-privacy" data-location-privacy>{lock}<span>{text}</span></p>;
 
 // ---- the answers to choose from (the field, and the laptop's map dialog): rows (board LocDesk) ----
 export function Answers({ query, results, attribution, pick }: { query: string; results: readonly PlaceSearchResult[]; attribution: string | null; pick: (r: PlaceSearchResult) => void }) {
@@ -78,8 +80,8 @@ export function Answers({ query, results, attribution, pick }: { query: string; 
           </li>
         ))}
       </ul>
-      <p class="ct-muted ct-small-text">{linked(T('location.noneOfThese'), { map: <button type="button" class="link-button ct-inline-link" onClick={openMap}>{T('location.mapLower')}</button>, osm: <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> })}{attribution && !/OpenStreetMap/.test(attribution) ? ` ${attribution}` : ''}</p>
-      {privacy(<>{T('location.searchPrivacy')} <a href={privacyHref()}>{T('location.privacyLink')}</a></>)}
+      <p class="ct-muted ct-small-text">{linked(T('location.noneOfThese'), { map: <button type="button" class="link-button ct-inline-link" onClick={openMap}>{T('location.mapLower')}</button>, osm: osm() })}{otherCredit(attribution)}</p>
+      <SearchPrivacy />
     </div>
   );
 }
@@ -115,6 +117,8 @@ export function PlaceRow({ loc, frame = false }: { loc: SiteLocation; frame?: bo
           <>{link(T('location.notThisPlace'), focusField)}{sep}{link(T('location.adjust'), openMap)}</>
         )}
       </p>
+      {/* A name the place search gave (one answer, "Look up its name", a link's `n`): its credit, quiet (privacy-2). */}
+      {loc.label && <p class="ct-place-credit" data-location-credit>{linked(T('location.placeCredit'), { osm: osm() })}{otherCredit(line.value?.attribution)}</p>}
     </div>
   );
 }

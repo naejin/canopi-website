@@ -1468,3 +1468,49 @@ test('PFC57 (pf-c, chunk 4 T17, chunk-2 M29): a guide link whose plant is in the
   await saysNot(page, canonical, `T17: the notice never names "${canonical}"`);
   await done(page);
 });
+
+// ---- PP-C pre-push privacy-1, privacy-2 (master's behaviour restored) ----
+
+const PRIVACY = 'Your search words go to OpenStreetMap’s place search (Nominatim) only when you press Search; nothing is sent as you type. Coordinates are read on this device; only “Look up its name” sends the centre of their climate-grid square, never the exact point. Privacy';
+// The privacy lines shown on the page (outside a closed dialog), and the place row's credit.
+const privacyLines = (page) => page.$$eval('#ct-root [data-location-privacy]', (es) => es.filter((e) => e.offsetParent !== null && !e.closest('dialog:not([open])')).map((e) => ({ text: e.textContent.replace(/\s+/g, ' ').trim(), lock: !!e.querySelector('svg[aria-hidden="true"]'), href: e.querySelector('a')?.getAttribute('href') ?? null })));
+const credit = (page) => page.evaluate(() => {
+  const c = document.querySelector('[data-location-place] [data-location-credit]');
+  return c ? { text: c.textContent.replace(/\s+/g, ' ').trim(), href: c.querySelector('a')?.getAttribute('href') ?? null } : null;
+});
+
+test('PFC58 (pf-c, pre-push privacy-1, master LocationSlot): the empty Place step shows the place search\'s privacy line (lock, "Privacy" link) under the field before any search, at 390 and 1280, once per screen; it stays visible beside "Look up its name" before the press', async () => {
+  for (const width of [390, 1280]) {
+    const page = await tool({ width, nominatim: 'fixture' });
+    await control(page, 'textbox', FIELD).catch(() => control(page, 'searchbox', FIELD));
+    assert.deepEqual(await privacyLines(page), [{ text: PRIVACY, lock: true, href: '/privacy/' }], `privacy-1: one privacy line on the empty Place step at ${width}`);
+    assert.equal(page.nominatim.length, 0, 'nothing sent before a press');
+    await searchFor(page, '-1.17, 36.83');
+    await says(page, '1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name.', { timeout: 10_000 });
+    await control(page, 'button', 'Look up its name');
+    assert.deepEqual(await privacyLines(page), [{ text: PRIVACY, lock: true, href: '/privacy/' }], `privacy-1: the line is visible beside "Look up its name" before the press at ${width}`);
+    assert.equal(page.nominatim.length, 0, 'nothing sent before "Look up its name" is pressed');
+    await done(page);
+  }
+  const several = await tool({ width: 390, nominatim: 'fixture', setup: searchStub() });
+  await searchFor(several, 'Kiambu');
+  await says(several, '3 places answer “Kiambu”. Which one is yours?', { timeout: 10_000 });
+  assert.equal((await privacyLines(several)).length, 1, 'privacy-1: said once on the screen with the answers');
+  await done(several);
+});
+
+test('PFC59 (pf-c, pre-push privacy-2): a place named by the place search (one match) or by "Look up its name" carries the credit "Place names © OpenStreetMap contributors." linked to the OpenStreetMap copyright page in its place row; a typed point with no name carries none', async () => {
+  const one = await tool({ width: 390, nominatim: 'fixture' });
+  await searchFor(one, 'Kiambu');
+  await says(one, /Near Kiambu, Kenya/, { timeout: 10_000 });
+  assert.deepEqual(await credit(one), { text: 'Place names © OpenStreetMap contributors.', href: 'https://www.openstreetmap.org/copyright' }, 'privacy-2: credit after a one-match search');
+  await done(one);
+  const rev = await tool({ width: 1280, nominatim: 'fixture' });
+  await searchFor(rev, '-1.17, 36.83');
+  await says(rev, '1.17° S, 36.83° E Read on this device. Nothing was sent, so the place has no name.', { timeout: 10_000 });
+  assert.equal(await credit(rev), null, 'no credit for a point nothing named');
+  await press(rev, 'button', 'Look up its name');
+  await says(rev, /Near Kiambu, Kenya/, { timeout: 10_000 });
+  assert.deepEqual(await credit(rev), { text: 'Place names © OpenStreetMap contributors.', href: 'https://www.openstreetmap.org/copyright' }, 'privacy-2: credit after a reverse lookup');
+  await done(rev);
+});

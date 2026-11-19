@@ -812,6 +812,7 @@
   "consortium.location.choose": "Выбрать",
   "consortium.location.chooseName": "Выбрать {name}",
   "consortium.location.noneOfThese": "Ни одно не подходит? Попробуйте ближайший город или {map}. Названия мест © участники {osm}.",
+  "consortium.location.placeCredit": "Названия мест © участники {osm}.",
   "consortium.location.mapLower": "выберите на карте",
   "consortium.location.near": "Около {place}",
   "consortium.location.nearLower": "около {place}",

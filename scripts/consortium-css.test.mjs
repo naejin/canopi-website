@@ -139,7 +139,7 @@ test('the meaning tokens are defined in tokens.css for light and both dark block
 // never styled by class. A class added here needs a reason; a class that gains a rule leaves the list.
 const HOOK_ONLY = new Set([
   'ct-climates', 'ct-corr-current', 'ct-corr-sent', 'ct-country-note', 'ct-details', 'ct-future-plants',
-  'ct-load-failed', 'ct-location', 'ct-location-result', 'ct-location-row', 'ct-paste', 'ct-pool', 'ct-print-marks', 'ct-print-stage',
+  'ct-load-failed', 'ct-location-result', 'ct-location-row', 'ct-paste', 'ct-pool', 'ct-print-marks', 'ct-print-stage',
   'ct-print-table', 'ct-share-location', 'ct-sv-plant', 'ct-swap', 'ct-toast-text',
 ]);
 test('every ct-* class literal in the island is defined in a stylesheet, or listed as hook-only', () => {
