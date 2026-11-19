@@ -243,8 +243,8 @@ test('strings: every S5c key sits in its block, in all 11 locales, with the same
   const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
   const mine = blockOf('en');
   // What the code reads: pool.tsx, PoolSlot and Weigh keys (PP-B b1b: range.pool.count is the borrowed
-  // count line; the mark keys, range.disputed and range.unavailable went with the mark providers in PP-C c2).
-  const used = ['range.pool.count', 'range.pool.caveat', 'range.pool.aridityNotChecked', 'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'estimate.short', 'estimate.fromMediterranean', 'estimate.fromTropical', 'estimate.fromTemperate', 'estimate.borrowed'];
+  // count line; the mark keys, range.disputed and range.unavailable went with the mark providers in PP-C c2; estimate.from{Zone} went in pf-f, the chip reads details.estimateChip).
+  const used = ['range.pool.count', 'range.pool.caveat', 'range.pool.aridityNotChecked', 'range.empty.title', 'range.empty.body', 'range.empty.search', 'range.unavailableBorrowed', 'range.needsSite', 'range.needsSite.go', 'range.needsSite.pill', 'estimate.short', 'estimate.borrowed'];
   assert.deepEqual(mine, used.map((k) => `consortium.${k}`));
   const holes = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().filter((x, i, a) => a.indexOf(x) === i);
   for (const l of locales) {
