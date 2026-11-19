@@ -100,8 +100,8 @@
 
 /* The page head (pf-c; v14 boards Place, PlaceDesk, SiteKiambu, Many): three steps above the title, the
    current step in ink, the others outlined; on Place the lede under the title. */
-.ct ol.ct-steps { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; line-height: 18px; color: var(--text-secondary); }
-.ct ol.ct-steps > li { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; min-width: 0; }
+.ct ol.ct-steps { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 18px; color: var(--text-secondary); }
+.ct ol.ct-steps > li { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; min-width: 0; }
 .ct ol.ct-steps > li:not(:last-child)::after { content: "›"; padding-left: 4px; color: var(--text-muted); }
 .ct ol.ct-steps > li[aria-current="step"] { color: var(--text); font-weight: 600; }
 .ct ol.ct-steps .ct-link { min-height: 24px; gap: 6px; font-size: inherit; }

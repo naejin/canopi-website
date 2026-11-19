@@ -8,14 +8,15 @@
 //   on the grower's own value only, Reset. Phone: one line open at a time (the main limit first);
 //   laptop (960 px): every line open, in two columns. Then the two folds, "What it means for your
 //   choice" and the foot.
-// - PaletteLimits: only the lines that limit plants here, the "Not a limit here" sentence, the Watering
-//   line with the members it notes, the link to the panel, and the Water card (the members drier here
-//   than where they are recorded, by period; only when one is).
+// - PaletteLimits: drawn only where a line limits plants here (A5: an outside count above 0, or a
+//   member drier here than where it is recorded; boards Palette and Main draw no card): those lines,
+//   the "Not a limit here" sentence, the Watering line with the members it notes, the link to the
+//   panel, and the Water card (the members drier here, by period; only when one is).
 // - Every edit goes through store.setSiteEdits with a summary function: when the verdicts are settled,
 //   the list and the members are judged for the three periods with the inputs before and after (six
 //   passes), and core siteChange / siteChangeLines say what changed (toast, with Undo; the line's own
 //   detail under it). Counting… and "Checks could not run" with Retry are the store's (F6, F7).
-import { computed, signal } from '@preact/signals';
+import { computed, effect as watch, signal } from '@preact/signals';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { ClimateZone, Hole, LimitLine, Line, PeriodId, PlantId, PlantVerdict, SiteChange, SiteEdits, SiteInputs, Taxon } from '../../../../lib/consortium/index.ts';
@@ -444,7 +445,10 @@ const SHIFT: Record<ClimateLine, () => ShiftConfig> = {
 function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const cfg = SHIFT[line]();
   const inp = i[INPUT[line]];
-  const map = inp.map ?? 0;
+  const step = (n: number) => (cfg.step < 1 ? Math.round(n * 10) / 10 : Math.round(n));
+  // The map's figure as the field shows it (its 0.1 step): the help quotes it, and an own figure is
+  // measured from it, so typing it back is no change (R1.1).
+  const map = step(inp.map ?? 0);
   const [text, setText] = useState(inp.shift ? editable(Math.abs(inp.shift)) : '');
   const [down, setDown] = useState(inp.shift ? inp.shift < 0 : true);
   const [figure, setFigure] = useState(false);
@@ -459,7 +463,6 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   const raw = parseNumber(text);
   // The shift the field makes (null: not a value the line takes), and the range to say.
   const range = figure ? { min: map - cfg.max, max: map + cfg.max } : { min: 0, max: line === 'rain' && down ? Math.min(cfg.max, map) : cfg.max };
-  const step = (n: number) => (cfg.step < 1 ? Math.round(n * 10) / 10 : Math.round(n));
   const shift: number | null = raw === null || (cfg.step >= 1 && !Number.isInteger(raw)) ? null
     : figure ? (raw < range.min || raw > range.max ? null : step(raw - map))
     : raw <= 0 || raw > range.max ? null : step(down ? -raw : raw);
@@ -468,7 +471,9 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
   // pair is hidden, so the figure decides, R8); before, the pair's choice.
   const tickColder = shift !== null && shift !== 0 ? shift < 0 : figure ? true : down;
   const use = () => {
-    if (shift === null || shift === 0) { setError(rangeWords); field.current?.focus(); return; }
+    // The map's own figure typed back means "no change": the editor closes, or the line's shift set
+    // before is cleared (the same-value path, M2), never a range error (R1.1).
+    if (shift === null || (shift === 0 && !figure)) { setError(rangeWords); field.current?.focus(); return; }
     commit(line, edited(shift));
   };
   // The edits "Use my value" would write (the tick: the hottest days too).
@@ -497,11 +502,17 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
     return `${F('previewLead')} ${own}${same}`;
   })() : null;
   const pressedMark = (on: boolean) => (on ? <Icon d={CHECK} /> : null);
+  // The own figure each temperature line reads, in words of its own (owner 2026-11-19, T19; R3, C4):
+  // Coldest nights the coolest month's average night low (tminColdC), not the year's coldest night;
+  // Hottest days the hottest month's average afternoon high (tmaxWarmC), not the year's hottest day.
+  // The help gives the map's value for that same figure at the field's precision (one decimal, R1.1), so
+  // a far-off one stands out.
+  const ownFigure = (key: string) => F(`${key}${line === 'nights' ? 'Nights' : 'Days'}`, { map: temp(map) });
   return (
     <fieldset class="fg-editor">
       <legend>{F(`legend${line[0].toUpperCase()}${line.slice(1)}`)}</legend>
       <div class="fg-editor-row">
-        <label for={id}>{F(figure ? 'plotFigure' : cfg.lead)}</label>
+        <label for={id}>{figure ? ownFigure('plotFigure') : F(cfg.lead)}</label>
         <input ref={field} id={id} type="text" inputMode="decimal" class="fg-number" value={text} aria-invalid={error ? 'true' : 'false'} aria-describedby={error ? `${id}-err` : undefined}
           onInput={(e) => { setText((e.currentTarget as HTMLInputElement).value); setError(null); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); use(); } }} />
         <span class="fg-unit">{F(cfg.unit)}</span>
@@ -514,7 +525,7 @@ function ClimateEditor({ line, i }: { line: ClimateLine; i: SiteInputs }) {
       )}
       {error && <p id={`${id}-err`} class="fg-error">{error}</p>}
       {(line === 'nights' || line === 'days') && <>
-        <p class="fg-help">{F(figure ? 'figureHelp' : 'knowHelp')}</p>
+        <p class="fg-help">{figure ? ownFigure('figureHelp') : F('knowHelp')}</p>
         <div><button type="button" class="ct-link-button fg-link" onClick={() => { setFigure(!figure); setText(''); setError(null); }}>{F(figure ? 'useShift' : 'knowFigure')}</button></div>
       </>}
       {line === 'nights' && <>
@@ -937,6 +948,21 @@ function WaterCard({ i }: { i: SiteInputs }) {
     </section>
   );
 }
+// Whether "What limits plants here" stands (T15; fix round 1 C2): once a ready count finds no limiting
+// line (an outside count, or a member drier here), it goes. The last ready answer is kept for the place
+// and list it was counted on, so while the checks count again (an edit made in the card) the card
+// stays as it was and the editor in it is not dropped; before any answer for this place and list (the
+// first count, or checks that could not run) the card is drawn in its counting or failed state, never
+// left out (unknown is never a hole).
+const placeKey = computed(() => { const l = store.location.value; return `${store.climate.value}|${l ? `${l.lat},${l.lon}` : ''}`; });
+const limiting = computed(() => limits.value.length > 0 || !!membersDry.value?.size);
+const lastAnswer = signal<{ key: string; limiting: boolean } | null>(null);
+watch(() => { if (checks.value === 'ready') lastAnswer.value = { key: placeKey.value, limiting: limiting.value }; });
+const limitShown = computed(() => {
+  if (checks.value === 'ready') return limiting.value;
+  const last = lastAnswer.value;
+  return last?.key === placeKey.value ? last.limiting : true;
+});
 export function PaletteLimits() {
   const i = store.siteInputs.value;
   if (!located.value || i.nights.value === null) return null;
@@ -958,6 +984,7 @@ export function PaletteLimits() {
     if (!lines.includes('nights')) not.push(F('notNights', { a: temp(today.tminColdC), b: temp(last.tminColdC), period: periodName(LAST), frost: F(today.tminColdC >= 10 ? 'noFrostLower' : 'frostLower') }));
     if (!lines.includes('days')) not.push(F('notDays', { a: temp(today.tmaxWarmC), b: temp(last.tmaxWarmC), period: periodName(LAST) }));
   }
+  if (!limitShown.value) return null;
   const grower = i.watering.source === 'grower';
   return (
     <>

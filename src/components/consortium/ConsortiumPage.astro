@@ -23,6 +23,7 @@ import { climatePageData } from '../../data/climate-page-data';
 import { setStrings } from '../../islands/consortium/strings.ts';
 import { END_KEY, LINK_VERSION } from '../../lib/consortium/state.ts';
 import { SAVE_FRAGMENT_MAX, STORE } from '../../islands/consortium/state/save.ts';
+import { LOCATION_STORE, SITE_CLIMATE } from '../../islands/consortium/state/persist.ts';
 import '../../styles/consortium/base.css';
 import '../../styles/consortium/details.css';
 import '../../styles/consortium/shell.css';
@@ -149,8 +150,11 @@ setStrings(strings, lang);
           newer or old link or save lands on Place, so its head paints as Place (C4); the island
           confirms or undoes the mark on every outcome (Steps on Place, App on a failure: R6). The link
           version, its end key and the save's store name come from the code that writes them (final1
-          N5), and so does the save's size cap (save.ts SAVE_FRAGMENT_MAX, persist.ts readRecord's). */}
-      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION), endKey: END_KEY, saveStore: STORE, saveMax: SAVE_FRAGMENT_MAX }}>try {
+          N5), and so does the save's size cap (save.ts SAVE_FRAGMENT_MAX, persist.ts readRecord's).
+          data-kept: a place or a climate is kept on this device (persist.ts LOCATION_STORE,
+          SITE_CLIMATE), or the page opens as a palette: a part lands after the island (the figures
+          panel), so the island keeps a screen until it renders (base.css; PFD49, fix round 1 R5). */}
+      <script is:inline define:vars={{ linkVersion: String(LINK_VERSION), endKey: END_KEY, saveStore: STORE, saveMax: SAVE_FRAGMENT_MAX, locationStore: LOCATION_STORE, siteClimate: SITE_CLIMATE }}>try {
         var h = document.getElementById('ct-head');
         var hp = new URLSearchParams((location.hash || '').replace(/^#/, '')), q = new URLSearchParams(location.search);
         var opens = hp.has('v') || hp.has('a') ? 'link' : q.has('plant') && q.has('climate') ? 'preset' : 'start';
@@ -161,6 +165,9 @@ setStrings(strings, lang);
         var save = !!saved && typeof saved.fragment === 'string' && saved.fragment.length < saveMax && typeof saved.at === 'string' && readable(saved.fragment);
         h.dataset.step = (opens === 'link' ? readable(location.hash.slice(1)) : opens === 'preset' || save) ? 'palette' : 'place';
         if (h.dataset.step === 'palette') { var li = h.querySelectorAll('#ct-steps > li'); li[0].removeAttribute('aria-current'); li[1].setAttribute('aria-current', 'step'); }
+        var kept = false;
+        try { kept = !!(localStorage.getItem(locationStore) || localStorage.getItem(siteClimate)); } catch (e) {}
+        if (kept || h.dataset.step === 'palette') h.dataset.kept = '';
       } catch (e) {}</script>
       <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
       {/* The release line (base.css .tool-release), the one tests and check-built-site read. The long

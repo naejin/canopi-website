@@ -25,18 +25,18 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/consortium/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/consortium/index.ts';
-import { type Country, addMembers, climate, country, countFits, curatedClimates, laterFits, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, offerUndo, openFigure, openSheet, removeMember, room, siteEdits, snapshot, view } from '../../store.ts';
+import { type Country, addMembers, climate, country, countFits, curatedClimates, laterFits, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, openFigure, openSheet, removeMember, room, siteEdits, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { formatLength, formatTemp } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
 import { PlaceFigures } from '../figures/slots.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
-import { climateChosen, holdSave, linkPlace, memory, restoring, COUNTRY_STORE } from '../../state/persist.ts';
+import { climateChosen, linkPlace, memory, restoring, COUNTRY_STORE } from '../../state/persist.ts';
 import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
 import { openingArrival } from '../../state/arrival.ts';
 import { STORE } from '../../state/save.ts';
-import { addOwnPlant, answering, backToPlace, chooseClimate, chooseCountry, openSavedInstead, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
+import { addOwnPlant, answering, backToPlace, chooseClimate, chooseCountry, keepShownAsMine, openSavedInstead, placeSaid, showPalette, startOver, useLinkPlace, useOwnPlace } from '../../state/draft.ts';
 import { pendingSuggest, requestSuggest } from '../../state/suggest-wait.ts';
 import { page } from '../kit/page.ts';
 import { markStart } from '../kit/start-mark.ts';
@@ -475,12 +475,11 @@ async function addShared(): Promise<void> {
   for (const id of theirs) { const z = homes[id] ?? linkZone; if (z && z !== mine) from[id] = z; }
   addMembers(theirs, from);
 }
-// "Keep it as mine" (R3): the shared palette becomes the save now, with Undo putting the earlier save back.
+// "Keep it as mine" (R3): the shared palette becomes the save now (state/draft.ts keepShownAsMine, with
+// its Undo), then the palette.
 function keepShared(): void {
   sharedSeen.value = 'done';
-  const before = snapshot();
-  holdSave(false);
-  offerUndo(P('palette.place.keptMine', members.peek().length), before);
+  keepShownAsMine();
   showPalette();
 }
 // "9 November" (board Arrivals): day then month; English in its day-first form, unambiguous worldwide.
