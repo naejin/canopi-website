@@ -175,6 +175,18 @@ test('R14: the Recognised head\'s "new" is what Add all adds; plants of another 
   assert.deepEqual([c.fresh, c.other, c.rec], [2, 2, 4]);
 });
 
+test('h3 r2 B3: the Recognised head counts another list\'s plant from the live members, as its row does: added during a re-read of the same text, it moves from "from another list" to "you have" at once', () => {
+  const tropical = [plant('t1', 'Musa acuminata', 'Banana'), plant('t2', 'Carica papaya', 'Papaya')];
+  const idx = releaseIndex({ lang: 'en', names: [...here, ...tropical].map((p) => ({ id: p.id, canonical: p.canonical_name, names: p.names })) });
+  const r = readPaste(pasteNames('Common bean\nBanana\nPapaya'), { here, others: [['Tropical', tropical]], index: idx });
+  const before = pasteCounts(r, []);
+  assert.deepEqual([before.fresh, before.other, before.have, before.rec], [1, 2, 0, 3], 'the premise');
+  // The stale reading still lists t1 as another list's; the members already hold it.
+  const after = pasteCounts(r, ['t1']);
+  assert.deepEqual([after.fresh, after.other, after.have, after.rec], [1, 1, 1, 3], 'one from another list, one you have; the names read unchanged');
+  assert.equal(after.fresh, plan(r, [], ['t1']).ids.length, 'and "new" is still what Add all adds');
+});
+
 // ---- fix round 1, batch 4 ----
 
 test('F23 C3: a paste is read in slices: step(n) reads n names at a time, says when every name is read, and the result is the one-pass reading', () => {

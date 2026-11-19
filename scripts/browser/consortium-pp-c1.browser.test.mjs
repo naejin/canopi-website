@@ -1131,7 +1131,7 @@ test('PP-C64 (c1 h3 r1 R3; W4, M23): after "Add anyway" the focus goes to the ne
   assert.ok(await on('Mangifera indica'), 'the focus on Mangifera indica\'s "Add anyway", not the count line');
 });
 
-test('PP-C65 (c1 h3 r1 R5): Add pressed at once after a short list is replaced reads the box then and adds its plants; while the box is unread its label has no stale count and it is not aria-disabled', async () => {
+test('PP-C65 (c1 h3 r1 R5, r2 B1, B2, C1, C3): up to 200 names Add counts the box as it is, at once: pressed within the 200 ms pause after a short list is replaced it reads the box then and adds its plants; its label is the board\'s "Add N plants" with the box\'s count, never a stale one or a count-free one', async () => {
   const page = await suggestedAt('lyon', 'Temperate');
   const two = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 2).map((t) => ({ id: t.id, name: t.canonical_name })); });
   await openPaste(page);
@@ -1139,9 +1139,110 @@ test('PP-C65 (c1 h3 r1 R5): Add pressed at once after a short list is replaced r
   await page.click('dialog[open] [data-paste-read]');
   assert.ok(await countSays(page, /^1 name read/), 'the first list read');
   assert.match(await page.$eval(ADD_ALL, (b) => b.textContent.trim()), /^Add 1 plant$/, 'the premise: "Add 1 plant"');
-  await typeIn(page, PASTE, `${two[0].name}\n${two[1].name}`);
-  const busy = await page.$eval(ADD_ALL, (b) => ({ label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') }));
-  assert.deepEqual(busy, { label: en['consortium.paste.addAllBusy'], aria: null }, 'no stale count, a press that runs');
-  await page.$eval(ADD_ALL, (b) => b.click());
+  // C3: the edit, the render (one frame, well inside the 200 ms pause), the label read and the press in
+  // one task: the reading cannot land between them, and the count is the box's whichever way it does.
+  const seen = await page.evaluate(async (add, sel, v) => {
+    const el = document.querySelector(sel);
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(r));
+    const b = document.querySelector(add);
+    const out = { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
+    b.click();
+    return out;
+  }, ADD_ALL, PASTE, `${two[0].name}\n${two[1].name}`);
+  assert.deepEqual(seen, { label: 'Add 2 plants', aria: null }, 'the box\'s count at once (board "Add N plants"), a press that runs');
   assert.ok(await page.waitForFunction((ids) => ids.every((id) => window.__ctTest.store.members.value.includes(id)), { timeout: 4000 }, two.map((t) => t.id)).then(() => true, () => false), 'both plants of the box added');
+});
+
+test('PP-C66 (c1 h3 r2 B1, B2): up to 200 names a box with nothing new says "Add 0 plants", aria-disabled, at once; typing that leaves the count alone leaves the label alone, keystroke by keystroke', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const three = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 3).map((t) => t.canonical_name); });
+  const member = await page.evaluate(() => { const s = window.__ctTest.store; return s.pool.value.find((t) => s.members.value.includes(t.id)).canonical_name; });
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await openPaste(page);
+  // One task each: the text, a frame, the label (B1: never a press that does nothing unsaid).
+  const at = (v) => page.evaluate(async (add, sel, text) => {
+    const el = document.querySelector(sel);
+    el.value = text;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(r));
+    const b = document.querySelector(add);
+    return { label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') };
+  }, ADD_ALL, PASTE, v);
+  assert.deepEqual(await at('xyzzy'), { label: 'Add 0 plants', aria: 'true' }, 'a name not found: nothing to add, said at once');
+  assert.deepEqual(await at(member), { label: 'Add 0 plants', aria: 'true' }, 'a plant already in: nothing to add, said at once');
+  await page.$eval(ADD_ALL, (b) => b.click());
+  await frames(page);
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  // B2: a 3-name list, then a fourth line not found typed one key at a time, a newline first: the
+  // label reads "Add 3 plants" after every key, so the foot bar never moves.
+  const list = three.join('\n');
+  assert.deepEqual(await at(list), { label: 'Add 3 plants', aria: null }, 'the premise: three to add');
+  const labels = await page.evaluate(async (add, sel, base) => {
+    const el = document.querySelector(sel), out = [];
+    let v = base;
+    for (const ch of '\nzzqx') {
+      v += ch;
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => requestAnimationFrame(r));
+      out.push(document.querySelector(add).textContent.trim());
+    }
+    return out;
+  }, ADD_ALL, PASTE, list);
+  assert.deepEqual(labels, Array(5).fill('Add 3 plants'), `the label holds while the count holds (${labels.join(' | ')})`);
+});
+
+test('PP-C67 (c1 h3 r2 B1, C1): past 200 names Add pressed while the text reads keeps the last reading\'s "Add N plants" (no count-free label); with nothing new it adds nothing, the focus stays on "Add 0 plants" (aria-disabled) and the sheet stays open', async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const member = await page.evaluate(() => { const s = window.__ctTest.store; return s.pool.value.find((t) => s.members.value.includes(t.id)).canonical_name; });
+  const size = await page.evaluate(() => window.__ctTest.store.members.value.length);
+  await openPaste(page);
+  // The text and the press in one task, then every frame until the reading lands.
+  const seen = await page.evaluate(async (add, sel, v) => {
+    const el = document.querySelector(sel);
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => requestAnimationFrame(r));
+    const b = document.querySelector(add);
+    b.focus(); b.click();
+    const labels = new Set();
+    for (let i = 0; i < 1800; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      const reading = document.querySelector('dialog[open] [data-paste-reading]');
+      if (reading) labels.add(b.textContent.trim());
+      if (/^300 names read/.test(document.querySelector('dialog[open] [data-paste-count]')?.textContent ?? '')) break;
+    }
+    return [...labels];
+  }, ADD_ALL, PASTE, [...nonsense(299), member].join('\n'));
+  assert.ok(await countSays(page, /^300 names read/), 'the premise: the 300 names read');
+  assert.ok(seen.every((l) => /^Add \d+ plants?$/.test(l)), `while it reads, the board's "Add N plants" only (${seen.join(' | ')})`);
+  await frames(page);
+  await new Promise((r) => setTimeout(r, 300));
+  const add = await page.evaluate((sel) => { const b = document.querySelector(sel); return { focused: document.activeElement === b, label: b.textContent.trim(), aria: b.getAttribute('aria-disabled') }; }, ADD_ALL);
+  assert.deepEqual(add, { focused: true, label: 'Add 0 plants', aria: 'true' }, 'nothing new: said on Add, which keeps the focus');
+  assert.equal(await page.evaluate(() => window.__ctTest.store.members.value.length), size, 'nothing added');
+  assert.ok(await has(page, PASTE, 500), 'the sheet stays open');
+});
+
+test('PP-C68 (c1 h3 r2 B4; W4): "Add anyway" on the last row shown of a folded Recognised list moves the focus forward to its "Show N more", where the next guest is, never back up the sheet', { timeout: 60_000 }, async () => {
+  const page = await suggestedAt('lyon', 'Temperate');
+  const guests = await realDb((db) => db.prepare("SELECT p.canonical_name c FROM plants p WHERE EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Tropical') AND NOT EXISTS (SELECT 1 FROM placements x WHERE x.plant = p.plant AND x.climate_zone = 'Temperate') ORDER BY p.canonical_name LIMIT 2").all().map((r) => r.c));
+  const here = await page.evaluate(() => { const s = window.__ctTest.store, m = new Set(s.members.value); return s.pool.value.filter((x) => !m.has(x.id)).slice(0, 12).map((t) => t.canonical_name); });
+  const guests0 = await page.evaluate(() => Object.keys(window.__ctTest.store.guests.value).length);
+  await openPaste(page);
+  // Recognised: two plants of this list, a guest, a second guest, then ten more of this list (14 rows,
+  // folded to its first three).
+  await typeIn(page, PASTE, [here[0], here[1], guests[0], guests[1], ...here.slice(2)].join('\n'));
+  await page.click('dialog[open] [data-paste-read]');
+  assert.ok(await countSays(page, /^14 names read/), 'the premise: the 14 names read');
+  const head = 'dialog[open] [data-paste-group="rec"] .ct-paste-ghead';
+  if (await page.$eval(head, (b) => b.getAttribute('aria-expanded')) !== 'true') await page.click(head);
+  const shown = await page.$$eval('dialog[open] [data-paste-group="rec"] [data-paste-row]', (els) => els.map((e) => e.textContent.match(/^“([^”]+)”/)?.[1]));
+  assert.deepEqual(shown, [here[0], here[1], guests[0]], 'the premise: folded, the first guest the last row shown');
+  await page.evaluate((name, label) => [...document.querySelectorAll('dialog[open] [data-paste-row]')].find((e) => e.textContent.startsWith(`“${name}”`))?.querySelectorAll('button').forEach((b) => { if (b.textContent.trim() === label) { b.focus(); b.click(); } }), guests[0], en['consortium.addAnyway']);
+  assert.ok(await page.waitForFunction((k) => Object.keys(window.__ctTest.store.guests.value).length === k, { timeout: 8000 }, guests0 + 1).then(() => true, () => false), `"${guests[0]}" added`);
+  assert.ok(await page.waitForFunction(() => document.activeElement?.matches('[data-paste-group="rec"] .ct-more-open'), { timeout: 4000 }).then(() => true, () => false),
+    `the focus on Recognised's "Show N more" (${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120))})`);
 });

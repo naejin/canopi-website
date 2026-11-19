@@ -302,7 +302,6 @@
   "consortium.paste.label": "Je plantenlijst",
   "consortium.paste.close": "Lezen als {name}",
   "consortium.paste.addAll": "one: # plant toevoegen | other: # planten toevoegen",
-  "consortium.paste.addAllBusy": "De planten toevoegen",
   "consortium.paste.added": "one: # plant toegevoegd en gehouden. | other: # planten toegevoegd en gehouden.",
   "consortium.paste.empty": "Plak of typ hierboven namen.",
   "consortium.dismiss": "Sluiten",

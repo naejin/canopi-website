@@ -302,7 +302,6 @@
   "consortium.paste.label": "내 식물 목록",
   "consortium.paste.close": "{name}(으)로 읽기",
   "consortium.paste.addAll": "other: 식물 #종 넣기",
-  "consortium.paste.addAllBusy": "식물 추가",
   "consortium.paste.added": "other: 식물 #종을 넣고 남겼습니다.",
   "consortium.paste.empty": "위에 이름을 붙여넣거나 입력하세요.",
   "consortium.dismiss": "닫기",

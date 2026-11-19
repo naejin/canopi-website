@@ -302,7 +302,6 @@
   "consortium.paste.label": "植物のリスト",
   "consortium.paste.close": "{name} として読む",
   "consortium.paste.addAll": "other: # 種を加える",
-  "consortium.paste.addAllBusy": "植物を追加",
   "consortium.paste.added": "other: # 種を加えて残しました。",
   "consortium.paste.empty": "上に名前を貼り付けるか入力してください。",
   "consortium.dismiss": "閉じる",

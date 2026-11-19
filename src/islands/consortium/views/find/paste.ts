@@ -437,8 +437,10 @@ export function pasteCounts<T extends Named>(r: PasteResult<T>, members: readonl
   return {
     lines: rec + choose + none, rec, choose, none,
     fresh: plan(r, [], members).ids.length,
-    other: r.other.filter((o) => !o.close).length,
-    have: r.already.length,
+    // Another list's plant counts from the live members, as its row reads (Paste.tsx otherRow): added
+    // while a re-read of the same text is under way, it is one you have at once (h3 r2 B3).
+    other: r.other.filter((o) => !o.close && !members.includes(o.taxon.id)).length,
+    have: r.already.length + r.other.filter((o) => !o.close && members.includes(o.taxon.id)).length,
     twice: repeats(recRows) + r.duplicate.length,
     askTwice: repeats(askRows),
     noneTwice: repeats(r.none),
