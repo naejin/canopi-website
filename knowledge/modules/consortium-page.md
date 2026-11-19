@@ -2,10 +2,10 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:22Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:53:00Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:13Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -80,8 +80,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:7d5dc44dd985ee5b
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:f02082c9d31d1f5a
+    last_modified: 2026-11-19T18:24:56Z
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
     title: scripts/browser/consortium-commit0.browser.test.mjs
@@ -206,7 +206,7 @@ sources:
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:65e8eb00f8a4ee77
-    last_modified: 2026-11-19T12:24:35Z
+    last_modified: 2026-11-19T12:55:44Z
   - id: p5-helpers-mjs
     resource: ../../scripts/browser/p5-helpers.mjs
     title: scripts/browser/p5-helpers.mjs
@@ -226,7 +226,7 @@ sources:
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
     digest: sha256:342093afa0ffb607
-    last_modified: 2026-11-19T12:24:54Z
+    last_modified: 2026-11-19T12:55:44Z
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
     title: src/islands/consortium/state/schema.ts

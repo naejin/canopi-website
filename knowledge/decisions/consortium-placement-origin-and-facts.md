@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T18:14:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:52Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:34Z }
 sources:
@@ -74,3 +74,5 @@ ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, writ
 - `factAt` returning `null` means unknown, never a misfit.
 
 - **Since 2026-11-18:** `FactAt`'s site argument is `SiteInputs | null` from [the site-inputs layer](/modules/consortium-site-inputs.md), never the climate lookup.
+
+- **Since 2026-11-19 (owner, one pool everywhere):** the guest path (guest pools, "Look in another climate's list", guest labels, the guest share-link segment) is to be deleted in the one-pool stream, and placement becomes one function `placementFor(plant, place, period)` (the grower's list, else the list of the climate the place will have in the period, else the plant's nearest list). Until that stream lands, the placement origin above is what the code does; `factAt` is not affected. See [user decisions](/decisions/consortium-user-decisions.md) "Owner decisions, 2026-11-19".

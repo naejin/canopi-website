@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:05Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:58Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
 sources:
@@ -27,8 +27,8 @@ sources:
   - id: harness-mjs
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
-    digest: sha256:7d5dc44dd985ee5b
-    last_modified: 2026-11-18T17:37:33Z
+    digest: sha256:f02082c9d31d1f5a
+    last_modified: 2026-11-19T18:24:56Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -128,7 +128,7 @@ sources:
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:ed4c92e4c62489ea
-    last_modified: 2026-11-19T12:59:26Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
@@ -138,12 +138,12 @@ sources:
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:370bb4a9489321e5
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -375,6 +375,8 @@ sources:
     digest: sha256:7a5518810d5d8e3a
     last_modified: 2026-11-18T17:07:24Z
 ---
+
+**State (2026-11-19):** PP-B and PP-C are built and live (master 398558aa); the module concepts ([page](/modules/consortium-page.md), [palette page](/modules/consortium-palette-page.md), [state](/modules/consortium-state.md), [core](/modules/consortium-core.md)) describe the code as it is. The owner's island architecture of 2026-11-19 ([user decisions](/decisions/consortium-user-decisions.md) "Owner decisions, 2026-11-19") changes this target in the coming commit 0 and one-pool stream: two stored records with one owner each (link as an overlay until "Use it"), the store split by domain, thin views over view models, one pool (a climate list is a label, never a scope; the guest path deleted) and no browser country guess. Until those land, the sections on storage, the store and guests describe the current code.
 
 Target architecture of the [Plant palette redesign](/project/consortium-v2-plan.md) (grower-first design approved by the owner on 2026-11-14). Pushes and streams: [Plant palette slices](/project/plant-palette-slices.md). Layer rules: [ADR-1](/decisions/consortium-island-layers.md); caps: [ADR-2](/decisions/consortium-chunk-budgets.md); owner answers: [user decisions](/decisions/consortium-user-decisions.md), rows of 2026-11-14.
 

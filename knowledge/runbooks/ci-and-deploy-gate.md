@@ -2,15 +2,15 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T17:12:13Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:53:05Z }
 verified:
-  - { by: claude-code/claude-opus-5-5, at: 2026-11-13T12:13:47Z }
+  - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:56Z }
 sources:
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
     digest: sha256:af2644ba6c84cc80
-    last_modified: 2026-11-19T14:11:42Z
+    last_modified: 2026-11-19T18:24:56Z
   - id: nightly-yml
     resource: ../../.github/workflows/nightly.yml
     title: .github/workflows/nightly.yml
@@ -60,7 +60,7 @@ sources:
     resource: ../../scripts/browser/harness.mjs
     title: scripts/browser/harness.mjs
     digest: sha256:f02082c9d31d1f5a
-    last_modified: 2026-11-19T17:12:11Z
+    last_modified: 2026-11-19T18:24:56Z
 enforced_by: [.github/workflows/ci.yml, scripts/ci-deploy.test.mjs]
 ---
 
