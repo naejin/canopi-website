@@ -3,16 +3,17 @@
 // controls, as a reader would; the test hook only makes the after-the-matrix chunk fail or wait (F4,
 // F5), which no control can. Run capped: npm run test:browser.
 //
-// This file: the layout seams: control sizes (W6), the toast (W7), type (W8/W9), the matrix at each width (UX3, UX5, Item 7), pop-ups and toasts in the walk-through (Walk-through 2 N1/N2) and Start's layout stability. Split from consortium-seams by owner (E1 design check A6); shared helpers in
+// This file: the layout seams: control sizes (W6), the toast (W7), type (W8/W9), the matrix at each width (UX3, UX5, Item 7), pop-ups and toasts in the walk-through (Walk-through 2 N1/N2), Start's layout stability in all 11 locales and the language-robust layout (L1-L3: step bar, CJK, long words). Split from consortium-seams by owner (E1 design check A6); shared helpers in
 // ./seams-helpers.mjs. Capped:
 //   timeout 600 systemd-run --user --scope -q -p MemoryMax=2G -p MemorySwapMax=0 \
 //     node --experimental-strip-types --disable-warning=ExperimentalWarning --test scripts/browser/consortium-seams-layout.browser.test.mjs
 // (npm run test:browser runs every file in shards: scripts/browser/run.mjs.)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync } from 'node:fs';
 import { loadState } from './harness.mjs';
 import { h, useHarness, aria, axNodes, layoutVariants, en, findAx, has, settled } from './helpers.mjs';
-import { everyPlant, esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openFind, STRINGS, STABLE, MISMATCH, stableStart, moved } from './seams-helpers.mjs';
+import { everyPlant, esc, done, temperate, cellIn, suggested, memberIds, addRows, controls, small, focused, openFind, STRINGS, STABLE, MISMATCH, LOCALES, stableStart, moved } from './seams-helpers.mjs';
 import { openCards } from './location-fixtures.mjs';
 
 useHarness();
@@ -255,21 +256,36 @@ test('Walk-through 2 N2: every pop-up stays within the viewport with a 16 px gut
   }
 });
 
-test('Layout stability (N2): nothing on Start moves after its first paint when the database opens and the guessed country is refined by the time zone, at 320–1280 px in en, fr and ja', async () => {
+// Both layout-stability cases run in every locale of the site (language-robust layout, pf-decisions
+// 2026-11-19: they were en, fr and ja), at the phone, the small phone and the two desk widths. Each
+// width is its own load: what they measure is the first paint, which a resize would not repeat.
+const N2_WIDTHS = [320, 390, 960, 1280];
+const N2_CASES = LOCALES.flatMap((lang) => N2_WIDTHS.map((width) => [lang, width]));
+// Two loads at a time (each its own context and measures; the font hold is per request), which halves
+// the 88 loads' run time; more would crowd the file's 2 GB and the harness's four open contexts.
+const N2_AT_ONCE = 2;
+async function eachN2Case(fn) {
+  for (let i = 0; i < N2_CASES.length; i += N2_AT_ONCE) await Promise.all(N2_CASES.slice(i, i + N2_AT_ONCE).map(([lang, width]) => fn(lang, width)));
+}
+
+test('Layout stability (N2): every locale of the site is covered', () => {
+  const files = readdirSync(new URL('../../src/i18n/translations/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
+  assert.deepEqual([...LOCALES].sort(), files.sort());
+});
+
+test('Layout stability (N2): nothing on Start moves after its first paint when the database opens and the guessed country is refined by the time zone, at 320–1280 px in all 11 locales', { timeout: 240_000 }, async () => {
   const bad = [];
-  for (const lang of ['en', 'fr', 'ja']) {
-    for (const width of [320, 390, 700, 960, 1280]) {
-      const at = `${lang} ${width} px`;
-      const page = await stableStart(lang, width);
-      const r = await moved(page);
-      assert.deepEqual(r.seen, STABLE, `${at}: every control measured`);
-      // The time zone's country, not the languages' (the mismatch is real).
-      assert.deepEqual(r.country, { code: MISMATCH[lang].guess, source: 'guess' }, `${at}: the time zone's guess`);
-      bad.push(...r.out.map((x) => `${at}: ${x}`));
-      if (r.cls > 0.01) bad.push(`${at}: CLS ${r.cls.toFixed(3)} (${r.shifts.map((e) => `${e.value.toFixed(3)} at ${e.at} ms by ${e.from}`).join('; ')})`);
-      await done(page);
-    }
-  }
+  await eachN2Case(async (lang, width) => {
+    const at = `${lang} ${width} px`;
+    const page = await stableStart(lang, width);
+    const r = await moved(page);
+    assert.deepEqual(r.seen, STABLE, `${at}: every control measured`);
+    // The time zone's country, not the languages' (the mismatch is real).
+    assert.deepEqual(r.country, { code: MISMATCH[lang].guess, source: 'guess' }, `${at}: the time zone's guess`);
+    bad.push(...r.out.map((x) => `${at}: ${x}`));
+    if (r.cls > 0.01) bad.push(`${at}: CLS ${r.cls.toFixed(3)} (${r.shifts.map((e) => `${e.value.toFixed(3)} at ${e.at} ms by ${e.from}`).join('; ')})`);
+    await done(page);
+  });
   assert.deepEqual(bad, []);
 });
 
@@ -288,7 +304,9 @@ test('Layout stability (N2): nothing on Start moves after its first paint when t
 // width), which no fallback face matches (206 px before Source Sans 3, 179 px after), so the rows after
 // it moved; its width is now set in em (.ct-location-search, base.css; E6 S2). A button's width follows
 // its own label, which the matched fallback keeps within about 1.5% (fr: 158 -> 160 px), so buttons get
-// that much; every height holds to the pixel. A control whose top did not move keeps its left within
+// that much; so does the place search, which now fills its row beside the search button and takes back
+// what that button's label gains or loses (es, it, ru: 1-2 px, in all 11 locales since 2026-11-19);
+// every height holds to the pixel. A control whose top did not move keeps its left within
 // the same 2% (a label before it on its line may grow by that much). Vertical moves are left to
 // LATE_CLS: one line of reflow above a control (en 320 px: the lede) moves it down without resizing it.
 const LABEL_SLACK = 0.02;
@@ -298,7 +316,7 @@ const sized = (page) => page.evaluate((sels, slack) => {
     const el = document.querySelector(sel), a = window.__stable.first[sel];
     if (!el || !a) continue;
     const r = el.getBoundingClientRect(), x = r.left + scrollX, y = r.top + scrollY;
-    const wSlack = el.matches('button') ? Math.max(1, a.w * slack) : 1;
+    const wSlack = el.matches('button, input[data-location-search]') ? Math.max(1, a.w * slack) : 1;
     if (Math.abs(r.width - a.w) > wSlack || Math.abs(r.height - a.h) > 1) out.push(`${sel}: size ${Math.round(a.w)}×${Math.round(a.h)} → ${Math.round(r.width)}×${Math.round(r.height)}`);
     if (Math.abs(y - a.y) <= 1 && Math.abs(x - a.x) > Math.max(1, a.x * slack)) out.push(`${sel}: left ${Math.round(a.x)} → ${Math.round(x)} on the same line`);
   }
@@ -326,30 +344,32 @@ async function holdFonts() {
   };
 }
 
-test('Layout stability (N2, late fonts): when the web fonts arrive after the first paint, no control on Start resizes and Start and the header shift no more than one line of reflow (CLS 0.015), at 320–1280 px in en, fr and ja', { timeout: 240_000 }, async () => {
+test('Layout stability (N2, late fonts): when the web fonts arrive after the first paint, no control on Start resizes and Start and the header shift no more than one line of reflow (CLS 0.015), at 320–1280 px in all 11 locales', { timeout: 400_000 }, async () => {
   const hold = await holdFonts();
   const bad = [];
+  const worst = {};
   try {
-    for (const lang of ['en', 'fr', 'ja']) {
-      for (const width of [320, 390, 700, 960, 1280]) {
-        const at = `${lang} ${width} px`;
-        const page = await stableStart(lang, width);
-        await hold.through();
-        const late = await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
-          const fcp = performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? null;
-          const fonts = performance.getEntriesByType('resource').filter((e) => /\/fonts\/[^/]+\.woff2$/.test(e.name)).map((e) => e.responseEnd);
-          return { fcp, firstFont: fonts.length ? Math.min(...fonts) : null, used: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => `${f.family} ${f.weight}`) };
-        }));
-        assert.ok(late.fcp !== null && late.firstFont !== null && late.fcp < late.firstFont, `${at}: the first paint (${late.fcp} ms) came before the first font (${late.firstFont} ms)`);
-        assert.ok(late.used.some((f) => f.startsWith('"Source Sans 3"') || f.startsWith('Source Sans 3')), `${at}: Source Sans 3 loaded (${late.used})`);
-        const r = await moved(page);
-        assert.deepEqual(r.seen, STABLE, `${at}: every control measured`);
-        bad.push(...(await sized(page)).map((x) => `${at}: ${x}`));
-        if (r.cls > LATE_CLS) bad.push(`${at}: CLS ${r.cls.toFixed(3)} (${r.shifts.map((e) => `${e.value.toFixed(3)} at ${e.at} ms by ${e.from}`).join('; ')})`);
-        await done(page);
-      }
-    }
+    await eachN2Case(async (lang, width) => {
+      const at = `${lang} ${width} px`;
+      const page = await stableStart(lang, width);
+      await hold.through();
+      const late = await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))).then(() => {
+        const fcp = performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? null;
+        const fonts = performance.getEntriesByType('resource').filter((e) => /\/fonts\/[^/]+\.woff2$/.test(e.name)).map((e) => e.responseEnd);
+        return { fcp, firstFont: fonts.length ? Math.min(...fonts) : null, used: [...document.fonts].filter((f) => f.status === 'loaded').map((f) => `${f.family} ${f.weight}`) };
+      }));
+      assert.ok(late.fcp !== null && late.firstFont !== null && late.fcp < late.firstFont, `${at}: the first paint (${late.fcp} ms) came before the first font (${late.firstFont} ms)`);
+      assert.ok(late.used.some((f) => f.startsWith('"Source Sans 3"') || f.startsWith('Source Sans 3')), `${at}: Source Sans 3 loaded (${late.used})`);
+      const r = await moved(page);
+      assert.deepEqual(r.seen, STABLE, `${at}: every control measured`);
+      bad.push(...(await sized(page)).map((x) => `${at}: ${x}`));
+      if (r.cls > LATE_CLS) bad.push(`${at}: CLS ${r.cls.toFixed(3)} (${r.shifts.map((e) => `${e.value.toFixed(3)} at ${e.at} ms by ${e.from}`).join('; ')})`);
+      if (!worst[lang] || r.cls > worst[lang].cls) worst[lang] = { width, cls: r.cls };
+      await done(page);
+    });
   } finally { await hold.stop(); }
+  // Reported, per locale at its widest offender (sizes and timings are reported; the budget fails).
+  console.log(`# N2 late fonts, CLS per locale at its worst width: ${Object.entries(worst).map(([l, w]) => `${l} ${w.cls.toFixed(4)} at ${w.width}`).join(', ')}`);
   assert.deepEqual(bad, []);
 });
 
@@ -404,4 +424,170 @@ test('Walk-through 2 N1 (review): with a toast in Find, the last controls tabbed
   });
   assert.ok(through, 'the area beside the toast is not the foot');
   await done(page);
+});
+
+// ---- Language-robust layout (pf-decisions 2026-11-19, "language-robust layout"; gate red GR-B2: at ja
+// 390 px the step bar wrapped under the fallback face, CLS 0.269 when the web fonts came). The palette's
+// parts only (.ct); the site header is never touched. With the two layout-stability cases above, run
+// in all 11 locales:
+// - L1 the step bar keeps one line in any face and any locale, 320 to 1280 px: the current step whole,
+//   the other steps' words shortened with an ellipsis (their number stays), their full words in the
+//   page (the accessible name), never in a title (R2.0: it repeated the words);
+// - L2 Japanese, Chinese and Korean: phrase-aware breaking, strict line breaks, no Latin tracking, pretty
+//   headings, and the language's own system face after the Latin ones;
+// - L3 long words (German, Dutch, Russian) and CJK runs: no label spills out of its box at 320 px. ----
+
+const langHome = (lang) => `${lang === 'en' ? '' : `/${lang}`}/palette/`;
+// A shared link of one plant (Apple, Temperate, no place): the page opens on the palette step, painted
+// so before the island (a guide's ?plant= lands on Place since the arrivals).
+const PALETTE = '#v=5&c=temperate&m=unsure&a=79iqTX&e=1';
+const DRAWN = { Place: '#ct-root [data-location-search]', palette: '.ct-palette-page:not([data-palette-placeholder]) h2[data-view-heading]' };
+const frames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+// The page opens at 320 px (a phone viewport: touch, mobile); widths change only, since a change of
+// isMobile would reload the page.
+const resize = async (page, width) => {
+  await page.setViewport({ width, height: 900, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await frames(page);
+};
+// A wide stand-in face, wider than any fallback the page may paint before its web fonts (GR-B2).
+const WIDE_FACE = '#ct-steps, #ct-steps * { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace !important; }';
+
+// The step bar's problems, in words: more than one line, a step outside the bar or the window, a step
+// number cut or gone, the current step's words shortened, words spilling, a shortened step whose full
+// words are not in the page's text, a title on a step (R2.0).
+const stepBar = (page) => page.evaluate(() => {
+  const out = [];
+  const ol = document.getElementById('ct-steps');
+  const bar = ol.getBoundingClientRect();
+  const items = [...ol.children];
+  const boxes = items.map((li) => li.getBoundingClientRect());
+  const mids = boxes.map((b) => b.top + b.height / 2);
+  if (Math.max(...mids) - Math.min(...mids) > 1 || bar.height > Math.max(...boxes.map((b) => b.height)) + 1) out.push(`on more than one line (bar ${Math.round(bar.height)} px tall)`);
+  if (bar.right > document.documentElement.clientWidth + 0.5) out.push(`past the window (${Math.round(bar.right)} px)`);
+  items.forEach((li, i) => {
+    const step = `step ${i + 1}`;
+    const b = boxes[i];
+    if (b.left < bar.left - 0.5 || b.right > bar.right + 0.5) out.push(`${step} outside the bar`);
+    const shown = [...li.querySelectorAll('*')].filter((e) => e.getClientRects().length && !e.closest('svg'));
+    const n = shown.find((e) => e.matches('.ct-steps-n'));
+    const nb = n?.getBoundingClientRect();
+    if (!nb || nb.width < 17 || nb.left < b.left - 0.5 || nb.right > b.right + 0.5) out.push(`${step}: its number cut or gone`);
+    const clipped = shown.filter((e) => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX !== 'visible');
+    const spill = shown.filter((e) => e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX === 'visible');
+    if (spill.length) out.push(`${step}: words spill out of their box`);
+    if (li.getAttribute('aria-current') === 'step' && clipped.length) out.push(`${step} (current): its words shortened`);
+    for (const e of clipped) {
+      const words = e.textContent.replace(/\s+/g, ' ').trim();
+      if (!words || /(…|\.\.\.)$/.test(words)) out.push(`${step}: shortened, its full words "${words}" not in the page's text`);
+    }
+  });
+  // R2.0: no title on the steps; it repeated the visible words (a tooltip on desk, read twice by some
+  // screen readers) and never shows on touch, where words are cut. The words in the page are the name.
+  if (ol.querySelector('[title]')) out.push('a step carries a title that repeats its words');
+  return out;
+});
+
+test('Layout stability, language-robust (L1): the step bar keeps one line at 320–1280 px in every locale, on Place and on the palette, in the web face and a wide stand-in face; the current step whole, the others keep their number and their full words', { timeout: 240_000 }, async () => {
+  const bad = [];
+  for (const lang of LOCALES) {
+    for (const [step, query] of [['Place', ''], ['palette', PALETTE]]) {
+      const page = await h.open(`${langHome(lang)}${query}`, { width: 320 });
+      assert.ok(await has(page, DRAWN[step], 15_000) && await has(page, `#ct-head[data-step="${step === 'Place' ? 'place' : 'palette'}"]`, 100), `${lang}: the ${step} step drawn`);
+      await page.evaluate(() => document.fonts.ready);
+      for (const width of [320, 390, 960, 1280]) {
+        await resize(page, width);
+        bad.push(...(await stepBar(page)).map((x) => `${lang} ${step} ${width} px: ${x}`));
+      }
+      await page.addStyleTag({ content: WIDE_FACE });
+      for (const width of [320, 390]) {
+        await resize(page, width);
+        bad.push(...(await stepBar(page)).map((x) => `${lang} ${step} ${width} px, wide face: ${x}`));
+      }
+      await done(page);
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
+// The CJK rules on the palette's parts, read as computed: Japanese breaks by phrase (auto-phrase);
+// Chinese asks for it too (the browser keeps its normal breaking where it has no phrase data, never
+// keep-all, which would leave whole sentences unbroken); Korean keeps its words whole at its spaces.
+const BREAK = { ja: 'auto-phrase', zh: 'auto-phrase', ko: 'keep-all' };
+const FACE = { ja: ['Hiragino Sans', 'Yu Gothic UI', 'Noto Sans CJK JP'], zh: ['PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC'], ko: ['Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans CJK KR'] };
+
+test('Layout stability, language-robust (L2): in Japanese, Chinese and Korean the palette breaks lines by phrase and strictly, keeps no Latin letter-spacing, wraps headings pretty and names the language\'s own system face after the Latin ones; the site header keeps the site\'s face', async () => {
+  const bad = [];
+  for (const lang of ['ja', 'zh', 'ko']) {
+    const page = await h.open(langHome(lang), { width: 390 });
+    assert.ok(await has(page, '#ct-head h1', 8000));
+    const s = await page.evaluate(() => {
+      const cs = (el) => getComputedStyle(el);
+      const head = document.getElementById('ct-head');
+      const title = cs(head.querySelector('h1')), lede = cs(head.querySelector('p')), badge = cs(head.querySelector('h1 + *'));
+      return {
+        title: { ls: title.letterSpacing, wrap: title.textWrapStyle || title.textWrap, font: title.fontFamily, wb: title.wordBreak },
+        lede: { wb: lede.wordBreak, lb: lede.lineBreak, font: lede.fontFamily },
+        badge: badge.letterSpacing,
+        header: cs(document.querySelector('header')).fontFamily, body: cs(document.body).fontFamily,
+      };
+    });
+    const at = (x) => `${lang}: ${x}`;
+    if (s.lede.wb !== BREAK[lang] || s.title.wb !== BREAK[lang]) bad.push(at(`word-break ${s.lede.wb} / ${s.title.wb}, not ${BREAK[lang]}`));
+    if (s.lede.lb !== 'strict') bad.push(at(`line-break ${s.lede.lb}`));
+    if (s.title.ls !== 'normal' || s.badge !== 'normal') bad.push(at(`letter-spacing ${s.title.ls} (title), ${s.badge} (badge)`));
+    if (!/pretty/.test(s.title.wrap)) bad.push(at(`headings wrap ${s.title.wrap}`));
+    for (const [part, font] of [['body text', s.lede.font], ['headings', s.title.font]]) {
+      const latin = font.search(/Source Sans 3|Literata/);
+      const missing = FACE[lang].filter((f) => font.indexOf(f) < 0);
+      if (part === 'body text' && missing.length) bad.push(at(`${part}: no ${missing.join(', ')} in ${font}`));
+      const cjk = Math.min(...FACE[lang].map((f) => font.indexOf(f)).filter((i) => i >= 0));
+      if (part === 'body text' && !(latin >= 0 && latin < cjk)) bad.push(at(`${part}: the Latin face is not first (${font})`));
+      for (const other of Object.keys(FACE).filter((l) => l !== lang)) {
+        const first = font.indexOf(FACE[other][2]);
+        if (first >= 0 && first < cjk) bad.push(at(`${part}: ${FACE[other][2]} before the language's own face`));
+      }
+    }
+    if (s.header !== s.body) bad.push(at(`the header's face changed (${s.header})`));
+    await done(page);
+  }
+  assert.deepEqual(bad, []);
+});
+
+// Every element of the palette's parts holding words, at 320 px: its words stay in its box, and in the
+// window unless a clipping or scrolling box holds it (the phone's time steps slide in a clipped track;
+// that box is checked itself). A box that shortens its words on purpose (an ellipsis, the step bar's
+// other steps) is left out.
+const spills = (page) => page.evaluate(() => {
+  const vw = document.documentElement.clientWidth, out = [];
+  const clipped = (e) => { for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) { if (getComputedStyle(a).overflowX !== 'visible') return true; } return false; };
+  for (const el of document.querySelectorAll('.ct *')) {
+    if (!el.getClientRects().length || el.closest('svg, dialog:not([open]), [hidden]')) continue;
+    if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+    const cs = getComputedStyle(el);
+    if (cs.textOverflow === 'ellipsis' || cs.position === 'absolute' && cs.clip !== 'auto') continue;
+    const words = el.textContent.replace(/\s+/g, ' ').trim().slice(0, 40);
+    if (el.clientWidth > 0 && cs.overflowX === 'visible' && el.scrollWidth > el.clientWidth + 1) out.push(`"${words}" spills ${el.scrollWidth - el.clientWidth} px out of its box`);
+    const right = Math.max(...[...el.getClientRects()].map((r) => r.right));
+    if (right > vw + 0.5 && !clipped(el)) out.push(`"${words}" ends past the window (${Math.round(right)} px)`);
+  }
+  return [...new Set(out)];
+});
+
+test('Layout stability, language-robust (L3): long German, Dutch and Russian words and CJK runs never spill out of their box at 320 px, on Place and on the palette; German, Dutch and Russian hyphenate', { timeout: 120_000 }, async () => {
+  const bad = [];
+  for (const lang of ['de', 'nl', 'ru', 'ja', 'zh', 'ko']) {
+    for (const [step, query] of [['Place', ''], ['palette', PALETTE]]) {
+      const page = await h.open(`${langHome(lang)}${query}`, { width: 320 });
+      assert.ok(await has(page, DRAWN[step], 15_000), `${lang}: ${step} drawn`);
+      await page.evaluate(() => document.fonts.ready);
+      await frames(page);
+      bad.push(...(await spills(page)).map((x) => `${lang} ${step}: ${x}`));
+      if (['de', 'nl', 'ru'].includes(lang)) {
+        const hy = await page.evaluate(() => getComputedStyle(document.querySelector('#ct-root p, #ct-root li')).hyphens);
+        if (hy !== 'auto') bad.push(`${lang} ${step}: hyphens ${hy}`);
+      }
+      await done(page);
+    }
+  }
+  assert.deepEqual(bad, []);
 });
