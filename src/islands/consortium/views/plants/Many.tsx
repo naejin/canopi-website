@@ -1,7 +1,7 @@
 /** @jsxImportSource preact */
 // Your plants past 40 plants (v14 pf-e; boards Many at 390, ManyDesk at 1280; F22, F30, A21): a
 // compact list on the phone, a table at 960 px and wider, both grouped (light level by default) with
-// each group closed until opened (its first 10 rows, then "+ N more", then all), sorted by fit unless
+// each group closed until opened (its first 10 rows, then "+ N more", then all, then "Show fewer"), sorted by fit unless
 // the reader sorts otherwise, filtered by the search (the phone's sits under the palette's head,
 // Palette.tsx; the desk's in this section). Ticks (views/plants/state.ts) stay when the reader searches,
 // sorts or regroups; "Remove N plants" removes the ticked plants at once with one Undo
@@ -24,7 +24,7 @@ import { flagLines } from '../kit/flags.ts';
 import { FindPanel, findIn, openFindInList } from '../Sheets.tsx';
 import { deskFind } from '../Toast.tsx';
 import { GROUPS, groupItems, plantItems, searchItems, shownRows, SORTS, sortItems, type GroupKey, type PlantItem, type SortKey } from './model.ts';
-import { clearTicks, groupKey, isTicked, query, removeTicked, reveal, setGroup, setStage, setTick, sortKey, stages, tickIds, ticked, wide } from './state.ts';
+import { clearTicks, groupKey, isTicked, manyShown, query, removeTicked, reveal, setGroup, setStage, setTick, sortKey, stages, tickIds, ticked, wide } from './state.ts';
 import { Missing } from './Small.tsx';
 
 const CHEVRON = (up: boolean) => <svg class="ct-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d={up ? 'm4 10 4-4 4 4' : 'm4 6 4 4 4-4'} fill="none" stroke="currentColor" stroke-width="1.6" /></svg>;
@@ -141,8 +141,17 @@ const focusRow = (id: PlantId | undefined) => {
 // Its spoken name starts with its visible words (WCAG 2.5.3): "+ 12 more (Show the other plants in Full sun)".
 function MoreButton({ k, word, rest, firstNew, desk }: { k: string; word: string; rest: number; firstNew?: PlantId; desk: boolean }) {
   return (
-    <button type="button" class="ct-many-more" aria-expanded="false" onClick={() => { setStage(k, 2); focusRow(firstNew); }}>
+    <button type="button" class="ct-many-more" data-more={k} aria-expanded="false" onClick={() => { setStage(k, 2); focusRow(firstNew); }}>
       {say(moreLine(rest))}<span class="visually-hidden"> ({T(desk ? 'many.showOtherRows' : 'many.showOther', { group: word })})</span>
+    </button>
+  );
+}
+// A group open whole folds back to its first 10 rows (the size rule's "Show fewer", MoreList's
+// sequence), the focus back on its "+ N more".
+function FewerButton({ k }: { k: string }) {
+  return (
+    <button type="button" class="ct-many-more" onClick={() => { setStage(k, 1); requestAnimationFrame(() => document.querySelector<HTMLElement>(`#ct-root .ct-plants [data-more="${CSS.escape(k)}"]`)?.focus()); }}>
+      {T('kit.showFewer')}
     </button>
   );
 }
@@ -249,13 +258,15 @@ export function ManyPlants({ rows }: { rows: readonly PlantRow[] }) {
   // The ticks and the search's place belong to this list (R9, R10): when it leaves (40 plants or fewer,
   // Start over) the ticks go, and a search open in its place moves beside the chart; a palette opened
   // (a link, a save) starts with none ticked.
-  useEffect(() => () => { clearTicks(); if (findIn.peek() === 'list') findIn.value = 'grid'; }, []);
+  useEffect(() => { manyShown.value = true; return () => { manyShown.value = false; clearTicks(); if (findIn.peek() === 'list') findIn.value = 'grid'; }; }, []);
   const opening = store.opening.value;
   useEffect(() => { if (opening) clearTicks(); }, [opening]);
 
   const body = (render: (i: PlantItem) => ComponentChildren, k: string, word: string, list: PlantItem[], stage: 0 | 1 | 2) => {
     const s = searching ? 2 : stage, shown = shownRows(list.length, s);
-    return { rows: list.slice(0, shown).map(render), more: shown < list.length && s > 0 ? <MoreButton k={k} word={word} rest={list.length - shown} firstNew={list[shown]?.id} desk={desk} /> : null };
+    const more = shown < list.length && s > 0 ? <MoreButton k={k} word={word} rest={list.length - shown} firstNew={list[shown]?.id} desk={desk} />
+      : !searching && s === 2 && list.length > shownRows(list.length, 1) ? <FewerButton k={k} /> : null;
+    return { rows: list.slice(0, shown).map(render), more };
   };
   const light = gk !== 'light';
   const colHead = (col: keyof typeof SORT_OF_COLUMN, word: string) => {

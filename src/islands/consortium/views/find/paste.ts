@@ -127,15 +127,15 @@ export type PastedNames = string[] & { header?: string | null; split?: ReadonlyS
 // repeatsOf: those lines by the name first read (each counts in that name's group: pasteCounts).
 // The names of a paste, every line read (no cap: v14 pf-e, F23): a spreadsheet's first column, a cell
 // split on commas and semicolons (unless they separate the columns, when every cell is a name), each
-// name once (folded; a repeat marks the first as `twice`). A first row that looks like column names
-// (in a paste of two rows or more) is left out and kept as `header`.
+// name once (folded; a repeat marks the first as `twice`). A first row that looks like column names is
+// left out and kept as `header` (a header alone reads no name: F23 "Nothing to read").
 export function pasteNames(text: string): PastedNames {
   const out: PastedNames = [], seen = new Map<string, string>(), split = new Set<string>(), twice = new Set<string>(), repeatsOf = new Map<string, number>(), table = pasteTable(text);
   let repeats = 0;
   const column = table.sep === ',' || table.sep === ';' ? EVERY_CELL : 0;
   const every = column === EVERY_CELL;
   const first = table.rows[0] ?? [];
-  const head = table.rows.length > 1 && (every ? first.length > 0 && first.every((c) => looksLikeHeader(c)) && first.join(', ') : looksLikeHeader(first[column]) && first[column].trim()) || null;
+  const head = (every ? first.length > 0 && first.every((c) => looksLikeHeader(c)) && first.join(', ') : looksLikeHeader(first[column]) && first[column].trim()) || null;
   table.rows.forEach((row, r) => {
     if (r === 0 && head) return;
     const cell = String(row[column] ?? '');
@@ -248,7 +248,17 @@ export interface PasteResult<T> {
 // consortium's ids; index: the page's release-wide search (Find's), else one over these lists.
 // rank: a plant's order among a guess's choices after the name rule (A16), lower first (the sheet gives
 // its fit: fits, a second look, outside, not checked); lang: the page's language.
-export function readPaste<T extends Named>(names: PastedNames, { here, others = [], members = [], index, rank, lang = 'en' }: { here: readonly T[]; others?: [ClimateZone, readonly T[]][]; members?: readonly PlantId[]; index?: Finder; rank?: (id: PlantId) => number; lang?: string }): PasteResult<T> {
+export interface PasteOptions<T extends Named> { here: readonly T[]; others?: [ClimateZone, readonly T[]][]; members?: readonly PlantId[]; index?: Finder; rank?: (id: PlantId) => number; lang?: string }
+export function readPaste<T extends Named>(names: PastedNames, opts: PasteOptions<T>): PasteResult<T> {
+  const r = pasteReader(names, opts);
+  r.step(Infinity);
+  return r.result();
+}
+// The same reading in slices (F23: every line read, the page responsive on 5,000 lines): step(n) reads
+// the next n names and says whether every name is read; done, result() sorts the questions once.
+// The sheet reads a long paste a slice a task, yielding between them, with "1,200 of 5,000 read".
+export interface PasteReader<T> { total: number; read: () => number; step: (n: number) => boolean; result: () => PasteResult<T> }
+export function pasteReader<T extends Named>(names: PastedNames, { here, others = [], members = [], index, rank, lang = 'en' }: PasteOptions<T>): PasteReader<T> {
   const lists = pasteLists(here, others, index), ins = new Set(members), seen = new Set<PlantId>();
   // A hit on the plant's own name (the page's language, or English) holding the query's words whole.
   const ownName = (h: FindHit): boolean => (h.why.match === 'exact' || h.why.match === 'tokens' || h.why.match === 'prefix') && (h.why.kind === 'name' || (h.why.kind === 'other' && h.why.lang === 'en' && lang !== 'en'));
@@ -270,14 +280,14 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
     if (own.length === 1 && !guess) one(name, own[0], null, sci);
     else out.choose.push({ at, name, word, taxa: own, inside: [], climate: z, guess, loose });
   };
-  for (const [i, name] of names.entries()) {
+  const line = (i: number, name: string): void => {
     at = i;
     const m = matchName(name, lists);
-    if (m?.how === 'exact') { one(name, m.taxa[0], null, !!m.sci); continue; }
+    if (m?.how === 'exact') { one(name, m.taxa[0], null, !!m.sci); return; }
     // A16: a name several plants share (a genus, or another language's name: "beans") yields to the
     // search below when that finds plants whose own name holds the word ("Which bean?").
     const shared = m && !m.sci ? m : null;
-    if (m && !shared) { group(name, m.taxa, false, name, true); continue; }
+    if (m && !shared) { group(name, m.taxa, false, name, true); return; }
     // No name matched: Find's search (not for a piece of a longer cell), then, as Find, its close
     // spellings (data/search.ts close with words: "chesnut" is one letter off "European chestnut"),
     // one plant read as it ("read as …", left unticked), several to choose.
@@ -289,7 +299,7 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
     const plural = /\p{L}{3}s$/u.test(name.trim()) ? name.trim().slice(0, -1) : null;
     let word = name, found = search(name);
     if (plural) { const more = search(plural); if (more.length && (!found.length || more.some((h) => ownName(h)))) word = plural; found = [...found, ...more]; }
-    if (shared && !found.some((h) => ownName(h))) { group(name, shared.taxa, false); continue; }
+    if (shared && !found.some((h) => ownName(h))) { group(name, shared.taxa, false); return; }
     const best = new Map<PlantId, { h: FindHit; at: number }>();
     found.forEach((h, k) => { const had = best.get(h.id); if (!had || (ownName(h) && !ownName(had.h))) best.set(h.id, { h, at: had?.at ?? k }); });
     // BC15, A16: the plain names first. A plant's own name holding the word whole ("Common bean") before
@@ -311,30 +321,41 @@ export function readPaste<T extends Named>(names: PastedNames, { here, others = 
       .sort((a, b) => a.k.tier - b.k.tier || a.k.words - b.k.words || b.k.share - a.k.share || (a.k.tier < 2 ? (rank?.(a.h.id) ?? 0) - (rank?.(b.h.id) ?? 0) || (a.k.name < b.k.name ? -1 : a.k.name > b.k.name ? 1 : 0) : 0) || a.at - b.at)
       .map((x) => lists.taxa.get(x.h.id)!);
     for (const t of shared?.taxa ?? []) if (!hits.includes(t)) hits.push(t);
-    // A search guess stays a question, even of one plant (c1r3 T1; pf decisions 2026-11-18: Paste never
-    // takes a plant unasked): "napier" asks about Napiergrass (board Paste draws it found: a known board
-    // difference, v14 spec A26).
+    // A search guess stays a question, even of one plant (c1r3 T1, "Date" never adds Date plum; v14 spec
+    // A26 and the pf-decisions row of 2026-11-19, pf-e C8): "napier", only the start of the one-word name
+    // "Napiergrass", asks (board Paste draws it found: a known board difference).
     // A guess of one plant you already have asks nothing (nothing would be added): you have it.
-    if (hits.length === 1 && ins.has(hits[0].id)) { one(name, hits[0], null); continue; }
-    if (hits.length) { group(name, hits, true, word, false, !m); continue; }
+    if (hits.length === 1 && ins.has(hits[0].id)) { one(name, hits[0], null); return; }
+    if (hits.length) { group(name, hits, true, word, false, !m); return; }
     const close = lists.index.close(name, true).filter((h) => lists.taxa.has(h.id));
     if (close.length === 1) one(name, lists.taxa.get(close[0].id)!, close[0].why.text);
     else if (close.length) group(name, close.map((h) => lists.taxa.get(h.id)!), true, name, false, true);
     else out.none.push({ at, name });
-  }
+  };
+  let next = 0, sorted: PasteResult<T> | null = null;
+  const step = (n: number): boolean => {
+    const end = Math.min(names.length, next + n);
+    for (; next < end; next++) line(next, names[next]);
+    return next >= names.length;
+  };
   // Plants another line matched leave the choose groups; a group they leave empty keeps its line, as
   // covered by another line (a duplicate of the plant it named first); a group left with one plant
   // stays a question ("Which Malus?" with the wild apple once "Malus domestica" took the apple, c1r4
   // U1): only a name that has one plant from the start is found.
-  const groups = out.choose;
-  out.choose = [];
-  for (const c of groups) {
-    const taxa = c.taxa.filter((t) => !seen.has(t.id));
-    if (taxa.length) out.choose.push({ ...c, taxa, inside: taxa.filter((t) => ins.has(t.id)).map((t) => t.id) });
-    else out.duplicate.push({ at: c.at, name: c.name, taxon: c.taxa[0] });
-  }
-  out.header = names.header ?? null;
-  return out;
+  const result = (): PasteResult<T> => {
+    if (sorted) return sorted;
+    step(Infinity);
+    const groups = out.choose;
+    out.choose = [];
+    for (const c of groups) {
+      const taxa = c.taxa.filter((t) => !seen.has(t.id));
+      if (taxa.length) out.choose.push({ ...c, taxa, inside: taxa.filter((t) => ins.has(t.id)).map((t) => t.id) });
+      else out.duplicate.push({ at: c.at, name: c.name, taxon: c.taxa[0] });
+    }
+    out.header = names.header ?? null;
+    return (sorted = out);
+  };
+  return { total: names.length, read: () => next, step, result };
 }
 
 // What "Add all" adds from a reading: the found plants (a close spelling only once ticked: "chesnut"

@@ -19,18 +19,20 @@ export const strataCounts = (page) => page.evaluate(() => {
 });
 export const LIGHT_OF = { emergent: 'Full sun', high: 'Mostly sun', medium: 'Part shade', low: 'Shade' };
 
-// The members' fit rank as Your plants sorts it: outside 0, a second look 1, fits with a mark 2,
-// fits 3, not checked 4 (from the store's verdicts and flags, as weigh.ts fitGroups reads them).
-export const fitRanks = (page) => page.evaluate(() => {
-  const s = window.__ctTest.store, v = s.memberVerdicts.value, out = {};
-  for (const t of s.memberTaxa.value) {
-    const fl = s.flagsOfPlant(t), level = v?.get(t.id)?.level ?? 'unknown';
-    const second = fl.some((f) => f.kind === 'invasive' || f.kind === 'misfit' || (f.kind === 'conflict' && f.severity === 'high') || (f.kind === 'toxicity' && (f.level === 'Severe' || f.level === 'Moderate')));
-    const slight = fl.some((f) => f.kind === 'toxicity' && f.level === 'Slight');
-    out[t.id] = level === 'outside' ? 0 : level === 'look' || second ? 1 : level === 'unknown' ? 4 : slight ? 2 : 3;
-  }
-  return out;
-});
+// The members' fit rank as Your plants sorts it (outside 0, a second look 1, fits with a mark 2, fits 3,
+// not checked 4), through the engine's own rule: weigh.ts fitGroups over the page's verdicts and flags
+// (as the page reads them: none while the verdict chunk failed), then the model's plantItems, run here
+// in node on the page's taxa; never a copy of the second-look rule.
+export async function fitRanks(page) {
+  const { fitGroups } = await import('../../src/lib/consortium/weigh.ts');
+  const { plantItems } = await import('../../src/islands/consortium/views/plants/model.ts');
+  const { taxa, verdicts, flags } = await page.evaluate(() => {
+    const s = window.__ctTest.store;
+    return { taxa: s.memberTaxa.value, verdicts: s.verdictFailed.value ? null : [...(s.memberVerdicts.value ?? new Map())], flags: s.flags.value };
+  });
+  const items = plantItems(taxa, fitGroups(taxa, verdicts ? new Map(verdicts) : null, flags), (t) => t.id);
+  return Object.fromEntries(items.map((i) => [i.id, i.rank]));
+}
 
 // Paste opened with a text, read at once ("Read the list").
 export async function pasteText(page, text) {

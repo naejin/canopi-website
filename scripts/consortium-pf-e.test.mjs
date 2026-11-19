@@ -7,7 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const M = await import('../src/islands/consortium/views/plants/model.ts');
-const { pasteNames, readPaste, plan, pasteCounts } = await import('../src/islands/consortium/views/find/paste.ts');
+const { pasteNames, pasteReader, readPaste, plan, pasteCounts } = await import('../src/islands/consortium/views/find/paste.ts');
 const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
 
 const taxon = (id, name, { stratum = null, family = null, functions = [], years = null } = {}) => ({
@@ -142,4 +142,28 @@ test('R14: the Recognised head\'s "new" is what Add all adds; plants of another 
   const c = pasteCounts(r, []);
   assert.equal(c.fresh, plan(r, [], []).ids.length, 'the head and Add all read one list');
   assert.deepEqual([c.fresh, c.other, c.rec], [2, 2, 4]);
+});
+
+// ---- fix round 1, batch 4 ----
+
+test('F23 C3: a paste is read in slices: step(n) reads n names at a time, says when every name is read, and the result is the one-pass reading', () => {
+  const text = [...Array.from({ length: 45 }, (_, i) => `zq${i}xv`), 'beans', 'Common bean', 'napier', 'common bean'].join('\n');
+  const names = pasteNames(text);
+  const r = pasteReader(names, { here, index });
+  const steps = [];
+  while (!r.step(10)) steps.push(r.read());
+  assert.deepEqual(steps, [10, 20, 30, 40], 'ten names a step, the progress said after each');
+  assert.equal(r.read(), r.total);
+  assert.equal(r.total, 48);
+  const once = readPaste(names, { here, index });
+  assert.deepEqual(JSON.parse(JSON.stringify({ ...r.result(), twice: [...r.result().twice], repeatsOf: [...r.result().repeatsOf] })),
+    JSON.parse(JSON.stringify({ ...once, twice: [...once.twice], repeatsOf: [...once.repeatsOf] })));
+  assert.equal(r.result(), r.result(), 'the questions are sorted once');
+});
+
+test('F23: a header alone reads no name (the sheet says "Nothing to read"); blank text reads none', () => {
+  const head = pasteNames('Scientific name\tQty\n');
+  assert.deepEqual([[...head], head.header], [[], 'Scientific name']);
+  assert.deepEqual([...pasteNames('  \n\n ')], []);
+  assert.deepEqual([...pasteNames('Malus domestica')], ['Malus domestica'], 'a plant on its own is read');
 });

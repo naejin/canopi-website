@@ -22,7 +22,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { useHarness, has, en, realDb } from './helpers.mjs';
 import { tool, choose, atSite } from './p5-helpers.mjs';
-import { control, dialogText, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, toastText, verdictsSettled } from './pf-helpers.mjs';
+import { boxOf, control, dialogText, done, focused, frames, loadCase, loadPalette200, names, press, says, saysNot, sectionBox, toastText, verdictsSettled } from './pf-helpers.mjs';
 import { failing } from '../expect-fail.mjs';
 import { fitRanks, LIGHT_OF, pasteText, PLANTS, rowsShown, strataCounts, typeIn } from './pf-e-helpers.mjs';
 
@@ -249,8 +249,9 @@ const SMALL_PASTE = 'corn, beans, sukuma wiki\npigeon pea, avocado, corn\ngrevil
 test('PFE11 (pf-e Paste board): every line is read into three groups, Recognised (new, you have, listed twice), Need a choice (a loose word asks, nothing chosen for you) and Not found; the first column of a spreadsheet; Add counts the new and the chosen', async () => {
   const page = await loadCase('kiambu-8', { width: 390 });
   // The board's palette: corn and pigeon pea in it, avocado, grevillea and napier not (the figures
-  // after it are the engine's: "napier" is a search guess, so it asks (pf decision: never taken unasked;
-  // the board draws it found), and the beans the pool holds are the ones named).
+  // after it are the engine's: "napier", only the start of the one-word name "Napiergrass", is a search
+  // guess, so it asks: pf-decisions row 2026-11-19 (C8, A26), a known board difference, the board
+  // drawing it found; and the beans the pool holds are the ones named).
   const before = await page.evaluate(() => {
     const s = window.__ctTest.store, out = new Set(['Persea americana', 'Grevillea robusta', 'Cenchrus purpureus']);
     s.members.value = s.memberTaxa.value.filter((t) => !out.has(t.canonical_name)).map((t) => t.id);
@@ -269,18 +270,18 @@ test('PFE11 (pf-e Paste board): every line is read into three groups, Recognised
   await says(page, '“avocado” Avocado Persea americana · new', { inDialog: true });
   await says(page, /“beans” Which bean\? \d+ plants are called bean\./, { inDialog: true });
   await says(page, '“sukuma wiki” Not found. Search by hand', { inDialog: true });
-  // The beans question's choices (Common bean, in the palette, is said but not pressable: nothing to add).
-  const choices = await page.$$eval('dialog[open] [role="group"]', (gs) => [...gs.find((g) => /beans/.test(g.getAttribute('aria-label') ?? '')).children]
+  // The beans question's choices (Common bean, in the palette, says so; pressed, it would add nothing).
+  const choices = await page.$$eval('dialog[open] [role="group"]', (gs) => [...gs.find((g) => /beans/.test(g.getAttribute('aria-label') ?? '')).querySelectorAll('button[aria-pressed]')]
     .map((b) => ({ t: b.textContent.replace(/\s+/g, ' ').trim(), on: b.getAttribute('aria-pressed') })));
   assert.ok(choices.slice(0, 3).every((c) => /\bbean\b/i.test(c.t)), `board: the plants named bean come first (A16): ${choices.slice(0, 3).map((c) => c.t)}`);
   assert.ok(choices.every((c) => c.on !== 'true'), 'board: nothing chosen for the grower');
-  await press(page, 'button', choices.find((c) => c.on === 'false').t);
+  await press(page, 'button', choices.find((c) => c.on === 'false' && !/in your palette/.test(c.t)).t);
   await press(page, 'button', 'Add 3 plants');
   assert.ok(await page.waitForFunction((n) => window.__ctTest.store.members.value.length === n + 3, { timeout: 8000 }, before).then(() => true, () => false), 'board: Add counts the new and the chosen');
   await done(page);
 });
 
-test('PFE12 (pf-e AddMany state 4, F23 F24 F25): 205 names on a palette of 20 are all read with no cap; the groups start closed past 10; choices say their fit; "Skip the N left", "Copy these N names"; one Add takes everything; the toast says "N plants added. Your palette: M plants." with Undo', async () => {
+test('PFE12 (pf-e AddMany state 4): 205 names on a palette of 20 are all read with no cap; the groups start closed past 10; choices say their fit; "Skip the N left", "Copy these N names"; one Add takes everything; the toast says "N plants added. Your palette: M plants." with Undo', async () => {
   const page = await loadPalette200({ width: 390 });
   const text = await page.evaluate(() => {
     const s = window.__ctTest.store, have = s.members.value.slice(0, 20);
@@ -333,9 +334,11 @@ async function openFirstTick3(page) {
   return rows;
 }
 
-failing('PFE14 (pf-e E4, BC1; the place line is main\'s Place.tsx: hand-off): past 40 plants under 960 px the place line says "200 plants: Your plants", the link landing on Your plants\' heading; at 1280 no link', { owner: 'pf-e', reason: /no link "Your plants"/ }, async () => {
+// The place line is main's (Place.tsx PlaceLine); pf-e's slot is views/plants/head-link.tsx PlantsCount,
+// which main mounts in place of the line's count (hand-off C1); main removes the marker when it lands.
+failing('PFE14 (pf-e E4, BC1, C1; hand-off: main mounts head-link.tsx PlantsCount in Place.tsx PlaceLine): past 40 plants under 960 px the place line says "200 plants: Your plants", the link landing on Your plants\' heading; at 1280 no link', { owner: 'pf-e', reason: /no link "Your plants"/ }, async () => {
   const page = await loadPalette200({ width: 390 });
-  const link = await page.evaluate(() => [...document.querySelectorAll('#ct-root [data-place-line] a')].find((a) => a.textContent.trim() === 'Your plants') ? true : false);
+  const link = await page.waitForFunction(() => [...document.querySelectorAll('#ct-root [data-place-line] a')].some((a) => a.textContent.trim() === 'Your plants'), { timeout: 6000 }).then(() => true, () => false);
   assert.ok(link, 'board: no link "Your plants" in the place line');
   await says(page, /200 plants: Your plants · Change/);
   await page.locator('::-p-aria([name="Your plants"][role="link"])').click();
@@ -558,13 +561,16 @@ test('PFE25 (pf-e BC15, A16, board Paste): "beans" offers Common bean, Lima bean
     await says(page, /“beans” Which bean\? \d+ plants are called bean\./, { inDialog: true });
     const choices = () => page.$$eval('dialog[open] [role="group"]', (gs) => {
       const g = gs.find((x) => /beans/.test(x.getAttribute('aria-label') ?? ''));
-      return [...g.children].map((c) => c.textContent.replace(/\s+/g, ' ').trim());
+      return [...g.querySelectorAll('button[aria-pressed]')].map((c) => c.textContent.replace(/\s+/g, ' ').trim());
     });
     const first = await choices();
     assert.deepEqual(first.slice(0, 3).map((t) => t.replace(/ [A-Z][a-z]+ [a-z].*$/, '')), ['Common bean', 'Lima bean', 'Sword bean'], `board: the beans in the board's order (A16): ${first.slice(0, 4).join(' | ')}`);
     assert.match(first[0], /· in your palette$/, 'board AddMany: a plant you have says "· in your palette"');
-    await page.$$eval('dialog[open] [role="group"] button[aria-expanded="false"]', (bs) => bs.forEach((b) => b.click()));
-    await frames(page);
+    // MoreList's sequence: "+ N more" (to 10), then "+ N more" (all).
+    for (let k = 0; k < 2; k++) {
+      await page.$$eval('dialog[open] [role="group"] .ct-more-open', (bs) => bs.forEach((b) => b.click()));
+      await frames(page);
+    }
     const all = (await choices()).filter((t) => t !== 'None');
     const n = Number((await dialogText(page)).match(/(\d+) plants are called bean\./)[1]);
     assert.equal(all.length, n, `the count says the choices offered (${n} said, ${all.length} offered)`);
@@ -612,7 +618,7 @@ test('PFE27 (pf-e BC17-BC20, boards Paste and AddMany): 215 names: the Need a ch
   await says(page, `0 chosen, ${n} to go. A name you leave is not added.`, { inDialog: true });
   await control(page, 'button', `Skip the ${n} left`);
   const more = await page.evaluate(() => {
-    const b = [...document.querySelectorAll('dialog[open] button')].find((x) => /^\+ \d+ more \(Show the other questions\)$/.test(x.textContent.replace(/\s+/g, ' ').trim()));
+    const b = [...document.querySelectorAll('dialog[open] button')].find((x) => /^\+ \d+ more: Show the other questions$/.test(x.getAttribute('aria-label') ?? ''));
     if (!b) return null;
     const r = b.getBoundingClientRect(), s = getComputedStyle(b);
     return { w: r.width, h: r.height, radius: parseFloat(s.borderTopLeftRadius), border: s.borderTopStyle, sheet: b.closest('dialog').getBoundingClientRect().width };
@@ -773,6 +779,8 @@ test('PFE33 (pf-e R5): with the clipboard refused, typing in the paste box keeps
   await openGroup(page, /^Not found/);
   await press(page, 'button', 'Copy these 3 names');
   assert.ok(await has(page, 'dialog[open] textarea[readonly]', 3000), 'the names to copy by hand');
+  // The field takes the focus once as it shows (F25); the grower then goes back to the paste box.
+  assert.ok(await page.waitForFunction(() => document.activeElement?.matches('dialog[open] textarea[readonly]'), { timeout: 3000 }).then(() => true, () => false), 'the names to copy by hand take the focus as they show');
   await page.focus('dialog[open] #ct-paste-text');
   await page.keyboard.type('zz');
   const at = await page.evaluate(() => document.activeElement?.id ?? '');
@@ -783,16 +791,25 @@ test('PFE33 (pf-e R5): with the clipboard refused, typing in the paste box keeps
   await done(page);
 });
 
-test('PFE34 (pf-e R6, R12): "+ N more" in Not found says its count first and hands the focus to the first name it shows; "Skip the N left" hands it to the progress line', async () => {
+test('PFE34 (pf-e R6, R12, C5): Not found folds by the size rule (MoreList): three names and "+ N more", then 10, then all, then "Show fewer"; each "+ N more" says its count first and hands the focus to the first name it shows; "Skip the N left" hands it to the progress line', async () => {
   const page = await boardPastePage(390);
-  const lost = Array.from({ length: 12 }, (_, i) => `qxzvk${'abcdefghijkl'[i]}`);
+  const lost = Array.from({ length: 13 }, (_, i) => `qxzvk${'abcdefghijklm'[i]}`);
   await pasteText(page, [...lost, 'beans', 'napier'].join('\n'));
   await openGroup(page, /^Not found/);
-  const more = await control(page, 'button', /^\+ 2 more\b/);
-  await press(page, 'button', more.name);
+  const shownLost = () => page.$$eval('dialog[open] [data-paste-row][data-status="none"]', (els) => els.length);
+  assert.equal(await shownLost(), 3, 'C5: a list of 13 starts with three names');
+  const at = async () => page.evaluate(() => document.activeElement?.textContent ?? '');
+  await press(page, 'button', (await control(page, 'button', /^\+ 10 more\b/)).name);
   await frames(page);
-  const f = await page.evaluate(() => document.activeElement?.closest('[data-paste-row]')?.textContent ?? '');
-  assert.ok(f.includes(lost[10]), `R6: the focus on the first name "+ 2 more" showed (${f})`);
+  assert.equal(await shownLost(), 10, 'C5: then 10');
+  assert.ok((await at()).includes(lost[3]), `R6: the focus on the first name "+ 10 more" showed (${await at()})`);
+  await press(page, 'button', (await control(page, 'button', /^\+ 3 more\b/)).name);
+  await frames(page);
+  assert.equal(await shownLost(), 13, 'C5: then all');
+  assert.ok((await at()).includes(lost[10]), `R6: the focus on the first name "+ 3 more" showed (${await at()})`);
+  await press(page, 'button', 'Show fewer');
+  await frames(page);
+  assert.equal(await shownLost(), 3, 'C5: "Show fewer" folds it back');
   await openGroup(page, /^Need a choice/);
   await press(page, 'button', 'Skip the 2 left');
   await frames(page);
@@ -862,7 +879,15 @@ test('PFE39 (pf-e R12): Your plants\' "+ N more" starts its spoken name with its
   const counts = await strataCounts(page);
   const [s, word] = Object.entries(LIGHT_OF).find(([k]) => (counts[k] ?? 0) > 10);
   await press(page, 'button', `${word} ${counts[s]} plants`);
-  await control(page, 'button', new RegExp(`^\\+ ${counts[s] - 10} more\\b.*${word}`));
+  const more = await control(page, 'button', new RegExp(`^\\+ ${counts[s] - 10} more\\b.*${word}`));
+  // C11 (the size rule's sequence, as MoreList): all, then "Show fewer" back to 10, the focus on "+ N more".
+  await press(page, 'button', more.name);
+  await frames(page);
+  assert.equal((await rowsShown(page)).length, counts[s], `all ${counts[s]} rows`);
+  await press(page, 'button', 'Show fewer');
+  await frames(page);
+  assert.equal((await rowsShown(page)).length, 10, 'C11: "Show fewer" folds the group back to its first 10');
+  assert.match((await focused(page)).name, new RegExp(`^\\+ ${counts[s] - 10} more`), 'C11: the focus back on "+ N more"');
   await done(page);
 });
 
@@ -887,5 +912,104 @@ test('PFE40 (pf-e R13): an open reading follows the verdicts: when they change (
   const fresh = await order();
   assert.notDeepEqual(before, fresh, `the premise: the new verdicts change the beans' fit order (${fresh.slice(0, 3).join(' | ')})`);
   assert.deepEqual(late, fresh, 'R13: the open reading in the fresh reading\'s order');
+  await done(page);
+});
+
+// ---- fix round 1, batch 4 (review C1 to C12) ----
+
+test('PFE41 (pf-e C6, board AddMany, word-map 10): a choice already in the palette is pressable, says "· in your palette", answers its question and adds nothing', async () => {
+  const page = await boardPastePage(390);
+  await pasteText(page, SMALL_PASTE);
+  await says(page, /“beans” Which bean\?/, { inDialog: true });
+  const progress = async () => (await dialogText(page)).match(/(\d+) chosen, (\d+) to go\./)?.slice(1).map(Number) ?? null;
+  const [chosen0, left0] = await progress();
+  const add0 = (await control(page, 'button', /^Add \d+ plants?$/)).name;
+  const mine = (await names(page, 'button')).find((n) => /^Common bean .*· in your palette$/.test(n));
+  assert.ok(mine, 'C6: "Common bean … · in your palette" is a button');
+  await press(page, 'button', mine);
+  assert.equal((await control(page, 'button', mine)).pressed, true, 'C6: pressed, it is the answer');
+  assert.deepEqual(await progress(), [chosen0 + 1, left0 - 1], 'C6: the question counts as answered');
+  assert.equal((await control(page, 'button', /^Add \d+ plants?$/)).name, add0, 'C6: and it adds nothing');
+  await done(page);
+});
+
+test('PFE42 (pf-e F23, C3): 0 lines and a header alone say "Nothing to read"; 5,000 lines are read in slices with "N of 5,000 read", the page answering meanwhile (the longest task reported)', async (t) => {
+  const page = await boardPastePage(390);
+  await page.evaluate(() => window.__ctTest.store.openSheet('paste'));
+  assert.ok(await has(page, 'dialog[open] #ct-paste-text', 15_000));
+  await says(page, 'Paste or type names above.', { inDialog: true });
+  await page.click('dialog[open] [data-paste-read]');
+  await says(page, 'Nothing to read.', { inDialog: true });
+  await pasteText(page, 'Scientific name\tQty\n');
+  await says(page, 'Nothing to read.', { inDialog: true });
+  await saysNot(page, 'names read', 'F23: the header is skipped, not read as a name');
+  // 5,000 different lines (none a plant: each goes through the whole search).
+  const lines = Array.from({ length: 5000 }, (_, i) => `zq${i.toString(36)}xv`).join('\n');
+  await page.evaluate(() => {
+    window.__paste = { progress: [], long: [] };
+    new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__paste.long.push(Math.round(e.duration)); }).observe({ type: 'longtask' });
+    new MutationObserver(() => { const p = document.querySelector('dialog[open] [data-paste-reading]'); if (p && window.__paste.progress.at(-1) !== p.textContent) window.__paste.progress.push(p.textContent); }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  });
+  const t0 = Date.now();
+  await pasteText(page, lines);
+  await says(page, '5,000 names read', { inDialog: true, timeout: 120_000 });
+  const ms = Date.now() - t0;
+  const seen = await page.evaluate(() => window.__paste);
+  assert.ok(seen.progress.some((p) => /^[\d,]+ of 5,000 read$/.test(p)), `F23: the progress line ("N of 5,000 read"): ${seen.progress.slice(0, 3).join(' | ')}`);
+  t.diagnostic(`F23 5,000 lines: read in ${ms} ms; progress steps ${seen.progress.length}; longest task ${Math.max(0, ...seen.long)} ms; tasks over 200 ms: ${seen.long.filter((x) => x > 200).length} (reported, never a failure)`);
+  await done(page);
+});
+
+test('PFE43 (pf-e F24, C7): while the names file loads, Paste says so and matches on the plants\' own names; when it arrives the reading refreshes and the grower\'s choice stays', async () => {
+  const page = await tool({ names: 'hold' });
+  await choose(page, 'Tropical');
+  // A loose word (the fixture's Ice-cream bean): a search guess stays a question even when it finds one
+  // plant (pf-decisions 2026-11-19, C8), to answer before the file arrives.
+  const word = 'beans';
+  await pasteText(page, `Gombo\n${word}`);
+  assert.ok(await has(page, 'dialog[open] [data-paste-names="loading"]', 4000), 'F24: "Names in other languages are still loading."');
+  await says(page, '“Gombo” Not found.', { inDialog: true });
+  const choice = (await page.$$eval('dialog[open] [role="group"] button[aria-pressed]', (bs) => bs.map((b) => b.textContent.replace(/\s+/g, ' ').trim())))[0];
+  await page.click('dialog[open] [role="group"] button[aria-pressed]');
+  await page.releaseHeld();
+  assert.ok(await page.waitForFunction(() => !document.querySelector('dialog[open] [data-paste-names]'), { timeout: 15_000 }).then(() => true, () => false), 'F24: the line goes when the file is in');
+  await saysNot(page, '“Gombo” Not found.', 'F24: the reading refreshes with the file\'s names');
+  const kept = await page.$$eval('dialog[open] [role="group"] button[aria-pressed="true"]', (bs) => bs.map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+  assert.deepEqual(kept, [choice], 'F24: the grower\'s choice is kept');
+  await done(page);
+});
+
+test('PFE44 (pf-e F25, C7, C9): one name not found has its "Copy this name"; a refused copy puts the names in a selected field with Share\'s words under it', async () => {
+  const page = await boardPastePage(390);
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('denied')) } }));
+  await pasteText(page, 'qxzvka\npigeon pea');
+  await openGroup(page, /^Not found/);
+  await press(page, 'button', 'Copy this name');
+  assert.ok(await has(page, 'dialog[open] textarea[readonly]', 3000), 'F25: the names to copy by hand');
+  await page.waitForFunction(() => document.activeElement?.matches('dialog[open] textarea[readonly]'), { timeout: 3000 }).catch(() => {});
+  const sel = await page.$eval('dialog[open] textarea[readonly]', (el) => ({ v: el.value, all: el.selectionStart === 0 && el.selectionEnd === el.value.length, focus: document.activeElement === el }));
+  assert.deepEqual(sel, { v: 'qxzvka', all: true, focus: true }, 'F25: selected, ready to copy');
+  await says(page, 'Copy the names above by hand.', { inDialog: true });
+  await done(page);
+});
+
+failing('PFE45 (pf-e E4, C2; hand-off: main passes Actions into Palette.tsx\'s foot slot and drops App.tsx slot(Actions)): past 40 plants at 1280 the palette\'s foot stands under Balance, in Your plants\' column (boards MainMore, PaletteMore)', { owner: 'pf-e', reason: /the foot is not under Balance/ }, async () => {
+  const page = await loadPalette200({ width: 1280 });
+  await says(page, 'Your palette is saved on this device.');
+  const at = { bal: await sectionBox(page, 'Balance'), foot: await boxOf(page, 'Your palette is saved on this device.') };
+  assert.ok(at.bal && at.foot && at.foot.x >= at.bal.x - 1 && at.foot.right <= at.bal.right + 1 && at.foot.y >= at.bal.bottom - 1, `board: the foot is not under Balance (${JSON.stringify(at)})`);
+  await done(page);
+});
+
+test('PFE46 (pf-e C9, board PaletteMore): a climber with a height and no width reads "Climbs to …, no width recorded" in the small form', async () => {
+  const page = await loadCase('kiambu-8', { width: 390 });
+  const climber = await page.evaluate(() => {
+    const s = window.__ctTest.store, t = (s.pool.value ?? []).find((x) => x.traits?.habit === 'Climber' && x.traits.width_max_m == null && x.traits.height_m?.max != null);
+    if (!t) return null;
+    s.members.value = [...s.members.value.slice(0, 5), t.id];
+    return t.names?.en ?? t.canonical_name;
+  });
+  assert.ok(climber, 'the premise: a climber with a height and no width on the list');
+  await says(page, new RegExp(`${climber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} .*Climbs to [\\d.,]+ (?:m|cm), no width recorded`));
   await done(page);
 });

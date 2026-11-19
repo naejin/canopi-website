@@ -49,6 +49,10 @@ export const stages = signal<ReadonlyMap<string, 0 | 1 | 2>>(new Map());
 export function setStage(key: string, stage: 0 | 1 | 2): void { const m = new Map(stages.peek()); m.set(key, stage); stages.value = m; }
 export function setGroup(key: GroupKey): void { groupKey.value = key; stages.value = new Map(); }
 
+// Your plants in its many form (ManyPlants mounted, past 40 plants): the place line's "200 plants: Your
+// plants" link (head-link.tsx) shows only then, so it follows the list's own form, never a second threshold.
+export const manyShown = signal(false);
+
 // 960 px and wider: the table (board ManyDesk); under it, the list (board Many).
 const wideQuery = typeof matchMedia === 'function' ? matchMedia('(min-width: 960px)') : null;
 export const wide = signal(!!wideQuery?.matches);

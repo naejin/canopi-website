@@ -25,10 +25,12 @@ import { RowNotes } from '../StageBar.tsx';
 
 const CHEVRON = <svg class="ct-glyph ct-plant-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>;
 
-// Its full-grown size in the boards' words ("Grows to 6 m wide, 6 m tall").
-function grownSize(t: Taxon): string {
+// Its full-grown size in the boards' words ("Grows to 6 m wide, 6 m tall"; a climber with no width,
+// board PaletteMore: "Climbs to 4 m, no width recorded").
+export function grownSize(t: Pick<Taxon, 'traits'>): string {
   const lang = pageLang(), w = t.traits.width_max_m, h = t.traits.height_m?.max ?? null;
   const W = w === null ? '' : formatLength(w, lang), H = h === null ? '' : formatLength(h, lang);
+  if (w === null && h !== null && t.traits.habit === 'Climber') return T('many.climbTall', { h: H });
   return w !== null && h !== null ? T('many.sizeBoth', { w: W, h: H }) : h !== null ? T('many.sizeTall', { h: H }) : w !== null ? T('many.sizeWide', { w: W }) : T('find.sizeNone');
 }
 

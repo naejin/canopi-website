@@ -11,6 +11,11 @@
 // shows no picture of nothing. Then Jobs, Warnings (past 40 plants "Warnings and fit"), Balance (v14
 // boards MainMore, Many; "checking" while a list loads; the plants of a list that failed, and those on
 // none of this climate's lists, counted as not checked from Your plants' rows), and Your plants.
+// `foot`: the palette's foot (views/Actions.tsx: "Your palette is saved on this device. Copy link · Print
+// · Download for Canopi"), placed where boards MainMore and PaletteMore draw it: after Your plants, under
+// Balance (at 960 px and wider past 40 plants, at the end of Your plants' column). App.tsx passes it
+// (main's hand-off, E4: slot(Actions) moves into this slot in the same merge).
+import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import type { Flag, PlantId } from '../../../../lib/consortium/index.ts';
@@ -68,7 +73,7 @@ function FirstView() {
 // pushed it (store.leaveEntry: the next Back then leaves the page), else the step itself.
 const toPlace = (): void => { if (!store.leaveEntry('palette')) backToPlace(); };
 
-export function Palette() {
+export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const members = store.memberTaxa.value;
   const verdicts = store.memberVerdicts.value;
   const missing = store.missingMembers.value;
@@ -153,11 +158,13 @@ export function Palette() {
                 <YourPlants rows={rows} />
                 <WarningsAndFit members={members} verdicts={verdicts} flags={flags} country={country} />
                 <Balance members={members} pending={loading} unchecked={unchecked} />
+                {foot && <div class="ct-palette-foot">{foot}</div>}
               </div>
             )}
             <FindPanelSlot />
           </div>
           {!desk && <YourPlants rows={rows} />}
+          {!desk && foot && <div class="ct-palette-foot">{foot}</div>}
         </>
       ) : (
         <>
@@ -178,6 +185,7 @@ export function Palette() {
             <FindPanelSlot />
           </div>
           <YourPlants rows={rows} />
+          {foot && <div class="ct-palette-foot">{foot}</div>}
         </>
       )}
       {/* v14 0W-1 item 8: the figures panel's palette place, a stub that renders nothing until pf-d; pf-b places it. */}

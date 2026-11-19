@@ -36,6 +36,8 @@
 /* ---- Your plants, v14 pf-e (boards PaletteMore, Recife, Many, ManyDesk) ---- */
 /* The section is a card, as on the boards. */
 .ct .ct-plants { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 14px; gap: 8px; }
+/* The palette's foot slot (Palette.tsx foot: Actions, boards MainMore, PaletteMore): after Your plants, under Balance. */
+.ct .ct-palette-foot { min-width: 0; }
 .ct .ct-plants h3 { font-weight: 600; font-size: 20px; line-height: 26px; }
 .ct .ct-plants > .ct-muted, .ct .ct-many-titles > .ct-muted { margin: 0; font-size: 14px; line-height: 20px; }
 

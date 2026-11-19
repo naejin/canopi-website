@@ -194,10 +194,12 @@
 .ct .ct-paste-ghead:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ct .ct-paste-gbody { display: grid; gap: 8px; padding-bottom: 8px; }
 .ct .ct-paste-gbody > .ct-paste-rows:only-child { margin-bottom: -8px; }
+/* The group head says the count (MoreList's own count cell is not drawn here). */
+.ct .ct-paste-rows .ct-more-count, .ct .ct-paste-chips .ct-more-count { display: none; }
 .ct .ct-paste-gbody > p { margin: 0; }
 .ct .ct-paste-gbody > .button { justify-self: start; }
 .ct .ct-paste-rows { margin: 0; padding: 0; list-style: none; }
-.ct .ct-paste-rows > li[data-paste-row] {
+.ct .ct-paste-rows [data-paste-row] {
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px; align-items: start; justify-items: stretch;
   padding: 7px 0; border-top: 1px solid var(--border); font-size: 14px; line-height: 20px;
 }
@@ -216,8 +218,8 @@
 /* "Skip the N left": an ochre text link after the progress words (board AddMany). */
 .ct .ct-paste-progress > .ct-paste-skip { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 /* "+ N more" questions: a small pill (board AddMany). */
-.ct .ct-paste-morepill { justify-self: start; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
-.ct .ct-paste-morepill:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ct .ct-paste-qs .ct-more-open, .ct .ct-paste-qs .ct-more-fewer { justify-self: start; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.ct :is(.ct-paste-qs .ct-more-open, .ct-paste-qs .ct-more-fewer):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* The field is light, as the board draws it (BC17); the foot's two buttons share the width. */
 .ct textarea.ct-paste-text { background: var(--surface); }
 .ct .ct-paste-foot > .button { flex: 1 1 0; justify-content: center; }
@@ -228,7 +230,8 @@
 }
 .ct .ct-paste-choice .ct-sci { color: var(--text-secondary); }
 .ct .ct-paste-choice[aria-pressed="true"] { border: 1.5px solid var(--text); background: var(--surface-alt); font-weight: 600; }
-.ct .ct-paste-choice.is-in { cursor: default; color: var(--text-secondary); }
+.ct .ct-paste-chips .ct-more-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct .ct-paste-reading { margin: 0; font-size: 14px; line-height: 20px; }
 .ct .ct-paste-choice:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .ct .ct-paste-fit { color: var(--text-secondary); font-weight: 400; }
 /* At 960 the filter column holds the job chips: the start shows one set (K15). */
