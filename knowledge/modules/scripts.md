@@ -5,10 +5,11 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:53:02Z }
+generated: { by: antigravity/gemini, at: 2026-11-22T22:36:52Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
+  - { by: antigravity/gemini, at: 2026-11-22T22:36:48Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -23,8 +24,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:5df91ba08aca970a
-    last_modified: 2026-11-19T18:24:56Z
+    digest: sha256:a09e1f314f7b7cb7
+    last_modified: 2026-11-22T22:35:17Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -58,8 +59,8 @@ sources:
   - id: ratchet-mjs
     resource: ../../scripts/quality/ratchet.mjs
     title: scripts/quality/ratchet.mjs
-    digest: sha256:e17849e2a8d92e75
-    last_modified: 2026-11-13T03:41:34Z
+    digest: sha256:8dc8323b87a1ea9b
+    last_modified: 2026-11-22T22:35:17Z
   - id: ci-deploy-test-mjs
     resource: ../../scripts/ci-deploy.test.mjs
     title: scripts/ci-deploy.test.mjs

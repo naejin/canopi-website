@@ -10,7 +10,7 @@
 #   says `fail`; until then it warns with the count); with `fail`, npm test runs with
 #   CANOPI_ZERO_MARKERS=1, so failing() throws for a marker the scan cannot see (PP-C commit 0).
 # Browser specs run in CI only. A push whose every range is documentation only (the rule of ci.yml's
-# `changes` job: knowledge/**, .beads/**, docs/**, root *.md) skips the first three. Deletions and
+# `changes` job: knowledge/**, docs/**, root *.md) skips the first three. Deletions and
 # tags are skipped. Each command runs memory-capped and prints its time. Bypass once with
 # `git push --no-verify` (CI still runs everything, and `deploy` moves only on a green gate).
 cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -37,13 +37,13 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   fi
 done
 [ "$run" = yes ] || exit 0
-need_node_modules pre-push || exit 1
 
 start=$(date +%s)
 if [ "$master" = yes ] && [ "$(grep -v '^#' .githooks/zero-markers 2>/dev/null | tr -d '[:space:]')" = fail ]; then
   export CANOPI_ZERO_MARKERS=1
 fi
 if [ "$code" = yes ]; then
+  need_node_modules pre-push || exit 1
   echo "pre-push: check, unit tests, layer rules" >&2
   step "npm run check" npm run check --silent || exit 1
   step "npm test" npm test --silent || exit 1

@@ -10,7 +10,7 @@
 # zero_markers: node scripts/expect-fail.mjs --zero, held to .githooks/zero-markers: with `fail` a
 #   marker left fails; with `warn` it prints the count (a GitHub warning annotation in CI) and passes.
 # docs_only: reads paths on stdin, one per line; true when there is at least one and every one is
-#   documentation (knowledge/**, .beads/**, docs/**, a root *.md; never src/data/*.md, which is site
+#   documentation (knowledge/**, docs/**, a root *.md; never src/data/*.md, which is site
 #   content). The same rule as the `changes` job of .github/workflows/ci.yml (design check A20).
 capped() {
   if command -v systemd-run >/dev/null 2>&1 && systemd-run --user --scope -q true >/dev/null 2>&1; then
@@ -44,7 +44,7 @@ tier_done() {
   return 0
 }
 
-DOCS_ONLY_RE='^(knowledge/|\.beads/|docs/|[^/]+\.md$)'
+DOCS_ONLY_RE='^(knowledge/|docs/|[^/]+\.md$)'
 docs_only() {
   seen=no
   while IFS= read -r path; do
@@ -56,9 +56,13 @@ docs_only() {
 }
 
 need_node_modules() {
-  [ -x node_modules/.bin/astro ] && return 0
-  echo "$1: node_modules is missing; run npm ci (capped) first, or push with --no-verify." >&2
-  return 1
+  for bin in astro wrangler ast-grep depcruise; do
+    if [ ! -x "node_modules/.bin/$bin" ]; then
+      echo "$1: node_modules is missing or stale (missing node_modules/.bin/$bin); run npm ci (capped) first, or bypass with --no-verify." >&2
+      return 1
+    fi
+  done
+  return 0
 }
 
 zero_markers() {

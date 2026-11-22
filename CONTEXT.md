@@ -55,4 +55,4 @@ The home page opens on the Canopi title over a painting in each locale's own tra
 
 Release metadata lives in `src/data/release.ts`, site links in `src/data/site.ts` (including the hidden Docs slot) and device detection in `src/lib/installer.mjs`. All UI copy is localized. Fonts are self-hosted under `public/fonts/` with their licenses.
 
-Cloudflare Workers Builds deploys the `projectcanopi` service automatically from `master`. Canopi Web remains a separate deployment at `web.projectcanopi.com`. The optional legacy `/app/` artifact installer is retained for its documented compatibility contract.
+Cloudflare Workers Builds deploys the `projectcanopi` service from the `deploy` branch, which GitHub Actions (`.github/workflows/ci.yml`) fast-forwards to `master` only when the `gate` check is green. Canopi Web remains a separate deployment at `web.projectcanopi.com`. The optional legacy `/app/` artifact installer is retained for its documented compatibility contract.

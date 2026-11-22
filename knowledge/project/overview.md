@@ -4,31 +4,32 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds from the deploy branch, which CI moves to master only when it is green.
 tags: [project]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T15:07:22Z }
+generated: { by: antigravity/gemini, at: 2026-11-22T22:39:22Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T14:15:31Z }
+  - { by: antigravity/gemini, at: 2026-11-22T22:39:20Z }
 sources:
   - id: readme
     resource: ../../README.md
     title: README.md
-    digest: sha256:18790192849df669
-    last_modified: 2026-11-06T14:34:09Z
+    digest: sha256:cacf097e29c875e7
+    last_modified: 2026-11-22T22:39:10Z
   - id: package-json
     resource: ../../package.json
     title: package.json
     digest: sha256:a54f837af2a33c43
     last_modified: 2026-11-14T11:12:40Z
-  - id: claude-md
-    resource: ../../CLAUDE.md
-    title: CLAUDE.md
-    digest: sha256:405af6ba4baa4b93
-    last_modified: 2026-11-16T18:31:35Z
+  - id: agents-md
+    resource: ../../AGENTS.md
+    title: AGENTS.md
+    digest: sha256:4fbf1b49391e18ff
+    last_modified: 2026-11-22T22:39:10Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md
-    digest: sha256:0a5a8181d949ff64
-    last_modified: 2026-11-10T15:32:40Z
+    digest: sha256:247e0a6e31fdecb9
+    last_modified: 2026-11-22T22:39:10Z
   - id: correction-ts
     resource: ../../src/pages/api/correction.ts
     title: src/pages/api/correction.ts
@@ -38,7 +39,7 @@ sources:
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
     digest: sha256:af2644ba6c84cc80
-    last_modified: 2026-11-19T14:11:42Z
+    last_modified: 2026-11-19T18:24:56Z
   - id: node-version
     resource: ../../.node-version
     title: .node-version
@@ -75,7 +76,7 @@ The public website of Canopi, an open-source agroecological design app run by a 
 - [src/scripts](/modules/src-scripts.md): browser behaviour.
 - [scripts](/modules/scripts.md): build helpers, tests, checks, generators.
 - [mockup](/modules/mockup.md): approved design reference, not built.
-- `docs/`: [Canopi Web deployment](/references/docs-canopi-web-subdomain-deployment.md), agent workflow docs, ADRs.
+- `docs/`: [Canopi Web deployment](/references/docs-canopi-web-subdomain-deployment.md). Durable ADRs live in `knowledge/decisions/`.
 
 # Getting started
 

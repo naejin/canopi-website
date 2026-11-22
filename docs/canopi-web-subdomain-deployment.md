@@ -105,7 +105,7 @@ Write one JSON report containing the release identity, artifact URLs and hashes,
 `publishLegacyApp`, website commit, deployment revisions, gate results, browser
 engine, exact commands, warnings, and platform gaps. Keep the working report
 outside the repository unless release records become versioned project
-artifacts. Append its compact summary to the release bead; Cloudflare and GitHub
+artifacts. Attach its compact summary to the release task or PR; Cloudflare and GitHub
 retain full deployment logs.
 
 ### Automation

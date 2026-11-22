@@ -1,8 +1,9 @@
 # Canopi Website
 
-Astro marketing site for `projectcanopi.com`. Cloudflare Workers Builds deploys
-the `projectcanopi` service automatically when `master` is pushed. The generated
-Cloudflare adapter serves the static site from `dist/client/`.
+Astro marketing site for `projectcanopi.com`. A push to `master` runs CI
+(`.github/workflows/ci.yml`); a green `gate` fast-forwards the `deploy` branch,
+and Cloudflare Workers Builds deploys `projectcanopi` from `deploy`. The
+generated Cloudflare adapter serves the static site from `dist/client/`.
 
 Canopi Web is a separate application at `https://web.projectcanopi.com/`. This
 website links to it; it does not build or modify the app. The optional legacy
@@ -12,10 +13,17 @@ website links to it; it does not build or modify the app. The optional legacy
 
 ```sh
 npm install
+npm run hooks:install
 npm run dev
 npm run build
+npm run install:climate
 npm test
 npm run check
+npm run check:arch
+npm run check:dup
+npm run check:dead
+npm run test:browser:smoke
+npm run test:axe
 npm run build:with-web
 npm run preview
 npm run deploy
@@ -82,9 +90,11 @@ it as the single download-link authority when release asset names change. The
 download dialog recommends a compatible desktop installer and keeps other
 platforms available without navigating through GitHub.
 
-Before publishing, run `npm test`, `npm run check`, `npm run build`, and
-`node scripts/check-built-site.mjs`. Push to `master`, wait for the GitHub
-“Workers Builds: projectcanopi” check, then verify the live homepage and downloads.
+Before publishing, run `npm test`, `npm run check`, `npm run check:arch`,
+`npm run build`, and `node scripts/check-built-site.mjs`. Push to `master`, wait
+for the GitHub Actions CI `gate`, `deploy`, and `live` jobs (which verify
+`https://projectcanopi.com/version.json`), then inspect the live homepage and
+downloads. Never push `deploy` manually (a branch ruleset refuses it).
 `npm run deploy` is an optional manual Wrangler path and requires Cloudflare
 authentication; use `CANOPI_WEB_EDITION_REQUIRED=0` for an intentional
 marketing-only manual deployment.

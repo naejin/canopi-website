@@ -5,13 +5,15 @@ description: How Canopi Web is deployed as its own Cloudflare Pages app at web.p
 resource: ../../docs/canopi-web-subdomain-deployment.md
 tags: [docs]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-26T20:30:07Z }
+generated: { by: antigravity/gemini, at: 2026-11-22T22:36:54Z }
+verified:
+  - { by: antigravity/gemini, at: 2026-11-22T22:36:50Z }
 sources:
   - id: canopi-web-subdomain-deployment-md
     resource: ../../docs/canopi-web-subdomain-deployment.md
     title: docs/canopi-web-subdomain-deployment.md
-    digest: sha256:eca26246b9826cd0
-    last_modified: 2026-10-26T20:30:07Z
+    digest: sha256:4aa70fb2b4574519
+    last_modified: 2026-11-22T22:35:19Z
 ---
 
 # Summary

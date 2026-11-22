@@ -2,7 +2,7 @@
 type: Runbook
 title: CI, hooks and the deploy gate
 description: How the website's tiered hooks, GitHub Actions CI and the deploy branch gate production deploys on Cloudflare Workers Builds, and what to do when something fails.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:53:05Z }
+generated: { by: antigravity/gemini, at: 2026-11-22T22:36:07Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:56Z }
 sources:
@@ -19,8 +19,8 @@ sources:
   - id: lib-sh
     resource: ../../.githooks/lib.sh
     title: .githooks/lib.sh
-    digest: sha256:cee592be6d4538a1
-    last_modified: 2026-11-13T03:34:49Z
+    digest: sha256:f65bdfdd2055c69d
+    last_modified: 2026-11-22T22:35:08Z
   - id: pre-commit
     resource: ../../.githooks/pre-commit
     title: .githooks/pre-commit
@@ -29,8 +29,8 @@ sources:
   - id: pre-push
     resource: ../../.githooks/pre-push
     title: .githooks/pre-push
-    digest: sha256:ff9d7b9815f700a9
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:3b29819f5fff8205
+    last_modified: 2026-11-22T22:35:16Z
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
@@ -85,7 +85,7 @@ Master deploys only through a green `gate` check. GitHub Actions moves the `depl
 
 | Job | Runs | Notes |
 |---|---|---|
-| `changes` | always | `docs_only=true` when every changed path is `knowledge/**`, `.beads/**`, `docs/**` or a root `*.md` (never `src/data/*.md`). On master the base is the tip of `deploy` (the last commit tested green), not the previous push, so a documentation-only commit after a red code commit (or after a `--no-verify` push) still runs jobs 2–4. It is false when there is no base (no `deploy` yet, new branch, force push, manual run). Tested in `scripts/ci-deploy.test.mjs`. |
+| `changes` | always | `docs_only=true` when every changed path is `knowledge/**`, `docs/**` or a root `*.md` (never `src/data/*.md`). On master the base is the tip of `deploy` (the last commit tested green), not the previous push, so a documentation-only commit after a red code commit (or after a `--no-verify` push) still runs jobs 2–4. It is false when there is no base (no `deploy` yet, new branch, force push, manual run). Tested in `scripts/ci-deploy.test.mjs`. |
 | 1 `unit` | always | climate install, `npm run check`, `npm test` (0 skips), `check:arch`, `check:dup`, `check:dead`, ast-grep, and the zero-marker check on master pushes (`.githooks/zero-markers` says `fail` since the E3/E4/E5a/E6 batch's chunk-5 exit, with 0 markers left: any expected-fail marker blocks a master push and fails the job; `warn` would only report the count; on a master push with `fail`, `npm test` runs with `CANOPI_ZERO_MARKERS=1` since PP-C commit 0). PP-C commit 0 brought markers back on its branch (the c1, c2 and pf tests written first), so PP-C is not pushed to master until its streams remove them |
 | 2 `browser-build` | code ranges | `npm run build:browser-test`; artifact `browser-test-build`: `dist-test/` + `src/data/climate-index.json` (1 day), read by jobs 3 and 4 |
 | 3 `browser` ×4 | code ranges | installs `fonts-noto-cjk` (apt; fails when `fc-list` finds no ja, ko or zh face), then `npm run test:browser:shard -- N`; results artifact always |

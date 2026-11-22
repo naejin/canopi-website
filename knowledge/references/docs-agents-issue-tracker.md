@@ -1,26 +1,11 @@
 ---
 type: Reference
 title: Issue Tracker
-description: This repo uses bd (beads) for work tracking.
-resource: ../../docs/agents/issue-tracker.md
+description: Retired reference to docs/agents/issue-tracker.md (Beads/bd); superseded by Coral tasks and AGENTS.md.
 tags: [docs]
-status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T08:57:08Z }
-sources:
-  - id: issue-tracker-md
-    resource: ../../docs/agents/issue-tracker.md
-    title: docs/agents/issue-tracker.md
-    digest: sha256:e155d4a0b66048fd
-    last_modified: 2026-07-08T06:31:38Z
+status: deprecated
+superseded_by: /conventions/agent-instructions.md
+generated: { by: antigravity/gemini, at: 2026-11-22T22:36:54Z }
 ---
 
-# Summary
-
-Source document: [docs/agents/issue-tracker.md](../../docs/agents/issue-tracker.md).
-
-- Work is tracked in **bd (beads)**, never in markdown TODO lists.
-- Claim before editing: `bd update <id> --claim`; close after verification: `bd close <id>`.
-- Types: `bug`, `feature`, `task`, `epic`, `chore`, `decision`; search closed `decision` beads with `--status all`.
-- Fields: problem in `description`, handoff brief/plan in `design`, observable checklist in `acceptance`.
-- `bd remember` is for terse cross-session memory only.
-- Session close: `git pull --rebase`, `bd dolt push`, `git push`, `git status`.
+> **Deprecated.** Superseded by [Existing agent instructions](/conventions/agent-instructions.md). Beads (`bd`) and `docs/agents/issue-tracker.md` were retired in favour of Coral tasks; workflow rules now live in `AGENTS.md` and [Existing agent instructions](/conventions/agent-instructions.md).

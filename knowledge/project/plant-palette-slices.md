@@ -4,9 +4,10 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:53:03Z }
+generated: { by: antigravity/gemini, at: 2026-11-22T22:36:53Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:19Z }
+  - { by: antigravity/gemini, at: 2026-11-22T22:36:49Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -26,8 +27,8 @@ sources:
   - id: lib-sh
     resource: ../../.githooks/lib.sh
     title: .githooks/lib.sh
-    digest: sha256:cee592be6d4538a1
-    last_modified: 2026-11-13T03:34:49Z
+    digest: sha256:f65bdfdd2055c69d
+    last_modified: 2026-11-22T22:35:08Z
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
@@ -46,8 +47,8 @@ sources:
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md
-    digest: sha256:405af6ba4baa4b93
-    last_modified: 2026-11-16T18:31:35Z
+    digest: sha256:9e9b671a4be59041
+    last_modified: 2026-11-22T22:34:58Z
   - id: package-json
     resource: ../../package.json
     title: package.json

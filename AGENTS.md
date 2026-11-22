@@ -1,185 +1,70 @@
 # Project Instructions for AI Agents
 
-This file provides instructions and context for AI coding agents working on this project.
+Landing page and web tools for `projectcanopi.com`, the Canopi agroecological design app. This file is the single canonical source of project instructions for AI coding agents (`CLAUDE.md` is a pointer shim here).
 
-<!-- BEGIN BEADS INTEGRATION v:1 profile:full hash:f65d5d33 -->
-## Issue Tracking with bd (beads)
+## Coral & Multi-Agent Workflow
 
-**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
+- **Task tracking:** In a Coral team, use `coral-board task` and the board for coordination (Beads/`bd` is retired). Follow the latest Operator/Orchestrator scope and acceptance criteria.
+- **Isolated worktrees:** Always work in your own Git worktree and branch from the agreed base; never edit, stage, stash, or build in the user's main checkout.
+- **Dependencies:** Run `npm ci --no-audit --no-fund` inside your worktree. **Never symlink `node_modules`** across worktrees (shared Astro/Vite caches leak content between branches).
+- **Preview & test ports:** Never use port `4321` (reserved for the user's dev server). Use a distinct `--port` for `astro preview`, stop it when done, and offset `CANOPI_BROWSER_PORT` if running browser tests in parallel.
+- **No direct `master` push:** Commit cleanly in your worktree branch and hand off for review. Never push to `master`, push `deploy`, or merge without explicit Operator/Orchestrator approval.
+- **Full delivery runbook:** See `knowledge/runbooks/agentic-delivery.md`.
 
-### Why bd?
+## CI, Deploy Gate & Hooks
 
-- Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Dolt-powered version control with native sync
-- Agent-optimized: JSON output, ready work detection, discovered-from links
-- Prevents duplicate tracking systems and confusion
+- **Production deploy:** Hosted on Cloudflare Workers Builds (`projectcanopi`), production branch **`deploy`** (not `master`). Pushing to `master` runs `.github/workflows/ci.yml`; only a green `gate` job fast-forwards `deploy`, which Cloudflare builds and verifies via `/version.json`.
+- **Hard rules:** Never push or force-push `deploy` by hand, and never rename the `gate` job in `ci.yml` (the branch ruleset requires `gate` by name). Runbook: `knowledge/runbooks/ci-and-deploy-gate.md`.
+- **Git hooks:** Tracked under `.githooks/`. Enable once in the main checkout with `git config core.hooksPath .githooks` (`npm run hooks:install` prints it; applies to all worktrees). `pre-commit` runs `ast-grep scan` on staged scripts; `pre-push` runs `npm run check`, `npm test`, `npm run check:arch`, and (on `master`) `zero-markers`.
 
-### Quick Start
+## Commands & Quality Gates
 
-**Check for ready work:**
+Run heavy commands (`check`, `build`, ratchets, `test:browser*`) memory-capped on Linux when `systemd-run` is available:
+`timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0 <cmd>`
 
-```bash
-bd ready --json
-```
+| Purpose | Command |
+|---|---|
+| Dev server (user checkout, port 4321) | `npm run dev` |
+| Type check (`wrangler types` + `astro check`; not MDX) | `npm run check` |
+| Unit, policy, ratchet & ast-grep scope tests | `npm test` |
+| Architecture layer rules L1–L10 (`dependency-cruiser`) | `npm run check:arch` |
+| Duplicate-code ratchet (`jscpd`) | `npm run check:dup` |
+| Dead-code ratchet (`knip`) | `npm run check:dead` |
+| `ast-grep` code rules (`sgconfig.yml`) | `node_modules/.bin/ast-grep scan` (`ast-grep test --skip-snapshot-tests`) |
+| Expected-fail markers (must be 0 on `master`) | `node scripts/expect-fail.mjs --zero` |
+| Marketing build (auto-installs pinned climate tiles) | `npm run build` |
+| Post-build budgets, pages & `/version.json` check | `node scripts/check-built-site.mjs` |
+| Climate tiles manual install (`-- <tar>` offline) | `npm run install:climate` |
+| Browser tests (builds `dist-test/`, runs local shards) | `npm run test:browser` |
+| Browser smoke & WCAG 2.x A/AA axe ratchet (on `dist/`) | `npm run test:browser:smoke` / `npm run test:axe` |
+| Bibliography link check (network, manual) | `npm run check:bibliography` |
+| Legacy `/app/` Web Edition build / preview / deploy | `npm run build:with-web` / `npm run preview` / `npm run deploy` |
+| Print git hooks setup command | `npm run hooks:install` |
 
-**Create new issues:**
+- **Baseline ownership:** Only the merge/coordinator step rewrites `scripts/quality/baselines/*.json` (`--write` or `CANOPI_AXE_WRITE=1`).
+- **`dist-test/` gotcha:** `npm run build:browser-test` (called by `npm run test:browser`) points `.wrangler/deploy/config.json` at `dist-test/` (which compiles in `__ctTest`). Never run bare `wrangler dev` or `wrangler deploy` after browser tests without running `npm run build` first.
+- **Web Edition env vars:** `build:with-web`, `preview`, and `deploy` require `CANOPI_WEB_EDITION_ARCHIVE=/path/to/canopi-web-edition-*.tar.gz` (set `CANOPI_WEB_EDITION_REQUIRED=0` only for an intentional marketing-only build). For releases, follow `docs/canopi-web-subdomain-deployment.md`.
 
-```bash
-bd create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
-bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:bd-123 --json
-```
+## Architecture & Scope
 
-**Claim and update:**
+- **Stack:** Astro 6 static output + pure CSS (no Tailwind). One Cloudflare Worker (`projectcanopi`) serves `dist/client/` plus `POST /api/contact` and `POST /api/correction`. Node `>= 22.13.0` (`.node-version` pins `22.22.0`).
+- **Canopi Web (`/app/` vs `web.projectcanopi.com`):** Canopi Web is a separate deployment at `https://web.projectcanopi.com/`. For optional legacy `/app/` files, do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior; `/app/canopi-catalog/` must remain directly served static assets.
+- **Plant Palette (`/palette/`):** Preact island (`src/islands/consortium/`, code/data paths keep the name `consortium`) reading its own static SQLite export (`/data/consortium/*.sqlite.gz`) in-browser via `sqlite-wasm` and storing the last palette, country choice, and shared site climate (`canopi-climate`) in `localStorage` (licences in `THIRD_PARTY_NOTICES.md`). Old `/consortium/` addresses answer **404** (not 301; `check-built-site.mjs` forbids `/consortium/` rules in `_redirects`).
+- **Climate tiles:** Fetched and SHA-256 verified at build by `climateTiles` (`astro.config.mjs` → `scripts/climate-integration.mjs`) from the release pinned in `src/data/climate-release.json` into gitignored `public/data/climate/` and `src/data/climate-index.json`. Never commit tiles.
+- **`_redirects` caveat:** Workers Builds does not apply `public/_redirects` in production (never rely on `_redirects` without a production `curl -sI` check), and Cloudflare `_redirects` does not support `Language=` conditions.
 
-```bash
-bd update <id> --claim --json
-bd update bd-42 --priority 1 --json
-```
+## i18n, Design System & Releases
 
-**Complete work:**
+- **11 locales:** `en` at `/`, plus `fr`, `es`, `pt`, `it`, `zh`, `de`, `ja`, `ko`, `nl`, `ru` under `/{lang}/`. Flat keys in `src/i18n/translations/{locale}.json`; add every new key to **all 11 files** (enforced by `scripts/homepage.test.mjs`). Components take a `lang` prop (`src/i18n/utils.ts`); first-visit language detection is client-side in `Base.astro`.
+- **Field Guides exception:** `/guides/` and `/fr/guides/` are `en` and `fr` only; strings live in `src/i18n/guides/{en,fr}.json`. Guide components (`src/components/guides/`) read `Astro.currentLocale` (`guideLangOf`), so guide MDX never passes `lang`.
+- **Design system (owner rule 2026-11-13):** Field-notebook aesthetic using the app's full token set (`canopi/desktop/web/src/styles/global.css`), neutral + plant-data colours with dark values. Colour carries meaning (roles, layers, marks, status); buttons and frames stay ochre and ink; green is plant-data only. Never convey meaning by colour alone (always pair with a word or symbol) and keep 4.5:1 text contrast in both themes.
+- **Typography, theme & layout:** Source Sans 3 (body) + Literata (display headlines), weights `400`/`600` only. Light/dark theme via `[data-theme="dark"]` + `localStorage`. `<body class="grain">` already provides the global SVG noise overlay (`global.css`) — do not add page-level paper textures. Responsive breakpoints are `max-width: 639px` (mobile) and `min-width: 960px` (desktop) only; no tablet tier.
+- **Releases & terminology:** `src/data/release.ts` is the sole download-link authority (update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` per release; desktop installers use permanent `releases/latest/download/` aliases). Read `CONTEXT.md` for canonical product/domain terminology.
 
-```bash
-bd close bd-42 --reason "Completed" --json
-```
+## OKF Knowledge Notes
 
-### Issue Types
-
-- `bug` - Something broken
-- `feature` - New functionality
-- `task` - Work item (tests, docs, refactoring)
-- `epic` - Large feature with subtasks
-- `chore` - Maintenance (dependencies, tooling)
-
-### Priorities
-
-- `0` - Critical (security, data loss, broken builds)
-- `1` - High (major features, important bugs)
-- `2` - Medium (default, nice-to-have)
-- `3` - Low (polish, optimization)
-- `4` - Backlog (future ideas)
-
-### Workflow for AI Agents
-
-1. **Check ready work**: `bd ready` shows unblocked issues
-2. **Claim your task atomically**: `bd update <id> --claim`
-3. **Work on it**: Implement, test, document
-4. **Discover new work?** Create linked issue:
-   - `bd create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
-5. **Complete**: `bd close <id> --reason "Done"`
-
-### Quality
-- Use `--acceptance` and `--design` fields when creating issues
-- Use `--validate` to check description completeness
-
-### Lifecycle
-- `bd defer <id>` / `bd supersede <id>` for issue management
-- `bd stale` / `bd orphans` / `bd lint` for hygiene
-- `bd human <id>` to flag for human decisions
-- `bd formula list` / `bd mol pour <name>` for structured workflows
-
-### Auto-Sync
-
-bd automatically syncs via Dolt:
-
-- Each write auto-commits to Dolt history
-- Use `bd dolt push`/`bd dolt pull` for remote sync
-- No manual export/import needed!
-
-### Important Rules
-
-- ✅ Use bd for ALL task tracking
-- ✅ Always use `--json` flag for programmatic use
-- ✅ Link discovered work with `discovered-from` dependencies
-- ✅ Check `bd ready` before asking "what should I work on?"
-- ❌ Do NOT create markdown TODO lists
-- ❌ Do NOT use external issue trackers
-- ❌ Do NOT duplicate tracking systems
-
-For more details, see README.md and docs/QUICKSTART.md.
-
-## Session Completion
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd dolt push
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-
-<!-- END BEADS INTEGRATION -->
-
-
-## Build & Test
-
-```bash
-npm run dev             # dev server
-npm run build           # marketing site only
-npm run build:with-web  # marketing site plus installed Web Edition artifact
-npm test                # installer regression tests
-npm run check           # type check (wrangler types, then astro check)
-npm run preview         # build with Web Edition artifact, then preview
-```
-
-`npm run build:with-web`, `npm run preview`, and `npm run deploy` require
-`CANOPI_WEB_EDITION_ARCHIVE` to point at a packaged Canopi Web Edition tarball.
-Set `CANOPI_WEB_EDITION_REQUIRED=0` only for an intentional website-only build.
-
-For release work, follow the efficient operating profile in
-`docs/canopi-web-subdomain-deployment.md`. Decide whether the optional `/app/`
-surface is actually being published before downloading its archive. Run each
-mandatory gate once, reuse the verified Pages directory for preview and
-production, and keep successful command output compact.
-
-## Architecture Overview
-
-Landing page for projectcanopi.com, the Canopi agroecological design app.
-
-- Astro static output with pure CSS, no Tailwind.
-- Hosted on Cloudflare Workers Builds (`projectcanopi`), deployed automatically from `master`; the Cloudflare adapter serves static assets from `dist/client/`.
-- Web Edition publishing installs the app-provided artifact into `dist/client/app/` when `dist/client/` exists, otherwise `dist/app/`.
-- 11 locales: `en` at `/`, plus `fr`, `es`, `pt`, `it`, `zh`, `de`, `ja`, `ko`, `nl`, and `ru` under `/{lang}/`.
-- Translation files live in `src/i18n/translations/{locale}.json`; add new translation keys to all 11 files.
-- Exception: Field Guides (`/guides/`, `/fr/guides/`) are English and French only; guide-only strings live in `src/i18n/guides/{en,fr}.json`, not in the 11 locale files.
-- `src/i18n/utils.ts` provides translation and locale helpers.
-- Download URLs live in `src/data/release.ts`; update `CANOPI_VERSION` and `CANOPI_RELEASE_DATE` when a new release ships.
-
-## Conventions & Patterns
-
-- Design follows the Canopi app's field-notebook aesthetic: ochre/parchment/ink palette, Source Sans 3 body font, Literata display headlines, weights 400/600 only.
-- No green in UI chrome; green is reserved for nature or plant content.
-- Light/dark theme uses `[data-theme="dark"]` and localStorage.
-- `<body class="grain">` already provides the global SVG noise overlay in `global.css`; do not add page-level paper textures.
-- Responsive breakpoints are `max-width: 639px` for mobile and `min-width: 960px` for desktop; do not add a tablet tier without a specific reason.
-- Cloudflare Pages `_redirects` does not support `Language=` conditions.
-- Web Edition `/app/*` fallback is a static `_redirects` rule; do not add website-side catalog search, storage, DuckDB, Worker, Pages Function, R2, KV, D1, service-worker, or offline catalog behavior.
-- Web Edition catalog assets under `/app/canopi-catalog/` must remain directly served static files.
-
-## Agent Skills
-
-Installed Codex skills for this repo use Beads and these local context files:
-
-- `docs/agents/issue-tracker.md` - bd conventions for creating, claiming, closing, and syncing work.
-- `docs/agents/triage-workflow.md` - readiness labels and AFK-ready handoff rules.
-- `docs/agents/domain.md` - domain documentation and ADR layout.
-
-Use `bd prime` at session start or after context compaction for current workflow guidance. Use `CONTEXT.md` and `docs/adr/` when they exist; create or update them only when a project-specific term, boundary, or architectural decision has become durable.
+- Before writing to `knowledge/`, identify yourself as an Antigravity/Coral agent: `export OKF_ACTOR=antigravity/<model>` (never `human:...`).
+- Architectural Decision Records (ADRs) live in `knowledge/decisions/`. `AGENTS.md` is the sole home of the managed OKF block below (do not duplicate it into `CLAUDE.md`).
 
 <!-- okf:begin -->
 <!-- Managed by `okf agents install` (okfkit 0.1.0). Edits inside this block are overwritten. -->

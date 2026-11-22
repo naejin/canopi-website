@@ -4,10 +4,11 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T02:04:11Z }
+generated: { by: antigravity/gemini, at: 2026-11-22T22:36:54Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
+  - { by: antigravity/gemini, at: 2026-11-22T22:36:51Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -17,8 +18,8 @@ sources:
   - id: readme
     resource: ../../README.md
     title: README.md
-    digest: sha256:18790192849df669
-    last_modified: 2026-11-06T14:34:09Z
+    digest: sha256:cacf097e29c875e7
+    last_modified: 2026-11-22T22:35:04Z
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
@@ -37,8 +38,8 @@ sources:
   - id: pre-push
     resource: ../../.githooks/pre-push
     title: .githooks/pre-push
-    digest: sha256:ff9d7b9815f700a9
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:3b29819f5fff8205
+    last_modified: 2026-11-22T22:35:16Z
   - id: pre-commit
     resource: ../../.githooks/pre-commit
     title: .githooks/pre-commit
@@ -57,8 +58,8 @@ sources:
   - id: ratchet-mjs
     resource: ../../scripts/quality/ratchet.mjs
     title: scripts/quality/ratchet.mjs
-    digest: sha256:e17849e2a8d92e75
-    last_modified: 2026-11-13T03:41:34Z
+    digest: sha256:8dc8323b87a1ea9b
+    last_modified: 2026-11-22T22:35:17Z
   - id: axe-smoke-mjs
     resource: ../../scripts/browser/smoke/axe.smoke.mjs
     title: scripts/browser/smoke/axe.smoke.mjs

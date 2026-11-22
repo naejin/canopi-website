@@ -1,38 +1,61 @@
 ---
 type: Runbook
 title: Agentic delivery adapter
-description: Commands and places for running multi-agent work on this site with the phased-agentic-delivery skill.
+description: Commands, worktree rules, and handoff gates for running Coral + Antigravity multi-agent work on canopi-website.
+tags: [process, coral]
 status: stable
-tags: [process]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-06T14:32:01Z }
+generated: { by: antigravity/gemini, at: 2026-11-22T22:39:22Z }
+verified:
+  - { by: antigravity/gemini, at: 2026-11-22T22:39:21Z }
+sources:
+  - id: agents-md
+    resource: ../../AGENTS.md
+    title: AGENTS.md
+    digest: sha256:4fbf1b49391e18ff
+    last_modified: 2026-11-22T22:39:10Z
+  - id: githooks-lib
+    resource: ../../.githooks/lib.sh
+    title: .githooks/lib.sh
+    digest: sha256:f65bdfdd2055c69d
+    last_modified: 2026-11-22T22:39:10Z
+  - id: ci-yml
+    resource: ../../.github/workflows/ci.yml
+    title: .github/workflows/ci.yml
+    digest: sha256:af2644ba6c84cc80
+    last_modified: 2026-11-19T18:24:56Z
 ---
 
-# Agentic delivery: canopi-website
+# Agentic delivery: canopi-website (Coral + Antigravity)
 
-## Places
-`<repo>` is the user's checkout and `<worktrees>` the sibling folder that holds the worktrees (`<repo>-wt`); the actual paths are in the main agent's brief.
-- User's checkout: `<repo>` — agents never commit, stage, stash or build there (the running dev server owns port 4321).
-- Integration worktree: `<worktrees>/integration`, branch `guides/integration` from `master`. Merged to `master` and pushed by the main agent only (push deploys production).
-- Stream worktrees: `git -C <repo> worktree add <worktrees>/<stream> -b guides/<stream> guides/integration`, then give the stream its own node_modules: `cp -al <worktrees>/integration/node_modules <worktrees>/<stream>/node_modules` and delete `node_modules/.astro` and `node_modules/.vite` in the copy. Never symlink node_modules: a shared one shares Astro's content cache, and other streams' guides leak into the build. The integration worktree has its own `npm ci` install; never use the user checkout's node_modules. Agents never run `npm i` in a stream: a dependency change is a hand-off.
-- Source notes (gitignored, book-derived): `<repo>/.local/field-guides/`. Guide specs: `.local/field-guides/specs/`.
-- Screenshots: `<worktree>/.local/shots/` (gitignored).
+## Worktrees & Isolation
 
-## Gates (run inside the worktree)
-- Affected / quick: `npm test && npm run check`.
-- Full: `npm test && npm run check && npm run build && node scripts/check-built-site.mjs`.
-- Ownership: each stream's brief lists its files; the reviewer checks `git diff --name-only guides/integration...HEAD` against it.
-- Merging streams: a conflict only in `knowledge/` source digest lines is resolved by taking either side, then `python3 .okf/okf.pyz sync` recomputes the digests.
+- **Main checkout:** `/home/daylon/projects/canopi-website` — agents never edit, stage, stash, commit, or run builds in the user's main checkout (port `4321` belongs to the user's dev server).
+- **Worker worktrees:** Create an isolated worktree and branch from the agreed base (typically local `master`):
+  ```bash
+  git -C /home/daylon/projects/canopi-website worktree add -b <branch> /home/daylon/projects/canopi-website-wt/<name> <base-sha>
+  ```
+- **Dependencies:** Run `npm ci --no-audit --no-fund` inside the worktree (capped at 3 GB RAM via `systemd-run`). **Never symlink `node_modules`** across worktrees: shared `.astro` and `.vite` caches leak content between branches.
+- **Git hooks:** `git config core.hooksPath .githooks` set once in the main checkout applies automatically to every worktree.
+- **Worktree cleanup:** Before removing any worktree, verify it has no uncommitted changes (`git status --porcelain`) and its commits are merged or explicitly discarded.
 
-## Real-environment check
-- `npx astro preview --port <port>` from the worktree after a build (never 4321; each agent gets its own port and kills only its own pid, and stops its preview before it reports: a preview left running took another stream's port in step 4). Before removing worktrees the main agent kills any listener whose `readlink /proc/<pid>/cwd` is inside them (`ss -ltnp`). After a rebuild, restart preview: a running preview answers 500 for the rebuilt pages.
-- Screenshots: `google-chrome --headless=new --window-size=<w>,<h> --screenshot=<file> http://localhost:<port>/guides/<slug>/` at 390 and 1280 widths, light and dark. The theme comes from `localStorage['canopi-theme']` (`light` or `dark`), so `--force-dark-mode` and `?theme=` do not switch it: drive Chrome over the DevTools protocol (`--remote-debugging-port`) and set the key with `Page.addScriptToEvaluateOnNewDocument` before navigating; `Page.captureScreenshot` with `captureBeyondViewport` takes the full page.
-- DOM checks: `google-chrome --headless=new --dump-dom <url>`.
+## Gates (run inside the worktree, memory-capped)
 
-## Tracker
-- bd (beads). Main agent only writes: `bd create`, `bd update <id> --claim`, `bd close <id> --reason`. Labels `guides-step-<n>`.
+Run heavy commands under `timeout 600 systemd-run --user --scope -q -p MemoryMax=3G -p MemorySwapMax=0`:
 
-## Plan
-- Architecture: [Field Guides architecture](/decisions/field-guides-architecture.md). Decisions: [user decisions](/decisions/field-guides-user-decisions.md). Plan: [Field Guides plan](/project/field-guides-plan.md).
+- **Code & policy checks:** `npm run check && npm test && npm run check:arch && npm run check:dup && npm run check:dead && node_modules/.bin/ast-grep scan && node scripts/expect-fail.mjs --zero`
+- **Build & site checks:** `npm run build && node scripts/check-built-site.mjs`
+- **Browser & accessibility checks:** `npm run test:browser:smoke && npm run test:axe` (or full `npm run test:browser`; remember `build:browser-test` points `.wrangler/deploy/config.json` at `dist-test/`, so always rebuild production before any `wrangler` preview/deploy).
+- **OKF knowledge:** Set `export OKF_ACTOR=antigravity/<model>`, run `python3 .okf/okf.pyz impact`, update affected concepts, then run `python3 .okf/okf.pyz sync && python3 .okf/okf.pyz check` (must report 0 errors).
 
-## Models
-- Agents use type `canopi-worker` (file + shell tools), strongest model, default effort.
+## Preview & Port Isolation
+
+- Never bind port `4321`. Start `npx astro preview --port <port>` on a unique port per worker, stop it by PID before reporting, and restart after any rebuild (a running preview answers 500 for rebuilt pages).
+- When running browser tests concurrently across worktrees, set distinct `CANOPI_BROWSER_PORT` bases (slots step by 8 ports).
+- Screenshots and scratch notes go under `.local/` (gitignored) or Coral artifacts (`coral-agent artifact upload <file>`).
+
+## Coordination & Merge Rules
+
+- **Task tracking:** Coral board and tasks (`coral-board task`) own team coordination; Beads (`bd`) is retired.
+- **Ownership & review:** Workers commit cleanly on their worktree branch and publish the exact commit SHA, branch name, worktree path, and gate results to the Orchestrator/Reviewer.
+- **Baseline ownership:** Only the merge/coordinator step rewrites `scripts/quality/baselines/*.json` (`--write` or `CANOPI_AXE_WRITE=1`).
+- **No direct `master` push:** Never push to `master`, push `deploy`, or merge without explicit Operator/Orchestrator approval. Production deploys only via `master` → CI `gate` → `deploy` ([CI, hooks and the deploy gate](/runbooks/ci-and-deploy-gate.md)).

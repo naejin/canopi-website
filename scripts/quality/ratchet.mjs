@@ -20,7 +20,7 @@
 // Keys: arch `rule|from|to`, a package by its name (a cycle: `L7-no-circular|a > b > a`, rotated to start at its smallest
 // module); dup `fileA <> fileB (n)`, the n-th clone of that file pair, so a line shift or an edit inside
 // a known clone does not make a new key; dead `type|file|symbol`.
-// Every command runs under the memory cap (CLAUDE.md), e.g.
+// Every command runs under the memory cap (AGENTS.md), e.g.
 //   timeout 300 systemd-run --user --scope -q -p MemoryMax=2G -p MemorySwapMax=0 npm run check:arch
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
