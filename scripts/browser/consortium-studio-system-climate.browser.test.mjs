@@ -38,24 +38,24 @@ test('2050 Climate: Typical vs Extreme envelope, Typical 2050s Winter floor warm
   await clickStudioTab(page, '2050 Climate');
   assert.ok(await has(page, '[data-climate-2050-tab]', 8_000), '2050 Climate tab mounts lazily');
 
-  // Verify Typical 2050s math: Winter floor warms (positive delta), Dry-spell delta matches future - today
+  // Verify Typical 2050s math: Winter nights & hard freezes + Longest summer dry spell days without rain
   const typicalForces = await page.evaluate(() =>
-    [...document.querySelectorAll('.ct-clim-force-row')].map((row) => ({
+    [...document.querySelectorAll('.cb-force-row, .ct-clim-force-row')].map((row) => ({
       text: row.textContent?.trim() ?? '',
-      delta: row.querySelector('.ct-clim-delta')?.textContent?.trim() ?? '',
+      delta: row.querySelector('.cb-force-v, .ct-clim-delta')?.textContent?.trim() ?? '',
     })),
   );
   assert.ok(typicalForces.length >= 3, 'Climate shift forces render');
-  const winter = typicalForces.find((f) => /winter floor/i.test(f.text));
-  assert.ok(winter, 'Winter floor force row renders');
-  assert.match(winter.delta, /^\+/, `Typical 2050s Winter floor warms up (got ${winter.delta})`);
+  const winter = typicalForces.find((f) => /winter nights/i.test(f.text));
+  assert.ok(winter, 'Winter nights & hard freezes force row renders');
+  assert.match(winter.text, /1-in-10-yr freeze/i, `Winter force shows explicit 1-in-10-yr freeze (got ${winter.text})`);
 
-  const dry = typicalForces.find((f) => /dry-spell/i.test(f.text));
-  assert.ok(dry, 'Dry-spell pressure force row renders');
-  const pctMatch = dry.text.match(/(\d+)%\s*→\s*(\d+)%/);
-  assert.ok(pctMatch, `Dry-spell shows today -> future % (${dry.text})`);
-  const expectedDelta = Number(pctMatch[2]) - Number(pctMatch[1]);
-  assert.ok(dry.delta.includes(String(Math.abs(expectedDelta))), `Dry-spell delta matches future - today (${dry.delta} vs ${expectedDelta})`);
+  const dry = typicalForces.find((f) => /longest summer dry spell/i.test(f.text));
+  assert.ok(dry, 'Longest summer dry spell force row renders');
+  const dayMatch = dry.text.match(/~?(\d+)d\s*→\s*(\d+)d/);
+  assert.ok(dayMatch, `Dry spell shows today -> future days (${dry.text})`);
+  const expectedDelta = Number(dayMatch[2]) - Number(dayMatch[1]);
+  assert.ok(dry.text.includes(`+${expectedDelta}d`), `Dry spell delta matches future - today (${dry.text} vs +${expectedDelta}d)`);
 
   // Switch to 1-in-10-yr Extreme and open Extremes Lab (6 levers)
   await page.locator(aria('button', '⚡ 1-in-10-yr Extreme')).click();

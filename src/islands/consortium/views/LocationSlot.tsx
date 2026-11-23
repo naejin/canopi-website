@@ -81,6 +81,7 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
   const showWays = !(frame && loc?.lookup);
   const search = (q: string) => { if (q.trim()) void run((x) => x.searchPlace(q)); };
   const pickSample = (s: typeof SAMPLE_PLOTS[number]) => {
+    location.value = null;
     void run((x) => x.settle('saved', JSON.stringify({ lat: s.lat, lon: s.lon, source: 'search', label: s.fullName })));
   };
   return (

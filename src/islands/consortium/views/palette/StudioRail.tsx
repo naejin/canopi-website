@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { jobsOf, type Taxon } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
-import { openFieldDossier, openPlantPool, poolOpen, railPreset, railTab, requestPlantOpen } from '../../state/studio.ts';
+import { microclimate, openFieldDossier, openPlantPool, poolOpen, railPreset, railTab, requestPlantOpen } from '../../state/studio.ts';
+import { formatFreezeTag, siteClimateProfile } from '../../rules/climate-words.ts';
 import { nameOf, zoneName } from '../kit/names.ts';
 import { placeWords } from '../location/shared.ts';
 import {
@@ -62,8 +63,13 @@ export function StudioRail() {
   const loc = store.location.value;
   const z = store.climate.value;
   const placeName = loc ? placeWords(loc) : z ? zoneName(z) : 'your site';
-  const sitePh = loc?.lookup?.soil?.phH2o ?? store.siteEdits.value.soilPh ?? null;
-  const coldC = loc?.lookup?.climate?.periods?.[0]?.tminColdC ?? null;
+  const profile = siteClimateProfile(loc, z, microclimate.value, store.siteEdits.value);
+  const coachSiteMeta = [
+    profile.coldFreeze10yrC != null
+      ? `1-in-10-yr freeze ${formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst)}`
+      : null,
+    profile.ph != null ? `pH ${profile.ph.toFixed(1)}` : null,
+  ].filter(Boolean).join(' · ');
 
   const coachCards = useMemo<CoachCard[]>(() => {
     const presentSun = new Set(members.map((t) => sunTierOf(t)));
@@ -186,7 +192,7 @@ export function StudioRail() {
               <h3 style="font-size:17px; margin-bottom:3px;">Strengthen your palette</h3>
               <p style="margin:0 0 10px; font-size:13.5px; color:var(--ink-soft);">
                 {coachCards.length} gentle {coachCards.length === 1 ? 'suggestion' : 'suggestions'} for {placeName}
-                {coldC != null || sitePh != null ? ` (${[coldC != null ? `${coldC > 0 ? '+' : ''}${coldC.toFixed(0)} °C winter` : '', sitePh != null ? `pH ${sitePh.toFixed(1)}` : ''].filter(Boolean).join(' · ')})` : ''}. Adding updates your studio live.
+                {coachSiteMeta ? ` (${coachSiteMeta})` : ''}. Adding updates your studio live.
               </p>
               {coachCards.length > 0 && (
                 <button

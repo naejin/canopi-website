@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useDismissOnOutside } from './FilterPopover.tsx';
 import {
   canopiFileName,
-  jobsOf,
   periodIds,
   type PeriodId,
 } from '../../../../lib/consortium/index.ts';
@@ -22,6 +21,7 @@ import {
   designName,
   ensureStudioGuards,
   hasActiveFileHandle,
+  microclimate,
   openStudioCanopiText,
   plantingConfig,
   poolOpen,
@@ -34,7 +34,7 @@ import {
   type StudioTab,
 } from '../../state/studio.ts';
 import { sunTierOf } from '../../rules/studio-filters.ts';
-import { evaluateClimate2050 } from '../../rules/studio-analysis.ts';
+import { countRoleSeasonSlots, evaluateClimate2050, siteClimateProfile } from '../../rules/studio-analysis.ts';
 import { placeWords } from '../location/shared.ts';
 import { zoneName } from '../kit/names.ts';
 
@@ -80,16 +80,19 @@ export function StudioHeader() {
 
   const envelope = designEnvelope.value;
   const stress = climateStress.value;
+  const mc = microclimate.value;
+  const edits = store.siteEdits.value;
   const catalog = store.fitPool.value ?? store.pool.value ?? [];
+
+  const profile = useMemo(() => siteClimateProfile(loc, z, mc, edits), [loc, z, mc, edits]);
 
   const ribbon = useMemo(() => {
     const sunTiers = new Set(members.map((t) => sunTierOf(t))).size;
-    const rolesFilled = new Set(members.flatMap((t) => jobsOf(t))).size;
-    const roleSeasonSlots = Math.min(24, rolesFilled * 4);
+    const roleSeasonSlots = countRoleSeasonSlots(members);
     let thriving = memberCount;
     let risky = 0;
     if (curPeriod !== periodIds[0] && memberCount > 0) {
-      const rep = evaluateClimate2050(members, catalog, loc, curPeriod, envelope, stress);
+      const rep = evaluateClimate2050(members, catalog, loc, curPeriod, envelope, stress, mc, edits);
       thriving = rep.holdsStrong.length;
       risky = rep.critical.length;
     } else if (verdicts) {
@@ -100,12 +103,9 @@ export function StudioHeader() {
         else if (v.level === 'outside') risky += 1;
       }
     }
-    const ph = loc?.lookup?.soil?.phH2o ?? store.siteEdits.value.soilPh ?? null;
-    const coldC = loc?.lookup?.climate?.periods?.[0]?.tminColdC ?? null;
-    const mildWinter = coldC != null ? coldC > 0 : z === 'Mediterranean' || z === 'Subtropical' || z === 'Tropical';
     const planUnits = Math.max(memberCount, Math.round(cfg.plotAreaM2 * 0.25));
-    return { sunTiers, roleSeasonSlots, thriving, risky, ph, mildWinter, planUnits };
-  }, [members, memberCount, verdicts, loc, z, cfg.plotAreaM2, curPeriod, catalog, envelope, stress]);
+    return { sunTiers, roleSeasonSlots, thriving, risky, ph: profile.ph, phReaction: profile.phReaction, winterShortLabel: profile.winterShortLabel, planUnits };
+  }, [members, memberCount, verdicts, loc, cfg.plotAreaM2, curPeriod, catalog, envelope, stress, mc, edits, profile]);
 
   const fileSlug = canopiFileName(designName.value.trim() || 'My Field Palette');
   const hLabel = curPeriod === periodIds[0] ? 'Today' : curPeriod === periodIds[1] ? '2050s' : '2080s';
@@ -386,7 +386,7 @@ export function StudioHeader() {
               <span class="status-dot dot-winter" aria-hidden="true" />
               <span>
                 {ribbon.ph != null ? <>Soil <strong>pH {ribbon.ph.toFixed(1)}</strong> · </> : null}
-                {ribbon.mildWinter ? '❄ Winter-plantable' : 'Frost-winter site'}
+                {ribbon.winterShortLabel}
               </span>
               <span class="hi-info" aria-hidden="true">i</span>
             </button>

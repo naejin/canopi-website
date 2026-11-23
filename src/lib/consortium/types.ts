@@ -488,6 +488,13 @@ export interface SiteLookup {
   soil: { phH2o: number; texture: string | null; filled: boolean; fillDistanceCells: number; distanceCells: number } | null;
   // codes null offshore (a coast: climate from the nearest cell, no country).
   regions: { wgsrpdL3: string | null; isoA2: string | null };
+  // Optional additive canopi-climate v0.7.0 layers when present on the lookup.
+  v07?: {
+    frostCalendar?: { frostFreeDays: number; falseSpringPct: number; frostFree: boolean } | null;
+    extremesTail?: { coldTail10yrC: number | null; heatDome10yrC: number | null; heatDays35: number | null; p90DryStreakDays: number | null } | null;
+    phenology?: { chillPortionsToday: number | null; chillPortions2050: number | null; chillPortions2080: number | null } | null;
+    waterBalance?: { cddDays: number | null; annualDeficitMm: number | null } | null;
+  } | null;
 }
 // Where the reader says the site is (store.location; S5b writes it, S5c, S5d and S5e read it): from the
 // device's location, a place search, a map pick, or a shared link's `o=` cell centre (approximate).

@@ -9,12 +9,13 @@ import { useMemo, useState } from 'preact/hooks';
 import { jobsOf, SUCCESSION_STAGES_6, type JobId, type Stratum, type Taxon } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
-import { openFieldDossier, openPlantPool, studioTab } from '../../state/studio.ts';
+import { microclimate, openFieldDossier, openPlantPool, studioTab } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
 import { SunIcon } from './SunIcon.tsx';
 import {
   buildRoleLedger,
   buildSunSuccessionMatrix,
+  siteClimateProfile,
 } from '../../rules/studio-analysis.ts';
 import { activityMonthsOf, stageSpanOf, sunTierLabel, sunTierOf } from '../../rules/studio-filters.ts';
 
@@ -118,6 +119,7 @@ function tracksForTaxon(t: Taxon): PlantTracks {
 
 export function LivingSystemTab() {
   const members = store.memberTaxa.value;
+  const profile = siteClimateProfile(store.location.value, store.climate.value, microclimate.value, store.siteEdits.value);
   const [roleMode, setRoleMode] = useState<RoleViewMode>('season');
   const [activityFilter, setActivityFilter] = useState<YearActivityFilter>('all');
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
@@ -247,6 +249,7 @@ export function LivingSystemTab() {
         <span class="ls-sum-sep" aria-hidden="true" />
         <button type="button" class="ls-sum-btn" onClick={() => scrollToSection('ct-sys-year')}>
           <span>Active harvest:</span> <strong>{activeHarvestMonths} of 12 months</strong>
+          {profile.hasLive ? <span style="color:var(--ink-muted);"> · {profile.winterShortLabel}</span> : null}
         </button>
       </div>
 

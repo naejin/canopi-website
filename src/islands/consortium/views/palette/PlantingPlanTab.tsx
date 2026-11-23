@@ -15,7 +15,6 @@ import {
   computePlantingPlan,
   computePlantingWaves,
   convertArea,
-  siteClimate as climateOf,
   type AreaUnit,
   type DensityMode,
   type LayoutPattern,
@@ -25,6 +24,7 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import { backToPlace } from '../../state/draft.ts';
 import {
+  microclimate,
   openFieldDossier,
   plantingConfig,
   saveStudioCanopi,
@@ -37,6 +37,11 @@ import {
   buildPlantingActionCalendar,
   computePlotLayout,
 } from '../../rules/studio-analysis.ts';
+import {
+  formatFreezeTag,
+  formatHeatPeakTag,
+  siteClimateProfile,
+} from '../../rules/climate-words.ts';
 
 type OrderSort = 'sun' | 'phase' | 'qty';
 type CalActionFilter = 'all' | 'plant' | 'sow' | 'prune' | 'harvest' | 'winter';
@@ -79,9 +84,9 @@ export function PlantingPlanTab() {
   const members = store.memberTaxa.value;
   const cfg = plantingConfig.value;
   const loc = store.location.value;
-  const sc = loc?.lookup ? climateOf(loc.lookup) : null;
-  const coldC = sc?.today?.tminColdC;
-  const hotC = sc?.today?.tmaxWarmC;
+  const profile = siteClimateProfile(loc, store.climate.value, microclimate.value, store.siteEdits.value);
+  const coldC = profile.typicalColdNightC ?? undefined;
+  const hotC = profile.typicalWarmHighC ?? undefined;
 
   const [activeMonth, setActiveMonth] = useState(10); // November default (matches mockup)
   const [orderSort, setOrderSort] = useState<OrderSort>('sun');
@@ -174,7 +179,7 @@ export function PlantingPlanTab() {
           <div class="ch-kicker-row">
             <span class="ch-kicker">1 · Field Sizing &amp; Design Readiness</span>
             <span class="ch-twin-pill">
-              {placeName} · {grossDisplay} {unitMeta.label} · {densityMeta.short}{cfg.bufferPct === 10 ? ' · +10% buffer' : ''}
+              {placeName}{profile.ph != null ? ` · pH ${profile.ph.toFixed(1)}` : ''} · {grossDisplay} {unitMeta.label} · {densityMeta.short}{cfg.bufferPct === 10 ? ' · +10% buffer' : ''}
             </span>
           </div>
           <button type="button" class="btn btn-xs" onClick={backToPlace}>
@@ -622,9 +627,14 @@ export function PlantingPlanTab() {
           </div>
         </div>
 
-        <div style="margin:14px 0; padding:10px 14px; border-left:3px solid var(--warn-dot); background:var(--bg); border-radius:6px;">
+        <div style="margin:14px 0; padding:10px 14px; border-left:3px solid var(--warn-dot); background:var(--bg); border-radius:6px;" data-plan-extreme-insurance>
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
-            <strong style="font-size:13px;">⚡ Extreme-Year Field Insurance (Site v0.7.0 Tail Prep)</strong>
+            <strong style="font-size:13px;">
+              ⚡ Extreme-Year Field Insurance
+              {profile.hasLive && profile.coldFreeze10yrC != null && profile.heatPeak10yrC != null
+                ? ` (1-in-10-yr freeze ${formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst)} · heat peak ${formatHeatPeakTag(profile.heatPeak10yrC, profile.heatPeakIsEst)}${profile.dryStreakDays != null ? ` · ~${profile.dryStreakDays}d dry spell` : ''})`
+                : ' (Site v0.7.0 Tail Prep)'}
+            </strong>
             <button type="button" class="link-btn" style="font-size:12px;" onClick={() => { studioTab.value = 'climate'; }}>
               Tune in Stress Lab →
             </button>

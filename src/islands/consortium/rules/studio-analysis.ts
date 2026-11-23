@@ -9,16 +9,16 @@ import type {
   JobId,
   LayoutPattern,
   PlantingPlanSummary,
+  SiteEdits,
   SiteLocation,
   Stratum,
   Taxon,
 } from '../../../lib/consortium/index.ts';
 import {
   jobsOf,
-  siteClimate,
   SUCCESSION_STAGES_6,
 } from '../../../lib/consortium/index.ts';
-import { evaluateTrajectory, type TrajectoryCode } from '../../../lib/climate/v07.ts';
+import { evaluateTrajectory, type MicroclimateParams, type TrajectoryCode } from '../../../lib/climate/v07.ts';
 import type { ClimateStressState } from '../state/studio.ts';
 import {
   activityMonthsOf,
@@ -26,6 +26,9 @@ import {
   stageSpanOf,
   SUN_TIER_OPTIONS,
 } from './studio-filters.ts';
+import { signedTemp1, siteClimateProfile } from './climate-words.ts';
+
+export { siteClimateProfile } from './climate-words.ts';
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
@@ -140,6 +143,40 @@ export function buildRoleLedger(members: readonly Taxon[]): RoleLedgerRow[] {
   });
 }
 
+const SEASON_MONTHS: readonly (readonly number[])[] = [
+  [11, 0, 1],
+  [2, 3, 4],
+  [5, 6, 7],
+  [8, 9, 10],
+];
+
+/** Exact 6x4 Role x Season active slot count shared by StudioHeader Health Ribbon and LivingSystemTab. */
+export function countRoleSeasonSlots(members: readonly Taxon[]): number {
+  const ledger = buildRoleLedger(members);
+  let total = 0;
+  for (const row of ledger) {
+    for (const months of SEASON_MONTHS) {
+      const hasAny = row.species.some((t) => {
+        const spark = activityMonthsOf(t);
+        const isAnnual = t.traits.is_annual === true || t.traits.grown_as_annual === true;
+        const isEvergreen = Boolean(t.traits.deciduous_evergreen && /evergreen/i.test(t.traits.deciduous_evergreen));
+        const cold = t.climate?.tminCold?.low ?? -4;
+        const winterGrow = isEvergreen || (!isAnnual && cold <= 0 && spark[0] !== 'dormant');
+        return months.some((m) => {
+          const lvl = spark[m];
+          const w = winterGrow && (m <= 1 || m === 10 || m === 11);
+          const s = isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10);
+          const b = lvl !== 'dormant' && m >= 3 && m <= 7;
+          const h = lvl === 'peak' || (lvl === 'active' && m >= 7 && m <= 9);
+          return w || s || b || h;
+        });
+      });
+      if (hasAny) total += 1;
+    }
+  }
+  return total;
+}
+
 interface GrowingMonthBrief {
   monthIndex: number;
   short: string;
@@ -236,11 +273,15 @@ export function evaluateClimate2050(
   period: string,
   envelope: DesignEnvelope,
   stress: ClimateStressState,
+  mc?: MicroclimateParams,
+  edits?: SiteEdits | null,
 ): Climate2050Report {
-  const sc = loc?.lookup ? siteClimate(loc.lookup) : null;
-  const baseColdToday = sc?.today?.tminColdC ?? -3;
-  const baseHotToday = sc?.today?.tmaxWarmC ?? 29;
-  const baseAridity = sc?.today?.aridityIndex ?? 0.8;
+  const profile = siteClimateProfile(loc, null, mc, edits);
+  const baseColdToday = profile.typicalColdNightC ?? -3;
+  const baseHotToday = profile.typicalWarmHighC ?? 29;
+  const baseAridity = profile.aridityIndex ?? 0.8;
+  const baseColdFreeze = profile.coldFreeze10yrC ?? Math.round((baseColdToday - 8.5) * 10) / 10;
+  const baseHeatPeak = profile.heatPeak10yrC ?? Math.round((baseHotToday + 8) * 10) / 10;
   const futureDeltaWarm = period === '2071-2099' ? 3.4 : 2.1;
   const winterWarmBump = Math.round(futureDeltaWarm * 0.6 * 10) / 10;
   const extremeHotBump = envelope === 'extreme10' ? 2.5 : 0;
@@ -251,12 +292,24 @@ export function evaluateClimate2050(
   const coldTail10yrC = envelope === 'extreme10' ? extremeColdTailC : typicalWinterFutureC;
   const hotTodayC = Math.round((baseHotToday + stress.heatDeltaC * 0.5) * 10) / 10;
   const hotFutureC = Math.round((baseHotToday + futureDeltaWarm + extremeHotBump + stress.heatDeltaC) * 10) / 10;
-  const chillTodayCP = Math.max(5, Math.round(60 - Math.max(0, baseColdToday) * 3));
-  const chillFutureCP = Math.max(0, Math.round(chillTodayCP - futureDeltaWarm * 6 - stress.heatDeltaC * 3));
+  const heatDomeFutureC = Math.round(baseHeatPeak + futureDeltaWarm + extremeHotBump + stress.heatDeltaC);
+  const freezeFutureC = Math.round(baseColdFreeze + (envelope === 'extreme10' ? -2.0 : winterWarmBump) + stress.winterDeltaC);
+  const chillTodayCP = loc?.lookup?.v07?.phenology?.chillPortionsToday ?? Math.max(5, Math.round(60 - Math.max(0, baseColdToday) * 3));
+  const chillV07Future = period === '2071-2099'
+    ? loc?.lookup?.v07?.phenology?.chillPortions2080
+    : loc?.lookup?.v07?.phenology?.chillPortions2050;
+  const chillFutureCP = chillV07Future != null
+    ? Math.max(0, Math.round(chillV07Future - stress.heatDeltaC * 3))
+    : Math.max(0, Math.round(chillTodayCP - futureDeltaWarm * 6 - stress.heatDeltaC * 3));
   const dryTodayPct = Math.round((1 - Math.min(1, baseAridity)) * 40);
   const dryFuturePct = Math.min(95, Math.max(0, dryTodayPct + Math.round(futureDeltaWarm * 4) + stress.droughtPct + (envelope === 'extreme10' ? 15 : 0)));
   const dryDeltaPct = dryFuturePct - dryTodayPct;
   const dryPressure = dryDeltaPct;
+  const baseDryDays = profile.dryStreakDays ?? Math.round(14 + (1 - Math.min(1, baseAridity)) * 38 + 6);
+  const dryFutureDays = Math.max(
+    baseDryDays + 2,
+    Math.round(baseDryDays * (1 + futureDeltaWarm * 0.08 + stress.droughtPct / 100 + (envelope === 'extreme10' ? 0.25 : 0))),
+  );
   const novelClimate = hotFutureC >= 41 || (chillFutureCP < 15 && stress.heatDeltaC >= 2.5);
   const matchQuality = novelClimate ? 0.45 : 0.82;
 
@@ -284,18 +337,18 @@ export function evaluateClimate2050(
     const lim = estimateTaxonLimits(t);
     const code = evaluateTrajectory(lim, site);
     const breached: string[] = [];
-    if (hotFutureC > lim.maxHotC) breached.push(`Summer peak ${hotFutureC} °C exceeds ${lim.maxHotC} °C ceiling`);
-    if (!lim.isAnnual && coldTail10yrC < lim.minColdC) breached.push(`Cold snap ${coldTail10yrC} °C dips below ${lim.minColdC} °C floor`);
+    if (hotFutureC > lim.maxHotC) breached.push(`Summer afternoons (${hotFutureC} °C avg) exceed ${lim.maxHotC} °C heat-dome limit`);
+    if (!lim.isAnnual && coldTail10yrC < lim.minColdC) breached.push(`Hard freeze (${freezeFutureC} °C 1-in-10-yr) dips below ${lim.minColdC} °C limit`);
     if (chillFutureCP < lim.chillMinCP) breached.push(`Winter chill (${chillFutureCP} CP) drops below ${lim.chillMinCP} CP need`);
     if (dryPressure >= 30 && (!t.traits.drought_tolerance || !/high/i.test(t.traits.drought_tolerance))) {
-      breached.push(`Dry-spell pressure (+${dryPressure}%) strains moisture demand`);
+      breached.push(`Longest dry spell (${dryFutureDays}d without rain) strains moisture demand`);
     }
 
     const allFiveLimits = [
-      `Cold floor ${lim.minColdC} °C (site tail ${coldTail10yrC} °C)`,
-      `Heat ceiling ${lim.maxHotC} °C (future ${hotFutureC} °C)`,
+      `Hard-freeze limit ${lim.minColdC} °C (1-in-10-yr ~${freezeFutureC} °C)`,
+      `Heat-dome limit ${lim.maxHotC} °C (future avg ${hotFutureC} °C)`,
       `Chill need ${lim.chillMinCP} CP (future ${chillFutureCP} CP)`,
-      `Drought tolerance ${t.traits.drought_tolerance ?? 'Moderate'}`,
+      `Drought tolerance ${t.traits.drought_tolerance ?? 'Moderate'} (${dryFutureDays}d dry spell)`,
       `Soil pH ${t.traits.soil_ph ? `${t.traits.soil_ph.min}–${t.traits.soil_ph.max}` : '6.0–7.5'}`,
     ].join(' · ');
 
@@ -345,13 +398,31 @@ export function evaluateClimate2050(
       ? `Evaluated under the 1-in-10-year extreme envelope (${coldTail10yrC} °C cold tail to ${hotFutureC} °C heat dome).`
       : `Evaluated under typical ${period === '2071-2099' ? '2080s' : '2050s'} conditions (${coldTodayC} °C winter to ${hotFutureC} °C summer).`;
 
-  const winterDelta = Math.round((coldTail10yrC - baseColdToday) * 10) / 10;
-  const hotDelta = Math.round((hotFutureC - baseHotToday) * 10) / 10;
   const forces = [
-    { label: 'Summer peak', today: `${baseHotToday.toFixed(1)} °C`, future: `${hotFutureC.toFixed(1)} °C`, delta: `${hotDelta >= 0 ? '+' : ''}${hotDelta.toFixed(1)} °C` },
-    { label: 'Winter floor', today: `${baseColdToday.toFixed(1)} °C`, future: `${coldTail10yrC.toFixed(1)} °C`, delta: `${winterDelta >= 0 ? '+' : ''}${winterDelta.toFixed(1)} °C` },
-    { label: 'Dry-spell pressure', today: `${dryTodayPct}%`, future: `${dryFuturePct}%`, delta: `${dryDeltaPct >= 0 ? '+' : ''}${dryDeltaPct}%` },
-    { label: 'Winter chill', today: `${chillTodayCP} CP`, future: `${chillFutureCP} CP`, delta: `${chillFutureCP - chillTodayCP} CP` },
+    {
+      label: 'Summer afternoons & heat domes',
+      today: baseHotToday.toFixed(1),
+      future: `${hotFutureC.toFixed(1)} °C avg`,
+      delta: `1-in-10-yr peak ~${heatDomeFutureC} °C`,
+    },
+    {
+      label: 'Winter nights & hard freezes',
+      today: signedTemp1(baseColdToday).replace(' °C', ''),
+      future: `${signedTemp1(coldTail10yrC)} avg`,
+      delta: `1-in-10-yr freeze ~${freezeFutureC} °C`,
+    },
+    {
+      label: 'Longest summer dry spell',
+      today: `~${baseDryDays}d`,
+      future: `${dryFutureDays}d without rain`,
+      delta: `+${dryFutureDays - baseDryDays}d`,
+    },
+    {
+      label: 'Winter chill (fruit trees)',
+      today: `${chillTodayCP}`,
+      future: `${chillFutureCP} chill portions`,
+      delta: chillFutureCP < 40 ? 'low-chill varieties' : `${chillFutureCP - chillTodayCP} CP`,
+    },
   ];
 
   // 12-month Today vs Future curve (pure sinusoidal approximation anchored to site cold/hot).

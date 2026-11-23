@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { jobsOf, siteClimate as climateOf, SUCCESSION_STAGES_6, type Details, type Locale, type Stratum, type Taxon } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { pageLang, T } from '../../strings.ts';
-import { closeFieldDossier, dossierId, dossierList, openFieldDossier, stepFieldDossier, studioTab } from '../../state/studio.ts';
+import { closeFieldDossier, dossierId, dossierList, microclimate, openFieldDossier, stepFieldDossier, studioTab } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
 import { SunIcon } from './SunIcon.tsx';
@@ -23,6 +23,7 @@ import {
   sunTierLabel,
   sunTierOf,
 } from '../../rules/studio-filters.ts';
+import { phReactionLabel } from '../../rules/climate-words.ts';
 
 const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'] as const;
 
@@ -115,9 +116,11 @@ export function FieldDossier() {
 
   const taxon = id ? store.taxonOf(id) : null;
   const loc = store.location.value;
+  const mc = microclimate.value;
+  const edits = store.siteEdits.value;
   const spec = useMemo(
-    () => (taxon ? buildDossierSpec(taxon, details, loc) : null),
-    [taxon, details, loc],
+    () => (taxon ? buildDossierSpec(taxon, details, loc, mc, edits) : null),
+    [taxon, details, loc, mc, edits],
   );
   const spark = useMemo(
     () => (taxon ? activityMonthsOf(taxon, details) : []),
@@ -145,7 +148,8 @@ export function FieldDossier() {
   const sc = loc?.lookup ? climateOf(loc.lookup) : null;
   const placeName = loc?.label ?? 'your site';
   const sitePh = spec.phTrack.sitePh;
-  const siteColdC = spec.tempTrack.siteColdC;
+  const siteFreezeC = spec.tempTrack.siteFreezeC;
+  const warmMonth = spec.tempTrack.warmMonth;
   const siteHot2050 = spec.tempTrack.siteHotC != null ? Math.round((spec.tempTrack.siteHotC + 2.1) * 10) / 10 : null;
   const phFits = sitePh == null || (sitePh >= spec.phTrack.min - 0.2 && sitePh <= spec.phTrack.max + 0.2);
   const hasDanger = spec.breakingPoints.some((b) => b.severity === 'danger');
@@ -158,7 +162,7 @@ export function FieldDossier() {
 
   const tBarLeft = clampPct(spec.tempTrack.minC, -20, 44);
   const tBarRight = clampPct(spec.tempTrack.maxC, -20, 44);
-  const tColdPct = siteColdC != null ? clampPct(siteColdC, -20, 44) : null;
+  const tColdPct = siteFreezeC != null ? clampPct(siteFreezeC, -20, 44) : null;
   const tHotPct = siteHot2050 != null ? clampPct(siteHot2050, -20, 44) : null;
 
   const isAnnual = taxon.traits.is_annual === true || taxon.traits.grown_as_annual === true;
@@ -247,9 +251,9 @@ export function FieldDossier() {
               </div>
               <div class="fit-banner-meta">
                 {placeName} (2050s):{' '}
-                {sitePh != null ? `pH ${sitePh.toFixed(1)} · ` : ''}
-                {siteColdC != null ? `${siteColdC >= 0 ? '+' : ''}${siteColdC.toFixed(1)} °C nights · ` : ''}
-                {siteHot2050 != null ? `${Math.round(siteHot2050)} °C highs` : 'climate loaded'}
+                {sitePh != null ? `pH ${sitePh.toFixed(1)} (${phReactionLabel(sitePh)}) · ` : ''}
+                {siteFreezeC != null ? `1-in-10-yr freeze ~${siteFreezeC.toFixed(1)} °C · ` : ''}
+                {siteHot2050 != null ? `${warmMonth} avg ${Math.round(siteHot2050)} °C` : 'climate loaded'}
                 {sc?.koppen ? ` · Köppen ${sc.koppen}` : ''}
                 <button
                   type="button"
@@ -294,18 +298,18 @@ export function FieldDossier() {
               <div class="gauge-head">
                 <strong>Winter cold &amp; 2050s heat</strong>
                 <span style="color:var(--plant-green); font-weight:600;">
-                  Hardy to {Math.round(spec.tempTrack.minC)} °C · Heat limit {Math.round(spec.tempTrack.maxC)} °C
+                  Hard-freeze limit {Math.round(spec.tempTrack.minC)} °C · Heat-dome limit {Math.round(spec.tempTrack.maxC)} °C
                 </span>
               </div>
               <div class="gauge-track-wrap">
                 {tColdPct != null && (
-                  <span class="gauge-pin-lbl pin-cold" style={{ left: `${Math.max(14, Math.min(86, tColdPct))}%` }}>
-                    Night {siteColdC! >= 0 ? '+' : ''}{siteColdC!.toFixed(1)}°
+                  <span class="gauge-pin-lbl pin-cold" style={{ left: `${Math.max(16, Math.min(84, tColdPct))}%` }}>
+                    1-in-10-yr freeze {siteFreezeC! >= 0 ? '+' : ''}{siteFreezeC!.toFixed(1)}°
                   </span>
                 )}
                 {tHotPct != null && (
-                  <span class="gauge-pin-lbl pin-ok" style={{ left: `${Math.max(14, Math.min(86, tHotPct))}%` }}>
-                    2050s {Math.round(siteHot2050!)}°
+                  <span class="gauge-pin-lbl pin-ok" style={{ left: `${Math.max(16, Math.min(84, tHotPct))}%` }}>
+                    2050s {warmMonth} avg {Math.round(siteHot2050!)}°
                   </span>
                 )}
                 <div class="gauge-track">
@@ -342,8 +346,9 @@ export function FieldDossier() {
                 <span style="font-size:12px; color:var(--ink-muted);">{spec.breakingPoints.length} limit{spec.breakingPoints.length === 1 ? '' : 's'} hit</span>
               </div>
               <div class="bp-signal-line">
-                <span class="bp-pill">🔥 Heat dome: {Math.round(spec.tempTrack.maxC)} °C</span>
-                <span class="bp-pill">❄ Cold floor: {Math.round(spec.tempTrack.minC)} °C</span>
+                <span class="bp-pill">🔥 Heat-dome limit: {Math.round(spec.tempTrack.maxC)} °C</span>
+                <span class="bp-pill">❄ Hard-freeze limit: {Math.round(spec.tempTrack.minC)} °C</span>
+                <span class="bp-pill">💧 Max dry spell: {spec.maxDryDays}d</span>
                 {spec.breakingPoints.map((bp, i) => (
                   <span key={i} class={`bp-pill ${bp.severity === 'danger' ? 'breached' : 'warn'}`}>
                     {bp.title}

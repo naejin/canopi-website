@@ -1095,13 +1095,13 @@
 
   .cb-forces-list { display: flex; flex-direction: column; }
   .cb-force-row {
-    display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 8px; align-items: baseline;
-    padding: 6px 4px; border-bottom: 1px solid var(--border); font-size: 13px;
+    display: grid; grid-template-columns: minmax(150px, 195px) minmax(0, 1fr); gap: 10px; align-items: baseline;
+    padding: 7px 4px; border-bottom: 1px solid var(--border); font-size: 13px;
     transition: background 0.12s; border-radius: 4px;
   }
   .cb-force-row:last-child { border-bottom: none; }
   .cb-force-row:hover { background: var(--surface-alt); }
-  .cb-force-k { font-size: 12px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+  .cb-force-k { font-size: 12px; font-weight: 600; color: var(--ink-muted); line-height: 1.3; }
   .cb-force-v { color: var(--ink-soft); line-height: 1.35; font-variant-numeric: tabular-nums; }
   .cb-force-v strong { color: var(--ink); font-weight: 600; }
   .cb-tail-emph { color: var(--risk-ink) !important; font-weight: 600; }

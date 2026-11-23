@@ -1,9 +1,10 @@
 // Pure Field Studio filter, sparkline, and Dossier specification helpers (Slice 3.3).
 // Shared by My Palette (Cards & Compact List), the Right Rail (Coach & All Plants), and Field Dossier.
 // Zero botanical-layer jargon; uses W1 t.light, unified 6-stage succession, and v0.7.0 photoperiod().
-import type { Details, JobId, Month, PhaseOrd, SiteLocation, Stratum, Taxon } from '../../../lib/consortium/index.ts';
-import { jobsOf, months, phases, phaseToStageIndex, siteClimate, SUCCESSION_STAGES_6 } from '../../../lib/consortium/index.ts';
-import { photoperiod } from '../../../lib/climate/v07.ts';
+import type { Details, JobId, Month, PhaseOrd, SiteEdits, SiteLocation, Stratum, Taxon } from '../../../lib/consortium/index.ts';
+import { jobsOf, months, phases, phaseToStageIndex, SUCCESSION_STAGES_6 } from '../../../lib/consortium/index.ts';
+import { photoperiod, type MicroclimateParams } from '../../../lib/climate/v07.ts';
+import { siteClimateProfile } from './climate-words.ts';
 
 export type FitFilter = 'fit' | 'care' | 'risk';
 
@@ -193,7 +194,19 @@ interface DossierBreakingPoint {
 
 export interface DossierSpec {
   phTrack: { min: number; max: number; sitePh: number | null; sitePct: number | null; barLeft: number; barWidth: number };
-  tempTrack: { minC: number; maxC: number; siteColdC: number | null; siteHotC: number | null; barLeft: number; barWidth: number; coldPin: number | null; hotPin: number | null };
+  tempTrack: {
+    minC: number;
+    maxC: number;
+    siteColdC: number | null;
+    siteFreezeC: number | null;
+    siteHotC: number | null;
+    warmMonth: 'Jul' | 'Jan';
+    barLeft: number;
+    barWidth: number;
+    coldPin: number | null;
+    hotPin: number | null;
+  };
+  maxDryDays: number;
   ledger: DossierLedgerRow[];
   breakingPoints: DossierBreakingPoint[];
   lifeline: { start: number; end: number; label: string };
@@ -218,11 +231,19 @@ export function formatHeightRange(h?: { min?: number | null; max?: number | null
   return `${fmt1(lo!)}–${fmt1(hi!)} m`;
 }
 
-export function buildDossierSpec(t: Taxon, details: Details | null, loc: SiteLocation | null): DossierSpec {
-  const sc = loc?.lookup ? siteClimate(loc.lookup) : null;
-  const sitePh = loc?.lookup?.soil?.phH2o ?? null;
-  const siteColdC = sc?.today?.tminColdC ?? null;
-  const siteHotC = sc?.today?.tmaxWarmC ?? null;
+export function buildDossierSpec(
+  t: Taxon,
+  details: Details | null,
+  loc: SiteLocation | null,
+  mc?: MicroclimateParams,
+  edits?: SiteEdits | null,
+): DossierSpec {
+  const profile = siteClimateProfile(loc, null, mc, edits);
+  const sitePh = profile.ph;
+  const siteColdC = profile.typicalColdNightC;
+  const siteHotC = profile.typicalWarmHighC;
+  const siteFreezeC = profile.coldFreeze10yrC;
+  const warmMonth: 'Jul' | 'Jan' = profile.warmMonth;
 
   const phMin = t.traits.soil_ph?.min ?? 5.5;
   const phMax = t.traits.soil_ph?.max ?? 7.8;
@@ -241,12 +262,22 @@ export function buildDossierSpec(t: Taxon, details: Details | null, loc: SiteLoc
     minC,
     maxC,
     siteColdC,
+    siteFreezeC,
     siteHotC,
+    warmMonth,
     barLeft: clampPct(minC, -30, 50),
     barWidth: Math.max(6, clampPct(maxC, -30, 50) - clampPct(minC, -30, 50)),
-    coldPin: siteColdC != null ? clampPct(siteColdC, -30, 50) : null,
+    coldPin: siteFreezeC != null ? clampPct(siteFreezeC, -30, 50) : null,
     hotPin: siteHotC != null ? clampPct(siteHotC, -30, 50) : null,
   };
+
+  const maxDryDays = details?.extremes?.maxDryDays != null
+    ? details.extremes.maxDryDays
+    : t.traits.drought_tolerance && /high/i.test(t.traits.drought_tolerance)
+      ? 60
+      : t.traits.drought_tolerance && /low/i.test(t.traits.drought_tolerance)
+        ? 18
+        : 32;
 
   const heightStr = formatHeightRange(t.traits.height_m) || 'Unrecorded';
   const spreadStr = t.traits.width_max_m != null ? `${fmt1(t.traits.width_max_m)} m spread` : 'spread unrecorded';
@@ -261,9 +292,9 @@ export function buildDossierSpec(t: Taxon, details: Details | null, loc: SiteLoc
 
   const ledger: DossierLedgerRow[] = [
     {
-      label: '1-in-10-yr Cold Tail',
-      value: `${minC}°C tolerance`,
-      tip: 'Estimated cold-snap survival floor from extreme climate bounds or Q05 occurrence distribution.',
+      label: 'Hard-freeze limit',
+      value: `${minC} °C survival limit`,
+      tip: 'Estimated 1-in-10-yr cold-snap survival limit from extreme climate bounds or Q05 occurrence distribution.',
     },
     {
       label: 'Chill & Dry Streak',
@@ -293,18 +324,18 @@ export function buildDossierSpec(t: Taxon, details: Details | null, loc: SiteLoc
   ];
 
   const breakingPoints: DossierBreakingPoint[] = [];
-  if (siteColdC != null && siteColdC < minC) {
+  if (siteFreezeC != null && siteFreezeC < minC) {
     breakingPoints.push({
       severity: 'danger',
-      title: 'Winter cold floor exceeded',
-      detail: `Site coldest low (${siteColdC.toFixed(1)}°C) sits below this plant's ${minC}°C cold bound.`,
+      title: 'Hard-freeze limit exceeded',
+      detail: `Site 1-in-10-yr freeze (~${siteFreezeC.toFixed(1)} °C) sits below this plant's ${minC} °C hard-freeze limit.`,
     });
   }
   if (siteHotC != null && siteHotC > maxC - 1.5) {
     breakingPoints.push({
       severity: siteHotC > maxC ? 'danger' : 'warn',
-      title: 'Summer heat ceiling near limit',
-      detail: `Warmest highs (${siteHotC.toFixed(1)}°C) approach or exceed the ${maxC}°C heat threshold.`,
+      title: 'Heat-dome limit near or exceeded',
+      detail: `Site ${warmMonth} average highs (${siteHotC.toFixed(1)} °C) approach or exceed the ${maxC} °C heat-dome limit.`,
     });
   }
   if (sitePh != null && (sitePh < phMin - 0.3 || sitePh > phMax + 0.3)) {
@@ -322,6 +353,7 @@ export function buildDossierSpec(t: Taxon, details: Details | null, loc: SiteLoc
   return {
     phTrack,
     tempTrack,
+    maxDryDays,
     ledger,
     breakingPoints,
     lifeline: stageSpanOf(t),

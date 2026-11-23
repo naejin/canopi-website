@@ -18,6 +18,7 @@ import { LAYERS } from './model.js';
 import { cellOf, searchTiles, tileNameOf, validCoordinate } from './grid.ts';
 import { climateAt, CLIMATE_GRID, DEFAULT_RADIUS, LAYER_GRID, ownCellAnswers, regionsAt, soilAt, type ClimateAt, type LayerId, type RegionsAt, type SoilAt } from './lookup.ts';
 import { decodeRaster, type Inflate, type Raster } from './tiff.ts';
+import type { SiteV07Layers } from './v07.ts';
 
 export * from './grid.ts';
 export * from './koppen.ts';
@@ -136,6 +137,8 @@ export interface SiteLookup {
   tilesRead: Record<LayerId, string[]>;
   /** A layer's answer came from a neighbouring tile's cell. */
   crossTile: boolean;
+  /** Optional additive canopi-climate v0.7.0 layers when present on the lookup. */
+  v07?: SiteV07Layers | null;
 }
 
 /** Search radius of the site layers (src/layer.rs LAYER_LOOKUP_RADIUS; `lookup --radius` leaves it). */

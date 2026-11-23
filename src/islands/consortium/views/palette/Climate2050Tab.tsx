@@ -15,6 +15,7 @@ import {
   climateStress,
   DEFAULT_CLIMATE_STRESS,
   designEnvelope,
+  microclimate,
   openFieldDossier,
   openPlantPool,
   studioTab,
@@ -27,6 +28,7 @@ import {
   type PlantTriageItem,
 } from '../../rules/studio-analysis.ts';
 import { activityMonthsOf, sunTierLabel, sunTierOf } from '../../rules/studio-filters.ts';
+import { formatFreezeTag, signedTemp1, siteClimateProfile } from '../../rules/climate-words.ts';
 
 type TriageFilter = 'all' | 'risk' | 'care' | 'fit';
 
@@ -54,6 +56,8 @@ export function Climate2050Tab() {
   const period = store.period.value;
   const envelope = designEnvelope.value;
   const stress = climateStress.value;
+  const mc = microclimate.value;
+  const edits = store.siteEdits.value;
 
   const [labOpen, setLabOpen] = useState(false);
   const [holdsOpen, setHoldsOpen] = useState(false);
@@ -66,8 +70,8 @@ export function Climate2050Tab() {
   const [analogue, setAnalogue] = useState<ClimateAnalogue | null>(null);
 
   const report = useMemo(
-    () => evaluateClimate2050(members, catalog, loc, period, envelope, stress),
-    [members, catalog, loc, period, envelope, stress],
+    () => evaluateClimate2050(members, catalog, loc, period, envelope, stress, mc, edits),
+    [members, catalog, loc, period, envelope, stress, mc, edits],
   );
   const memberIds = useMemo(() => members.map((m) => m.id), [members]);
 
@@ -90,11 +94,14 @@ export function Climate2050Tab() {
   }
 
   const sc = loc?.lookup ? climateOf(loc.lookup) : null;
-  const coldC = sc?.today?.tminColdC ?? 0;
-  const hotTodayC = sc?.today?.tmaxWarmC ?? 29;
+  const profile = siteClimateProfile(loc, store.climate.value, mc, edits);
+  const coldC = profile.typicalColdNightC ?? 0;
+  const hotTodayC = profile.typicalWarmHighC ?? 29;
   const hotFutureC = Math.round((hotTodayC + (period === '2071-2099' ? 3.4 : 2.1) + (envelope === 'extreme10' ? 2.5 : 0) + stress.heatDeltaC) * 10) / 10;
-  const mildWinter = coldC >= 0;
-  const sitePh = loc?.lookup?.soil?.phH2o ?? store.siteEdits.value.soilPh ?? null;
+  const sitePh = profile.ph;
+  const freezeTodayTag = profile.coldFreeze10yrC != null
+    ? formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst)
+    : `~${(coldC - 8.5).toFixed(1)} °C`;
   const placeName = loc?.label ?? 'your site';
   const horizonLabel = period === '2071-2099' ? '2080s' : '2050s';
   const matchPct = report.novelClimate ? null : analogue ? Math.round(analogue.matchQuality * 100) : 88;
@@ -203,8 +210,8 @@ export function Climate2050Tab() {
         </div>
 
         <div class="bp-signal-line" onClick={(e) => e.stopPropagation()}>
-          <span class={`bp-pill ${tone === 'danger' ? 'breached' : 'warn'}`}>🔥 Heat dome: {maxComfort.toFixed(1)} °C</span>
-          <span class="bp-pill">💧 Max dry: {maxDry}d</span>
+          <span class={`bp-pill ${tone === 'danger' ? 'breached' : 'warn'}`}>🔥 Heat-dome limit: {maxComfort.toFixed(1)} °C</span>
+          <span class="bp-pill">💧 Max dry spell: {maxDry}d</span>
           <FieldTip label="All 5 limits" text={item.allFiveLimits} glyph="All 5 limits ⓘ" />
         </div>
 
@@ -287,10 +294,12 @@ export function Climate2050Tab() {
       ? `Apply 10–15 cm woodchip mulch and afternoon shade cloth before peaks hit ${Math.round(m.futureC)} °C (${rFut} mm rain).`
       : isSpring && stress.falseSpringDeltaPct > 0
       ? `Elevated false-spring risk (+${stress.falseSpringDeltaPct}%): keep frost fleece handy for early-blooming perennials and delay tender transplants.`
-      : isWinterWin && simWinterFloorC >= 0
+      : isWinterWin && simWinterFloorC >= 3.5
       ? `Frost-rare winter rain (${rFut} mm): prime window to direct-sow hardy greens, legumes, and bare-root trees while soil holds moisture.`
+      : isWinterWin && simWinterFloorC >= 0
+      ? `Cool-season rain window (${rFut} mm, typical night ${signedTemp1(simWinterFloorC)}): sow hardy greens & cover crops on winter rain; protect tender stock against occasional overnight freezes.`
       : isWinterWin
-      ? `Cold floor near ${simWinterFloorC} °C: mulch root crowns, protect young subtropicals, and plant dormant bare-root stock on thawed days.`
+      ? `Dormant winter nights near ${signedTemp1(simWinterFloorC)}: mulch root crowns, protect young subtropicals, and plant dormant bare-root stock on thawed days.`
       : `Transition window (${Math.round(m.futureC)} °C, ${rFut} mm): chop-and-drop biomass species to recharge soil organic matter ahead of stress.`;
     return { m, rToday, rFut, stressedCount: stressedInMonth.length, stressedNames: stressedInMonth.slice(0, 3).map((t) => nameOf(t)), takeaway };
   })() : null;
@@ -302,7 +311,7 @@ export function Climate2050Tab() {
         <div class="cb-top">
           <div class="cb-meta-line">
             <strong>{placeName}</strong>
-            {sitePh != null && <><span>·</span><span>pH {sitePh.toFixed(1)}</span></>}
+            {sitePh != null && <><span>·</span><span>pH {sitePh.toFixed(1)} ({profile.phReaction})</span></>}
             <span class={report.novelClimate ? 'novel-pill' : 'match-pill'}>
               {report.novelClimate ? '⚠ Novel climate' : `${matchPct}% climate match`}
             </span>
@@ -383,10 +392,22 @@ export function Climate2050Tab() {
 
         <div class="cb-opp-foot">
           <span>
-            <strong>{mildWinter ? '❄ Mild-winter advantage:' : '❄ Winter window:'}</strong>{' '}
-            {mildWinter
-              ? `Nov–Mar stays frost-rare (${coldC.toFixed(1)} °C) — sow cool-season species in autumn to build deep roots before summer heat.`
-              : `Winter floor reaches ${coldC.toFixed(1)} °C — focus on hardy bare-root stock in late autumn or early spring.`}
+            {profile.winterTier === 'mild' ? (
+              <>
+                <strong>❄ Mild-winter advantage:</strong>{' '}
+                {profile.winterSeason} stays frost-rare (typical {profile.coldMonth} night {signedTemp1(coldC)}) — sow cool-season species in autumn to build deep roots before summer heat.
+              </>
+            ) : profile.winterTier === 'cool' ? (
+              <>
+                <strong>❄ Cool-season window:</strong>{' '}
+                mild daytime winters let hardy greens &amp; cover crops establish on winter rain, though occasional overnight freezes still occur (1-in-10-yr freeze {freezeTodayTag}).
+              </>
+            ) : (
+              <>
+                <strong>❄ Dormant-winter advantage:</strong>{' '}
+                reliable winter cold (typical {profile.coldMonth} night {signedTemp1(coldC)}, 1-in-10-yr freeze {freezeTodayTag}) meets chill needs for temperate fruit &amp; nut trees — plant bare-root stock in late autumn or early spring.
+              </>
+            )}
           </span>
           <button
             type="button"
@@ -486,7 +507,7 @@ export function Climate2050Tab() {
           <div class="sec-head" style="margin-bottom:8px;">
             <div>
               <h3 style="margin:0; font-size:17px;">12-Month Climate Shift &amp; Stress Windows (Today vs {horizonLabel})</h3>
-              <p class="sec-sub" style="margin:2px 0 0;">Live-synced with your presets &amp; levers above. Click any month to inspect exact temperature, rainfall, and field action.</p>
+              <p class="sec-sub" style="margin:2px 0 0;">Monthly average daytime highs (Today vs {horizonLabel}) &amp; rainfall — 1-in-10-yr heatwaves peak +6–9 °C hotter. Click any month for field actions.</p>
             </div>
             <span class={`why-tag${activeScenarioTags.length ? ' is-live' : ''}`} data-climate-scenario-badge>{scenarioBadge}</span>
           </div>
@@ -565,14 +586,22 @@ export function Climate2050Tab() {
 
           <div class="cshift-windows-grid">
             <div class="cshift-win-card winter">
-              <strong style="color:var(--winter-ink);">❄ {simWinterFloorC >= 0 ? 'Mild-Winter Rain Window (Nov–Mar)' : `Cold-Winter Window (floor ${simWinterFloorC} °C)`}</strong><br />
-              {simWinterFloorC >= 0
-                ? 'Use winter rain to establish roots & grow cool-season crops before summer heat arrives.'
-                : `Protect frost-tender stock when nights dip to ${simWinterFloorC} °C; plant hardy bare-root trees on thawed days.`}
+              <strong style="color:var(--winter-ink);">
+                ❄ {simWinterFloorC >= 3.5
+                  ? `Mild-Winter Rain Window (${profile.winterSeason})`
+                  : simWinterFloorC >= 0
+                    ? `Cool-Season Rain Window (${profile.winterSeason})`
+                    : `Dormant-Winter Window (typical night ${signedTemp1(simWinterFloorC)})`}
+              </strong><br />
+              {simWinterFloorC >= 3.5
+                ? 'Use frost-rare winter rain to establish roots & grow cool-season crops before summer heat arrives.'
+                : simWinterFloorC >= 0
+                  ? 'Mild daytime winters let hardy greens & cover crops establish on winter rain, though occasional overnight freezes still occur.'
+                  : `Protect frost-tender stock against hard freezes (1-in-10-yr ${freezeTodayTag}); plant hardy bare-root trees on thawed days.`}
             </div>
             <div class="cshift-win-card summer">
               <strong style="color:var(--risk-ink);">☀ Peak Summer Stress Window (Jul–Aug)</strong><br />
-              Deep mulch, afternoon shade &amp; drought-hardy anchors protect your plot when highs reach {Math.round(hotFutureC)} °C
+              Deep mulch, afternoon shade &amp; drought-hardy anchors protect your plot when average highs reach {Math.round(hotFutureC)} °C (heatwaves +6–9 °C hotter)
               {stress.droughtPct > 0 ? ` with -${stress.droughtPct}% summer rain` : ''}.
             </div>
           </div>
