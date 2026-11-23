@@ -13,10 +13,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { english, installedRelease } from './consortium-pf-env.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
-const words = await import('../src/islands/consortium/words.ts');
+const core = await import('../src/lib/palette/index.ts');
+const words = await import('../src/islands/palette/words.ts');
 const { en, say } = await english();
-const { foldOf } = await import('../src/islands/consortium/views/kit/fold.ts');
+const { foldOf } = await import('../src/islands/palette/views/kit/fold.ts');
 
 // ---- holes.ts ----
 const lane = (job, thin, counts = [2, 2, 2, 2, 2, 2, 2]) => ({ kind: 'job', job, counts, thin });
@@ -378,7 +378,7 @@ test('R1: a toxicity flag carries its level; Slight alone is no second look, Mod
 
 // ---- 0W-2 R2: watering sets the dryness note; the dry-months path is gone ----
 const S = await import('./consortium-scenarios.mjs');
-const { verdict } = await import('../src/lib/consortium/verdict.ts');
+const { verdict } = await import('../src/lib/palette/verdict.ts');
 test('R2: rain or no answer says drier, first-years the same note in "water it the first years" words, all-year none; the fit never moves', async () => {
   const file = JSON.parse(readFileSync(new URL('./fixtures/consortium-scenarios.json', import.meta.url), 'utf8'));
   const c = file.cases.find((x) => x.id === 'mendoza-board-rain');

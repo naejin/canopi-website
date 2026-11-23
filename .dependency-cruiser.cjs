@@ -21,7 +21,7 @@
 // - `.astro` files are not parsed (dependency-cruiser has no Astro parser): L9 covers .ts/.tsx/.js/.mjs.
 //   src/scripts/ (client scripts of the pages) is not the repo-root scripts/ that L9 guards.
 
-const ISL = '^src/islands/consortium/';
+const ISL = '^src/islands/palette/';
 const RUNTIME = ['type-only'];
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -30,8 +30,8 @@ module.exports = {
     {
       name: 'L1-lib-no-ui',
       severity: 'error', // Q3 (E6 chunk 3): S2 removed place-search.ts's signals (A12)
-      comment: 'L1: src/lib/{consortium,climate,location} import no preact, @preact/signals, src/islands or src/components (ADR-1).',
-      from: { path: '^src/lib/(consortium|climate|location)/' },
+      comment: 'L1: src/lib/{palette,climate,location} import no preact, @preact/signals, src/islands or src/components (ADR-1).',
+      from: { path: '^src/lib/(palette|climate|location)/' },
       // (^|/): a package reached through a symlinked node_modules resolves outside the repo
       to: { path: ['(^|/)node_modules/(preact|@preact/signals|@preact/signals-core)/', '^src/(islands|components)/'] },
     },
@@ -52,9 +52,9 @@ module.exports = {
     {
       name: 'L4-views-core-entry',
       severity: 'error',
-      comment: 'L4: views/** reach the core only through src/lib/consortium/index.ts and types.ts (ADR-1).',
+      comment: 'L4: views/** reach the core only through src/lib/palette/index.ts and types.ts (ADR-1).',
       from: { path: `${ISL}views/` },
-      to: { path: '^src/lib/consortium/', pathNot: '^src/lib/consortium/(index|types)\\.ts$' },
+      to: { path: '^src/lib/palette/', pathNot: '^src/lib/palette/(index|types)\\.ts$' },
     },
     {
       name: 'L5-kit-leaf',
@@ -80,8 +80,8 @@ module.exports = {
     {
       name: 'L7-no-circular',
       severity: 'error', // E6 chunk 5 (choice 15, A24; every cycle gone since chunk 2)
-      comment: 'L7: no runtime import cycle (static and dynamic edges, type-only edges dropped) in src/islands/consortium and src/lib (ADR-1, A24).',
-      from: { path: '^src/(islands/consortium|lib)/' },
+      comment: 'L7: no runtime import cycle (static and dynamic edges, type-only edges dropped) in src/islands/palette and src/lib (ADR-1, A24).',
+      from: { path: '^src/(islands/palette|lib)/' },
       to: {
         circular: true,
         dependencyTypesNot: RUNTIME,
@@ -107,10 +107,10 @@ module.exports = {
       severity: 'error', // PP-B commit 0; error since PP-C c2 (the mark providers deleted, the baseline empty)
       comment: 'L10: inside the core only the rule files, verdict*.ts, place.ts, suggest.ts, site-climate.ts, conflicts.ts (misfitsBeside for the flags, as verdict.ts reads it) and index.ts (named re-exports) import range.ts, future.ts or site.ts (plant-palette-architecture, consortium-v2-architecture row 3).',
       from: {
-        path: '^src/lib/consortium/',
-        pathNot: '^src/lib/consortium/(range|future|site|verdict[^/]*|place|suggest|site-climate|conflicts|index)\\.ts$',
+        path: '^src/lib/palette/',
+        pathNot: '^src/lib/palette/(range|future|site|verdict[^/]*|place|suggest|site-climate|conflicts|index)\\.ts$',
       },
-      to: { path: '^src/lib/consortium/(range|future|site)\\.ts$' },
+      to: { path: '^src/lib/palette/(range|future|site)\\.ts$' },
     },
   ],
   options: {

@@ -22,10 +22,10 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
-const { fold, jobIds, queryTokens } = await import('../src/lib/consortium/index.ts');
+const { fold, jobIds, queryTokens } = await import('../src/lib/palette/index.ts');
 const words = Object.fromEntries(readdirSync(new URL('../src/i18n/translations/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(`../src/i18n/translations/${f}`, import.meta.url), 'utf8'))]));
-const findQuery = () => import('../src/islands/consortium/rules/find-query.ts');
-const search = () => import('../src/islands/consortium/data/search.ts');
+const findQuery = () => import('../src/islands/palette/rules/find-query.ts');
+const search = () => import('../src/islands/palette/data/search.ts');
 
 const id = (n) => `00000000-c1c1-4000-8000-${String(n).padStart(12, '0')}`;
 const plant = (n, over = {}) => taxon({ id: id(n), canonical_name: `Plantus ${n}`, ...over });
@@ -168,7 +168,7 @@ test('PP-C-u9 (c1 one search module): Paste matches through it, synonyms include
   assert.equal(oneOff('okra', 'kale'), false);
   // Paste reads through the search module: a pasted synonym and a names-file name are found as Find
   // finds them, and Paste keeps no matcher of its own.
-  const paste = await import('../src/islands/consortium/views/find/paste.ts');
+  const paste = await import('../src/islands/palette/views/find/paste.ts');
   assert.equal('oneOff' in paste, false, 'oneOff lives in data/search.ts only');
   const index = releaseIndex({ names: NAMES, plants: NAMES.map((n) => n.id), lang: 'en' });
   const here = NAMES.map((n) => ({ id: n.id, canonical_name: n.canonical, names: n.names }));
@@ -196,7 +196,7 @@ test('PP-C c1 fix A5: why a row matched (whyLines, the one owner of those words)
 });
 
 test('PP-C c1 fix A6: one warned rule for every add in Find and Paste (in-list, "Add from {list}", pasted): invasive, toxic, a site misfit or a serious conflict (core secondLook since the pf hand-off; store.warnedPlant)', async () => {
-  const { secondLook } = await import('../src/lib/consortium/index.ts');
+  const { secondLook } = await import('../src/lib/palette/index.ts');
   const f = (kind, over = {}) => ({ id: id(1), kind, ...over });
   assert.equal(secondLook([]), false);
   for (const flags of [[f('invasive')], [f('toxicity')], [f('misfit')], [f('conflict', { severity: 'high' })]]) assert.equal(secondLook(flags), true, flags[0].kind);
@@ -250,7 +250,7 @@ test('PP-C c1 fix round 2 K2: best first breaks ties by the years in range, then
 // c1r3 T4 (review c1r3-05): before the core's names are in, Find has no search (it says "Searching…",
 // never the whole list); a failed load is said (finderFailed) and the next want tries again.
 test('c1r3 T4: no search before the core names; a failure is said and retried', async () => {
-  const { wantNames, finder, finderFailed } = await import('../src/islands/consortium/views/find/names.ts');
+  const { wantNames, finder, finderFailed } = await import('../src/islands/palette/views/find/names.ts');
   let fail;
   const source = { names: () => new Promise((_, reject) => { fail = reject; }) };
   wantNames(source, 'en');

@@ -7,13 +7,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const core = await import('../src/lib/consortium/index.ts');
+const core = await import('../src/lib/palette/index.ts');
 const { decodeLink, encodeLink, linkVersionStatus, linkOrigin, snapOrigin, isLongLink, bringsPlace, zoneOf, siteIdOf, siteOf, siteInputsOf, NO_INPUTS, climateFor, LINK_VERSION } = core;
 const grid = await import('../src/lib/climate/grid.ts');
-const persist = await import('../src/islands/consortium/state/persist.ts');
+const persist = await import('../src/islands/palette/state/persist.ts');
 const { saveRecord, readRecord } = persist;
-const { arrival, placeOfSeed } = await import('../src/islands/consortium/state/arrival.ts');
-const { state: schema } = await import('../src/islands/consortium/state/schema.ts');
+const { arrival, placeOfSeed } = await import('../src/islands/palette/state/arrival.ts');
+const { state: schema } = await import('../src/islands/palette/state/schema.ts');
 
 const V = JSON.parse(readFileSync(new URL('vectors/link-v5.json', import.meta.url), 'utf8'));
 const KNOWN_SCHEMAS = ['canopi-palette-link/5'];

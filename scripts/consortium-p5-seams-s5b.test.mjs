@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { lyon } from './consortium-p5-fixtures.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
-const sc = await import('../src/lib/consortium/site-climate.ts');
-const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
+const core = await import('../src/lib/palette/index.ts');
+const sc = await import('../src/lib/palette/site-climate.ts');
+const view = (f) => readFileSync(new URL(`../src/islands/palette/views/${f}`, import.meta.url), 'utf8');
 
 // A lookup as the core sees it, from Lyon's with one period replaced.
 const at = (period, { regions = lyon.lookup.regions, climate = true } = {}) => ({
@@ -86,11 +86,11 @@ test('state.ts o=: the cell centre only when given, among the place keys; the de
 });
 
 test('state/persist.ts and state/location.ts: a location country goes into a link only with the tick; the saved location record', async () => {
-  const m = await import('../src/islands/consortium/state/persist.ts');
+  const m = await import('../src/islands/palette/state/persist.ts');
   const input = { climate: 'Mediterranean', country: { code: 'ES', source: 'location' }, room: 'unsure', plot: null, period: '1991-2020', spot: { light: 'unsure', water: 'unsure', wind: 'unsure', ground: 'unsure', height: 'unsure' }, soil: { from: 'map' }, members: [], removed: [], guests: {} };
   assert.equal(m.shareState(input).country, null);
   assert.equal(m.shareState(input, { place: true }).country, 'ES', 'with "Include my place" (link v5)');
-  const keep = await import('../src/islands/consortium/state/location.ts');
+  const keep = await import('../src/islands/palette/state/location.ts');
   const rec = keep.locationRecord({ lat: 37.3891, lon: -5.9845, source: 'geo' });
   assert.deepEqual(keep.readLocation(rec), { lat: 37.3891, lon: -5.9845, source: 'geo' });
   assert.deepEqual(keep.readLocation(keep.locationRecord({ lat: 45.7, lon: 4.8, source: 'search', label: 'Lyon, France' })).label, 'Lyon, France');
@@ -101,7 +101,7 @@ test('state/persist.ts and state/location.ts: a location country goes into a lin
 });
 
 test('h2 R4: a share link carries the place\'s name only when it is town-level (persist.ts linkName), never a road\'s or a farm\'s', async () => {
-  const m = await import('../src/islands/consortium/state/persist.ts');
+  const m = await import('../src/islands/palette/state/persist.ts');
   assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'search', label: 'Chemin des Vignes, France', lookup: null }), null, 'a road\'s label stays on the page');
   assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'search', label: 'Saint-Rémy-de-Provence, France', placeLevel: true, lookup: null }), 'Saint-Rémy-de-Provence, France');
   assert.equal(m.linkName({ lat: 43.79, lon: 4.83, source: 'map', lookup: null }), null, 'no label, no name');
@@ -109,8 +109,8 @@ test('h2 R4: a share link carries the place\'s name only when it is town-level (
 });
 
 test('state/location.ts locationCountry: replaces a guess or none, never a chosen or linked country; none offshore clears only its own', async () => {
-  const m = await import('../src/islands/consortium/state/location.ts');
-  const store = await import('../src/islands/consortium/store.ts');
+  const m = await import('../src/islands/palette/state/location.ts');
+  const store = await import('../src/islands/palette/store.ts');
   const before = store.country.value;
   try {
     const run = (from, code) => { store.country.value = from; m.locationCountry(code, true); return store.country.value; };
@@ -193,9 +193,9 @@ test('the location step stays off the first run: the shell imports its chunk onl
 });
 
 test('review round 2 (1): a lookup\'s writes are quiet even in a batch: a restore in flight survives them', async () => {
-  const m = { ...await import('../src/islands/consortium/state/persist.ts'), ...await import('../src/islands/consortium/state/restore.ts') };
-  const store = await import('../src/islands/consortium/store.ts');
-  const keep = await import('../src/islands/consortium/state/location.ts');
+  const m = { ...await import('../src/islands/palette/state/persist.ts'), ...await import('../src/islands/palette/state/restore.ts') };
+  const store = await import('../src/islands/palette/store.ts');
+  const keep = await import('../src/islands/palette/state/location.ts');
   const { batch } = await import('@preact/signals');
   m.watchStore();
   const before = { country: store.country.peek(), location: store.location.peek(), source: store.source.peek() };
@@ -221,7 +221,7 @@ test('review round 2 (1): a lookup\'s writes are quiet even in a batch: a restor
 });
 
 test('review round 2 (2): one pending lookup from the chunk load through its settle, no gap for Suggest', async () => {
-  const load = await import('../src/islands/consortium/state/lookups.ts');
+  const load = await import('../src/islands/palette/state/lookups.ts');
   const { effect } = await import('@preact/signals');
   const seen = [];
   const stop = effect(() => { seen.push(load.lookups.value); });
@@ -235,7 +235,7 @@ test('review round 2 (2): one pending lookup from the chunk load through its set
     assert.deepEqual(seen, [1, 0], 'lookingThrough: one lookup from load to settle');
   } finally { stop(); }
   // settleLocation (state/restore.ts), in code (comments left out), not in a comment.
-  const code = ['state/restore.ts'].map((f) => new URL(`../src/islands/consortium/${f}`, import.meta.url)).filter((u) => existsSync(u))
+  const code = ['state/restore.ts'].map((f) => new URL(`../src/islands/palette/${f}`, import.meta.url)).filter((u) => existsSync(u))
     .map((u) => readFileSync(u, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')).join('\n');
   assert.match(code, /lookingThrough\(/, 'settleLocation holds one lookup through load and settle');
 });
@@ -260,9 +260,9 @@ test('review round 2 (3): a geocoder request unanswered in 15 s fails as an erro
 
 test('review round 3 (1): the Suggest cap is 10 s per press: an earlier press\'s timer never releases a later one', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
-  const m = await import('../src/islands/consortium/state/suggest-wait.ts');
-  const store = await import('../src/islands/consortium/store.ts');
-  const load = await import('../src/islands/consortium/state/lookups.ts');
+  const m = await import('../src/islands/palette/state/suggest-wait.ts');
+  const store = await import('../src/islands/palette/store.ts');
+  const load = await import('../src/islands/palette/state/lookups.ts');
   assert.equal(store.pool.peek(), null, 'no plant list read: Suggest stays pending');
   try {
     load.lookups.value = 1;
@@ -279,9 +279,9 @@ test('review round 3 (1): the Suggest cap is 10 s per press: an earlier press\'s
 });
 
 test('review round 3 (2, 3): Start over, Change site and Start empty drop a link\'s lookup (its hold, its line, its later writes) and the "not read" note', async (t) => {
-  const m = await import('../src/islands/consortium/state/draft.ts');
-  const store = await import('../src/islands/consortium/store.ts');
-  const load = await import('../src/islands/consortium/state/lookups.ts');
+  const m = await import('../src/islands/palette/state/draft.ts');
+  const store = await import('../src/islands/palette/store.ts');
+  const load = await import('../src/islands/palette/state/lookups.ts');
   const raf = globalThis.requestAnimationFrame;
   globalThis.requestAnimationFrame ??= () => 0; // Start empty opens the search sheet (its focus waits a frame)
   t.after(() => { globalThis.requestAnimationFrame = raf; store.closeSheet(); });
@@ -385,7 +385,7 @@ test('review round 4 (3): a one-time Allow that fires no change event still gets
 });
 
 test('review round 4 (1): a lookup replaced while it waits (a prompt nobody answers) lets its hold go at once', async () => {
-  const load = await import('../src/islands/consortium/state/lookups.ts');
+  const load = await import('../src/islands/palette/state/lookups.ts');
   const first = load.looking(async () => { load.nextLookup(); await load.unlessReplaced(new Promise(() => {})); });
   assert.equal(load.lookups.peek(), 1);
   await load.looking(async () => { load.nextLookup(); });

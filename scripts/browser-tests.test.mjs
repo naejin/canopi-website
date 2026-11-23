@@ -44,9 +44,9 @@ test('the browser tests build their own hook build; only the browser-test flag t
   assert.doesNotMatch(pkg.scripts.build, /CANOPI_BROWSER_TEST/);
   const config = readFileSync(new URL('../astro.config.mjs', import.meta.url), 'utf8');
   assert.match(config, /__CT_TEST_HOOK__:\s*JSON\.stringify\(process\.env\.CANOPI_BROWSER_TEST === '1'\)/, 'astro.config.mjs defines the switch from the flag');
-  const hook = readFileSync(new URL('../src/islands/consortium/test-hook.ts', import.meta.url), 'utf8');
+  const hook = readFileSync(new URL('../src/islands/palette/test-hook.ts', import.meta.url), 'utf8');
   assert.match(hook, /if \(__CT_TEST_HOOK__\)/);
-  for (const f of ['../astro.config.mjs', '../src/islands/consortium/test-hook.ts', '../package.json'])
+  for (const f of ['../astro.config.mjs', '../src/islands/palette/test-hook.ts', '../package.json'])
     assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), 'utf8'), /PUBLIC_CT_TEST_HOOK/, f);
   const checker = readFileSync(new URL('./check-built-site.mjs', import.meta.url), 'utf8');
   for (const word of ['__ctTest', '__ctViews', 'failSheets', '__ctTimeouts']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);

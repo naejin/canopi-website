@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const line = await import('../src/lib/consortium/verdict-line.ts');
+const line = await import('../src/lib/palette/verdict-line.ts');
 const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
 // A Line in English words: {vars} filled, a plural key's "other:" form with # as the count.
 const say = (l) => {

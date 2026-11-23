@@ -2,25 +2,25 @@
 type: Convention
 title: Palette language-robust layout
 description: "The Plant palette's parts (.ct) lay out in any face and all 11 locales: a one-line step bar, CJK breaking and system faces, long-word hyphenation, checked at 320-1280 px."
-generated: { by: antigravity/gemini, at: 2026-11-23T15:46:15Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:25Z }
 verified:
   - { by: antigravity/gemini, at: 2026-11-23T15:45:59Z }
 sources:
   - id: shell-css
-    resource: ../../src/styles/consortium/shell.css
-    title: src/styles/consortium/shell.css
+    resource: ../../src/styles/palette/shell.css
+    title: src/styles/palette/shell.css
     digest: sha256:4682ccb2f6cdb00e
     last_modified: 2026-11-19T10:56:43Z
   - id: base-css
-    resource: ../../src/styles/consortium/base.css
-    title: src/styles/consortium/base.css
+    resource: ../../src/styles/palette/base.css
+    title: src/styles/palette/base.css
     digest: sha256:59ecfbc3a59f1adf
     last_modified: 2026-11-19T11:59:54Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:c40ee8fe93f63c81
-    last_modified: 2026-11-23T15:35:23Z
+    digest: sha256:c35923d10b1d644f
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
     title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs

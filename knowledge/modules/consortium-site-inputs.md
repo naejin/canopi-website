@@ -2,56 +2,56 @@
 type: Module
 title: Consortium site inputs
 description: The core module that owns every site input the Plant palette engine reads, merged from the climate grid and soil map with the grower's edits as shifts, plus the palette goals read beside them.
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:49Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:16Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:37Z }
 sources:
   - id: site-inputs-ts
-    resource: ../../src/lib/consortium/site-inputs.ts
-    title: src/lib/consortium/site-inputs.ts
+    resource: ../../src/lib/palette/site-inputs.ts
+    title: src/lib/palette/site-inputs.ts
     digest: sha256:579c7c0952cb3f5c
-    last_modified: 2026-11-19T04:40:24Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: types-ts
-    resource: ../../src/lib/consortium/types.ts
-    title: src/lib/consortium/types.ts
-    digest: sha256:6918fafa28e9b4ad
-    last_modified: 2026-11-23T11:35:01Z
+    resource: ../../src/lib/palette/types.ts
+    title: src/lib/palette/types.ts
+    digest: sha256:2163e2e956deda1c
+    last_modified: 2026-11-23T20:58:01Z
   - id: place-ts
-    resource: ../../src/lib/consortium/place.ts
-    title: src/lib/consortium/place.ts
+    resource: ../../src/lib/palette/place.ts
+    title: src/lib/palette/place.ts
     digest: sha256:e3764f30b6573f2d
-    last_modified: 2026-11-18T04:51:36Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: holes-ts
-    resource: ../../src/lib/consortium/holes.ts
-    title: src/lib/consortium/holes.ts
+    resource: ../../src/lib/palette/holes.ts
+    title: src/lib/palette/holes.ts
     digest: sha256:5da2a7bd168c0ee5
-    last_modified: 2026-11-18T17:33:57Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: store-ts
-    resource: ../../src/islands/consortium/store.ts
-    title: src/islands/consortium/store.ts
-    digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/store.ts
+    title: src/islands/palette/store.ts
+    digest: sha256:a2d405853d85b528
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-scenarios-mjs
     resource: ../../scripts/consortium-scenarios.mjs
     title: scripts/consortium-scenarios.mjs
-    digest: sha256:302ca86562407789
-    last_modified: 2026-11-18T21:45:59Z
+    digest: sha256:32c78d981cb6aee2
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-scenarios-json
     resource: ../../scripts/fixtures/consortium-scenarios.json
     title: scripts/fixtures/consortium-scenarios.json
     digest: sha256:f45b862ed618d1ca
     last_modified: 2026-11-18T21:45:59Z
   - id: state-ts
-    resource: ../../src/lib/consortium/state.ts
-    title: src/lib/consortium/state.ts
+    resource: ../../src/lib/palette/state.ts
+    title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:21:26Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: site-change-line-ts
-    resource: ../../src/lib/consortium/site-change-line.ts
-    title: src/lib/consortium/site-change-line.ts
+    resource: ../../src/lib/palette/site-change-line.ts
+    title: src/lib/palette/site-change-line.ts
     digest: sha256:af099a0b86672327
-    last_modified: 2026-11-19T04:40:24Z
+    last_modified: 2026-11-23T11:23:11Z
 enforced_by:
   - scripts/consortium-site-inputs.test.mjs
   - scripts/consortium-scenarios.test.mjs
@@ -62,7 +62,7 @@ enforced_by:
 Owner decision 2026-11-18: one module owns every engine site input; the scenario JSON is the contract for a later Rust port.
 
 ## Shape
-- `siteInputsOf({ lookup, room, edits })` in `src/lib/consortium/site-inputs.ts` returns `SiteInputs`: each input is `{ value, source: 'map' | 'grower' | 'none' }` ('none' is unknown, never a "no").
+- `siteInputsOf({ lookup, room, edits })` in `src/lib/palette/site-inputs.ts` returns `SiteInputs`: each input is `{ value, source: 'map' | 'grower' | 'none' }` ('none' is unknown, never a "no").
 - Climate figures (`nights`, `days`, `rain`, `dryMonths`) also keep `map` and `shift`; `soilPh` keeps the soil map's `map`; `drainage`, `watering`, `light`, `wind`, `coldAir`, `room` are answers.
 - `periods`: every climate slot with the grower's shifts applied (`SiteEdits.nightsShiftC`, `daysShiftC`, `rainShiftMm`, `dryMonthsShift`), so an edit holds in every period and scenario. Köppen stays the map's.
 - `NO_EDITS`, `NO_INPUTS`, `hasClimate`; `todayOf` lives in `site-today.ts` (types only), so `siteToday` rides the first run and the range checks' chunk is no longer imported by the pool panel (with the verdict chunk offline, a curated list's count line says "Could not check" with Retry) (since v14 0W-2 R3, `soilPhOf(inputs)` gives the pH the check reads: the soil test, else the map's pH, null in pots; a soil-pH or drainage misfit is a hint, never a level, and `nearKm` (`SOIL_CELL_KM`) says when the map value comes from a neighbouring cell).

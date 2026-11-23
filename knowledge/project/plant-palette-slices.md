@@ -4,7 +4,7 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T18:53:23Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:37Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:19Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:53:14Z }
@@ -37,8 +37,8 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:2c462bea8e6fe19d
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:b6d0b198825d16a5
+    last_modified: 2026-11-23T20:58:08Z
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
@@ -57,8 +57,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:0ede506690c0787d
-    last_modified: 2026-11-23T13:43:06Z
+    digest: sha256:57e51b4beeb6edd5
+    last_modified: 2026-11-23T20:58:01Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
@@ -67,33 +67,33 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:fe406149f10e3477
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:eeaab36bba2abe93
+    last_modified: 2026-11-23T21:01:37Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:61d3d077c466a46e
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7a74ee4c3c588107
+    last_modified: 2026-11-23T20:58:01Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:c2b450b349d5137d
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7eb74c8505c7b909
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
-    digest: sha256:213bc47007f2b373
-    last_modified: 2026-11-11T04:54:12Z
+    digest: sha256:bcdcab2cd288bb15
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
-    digest: sha256:853938d7571921fa
-    last_modified: 2026-11-18T04:32:21Z
+    digest: sha256:8287b1b5df652fb1
+    last_modified: 2026-11-23T20:58:01Z
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:46ea306f8803c107
-    last_modified: 2026-11-23T13:35:12Z
+    digest: sha256:7a9f193482a5292a
+    last_modified: 2026-11-23T20:58:01Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -107,8 +107,8 @@ sources:
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
-    digest: sha256:8dd5eb4c4a85c004
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:e95bb5569ae7217b
+    last_modified: 2026-11-23T20:58:01Z
   - id: axe-json
     resource: ../../scripts/quality/baselines/axe.json
     title: scripts/quality/baselines/axe.json
@@ -122,103 +122,103 @@ sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
-    digest: sha256:e7e62bb8151b31fd
-    last_modified: 2026-11-14T12:22:11Z
+    digest: sha256:1a2cf7d7db89b2b7
+    last_modified: 2026-11-23T20:58:01Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
     digest: sha256:f17c3cc7b270a864
     last_modified: 2026-11-11T09:33:29Z
   - id: app-tsx
-    resource: ../../src/islands/consortium/App.tsx
-    title: src/islands/consortium/App.tsx
-    digest: sha256:9b5471db4254810e
-    last_modified: 2026-11-19T05:13:33Z
+    resource: ../../src/islands/palette/App.tsx
+    title: src/islands/palette/App.tsx
+    digest: sha256:685ec7e12121c7e4
+    last_modified: 2026-11-23T20:58:01Z
   - id: load-ts
-    resource: ../../src/islands/consortium/data/load.ts
-    title: src/islands/consortium/data/load.ts
-    digest: sha256:f51632afa38a12d9
-    last_modified: 2026-11-18T18:43:00Z
+    resource: ../../src/islands/palette/data/load.ts
+    title: src/islands/palette/data/load.ts
+    digest: sha256:8159e2aae175b171
+    last_modified: 2026-11-23T20:58:01Z
   - id: search-ts
-    resource: ../../src/islands/consortium/data/search.ts
-    title: src/islands/consortium/data/search.ts
-    digest: sha256:73297ee3a4f9bdb6
-    last_modified: 2026-11-17T16:37:51Z
+    resource: ../../src/islands/palette/data/search.ts
+    title: src/islands/palette/data/search.ts
+    digest: sha256:b880117e9fda4714
+    last_modified: 2026-11-23T20:58:01Z
   - id: sqlite-source-ts
-    resource: ../../src/islands/consortium/data/sqlite-source.ts
-    title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:96c53431ba5d3d97
-    last_modified: 2026-11-23T11:50:28Z
+    resource: ../../src/islands/palette/data/sqlite-source.ts
+    title: src/islands/palette/data/sqlite-source.ts
+    digest: sha256:1d4e48c67077cda7
+    last_modified: 2026-11-23T20:58:01Z
   - id: focus-ts
-    resource: ../../src/islands/consortium/focus.ts
-    title: src/islands/consortium/focus.ts
-    digest: sha256:ae06582d6b9a7fb4
-    last_modified: 2026-11-23T18:43:52Z
+    resource: ../../src/islands/palette/focus.ts
+    title: src/islands/palette/focus.ts
+    digest: sha256:2a09db72632e81bd
+    last_modified: 2026-11-23T20:58:01Z
   - id: main-ts
-    resource: ../../src/islands/consortium/main.ts
-    title: src/islands/consortium/main.ts
-    digest: sha256:04d212e17c481deb
-    last_modified: 2026-11-18T17:40:12Z
+    resource: ../../src/islands/palette/main.ts
+    title: src/islands/palette/main.ts
+    digest: sha256:f9f45406565dd302
+    last_modified: 2026-11-23T20:58:01Z
   - id: site-fit-ts
-    resource: ../../src/islands/consortium/rules/site-fit.ts
-    title: src/islands/consortium/rules/site-fit.ts
-    digest: sha256:3b03ce1e0f6df7cf
-    last_modified: 2026-11-17T14:13:26Z
+    resource: ../../src/islands/palette/rules/site-fit.ts
+    title: src/islands/palette/rules/site-fit.ts
+    digest: sha256:cc3b45174c87f0b4
+    last_modified: 2026-11-23T20:58:01Z
   - id: suggest-block-ts
-    resource: ../../src/islands/consortium/rules/suggest-block.ts
-    title: src/islands/consortium/rules/suggest-block.ts
-    digest: sha256:2d0ed7f2ff4ec7b5
-    last_modified: 2026-11-17T13:23:27Z
+    resource: ../../src/islands/palette/rules/suggest-block.ts
+    title: src/islands/palette/rules/suggest-block.ts
+    digest: sha256:a40b87de812fd50b
+    last_modified: 2026-11-23T20:58:01Z
   - id: location-ts
-    resource: ../../src/islands/consortium/state/location.ts
-    title: src/islands/consortium/state/location.ts
-    digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/location.ts
+    title: src/islands/palette/state/location.ts
+    digest: sha256:5acb3da6eca26ed5
+    last_modified: 2026-11-23T20:58:01Z
   - id: store-ts
-    resource: ../../src/islands/consortium/store.ts
-    title: src/islands/consortium/store.ts
-    digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/store.ts
+    title: src/islands/palette/store.ts
+    digest: sha256:a2d405853d85b528
+    last_modified: 2026-11-23T20:58:01Z
   - id: correction-tsx
-    resource: ../../src/islands/consortium/views/Correction.tsx
-    title: src/islands/consortium/views/Correction.tsx
+    resource: ../../src/islands/palette/views/Correction.tsx
+    title: src/islands/palette/views/Correction.tsx
     digest: sha256:bf8e99431d3f4218
-    last_modified: 2026-11-17T16:00:38Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: futureslot-tsx
-    resource: ../../src/islands/consortium/views/FutureSlot.tsx
-    title: src/islands/consortium/views/FutureSlot.tsx
-    digest: sha256:0ae13573d9f7e790
-    last_modified: 2026-11-14T21:28:50Z
+    resource: ../../src/islands/palette/views/FutureSlot.tsx
+    title: src/islands/palette/views/FutureSlot.tsx
+    digest: sha256:6f3324fce10a0c9b
+    last_modified: 2026-11-23T20:58:01Z
   - id: sheets-tsx
-    resource: ../../src/islands/consortium/views/Sheets.tsx
-    title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:397cf5c91deb80d0
-    last_modified: 2026-11-19T08:16:50Z
+    resource: ../../src/islands/palette/views/Sheets.tsx
+    title: src/islands/palette/views/Sheets.tsx
+    digest: sha256:b1e6bc8619935c95
+    last_modified: 2026-11-23T20:58:01Z
   - id: flags-ts
-    resource: ../../src/islands/consortium/views/kit/flags.ts
-    title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:046945d22adbcc0a
-    last_modified: 2026-11-19T04:59:08Z
+    resource: ../../src/islands/palette/views/kit/flags.ts
+    title: src/islands/palette/views/kit/flags.ts
+    digest: sha256:e629db37f6148c1f
+    last_modified: 2026-11-23T20:58:01Z
   - id: sheet-tsx
-    resource: ../../src/islands/consortium/views/kit/sheet.tsx
-    title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:fdf04f4a2b1781a3
-    last_modified: 2026-11-19T08:16:50Z
+    resource: ../../src/islands/palette/views/kit/sheet.tsx
+    title: src/islands/palette/views/kit/sheet.tsx
+    digest: sha256:79cc5bbaf0b55518
+    last_modified: 2026-11-23T20:58:01Z
   - id: later-ts
-    resource: ../../src/islands/consortium/views/later.ts
-    title: src/islands/consortium/views/later.ts
-    digest: sha256:14a41ad260f237ba
-    last_modified: 2026-11-14T12:12:11Z
+    resource: ../../src/islands/palette/views/later.ts
+    title: src/islands/palette/views/later.ts
+    digest: sha256:fb713ad123fb3bbc
+    last_modified: 2026-11-23T20:58:01Z
   - id: layers-ts
-    resource: ../../src/islands/consortium/views/layers.ts
-    title: src/islands/consortium/views/layers.ts
-    digest: sha256:7252e2bc066e5305
-    last_modified: 2026-11-11T09:49:44Z
+    resource: ../../src/islands/palette/views/layers.ts
+    title: src/islands/palette/views/layers.ts
+    digest: sha256:724abc98a8c401ae
+    last_modified: 2026-11-23T20:58:01Z
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:0c6931a4a66f6ca4
-    last_modified: 2026-11-23T11:35:01Z
+    digest: sha256:09a8785016e8c670
+    last_modified: 2026-11-23T20:58:01Z
   - id: model-js
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
@@ -230,50 +230,50 @@ sources:
     digest: sha256:412c74305668a696
     last_modified: 2026-11-12T20:26:30Z
   - id: canopi-file-ts
-    resource: ../../src/lib/consortium/canopi-file.ts
-    title: src/lib/consortium/canopi-file.ts
+    resource: ../../src/lib/palette/canopi-file.ts
+    title: src/lib/palette/canopi-file.ts
     digest: sha256:872518766f5b6313
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:30:42Z
   - id: conflicts-ts
-    resource: ../../src/lib/consortium/conflicts.ts
-    title: src/lib/consortium/conflicts.ts
+    resource: ../../src/lib/palette/conflicts.ts
+    title: src/lib/palette/conflicts.ts
     digest: sha256:aceaab4e54f45431
-    last_modified: 2026-11-18T04:37:58Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: index-ts-2
-    resource: ../../src/lib/consortium/index.ts
-    title: src/lib/consortium/index.ts
+    resource: ../../src/lib/palette/index.ts
+    title: src/lib/palette/index.ts
     digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:30:44Z
   - id: jobs-ts
-    resource: ../../src/lib/consortium/jobs.ts
-    title: src/lib/consortium/jobs.ts
+    resource: ../../src/lib/palette/jobs.ts
+    title: src/lib/palette/jobs.ts
     digest: sha256:97b5290a800f6a3f
-    last_modified: 2026-11-14T12:46:39Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: site-climate-ts
-    resource: ../../src/lib/consortium/site-climate.ts
-    title: src/lib/consortium/site-climate.ts
+    resource: ../../src/lib/palette/site-climate.ts
+    title: src/lib/palette/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-12T07:59:10Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: site-today-ts
-    resource: ../../src/lib/consortium/site-today.ts
-    title: src/lib/consortium/site-today.ts
+    resource: ../../src/lib/palette/site-today.ts
+    title: src/lib/palette/site-today.ts
     digest: sha256:d410a7e506adace3
-    last_modified: 2026-11-19T05:03:52Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: site-ts
-    resource: ../../src/lib/consortium/site.ts
-    title: src/lib/consortium/site.ts
+    resource: ../../src/lib/palette/site.ts
+    title: src/lib/palette/site.ts
     digest: sha256:323fb9b1c48bc193
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:29:02Z
   - id: source-ts
-    resource: ../../src/lib/consortium/source.ts
-    title: src/lib/consortium/source.ts
-    digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:52:11Z
+    resource: ../../src/lib/palette/source.ts
+    title: src/lib/palette/source.ts
+    digest: sha256:9efeeffb336dec8a
+    last_modified: 2026-11-23T20:58:01Z
   - id: suggest-ts
-    resource: ../../src/lib/consortium/suggest.ts
-    title: src/lib/consortium/suggest.ts
+    resource: ../../src/lib/palette/suggest.ts
+    title: src/lib/palette/suggest.ts
     digest: sha256:15f1a3ec8774ad24
-    last_modified: 2026-11-18T17:13:28Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json
@@ -373,8 +373,8 @@ A stream never deletes a whole spec file: it empties it of its cases; main delet
 **Commit 0 (main agent; owners file `scripts/plan/pp-b-owners.json` chunk 0, which lists every file): 0a seams (built), 0a' the deletion, 0b the move, in that order.**
 - **0a seams (built 2026-11-14, 50be21a to 362fe3f; the temporary matrix `lazyPart` and role it added are undone by 0a'):** types of architecture 3.1–3.3 (with `Line`, `VerdictContext.canopy`, `LinkNotice.period`); `place.ts` with real bodies for `emptyPlace`, `siteFor` (today's light, soil and water answers passed to `fits()`) and a minimal `resolveSoil` (basis `'none'` for the map, `'pots'` for pots), and `climateFor` passing the slot through (the arch-rules grep line that only `place.ts` reads `lookup.periods`, `warn`); empty-bodied `verdict.ts`, `verdict-load.ts` (exported from `index.ts`; b2 writes the body), `verdict-line.ts` with the `fitLine`, `holeLine`, `yearsLine` signatures, `years.ts` (with `phaseOrd` and `spanOf` moved in, `views/kit/span.ts` deleted and `views/kit/sheet.tsx` repointed, `yearsOf` = first to last stage present), `holes.ts` (with `HOLE_ORDER`), `weigh.ts`; `PlantSource.layerValues` with a stub; `SitePeriod` gains `precipMm`, `dryMonths`; `pots` in `rooms`; the whole link v5 codec under the extension rule (architecture 8.1: unknown keys ignored, per-key fallback, `u=` reserved, reserved letters, `y` = `PeriodId` span string), `encodePlace` (`k` from `store.country`, `o` from `store.location`) and `linkVersionStatus` (classifies `v` only, `null` = `absent`, older = v1–v4) with `scripts/vectors/link-v5.json` in the shared envelope (reviewed by the coordinator before any stream starts) and its consumers in `persist.ts` (`:99-118`) and `restore.ts` (`:131-143`); state fields and the place rule; `site` derived; `kept`, `crops`, `stage` deprecated; the save record `{ fragment, place, at, src, country? }`, `canopi-place` as the seed of a new palette, `history.state.pl`; `applyPreset` adds the guide plant; store seams (`verdictContext` with `canopy`, `verdictRule`, `memberVerdicts`, `poolVerdicts`, `countFits`, an empty `offline`), `withRule` waits on `verdict`; `views/place/Place.tsx` re-exporting Start; the matrix behind `lazyPart` (role `structure` renamed `matrix`, 12 KB); `views/tracks.ts` helpers to `views/kit/phase.ts` and `names.ts`; the Balance seams deleted; roles `palette`, `verdict` (12 KB); L10 as `warn` with `index.ts` allowed for named re-exports (`index` in `pathNot`, an arch-rules fixture), keys written by `ratchet.mjs arch --write`; the colour token block in `src/styles/tokens.css` (architecture 3.5) with `consortium-css.test.mjs`'s new rule; `format.ts` unit formatters and `parsePlotSize` with the unit-after-placeholder policy in `consortium-keys.test.mjs`; the harness's `database: 'hold'` with `page.releaseHeld()` (and `timeouts.slow` if needed); `range_verdicts.json` read from the installed release (stamped copy with a release-id test until the installer change lands); empty page-level stylesheets; the marker moves and parking of section 1 with `scripts/plan/parked-markers.json`.
 - **0a' delete first (owner, 2026-11-14, row "Delete first"; one commit, or a few if review needs it, before 0b):** the old screens go with their tests (section 1b) and their keys; the shell, the place step, the sheets, Details, Share, print and the lasting layer stay with their tests. Exports left without a reader are deleted in the same commit so `check:dead` holds; a later stream re-adds what it needs.
-  - **Files deleted (11):** `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `tracks.ts`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx` (its readers are Matrix, PhoneMatrix and the on-screen side view only); `src/styles/consortium/matrix.css` and the empty F1a `palette.css`; `scripts/consortium-tracks.test.mjs` (its kept cases move to `scripts/consortium-print.test.mjs`, section 1b); `scripts/browser/consortium-s2.browser.test.mjs`.
-  - **CSS moved before matrix.css goes (check deletion-4, measured on the classes kept code uses):** to `shell.css`: `.ct-dim`, `.ct-icon` (every glyph of `kit/icons.tsx`), `.ct-link-button` (with its phone 40 px rule), `.ct-sc`, the unscoped `.ct-flag` and `.ct-tag` (as `:where(.ct) .ct-flag` and `:where(.ct) .ct-tag`: `details.css` loads before `shell.css`, so a moved rule of equal weight would override the sheets' own) and the mark-surface rules (the `:where(.ct-views)` ones match nothing once the tabs go); built: `.ct-key svg`, `.ct-stagebar`, `.ct-explain*` and `.ct-pop*` were dropped, not moved, since no kept code writes them; to `print.css`, outside `@media print`: the side drawing `SideDrawing` draws, `.ct-sv-figure`, `.ct-sv-plot` (`is-marks`), `.ct-sv-scale`, `.ct-sv-svg`, `.ct-sv-line`, `.ct-sv-mark` (`is-dashed`), `.ct-sv-nums`, `.ct-sv-note`, `.ct-sv-key`, `.ct-sv-n`, `.ct-sv-sw`, every `[data-stratum]` fill, stroke and swatch rule and the phone plot rules. Deleted with the screens: `.ct-sv`, `.ct-sv-term`, `.ct-sv-layer`, `.ct-sv-phases`, `.ct-sv-stepper`, `.ct-stchip`, `.ct-chip-term`, `.ct-tag-crop`, `.ct-stagestrip` and every matrix, phone grid, stepper, Jobs and list rule (`.ct-nw`, `.ct-row`, `.ct-quiet`, `.ct-btn-sm` have no reader left). A new case in `consortium-css.test.mjs` collects every `ct-*` class literal in `src/islands/consortium/**` and asserts each is defined in a sheet under `src/styles/`, except a listed set of hook-only names (ids, JS hooks, prefixes built at run time).
+  - **Files deleted (11):** `views/Matrix.tsx`, `PhoneMatrix.tsx`, `matrix-parts.tsx`, `tracks.ts`, `Jobs.tsx`, `PlantList.tsx`, `StageStepper.tsx` (its readers are Matrix, PhoneMatrix and the on-screen side view only); `src/styles/palette/matrix.css` and the empty F1a `palette.css`; `scripts/consortium-tracks.test.mjs` (its kept cases move to `scripts/consortium-print.test.mjs`, section 1b); `scripts/browser/consortium-s2.browser.test.mjs`.
+  - **CSS moved before matrix.css goes (check deletion-4, measured on the classes kept code uses):** to `shell.css`: `.ct-dim`, `.ct-icon` (every glyph of `kit/icons.tsx`), `.ct-link-button` (with its phone 40 px rule), `.ct-sc`, the unscoped `.ct-flag` and `.ct-tag` (as `:where(.ct) .ct-flag` and `:where(.ct) .ct-tag`: `details.css` loads before `shell.css`, so a moved rule of equal weight would override the sheets' own) and the mark-surface rules (the `:where(.ct-views)` ones match nothing once the tabs go); built: `.ct-key svg`, `.ct-stagebar`, `.ct-explain*` and `.ct-pop*` were dropped, not moved, since no kept code writes them; to `print.css`, outside `@media print`: the side drawing `SideDrawing` draws, `.ct-sv-figure`, `.ct-sv-plot` (`is-marks`), `.ct-sv-scale`, `.ct-sv-svg`, `.ct-sv-line`, `.ct-sv-mark` (`is-dashed`), `.ct-sv-nums`, `.ct-sv-note`, `.ct-sv-key`, `.ct-sv-n`, `.ct-sv-sw`, every `[data-stratum]` fill, stroke and swatch rule and the phone plot rules. Deleted with the screens: `.ct-sv`, `.ct-sv-term`, `.ct-sv-layer`, `.ct-sv-phases`, `.ct-sv-stepper`, `.ct-stchip`, `.ct-chip-term`, `.ct-tag-crop`, `.ct-stagestrip` and every matrix, phone grid, stepper, Jobs and list rule (`.ct-nw`, `.ct-row`, `.ct-quiet`, `.ct-btn-sm` have no reader left). A new case in `consortium-css.test.mjs` collects every `ct-*` class literal in `src/islands/palette/**` and asserts each is defined in a sheet under `src/styles/`, except a listed set of hook-only names (ids, JS hooks, prefixes built at run time).
   - **Trimmed:** `App.tsx` (the matrix `lazyPart` and the keep-alive imports the build no longer needs out; `Actions` mounted statically again, so it rejoins the first run until b2 hosts it under the palette page; the keep-alive imports that check-built-site's K3 rule still needs stay, decided by one build); `views/later.ts` (the `SideView`, `Jobs` and `PlantList` re-exports out); `views/Actions.tsx` (the view-tab reads out; it takes `FirstPaint`, the `ct:first-view` mark and `prefetchLater()` the timing script and the later prefetch wait for, from Matrix.tsx, until b2 marks the palette page); `views/SideView.tsx` keeps only `SideDrawing` (print), the on-screen side view and its stage chips go (inventory drop "on-screen side view (print only)"); `views/StageBar.tsx` loses `StageStrip`, `cellName`, `plantLabel`, `openSwap` (its only reader was PlantList; Details opens Swap through `openSheet`) and the kept and main-crop marks (`Marks`, `warnings`, `openDetails`, `jobFind`, `byName` stay for Add, Details, the future panel and print until PP-C and PP-E; built: `StageBar`, `Explain` and `openAdd` had no reader left and went too, and `warnings` is module-private); `views/kit/phase.ts` loses `stepStage` and whatever else check:dead flags; **`warningCounts` stays** (StageBar's `warnings` and `Marks` read it, and `SideDrawing` draws `Marks` for print; check deletion-5); `views/kit/icons.tsx` loses `ChevronIcon`, `PinIcon`, `SproutIcon` and `PIN` once nothing reads them, and `views/PoolSlot.tsx` loses `WhyNoSuggest` (its only reader was matrix-parts; b1b re-adds from git what Place needs), both files main's in chunk 0 (check deletion-6); `views/PrintSheet.tsx` loses "At a glance" (it read `matrix`) and the kept and main-crop labels, keeps the plant table and the side drawing for ≤ 20 plants, drawn at the store's `stage` until b2 points it at the year step chosen in Through the years (PP-B18); `views/details/Details.tsx` loses the Keep button and the crop branch (`details.cropNoSwap`); `views/Start.tsx` loses the Main crops picker (the `.crops.*` keys go); core `matrix.ts` keeps only `cellsOf` and `cellKey` (Suggest's gain until b1b and Swap's "Also fills" until c2; `buildMatrix`, `plantsIn`, `startCell`, the Matrix types go), `source.ts` and `data/sqlite-source.ts` lose `cellCounts`, **`suggest.ts` turns `kept` and `crops` into one `seed` option** (the current members: always members, flagged or not, the seed wins over `removed`; guests are members only when seeded; seeded plants first in tie order, then seeded guests; only the Main-crops-first loop goes), so Suggest builds around every plant already there (inventory C6, drop 5; check coverage-2), `types.ts` loses the Matrix types and the core `views` list, `state.ts` loses the deprecated `kept`, `crops` and `stage` share fields (the codec already writes none and ignores `p`, `n`, `t`); `store.ts` narrows `View` to `'start' | 'matrix'` (**`'matrix'` now names the empty palette slot**: `suggest-wait.ts:68`, `draft.ts`, `restore.ts` and `store.ts:540` keep writing it, so 0a' edits no b1a file (check deletion-2, option (a)); b2 replaces the type with `'place' | 'palette' | 'plan'` in chunk 1 and the b1a-owned writers switch in the same chunk through the coordinator), loses `matrix`, `toggleKeep`, `kept`, `crops`, their keep logic and `marksFailed` (its only reader was Matrix.tsx's notices); **`fitPool` stays** (the range-filtered pool Add and Swap read until PP-C rebuilds them on verdicts; check deletion-1); `suggestMembers` seeds from `members`; `missingMembers` stays (b2 shows its L2 lines on the palette page, PP-B21); `stage` stays an unsaved signal for print until PP-B18; `state/schema.ts`, `restore.ts` (a guide's crop role adds a member), `persist.ts`, `draft.ts` follow; `rules/list-query.ts` loses the plant list's query; `ConsortiumPage.astro` drops the two stylesheets; `scripts/built-modules.mjs`, `check-built-site.mjs` and `built-modules.test.mjs` drop the `matrix` role; the 11 locale files drop the keys only deleted code read, found by `consortium-keys.test.mjs` "no consortium key is left unused (H9)" run on the trimmed tree: the 62 `consortium.matrix.*` (the view tabs included; a key a kept view or print still reads stays), 16 `.list.*` (the 7 climate names `list.*` stay), `.side.layer` (the other `.side.*` keys `SideDrawing` reads stay), the 5 `.job.title`, `.job.covered`, `.job.missing`, `.job.every`, `.job.never` (built: Jobs' own, missed by H9 behind a template), 8 `.crops.*`, `.keptTag`, `.mainCrop`, and (check deletion-3) `consortium.job.*.about`, `.job.*.gap`, `.job.col.*`, `.phase.group.*`, `.phase.earlier`, `.phase.later`, `.phase.stepOf`, `.phase.stage`, `.print.glance`, `.print.kept`, `.print.mainCrop`, `.details.keep`, `.details.cropNoSwap`: 121 keys in each of the 11 files (built). `consortium.marks.unavailable` **stays**: `store.ts`'s chunk toast still says it (listed in INDIRECT in `consortium-keys.test.mjs`); the persistent line with Reload (inventory L3) goes with Matrix.tsx and PP-C c2 restores it from git with `marksFailed` (check deletion-7). The E6 and E4 wordings b2 reuses go with the matrix keys; b2 writes new `consortium.line.*` keys and copies the wording and 11 translations from git (EN at 1311317: `matrix.more` "+ {n} more", `matrix.gap` "A data gap, not your site", `matrix.misfit` "No plant fits your site here", `matrix.gapBody` as in `en.json`; check deletion-9).
   - **Not deleted, though old:** `views/Add.tsx`, `Paste.tsx`, `paste.ts`, `Swap.tsx`, `Sheets.tsx`, `kit/sheet.tsx` (rewritten in PP-C), `views/future/**` and `FutureSlot.tsx` (PP-E), `PoolSlot.tsx`, `views/pool/**` and `rules/suggest-block.ts` (b1b folds the count into Place), `views/details/**` (the new page opens Details), `Share.tsx`, `PrintSheet.tsx`, `side.ts`, `draw.ts` (print is kept: board `Print`, BT-8, d2 in PP-D), `PlantMarks.tsx`, `layers.ts`, `Correction.tsx`.
   - **Probe:** one `npm run build` and `node scripts/check-built-site.mjs` after 0a' measure the first run and every role; the `later` part is expected back under its 8 KB cap with `tracks.ts` gone, so no raise is recorded unless the measure says otherwise (budget rule).
@@ -406,7 +406,7 @@ A stream never deletes a whole spec file: it empties it of its cases; main delet
 
 ## 3. PP-C: find a plant, know a plant
 
-Rewritten 2026-11-17 at the PP-C amendment from the design checks of c1 and c2, the mock-up conformance report (30 differences, PP-B screens against the boards) and the decision rows of 2026-11-17 ("Mock-up conformance answers", "Conformance: coordinator calls", "Schema 4.1 staging and search normalization", "PP-C streams and drops"). Inputs (main checkout, gitignored): `.local/consortium/v2/archive/ppc/design-check-c1.md`, `design-check-c2.md`, `conformance/report.md`. Corrected the same day by the independent amendment check (`.local/consortium/v2/archive/ppc/amendment-check.md`, 23 findings) and the coordinator's choices on it. **Citations are at master f102922** (code lines unchanged at a0bc61b, the r-c15a schema-3 install onto which `pp/c` was rebased); paths are under `src/lib/consortium/` (core) or `src/islands/consortium/` (island) unless given in full. Owners: `scripts/plan/pp-c-owners.json`.
+Rewritten 2026-11-17 at the PP-C amendment from the design checks of c1 and c2, the mock-up conformance report (30 differences, PP-B screens against the boards) and the decision rows of 2026-11-17 ("Mock-up conformance answers", "Conformance: coordinator calls", "Schema 4.1 staging and search normalization", "PP-C streams and drops"). Inputs (main checkout, gitignored): `.local/consortium/v2/archive/ppc/design-check-c1.md`, `design-check-c2.md`, `conformance/report.md`. Corrected the same day by the independent amendment check (`.local/consortium/v2/archive/ppc/amendment-check.md`, 23 findings) and the coordinator's choices on it. **Citations are at master f102922** (code lines unchanged at a0bc61b, the r-c15a schema-3 install onto which `pp/c` was rebased); paths are under `src/lib/palette/` (core) or `src/islands/palette/` (island) unless given in full. Owners: `scripts/plan/pp-c-owners.json`.
 
 **Outcome.** One search finds plants by name in any language the names file holds (20 today), by scientific name or synonym, or by a job word, grouped by how they fit the place, and each result says why it matched; a hole opens the same Find, preset to it; Details opens on "Against your place" with disputed values and their sources; Swap says what is gained and lost as holes. The palette page and Place take the conformance fixes (stream pf).
 **Boards:** c1 `Find`, `FindResults`, `FindType`, `FindJob`, `FindNone`, `FindFilters`, `Paste`, `FindMulti`, `FindDesk`, `FillHole`, `HoleOpen`, `DarkFind`, `AddAnyway` (compared without its ask); c2 `Details`, `DetailsMore`, `DetailsDesk` (without "Keep it" and "Show as a table"), `Swap` (without "Swap anyway?"), `Correction`, `DarkDetails`; pf `Main`, `Palette`, `PaletteMore`, `Empty`, `Balcony`, `Place`, `LocSearch`, `LocStates`, `SiteKiambu`, `ClimateHand`, `Country`, `DarkMap`, `Arrivals`, `Toasts`, `Loading`. `Share` goes to PP-D, `ChangePlace` to PP-F.
@@ -455,7 +455,7 @@ v13 (51 boards, superseded by v14 the same day) removed `DarkPalette`, `DarkFind
 
 | Stream | Chunk | Owns (full list in the owners file) | Prefix |
 |---|---|---|---|
-| **c1 Find** | 1 | `views/find/**` (Find, results, filters, FillHole, the "Add plants"/"Find plants" entries, the bottom bar, Paste and `paste.ts` moved in), `rules/find-query.ts`, `data/search.ts` (fold, scoring, `oneOff`: one module for Find and Paste), core `fold.ts`, `views/Sheets.tsx`, `views/kit/sheet.tsx` (c2 consulted before a frame change), `source.ts` and `data/sqlite-source.ts`, `styles/consortium/find.css`, the fold corpus fixture, `consortium-s3.browser.test.mjs`, `seams-helpers.mjs`, `consortium-pp-b2.browser.test.mjs`, `consortium-pp-b1`, `-seams-layout`, `-seams-p2` and `-seams-p5` browser in chunk 1 (no role line: commit 0 wrote the `find` role) | `consortium.find.` (edits `consortium.add*`, `consortium.paste.*`, `consortium.search.*`) |
+| **c1 Find** | 1 | `views/find/**` (Find, results, filters, FillHole, the "Add plants"/"Find plants" entries, the bottom bar, Paste and `paste.ts` moved in), `rules/find-query.ts`, `data/search.ts` (fold, scoring, `oneOff`: one module for Find and Paste), core `fold.ts`, `views/Sheets.tsx`, `views/kit/sheet.tsx` (c2 consulted before a frame change), `source.ts` and `data/sqlite-source.ts`, `styles/palette/find.css`, the fold corpus fixture, `consortium-s3.browser.test.mjs`, `seams-helpers.mjs`, `consortium-pp-b2.browser.test.mjs`, `consortium-pp-b1`, `-seams-layout`, `-seams-p2` and `-seams-p5` browser in chunk 1 (no role line: commit 0 wrote the `find` role) | `consortium.find.` (edits `consortium.add*`, `consortium.paste.*`, `consortium.search.*`) |
 | **c2 One plant** | 1 | `views/details/**`, `views/Swap.tsx`, `views/Correction.tsx`, `views/PlantMarks.tsx` (deleted), `views/kit/flags.ts`, `views/kit/fit.tsx`, `views/StageBar.tsx`, `views/SideView.tsx`, `views/PrintSheet.tsx`, `views/palette/YourPlants.tsx` (PlantMarks reader only), `views/pool/pool.tsx`, `views/PoolSlot.tsx` (reads `rangeRule`/`rangeFailed`, `:22,43,49,99`), `rules/suggest-block.ts`, `rules/site-fit.ts`, `App.tsx`, `views/lazy.tsx`, `store.ts`, core `types.ts`, `state.ts`, `index.ts`, `verdict.ts`, `verdict-load.ts`, `verdict-line.ts`, `conflicts.ts`, `suggest.ts` (`alternatives` only), `place.ts`, `future.ts`, `range.ts`, the mark files, `matrix.ts`, `details.css`, the role and arch files, the P5 mark tests (unit and the browser specs `consortium-p5-s5c`, `-p5-s5d`, `-e6`, `-e6-r4`) | `consortium.details.` (edits `consortium.d.*`, `consortium.swap.*`, `consortium.misfit.*`, `consortium.line.*`, `consortium.print.*`, and deletes only the 22 keys read solely by `*-marks.ts`, listed in 3.6) |
 | **pf Palette page fixes** | 2 | `views/palette/**`, `views/place/**`, `views/location/**`, `LocationSlot.tsx`, `PoolSlot.tsx` (from c2: #17, U8), `Actions.tsx`, `FutureSlot.tsx`, `rules/picture*.ts`, `rules/change-summary.ts`, core `holes.ts` and `verdict-line.ts` (wording), `store.ts` (toasts, pending line), `App.tsx` (loading line), `views/kit/fit.tsx` (icon-only chips), `ConsortiumPage.astro`, `views/kit/chart.tsx`, the palette and place stylesheets, `scripts/browser/helpers.mjs`, `consortium-pp-b2.browser.test.mjs` (whole file; PP-B6), `consortium-pp-b1`, `-seams-layout` and `-seams-p2` browser | `consortium.palette.` (edits `consortium.line.*`, `consortium.location.*`, `consortium.country.*`, `consortium.place.*`, `consortium.start.*`, `consortium.load.*`, `consortium.plants.*`, `consortium.details.removed`, `consortium.page.*`, `consortium.site.*`) |
 

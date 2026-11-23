@@ -70,5 +70,5 @@ test('no URL string in src/ or public/_redirects names the old /consortium/ path
   assert.deepEqual(found, [], 'old /consortium/ URLs left (use consortiumPath(lang), /palette/ or /<lang>/palette/)');
   // The rule itself: what counts as a URL string and what does not.
   for (const yes of ["href='/consortium/'", 'h.open(`/fr/consortium/?plant=x`)', '[tool](/consortium/)', "x = '/consortium'", '${base}/consortium/']) assert.ok(url.test(yes), yes);
-  for (const no of ["import x from '../islands/consortium/App'", "'/data/consortium/a.sqlite.gz'", "new URL('../src/lib/consortium/', u)", '// the old /consortium/ paths', "'src/styles/consortium/x.css'"]) assert.ok(!url.test(no), no);
+  for (const no of ["import x from '../islands/palette/App'", "'/data/consortium/a.sqlite.gz'", "new URL('../src/lib/palette/', u)", '// the old /consortium/ paths', "'src/styles/palette/x.css'"]) assert.ok(!url.test(no), no);
 });

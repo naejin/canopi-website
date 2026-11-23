@@ -4,7 +4,7 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T13:34:47Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:39Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
@@ -23,8 +23,8 @@ sources:
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:c2b450b349d5137d
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7eb74c8505c7b909
+    last_modified: 2026-11-23T20:58:01Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -83,13 +83,13 @@ sources:
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
-    digest: sha256:9a944293ae6767b0
-    last_modified: 2026-11-13T06:47:29Z
+    digest: sha256:3993101a22fc3722
+    last_modified: 2026-11-23T20:58:01Z
   - id: number-format-only-in-format-typescript
     resource: ../../scripts/quality/ast-grep/rules/number-format-only-in-format.typescript.yml
     title: scripts/quality/ast-grep/rules/number-format-only-in-format.typescript.yml
-    digest: sha256:6265d1a1b944e5fe
-    last_modified: 2026-11-13T06:47:29Z
+    digest: sha256:6e464b145be567ac
+    last_modified: 2026-11-23T20:58:01Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -98,18 +98,18 @@ sources:
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
-    digest: sha256:de83b81abefa97df
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:3a8eff8f51600f86
+    last_modified: 2026-11-23T20:58:01Z
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:2c462bea8e6fe19d
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:b6d0b198825d16a5
+    last_modified: 2026-11-23T20:58:08Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
     digest: sha256:484efcce06b077ec
-    last_modified: 2026-11-23T13:19:21Z
+    last_modified: 2026-11-23T13:35:12Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml
@@ -129,7 +129,7 @@ Node >= 22.13.0 (`node:sqlite` without a flag); `.node-version` pins 22.22.0 for
 | install | `npm install` |
 | dev server (port 4321) | `npm run dev` |
 | unit/regression tests | `npm test` (`node --experimental-strip-types --test scripts/*.test.mjs scripts/quality/*.test.mjs scripts/quality/ast-grep/*.test.mjs`, so it runs on Node 22.13; `scripts/quality/` holds the ratchet's and the layer rules' own tests, `scripts/quality/ast-grep/rules.test.mjs` the ast-grep rules' file scopes) |
-| ast-grep code rules | `node_modules/.bin/ast-grep scan` (config `sgconfig.yml`, rules in `scripts/quality/ast-grep/rules/`; CI job 1 and the pre-commit hook on staged files); `ast-grep test` runs each rule's snippets in `scripts/quality/ast-grep/rule-tests/`. One rule so far, `number-format-only-in-format` (E6 Q2; one file per language, typescript, tsx, javascript): no `Intl.NumberFormat` under `src/islands/consortium/**` or `src/lib/**` except `src/islands/consortium/format.ts`; views take `num` from `views/kit/names.ts`. The rest of the site is out of scope |
+| ast-grep code rules | `node_modules/.bin/ast-grep scan` (config `sgconfig.yml`, rules in `scripts/quality/ast-grep/rules/`; CI job 1 and the pre-commit hook on staged files); `ast-grep test` runs each rule's snippets in `scripts/quality/ast-grep/rule-tests/`. One rule so far, `number-format-only-in-format` (E6 Q2; one file per language, typescript, tsx, javascript): no `Intl.NumberFormat` under `src/islands/palette/**` or `src/lib/**` except `src/islands/palette/format.ts`; views take `num` from `views/kit/names.ts`. The rest of the site is out of scope |
 | quality ratchets | `npm run check:arch` (dependency-cruiser layer rules L1–L9, `.dependency-cruiser.cjs`), `npm run check:dup` (jscpd, `.jscpd.json`), `npm run check:dead` (knip, `knip.json`), each through `scripts/quality/ratchet.mjs` against `scripts/quality/baselines/<tool>.json`: a new finding warns locally and fails in CI (`--ci` or `CI=true`), a gone one prints "baseline stale"; an `error` arch rule fails everywhere; a crash or empty scan fails; only the merge agent rewrites a baseline (`--write`); run capped (`MemoryMax=2G`) |
 | climate vectors | `npm run test:vectors` (`scripts/climate-vectors.test.mjs`, also part of `npm test`): canopi-climate v0.2.1's committed `lookup.json` against its sha256 and grid pins, then its 54 points through the reader on the installed grid; skips without the grid unless `CANOPI_REQUIRE_VECTORS=1` (CI); see [Climate reader](/modules/climate-reader.md) |
 | accessibility smoke (after `npm run build`) | `npm run test:axe` (`scripts/browser/smoke/axe.smoke.mjs`: axe-core WCAG 2.x A/AA on the production `dist/`, both themes at 1280 px plus the filled consortium at 390 px, counts compared with `scripts/quality/baselines/axe.json`; `CANOPI_AXE_WRITE=1` rewrites it, merge agent only); capped `MemoryMax=2G` |

@@ -2,7 +2,7 @@
 // imports so node --test can run it (scripts/correction.test.mjs). src/pages/api/correction.ts passes
 // the request and the Worker's env, as contact does.
 //
-// The consortium tool's plant dialog (src/islands/consortium/views/Correction.tsx, opened from
+// The consortium tool's plant dialog (src/islands/palette/views/Correction.tsx, opened from
 // views/Correction.tsx) posts one reader's suggested change to one plant value as JSON. It goes out through the same send_email binding EMAIL
 // to MAIL_TO as the contact form, and nothing is stored here. The mail body holds the report twice:
 // lines a person reads, then one JSON block between REPORT_START and REPORT_END that canopi-data
@@ -10,7 +10,7 @@
 // data: the reporter's optional email is only the reply-to address, and no IP or name is read.
 // Answers JSON { ok, code, fields? }; logs carry codes only, never report content.
 import { CONTROL, EMAIL_RE, FROM, LOCALES, PERMANENT, TIMEOUT_MS, withTimeout } from './contact.mjs';
-import { climateZones, zoneOfSiteId } from './consortium/zones.ts';
+import { climateZones, zoneOfSiteId } from './palette/zones.ts';
 
 export { LOCALES };
 export const MAX_BODY = 16 * 1024;
@@ -22,7 +22,7 @@ export const REPORT_END = '-----END CANOPI CORRECTION REPORT-----';
 // What the reader agreed to; the form's consent line says the same.
 export const LICENCE = 'CC BY-SA 4.0';
 // The climates of the site, written in the block as the export names them: the zone list
-// (src/lib/consortium/zones.ts), derived, never copied.
+// (src/lib/palette/zones.ts), derived, never copied.
 export const CLIMATES = [...climateZones];
 const PLANT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const RELEASE_ID = /^r-[0-9a-f]{16}$/;

@@ -46,11 +46,11 @@ test('every rule snippet test passes (ast-grep test)', () => {
 
 test('number-format-only-in-format: a second formatter in the consortium or src/lib fails, the owner and the rest of the site pass', () => {
   const dir = planted({
-    'src/islands/consortium/views/Planted.tsx': `export const P = (n: number) => <b>{new Intl.NumberFormat('fr').format(n)}</b>;\n`,
-    'src/islands/consortium/state/planted.ts': "export const make = (l: string) => Intl.NumberFormat(l);\n",
-    'src/lib/consortium/planted.ts': formatter,
+    'src/islands/palette/views/Planted.tsx': `export const P = (n: number) => <b>{new Intl.NumberFormat('fr').format(n)}</b>;\n`,
+    'src/islands/palette/state/planted.ts': "export const make = (l: string) => Intl.NumberFormat(l);\n",
+    'src/lib/palette/planted.ts': formatter,
     'src/lib/planted.mjs': formatter,
-    'src/islands/consortium/format.ts': formatter,
+    'src/islands/palette/format.ts': formatter,
     'src/scripts/home.js': formatter,
     'src/components/planted.ts': formatter,
   });
@@ -58,9 +58,9 @@ test('number-format-only-in-format: a second formatter in the consortium or src/
     const r = scan(dir);
     assert.notEqual(r.status, 0, 'a planted violation must fail the scan');
     assert.deepEqual(r.files, [
-      'src/islands/consortium/state/planted.ts',
-      'src/islands/consortium/views/Planted.tsx',
-      'src/lib/consortium/planted.ts',
+      'src/islands/palette/state/planted.ts',
+      'src/islands/palette/views/Planted.tsx',
+      'src/lib/palette/planted.ts',
       'src/lib/planted.mjs',
     ]);
     assert.deepEqual(r.rules, [

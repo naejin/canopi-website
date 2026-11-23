@@ -5,12 +5,12 @@
 // when PP-B commit 0a' deleted views/tracks.ts and the matrix it served. No DOM, no browser.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { phases } from '../src/lib/consortium/index.ts';
-import { warningCounts } from '../src/islands/consortium/views/kit/phase.ts';
-import { nameOrder } from '../src/islands/consortium/views/kit/names.ts';
-import { MAX_SILHOUETTES, lineTop, shapeOf, sidePlants } from '../src/islands/consortium/views/side.ts';
-import { FALLBACK_HEIGHT, LOG_MAX, SCALE_LINES, heightFrac, quantile, usualHeight } from '../src/islands/consortium/rules/heights.ts';
-import { PLOT_H, blob, hash, plantStrokes, reachOf, topOf } from '../src/islands/consortium/views/draw.ts';
+import { phases } from '../src/lib/palette/index.ts';
+import { warningCounts } from '../src/islands/palette/views/kit/phase.ts';
+import { nameOrder } from '../src/islands/palette/views/kit/names.ts';
+import { MAX_SILHOUETTES, lineTop, shapeOf, sidePlants } from '../src/islands/palette/views/side.ts';
+import { FALLBACK_HEIGHT, LOG_MAX, SCALE_LINES, heightFrac, quantile, usualHeight } from '../src/islands/palette/rules/heights.ts';
+import { PLOT_H, blob, hash, plantStrokes, reachOf, topOf } from '../src/islands/palette/views/draw.ts';
 
 const traits = (over = {}) => ({
   height_m: null, width_max_m: null, sun: true, semi_shade: true, full_shade: false, hardiness_zone: null, frost_tender: null, soil_ph: null,

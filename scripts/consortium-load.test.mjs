@@ -1,4 +1,4 @@
-// The consortium island's byte checks before SQLite sees the database (src/islands/consortium/data/
+// The consortium island's byte checks before SQLite sees the database (src/islands/palette/data/
 // bytes.ts, review B3 and C11): the whole body is read, an empty body is damage, the gzip magic is
 // read from the whole buffer, and the digests the page was built with are checked (gzipped bytes when
 // the magic is there, the raw database when the server already decoded it, P3).
@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
-import { decodeChecked, decodeDatabase, isGzip, LoadError } from '../src/islands/consortium/data/bytes.ts';
+import { decodeChecked, decodeDatabase, isGzip, LoadError } from '../src/islands/palette/data/bytes.ts';
 
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 const raw = Buffer.from('SQLite format 3\0' + 'x'.repeat(400));

@@ -5,8 +5,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const core = await import('../src/lib/consortium/index.ts');
-const words = await import('../src/lib/consortium/site-change-line.ts');
+const core = await import('../src/lib/palette/index.ts');
+const words = await import('../src/lib/palette/site-change-line.ts');
 const en = JSON.parse(readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
 
 const P = core.periodIds;
@@ -468,11 +468,11 @@ test('M4: the Water lead for a one-plant palette says "your one plant", never "y
 });
 
 test('R18: the figures panel reads the year\'s warmth without the range rule: yearMeanC lives in site-today.ts, range.ts only re-exports it', async () => {
-  const today = await import('../src/lib/consortium/site-today.ts');
+  const today = await import('../src/lib/palette/site-today.ts');
   assert.equal(today.yearMeanC({ tmeanColdC: 17.6, tmeanWarmC: 21.1 }), 19.35, 'Nairobi (17.6 + 21.1) / 2');
   assert.equal(core.yearMeanC, today.yearMeanC, 'the core index hands out the one function');
   const strip = (s) => s.replace(/\/\/.*$/gm, '');
-  const range = strip(readFileSync(new URL('../src/lib/consortium/range.ts', import.meta.url), 'utf8'));
+  const range = strip(readFileSync(new URL('../src/lib/palette/range.ts', import.meta.url), 'utf8'));
   assert.doesNotMatch(range, /export\s+(const|function)\s+yearMeanC\b/, 'range.ts does not define it');
   // (Whether the built figures chunk pulls the range rule in is the browser gates' to say: P5-14g,
   // P5-26e. A source grep of Figures.tsx could not see an import through index.ts; C8.)

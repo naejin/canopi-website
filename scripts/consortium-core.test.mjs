@@ -1,4 +1,4 @@
-// The consortium v2 core (src/lib/consortium/, stream S1 of P2): site fit, conflicts, jobs, the
+// The consortium v2 core (src/lib/palette/, stream S1 of P2): site fit, conflicts, jobs, the
 // cells a plant fills, the suggestion and Swap alternatives, and the #v=5 share state, through the
 // core's public index. Plants come from two places: invented records made here for one rule at a
 // time, and the invented fixture database (scripts/fixtures/consortium-v2/export/) read through the
@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
-const core = await import('../src/lib/consortium/index.ts');
+const core = await import('../src/lib/palette/index.ts');
 const {
   fits, misfitsBeside, ROOM_LIMIT_M, UNSURE_SITE,
   conflicts, isSerious, invasiveIn, pairings, countryStatus,
@@ -21,13 +21,13 @@ const {
   strata, phases,
 } = core;
 // The suggestion and the Swap list: their own chunk on the page (core loadSuggest), not in the barrel.
-const { suggest, SIZE_LIMIT, gain, alternatives } = await import('../src/lib/consortium/suggest.ts');
+const { suggest, SIZE_LIMIT, gain, alternatives } = await import('../src/lib/palette/suggest.ts');
 
 // ---- the fixture through the adapter ----
 const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', fixtureDir), 'utf8'));
-const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+const { openBytes } = await import('../src/islands/palette/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
 const raw = new Uint8Array(gunzipSync(readFileSync(new URL(manifest.files[0].file, fixtureDir))));
 const opened = await openBytes(raw, { releaseId: manifest.release_id, climates: manifest.climates.map((c) => c.climate_zone) });
 const source = createSqliteSource(opened.db, { images: {} });
@@ -510,19 +510,19 @@ test('recompute: flags for 200 members, a suggestion and every Swap list, timed 
 // C1 placed.ts ⇄ placement.ts gone), and the flags live beside conflicts.ts, so the store's flags
 // reach no suggestion code. Imports are read as text: a static or dynamic import is an edge.
 test('core leaves: nearest.ts imports only types; placed.ts never imports placement.ts; flags come from conflicts.ts', async () => {
-  const src = (f) => readFileSync(new URL(`../src/lib/consortium/${f}`, import.meta.url), 'utf8');
+  const src = (f) => readFileSync(new URL(`../src/lib/palette/${f}`, import.meta.url), 'utf8');
   const edges = (f) => [...src(f).matchAll(/(?:from|import)\s*\(?\s*['"]\.\/([^'"]+)['"]/g)].map((m) => m[1]);
   assert.deepEqual(edges('nearest.ts'), ['types.ts']);
   assert.ok(!edges('placed.ts').includes('placement.ts'), 'placed.ts reads the table from nearest.ts');
   assert.ok(!edges('conflicts.ts').includes('suggest.ts'), 'conflicts.ts does not reach the suggestion');
-  const conflictsMod = await import('../src/lib/consortium/conflicts.ts');
-  const suggestMod = await import('../src/lib/consortium/suggest.ts');
+  const conflictsMod = await import('../src/lib/palette/conflicts.ts');
+  const suggestMod = await import('../src/lib/palette/suggest.ts');
   for (const name of ['flagsOf', 'flagsFor', 'warns']) {
     assert.equal(typeof conflictsMod[name], 'function', `conflicts.ts exports ${name}`);
     assert.equal(suggestMod[name], undefined, `suggest.ts no longer declares ${name}`);
     assert.equal(core[name], conflictsMod[name], `the index exports conflicts.ts's ${name}`);
   }
-  assert.equal(core.NEAREST_LISTS, (await import('../src/lib/consortium/nearest.ts')).NEAREST_LISTS);
+  assert.equal(core.NEAREST_LISTS, (await import('../src/lib/palette/nearest.ts')).NEAREST_LISTS);
 });
 
 // E6 R4 (design check A11): the page reaches suggest.ts only through loadSuggest (its own chunk); the
@@ -544,6 +544,6 @@ test('factAt: the stored value of each ADR-6 fact, null when not recorded (never
   assert.deepEqual(core.factAt('water_need', t, at, period), { drought: 'Medium', moisture: null });
   assert.deepEqual(core.factAt('water_need', taxon({ traits: { drought_tolerance: null, moisture_use: 'High' } }), at, period), { drought: null, moisture: 'High' });
   assert.equal(core.factAt('water_need', taxon({ traits: { drought_tolerance: null, moisture_use: null } }), at, period), null);
-  const stored = readFileSync(new URL('../src/lib/consortium/source.ts', import.meta.url), 'utf8');
+  const stored = readFileSync(new URL('../src/lib/palette/source.ts', import.meta.url), 'utf8');
   for (const gone of ['life_cycle', 'cold_limit', 'heat_limit']) assert.ok(!stored.includes(gone), `${gone}: no reader, so no stored fact (b3g-5)`);
 });

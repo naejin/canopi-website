@@ -1,5 +1,5 @@
 // "Download for Canopi" (design check A11, stream S4): the consortium as a Canopi design file, v9,
-// written by the pure core function canopiFile (src/lib/consortium/canopi-file.ts) and validated
+// written by the pure core function canopiFile (src/lib/palette/canopi-file.ts) and validated
 // against the app's own format at canopi 0c425fb07 (scripts/vendor/canopi-design-format/, test-only).
 // Plants come from the invented fixture database through the island's SQLite adapter, plus invented
 // records for the edge cases (no layer yet, a guest from another list).
@@ -10,13 +10,13 @@ import { gunzipSync } from 'node:zlib';
 import { CANOPI_FILE_SCHEMA, CURRENT_CANOPI_FILE_VERSION } from './vendor/canopi-design-format/canopi-design-format.ts';
 import { validate } from './vendor/canopi-design-format/validate.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
+const core = await import('../src/lib/palette/index.ts');
 const { canopiFile, canopiFileName, CANOPI_FILE_VERSION, phases } = core;
 
 const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', fixtureDir), 'utf8'));
-const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+const { openBytes } = await import('../src/islands/palette/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
 const raw = new Uint8Array(gunzipSync(readFileSync(new URL(manifest.files[0].file, fixtureDir))));
 const opened = await openBytes(raw, { releaseId: manifest.release_id, climates: manifest.climates.map((c) => c.climate_zone) });
 const source = createSqliteSource(opened.db, { images: {} });

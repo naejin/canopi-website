@@ -4,7 +4,7 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T18:53:16Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:23Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:34Z }
@@ -18,8 +18,8 @@ sources:
   - id: dependency-cruiser-cjs
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
-    digest: sha256:2c462bea8e6fe19d
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:b6d0b198825d16a5
+    last_modified: 2026-11-23T20:58:08Z
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
@@ -38,23 +38,23 @@ sources:
   - id: built-links-test-mjs
     resource: ../../scripts/built-links.test.mjs
     title: scripts/built-links.test.mjs
-    digest: sha256:c633635424669a25
-    last_modified: 2026-11-14T12:22:23Z
+    digest: sha256:ad66fba7640035f2
+    last_modified: 2026-11-23T20:58:01Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:fe406149f10e3477
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:eeaab36bba2abe93
+    last_modified: 2026-11-23T21:01:37Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:c2b450b349d5137d
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7eb74c8505c7b909
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:8165db4fcb8d590c
-    last_modified: 2026-11-13T07:53:00Z
+    digest: sha256:adc4859cf8ddf332
+    last_modified: 2026-11-23T21:01:39Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
@@ -63,8 +63,8 @@ sources:
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
-    digest: sha256:8dd5eb4c4a85c004
-    last_modified: 2026-11-17T13:23:27Z
+    digest: sha256:e95bb5569ae7217b
+    last_modified: 2026-11-23T20:58:01Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
@@ -81,170 +81,170 @@ sources:
     digest: sha256:f2e51ba89fdab93e
     last_modified: 2026-11-14T12:22:23Z
   - id: app-tsx
-    resource: ../../src/islands/consortium/App.tsx
-    title: src/islands/consortium/App.tsx
-    digest: sha256:9b5471db4254810e
-    last_modified: 2026-11-19T05:13:33Z
+    resource: ../../src/islands/palette/App.tsx
+    title: src/islands/palette/App.tsx
+    digest: sha256:685ec7e12121c7e4
+    last_modified: 2026-11-23T20:58:01Z
   - id: load-ts
-    resource: ../../src/islands/consortium/data/load.ts
-    title: src/islands/consortium/data/load.ts
-    digest: sha256:f51632afa38a12d9
-    last_modified: 2026-11-18T18:43:00Z
+    resource: ../../src/islands/palette/data/load.ts
+    title: src/islands/palette/data/load.ts
+    digest: sha256:8159e2aae175b171
+    last_modified: 2026-11-23T20:58:01Z
   - id: search-ts
-    resource: ../../src/islands/consortium/data/search.ts
-    title: src/islands/consortium/data/search.ts
-    digest: sha256:73297ee3a4f9bdb6
-    last_modified: 2026-11-17T16:37:51Z
+    resource: ../../src/islands/palette/data/search.ts
+    title: src/islands/palette/data/search.ts
+    digest: sha256:b880117e9fda4714
+    last_modified: 2026-11-23T20:58:01Z
   - id: sqlite-source-ts
-    resource: ../../src/islands/consortium/data/sqlite-source.ts
-    title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:96c53431ba5d3d97
-    last_modified: 2026-11-23T11:50:28Z
+    resource: ../../src/islands/palette/data/sqlite-source.ts
+    title: src/islands/palette/data/sqlite-source.ts
+    digest: sha256:1d4e48c67077cda7
+    last_modified: 2026-11-23T20:58:01Z
   - id: focus-ts
-    resource: ../../src/islands/consortium/focus.ts
-    title: src/islands/consortium/focus.ts
-    digest: sha256:ae06582d6b9a7fb4
-    last_modified: 2026-11-23T18:43:52Z
+    resource: ../../src/islands/palette/focus.ts
+    title: src/islands/palette/focus.ts
+    digest: sha256:2a09db72632e81bd
+    last_modified: 2026-11-23T20:58:01Z
   - id: format-ts
-    resource: ../../src/islands/consortium/format.ts
-    title: src/islands/consortium/format.ts
+    resource: ../../src/islands/palette/format.ts
+    title: src/islands/palette/format.ts
     digest: sha256:8f5252bea4821008
-    last_modified: 2026-11-19T04:59:08Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: main-ts
-    resource: ../../src/islands/consortium/main.ts
-    title: src/islands/consortium/main.ts
-    digest: sha256:04d212e17c481deb
-    last_modified: 2026-11-18T17:40:12Z
+    resource: ../../src/islands/palette/main.ts
+    title: src/islands/palette/main.ts
+    digest: sha256:f9f45406565dd302
+    last_modified: 2026-11-23T20:58:01Z
   - id: site-fit-ts
-    resource: ../../src/islands/consortium/rules/site-fit.ts
-    title: src/islands/consortium/rules/site-fit.ts
-    digest: sha256:3b03ce1e0f6df7cf
-    last_modified: 2026-11-17T14:13:26Z
+    resource: ../../src/islands/palette/rules/site-fit.ts
+    title: src/islands/palette/rules/site-fit.ts
+    digest: sha256:cc3b45174c87f0b4
+    last_modified: 2026-11-23T20:58:01Z
   - id: suggest-block-ts
-    resource: ../../src/islands/consortium/rules/suggest-block.ts
-    title: src/islands/consortium/rules/suggest-block.ts
-    digest: sha256:2d0ed7f2ff4ec7b5
-    last_modified: 2026-11-17T13:23:27Z
+    resource: ../../src/islands/palette/rules/suggest-block.ts
+    title: src/islands/palette/rules/suggest-block.ts
+    digest: sha256:a40b87de812fd50b
+    last_modified: 2026-11-23T20:58:01Z
   - id: arrival-ts
-    resource: ../../src/islands/consortium/state/arrival.ts
-    title: src/islands/consortium/state/arrival.ts
-    digest: sha256:ed4c92e4c62489ea
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/arrival.ts
+    title: src/islands/palette/state/arrival.ts
+    digest: sha256:2b38494690ba1bea
+    last_modified: 2026-11-23T20:58:01Z
   - id: draft-ts
-    resource: ../../src/islands/consortium/state/draft.ts
-    title: src/islands/consortium/state/draft.ts
-    digest: sha256:9c3a0fb17eddf50b
-    last_modified: 2026-11-19T12:21:26Z
+    resource: ../../src/islands/palette/state/draft.ts
+    title: src/islands/palette/state/draft.ts
+    digest: sha256:ea0e524d1cd90f7b
+    last_modified: 2026-11-23T20:58:01Z
   - id: location-ts
-    resource: ../../src/islands/consortium/state/location.ts
-    title: src/islands/consortium/state/location.ts
-    digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/location.ts
+    title: src/islands/palette/state/location.ts
+    digest: sha256:5acb3da6eca26ed5
+    last_modified: 2026-11-23T20:58:01Z
   - id: persist-ts
-    resource: ../../src/islands/consortium/state/persist.ts
-    title: src/islands/consortium/state/persist.ts
-    digest: sha256:370bb4a9489321e5
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/persist.ts
+    title: src/islands/palette/state/persist.ts
+    digest: sha256:abaa195b434f5099
+    last_modified: 2026-11-23T20:58:01Z
   - id: restore-ts
-    resource: ../../src/islands/consortium/state/restore.ts
-    title: src/islands/consortium/state/restore.ts
-    digest: sha256:20cb5074cb42d667
-    last_modified: 2026-11-19T09:14:39Z
+    resource: ../../src/islands/palette/state/restore.ts
+    title: src/islands/palette/state/restore.ts
+    digest: sha256:030d6d5d5be6780b
+    last_modified: 2026-11-23T20:58:01Z
   - id: schema-ts
-    resource: ../../src/islands/consortium/state/schema.ts
-    title: src/islands/consortium/state/schema.ts
-    digest: sha256:055b522d8f0d238e
-    last_modified: 2026-11-18T04:51:36Z
+    resource: ../../src/islands/palette/state/schema.ts
+    title: src/islands/palette/state/schema.ts
+    digest: sha256:335adf6feff78380
+    last_modified: 2026-11-23T20:58:01Z
   - id: suggest-wait-ts
-    resource: ../../src/islands/consortium/state/suggest-wait.ts
-    title: src/islands/consortium/state/suggest-wait.ts
+    resource: ../../src/islands/palette/state/suggest-wait.ts
+    title: src/islands/palette/state/suggest-wait.ts
     digest: sha256:ad330f5c00ac2504
-    last_modified: 2026-11-18T18:38:12Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: store-ts
-    resource: ../../src/islands/consortium/store.ts
-    title: src/islands/consortium/store.ts
-    digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/store.ts
+    title: src/islands/palette/store.ts
+    digest: sha256:a2d405853d85b528
+    last_modified: 2026-11-23T20:58:01Z
   - id: strings-ts
-    resource: ../../src/islands/consortium/strings.ts
-    title: src/islands/consortium/strings.ts
+    resource: ../../src/islands/palette/strings.ts
+    title: src/islands/palette/strings.ts
     digest: sha256:cc2cefe2eeef65d9
-    last_modified: 2026-11-17T13:47:38Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: actions-tsx
-    resource: ../../src/islands/consortium/views/Actions.tsx
-    title: src/islands/consortium/views/Actions.tsx
+    resource: ../../src/islands/palette/views/Actions.tsx
+    title: src/islands/palette/views/Actions.tsx
     digest: sha256:554bc62276690579
-    last_modified: 2026-11-19T06:34:34Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: correction-tsx
-    resource: ../../src/islands/consortium/views/Correction.tsx
-    title: src/islands/consortium/views/Correction.tsx
+    resource: ../../src/islands/palette/views/Correction.tsx
+    title: src/islands/palette/views/Correction.tsx
     digest: sha256:bf8e99431d3f4218
-    last_modified: 2026-11-17T16:00:38Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: futureslot-tsx
-    resource: ../../src/islands/consortium/views/FutureSlot.tsx
-    title: src/islands/consortium/views/FutureSlot.tsx
-    digest: sha256:0ae13573d9f7e790
-    last_modified: 2026-11-14T21:28:50Z
+    resource: ../../src/islands/palette/views/FutureSlot.tsx
+    title: src/islands/palette/views/FutureSlot.tsx
+    digest: sha256:6f3324fce10a0c9b
+    last_modified: 2026-11-23T20:58:01Z
   - id: locationslot-tsx
-    resource: ../../src/islands/consortium/views/LocationSlot.tsx
-    title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:e96bcdabea1b6bcc
-    last_modified: 2026-11-23T17:15:38Z
+    resource: ../../src/islands/palette/views/LocationSlot.tsx
+    title: src/islands/palette/views/LocationSlot.tsx
+    digest: sha256:49df7d766bb12039
+    last_modified: 2026-11-23T19:33:12Z
   - id: poolslot-tsx
-    resource: ../../src/islands/consortium/views/PoolSlot.tsx
-    title: src/islands/consortium/views/PoolSlot.tsx
-    digest: sha256:1f630acabe60c541
-    last_modified: 2026-11-18T09:55:56Z
+    resource: ../../src/islands/palette/views/PoolSlot.tsx
+    title: src/islands/palette/views/PoolSlot.tsx
+    digest: sha256:4db3fccf4d5fef14
+    last_modified: 2026-11-23T20:58:01Z
   - id: sideview-tsx
-    resource: ../../src/islands/consortium/views/SideView.tsx
-    title: src/islands/consortium/views/SideView.tsx
-    digest: sha256:def097ed817ef1fe
-    last_modified: 2026-11-14T12:51:29Z
+    resource: ../../src/islands/palette/views/SideView.tsx
+    title: src/islands/palette/views/SideView.tsx
+    digest: sha256:3f6ac881e374bec9
+    last_modified: 2026-11-23T20:58:01Z
   - id: stagebar-tsx
-    resource: ../../src/islands/consortium/views/StageBar.tsx
-    title: src/islands/consortium/views/StageBar.tsx
-    digest: sha256:7d6b3e7587aa6aba
-    last_modified: 2026-11-23T11:50:28Z
+    resource: ../../src/islands/palette/views/StageBar.tsx
+    title: src/islands/palette/views/StageBar.tsx
+    digest: sha256:8fb3588aeca54223
+    last_modified: 2026-11-23T20:58:01Z
   - id: toast-tsx
-    resource: ../../src/islands/consortium/views/Toast.tsx
-    title: src/islands/consortium/views/Toast.tsx
+    resource: ../../src/islands/palette/views/Toast.tsx
+    title: src/islands/palette/views/Toast.tsx
     digest: sha256:86cdcc6fd7c86414
-    last_modified: 2026-11-19T06:44:45Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: flags-ts
-    resource: ../../src/islands/consortium/views/kit/flags.ts
-    title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:046945d22adbcc0a
-    last_modified: 2026-11-19T04:59:08Z
+    resource: ../../src/islands/palette/views/kit/flags.ts
+    title: src/islands/palette/views/kit/flags.ts
+    digest: sha256:e629db37f6148c1f
+    last_modified: 2026-11-23T20:58:01Z
   - id: names-ts
-    resource: ../../src/islands/consortium/views/kit/names.ts
-    title: src/islands/consortium/views/kit/names.ts
-    digest: sha256:af0063c7b3398eda
-    last_modified: 2026-11-18T04:25:38Z
+    resource: ../../src/islands/palette/views/kit/names.ts
+    title: src/islands/palette/views/kit/names.ts
+    digest: sha256:949e5b236a7bf8fe
+    last_modified: 2026-11-23T20:58:01Z
   - id: later-ts
-    resource: ../../src/islands/consortium/views/later.ts
-    title: src/islands/consortium/views/later.ts
-    digest: sha256:14a41ad260f237ba
-    last_modified: 2026-11-14T12:12:11Z
+    resource: ../../src/islands/palette/views/later.ts
+    title: src/islands/palette/views/later.ts
+    digest: sha256:fb713ad123fb3bbc
+    last_modified: 2026-11-23T20:58:01Z
   - id: layers-ts
-    resource: ../../src/islands/consortium/views/layers.ts
-    title: src/islands/consortium/views/layers.ts
-    digest: sha256:7252e2bc066e5305
-    last_modified: 2026-11-11T09:49:44Z
+    resource: ../../src/islands/palette/views/layers.ts
+    title: src/islands/palette/views/layers.ts
+    digest: sha256:724abc98a8c401ae
+    last_modified: 2026-11-23T20:58:01Z
   - id: lazy-tsx
-    resource: ../../src/islands/consortium/views/lazy.tsx
-    title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:cbfcbb83cffaa528
-    last_modified: 2026-11-17T13:23:27Z
+    resource: ../../src/islands/palette/views/lazy.tsx
+    title: src/islands/palette/views/lazy.tsx
+    digest: sha256:be4f158b7f10cafd
+    last_modified: 2026-11-23T20:58:01Z
   - id: pool-tsx
-    resource: ../../src/islands/consortium/views/pool/pool.tsx
-    title: src/islands/consortium/views/pool/pool.tsx
-    digest: sha256:5e6e8f91c970fca9
-    last_modified: 2026-11-18T00:51:57Z
+    resource: ../../src/islands/palette/views/pool/pool.tsx
+    title: src/islands/palette/views/pool/pool.tsx
+    digest: sha256:b36c528b19920022
+    last_modified: 2026-11-23T20:58:01Z
   - id: side-ts
-    resource: ../../src/islands/consortium/views/side.ts
-    title: src/islands/consortium/views/side.ts
-    digest: sha256:be6befe2c0690925
-    last_modified: 2026-11-14T12:51:29Z
+    resource: ../../src/islands/palette/views/side.ts
+    title: src/islands/palette/views/side.ts
+    digest: sha256:4c0191d39a946863
+    last_modified: 2026-11-23T20:58:01Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -256,125 +256,125 @@ sources:
     digest: sha256:412c74305668a696
     last_modified: 2026-11-12T20:26:30Z
   - id: canopi-file-ts
-    resource: ../../src/lib/consortium/canopi-file.ts
-    title: src/lib/consortium/canopi-file.ts
+    resource: ../../src/lib/palette/canopi-file.ts
+    title: src/lib/palette/canopi-file.ts
     digest: sha256:872518766f5b6313
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:30:42Z
   - id: conflicts-ts
-    resource: ../../src/lib/consortium/conflicts.ts
-    title: src/lib/consortium/conflicts.ts
+    resource: ../../src/lib/palette/conflicts.ts
+    title: src/lib/palette/conflicts.ts
     digest: sha256:aceaab4e54f45431
-    last_modified: 2026-11-18T04:37:58Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: fold-ts
-    resource: ../../src/lib/consortium/fold.ts
-    title: src/lib/consortium/fold.ts
+    resource: ../../src/lib/palette/fold.ts
+    title: src/lib/palette/fold.ts
     digest: sha256:dae939a445a54069
-    last_modified: 2026-11-17T11:57:14Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: future-ts
-    resource: ../../src/lib/consortium/future.ts
-    title: src/lib/consortium/future.ts
+    resource: ../../src/lib/palette/future.ts
+    title: src/lib/palette/future.ts
     digest: sha256:788e3562bea607f1
-    last_modified: 2026-11-18T04:32:21Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: index-ts
-    resource: ../../src/lib/consortium/index.ts
-    title: src/lib/consortium/index.ts
+    resource: ../../src/lib/palette/index.ts
+    title: src/lib/palette/index.ts
     digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:30:44Z
   - id: jobs-ts
-    resource: ../../src/lib/consortium/jobs.ts
-    title: src/lib/consortium/jobs.ts
+    resource: ../../src/lib/palette/jobs.ts
+    title: src/lib/palette/jobs.ts
     digest: sha256:97b5290a800f6a3f
-    last_modified: 2026-11-14T12:46:39Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: nearest-ts
-    resource: ../../src/lib/consortium/nearest.ts
-    title: src/lib/consortium/nearest.ts
+    resource: ../../src/lib/palette/nearest.ts
+    title: src/lib/palette/nearest.ts
     digest: sha256:b8ccc5ba13429537
-    last_modified: 2026-11-17T01:10:16Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: placed-ts
-    resource: ../../src/lib/consortium/placed.ts
-    title: src/lib/consortium/placed.ts
+    resource: ../../src/lib/palette/placed.ts
+    title: src/lib/palette/placed.ts
     digest: sha256:4bee0febe945ad89
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:29:04Z
   - id: placement-ts
-    resource: ../../src/lib/consortium/placement.ts
-    title: src/lib/consortium/placement.ts
+    resource: ../../src/lib/palette/placement.ts
+    title: src/lib/palette/placement.ts
     digest: sha256:8f7a898e3dc4d6ad
-    last_modified: 2026-11-13T14:45:08Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: range-ts
-    resource: ../../src/lib/consortium/range.ts
-    title: src/lib/consortium/range.ts
+    resource: ../../src/lib/palette/range.ts
+    title: src/lib/palette/range.ts
     digest: sha256:563dd255757eddd8
-    last_modified: 2026-11-19T05:03:52Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: site-climate-ts
-    resource: ../../src/lib/consortium/site-climate.ts
-    title: src/lib/consortium/site-climate.ts
+    resource: ../../src/lib/palette/site-climate.ts
+    title: src/lib/palette/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-12T07:59:10Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: site-today-ts
-    resource: ../../src/lib/consortium/site-today.ts
-    title: src/lib/consortium/site-today.ts
+    resource: ../../src/lib/palette/site-today.ts
+    title: src/lib/palette/site-today.ts
     digest: sha256:d410a7e506adace3
-    last_modified: 2026-11-19T05:03:52Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: site-ts
-    resource: ../../src/lib/consortium/site.ts
-    title: src/lib/consortium/site.ts
+    resource: ../../src/lib/palette/site.ts
+    title: src/lib/palette/site.ts
     digest: sha256:323fb9b1c48bc193
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:29:02Z
   - id: source-ts
-    resource: ../../src/lib/consortium/source.ts
-    title: src/lib/consortium/source.ts
-    digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:52:11Z
+    resource: ../../src/lib/palette/source.ts
+    title: src/lib/palette/source.ts
+    digest: sha256:9efeeffb336dec8a
+    last_modified: 2026-11-23T20:58:01Z
   - id: state-ts
-    resource: ../../src/lib/consortium/state.ts
-    title: src/lib/consortium/state.ts
+    resource: ../../src/lib/palette/state.ts
+    title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:21:26Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: suggest-ts
-    resource: ../../src/lib/consortium/suggest.ts
-    title: src/lib/consortium/suggest.ts
+    resource: ../../src/lib/palette/suggest.ts
+    title: src/lib/palette/suggest.ts
     digest: sha256:15f1a3ec8774ad24
-    last_modified: 2026-11-18T17:13:28Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: types-ts
-    resource: ../../src/lib/consortium/types.ts
-    title: src/lib/consortium/types.ts
-    digest: sha256:6918fafa28e9b4ad
-    last_modified: 2026-11-23T11:35:01Z
+    resource: ../../src/lib/palette/types.ts
+    title: src/lib/palette/types.ts
+    digest: sha256:2163e2e956deda1c
+    last_modified: 2026-11-23T20:58:01Z
   - id: zones-ts
-    resource: ../../src/lib/consortium/zones.ts
-    title: src/lib/consortium/zones.ts
+    resource: ../../src/lib/palette/zones.ts
+    title: src/lib/palette/zones.ts
     digest: sha256:33f34d5c6cad519a
-    last_modified: 2026-11-13T07:25:07Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: place-ts
-    resource: ../../src/lib/consortium/place.ts
-    title: src/lib/consortium/place.ts
+    resource: ../../src/lib/palette/place.ts
+    title: src/lib/palette/place.ts
     digest: sha256:e3764f30b6573f2d
-    last_modified: 2026-11-18T04:51:36Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
     digest: sha256:f456eb36dd7851bb
     last_modified: 2026-11-23T17:15:38Z
   - id: swap-tsx
-    resource: ../../src/islands/consortium/views/Swap.tsx
-    title: src/islands/consortium/views/Swap.tsx
-    digest: sha256:6a972d90f97afb69
-    last_modified: 2026-11-19T06:44:45Z
+    resource: ../../src/islands/palette/views/Swap.tsx
+    title: src/islands/palette/views/Swap.tsx
+    digest: sha256:ed02a27cceea1426
+    last_modified: 2026-11-23T20:58:01Z
   - id: nextstep-tsx
-    resource: ../../src/islands/consortium/views/palette/NextStep.tsx
-    title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:f1a44de7554e891c
-    last_modified: 2026-11-19T08:17:40Z
+    resource: ../../src/islands/palette/views/palette/NextStep.tsx
+    title: src/islands/palette/views/palette/NextStep.tsx
+    digest: sha256:7c310360252cce4b
+    last_modified: 2026-11-23T20:58:01Z
   - id: palette-tsx
-    resource: ../../src/islands/consortium/views/palette/Palette.tsx
-    title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:6f0b82dd048e13bd
-    last_modified: 2026-11-23T18:43:54Z
+    resource: ../../src/islands/palette/views/palette/Palette.tsx
+    title: src/islands/palette/views/palette/Palette.tsx
+    digest: sha256:32defe8479504c15
+    last_modified: 2026-11-23T20:58:01Z
   - id: save-ts
-    resource: ../../src/islands/consortium/state/save.ts
-    title: src/islands/consortium/state/save.ts
+    resource: ../../src/islands/palette/state/save.ts
+    title: src/islands/palette/state/save.ts
     digest: sha256:7a5518810d5d8e3a
-    last_modified: 2026-11-18T17:07:24Z
+    last_modified: 2026-11-23T11:23:11Z
 ---
 
 **State (2026-11-19):** PP-B and PP-C are built and live (master 398558aa); the module concepts ([page](/modules/consortium-page.md), [palette page](/modules/consortium-palette-page.md), [state](/modules/consortium-state.md), [core](/modules/consortium-core.md)) describe the code as it is. The owner's island architecture of 2026-11-19 ([user decisions](/decisions/consortium-user-decisions.md) "Owner decisions, 2026-11-19") changes this target in the coming commit 0 and one-pool stream: two stored records with one owner each (link as an overlay until "Use it"), the store split by domain, thin views over view models, one pool (a climate list is a label, never a scope; the guest path deleted) and no browser country guess. Until those land, the sections on storage, the store and guests describe the current code.
@@ -385,7 +385,7 @@ Inputs (gitignored, main checkout): the approved boards and answers in `.local/c
 
 ## 1. What stays
 
-The ADR-1 stack and layers stay: a storage-independent TypeScript core (`src/lib/consortium/`) behind `PlantSource` (`source.ts:7-26`), the L2 SQLite adapter (`src/islands/consortium/data/`), L3 state and rules (`store.ts`, `state/**`, `rules/**`), L4 Preact views loaded lazily through `views/lazy.tsx` (`lazyPart`). The redesign changes what the core answers (a verdict per plant and a list of holes per palette, for one place and one period) and replaces the matrix screens with one palette page drawn from pure picture models. Code names stay "consortium"; readers see "Plant palette" at `/palette/` (owner row "Plant palette name").
+The ADR-1 stack and layers stay: a storage-independent TypeScript core (`src/lib/palette/`) behind `PlantSource` (`source.ts:7-26`), the L2 SQLite adapter (`src/islands/palette/data/`), L3 state and rules (`store.ts`, `state/**`, `rules/**`), L4 Preact views loaded lazily through `views/lazy.tsx` (`lazyPart`). The redesign changes what the core answers (a verdict per plant and a list of holes per palette, for one place and one period) and replaces the matrix screens with one palette page drawn from pure picture models. Code names stay "consortium"; readers see "Plant palette" at `/palette/` (owner row "Plant palette name").
 
 ## 2. Layers and modules
 
@@ -409,11 +409,11 @@ The ADR-1 stack and layers stay: a storage-independent TypeScript core (`src/lib
 | L4 views | `views/place/**`, `views/palette/**`, `views/find/**` (PP-C), `views/plan/**` and `views/take/**` (PP-D), `views/climate/**` (PP-E), `views/soil/**` (PP-F), `views/year/**` (PP-G), `views/details/**` | one folder per chunk | core through `index.ts` only (L4) |
 | L4 kit | `views/kit/chart.tsx` (band chart with its "Show as a table" form, P17), `views/kit/fit.tsx` (fit line, P16), `views/kit/phase.ts` (from `views/tracks.ts`; only `warningCounts` after commit 0a') | leaf parts (L5) | kit leaf |
 
-The core stays flat (no subfolder of `src/lib/consortium/`): whether the boundary test globs it flat is unverified (`scripts/consortium-boundary.test.mjs`).
+The core stays flat (no subfolder of `src/lib/palette/`): whether the boundary test globs it flat is unverified (`scripts/consortium-boundary.test.mjs`).
 
 ### ADR changes (rows in [Consortium v2 architecture](/decisions/consortium-v2-architecture.md); written into ADR-1 and ADR-2 by each push's commit 0)
 
-- **ADR-1 rule L10 one-verdict** (lands `warn` in PP-B commit 0, which writes its keys with `node scripts/quality/ratchet.mjs arch --write` (a new key fails CI, `ratchet.mjs:11,16`); the merge agent rewrites the baseline at each chunk merge; `error` at the end of PP-C, when c2 owns `.dependency-cruiser.cjs`, adds a breach fixture and an allowed neighbour to `scripts/quality/arch-rules.test.mjs` and empties the baseline). Inside `src/lib/consortium/`, only these import `range.ts`, `future.ts` or `site.ts`: the rule files themselves (`future.ts` → `range.ts` included), `verdict*.ts`, `place.ts`, `suggest.ts`, `site-climate.ts`, `matrix.ts` until it is deleted, and `index.ts` for re-exports only (named `site.ts` exports, never `fits`, and `future.ts` until e2): dependency-cruiser counts `export * from` as an edge (`index.ts:9,15,17`), so `index` is in the rule's `pathNot` with an arch-rules fixture, and the rule still turns `error` in c2 (index.ts keeps importing `site.ts` after that). A second line, `warn` beside L10: only `place.ts` reads `lookup.periods` (`climateFor`, section 3.1), a grep in the arch-rules test. `conflicts.ts`: its misfit flag moves into the verdict, so `FlagContext` drops `site` and `conflicts.ts` stops importing `site.ts` (option (a) of amendment 14; c2). `index.ts` replaces `export * from './site.ts'` with named exports (`canopyOf`, `misfitsBeside`, `ROOM_LIMIT_M`, `Canopy`; never `fits`); it stops re-exporting `range` in c2 (PP-C) and `future` in e2 (PP-E, the commit that deletes `views/future/**`). Callers moved in PP-B/PP-C: `rules/list-query.ts:7`, `views/tracks.ts:13`, `store.ts`, `rules/suggest-block.ts`, `views/Start.tsx`, `views/PoolSlot.tsx`, `views/Paste.tsx`, `views/kit/flags.ts`.
+- **ADR-1 rule L10 one-verdict** (lands `warn` in PP-B commit 0, which writes its keys with `node scripts/quality/ratchet.mjs arch --write` (a new key fails CI, `ratchet.mjs:11,16`); the merge agent rewrites the baseline at each chunk merge; `error` at the end of PP-C, when c2 owns `.dependency-cruiser.cjs`, adds a breach fixture and an allowed neighbour to `scripts/quality/arch-rules.test.mjs` and empties the baseline). Inside `src/lib/palette/`, only these import `range.ts`, `future.ts` or `site.ts`: the rule files themselves (`future.ts` → `range.ts` included), `verdict*.ts`, `place.ts`, `suggest.ts`, `site-climate.ts`, `matrix.ts` until it is deleted, and `index.ts` for re-exports only (named `site.ts` exports, never `fits`, and `future.ts` until e2): dependency-cruiser counts `export * from` as an edge (`index.ts:9,15,17`), so `index` is in the rule's `pathNot` with an arch-rules fixture, and the rule still turns `error` in c2 (index.ts keeps importing `site.ts` after that). A second line, `warn` beside L10: only `place.ts` reads `lookup.periods` (`climateFor`, section 3.1), a grep in the arch-rules test. `conflicts.ts`: its misfit flag moves into the verdict, so `FlagContext` drops `site` and `conflicts.ts` stops importing `site.ts` (option (a) of amendment 14; c2). `index.ts` replaces `export * from './site.ts'` with named exports (`canopyOf`, `misfitsBeside`, `ROOM_LIMIT_M`, `Canopy`; never `fits`); it stops re-exporting `range` in c2 (PP-C) and `future` in e2 (PP-E, the commit that deletes `views/future/**`). Callers moved in PP-B/PP-C: `rules/list-query.ts:7`, `views/tracks.ts:13`, `store.ts`, `rules/suggest-block.ts`, `views/Start.tsx`, `views/PoolSlot.tsx`, `views/Paste.tsx`, `views/kit/flags.ts`.
 - **ADR-1 statement:** L3 holds `rules/picture-*.ts`; a view draws, it never computes a position from plant data. No first-run module statically imports `verdict.ts`; verdicts and `holdsBy` are reached through `loadVerdictRule()` in the core module `verdict-load.ts` (as `marks.ts:47-51` does for the range rule today), which outlives `marks.ts` (deleted in c2).
 - **ADR-2 roles:** delete `balance` (PP-B commit 0); rename `structure` to `matrix` (entry `views/Matrix.tsx` with `Actions`, cap 12 KB) in PP-B commit 0a so the matrix leaves the first run, and delete it with the matrix in commit 0a' (owner, 2026-11-14, "Delete first"; `Actions` returns to the first run until b2 hosts it); add `palette` and `verdict` (PP-B; `verdict` capped at 12 KB, then measured + 0.5 KB at the exit), `find` replacing `sheets` (PP-C), `plan` and `take` renamed from `later` (PP-D), `climate` replacing `future` (PP-E), `soil` (PP-F), `year` (PP-G); `range` and `markProviders` fold into `verdict` (PP-C); `pool` deleted once Place shows its count (PP-B, coordinator choice of 2026-11-14). Every role keeps a cap and every cap a role (`check-built-site.mjs:527`). **No `charts` role:** a statically shared module never gets a role (`built-modules.mjs:142-144`), so `views/kit/chart.tsx` is a kit module counted in full in each importing role's cost, and Details reaches it only through `lazyPart` (K3, `check-built-site.mjs:590-601`, fails a sheet chunk that statically imports a non-first-run chunk). Each commit 0 rewrites the one-chunk list (`check-built-site.mjs:528`), the sheet count (`:529`) and `sheetLike` (`:594`, Details + Find).
 
@@ -608,7 +608,7 @@ state (members, room, plot, spot, soil, period) ─┬─► place.ts siteFor / 
 state ─► state.ts encodeLink (public | with place) ─► address bar (public form only), share sheet, save record { fragment, place }; canopi-place (seed of the next palette)
 ```
 
-Store after the change (`store.ts`): `verdictContext`, `verdictRule` (the lazy `verdict` chunk, as `rangeRule` at `:100`), `memberVerdicts`, `poolVerdicts`, `offline`; `withRule` (`:131`) waits on the `verdict` chunk from PP-B commit 0; `loadRangeRule` and `loadMarkProviders` (`marks.ts`, imported at `store.ts:9`, `:476`) go when their readers move (c2). Removed in PP-B commit 0a': `matrix` (`:286`), `toggleKeep` (`:507`), `kept`, `crops`, `marksFailed` (`:309`, its line returns in c2) and the tab values of `View` (`:25`; `'matrix'` stays as the palette slot, the rest of `View` in b2); `suggestMembers` seeds Suggest from `members`. **`fitPool` (`:179`) stays**: the range-filtered pool Add (`Add.tsx:54`) and Swap (`Swap.tsx:37`) read, removed in PP-C when they are rebuilt on verdicts; in PP-C `rangeRule`, `loadRangeRule`, `rangeFailed`, `markProviders`, `markContext`, `FlagScene` rebuilt on verdicts (`:11`, `:216-241`). Grep gate before c2 closes: `grep -rn "rangeFit\|withinRange\|futureSummary" src/islands/consortium` finds only `views/future`.
+Store after the change (`store.ts`): `verdictContext`, `verdictRule` (the lazy `verdict` chunk, as `rangeRule` at `:100`), `memberVerdicts`, `poolVerdicts`, `offline`; `withRule` (`:131`) waits on the `verdict` chunk from PP-B commit 0; `loadRangeRule` and `loadMarkProviders` (`marks.ts`, imported at `store.ts:9`, `:476`) go when their readers move (c2). Removed in PP-B commit 0a': `matrix` (`:286`), `toggleKeep` (`:507`), `kept`, `crops`, `marksFailed` (`:309`, its line returns in c2) and the tab values of `View` (`:25`; `'matrix'` stays as the palette slot, the rest of `View` in b2); `suggestMembers` seeds Suggest from `members`. **`fitPool` (`:179`) stays**: the range-filtered pool Add (`Add.tsx:54`) and Swap (`Swap.tsx:37`) read, removed in PP-C when they are rebuilt on verdicts; in PP-C `rangeRule`, `loadRangeRule`, `rangeFailed`, `markProviders`, `markContext`, `FlagScene` rebuilt on verdicts (`:11`, `:216-241`). Grep gate before c2 closes: `grep -rn "rangeFit\|withinRange\|futureSummary" src/islands/palette` finds only `views/future`.
 
 ## 5. What is computed where and when
 

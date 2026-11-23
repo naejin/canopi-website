@@ -93,7 +93,7 @@ function walk(graph, from, stop, next) {
 export const reachable = (graph, from, stop = new Set()) => walk(graph, from, stop, (p) => graph.get(p).imports);
 
 // The island's own chunks (§8): everything reachable from its entry chunk (the one that mounts into
-// #ct-root, src/islands/consortium/main.ts), less what the page loads without it (the site chrome,
+// #ct-root, src/islands/palette/main.ts), less what the page loads without it (the site chrome,
 // the page script with Vite's preload helper) and less the sqlite glue. The entry is the one chunk with
 // the bare "ct-root" literal: main.ts's own getElementById, and an entry module's code is always in its
 // entry chunk (the page script names it as the selector '#ct-root'). Not by "ct-data", whose reader
@@ -154,32 +154,32 @@ export const staticClosure = (graph, roots, stop = new Set()) => [...walk(graph,
 export const CHUNK_ROLES_FILE = 'consortium-chunks.json';
 export const ROLE_ENTRIES = {
   // P5 features
-  location: { entry: /\/src\/islands\/consortium\/views\/location\/location\.tsx$/, chunks: 1 }, // S5b
-  future: { entry: /\/src\/islands\/consortium\/views\/future\/future\.tsx$/, chunks: 1 }, // S5d
-  pool: { entry: /\/src\/islands\/consortium\/views\/pool\/pool\.tsx$/, chunks: 1 }, // S5c
+  location: { entry: /\/src\/islands\/palette\/views\/location\/location\.tsx$/, chunks: 1 }, // S5b
+  future: { entry: /\/src\/islands\/palette\/views\/future\/future\.tsx$/, chunks: 1 }, // S5d
+  pool: { entry: /\/src\/islands\/palette\/views\/pool\/pool\.tsx$/, chunks: 1 }, // S5c
   // E6 lazy island parts (design check A5, A6, A11; L1-L12)
-  details: { entry: /\/src\/islands\/consortium\/views\/details\/Details\.tsx$/, chunks: 1 }, // K3: the plant dialog
-  sheets: { entry: /\/src\/islands\/consortium\/views\/(Swap|Correction)\.tsx$/, chunks: 2 }, // K3
+  details: { entry: /\/src\/islands\/palette\/views\/details\/Details\.tsx$/, chunks: 1 }, // K3: the plant dialog
+  sheets: { entry: /\/src\/islands\/palette\/views\/(Swap|Correction)\.tsx$/, chunks: 2 }, // K3
   // PP-C c1: Find and Paste (views/find/**).
-  find: { entry: /\/src\/islands\/consortium\/views\/find\/.+\.tsx?$/, chunks: '1+' }, // K3
-  later: { entry: /\/src\/islands\/consortium\/views\/later\.ts$/, chunks: 1 }, // K3: the views after the first view
-  suggest: { entry: /\/src\/lib\/consortium\/suggest\.ts$/, chunks: 1 }, // R4: loadSuggest
+  find: { entry: /\/src\/islands\/palette\/views\/find\/.+\.tsx?$/, chunks: '1+' }, // K3
+  later: { entry: /\/src\/islands\/palette\/views\/later\.ts$/, chunks: 1 }, // K3: the views after the first view
+  suggest: { entry: /\/src\/lib\/palette\/suggest\.ts$/, chunks: 1 }, // R4: loadSuggest
   // PP-B parts (plant-palette-slices, commit 0; F1a's structure and balance roles went with it, and
   // commit 0a' deleted the matrix role with the matrix): the palette page (b2 gives it a chunk) and the
   // verdict rule (core verdict-load.ts).
-  palette: { entry: /\/src\/islands\/consortium\/views\/palette\/Palette\.tsx$/, chunks: 1 }, // b2
+  palette: { entry: /\/src\/islands\/palette\/views\/palette\/Palette\.tsx$/, chunks: 1 }, // b2
   // The verdict rule (core verdict-load.ts), the range checks with it (PP-C c2 folded the range and
   // markProviders roles away with the mark providers).
-  verdict: { entry: /\/src\/lib\/consortium\/verdict\.ts$/, chunks: 1 }, // b2 writes the body
+  verdict: { entry: /\/src\/lib\/palette\/verdict\.ts$/, chunks: 1 }, // b2 writes the body
   // v14 pf commit 0W (chk #39): the figures panel behind views/figures/slots.tsx (pf-d fills it).
-  figures: { entry: /\/src\/islands\/consortium\/views\/figures\/Figures\.tsx$/, chunks: 1 },
+  figures: { entry: /\/src\/islands\/palette\/views\/figures\/Figures\.tsx$/, chunks: 1 },
   // Phase 3 / Slice 3.4: on-demand Field Studio tabs & Field Dossier drawer (lazy-loaded from Palette.tsx).
-  studio: { entry: /\/src\/islands\/consortium\/views\/palette\/(FieldDossier|LivingSystemTab|Climate2050Tab|PlantingPlanTab)\.tsx$/, chunks: 4 },
+  studio: { entry: /\/src\/islands\/palette\/views\/palette\/(FieldDossier|LivingSystemTab|Climate2050Tab|PlantingPlanTab)\.tsx$/, chunks: 4 },
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 // The browser-test hook (main.ts imports it with import() under __CT_TEST_HOOK__ and awaits it before
 // the first render), in the browser-test build only: not a part, never in dist/ (L11).
-const TEST_HOOK = /\/src\/islands\/consortium\/test-hook\.ts$/;
+const TEST_HOOK = /\/src\/islands\/palette\/test-hook\.ts$/;
 const emptyRoles = () => Object.fromEntries(Object.keys(ROLE_ENTRIES).map((k) => [k, []]));
 const norm = (id) => (id ?? '').split('?')[0].replaceAll('\\', '/');
 /**

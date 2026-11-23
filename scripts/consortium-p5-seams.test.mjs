@@ -7,11 +7,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
+const core = await import('../src/lib/palette/index.ts');
 
 // ---- E6 R2: the one site-fit vocabulary (core verdict-line.ts siteLines since fix round 1 B2, rules/site-fit.ts) ----
 test('E6 R2 site-fit: one vocabulary of misfits, unknowns and notes; the flags keep the misfits that hold beside the canopy', async () => {
-  const { siteFit, misfitsOf, unknownsOf } = await import('../src/islands/consortium/rules/site-fit.ts');
+  const { siteFit, misfitsOf, unknownsOf } = await import('../src/islands/palette/rules/site-fit.ts');
   const traits = { sun: true, semi_shade: false, full_shade: false, soil_ph: { min: 7.8, max: 8.4 }, drought_tolerance: 'Medium', moisture_use: null, well_drained: null, height_m: { max: 13.716 }, habit: 'Tree' };
   const low = taxon({ id: 'low', stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'climax', sources: [] }, traits });
   const site = { light: 'part', soil: 'acid', water: 'dry', room: 'small' };

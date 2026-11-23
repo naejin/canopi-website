@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { register } from 'node:module';
 import { readdirSync, readFileSync } from 'node:fs';
 
-const island = new URL('../src/islands/consortium/', import.meta.url);
+const island = new URL('../src/islands/palette/', import.meta.url);
 const real = import.meta.resolve('@preact/signals');
 const wrapper = `data:text/javascript,${encodeURIComponent(`export * from ${JSON.stringify(real)};
 import { effect as real } from ${JSON.stringify(real)};

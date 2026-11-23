@@ -4,7 +4,7 @@ title: Consortium tool plan (beta)
 description: Scope, user paths, data path, scoring contract, states and tests for the beta consortium design tool.
 status: deprecated
 superseded_by: /project/consortium-v2-plan.md
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:21Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:36Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:36Z }
 sources:
@@ -18,13 +18,13 @@ sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
-    digest: sha256:8bf60353ef1bf24f
-    last_modified: 2026-11-13T03:45:07Z
+    digest: sha256:c22dc51d073203d2
+    last_modified: 2026-11-23T20:58:01Z
   - id: suggest-ts
-    resource: ../../src/lib/consortium/suggest.ts
-    title: src/lib/consortium/suggest.ts
+    resource: ../../src/lib/palette/suggest.ts
+    title: src/lib/palette/suggest.ts
     digest: sha256:15f1a3ec8774ad24
-    last_modified: 2026-11-18T17:13:28Z
+    last_modified: 2026-11-23T11:23:11Z
 ---
 
 > **Deprecated.** Superseded by [Consortium v2 plan](/project/consortium-v2-plan.md). P2 commit 0 (consortium/integration) replaced the v1 tool and its format 3 data path; the v2 plan keeps this one for history
@@ -93,7 +93,7 @@ the region-cell plan of format 2 is superseded where this page says so).
   licence and source page stay. Missing photo = no photo.
 - Client loads the manifest, then one climate file (`fetch`, cached in memory).
 
-## Scoring module (`src/lib/consortium/`, dependency-free TypeScript)
+## Scoring module (`src/lib/palette/`, dependency-free TypeScript)
 Types mirror format 3. Pure functions, unit-tested with `node --test`:
 - `fileFor(manifest, climate)` → file or null; `isCountry`, `invasiveChecked(manifest, country)`.
 - `fits(taxon, site)` → `{ ok, misfits[] }` using traits (sun/semi/full shade,

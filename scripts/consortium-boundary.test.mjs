@@ -1,7 +1,7 @@
-// The consortium core's boundary (design check §6, commit 0 of P2): src/lib/consortium/ is pure and
+// The consortium core's boundary (design check §6, commit 0 of P2): src/lib/palette/ is pure and
 // framework-free, so node --test runs it and it can move into a package unchanged. Every import of a
 // core file stays inside the folder (no package, no node: module, no ../), and no core file touches a
-// DOM or browser global. The island (src/islands/consortium/) may import the core, never the reverse.
+// DOM or browser global. The island (src/islands/palette/) may import the core, never the reverse.
 // Design check E6 A27, one owner per rule: src/lib/climate/ and src/lib/location/ keep their relative
 // imports inside their own folder (packages allowed). "No preact, @preact/signals, src/islands or
 // src/components in src/lib" is dependency-cruiser's L1 (.dependency-cruiser.cjs, npm run check:arch),
@@ -42,7 +42,7 @@ export function globalsOf(text) {
   return BROWSER.filter((name) => new RegExp(`(?<![.\\w$])${name}(?![\\w$])(?!\\s*:)`).test(body));
 }
 
-test('every core import stays inside src/lib/consortium/', () => {
+test('every core import stays inside src/lib/palette/', () => {
   const list = files(core);
   assert.ok(list.some((f) => f.name === 'types.ts') && list.some((f) => f.name === 'source.ts') && list.some((f) => f.name === 'index.ts'), 'the frozen seams exist');
   for (const { name, text } of list) {
@@ -59,8 +59,8 @@ test('no core file uses a DOM or browser global', () => {
 test('the core never imports the island; the island reaches the core through its public files', () => {
   for (const { name, text } of files(core)) assert.ok(!importsOf(text).some((s) => s.includes('islands')), `${name} imports the island`);
   for (const { name, text } of files(islands)) {
-    for (const spec of importsOf(text).filter((s) => s.includes('lib/consortium/'))) {
-      assert.match(spec, /lib\/consortium\/(index|types|source)\.ts$/, `${name} imports ${spec}: the island imports the core through index.ts, types.ts or source.ts`);
+    for (const spec of importsOf(text).filter((s) => s.includes('lib/palette/'))) {
+      assert.match(spec, /lib\/palette\/(index|types|source)\.ts$/, `${name} imports ${spec}: the island imports the core through index.ts, types.ts or source.ts`);
     }
   }
 });
@@ -77,7 +77,7 @@ test('src/lib/climate and src/lib/location import only their own files and packa
 });
 
 test('the boundary readers catch what they guard against', () => {
-  assert.deepEqual(outsideImportsOf("import { x } from '../../islands/consortium/store.ts';\nimport { k } from './koppen.ts';\nimport c from 'maplibre-gl/dist/maplibre-gl.css?inline';\nimport { z } from './a/../../b.ts';\nconst m = await import('../climate/index.ts');"), ['../../islands/consortium/store.ts', './a/../../b.ts', '../climate/index.ts']);
+  assert.deepEqual(outsideImportsOf("import { x } from '../../islands/palette/store.ts';\nimport { k } from './koppen.ts';\nimport c from 'maplibre-gl/dist/maplibre-gl.css?inline';\nimport { z } from './a/../../b.ts';\nconst m = await import('../climate/index.ts');"), ['../../islands/palette/store.ts', './a/../../b.ts', '../climate/index.ts']);
   assert.deepEqual(importsOf("import { a } from '../x.ts';\nexport * from './y.ts';\nimport 'z';\nconst m = await import('preact');"), ['../x.ts', './y.ts', 'z', 'preact']);
   assert.deepEqual(globalsOf("const w = window.innerWidth; // document in a comment\nconst s = 'location';\nfoo.document = 1;"), ['window']);
   assert.deepEqual(globalsOf('interface X { location: string }'), []);

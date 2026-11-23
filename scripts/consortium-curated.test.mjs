@@ -9,7 +9,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const island = new URL('../src/islands/consortium/', import.meta.url);
+const island = new URL('../src/islands/palette/', import.meta.url);
 const store = await import(new URL('store.ts', island).href);
 
 test('store.curatedClimates: the page\'s list before the database opens, the database\'s once it is open', () => {

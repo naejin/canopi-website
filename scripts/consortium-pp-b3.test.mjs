@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
-const { weighLines } = await import('../src/lib/consortium/weigh.ts');
+const { weighLines } = await import('../src/lib/palette/weigh.ts');
 
 let n = 0;
 const plant = (over = {}) => taxon({ id: `00000000-ba1a-4000-8000-${String(++n).padStart(12, '0')}`, canonical_name: `Plantus ${n}`, genus: `Plantus${n}`, ...over });
@@ -68,7 +68,7 @@ const lines = (out) => { assert.ok(Array.isArray(out), 'lines, not "checking"');
 
 // Things to weigh's water-need classifier (weigh.ts, off the first run: only Things to weigh reads it).
 test('weigh.ts waterNeed: drought tolerance first (High dry, Medium medium, Low or None regular), else moisture use (Low dry, Medium medium, High regular), else not recorded; a drought value outside that list counts as not recorded', async () => {
-  const { waterNeed } = await import('../src/lib/consortium/weigh.ts');
+  const { waterNeed } = await import('../src/lib/palette/weigh.ts');
   const cases = [
     [{ drought: 'High', moisture: 'High' }, 'dry'], [{ drought: 'Medium', moisture: null }, 'medium'], [{ drought: 'Low', moisture: 'Low' }, 'regular'],
     [{ drought: 'None', moisture: null }, 'regular'], [{ drought: null, moisture: 'Low' }, 'dry'], [{ drought: null, moisture: 'Medium' }, 'medium'],
@@ -82,7 +82,7 @@ test('weigh.ts waterNeed: drought tolerance first (High dry, Medium medium, Low 
 // drought tolerance as Things to weigh does (review b3g-3): a value outside High, Medium, Low, None is
 // not recorded, so moisture use decides, never a "fit" given for the drought reason.
 test('site.ts water check: an unexpected drought value (\'\' or a new word) counts as not recorded, as in weigh.ts waterNeed', async () => {
-  const { fits } = await import('../src/lib/consortium/site.ts');
+  const { fits } = await import('../src/lib/palette/site.ts');
   const water = (traits, w) => fits(plant({ traits: { well_drained: null, ...traits } }), { light: 'unsure', soil: 'unsure', water: w, room: 'unsure' }).reasons.find((r) => r.key === 'water');
   for (const drought of ['', 'Very high']) {
     assert.deepEqual(water({ drought_tolerance: drought, moisture_use: 'High' }, 'dry'), { key: 'water', verdict: 'misfit', trait: 'moisture_use' }, `dry site, drought ${JSON.stringify(drought)}, moisture High`);
@@ -92,7 +92,7 @@ test('site.ts water check: an unexpected drought value (\'\' or a new word) coun
 });
 
 // ---- Your plants (new form of the deleted F1a-P10: each plant once, warnings first) ----
-const { yourPlants } = await import('../src/lib/consortium/weigh.ts');
+const { yourPlants } = await import('../src/lib/palette/weigh.ts');
 
 test('Your plants lists each plant once, warnings first (a Slight or Moderate toxic, an invasive, a misfit, a high or medium conflict), then the plants it cannot show (a list unread, on no list of this climate), then the rest, in palette order within each group; a low conflict alone does not lead', () => {
   const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -113,7 +113,7 @@ test('Your plants lists each plant once, warnings first (a Slight or Moderate to
 });
 
 // ---- toxicity levels (inventory F5; owner: mild = warning, moderate and above = danger, words and icon) ----
-const core = await import('../src/lib/consortium/index.ts');
+const core = await import('../src/lib/palette/index.ts');
 
 test('conflicts.ts raises a toxicity flag for Slight, Moderate and Severe, none for None or unrecorded; toxicity alone never warns (inform, don\'t block)', () => {
   const ctx = { site: core.UNSURE_SITE, interactions: [], country: null, countryStatus: 'none' };
@@ -127,10 +127,10 @@ test('conflicts.ts raises a toxicity flag for Slight, Moderate and Severe, none 
 });
 
 test('kit/flags.ts: a Slight toxicity line says "Mildly toxic" at the warning level, Moderate and Severe at the danger level', async () => {
-  const strings = await import('../src/islands/consortium/strings.ts');
+  const strings = await import('../src/islands/palette/strings.ts');
   const en = JSON.parse((await import('node:fs')).readFileSync(new URL('../src/i18n/translations/en.json', import.meta.url), 'utf8'));
   strings.setStrings(Object.fromEntries(Object.entries(en).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice(11), v])), 'en');
-  const { flagLines } = await import('../src/islands/consortium/views/kit/flags.ts');
+  const { flagLines } = await import('../src/islands/palette/views/kit/flags.ts');
   const scene = { site: core.UNSURE_SITE, members: [], country: null, taxonOf: () => null };
   const want = { Slight: ['warning', 'Mildly toxic'], Moderate: ['danger', 'Toxic'], Severe: ['danger', 'Very toxic'] };
   for (const [level, [tone, word]] of Object.entries(want)) {

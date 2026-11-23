@@ -2,7 +2,7 @@
 // The consortium design tool (beta, v2): /palette/ and /<lang>/palette/ ("Plant palette"; the old /consortium/ paths 301 here, public/_redirects).
 // Astro renders the static shell (design check A1): the head (title, beta badge, lede, the release line),
 // the noscript callout with its guide link, a loading line and the data release line. The tool is a
-// Preact island, src/islands/consortium/main.ts, mounted from the page script into #ct-root; it reads
+// Preact island, src/islands/palette/main.ts, mounted from the page script into #ct-root; it reads
 // #ct-data: every consortium.* key of the page language without its prefix, the release id, the
 // installed database (url, sha256, bytes and the raw digest, checked by the island), the climates and the {plant uuid: photo} map, all from
 // src/data/consortium-index.json (scripts/install-consortium.mjs; nothing at build time reads SQLite).
@@ -17,15 +17,15 @@ import en from '../../i18n/translations/en.json';
 import { publishedGuides, slugOf } from '../../lib/guides';
 import { consortiumGuides, explainGuide } from '../../data/consortium-guides';
 import { climates } from '../../data/climates';
-import { countryZones } from '../../lib/consortium/country-zones.ts';
+import { countryZones } from '../../lib/palette/country-zones.ts';
 import index from '../../data/consortium-index.json';
 import { climatePageData } from '../../data/climate-page-data';
-import { setStrings } from '../../islands/consortium/strings.ts';
-import { END_KEY, LINK_VERSION } from '../../lib/consortium/state.ts';
-import { SAVE_FRAGMENT_MAX, STORE } from '../../islands/consortium/state/save.ts';
-import { LOCATION_STORE, SITE_CLIMATE } from '../../islands/consortium/state/persist.ts';
-import '../../styles/consortium/field-studio.css';
-import '../../styles/consortium/print.css';
+import { setStrings } from '../../islands/palette/strings.ts';
+import { END_KEY, LINK_VERSION } from '../../lib/palette/state.ts';
+import { SAVE_FRAGMENT_MAX, STORE } from '../../islands/palette/state/save.ts';
+import { LOCATION_STORE, SITE_CLIMATE } from '../../islands/palette/state/persist.ts';
+import '../../styles/palette/field-studio.css';
+import '../../styles/palette/print.css';
 
 interface Props { lang: Locale; }
 const { lang } = Astro.props;
@@ -176,7 +176,7 @@ setStrings(strings, lang);
     initChrome();
     // The island's chunk did not arrive (offline, a deploy replaced it): the loading line would stay
     // forever, so it gives way to "the tool did not load" and Reload (pre-push review 3).
-    import('../../islands/consortium/main.ts').catch(() => {
+    import('../../islands/palette/main.ts').catch(() => {
       const root = document.querySelector('#ct-root'); // a selector: the bare ids mark the island's chunk (scripts/built-modules.mjs)
       if (!root) return;
       let words: Record<string, string> = {};

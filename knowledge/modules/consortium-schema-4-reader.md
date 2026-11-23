@@ -2,7 +2,7 @@
 type: Module
 title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 4.7 exports and nothing older: additive-tier checks, the required 4.2 to 4.7 additions (plant_aliases accepted, never read), the light span columns, the AI-estimate kinds on jobs and primary names, and the search names file."
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:49Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:33Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:16Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:36Z }
@@ -10,53 +10,53 @@ sources:
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
-    digest: sha256:121d87b32b4dfb4d
-    last_modified: 2026-11-18T06:34:33Z
+    digest: sha256:521be440cb6a551b
+    last_modified: 2026-11-23T20:58:01Z
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
     digest: sha256:fdcadd208508d5e3
     last_modified: 2026-11-18T06:34:33Z
   - id: sqlite-source-ts
-    resource: ../../src/islands/consortium/data/sqlite-source.ts
-    title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:96c53431ba5d3d97
-    last_modified: 2026-11-23T11:50:28Z
+    resource: ../../src/islands/palette/data/sqlite-source.ts
+    title: src/islands/palette/data/sqlite-source.ts
+    digest: sha256:1d4e48c67077cda7
+    last_modified: 2026-11-23T20:58:01Z
   - id: source-ts
-    resource: ../../src/lib/consortium/source.ts
-    title: src/lib/consortium/source.ts
-    digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:52:11Z
+    resource: ../../src/lib/palette/source.ts
+    title: src/lib/palette/source.ts
+    digest: sha256:9efeeffb336dec8a
+    last_modified: 2026-11-23T20:58:01Z
   - id: types-ts
-    resource: ../../src/lib/consortium/types.ts
-    title: src/lib/consortium/types.ts
-    digest: sha256:6918fafa28e9b4ad
-    last_modified: 2026-11-23T11:35:01Z
+    resource: ../../src/lib/palette/types.ts
+    title: src/lib/palette/types.ts
+    digest: sha256:2163e2e956deda1c
+    last_modified: 2026-11-23T20:58:01Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
     digest: sha256:0c684e2ed3d541ad
     last_modified: 2026-11-18T06:34:33Z
   - id: state-ts
-    resource: ../../src/lib/consortium/state.ts
-    title: src/lib/consortium/state.ts
+    resource: ../../src/lib/palette/state.ts
+    title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:21:26Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: consortium-source-test-mjs
     resource: ../../scripts/consortium-source.test.mjs
     title: scripts/consortium-source.test.mjs
-    digest: sha256:ed7d7fd6ff8af80f
-    last_modified: 2026-11-18T17:30:56Z
+    digest: sha256:7ec90e01ed7bfb91
+    last_modified: 2026-11-23T20:58:01Z
   - id: names-ts
-    resource: ../../src/islands/consortium/views/find/names.ts
-    title: src/islands/consortium/views/find/names.ts
-    digest: sha256:cf3b844703f6a3e8
-    last_modified: 2026-11-17T16:37:51Z
+    resource: ../../src/islands/palette/views/find/names.ts
+    title: src/islands/palette/views/find/names.ts
+    digest: sha256:dd99c7e5ca8e8a82
+    last_modified: 2026-11-23T20:58:01Z
   - id: names-file-ts
-    resource: ../../src/islands/consortium/data/names-file.ts
-    title: src/islands/consortium/data/names-file.ts
+    resource: ../../src/islands/palette/data/names-file.ts
+    title: src/islands/palette/data/names-file.ts
     digest: sha256:a6d9f0e270c94cbf
-    last_modified: 2026-11-17T17:52:44Z
+    last_modified: 2026-11-23T11:23:11Z
 enforced_by:
   - scripts/install-consortium.test.mjs
   - scripts/consortium-source.test.mjs

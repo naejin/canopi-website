@@ -155,7 +155,7 @@ test('the manifest: format 4 and schema 4 only, by name; release id, split, clim
   assert.ok(!existsSync(w.out), 'nothing written');
 });
 
-// E6 R1: the zone list (src/lib/consortium/zones.ts; the installer keeps a copy, checked equal by
+// E6 R1: the zone list (src/lib/palette/zones.ts; the installer keeps a copy, checked equal by
 // consortium-zones.test.mjs) is the only climate ids an export may name. A zone id outside it in the
 // manifest is refused before anything is written; the committed index (today's export) names only
 // zones of the list.

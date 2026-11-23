@@ -11,10 +11,10 @@ import { ctx, lyon, placement, taxon } from './consortium-p5-fixtures.mjs';
 import { locale, LOCALES } from './consortium-pf-env.mjs';
 
 // The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
-const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
-const { suggest } = await import('../src/lib/consortium/suggest.ts');
-const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+const core = { ...(await import('../src/lib/palette/index.ts')), ...(await import('../src/lib/palette/site.ts')), ...(await import('../src/lib/palette/range.ts')), ...(await import('../src/lib/palette/future.ts')) };
+const { suggest } = await import('../src/lib/palette/suggest.ts');
+const { openBytes } = await import('../src/islands/palette/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
 
 // A site whose today values are given (the climate reader's historical period first, a future one
 // after), as the rules read it: the site inputs of a lookup (site-inputs.ts, no grower edit).
@@ -100,7 +100,7 @@ test('withinRange: leaves out only the plants outside, never a kept one; the sam
 // ---- "can Suggest now" (E6 R2, rules/suggest-block.ts): the rule views/PoolSlot.tsx and the store read ----
 
 test('E6 R2 suggest-block: noList, needsSite, needsRule, nothingFits in that order; hasList; nothingFits and notOutside from the verdicts (PP-C c2); the old pool counts gone (PP-B b1b)', async () => {
-  const rules = await import('../src/islands/consortium/rules/suggest-block.ts');
+  const rules = await import('../src/islands/palette/rules/suggest-block.ts');
   const rule = await core.loadVerdictRule();
   assert.equal('withinRange' in rule, false, 'the islands read verdicts, never the range checks (PP-C c2, one verdict)');
   const scene = (over = {}) => ({ curated: ['Mediterranean', 'Temperate'], siteClimate: false, rangeFailed: false, nothingFits: false, ...over });
@@ -400,7 +400,7 @@ test('PlantSource.interactions: a borrowed climate keeps one row per (subject, o
 
 
 test('PP-B b1b count line states (b1br-1): never "0 of m": none fit is "none", none known to fit with some not checked is "unchecked"', async () => {
-  const { countKind } = await import('../src/islands/consortium/rules/suggest-block.ts');
+  const { countKind } = await import('../src/islands/palette/rules/suggest-block.ts');
   assert.equal(countKind({ fits: 3, look: 0, unknown: 0, of: 9 }), 'count');
   assert.equal(countKind({ fits: 0, look: 1, unknown: 8, of: 9 }), 'count');
   assert.equal(countKind({ fits: 0, look: 0, unknown: 0, of: 9 }), 'none', 'all outside: none fit');

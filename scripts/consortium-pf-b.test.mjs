@@ -10,10 +10,10 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { installedRelease } from './consortium-pf-env.mjs';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
-const weigh = await import('../src/lib/consortium/weigh.ts');
-const picture = await import('../src/islands/consortium/rules/picture.ts');
-const { yearsPicture } = await import('../src/islands/consortium/rules/picture-years.ts');
+const core = await import('../src/lib/palette/index.ts');
+const weigh = await import('../src/lib/palette/weigh.ts');
+const picture = await import('../src/islands/palette/rules/picture.ts');
+const { yearsPicture } = await import('../src/islands/palette/rules/picture-years.ts');
 
 // ---- fitGroups: the second look's reasons from the limiting factor (review R3) ----
 
@@ -251,7 +251,7 @@ test('plainList (c2 B1): the boards\' plain list of names keeps three names apar
 
 // ---- policies ----
 
-const VIEWS = new URL('../src/islands/consortium/views/palette/', import.meta.url);
+const VIEWS = new URL('../src/islands/palette/views/palette/', import.meta.url);
 test('policy (R2, C1): the pictures name member plants only through the one names list (kit/chart.tsx Names: every name at 40 plants or fewer and 12 or fewer, else the count cell); no view joins member names itself', () => {
   for (const f of ['Years.tsx', 'JobsPicture.tsx', 'Weigh.tsx']) {
     const src = readFileSync(new URL(f, VIEWS), 'utf8');

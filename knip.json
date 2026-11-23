@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
     "scripts/**/*.mjs!",
-    "src/islands/consortium/main.ts!",
+    "src/islands/palette/main.ts!",
     "src/components/guides/diagrams/*/*.astro!"
   ],
   "project": [

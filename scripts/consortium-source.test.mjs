@@ -1,4 +1,4 @@
-// The consortium island's PlantSource over SQLite-WASM (src/islands/consortium/data/sqlite-source.ts
+// The consortium island's PlantSource over SQLite-WASM (src/islands/palette/data/sqlite-source.ts
 // and the open checks of data/load.ts; stream S1, design check §4). It runs the sqlite-wasm package's
 // Node build on the invented fixture (scripts/fixtures/consortium-v2/export/), where every value is
 // known, then a smoke test on the real install (public/data/consortium/, src/data/consortium-index.json).
@@ -11,12 +11,12 @@ import { DatabaseSync } from 'node:sqlite';
 import { gunzipSync } from 'node:zlib';
 import { writeFixtureExport, FIXTURE_GRID_SHA256 } from './fixtures/consortium-v2/make-fixture.mjs';
 
-const { openBytes, LoadError } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-const { fold } = await import('../src/lib/consortium/index.ts');
-const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
-const core = await import('../src/lib/consortium/index.ts');
-const { suggest } = await import('../src/lib/consortium/suggest.ts');
+const { openBytes, LoadError } = await import('../src/islands/palette/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
+const { fold } = await import('../src/lib/palette/index.ts');
+const { releaseIndex } = await import('../src/islands/palette/data/search.ts');
+const core = await import('../src/lib/palette/index.ts');
+const { suggest } = await import('../src/lib/palette/suggest.ts');
 
 const fixtureDir = new URL('fixtures/consortium-v2/export/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', fixtureDir), 'utf8'));
@@ -282,10 +282,10 @@ test('real install: opens with the index, every pool and image path, and 9 plant
   } finally { real.db.close(); }
 });
 
-// ---- store: pool loading, guests, country status, source replacement (src/islands/consortium/store.ts) ----
+// ---- store: pool loading, guests, country status, source replacement (src/islands/palette/store.ts) ----
 
-const store = await import('../src/islands/consortium/store.ts');
-const { DEFAULT_SITE } = await import('../src/islands/consortium/state/schema.ts');
+const store = await import('../src/islands/palette/store.ts');
+const { DEFAULT_SITE } = await import('../src/islands/palette/state/schema.ts');
 const tick = () => new Promise((r) => setTimeout(r, 0));
 // A PlantSource over the fixture that counts pool reads and can fail them.
 function counting(base = source, { fail = () => false } = {}) {

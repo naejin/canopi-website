@@ -94,7 +94,7 @@ async function main() {
   const { startHarness } = await import('./harness.mjs');
   const { BUILDS, ROOT } = await import('./serve.mjs');
   const { realDb } = await import('./helpers.mjs');
-  const { encodeLink } = await import('../../src/lib/consortium/state.ts');
+  const { encodeLink } = await import('../../src/lib/palette/state.ts');
   const opts = parseArgs(process.argv.slice(2));
   const ratchet = opts.ratchet ? checkRatchet(JSON.parse(readFileSync(opts.ratchet, 'utf8')), opts.ratchet) : null;
   const unset = ratchet ? nullRatchetWarning(ratchet, opts.ratchet) : null;

@@ -5,7 +5,7 @@ description: Vanilla browser modules for the site's pages (chrome, climate, hero
 resource: ../../src/scripts
 tags: [module, frontend]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-11T14:20:21Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:36Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-11T10:05:33Z }
 sources:
@@ -13,7 +13,7 @@ sources:
     resource: ../../src/scripts
     title: src/scripts/
     digest: sha256:35549cdec25c922e
-    last_modified: 2026-11-11T08:52:00Z
+    last_modified: 2026-11-11T09:00:47Z
 ---
 
 # Responsibility
@@ -31,7 +31,7 @@ Client-side behaviour, no framework. Scripts hold no user-facing English: every 
 - [design-list.js](../../src/scripts/design-list.js): the list of featured designs under the canvas, a page at a time.
 - [contact.js](../../src/scripts/contact.js): in-place validation, posts with `Accept: application/json`.
 - [climate.js](../../src/scripts/climate.js): the reader's climate (`initClimate()`, called by `initChrome`): the picker dialog, `localStorage["canopi-climate"]` and `html[data-climate]`, ordering of `<ForClimate>` runs, the "not covered yet" note, sync across tabs, all blocks open for print. See [Climate UX](/decisions/climate-ux.md).
-- The v1 consortium modules (`src/scripts/consortium/`) were deleted at the P2 hand-offs once the v2 island in `src/islands/consortium/` had ported them; see [Consortium page](/modules/consortium-page.md).
+- The v1 consortium modules (`src/scripts/consortium/`) were deleted at the P2 hand-offs once the v2 island in `src/islands/palette/` had ported them; see [Consortium page](/modules/consortium-page.md).
 - [donate.js](../../src/scripts/donate.js), [dialogs.js](../../src/scripts/dialogs.js): HelloAsso donation dialog and native `<dialog>` helpers; `initDialogs` skips a dialog marked `data-own-dialog` (the consortium tool's sheet, which handles its own close, backdrop and scroll lock). Donate opened from the phone Menu returns focus to the Menu summary; from `#donate`, to the first visible Donate button.
 
 # Interfaces

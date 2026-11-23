@@ -31,7 +31,7 @@ test('a superseded owners file names the owners file that replaced it, and that 
 test('PP-B: the importers of what a chunk deletes are owned in that chunk; b1b waits for b2', () => {
   const ppb = readOwners(ownersFiles().find((f) => f.endsWith('/pp-b-owners.json')));
   const owns = (chunk, stream, path) => (ppb.chunks[chunk].streams[stream]?.files ?? []).some((f) => matches(f, path));
-  const v = 'src/islands/consortium/views/';
+  const v = 'src/islands/palette/views/';
   // Chunk 0 deletes views/kit/span.ts; kit/sheet.tsx imports spanOf from it.
   for (const p of [`${v}kit/span.ts`, `${v}kit/sheet.tsx`]) assert.ok(owns(0, 'main', p), `chunk 0 main owns ${p}`);
   // Delete first (owner, 2026-11-14): chunk 0 (commit 0a') deletes the old screens, so it owns each
@@ -39,13 +39,13 @@ test('PP-B: the importers of what a chunk deletes are owned in that chunk; b1b w
   // and PlantList, SideView imports StageStepper, PrintSheet reads the matrix, Details and Start hold
   // Kept and Main crops, suggest.ts takes their options, ConsortiumPage.astro imports matrix.css.
   const deleted = ['Matrix.tsx', 'PhoneMatrix.tsx', 'matrix-parts.tsx', 'tracks.ts', 'Jobs.tsx', 'PlantList.tsx', 'StageStepper.tsx'].map((f) => v + f);
-  const trimmed = ['src/islands/consortium/App.tsx', 'src/islands/consortium/store.ts', `${v}later.ts`, `${v}Actions.tsx`, `${v}SideView.tsx`, `${v}StageBar.tsx`, `${v}PrintSheet.tsx`, `${v}details/Details.tsx`, `${v}Start.tsx`,
-    'src/lib/consortium/matrix.ts', 'src/lib/consortium/suggest.ts', 'src/lib/consortium/source.ts', 'src/islands/consortium/data/sqlite-source.ts', 'src/components/consortium/ConsortiumPage.astro',
-    'src/styles/consortium/matrix.css', 'src/styles/consortium/shell.css', 'scripts/browser/consortium-s2.browser.test.mjs', 'scripts/built-modules.mjs', 'scripts/check-built-site.mjs'];
+  const trimmed = ['src/islands/palette/App.tsx', 'src/islands/palette/store.ts', `${v}later.ts`, `${v}Actions.tsx`, `${v}SideView.tsx`, `${v}StageBar.tsx`, `${v}PrintSheet.tsx`, `${v}details/Details.tsx`, `${v}Start.tsx`,
+    'src/lib/palette/matrix.ts', 'src/lib/palette/suggest.ts', 'src/lib/palette/source.ts', 'src/islands/palette/data/sqlite-source.ts', 'src/components/consortium/ConsortiumPage.astro',
+    'src/styles/palette/matrix.css', 'src/styles/palette/shell.css', 'scripts/browser/consortium-s2.browser.test.mjs', 'scripts/built-modules.mjs', 'scripts/check-built-site.mjs'];
   for (const p of [...deleted, ...trimmed]) assert.ok(owns(0, 'main', p), `chunk 0 main owns ${p}`);
   // No stream deletes an old screen any more: b3 builds Your plants only, b2 takes print, b1b Suggest's gain.
   for (const p of deleted) for (const [c, s] of [[1, 'b1a'], [1, 'b2'], [2, 'b1b'], [2, 'b3']]) assert.ok(!owns(c, s, p), `${s} does not own ${p}`);
-  assert.ok(owns(2, 'b3', `${v}palette/Palette.tsx`) && owns(1, 'b2', `${v}PrintSheet.tsx`) && owns(2, 'b1b', 'src/lib/consortium/suggest.ts'));
+  assert.ok(owns(2, 'b3', `${v}palette/Palette.tsx`) && owns(1, 'b2', `${v}PrintSheet.tsx`) && owns(2, 'b1b', 'src/lib/palette/suggest.ts'));
   // b1b ports the pool panel onto b2's verdict engine, so it runs after b2 (recheck 5).
   assert.ok(ppb.chunks[2].streams.b1b.needs.includes('b2'));
   for (const p of [`${v}pool/pool.tsx`, `${v}PoolSlot.tsx`]) assert.ok(owns(2, 'b1b', p) && !owns(1, 'b1a', p), p);
@@ -55,7 +55,7 @@ test('PP-B: the importers of what a chunk deletes are owned in that chunk; b1b w
 // are gone, and no file of the island reads them, by a named import or through a store namespace.
 test('PP-B 0a\': no src file reads a removed store export (matrix, toggleKeep, kept, crops, marksFailed)', async () => {
   const removed = ['matrix', 'toggleKeep', 'kept', 'crops', 'marksFailed'];
-  const store = await import('../src/islands/consortium/store.ts');
+  const store = await import('../src/islands/palette/store.ts');
   assert.deepEqual(removed.filter((k) => k in store || k in (store.signals ?? {})), [], 'store.ts exports none of them');
   const root = fileURLToPath(new URL('../src/', import.meta.url));
   const offenders = [];
@@ -104,8 +104,8 @@ test('the owners check fails a path two streams own in one chunk, and a need on 
   const owners = { chunks: [
     { chunk: 0, streams: { main: { needs: [], files: ['package.json'] } } },
     { chunk: 1, streams: {
-      A: { needs: ['main'], files: ['src/islands/consortium/views/**'] },
-      B: { needs: ['main', 'C'], files: ['src/islands/consortium/views/Add.tsx'] },
+      A: { needs: ['main'], files: ['src/islands/palette/views/**'] },
+      B: { needs: ['main', 'C'], files: ['src/islands/palette/views/Add.tsx'] },
     } },
   ] };
   const problems = ownersProblems(owners);
@@ -117,10 +117,10 @@ test('patterns: * within a folder, ** across folders; overlap is conservative be
   assert.ok(matches('scripts/consortium-p5-seams*.test.mjs', 'scripts/consortium-p5-seams-s5b.test.mjs'));
   assert.ok(!matches('scripts/consortium-p5-seams*.test.mjs', 'scripts/consortium-memory.test.mjs'));
   assert.ok(matches('scripts/quality/**', 'scripts/quality/baselines/knip.json'));
-  assert.ok(!matches('src/islands/consortium/views/*.tsx', 'src/islands/consortium/views/kit/sheet.tsx'));
+  assert.ok(!matches('src/islands/palette/views/*.tsx', 'src/islands/palette/views/kit/sheet.tsx'));
   assert.ok(overlaps('scripts/quality/**', 'scripts/quality/baselines/**'));
   assert.ok(!overlaps('scripts/quality/ast-grep/**', 'scripts/quality/baselines/**'));
-  assert.ok(!overlaps('src/islands/consortium/state/**', 'src/islands/consortium/views/details/**'));
+  assert.ok(!overlaps('src/islands/palette/state/**', 'src/islands/palette/views/details/**'));
 });
 
 test('a stream diff outside its rows is named', () => {

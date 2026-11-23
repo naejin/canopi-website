@@ -2,174 +2,174 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: antigravity/gemini, at: 2026-11-23T18:53:22Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:32Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:42Z }
 sources:
   - id: palette-tsx
-    resource: ../../src/islands/consortium/views/palette/Palette.tsx
-    title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:6f0b82dd048e13bd
-    last_modified: 2026-11-23T18:43:54Z
+    resource: ../../src/islands/palette/views/palette/Palette.tsx
+    title: src/islands/palette/views/palette/Palette.tsx
+    digest: sha256:32defe8479504c15
+    last_modified: 2026-11-23T20:58:01Z
   - id: nextstep-tsx
-    resource: ../../src/islands/consortium/views/palette/NextStep.tsx
-    title: src/islands/consortium/views/palette/NextStep.tsx
-    digest: sha256:f1a44de7554e891c
-    last_modified: 2026-11-19T08:17:40Z
+    resource: ../../src/islands/palette/views/palette/NextStep.tsx
+    title: src/islands/palette/views/palette/NextStep.tsx
+    digest: sha256:7c310360252cce4b
+    last_modified: 2026-11-23T20:58:01Z
   - id: years-tsx
-    resource: ../../src/islands/consortium/views/palette/Years.tsx
-    title: src/islands/consortium/views/palette/Years.tsx
-    digest: sha256:2f1f47359616befc
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/views/palette/Years.tsx
+    title: src/islands/palette/views/palette/Years.tsx
+    digest: sha256:54492aad9ed09949
+    last_modified: 2026-11-23T20:58:01Z
   - id: chart-tsx
-    resource: ../../src/islands/consortium/views/kit/chart.tsx
-    title: src/islands/consortium/views/kit/chart.tsx
-    digest: sha256:8f0324bd61988d5f
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/views/kit/chart.tsx
+    title: src/islands/palette/views/kit/chart.tsx
+    digest: sha256:e9c5f58e40e15dcb
+    last_modified: 2026-11-23T20:58:01Z
   - id: fit-tsx
-    resource: ../../src/islands/consortium/views/kit/fit.tsx
-    title: src/islands/consortium/views/kit/fit.tsx
-    digest: sha256:14964280ae358d64
-    last_modified: 2026-11-19T06:44:45Z
+    resource: ../../src/islands/palette/views/kit/fit.tsx
+    title: src/islands/palette/views/kit/fit.tsx
+    digest: sha256:75bd668632d0a297
+    last_modified: 2026-11-23T20:58:01Z
   - id: picture-ts
-    resource: ../../src/islands/consortium/rules/picture.ts
-    title: src/islands/consortium/rules/picture.ts
-    digest: sha256:c3dc68f2bd469897
-    last_modified: 2026-11-18T17:07:24Z
+    resource: ../../src/islands/palette/rules/picture.ts
+    title: src/islands/palette/rules/picture.ts
+    digest: sha256:16756c1793022baf
+    last_modified: 2026-11-23T20:58:01Z
   - id: app-tsx
-    resource: ../../src/islands/consortium/App.tsx
-    title: src/islands/consortium/App.tsx
-    digest: sha256:9b5471db4254810e
-    last_modified: 2026-11-19T05:13:33Z
+    resource: ../../src/islands/palette/App.tsx
+    title: src/islands/palette/App.tsx
+    digest: sha256:685ec7e12121c7e4
+    last_modified: 2026-11-23T20:58:01Z
   - id: lazy-tsx
-    resource: ../../src/islands/consortium/views/lazy.tsx
-    title: src/islands/consortium/views/lazy.tsx
-    digest: sha256:cbfcbb83cffaa528
-    last_modified: 2026-11-17T13:23:27Z
+    resource: ../../src/islands/palette/views/lazy.tsx
+    title: src/islands/palette/views/lazy.tsx
+    digest: sha256:be4f158b7f10cafd
+    last_modified: 2026-11-23T20:58:01Z
   - id: store-ts
-    resource: ../../src/islands/consortium/store.ts
-    title: src/islands/consortium/store.ts
-    digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/store.ts
+    title: src/islands/palette/store.ts
+    digest: sha256:a2d405853d85b528
+    last_modified: 2026-11-23T20:58:01Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:6346b81af8801e47
-    last_modified: 2026-11-18T15:30:23Z
+    digest: sha256:df1d6414f82153a6
+    last_modified: 2026-11-23T21:04:15Z
   - id: weigh-ts
-    resource: ../../src/lib/consortium/weigh.ts
-    title: src/lib/consortium/weigh.ts
+    resource: ../../src/lib/palette/weigh.ts
+    title: src/lib/palette/weigh.ts
     digest: sha256:6942a56137019e61
-    last_modified: 2026-11-19T05:25:31Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: weigh-view-tsx
-    resource: ../../src/islands/consortium/views/palette/Weigh.tsx
-    title: src/islands/consortium/views/palette/Weigh.tsx
-    digest: sha256:bdc17dc0f3947bcf
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/views/palette/Weigh.tsx
+    title: src/islands/palette/views/palette/Weigh.tsx
+    digest: sha256:10e249b867cab542
+    last_modified: 2026-11-23T20:58:01Z
   - id: jobs-picture-tsx
-    resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
-    title: src/islands/consortium/views/palette/JobsPicture.tsx
-    digest: sha256:23ad0e26719a7027
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/views/palette/JobsPicture.tsx
+    title: src/islands/palette/views/palette/JobsPicture.tsx
+    digest: sha256:069a3088a44e86e7
+    last_modified: 2026-11-23T20:58:01Z
   - id: actions-tsx
-    resource: ../../src/islands/consortium/views/Actions.tsx
-    title: src/islands/consortium/views/Actions.tsx
+    resource: ../../src/islands/palette/views/Actions.tsx
+    title: src/islands/palette/views/Actions.tsx
     digest: sha256:554bc62276690579
-    last_modified: 2026-11-19T06:34:34Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: palette-page-css
-    resource: ../../src/styles/consortium/palette-page.css
-    title: src/styles/consortium/palette-page.css
+    resource: ../../src/styles/palette/palette-page.css
+    title: src/styles/palette/palette-page.css
     digest: sha256:7b3b161a4bbec2cf
     last_modified: 2026-11-19T06:07:14Z
   - id: pf-b-test
     resource: ../../scripts/consortium-pf-b.test.mjs
     title: scripts/consortium-pf-b.test.mjs
-    digest: sha256:a4849dd51b47e1a0
-    last_modified: 2026-11-18T17:33:57Z
+    digest: sha256:9d29199fe3f3ac31
+    last_modified: 2026-11-23T20:58:01Z
   - id: find-tsx
-    resource: ../../src/islands/consortium/views/find/Find.tsx
-    title: src/islands/consortium/views/find/Find.tsx
-    digest: sha256:668fb618a9d170ed
-    last_modified: 2026-11-19T07:06:28Z
+    resource: ../../src/islands/palette/views/find/Find.tsx
+    title: src/islands/palette/views/find/Find.tsx
+    digest: sha256:320123ca652ab060
+    last_modified: 2026-11-23T20:58:01Z
   - id: paste-tsx
-    resource: ../../src/islands/consortium/views/find/Paste.tsx
-    title: src/islands/consortium/views/find/Paste.tsx
-    digest: sha256:3b336d1a022c5ad6
-    last_modified: 2026-11-19T08:59:33Z
+    resource: ../../src/islands/palette/views/find/Paste.tsx
+    title: src/islands/palette/views/find/Paste.tsx
+    digest: sha256:5e1c6b0a5b56b5f9
+    last_modified: 2026-11-23T20:58:01Z
   - id: paste-ts
-    resource: ../../src/islands/consortium/views/find/paste.ts
-    title: src/islands/consortium/views/find/paste.ts
-    digest: sha256:682d6e0249b5041f
-    last_modified: 2026-11-19T08:41:16Z
+    resource: ../../src/islands/palette/views/find/paste.ts
+    title: src/islands/palette/views/find/paste.ts
+    digest: sha256:594b76dd46601bf5
+    last_modified: 2026-11-23T20:58:01Z
   - id: many-tsx
-    resource: ../../src/islands/consortium/views/plants/Many.tsx
-    title: src/islands/consortium/views/plants/Many.tsx
-    digest: sha256:9d8c3a1d3368bf2b
-    last_modified: 2026-11-19T08:17:40Z
+    resource: ../../src/islands/palette/views/plants/Many.tsx
+    title: src/islands/palette/views/plants/Many.tsx
+    digest: sha256:ad492d40f40049bc
+    last_modified: 2026-11-23T20:58:01Z
   - id: small-tsx
-    resource: ../../src/islands/consortium/views/plants/Small.tsx
-    title: src/islands/consortium/views/plants/Small.tsx
-    digest: sha256:737bfb8391b57a4a
-    last_modified: 2026-11-19T05:46:59Z
+    resource: ../../src/islands/palette/views/plants/Small.tsx
+    title: src/islands/palette/views/plants/Small.tsx
+    digest: sha256:e9e78db43c1cadd6
+    last_modified: 2026-11-23T20:58:01Z
   - id: state-ts
-    resource: ../../src/islands/consortium/views/plants/state.ts
-    title: src/islands/consortium/views/plants/state.ts
-    digest: sha256:317973d344dc6d16
-    last_modified: 2026-11-19T05:13:33Z
+    resource: ../../src/islands/palette/views/plants/state.ts
+    title: src/islands/palette/views/plants/state.ts
+    digest: sha256:e730362ff34c8c8f
+    last_modified: 2026-11-23T20:58:01Z
   - id: model-ts
-    resource: ../../src/islands/consortium/views/plants/model.ts
-    title: src/islands/consortium/views/plants/model.ts
-    digest: sha256:4a8d15d447ede38d
-    last_modified: 2026-11-19T02:51:06Z
+    resource: ../../src/islands/palette/views/plants/model.ts
+    title: src/islands/palette/views/plants/model.ts
+    digest: sha256:68b80d3f4c781556
+    last_modified: 2026-11-23T20:58:01Z
   - id: head-link-tsx
-    resource: ../../src/islands/consortium/views/plants/head-link.tsx
-    title: src/islands/consortium/views/plants/head-link.tsx
+    resource: ../../src/islands/palette/views/plants/head-link.tsx
+    title: src/islands/palette/views/plants/head-link.tsx
     digest: sha256:9ba5bb9aaff8b88c
-    last_modified: 2026-11-19T01:52:11Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: steps-tsx
-    resource: ../../src/islands/consortium/views/place/steps.tsx
-    title: src/islands/consortium/views/place/steps.tsx
+    resource: ../../src/islands/palette/views/place/steps.tsx
+    title: src/islands/palette/views/place/steps.tsx
     digest: sha256:3448a53f9ebb4e85
-    last_modified: 2026-11-19T05:13:33Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: sheet-tsx
-    resource: ../../src/islands/consortium/views/kit/sheet.tsx
-    title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:fdf04f4a2b1781a3
-    last_modified: 2026-11-19T08:16:50Z
+    resource: ../../src/islands/palette/views/kit/sheet.tsx
+    title: src/islands/palette/views/kit/sheet.tsx
+    digest: sha256:79cc5bbaf0b55518
+    last_modified: 2026-11-23T20:58:01Z
   - id: sheets-tsx
-    resource: ../../src/islands/consortium/views/Sheets.tsx
-    title: src/islands/consortium/views/Sheets.tsx
-    digest: sha256:397cf5c91deb80d0
-    last_modified: 2026-11-19T08:16:50Z
+    resource: ../../src/islands/palette/views/Sheets.tsx
+    title: src/islands/palette/views/Sheets.tsx
+    digest: sha256:b1e6bc8619935c95
+    last_modified: 2026-11-23T20:58:01Z
   - id: toast-tsx
-    resource: ../../src/islands/consortium/views/Toast.tsx
-    title: src/islands/consortium/views/Toast.tsx
+    resource: ../../src/islands/palette/views/Toast.tsx
+    title: src/islands/palette/views/Toast.tsx
     digest: sha256:86cdcc6fd7c86414
-    last_modified: 2026-11-19T06:44:45Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: flags-ts
-    resource: ../../src/islands/consortium/views/kit/flags.ts
-    title: src/islands/consortium/views/kit/flags.ts
-    digest: sha256:046945d22adbcc0a
-    last_modified: 2026-11-19T04:59:08Z
+    resource: ../../src/islands/palette/views/kit/flags.ts
+    title: src/islands/palette/views/kit/flags.ts
+    digest: sha256:e629db37f6148c1f
+    last_modified: 2026-11-23T20:58:01Z
   - id: yourplants-tsx
-    resource: ../../src/islands/consortium/views/palette/YourPlants.tsx
-    title: src/islands/consortium/views/palette/YourPlants.tsx
-    digest: sha256:b8b3cecd165b9428
-    last_modified: 2026-11-18T21:43:34Z
+    resource: ../../src/islands/palette/views/palette/YourPlants.tsx
+    title: src/islands/palette/views/palette/YourPlants.tsx
+    digest: sha256:ddd2c1e5b9e94139
+    last_modified: 2026-11-23T20:58:01Z
   - id: figures-tsx
-    resource: ../../src/islands/consortium/views/figures/Figures.tsx
-    title: src/islands/consortium/views/figures/Figures.tsx
-    digest: sha256:73df3b0ef8b5c317
-    last_modified: 2026-11-19T11:24:03Z
+    resource: ../../src/islands/palette/views/figures/Figures.tsx
+    title: src/islands/palette/views/figures/Figures.tsx
+    digest: sha256:38c8bb6f863e1613
+    last_modified: 2026-11-23T20:58:01Z
   - id: slots-tsx
-    resource: ../../src/islands/consortium/views/figures/slots.tsx
-    title: src/islands/consortium/views/figures/slots.tsx
-    digest: sha256:7c68ea9bff16f064
-    last_modified: 2026-11-19T11:24:03Z
+    resource: ../../src/islands/palette/views/figures/slots.tsx
+    title: src/islands/palette/views/figures/slots.tsx
+    digest: sha256:ae4b8bbf3eb488d9
+    last_modified: 2026-11-23T21:02:12Z
   - id: figures-css
-    resource: ../../src/styles/consortium/figures.css
-    title: src/styles/consortium/figures.css
+    resource: ../../src/styles/palette/figures.css
+    title: src/styles/palette/figures.css
     digest: sha256:91a8e9ccd407316c
     last_modified: 2026-11-19T10:56:24Z
 enforced_by:
@@ -322,7 +322,7 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
   the add note explains the figure it aims for (core `addGoal`: Plants per job less what the job
   has). A row's change lines come from core `holeChangeLines`, `target: 'none'` when no target is
   left. The empty small-palette sub-line counts `store.suggestionSize` (`SIZE_LIMIT`, now declared in
-  `lib/consortium/site.ts`).
+  `lib/palette/site.ts`).
 - **One count source for holes.** `views/rows.tsx` `holeFillers` gives a hole's "N plants" for the
   Next step, its other holes, Find's hole rows and (M25) the jobs picture's hole lines past 40 plants:
   "…; no plant on your lists fits here and does this then; N do it but are outside their climate
@@ -361,5 +361,5 @@ The page the grower sees after the Place step (PP-B stream b2): one column, in i
 
 - Drawn first, before the Next step (board SiteMendoza), only where a line limits (an outside count, or a member drier here); `views/figures/Figures.tsx` `PaletteLimits`, mounted through the lazy shell `views/figures/slots.tsx`, which asks for the part only at a located place with climate figures (fix round 1 R1, C5), so a failed chunk is never said on a palette with no place or a climate only.
 - Shown state, held in the component (`useRef`, one visit per place key and loaded list `store.pools[climate]`; no module state, it ends when the palette unmounts; fix round 1 C4, the leftovers' per-view latch): the counting or failed state before any ready count; a ready count that finds no limiting line leaves it out; once a count found one, the card stays for the visit with every row it showed, so an edit made in it never removes the card or the focused row, and the change is said in words ("No climate line limits plants here.", the row's "Not a limit for this list"). If the card goes while it holds the focus, `focus.ts`'s safety net lands it on the palette's heading.
-- Phone (max-width 639px, RULED (a)): closed to its head and, once counted, the main limit in one line, named by the limit (`figures.limitsSummary`; warmth over the year as `figures.limitsWarmth` with the year's mean, never the Hottest days row it is shown in), or "No climate line limits plants here." with `figures.limitsDry` when only members are drier; and a button with `aria-expanded` ("Show the N limits", `figures.limitsShow`: N = core `limitsOf` entries, plus 1 when members are drier; with none, `figures.limitsShowAll`). No button before a ready count; open is per visit, so a new place opens closed. The counting and failed lines are one `role="status"` line outside the body, shown at every width. The Water card is hidden with the body. From 640 px the body is `display: contents` and the button is not drawn (`styles/consortium/figures.css`).
+- Phone (max-width 639px, RULED (a)): closed to its head and, once counted, the main limit in one line, named by the limit (`figures.limitsSummary`; warmth over the year as `figures.limitsWarmth` with the year's mean, never the Hottest days row it is shown in), or "No climate line limits plants here." with `figures.limitsDry` when only members are drier; and a button with `aria-expanded` ("Show the N limits", `figures.limitsShow`: N = core `limitsOf` entries, plus 1 when members are drier; with none, `figures.limitsShowAll`). No button before a ready count; open is per visit, so a new place opens closed. The counting and failed lines are one `role="status"` line outside the body, shown at every width. The Water card is hidden with the body. From 640 px the body is `display: contents` and the button is not drawn (`styles/palette/figures.css`).
 - The figures parts are not quiet lazy parts: while their chunk loads they render nothing (the slot reserve in `base.css` holds the room); a failed chunk shows the in-place "could not open" notice with Reload, which retries in place, so the reserve ends. Measured (fix round 1 C6): when the chunk lands late at a limited place, the card pushes the Next step down (695 px at 1280, 141 px at 390, Kiambu); normally the chunk is already loaded by the Place step's panel.

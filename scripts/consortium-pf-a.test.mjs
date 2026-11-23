@@ -11,7 +11,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { english, locale, LOCALES } from './consortium-pf-env.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
+const core = await import('../src/lib/palette/index.ts');
 const { en, say } = await english();
 
 const hole = (id, over = {}) => {
@@ -145,7 +145,7 @@ test('N7 the Portuguese invasive chip reads without a bare "em" before the count
 
 test('PFA-R5, PFA-G1 one group rule for the card and the sheet: core fillers and Find\'s findGroups put each plant in the same group; a warned plant is a second look whatever its level but outside (pf-decisions "Toxic counts as a second look"), a warned fit too', async () => {
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
-  const { findGroups } = await import('../src/islands/consortium/rules/find-query.ts');
+  const { findGroups } = await import('../src/islands/palette/rules/find-query.ts');
   const h = hole('light:emergent:0-60');
   const ids = ['fit', 'fitWarned', 'unknownWarned', 'unknown', 'look', 'outsideWarned', 'none'];
   const taxa = ids.map((id) => taxon({ id, canonical_name: id }));

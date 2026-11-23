@@ -7,10 +7,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const analysis = await import('../src/islands/consortium/rules/studio-analysis.ts');
-const filtersMod = await import('../src/islands/consortium/rules/studio-filters.ts');
-const planting = await import('../src/lib/consortium/planting-plan.ts');
-const studio = await import('../src/islands/consortium/state/studio.ts');
+const analysis = await import('../src/islands/palette/rules/studio-analysis.ts');
+const filtersMod = await import('../src/islands/palette/rules/studio-filters.ts');
+const planting = await import('../src/lib/palette/planting-plan.ts');
+const studio = await import('../src/islands/palette/state/studio.ts');
 
 const makeSpecies = (id, name, extra = {}) => ({
   id,
@@ -204,11 +204,11 @@ test('Planting Plan Plot Layout stays strictly bounded and non-overlapping acros
 
 test('Slice 3.4 views & PrintSheet contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
   const files = [
-    'src/islands/consortium/rules/studio-analysis.ts',
-    'src/islands/consortium/views/palette/LivingSystemTab.tsx',
-    'src/islands/consortium/views/palette/Climate2050Tab.tsx',
-    'src/islands/consortium/views/palette/PlantingPlanTab.tsx',
-    'src/islands/consortium/views/PrintSheet.tsx',
+    'src/islands/palette/rules/studio-analysis.ts',
+    'src/islands/palette/views/palette/LivingSystemTab.tsx',
+    'src/islands/palette/views/palette/Climate2050Tab.tsx',
+    'src/islands/palette/views/palette/PlantingPlanTab.tsx',
+    'src/islands/palette/views/PrintSheet.tsx',
   ];
   const forbidden = /\b(canopy|understory|ground\s+cover|shrub\s+layer|herbaceous|climber|strata)\b/i;
 
@@ -221,7 +221,7 @@ test('Slice 3.4 views & PrintSheet contain zero native title attributes, zero CS
   }
 
   // Verify PrintSheet includes Field & Nursery Sheet sections.
-  const printSrc = readFileSync('src/islands/consortium/views/PrintSheet.tsx', 'utf8');
+  const printSrc = readFileSync('src/islands/palette/views/PrintSheet.tsx', 'utf8');
   assert.match(printSrc, /Field &amp; Microclimate Brief/);
   assert.match(printSrc, /Nursery Order &amp; Spacing Sheet/);
   assert.match(printSrc, /Field Materials &amp; 4 Planting Waves/);
@@ -229,7 +229,7 @@ test('Slice 3.4 views & PrintSheet contain zero native title attributes, zero CS
 });
 
 test('Stage 1G: siteClimateProfile is the single source of truth across all 7 Studio screens (mild, cold & southern hemisphere)', async () => {
-  const cw = await import('../src/islands/consortium/rules/climate-words.ts');
+  const cw = await import('../src/islands/palette/rules/climate-words.ts');
   const sp = taxon({
     id: 'oregano',
     canonical_name: 'Origanum vulgare',
@@ -292,13 +292,13 @@ test('Stage 1G: siteClimateProfile is the single source of truth across all 7 St
 
   // 4. Static guard: all 7 Studio screens wire through siteClimateProfile & contain zero legacy misleading labels.
   const sevenScreens = [
-    'src/islands/consortium/views/place/SitePostcard.tsx',
-    'src/islands/consortium/views/palette/StudioHeader.tsx',
-    'src/islands/consortium/views/palette/StudioRail.tsx',
-    'src/islands/consortium/views/palette/LivingSystemTab.tsx',
-    'src/islands/consortium/views/palette/Climate2050Tab.tsx',
-    'src/islands/consortium/views/palette/PlantingPlanTab.tsx',
-    'src/islands/consortium/views/palette/FieldDossier.tsx',
+    'src/islands/palette/views/place/SitePostcard.tsx',
+    'src/islands/palette/views/palette/StudioHeader.tsx',
+    'src/islands/palette/views/palette/StudioRail.tsx',
+    'src/islands/palette/views/palette/LivingSystemTab.tsx',
+    'src/islands/palette/views/palette/Climate2050Tab.tsx',
+    'src/islands/palette/views/palette/PlantingPlanTab.tsx',
+    'src/islands/palette/views/palette/FieldDossier.tsx',
   ];
   const forbiddenLegacy = /\b(coldest low|warmest high|Winter floor)\b|Aridity\s+\d/i;
   for (const f of sevenScreens) {
@@ -307,8 +307,8 @@ test('Stage 1G: siteClimateProfile is the single source of truth across all 7 St
   }
   const profileConsumers = [
     ...sevenScreens.slice(0, 6),
-    'src/islands/consortium/rules/studio-filters.ts',
-    'src/islands/consortium/rules/studio-analysis.ts',
+    'src/islands/palette/rules/studio-filters.ts',
+    'src/islands/palette/rules/studio-analysis.ts',
   ];
   for (const f of profileConsumers) {
     const src = readFileSync(f, 'utf8');

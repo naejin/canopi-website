@@ -1,11 +1,11 @@
-// The site-inputs layer (src/lib/consortium/site-inputs.ts; owner 2026-11-18): one module owns every
+// The site-inputs layer (src/lib/palette/site-inputs.ts; owner 2026-11-18): one module owns every
 // site input the engine reads, each { value, source: 'map' | 'grower' | 'none' }; grower temperature and
 // rain edits are shifts applied to every period and scenario; the rules read the merged inputs only.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
-const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/verdict.ts')) };
+const core = { ...(await import('../src/lib/palette/index.ts')), ...(await import('../src/lib/palette/verdict.ts')) };
 // The places of the scenario file: all 9 slots as the climate grid reader answers them.
 const { places } = JSON.parse(readFileSync(new URL('fixtures/consortium-scenarios.json', import.meta.url), 'utf8'));
 const lookupOf = (name) => ({ lat: places[name].lat, lon: places[name].lon, climate: { cellLat: 0, cellLon: 0, distanceCells: 0, periods: places[name].periods }, soil: { phH2o: 6.4, texture: null, filled: false, fillDistanceCells: 0, distanceCells: 0 }, regions: { wgsrpdL3: null, isoA2: null } });
@@ -80,17 +80,17 @@ test('"2 °C colder": the cold check reads the shifted nights in every period', 
 });
 
 test('the engine reads the merged inputs only: no rule file names the lookup, a stored spot or soil answer', () => {
-  const dir = new URL('../src/lib/consortium/', import.meta.url);
+  const dir = new URL('../src/lib/palette/', import.meta.url);
   for (const f of ['verdict.ts', 'range.ts', 'future.ts', 'weigh.ts', 'holes.ts', 'site.ts', 'site-today.ts', 'place.ts']) {
     const src = readFileSync(new URL(f, dir), 'utf8').replace(/\/\/.*$/gm, '');
     assert.doesNotMatch(src, /\blookup\b/, `${f} reads no lookup`);
     assert.doesNotMatch(src, /\bctx\.place\b|\bspot\.(light|water|wind|height)\b/, `${f} reads no stored answer`);
   }
   assert.ok(readdirSync(dir).includes('site-inputs.ts'));
-  const store = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
+  const store = readFileSync(new URL('../src/islands/palette/store.ts', import.meta.url), 'utf8');
   assert.match(store, /siteInputsOf\(\{ lookup: location\.value\?\.lookup \?\? null, room: room\.value, edits: siteEdits\.value \}\)/, 'the store merges the lookup, the room and the edits');
   // v14 pf commit 0W: the edits are a saved state field (state/schema.ts), NO_EDITS until the grower or a link sets one.
-  const schema = readFileSync(new URL('../src/islands/consortium/state/schema.ts', import.meta.url), 'utf8');
+  const schema = readFileSync(new URL('../src/islands/palette/state/schema.ts', import.meta.url), 'utf8');
   assert.match(schema, /siteEdits: \{\s*initial: \(\): SiteEdits => NO_EDITS/, 'no edit on load: NO_EDITS until the grower or a link writes one');
 });
 

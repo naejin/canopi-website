@@ -11,8 +11,8 @@ import { join } from 'node:path';
 const root = new URL('../src/', import.meta.url).pathname;
 const locales = readdirSync(join(root, 'i18n/translations')).filter((f) => f.endsWith('.json'));
 const words = Object.fromEntries(locales.map((f) => [f.slice(0, -5), JSON.parse(readFileSync(join(root, 'i18n/translations', f), 'utf8'))]));
-const island = readdirSync(join(root, 'islands/consortium'), { recursive: true }).filter((f) => /\.(ts|tsx)$/.test(f))
-  .map((f) => readFileSync(join(root, 'islands/consortium', f), 'utf8')).join('\n');
+const island = readdirSync(join(root, 'islands/palette'), { recursive: true }).filter((f) => /\.(ts|tsx)$/.test(f))
+  .map((f) => readFileSync(join(root, 'islands/palette', f), 'utf8')).join('\n');
 const page = readFileSync(join(root, 'components/consortium/ConsortiumPage.astro'), 'utf8');
 const short = Object.keys(words.en).filter((k) => k.startsWith('consortium.') && !k.startsWith('consortium.block.')).map((k) => k.slice(11));
 
@@ -46,10 +46,10 @@ const INDIRECT = [
   'correction.fieldError', 'correction.proposedError', 'correction.unchanged', 'correction.tooLong', 'correction.emailError',
   'correction.consentError', 'correction.invalid', 'correction.failed', 'correction.refused', 'correction.offline',
 ];
-// The site-fit vocabulary (src/lib/consortium/verdict-line.ts siteLines, fix round 1 B2) writes its
+// The site-fit vocabulary (src/lib/palette/verdict-line.ts siteLines, fix round 1 B2) writes its
 // keys as quoted strings; views/kit/flags.ts draws each line through say. (The P5 mark providers that
 // wrote theirs the same way were deleted in PP-C c2.)
-const markSource = readFileSync(join(root, 'lib/consortium/verdict-line.ts'), 'utf8');
+const markSource = readFileSync(join(root, 'lib/palette/verdict-line.ts'), 'utf8');
 const markKeys = new Set([...markSource.matchAll(/'([a-z]\w*(?:\.\w+)+)'/g)].map((m) => m[1]));
 const fromPage = new Set([...page.matchAll(/\b(?:tr|P)\('([\w.]+)'/g)].map((m) => m[1]));
 const asked = (k) => named.has(k) || markKeys.has(k) || INDIRECT.includes(k) || fromPage.has(k) || templates.some((re) => re.test(k));
@@ -82,7 +82,7 @@ test('every key the island asks for by name is in all 11 locale files', () => {
 // the hint names the sizes in every locale and no longer says "never how many". The long Beta line went
 // (D8): the head's beta badge says it.
 test('the room hint says what the tool does, in all 11 locales; the long Beta line is gone', async () => {
-  const { SIZE_LIMIT } = await import('../src/lib/consortium/suggest.ts');
+  const { SIZE_LIMIT } = await import('../src/lib/palette/suggest.ts');
   const sizes = [...new Set(Object.values(SIZE_LIMIT))].sort((a, b) => a - b);
   assert.deepEqual(sizes, [6, 9, 12]);
   for (const [lang, w] of Object.entries(words)) {
@@ -114,7 +114,7 @@ test('no new consortium key writes a unit after a placeholder, in any locale (fo
 });
 
 test('format.ts measures: the unit in the language\'s own form; a difference is signed; an area is " m²"', async () => {
-  const f = await import('../src/islands/consortium/format.ts');
+  const f = await import('../src/islands/palette/format.ts');
   const sp = (s) => s.replace(/[  ]/g, ' ');
   assert.equal(f.formatLength(2.5, 'en'), '2.5 m');
   assert.equal(sp(f.formatLength(2.5, 'fr')), '2,5 m');
@@ -133,15 +133,15 @@ test('format.ts measures: the unit in the language\'s own form; a difference is 
 });
 
 test('parsePlotSize: whole square metres 1 to MAX_PLOT_M2 in the language\'s separators, else null', async () => {
-  const { parsePlotSize } = await import('../src/islands/consortium/format.ts');
-  const { MAX_PLOT_M2 } = await import('../src/lib/consortium/index.ts');
+  const { parsePlotSize } = await import('../src/islands/palette/format.ts');
+  const { MAX_PLOT_M2 } = await import('../src/lib/palette/index.ts');
   const cases = [
     ['120', 'en', 120], ['1,200', 'en', 1200], ['1 200', 'fr', 1200], ['1 200', 'fr', 1200], ['1.200', 'de', 1200],
     ['120 m²', 'en', 120], ['12.5', 'en', 13], ['12,5', 'fr', 13], [String(MAX_PLOT_M2), 'en', MAX_PLOT_M2],
     ['', 'en', null], ['0', 'en', null], ['-5', 'en', null], [String(MAX_PLOT_M2 + 1), 'en', null], ['abc', 'en', null], ['12a', 'en', null],
   ];
   for (const [text, lang, want] of cases) assert.equal(parsePlotSize(text, lang), want, `${JSON.stringify(text)} in ${lang}`);
-  const src = readFileSync(join(root, 'islands/consortium/format.ts'), 'utf8');
+  const src = readFileSync(join(root, 'islands/palette/format.ts'), 'utf8');
   assert.match(src, new RegExp(`const MAX_PLOT_M2 = ${MAX_PLOT_M2.toLocaleString('en').replace(/,/g, '_')};`), 'format.ts pins the core MAX_PLOT_M2');
 });
 
@@ -152,8 +152,8 @@ test('parsePlotSize: whole square metres 1 to MAX_PLOT_M2 in the language\'s sep
 // for a named 'line.…' key (a plant with no verdict says verdict-line.ts levelLine, PP-C c2).
 const sources = (dir) => readdirSync(join(root, dir), { recursive: true }).filter((f) => /\.(ts|tsx)$/.test(f)).map((f) => [`${dir}/${f}`, readFileSync(join(root, dir, f), 'utf8')]);
 test('PP-C0-keys (policy, c2): no consortium.line. key is written outside core verdict-line.ts', () => {
-  const stray = [...sources('islands/consortium'), ...sources('lib/consortium')]
-    .filter(([f]) => f !== 'lib/consortium/verdict-line.ts')
+  const stray = [...sources('islands/palette'), ...sources('lib/palette')]
+    .filter(([f]) => f !== 'lib/palette/verdict-line.ts')
     .filter(([, src]) => src.includes('consortium.line.') || /\b[TP]\(\s*['"`]line\.\w/.test(src))
     .map(([f]) => f);
   assert.deepEqual(stray, [], `consortium.line.* keys written outside verdict-line.ts: ${stray.join(', ')}`);

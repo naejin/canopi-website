@@ -7,8 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const store = await import('../src/islands/consortium/store.ts');
-const studio = await import('../src/islands/consortium/state/studio.ts');
+const store = await import('../src/islands/palette/store.ts');
+const studio = await import('../src/islands/palette/state/studio.ts');
 
 test('state/studio.ts syncs plantingConfig with store.plot, tracks dirty state, and round-trips .canopi v9', () => {
   store.view.value = 'matrix';
@@ -40,14 +40,14 @@ test('state/studio.ts syncs plantingConfig with store.plot, tracks dirty state, 
 
 test('Slice 3.2 touched components contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
   const touched = [
-    '../src/islands/consortium/views/kit/field-tip.tsx',
-    '../src/islands/consortium/views/palette/StudioHeader.tsx',
-    '../src/islands/consortium/views/palette/PlantingPlanTab.tsx',
-    '../src/islands/consortium/views/palette/RequestPlantModal.tsx',
-    '../src/islands/consortium/views/place/SitePostcard.tsx',
-    '../src/islands/consortium/views/place/AreaStep.tsx',
-    '../src/islands/consortium/views/StageBar.tsx',
-    '../src/islands/consortium/views/LocationSlot.tsx',
+    '../src/islands/palette/views/kit/field-tip.tsx',
+    '../src/islands/palette/views/palette/StudioHeader.tsx',
+    '../src/islands/palette/views/palette/PlantingPlanTab.tsx',
+    '../src/islands/palette/views/palette/RequestPlantModal.tsx',
+    '../src/islands/palette/views/place/SitePostcard.tsx',
+    '../src/islands/palette/views/place/AreaStep.tsx',
+    '../src/islands/palette/views/StageBar.tsx',
+    '../src/islands/palette/views/LocationSlot.tsx',
   ];
 
   for (const rel of touched) {

@@ -1,5 +1,5 @@
 # number-format-only-in-format (E6 design check §3 Q2, §7.1 "Number formatters (7)"): the consortium and
-# its library write numbers through one formatter, src/islands/consortium/format.ts (formatNumber; views
+# its library write numbers through one formatter, src/islands/palette/format.ts (formatNumber; views
 # take `num` from views/kit/names.ts). Any other Intl.NumberFormat, with or without `new`, is a second
 # formatter. Shape from the app's number-format-only-in-utils rule (policy/ast-grep/rules/), without its
 # toFixed/toPrecision branch: those calls here write SVG and URL numbers, not reader text.
@@ -7,12 +7,12 @@
 id: number-format-only-in-format.typescript
 language: typescript
 severity: error
-message: "number-format-only-in-format: format numbers with formatNumber (src/islands/consortium/format.ts) or num (views/kit/names.ts), not a new Intl.NumberFormat."
+message: "number-format-only-in-format: format numbers with formatNumber (src/islands/palette/format.ts) or num (views/kit/names.ts), not a new Intl.NumberFormat."
 files:
-  - "src/islands/consortium/**/*.ts"
+  - "src/islands/palette/**/*.ts"
   - "src/lib/**/*.ts"
 ignores:
-  - "src/islands/consortium/format.ts"
+  - "src/islands/palette/format.ts"
 rule:
   kind: member_expression
   regex: ^Intl\s*\.\s*NumberFormat$

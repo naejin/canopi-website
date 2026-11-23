@@ -7,8 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const filters = await import('../src/islands/consortium/rules/studio-filters.ts');
-const studio = await import('../src/islands/consortium/state/studio.ts');
+const filters = await import('../src/islands/palette/rules/studio-filters.ts');
+const studio = await import('../src/islands/palette/state/studio.ts');
 
 function taxon(over = {}) {
   return {
@@ -119,11 +119,11 @@ test('Field Dossier state steps cleanly through plant list and closes', () => {
 
 test('Slice 3.3 views contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
   const files = [
-    '../src/islands/consortium/rules/studio-filters.ts',
-    '../src/islands/consortium/views/palette/FilterPopover.tsx',
-    '../src/islands/consortium/views/palette/PaletteCards.tsx',
-    '../src/islands/consortium/views/palette/StudioRail.tsx',
-    '../src/islands/consortium/views/palette/FieldDossier.tsx',
+    '../src/islands/palette/rules/studio-filters.ts',
+    '../src/islands/palette/views/palette/FilterPopover.tsx',
+    '../src/islands/palette/views/palette/PaletteCards.tsx',
+    '../src/islands/palette/views/palette/StudioRail.tsx',
+    '../src/islands/palette/views/palette/FieldDossier.tsx',
   ];
   for (const rel of files) {
     const src = readFileSync(new URL(rel, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');

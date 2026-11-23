@@ -1,9 +1,0 @@
-/* Consortium P5, stream S5c (range marks, borrowed lists: PoolSlot and views/pool/). Owned by that stream alone; no other stream edits this file, and
-   the stream edits no shared consortium CSS (base, matrix, details, shell, print). Imported once by
-   ConsortiumPage.astro. Use the tokens of base.css; the future mark draws in ink, never green. */
-
-/* Place's count line (PP-B b1b, views/pool/pool.tsx and its loading line in PoolSlot): one status line
-   under the climate cards, its height kept from "Checking…" to the count, so nothing below moves when
-   the verdicts arrive; Try again wraps under the words on a phone. */
-.ct .ct-pool-count { flex-wrap: wrap; gap: 6px 10px; min-height: 1.5em; margin: 12px 0 0; color: var(--text); overflow-wrap: anywhere; }
-.ct .ct-pool-count + .ct-small-text { margin-top: 4px; }

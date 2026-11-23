@@ -1,5 +1,5 @@
 // The scenario file's runner and recorder (site-inputs layer, owner 2026-11-18): every case of
-// scripts/fixtures/consortium-scenarios.json run through the engine (src/lib/consortium: siteInputsOf,
+// scripts/fixtures/consortium-scenarios.json run through the engine (src/lib/palette: siteInputsOf,
 // verdicts, flags, holes, thin targets, nextStep, fillers, bestToAdd, jobGapsByPhase) on the installed
 // consortium release. The file is
 // a golden file recorded from the engine and the contract a later Rust port must meet.
@@ -17,8 +17,8 @@ const ROOT = new URL('../', import.meta.url);
 export const FILE = new URL('scripts/fixtures/consortium-scenarios.json', ROOT);
 export const consortiumIndex = JSON.parse(readFileSync(new URL('src/data/consortium-index.json', ROOT), 'utf8'));
 export const releaseFile = new URL(`public${consortiumIndex.files[0].url}`, ROOT);
-const core = await import('../src/lib/consortium/index.ts');
-const { verdicts, holdsBy } = await import('../src/lib/consortium/verdict.ts');
+const core = await import('../src/lib/palette/index.ts');
+const { verdicts, holdsBy } = await import('../src/lib/palette/verdict.ts');
 // The dryness notes a verdict carries (beside its level, never a level).
 const DRY_NOTES = new Set(['drier', 'drier-later']);
 // The factors that are soil hints (soil pH, drainage): listed per member when they are not 'fits'.
@@ -29,8 +29,8 @@ const pools = new Map();
 // A list of the installed release, as the page reads it (sqlite-source.ts).
 export async function pool(list) {
   if (!opened) {
-    const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-    const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+    const { openBytes } = await import('../src/islands/palette/data/load.ts');
+    const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
     const db = await openBytes(new Uint8Array(gunzipSync(readFileSync(releaseFile))), { releaseId: consortiumIndex.release_id, climates: consortiumIndex.climates });
     opened = createSqliteSource(db.db, { images: {} });
   }
@@ -304,7 +304,7 @@ async function record() {
     format: 'canopi-consortium-scenarios',
     format_version: 2,
     note: [
-      'Golden file recorded from the engine at HEAD (src/lib/consortium) by scripts/consortium-scenarios.mjs --record; scripts/consortium-scenarios.test.mjs runs every case.',
+      'Golden file recorded from the engine at HEAD (src/lib/palette) by scripts/consortium-scenarios.mjs --record; scripts/consortium-scenarios.test.mjs runs every case.',
       'The contract for a later Rust port of the engine: the same inputs must give the same outputs.',
       'places: each place\'s climate slots (today and the 8 future slots) and its soil reading (phH2o, texture, filled, fillDistanceCells, distanceCells; null: no soil value) as the climate and soil grid reader answers them at its coordinates. seville-board and mendoza-board are seville and mendoza with the v14 boards\' values in the historical and SSP2-4.5 slots (aridity scaled with rain).',
       'Inputs: the list, the place (a name in places, or null: no location), the period, the scenario (default ssp245), the room (default unsure), the palette goals (default plantsPerJob 2), the grower edits (SiteEdits: climate shifts applied to every slot, soil test pH, answers), pots (the grower\'s answer: pots or brought-in soil) and the member plant ids of the release.',

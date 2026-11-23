@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { monthRuns, monthsText, scopeText, layerRows, isEstimate } = await import('../src/islands/consortium/views/layers.ts');
+const { monthRuns, monthsText, scopeText, layerRows, isEstimate } = await import('../src/islands/palette/views/layers.ts');
 
 // ---- months as runs ----
 const W = {

@@ -28,8 +28,8 @@ const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json
 let opened = null;
 async function source() {
   if (opened) return opened;
-  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+  const { openBytes } = await import('../src/islands/palette/data/load.ts');
+  const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
   const db = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
   opened = createSqliteSource(db.db, { images: {} });
   return opened;
@@ -69,7 +69,7 @@ export async function palette200({ own: count = MEMBERS } = {}) {
 
 // The save record (state/persist.ts saveRecord) of the 200-plant palette, link v5, no place answers.
 export async function savedRecord200({ own = MEMBERS } = {}) {
-  const core = await import('../src/lib/consortium/index.ts');
+  const core = await import('../src/lib/palette/index.ts');
   const p = await palette200({ own });
   const known = Object.fromEntries(Object.entries(p.pools).map(([c, list]) => [c, list.map((t) => t.id)]));
   const fragment = core.encodeLink({

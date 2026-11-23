@@ -2,7 +2,7 @@
 type: Module
 title: Privacy page and tool credits
 description: The /privacy/ page in 11 locales, its footer link, and the consortium tool's climate, occurrence, map and search credits on /data-sources/.
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:50Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:35Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:40Z }
@@ -10,8 +10,8 @@ sources:
   - id: privacypage-astro
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
-    digest: sha256:e7e62bb8151b31fd
-    last_modified: 2026-11-14T12:22:11Z
+    digest: sha256:1a2cf7d7db89b2b7
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-credits-ts
     resource: ../../src/data/consortium-credits.ts
     title: src/data/consortium-credits.ts
@@ -45,8 +45,8 @@ sources:
   - id: correction-mjs
     resource: ../../src/lib/correction.mjs
     title: src/lib/correction.mjs
-    digest: sha256:3bbce3e4eab43111
-    last_modified: 2026-11-13T10:30:35Z
+    digest: sha256:16cff4bec2a99cbf
+    last_modified: 2026-11-23T21:01:36Z
   - id: maplibre-notices-mjs
     resource: ../../scripts/maplibre-notices.mjs
     title: scripts/maplibre-notices.mjs
@@ -55,30 +55,30 @@ sources:
   - id: climate-index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:0c6931a4a66f6ca4
-    last_modified: 2026-11-23T11:35:01Z
+    digest: sha256:09a8785016e8c670
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-state-ts
-    resource: ../../src/lib/consortium/state.ts
-    title: src/lib/consortium/state.ts
+    resource: ../../src/lib/palette/state.ts
+    title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:21:26Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: location-tsx
-    resource: ../../src/islands/consortium/views/location/location.tsx
-    title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:342093afa0ffb607
-    last_modified: 2026-11-19T12:55:44Z
+    resource: ../../src/islands/palette/views/location/location.tsx
+    title: src/islands/palette/views/location/location.tsx
+    digest: sha256:4a3aaec54728bcfd
+    last_modified: 2026-11-23T20:58:01Z
   - id: developers-cloudflare-com-workers-observ
     resource: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
   - id: persist-ts
-    resource: ../../src/islands/consortium/state/persist.ts
-    title: src/islands/consortium/state/persist.ts
-    digest: sha256:370bb4a9489321e5
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/persist.ts
+    title: src/islands/palette/state/persist.ts
+    digest: sha256:abaa195b434f5099
+    last_modified: 2026-11-23T20:58:01Z
   - id: location-ts
-    resource: ../../src/islands/consortium/state/location.ts
-    title: src/islands/consortium/state/location.ts
-    digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/location.ts
+    title: src/islands/palette/state/location.ts
+    digest: sha256:5acb3da6eca26ed5
+    last_modified: 2026-11-23T20:58:01Z
 enforced_by:
   - scripts/consortium-p5-seams-s5f.test.mjs
   - scripts/check-built-site.mjs

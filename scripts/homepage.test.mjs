@@ -86,7 +86,7 @@ test('every English key is used by a page or a script, and every script string r
   const en = JSON.parse(read('i18n/translations/en.json'));
   const source = [...dir('components'), ...dir('scripts'), read('layouts/Base.astro'), read('data/network.ts')].join('\n');
   // Keys built from a prefix in components (installer names and details, plant roles, countries, bibliography themes, climate zones).
-  // consortium.* and correction.* keys are asked for by the island (T('…'), src/islands/consortium/);
+  // consortium.* and correction.* keys are asked for by the island (T('…'), src/islands/palette/);
   // scripts/consortium-keys.test.mjs checks those are all used and all present.
   const dynamic = ['edition.installer.', 'download.detail.', 'design.role.', 'network.country.', 'bibliography.theme.', 'climate.', 'consortium.', 'correction.'];
   for (const key of Object.keys(en)) {

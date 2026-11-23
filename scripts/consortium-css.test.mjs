@@ -1,4 +1,4 @@
-// The consortium's styles (src/styles/consortium/*.css; review C10). Site rules, checked here so no
+// The consortium's styles (src/styles/palette/*.css; review C10). Site rules, checked here so no
 // stream breaks them:
 // - breakpoints are max-width 639px and min-width 960px only (no tablet tier, no 1199/1200px tier,
 //   no em/rem widths, no range syntax);
@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const dir = new URL('../src/styles/consortium/', import.meta.url);
+const dir = new URL('../src/styles/palette/', import.meta.url);
 const sheets = readdirSync(dir).filter((f) => f.endsWith('.css')).map((f) => ({ name: f, css: readFileSync(new URL(f, dir), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '') }));
 
 // Hue in degrees and saturation (HSL) of #rgb / #rrggbb.
@@ -117,7 +117,7 @@ test('no raw hex colour in consortium CSS (print.css excepted) or island code: t
       }
     }
   }
-  for (const file of islandFiles(new URL('../src/islands/consortium/', import.meta.url))) {
+  for (const file of islandFiles(new URL('../src/islands/palette/', import.meta.url))) {
     const code = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
     const hex = [...code.matchAll(/['"`(:,\s]#[0-9a-f]{3,8}\b/gi)].map(([m]) => m.slice(1));
     assert.deepEqual(hex, [], `${file}: raw hex colour ${hex.join(', ')}; use a token from src/styles/tokens.css`);
@@ -143,7 +143,7 @@ const HOOK_ONLY = new Set([
   'ct-print-table', 'ct-share-location', 'ct-sv-plant', 'ct-swap', 'ct-toast-text',
 ]);
 test('every ct-* class literal in the island is defined in a stylesheet, or listed as hook-only', () => {
-  const island = new URL('../src/islands/consortium/', import.meta.url);
+  const island = new URL('../src/islands/palette/', import.meta.url);
   const used = new Map();
   for (const f of readdirSync(island, { recursive: true })) {
     if (!/\.(ts|tsx)$/.test(f)) continue;

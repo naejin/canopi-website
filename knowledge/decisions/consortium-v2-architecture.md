@@ -3,15 +3,15 @@ type: Architecture Decision
 title: Consortium v2 architecture
 description: "How consortium v2 is built: a storage-independent TypeScript core, Preact islands, a gzipped SQLite export read with SQLite-WASM, per-climate placements, and climate matching on one shared grid from canopi-climate."
 tags: [consortium, architecture]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-17T10:22:53Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-13T03:47:09Z }
 sources:
   - id: climates-ts
     resource: ../../src/data/climates.ts
     title: src/data/climates.ts
-    digest: sha256:8bf60353ef1bf24f
-    last_modified: 2026-11-13T03:45:07Z
+    digest: sha256:c22dc51d073203d2
+    last_modified: 2026-11-23T20:58:01Z
   - id: decisions-consortium-user-decisions
     resource: /decisions/consortium-user-decisions.md
   - id: wrangler-jsonc
@@ -31,7 +31,7 @@ Owner decisions behind this: [Consortium tool — user decisions](/decisions/con
 - Prototypes (2026-11-11): DuckDB-WASM cost about 7 MB from two third-party hosts and 6–32 s to a first result; a slim pool costs about 240 bytes per plant gzipped; a 0.1° climate grid in 10° tiles costs about 50–80 MB in total, under 350–650 KB per tile.
 
 ## Decision
-1. **Core.** `src/lib/consortium/` is a self-contained, framework-free TypeScript module: types, site fit, matrix fill, swaps, conflicts, jobs, future-climate checks, share state. It reads plants only through a `PlantSource` interface (plain records) and imports nothing from the site; a test fails any import outside it. It is the unit that later moves to a `canopi-consortium` package.
+1. **Core.** `src/lib/palette/` is a self-contained, framework-free TypeScript module: types, site fit, matrix fill, swaps, conflicts, jobs, future-climate checks, share state. It reads plants only through a `PlantSource` interface (plain records) and imports nothing from the site; a test fails any import outside it. It is the unit that later moves to a `canopi-consortium` package.
 2. **Storage.** canopi-data builds one gzipped SQLite file from its `release.db`; the installer verifies it and copies it under `public/data/consortium/` with its version in the file name. The browser fetches it whole, decompresses it with `DecompressionStream`, opens it with the official SQLite WASM build (pinned, served from this site) and implements `PlantSource` with SQL. The schema carries a version checked on open; above about 10 MB gzipped the export splits per climate (placements are already per climate).
 3. **UI.** Preact islands (Preact 11 and signals at the app's versions, mounted from the page script without `@astrojs/preact`, whose Astro 6 releases accept only Preact 10; coordinator row "v2 build setup", 2026-11-11); the page stays a static Astro page that renders without JavaScript what it can (title, explanation, a no-script note). The matrix is an accessible table.
 4. **Placements are per climate.** A plant has one placement (stratum, phase range, role, reasons) per curated climate. The tool uses the placement for the reader's climate; otherwise the nearest curated climate, marked "estimate". Nothing is invented.

@@ -546,8 +546,8 @@ const ROLE_CAPS = {
 const LOCATION_BUDGET = 20 * KB;
 const MAPLIBRE_BUDGET = 330 * KB;
 const kb = (n) => `${(n / KB).toFixed(1)} KB`;
-const locationSource = existsSync(new URL('../src/islands/consortium/views/location/', import.meta.url));
-if (locationSource) assert.ok(existsSync(new URL('../src/islands/consortium/views/location/location.tsx', import.meta.url)), 'src/islands/consortium/views/location/ has no location.tsx, the lazy entry the location budget finds by its module id');
+const locationSource = existsSync(new URL('../src/islands/palette/views/location/', import.meta.url));
+if (locationSource) assert.ok(existsSync(new URL('../src/islands/palette/views/location/location.tsx', import.meta.url)), 'src/islands/palette/views/location/ has no location.tsx, the lazy entry the location budget finds by its module id');
 assert.ok(existsSync(join(root, '..', CHUNK_ROLES_FILE)), `${join(root, '..', CHUNK_ROLES_FILE)} is missing: the build writes it (astro.config.mjs canopi:consortium-chunk-roles)`);
 assert.ok(!existsSync(join(root, CHUNK_ROLES_FILE)), `${CHUNK_ROLES_FILE} must not be served`);
 const roles = readChunkRoles(root);

@@ -3,8 +3,8 @@
 // invasive tie); b1a made them pass in suggest.ts and removed the markers.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { UNSURE_SITE } from '../src/lib/consortium/index.ts';
-import { suggest } from '../src/lib/consortium/suggest.ts';
+import { UNSURE_SITE } from '../src/lib/palette/index.ts';
+import { suggest } from '../src/lib/palette/suggest.ts';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
 let n = 0;
@@ -57,22 +57,22 @@ test('PP-B exit: a seeded plant the suggestion cannot read stays in the palette'
 // storage double; Node has no location or history, so the address is left alone. ----
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
-import { encodeLink, encodePlace, linkOrigin, decodeLink, NO_EDITS } from '../src/lib/consortium/index.ts';
+import { encodeLink, encodePlace, linkOrigin, decodeLink, NO_EDITS } from '../src/lib/palette/index.ts';
 
-const persist = await import('../src/islands/consortium/state/persist.ts');
+const persist = await import('../src/islands/palette/state/persist.ts');
 // The device save's own state (fix round 3 save model, state/save.ts): held, and the save as this page
 // last wrote or read it.
-const saveM = await import('../src/islands/consortium/state/save.ts');
+const saveM = await import('../src/islands/palette/state/save.ts');
 const opened = (raw) => { saveM.lastSave.value = raw; };
 const isHeld = () => saveM.held.peek();
-const restoreM = await import('../src/islands/consortium/state/restore.ts');
-const arrivalM = await import('../src/islands/consortium/state/arrival.ts');
-const draft = await import('../src/islands/consortium/state/draft.ts');
-const locationM = await import('../src/islands/consortium/state/location.ts');
-const store = await import('../src/islands/consortium/store.ts');
-const { state: schema } = await import('../src/islands/consortium/state/schema.ts');
-const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+const restoreM = await import('../src/islands/palette/state/restore.ts');
+const arrivalM = await import('../src/islands/palette/state/arrival.ts');
+const draft = await import('../src/islands/palette/state/draft.ts');
+const locationM = await import('../src/islands/palette/state/location.ts');
+const store = await import('../src/islands/palette/store.ts');
+const { state: schema } = await import('../src/islands/palette/state/schema.ts');
+const { openBytes } = await import('../src/islands/palette/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
 const { STORE, PLACE_STORE, LOCATION_STORE, COUNTRY_STORE, readRecord, saveRecord } = persist;
 
 test('b1a arrival with the v5 record { fragment, place, at, src, country? }: the save, the tab\'s pl, and canopi-place only as a seed', () => {
@@ -1073,8 +1073,8 @@ test('save model r3-3: a card clicked before its list is read, a plant removed, 
 
 
 // ---- fix round 4: the actions outside the save model, and flags read as each other ----
-const waitM = await import('../src/islands/consortium/state/suggest-wait.ts');
-const lookupsM = await import('../src/islands/consortium/state/lookups.ts');
+const waitM = await import('../src/islands/palette/state/suggest-wait.ts');
+const lookupsM = await import('../src/islands/palette/state/lookups.ts');
 // The waiting Suggest's effects, as startMemory sets them up on the page.
 waitM.watchSuggest();
 // The suggestion's chunk read, so a Suggest acts once its lists are read.
@@ -1414,7 +1414,7 @@ test('pre-push saves-1: a page that does not open the save keeps the grower\'s o
 });
 
 // ---- pre-push re-review of 1e38a289: two data-loss paths through linkPlace.own and canopi-place ----
-const { soilPhOf } = await import('../src/lib/consortium/site-inputs.ts');
+const { soilPhOf } = await import('../src/lib/palette/site-inputs.ts');
 const placeEdits = () => arrivalM.placeOfSeed(kept.get(PLACE_STORE) ?? null)?.siteEdits ?? NO_EDITS;
 const savedPlaceEdits = () => decodeLink(`v=5&${saved()?.place ?? ''}&e=1`, {}).state.siteEdits ?? NO_EDITS;
 const openPage = (how, seed) => {

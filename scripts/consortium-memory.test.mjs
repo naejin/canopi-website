@@ -1,4 +1,4 @@
-// What the consortium tool keeps and how it opens (src/islands/consortium/state/*.ts, split from memory.ts by E6 S2; stream S4;
+// What the consortium tool keeps and how it opens (src/islands/palette/state/*.ts, split from memory.ts by E6 S2; stream S4;
 // design check §5, BT-7; owner row "Memory", 2026-10-27): the guarded storage, the save record, the
 // arrival order (link, guide preset, the last consortium, the shared site climate, else nothing),
 // the country at start (a guess is never written), the share state, and the pure part ported from
@@ -10,21 +10,21 @@ import { existsSync, readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 
 // The state modules themselves (E6 S2 split memory.ts into state/), merged into one namespace `m`.
-const persist = await import('../src/islands/consortium/state/persist.ts');
-const restoreModule = await import('../src/islands/consortium/state/restore.ts');
+const persist = await import('../src/islands/palette/state/persist.ts');
+const restoreModule = await import('../src/islands/palette/state/restore.ts');
 const m = {
   ...persist, ...restoreModule,
-  ...(await import('../src/islands/consortium/state/arrival.ts')),
-  ...(await import('../src/islands/consortium/state/draft.ts')),
-  ...(await import('../src/islands/consortium/state/suggest-wait.ts')),
+  ...(await import('../src/islands/palette/state/arrival.ts')),
+  ...(await import('../src/islands/palette/state/draft.ts')),
+  ...(await import('../src/islands/palette/state/suggest-wait.ts')),
 };
 const { guarded, saveRecord, readRecord, arrival, hashAction, countryAtStart, shareState, shareUrl, guessCountry, STORE, COUNTRY_STORE, SITE_CLIMATE } = m;
 // Island state, all of it (the text checks below).
 const stateSrc = ['persist', 'save', 'restore', 'arrival', 'draft', 'suggest-wait', 'lookups', 'location']
-  .map((f) => readFileSync(new URL(`../src/islands/consortium/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
-const { decodeLink, encodeLink, NO_EDITS, zoneOf } = await import('../src/lib/consortium/index.ts');
-const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+  .map((f) => readFileSync(new URL(`../src/islands/palette/state/${f}.ts`, import.meta.url), 'utf8')).join('\n');
+const { decodeLink, encodeLink, NO_EDITS, zoneOf } = await import('../src/lib/palette/index.ts');
+const { openBytes } = await import('../src/islands/palette/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
 
 function fakeStorage() {
   const map = new Map();
@@ -89,14 +89,14 @@ test('one zoneOf: the island reads climate ids with the core\'s (H15)', async ()
   // Every island file (views, state, main.ts) imports the core's zoneOf: none defines one, imports
   // one from elsewhere, or re-exports it.
   const { readdirSync } = await import('node:fs');
-  const dir = new URL('../src/islands/consortium/', import.meta.url);
+  const dir = new URL('../src/islands/palette/', import.meta.url);
   const files = readdirSync(dir, { recursive: true }).filter((f) => /\.tsx?$/.test(f));
   assert.ok(files.some((f) => f.startsWith('views')), 'the views are scanned');
   for (const f of files) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     assert.doesNotMatch(src, /\b(?:const|let|var|function)\s+zoneOf\b|zoneOf\s*:/, `${f} defines no zoneOf of its own`);
-    assert.doesNotMatch(src, /export\s*\{[^}]*\bzoneOf\b[^}]*\}|export\s*\*\s*from\s*['"][^'"]*lib\/consortium/, `${f} re-exports no zoneOf`);
-    for (const [, from] of src.matchAll(/import\s*\{[^}]*\bzoneOf\b[^}]*\}\s*from\s*'([^']+)'/g)) assert.match(from, /\/lib\/consortium\/index\.ts$/, `${f} imports zoneOf from the core barrel, not ${from}`);
+    assert.doesNotMatch(src, /export\s*\{[^}]*\bzoneOf\b[^}]*\}|export\s*\*\s*from\s*['"][^'"]*lib\/palette/, `${f} re-exports no zoneOf`);
+    for (const [, from] of src.matchAll(/import\s*\{[^}]*\bzoneOf\b[^}]*\}\s*from\s*'([^']+)'/g)) assert.match(from, /\/lib\/palette\/index\.ts$/, `${f} imports zoneOf from the core barrel, not ${from}`);
   }
   assert.doesNotMatch(stateSrc, /ct:pool/, 'no ct:pool mark: the timing script reads ct:first-view');
   assert.doesNotMatch(readFileSync(new URL('./browser/consortium-timing.mjs', import.meta.url), 'utf8'), /ct:pool/, 'the timing script has no ct:pool fallback');
@@ -183,7 +183,7 @@ test('a share state round-trips through the #v=5 link', async () => {
 
 // ---- restore (rounds 2 and 3 of the S4 review), on the real data with a source whose reads can be
 // delayed or made to fail. Node has no location or history: the address is left alone. ----
-const store = await import('../src/islands/consortium/store.ts');
+const store = await import('../src/islands/palette/store.ts');
 const storage = fakeStorage();
 let writes = 0;
 globalThis.localStorage = { getItem: storage.getItem, removeItem: storage.removeItem, setItem: (k, v) => { writes++; storage.setItem(k, v); } };
@@ -398,10 +398,10 @@ test('a country from the location: never in a link or the address without the ti
   assert.deepEqual(countryAtStart({ link: 'DE', pref: null, saved: 'fr', savedFrom: 'location', guess: () => 'US' }), { code: 'DE', source: 'link' }, 'a link\'s own country wins');
 });
 
-// ---- E6 S1: the consortium's state declared once (src/islands/consortium/state/schema.ts). Each field
+// ---- E6 S1: the consortium's state declared once (src/islands/palette/state/schema.ts). Each field
 // says whether it is in Undo's snapshot, saved, in the link and watched; store.ts and memory.ts take
 // every list from there. Per field: save → restore, link → restore and Undo, on the real data. ----
-const schemaModule = await import('../src/islands/consortium/state/schema.ts');
+const schemaModule = await import('../src/islands/palette/state/schema.ts');
 const { defineState, CONSORTIUM_FIELDS, STATE_FIELDS, state: schema } = schemaModule;
 const { effect } = await import('@preact/signals');
 const sorted = (list) => [...list].sort();
@@ -424,12 +424,12 @@ test('schema: each field declares its part once (snapshot, Undo, saved, link, wa
 
 test('schema: the saved fields are exactly the ShareState the core link codec reads and writes', () => {
   assert.deepEqual(sorted(schema.lists.saved), sorted(Object.keys(decodeLink('v=5&c=temperate&e=1', {}).state)),
-    'a field put into the link needs the core codec (lib/consortium/state.ts) to carry it');
+    'a field put into the link needs the core codec (lib/palette/state.ts) to carry it');
 });
 
 test('schema: store.ts and island state (state/*.ts) list no state field by hand', () => {
   const memSrc = stateSrc;
-  const storeSrc = readFileSync(new URL('../src/islands/consortium/store.ts', import.meta.url), 'utf8');
+  const storeSrc = readFileSync(new URL('../src/islands/palette/store.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(memSrc, /void \[store\./, 'watcher lists come from schema.lists');
   assert.doesNotMatch(memSrc, /store\.(members|removed|guests)\.value = (s\.|same)/, 'the link and the draft write fields through the schema');
   assert.doesNotMatch(storeSrc, /SNAP_KEYS = \[/, 'SNAP_KEYS comes from schema.lists');
@@ -616,12 +616,12 @@ test('a #v=4 beta-tool link opens nothing, names no climate and says it cannot b
 // ---- E6 S2: the memory split (state/persist, restore, arrival, draft, suggest-wait, lookups; state/location) ----
 
 test('the split: island state imports nothing under views/, statically or through import() (ADR-1 L2); memory.ts is gone (E6 chunk 5)', () => {
-  const dir = new URL('../src/islands/consortium/state/', import.meta.url);
+  const dir = new URL('../src/islands/palette/state/', import.meta.url);
   for (const f of ['persist.ts', 'restore.ts', 'arrival.ts', 'draft.ts', 'suggest-wait.ts', 'lookups.ts', 'location.ts']) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     assert.doesNotMatch(src, /(from|import\()\s*'[^']*\/views\//, `state/${f} imports a view`);
   }
-  assert.equal(existsSync(new URL('../src/islands/consortium/memory.ts', import.meta.url)), false, 'no memory.ts barrel: consumers import state/ modules directly');
+  assert.equal(existsSync(new URL('../src/islands/palette/memory.ts', import.meta.url)), false, 'no memory.ts barrel: consumers import state/ modules directly');
   assert.doesNotMatch(readFileSync(new URL('../src/lib/location/place-search.ts', import.meta.url), 'utf8'), /@preact\/signals/, 'the location service imports no UI framework (A12)');
 });
 
@@ -634,7 +634,7 @@ test('one country-source enum: the save keeps store.ts CountrySource without the
 test('a link\'s o= is looked up through the location step the view hands in (restore.ts provideLocationStep), its lookup held until it settles', async () => {
   await shown();
   const calls = [];
-  const lookupsModule = await import('../src/islands/consortium/state/lookups.ts');
+  const lookupsModule = await import('../src/islands/palette/state/lookups.ts');
   let held = null;
   const before = restoreModule.provideLocationStep(async () => ({ settle: (how, saved) => { calls.push([how, saved, lookupsModule.lookups.peek()]); return new Promise((r) => { held = r; }); } }));
   try {
@@ -670,7 +670,7 @@ test('a link\'s o= is looked up through the location step the view hands in (res
 // ---- E6 chunk 5: the one shown climate (S2/R2 seam) ----
 
 test('climateChosen: the reader\'s choice, else a link\'s climate while it opens', async () => {
-  const store = await import('../src/islands/consortium/store.ts');
+  const store = await import('../src/islands/palette/store.ts');
   const before = { climate: store.climate.peek(), inFlight: persist.inFlight.peek() };
   try {
     for (const climate of [null, 'Temperate', 'Mediterranean']) for (const pending of [null, 'Temperate', 'Tropical']) {
@@ -695,7 +695,7 @@ test('the waiting Suggest ends through dropSuggest only; no other island module 
   const { readdirSync, statSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { fileURLToPath } = await import('node:url');
-  const root = fileURLToPath(new URL('../src/islands/consortium/', import.meta.url));
+  const root = fileURLToPath(new URL('../src/islands/palette/', import.meta.url));
   const writers = [];
   const walk = (dir) => { for (const f of readdirSync(dir)) { const p = join(dir, f); if (statSync(p).isDirectory()) walk(p); else if (/\.tsx?$/.test(f) && /pendingSuggest\.value\s*=(?!=)/.test(readFileSync(p, 'utf8'))) writers.push(p.slice(root.length)); } };
   walk(root);

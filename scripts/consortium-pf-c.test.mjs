@@ -1,10 +1,10 @@
 // pf-c (Your place, v14 board LocStates "Coordinates typed", owner Q6): the place field reads
-// coordinates on this device (src/islands/consortium/views/location/coords.ts readCoords); words go
+// coordinates on this device (src/islands/palette/views/location/coords.ts readCoords); words go
 // to the place search, coordinates are never sent; what looks like coordinates but cannot be read says
 // so, and a second Search looks it up as a name (views/location/location.tsx).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readCoords } from '../src/islands/consortium/views/location/coords.ts';
+import { readCoords } from '../src/islands/palette/views/location/coords.ts';
 
 const near = (got, lat, lon) => {
   assert.ok(got && typeof got === 'object', `coordinates read (${JSON.stringify(got)})`);
@@ -47,8 +47,8 @@ test('pf-c readCoords: words are names to look up', () => {
 
 // ---- fix round 1 ----
 import { readFileSync } from 'node:fs';
-import { meansKoppen } from '../src/lib/consortium/site-climate.ts';
-import { koppenWordsKey } from '../src/islands/consortium/views/location/koppen-words.ts';
+import { meansKoppen } from '../src/lib/palette/site-climate.ts';
+import { koppenWordsKey } from '../src/islands/palette/views/location/koppen-words.ts';
 
 const LOCALES = ['en', 'fr', 'es', 'pt', 'it', 'zh', 'de', 'ja', 'ko', 'nl', 'ru'];
 const words = Object.fromEntries(LOCALES.map((l) => [l, JSON.parse(readFileSync(new URL(`../src/i18n/translations/${l}.json`, import.meta.url), 'utf8'))]));
@@ -86,13 +86,13 @@ test('pf-c final1 N4 (board Loading, Old browser): the button names the guides w
 test('pf-c final1 N5 (the head painted before the island): the inline script takes the link\'s end key and the save\'s store name from the code that writes them, keeping no copy', () => {
   const page = readFileSync(new URL('../src/components/consortium/ConsortiumPage.astro', import.meta.url), 'utf8');
   const script = page.slice(page.indexOf('<script is:inline define:vars'), page.indexOf('</script>', page.indexOf('<script is:inline define:vars')));
-  assert.match(script, /define:vars=\{\{[^}]*\bendKey: END_KEY\b/, 'END_KEY (lib/consortium/state.ts) passed in');
+  assert.match(script, /define:vars=\{\{[^}]*\bendKey: END_KEY\b/, 'END_KEY (lib/palette/state.ts) passed in');
   assert.match(script, /define:vars=\{\{[^}]*\bsaveStore: STORE\b/, 'the save\'s store name (state/save.ts STORE) passed in');
   assert.doesNotMatch(script, /'canopi-consortium'|p\.get\('e'\)/, 'no copy of the store name or the end key');
 });
 
 // ---- step back: the country field (board Country "Your country") ----
-import { enterCountry, findCountries, foldName } from '../src/islands/consortium/views/place/country-search.ts';
+import { enterCountry, findCountries, foldName } from '../src/islands/palette/views/place/country-search.ts';
 
 const CODES = ['KE', 'TZ', 'RE', 'FR', 'DE', 'GH', 'CV', 'GY', 'KZ', 'QA', 'CA', 'PK', 'BH', 'HT', 'PE', 'MR', 'AF'];
 const namesIn = (lang) => { const d = new Intl.DisplayNames([lang], { type: 'region' }); return (c) => d.of(c); };
@@ -144,10 +144,10 @@ test('pf-c country field: Enter takes the one match or an exact name (page langu
 
 // ---- chunk 4 (C2): the guide's missing plant named (T17, chunk-2 M29) and "Keep it as mine" as one
 // store-side action (T18, chunk-2 D9). The state modules in Node with a source double. ----
-const store = await import('../src/islands/consortium/store.ts');
-const restoreM = await import('../src/islands/consortium/state/restore.ts');
-const draftM = await import('../src/islands/consortium/state/draft.ts');
-const saveM = await import('../src/islands/consortium/state/save.ts');
+const store = await import('../src/islands/palette/store.ts');
+const restoreM = await import('../src/islands/palette/state/restore.ts');
+const draftM = await import('../src/islands/palette/state/draft.ts');
+const saveM = await import('../src/islands/palette/state/save.ts');
 
 // A release of three plants, none on the Temperate list: an apple with an English name, a plant with
 // a French name only, one with no common name.

@@ -1,5 +1,5 @@
 // E6 stream R1 (design check §3 chunk 1, §7.1 "Climate-zone list and order"): one climate-zone list
-// and order, src/lib/consortium/zones.ts, that the correction endpoint (src/lib/correction.mjs
+// and order, src/lib/palette/zones.ts, that the correction endpoint (src/lib/correction.mjs
 // CLIMATES), the site's climate ids (src/data/climates.ts) and the installer (scripts/
 // install-consortium.mjs CLIMATE_ZONES, which refuses a manifest zone outside it) agree with, in the
 // core's order (types.ts climateZones, canopi-data climates.ord). Written failing in commit 0
@@ -10,13 +10,13 @@
 // its own copy checked here.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { climateZones } from '../src/lib/consortium/types.ts';
+import { climateZones } from '../src/lib/palette/types.ts';
 import { CLIMATES } from '../src/lib/correction.mjs';
 import { climates } from '../src/data/climates.ts';
 import { CLIMATE_ZONES } from './install-consortium.mjs';
 
 test('E6 zones (R1 core leaves): one climate-zone list and order for the core, the correction endpoint, the site ids and the installer', async () => {
-  const zones = await import('../src/lib/consortium/zones.ts');
+  const zones = await import('../src/lib/palette/zones.ts');
   const list = Object.values(zones).find((v) => Array.isArray(v) && v.includes('Temperate'));
   assert.ok(list, 'zones.ts exports the zone list');
   assert.deepEqual([...list], [...climateZones], 'the core order (canopi-data climates.ord)');

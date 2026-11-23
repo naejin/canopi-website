@@ -33,9 +33,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const core = await import('../src/lib/consortium/index.ts');
-const line = await import('../src/lib/consortium/verdict-line.ts');
-const { verdict, laterLossOf } = await import('../src/lib/consortium/verdict.ts');
+const core = await import('../src/lib/palette/index.ts');
+const line = await import('../src/lib/palette/verdict-line.ts');
+const { verdict, laterLossOf } = await import('../src/lib/palette/verdict.ts');
 // The keep line on a member's verdicts today and later: the rule's laterLoss (M29), then the words.
 const keep = (now, laters, year) => line.keepLine(now, laterLossOf(now, laters), year);
 const { confidenceTerms } = core;
@@ -214,7 +214,7 @@ test('PP-C-u14 (c2 misfit parity): the conflict misfit equals the verdict\'s hin
 // Swap's gains and losses through the holes (slices c2 row): what the candidate fills and leaves empty
 // is holes(members) against holes(members - out + inn), never the deleted cells; the strata gain kept.
 test('PP-C-u15 (c2 Swap gains): Swap\'s gains and losses are holes(members) against holes(members - m + c), with the candidates\' verdicts; the strata gain kept', async () => {
-  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { alternatives } = await import('../src/lib/palette/suggest.ts');
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const t = (n, stratum, start, end, fn) => taxon({ id: `00000000-c2c2-4000-8000-00000000002${n}`, canonical_name: `Plantus ${n}`, stratum: { value: stratum, sources: [] }, phases: { start, end, sources: [] }, functions: fn });
   const members = [t(1, 'emergent', 'secondary_i', 'climax', ['nitrogen_fixer']), t(2, 'low', 'placenta_i', 'secondary_ii', ['edible_fruit'])];
@@ -278,7 +278,7 @@ test('PP-C-u21 (c2 invasive scope, schema 4.3): one line per source with its are
 // Coordinator 2026-11-17: schema 4.4 adds the dispute kind `source`; a kind the reader does not know is
 // skipped in Details' lines, never worded as another kind.
 test('PP-C-u22 (c2 unknown dispute kind): factLines skips a plant_disputes kind it does not know', async () => {
-  const { factLines } = await import('../src/lib/consortium/verdict-line.ts');
+  const { factLines } = await import('../src/lib/palette/verdict-line.ts');
   const known = { field: 'toxicity', kind: 'queue', value: 'Moderate', unit: null, derived: false, scope: null, source: 'ncsu_plant_toolbox' };
   const lines = factLines({ disputes: [{ ...known, kind: 'source', source: 'les_alveoles' }, known], traitSources: null, shipped: { toxicity: 'Slight' } });
   assert.equal(lines.length, 1, 'the unknown kind is skipped');
@@ -286,7 +286,7 @@ test('PP-C-u22 (c2 unknown dispute kind): factLines skips a plant_disputes kind 
 });
 
 test('PP-C-u23 (c2 cool season): an annual past its heat range reads the cool-season line, not the annual one', async () => {
-  const { againstLines } = await import('../src/lib/consortium/verdict-line.ts');
+  const { againstLines } = await import('../src/lib/palette/verdict-line.ts');
   const v = (notes) => ({ id: 1, judged: '1991-2020', ownYears: false, level: 'fits', limiting: null, factors: [], notes, range: 'judged' });
   const words = { period: (p) => p, scenario: 'SSP2-4.5', heightM: null };
   const notesOf = (n) => againstLines(v(n), null, words).map((e) => e.note).filter(Boolean);
@@ -300,7 +300,7 @@ test('PP-C-u23 (c2 cool season): an annual past its heat range reads the cool-se
 // changes nothing. C13: swapping out a member outside its range, the gaps count from what that member
 // would do, so a candidate that starts late leaves its early years empty (never "leaves no gap").
 test('c2 fix A1 + C13 (Swap by lane and years): a shrunk hole is in neither list; a grown one is left; narrowing ranks higher; an outside member\'s gaps count from its years', async () => {
-  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { alternatives } = await import('../src/lib/palette/suggest.ts');
   const site0 = core.siteOf(core.NO_INPUTS);
   const swapChange = (c, o, i) => alternatives(o.id, c.members, [i], { site: site0, interactions: [], verdicts: c.verdicts }).find((x) => x.id === i.id);
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
@@ -491,7 +491,7 @@ test('c2 fix B6 (pt is Brazilian): the c2 words carry no European Portuguese for
 // ---- fix round 1, the boards (C5, C12; the page-level ones are in the browser spec PP-C6b) ----
 
 test('c2 fix C12: a candidate with a caution (toxic, invasive here) ranks after the clean ones and before a warned one, and keeps its flags', async () => {
-  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { alternatives } = await import('../src/lib/palette/suggest.ts');
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const t = (n, warnings = {}) => taxon({ id: `00000000-c2c2-4000-8000-0000000003${n}`, canonical_name: `Plantus ${n}`, stratum: { value: 'low', sources: [] }, phases: { start: 'placenta_i', end: 'secondary_ii', sources: [] }, functions: ['edible_fruit'], ...(Object.keys(warnings).length && { warnings: { ...taxon({}).warnings, ...warnings } }) });
   const member = t(10), toxic = t(11, { toxicity: { level: 'Severe', sources: [] } }), clean = t(12);
@@ -506,7 +506,7 @@ test('c2 fix C12: a candidate with a caution (toxic, invasive here) ranks after 
 // holes (Murphey agave: Quince, which feeds you as it does, before Antelope bitterbrush); then the
 // years it covers; warned ones after the clean ones; in pots a plant taller than the room comes last.
 test('c2 fix R3 + K3 + K13 (Swap order): closest in jobs, then years; clean before a caution; taller than the room last', async () => {
-  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { alternatives } = await import('../src/lib/palette/suggest.ts');
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const fn = (...fs) => fs.map((f) => ({ function: f, method: 'recorded', sources: [] }));
   const t = (n, over = {}) => taxon({ id: `00000000-c2c2-4000-8000-0000000004${n}`, canonical_name: `Plantus ${n}`, role: 'support', stratum: { value: 'medium', sources: [] }, phases: { start: 'placenta_iii', end: 'secondary_ii', sources: [] }, functions: null, climate: null, ...over });
@@ -698,7 +698,7 @@ test('c2 fix V2 (band status true outside the recorded range): Lyon, Amburana ce
 // years comes first (Lyon, Madre de cacao, years 1 to 60: Autumn olive, years 1–15, above Chicory, to
 // year 3), whatever hole-years each closes.
 test('c2 fix T9 (Swap order): within equal shared jobs, more of the member\'s years first (years 1–15 above "to year 3")', async () => {
-  const { alternatives } = await import('../src/lib/consortium/suggest.ts');
+  const { alternatives } = await import('../src/lib/palette/suggest.ts');
   const { taxon } = await import('./consortium-p5-fixtures.mjs');
   const fn = (...fs) => fs.map((f) => ({ function: f, method: 'recorded', sources: [] }));
   const t = (n, start, end, over = {}) => taxon({ id: `00000000-c2c2-4000-8000-0000000005${n}`, canonical_name: `Plantus ${n}`, role: 'support', stratum: { value: 'medium', sources: [] }, phases: { start, end, sources: [] }, functions: fn('nitrogen_fixer', 'wildlife_habitat'), climate: null, ...over });

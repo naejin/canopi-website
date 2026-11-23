@@ -3,54 +3,54 @@ type: Architecture Decision
 title: Consortium placement origin and factAt (ADR-6)
 description: One placement origin on guest and borrowed plants replaces three fields, and views read four site- and period-dependent facts through factAt in the core's source.ts instead of raw traits.
 tags: [consortium, architecture]
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:46Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:34Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:26Z }
 sources:
   - id: types-ts
-    resource: ../../src/lib/consortium/types.ts
-    title: src/lib/consortium/types.ts
-    digest: sha256:6918fafa28e9b4ad
-    last_modified: 2026-11-23T11:35:01Z
+    resource: ../../src/lib/palette/types.ts
+    title: src/lib/palette/types.ts
+    digest: sha256:2163e2e956deda1c
+    last_modified: 2026-11-23T20:58:01Z
   - id: placement-ts
-    resource: ../../src/lib/consortium/placement.ts
-    title: src/lib/consortium/placement.ts
+    resource: ../../src/lib/palette/placement.ts
+    title: src/lib/palette/placement.ts
     digest: sha256:8f7a898e3dc4d6ad
-    last_modified: 2026-11-13T14:45:08Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: source-ts
-    resource: ../../src/lib/consortium/source.ts
-    title: src/lib/consortium/source.ts
-    digest: sha256:766ed7fdb9ff7efa
-    last_modified: 2026-11-17T10:52:11Z
+    resource: ../../src/lib/palette/source.ts
+    title: src/lib/palette/source.ts
+    digest: sha256:9efeeffb336dec8a
+    last_modified: 2026-11-23T20:58:01Z
   - id: details-tsx
-    resource: ../../src/islands/consortium/views/details/Details.tsx
-    title: src/islands/consortium/views/details/Details.tsx
-    digest: sha256:0e28aa912e5a06f3
-    last_modified: 2026-11-19T07:06:28Z
+    resource: ../../src/islands/palette/views/details/Details.tsx
+    title: src/islands/palette/views/details/Details.tsx
+    digest: sha256:76af5ace5e01491f
+    last_modified: 2026-11-23T20:58:01Z
   - id: placed-ts
-    resource: ../../src/lib/consortium/placed.ts
-    title: src/lib/consortium/placed.ts
+    resource: ../../src/lib/palette/placed.ts
+    title: src/lib/palette/placed.ts
     digest: sha256:4bee0febe945ad89
-    last_modified: 2026-11-23T11:35:01Z
+    last_modified: 2026-11-23T11:29:04Z
   - id: store-ts
-    resource: ../../src/islands/consortium/store.ts
-    title: src/islands/consortium/store.ts
-    digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/store.ts
+    title: src/islands/palette/store.ts
+    digest: sha256:a2d405853d85b528
+    last_modified: 2026-11-23T20:58:01Z
   - id: taxon-of-test
     resource: ../../scripts/consortium-taxon-of.test.mjs
     title: scripts/consortium-taxon-of.test.mjs
-    digest: sha256:54ebe58c62317d47
-    last_modified: 2026-11-13T15:32:49Z
+    digest: sha256:f0946f5f762740ad
+    last_modified: 2026-11-23T20:58:01Z
   - id: verdict-line-ts
-    resource: ../../src/lib/consortium/verdict-line.ts
-    title: src/lib/consortium/verdict-line.ts
+    resource: ../../src/lib/palette/verdict-line.ts
+    title: src/lib/palette/verdict-line.ts
     digest: sha256:a169b614d21093dd
-    last_modified: 2026-11-19T05:25:31Z
+    last_modified: 2026-11-23T11:23:11Z
 ---
 
-ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/consortium/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).
+ADR-6 of the [Consortium v2 plan](/project/consortium-v2-plan.md) (step E6, written in commit 0, 2026-11-13). Commit 0 added the types only (`src/lib/palette/types.ts`); stream R4 implemented and wired them, merged in chunk 4 (coordinator row "E6 R4 merge choices" in [the decisions](/decisions/consortium-user-decisions.md)). Core: [Consortium core](/modules/consortium-core.md).
 
 ## Context
 

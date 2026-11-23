@@ -17,42 +17,42 @@ const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const FILES = {
   'tsconfig.json': JSON.stringify({ compilerOptions: { allowImportingTsExtensions: true, noEmit: true, jsx: 'preserve', module: 'esnext', moduleResolution: 'bundler' } }),
   // P-E4a: static edge, type-only back edge (no cycle)
-  'src/lib/consortium/a.ts': "import { b } from './b.ts';\nexport const a = b;\n",
-  'src/lib/consortium/b.ts': "import type { a } from './a.ts';\nexport const b = 1;\nexport type A = typeof a;\n",
+  'src/lib/palette/a.ts': "import { b } from './b.ts';\nexport const a = b;\n",
+  'src/lib/palette/b.ts': "import type { a } from './a.ts';\nexport const b = 1;\nexport type A = typeof a;\n",
   // P-E4a: a dynamic import with a cast closes a cycle (C4 shape)
-  'src/lib/consortium/c.ts': "const load = () => import('./d.ts') as Promise<unknown>;\nexport const c = load;\n",
-  'src/lib/consortium/d.ts': "import { c } from './c.ts';\nexport const d = c;\n",
+  'src/lib/palette/c.ts': "const load = () => import('./d.ts') as Promise<unknown>;\nexport const c = load;\n",
+  'src/lib/palette/d.ts': "import { c } from './c.ts';\nexport const d = c;\n",
   // P-E4a: typeof import + import of the same file merge into one edge that must count
-  'src/lib/consortium/e.ts': "type F = typeof import('./f.ts');\nexport const e = (): Promise<F> => import('./f.ts');\n",
-  'src/lib/consortium/f.ts': "import { e } from './e.ts';\nexport const f = e;\n",
+  'src/lib/palette/e.ts': "type F = typeof import('./f.ts');\nexport const e = (): Promise<F> => import('./f.ts');\n",
+  'src/lib/palette/f.ts': "import { e } from './e.ts';\nexport const f = e;\n",
   // L1
   'src/lib/location/p.ts': "import { signal } from '@preact/signals';\nexport const p = signal(0);\n",
-  'src/lib/climate/q.ts': "import { b } from '../consortium/b.ts';\nexport const q = b;\n",
+  'src/lib/climate/q.ts': "import { b } from '../palette/b.ts';\nexport const q = b;\n",
   // L2 (dynamic counts), allowed: store → data
-  'src/islands/consortium/store.ts': "import { y } from './data/y.ts';\nexport const s = () => import('./views/v.tsx');\nexport const sy = y;\n",
+  'src/islands/palette/store.ts': "import { y } from './data/y.ts';\nexport const s = () => import('./views/v.tsx');\nexport const sy = y;\n",
   // L3
-  'src/islands/consortium/data/x.ts': "import { s } from '../store.ts';\nexport const x = s;\n",
-  'src/islands/consortium/data/y.ts': "import { a } from '../../../lib/consortium/a.ts';\nexport const y = a;\n",
+  'src/islands/palette/data/x.ts': "import { s } from '../store.ts';\nexport const x = s;\n",
+  'src/islands/palette/data/y.ts': "import { a } from '../../../lib/palette/a.ts';\nexport const y = a;\n",
   // L4, allowed: index.ts
-  'src/islands/consortium/views/v.tsx': "import { a } from '../../../lib/consortium/a.ts';\nimport { i } from '../../../lib/consortium/index.ts';\nexport const v = [a, i];\n",
+  'src/islands/palette/views/v.tsx': "import { a } from '../../../lib/palette/a.ts';\nimport { i } from '../../../lib/palette/index.ts';\nexport const v = [a, i];\n",
   // L5, allowed: kit → kit, kit → strings
-  'src/islands/consortium/views/kit/k.ts': "import { v } from '../v.tsx';\nimport { k2 } from './k2.ts';\nimport { str } from '../../strings.ts';\nexport const k = [v, k2, str];\n",
-  'src/islands/consortium/views/kit/k2.ts': 'export const k2 = 1;\n',
-  'src/islands/consortium/strings.ts': 'export const str = 1;\n',
+  'src/islands/palette/views/kit/k.ts': "import { v } from '../v.tsx';\nimport { k2 } from './k2.ts';\nimport { str } from '../../strings.ts';\nexport const k = [v, k2, str];\n",
+  'src/islands/palette/views/kit/k2.ts': 'export const k2 = 1;\n',
+  'src/islands/palette/strings.ts': 'export const str = 1;\n',
   // L6: Other static (breach), Sheets dynamic (allowed), Sheets2 is not Sheets (breach)
-  'src/islands/consortium/views/details/D.tsx': "import { d2 } from './d2.ts';\nexport const D = d2;\n",
-  'src/islands/consortium/views/details/d2.ts': 'export const d2 = 1;\n',
-  'src/islands/consortium/views/Other.tsx': "import { D } from './details/D.tsx';\nexport const o = D;\n",
-  'src/islands/consortium/views/Sheets.tsx': "export const load = () => import('./details/D.tsx');\n",
+  'src/islands/palette/views/details/D.tsx': "import { d2 } from './d2.ts';\nexport const D = d2;\n",
+  'src/islands/palette/views/details/d2.ts': 'export const d2 = 1;\n',
+  'src/islands/palette/views/Other.tsx': "import { D } from './details/D.tsx';\nexport const o = D;\n",
+  'src/islands/palette/views/Sheets.tsx': "export const load = () => import('./details/D.tsx');\n",
   // L8, allowed: main.ts
-  'src/islands/consortium/test-hook.ts': 'export const hook = 1;\n',
-  'src/islands/consortium/views/lazy.tsx': "import { hook } from '../test-hook.ts';\nexport const l = hook;\n",
-  'src/islands/consortium/main.ts': "import { hook } from './test-hook.ts';\nexport const m = hook;\n",
+  'src/islands/palette/test-hook.ts': 'export const hook = 1;\n',
+  'src/islands/palette/views/lazy.tsx': "import { hook } from '../test-hook.ts';\nexport const l = hook;\n",
+  'src/islands/palette/main.ts': "import { hook } from './test-hook.ts';\nexport const m = hook;\n",
   // L10 (error since PP-C c2), allowed: verdict.ts, and index.ts for re-exports
-  'src/lib/consortium/site.ts': 'export const fits = 1;\n',
-  'src/lib/consortium/holes.ts': "import { fits } from './site.ts';\nexport const h = fits;\n",
-  'src/lib/consortium/verdict.ts': "import { fits } from './site.ts';\nexport const vd = fits;\n",
-  'src/lib/consortium/index.ts': "export { fits } from './site.ts';\nexport const i = 1;\n",
+  'src/lib/palette/site.ts': 'export const fits = 1;\n',
+  'src/lib/palette/holes.ts': "import { fits } from './site.ts';\nexport const h = fits;\n",
+  'src/lib/palette/verdict.ts': "import { fits } from './site.ts';\nexport const vd = fits;\n",
+  'src/lib/palette/index.ts': "export { fits } from './site.ts';\nexport const i = 1;\n",
   // L9
   'src/pages/z.ts': "import { tool } from '../../scripts/tool.mjs';\nexport const z = tool;\n",
   'scripts/tool.mjs': 'export const tool = 1;\n',
@@ -71,17 +71,17 @@ test('dependency-cruiser rules L1-L10 catch one breach each, allow their neighbo
     assert.equal(r.error, undefined);
     const { scanned, errors, keys } = archKeys(JSON.parse(readFileSync(out, 'utf8')));
     assert.ok(scanned >= Object.keys(FILES).length - 2, `scanned ${scanned}`);
-    const I = 'src/islands/consortium';
+    const I = 'src/islands/palette';
     assert.deepEqual(errors, [
       'L1-lib-no-ui|src/lib/location/p.ts|@preact/signals',
-      'L10-one-verdict|src/lib/consortium/holes.ts|src/lib/consortium/site.ts',
+      'L10-one-verdict|src/lib/palette/holes.ts|src/lib/palette/site.ts',
       `L2-state-no-views|${I}/store.ts|${I}/views/v.tsx`,
       `L3-data-down|${I}/data/x.ts|${I}/store.ts`,
-      `L4-views-core-entry|${I}/views/v.tsx|src/lib/consortium/a.ts`,
+      `L4-views-core-entry|${I}/views/v.tsx|src/lib/palette/a.ts`,
       `L5-kit-leaf|${I}/views/kit/k.ts|${I}/views/v.tsx`,
       `L6-sheets-not-details|${I}/views/Other.tsx|${I}/views/details/D.tsx`,
-      'L7-no-circular|src/lib/consortium/c.ts > src/lib/consortium/d.ts > src/lib/consortium/c.ts',
-      'L7-no-circular|src/lib/consortium/e.ts > src/lib/consortium/f.ts > src/lib/consortium/e.ts',
+      'L7-no-circular|src/lib/palette/c.ts > src/lib/palette/d.ts > src/lib/palette/c.ts',
+      'L7-no-circular|src/lib/palette/e.ts > src/lib/palette/f.ts > src/lib/palette/e.ts',
       `L8-test-hook-entry-only|${I}/views/lazy.tsx|${I}/test-hook.ts`,
       'L9-no-build-scripts-in-src|src/pages/z.ts|scripts/tool.mjs',
     ]);
@@ -95,7 +95,7 @@ test('dependency-cruiser rules L1-L10 catch one breach each, allow their neighbo
 // The line beside L10 (warn, plant-palette-architecture: only place.ts reads lookup.periods, through
 // climateFor, so every rule reads the same climate): a diagnostic, never a failure, until PP-C c2.
 test('only place.ts reads lookup.periods in the core (warn)', (t) => {
-  const dir = join(ROOT, 'src/lib/consortium');
+  const dir = join(ROOT, 'src/lib/palette');
   const readers = readdirSync(dir).filter((f) => /\.ts$/.test(f) && /\.periods\b/.test(readFileSync(join(dir, f), 'utf8')));
   assert.ok(readers.includes('place.ts'), 'place.ts climateFor reads lookup.periods');
   const others = readers.filter((f) => f !== 'place.ts');

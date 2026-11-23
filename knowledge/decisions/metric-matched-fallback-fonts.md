@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Metric-matched fallback fonts
 description: Local Arial and Times New Roman (or their metric twins) scaled to Source Sans 3's and Literata's metrics come first in the fallback stacks, so the late web-font swap does not shift the layout on slow phones.
 tags: [fonts, performance, layout]
-generated: { by: antigravity/gemini, at: 2026-11-23T17:14:46Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:20Z }
   - { by: antigravity/gemini, at: 2026-11-23T17:14:39Z }
@@ -17,7 +17,7 @@ sources:
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
     digest: sha256:f456eb36dd7851bb
-    last_modified: 2026-11-23T16:55:15Z
+    last_modified: 2026-11-23T17:15:38Z
   - id: font-fallback-metrics-mjs
     resource: ../../scripts/font-fallback-metrics.mjs
     title: scripts/font-fallback-metrics.mjs
@@ -34,8 +34,8 @@ sources:
     digest: sha256:44c049911b38bbe1
     last_modified: 2026-11-11T03:28:04Z
   - id: base-css
-    resource: ../../src/styles/consortium/base.css
-    title: src/styles/consortium/base.css
+    resource: ../../src/styles/palette/base.css
+    title: src/styles/palette/base.css
     digest: sha256:59ecfbc3a59f1adf
     last_modified: 2026-11-19T11:59:54Z
 enforced_by: [scripts/browser/consortium-studio-plan-i18n.browser.test.mjs]
@@ -61,5 +61,5 @@ Source Sans 3 (body) and Literata (display) are self-hosted woff2 files with `fo
 # Known gaps
 
 - **Android** ships neither Arial nor Times New Roman (nor Liberation), so the matched faces do not apply there and the stack falls to Roboto / Noto Serif unmatched. Roboto- and Noto-Serif-matched faces are a follow-up (F1a).
-- **Place-search input width (fixed in E6 S2):** the input took its width from `size=20`, the font's average character width (206 px in the fallback, 179 px in Source Sans 3), which no fallback face can match. `.ct .ct-location-search { width: 11.2em; max-width: 100%; }` in [base.css](../../src/styles/consortium/base.css) now fixes it, and the late-font spec checks sizes. Any input sized by `size=` has the same problem.
+- **Place-search input width (fixed in E6 S2):** the input took its width from `size=20`, the font's average character width (206 px in the fallback, 179 px in Source Sans 3), which no fallback face can match. `.ct .ct-location-search { width: 11.2em; max-width: 100%; }` in [base.css](../../src/styles/palette/base.css) now fixes it, and the late-font spec checks sizes. Any input sized by `size=` has the same problem.
 - The 640 px header fit in [Site navigation](/decisions/site-navigation.md) was measured against the Noto fallback, not re-measured with the matched faces.

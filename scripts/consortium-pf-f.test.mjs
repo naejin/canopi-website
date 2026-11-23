@@ -14,9 +14,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const line = await import('../src/lib/consortium/verdict-line.ts');
+const line = await import('../src/lib/palette/verdict-line.ts');
 // The hold predicates live beside holdsBy in the verdict rule (M29), not in the words module.
-const vd = await import('../src/lib/consortium/verdict.ts');
+const vd = await import('../src/lib/palette/verdict.ts');
 // The keep line on a member's verdicts today and later: the rule's laterLoss, then the words.
 const keep = (now, laters, year) => line.keepLine(now, vd.laterLossOf(now, laters), year);
 const { words, said } = await import('./consortium-said.mjs');
@@ -33,8 +33,8 @@ test('F2 (pf-f): the German thin spot opens as board German, then the backup pro
 // range-source line; the props say only what each view reads, so no reader of the code thinks the trait
 // pH's source reaches Against or the soil card (it reaches neither: soilSayOf reads only the band's level).
 test('C13 (pf-f): Against and the soil card take no traitSources; no alias of the bands', () => {
-  const src = readFileSync(new URL('../src/islands/consortium/views/details/Against.tsx', import.meta.url), 'utf8');
-  const details = readFileSync(new URL('../src/islands/consortium/views/details/Details.tsx', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../src/islands/palette/views/details/Against.tsx', import.meta.url), 'utf8');
+  const details = readFileSync(new URL('../src/islands/palette/views/details/Details.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /traitSources/, 'Against.tsx reads no trait source');
   assert.doesNotMatch(src, /climateBands/, 'no alias of the bands');
   assert.doesNotMatch(details, /<Against[^>]*traitSources/, 'Details passes none to Against');
@@ -55,7 +55,7 @@ test('M23 (pf-f): "recorded from N mm" from the low end of the plant\'s recorded
 
 // ---- fix round 1, batch 1 ----
 
-const bloom = await import('../src/islands/consortium/views/details/bloom.ts');
+const bloom = await import('../src/islands/palette/views/details/bloom.ts');
 const row = (months, scope, kind = 'derived') => ({ field: 'bloom_months', months, flag: null, climate: null, scope, source: 'phenovision', kind });
 // The installed release's rows for Pinto peanut (phenovision: N 0..23, N 23..35, S −23..0) and Almond.
 const PINTO = [
@@ -131,8 +131,8 @@ test('BC11 (pf-f keep line): a later second look counts, as the board\'s 15 year
 
 // ---- fix round 1, batch 3 (review findings C1 to C12) ----
 
-const core = await import('../src/lib/consortium/index.ts');
-const { verdict } = await import('../src/lib/consortium/verdict.ts');
+const core = await import('../src/lib/palette/index.ts');
+const { verdict } = await import('../src/lib/palette/verdict.ts');
 // A plant for the site checks: its drainage need (well_drained) and a high drought tolerance, so a wet
 // ground is a misfit only when it wants free-draining soil (site.ts water).
 const drainPlant = (wd) => ({ id: 1, canonical_name: 'Fixture plant', names: {}, traits: { well_drained: wd, drought_tolerance: 'High', moisture_use: null, soil_ph: null, height_m: null, habit: null }, climate: null, stratum: null, warnings: {}, phases: null });
@@ -354,7 +354,7 @@ test('M29: holdStatesOf, laterLossOf and holdCounts are the verdict rule\'s, rea
     assert.equal(typeof vd[k], 'function', `verdict.ts ${k}`);
     assert.equal(line[k], undefined, `verdict-line.ts has no ${k}`);
   }
-  const { loadVerdictRule } = await import('../src/lib/consortium/verdict-load.ts');
+  const { loadVerdictRule } = await import('../src/lib/palette/verdict-load.ts');
   const rule = await loadVerdictRule();
   for (const k of ['holdStates', 'laterLoss', 'holdCounts']) assert.equal(typeof rule[k], 'function', `rule.${k}`);
 });
@@ -370,9 +370,9 @@ test('M30: holdCounts counts holds, not and unknown over the given ids; an id wi
 // M31: a serious conflict carries its seriousness on the line itself, so every surface (Details, Swap,
 // Find, the Next step) draws it in the danger colour with the word.
 test('M31: flagLines gives a high conflict the danger level and a chip ending "(serious)"; a medium one stays a warning', async () => {
-  const strings = await import('../src/islands/consortium/strings.ts');
+  const strings = await import('../src/islands/palette/strings.ts');
   strings.setStrings(Object.fromEntries(Object.entries(words.en).filter(([k]) => k.startsWith('consortium.')).map(([k, v]) => [k.slice(11), v])), 'en');
-  const { flagLines } = await import('../src/islands/consortium/views/kit/flags.ts');
+  const { flagLines } = await import('../src/islands/palette/views/kit/flags.ts');
   const olive = { id: 9, names: { en: 'Olive' }, canonical_name: 'Olea europaea' };
   const scene = { site: core.UNSURE_SITE, members: [], country: null, taxonOf: (id) => (id === 9 ? olive : null) };
   const t = drainPlant(true);
@@ -407,7 +407,7 @@ test('M36: rowRainLine says "recorded from N mm" at a dryland with a rain range,
 
 // M39: the soil card's distance in each language's own kilometre form.
 test('M39: formatKm writes kilometres in the language\'s unit form', async () => {
-  const { formatKm } = await import('../src/islands/consortium/format.ts');
+  const { formatKm } = await import('../src/islands/palette/format.ts');
   assert.equal(formatKm(12, 'en'), '12 km');
   assert.equal(formatKm(12, 'ja'), new Intl.NumberFormat('ja', { style: 'unit', unit: 'kilometer', unitDisplay: 'short', maximumFractionDigits: 0 }).format(12));
   assert.equal(formatKm(1250, 'en'), '1,250 km');
@@ -416,7 +416,7 @@ test('M39: formatKm writes kilometres in the language\'s unit form', async () =>
 // M38, h3 R1-R4: a plant's sheet opened from a sheet stacks over it (store.sheets); the sheet under it
 // is the way back (sheetBack), and closing the top one shows the one under as it was (same opening).
 test('M38, h3 R1-R4: Details from Find stacks over it; Swap from Details stacks too; the same kind replaces the top; each back pops one level, Find and its target kept', async () => {
-  const store = await import('../src/islands/consortium/store.ts');
+  const store = await import('../src/islands/palette/store.ts');
   store.closeSheet();
   store.openSheet('details', 5);
   assert.equal(store.sheetBack.peek(), null, 'from the palette: no way back');
@@ -458,7 +458,7 @@ test('M38, h3 R1-R4: Details from Find stacks over it; Swap from Details stacks 
 // h3 fix round 2, B2.1: a history that refuses pushState (Safari's SecurityError past 100 calls,
 // Firefox's rate limit) never hangs the page: pushWaiting stops at the first refused push.
 test('B2.1 (h3): pushWaiting returns when pushState throws, with sheets above the entries', async () => {
-  const store = await import('../src/islands/consortium/store.ts');
+  const store = await import('../src/islands/palette/store.ts');
   const had = Object.getOwnPropertyDescriptor(globalThis, 'history');
   let calls = 0;
   Object.defineProperty(globalThis, 'history', { configurable: true, value: { state: null, pushState() { calls++; throw new Error('SecurityError'); }, go() {} } });
@@ -482,7 +482,7 @@ test('B2.1 (h3): pushWaiting returns when pushState throws, with sheets above th
 // plant already on top keeps that sheet (its warning takes the focus, c4 R2); one raised in Find opens
 // Details from Find (c4 C2).
 test('B4.1 (h3; c4 T7): a sheet records where it was opened from; a Details replacing one keeps it; Show for the Details on top keeps it; Show raised in Find comes from Find', async () => {
-  const store = await import('../src/islands/consortium/store.ts');
+  const store = await import('../src/islands/palette/store.ts');
   store.closeSheet();
   store.openFind();
   store.openSheet('details', 5);
@@ -514,6 +514,6 @@ test('B4.1 (h3; c4 T7): a sheet records where it was opened from; a Details repl
   store.hideToast();
   store.closeSheet();
   const src = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
-  assert.match(src('../src/islands/consortium/views/find/Find.tsx'), /openSheet\('details', t\.id, \{\}, 'find'\)/, 'Find\'s row says it opened Details');
-  assert.match(src('../src/islands/consortium/views/details/Details.tsx'), /from === 'find' && \w+\?\.kind === 'find'/, 'Details shows the link only from Find, over Find');
+  assert.match(src('../src/islands/palette/views/find/Find.tsx'), /openSheet\('details', t\.id, \{\}, 'find'\)/, 'Find\'s row says it opened Details');
+  assert.match(src('../src/islands/palette/views/details/Details.tsx'), /from === 'find' && \w+\?\.kind === 'find'/, 'Details shows the link only from Find, over Find');
 });

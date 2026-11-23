@@ -152,7 +152,7 @@ const LAYER_IDS: LayerId[] = ['climate', 'soil', 'regions'];
  * coordinate (latitude outside [-90, 90], non-finite) and with ClimateTileError when a listed tile
  * cannot be read. `{ soil: false }` reads no soil tile (soil null): the consortium puts a place in use
  * without it, so a slow or failed soil tile never holds the place, then reads it again with the soil
- * for its figures (islands/consortium/state/location.ts soilLater).
+ * for its figures (islands/palette/state/location.ts soilLater).
  */
 export async function lookupSite(lat: number, lon: number, source: TileSource, radius = DEFAULT_RADIUS, { soil: withSoil = true }: { soil?: boolean } = {}): Promise<SiteLookup> {
   if (!validCoordinate(lat, lon)) throw new RangeError(`invalid coordinate ${lat}, ${lon}`);

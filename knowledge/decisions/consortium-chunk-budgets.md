@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:45Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:25Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:25Z }
@@ -11,28 +11,28 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:fe406149f10e3477
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:eeaab36bba2abe93
+    last_modified: 2026-11-23T21:01:37Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:c2b450b349d5137d
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7eb74c8505c7b909
+    last_modified: 2026-11-23T20:58:01Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
-    digest: sha256:de83b81abefa97df
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:3a8eff8f51600f86
+    last_modified: 2026-11-23T20:58:01Z
   - id: sheet-tsx
-    resource: ../../src/islands/consortium/views/kit/sheet.tsx
-    title: src/islands/consortium/views/kit/sheet.tsx
-    digest: sha256:fdf04f4a2b1781a3
-    last_modified: 2026-11-19T08:16:50Z
+    resource: ../../src/islands/palette/views/kit/sheet.tsx
+    title: src/islands/palette/views/kit/sheet.tsx
+    digest: sha256:79cc5bbaf0b55518
+    last_modified: 2026-11-23T20:58:01Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:6346b81af8801e47
-    last_modified: 2026-11-18T15:30:23Z
+    digest: sha256:df1d6414f82153a6
+    last_modified: 2026-11-23T21:04:15Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -44,10 +44,10 @@ sources:
     digest: sha256:f461e1c971e04d97
     last_modified: 2026-11-13T03:21:28Z
   - id: app-tsx
-    resource: ../../src/islands/consortium/App.tsx
-    title: src/islands/consortium/App.tsx
-    digest: sha256:9b5471db4254810e
-    last_modified: 2026-11-19T05:13:33Z
+    resource: ../../src/islands/palette/App.tsx
+    title: src/islands/palette/App.tsx
+    digest: sha256:685ec7e12121c7e4
+    last_modified: 2026-11-23T20:58:01Z
 enforced_by: [scripts/check-built-site.mjs, scripts/built-modules.test.mjs]
 ---
 
@@ -112,7 +112,7 @@ Coordinator row "F1a design-check choices" in [the decisions](/decisions/consort
 - **Roles.** `structure` and `balance` are removed. Three roles are added, each capped at 12 KB:
   - `matrix` (`views/Matrix.tsx` and `Actions.tsx`, which must be 2 chunks)
   - `palette` (`views/palette/Palette.tsx`)
-  - `verdict` (`src/lib/consortium/verdict.ts`, one chunk)
+  - `verdict` (`src/lib/palette/verdict.ts`, one chunk)
 - **Measured after 0a** (gzip -9, matrix behind `lazyPart`):
   - first run 35.5 KB (36,396 B) of 38 KB, down from 38.0 KB at f1a/int
   - matrix 5.5 KB, verdict 0.2 KB, details 6.4 of 6.7 KB

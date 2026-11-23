@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 
-const { formatMm } = await import('../src/islands/consortium/format.ts');
+const { formatMm } = await import('../src/islands/palette/format.ts');
 const dir = new URL('../src/i18n/translations/', import.meta.url);
 // Every locale's flat key map, by language.
 export const words = Object.fromEntries(readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => [f.slice(0, -5), JSON.parse(readFileSync(new URL(f, dir), 'utf8'))]));

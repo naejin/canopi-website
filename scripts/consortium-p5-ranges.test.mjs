@@ -11,12 +11,12 @@ import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
 
 // The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
-const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
-const { SIZE_LIMIT, suggest } = await import('../src/lib/consortium/suggest.ts');
-const sc = await import('../src/lib/consortium/site-climate.ts');
-const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
-const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
+const core = { ...(await import('../src/lib/palette/index.ts')), ...(await import('../src/lib/palette/site.ts')), ...(await import('../src/lib/palette/range.ts')), ...(await import('../src/lib/palette/future.ts')) };
+const { SIZE_LIMIT, suggest } = await import('../src/lib/palette/suggest.ts');
+const sc = await import('../src/lib/palette/site-climate.ts');
+const { openBytes } = await import('../src/islands/palette/data/load.ts');
+const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
+const view = (f) => readFileSync(new URL(`../src/islands/palette/views/${f}`, import.meta.url), 'utf8');
 
 // A lookup whose today slot is given (Lyon's regions unless replaced).
 const lookupAt = (period, regions = lyon.lookup.regions) => ({
@@ -120,10 +120,10 @@ test('fits: on a dry site, drought tolerance Medium fits (no note: watering is t
 // ---- the seam: one list of range variables ----
 
 test('range variables: the export variables the source reads and the bounds the rule checks are listed once', async () => {
-  const types = await import('../src/lib/consortium/types.ts');
+  const types = await import('../src/lib/palette/types.ts');
   assert.deepEqual(Object.keys(types.RANGE_VARIABLES), ['tmin_cold', 'tmax_warm', 'tmean_year', 'tmean_warm', 'aridity']);
   assert.deepEqual(core.RANGE_BOUNDS.map((b) => b.side), ['cold', 'mild', 'cool', 'summer', 'hot']);
-  const source = readFileSync(new URL('../src/islands/consortium/data/sqlite-source.ts', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/islands/palette/data/sqlite-source.ts', import.meta.url), 'utf8');
   assert.match(source, /RANGE_VARIABLES/);
   assert.doesNotMatch(source, /'tmin_cold', 'tmax_warm'/, 'no second list in the SQL');
 });
@@ -224,7 +224,7 @@ for (const name of ['Ficus carica', 'Ziziphus jujuba', 'Punica granatum']) {
 }
 
 test('schema 4: the reader and the installer read schema 4 only (PP-C 0b), the source reads blocks, sources and weak', async () => {
-  const types = await import('../src/lib/consortium/types.ts');
+  const types = await import('../src/lib/palette/types.ts');
   assert.deepEqual(types.SCHEMA_VERSIONS, [4]);
   const cacao = plant('Theobroma cacao').climate;
   assert.deepEqual(cacao.tmeanYear, { low: 21.3, median: 25.2, high: 27.5, count: cacao.tmeanYear.count, basis: 'thinned_cells', blocks: 499, lowSource: 'treegoer_ranges', highSource: null, weak: false });
@@ -276,7 +276,7 @@ test('reader: plants.grown_as_annual reaches Taxon.traits (fixture: onion)', asy
 });
 
 test('range.ts: which checks annuals skip is one switch (checksWinter), read by every winter-side bound', () => {
-  const src = readFileSync(new URL('../src/lib/consortium/range.ts', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../src/lib/palette/range.ts', import.meta.url), 'utf8');
   assert.equal((src.match(/export const checksWinter = /g) ?? []).length, 1);
   const bounds = src.slice(src.indexOf('export const RANGE_BOUNDS'), src.indexOf('];', src.indexOf('export const RANGE_BOUNDS')));
   for (const side of ['cold', 'mild', 'cool']) assert.match(bounds, new RegExp(`side: '${side}'[^\\n]*checksWinter`), side);

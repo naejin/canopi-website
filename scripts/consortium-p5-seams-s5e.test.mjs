@@ -9,20 +9,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 
-const core = await import('../src/lib/consortium/index.ts');
+const core = await import('../src/lib/palette/index.ts');
 const file = (f) => new URL(`../src/${f}`, import.meta.url);
 const text = (f) => readFileSync(file(f), 'utf8');
-const view = (f) => text(`islands/consortium/views/${f}`);
+const view = (f) => text(`islands/palette/views/${f}`);
 
 test('S5e ships nothing in P5: no native or soil-likely module, slot or reader', async () => {
-  for (const f of ['lib/consortium/native.ts', 'lib/consortium/native-marks.ts', 'lib/consortium/soil-likely.ts',
-    'islands/consortium/views/NativeSlot.tsx', 'islands/consortium/views/LikelySlot.tsx']) assert.equal(existsSync(file(f)), false, f);
+  for (const f of ['lib/palette/native.ts', 'lib/palette/native-marks.ts', 'lib/palette/soil-likely.ts',
+    'islands/palette/views/NativeSlot.tsx', 'islands/palette/views/LikelySlot.tsx']) assert.equal(existsSync(file(f)), false, f);
   assert.equal('nativeHere' in core, false);
   assert.equal('likelyFor' in core, false);
   assert.doesNotMatch(view('place/Place.tsx'), /LikelySlot/);
   assert.doesNotMatch(view('details/Details.tsx'), /NativeSlot/);
-  assert.doesNotMatch(text('islands/consortium/data/sqlite-source.ts'), /nativeIn|plant_areas/);
-  assert.doesNotMatch(text('lib/consortium/source.ts'), /nativeIn/);
+  assert.doesNotMatch(text('islands/palette/data/sqlite-source.ts'), /nativeIn|plant_areas/);
+  assert.doesNotMatch(text('lib/palette/source.ts'), /nativeIn/);
   // (marks.ts and its providers went in PP-C c2: no mark can carry nativeness.)
   assert.equal('loadMarkProviders' in core, false);
 });

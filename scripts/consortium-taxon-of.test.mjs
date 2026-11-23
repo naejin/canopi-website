@@ -6,8 +6,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-const store = await import('../src/islands/consortium/store.ts');
-const { guestOf, borrowedFrom } = await import('../src/lib/consortium/index.ts');
+const store = await import('../src/islands/palette/store.ts');
+const { guestOf, borrowedFrom } = await import('../src/lib/palette/index.ts');
 
 const plant = (id, origin) => ({ id, canonical_name: id, common_name: null, ...(origin ? { origin } : {}) });
 

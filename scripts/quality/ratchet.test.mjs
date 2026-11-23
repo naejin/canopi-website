@@ -57,7 +57,7 @@ test('arch keys name a package, not its resolved path: a symlinked node_modules 
   assert.deepEqual(l1('../../../../home/u/checkout/node_modules/@preact/signals/dist/signals.d.ts'), known);
   assert.deepEqual(compare(known, l1('../../wt/node_modules/.pnpm/x/node_modules/@preact/signals/src/index.ts')).added, []);
   assert.equal(modulePart('node_modules/preact/hooks/src/index.d.ts'), 'preact');
-  assert.equal(modulePart('src/islands/consortium/store.ts'), 'src/islands/consortium/store.ts');
+  assert.equal(modulePart('src/islands/palette/store.ts'), 'src/islands/palette/store.ts');
 });
 
 test('cycle keys rotate to the smallest module and keep direction', () => {

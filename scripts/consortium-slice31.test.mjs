@@ -7,8 +7,8 @@ import { taxon } from './consortium-p5-fixtures.mjs';
 import { CANOPI_FILE_SCHEMA } from './vendor/canopi-design-format/canopi-design-format.ts';
 import { validate } from './vendor/canopi-design-format/validate.mjs';
 
-const core = await import('../src/lib/consortium/index.ts');
-const { applyFilters } = await import('../src/islands/consortium/rules/find-query.ts');
+const core = await import('../src/lib/palette/index.ts');
+const { applyFilters } = await import('../src/islands/palette/rules/find-query.ts');
 
 const {
   canopiFile,

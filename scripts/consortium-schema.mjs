@@ -1,7 +1,7 @@
 // The consortium export's schema (format 4, schema 4.7 or later) as the website expects it: the
 // installer (scripts/install-consortium.mjs) compares every table's columns and statements with them,
 // and the fixture (scripts/fixtures/consortium-v2/make-fixture.mjs) is built from them. A new schema
-// version in canopi-data means a new copy here, and a reader change in src/lib/consortium/.
+// version in canopi-data means a new copy here, and a reader change in src/lib/palette/.
 // Schema 2 (P5 commit 0) adds the climate range tables plant_climate_status, plant_climate and
 // plant_koppen, as SQLite stores them: copied from the sqlite_master of export r-e0b162087a79eecf;
 // schema 3 (the ranges rebuild, owner "Climate ranges fixed before the P5 push") changes

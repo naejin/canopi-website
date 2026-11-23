@@ -4,8 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader, plan } = await import('../src/islands/consortium/views/find/paste.ts');
-const { oneOff, releaseIndex } = await import('../src/islands/consortium/data/search.ts');
+const { pasteNames, pasteTable, binomial, matchName, pasteLists, readPaste, looksLikeHeader, plan } = await import('../src/islands/palette/views/find/paste.ts');
+const { oneOff, releaseIndex } = await import('../src/islands/palette/data/search.ts');
 
 const plant = (id, canonical_name, names = {}) => ({ id, canonical_name, genus: canonical_name.split(' ')[0], names });
 const temperate = [

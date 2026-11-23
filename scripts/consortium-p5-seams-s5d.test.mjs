@@ -1,4 +1,4 @@
-// P5 stream S5d: the future climate check (src/lib/consortium/future.ts, the panel
+// P5 stream S5d: the future climate check (src/lib/palette/future.ts, the panel
 // views/future/future.tsx behind the FutureSlot.tsx shell, store.scenario). Decision row "P5 engineering
 // choices": the latest period a plant's phases reach (phase_end ≥ 3 → 2041–2070; climax → 2071–2099),
 // SSP2-4.5 by default, the scenarios' agreement, too hot (warmest-month maximum beyond Q95 + 2 °C, the
@@ -12,8 +12,8 @@ import { gunzipSync } from 'node:zlib';
 import { ctx, lyon, taxon } from './consortium-p5-fixtures.mjs';
 
 // The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
-const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
-const view = (f) => readFileSync(new URL(`../src/islands/consortium/views/${f}`, import.meta.url), 'utf8');
+const core = { ...(await import('../src/lib/palette/index.ts')), ...(await import('../src/lib/palette/site.ts')), ...(await import('../src/lib/palette/range.ts')), ...(await import('../src/lib/palette/future.ts')) };
+const view = (f) => readFileSync(new URL(`../src/islands/palette/views/${f}`, import.meta.url), 'utf8');
 // Four sites as `canopi-climate lookup` answers them on the v0.2.0 grid (all 9 slots; see the README).
 const SITES = JSON.parse(readFileSync(new URL('fixtures/consortium-future/sites.json', import.meta.url), 'utf8'));
 // As the rules read a site: its inputs (site-inputs.ts, no grower edit).
@@ -136,8 +136,8 @@ const realFile = new URL(`public${index.files[0].url}`, ROOT);
 let pools = null;
 async function realPools() {
   if (pools) return pools;
-  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+  const { openBytes } = await import('../src/islands/palette/data/load.ts');
+  const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
   const real = await openBytes(new Uint8Array(gunzipSync(readFileSync(realFile))), { releaseId: index.release_id, climates: index.climates });
   const src = createSqliteSource(real.db, { images: index.images });
   pools = Object.fromEntries(await Promise.all(['Temperate', 'Tropical', 'Mediterranean'].map(async (c) => [c, await src.pool(c)])));
@@ -180,7 +180,7 @@ test('real export, SSP2-4.5: whole lists through futureSummary (Lyon Temperate, 
 // ---- the marks and the views ----
 
 test('store.scenario starts at SSP2-4.5; FutureSlot.tsx stays a shell; the panel is the future chunk with the scenario radios', async () => {
-  const store = await import('../src/islands/consortium/store.ts');
+  const store = await import('../src/islands/palette/store.ts');
   assert.equal(store.scenario.value, 'ssp245');
   assert.deepEqual(core.scenarios, ['ssp126', 'ssp245', 'ssp370', 'ssp585']);
   assert.equal(core.DEFAULT_SCENARIO, 'ssp245');

@@ -12,9 +12,9 @@ import { gunzipSync } from 'node:zlib';
 import { taxon } from './consortium-p5-fixtures.mjs';
 
 // The rule files' own helpers come from the files (index.ts names only what the views read, fix round 1 B3).
-const core = { ...(await import('../src/lib/consortium/index.ts')), ...(await import('../src/lib/consortium/site.ts')), ...(await import('../src/lib/consortium/range.ts')), ...(await import('../src/lib/consortium/future.ts')) };
-const { verdict, verdicts, judgedPeriod, holdsBy } = await import('../src/lib/consortium/verdict.ts');
-const { gain } = await import('../src/lib/consortium/suggest.ts');
+const core = { ...(await import('../src/lib/palette/index.ts')), ...(await import('../src/lib/palette/site.ts')), ...(await import('../src/lib/palette/range.ts')), ...(await import('../src/lib/palette/future.ts')) };
+const { verdict, verdicts, judgedPeriod, holdsBy } = await import('../src/lib/palette/verdict.ts');
+const { gain } = await import('../src/lib/palette/suggest.ts');
 const vectors = (f) => JSON.parse(readFileSync(new URL(`vectors/${f}`, import.meta.url), 'utf8'));
 const V = vectors('verdicts.json'), H = vectors('holes.json'), RV = vectors('range-verdicts.json');
 
@@ -115,12 +115,12 @@ const KIAMBU = { lat: -1.1714, lon: 36.8356, source: 'search', label: 'Kiambu', 
 } };
 const index = JSON.parse(readFileSync(new URL('../src/data/consortium-index.json', import.meta.url), 'utf8'));
 async function kiambuStore() {
-  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+  const { openBytes } = await import('../src/islands/palette/data/load.ts');
+  const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
   const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
   const real = createSqliteSource(opened.db, { images: {} });
-  const store = await import('../src/islands/consortium/store.ts');
-  const { state } = await import('../src/islands/consortium/state/schema.ts');
+  const store = await import('../src/islands/palette/store.ts');
+  const { state } = await import('../src/islands/palette/state/schema.ts');
   state.signals.climate.value = 'Subtropical';
   store.pools.value = { Subtropical: await real.pool('Subtropical') };
   store.location.value = KIAMBU;
@@ -147,9 +147,9 @@ test('PP-B (b1b countFits, real data): Kiambu, 305 of the 515 plants on the near
 // (Subtropical borrows every curated list, so the guest case runs on the Temperate list at Kiambu.)
 test('PP-B (b1b countFits, real data): guests in the palette are left out of the count', async () => {
   const store = await kiambuStore();
-  const { state } = await import('../src/islands/consortium/state/schema.ts');
-  const { openBytes } = await import('../src/islands/consortium/data/load.ts');
-  const { createSqliteSource } = await import('../src/islands/consortium/data/sqlite-source.ts');
+  const { state } = await import('../src/islands/palette/state/schema.ts');
+  const { openBytes } = await import('../src/islands/palette/data/load.ts');
+  const { createSqliteSource } = await import('../src/islands/palette/data/sqlite-source.ts');
   const opened = await openBytes(new Uint8Array(gunzipSync(readFileSync(new URL(`../public${index.files[0].url}`, import.meta.url)))), { releaseId: index.release_id, climates: index.climates });
   const real = createSqliteSource(opened.db, { images: {} });
   const temperate = await real.pool('Temperate'), tropical = await real.pool('Tropical');
@@ -270,9 +270,9 @@ test('PP-B (pre-push fix 1): adding any plant fills() names changes its hole (it
 });
 
 test('PP-B (b2 holes, 7.3): jobGapsByPhase moved to holes.ts (one gap engine), still exported from the core', async () => {
-  const jobs = readFileSync(new URL('../src/lib/consortium/jobs.ts', import.meta.url), 'utf8');
+  const jobs = readFileSync(new URL('../src/lib/palette/jobs.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(jobs, /export function jobGapsByPhase/);
-  const holes = await import('../src/lib/consortium/holes.ts');
+  const holes = await import('../src/lib/palette/holes.ts');
   assert.equal(typeof holes.jobGapsByPhase, 'function');
   assert.equal(core.jobGapsByPhase, holes.jobGapsByPhase);
 });
@@ -318,9 +318,9 @@ test('PP-B (b2 probe): verdicts and holes for 200 plants of the real export are 
 
 // ---- the picture model (rules/picture.ts, picture-years.ts, change-summary.ts; the jobs picture is drawn from store.lanes since pf-b)) ----
 const pictures = async () => ({
-  ...await import('../src/islands/consortium/rules/picture.ts'),
-  ...await import('../src/islands/consortium/rules/picture-years.ts'),
-  ...await import('../src/islands/consortium/rules/change-summary.ts'),
+  ...await import('../src/islands/palette/rules/picture.ts'),
+  ...await import('../src/islands/palette/rules/picture-years.ts'),
+  ...await import('../src/islands/palette/rules/change-summary.ts'),
 });
 const { sameCells } = await import('./picture-table.mjs');
 const nameOf = (t) => t.canonical_name;
@@ -420,7 +420,7 @@ test('PP-B (b2 scale fixture, review r1 perf-11): the 10-plant palette is the 20
 // after each part, against the size the page was built with, so the slow line can say how far it is
 // (through openDatabase, the page's own seam; the bytes here are no database, so the open then fails).
 test('M28: opening the database reports the bytes received after each part', async () => {
-  const { openDatabase } = await import('../src/islands/consortium/data/load.ts');
+  const { openDatabase } = await import('../src/islands/palette/data/load.ts');
   const parts = [new Uint8Array(300_000), new Uint8Array(500_000), new Uint8Array(600_000)];
   const real = globalThis.fetch;
   globalThis.fetch = async (input, init) => (String(input?.url ?? input).endsWith('/db.gz')

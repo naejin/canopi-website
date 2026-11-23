@@ -2,7 +2,7 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:47Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:26Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:17Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:29Z }
@@ -10,8 +10,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:0c6931a4a66f6ca4
-    last_modified: 2026-11-23T11:35:01Z
+    digest: sha256:09a8785016e8c670
+    last_modified: 2026-11-23T20:58:01Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -40,8 +40,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:c2b450b349d5137d
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7eb74c8505c7b909
+    last_modified: 2026-11-23T20:58:01Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -65,18 +65,18 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:6346b81af8801e47
-    last_modified: 2026-11-18T15:30:23Z
+    digest: sha256:df1d6414f82153a6
+    last_modified: 2026-11-23T21:04:15Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:9def0d1d684cb01f
     last_modified: 2026-11-23T11:35:01Z
   - id: store-ts
-    resource: ../../src/islands/consortium/store.ts
-    title: src/islands/consortium/store.ts
-    digest: sha256:c4e8c2410220e903
-    last_modified: 2026-11-19T09:07:50Z
+    resource: ../../src/islands/palette/store.ts
+    title: src/islands/palette/store.ts
+    digest: sha256:a2d405853d85b528
+    last_modified: 2026-11-23T20:58:01Z
   - id: vectors-mjs
     resource: ../../scripts/fixtures/climate/vectors.mjs
     title: scripts/fixtures/climate/vectors.mjs
@@ -100,13 +100,13 @@ sources:
   - id: consortium-p5-ranges-test-mjs
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
-    digest: sha256:ada2fb6322d9da54
-    last_modified: 2026-11-18T04:32:21Z
+    digest: sha256:fb7426fc53e5e9fa
+    last_modified: 2026-11-23T20:58:01Z
   - id: location-ts
-    resource: ../../src/islands/consortium/state/location.ts
-    title: src/islands/consortium/state/location.ts
-    digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/location.ts
+    title: src/islands/palette/state/location.ts
+    digest: sha256:5acb3da6eca26ed5
+    last_modified: 2026-11-23T20:58:01Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
@@ -114,7 +114,7 @@ enforced_by:
 
 # What it is
 
-P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid (`src/lib/climate/`) and the installer that serves the grid's tiles as static files (`scripts/install-climate.mjs`). The island's "Where is your site?" view (S5b UI) calls it. Since P5 commit 0 the island's `store.ts` imports its `SiteLookup` type only, to check at compile time that it stays assignable to the core's structural `SiteLookup` (`src/lib/consortium/types.ts`: lat, lon, climate periods with Köppen, margin, tmin/tmax and tmean of the coldest/warmest months, aridity; soil pH, texture and fill; region codes); the core never imports the reader. `scripts/browser/location-fixtures.mjs` `lookupAt` runs it in Node over a build's tiles for the P5 browser specs.
+P5 stream S5b's data half: a TypeScript reader for the canopi-climate v0.2 grid (`src/lib/climate/`) and the installer that serves the grid's tiles as static files (`scripts/install-climate.mjs`). The island's "Where is your site?" view (S5b UI) calls it. Since P5 commit 0 the island's `store.ts` imports its `SiteLookup` type only, to check at compile time that it stays assignable to the core's structural `SiteLookup` (`src/lib/palette/types.ts`: lat, lon, climate periods with Köppen, margin, tmin/tmax and tmean of the coldest/warmest months, aridity; soil pH, texture and fill; region codes); the core never imports the reader. `scripts/browser/location-fixtures.mjs` `lookupAt` runs it in Node over a build's tiles for the P5 browser specs.
 
 # Reader (`src/lib/climate/`)
 

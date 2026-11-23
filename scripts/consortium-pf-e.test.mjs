@@ -6,9 +6,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const M = await import('../src/islands/consortium/views/plants/model.ts');
-const { pasteNames, pasteReader, readPaste, plan, pasteCounts, answered, questionsOf, isAnswered, isPicked } = await import('../src/islands/consortium/views/find/paste.ts');
-const { releaseIndex } = await import('../src/islands/consortium/data/search.ts');
+const M = await import('../src/islands/palette/views/plants/model.ts');
+const { pasteNames, pasteReader, readPaste, plan, pasteCounts, answered, questionsOf, isAnswered, isPicked } = await import('../src/islands/palette/views/find/paste.ts');
+const { releaseIndex } = await import('../src/islands/palette/data/search.ts');
 
 const taxon = (id, name, { stratum = null, family = null, functions = [], years = null } = {}) => ({
   id, canonical_name: `${name} sp`, names: { en: name }, family,

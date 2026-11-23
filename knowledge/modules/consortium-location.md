@@ -2,41 +2,41 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: antigravity/gemini, at: 2026-11-23T18:52:49Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:29Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:39Z }
 sources:
   - id: location-privacy-tsx
-    resource: ../../src/islands/consortium/views/location/privacy.tsx
-    title: src/islands/consortium/views/location/privacy.tsx
+    resource: ../../src/islands/palette/views/location/privacy.tsx
+    title: src/islands/palette/views/location/privacy.tsx
     digest: sha256:cd3c9e941a9646eb
-    last_modified: 2026-11-19T12:55:44Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: locationslot-tsx
-    resource: ../../src/islands/consortium/views/LocationSlot.tsx
-    title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:e96bcdabea1b6bcc
-    last_modified: 2026-11-23T17:15:38Z
+    resource: ../../src/islands/palette/views/LocationSlot.tsx
+    title: src/islands/palette/views/LocationSlot.tsx
+    digest: sha256:49df7d766bb12039
+    last_modified: 2026-11-23T19:33:12Z
   - id: location-tsx
-    resource: ../../src/islands/consortium/views/location/location.tsx
-    title: src/islands/consortium/views/location/location.tsx
-    digest: sha256:342093afa0ffb607
-    last_modified: 2026-11-19T12:55:44Z
+    resource: ../../src/islands/palette/views/location/location.tsx
+    title: src/islands/palette/views/location/location.tsx
+    digest: sha256:4a3aaec54728bcfd
+    last_modified: 2026-11-23T20:58:01Z
   - id: load-ts
-    resource: ../../src/islands/consortium/views/location/load.ts
-    title: src/islands/consortium/views/location/load.ts
-    digest: sha256:35349134ff46ab9c
-    last_modified: 2026-11-14T21:28:50Z
+    resource: ../../src/islands/palette/views/location/load.ts
+    title: src/islands/palette/views/location/load.ts
+    digest: sha256:5229676dcc8299b6
+    last_modified: 2026-11-23T20:58:01Z
   - id: site-climate-ts
-    resource: ../../src/lib/consortium/site-climate.ts
-    title: src/lib/consortium/site-climate.ts
+    resource: ../../src/lib/palette/site-climate.ts
+    title: src/lib/palette/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-12T07:59:10Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: state-ts
-    resource: ../../src/lib/consortium/state.ts
-    title: src/lib/consortium/state.ts
+    resource: ../../src/lib/palette/state.ts
+    title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:21:26Z
+    last_modified: 2026-11-23T11:23:11Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -68,50 +68,50 @@ sources:
     digest: sha256:0ea12cf3eed423f3
     last_modified: 2026-11-11T18:00:01Z
   - id: share-tsx
-    resource: ../../src/islands/consortium/views/Share.tsx
-    title: src/islands/consortium/views/Share.tsx
-    digest: sha256:64add8412f5965b6
-    last_modified: 2026-11-19T06:07:14Z
+    resource: ../../src/islands/palette/views/Share.tsx
+    title: src/islands/palette/views/Share.tsx
+    digest: sha256:df3879a82655959b
+    last_modified: 2026-11-23T20:58:01Z
   - id: s5b-css
-    resource: ../../src/styles/consortium/p5/s5b.css
-    title: src/styles/consortium/p5/s5b.css
+    resource: ../../src/styles/palette/p5/s5b.css
+    title: src/styles/palette/p5/s5b.css
     digest: sha256:ed9da057326d8304
     last_modified: 2026-11-18T17:05:25Z
   - id: start-tsx
-    resource: ../../src/islands/consortium/views/place/Place.tsx
-    title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:61f195384df6b977
-    last_modified: 2026-11-23T18:06:44Z
+    resource: ../../src/islands/palette/views/place/Place.tsx
+    title: src/islands/palette/views/place/Place.tsx
+    digest: sha256:8310681ad9758fb1
+    last_modified: 2026-11-23T20:58:01Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
     digest: sha256:8a1b289257cc7217
     last_modified: 2026-11-11T20:03:06Z
   - id: location-ts
-    resource: ../../src/islands/consortium/state/location.ts
-    title: src/islands/consortium/state/location.ts
-    digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T13:11:53Z
+    resource: ../../src/islands/palette/state/location.ts
+    title: src/islands/palette/state/location.ts
+    digest: sha256:5acb3da6eca26ed5
+    last_modified: 2026-11-23T20:58:01Z
   - id: lookups-ts
-    resource: ../../src/islands/consortium/state/lookups.ts
-    title: src/islands/consortium/state/lookups.ts
-    digest: sha256:9b4b17c87a85f603
-    last_modified: 2026-11-13T07:21:50Z
+    resource: ../../src/islands/palette/state/lookups.ts
+    title: src/islands/palette/state/lookups.ts
+    digest: sha256:6ac754c9cfc6c61b
+    last_modified: 2026-11-23T20:58:01Z
   - id: restore-ts
-    resource: ../../src/islands/consortium/state/restore.ts
-    title: src/islands/consortium/state/restore.ts
-    digest: sha256:20cb5074cb42d667
-    last_modified: 2026-11-19T09:14:39Z
+    resource: ../../src/islands/palette/state/restore.ts
+    title: src/islands/palette/state/restore.ts
+    digest: sha256:030d6d5d5be6780b
+    last_modified: 2026-11-23T20:58:01Z
   - id: base-css
-    resource: ../../src/styles/consortium/base.css
-    title: src/styles/consortium/base.css
+    resource: ../../src/styles/palette/base.css
+    title: src/styles/palette/base.css
     digest: sha256:59ecfbc3a59f1adf
     last_modified: 2026-11-19T11:59:54Z
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:0c6931a4a66f6ca4
-    last_modified: 2026-11-23T11:35:01Z
+    digest: sha256:09a8785016e8c670
+    last_modified: 2026-11-23T20:58:01Z
 enforced_by:
   - scripts/consortium-p5-seams-s5b.test.mjs
   - scripts/browser/consortium-studio-onboarding.browser.test.mjs
@@ -127,13 +127,13 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 
 | File | Role |
 |---|---|
-| `src/islands/consortium/views/LocationSlot.tsx` | Thin shell in the island (first run): the three controls (the search input `.ct-location-search` is `11.2em` wide in `base.css`, so a late web font cannot resize it; [fallback fonts](/decisions/metric-matched-fallback-fonts.md)), each with a `[data-location-privacy]` line naming the service, the privacy link (`/privacy/`, S5f), a loading line while a link's or saved location is looked up. "Use my location" shows only with the Geolocation API (an inline `isSecureContext && navigator.geolocation` check: importing lib/location/geolocation.ts would put that module in the first run); the map button only with WebGL, probed once (a `webgl` context, released with `WEBGL_lose_context`), never in `compact`. Enter while an input method composes (`isComposing`, keyCode 229) is not a search. `compact` (result head): the result line only |
-| `src/islands/consortium/state/location.ts` | Since E6 S2 the location step's state, in the lazy location chunk (only location.tsx imports it): `readLocation`, `locationRecord`, `keepLocation`, `locationCountry` (uses persist.ts's `memory` and `quietly`), `siteFound(write, code?)` (a lookup's writes in one batch, then the country quietly, outside it), the tile `read` (15 s `READ_TIMEOUT_MS`, `{ soil: false }`), `soilLater` (the soil map's reading after the place, best effort), `lookUpName` (the reverse lookup's name for a typed point, `nameAsk`), `locate`, `settle(how, saved)`, `useMyLocation`, `searchPlace`, `placeName`, `confirmProposed`, `forget`. The seam tests import it directly (`views/location/keep.ts` deleted in E6 chunk 5) |
-| `src/islands/consortium/state/lookups.ts` | In the first run: `lookups`/`looking(step)`: location steps in flight (a click, a search, a map centre, a link's or the saved location), counted until they settle or fail; `lookingThrough(load, run)` holds one count from the chunk load through its settle; `unread` (Suggest ran without the site's climate); the result `line`; `nextLookup`/`liveLookup` (one lookup at a time owns Start's location state: an older or dropped one writes nothing); `unlessReplaced(wait)` (a prompt, position, tile read or search ends with `undefined` the moment its lookup is replaced or dropped; review round 4, 1, P5-1g); `letGo(drop)` |
-| `src/islands/consortium/views/location/load.ts` | `loadLocationStep()` (cached `import('./location.tsx')` through core `retry-import.ts` `retryableImport` since the E6 hand-off, so after a failure the next ask fetches the chunk again as `?retry=n`, even in Chromium; a failure logged once and not cached), the `locationStep` signal, and `loadLocationStep`, which main.ts hands to `state/restore.ts` with `provideLocationStep` before the first render (state imports no view, ADR-1 L2; since E6 S3 this module registers nothing at import, and the loader is in place before `startMemory`). Its re-exports of the `state/lookups.ts` names were removed in E6 chunk 5 (the seam tests import `state/lookups.ts`) |
-| `src/islands/consortium/views/location/location.tsx` | The lazy chunk's entry (≤ 20 KB); renders only since E6 S2, re-exporting `settle`, `useMyLocation`, `searchPlace` from `state/location.ts`: the shell (LocationSlot) and `state/restore.ts` (settle) call them through these three, the lazy chunk's interface (a direct import of `state/location.ts` would split it into a second, role-less lazy chunk; kept at the E6 chunk-5 merge, coordinator row "E6 chunk-5 merge choices"): `openMap`, `stateText`, `LocationResult` (`[data-location-state]`, `[data-location-confirm]`), the map dialog (`[data-location-map]`, crosshair, `[data-location-use-centre]`; test hook `mapCentre`) |
-| `src/lib/consortium/site-climate.ts` | `siteClimate(lookup)`: state `sea` / `polar` / `borderline` / `coast` / `ready`, `zone`, `near`, `suggested`; `koppenZone(k)` |
-| `src/lib/consortium/state.ts` | `o=` in links: `encodeLink(…, { origin })`, `linkOrigin(link)`, `cellCentre(lookup)` |
+| `src/islands/palette/views/LocationSlot.tsx` | Thin shell in the island (first run): the three controls (the search input `.ct-location-search` is `11.2em` wide in `base.css`, so a late web font cannot resize it; [fallback fonts](/decisions/metric-matched-fallback-fonts.md)), each with a `[data-location-privacy]` line naming the service, the privacy link (`/privacy/`, S5f), a loading line while a link's or saved location is looked up. "Use my location" shows only with the Geolocation API (an inline `isSecureContext && navigator.geolocation` check: importing lib/location/geolocation.ts would put that module in the first run); the map button only with WebGL, probed once (a `webgl` context, released with `WEBGL_lose_context`), never in `compact`. Enter while an input method composes (`isComposing`, keyCode 229) is not a search. `compact` (result head): the result line only |
+| `src/islands/palette/state/location.ts` | Since E6 S2 the location step's state, in the lazy location chunk (only location.tsx imports it): `readLocation`, `locationRecord`, `keepLocation`, `locationCountry` (uses persist.ts's `memory` and `quietly`), `siteFound(write, code?)` (a lookup's writes in one batch, then the country quietly, outside it), the tile `read` (15 s `READ_TIMEOUT_MS`, `{ soil: false }`), `soilLater` (the soil map's reading after the place, best effort), `lookUpName` (the reverse lookup's name for a typed point, `nameAsk`), `locate`, `settle(how, saved)`, `useMyLocation`, `searchPlace`, `placeName`, `confirmProposed`, `forget`. The seam tests import it directly (`views/location/keep.ts` deleted in E6 chunk 5) |
+| `src/islands/palette/state/lookups.ts` | In the first run: `lookups`/`looking(step)`: location steps in flight (a click, a search, a map centre, a link's or the saved location), counted until they settle or fail; `lookingThrough(load, run)` holds one count from the chunk load through its settle; `unread` (Suggest ran without the site's climate); the result `line`; `nextLookup`/`liveLookup` (one lookup at a time owns Start's location state: an older or dropped one writes nothing); `unlessReplaced(wait)` (a prompt, position, tile read or search ends with `undefined` the moment its lookup is replaced or dropped; review round 4, 1, P5-1g); `letGo(drop)` |
+| `src/islands/palette/views/location/load.ts` | `loadLocationStep()` (cached `import('./location.tsx')` through core `retry-import.ts` `retryableImport` since the E6 hand-off, so after a failure the next ask fetches the chunk again as `?retry=n`, even in Chromium; a failure logged once and not cached), the `locationStep` signal, and `loadLocationStep`, which main.ts hands to `state/restore.ts` with `provideLocationStep` before the first render (state imports no view, ADR-1 L2; since E6 S3 this module registers nothing at import, and the loader is in place before `startMemory`). Its re-exports of the `state/lookups.ts` names were removed in E6 chunk 5 (the seam tests import `state/lookups.ts`) |
+| `src/islands/palette/views/location/location.tsx` | The lazy chunk's entry (≤ 20 KB); renders only since E6 S2, re-exporting `settle`, `useMyLocation`, `searchPlace` from `state/location.ts`: the shell (LocationSlot) and `state/restore.ts` (settle) call them through these three, the lazy chunk's interface (a direct import of `state/location.ts` would split it into a second, role-less lazy chunk; kept at the E6 chunk-5 merge, coordinator row "E6 chunk-5 merge choices"): `openMap`, `stateText`, `LocationResult` (`[data-location-state]`, `[data-location-confirm]`), the map dialog (`[data-location-map]`, crosshair, `[data-location-use-centre]`; test hook `mapCentre`) |
+| `src/lib/palette/site-climate.ts` | `siteClimate(lookup)`: state `sea` / `polar` / `borderline` / `coast` / `ready`, `zone`, `near`, `suggested`; `koppenZone(k)` |
+| `src/lib/palette/state.ts` | `o=` in links: `encodeLink(…, { origin })`, `linkOrigin(link)`, `cellCentre(lookup)` |
 | `src/lib/location/*` | Copied from canopi (see below): registry, place search, transport, geolocation, MapLibre loader; `maplibre-entry.ts`, `maplibre-worker.ts` |
 
 ## Rules
@@ -151,7 +151,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 - **Naming a typed point** (h3 G1 round 2, B1.1; PFD51): `lookUpName` checks that the place is still the same typed, unnamed point (lat, lon, source), not the same object, and names the current object, so a soil reading patched on meanwhile neither drops the name nor is dropped by it. Each ask is numbered (`nameAsk`): only the latest ask writes `naming`, so an earlier ask answered or cut short after the grower moved on never clears a newer ask's busy state (h3 G1#1).
 - **Timeouts** (review round 2, 3): a tile read unanswered in 15 s (`READ_TIMEOUT_MS`, a race in state/location.ts's `read`; the climate reader takes no signal) fails like a failed read; a geocoder request is aborted after 15 s (`GEOCODER_TIMEOUT_MS`, transport.ts) and thrown as an error, not an AbortError, so the search shows "offline"; `currentPosition(options, permission)`: the browser's own timeout does not run while its permission prompt waits, so a permission granted before the press gets the browser's 15 s plus a 5 s backstop, and anything else one 45 s cap (`PROMPT_CAP_MS`) over prompt and fix, since a one-time Allow fires no `change` event in some browsers (review round 4, 3).
 - **Keyboard on the cards** (views/place/Place.tsx, formerly Start.tsx; review round 2, 5): with a card proposed and none checked, only the proposed radio is in the tab order; arrows move the focus without checking; Space, Enter or a click confirms (P5-10b).
-- **Map dialog**: Close, "Use the map centre" and Escape all close the native dialog, so focus returns to the map button; the centre pin (ink cross, ochre point) and the dialog's styles are in `src/styles/consortium/p5/s5b.css`.
+- **Map dialog**: Close, "Use the map centre" and Escape all close the native dialog, so focus returns to the map button; the centre pin (ink cross, ochre point) and the dialog's styles are in `src/styles/palette/p5/s5b.css`.
 
 ## Budgets (production build, 2026-11-11)
 
