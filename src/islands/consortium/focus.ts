@@ -16,7 +16,7 @@ function land(found: HTMLElement | null): HTMLElement | null {
   el ??= sheet ? sheet.querySelector<HTMLElement>('[data-autofocus]') : document.querySelector<HTMLElement>('#ct-root h2');
   if (!el) return null;
   if (!el.matches('button, a[href], input, select, textarea, [tabindex]')) el.tabIndex = -1;
-  el.focus();
+  el.focus({ preventScroll: true });
   return el;
 }
 // then: told the element focused (the Next step's Add hands the toast's way back to it).

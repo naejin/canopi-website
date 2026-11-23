@@ -9,7 +9,7 @@
 //   2-column 6-row spec ledger with status icons, Breaking Points badges,
 //   60-year 6-stage lifeline, and full-width 12-month 4-track calendar!
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { siteClimate as climateOf, SUCCESSION_STAGES_6, type Details, type Locale, type Stratum } from '../../../../lib/consortium/index.ts';
+import { jobsOf, siteClimate as climateOf, SUCCESSION_STAGES_6, type Details, type Locale, type Stratum, type Taxon } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { pageLang, T } from '../../strings.ts';
 import { closeFieldDossier, dossierId, dossierList, openFieldDossier, stepFieldDossier, studioTab } from '../../state/studio.ts';
@@ -19,11 +19,58 @@ import { SunIcon } from './SunIcon.tsx';
 import {
   activityMonthsOf,
   buildDossierSpec,
+  stageSpanOf,
   sunTierLabel,
   sunTierOf,
 } from '../../rules/studio-filters.ts';
 
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'] as const;
+
+function scoreCompanion(p: Taxon, other: Taxon): { plant: Taxon; score: number; reason: string } {
+  let score = 0;
+  const reasons: string[] = [];
+  const pSun = sunTierOf(p);
+  const oSun = sunTierOf(other);
+  const pJobs = jobsOf(p);
+  const oJobs = jobsOf(other);
+  if (pSun !== oSun) {
+    score += 2;
+    reasons.push(`Complementary sun (${sunTierLabel(other)})`);
+  }
+  if (pJobs.includes('feeds_soil') && oJobs.includes('feeds_you')) {
+    score += 3;
+    reasons.push('Feeds this harvest partner');
+  } else if (oJobs.includes('feeds_soil') && pJobs.includes('feeds_you')) {
+    score += 3;
+    reasons.push('Fixes nitrogen nearby');
+  }
+  const pDeep = (p.traits.root_depth_min_cm ?? 0) >= 60;
+  const oDeep = (other.traits.root_depth_min_cm ?? 0) >= 60;
+  if (pDeep !== oDeep) {
+    score += 2;
+    reasons.push(oDeep ? 'Deep taproot partner' : 'Shallow-root neighbor');
+  }
+  const pSpan = stageSpanOf(p);
+  const oSpan = stageSpanOf(other);
+  if (oSpan.start !== pSpan.start || oSpan.end !== pSpan.end) {
+    score += 1;
+    reasons.push(`Adjacent succession (${oSpan.label})`);
+  }
+  if (oJobs.includes('helpers') && !reasons.length) {
+    score += 1;
+    reasons.push('Attracts pollinators');
+  } else if (oJobs.includes('mulch') && !reasons.length) {
+    score += 1;
+    reasons.push('Produces biomass & mulch');
+  } else if (oJobs.includes('ground') && !reasons.length) {
+    score += 1;
+    reasons.push('Living soil cover');
+  } else if (oJobs.includes('shelter') && !reasons.length) {
+    score += 1;
+    reasons.push('Windbreak & microclimate shelter');
+  }
+  return { plant: other, score, reason: reasons.slice(0, 2).join(' · ') || 'Balanced guild neighbor' };
+}
 
 const SUN_EMBLEM: Record<Stratum, { glyph: string; sky: string }> = {
   emergent: { glyph: '☀', sky: '100% open sky' },
@@ -80,7 +127,17 @@ export function FieldDossier() {
   if (!id || !taxon || !spec) return null;
 
   const inPalette = store.members.value.includes(taxon.id);
-  const peers = store.memberTaxa.value.filter((m) => m.id !== taxon.id).slice(0, 5);
+  const memberSet = new Set(store.members.value);
+  const inPalComps = store.memberTaxa.value
+    .filter((m) => m.id !== taxon.id)
+    .map((m) => scoreCompanion(taxon, m))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  const poolComps = (store.fitPool.value ?? store.pool.value ?? [])
+    .filter((c) => !memberSet.has(c.id) && c.id !== taxon.id)
+    .map((c) => scoreCompanion(taxon, c))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
   const canStep = list.length > 1;
   const curIdx = list.indexOf(taxon.id);
   const sun = sunTierOf(taxon);
@@ -326,67 +383,141 @@ export function FieldDossier() {
               </div>
             </div>
 
-            {/* Full-Width 12-Month 4-Track Calendar (verbatim .cal-table) */}
-            <div class="gauge-card">
-              <div class="gauge-head">
-                <strong>12-month seasonal activity</strong>
+            {/* Section 3 · 12-Month Rhythm (verbatim 13-col .d-cal-grid: Activity + J..D) */}
+            <section class="d-section" aria-label="Your year with this plant">
+              <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:8px;">
+                <div>
+                  <div class="d-sec-kicker">Section 3 · 12-month rhythm</div>
+                  <h3 class="d-sec-title">Your Year With This Plant</h3>
+                </div>
                 {spec.photoperiodInfo && (
-                  <span class="winter-pill" data-photoperiod-badge>
+                  <span class="prov-badge" data-photoperiod-badge>
                     Photoperiod {spec.photoperiodInfo.winterH.toFixed(1)}–{spec.photoperiodInfo.summerH.toFixed(1)} h
                   </span>
                 )}
               </div>
-              <div class="cal-wrap">
-                <table class="cal-table" style="min-width:100%;">
-                  <thead>
-                    <tr>
-                      {MONTH_SHORT.map((mo, m) => (
-                        <th key={mo} class={m <= 2 || m >= 10 ? 'win' : undefined}>{mo}</th>
+
+              <table class="d-cal-grid" data-dossier-calendar>
+                <thead>
+                  <tr>
+                    <th>Activity</th>
+                    {MONTH_LETTERS.map((m, i) => (
+                      <th key={i} class={i <= 2 || i >= 10 ? 'win' : undefined}>{m}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {([
+                    {
+                      label: 'Winter-grow',
+                      cls: 'on-win',
+                      on: (m: number) => (isEvergreen || (!isAnnual && (spark[m] ?? 'dormant') !== 'dormant')) && (m <= 1 || m >= 10),
+                    },
+                    {
+                      label: 'Sow / plant',
+                      cls: 'on-sow',
+                      on: (m: number) => (isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10)),
+                    },
+                    {
+                      label: 'Bloom',
+                      cls: 'on-bloom',
+                      on: (m: number) => (spark[m] ?? 'dormant') !== 'dormant' && m >= 3 && m <= 7,
+                    },
+                    {
+                      label: 'Harvest',
+                      cls: 'on-harv',
+                      on: (m: number) => (spark[m] ?? 'dormant') === 'peak' || ((spark[m] ?? 'dormant') === 'active' && m >= 7 && m <= 9),
+                    },
+                  ] as const).map((row) => (
+                    <tr key={row.label}>
+                      <td>{row.label}</td>
+                      {MONTH_LETTERS.map((_, i) => (
+                        <td key={i} class={i <= 2 || i >= 10 ? 'win' : undefined}>
+                          <div class="d-cal-cell-wrap">
+                            {row.on(i) && <div class={`d-cal-cell ${row.cls}`} />}
+                          </div>
+                        </td>
                       ))}
                     </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      {MONTH_SHORT.map((mo, m) => {
-                        const lvl = spark[m] ?? 'dormant';
-                        const showW = (isEvergreen || (!isAnnual && lvl !== 'dormant')) && (m <= 1 || m >= 10);
-                        const showS = isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10);
-                        const showB = lvl !== 'dormant' && m >= 3 && m <= 7;
-                        const showH = lvl === 'peak' || (lvl === 'active' && m >= 7 && m <= 9);
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            {/* Section 4 · Guild Synergy (verbatim mockup .comp-list / .comp-row) */}
+            {(inPalComps.length > 0 || poolComps.length > 0) && (
+              <section class="d-section" aria-label="Companion synergy">
+                <div>
+                  <div class="d-sec-kicker">Section 4 · Guild synergy</div>
+                  <h3 class="d-sec-title">Works Well With in Your Palette</h3>
+                </div>
+
+                {inPalComps.length > 0 && (
+                  <div>
+                    <div class="fp-label">Already in your palette</div>
+                    <div class="comp-list">
+                      {inPalComps.map((c) => {
+                        const cSun = SUN_CLS[sunTierOf(c.plant)];
                         return (
-                          <td key={mo} class={m <= 2 || m >= 10 ? 'win' : undefined}>
-                            <div class="cal-tracks" aria-hidden="true">
-                              {showW && <span class="ct-slot"><span class="ct-win" /></span>}
-                              {showS && <span class="ct-slot"><span class="ct-sow" /></span>}
-                              {showB && <span class="ct-slot"><span class="ct-bloom" /></span>}
-                              {showH && <span class="ct-slot"><span class="ct-harv" /></span>}
+                          <div
+                            key={c.plant.id}
+                            class="comp-row"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => openFieldDossier(c.plant.id, store.members.peek())}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFieldDossier(c.plant.id, store.members.peek()); } }}
+                          >
+                            <div style="min-width:0;">
+                              <strong style="font-size:14px;">{nameOf(c.plant)}</strong>
+                              <span class={`sun-badge ${cSun}`} style="font-size:10.5px; padding:1px 6px; margin-left:4px;">
+                                {sunTierLabel(c.plant)}
+                              </span>
+                              <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">{c.reason}</div>
                             </div>
-                          </td>
+                            <span style="font-size:12.5px; font-weight:600; color:var(--ink-muted); white-space:nowrap;">Open →</span>
+                          </div>
                         );
                       })}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    </div>
+                  </div>
+                )}
 
-            {/* Companion Synergy Links */}
-            {peers.length > 0 && (
-              <div class="gauge-card">
-                <strong>Companion synergy in your palette</strong>
-                <div class="chip-row">
-                  {peers.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      class="btn btn-xs"
-                      onClick={() => openFieldDossier(p.id, store.members.peek())}
-                    >
-                      {nameOf(p)} →
-                    </button>
-                  ))}
-                </div>
-              </div>
+                {poolComps.length > 0 && (
+                  <div>
+                    <div class="fp-label">Good companions to add</div>
+                    <div class="comp-list">
+                      {poolComps.map((c) => {
+                        const cSun = SUN_CLS[sunTierOf(c.plant)];
+                        return (
+                          <div
+                            key={c.plant.id}
+                            class="comp-row"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => openFieldDossier(c.plant.id, list)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFieldDossier(c.plant.id, list); } }}
+                          >
+                            <div style="min-width:0;">
+                              <strong style="font-size:14px;">{nameOf(c.plant)}</strong>
+                              <span class={`sun-badge ${cSun}`} style="font-size:10.5px; padding:1px 6px; margin-left:4px;">
+                                {sunTierLabel(c.plant)}
+                              </span>
+                              <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">{c.reason}</div>
+                            </div>
+                            <button
+                              type="button"
+                              class="btn btn-xs"
+                              onClick={(e) => { e.stopPropagation(); store.addMembers([c.plant.id]); }}
+                            >
+                              + Add
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </section>
             )}
           </section>
         </div>

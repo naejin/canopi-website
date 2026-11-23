@@ -46,11 +46,11 @@ export function StudioRail() {
   const preset = railPreset.value;
   useEffect(() => {
     if (!preset) return;
-    setFilters((prev) => ({
+    setFilters(() => ({
       ...EMPTY_STUDIO_FILTERS,
-      sun: preset.sun ?? prev.sun,
-      stage: preset.stage ?? prev.stage,
-      role: (preset.role as StudioFilterState['role']) ?? prev.role,
+      suns: preset.sun ? [preset.sun] : [],
+      stages: preset.stage != null ? [preset.stage] : [],
+      roles: preset.role ? [preset.role as StudioFilterState['roles'][number]] : [],
     }));
     if (preset.intent !== undefined) setIntent(preset.intent);
     railPreset.value = null;

@@ -138,7 +138,7 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   return (
     <div class="ct-palette-page">
       <StudioHeader />
-      <div class={`studio-shell${railVisible ? '' : ' rail-hidden'}`}>
+      <div class={`studio-shell${railVisible ? '' : ' rail-collapsed'}`}>
         <div class="studio-main">
           {activeTab === 'system' ? (
             <LazyLivingSystem.View />
@@ -149,7 +149,7 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
           ) : (
             <>
               <PaletteCards />
-              <h2 class="visually-hidden ct-palette-title" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
+              <h2 class="visually-hidden ct-palette-title" tabIndex={-1}>{T('palette.title')}</h2>
               {store.verdictFailed.value && <VerdictNotice />}
               {failedLists.length > 0 && (
                 <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {retry === 'failed'

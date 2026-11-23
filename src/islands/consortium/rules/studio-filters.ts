@@ -5,23 +5,35 @@ import type { Details, JobId, Month, PhaseOrd, SiteLocation, Stratum, Taxon } fr
 import { jobsOf, months, phases, phaseToStageIndex, siteClimate, SUCCESSION_STAGES_6 } from '../../../lib/consortium/index.ts';
 import { photoperiod } from '../../../lib/climate/v07.ts';
 
+export type FitFilter = 'fit' | 'care' | 'risk';
+
 export interface StudioFilterState {
-  sun: Stratum | 'all';
-  stage: number | 'all';
-  role: JobId | 'all';
+  fits: FitFilter[];
+  suns: Stratum[];
+  stages: number[];
+  roles: JobId[];
+  winterPlantable: boolean;
   lowChill: boolean;
   clayWet: boolean;
   extremeHardy: boolean;
 }
 
 export const EMPTY_STUDIO_FILTERS: StudioFilterState = {
-  sun: 'all',
-  stage: 'all',
-  role: 'all',
+  fits: [],
+  suns: [],
+  stages: [],
+  roles: [],
+  winterPlantable: false,
   lowChill: false,
   clayWet: false,
   extremeHardy: false,
 };
+
+export const FIT_OPTIONS: readonly { id: FitFilter; label: string }[] = [
+  { id: 'fit', label: '✓ Thrives' },
+  { id: 'care', label: '⚠ Needs care' },
+  { id: 'risk', label: '✕ At risk' },
+];
 
 export const SUN_TIER_OPTIONS: readonly { id: Stratum; label: string }[] = [
   { id: 'emergent', label: 'Full sun' },
@@ -40,14 +52,16 @@ export const ROLE_OPTIONS: readonly { id: JobId; label: string }[] = [
 ];
 
 export function activeFilterCount(f: StudioFilterState): number {
-  let n = 0;
-  if (f.sun !== 'all') n++;
-  if (f.stage !== 'all') n++;
-  if (f.role !== 'all') n++;
-  if (f.lowChill) n++;
-  if (f.clayWet) n++;
-  if (f.extremeHardy) n++;
-  return n;
+  return (
+    f.fits.length +
+    f.suns.length +
+    f.stages.length +
+    f.roles.length +
+    (f.winterPlantable ? 1 : 0) +
+    (f.lowChill ? 1 : 0) +
+    (f.clayWet ? 1 : 0) +
+    (f.extremeHardy ? 1 : 0)
+  );
 }
 
 function primarySunTier(t: Taxon): Stratum {
@@ -95,26 +109,40 @@ function isExtremeHardyTaxon(t: Taxon): boolean {
   return false;
 }
 
-export function matchesStudioFilters(t: Taxon, f: StudioFilterState): boolean {
-  if (f.sun !== 'all') {
+function isWinterPlantableTaxon(t: Taxon): boolean {
+  const cold = t.climate?.tminCold?.low;
+  if (cold != null && cold <= -2) return true;
+  if (t.traits.deciduous_evergreen && /evergreen/i.test(t.traits.deciduous_evergreen)) return true;
+  return false;
+}
+
+export function matchesStudioFilters(t: Taxon, f: StudioFilterState, verdictLevel?: string): boolean {
+  if (f.fits.length > 0) {
+    const k: FitFilter = verdictLevel === 'outside' ? 'risk' : verdictLevel === 'look' ? 'care' : 'fit';
+    if (!f.fits.includes(k)) return false;
+  }
+  if (f.suns.length > 0) {
     const order: readonly Stratum[] = ['emergent', 'high', 'medium', 'low'];
-    if (t.light?.sunniest && t.light?.shadiest) {
-      const a = order.indexOf(t.light.sunniest);
-      const b = order.indexOf(t.light.shadiest);
-      const want = order.indexOf(f.sun);
-      if (want < Math.min(a, b) || want > Math.max(a, b)) return false;
-    } else if (primarySunTier(t) !== f.sun) {
-      return false;
-    }
+    const sunOk = f.suns.some((wantSun) => {
+      if (t.light?.sunniest && t.light?.shadiest) {
+        const a = order.indexOf(t.light.sunniest);
+        const b = order.indexOf(t.light.shadiest);
+        const want = order.indexOf(wantSun);
+        return want >= Math.min(a, b) && want <= Math.max(a, b);
+      }
+      return primarySunTier(t) === wantSun;
+    });
+    if (!sunOk) return false;
   }
-  if (f.stage !== 'all') {
+  if (f.stages.length > 0) {
     const span = stageSpanOf(t);
-    if (f.stage < span.start || f.stage > span.end) return false;
+    if (!f.stages.some((st) => st >= span.start && st <= span.end)) return false;
   }
-  if (f.role !== 'all') {
+  if (f.roles.length > 0) {
     const jobs = jobsOf(t);
-    if (!jobs.includes(f.role)) return false;
+    if (!f.roles.some((r) => jobs.includes(r))) return false;
   }
+  if (f.winterPlantable && !isWinterPlantableTaxon(t)) return false;
   if (f.lowChill && !isLowChillTaxon(t)) return false;
   if (f.clayWet && !isClayWetTaxon(t)) return false;
   if (f.extremeHardy && !isExtremeHardyTaxon(t)) return false;

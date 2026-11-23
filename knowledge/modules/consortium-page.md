@@ -2,11 +2,11 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: antigravity/gemini, at: 2026-11-23T18:06:07Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T18:53:20Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T18:06:00Z }
+  - { by: antigravity/gemini, at: 2026-11-23T18:52:40Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -107,7 +107,7 @@ sources:
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
     digest: sha256:61f195384df6b977
-    last_modified: 2026-11-23T18:00:49Z
+    last_modified: 2026-11-23T18:06:44Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -161,8 +161,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:d65efdcaadb604d5
-    last_modified: 2026-11-19T09:07:50Z
+    digest: sha256:ae06582d6b9a7fb4
+    last_modified: 2026-11-23T18:43:52Z
   - id: test-hook-ts
     resource: ../../src/islands/consortium/test-hook.ts
     title: src/islands/consortium/test-hook.ts

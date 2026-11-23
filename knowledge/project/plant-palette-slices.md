@@ -4,10 +4,10 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T14:27:52Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T18:53:23Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:19Z }
-  - { by: antigravity/gemini, at: 2026-11-23T14:27:45Z }
+  - { by: antigravity/gemini, at: 2026-11-23T18:53:14Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -152,8 +152,8 @@ sources:
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
-    digest: sha256:d65efdcaadb604d5
-    last_modified: 2026-11-19T09:07:50Z
+    digest: sha256:ae06582d6b9a7fb4
+    last_modified: 2026-11-23T18:43:52Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts

@@ -131,7 +131,7 @@ export function StudioHeader() {
   };
 
   return (
-    <header ref={headerRef} data-studio-header>
+    <header ref={headerRef} data-studio-header data-view-heading="" tabIndex={-1}>
       <input
         ref={fileInputRef}
         type="file"

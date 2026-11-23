@@ -11,6 +11,10 @@
 }
 
 .ct {
+  [data-studio-header] {
+    position: sticky; top: 0; z-index: 45;
+    background: var(--surface);
+  }
   .studio-doc-bar {
     position: relative; z-index: 44;
     background: var(--surface);
@@ -153,9 +157,9 @@
   }
   .doc-action-btn:hover { background: var(--bg); border-color: var(--border-strong); color: var(--ink); }
 
-  /* Tier 2 — Crisp Navigation & Horizon Bar (~46px, sticky while scrolling) */
+  /* Tier 2 — Crisp Navigation & Horizon Bar (~46px, inside sticky studio header) */
   .studio-nav-bar {
-    position: sticky; top: 0; z-index: 42;
+    position: relative; z-index: 42;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 0 20px;
@@ -348,8 +352,8 @@
 
   /* Right Persistent Collapsible Rail */
   .studio-rail {
-    position: sticky; top: 55px;
-    height: calc(100vh - 55px);
+    position: sticky; top: 138px;
+    height: calc(100vh - 138px);
     background: var(--surface);
     border-left: 1px solid var(--border);
     display: flex; flex-direction: column;
@@ -1918,7 +1922,7 @@
 
   /* 12-Month Personal Calendar */
   .d-cal-grid {
-    width: 100%; border-collapse: collapse; font-size: 11.5px;
+    width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11.5px;
   }
   .d-cal-grid th {
     padding: 5px 2px; text-align: center; font-weight: 600; color: var(--ink-muted);

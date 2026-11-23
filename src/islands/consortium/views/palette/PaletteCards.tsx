@@ -24,7 +24,7 @@ import {
   sunTierOf,
   type StudioFilterState,
 } from '../../rules/studio-filters.ts';
-import { FilterPopover } from './FilterPopover.tsx';
+import { ActiveFilterChips, FilterPanel, FilterPopover } from './FilterPopover.tsx';
 import { SunIcon } from './SunIcon.tsx';
 
 const SUN_COLOR: Record<string, string> = {
@@ -112,18 +112,19 @@ export function PaletteCards() {
   const sitePh = store.location.value?.lookup?.soil?.phH2o ?? store.siteEdits.value.soilPh ?? null;
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<StudioFilterState>({ ...EMPTY_STUDIO_FILTERS });
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const mode = paletteViewMode.value;
   const groupBy = paletteGroupMode.value;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return members.filter((t) => {
-      if (!matchesStudioFilters(t, filters)) return false;
+      if (!matchesStudioFilters(t, filters, verdicts?.get(t.id)?.level)) return false;
       if (!q) return true;
       const roles = roleSummary(t).toLowerCase();
       return nameOf(t).toLowerCase().includes(q) || t.canonical_name.toLowerCase().includes(q) || roles.includes(q);
     });
-  }, [members, filters, query]);
+  }, [members, filters, query, verdicts]);
 
   const ids = useMemo(() => filtered.map((t) => t.id), [filtered]);
 
@@ -232,7 +233,12 @@ export function PaletteCards() {
             value={query}
             onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
           />
-          <FilterPopover value={filters} onChange={setFilters} />
+          <FilterPopover
+            value={filters}
+            onChange={setFilters}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((v) => !v)}
+          />
           <select
             class="field-select"
             aria-label="Group plants by"
@@ -265,6 +271,18 @@ export function PaletteCards() {
           </button>
         </div>
       </div>
+
+      {filtersOpen && (
+        <FilterPanel
+          value={filters}
+          onChange={setFilters}
+          onDone={() => setFiltersOpen(false)}
+          shownCount={filtered.length}
+          totalCount={members.length}
+          showFit
+        />
+      )}
+      <ActiveFilterChips value={filters} onChange={setFilters} />
 
       {!filtered.length ? (
         <p class="ct-muted">No species in your palette match the current filters.</p>

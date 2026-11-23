@@ -15,9 +15,9 @@ const UNITS: readonly { id: AreaUnit; label: string }[] = [
 ];
 
 const DENSITIES: readonly { id: DensityMode; label: string }[] = [
-  { id: 'spacious', label: 'Spacious 0.7×' },
-  { id: 'balanced', label: 'Balanced 1.0×' },
-  { id: 'dense', label: 'Dense 1.4×' },
+  { id: 'spacious', label: 'Spacious' },
+  { id: 'balanced', label: 'Balanced' },
+  { id: 'dense', label: 'Dense syntropic' },
 ];
 
 const PATHWAYS = [0, 10, 20, 30] as const;
@@ -30,17 +30,19 @@ export function AreaStep() {
   const unitLabel = cfg.areaUnit === 'm2' ? 'm²' : cfg.areaUnit === 'ft2' ? 'ft²' : cfg.areaUnit;
 
   return (
-    <section class="area-control-box" style="margin-top:12px;" data-area-step aria-label="Planting area">
-      <div class="area-grid">
-        <div class="area-field">
-          <label for="ct-area-val">PLANTING AREA</label>
-          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+    <section class="ob-space-strip" data-area-step aria-label="Planting area">
+      <div class="ob-space-controls">
+        <div>
+          <label class="fp-label" for="ct-area-val" style="margin-bottom:5px; display:block;">Planting area</label>
+          <div class="area-input-row">
             <input
               id="ct-area-val"
               type="number"
               min="1"
               step={cfg.areaUnit === 'ha' || cfg.areaUnit === 'ac' ? '0.05' : '10'}
               class="area-num-input"
+              style="width:104px; padding:6px 9px; font-size:15.5px;"
+              aria-label="Planting area value"
               value={displayArea}
               onInput={(e) => {
                 const raw = Number((e.currentTarget as HTMLInputElement).value);
@@ -49,12 +51,13 @@ export function AreaStep() {
                 }
               }}
             />
-            <div class="ink-seg" role="group" aria-label="Area unit">
+            <div class="ink-seg" role="group" aria-label="Planting area unit">
               {UNITS.map((u) => (
                 <button
                   key={u.id}
                   type="button"
                   class="ink-seg-btn"
+                  style="padding:5px 9px;"
                   aria-pressed={cfg.areaUnit === u.id ? 'true' : 'false'}
                   onClick={() => setPlantingConfig({ areaUnit: u.id })}
                 >
@@ -65,14 +68,14 @@ export function AreaStep() {
           </div>
         </div>
 
-        <div class="area-field">
-          <label>DENSITY</label>
-          <div class="ink-seg" role="group" aria-label="Planting density">
+        <div>
+          <div class="fp-label" style="margin-bottom:5px;">Density</div>
+          <div class="chip-row" role="group" aria-label="Planting density">
             {DENSITIES.map((d) => (
               <button
                 key={d.id}
                 type="button"
-                class="ink-seg-btn"
+                class="filter-chip"
                 aria-pressed={cfg.densityMode === d.id ? 'true' : 'false'}
                 onClick={() => setPlantingConfig({ densityMode: d.id })}
               >
@@ -82,14 +85,14 @@ export function AreaStep() {
           </div>
         </div>
 
-        <div class="area-field">
-          <label>PATHWAYS %</label>
-          <div class="ink-seg" role="group" aria-label="Pathways percentage">
+        <div>
+          <div class="fp-label" style="margin-bottom:5px;">Pathways %</div>
+          <div class="chip-row" role="group" aria-label="Pathways percentage">
             {PATHWAYS.map((pct) => (
               <button
                 key={pct}
                 type="button"
-                class="ink-seg-btn"
+                class="filter-chip"
                 aria-pressed={cfg.pathwaysPct === pct ? 'true' : 'false'}
                 onClick={() => setPlantingConfig({ pathwaysPct: pct })}
               >
@@ -100,9 +103,9 @@ export function AreaStep() {
         </div>
       </div>
 
-      <div class="area-net-line" data-net-area>
-        <span>Net planted area: <strong>{netDisplay} {unitLabel}</strong> of {displayArea} {unitLabel} ({cfg.pathwaysPct}% paths &amp; access)</span>
-        <span>Auto-sizes plant counts &amp; spacing in Planting Plan</span>
+      <div class="ob-net-line" data-net-area>
+        <span><strong>Net planted area: {netDisplay} {unitLabel}</strong> of {displayArea} {unitLabel} ({cfg.pathwaysPct}% paths &amp; access)</span>
+        <span style="font-size:12.5px; color:var(--ink-muted);">Auto-sizes plant counts &amp; spacing in Planting Plan</span>
       </div>
     </section>
   );

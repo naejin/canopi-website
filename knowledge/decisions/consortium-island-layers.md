@@ -3,16 +3,16 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: antigravity/gemini, at: 2026-11-23T18:06:26Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T18:52:48Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:57Z }
-  - { by: antigravity/gemini, at: 2026-11-23T18:06:24Z }
+  - { by: antigravity/gemini, at: 2026-11-23T18:52:38Z }
 sources:
   - id: consortium
     resource: ../../src/islands/consortium
     title: src/islands/consortium/
-    digest: sha256:844b5531aa27234e
-    last_modified: 2026-11-23T18:01:12Z
+    digest: sha256:cae42878a01ce3ea
+    last_modified: 2026-11-23T18:50:51Z
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
