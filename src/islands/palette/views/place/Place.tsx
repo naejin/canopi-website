@@ -686,7 +686,7 @@ function Questions() {
   const placeShort = loc?.label ? loc.label.split(',')[0] : z ? zoneName(z) : '';
 
   const startWinterGuild = () => {
-    openPlantPool({ tab: 'all', intent: 'winter', banner: 'Winter-planted starter guild' });
+    openPlantPool({ tab: 'all', intent: 'winter', banner: T('studio.onboard.winterBanner') });
     if (ready && !block) void requestSuggest();
     else if (ready) showPalette();
     else openClimates();
@@ -697,15 +697,15 @@ function Questions() {
   return (
     <div class="onboard-shell">
       <div class="onboard-hero">
-        <h1>Design a resilient plant palette for your land</h1>
-        <p>Match your local soil pH, winter warmth, future summers, and every level of sunlight — so all six ecological roles stay filled across the entire year.</p>
+        <h1>{T('studio.onboard.heroTitle')}</h1>
+        <p>{T('studio.onboard.heroSub')}</p>
       </div>
 
       <div class="onboard-grid">
         <div>
           {/* Step 1 · Your Place & Soil */}
           <div class="ob-card">
-            <div class="ob-step">Step 1 · Your place &amp; soil</div>
+            <div class="ob-step">{T('studio.onboard.step1')}</div>
             <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
             {!loc?.lookup && <WeRead />}
             <SitePostcard />
@@ -716,18 +716,18 @@ function Questions() {
 
           {/* Step 2 · Your Space (always visible on initial load, matching v14) */}
           <div class="ob-card">
-            <div class="ob-step">Step 2 · Your space</div>
+            <div class="ob-step">{T('studio.onboard.step2')}</div>
             <RoomStep />
             <AreaStep />
           </div>
         </div>
 
         {/* Right Sticky Sidebar: Path A + Path B */}
-        <aside style="position:sticky; top:72px; display:flex; flex-direction:column; gap:16px;" aria-label="Start or open a palette">
+        <aside style="position:sticky; top:72px; display:flex; flex-direction:column; gap:16px;" aria-label={T('studio.onboard.sidebarAria')}>
           <div class="ob-card" style="margin-bottom:0;">
-            <div class="ob-step">Path A · Start fresh for your land</div>
-            <h2>Choose a starter palette</h2>
-            <p style="margin:0 0 12px; font-size:14px; color:var(--ink-soft);">Every starter is tuned to your soil pH, winter warmth, and all four preferred sun exposures.</p>
+            <div class="ob-step">{T('studio.onboard.pathA')}</div>
+            <h2>{T('studio.onboard.starterTitle')}</h2>
+            <p style="margin:0 0 12px; font-size:14px; color:var(--ink-soft);">{T('studio.onboard.starterSub')}</p>
             {!block && (
               <button
                 type="button"
@@ -738,9 +738,9 @@ function Questions() {
               >
                 <div>
                   <strong style="font-size:14.5px;">{T('start.suggest')}</strong>
-                  <div style="font-size:12.5px; color:var(--ink-soft);" aria-hidden="true">Balanced across sun levels + ready for Coach tuning.</div>
+                  <div style="font-size:12.5px; color:var(--ink-soft);" aria-hidden="true">{T('studio.onboard.suggestSub')}</div>
                 </div>
-                <span style="font-weight:600; font-size:13px;" aria-hidden="true">Open →</span>
+                <span style="font-weight:600; font-size:13px;" aria-hidden="true">{T('studio.onboard.openArrow')}</span>
               </button>
             )}
             <button
@@ -749,10 +749,10 @@ function Questions() {
               onClick={startWinterGuild}
             >
               <div>
-                <strong style="font-size:14.5px;">❄ Winter-Planted Mild-Climate Guild</strong>
-                <div style="font-size:12.5px; color:var(--ink-soft);">Opens studio with cool-season, autumn-sowable plants pre-filtered.</div>
+                <strong style="font-size:14.5px;">{T('studio.onboard.winterTitle')}</strong>
+                <div style="font-size:12.5px; color:var(--ink-soft);">{T('studio.onboard.winterSub')}</div>
               </div>
-              <span style="font-weight:600; font-size:13px;" aria-hidden="true">Explore</span>
+              <span style="font-weight:600; font-size:13px;" aria-hidden="true">{T('studio.onboard.explore')}</span>
             </button>
             <button
               type="button"
@@ -768,10 +768,10 @@ function Questions() {
               }}
             >
               <div>
-                <strong style="font-size:14.5px;">Start from your own plants</strong>
-                <div style="font-size:12.5px; color:var(--ink-soft);">Search any plant by name or paste your existing list.</div>
+                <strong style="font-size:14.5px;">{T('studio.onboard.ownTitle')}</strong>
+                <div style="font-size:12.5px; color:var(--ink-soft);">{T('studio.onboard.ownSub')}</div>
               </div>
-              <span style="font-weight:600; font-size:13px; white-space:nowrap;" aria-hidden="true">Browse →</span>
+              <span style="font-weight:600; font-size:13px; white-space:nowrap;" aria-hidden="true">{T('studio.onboard.browseArrow')}</span>
             </button>
             <button
               type="button"
@@ -781,8 +781,8 @@ function Questions() {
               onClick={() => (ready ? showPalette() : openClimates())}
             >
               {hasPalette
-                ? (placeShort ? `Return to my ${placeShort} studio →` : `${T('place.back')} →`)
-                : (placeShort ? `Open my ${placeShort} studio →` : `${T('place.show')} →`)}
+                ? (placeShort ? T('studio.onboard.returnPlace', { place: placeShort }) : `${T('place.back')} →`)
+                : (placeShort ? T('studio.onboard.openPlace', { place: placeShort }) : `${T('place.show')} →`)}
             </button>
             {hasPalette && (
               <div style="margin-top:8px; text-align:center;">
@@ -800,8 +800,8 @@ function Questions() {
           </div>
 
           <div class="ob-card" style="margin-bottom:0;">
-            <div class="ob-step">Path B · Existing project</div>
-            <h2 style="font-size:17px; margin-bottom:8px;">Open an existing .canopi file</h2>
+            <div class="ob-step">{T('studio.onboard.pathB')}</div>
+            <h2 style="font-size:17px; margin-bottom:8px;">{T('studio.onboard.openFileTitle')}</h2>
             <OpenCanopiPathB />
           </div>
         </aside>

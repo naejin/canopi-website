@@ -87,8 +87,8 @@ export function Climate2050Tab() {
   if (!members.length) {
     return (
       <section class="ct-studio-section" data-climate-2050-tab>
-        <p class="ct-muted">No species in palette yet — add plants to stress-test 2050s/2080s climate resilience.</p>
-        <div><button type="button" class="ct-card-act" onClick={() => { studioTab.value = 'palette'; }}>Go to My Palette</button></div>
+        <p class="ct-muted">{T('studio.clim.empty')}</p>
+        <div><button type="button" class="ct-card-act" onClick={() => { studioTab.value = 'palette'; }}>{T('studio.clim.goPalette')}</button></div>
       </section>
     );
   }
@@ -102,8 +102,8 @@ export function Climate2050Tab() {
   const freezeTodayTag = profile.coldFreeze10yrC != null
     ? formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst)
     : `~${(coldC - 8.5).toFixed(1)} °C`;
-  const placeName = loc?.label ?? 'your site';
-  const horizonLabel = period === '2071-2099' ? '2080s' : '2050s';
+  const placeName = loc?.label ?? T('studio.common.yourSite');
+  const horizonLabel = period === '2071-2099' ? T('studio.horizon.2080s') : T('studio.horizon.2050s');
   const matchPct = report.novelClimate ? null : analogue ? Math.round(analogue.matchQuality * 100) : 88;
 
   const totalCount = members.length;
@@ -166,7 +166,7 @@ export function Climate2050Tab() {
     const futurePinPct = clampPct(hotFutureC, 18, 44);
     const sun = sunTierOf(item.taxon);
     const maxDry = item.taxon.traits.drought_tolerance && /high/i.test(item.taxon.traits.drought_tolerance) ? 60 : 32;
-    const badgeLabel = margin < 0 ? 'Crosses heat dome' : 'Near thermal limit';
+    const badgeLabel = margin < 0 ? T('studio.clim.crossesHeat') : T('studio.clim.nearLimit');
 
     const SUN_CLS: Record<string, string> = {
       emergent: 'sun-full',
@@ -193,9 +193,9 @@ export function Climate2050Tab() {
         {/* Visual Thermal Comfort-Range Bar */}
         <div style="padding:8px 10px; border-radius:6px; background:var(--bg); border:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:6px;">
-            <span>Comfort max {Math.round(maxComfort)} °C</span>
+            <span>{T('studio.clim.comfortMax', { temp: `${Math.round(maxComfort)} °C` })}</span>
             <span style={{ color: pinColor, fontWeight: 600 }}>
-              {horizonLabel} {Math.round(hotFutureC)} °C ({margin < 0 ? `+${Math.abs(Math.round(margin))} °C over` : `${Math.round(margin)} °C margin`})
+              {horizonLabel} {Math.round(hotFutureC)} °C ({margin < 0 ? T('studio.clim.overBy', { diff: `+${Math.abs(Math.round(margin))} °C` }) : T('studio.clim.marginOf', { diff: `${Math.round(margin)} °C` })})
             </span>
           </div>
           <div class="gauge-track" aria-hidden="true">
@@ -210,34 +210,34 @@ export function Climate2050Tab() {
         </div>
 
         <div class="bp-signal-line" onClick={(e) => e.stopPropagation()}>
-          <span class={`bp-pill ${tone === 'danger' ? 'breached' : 'warn'}`}>🔥 Heat-dome limit: {maxComfort.toFixed(1)} °C</span>
-          <span class="bp-pill">💧 Max dry spell: {maxDry}d</span>
-          <FieldTip label="All 5 limits" text={item.allFiveLimits} glyph="All 5 limits ⓘ" />
+          <span class={`bp-pill ${tone === 'danger' ? 'breached' : 'warn'}`}>{T('studio.dossier.pillHeat', { temp: `${maxComfort.toFixed(1)} °C` })}</span>
+          <span class="bp-pill">{T('studio.dossier.pillDry', { days: maxDry })}</span>
+          <FieldTip label={T('studio.clim.allFive')} text={item.allFiveLimits} glyph={`${T('studio.clim.allFive')} ⓘ`} />
         </div>
 
         <div class="tc-action-foot" onClick={(e) => e.stopPropagation()}>
           <div class="tc-tactic-line">
-            <strong>{tone === 'danger' ? 'Field Insurance:' : 'Practical Field Care:'}</strong> {item.fieldInsurance}
+            <strong>{tone === 'danger' ? T('studio.clim.fieldIns') : T('studio.clim.fieldCare')}</strong> {item.fieldInsurance}
           </div>
 
           {item.twinSwap ? (
             <div class="swap-preview-box">
               <div class="swap-preview-top">
                 <span><strong>{nameOf(item.taxon)}</strong> → <strong style="color:var(--plant-green);">{nameOf(item.twinSwap)}</strong></span>
-                <span class="verdict-tag v-fit" style="font-size:11px; padding:1px 6px;">Climate twin</span>
+                <span class="verdict-tag v-fit" style="font-size:11px; padding:1px 6px;">{T('studio.clim.twinBadge')}</span>
               </div>
               <div class="swap-preview-why">
-                Same {sunTierLabel(item.taxon)} · thrives to {Math.round(item.twinSwap.climate?.tmaxWarm?.high ?? 37)} °C
+                {T('studio.clim.twinWhy', { sun: sunTierLabel(item.taxon), temp: `${Math.round(item.twinSwap.climate?.tmaxWarm?.high ?? 37)} °C` })}
                 {item.twinSwap.traits.soil_ph ? ` & pH ${item.twinSwap.traits.soil_ph.min}–${item.twinSwap.traits.soil_ph.max}` : ''}
               </div>
               <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:2px;">
-                <button type="button" class="btn btn-xs" onClick={() => doTwinSwap(item)}>⇄ Swap</button>
-                <button type="button" class="btn btn-xs" onClick={() => openFieldDossier(item.twinSwap!.id, memberIds)}>Dossier</button>
+                <button type="button" class="btn btn-xs" onClick={() => doTwinSwap(item)}>{T('studio.cards.swap')}</button>
+                <button type="button" class="btn btn-xs" onClick={() => openFieldDossier(item.twinSwap!.id, memberIds)}>{T('studio.dossierShort')}</button>
               </div>
             </div>
           ) : (
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button type="button" class="btn btn-xs" onClick={() => openFieldDossier(item.taxon.id, memberIds)}>Dossier</button>
+              <button type="button" class="btn btn-xs" onClick={() => openFieldDossier(item.taxon.id, memberIds)}>{T('studio.dossierShort')}</button>
             </div>
           )}
         </div>
@@ -266,16 +266,16 @@ export function Climate2050Tab() {
   const maxMonthRain = Math.max(40, ...monthRainToday, ...monthRainFuture);
 
   const activeScenarioTags: string[] = [];
-  if (envelope === 'extreme10') activeScenarioTags.push('1-in-10-yr Extreme');
-  if (stress.heatDeltaC > 0) activeScenarioTags.push(`+${stress.heatDeltaC}°C heat`);
-  if (stress.droughtPct > 0) activeScenarioTags.push(`-${stress.droughtPct}% summer rain`);
-  if (stress.winterDeltaC < 0) activeScenarioTags.push(`${stress.winterDeltaC}°C cold snap`);
-  if (stress.falseSpringDeltaPct > 0) activeScenarioTags.push(`+${stress.falseSpringDeltaPct}% false spring`);
-  if (stress.windExposure > 0) activeScenarioTags.push(`wind ${stress.windExposure}/3`);
-  if (stress.extremeRainPct !== 0) activeScenarioTags.push(`${stress.extremeRainPct > 0 ? '+' : ''}${stress.extremeRainPct}% heavy rain`);
+  if (envelope === 'extreme10') activeScenarioTags.push(T('studio.climExtreme'));
+  if (stress.heatDeltaC > 0) activeScenarioTags.push(`+${stress.heatDeltaC}°C`);
+  if (stress.droughtPct > 0) activeScenarioTags.push(`-${stress.droughtPct}%`);
+  if (stress.winterDeltaC < 0) activeScenarioTags.push(`${stress.winterDeltaC}°C`);
+  if (stress.falseSpringDeltaPct > 0) activeScenarioTags.push(`+${stress.falseSpringDeltaPct}%`);
+  if (stress.windExposure > 0) activeScenarioTags.push(`${stress.windExposure}/3`);
+  if (stress.extremeRainPct !== 0) activeScenarioTags.push(`${stress.extremeRainPct > 0 ? '+' : ''}${stress.extremeRainPct}%`);
   const scenarioBadge = activeScenarioTags.length
-    ? `${horizonLabel} · ${activeScenarioTags.slice(0, 2).join(' · ')} active`
-    : `${horizonLabel} projection`;
+    ? `${horizonLabel} · ${activeScenarioTags.slice(0, 2).join(' · ')}`
+    : T('studio.clim.projBadge', { horizon: horizonLabel });
   const simWinterFloorC = Math.round((coldC + stress.winterDeltaC - (envelope === 'extreme10' ? 3.5 : 0)) * 10) / 10;
 
   const selectedMonthInfo = selectedMonth != null ? (() => {
@@ -291,21 +291,21 @@ export function Climate2050Tab() {
       return (isHeat && m.futureC > limHot) || (isWinterWin && simWinterFloorC < limCold);
     });
     const takeaway = isHeat
-      ? `Apply 10–15 cm woodchip mulch and afternoon shade cloth before peaks hit ${Math.round(m.futureC)} °C (${rFut} mm rain).`
+      ? T('studio.clim.tkHeat', { temp: `${Math.round(m.futureC)} °C`, rain: `${rFut} mm` })
       : isSpring && stress.falseSpringDeltaPct > 0
-      ? `Elevated false-spring risk (+${stress.falseSpringDeltaPct}%): keep frost fleece handy for early-blooming perennials and delay tender transplants.`
+      ? T('studio.clim.tkSpring', { pct: stress.falseSpringDeltaPct })
       : isWinterWin && simWinterFloorC >= 3.5
-      ? `Frost-rare winter rain (${rFut} mm): prime window to direct-sow hardy greens, legumes, and bare-root trees while soil holds moisture.`
+      ? T('studio.clim.tkWinMild', { rain: `${rFut} mm` })
       : isWinterWin && simWinterFloorC >= 0
-      ? `Cool-season rain window (${rFut} mm, typical night ${signedTemp1(simWinterFloorC)}): sow hardy greens & cover crops on winter rain; protect tender stock against occasional overnight freezes.`
+      ? T('studio.clim.tkWinCool', { rain: `${rFut} mm`, night: signedTemp1(simWinterFloorC) })
       : isWinterWin
-      ? `Dormant winter nights near ${signedTemp1(simWinterFloorC)}: mulch root crowns, protect young subtropicals, and plant dormant bare-root stock on thawed days.`
-      : `Transition window (${Math.round(m.futureC)} °C, ${rFut} mm): chop-and-drop biomass species to recharge soil organic matter ahead of stress.`;
+      ? T('studio.clim.tkWinDorm', { night: signedTemp1(simWinterFloorC) })
+      : T('studio.clim.tkTrans', { temp: `${Math.round(m.futureC)} °C`, rain: `${rFut} mm` });
     return { m, rToday, rFut, stressedCount: stressedInMonth.length, stressedNames: stressedInMonth.slice(0, 3).map((t) => nameOf(t)), takeaway };
   })() : null;
 
   return (
-    <section data-climate-2050-tab aria-label="2050 climate resilience analysis">
+    <section data-climate-2050-tab aria-label={T('studio.clim.aria')}>
       {/* Section 1: v14 Serene Executive Climate Brief (verbatim .cb-hero) */}
       <div class="cb-hero">
         <div class="cb-top">
@@ -313,7 +313,7 @@ export function Climate2050Tab() {
             <strong>{placeName}</strong>
             {sitePh != null && <><span>·</span><span>pH {sitePh.toFixed(1)} ({profile.phReaction})</span></>}
             <span class={report.novelClimate ? 'novel-pill' : 'match-pill'}>
-              {report.novelClimate ? '⚠ Novel climate' : `${matchPct}% climate match`}
+              {report.novelClimate ? T('studio.clim.novelPill') : T('studio.clim.matchPill', { pct: matchPct ?? 88 })}
             </span>
             {!analogue && !report.novelClimate && (
               <button
@@ -323,13 +323,13 @@ export function Climate2050Tab() {
                 disabled={analogueState === 'loading' || !loc}
                 onClick={() => void loadClimateTwin()}
               >
-                {analogueState === 'loading' ? 'Checking twin…' : analogueState === 'done' ? 'No published twin yet' : 'Check Climate Twin'}
+                {analogueState === 'loading' ? T('studio.clim.checkingTwin') : analogueState === 'done' ? T('studio.clim.noTwin') : T('studio.clim.checkTwin')}
               </button>
             )}
           </div>
           <div class="cb-env-wrap">
-            <span class="cb-env-lbl">Design for:</span>
-            <div class="ink-seg" role="group" aria-label="Design envelope">
+            <span class="cb-env-lbl">{T('studio.clim.designFor')}</span>
+            <div class="ink-seg" role="group" aria-label={T('studio.clim.envAria')}>
               <button
                 type="button"
                 class="ink-seg-btn"
@@ -351,36 +351,36 @@ export function Climate2050Tab() {
         </div>
 
         <h2 class="cb-headline">
-          By the {horizonLabel}, {placeName} feels like{' '}
-          <span class="ch-twin-accent">
-            {analogue ? `${analogue.name}, ${analogue.country}` : report.novelClimate ? 'a novel hot-summer regime' : 'a warmer southern analogue'}
-          </span>{' '}
-          today
+          {T('studio.clim.headline', {
+            horizon: horizonLabel,
+            place: placeName,
+            twin: analogue ? `${analogue.name}, ${analogue.country}` : report.novelClimate ? T('studio.clim.novelRegime') : T('studio.clim.warmerAnalogue'),
+          })}
         </h2>
 
         <div class="cb-verdict-grid">
           <div class="cb-verdict-col">
-            <span class="cb-verdict-k">Your Palette Verdict ({envelope === 'extreme10' ? '1-in-10-yr Extreme' : `Typical ${horizonLabel}`})</span>
-            <div class="cb-verdict-big">{fitCount} of {totalCount} plants thrive</div>
-            <div class="resilience-bar" role="img" aria-label={`${fitCount} thrives, ${careCount} needs care, ${riskCount} at risk`}>
+            <span class="cb-verdict-k">{T('studio.clim.verdictK', { mode: envelope === 'extreme10' ? T('studio.climExtreme') : T('studio.clim.typicalH', { horizon: horizonLabel }) })}</span>
+            <div class="cb-verdict-big">{T('studio.clim.verdictBig', { fit: fitCount, total: totalCount })}</div>
+            <div class="resilience-bar" role="img" aria-label={`${fitCount} ${T('studio.status.fit')}, ${careCount} ${T('studio.status.care')}, ${riskCount} ${T('studio.status.risk')}`}>
               {fitPct > 0 && <div class="res-seg fit" style={{ width: `${fitPct}%` }} />}
               {carePct > 0 && <div class="res-seg care" style={{ width: `${carePct}%` }} />}
               {riskPct > 0 && <div class="res-seg risk" style={{ width: `${riskPct}%` }} />}
             </div>
             <div class="res-legend">
               <button type="button" class="res-leg-btn" onClick={() => setTriageFilter('fit')}>
-                <span class="res-dot" style="background:var(--plant-green);" />{fitCount} Thrives
+                <span class="res-dot" style="background:var(--plant-green);" />{fitCount} {T('studio.status.fit')}
               </button>
               <button type="button" class="res-leg-btn" onClick={() => setTriageFilter('care')}>
-                <span class="res-dot" style="background:var(--warn-dot);" />{careCount} Needs care
+                <span class="res-dot" style="background:var(--warn-dot);" />{careCount} {T('studio.status.care')}
               </button>
               <button type="button" class="res-leg-btn" onClick={() => setTriageFilter('risk')}>
-                <span class="res-dot" style="background:var(--risk-ink);" />{riskCount} At risk
+                <span class="res-dot" style="background:var(--risk-ink);" />{riskCount} {T('studio.status.risk')}
               </button>
             </div>
           </div>
 
-          <div class="cb-forces-list" role="list" aria-label="Four key climate forces">
+          <div class="cb-forces-list" role="list" aria-label={T('studio.clim.forcesAria')}>
             {report.forces.map((f) => (
               <div key={f.label} class="cb-force-row" role="listitem">
                 <span class="cb-force-k">{f.label}</span>
@@ -394,33 +394,33 @@ export function Climate2050Tab() {
           <span>
             {profile.winterTier === 'mild' ? (
               <>
-                <strong>❄ Mild-winter advantage:</strong>{' '}
-                {profile.winterSeason} stays frost-rare (typical {profile.coldMonth} night {signedTemp1(coldC)}) — sow cool-season species in autumn to build deep roots before summer heat.
+                <strong>{T('studio.winter.mildHead')}</strong>{' '}
+                {T('studio.winter.mildBody', { season: profile.winterSeason, month: profile.coldMonth, night: signedTemp1(coldC) })}
               </>
             ) : profile.winterTier === 'cool' ? (
               <>
-                <strong>❄ Cool-season window:</strong>{' '}
-                mild daytime winters let hardy greens &amp; cover crops establish on winter rain, though occasional overnight freezes still occur (1-in-10-yr freeze {freezeTodayTag}).
+                <strong>{T('studio.winter.coolHead')}</strong>{' '}
+                {T('studio.winter.coolBody', { freeze: freezeTodayTag })}
               </>
             ) : (
               <>
-                <strong>❄ Dormant-winter advantage:</strong>{' '}
-                reliable winter cold (typical {profile.coldMonth} night {signedTemp1(coldC)}, 1-in-10-yr freeze {freezeTodayTag}) meets chill needs for temperate fruit &amp; nut trees — plant bare-root stock in late autumn or early spring.
+                <strong>{T('studio.winter.dormantHead')}</strong>{' '}
+                {T('studio.winter.dormantBody', { month: profile.coldMonth, night: signedTemp1(coldC) })}
               </>
             )}
           </span>
           <button
             type="button"
             class="link-btn"
-            onClick={() => openPlantPool({ tab: 'all', intent: 'winter', banner: 'Winter-plantable species for cool-season establishment' })}
+            onClick={() => openPlantPool({ tab: 'all', intent: 'winter', banner: T('studio.sys.browseWinterBanner') })}
           >
-            Browse winter-plantable →
+            {T('studio.clim.browseWinterArrow')}
           </button>
         </div>
         {/* Unified Interactive Stress Presets + Extremes Lab (6 levers) inside the same .cb-hero frame */}
-        <div style="border-top:1px solid var(--border); margin-top:14px; padding-top:14px;" role="region" aria-label="Interactive extreme-year stress bar">
+        <div style="border-top:1px solid var(--border); margin-top:14px; padding-top:14px;" role="region" aria-label={T('studio.clim.stressBarAria')}>
           <div class="sb-row1">
-            <div class="sb-presets" role="group" aria-label="Compound climate stress presets">
+            <div class="sb-presets" role="group" aria-label={T('studio.clim.presetsAria')}>
               {STRESS_PRESETS.map((p) => (
                 <button
                   key={p.id}
@@ -432,7 +432,7 @@ export function Climate2050Tab() {
                     climateStress.value = { ...p.stress };
                   }}
                 >
-                  {p.label}
+                  {T(`studio.preset.${p.id}`)}
                 </button>
               ))}
             </div>
@@ -443,16 +443,16 @@ export function Climate2050Tab() {
                 aria-expanded={labOpen ? 'true' : 'false'}
                 onClick={() => setLabOpen((v) => !v)}
               >
-                ⚙ {labOpen ? 'Hide 6 levers ▴' : T('studio.climLab')}
+                ⚙ {labOpen ? T('studio.clim.hideLevers') : T('studio.climLab')}
               </button>
             </div>
           </div>
 
           <div class="sr-impact-line" style="margin-top:8px;" data-climate-impact>
-            <span><strong>Live system impact:</strong> {report.impactLine}</span>
+            <span><strong>{T('studio.clim.liveImpact')}</strong> {report.impactLine}</span>
             {breaksFirst.length > 0 && (
               <span>
-                <strong>Breaks first:</strong>{' '}
+                <strong>{T('studio.clim.breaksFirst')}</strong>{' '}
                 {breaksFirst.map((it, idx) => (
                   <span key={it.taxon.id}>
                     {idx > 0 ? ', ' : ''}
@@ -469,33 +469,33 @@ export function Climate2050Tab() {
             <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
               <div class="extreme-sliders-grid">
                 <div class="ext-slider-card">
-                  <div class="ext-slider-head"><span>Summer heatwave</span><strong>+{stress.heatDeltaC} °C</strong></div>
+                  <div class="ext-slider-head"><span>{T('studio.clim.levHeat')}</span><strong>+{stress.heatDeltaC} °C</strong></div>
                   <input class="tune-slider" type="range" min={0} max={6} step={0.5} value={stress.heatDeltaC} onInput={(e) => { setActivePreset('custom'); climateStress.value = { ...stress, heatDeltaC: Number((e.currentTarget as HTMLInputElement).value) }; }} />
                 </div>
                 <div class="ext-slider-card">
-                  <div class="ext-slider-head"><span>Drought deficit</span><strong>+{stress.droughtPct}%</strong></div>
+                  <div class="ext-slider-head"><span>{T('studio.clim.levDrought')}</span><strong>+{stress.droughtPct}%</strong></div>
                   <input class="tune-slider" type="range" min={0} max={60} step={5} value={stress.droughtPct} onInput={(e) => { setActivePreset('custom'); climateStress.value = { ...stress, droughtPct: Number((e.currentTarget as HTMLInputElement).value) }; }} />
                 </div>
                 <div class="ext-slider-card">
-                  <div class="ext-slider-head"><span>Winter snap</span><strong>{stress.winterDeltaC} °C</strong></div>
+                  <div class="ext-slider-head"><span>{T('studio.clim.levWinter')}</span><strong>{stress.winterDeltaC} °C</strong></div>
                   <input class="tune-slider" type="range" min={-8} max={2} step={0.5} value={stress.winterDeltaC} onInput={(e) => { setActivePreset('custom'); climateStress.value = { ...stress, winterDeltaC: Number((e.currentTarget as HTMLInputElement).value) }; }} />
                 </div>
                 <div class="ext-slider-card">
-                  <div class="ext-slider-head"><span>False spring risk</span><strong>+{stress.falseSpringDeltaPct}%</strong></div>
+                  <div class="ext-slider-head"><span>{T('studio.clim.levSpring')}</span><strong>+{stress.falseSpringDeltaPct}%</strong></div>
                   <input class="tune-slider" type="range" min={0} max={40} step={5} value={stress.falseSpringDeltaPct} onInput={(e) => { setActivePreset('custom'); climateStress.value = { ...stress, falseSpringDeltaPct: Number((e.currentTarget as HTMLInputElement).value) }; }} />
                 </div>
                 <div class="ext-slider-card">
-                  <div class="ext-slider-head"><span>Drying wind</span><strong>{stress.windExposure}/3</strong></div>
+                  <div class="ext-slider-head"><span>{T('studio.clim.levWind')}</span><strong>{stress.windExposure}/3</strong></div>
                   <input class="tune-slider" type="range" min={0} max={3} step={1} value={stress.windExposure} onInput={(e) => { setActivePreset('custom'); climateStress.value = { ...stress, windExposure: Number((e.currentTarget as HTMLInputElement).value) }; }} />
                 </div>
                 <div class="ext-slider-card">
-                  <div class="ext-slider-head"><span>Heavy rain shift</span><strong>{stress.extremeRainPct >= 0 ? '+' : ''}{stress.extremeRainPct}%</strong></div>
+                  <div class="ext-slider-head"><span>{T('studio.clim.levRain')}</span><strong>{stress.extremeRainPct >= 0 ? '+' : ''}{stress.extremeRainPct}%</strong></div>
                   <input class="tune-slider" type="range" min={-30} max={40} step={5} value={stress.extremeRainPct} onInput={(e) => { setActivePreset('custom'); climateStress.value = { ...stress, extremeRainPct: Number((e.currentTarget as HTMLInputElement).value) }; }} />
                 </div>
               </div>
               <div style="margin-top:8px;">
                 <button type="button" class="link-btn" onClick={() => { setActivePreset('baseline'); climateStress.value = { ...DEFAULT_CLIMATE_STRESS }; }}>
-                  ↺ Reset levers
+                  {T('studio.clim.resetLevers')}
                 </button>
               </div>
             </div>
@@ -506,23 +506,23 @@ export function Climate2050Tab() {
         <div style="border-top:1px solid var(--border); margin-top:14px; padding-top:14px;" data-climate-shift-studio>
           <div class="sec-head" style="margin-bottom:8px;">
             <div>
-              <h3 style="margin:0; font-size:17px;">12-Month Climate Shift &amp; Stress Windows (Today vs {horizonLabel})</h3>
-              <p class="sec-sub" style="margin:2px 0 0;">Monthly average daytime highs (Today vs {horizonLabel}) &amp; rainfall — 1-in-10-yr heatwaves peak +6–9 °C hotter. Click any month for field actions.</p>
+              <h3 style="margin:0; font-size:17px;">{T('studio.clim.shiftTitle', { horizon: horizonLabel })}</h3>
+              <p class="sec-sub" style="margin:2px 0 0;">{T('studio.clim.shiftSub', { horizon: horizonLabel })}</p>
             </div>
             <span class={`why-tag${activeScenarioTags.length ? ' is-live' : ''}`} data-climate-scenario-badge>{scenarioBadge}</span>
           </div>
 
-          <div class="legend-row" aria-label="12-month climate shift legend">
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--border-strong); opacity:0.75;" />Today</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--accent);" />{horizonLabel} (mild/warm)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--risk-ink);" />Peak heat (≥ 32 °C)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--cal-winter); opacity:0.65;" />Monthly rain (mm)</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--winter-bg); border:1px solid var(--winter-line);" />❄ Winter rain window</span>
-            <span class="legend-item"><span class="legend-swatch" style="background:var(--risk-bg); border:1px solid var(--risk-ink);" />☀ Summer stress window</span>
+          <div class="legend-row" aria-label={T('studio.clim.shiftLegAria')}>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--border-strong); opacity:0.75;" />{T('studio.horizon.today')}</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--accent);" />{T('studio.clim.legHorizon', { horizon: horizonLabel })}</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--risk-ink);" />{T('studio.clim.legPeakHeat')}</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--cal-winter); opacity:0.65;" />{T('studio.clim.legRain')}</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--winter-bg); border:1px solid var(--winter-line);" />{T('studio.clim.legWinWin')}</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:var(--risk-bg); border:1px solid var(--risk-ink);" />{T('studio.clim.legSumWin')}</span>
           </div>
 
           <div class="cshift-wrap">
-            <div class="cshift-chart" role="group" aria-label="12-month temperature and rainfall comparison">
+            <div class="cshift-chart" role="group" aria-label={T('studio.clim.shiftChartAria')}>
               {report.monthlyShift.map((m, i) => {
                 const rainMm = monthRainFuture[i];
                 const isWinterWin = i <= 2 || i >= 10;
@@ -532,12 +532,12 @@ export function Climate2050Tab() {
                 const hRain = Math.max(3, Math.round((rainMm / maxMonthRain) * 20));
                 const futCls = m.futureC >= 32 ? 'hot' : isWinterWin ? 'mild' : '';
                 const bandCls = isSummerPeak ? 'stress-band' : isWinterWin ? 'win-band' : '';
-                const tag = i === 0 ? { cls: 'win', text: '❄ Winter rain' }
-                  : i === 6 ? { cls: 'stress', text: '☀ Peak stress' }
-                  : i === 10 ? { cls: 'win', text: '❄ Sow window' } : null;
+                const tag = i === 0 ? { cls: 'win', text: T('studio.clim.tagWinRain') }
+                  : i === 6 ? { cls: 'stress', text: T('studio.clim.tagPeakStress') }
+                  : i === 10 ? { cls: 'win', text: T('studio.clim.tagSowWin') } : null;
                 return (
                   <button
-                    key={m.month}
+                    key={i}
                     type="button"
                     class={`cshift-col ${bandCls}`}
                     aria-pressed={selectedMonth === i ? 'true' : 'false'}
@@ -557,7 +557,7 @@ export function Climate2050Tab() {
                     </div>
                     <div class="cshift-rain-mm">{rainMm}mm</div>
                     <div class="cshift-mo">{m.month}</div>
-                    <div class="cshift-active">{activeByMonth[i]} active</div>
+                    <div class="cshift-active">{T('studio.clim.activeCount', { n: activeByMonth[i] })}</div>
                   </button>
                 );
               })}
@@ -565,21 +565,21 @@ export function Climate2050Tab() {
           </div>
 
           {selectedMonthInfo && selectedMonth != null && (
-            <div class="month-brief" style="margin-top:10px;" data-climate-month-brief role="region" aria-label={`${selectedMonthInfo.m.month} climate shift brief`}>
+            <div class="month-brief" style="margin-top:10px;" data-climate-month-brief role="region" aria-label={T('studio.clim.monthBriefTitle', { month: selectedMonthInfo.m.month })}>
               <div class="mb-head">
                 <div>
                   <div class="mb-title">
-                    {selectedMonthInfo.m.month} Field Brief · {Math.round(selectedMonthInfo.m.todayC)}° → {Math.round(selectedMonthInfo.m.futureC)}°C · {selectedMonthInfo.rToday} → {selectedMonthInfo.rFut} mm rain
+                    {T('studio.clim.monthBriefTitle', { month: selectedMonthInfo.m.month })} · {Math.round(selectedMonthInfo.m.todayC)}° → {Math.round(selectedMonthInfo.m.futureC)}°C · {selectedMonthInfo.rToday} → {selectedMonthInfo.rFut} mm
                   </div>
                   <div style="font-size:12.5px; color:var(--ink-soft); margin-top:2px;">
-                    <strong>{activeByMonth[selectedMonth]}</strong> active species ·{' '}
+                    <strong>{activeByMonth[selectedMonth]}</strong> {T('studio.clim.activeSpecies')} ·{' '}
                     <strong style={{ color: selectedMonthInfo.stressedCount > 0 ? 'var(--risk-ink)' : 'var(--plant-green)' }}>
-                      {selectedMonthInfo.stressedCount} stressed
+                      {T('studio.clim.stressedCount', { n: selectedMonthInfo.stressedCount })}
                     </strong>
                     {selectedMonthInfo.stressedNames.length > 0 ? ` (${selectedMonthInfo.stressedNames.join(', ')})` : ''} · {selectedMonthInfo.takeaway}
                   </div>
                 </div>
-                <button type="button" class="btn btn-xs" onClick={() => setSelectedMonth(null)}>✕ Close</button>
+                <button type="button" class="btn btn-xs" onClick={() => setSelectedMonth(null)}>✕ {T('studio.close')}</button>
               </div>
             </div>
           )}
@@ -587,22 +587,22 @@ export function Climate2050Tab() {
           <div class="cshift-windows-grid">
             <div class="cshift-win-card winter">
               <strong style="color:var(--winter-ink);">
-                ❄ {simWinterFloorC >= 3.5
-                  ? `Mild-Winter Rain Window (${profile.winterSeason})`
+                {simWinterFloorC >= 3.5
+                  ? T('studio.clim.winCardMild', { season: profile.winterSeason })
                   : simWinterFloorC >= 0
-                    ? `Cool-Season Rain Window (${profile.winterSeason})`
-                    : `Dormant-Winter Window (typical night ${signedTemp1(simWinterFloorC)})`}
+                    ? T('studio.clim.winCardCool', { season: profile.winterSeason })
+                    : T('studio.clim.winCardDorm', { night: signedTemp1(simWinterFloorC) })}
               </strong><br />
               {simWinterFloorC >= 3.5
-                ? 'Use frost-rare winter rain to establish roots & grow cool-season crops before summer heat arrives.'
+                ? T('studio.clim.winCardMildBody')
                 : simWinterFloorC >= 0
-                  ? 'Mild daytime winters let hardy greens & cover crops establish on winter rain, though occasional overnight freezes still occur.'
-                  : `Protect frost-tender stock against hard freezes (1-in-10-yr ${freezeTodayTag}); plant hardy bare-root trees on thawed days.`}
+                  ? T('studio.clim.winCardCoolBody')
+                  : T('studio.clim.winCardDormBody', { freeze: freezeTodayTag })}
             </div>
             <div class="cshift-win-card summer">
-              <strong style="color:var(--risk-ink);">☀ Peak Summer Stress Window (Jul–Aug)</strong><br />
-              Deep mulch, afternoon shade &amp; drought-hardy anchors protect your plot when average highs reach {Math.round(hotFutureC)} °C (heatwaves +6–9 °C hotter)
-              {stress.droughtPct > 0 ? ` with -${stress.droughtPct}% summer rain` : ''}.
+              <strong style="color:var(--risk-ink);">{T('studio.clim.sumCardHead')}</strong><br />
+              {T('studio.clim.sumCardBody', { temp: `${Math.round(hotFutureC)} °C` })}
+              {stress.droughtPct > 0 ? ` (${T('studio.clim.sumCardDrought', { pct: stress.droughtPct })})` : ''}.
             </div>
           </div>
         </div>
@@ -610,26 +610,26 @@ export function Climate2050Tab() {
 
       {/* Section 3: Triage Filter Bar + Rich Triage Cards */}
       <div class="canvas-bar" style="margin-top:16px;">
-        <div class="ink-seg" role="group" aria-label="Filter triage by status">
+        <div class="ink-seg" role="group" aria-label={T('studio.clim.triageAria')}>
           <button type="button" class="ink-seg-btn" aria-pressed={triageFilter === 'all' ? 'true' : 'false'} onClick={() => setTriageFilter('all')}>
-            All ({totalCount})
+            {T('studio.clim.triageAll', { n: totalCount })}
           </button>
           <button type="button" class="ink-seg-btn" aria-pressed={triageFilter === 'risk' ? 'true' : 'false'} onClick={() => setTriageFilter('risk')}>
-            ✕ At Risk ({riskCount})
+            ✕ {T('studio.status.risk')} ({riskCount})
           </button>
           <button type="button" class="ink-seg-btn" aria-pressed={triageFilter === 'care' ? 'true' : 'false'} onClick={() => setTriageFilter('care')}>
-            ⚠ Needs Adaptation ({careCount})
+            ⚠ {T('studio.status.care')} ({careCount})
           </button>
           <button type="button" class="ink-seg-btn" aria-pressed={triageFilter === 'fit' ? 'true' : 'false'} onClick={() => setTriageFilter('fit')}>
-            ✓ Thrives ({fitCount})
+            ✓ {T('studio.status.fit')} ({fitCount})
           </button>
         </div>
         <input
           type="search"
           class="field-input"
           style="width:220px; max-width:100%;"
-          placeholder="Search plants in triage…"
-          aria-label="Search plants in triage"
+          placeholder={T('studio.clim.triageSearchPh')}
+          aria-label={T('studio.clim.triageSearchAria')}
           value={triageQuery}
           onInput={(e) => setTriageQuery((e.currentTarget as HTMLInputElement).value)}
         />
@@ -637,8 +637,8 @@ export function Climate2050Tab() {
 
       {lastSwap && (
         <div class="cal-insight-bar" style="margin-bottom:12px;">
-          <span>Swapped <strong>{lastSwap.fromName} → {lastSwap.toName}</strong></span>
-          <button type="button" class="btn btn-xs" onClick={undoTwinSwap}>Undo</button>
+          <span>{T('studio.clim.swapped', { from: lastSwap.fromName, to: lastSwap.toName })}</span>
+          <button type="button" class="btn btn-xs" onClick={undoTwinSwap}>{T('studio.clim.undo')}</button>
         </div>
       )}
 
@@ -646,12 +646,12 @@ export function Climate2050Tab() {
         <div class="system-section" style="border-color:var(--risk-ink);">
           <div class="sec-head">
             <div>
-              <h3 style="color:var(--risk-ink);">✕ At Risk — Swap Ready ({shownCritical.length})</h3>
-              <p class="sec-sub">Exceeds thermal comfort ceiling in {horizonLabel}. Swap individually or in one click with full Undo.</p>
+              <h3 style="color:var(--risk-ink);">{T('studio.clim.riskTitle', { n: shownCritical.length })}</h3>
+              <p class="sec-sub">{T('studio.clim.riskSub', { horizon: horizonLabel })}</p>
             </div>
             {report.critical.some((it) => it.twinSwap) && (
               <button type="button" class="btn btn-xs btn-primary" onClick={swapAllAtRisk}>
-                ⇄ Swap all {report.critical.length} at-risk
+                {T('studio.clim.swapAll', { n: report.critical.length })}
               </button>
             )}
           </div>
@@ -665,8 +665,8 @@ export function Climate2050Tab() {
         <div class="system-section" style="border-color:var(--warn-line);">
           <div class="sec-head">
             <div>
-              <h3 style="color:var(--warn-ink);">⚠ Needs Adaptation — Practical Field Care ({shownWatch.length})</h3>
-              <p class="sec-sub">Can still succeed on your land with targeted microsite care, mulch, or soil buffering.</p>
+              <h3 style="color:var(--warn-ink);">{T('studio.clim.careTitle', { n: shownWatch.length })}</h3>
+              <p class="sec-sub">{T('studio.clim.careSub')}</p>
             </div>
           </div>
           <div class="triage-grid">
@@ -678,8 +678,8 @@ export function Climate2050Tab() {
       {(triageFilter === 'all' || triageFilter === 'fit') && (
         <details class="group-details" open={holdsOpen || triageFilter === 'fit'} onToggle={(e) => setHoldsOpen((e.currentTarget as HTMLDetailsElement).open)}>
           <summary>
-            <span style="color:var(--plant-green);">✓ Holds Strong ({shownFit.length} species thrive in {horizonLabel} climate)</span>
-            <span class="nav-count">Show {shownFit.length} species ▾</span>
+            <span style="color:var(--plant-green);">{T('studio.clim.holdsTitle', { n: shownFit.length, horizon: horizonLabel })}</span>
+            <span class="nav-count">{T('studio.clim.showSpecies', { n: shownFit.length })}</span>
           </summary>
           <div class="group-inner">
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px;">
@@ -705,15 +705,15 @@ export function Climate2050Tab() {
         <div class="system-section">
           <div class="sec-head">
             <div>
-              <h3>✦ Newly Thriving Opportunities in Your {horizonLabel} Climate</h3>
-              <p class="sec-sub">Warm-winter &amp; drought-resilient winners not yet in your palette — click any card for its full Field Dossier.</p>
+              <h3>{T('studio.clim.oppTitle', { horizon: horizonLabel })}</h3>
+              <p class="sec-sub">{T('studio.clim.oppSub')}</p>
             </div>
             <button
               type="button"
               class="btn btn-xs"
-              onClick={() => openPlantPool({ tab: 'all', banner: `Warm-adapted opportunities for ${horizonLabel}` })}
+              onClick={() => openPlantPool({ tab: 'all', banner: T('studio.clim.oppTitle', { horizon: horizonLabel }) })}
             >
-              Explore all →
+              {T('studio.clim.exploreAll')}
             </button>
           </div>
           <div class="opp-grid">
@@ -727,14 +727,14 @@ export function Climate2050Tab() {
                     <strong style="font-family:var(--font-display); font-size:15.5px;">{nameOf(t)}</strong>
                     <span class={`sun-badge ${SUN_CLS_MAP[sun] ?? 'sun-full'}`} style="font-size:11px;">{sunTierLabel(t)}</span>
                   </div>
-                  <p style="margin:0; font-size:12.5px; color:var(--ink-soft);">{t.canonical_name} · warm-adapted perennial companion</p>
+                  <p style="margin:0; font-size:12.5px; color:var(--ink-soft);">{t.canonical_name} · {T('studio.clim.warmCompanion')}</p>
                   <p style="margin:0; font-size:12px; color:var(--ink-muted);">
-                    Honest note: Handles {Math.round(cold)} °C to {Math.round(hot)} °C
+                    {T('studio.clim.honestNote', { min: `${Math.round(cold)} °C`, max: `${Math.round(hot)} °C` })}
                     {t.traits.soil_ph ? ` · pH ${t.traits.soil_ph.min}–${t.traits.soil_ph.max}` : ''}.
                   </p>
                   <div style="display:flex; gap:6px; margin-top:auto;">
-                    <button type="button" class="btn btn-xs" onClick={() => store.addMembers([t.id])}>+ Add</button>
-                    <button type="button" class="btn btn-xs" onClick={() => openFieldDossier(t.id, [t.id, ...memberIds])}>Dossier</button>
+                    <button type="button" class="btn btn-xs" onClick={() => store.addMembers([t.id])}>{T('studio.add')}</button>
+                    <button type="button" class="btn btn-xs" onClick={() => openFieldDossier(t.id, [t.id, ...memberIds])}>{T('studio.dossierShort')}</button>
                   </div>
                 </article>
               );

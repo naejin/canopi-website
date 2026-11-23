@@ -5,12 +5,42 @@
 import type { ClimateZone, SiteEdits, SiteLocation } from '../../../lib/palette/index.ts';
 import { siteClimate } from '../../../lib/palette/index.ts';
 import { adjustMicroclimate, type MicroclimateParams } from '../../../lib/climate/v07.ts';
+import { pageLang, T } from '../strings.ts';
 
-type WinterClass =
-  | 'Frost-free'
-  | 'Mild winter (occasional frost)'
-  | 'Hard-freeze winter'
-  | 'Severe winter freezes';
+const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
+
+export function localMonthShort(idx: number): string {
+  const EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+  const lang = pageLang();
+  if (!lang || lang === 'en') return EN[idx] ?? 'Jan';
+  try {
+    return new Intl.DateTimeFormat(lang, { month: 'short' }).format(new Date(Date.UTC(2024, idx, 15)));
+  } catch {
+    return EN[idx] ?? 'Jan';
+  }
+}
+
+export function localMonthLong(idx: number): string {
+  const EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
+  const lang = pageLang();
+  if (!lang || lang === 'en') return EN[idx] ?? 'January';
+  try {
+    return new Intl.DateTimeFormat(lang, { month: 'long' }).format(new Date(Date.UTC(2024, idx, 15)));
+  } catch {
+    return EN[idx] ?? 'January';
+  }
+}
+
+export function localMonthInitial(idx: number): string {
+  const EN = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'] as const;
+  const lang = pageLang();
+  if (!lang || lang === 'en') return EN[idx] ?? 'J';
+  try {
+    return new Intl.DateTimeFormat(lang, { month: 'narrow' }).format(new Date(Date.UTC(2024, idx, 15)));
+  } catch {
+    return EN[idx] ?? 'J';
+  }
+}
 
 type WinterTier = 'mild' | 'cool' | 'dormant';
 
@@ -41,15 +71,15 @@ export interface SiteClimateProfile {
   phReaction: string | null;
   soilTexture: string | null;
   /** Grower-first winter classification. */
-  winterClass: WinterClass;
+  winterClass: string;
   /** Compact winter label for header Health Ribbon. */
   winterShortLabel: string;
   /** 3-tier winter window: 'mild' (>= 3.5 °C), 'cool' (0..3.5 °C), 'dormant' (< 0 °C). */
   winterTier: WinterTier;
   /** Hemisphere-aware peak months & winter season. */
-  coldMonth: 'Jan' | 'Jul';
-  warmMonth: 'Jul' | 'Jan';
-  winterSeason: 'Nov–Mar' | 'May–Sep';
+  coldMonth: string;
+  warmMonth: string;
+  winterSeason: string;
   /** v0.7 frost calendar when available. */
   frostFreeDays: number | null;
   falseSpringPct: number | null;
@@ -62,25 +92,25 @@ const DEFAULT_MICRO: MicroclimateParams = { slopeDeg: 0, aspect: 'flat', landfor
 const r1 = (n: number): number => Math.round(n * 10) / 10;
 
 export function phReactionLabel(ph: number): string {
-  if (ph < 5.5) return 'strongly acidic';
-  if (ph < 6.2) return 'mildly acidic';
-  if (ph <= 7.2) return 'neutral';
-  if (ph <= 7.8) return 'mildly alkaline';
-  return 'alkaline';
+  if (ph < 5.5) return fb(T('studio.ph.strongAcid'), 'strongly acidic');
+  if (ph < 6.2) return fb(T('studio.ph.mildAcid'), 'mildly acidic');
+  if (ph <= 7.2) return fb(T('studio.ph.neutral'), 'neutral');
+  if (ph <= 7.8) return fb(T('studio.ph.mildAlk'), 'mildly alkaline');
+  return fb(T('studio.ph.alkaline'), 'alkaline');
 }
 
 function moistureRegimeLabel(aridityIndex: number): string {
-  if (aridityIndex >= 0.65) return 'Humid';
-  if (aridityIndex >= 0.5) return 'Sub-humid';
-  if (aridityIndex >= 0.2) return 'Dry-summer / semi-arid';
-  return 'Arid';
+  if (aridityIndex >= 0.65) return fb(T('studio.moisture.humid'), 'Humid');
+  if (aridityIndex >= 0.5) return fb(T('studio.moisture.subhumid'), 'Sub-humid');
+  if (aridityIndex >= 0.2) return fb(T('studio.moisture.semiarid'), 'Dry-summer / semi-arid');
+  return fb(T('studio.moisture.arid'), 'Arid');
 }
 
-function winterClassFor(typicalColdNightC: number, coldFreeze10yrC: number): WinterClass {
-  if (typicalColdNightC >= 8 || coldFreeze10yrC >= 0) return 'Frost-free';
-  if (typicalColdNightC >= 2) return 'Mild winter (occasional frost)';
-  if (typicalColdNightC >= -4) return 'Hard-freeze winter';
-  return 'Severe winter freezes';
+function winterClassFor(typicalColdNightC: number, coldFreeze10yrC: number): string {
+  if (typicalColdNightC >= 8 || coldFreeze10yrC >= 0) return fb(T('studio.wclass.frostFree'), 'Frost-free');
+  if (typicalColdNightC >= 2) return fb(T('studio.wclass.mild'), 'Mild winter (occasional frost)');
+  if (typicalColdNightC >= -4) return fb(T('studio.wclass.hard'), 'Hard-freeze winter');
+  return fb(T('studio.wclass.severe'), 'Severe winter freezes');
 }
 
 export function signedTemp1(c: number): string {
@@ -112,9 +142,11 @@ export function siteClimateProfile(
   const today = sc?.today ?? null;
   const lat = loc?.lat ?? 45;
   const southHem = lat < 0;
-  const coldMonth: 'Jan' | 'Jul' = southHem ? 'Jul' : 'Jan';
-  const warmMonth: 'Jul' | 'Jan' = southHem ? 'Jan' : 'Jul';
-  const winterSeason: 'Nov–Mar' | 'May–Sep' = southHem ? 'May–Sep' : 'Nov–Mar';
+  const coldMonth = southHem ? localMonthShort(6) : localMonthShort(0);
+  const warmMonth = southHem ? localMonthShort(0) : localMonthShort(6);
+  const winterSeason = southHem
+    ? `${localMonthShort(4)}–${localMonthShort(8)}`
+    : `${localMonthShort(10)}–${localMonthShort(2)}`;
 
   const phRaw = edits?.soilPh ?? loc?.lookup?.soil?.phH2o ?? null;
   const ph = phRaw != null && Number.isFinite(phRaw) ? r1(phRaw) : null;
@@ -128,12 +160,12 @@ export function siteClimateProfile(
         : zone === 'Mediterranean'
           ? 'cool'
           : 'dormant';
-    const winterClass: WinterClass =
-      zone === 'Tropical' || zone === 'Subtropical'
-        ? 'Frost-free'
-        : zone === 'Mediterranean'
-          ? 'Mild winter (occasional frost)'
-          : 'Hard-freeze winter';
+    const isFrostFreeZone = zone === 'Tropical' || zone === 'Subtropical';
+    const winterClass = isFrostFreeZone
+      ? fb(T('studio.wclass.frostFree'), 'Frost-free')
+      : zone === 'Mediterranean'
+        ? fb(T('studio.wclass.mild'), 'Mild winter (occasional frost)')
+        : fb(T('studio.wclass.hard'), 'Hard-freeze winter');
     return {
       hasLive: false,
       typicalColdNightC: null,
@@ -160,7 +192,7 @@ export function siteClimateProfile(
       winterSeason,
       frostFreeDays: null,
       falseSpringPct: null,
-      frostFree: winterClass === 'Frost-free',
+      frostFree: isFrostFreeZone,
       koppen: sc?.koppen ?? null,
     };
   }
@@ -195,7 +227,8 @@ export function siteClimateProfile(
   const winterClass = winterClassFor(adj.adjustedColdC, coldFreeze10yrC);
   const winterTier: WinterTier =
     adj.adjustedColdC >= 3.5 ? 'mild' : adj.adjustedColdC >= 0 ? 'cool' : 'dormant';
-  const winterShortLabel = `❄ 1-in-10-yr freeze ${formatFreezeTag(coldFreeze10yrC, coldFreezeIsEst)}`;
+  const freezeTag = formatFreezeTag(coldFreeze10yrC, coldFreezeIsEst);
+  const winterShortLabel = fb(T('studio.ribbon.freezeShort', { freeze: freezeTag }), `❄ 1-in-10-yr freeze ${freezeTag}`);
 
   return {
     hasLive: true,

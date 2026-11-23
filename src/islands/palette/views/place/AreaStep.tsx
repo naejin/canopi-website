@@ -5,6 +5,7 @@
 // - Compact Path B dashed dropzone ("Drop a .canopi file or browse" + "Browse…")
 import { useRef, useState } from 'preact/hooks';
 import { convertArea, toSquareMeters, type AreaUnit, type DensityMode } from '../../../../lib/palette/index.ts';
+import { T } from '../../strings.ts';
 import { openStudioCanopiText, plantingConfig, setPlantingConfig } from '../../state/studio.ts';
 
 const UNITS: readonly { id: AreaUnit; label: string }[] = [
@@ -14,11 +15,7 @@ const UNITS: readonly { id: AreaUnit; label: string }[] = [
   { id: 'ac', label: 'ac' },
 ];
 
-const DENSITIES: readonly { id: DensityMode; label: string }[] = [
-  { id: 'spacious', label: 'Spacious' },
-  { id: 'balanced', label: 'Balanced' },
-  { id: 'dense', label: 'Dense syntropic' },
-];
+const DENSITIES: readonly DensityMode[] = ['spacious', 'balanced', 'dense'];
 
 const PATHWAYS = [0, 10, 20, 30] as const;
 
@@ -30,10 +27,10 @@ export function AreaStep() {
   const unitLabel = cfg.areaUnit === 'm2' ? 'm²' : cfg.areaUnit === 'ft2' ? 'ft²' : cfg.areaUnit;
 
   return (
-    <section class="ob-space-strip" data-area-step aria-label="Planting area">
+    <section class="ob-space-strip" data-area-step aria-label={T('studio.area.title')}>
       <div class="ob-space-controls">
         <div>
-          <label class="fp-label" for="ct-area-val" style="margin-bottom:5px; display:block;">Planting area</label>
+          <label class="fp-label" for="ct-area-val" style="margin-bottom:5px; display:block;">{T('studio.area.title')}</label>
           <div class="area-input-row">
             <input
               id="ct-area-val"
@@ -42,7 +39,7 @@ export function AreaStep() {
               step={cfg.areaUnit === 'ha' || cfg.areaUnit === 'ac' ? '0.05' : '10'}
               class="area-num-input"
               style="width:104px; padding:6px 9px; font-size:15.5px;"
-              aria-label="Planting area value"
+              aria-label={T('studio.area.valueAria')}
               value={displayArea}
               onInput={(e) => {
                 const raw = Number((e.currentTarget as HTMLInputElement).value);
@@ -51,7 +48,7 @@ export function AreaStep() {
                 }
               }}
             />
-            <div class="ink-seg" role="group" aria-label="Planting area unit">
+            <div class="ink-seg" role="group" aria-label={T('studio.area.unitAria')}>
               {UNITS.map((u) => (
                 <button
                   key={u.id}
@@ -69,25 +66,25 @@ export function AreaStep() {
         </div>
 
         <div>
-          <div class="fp-label" style="margin-bottom:5px;">Density</div>
-          <div class="chip-row" role="group" aria-label="Planting density">
+          <div class="fp-label" style="margin-bottom:5px;">{T('studio.area.density')}</div>
+          <div class="chip-row" role="group" aria-label={T('studio.area.densityAria')}>
             {DENSITIES.map((d) => (
               <button
-                key={d.id}
+                key={d}
                 type="button"
                 class="filter-chip"
-                aria-pressed={cfg.densityMode === d.id ? 'true' : 'false'}
-                onClick={() => setPlantingConfig({ densityMode: d.id })}
+                aria-pressed={cfg.densityMode === d ? 'true' : 'false'}
+                onClick={() => setPlantingConfig({ densityMode: d })}
               >
-                {d.label}
+                {T(`studio.density.${d}`)}
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <div class="fp-label" style="margin-bottom:5px;">Pathways %</div>
-          <div class="chip-row" role="group" aria-label="Pathways percentage">
+          <div class="fp-label" style="margin-bottom:5px;">{T('studio.area.pathways')}</div>
+          <div class="chip-row" role="group" aria-label={T('studio.area.pathwaysAria')}>
             {PATHWAYS.map((pct) => (
               <button
                 key={pct}
@@ -104,8 +101,11 @@ export function AreaStep() {
       </div>
 
       <div class="ob-net-line" data-net-area>
-        <span><strong>Net planted area: {netDisplay} {unitLabel}</strong> of {displayArea} {unitLabel} ({cfg.pathwaysPct}% paths &amp; access)</span>
-        <span style="font-size:12.5px; color:var(--ink-muted);">Auto-sizes plant counts &amp; spacing in Planting Plan</span>
+        <span>
+          <strong>{T('studio.area.netLabel', { area: `${netDisplay} ${unitLabel}` })}</strong>{' '}
+          {T('studio.area.netOf', { gross: `${displayArea} ${unitLabel}`, pct: cfg.pathwaysPct })}
+        </span>
+        <span style="font-size:12.5px; color:var(--ink-muted);">{T('studio.area.autoSizes')}</span>
       </div>
     </section>
   );
@@ -126,8 +126,8 @@ export function OpenCanopiPathB() {
   return (
     <div class="ob-dropzone-compact" data-open-canopi-path-b onClick={() => inputRef.current?.click()}>
       <div style="min-width:0;">
-        <strong style="font-size:13.5px; color:var(--ink); display:block;">Drop a .canopi file or browse</strong>
-        <span style="font-size:12px; color:var(--ink-muted);">Stays local · custom plants preserved intact</span>
+        <strong style="font-size:13.5px; color:var(--ink); display:block;">{T('studio.area.dropTitle')}</strong>
+        <span style="font-size:12px; color:var(--ink-muted);">{T('studio.area.dropSub')}</span>
       </div>
       <input
         ref={inputRef}
@@ -142,7 +142,7 @@ export function OpenCanopiPathB() {
         }}
       />
       <button type="button" class="btn btn-xs" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
-        Browse…
+        {T('studio.area.browse')}
       </button>
       {error && <p class="ct-muted" role="alert">{error}</p>}
     </div>

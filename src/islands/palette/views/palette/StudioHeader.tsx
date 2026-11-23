@@ -38,10 +38,10 @@ import { countRoleSeasonSlots, evaluateClimate2050, siteClimateProfile } from '.
 import { placeWords } from '../location/shared.ts';
 import { zoneName } from '../kit/names.ts';
 
-const HORIZONS: readonly { id: PeriodId; label: string }[] = [
-  { id: periodIds[0], label: 'Today' },
-  { id: periodIds[1], label: '2050s' },
-  { id: periodIds[2], label: '2080s' },
+const HORIZONS: readonly { id: PeriodId; key: 'today' | '2050s' | '2080s' }[] = [
+  { id: periodIds[0], key: 'today' },
+  { id: periodIds[1], key: '2050s' },
+  { id: periodIds[2], key: '2080s' },
 ];
 
 const TABS: readonly { id: StudioTab; key: string }[] = [
@@ -65,7 +65,7 @@ export function StudioHeader() {
 
   const loc = store.location.value;
   const z = store.climate.value;
-  const locText = loc ? placeWords(loc) : z ? zoneName(z) : 'Set location';
+  const locText = loc ? placeWords(loc) : z ? zoneName(z) : T('studio.header.setLocation');
   const dirty = designDirty.value;
   const tab = studioTab.value;
   const curPeriod = store.period.value;
@@ -107,20 +107,21 @@ export function StudioHeader() {
     return { sunTiers, roleSeasonSlots, thriving, risky, ph: profile.ph, phReaction: profile.phReaction, winterShortLabel: profile.winterShortLabel, planUnits };
   }, [members, memberCount, verdicts, loc, cfg.plotAreaM2, curPeriod, catalog, envelope, stress, mc, edits, profile]);
 
-  const fileSlug = canopiFileName(designName.value.trim() || 'My Field Palette');
-  const hLabel = curPeriod === periodIds[0] ? 'Today' : curPeriod === periodIds[1] ? '2050s' : '2080s';
+  const shownName = designName.value.trim() || T('studio.defaultName');
+  const fileSlug = canopiFileName(shownName);
+  const hLabel = curPeriod === periodIds[0] ? T('studio.horizon.today') : curPeriod === periodIds[1] ? T('studio.horizon.2050s') : T('studio.horizon.2080s');
 
   const handleOpenFile = async (file: File | undefined) => {
     setOpenMenu(null);
     if (!file) return;
     const res = openStudioCanopiText(await file.text());
-    setStatusMsg(res.ok ? `Opened ${res.name} (${res.matched} matched).` : res.error);
+    setStatusMsg(res.ok ? T('studio.header.openedFile', { name: res.name, n: res.matched }) : res.error);
   };
 
   const handleSave = async (saveAs = false) => {
     setOpenMenu(null);
     const ok = await saveStudioCanopi({ saveAs });
-    if (ok) setStatusMsg('Saved .canopi file.');
+    if (ok) setStatusMsg(T('studio.header.savedFile'));
   };
 
   const selectTab = (next: StudioTab) => {
@@ -153,8 +154,8 @@ export function StudioHeader() {
               <input
                 type="text"
                 class="doc-title-btn"
-                aria-label="Design name"
-                value={designName.value}
+                aria-label={T('studio.header.designName')}
+                value={designName.value || T('studio.defaultName')}
                 onInput={(e) => setDesignName((e.currentTarget as HTMLInputElement).value)}
               />
               <span class="doc-filename">{fileSlug}</span>
@@ -164,7 +165,7 @@ export function StudioHeader() {
                 onClick={() => { autoSaveEnabled.value = !autoSaveEnabled.value; }}
               >
                 <span class="fs-dot" aria-hidden="true" />
-                <span>{dirty ? 'Unsaved' : autoSaveEnabled.value ? 'Auto-save On' : 'Saved'}</span>
+                <span>{dirty ? T('studio.header.unsaved') : autoSaveEnabled.value ? T('studio.header.autoSaveOn') : T('studio.header.saved')}</span>
               </button>
             </div>
             <span class="doc-sep" aria-hidden="true" />
@@ -180,7 +181,7 @@ export function StudioHeader() {
             </button>
           </div>
 
-          <div class="doc-actions" role="group" aria-label="Document file actions">
+          <div class="doc-actions" role="group" aria-label={T('studio.header.actionsAria')}>
             {/* 1. Open .canopi ▾ (desktop) */}
             <div class="tb-menu desktop-only" style="position:relative;">
               <button
@@ -194,21 +195,21 @@ export function StudioHeader() {
               {openMenu === 'open' && (
                 <div class="tb-menu-panel" role="menu">
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
-                    <strong>Choose .canopi file…</strong>
-                    <span>Open a saved palette from your computer</span>
+                    <strong>{T('studio.header.chooseFile')}</strong>
+                    <span>{T('studio.header.chooseFileSub')}</span>
                   </button>
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
-                    <strong>Load example palette</strong>
-                    <span>Start from a suggested guild for your land</span>
+                    <strong>{T('studio.header.loadExample')}</strong>
+                    <span>{T('studio.header.loadExampleSub')}</span>
                   </button>
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); requestPlantOpen.value = true; }}>
                     <strong>{T('studio.requestPlant')}</strong>
-                    <span>Suggest a species to add to canopi-data</span>
+                    <span>{T('studio.header.requestSub')}</span>
                   </button>
                   <div class="tb-menu-sep" />
                   <button type="button" class="tb-menu-item" role="menuitem" data-start-over onClick={() => { setOpenMenu(null); startOver(); }}>
-                    <strong>New empty palette (Start over)</strong>
-                    <span>Clear your current palette while keeping your place</span>
+                    <strong>{T('studio.header.startOver')}</strong>
+                    <span>{T('studio.header.startOverSub')}</span>
                   </button>
                 </div>
               )}
@@ -228,7 +229,7 @@ export function StudioHeader() {
                 type="button"
                 class="doc-action-btn save-more"
                 style="border-top-left-radius:0; border-bottom-left-radius:0; border-left:0; padding:0 10px; min-width:28px;"
-                aria-label="More save options"
+                aria-label={T('studio.header.moreSave')}
                 aria-expanded={openMenu === 'save' ? 'true' : 'false'}
                 onClick={() => setOpenMenu((m) => (m === 'save' ? null : 'save'))}
               >
@@ -268,8 +269,8 @@ export function StudioHeader() {
                       }
                     }}
                   >
-                    <strong>Auto-save: {autoSaveEnabled.value ? 'On' : 'Off'}</strong>
-                    <span>{fsSupported ? 'Writes directly to your .canopi file' : 'Downloads .canopi file on save'}</span>
+                    <strong>{autoSaveEnabled.value ? T('studio.header.autoSaveOnLabel') : T('studio.header.autoSaveOffLabel')}</strong>
+                    <span>{fsSupported ? T('studio.header.autoSaveFs') : T('studio.header.autoSaveDl')}</span>
                   </button>
                 </div>
               )}
@@ -288,26 +289,26 @@ export function StudioHeader() {
               <button
                 type="button"
                 class="doc-action-btn"
-                aria-label="File menu"
+                aria-label={T('studio.header.fileMenu')}
                 aria-expanded={openMenu === 'mobile' ? 'true' : 'false'}
                 onClick={() => setOpenMenu((m) => (m === 'mobile' ? null : 'mobile'))}
               >
-                File <span aria-hidden="true">▾</span>
+                {T('studio.header.file')} <span aria-hidden="true">▾</span>
               </button>
               {openMenu === 'mobile' && (
                 <div class="tb-menu-panel" role="menu">
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
-                    <strong>Choose .canopi file…</strong>
-                    <span>Open a saved palette from your device</span>
+                    <strong>{T('studio.header.chooseFile')}</strong>
+                    <span>{T('studio.header.chooseFileSub')}</span>
                   </button>
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
-                    <strong>Load example palette</strong>
-                    <span>Start from a suggested guild for your land</span>
+                    <strong>{T('studio.header.loadExample')}</strong>
+                    <span>{T('studio.header.loadExampleSub')}</span>
                   </button>
                   <div class="tb-menu-sep" />
                   <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); if (typeof window !== 'undefined') window.print(); }}>
                     <strong>{T('studio.printPdf')}</strong>
-                    <span>1-page Nursery &amp; Field Sheet</span>
+                    <span>{T('studio.header.printSub')}</span>
                   </button>
                 </div>
               )}
@@ -317,9 +318,9 @@ export function StudioHeader() {
       </div>
 
       {/* Tier 2: Crisp Underline Tabs + Dark-Pill Horizon Switch + Hide/Show Plant Pool */}
-      <div class="studio-nav-bar" role="region" aria-label="Studio views and climate horizon">
+      <div class="studio-nav-bar" role="region" aria-label={T('studio.header.navAria')}>
         <div class="nav-bar-inner">
-          <nav class="studio-nav" role="tablist" aria-label="Studio sections">
+          <nav class="studio-nav" role="tablist" aria-label={T('studio.header.tabsAria')}>
             {TABS.map((item) => (
               <button
                 key={item.id}
@@ -332,14 +333,14 @@ export function StudioHeader() {
               >
                 <span>{T(`studio.tab.${item.id}`)}</span>
                 {item.id === 'palette' && <span class="nav-count">({memberCount})</span>}
-                {item.id === 'system' && holesCount > 0 && <span class="nav-count">({holesCount} gaps)</span>}
-                {item.id === 'plan' && <span class="nav-count">({ribbon.planUnits} plants)</span>}
+                {item.id === 'system' && holesCount > 0 && <span class="nav-count">({T('studio.header.gapsCount', { n: holesCount })})</span>}
+                {item.id === 'plan' && <span class="nav-count">({T('studio.header.plantsCount', { n: ribbon.planUnits })})</span>}
               </button>
             ))}
           </nav>
 
           <div class="nav-bar-right">
-            <div class="ink-seg" role="group" aria-label="Climate horizon">
+            <div class="ink-seg" role="group" aria-label={T('studio.header.horizonAria')}>
               {HORIZONS.map((h) => (
                 <button
                   key={h.id}
@@ -348,7 +349,7 @@ export function StudioHeader() {
                   aria-pressed={curPeriod === h.id ? 'true' : 'false'}
                   onClick={() => { store.period.value = h.id; }}
                 >
-                  {h.label}
+                  {T(`studio.horizon.${h.key}`)}
                 </button>
               ))}
             </div>
@@ -357,35 +358,35 @@ export function StudioHeader() {
               class="btn-quiet"
               onClick={() => { poolOpen.value = !poolOpen.value; }}
             >
-              {railVisible ? 'Hide plant pool →' : '← Show plant pool'}
+              {railVisible ? T('studio.header.hidePool') : T('studio.header.showPool')}
             </button>
           </div>
         </div>
       </div>
 
       {/* Tier 3: 4-Segment Whisper-Quiet Hairline Health Ribbon */}
-      <div class="health-ribbon" data-health-ribbon role="region" aria-label="Land health summary">
+      <div class="health-ribbon" data-health-ribbon role="region" aria-label={T('studio.header.ribbonAria')}>
         <div class="health-ribbon-inner">
           <div class="health-items">
             <button type="button" class="health-item" onClick={() => selectTab('system')}>
               <span class={`status-dot ${ribbon.sunTiers >= 4 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
-              <span>Sunlight: <strong>{ribbon.sunTiers}/4</strong>{ribbon.sunTiers < 4 ? ` · ${4 - ribbon.sunTiers} gap` : ' ✓'}</span>
+              <span>{T('studio.ribbon.sunlight')} <strong>{ribbon.sunTiers}/4</strong>{ribbon.sunTiers < 4 ? ` · ${T('studio.ribbon.gapCount', { n: 4 - ribbon.sunTiers })}` : ' ✓'}</span>
               <span class="hi-info" aria-hidden="true">i</span>
             </button>
             <button type="button" class="health-item" onClick={() => selectTab('system')}>
               <span class={`status-dot ${ribbon.roleSeasonSlots >= 20 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
-              <span>Roles: <strong>{ribbon.roleSeasonSlots}/24</strong> year-round</span>
+              <span>{T('studio.ribbon.roles')} <strong>{ribbon.roleSeasonSlots}/24</strong> {T('studio.ribbon.yearRound')}</span>
               <span class="hi-info" aria-hidden="true">i</span>
             </button>
             <button type="button" class="health-item" onClick={cycleWateringMode}>
               <span class={`status-dot ${ribbon.risky > 0 ? 'dot-risk' : 'dot-good'}`} aria-hidden="true" />
-              <span>{hLabel}: <strong>{ribbon.thriving}/{memberCount}</strong> thrive · {water} ▾</span>
+              <span>{hLabel}: <strong>{ribbon.thriving}/{memberCount}</strong> {T('studio.ribbon.thrive')} · {T(`studio.waterMode.${water === 'Rain-fed' ? 'rain' : water === 'Occasional' ? 'drip' : 'irrigated'}`)} ▾</span>
               <span class="hi-info" aria-hidden="true">i</span>
             </button>
             <button type="button" class="health-item" onClick={() => selectTab('climate')}>
               <span class="status-dot dot-winter" aria-hidden="true" />
               <span>
-                {ribbon.ph != null ? <>Soil <strong>pH {ribbon.ph.toFixed(1)}</strong> · </> : null}
+                {ribbon.ph != null ? <>{T('studio.ribbon.soil')} <strong>pH {ribbon.ph.toFixed(1)}</strong> · </> : null}
                 {ribbon.winterShortLabel}
               </span>
               <span class="hi-info" aria-hidden="true">i</span>

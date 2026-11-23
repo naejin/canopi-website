@@ -62,11 +62,11 @@ export function StudioRail() {
   const pool = store.fitPool.value ?? store.pool.value ?? [];
   const loc = store.location.value;
   const z = store.climate.value;
-  const placeName = loc ? placeWords(loc) : z ? zoneName(z) : 'your site';
+  const placeName = loc ? placeWords(loc) : z ? zoneName(z) : T('studio.common.yourSite');
   const profile = siteClimateProfile(loc, z, microclimate.value, store.siteEdits.value);
   const coachSiteMeta = [
     profile.coldFreeze10yrC != null
-      ? `1-in-10-yr freeze ${formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst)}`
+      ? T('studio.tuner.freezeFoot', { freeze: formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst) })
       : null,
     profile.ph != null ? `pH ${profile.ph.toFixed(1)}` : null,
   ].filter(Boolean).join(' · ');
@@ -86,10 +86,11 @@ export function StudioRail() {
       const hit = candidates.find((t) => !picked.has(t.id) && jobsOf(t).includes(r.id));
       if (hit) {
         picked.add(hit.id);
+        const rName = T(`studio.role.${r.id}`);
         out.push({
-          eyebrow: `${r.label.toUpperCase()} GAP`,
+          eyebrow: T('studio.rail.roleGap', { role: rName.toUpperCase() }),
           taxon: hit,
-          why: `Adds ${r.label.toLowerCase()} redundancy · ${stageSpanOf(hit).label}`,
+          why: T('studio.rail.roleWhy', { role: rName.toLowerCase(), span: stageSpanOf(hit).label }),
         });
       }
     }
@@ -98,10 +99,11 @@ export function StudioRail() {
       const hit = candidates.find((t) => !picked.has(t.id) && sunTierOf(t) === s);
       if (hit) {
         picked.add(hit.id);
+        const sName = sunTierLabel(hit);
         out.push({
-          eyebrow: `${sunTierLabel(hit).toUpperCase()} EXPOSURE GAP`,
+          eyebrow: T('studio.rail.sunGap', { sun: sName.toUpperCase() }),
           taxon: hit,
-          why: `Fills your open ${sunTierLabel(hit).toLowerCase()} niche · ${stageSpanOf(hit).label}`,
+          why: T('studio.rail.sunWhy', { sun: sName.toLowerCase(), span: stageSpanOf(hit).label }),
         });
       }
     }
@@ -109,11 +111,11 @@ export function StudioRail() {
       if (out.length >= 3) break;
       if (picked.has(hit.id)) continue;
       picked.add(hit.id);
-      const rLabel = jobsOf(hit).map((j) => ROLE_OPTIONS.find((r) => r.id === j)?.label).filter(Boolean).slice(0, 2).join(' & ');
+      const rLabel = jobsOf(hit).map((j) => T(`studio.role.${j}`)).filter(Boolean).slice(0, 2).join(' & ');
       out.push({
-        eyebrow: 'COMPLEMENTARY RESILIENCE PICK',
+        eyebrow: T('studio.rail.compEyebrow'),
         taxon: hit,
-        why: rLabel ? `Strengthens ${rLabel.toLowerCase()} across ${stageSpanOf(hit).label}` : `Well-suited companion for ${placeName}`,
+        why: rLabel ? T('studio.rail.compWhy', { roles: rLabel.toLowerCase(), span: stageSpanOf(hit).label }) : T('studio.rail.compFallback', { place: placeName }),
       });
     }
     return out;
@@ -151,9 +153,9 @@ export function StudioRail() {
   };
 
   return (
-    <aside class="studio-rail" data-studio-rail aria-label="Coach and plant catalog">
+    <aside class="studio-rail" data-studio-rail aria-label={T('studio.rail.aria')}>
       <div class="rail-head">
-        <div class="ink-seg" role="tablist" aria-label="Right rail">
+        <div class="ink-seg" role="tablist" aria-label={T('studio.rail.tablistAria')}>
           <button
             type="button"
             role="tab"
@@ -176,7 +178,7 @@ export function StudioRail() {
         <button
           type="button"
           class="btn-quiet"
-          aria-label="Close plant pool rail"
+          aria-label={T('studio.rail.closeAria')}
           onClick={() => { poolOpen.value = false; }}
         >
           ✕
@@ -187,10 +189,9 @@ export function StudioRail() {
         {tab === 'coach' ? (
           <>
             <div>
-              <h3 style="font-size:17px; margin-bottom:3px;">Strengthen your palette</h3>
+              <h3 style="font-size:17px; margin-bottom:3px;">{T('studio.rail.coachTitle')}</h3>
               <p style="margin:0 0 10px; font-size:13.5px; color:var(--ink-soft);">
-                {coachCards.length} gentle {coachCards.length === 1 ? 'suggestion' : 'suggestions'} for {placeName}
-                {coachSiteMeta ? ` (${coachSiteMeta})` : ''}. Adding updates your studio live.
+                {T('studio.rail.coachSub', { n: coachCards.length, place: placeName, meta: coachSiteMeta ? ` (${coachSiteMeta})` : '' })}
               </p>
               {coachCards.length > 0 && (
                 <button
@@ -199,7 +200,7 @@ export function StudioRail() {
                   style="width:100%;"
                   onClick={autoStrengthen}
                 >
-                  ✦ Auto-Strengthen (fill top {coachCards.length})
+                  {T('studio.rail.autoStrengthen', { n: coachCards.length })}
                 </button>
               )}
             </div>
@@ -244,7 +245,7 @@ export function StudioRail() {
               style="width:100%; border:1px solid var(--border);"
               onClick={() => openPlantPool({ tab: 'all' })}
             >
-              Explore all {pool.length} plants in Unified Pool →
+              {T('studio.rail.exploreAll', { n: pool.length })}
             </button>
           </>
         ) : (
@@ -252,19 +253,14 @@ export function StudioRail() {
             <input
               type="search"
               class="field-input"
-              aria-label="Search all plants"
-              placeholder="Search any plant, Latin, or role…"
+              aria-label={T('studio.rail.searchAria')}
+              placeholder={T('studio.rail.searchPh')}
               value={query}
               onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
             />
 
             <div class="chip-row">
-              {([
-                ['winter', '❄ Compact / winter'],
-                ['gap', '★ Fills a gap'],
-                ['soil', 'Soil builders'],
-                ['early', 'Pollinators'],
-              ] as const).map(([id, lbl]) => (
+              {(['winter', 'gap', 'soil', 'early'] as const).map((id) => (
                 <button
                   key={id}
                   type="button"
@@ -272,15 +268,15 @@ export function StudioRail() {
                   aria-pressed={intent === id ? 'true' : 'false'}
                   onClick={() => setIntent((cur) => (cur === id ? null : id))}
                 >
-                  {lbl}
+                  {T(`studio.rail.intent.${id}`)}
                 </button>
               ))}
             </div>
 
             <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px;">
               <FilterPopover value={filters} onChange={setFilters} />
-              <div class="ink-seg" role="group" aria-label="Sort pool">
-                {([['fit', 'Best fit'], ['gap', 'Gap'], ['az', 'A–Z']] as const).map(([id, lbl]) => (
+              <div class="ink-seg" role="group" aria-label={T('studio.rail.sortAria')}>
+                {(['fit', 'gap', 'az'] as const).map((id) => (
                   <button
                     key={id}
                     type="button"
@@ -289,7 +285,7 @@ export function StudioRail() {
                     aria-pressed={sort === id ? 'true' : 'false'}
                     onClick={() => setSort(id)}
                   >
-                    {lbl}
+                    {T(`studio.rail.sort.${id}`)}
                   </button>
                 ))}
               </div>
@@ -335,7 +331,7 @@ export function StudioRail() {
             </div>
 
             <p style="font-size:12.5px; color:var(--ink-muted); margin:4px 0 0;">
-              Can&apos;t find a species?{' '}
+              {T('studio.rail.cantFind')}{' '}
               <button
                 type="button"
                 class="link-btn"

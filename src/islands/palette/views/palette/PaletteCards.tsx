@@ -18,7 +18,6 @@ import {
   formatHeightRange,
   matchesStudioFilters,
   MONTH_INITIALS,
-  ROLE_OPTIONS,
   stageSpanOf,
   sunTierLabel,
   sunTierOf,
@@ -45,7 +44,7 @@ function Sparkline({ taxon }: { taxon: Taxon }) {
   const levels = useMemo(() => activityMonthsOf(taxon), [taxon]);
   const isAnnual = taxon.traits.is_annual === true;
   return (
-    <span class="mini-spark" role="img" aria-label="12-month activity">
+    <span class="mini-spark" role="img" aria-label={T('studio.cards.sparkAria')}>
       {MONTH_INITIALS.map((_, i) => {
         const m = i + 1;
         const w = (m <= 3 || m >= 11) && levels[i] !== 'dormant';
@@ -67,25 +66,15 @@ function Sparkline({ taxon }: { taxon: Taxon }) {
   );
 }
 
-const SHORT_ROLE: Record<string, string> = {
-  food: 'Food',
-  nitrogen: 'Soil',
-  mulch: 'Mulch',
-  groundcover: 'Covers',
-  pollinator: 'Bees',
-  shelter: 'Shelter',
-  accumulate: 'Soil',
-};
-
 function shortRolesOf(t: Taxon): string[] {
   const jobs = jobsOf(t);
   const out: string[] = [];
   for (const j of jobs) {
-    const s = SHORT_ROLE[j] ?? ROLE_OPTIONS.find((r) => r.id === j)?.label;
+    const s = T(`studio.roleShort.${j}`);
     if (s && !out.includes(s)) out.push(s);
     if (out.length >= 2) break;
   }
-  return out.length ? out : ['Companion'];
+  return out.length ? out : [T('studio.roleShort.companion')];
 }
 
 function roleSummary(t: Taxon): string {
@@ -101,9 +90,9 @@ function compactHeightOf(t: Taxon): string {
 }
 
 function verdictMeta(level: string | undefined): { cls: string; icon: string; label: string; key: string } {
-  if (level === 'outside') return { cls: 'v-risk', icon: '✕', label: 'At risk', key: 'At risk' };
-  if (level === 'look') return { cls: 'v-care', icon: '⚠', label: 'Needs care', key: 'Needs care' };
-  return { cls: 'v-fit', icon: '✓', label: 'Thrives', key: 'Thrives' };
+  if (level === 'outside') return { cls: 'v-risk', icon: '✕', label: T('studio.status.risk'), key: T('studio.status.risk') };
+  if (level === 'look') return { cls: 'v-care', icon: '⚠', label: T('studio.status.care'), key: T('studio.status.care') };
+  return { cls: 'v-fit', icon: '✓', label: T('studio.status.fit'), key: T('studio.status.fit') };
 }
 
 export function PaletteCards() {
@@ -172,7 +161,7 @@ export function PaletteCards() {
             <button
               type="button"
               class="pc-rm-btn"
-              aria-label={`Remove ${nameOf(t)}`}
+              aria-label={T('studio.cards.removeAria', { name: nameOf(t) })}
               onClick={(e) => { e.stopPropagation(); store.removeMember(t.id); }}
             >
               ×
@@ -204,7 +193,7 @@ export function PaletteCards() {
                 class="link-btn"
                 onClick={(e) => { e.stopPropagation(); store.openSheet('swap', t.id); }}
               >
-                ⇄ Swap
+                {T('studio.cards.swap')}
               </button>
             )}
             <button
@@ -221,15 +210,15 @@ export function PaletteCards() {
   };
 
   return (
-    <section data-palette-cards aria-label="My palette species">
+    <section data-palette-cards aria-label={T('studio.cards.aria')}>
       <div class="canvas-bar">
         <div class="canvas-search-group">
           <input
             type="search"
             class="field-input"
             style="flex:1; min-width:190px;"
-            aria-label="Search within your plants"
-            placeholder={`Search your ${members.length} plants (name, Latin, role)…`}
+            aria-label={T('studio.cards.searchAria')}
+            placeholder={T('studio.cards.searchPh', { n: members.length })}
             value={query}
             onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
           />
@@ -241,18 +230,18 @@ export function PaletteCards() {
           />
           <select
             class="field-select"
-            aria-label="Group plants by"
+            aria-label={T('studio.cards.groupAria')}
             value={groupBy}
             onChange={(e) => { paletteGroupMode.value = (e.currentTarget as HTMLSelectElement).value as PaletteGroupMode; }}
           >
-            <option value="none">Group: None</option>
-            <option value="sun">By Sun Exposure</option>
-            <option value="stage">By Succession</option>
-            <option value="status">By Status</option>
+            <option value="none">{T('studio.cards.groupNone')}</option>
+            <option value="sun">{T('studio.cards.groupSun')}</option>
+            <option value="stage">{T('studio.cards.groupStage')}</option>
+            <option value="status">{T('studio.cards.groupStatus')}</option>
           </select>
         </div>
 
-        <div class="ink-seg" role="group" aria-label="Palette view mode">
+        <div class="ink-seg" role="group" aria-label={T('studio.cards.viewAria')}>
           <button
             type="button"
             class="ink-seg-btn"
@@ -285,29 +274,29 @@ export function PaletteCards() {
       <ActiveFilterChips value={filters} onChange={setFilters} />
 
       {!filtered.length ? (
-        <p class="ct-muted">No species in your palette match the current filters.</p>
+        <p class="ct-muted">{T('studio.cards.noMatch')}</p>
       ) : mode === 'compact' ? (
         <div class="field-table-wrap" data-compact-list>
-          <div class="spark-key-bar" aria-label="Calendar sparkline shape and color key">
-            <span style="font-weight:600; color:var(--ink);">Calendar key (Jan → Dec):</span>
+          <div class="spark-key-bar" aria-label={T('studio.cards.calKeyAria')}>
+            <span style="font-weight:600; color:var(--ink);">{T('studio.cards.calKeyTitle')}</span>
             <span style="display:inline-flex; flex-wrap:wrap; gap:10px; align-items:center;">
-              <span class="legend-item"><span class="act-swatch"><span class="sw-win" /></span>Winter</span>
-              <span class="legend-item"><span class="act-swatch"><span class="sw-sow" /></span>Sow</span>
-              <span class="legend-item"><span class="act-swatch"><span class="sw-bloom" /></span>Bloom</span>
-              <span class="legend-item"><span class="act-swatch"><span class="sw-harv" /></span>Harvest</span>
-              <span style="color:var(--ink-muted);">· Same language as Living System &amp; Dossier</span>
+              <span class="legend-item"><span class="act-swatch"><span class="sw-win" /></span>{T('studio.act.winter')}</span>
+              <span class="legend-item"><span class="act-swatch"><span class="sw-sow" /></span>{T('studio.act.sow')}</span>
+              <span class="legend-item"><span class="act-swatch"><span class="sw-bloom" /></span>{T('studio.act.bloom')}</span>
+              <span class="legend-item"><span class="act-swatch"><span class="sw-harv" /></span>{T('studio.act.harvest')}</span>
+              <span style="color:var(--ink-muted);">· {T('studio.cards.calKeyNote')}</span>
             </span>
           </div>
           <table class="field-table">
             <thead>
               <tr>
-                <th>Sun</th>
-                <th>Species</th>
-                <th>{store.period.value === '1991-2020' ? 'Today' : store.period.value === '2071-2099' ? '2080s' : '2050s'} Fit</th>
-                <th>Roles</th>
-                <th>Calendar<span class="spark-axis">J · · A · · J · · O · D</span></th>
-                <th>Ht</th>
-                <th>Actions</th>
+                <th>{T('studio.cards.colSun')}</th>
+                <th>{T('studio.cards.colSpecies')}</th>
+                <th>{T('studio.cards.colFit', { horizon: store.period.value === '1991-2020' ? T('studio.horizon.today') : store.period.value === '2071-2099' ? T('studio.horizon.2080s') : T('studio.horizon.2050s') })}</th>
+                <th>{T('studio.cards.colRoles')}</th>
+                <th>{T('studio.cards.colCal')}<span class="spark-axis">J · · A · · J · · O · D</span></th>
+                <th>{T('studio.cards.colHt')}</th>
+                <th>{T('studio.cards.colActs')}</th>
               </tr>
             </thead>
             <tbody>
@@ -352,13 +341,13 @@ export function PaletteCards() {
                         style="padding:3px 6px; font-size:12.5px;"
                         onClick={(e) => { e.stopPropagation(); openFieldDossier(t.id, ids); }}
                       >
-                        Dossier
+                        {T('studio.dossierShort')}
                       </button>
                       <button
                         type="button"
                         class="link-btn danger"
                         style="padding:3px 6px; font-size:12.5px;"
-                        aria-label={`Remove ${nameOf(t)}`}
+                        aria-label={T('studio.cards.removeAria', { name: nameOf(t) })}
                         onClick={(e) => { e.stopPropagation(); store.removeMember(t.id); }}
                       >
                         ✕

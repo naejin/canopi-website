@@ -12,11 +12,11 @@
 
 .ct {
   [data-studio-header] {
-    position: sticky; top: 0; z-index: 45;
+    position: sticky; top: 0; z-index: 15;
     background: var(--surface);
   }
   .studio-doc-bar {
-    position: relative; z-index: 44;
+    position: relative; z-index: 14;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 0 20px;
@@ -99,7 +99,7 @@
   .tb-menu summary::-webkit-details-marker { display: none; }
   .tb-menu summary:hover { background: var(--bg); border-color: var(--border-strong); color: var(--ink); }
   .tb-menu-panel {
-    position: absolute; right: 0; top: calc(100% + 6px); z-index: 65;
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 18;
     min-width: 268px; padding: 6px;
     background: var(--surface); border: 1px solid var(--border-strong);
     border-radius: var(--radius); box-shadow: var(--shadow);
@@ -159,7 +159,7 @@
 
   /* Tier 2 — Crisp Navigation & Horizon Bar (~46px, inside sticky studio header) */
   .studio-nav-bar {
-    position: relative; z-index: 42;
+    position: relative; z-index: 12;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 0 20px;
@@ -2482,7 +2482,7 @@
 /* FilterPopover panel */
 .ct .ct-filter-wrap { position: relative; display: inline-flex; }
 .ct .ct-filter-panel {
-  position: absolute; top: calc(100% + 6px); right: 0; z-index: 50;
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 16;
   width: min(360px, calc(100vw - 24px)); padding: 14px;
   background: var(--surface); border: 1px solid var(--border-strong);
   border-radius: 10px; box-shadow: var(--shadow);
@@ -2970,4 +2970,79 @@
   .ct .tuner-status-pill { white-space: normal; }
   .ct .doc-action-btn { min-width: 44px; min-height: 44px; }
   .ct .ct-toast .ct-toast-dismiss { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+}
+
+/* ================= FIELD-NOTEBOOK LOADING SCREEN ================= */
+.ct .ct-loading-shell {
+  display: flex; flex-direction: column; gap: 20px;
+  padding: 20px 0 32px;
+}
+.ct .ct-loading-card {
+  max-width: 540px; width: 100%; margin: 12px auto 0;
+  padding: 28px 26px 24px; text-align: center;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.ct .ct-loading-mark {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-alt); border: 1px solid var(--border);
+  color: var(--accent-ink);
+  animation: ct-breathe 2.4s ease-in-out infinite;
+}
+.ct .ct-loading-title {
+  margin: 2px 0 0; font-family: var(--font-display);
+  font-size: 20px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em;
+}
+.ct .ct-loading-card .status-line {
+  margin: 0; font-size: 14.5px; font-weight: 600; color: var(--ink-soft);
+}
+.ct .ct-loading-sub {
+  margin: 0; max-width: 42ch; font-size: 13px; color: var(--ink-muted); line-height: 1.45;
+}
+.ct .ct-loading-bar {
+  width: 148px; height: 3px; margin-top: 6px; border-radius: 999px;
+  background: var(--border); overflow: hidden; position: relative;
+}
+.ct .ct-loading-bar::after {
+  content: ''; position: absolute; inset: 0; width: 45%;
+  border-radius: 999px; background: var(--accent);
+  animation: ct-slide 1.8s ease-in-out infinite;
+}
+.ct .ct-loading-skel {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
+  opacity: 0.62;
+}
+.ct .ct-skel-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.ct .ct-skel-line {
+  height: 10px; border-radius: 999px; background: var(--surface-alt);
+}
+.ct .ct-skel-line.is-title { height: 14px; width: 64%; }
+.ct .ct-skel-line.is-sub { width: 42%; }
+.ct .ct-skel-line.is-wide { width: 88%; }
+.ct .ct-skel-pills { display: flex; gap: 6px; margin-top: 4px; }
+.ct .ct-skel-pill {
+  height: 20px; width: 58px; border-radius: 999px;
+  background: var(--surface-alt); border: 1px solid var(--border);
+}
+@keyframes ct-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.92; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+@keyframes ct-slide {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(250%); }
+}
+@media (max-width: 639px) {
+  .ct .ct-loading-card { padding: 22px 18px 20px; }
+  .ct .ct-loading-skel { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ct .ct-loading-mark, .ct .ct-loading-bar::after { animation: none; }
+  .ct .ct-loading-bar::after { width: 60%; transform: translateX(30%); }
 }

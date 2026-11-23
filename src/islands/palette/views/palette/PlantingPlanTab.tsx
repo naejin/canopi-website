@@ -40,17 +40,14 @@ import {
 import {
   formatFreezeTag,
   formatHeatPeakTag,
+  localMonthLong,
   siteClimateProfile,
 } from '../../rules/climate-words.ts';
 
 type OrderSort = 'sun' | 'phase' | 'qty';
 type CalActionFilter = 'all' | 'plant' | 'sow' | 'prune' | 'harvest' | 'winter';
 
-const LAYOUT_OPTIONS: readonly { id: LayoutPattern; label: string }[] = [
-  { id: 'guild', label: 'Guild Clusters' },
-  { id: 'alley', label: 'Syntropic Alley Rows' },
-  { id: 'grid', label: 'Orchard Grid' },
-];
+const LAYOUT_IDS: readonly LayoutPattern[] = ['guild', 'alley', 'grid'];
 
 const UNIT_OPTIONS: readonly { id: AreaUnit; label: string; toM2: number }[] = [
   { id: 'm2', label: 'm²', toM2: 1 },
@@ -59,26 +56,11 @@ const UNIT_OPTIONS: readonly { id: AreaUnit; label: string; toM2: number }[] = [
   { id: 'ac', label: 'ac', toM2: 4046.86 },
 ];
 
-const DENSITY_OPTIONS: readonly { id: DensityMode; label: string; short: string }[] = [
-  { id: 'spacious', label: 'Spacious 0.7×', short: 'Spacious (0.7×)' },
-  { id: 'balanced', label: 'Balanced 1.0×', short: 'Balanced (1.0×)' },
-  { id: 'dense', label: 'Dense syntropic 1.4×', short: 'Dense (1.4×)' },
-];
+const DENSITY_IDS: readonly DensityMode[] = ['spacious', 'balanced', 'dense'];
 
 const PATHWAY_OPTIONS = [0, 10, 20, 30] as const;
 
 const SUN_ORDER: Record<Stratum, number> = { emergent: 0, high: 1, medium: 2, low: 3 };
-const SUN_LABELS: Record<Stratum, string> = {
-  emergent: 'Full sun',
-  high: 'Mostly sun',
-  medium: 'Part shade',
-  low: 'Shade',
-};
-
-const MONTH_LONG = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-] as const;
 
 export function PlantingPlanTab() {
   const members = store.memberTaxa.value;
@@ -108,20 +90,20 @@ export function PlantingPlanTab() {
   if (!members.length) {
     return (
       <section class="ct-studio-section" data-planting-plan-tab>
-        <p class="ct-muted">Add species first to generate nursery counts, spacing blueprint, materials, and planting waves.</p>
+        <p class="ct-muted">{T('studio.plan.empty')}</p>
         <div>
-          <button type="button" class="button button-secondary ct-small" onClick={() => { studioTab.value = 'palette'; }}>Return to My Palette</button>
+          <button type="button" class="button button-secondary ct-small" onClick={() => { studioTab.value = 'palette'; }}>{T('studio.plan.returnPalette')}</button>
         </div>
       </section>
     );
   }
 
   const unitMeta = UNIT_OPTIONS.find((u) => u.id === cfg.areaUnit) ?? UNIT_OPTIONS[0];
-  const densityMeta = DENSITY_OPTIONS.find((d) => d.id === cfg.densityMode) ?? DENSITY_OPTIONS[1];
+  const densityShort = T(`studio.densityShort.${cfg.densityMode}`);
   const grossDisplay = convertArea(cfg.plotAreaM2, cfg.areaUnit);
   const netDisplay = convertArea(plan.netAreaM2, cfg.areaUnit);
   const activeBrief = calendar[activeMonth] ?? calendar[0];
-  const placeName = loc?.label ?? 'Your site';
+  const placeName = loc?.label ?? T('studio.common.yourSite');
 
   const onAreaInput = (raw: string) => {
     const num = Number(raw);
@@ -150,7 +132,7 @@ export function PlantingPlanTab() {
     ? Math.round(materials.mulchM3 * 1.4 * 10) / 10
     : materials.mulchM3;
 
-  const layoutLabel = LAYOUT_OPTIONS.find((o) => o.id === cfg.layoutPattern)?.label ?? 'Guild Clusters';
+  const layoutLabel = T(`studio.plan.layout.${cfg.layoutPattern}`);
 
   const SUN_COLOR: Record<string, string> = {
     emergent: 'var(--sun-full)',
@@ -172,31 +154,31 @@ export function PlantingPlanTab() {
   };
 
   return (
-    <section data-planting-plan-tab aria-label="Planting plan">
+    <section data-planting-plan-tab aria-label={T('studio.tab.plan')}>
       {/* 1 · FIELD SIZING & DESIGN READINESS Hero Card (verbatim .plan-hero) */}
       <div class="plan-hero">
         <div class="ch-top">
           <div class="ch-kicker-row">
-            <span class="ch-kicker">1 · Field Sizing &amp; Design Readiness</span>
+            <span class="ch-kicker">{T('studio.plan.kicker1')}</span>
             <span class="ch-twin-pill">
-              {placeName}{profile.ph != null ? ` · pH ${profile.ph.toFixed(1)}` : ''} · {grossDisplay} {unitMeta.label} · {densityMeta.short}{cfg.bufferPct === 10 ? ' · +10% buffer' : ''}
+              {placeName}{profile.ph != null ? ` · pH ${profile.ph.toFixed(1)}` : ''} · {grossDisplay} {unitMeta.label} · {densityShort}{cfg.bufferPct === 10 ? ` · ${T('studio.plan.bufferTag')}` : ''}
             </span>
           </div>
           <button type="button" class="btn btn-xs" onClick={backToPlace}>
-            Edit location &amp; soil →
+            {T('studio.plan.editLoc')}
           </button>
         </div>
 
         <div>
-          <h2 class="ch-headline">Actionable Planting Plan for your {grossDisplay} {unitMeta.label} plot</h2>
+          <h2 class="ch-headline">{T('studio.plan.headline', { area: `${grossDisplay} ${unitMeta.label}` })}</h2>
           <p class="ch-sub" style="margin-top:5px;">
-            Realistic guild quantities, scaled layout blueprint, nursery lead times, field materials, and month-by-month actions — live-synced with your Location and <code>.canopi</code> file.
+            {T('studio.plan.heroSub')}
           </p>
         </div>
 
-        <div class="plan-controls-strip" role="region" aria-label="Inline plot sizing controls">
+        <div class="plan-controls-strip" role="region" aria-label={T('studio.plan.controlsAria')}>
           <div class="plan-ctrl-group">
-            <label class="fp-label" style="margin-bottom:0;" for="ct-plan-area-input">Planting area</label>
+            <label class="fp-label" style="margin-bottom:0;" for="ct-plan-area-input">{T('studio.area.title')}</label>
             <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px;">
               <input
                 id="ct-plan-area-input"
@@ -208,7 +190,7 @@ export function PlantingPlanTab() {
                 value={grossDisplay}
                 onChange={(e) => onAreaInput((e.currentTarget as HTMLInputElement).value)}
               />
-              <div class="ink-seg" role="group" aria-label="Area unit">
+              <div class="ink-seg" role="group" aria-label={T('studio.area.unitAria')}>
                 {UNIT_OPTIONS.map((u) => (
                   <button
                     key={u.id}
@@ -226,25 +208,25 @@ export function PlantingPlanTab() {
           </div>
 
           <div class="plan-ctrl-group">
-            <span class="fp-label" style="margin-bottom:0;">Density</span>
-            <div class="chip-row" role="group" aria-label="Planting density">
-              {DENSITY_OPTIONS.map((d) => (
+            <span class="fp-label" style="margin-bottom:0;">{T('studio.area.density')}</span>
+            <div class="chip-row" role="group" aria-label={T('studio.area.densityAria')}>
+              {DENSITY_IDS.map((d) => (
                 <button
-                  key={d.id}
+                  key={d}
                   type="button"
                   class="filter-chip"
-                  aria-pressed={cfg.densityMode === d.id ? 'true' : 'false'}
-                  onClick={() => setPlantingConfig({ densityMode: d.id })}
+                  aria-pressed={cfg.densityMode === d ? 'true' : 'false'}
+                  onClick={() => setPlantingConfig({ densityMode: d })}
                 >
-                  {d.label}
+                  {T(`studio.densityMult.${d}`)}
                 </button>
               ))}
             </div>
           </div>
 
           <div class="plan-ctrl-group">
-            <span class="fp-label" style="margin-bottom:0;">Pathways %</span>
-            <div class="chip-row" role="group" aria-label="Pathway allowance">
+            <span class="fp-label" style="margin-bottom:0;">{T('studio.area.pathways')}</span>
+            <div class="chip-row" role="group" aria-label={T('studio.area.pathwaysAria')}>
               {PATHWAY_OPTIONS.map((pct) => (
                 <button
                   key={pct}
@@ -260,45 +242,45 @@ export function PlantingPlanTab() {
           </div>
 
           <div class="plan-ctrl-group">
-            <span class="fp-label" style="margin-bottom:0;">Safety margin</span>
+            <span class="fp-label" style="margin-bottom:0;">{T('studio.plan.safetyMargin')}</span>
             <button
               type="button"
               class="filter-chip"
               aria-pressed={cfg.bufferPct === 10 ? 'true' : 'false'}
               onClick={() => setPlantingConfig({ bufferPct: cfg.bufferPct === 10 ? 0 : 10 })}
             >
-              {cfg.bufferPct === 10 ? '✓ +10% establishment buffer' : '+10% establishment buffer'}
+              {cfg.bufferPct === 10 ? `✓ ${T('studio.plan.bufferBtn')}` : T('studio.plan.bufferBtn')}
             </button>
           </div>
         </div>
 
-        <div class="plan-ledger-strip" role="region" aria-label="Plot summary metrics">
+        <div class="plan-ledger-strip" role="region" aria-label={T('studio.plan.metricsAria')}>
           <div class="plan-ledger-col">
-            <span class="lk">Plants &amp; Seed Order</span>
+            <span class="lk">{T('studio.plan.mOrder')}</span>
             <div class="lv">
-              {plan.totalUnits} transplants{plan.totalSeedGrams > 0 ? ` + ${plan.totalSeedGrams} g seed` : ''}
+              {T('studio.plan.transplants', { n: plan.totalUnits })}{plan.totalSeedGrams > 0 ? ` + ${T('studio.plan.seedGrams', { g: plan.totalSeedGrams })}` : ''}
             </div>
-            <div class="ls">{members.length} species</div>
+            <div class="ls">{T('studio.plan.speciesCount', { n: members.length })}</div>
           </div>
           <div class="plan-ledger-col">
-            <span class="lk">Net Planted Area</span>
-            <div class="lv">{netDisplay} {unitMeta.label} net · {plan.coveragePct}% stacked</div>
-            <div class="ls">Of {grossDisplay} {unitMeta.label} gross · {cfg.pathwaysPct}% paths</div>
+            <span class="lk">{T('studio.plan.mNetArea')}</span>
+            <div class="lv">{T('studio.plan.netStacked', { area: `${netDisplay} ${unitMeta.label}`, pct: plan.coveragePct })}</div>
+            <div class="ls">{T('studio.plan.ofGross', { gross: `${grossDisplay} ${unitMeta.label}`, pct: cfg.pathwaysPct })}</div>
           </div>
           <div class="plan-ledger-col">
-            <span class="lk">Planting Waves</span>
-            <div class="lv">{waves.length} waves · Frost-anchored</div>
-            <div class="ls">{waves[1]?.kicker ?? 'Autumn/Winter root-in'}</div>
+            <span class="lk">{T('studio.plan.mWaves')}</span>
+            <div class="lv">{T('studio.plan.wavesFrost', { n: waves.length })}</div>
+            <div class="ls">{waves[1]?.kicker ?? T('studio.plan.wavesDefault')}</div>
           </div>
           <div class="plan-ledger-col">
-            <span class="lk">Harvest Horizon</span>
-            <div class="lv">3 mo → Yr 5+</div>
-            <div class="ls">First harvest: Placenta 1 · Mature yield: Yr 4–7</div>
+            <span class="lk">{T('studio.plan.mHarvest')}</span>
+            <div class="lv">{T('studio.plan.harvestSpan')}</div>
+            <div class="ls">{T('studio.plan.harvestSub')}</div>
           </div>
         </div>
 
         {plan.notes.length > 0 && (
-          <div class="plan-notes-footer" role="region" aria-label="Agronomic notes">
+          <div class="plan-notes-footer" role="region" aria-label={T('studio.plan.notesAria')}>
             {plan.notes.map((n, i) => (
               <span key={i}>
                 {i > 0 ? <span style="color:var(--border-strong); margin:0 6px;" aria-hidden="true">·</span> : ''}
@@ -315,20 +297,20 @@ export function PlantingPlanTab() {
           <div>
             <h2>{T('studio.planBlueprint')} · {blueprint.widthM} m × {blueprint.heightM} m</h2>
             <p class="sec-sub">
-              Scaled <strong>{layoutLabel}</strong> preview with dashed mature-spread rings and {cfg.pathwaysPct}% access paths. Click any circle for its Field Dossier.
+              {T('studio.plan.bpSub', { layout: layoutLabel, pct: cfg.pathwaysPct })}
             </p>
           </div>
-          <div class="ink-seg" role="group" aria-label="Layout pattern">
-            {LAYOUT_OPTIONS.map((opt) => (
+          <div class="ink-seg" role="group" aria-label={T('studio.plan.layoutAria')}>
+            {LAYOUT_IDS.map((opt) => (
               <button
-                key={opt.id}
+                key={opt}
                 type="button"
                 class="ink-seg-btn"
                 style="padding:5px 10px; font-size:12.5px;"
-                aria-pressed={cfg.layoutPattern === opt.id ? 'true' : 'false'}
-                onClick={() => setPlantingConfig({ layoutPattern: opt.id })}
+                aria-pressed={cfg.layoutPattern === opt ? 'true' : 'false'}
+                onClick={() => setPlantingConfig({ layoutPattern: opt })}
               >
-                {opt.label}
+                {T(`studio.plan.layout.${opt}`)}
               </button>
             ))}
           </div>
@@ -340,10 +322,10 @@ export function PlantingPlanTab() {
               viewBox={`0 0 ${blueprint.viewWidth} ${blueprint.viewHeight + 36}`}
               class="bp-svg"
               role="img"
-              aria-label={`Planting layout blueprint (${layoutLabel})`}
+              aria-label={`${T('studio.planBlueprint')} (${layoutLabel})`}
             >
               <text x={blueprint.viewWidth / 2} y="16" text-anchor="middle" fill="var(--ink-muted)" font-size="11">
-                {blueprint.widthM} m width · {grossDisplay} {unitMeta.label} gross
+                {T('studio.plan.bpWidth', { w: `${blueprint.widthM} m`, area: `${grossDisplay} ${unitMeta.label}` })}
               </text>
               <text
                 x="12"
@@ -407,7 +389,7 @@ export function PlantingPlanTab() {
                 <text x="110" y="-7" text-anchor="end" fill="var(--ink-muted)" font-size="10">4 m</text>
               </g>
               <text x={blueprint.viewWidth - 20} y={blueprint.viewHeight + 18} text-anchor="end" fill="var(--ink-muted)" font-size="10.5">
-                Dashed rings = mature spread · {cfg.pathwaysPct}% access paths
+                {T('studio.plan.bpRings', { pct: cfg.pathwaysPct })}
               </text>
             </svg>
           </div>
@@ -416,14 +398,14 @@ export function PlantingPlanTab() {
               {(['emergent', 'high', 'medium', 'low'] as const).map((tier) => (
                 <span key={tier} class="legend-item">
                   <span class="win-dot" style={{ background: SUN_COLOR[tier], width: '10px', height: '10px' }} />
-                  {SUN_LABELS[tier]}
+                  {T(`studio.sun.${tier}`)}
                 </span>
               ))}
             </div>
-            <span>{blueprint.widthM} m × {blueprint.heightM} m · {layoutLabel} · {densityMeta.short}</span>
+            <span>{blueprint.widthM} m × {blueprint.heightM} m · {layoutLabel} · {densityShort}</span>
           </div>
           <div class="bp-canopi-note">
-            <span>↳ Exports exact area, layout pattern, spacing &amp; species counts into your <code>.canopi</code> file so you can place and refine every plant on the Canopi Desktop map.</span>
+            <span>{T('studio.plan.bpCanopiNote')}</span>
           </div>
         </div>
       </div>
@@ -432,29 +414,27 @@ export function PlantingPlanTab() {
       <div class="system-section">
         <div class="sec-head">
           <div>
-            <h2>2 · Species Quantities, Spacing &amp; Nursery Order</h2>
-            <p class="sec-sub">
-              Adjust any quantity directly — blueprint, materials, waves, monthly briefs, and your <code>.canopi</code> file update live. Click any species to open its Field Dossier.
-            </p>
+            <h2>{T('studio.plan.sec2Title')}</h2>
+            <p class="sec-sub">{T('studio.plan.sec2Sub')}</p>
           </div>
           <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
-            <div class="ink-seg" role="group" aria-label="Sort species order">
+            <div class="ink-seg" role="group" aria-label={T('studio.plan.sortAria')}>
               <button type="button" class="ink-seg-btn" style="padding:4px 9px; font-size:12px;" aria-pressed={orderSort === 'sun' ? 'true' : 'false'} onClick={() => setOrderSort('sun')}>
-                By Preferred Sun
+                {T('studio.plan.sortSun')}
               </button>
               <button type="button" class="ink-seg-btn" style="padding:4px 9px; font-size:12px;" aria-pressed={orderSort === 'phase' ? 'true' : 'false'} onClick={() => setOrderSort('phase')}>
-                By Planting Phase
+                {T('studio.plan.sortPhase')}
               </button>
               <button type="button" class="ink-seg-btn" style="padding:4px 9px; font-size:12px;" aria-pressed={orderSort === 'qty' ? 'true' : 'false'} onClick={() => setOrderSort('qty')}>
-                By Quantity
+                {T('studio.plan.sortQty')}
               </button>
             </div>
             <input
               type="search"
               class="field-input"
               style="width:190px; max-width:100%;"
-              placeholder="Filter species…"
-              aria-label="Filter nursery order species"
+              placeholder={T('studio.plan.filterPh')}
+              aria-label={T('studio.plan.filterAria')}
               value={orderQuery}
               onInput={(e) => setOrderQuery((e.currentTarget as HTMLInputElement).value)}
             />
@@ -469,7 +449,7 @@ export function PlantingPlanTab() {
               return (
                 <div key={tier} class="fp-tier-col">
                   <div class="fp-tier-head">
-                    <strong style="color:var(--ink);">{SUN_LABELS[tier]}</strong>
+                    <strong style="color:var(--ink);">{T(`studio.sun.${tier}`)}</strong>
                     <span style="color:var(--ink-soft); font-weight:600;">{m2} m² ({pct}%)</span>
                   </div>
                   <div class="fp-tier-track">
@@ -481,26 +461,26 @@ export function PlantingPlanTab() {
           </div>
         </div>
 
-        <div class="leadtime-ribbon" role="region" aria-label="Nursery order lead-time summary">
-          <span class="lt-item"><strong>{plan.stockSummary.bareroot}× Bare-root trees</strong> · order Sep–Oct</span>
+        <div class="leadtime-ribbon" role="region" aria-label={T('studio.plan.leadAria')}>
+          <span class="lt-item"><strong>{T('studio.plan.ltBareRoot', { n: plan.stockSummary.bareroot })}</strong> · {T('studio.plan.ltOrderSepOct')}</span>
           <span style="color:var(--border-strong);" aria-hidden="true">·</span>
-          <span class="lt-item"><strong>{plan.stockSummary.pot}× Potted starts</strong> · order Feb</span>
+          <span class="lt-item"><strong>{T('studio.plan.ltPots', { n: plan.stockSummary.pot })}</strong> · {T('studio.plan.ltOrderFeb')}</span>
           <span style="color:var(--border-strong);" aria-hidden="true">·</span>
-          <span class="lt-item"><strong>{plan.stockSummary.bulb}× Bulbs / divisions</strong> · order Sep</span>
+          <span class="lt-item"><strong>{T('studio.plan.ltBulbs', { n: plan.stockSummary.bulb })}</strong> · {T('studio.plan.ltOrderSep')}</span>
           <span style="color:var(--border-strong);" aria-hidden="true">·</span>
-          <span class="lt-item"><strong>{plan.stockSummary.seedPacks}× Seed pack ({plan.stockSummary.seedGrams} g)</strong> · order Jan–Feb</span>
+          <span class="lt-item"><strong>{T('studio.plan.ltSeeds', { n: plan.stockSummary.seedPacks, g: plan.stockSummary.seedGrams })}</strong> · {T('studio.plan.ltOrderJanFeb')}</span>
         </div>
 
         <div class="plan-table-wrap" style="overflow-x:auto;">
-          <table class="plan-table" aria-label="Species quantities, spacing and nursery format">
+          <table class="plan-table" aria-label={T('studio.plan.tableAria')}>
             <thead>
               <tr>
-                <th style="min-width:175px;">Species &amp; Succession</th>
-                <th style="min-width:142px;">Spacing &amp; Prep</th>
-                <th style="min-width:136px;">Quantity</th>
-                <th style="min-width:152px;">Stock Format</th>
-                <th style="min-width:98px;">Footprint</th>
-                <th style="min-width:165px;">Key Field Windows</th>
+                <th style="min-width:175px;">{T('studio.plan.colSpecies')}</th>
+                <th style="min-width:142px;">{T('studio.plan.colSpacing')}</th>
+                <th style="min-width:136px;">{T('studio.plan.colQty')}</th>
+                <th style="min-width:152px;">{T('studio.plan.colStock')}</th>
+                <th style="min-width:98px;">{T('studio.plan.colFootprint')}</th>
+                <th style="min-width:165px;">{T('studio.plan.colWindows')}</th>
               </tr>
             </thead>
             <tbody>
@@ -519,54 +499,54 @@ export function PlantingPlanTab() {
                           {nameOf(item.taxon)}
                         </button>
                         <div style="display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-top:2px;">
-                          <span class={`sun-badge ${SUN_CLS[item.sunBand]}`} style="font-size:10.5px; padding:1px 6px;">{SUN_LABELS[item.sunBand]}</span>
+                          <span class={`sun-badge ${SUN_CLS[item.sunBand]}`} style="font-size:10.5px; padding:1px 6px;">{T(`studio.sun.${item.sunBand}`)}</span>
                           <span class="why-tag" style="font-size:10.5px;">{item.stageLabel}</span>
                         </div>
                       </div>
                     </div>
                   </td>
                   <td class="mob-kv">
-                    <span class="mob-field-lbl">Spacing &amp; prep</span>
+                    <span class="mob-field-lbl">{T('studio.plan.colSpacing')}</span>
                     <div>
                       <strong style="color:var(--ink); white-space:nowrap;">{item.spacingLabel}</strong>
-                      <div style="font-size:11.5px; color:var(--ink-muted);">in-row × between-row</div>
+                      <div style="font-size:11.5px; color:var(--ink-muted);">{T('studio.plan.inBetweenRow')}</div>
                     </div>
                   </td>
                   <td class="mob-kv">
-                    <span class="mob-field-lbl">Quantity</span>
+                    <span class="mob-field-lbl">{T('studio.plan.colQty')}</span>
                     <div>
                       <div class="qty-stepper">
-                        <button type="button" class="qty-step-btn" aria-label={`Decrease ${nameOf(item.taxon)}`} onClick={() => setQuantityOverride(item.taxon.id, Math.max(0, item.qty - 1))}>−</button>
+                        <button type="button" class="qty-step-btn" aria-label={T('studio.plan.decAria', { name: nameOf(item.taxon) })} onClick={() => setQuantityOverride(item.taxon.id, Math.max(0, item.qty - 1))}>−</button>
                         <input
                           type="number"
                           class="qty-input"
                           min={0}
                           max={9999}
-                          aria-label={`Quantity for ${nameOf(item.taxon)}`}
+                          aria-label={T('studio.plan.qtyAria', { name: nameOf(item.taxon) })}
                           value={item.qty}
                           onChange={(e) => setQuantityOverride(item.taxon.id, Number((e.currentTarget as HTMLInputElement).value))}
                         />
-                        <button type="button" class="qty-step-btn" aria-label={`Increase ${nameOf(item.taxon)}`} onClick={() => setQuantityOverride(item.taxon.id, item.qty + 1)}>+</button>
+                        <button type="button" class="qty-step-btn" aria-label={T('studio.plan.incAria', { name: nameOf(item.taxon) })} onClick={() => setQuantityOverride(item.taxon.id, item.qty + 1)}>+</button>
                       </div>
                       <div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
-                        <span class={`qty-badge${item.isCustom ? ' custom' : ''}`}>{item.isCustom ? 'Custom' : 'Auto'}</span>
+                        <span class={`qty-badge${item.isCustom ? ' custom' : ''}`}>{item.isCustom ? T('studio.plan.custom') : T('studio.plan.auto')}</span>
                         {item.isCustom && (
                           <button type="button" class="link-btn" style="font-size:11px; padding:0;" onClick={() => setQuantityOverride(item.taxon.id, null)}>
-                            Reset ({item.autoQty})
+                            {T('studio.tuner.reset')} ({item.autoQty})
                           </button>
                         )}
                       </div>
                     </div>
                   </td>
                   <td class="mob-kv">
-                    <span class="mob-field-lbl">Stock format</span>
+                    <span class="mob-field-lbl">{T('studio.plan.colStock')}</span>
                     <div>
-                      <strong style="font-size:13px; color:var(--ink); white-space:nowrap;">{item.stockLabel}{item.seedGrams > 0 ? ` · ${item.seedGrams} g pack` : ''}</strong>
+                      <strong style="font-size:13px; color:var(--ink); white-space:nowrap;">{item.stockLabel}{item.seedGrams > 0 ? ` · ${item.seedGrams} g` : ''}</strong>
                       <div style="font-size:11.5px; color:var(--ink-muted);">{item.orderWindow}</div>
                     </div>
                   </td>
                   <td class="mob-kv">
-                    <span class="mob-field-lbl">Footprint</span>
+                    <span class="mob-field-lbl">{T('studio.plan.colFootprint')}</span>
                     <div>
                       <div style="font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;">
                         {item.footprintM2} m² <span style="font-weight:400; color:var(--ink-muted);">({item.pctOfNet}%)</span>
@@ -580,11 +560,11 @@ export function PlantingPlanTab() {
                     <div class="win-pills">
                       <span class="win-pill">
                         <span class="win-dot" style="background:var(--cal-sow);" />
-                        {item.isSeed ? 'Sow Apr–May' : item.phase === 'winter' ? 'Plant Nov–Feb' : 'Plant Mar–Oct'}
+                        {item.isSeed ? T('studio.plan.winSow') : item.phase === 'winter' ? T('studio.plan.winPlantWin') : T('studio.plan.winPlantSpr')}
                       </span>
                       <span class="win-pill">
                         <span class="win-dot" style="background:var(--cal-harvest);" />
-                        Harvest Jul–Oct
+                        {T('studio.plan.winHarv')}
                       </span>
                     </div>
                   </td>
@@ -599,50 +579,50 @@ export function PlantingPlanTab() {
       <div class="system-section">
         <div class="sec-head">
           <div>
-            <h2>3 · Field Materials, Prep &amp; Year-1 Sequence</h2>
-            <p class="sec-sub">Live-calculated materials and labor for your {netDisplay} {unitMeta.label} net planted area, followed by 4 chronological field waves.</p>
+            <h2>{T('studio.plan.sec3Title')}</h2>
+            <p class="sec-sub">{T('studio.plan.sec3Sub', { area: `${netDisplay} ${unitMeta.label}` })}</p>
           </div>
         </div>
 
-        <div class="plan-ledger-strip" role="region" aria-label="Field materials, prep and labor calculator">
+        <div class="plan-ledger-strip" role="region" aria-label={T('studio.plan.matAria')}>
           <div class="plan-ledger-col">
-            <span class="lk">Mulch &amp; Compost</span>
-            <div class="lv">{effectiveMulchM3} m³ woodchip / straw</div>
-            <div class="ls">{extremeInsurance ? '14 cm deep (+4 cm cap)' : '10 cm depth'} · ~{materials.compostL} L compost</div>
+            <span class="lk">{T('studio.plan.matMulch')}</span>
+            <div class="lv">{T('studio.plan.matMulchVal', { vol: `${effectiveMulchM3} m³` })}</div>
+            <div class="ls">{extremeInsurance ? T('studio.plan.matDepthExt') : T('studio.plan.matDepthStd')} · ~{materials.compostL} L {T('studio.plan.compost')}</div>
           </div>
           <div class="plan-ledger-col">
-            <span class="lk">Stakes &amp; Labels</span>
-            <div class="lv">{materials.stakes}× tree stakes &amp; rings</div>
-            <div class="ls">+ {materials.tags}× weatherproof species tags</div>
+            <span class="lk">{T('studio.plan.matStakes')}</span>
+            <div class="lv">{T('studio.plan.matStakesVal', { n: materials.stakes })}</div>
+            <div class="ls">{T('studio.plan.matTagsVal', { n: materials.tags })}</div>
           </div>
           <div class="plan-ledger-col">
-            <span class="lk">Year-1 Watering</span>
+            <span class="lk">{T('studio.plan.matWater')}</span>
             <div class="lv">{materials.wateringCadence}</div>
             <div class="ls">{materials.wateringDetail}</div>
           </div>
           <div class="plan-ledger-col">
-            <span class="lk">Est. Effort</span>
+            <span class="lk">{T('studio.plan.matEffort')}</span>
             <div class="lv">{materials.effortLabel}</div>
-            <div class="ls">Layout staking, bare-root planting &amp; mulching</div>
+            <div class="ls">{T('studio.plan.matEffortSub')}</div>
           </div>
         </div>
 
         <div style="margin:14px 0; padding:10px 14px; border-left:3px solid var(--warn-dot); background:var(--bg); border-radius:6px;" data-plan-extreme-insurance>
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
             <strong style="font-size:13px;">
-              ⚡ Extreme-Year Field Insurance
+              {T('studio.plan.extInsTitle')}
               {profile.hasLive && profile.coldFreeze10yrC != null && profile.heatPeak10yrC != null
-                ? ` (1-in-10-yr freeze ${formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst)} · heat peak ${formatHeatPeakTag(profile.heatPeak10yrC, profile.heatPeakIsEst)}${profile.dryStreakDays != null ? ` · ~${profile.dryStreakDays}d dry spell` : ''})`
-                : ' (Site v0.7.0 Tail Prep)'}
+                ? ` (${T('studio.tuner.freezeFoot', { freeze: formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst) })} · ${T('studio.tuner.peakFoot', { peak: formatHeatPeakTag(profile.heatPeak10yrC, profile.heatPeakIsEst) })}${profile.dryStreakDays != null ? ` · ${T('studio.postcard.drySpellDays', { days: profile.dryStreakDays })}` : ''})`
+                : ''}
             </strong>
             <button type="button" class="link-btn" style="font-size:12px;" onClick={() => { studioTab.value = 'climate'; }}>
-              Tune in Stress Lab →
+              {T('studio.plan.tuneStress')}
             </button>
           </div>
           <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; color:var(--ink-soft); cursor:pointer;">
             <input type="checkbox" checked={extremeInsurance} onChange={(e) => setExtremeInsurance((e.currentTarget as HTMLInputElement).checked)} />
             <span>
-              <strong>Extra +4 cm woodchip mulch cap &amp; shade cloth</strong> — protects roots during peak summer heat domes &amp; extended dry streaks.
+              <strong>{T('studio.plan.extInsCheck')}</strong> — {T('studio.plan.extInsDesc')}
             </span>
           </label>
         </div>
@@ -650,12 +630,12 @@ export function PlantingPlanTab() {
         <div class="wave-grid">
           {waves.map((w) => {
             const extraTask = w.id === 'w1'
-              ? `Stage ${effectiveMulchM3} m³ woodchip mulch & ~${materials.compostL} L planting compost.`
+              ? T('studio.plan.waveTask1', { vol: `${effectiveMulchM3} m³`, compost: `${materials.compostL} L` })
               : w.id === 'w2'
-              ? 'Water in deeply after planting so soil settles cleanly around bare roots.'
+              ? T('studio.plan.waveTask2')
               : w.id === 'w3'
-              ? 'Label direct-sown rows and mulch pathways to suppress spring weeds.'
-              : 'Monitor young tree moisture every 7–10 days during dry spells.';
+              ? T('studio.plan.waveTask3')
+              : T('studio.plan.waveTask4');
             const allTasks = [...w.tasks, extraTask];
             const doneCount = allTasks.filter((_, idx) => waveChecks[`${w.id}-${idx}`]).length;
             const waveSpecies = plan.items.filter((it) => w.speciesIds.includes(it.taxon.id) && it.qty > 0);
@@ -666,7 +646,7 @@ export function PlantingPlanTab() {
                     <div class="wave-kicker">{w.kicker}</div>
                     <h4 class="wave-title">{w.title}</h4>
                   </div>
-                  <span class="wave-prog">{doneCount}/{allTasks.length} done</span>
+                  <span class="wave-prog">{T('studio.plan.waveDone', { done: doneCount, total: allTasks.length })}</span>
                 </div>
                 <ul class="wave-list">
                   {allTasks.map((task, idx) => {
@@ -707,21 +687,14 @@ export function PlantingPlanTab() {
       <div class="system-section">
         <div class="sec-head">
           <div>
-            <h2>4 · 12-Month Field Action Calendar</h2>
-            <p class="sec-sub">Filter by concrete field action and click any month to read your weekend <strong>Field Brief</strong> for your {grossDisplay} {unitMeta.label} plot.</p>
+            <h2>{T('studio.plan.sec4Title')}</h2>
+            <p class="sec-sub">{T('studio.plan.sec4Sub', { area: `${grossDisplay} ${unitMeta.label}` })}</p>
           </div>
         </div>
 
-        <div class="cal-focus-bar" role="group" aria-label="Filter calendar by action">
+        <div class="cal-focus-bar" role="group" aria-label={T('studio.plan.calFilterAria')}>
           <div class="cal-focus-pills">
-            {([
-              ['all', 'All actions'],
-              ['plant', '⚒ Plant out'],
-              ['sow', '● Direct sow'],
-              ['prune', '✂ Prune & mulch'],
-              ['harvest', '✦ Harvest'],
-              ['winter', '❄ Winter-grow'],
-            ] as const).map(([id, lbl]) => (
+            {(['all', 'plant', 'sow', 'prune', 'harvest', 'winter'] as const).map((id) => (
               <button
                 key={id}
                 type="button"
@@ -729,13 +702,13 @@ export function PlantingPlanTab() {
                 aria-pressed={calFilter === id ? 'true' : 'false'}
                 onClick={() => setCalFilter(id)}
               >
-                {lbl}
+                {T(`studio.plan.act.${id}`)}
               </button>
             ))}
           </div>
         </div>
 
-        <div class="hm-grid" role="group" aria-label="12-month field calendar">
+        <div class="hm-grid" role="group" aria-label={T('studio.plan.calGridAria')}>
           {calendar.map((m, idx) => {
             const isPlant = idx === 1 || idx === 2 || idx === 3 || idx === 9 || idx === 10;
             const isSow = idx === 2 || idx === 3 || idx === 4 || idx === 8;
@@ -745,7 +718,7 @@ export function PlantingPlanTab() {
             const taskCnt = (isPlant ? 2 : 0) + (isSow ? 1 : 0) + (isPrune ? 1 : 0) + (isHarv ? 3 : 0) + (isWin ? 1 : 0);
             return (
               <button
-                key={m.month}
+                key={idx}
                 type="button"
                 class={`hm-col${isWin ? ' win' : ''}`}
                 aria-pressed={activeMonth === idx ? 'true' : 'false'}
@@ -767,23 +740,23 @@ export function PlantingPlanTab() {
 
         <div class="month-brief" style="margin-top:14px;">
           <div class="mb-head">
-            <div class="mb-title">Field Brief for {MONTH_LONG[activeMonth]} (on your {grossDisplay} {unitMeta.label} plot)</div>
+            <div class="mb-title">{T('studio.plan.briefTitle', { month: localMonthLong(activeMonth), area: `${grossDisplay} ${unitMeta.label}` })}</div>
             <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-muted);">
-              <span class="why-tag">Est. field time: ~4–5 hrs</span>
+              <span class="why-tag">{T('studio.plan.estTime')}</span>
               <span>{placeName} · {layoutLabel}</span>
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:6px; font-size:13.5px; color:var(--ink-soft);">
             <div><strong>⚒ {activeBrief.tag}:</strong> {activeBrief.brief}</div>
             <div>
-              <strong>❄ Seasonal rhythm:</strong>{' '}
+              <strong>{T('studio.plan.seasonalRhythm')}</strong>{' '}
               {plan.items.slice(0, 3).map((it) => `${it.qty}× ${nameOf(it.taxon)} (${it.spacingLabel})`).join(', ')}.
             </div>
             <div>
-              <strong>Bring to the field:</strong> Spade, {materials.stakes}× tree stakes &amp; ties, {Math.max(1, Math.round(effectiveMulchM3 * 0.4 * 10) / 10)} m³ mulch, root-soaking bucket.
+              <strong>{T('studio.plan.bringField')}</strong> {T('studio.plan.bringFieldItems', { stakes: materials.stakes, vol: `${Math.max(1, Math.round(effectiveMulchM3 * 0.4 * 10) / 10)} m³` })}
             </div>
             <div style="padding-top:6px; border-top:1px dashed var(--border); font-size:12.5px; color:var(--ink-muted);">
-              <strong>Next-month heads-up:</strong> {calendar[(activeMonth + 1) % 12]?.month}: {calendar[(activeMonth + 1) % 12]?.brief}
+              <strong>{T('studio.plan.nextMonth')}</strong> {calendar[(activeMonth + 1) % 12]?.month}: {calendar[(activeMonth + 1) % 12]?.brief}
             </div>
           </div>
         </div>
@@ -792,14 +765,14 @@ export function PlantingPlanTab() {
       {/* Bottom Print / Save Bar */}
       <div class="system-section" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;">
         <p style="margin:0; font-size:13.5px; color:var(--ink-soft);">
-          <strong>Ready for the nursery or Canopi Desktop?</strong> Save your plot area, {layoutLabel} layout, spacing, and quantities into your <code>.canopi</code> file.
+          <strong>{T('studio.plan.readyTitle')}</strong> {T('studio.plan.readySub', { layout: layoutLabel })}
         </p>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn" onClick={() => window.print()}>
-            Print Field &amp; Nursery Sheet (PDF)
+            {T('studio.plan.printSheet')}
           </button>
           <button type="button" class="btn btn-primary" onClick={() => void saveStudioCanopi()}>
-            Save plan to .canopi
+            {T('studio.plan.savePlan')}
           </button>
         </div>
       </div>

@@ -4,7 +4,10 @@
 import type { Details, JobId, Month, PhaseOrd, SiteEdits, SiteLocation, Stratum, Taxon } from '../../../lib/palette/index.ts';
 import { jobsOf, months, phases, phaseToStageIndex, SUCCESSION_STAGES_6 } from '../../../lib/palette/index.ts';
 import { photoperiod, type MicroclimateParams } from '../../../lib/climate/v07.ts';
+import { T } from '../strings.ts';
 import { siteClimateProfile } from './climate-words.ts';
+
+const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
 
 export type FitFilter = 'fit' | 'care' | 'risk';
 
@@ -73,17 +76,20 @@ export const sunTierOf = primarySunTier;
 
 export function sunTierLabel(t: Taxon): string {
   const tier = primarySunTier(t);
-  return SUN_TIER_OPTIONS.find((o) => o.id === tier)?.label ?? 'Mostly sun';
+  const def = SUN_TIER_OPTIONS.find((o) => o.id === tier)?.label ?? 'Mostly sun';
+  return fb(T(`studio.sun.${tier}`), def);
 }
 
 export function stageSpanOf(t: Taxon): { start: number; end: number; label: string } {
-  if (!t.phases) return { start: 2, end: 4, label: 'Secondary 1–3' };
+  if (!t.phases) return { start: 2, end: 4, label: `${fb(T('studio.stage.s1'), 'Secondary 1')} → ${fb(T('studio.stage.s3'), 'Secondary 3')}` };
   const sOrd = Math.max(0, phases.indexOf(t.phases.start)) as PhaseOrd;
   const eOrd = Math.max(0, phases.indexOf(t.phases.end)) as PhaseOrd;
   const start = phaseToStageIndex(sOrd);
   const end = Math.max(start, phaseToStageIndex(eOrd));
-  const a = SUCCESSION_STAGES_6[start].name;
-  const b = SUCCESSION_STAGES_6[end].name;
+  const stA = SUCCESSION_STAGES_6[start];
+  const stB = SUCCESSION_STAGES_6[end];
+  const a = fb(T(`studio.stage.${stA.id}`), stA.name);
+  const b = fb(T(`studio.stage.${stB.id}`), stB.name);
   return { start, end, label: start === end ? a : `${a} → ${b}` };
 }
 
@@ -200,7 +206,7 @@ export interface DossierSpec {
     siteColdC: number | null;
     siteFreezeC: number | null;
     siteHotC: number | null;
-    warmMonth: 'Jul' | 'Jan';
+    warmMonth: string;
     barLeft: number;
     barWidth: number;
     coldPin: number | null;
@@ -225,7 +231,7 @@ export function formatHeightRange(h?: { min?: number | null; max?: number | null
   const lo = h.min != null && Number.isFinite(h.min) ? h.min : null;
   const hi = h.max != null && Number.isFinite(h.max) ? h.max : null;
   if (lo == null && hi == null) return '';
-  if (lo == null && hi != null) return `up to ${fmt1(hi)} m`;
+  if (lo == null && hi != null) return fb(T('studio.heightUpTo', { h: `${fmt1(hi)} m` }), `up to ${fmt1(hi)} m`);
   if (lo != null && hi == null) return `${fmt1(lo)}+ m`;
   if (fmt1(lo!) === fmt1(hi!)) return `${fmt1(hi!)} m`;
   return `${fmt1(lo!)}–${fmt1(hi!)} m`;
@@ -243,7 +249,7 @@ export function buildDossierSpec(
   const siteColdC = profile.typicalColdNightC;
   const siteHotC = profile.typicalWarmHighC;
   const siteFreezeC = profile.coldFreeze10yrC;
-  const warmMonth: 'Jul' | 'Jan' = profile.warmMonth;
+  const warmMonth = profile.warmMonth;
 
   const phMin = t.traits.soil_ph?.min ?? 5.5;
   const phMax = t.traits.soil_ph?.max ?? 7.8;
@@ -279,47 +285,57 @@ export function buildDossierSpec(
         ? 18
         : 32;
 
-  const heightStr = formatHeightRange(t.traits.height_m) || 'Unrecorded';
-  const spreadStr = t.traits.width_max_m != null ? `${fmt1(t.traits.width_max_m)} m spread` : 'spread unrecorded';
+  const heightStr = formatHeightRange(t.traits.height_m) || fb(T('studio.dossier.unrecorded'), 'Unrecorded');
+  const spreadStr = t.traits.width_max_m != null
+    ? fb(T('studio.dossier.spreadVal', { len: `${fmt1(t.traits.width_max_m)} m` }), `${fmt1(t.traits.width_max_m)} m spread`)
+    : fb(T('studio.dossier.spreadUnrec'), 'spread unrecorded');
   const chillStr = details?.extremes?.chillMinCP != null
-    ? `${details.extremes.chillMinCP} chill portions`
-    : isLowChillTaxon(t) ? 'Low chill (< 200 h)' : 'Moderate chill';
+    ? fb(T('studio.dossier.chillPortions', { n: details.extremes.chillMinCP }), `${details.extremes.chillMinCP} chill portions`)
+    : isLowChillTaxon(t) ? fb(T('studio.dossier.lowChill'), 'Low chill (< 200 h)') : fb(T('studio.dossier.modChill'), 'Moderate chill');
   const dryStr = details?.extremes?.maxDryDays != null
-    ? `${details.extremes.maxDryDays} dry days`
-    : t.traits.drought_tolerance ? `${t.traits.drought_tolerance} drought tolerance` : 'Needs regular moisture';
+    ? fb(T('studio.dossier.dryDays', { n: details.extremes.maxDryDays }), `${details.extremes.maxDryDays} dry days`)
+    : t.traits.drought_tolerance
+      ? fb(T('studio.dossier.droughtTol', { level: t.traits.drought_tolerance }), `${t.traits.drought_tolerance} drought tolerance`)
+      : fb(T('studio.dossier.regMoisture'), 'Needs regular moisture');
   const windRow = details?.layerValues?.find((lv) => lv.field === 'tolerates_wind');
-  const windStr = windRow?.flag === true ? 'Wind-hardy' : windRow?.flag === false ? 'Needs wind shelter' : 'Moderate shelter preferred';
+  const windStr = windRow?.flag === true
+    ? fb(T('studio.dossier.windHardy'), 'Wind-hardy')
+    : windRow?.flag === false
+      ? fb(T('studio.dossier.windShelter'), 'Needs wind shelter')
+      : fb(T('studio.dossier.windMod'), 'Moderate shelter preferred');
 
   const ledger: DossierLedgerRow[] = [
     {
-      label: 'Hard-freeze limit',
-      value: `${minC} °C survival limit`,
-      tip: 'Estimated 1-in-10-yr cold-snap survival limit from extreme climate bounds or Q05 occurrence distribution.',
+      label: fb(T('studio.dossier.lblFreeze'), 'Hard-freeze limit'),
+      value: fb(T('studio.dossier.valFreeze', { temp: `${minC} °C` }), `${minC} °C survival limit`),
+      tip: fb(T('studio.dossier.tipFreeze'), 'Estimated 1-in-10-yr cold-snap survival limit from extreme climate bounds or Q05 occurrence distribution.'),
     },
     {
-      label: 'Chill & Dry Streak',
+      label: fb(T('studio.dossier.lblChill'), 'Chill & Dry Streak'),
       value: `${chillStr} · ${dryStr}`,
-      tip: 'Winter dormancy chill requirement paired with maximum consecutive dry-day resilience.',
+      tip: fb(T('studio.dossier.tipChill'), 'Winter dormancy chill requirement paired with maximum consecutive dry-day resilience.'),
     },
     {
-      label: 'Deep Subsoil (30–100 cm)',
-      value: t.traits.root_depth_min_cm != null ? `${Math.round(t.traits.root_depth_min_cm)} cm min rooting` : (isClayWetTaxon(t) ? 'Tolerates dense/clay subsoil' : 'Prefers aerated subsoil'),
-      tip: 'Rooting depth and subsoil tolerance below the topsoil horizon.',
+      label: fb(T('studio.dossier.lblSubsoil'), 'Deep Subsoil (30–100 cm)'),
+      value: t.traits.root_depth_min_cm != null
+        ? fb(T('studio.dossier.valRooting', { depth: `${Math.round(t.traits.root_depth_min_cm)} cm` }), `${Math.round(t.traits.root_depth_min_cm)} cm min rooting`)
+        : (isClayWetTaxon(t) ? fb(T('studio.dossier.valClay'), 'Tolerates dense/clay subsoil') : fb(T('studio.dossier.valAerated'), 'Prefers aerated subsoil')),
+      tip: fb(T('studio.dossier.tipSubsoil'), 'Rooting depth and subsoil tolerance below the topsoil horizon.'),
     },
     {
-      label: 'Water & Drainage',
-      value: `${t.traits.moisture_use ?? 'Moderate'} · ${t.traits.well_drained === false ? 'wet-foot tolerant' : 'well-drained'}`,
-      tip: 'Moisture demand and sensitivity to standing winter water.',
+      label: fb(T('studio.dossier.lblWater'), 'Water & Drainage'),
+      value: `${t.traits.moisture_use ?? fb(T('studio.dossier.modWater'), 'Moderate')} · ${t.traits.well_drained === false ? fb(T('studio.dossier.wetFoot'), 'wet-foot tolerant') : fb(T('studio.dossier.wellDrained'), 'well-drained')}`,
+      tip: fb(T('studio.dossier.tipWater'), 'Moisture demand and sensitivity to standing winter water.'),
     },
     {
-      label: 'Wind',
+      label: fb(T('studio.dossier.lblWind'), 'Wind'),
       value: windStr,
-      tip: 'Tolerance to exposed ridges and desiccating winds.',
+      tip: fb(T('studio.dossier.tipWind'), 'Tolerance to exposed ridges and desiccating winds.'),
     },
     {
-      label: 'Mature Height & Spread',
+      label: fb(T('studio.dossier.lblSize'), 'Mature Height & Spread'),
       value: `${heightStr} · ${spreadStr}`,
-      tip: 'Expected adult size used for spacing and shading plans.',
+      tip: fb(T('studio.dossier.tipSize'), 'Expected adult size used for spacing and shading plans.'),
     },
   ];
 
@@ -327,22 +343,22 @@ export function buildDossierSpec(
   if (siteFreezeC != null && siteFreezeC < minC) {
     breakingPoints.push({
       severity: 'danger',
-      title: 'Hard-freeze limit exceeded',
-      detail: `Site 1-in-10-yr freeze (~${siteFreezeC.toFixed(1)} °C) sits below this plant's ${minC} °C hard-freeze limit.`,
+      title: fb(T('studio.dossier.bpFreezeTitle'), 'Hard-freeze limit exceeded'),
+      detail: fb(T('studio.dossier.bpFreezeDetail', { site: `~${siteFreezeC.toFixed(1)} °C`, limit: `${minC} °C` }), `Site 1-in-10-yr freeze (~${siteFreezeC.toFixed(1)} °C) sits below this plant's ${minC} °C hard-freeze limit.`),
     });
   }
   if (siteHotC != null && siteHotC > maxC - 1.5) {
     breakingPoints.push({
       severity: siteHotC > maxC ? 'danger' : 'warn',
-      title: 'Heat-dome limit near or exceeded',
-      detail: `Site ${warmMonth} average highs (${siteHotC.toFixed(1)} °C) approach or exceed the ${maxC} °C heat-dome limit.`,
+      title: fb(T('studio.dossier.bpHeatTitle'), 'Heat-dome limit near or exceeded'),
+      detail: fb(T('studio.dossier.bpHeatDetail', { month: warmMonth, site: `${siteHotC.toFixed(1)} °C`, limit: `${maxC} °C` }), `Site ${warmMonth} average highs (${siteHotC.toFixed(1)} °C) approach or exceed the ${maxC} °C heat-dome limit.`),
     });
   }
   if (sitePh != null && (sitePh < phMin - 0.3 || sitePh > phMax + 0.3)) {
     breakingPoints.push({
       severity: 'warn',
-      title: 'Soil pH outside preferred band',
-      detail: `Baseline soil pH ${sitePh.toFixed(1)} falls outside ${phMin.toFixed(1)}–${phMax.toFixed(1)}.`,
+      title: fb(T('studio.dossier.bpPhTitle'), 'Soil pH outside preferred band'),
+      detail: fb(T('studio.dossier.bpPhDetail', { site: sitePh.toFixed(1), min: phMin.toFixed(1), max: phMax.toFixed(1) }), `Baseline soil pH ${sitePh.toFixed(1)} falls outside ${phMin.toFixed(1)}–${phMax.toFixed(1)}.`),
     });
   }
 

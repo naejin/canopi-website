@@ -20,74 +20,29 @@ import {
   suggestRoleFillers,
 } from '../../rules/studio-analysis.ts';
 import { formatHeightRange, stageSpanOf, sunTierLabel, sunTierOf } from '../../rules/studio-filters.ts';
+import { localMonthShort } from '../../rules/climate-words.ts';
 
 type RoleViewMode = 'season' | 'succession';
 type YearActivityFilter = 'all' | 'winter' | 'sow' | 'bloom' | 'harvest';
 
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 const SEASONS = [
-  { id: 'winter', label: '❄ Winter', months: [11, 0, 1] },
-  { id: 'spring', label: 'Spring', months: [2, 3, 4] },
-  { id: 'summer', label: 'Summer', months: [5, 6, 7] },
-  { id: 'autumn', label: 'Autumn', months: [8, 9, 10] },
+  { id: 'winter', months: [11, 0, 1] },
+  { id: 'spring', months: [2, 3, 4] },
+  { id: 'summer', months: [5, 6, 7] },
+  { id: 'autumn', months: [8, 9, 10] },
 ] as const;
-
-const SUN_META: Record<Stratum, { hours: string; glyph: string; label: string }> = {
-  emergent: { hours: '6+ hrs', glyph: '☀', label: 'Full sun' },
-  high: { hours: '4–6 hrs', glyph: '🌤', label: 'Mostly sun' },
-  medium: { hours: '2–4 hrs', glyph: '◐', label: 'Part shade' },
-  low: { hours: '< 2 hrs', glyph: '●', label: 'Shade' },
-};
 
 const ROLE_SPECS: readonly {
   id: string;
   job: JobId;
-  label: string;
-  sub: string;
   match: (t: Taxon) => boolean;
 }[] = [
-  {
-    id: 'food',
-    job: 'feeds_you',
-    label: 'Feeds you',
-    sub: 'fruit & greens',
-    match: (t) => jobsOf(t).includes('feeds_you'),
-  },
-  {
-    id: 'nfix',
-    job: 'feeds_soil',
-    label: 'Feeds the soil',
-    sub: 'nitrogen & minerals',
-    match: (t) => (t.functions ?? []).some((f) => /nitrogen/i.test(f.function)) || jobsOf(t).includes('feeds_soil'),
-  },
-  {
-    id: 'biomass',
-    job: 'mulch',
-    label: 'Makes mulch',
-    sub: 'chop-and-drop',
-    match: (t) => jobsOf(t).includes('mulch'),
-  },
-  {
-    id: 'ground',
-    job: 'ground',
-    label: 'Covers the ground',
-    sub: 'living mulch',
-    match: (t) => jobsOf(t).includes('ground') || (t.functions ?? []).some((f) => /accumulator|mineral|soil/i.test(f.function)),
-  },
-  {
-    id: 'helpers',
-    job: 'helpers',
-    label: 'Brings helpers',
-    sub: 'pollinators & predators',
-    match: (t) => jobsOf(t).includes('helpers'),
-  },
-  {
-    id: 'shelter',
-    job: 'shelter',
-    label: 'Shelters & protects',
-    sub: 'wind & microclimate',
-    match: (t) => jobsOf(t).includes('shelter'),
-  },
+  { id: 'food', job: 'feeds_you', match: (t) => jobsOf(t).includes('feeds_you') },
+  { id: 'nfix', job: 'feeds_soil', match: (t) => (t.functions ?? []).some((f) => /nitrogen/i.test(f.function)) || jobsOf(t).includes('feeds_soil') },
+  { id: 'biomass', job: 'mulch', match: (t) => jobsOf(t).includes('mulch') },
+  { id: 'ground', job: 'ground', match: (t) => jobsOf(t).includes('ground') || (t.functions ?? []).some((f) => /accumulator|mineral|soil/i.test(f.function)) },
+  { id: 'helpers', job: 'helpers', match: (t) => jobsOf(t).includes('helpers') },
+  { id: 'shelter', job: 'shelter', match: (t) => jobsOf(t).includes('shelter') },
 ];
 
 interface SelectedRoleCell {
@@ -97,18 +52,9 @@ interface SelectedRoleCell {
   mode: RoleViewMode;
 }
 
-const JOB_LABELS: Record<JobId, string> = {
-  feeds_you: 'Feeds you',
-  feeds_soil: 'Feeds the soil',
-  mulch: 'Makes mulch',
-  ground: 'Covers the ground',
-  helpers: 'Brings helpers',
-  shelter: 'Shelters & protects',
-};
-
 function primaryRoleCue(t: Taxon): string {
   const first = jobsOf(t)[0];
-  return first ? JOB_LABELS[first] : 'Companion';
+  return first ? T(`studio.role.${first}`) : T('studio.roleShort.companion');
 }
 
 export function LivingSystemTab() {
@@ -151,9 +97,9 @@ export function LivingSystemTab() {
   if (!members.length) {
     return (
       <section class="ct-studio-section" data-living-system-tab>
-        <p class="ct-muted">Your Living System matrix needs at least one species. Open My Palette to add plants.</p>
+        <p class="ct-muted">{T('studio.sys.empty')}</p>
         <div>
-          <button type="button" class="ct-card-act" onClick={() => { studioTab.value = 'palette'; }}>Open My Palette</button>
+          <button type="button" class="ct-card-act" onClick={() => { studioTab.value = 'palette'; }}>{T('studio.sys.openPalette')}</button>
         </div>
       </section>
     );
@@ -167,26 +113,29 @@ export function LivingSystemTab() {
   const stageSunCounts = SUCCESSION_STAGES_6.map((_, idx) =>
     matrix.rows.filter((r) => r.cells[idx].length > 0).length,
   );
+  const monthLabels = Array.from({ length: 12 }, (_, i) => localMonthShort(i));
 
   // Section 2: Role x Season / Role x 6-Stage redundancy matrix (storing active species per cell!)
   const roleMatrix = ROLE_SPECS.map((spec) => {
     const matched = plantTracks.filter((p) => spec.match(p.taxon));
+    const roleLabel = T(`studio.sys.role.${spec.id}`);
+    const roleSub = T(`studio.sys.roleSub.${spec.id}`);
     if (roleMode === 'season') {
       const cells = SEASONS.map((s, colIndex) => {
         const active = matched.filter((p) =>
           s.months.some((m) => p.tracks.winter[m] || p.tracks.sow[m] || p.tracks.bloom[m] || p.tracks.harvest[m]),
         );
-        return { key: s.id, colIndex, label: s.label, count: active.length, species: active };
+        return { key: s.id, colIndex, label: T(`studio.season.${s.id}`), count: active.length, species: active };
       });
       const backed = cells.filter((c) => c.count >= 2).length;
-      return { spec, cells, backed, totalCols: 4, unit: 'seasons' };
+      return { spec: { ...spec, label: roleLabel, sub: roleSub }, cells, backed, totalCols: 4, unit: T('studio.sys.unitSeasons') };
     }
     const cells = SUCCESSION_STAGES_6.map((st, colIndex) => {
       const active = matched.filter((p) => colIndex >= p.span.start && colIndex <= p.span.end);
-      return { key: st.id, colIndex, label: st.name, count: active.length, species: active };
+      return { key: st.id, colIndex, label: T(`studio.stage.${st.id}`), count: active.length, species: active };
     });
     const backed = cells.filter((c) => c.count >= 2).length;
-    return { spec, cells, backed, totalCols: 6, unit: 'stages' };
+    return { spec: { ...spec, label: roleLabel, sub: roleSub }, cells, backed, totalCols: 6, unit: T('studio.sys.unitStages') };
   });
 
   const activeRoleInspect = useMemo(() => {
@@ -212,7 +161,7 @@ export function LivingSystemTab() {
   const totalRoleMax = roleMatrix.length * (roleMode === 'season' ? 4 : 6);
 
   // Section 3: 12-Month stacked bar counts & hungry gaps
-  const monthSummary = MONTH_SHORT.map((label, m) => {
+  const monthSummary = monthLabels.map((label, m) => {
     let winter = 0;
     let sow = 0;
     let bloom = 0;
@@ -262,25 +211,25 @@ export function LivingSystemTab() {
   };
 
   return (
-    <section data-living-system-tab aria-label="Living system analysis">
+    <section data-living-system-tab aria-label={T('studio.sys.aria')}>
       {/* Clickable 1-Line Hairline Summary Strip (verbatim .ls-summary-strip) */}
-      <div class="ls-summary-strip" role="navigation" aria-label="Living System quick summary">
+      <div class="ls-summary-strip" role="navigation" aria-label={T('studio.sys.stripAria')}>
         <button type="button" class="ls-sum-btn" onClick={() => scrollToSection('ct-sys-matrix')}>
-          <span>Sunlight:</span> <strong>{matrix.sunTiersFilled}/4 tiers</strong>
+          <span>{T('studio.ribbon.sunlight')}</span> <strong>{T('studio.sys.tiersCount', { n: matrix.sunTiersFilled })}</strong>
           <span style={{ color: matrix.sunTiersFilled < 4 ? 'var(--warn-ink)' : 'var(--plant-green)', fontWeight: 600 }}>
-            · {matrix.sunTiersFilled < 4 ? `${4 - matrix.sunTiersFilled} ${4 - matrix.sunTiersFilled === 1 ? 'gap' : 'gaps'}` : `${filledNiches}/24 niches`}
+            · {matrix.sunTiersFilled < 4 ? T('studio.header.gapsCount', { n: 4 - matrix.sunTiersFilled }) : T('studio.sys.nichesCount', { n: filledNiches })}
           </span>
         </button>
         <span class="ls-sum-sep" aria-hidden="true" />
         <button type="button" class="ls-sum-btn" onClick={() => scrollToSection('ct-sys-roles')}>
-          <span>Roles:</span> <strong>{totalRoleSlots}/{totalRoleMax} {roleMode === 'season' ? 'year-round' : 'across stages'}</strong>
+          <span>{T('studio.ribbon.roles')}</span> <strong>{totalRoleSlots}/{totalRoleMax} {roleMode === 'season' ? T('studio.ribbon.yearRound') : T('studio.sys.acrossStages')}</strong>
           <span style={{ color: roleGaps > 0 ? 'var(--accent-ink)' : 'var(--plant-green)', fontWeight: 600 }}>
-            · {roleGaps > 0 ? `${roleGaps} ${roleGaps === 1 ? 'gap' : 'gaps'}` : 'All active'}
+            · {roleGaps > 0 ? T('studio.header.gapsCount', { n: roleGaps }) : T('studio.sys.allActive')}
           </span>
         </button>
         <span class="ls-sum-sep" aria-hidden="true" />
         <button type="button" class="ls-sum-btn" onClick={() => scrollToSection('ct-sys-year')}>
-          <span>Active harvest:</span> <strong>{activeHarvestMonths} of 12 months</strong>
+          <span>{T('studio.sys.activeHarvest')}</span> <strong>{T('studio.sys.ofMonths', { n: activeHarvestMonths })}</strong>
           {profile.hasLive ? <span style="color:var(--ink-muted);"> · {profile.winterShortLabel}</span> : null}
         </button>
       </div>
@@ -290,9 +239,7 @@ export function LivingSystemTab() {
         <div class="sec-head">
           <div>
             <h2>1 · {T('studio.sysMatrix')}</h2>
-            <p class="sec-sub">
-              Map every level of sunlight from the first 90 days (Placenta 1) to 60+ years (Climax). Click any sun row to expand continuous lifespan bars for each plant, or click <strong>0</strong> to fill an open niche in place.
-            </p>
+            <p class="sec-sub">{T('studio.sys.matrixSub')}</p>
           </div>
           <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px;">
             <button
@@ -301,52 +248,53 @@ export function LivingSystemTab() {
               data-ssm-toggle-all
               onClick={toggleAllSunRows}
             >
-              {anyExpanded ? 'Collapse all ▴' : 'Expand all ▾'}
+              {anyExpanded ? T('studio.sys.collapseAll') : T('studio.sys.expandAll')}
             </button>
             <button
               type="button"
               class="btn btn-xs"
-              onClick={() => openPlantPool({ tab: 'all', sun: 'emergent', banner: 'Browsing Full sun species' })}
+              onClick={() => openPlantPool({ tab: 'all', sun: 'emergent', banner: T('studio.sys.browseFullSunBanner') })}
             >
-              Browse Full sun →
+              {T('studio.sys.browseFullSun')}
             </button>
           </div>
         </div>
 
-        <div class="legend-row" aria-label="Matrix cell key">
-          <span class="legend-item"><span class="ssm-leg-swatch" style="border:1px dashed var(--border-strong); background:transparent;" aria-hidden="true" /> 0 Open niche (+ Fill)</span>
-          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--warn-bg); border:1px solid var(--warn-line);" aria-hidden="true" /> 1 Thin (single species)</span>
-          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--plant-green-bg); border:1px solid color-mix(in srgb, var(--plant-green) 35%, var(--border));" aria-hidden="true" /> 2+ Resilient ✓</span>
-          <span class="legend-item" style="margin-left:auto; color:var(--ink-muted);">Click any sun row to inspect continuous lifespan bars</span>
+        <div class="legend-row" aria-label={T('studio.sys.matrixKeyAria')}>
+          <span class="legend-item"><span class="ssm-leg-swatch" style="border:1px dashed var(--border-strong); background:transparent;" aria-hidden="true" /> {T('studio.sys.keyOpen')}</span>
+          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--warn-bg); border:1px solid var(--warn-line);" aria-hidden="true" /> {T('studio.sys.keyThin')}</span>
+          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--plant-green-bg); border:1px solid color-mix(in srgb, var(--plant-green) 35%, var(--border));" aria-hidden="true" /> {T('studio.sys.keyResilient')}</span>
+          <span class="legend-item" style="margin-left:auto; color:var(--ink-muted);">{T('studio.sys.keyHint')}</span>
         </div>
 
         <div class="ssm-wrap">
-          <div class="ssm-grid" role="region" aria-label="Preferred Sun by Succession Stage matrix">
+          <div class="ssm-grid" role="region" aria-label={T('studio.sysMatrix')}>
             {/* Header row */}
             <div class="ssm-grid-row ssm-grid-head">
-              <div class="ssm-th">Preferred Sun</div>
+              <div class="ssm-th">{T('studio.sys.colSun')}</div>
               {SUCCESSION_STAGES_6.map((s) => (
                 <div key={s.id} class="ssm-th">
                   <div class="ssm-col-head">
-                    <span class="ssm-col-name">{s.name}</span>
-                    <span class="ssm-col-time">{s.time}</span>
+                    <span class="ssm-col-name">{T(`studio.stage.${s.id}`)}</span>
+                    <span class="ssm-col-time">{T(`studio.stageTime.${s.id}`)}</span>
                   </div>
                 </div>
               ))}
-              <div class="ssm-th">Coverage</div>
+              <div class="ssm-th">{T('studio.sys.colCoverage')}</div>
             </div>
 
             {/* Sun tier rows (compact counts + smooth inline continuous-bar expansion) */}
             {matrix.rows.map((row) => {
               const stagesCovered = row.cells.filter((c) => c.length > 0).length;
               const pct = Math.round((stagesCovered / 6) * 100);
-              const meta = SUN_META[row.sun];
+              const hours = T(`studio.sunHrs.${row.sun}`);
+              const sunLabel = T(`studio.sun.${row.sun}`);
               const sunCls = SUN_CLS[row.sun];
               const sunColor = SUN_COLOR[row.sun];
               const isExpanded = Boolean(expandedSuns[row.sun]);
               const plantCount = row.plants.length;
               const openStages = SUCCESSION_STAGES_6
-                .map((st, idx) => ({ idx, name: st.name }))
+                .map((st, idx) => ({ idx, name: T(`studio.stage.${st.id}`) }))
                 .filter(({ idx }) => row.cells[idx].length === 0);
 
               return (
@@ -365,16 +313,16 @@ export function LivingSystemTab() {
                         <SunIcon tier={row.sun} size={15} />
                       </span>
                       <span class="ssm-row-meta">
-                        <span class="ssm-row-title">{row.label}</span>
-                        <span class="ssm-row-hrs">{meta.hours}</span>
+                        <span class="ssm-row-title">{sunLabel}</span>
+                        <span class="ssm-row-hrs">{hours}</span>
                       </span>
                       <span class="ssm-count-pill">
-                        {plantCount} {plantCount === 1 ? 'plant' : 'plants'}
+                        {T('studio.header.plantsCount', { n: plantCount })}
                       </span>
                     </button>
 
                     {row.cells.map((cell, idx) => {
-                      const stageName = SUCCESSION_STAGES_6[idx]?.name ?? `Stage ${idx + 1}`;
+                      const stageName = T(`studio.stage.${SUCCESSION_STAGES_6[idx].id}`);
                       if (cell.length === 0) {
                         return (
                           <button
@@ -382,16 +330,16 @@ export function LivingSystemTab() {
                             type="button"
                             class="ssm-num-cell state-open"
                             data-ssm-cell={`${row.sun}:${idx}`}
-                            aria-label={`0 plants in ${row.label} ${stageName} — open plant pool to fill`}
+                            aria-label={T('studio.sys.cellOpenAria', { sun: sunLabel, stage: stageName })}
                             onClick={() => openPlantPool({
                               tab: 'all',
                               sun: row.sun,
                               stage: idx,
-                              banner: `Open niche: ${row.label} · ${stageName}`,
+                              banner: `${sunLabel} · ${stageName}`,
                             })}
                           >
                             <span class="ssm-num-val">0</span>
-                            <span class="ssm-num-hint">+ Fill</span>
+                            <span class="ssm-num-hint">{T('studio.sys.plusFill')}</span>
                           </button>
                         );
                       }
@@ -403,17 +351,17 @@ export function LivingSystemTab() {
                           class={`ssm-num-cell ${isResilient ? 'state-resilient' : 'state-thin'}`}
                           data-ssm-cell={`${row.sun}:${idx}`}
                           aria-expanded={isExpanded ? 'true' : 'false'}
-                          aria-label={`${cell.length} ${cell.length === 1 ? 'plant' : 'plants'} in ${row.label} ${stageName} — click to ${isExpanded ? 'collapse' : 'expand'} lifespan bars`}
+                          aria-label={T('studio.sys.cellCountAria', { n: cell.length, sun: sunLabel, stage: stageName })}
                           onClick={() => toggleSunRow(row.sun)}
                         >
                           <span class="ssm-num-val">{cell.length}</span>
-                          <span class="ssm-num-tag">{isResilient ? '✓' : 'thin'}</span>
+                          <span class="ssm-num-tag">{isResilient ? '✓' : T('studio.sys.thinTag')}</span>
                         </button>
                       );
                     })}
 
                     <div class="ssm-cov-cell">
-                      <div class="ssm-cov-lbl">{stagesCovered}/6 stages</div>
+                      <div class="ssm-cov-lbl">{T('studio.sys.stagesCov', { n: stagesCovered })}</div>
                       <div class="ssm-cov-track">
                         <div class="ssm-cov-fill" style={{ width: `${pct}%`, background: sunColor }} />
                       </div>
@@ -432,8 +380,8 @@ export function LivingSystemTab() {
                             const h = formatHeightRange(taxon.traits.height_m);
                             const roleCue = primaryRoleCue(taxon);
                             const stageCount = span.end - span.start + 1;
-                            const startName = SUCCESSION_STAGES_6[span.start]?.name ?? `S${span.start + 1}`;
-                            const endName = SUCCESSION_STAGES_6[span.end]?.name ?? `S${span.end + 1}`;
+                            const startName = T(`studio.stage.${SUCCESSION_STAGES_6[span.start].id}`);
+                            const endName = T(`studio.stage.${SUCCESSION_STAGES_6[span.end].id}`);
                             const spanText = span.start === span.end ? startName : `${startName} → ${endName}`;
                             return (
                               <div key={taxon.id} class="ssm-grid-row ssm-bar-row" data-ssm-bar-plant={taxon.id}>
@@ -462,7 +410,7 @@ export function LivingSystemTab() {
                                       gridColumn: `${span.start + 1} / ${span.end + 2}`,
                                       borderColor: sunColor,
                                     }}
-                                    aria-label={`${nameOf(taxon)}: ${spanText} — open Field Dossier`}
+                                    aria-label={`${nameOf(taxon)}: ${spanText}`}
                                     onClick={() => openFieldDossier(taxon.id, memberIds)}
                                   >
                                     <span class="ssm-span-bar-lbl">{spanText}</span>
@@ -470,7 +418,7 @@ export function LivingSystemTab() {
                                 </div>
 
                                 <div class="ssm-span-tally">
-                                  {stageCount} {stageCount === 1 ? 'stage' : 'stages'}
+                                  {T('studio.sys.stageTally', { n: stageCount })}
                                 </div>
                               </div>
                             );
@@ -478,20 +426,20 @@ export function LivingSystemTab() {
                         </div>
                       ) : (
                         <div class="ssm-empty-tier">
-                          No species in your palette currently prefer <strong>{row.label}</strong> ({meta.hours}).
+                          {T('studio.sys.emptyTier', { sun: sunLabel, hrs: hours })}
                         </div>
                       )}
 
                       {openStages.length > 0 && (
                         <div class="ssm-gap-cue">
                           <span>
-                            Open niche in{' '}
+                            {T('studio.sys.openNicheIn')}{' '}
                             <strong>
                               {openStages.length === 6
-                                ? 'all 6 stages'
+                                ? T('studio.sys.allSixStages')
                                 : openStages.length <= 3
                                   ? openStages.map((s) => s.name).join(' & ')
-                                  : `${openStages.slice(0, 2).map((s) => s.name).join(', ')} + ${openStages.length - 2} more`}
+                                  : `${openStages.slice(0, 2).map((s) => s.name).join(', ')} + ${openStages.length - 2}`}
                             </strong>
                           </span>
                           <button
@@ -501,10 +449,10 @@ export function LivingSystemTab() {
                               tab: 'all',
                               sun: row.sun,
                               stage: openStages[0].idx,
-                              banner: `Open niche: ${row.label} · ${openStages[0].name}`,
+                              banner: `${sunLabel} · ${openStages[0].name}`,
                             })}
                           >
-                            + Find {openStages[0].idx >= 4 ? 'late-stage ' : ''}{row.label} species →
+                            {T('studio.sys.findSpecies', { sun: sunLabel })}
                           </button>
                         </div>
                       )}
@@ -516,16 +464,16 @@ export function LivingSystemTab() {
 
             {/* Footer row */}
             <div class="ssm-grid-row ssm-grid-foot">
-              <div class="ssm-foot-cell" style="font-size:11.5px; font-weight:600; color:var(--ink-muted);">Sun coverage</div>
+              <div class="ssm-foot-cell" style="font-size:11.5px; font-weight:600; color:var(--ink-muted);">{T('studio.sys.sunCov')}</div>
               {stageSunCounts.map((cnt, idx) => (
                 <div key={idx} class="ssm-foot-cell">
-                  <div class="ssm-cov-lbl">{cnt}/4 sun</div>
+                  <div class="ssm-cov-lbl">{cnt}/4</div>
                   <div class="ssm-cov-track">
                     <div class="ssm-cov-fill" style={{ width: `${Math.round((cnt / 4) * 100)}%` }} />
                   </div>
                 </div>
               ))}
-              <div class="ssm-foot-cell ssm-foot-total">{filledNiches}/24 niches</div>
+              <div class="ssm-foot-cell ssm-foot-total">{T('studio.sys.nichesCount', { n: filledNiches })}</div>
             </div>
           </div>
         </div>
@@ -535,19 +483,17 @@ export function LivingSystemTab() {
       <div id="ct-sys-roles" class="system-section">
         <div class="sec-head">
           <div>
-            <h2>2 · Six Key Ecological Roles &amp; Redundancy</h2>
-            <p class="sec-sub">
-              Keep every role active with at least 2 backup species across seasons and all six succession stages. Click any cell to inspect who fills it and add climate-matched backups in place.
-            </p>
+            <h2>{T('studio.sys.rolesTitle')}</h2>
+            <p class="sec-sub">{T('studio.sys.rolesSub')}</p>
           </div>
-          <div class="ink-seg" role="group" aria-label="Redundancy view">
+          <div class="ink-seg" role="group" aria-label={T('studio.sys.rolesViewAria')}>
             <button
               type="button"
               class="ink-seg-btn"
               aria-pressed={roleMode === 'season' ? 'true' : 'false'}
               onClick={() => { setRoleMode('season'); setSelectedRoleCell(null); }}
             >
-              By Season
+              {T('studio.sys.bySeason')}
             </button>
             <button
               type="button"
@@ -555,34 +501,34 @@ export function LivingSystemTab() {
               aria-pressed={roleMode === 'succession' ? 'true' : 'false'}
               onClick={() => { setRoleMode('succession'); setSelectedRoleCell(null); }}
             >
-              Across 60+ Years
+              {T('studio.sys.across60')}
             </button>
           </div>
         </div>
 
-        <div class="legend-row" aria-label="Role redundancy key">
-          <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip" /><span class="m-pip" /></span> 0 · Fill gap</span>
-          <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--warn-dot); border-color:var(--warn-dot);" /><span class="m-pip" /></span> 1 · Thin (add backup)</span>
-          <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /></span> 2+ · Resilient</span>
-          <span class="legend-item" style="margin-left:auto; color:var(--ink-muted);">Click any cell for inline inspector &amp; + Add fillers</span>
+        <div class="legend-row" aria-label={T('studio.sys.rolesKeyAria')}>
+          <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip" /><span class="m-pip" /></span> {T('studio.sys.pipGap')}</span>
+          <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--warn-dot); border-color:var(--warn-dot);" /><span class="m-pip" /></span> {T('studio.sys.pipThin')}</span>
+          <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /></span> {T('studio.sys.pipResilient')}</span>
+          <span class="legend-item" style="margin-left:auto; color:var(--ink-muted);">{T('studio.sys.rolesHint')}</span>
         </div>
 
         <div class="matrix-wrap">
           <table class="matrix-table">
             <thead>
               <tr>
-                <th style="min-width:175px;">Ecological Role</th>
+                <th style="min-width:175px;">{T('studio.filter.roleGroup')}</th>
                 {roleMode === 'season'
-                  ? SEASONS.map((s) => <th key={s.id} scope="col">{s.label}</th>)
+                  ? SEASONS.map((s) => <th key={s.id} scope="col">{T(`studio.season.${s.id}`)}</th>)
                   : SUCCESSION_STAGES_6.map((s) => (
                     <th key={s.id} scope="col">
                       <div class="ssm-col-head">
-                        <span class="ssm-col-name">{s.name}</span>
-                        <span class="ssm-col-time">{s.time}</span>
+                        <span class="ssm-col-name">{T(`studio.stage.${s.id}`)}</span>
+                        <span class="ssm-col-time">{T(`studio.stageTime.${s.id}`)}</span>
                       </div>
                     </th>
                   ))}
-                <th style="min-width:108px;">Backed up</th>
+                <th style="min-width:108px;">{T('studio.sys.colBackedUp')}</th>
               </tr>
             </thead>
             <tbody>
@@ -608,7 +554,7 @@ export function LivingSystemTab() {
                           : { roleId: row.spec.id, colKey: cell.key, colIndex: cell.colIndex, mode: roleMode }
                       ));
                       const cls = cell.count >= 2 ? 'm-robust' : cell.count === 1 ? 'm-thin' : 'm-gap';
-                      const labelText = cell.count >= 2 ? String(cell.count) : cell.count === 0 ? '0 · Fill' : '1 · Backup';
+                      const labelText = cell.count >= 2 ? String(cell.count) : cell.count === 0 ? T('studio.sys.cellFill') : T('studio.sys.cellBackup');
                       return (
                         <td key={cell.key}>
                           <button
@@ -649,26 +595,26 @@ export function LivingSystemTab() {
             class={`role-brief ${activeRoleInspect.cell.count >= 2 ? 'is-resilient' : activeRoleInspect.cell.count === 1 ? 'is-thin' : 'is-gap'}`}
             data-role-brief
             role="region"
-            aria-label={`${activeRoleInspect.row.spec.label} in ${activeRoleInspect.cell.label}`}
+            aria-label={`${activeRoleInspect.row.spec.label} · ${activeRoleInspect.cell.label}`}
           >
             <div class="mb-head">
               <div>
                 <div class="rb-eyebrow">
                   {activeRoleInspect.cell.count === 0
-                    ? '0 species · Open gap'
+                    ? T('studio.sys.rbGap')
                     : activeRoleInspect.cell.count === 1
-                      ? '1 species · Single point of failure'
-                      : `${activeRoleInspect.cell.count} species · Resilient across ${activeRoleInspect.sunTierCount} sun ${activeRoleInspect.sunTierCount === 1 ? 'tier' : 'tiers'}`}
+                      ? T('studio.sys.rbSingle')
+                      : T('studio.sys.rbResilient', { n: activeRoleInspect.cell.count, tiers: activeRoleInspect.sunTierCount })}
                 </div>
                 <div class="mb-title">
                   {activeRoleInspect.row.spec.label} · {activeRoleInspect.cell.label}
                 </div>
                 <p class="rb-diag">
                   {activeRoleInspect.cell.count === 0
-                    ? `No species in your palette currently cover "${activeRoleInspect.row.spec.label.toLowerCase()}" here. Add a climate-matched species below to close this gap live.`
+                    ? T('studio.sys.rbDiagGap', { role: activeRoleInspect.row.spec.label.toLowerCase() })
                     : activeRoleInspect.cell.count === 1
-                      ? `Only 1 species covers this slot — add a backup so a bad season, frost, or pest doesn't leave this role uncovered.`
-                      : `Backed up across ${activeRoleInspect.sunTierCount} sun ${activeRoleInspect.sunTierCount === 1 ? 'tier' : 'tiers'}. Click any species to inspect its Field Dossier, or add a companion below.`}
+                      ? T('studio.sys.rbDiagSingle')
+                      : T('studio.sys.rbDiagResilient', { tiers: activeRoleInspect.sunTierCount })}
                 </p>
               </div>
               <button
@@ -676,14 +622,14 @@ export function LivingSystemTab() {
                 class="btn btn-xs"
                 onClick={() => setSelectedRoleCell(null)}
               >
-                ✕ Close
+                ✕ {T('studio.close')}
               </button>
             </div>
 
             {/* Active species filling this cell */}
             <div class="rb-block">
               <div class="rb-block-label">
-                Species filling this role now ({activeRoleInspect.cell.species.length})
+                {T('studio.sys.rbFillingNow', { n: activeRoleInspect.cell.species.length })}
               </div>
               {activeRoleInspect.cell.species.length > 0 ? (
                 <div class="mb-chips">
@@ -701,7 +647,7 @@ export function LivingSystemTab() {
                   ))}
                 </div>
               ) : (
-                <div class="rb-empty">None yet — pick a climate-matched starter below.</div>
+                <div class="rb-empty">{T('studio.sys.rbNoneYet')}</div>
               )}
             </div>
 
@@ -709,8 +655,8 @@ export function LivingSystemTab() {
             <div class="rb-block">
               <div class="rb-block-label">
                 {activeRoleInspect.cell.count < 2
-                  ? 'One-click climate-matched fillers for your site'
-                  : 'Strengthen further with climate-matched companions'}
+                  ? T('studio.sys.rbFillersNeed')
+                  : T('studio.sys.rbFillersMore')}
               </div>
               {activeRoleInspect.fillers.length > 0 ? (
                 <div class="rb-fillers-grid">
@@ -736,13 +682,13 @@ export function LivingSystemTab() {
                         data-role-add={f.taxon.id}
                         onClick={() => store.addMembers([f.taxon.id])}
                       >
-                        + Add
+                        {T('studio.add')}
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div class="rb-empty">All matching species in your climate pool are already in your palette.</div>
+                <div class="rb-empty">{T('studio.sys.rbAllIn')}</div>
               )}
             </div>
 
@@ -757,7 +703,7 @@ export function LivingSystemTab() {
                   banner: `${activeRoleInspect.row.spec.label} (${activeRoleInspect.cell.label})`,
                 })}
               >
-                Browse all matching in Plant Pool →
+                {T('studio.sys.rbBrowseAll')}
               </button>
             </div>
           </div>
@@ -768,29 +714,21 @@ export function LivingSystemTab() {
       <div id="ct-sys-year" class="system-section">
         <div class="sec-head">
           <div>
-            <h2>3 · Your Growing Year — Sow, Winter, Bloom &amp; Harvest</h2>
-            <p class="sec-sub">
-              Focus on a single rhythm or view all four together. Click any month to open your <strong>Monthly Field Brief</strong>, or click any plant row for its Dossier.
-            </p>
+            <h2>{T('studio.sys.yearTitle')}</h2>
+            <p class="sec-sub">{T('studio.sys.yearSub')}</p>
           </div>
           <button
             type="button"
             class="btn btn-xs"
-            onClick={() => openPlantPool({ tab: 'all', intent: 'winter', banner: 'Winter-plantable species for cool-season growth' })}
+            onClick={() => openPlantPool({ tab: 'all', intent: 'winter', banner: T('studio.sys.browseWinterBanner') })}
           >
-            ❄ Browse winter-plantable
+            {T('studio.sys.browseWinter')}
           </button>
         </div>
 
-        <div class="cal-focus-bar" role="group" aria-label="Calendar activity focus">
+        <div class="cal-focus-bar" role="group" aria-label={T('studio.sys.calFocusAria')}>
           <div class="cal-focus-pills">
-            {([
-              ['all', 'All activities'],
-              ['winter', '❄ Winter-grow'],
-              ['sow', '● Sow'],
-              ['bloom', '✿ Bloom'],
-              ['harvest', '✦ Harvest'],
-            ] as const).map(([id, lbl]) => (
+            {(['all', 'winter', 'sow', 'bloom', 'harvest'] as const).map((id) => (
               <button
                 key={id}
                 type="button"
@@ -798,22 +736,22 @@ export function LivingSystemTab() {
                 aria-pressed={activityFilter === id ? 'true' : 'false'}
                 onClick={() => setActivityFilter(id)}
               >
-                {lbl}
+                {T(`studio.sys.focus.${id}`)}
               </button>
             ))}
           </div>
           {selectedMonth != null && (
             <button type="button" class="btn-quiet" style="font-size:12.5px;" onClick={() => setSelectedMonth(null)}>
-              Clear month ({MONTH_SHORT[selectedMonth]}) ✕
+              {T('studio.sys.clearMonth', { month: monthLabels[selectedMonth] })}
             </button>
           )}
         </div>
 
         <div class="cal-insight-bar">
           <span>
-            <strong>12-Month Rhythm</strong> across {members.length} species
-            {hungryMonths.length > 0 ? <> · Lowest harvest: <strong>{hungryMonths.slice(0, 5).join(', ')}</strong></> : ' · Year-round harvest active'}
-            {' · '}Click any month for your <strong>Monthly Field Brief</strong>.
+            <strong>{T('studio.sys.rhythm12')}</strong> ({members.length})
+            {hungryMonths.length > 0 ? <> · {T('studio.sys.lowestHarvest')} <strong>{hungryMonths.slice(0, 5).join(', ')}</strong></> : ` · ${T('studio.sys.yearRoundHarvest')}`}
+            {' · '}{T('studio.sys.clickMonthBrief')}
           </span>
           {hungryMonths.length > 0 && (
             <button
@@ -821,20 +759,20 @@ export function LivingSystemTab() {
               class="link-btn"
               onClick={() => setActivityFilter('harvest')}
             >
-              Inspect harvest gaps →
+              {T('studio.sys.inspectGaps')}
             </button>
           )}
         </div>
 
-        <div class="legend-row" aria-label="Activity color key">
-          <span class="legend-item"><span class="act-swatch"><span class="sw-win" /></span>Winter-growing (Nov–Mar ❄)</span>
-          <span class="legend-item"><span class="act-swatch"><span class="sw-sow" /></span>Sowing / planting</span>
-          <span class="legend-item"><span class="act-swatch"><span class="sw-bloom" /></span>Bloom (pollinators)</span>
-          <span class="legend-item"><span class="act-swatch"><span class="sw-harv" /></span>Harvest / fruiting</span>
+        <div class="legend-row" aria-label={T('studio.sys.actKeyAria')}>
+          <span class="legend-item"><span class="act-swatch"><span class="sw-win" /></span>{T('studio.sys.legWin', { season: profile.winterSeason })}</span>
+          <span class="legend-item"><span class="act-swatch"><span class="sw-sow" /></span>{T('studio.sys.legSow')}</span>
+          <span class="legend-item"><span class="act-swatch"><span class="sw-bloom" /></span>{T('studio.sys.legBloom')}</span>
+          <span class="legend-item"><span class="act-swatch"><span class="sw-harv" /></span>{T('studio.sys.legHarv')}</span>
         </div>
 
         {/* Tactile 12-Month Rhythm Strip (verbatim .hm-grid, .hm-bar 9px / solo 18px, exact --cal-* colors) */}
-        <div class="hm-grid" role="group" aria-label="12-month harvest and activity bars">
+        <div class="hm-grid" role="group" aria-label={T('studio.sys.barsAria')}>
           {monthSummary.map((mo) => {
             const isWin = mo.m <= 2 || mo.m >= 10;
             const isHungry = (activityFilter === 'all' || activityFilter === 'harvest') && mo.harvest === 0;
@@ -842,10 +780,10 @@ export function LivingSystemTab() {
             const soloKey = activityFilter === 'all' ? null : activityFilter;
             const soloVal = soloKey === 'winter' ? mo.winter : soloKey === 'sow' ? mo.sow : soloKey === 'bloom' ? mo.bloom : soloKey === 'harvest' ? mo.harvest : 0;
             const soloCls = soloKey === 'winter' ? 'hb-win' : soloKey === 'sow' ? 'hb-sow' : soloKey === 'bloom' ? 'hb-bloom' : 'hb-harv';
-            const soloUnit = soloKey === 'winter' ? 'win' : soloKey === 'sow' ? 'sow' : soloKey === 'bloom' ? 'bloom' : 'harv';
+            const soloUnit = soloKey ? T(`studio.actShort.${soloKey}`) : T('studio.actShort.harvest');
             return (
               <button
-                key={mo.label}
+                key={mo.m}
                 type="button"
                 class={`hm-col${isWin ? ' win' : ''}${isHungry ? ' hungry' : ''}`}
                 aria-pressed={selectedMonth === mo.m ? 'true' : 'false'}
@@ -864,25 +802,25 @@ export function LivingSystemTab() {
                     <span class={`hm-bar solo ${soloCls}`} style={{ height: `${soloVal ? Math.max(5, Math.round((soloVal / maxBar) * 38)) : 2}px`, opacity: soloVal ? 1 : 0.18 }} />
                   )}
                 </span>
-                <span class="hm-nums">{activityFilter === 'all' ? `${mo.harvest} harv` : `${soloVal} ${soloUnit}`}</span>
-                {isHungry && <span class="hm-flag">Hungry gap</span>}
+                <span class="hm-nums">{activityFilter === 'all' ? `${mo.harvest} ${T('studio.actShort.harvest')}` : `${soloVal} ${soloUnit}`}</span>
+                {isHungry && <span class="hm-flag">{T('studio.sys.hungryGap')}</span>}
               </button>
             );
           })}
         </div>
 
         {activeBrief && (
-          <div class="month-brief" role="region" aria-label={`In ${activeBrief.label} on your land`}>
+          <div class="month-brief" role="region" aria-label={T('studio.sys.inMonth', { month: activeBrief.label })}>
             <div class="mb-head">
               <div>
-                <div class="mb-title">In {activeBrief.label} on your land</div>
+                <div class="mb-title">{T('studio.sys.inMonth', { month: activeBrief.label })}</div>
                 <div style="font-size:12.5px; color:var(--ink-soft);">
-                  {activeBrief.harvestNames.length > 0 ? `Harvest: ${activeBrief.harvestNames.slice(0, 4).join(', ')}. ` : 'No active harvest this month (hungry gap). '}
-                  {activeBrief.bloomNames.length > 0 ? `Bloom: ${activeBrief.bloomNames.slice(0, 3).join(', ')}. ` : ''}
-                  {activeBrief.sowNames.length > 0 ? `Sow / plant: ${activeBrief.sowNames.slice(0, 3).join(', ')}.` : ''}
+                  {activeBrief.harvestNames.length > 0 ? `${T('studio.act.harvest')}: ${activeBrief.harvestNames.slice(0, 4).join(', ')}. ` : `${T('studio.sys.noHarvestMonth')} `}
+                  {activeBrief.bloomNames.length > 0 ? `${T('studio.act.bloom')}: ${activeBrief.bloomNames.slice(0, 3).join(', ')}. ` : ''}
+                  {activeBrief.sowNames.length > 0 ? `${T('studio.act.sowPlant')}: ${activeBrief.sowNames.slice(0, 3).join(', ')}.` : ''}
                 </div>
               </div>
-              <button type="button" class="btn btn-xs" onClick={() => setSelectedMonth(null)}>✕ Close brief</button>
+              <button type="button" class="btn btn-xs" onClick={() => setSelectedMonth(null)}>✕ {T('studio.close')}</button>
             </div>
           </div>
         )}
@@ -892,8 +830,8 @@ export function LivingSystemTab() {
           <input
             type="search"
             class="field-input cal-search-input"
-            placeholder="Filter calendar…"
-            aria-label="Filter calendar by plant name"
+            placeholder={T('studio.sys.filterCalPh')}
+            aria-label={T('studio.sys.filterCalAria')}
             value={calQuery}
             onInput={(e) => setCalQuery((e.currentTarget as HTMLInputElement).value)}
           />
@@ -905,7 +843,7 @@ export function LivingSystemTab() {
               aria-pressed={calSun === tier ? 'true' : 'false'}
               onClick={() => setCalSun((cur) => (cur === tier ? 'all' : tier))}
             >
-              {SUN_META[tier].label}
+              {T(`studio.sun.${tier}`)}
             </button>
           ))}
         </div>
@@ -914,9 +852,9 @@ export function LivingSystemTab() {
           <table class="cal-table">
             <thead>
               <tr>
-                <th>Plant</th>
-                {MONTH_SHORT.map((mo, i) => (
-                  <th key={mo} class={`${i <= 2 || i >= 10 ? 'win' : ''} ${selectedMonth === i ? 'is-sel' : ''}`}>
+                <th>{T('studio.sys.colPlant')}</th>
+                {monthLabels.map((mo, i) => (
+                  <th key={i} class={`${i <= 2 || i >= 10 ? 'win' : ''} ${selectedMonth === i ? 'is-sel' : ''}`}>
                     {mo}
                   </th>
                 ))}
@@ -931,14 +869,14 @@ export function LivingSystemTab() {
                       {sunTierLabel(taxon)}
                     </span>
                   </td>
-                  {MONTH_SHORT.map((mo, m) => {
+                  {monthLabels.map((_, m) => {
                     const isWin = m <= 2 || m >= 10;
                     const showW = tracks.winter[m];
                     const showS = tracks.sow[m];
                     const showB = tracks.bloom[m];
                     const showH = tracks.harvest[m];
                     return (
-                      <td key={mo} class={`${isWin ? 'win' : ''} ${selectedMonth === m ? 'is-sel' : ''}`}>
+                      <td key={m} class={`${isWin ? 'win' : ''} ${selectedMonth === m ? 'is-sel' : ''}`}>
                         <div class="cal-tracks" aria-hidden="true">
                           {showW && (
                             <span class={`ct-slot${activityFilter !== 'all' && activityFilter !== 'winter' ? ' dim' : ''}`}>

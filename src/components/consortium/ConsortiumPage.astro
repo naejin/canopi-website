@@ -157,7 +157,43 @@ setStrings(strings, lang);
         try { kept = !!(localStorage.getItem(locationStore) || localStorage.getItem(siteClimate)); } catch (e) {}
         if (kept || h.dataset.step === 'palette') h.dataset.kept = '';
       } catch (e) {}</script>
-      <div id="ct-root" aria-busy="true"><p class="status-line">{tr('loadingTool')}</p></div>
+      <div id="ct-root" aria-busy="true">
+        <div class="ct-loading-shell">
+          <div class="ct-loading-card">
+            <span class="ct-loading-mark" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21V11" />
+                <path d="M12 11C12 6.5 15.5 3.5 20 3.5c0 4.5-3 8-8 7.5Z" />
+                <path d="M12 14C12 10 9 7.5 4.5 7.5c0 4 2.5 7 7.5 6.5Z" />
+              </svg>
+            </span>
+            <p class="ct-loading-title">{tr('title')}</p>
+            <p class="status-line">{tr('loadingTool')}</p>
+            <p class="ct-loading-sub">{tr('studio.loadingSub')}</p>
+            <div class="ct-loading-bar" aria-hidden="true"></div>
+          </div>
+          <div class="ct-loading-skel" aria-hidden="true">
+            <div class="ct-skel-card">
+              <div class="ct-skel-line is-title"></div>
+              <div class="ct-skel-line is-sub"></div>
+              <div class="ct-skel-line is-wide"></div>
+              <div class="ct-skel-pills"><span class="ct-skel-pill"></span><span class="ct-skel-pill"></span></div>
+            </div>
+            <div class="ct-skel-card">
+              <div class="ct-skel-line is-title"></div>
+              <div class="ct-skel-line is-sub"></div>
+              <div class="ct-skel-line is-wide"></div>
+              <div class="ct-skel-pills"><span class="ct-skel-pill"></span><span class="ct-skel-pill"></span></div>
+            </div>
+            <div class="ct-skel-card">
+              <div class="ct-skel-line is-title"></div>
+              <div class="ct-skel-line is-sub"></div>
+              <div class="ct-skel-line is-wide"></div>
+              <div class="ct-skel-pills"><span class="ct-skel-pill"></span><span class="ct-skel-pill"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* The release line (base.css .tool-release), the one tests and check-built-site read. The long
           beta note went (D8, pf-decisions 2026-11-18): the head's beta badge says it, and the place line
           and the Oulu banner say when a list is borrowed. */}

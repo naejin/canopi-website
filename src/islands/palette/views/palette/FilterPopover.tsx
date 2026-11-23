@@ -48,11 +48,11 @@ export interface FilterPanelProps {
 export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, showFit = true }: FilterPanelProps) {
   const count = activeFilterCount(value);
   return (
-    <div class="palette-filter-popover" data-filter-popover role="region" aria-label="Filter plants">
+    <div class="palette-filter-popover" data-filter-popover role="region" aria-label={T('studio.filter.aria')}>
       <div class="pfp-grid">
         {showFit && (
           <div>
-            <div class="fp-label">Site &amp; Climate Fit</div>
+            <div class="fp-label">{T('studio.filter.fitGroup')}</div>
             <div class="chip-row">
               {FIT_OPTIONS.map((o) => (
                 <button
@@ -62,7 +62,7 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
                   aria-pressed={value.fits.includes(o.id) ? 'true' : 'false'}
                   onClick={() => onChange((prev) => ({ ...prev, fits: toggleIn<FitFilter>(prev.fits, o.id) }))}
                 >
-                  {o.label}
+                  {T(`studio.fit.${o.id}`)}
                 </button>
               ))}
             </div>
@@ -70,7 +70,7 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
         )}
 
         <div>
-          <div class="fp-label">Preferred Sun Exposure</div>
+          <div class="fp-label">{T('studio.filter.sunGroup')}</div>
           <div class="chip-row">
             {SUN_TIER_OPTIONS.map((o) => (
               <button
@@ -80,14 +80,14 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
                 aria-pressed={value.suns.includes(o.id) ? 'true' : 'false'}
                 onClick={() => onChange((prev) => ({ ...prev, suns: toggleIn<Stratum>(prev.suns, o.id) }))}
               >
-                {o.label}
+                {T(`studio.sun.${o.id}`)}
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <div class="fp-label">Ecological Role</div>
+          <div class="fp-label">{T('studio.filter.roleGroup')}</div>
           <div class="chip-row">
             {ROLE_OPTIONS.map((r) => (
               <button
@@ -97,14 +97,14 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
                 aria-pressed={value.roles.includes(r.id) ? 'true' : 'false'}
                 onClick={() => onChange((prev) => ({ ...prev, roles: toggleIn<JobId>(prev.roles, r.id) }))}
               >
-                {r.label}
+                {T(`studio.role.${r.id}`)}
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <div class="fp-label">Succession Stage (When it stands)</div>
+          <div class="fp-label">{T('studio.filter.stageGroup')}</div>
           <div class="chip-row">
             {SUCCESSION_STAGES_6.map((st, idx) => (
               <button
@@ -114,14 +114,14 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
                 aria-pressed={value.stages.includes(idx) ? 'true' : 'false'}
                 onClick={() => onChange((prev) => ({ ...prev, stages: toggleIn<number>(prev.stages, idx) }))}
               >
-                {st.name} · {st.time}
+                {T(`studio.stage.${st.id}`)} · {T(`studio.stageTime.${st.id}`)}
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <div class="fp-label">Special &amp; Grower Traits</div>
+          <div class="fp-label">{T('studio.filter.traitsGroup')}</div>
           <div class="chip-row">
             <button
               type="button"
@@ -129,7 +129,7 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
               aria-pressed={value.winterPlantable ? 'true' : 'false'}
               onClick={() => onChange((prev) => ({ ...prev, winterPlantable: !prev.winterPlantable }))}
             >
-              ❄ Winter-plantable
+              {T('studio.filter.winterPlantable')}
             </button>
             <button
               type="button"
@@ -137,7 +137,7 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
               aria-pressed={value.lowChill ? 'true' : 'false'}
               onClick={() => onChange((prev) => ({ ...prev, lowChill: !prev.lowChill }))}
             >
-              Low chill (mild winters)
+              {T('studio.filter.lowChill')}
             </button>
             <button
               type="button"
@@ -145,7 +145,7 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
               aria-pressed={value.clayWet ? 'true' : 'false'}
               onClick={() => onChange((prev) => ({ ...prev, clayWet: !prev.clayWet }))}
             >
-              Clay / wet-soil tolerant
+              {T('studio.filter.clayWet')}
             </button>
             <button
               type="button"
@@ -153,7 +153,7 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
               aria-pressed={value.extremeHardy ? 'true' : 'false'}
               onClick={() => onChange((prev) => ({ ...prev, extremeHardy: !prev.extremeHardy }))}
             >
-              ⚡ Extreme-hardy
+              {T('studio.filter.extremeHardy')}
             </button>
           </div>
         </div>
@@ -162,19 +162,19 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
       <div class="pfp-foot">
         <span>
           {shownCount != null && totalCount != null ? (
-            <>Showing <strong>{shownCount}</strong> of <strong>{totalCount}</strong> plants</>
+            T('studio.filter.showingOf', { shown: shownCount, total: totalCount })
           ) : (
-            <>{count > 0 ? `${count} active filter${count === 1 ? '' : 's'}` : 'Select any combination of filters'}</>
+            count > 0 ? T('studio.filter.activeCount', { n: count }) : T('studio.filter.selectHint')
           )}
         </span>
         <div style="display:flex; align-items:center; gap:8px;">
           {count > 0 && (
             <button type="button" class="link-btn" onClick={() => onChange({ ...EMPTY_STUDIO_FILTERS })}>
-              Clear all
+              {T('studio.filter.clearAll')}
             </button>
           )}
           <button type="button" class="btn btn-xs btn-primary" onClick={onDone}>
-            Done
+            {T('studio.filter.done')}
           </button>
         </div>
       </div>
@@ -185,25 +185,22 @@ export function FilterPanel({ value, onChange, onDone, shownCount, totalCount, s
 export function ActiveFilterChips({ value, onChange }: { value: StudioFilterState; onChange: (next: StudioFilterState) => void }) {
   const chips: { key: string; label: string; remove: () => void }[] = [];
   for (const id of value.fits) {
-    const lbl = FIT_OPTIONS.find((x) => x.id === id)?.label ?? id;
-    chips.push({ key: `fit-${id}`, label: lbl, remove: () => onChange({ ...value, fits: value.fits.filter((x) => x !== id) }) });
+    chips.push({ key: `fit-${id}`, label: T(`studio.fit.${id}`), remove: () => onChange({ ...value, fits: value.fits.filter((x) => x !== id) }) });
   }
   for (const id of value.suns) {
-    const lbl = SUN_TIER_OPTIONS.find((x) => x.id === id)?.label ?? id;
-    chips.push({ key: `sun-${id}`, label: lbl, remove: () => onChange({ ...value, suns: value.suns.filter((x) => x !== id) }) });
+    chips.push({ key: `sun-${id}`, label: T(`studio.sun.${id}`), remove: () => onChange({ ...value, suns: value.suns.filter((x) => x !== id) }) });
   }
   for (const id of value.roles) {
-    const lbl = ROLE_OPTIONS.find((x) => x.id === id)?.label ?? id;
-    chips.push({ key: `role-${id}`, label: lbl, remove: () => onChange({ ...value, roles: value.roles.filter((x) => x !== id) }) });
+    chips.push({ key: `role-${id}`, label: T(`studio.role.${id}`), remove: () => onChange({ ...value, roles: value.roles.filter((x) => x !== id) }) });
   }
   for (const idx of value.stages) {
     const st = SUCCESSION_STAGES_6[idx];
-    if (st) chips.push({ key: `st-${idx}`, label: st.name, remove: () => onChange({ ...value, stages: value.stages.filter((x) => x !== idx) }) });
+    if (st) chips.push({ key: `st-${idx}`, label: T(`studio.stage.${st.id}`), remove: () => onChange({ ...value, stages: value.stages.filter((x) => x !== idx) }) });
   }
-  if (value.winterPlantable) chips.push({ key: 'win', label: '❄ Winter-plantable', remove: () => onChange({ ...value, winterPlantable: false }) });
-  if (value.lowChill) chips.push({ key: 'chill', label: 'Low chill', remove: () => onChange({ ...value, lowChill: false }) });
-  if (value.clayWet) chips.push({ key: 'clay', label: 'Clay / wet-soil', remove: () => onChange({ ...value, clayWet: false }) });
-  if (value.extremeHardy) chips.push({ key: 'hardy', label: '⚡ Extreme-hardy', remove: () => onChange({ ...value, extremeHardy: false }) });
+  if (value.winterPlantable) chips.push({ key: 'win', label: T('studio.filter.winterPlantable'), remove: () => onChange({ ...value, winterPlantable: false }) });
+  if (value.lowChill) chips.push({ key: 'chill', label: T('studio.filter.lowChillShort'), remove: () => onChange({ ...value, lowChill: false }) });
+  if (value.clayWet) chips.push({ key: 'clay', label: T('studio.filter.clayWetShort'), remove: () => onChange({ ...value, clayWet: false }) });
+  if (value.extremeHardy) chips.push({ key: 'hardy', label: T('studio.filter.extremeHardy'), remove: () => onChange({ ...value, extremeHardy: false }) });
 
   if (!chips.length) return null;
   return (
@@ -214,7 +211,7 @@ export function ActiveFilterChips({ value, onChange }: { value: StudioFilterStat
         </button>
       ))}
       <button type="button" class="link-btn" style="font-size:12.5px;" onClick={() => onChange({ ...EMPTY_STUDIO_FILTERS })}>
-        Clear all
+        {T('studio.filter.clearAll')}
       </button>
     </div>
   );

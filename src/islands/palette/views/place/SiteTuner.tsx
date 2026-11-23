@@ -16,6 +16,7 @@ import {
   climate,
   siteEdits,
 } from '../../store.ts';
+import { T } from '../../strings.ts';
 import { microclimate, setMicroclimate } from '../../state/studio.ts';
 import {
   formatFreezeTag,
@@ -25,36 +26,19 @@ import {
   siteClimateProfile,
 } from '../../rules/climate-words.ts';
 
-const ASPECTS: readonly { id: MicroAspect; label: string }[] = [
-  { id: 'flat', label: 'Flat' },
-  { id: 'south', label: 'South' },
-  { id: 'east', label: 'East' },
-  { id: 'west', label: 'West' },
-  { id: 'north', label: 'North' },
-];
+const ASPECTS: readonly MicroAspect[] = ['flat', 'south', 'east', 'west', 'north'];
 
-const LANDFORMS: readonly { id: MicroLandform; label: string }[] = [
-  { id: 'ridge', label: 'Ridge' },
-  { id: 'mid-slope', label: 'Mid-slope' },
-  { id: 'valley', label: 'Valley frost pocket' },
-];
+const LANDFORMS: readonly MicroLandform[] = ['ridge', 'mid-slope', 'valley'];
 
-const WATERINGS: readonly { id: NonNullable<SiteEdits['watering']>; label: string }[] = [
-  { id: 'rain', label: 'Rain only' },
-  { id: 'first-years', label: 'First 2 years' },
-  { id: 'all-year', label: 'All year' },
-];
+const WATERINGS: readonly NonNullable<SiteEdits['watering']>[] = ['rain', 'first-years', 'all-year'];
 
-const DRAINAGES: readonly { id: NonNullable<SiteEdits['drainage']>; label: string }[] = [
-  { id: 'drains', label: 'Drains within a day' },
-  { id: 'wet', label: 'Stays wet for days' },
-];
+const DRAINAGES: readonly NonNullable<SiteEdits['drainage']>[] = ['drains', 'wet'];
 
 function slopeLabel(deg: number): string {
-  if (deg <= 0) return '0° flat';
-  if (deg <= 8) return `${deg}° gentle`;
-  if (deg <= 18) return `${deg}° moderate`;
-  return `${deg}° steep`;
+  if (deg <= 0) return T('studio.tuner.slopeFlat');
+  if (deg <= 8) return T('studio.tuner.slopeGentle', { deg });
+  if (deg <= 18) return T('studio.tuner.slopeMod', { deg });
+  return T('studio.tuner.slopeSteep', { deg });
 }
 
 function fmtShift(val: number, unit: string, decimals = 1): string {
@@ -165,9 +149,9 @@ export function SiteTuner() {
   return (
     <details ref={detailsRef} class="tuner-details" data-microclimate>
       <summary class="tuner-summary">
-        <span>Tune canopi-climate readings &amp; microclimate (live updates)</span>
+        <span>{T('studio.tuner.summary')}</span>
         {overrideCount > 0 && (
-          <span class="tuner-summary-badge">{overrideCount} active</span>
+          <span class="tuner-summary-badge">{T('studio.tuner.activeBadge', { n: overrideCount })}</span>
         )}
       </summary>
 
@@ -175,13 +159,13 @@ export function SiteTuner() {
         {/* Top Header Strip */}
         <div class="tuner-head">
           <span class="tuner-sub">
-            Overrides apply live across My Palette, Living System, 2050 Climate &amp; Dossier.
+            {T('studio.tuner.sub')}
           </span>
           <div class="tuner-head-right">
             <span class={`tuner-status-pill${overrideCount > 0 ? ' is-active' : ''}`} data-tuner-status>
               {overrideCount === 0
-                ? 'Map baseline · 0 overrides'
-                : `${overrideCount} custom ${overrideCount === 1 ? 'override' : 'overrides'} active`}
+                ? T('studio.tuner.statusBaseline')
+                : T('studio.tuner.statusActive', { n: overrideCount })}
             </span>
             {overrideCount > 0 && (
               <button
@@ -190,7 +174,7 @@ export function SiteTuner() {
                 data-tuner-reset-all
                 onClick={resetAll}
               >
-                Reset all to map baseline
+                {T('studio.tuner.resetAll')}
               </button>
             )}
           </div>
@@ -201,21 +185,21 @@ export function SiteTuner() {
           {/* 1. Typical Winter Night */}
           <div class={`tune-box${nightsShift !== 0 ? ' is-edited' : ''}`}>
             <div class="tune-box-head">
-              <label for="ct-tune-nights" class="tune-box-label">Typical Winter Night</label>
+              <label for="ct-tune-nights" class="tune-box-label">{T('studio.tuner.winterNight')}</label>
               {nightsShift !== 0 && (
                 <button
                   type="button"
                   class="tune-reset-btn"
                   onClick={() => patchEdits({ nightsShiftC: undefined })}
                 >
-                  Reset
+                  {T('studio.tuner.reset')}
                 </button>
               )}
             </div>
             <div class="tune-box-vals">
               <span>{signedTemp1(curCold)}</span>
               <span class="tune-arrow" aria-hidden="true">→</span>
-              <span class="tune-fut-cold">2050s {signedTemp1(futCold)}</span>
+              <span class="tune-fut-cold">{T('studio.horizon.2050s')} {signedTemp1(futCold)}</span>
             </div>
             <input
               id="ct-tune-nights"
@@ -232,10 +216,10 @@ export function SiteTuner() {
             />
             <div class="tune-box-foot">
               <span>
-                1-in-10-yr freeze {profile.coldFreeze10yrC != null ? formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst) : `~${(curCold - 8.5).toFixed(1)} °C`}
+                {T('studio.tuner.freezeFoot', { freeze: profile.coldFreeze10yrC != null ? formatFreezeTag(profile.coldFreeze10yrC, profile.coldFreezeIsEst) : `~${(curCold - 8.5).toFixed(1)} °C` })}
               </span>
               <span class={`tune-delta-pill${nightsShift !== 0 ? ' is-edited' : ''}`}>
-                {nightsShift !== 0 ? `${fmtShift(nightsShift, '°C')} vs map` : `Map: ${signedTemp1(mapCold)}`}
+                {nightsShift !== 0 ? T('studio.tuner.vsMap', { delta: fmtShift(nightsShift, '°C') }) : T('studio.tuner.mapVal', { val: signedTemp1(mapCold) })}
               </span>
             </div>
           </div>
@@ -243,21 +227,21 @@ export function SiteTuner() {
           {/* 2. Typical Summer Afternoon */}
           <div class={`tune-box${daysShift !== 0 ? ' is-edited' : ''}`}>
             <div class="tune-box-head">
-              <label for="ct-tune-days" class="tune-box-label">Typical Summer Afternoon</label>
+              <label for="ct-tune-days" class="tune-box-label">{T('studio.tuner.summerDay')}</label>
               {daysShift !== 0 && (
                 <button
                   type="button"
                   class="tune-reset-btn"
                   onClick={() => patchEdits({ daysShiftC: undefined })}
                 >
-                  Reset
+                  {T('studio.tuner.reset')}
                 </button>
               )}
             </div>
             <div class="tune-box-vals">
               <span>{curHot.toFixed(1)} °C</span>
               <span class="tune-arrow" aria-hidden="true">→</span>
-              <span class="tune-fut-hot">2050s {futHot.toFixed(1)} °C</span>
+              <span class="tune-fut-hot">{T('studio.horizon.2050s')} {futHot.toFixed(1)} °C</span>
             </div>
             <input
               id="ct-tune-days"
@@ -274,10 +258,10 @@ export function SiteTuner() {
             />
             <div class="tune-box-foot">
               <span>
-                1-in-10-yr peak {profile.heatPeak10yrC != null ? formatHeatPeakTag(profile.heatPeak10yrC, profile.heatPeakIsEst) : `~${(curHot + 8).toFixed(1)} °C`}
+                {T('studio.tuner.peakFoot', { peak: profile.heatPeak10yrC != null ? formatHeatPeakTag(profile.heatPeak10yrC, profile.heatPeakIsEst) : `~${(curHot + 8).toFixed(1)} °C` })}
               </span>
               <span class={`tune-delta-pill${daysShift !== 0 ? ' is-edited' : ''}`}>
-                {daysShift !== 0 ? `${fmtShift(daysShift, '°C')} vs map` : `Map: ${mapHot.toFixed(1)} °C`}
+                {daysShift !== 0 ? T('studio.tuner.vsMap', { delta: fmtShift(daysShift, '°C') }) : T('studio.tuner.mapVal', { val: `${mapHot.toFixed(1)} °C` })}
               </span>
             </div>
           </div>
@@ -285,21 +269,21 @@ export function SiteTuner() {
           {/* 3. Annual Rainfall */}
           <div class={`tune-box${rainShift !== 0 ? ' is-edited' : ''}`}>
             <div class="tune-box-head">
-              <label for="ct-tune-rain" class="tune-box-label">Annual Rainfall</label>
+              <label for="ct-tune-rain" class="tune-box-label">{T('studio.tuner.rainfall')}</label>
               {rainShift !== 0 && (
                 <button
                   type="button"
                   class="tune-reset-btn"
                   onClick={() => patchEdits({ rainShiftMm: undefined })}
                 >
-                  Reset
+                  {T('studio.tuner.reset')}
                 </button>
               )}
             </div>
             <div class="tune-box-vals">
               <span>{curRain} mm</span>
               <span class="tune-arrow" aria-hidden="true">→</span>
-              <span class="tune-fut-rain">2050s {futRain} mm</span>
+              <span class="tune-fut-rain">{T('studio.horizon.2050s')} {futRain} mm</span>
             </div>
             <input
               id="ct-tune-rain"
@@ -315,9 +299,9 @@ export function SiteTuner() {
               }}
             />
             <div class="tune-box-foot">
-              <span>{profile.moistureRegime ?? 'Baseline rainfall'}</span>
+              <span>{profile.moistureRegime ?? T('studio.tuner.rainBaseline')}</span>
               <span class={`tune-delta-pill${rainShift !== 0 ? ' is-edited' : ''}`}>
-                {rainShift !== 0 ? `${fmtShift(rainShift, 'mm', 0)} vs map` : `Map: ${mapRain} mm`}
+                {rainShift !== 0 ? T('studio.tuner.vsMap', { delta: fmtShift(rainShift, 'mm', 0) }) : T('studio.tuner.mapVal', { val: `${mapRain} mm` })}
               </span>
             </div>
           </div>
@@ -325,14 +309,14 @@ export function SiteTuner() {
           {/* 4. Local Soil pH */}
           <div class={`tune-box${phModified ? ' is-edited' : ''}`}>
             <div class="tune-box-head">
-              <label for="ct-tune-ph" class="tune-box-label">Local Soil pH</label>
+              <label for="ct-tune-ph" class="tune-box-label">{T('studio.tuner.soilPh')}</label>
               {phModified && (
                 <button
                   type="button"
                   class="tune-reset-btn"
                   onClick={() => patchEdits({ soilPh: undefined })}
                 >
-                  Reset
+                  {T('studio.tuner.reset')}
                 </button>
               )}
             </div>
@@ -354,9 +338,9 @@ export function SiteTuner() {
               }}
             />
             <div class="tune-box-foot">
-              <span>{curPots ? 'Bypassed in pots / raised beds' : (profile.soilTexture ? `Topsoil · ${profile.soilTexture}` : 'Topsoil pH test override')}</span>
+              <span>{curPots ? T('studio.tuner.phBypassed') : (profile.soilTexture ? T('studio.tuner.phTexture', { texture: profile.soilTexture }) : T('studio.tuner.phOverride'))}</span>
               <span class={`tune-delta-pill${phModified ? ' is-edited' : ''}`}>
-                {phModified ? `${fmtShift(curPh - mapPh, 'pH')} vs map` : `Map: ${mapPh.toFixed(1)}`}
+                {phModified ? T('studio.tuner.vsMap', { delta: fmtShift(curPh - mapPh, 'pH') }) : T('studio.tuner.mapVal', { val: mapPh.toFixed(1) })}
               </span>
             </div>
           </div>
@@ -365,56 +349,56 @@ export function SiteTuner() {
         {/* Section B — Site Water, Drainage & Growing Medium (Zero <select>s!) */}
         <div class="tuner-cond-box">
           <div class="tuner-cond-row">
-            <div class="fp-label">Watering</div>
-            <div class="chip-row" role="group" aria-label="Watering regime">
+            <div class="fp-label">{T('studio.tuner.watering')}</div>
+            <div class="chip-row" role="group" aria-label={T('studio.tuner.wateringAria')}>
               {WATERINGS.map((w) => (
                 <button
-                  key={w.id}
+                  key={w}
                   type="button"
                   class="filter-chip"
-                  data-tune-watering={w.id}
-                  aria-pressed={curWatering === w.id ? 'true' : 'false'}
-                  onClick={() => patchEdits({ watering: w.id === 'rain' ? undefined : w.id })}
+                  data-tune-watering={w}
+                  aria-pressed={curWatering === w ? 'true' : 'false'}
+                  onClick={() => patchEdits({ watering: w === 'rain' ? undefined : w })}
                 >
-                  {w.label}
+                  {T(`studio.tuner.water.${w}`)}
                 </button>
               ))}
             </div>
             {curWatering !== 'rain' && (
               <div class="tuner-hint">
                 {curWatering === 'first-years'
-                  ? 'Counts on establishment watering for the first 2 summers, then rain-fed.'
-                  : 'Assumes supplemental summer irrigation for drought-sensitive species.'}
+                  ? T('studio.tuner.waterHintFirst')
+                  : T('studio.tuner.waterHintAll')}
               </div>
             )}
           </div>
 
           <div class="tuner-cond-row">
-            <div class="fp-label">Drainage (after heavy rain)</div>
-            <div class="chip-row" role="group" aria-label="Soil drainage">
+            <div class="fp-label">{T('studio.tuner.drainage')}</div>
+            <div class="chip-row" role="group" aria-label={T('studio.tuner.drainageAria')}>
               {DRAINAGES.map((d) => (
                 <button
-                  key={d.id}
+                  key={d}
                   type="button"
                   class="filter-chip"
-                  data-tune-drainage={d.id}
-                  aria-pressed={curDrainage === d.id ? 'true' : 'false'}
-                  onClick={() => patchEdits({ drainage: d.id === 'drains' ? undefined : d.id })}
+                  data-tune-drainage={d}
+                  aria-pressed={curDrainage === d ? 'true' : 'false'}
+                  onClick={() => patchEdits({ drainage: d === 'drains' ? undefined : d })}
                 >
-                  {d.label}
+                  {T(`studio.tuner.drain.${d}`)}
                 </button>
               ))}
             </div>
             {curDrainage === 'wet' && (
               <div class="tuner-hint">
-                Flags species sensitive to winter waterlogging and poor root aeration.
+                {T('studio.tuner.drainHintWet')}
               </div>
             )}
           </div>
 
           <div class="tuner-cond-row">
-            <div class="fp-label">Growing medium</div>
-            <div class="chip-row" role="group" aria-label="Growing medium">
+            <div class="fp-label">{T('studio.tuner.medium')}</div>
+            <div class="chip-row" role="group" aria-label={T('studio.tuner.medium')}>
               <button
                 type="button"
                 class="filter-chip"
@@ -422,7 +406,7 @@ export function SiteTuner() {
                 aria-pressed={!curPots ? 'true' : 'false'}
                 onClick={() => patchEdits({ pots: undefined })}
               >
-                In the ground
+                {T('studio.tuner.inGround')}
               </button>
               <button
                 type="button"
@@ -431,12 +415,12 @@ export function SiteTuner() {
                 aria-pressed={curPots ? 'true' : 'false'}
                 onClick={() => patchEdits({ pots: true })}
               >
-                Pots / raised beds
+                {T('studio.tuner.inPots')}
               </button>
             </div>
             {curPots && (
               <div class="tuner-hint">
-                Pots / raised beds bypasses the local soil pH map and favors compact roots.
+                {T('studio.tuner.potsHint')}
               </div>
             )}
           </div>
@@ -445,17 +429,21 @@ export function SiteTuner() {
         {/* Section C — Local Terrain & Microclimate (.micro-box, Zero <select>s!) */}
         <div class="micro-box">
           <div class="micro-box-head">
-            <span class="fp-label" style="margin:0;">Local terrain &amp; microclimate</span>
+            <span class="fp-label" style="margin:0;">{T('studio.tuner.microTitle')}</span>
             <span class={`tuner-status-pill${profile.hasMicroShift ? ' is-active' : ''}`} data-microclimate-delta>
               {profile.hasMicroShift
-                ? `${fmtShift(profile.coldDeltaC, '°C')} winter night · ${fmtShift(profile.hotDeltaC, '°C')} summer peak · ${fmtShift(profile.falseSpringDeltaPct, '%', 0)} false-spring risk`
-                : 'Flat mid-slope · baseline tile readings'}
+                ? T('studio.tuner.microDelta', {
+                    cold: fmtShift(profile.coldDeltaC, '°C'),
+                    hot: fmtShift(profile.hotDeltaC, '°C'),
+                    spring: fmtShift(profile.falseSpringDeltaPct, '%', 0),
+                  })
+                : T('studio.tuner.microBaseline')}
             </span>
           </div>
 
           <div class="micro-slope-row">
             <div class="tune-box-head">
-              <label for="ct-micro-slope" class="tune-box-label">Slope angle</label>
+              <label for="ct-micro-slope" class="tune-box-label">{T('studio.tuner.slopeAngle')}</label>
               <span class="micro-slope-val">{slopeLabel(mc.slopeDeg)}</span>
             </div>
             <input
@@ -472,35 +460,35 @@ export function SiteTuner() {
 
           <div class="micro-pills-grid">
             <div>
-              <div class="fp-label">Aspect</div>
-              <div class="chip-row" role="group" aria-label="Slope aspect">
+              <div class="fp-label">{T('studio.tuner.aspect')}</div>
+              <div class="chip-row" role="group" aria-label={T('studio.tuner.aspectAria')}>
                 {ASPECTS.map((a) => (
                   <button
-                    key={a.id}
+                    key={a}
                     type="button"
                     class="filter-chip"
-                    data-micro-aspect={a.id}
-                    aria-pressed={mc.aspect === a.id ? 'true' : 'false'}
-                    onClick={() => setMicroclimate({ aspect: a.id })}
+                    data-micro-aspect={a}
+                    aria-pressed={mc.aspect === a ? 'true' : 'false'}
+                    onClick={() => setMicroclimate({ aspect: a })}
                   >
-                    {a.label}
+                    {T(`studio.tuner.aspect.${a}`)}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <div class="fp-label">Landform</div>
-              <div class="chip-row" role="group" aria-label="Site landform">
+              <div class="fp-label">{T('studio.tuner.landform')}</div>
+              <div class="chip-row" role="group" aria-label={T('studio.tuner.landformAria')}>
                 {LANDFORMS.map((l) => (
                   <button
-                    key={l.id}
+                    key={l}
                     type="button"
                     class="filter-chip"
-                    data-micro-landform={l.id}
-                    aria-pressed={mc.landform === l.id ? 'true' : 'false'}
-                    onClick={() => setMicroclimate({ landform: l.id })}
+                    data-micro-landform={l}
+                    aria-pressed={mc.landform === l ? 'true' : 'false'}
+                    onClick={() => setMicroclimate({ landform: l })}
                   >
-                    {l.label}
+                    {T(`studio.tuner.landform.${l}`)}
                   </button>
                 ))}
               </div>
@@ -510,10 +498,8 @@ export function SiteTuner() {
 
         {/* Section D — Compact 1-line Collapsible Methodology Micro-Footer */}
         <details class="tuner-method">
-          <summary>Methodology &amp; what isn&apos;t modelled</summary>
-          <p>
-            Climate baselines come from on-device 11 km SSP2-4.5 tiles (1991–2020 today vs 2041–2070 projection) paired with COPERNICUS/DEM/GLO30 terrain and topsoil pH grids. Local wind corridors, day-length cultivar tuning, browsing wildlife, pests, and wildfire risk are not modelled automatically — use your own field observations alongside these readings.
-          </p>
+          <summary>{T('studio.tuner.methodTitle')}</summary>
+          <p>{T('studio.tuner.methodBody')}</p>
         </details>
       </div>
     </details>

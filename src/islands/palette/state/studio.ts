@@ -78,7 +78,7 @@ export function cycleWateringMode(): void {
   const idx = WATERING_CYCLE.indexOf(wateringMode.peek());
   wateringMode.value = WATERING_CYCLE[(idx + 1) % WATERING_CYCLE.length];
 }
-export const designName = signal<string>('My Field Palette');
+export const designName = signal<string>('');
 export const designDirty = signal<boolean>(false);
 export const autoSaveEnabled = signal<boolean>(false);
 const lastSavedAt = signal<string | null>(null);

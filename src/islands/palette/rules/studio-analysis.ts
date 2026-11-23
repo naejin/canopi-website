@@ -26,7 +26,10 @@ import {
   stageSpanOf,
   SUN_TIER_OPTIONS,
 } from './studio-filters.ts';
-import { signedTemp1, siteClimateProfile } from './climate-words.ts';
+import { localMonthShort, signedTemp1, siteClimateProfile } from './climate-words.ts';
+import { T } from '../strings.ts';
+
+const fb = (v: string, d: string): string => (v.startsWith('studio.') ? d : v);
 
 export { siteClimateProfile } from './climate-words.ts';
 
@@ -516,28 +519,28 @@ export function evaluateClimate2050(
 
   const forces = [
     {
-      label: 'Summer afternoons & heat domes',
+      label: fb(T('studio.clim.forceSummer'), 'Summer afternoons & heat domes'),
       today: baseHotToday.toFixed(1),
-      future: `${hotFutureC.toFixed(1)} °C avg`,
-      delta: `1-in-10-yr peak ~${heatDomeFutureC} °C`,
+      future: `${hotFutureC.toFixed(1)} °C`,
+      delta: `${fb(T('studio.clim.forcePeak'), '1-in-10-yr peak')} ~${heatDomeFutureC} °C`,
     },
     {
-      label: 'Winter nights & hard freezes',
+      label: fb(T('studio.clim.forceWinter'), 'Winter nights & hard freezes'),
       today: signedTemp1(baseColdToday).replace(' °C', ''),
-      future: `${signedTemp1(coldTail10yrC)} avg`,
-      delta: `1-in-10-yr freeze ~${freezeFutureC} °C`,
+      future: signedTemp1(coldTail10yrC),
+      delta: `${fb(T('studio.clim.forceFreeze'), '1-in-10-yr freeze')} ~${freezeFutureC} °C`,
     },
     {
-      label: 'Longest summer dry spell',
+      label: fb(T('studio.clim.forceDry'), 'Longest summer dry spell'),
       today: `~${baseDryDays}d`,
-      future: `${dryFutureDays}d without rain`,
+      future: `${dryFutureDays}d ${fb(T('studio.clim.forceNoRain'), 'without rain')}`,
       delta: `+${dryFutureDays - baseDryDays}d`,
     },
     {
-      label: 'Winter chill (fruit trees)',
+      label: fb(T('studio.clim.forceChill'), 'Winter chill (fruit trees)'),
       today: `${chillTodayCP}`,
-      future: `${chillFutureCP} chill portions`,
-      delta: chillFutureCP < 40 ? 'low-chill varieties' : `${chillFutureCP - chillTodayCP} CP`,
+      future: `${chillFutureCP} CP`,
+      delta: chillFutureCP < 40 ? fb(T('studio.clim.lowChillVar'), 'low-chill varieties') : `${chillFutureCP - chillTodayCP} CP`,
     },
   ];
 
@@ -546,12 +549,12 @@ export function evaluateClimate2050(
   const ampToday = Math.max(4, (baseHotToday - baseColdToday) / 2);
   const midFut = (hotFutureC + coldTodayC) / 2;
   const ampFut = Math.max(4, (hotFutureC - coldTodayC) / 2);
-  const monthlyShift = MONTH_NAMES.map((month, i) => {
+  const monthlyShift = Array.from({ length: 12 }, (_, i) => {
     const wave = -Math.cos(((i) / 12) * Math.PI * 2);
     const todayC = Math.round((midToday + ampToday * wave) * 10) / 10;
     const futureC = Math.round((midFut + ampFut * wave) * 10) / 10;
     return {
-      month,
+      month: localMonthShort(i),
       todayC,
       futureC,
       heatStress: futureC >= 32,
@@ -565,7 +568,10 @@ export function evaluateClimate2050(
     verdictDetail,
     novelClimate,
     forces,
-    impactLine: `${holdsStrong.length} resilient · ${watch.length} stressed · ${critical.length} critical`,
+    impactLine: fb(
+      T('studio.clim.impactLine', { fit: holdsStrong.length, care: watch.length, risk: critical.length }),
+      `${holdsStrong.length} resilient · ${watch.length} stressed · ${critical.length} critical`,
+    ),
     critical,
     watch,
     holdsStrong,
@@ -713,17 +719,17 @@ export function buildPlantingActionCalendar(plan: PlantingPlanSummary, coldC?: n
   const hasBareRoot = plan.stockSummary.bareroot > 0;
   const hasSeeds = plan.stockSummary.seedPacks > 0;
   return [
-    { month: 'Jan', tag: 'Order', brief: hasSeeds ? 'Order direct-sow seed packs and check bare-root delivery dates.' : 'Confirm nursery dispatch dates and inspect soil drainage.' },
-    { month: 'Feb', tag: 'Prep', brief: mild ? 'Lay 10 cm wood-chip mulch and plant early bare-root stock.' : 'Order 2 L pots and plugs; stage stakes and compost.' },
-    { month: 'Mar', tag: 'Plant', brief: hasBareRoot ? 'Plant dormant bare-root trees and stake against spring wind.' : 'Prepare planting pockets with compost and mycorrhizal mulch.' },
-    { month: 'Apr', tag: 'Establish', brief: 'Set out potted shrubs and perennials; water deeply after planting.' },
-    { month: 'May', tag: 'Sow', brief: hasSeeds ? 'Direct-sow warm-season annuals and living mulch lines after last frost.' : 'Check young shoot growth and top up mulch rings.' },
-    { month: 'Jun', tag: 'Mulch', brief: 'Deep-soak establishment watering twice weekly during dry spells.' },
-    { month: 'Jul', tag: 'Buffer', brief: 'Chop-and-drop fast biomass to shade soil before peak summer heat.' },
-    { month: 'Aug', tag: 'Harvest', brief: 'Harvest early fruit/greens; keep young roots cool under 10 cm mulch.' },
-    { month: 'Sep', tag: 'Order', brief: 'Reserve autumn bare-root trees and spring-flowering bulbs.' },
-    { month: 'Oct', tag: 'Autumn', brief: 'Plant hardy divisions and bulbs while soil retains autumn warmth.' },
-    { month: 'Nov', tag: 'Dormant', brief: mild ? 'Begin main winter bare-root planting wave.' : 'Add winter mulch collars around young woody stems.' },
-    { month: 'Dec', tag: 'Review', brief: 'Record survival notes and update quantities for next season.' },
+    { month: localMonthShort(0), tag: fb(T('studio.plan.calTag.order'), 'Order'), brief: fb(hasSeeds ? T('studio.plan.calBrief.0s') : T('studio.plan.calBrief.0'), hasSeeds ? 'Order direct-sow seed packs and check bare-root delivery dates.' : 'Confirm nursery dispatch dates and inspect soil drainage.') },
+    { month: localMonthShort(1), tag: fb(T('studio.plan.calTag.prep'), 'Prep'), brief: fb(mild ? T('studio.plan.calBrief.1m') : T('studio.plan.calBrief.1'), mild ? 'Lay 10 cm wood-chip mulch and plant early bare-root stock.' : 'Order 2 L pots and plugs; stage stakes and compost.') },
+    { month: localMonthShort(2), tag: fb(T('studio.plan.calTag.plant'), 'Plant'), brief: fb(hasBareRoot ? T('studio.plan.calBrief.2b') : T('studio.plan.calBrief.2'), hasBareRoot ? 'Plant dormant bare-root trees and stake against spring wind.' : 'Prepare planting pockets with compost and mycorrhizal mulch.') },
+    { month: localMonthShort(3), tag: fb(T('studio.plan.calTag.establish'), 'Establish'), brief: fb(T('studio.plan.calBrief.3'), 'Set out potted shrubs and perennials; water deeply after planting.') },
+    { month: localMonthShort(4), tag: fb(T('studio.plan.calTag.sow'), 'Sow'), brief: fb(hasSeeds ? T('studio.plan.calBrief.4s') : T('studio.plan.calBrief.4'), hasSeeds ? 'Direct-sow warm-season annuals and living mulch lines after last frost.' : 'Check young shoot growth and top up mulch rings.') },
+    { month: localMonthShort(5), tag: fb(T('studio.plan.calTag.mulch'), 'Mulch'), brief: fb(T('studio.plan.calBrief.5'), 'Deep-soak establishment watering twice weekly during dry spells.') },
+    { month: localMonthShort(6), tag: fb(T('studio.plan.calTag.buffer'), 'Buffer'), brief: fb(T('studio.plan.calBrief.6'), 'Chop-and-drop fast biomass to shade soil before peak summer heat.') },
+    { month: localMonthShort(7), tag: fb(T('studio.plan.calTag.harvest'), 'Harvest'), brief: fb(T('studio.plan.calBrief.7'), 'Harvest early fruit/greens; keep young roots cool under 10 cm mulch.') },
+    { month: localMonthShort(8), tag: fb(T('studio.plan.calTag.order'), 'Order'), brief: fb(T('studio.plan.calBrief.8'), 'Reserve autumn bare-root trees and spring-flowering bulbs.') },
+    { month: localMonthShort(9), tag: fb(T('studio.plan.calTag.autumn'), 'Autumn'), brief: fb(T('studio.plan.calBrief.9'), 'Plant hardy divisions and bulbs while soil retains autumn warmth.') },
+    { month: localMonthShort(10), tag: fb(T('studio.plan.calTag.dormant'), 'Dormant'), brief: fb(mild ? T('studio.plan.calBrief.10m') : T('studio.plan.calBrief.10'), mild ? 'Begin main winter bare-root planting wave.' : 'Add winter mulch collars around young woody stems.') },
+    { month: localMonthShort(11), tag: fb(T('studio.plan.calTag.review'), 'Review'), brief: fb(T('studio.plan.calBrief.11'), 'Record survival notes and update quantities for next season.') },
   ];
 }

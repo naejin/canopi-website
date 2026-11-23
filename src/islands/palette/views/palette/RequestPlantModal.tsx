@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { requestPlantOpen } from '../../state/studio.ts';
 import * as store from '../../store.ts';
+import { T } from '../../strings.ts';
 import { placeWords } from '../location/shared.ts';
 import { zoneName } from '../kit/names.ts';
 
@@ -27,7 +28,7 @@ export function RequestPlantModal() {
 
   const loc = store.location.value;
   const z = store.climate.value;
-  const siteSummary = loc ? placeWords(loc) : z ? zoneName(z) : 'Not set';
+  const siteSummary = loc ? placeWords(loc) : z ? zoneName(z) : T('studio.req.notSet');
 
   const bodyText = [
     `Common name: ${commonName.trim() || '(not specified)'}`,
@@ -61,49 +62,49 @@ export function RequestPlantModal() {
       onCancel={(e) => { e.preventDefault(); close(); }}
       onClose={close}
     >
-      <h3 id="ct-req-title">Request a plant</h3>
+      <h3 id="ct-req-title">{T('studio.requestPlant')}</h3>
       <p class="ct-muted ct-small-text">
-        Missing a species for your site ({siteSummary})? Send the name and growing notes to the Canopi catalog team.
+        {T('studio.req.intro', { site: siteSummary })}
       </p>
       <form
         class="ct-req-form"
         onSubmit={(e) => { e.preventDefault(); void copyText(); }}
       >
         <div class="ct-req-field">
-          <label for="ct-req-common">Common name</label>
+          <label for="ct-req-common">{T('studio.req.commonLabel')}</label>
           <input
             id="ct-req-common"
             type="text"
             value={commonName}
-            placeholder="e.g., Pineapple guava"
+            placeholder={T('studio.req.commonPh')}
             onInput={(e) => setCommonName((e.currentTarget as HTMLInputElement).value)}
           />
         </div>
         <div class="ct-req-field">
-          <label for="ct-req-botanical">Botanical name (optional)</label>
+          <label for="ct-req-botanical">{T('studio.req.botanicalLabel')}</label>
           <input
             id="ct-req-botanical"
             type="text"
             value={botanicalName}
-            placeholder="e.g., Acca sellowiana"
+            placeholder={T('studio.req.botanicalPh')}
             onInput={(e) => setBotanicalName((e.currentTarget as HTMLInputElement).value)}
           />
         </div>
         <div class="ct-req-field">
-          <label for="ct-req-notes">Site &amp; role notes (optional)</label>
+          <label for="ct-req-notes">{T('studio.req.notesLabel')}</label>
           <textarea
             id="ct-req-notes"
             rows={3}
             value={notes}
-            placeholder="How you grow it, sun exposure, frost tolerance, or local cultivar..."
+            placeholder={T('studio.req.notesPh')}
             onInput={(e) => setNotes((e.currentTarget as HTMLTextAreaElement).value)}
           />
         </div>
-        {copied && <p class="ct-small-text" role="status">Request copied to clipboard.</p>}
+        {copied && <p class="ct-small-text" role="status">{T('studio.req.copied')}</p>}
         <div class="ct-req-acts">
-          <button type="button" class="button button-secondary ct-small" onClick={close}>Close</button>
-          <button type="submit" class="button button-secondary ct-small">Copy request</button>
-          <a class="button button-primary ct-small" href={mailtoHref}>Email Canopi</a>
+          <button type="button" class="button button-secondary ct-small" onClick={close}>{T('studio.close')}</button>
+          <button type="submit" class="button button-secondary ct-small">{T('studio.req.copy')}</button>
+          <a class="button button-primary ct-small" href={mailtoHref}>{T('studio.req.email')}</a>
         </div>
       </form>
     </dialog>

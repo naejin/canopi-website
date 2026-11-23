@@ -23,9 +23,7 @@ import {
   sunTierLabel,
   sunTierOf,
 } from '../../rules/studio-filters.ts';
-import { phReactionLabel } from '../../rules/climate-words.ts';
-
-const MONTH_LETTERS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'] as const;
+import { localMonthInitial, phReactionLabel } from '../../rules/climate-words.ts';
 
 function scoreCompanion(p: Taxon, other: Taxon): { plant: Taxon; score: number; reason: string } {
   let score = 0;
@@ -36,65 +34,58 @@ function scoreCompanion(p: Taxon, other: Taxon): { plant: Taxon; score: number; 
   const oJobs = jobsOf(other);
   if (pSun !== oSun) {
     score += 2;
-    reasons.push(`Complementary sun (${sunTierLabel(other)})`);
+    reasons.push(T('studio.dossier.compSun', { sun: sunTierLabel(other) }));
   }
   if (pJobs.includes('feeds_soil') && oJobs.includes('feeds_you')) {
     score += 3;
-    reasons.push('Feeds this harvest partner');
+    reasons.push(T('studio.dossier.compFeeds'));
   } else if (oJobs.includes('feeds_soil') && pJobs.includes('feeds_you')) {
     score += 3;
-    reasons.push('Fixes nitrogen nearby');
+    reasons.push(T('studio.dossier.compNitrogen'));
   }
   const pDeep = (p.traits.root_depth_min_cm ?? 0) >= 60;
   const oDeep = (other.traits.root_depth_min_cm ?? 0) >= 60;
   if (pDeep !== oDeep) {
     score += 2;
-    reasons.push(oDeep ? 'Deep taproot partner' : 'Shallow-root neighbor');
+    reasons.push(oDeep ? T('studio.dossier.compDeepRoot') : T('studio.dossier.compShallowRoot'));
   }
   const pSpan = stageSpanOf(p);
   const oSpan = stageSpanOf(other);
   if (oSpan.start !== pSpan.start || oSpan.end !== pSpan.end) {
     score += 1;
-    reasons.push(`Adjacent succession (${oSpan.label})`);
+    reasons.push(T('studio.dossier.compSucc', { span: oSpan.label }));
   }
   if (oJobs.includes('helpers') && !reasons.length) {
     score += 1;
-    reasons.push('Attracts pollinators');
+    reasons.push(T('studio.dossier.compPollinators'));
   } else if (oJobs.includes('mulch') && !reasons.length) {
     score += 1;
-    reasons.push('Produces biomass & mulch');
+    reasons.push(T('studio.dossier.compMulch'));
   } else if (oJobs.includes('ground') && !reasons.length) {
     score += 1;
-    reasons.push('Living soil cover');
+    reasons.push(T('studio.dossier.compGround'));
   } else if (oJobs.includes('shelter') && !reasons.length) {
     score += 1;
-    reasons.push('Windbreak & microclimate shelter');
+    reasons.push(T('studio.dossier.compShelter'));
   }
-  return { plant: other, score, reason: reasons.slice(0, 2).join(' · ') || 'Balanced guild neighbor' };
+  return { plant: other, score, reason: reasons.slice(0, 2).join(' · ') || T('studio.dossier.compDefault') };
 }
-
-const SUN_EMBLEM: Record<Stratum, { glyph: string; sky: string }> = {
-  emergent: { glyph: '☀', sky: '100% open sky' },
-  high: { glyph: '🌤', sky: '4–6 hrs sun' },
-  medium: { glyph: '◐', sky: '2–4 hrs sun' },
-  low: { glyph: '●', sky: 'dappled shade' },
-};
 
 const clampPct = (v: number, lo: number, hi: number): number =>
   Math.max(4, Math.min(96, Math.round(((v - lo) / (hi - lo)) * 100)));
 
-const ROLE_LABELS: Record<string, string> = {
-  overall: 'Overall',
-  habit: 'Overall',
-  leaf: 'Leaf',
-  foliage: 'Leaf',
-  flower: 'Flower',
-  bloom: 'Flower',
-  fruit: 'Fruit',
-  seed: 'Fruit',
-  cone: 'Cone',
-  sori: 'Sori',
-  bark: 'Bark',
+const ROLE_MAP: Record<string, string> = {
+  overall: 'overall',
+  habit: 'overall',
+  leaf: 'leaf',
+  foliage: 'leaf',
+  flower: 'flower',
+  bloom: 'flower',
+  fruit: 'fruit',
+  seed: 'fruit',
+  cone: 'cone',
+  sori: 'sori',
+  bark: 'bark',
 };
 
 function safeHref(url: string | null | undefined): string | null {
@@ -103,9 +94,10 @@ function safeHref(url: string | null | undefined): string | null {
 }
 
 function plateRoleLabel(role: string | null | undefined): string {
-  if (!role) return 'Overall';
+  if (!role) return T('studio.plateRole.overall');
   const key = role.trim().toLowerCase();
-  return ROLE_LABELS[key] ?? (key.charAt(0).toUpperCase() + key.slice(1));
+  const mapped = ROLE_MAP[key];
+  return mapped ? T(`studio.plateRole.${mapped}`) : (key.charAt(0).toUpperCase() + key.slice(1));
 }
 
 export function FieldDossier() {
@@ -203,9 +195,10 @@ export function FieldDossier() {
   const canStep = list.length > 1;
   const curIdx = list.indexOf(taxon.id);
   const sun = sunTierOf(taxon);
-  const emblem = SUN_EMBLEM[sun];
+  const sunSky = T(`studio.sunSky.${sun}`);
   const sc = loc?.lookup ? climateOf(loc.lookup) : null;
-  const placeName = loc?.label ?? 'your site';
+  const placeName = loc?.label ?? T('studio.common.yourSite');
+  const monthLetters = Array.from({ length: 12 }, (_, i) => localMonthInitial(i));
   const sitePh = spec.phTrack.sitePh;
   const siteFreezeC = spec.tempTrack.siteFreezeC;
   const warmMonth = spec.tempTrack.warmMonth;
@@ -271,7 +264,7 @@ export function FieldDossier() {
                 <div class="dossier-latin">{taxon.canonical_name}</div>
                 <div class="dossier-id-badges">
                   <span class={`sun-badge ${sunCls}`}>
-                    {sunTierLabel(taxon)} · {emblem.sky}
+                    {sunTierLabel(taxon)} · {sunSky}
                   </span>
                 </div>
               </div>
@@ -285,7 +278,7 @@ export function FieldDossier() {
               style="flex:1;"
               onClick={() => (inPalette ? store.removeMember(taxon.id) : store.addMembers([taxon.id]))}
             >
-              {inPalette ? '✓ In your palette · Remove' : '+ Add to my palette'}
+              {inPalette ? T('studio.dossier.inPalRemove') : T('studio.dossier.addToPal')}
             </button>
           </div>
         </div>
@@ -298,12 +291,12 @@ export function FieldDossier() {
             const activePlate = plates[safeIdx] ?? null;
             const activeFailed = activePlate ? Boolean(failedUrls[activePlate.url]) : false;
             const photoHref = activePlate ? safeHref(activePlate.source_page_url) : null;
-            const roleLabel = activePlate ? plateRoleLabel(activePlate.role) : 'Overall';
+            const roleLabel = activePlate ? plateRoleLabel(activePlate.role) : T('studio.plateRole.overall');
 
             if (!activePlate) {
               return (
                 <div class="dossier-plate-empty" data-dossier-plate-empty>
-                  No curated field photo in this release yet.
+                  {T('studio.dossier.noPhoto')}
                 </div>
               );
             }
@@ -315,7 +308,7 @@ export function FieldDossier() {
                     type="button"
                     class="dossier-plate-frame"
                     data-dossier-plate-open
-                    aria-label={`Open full botanical plate for ${nameOf(taxon)} (${roleLabel})`}
+                    aria-label={T('studio.dossier.openPlateAria', { name: nameOf(taxon), role: roleLabel })}
                     onClick={() => setLightboxOpen(true)}
                   >
                     <img
@@ -332,17 +325,17 @@ export function FieldDossier() {
                         {roleLabel} · {safeIdx + 1}/{plates.length}
                       </span>
                     )}
-                    <span class="dossier-plate-hover-cue" aria-hidden="true">⤢ Full plate</span>
+                    <span class="dossier-plate-hover-cue" aria-hidden="true">{T('studio.dossier.fullPlate')}</span>
                   </button>
                 ) : (
                   <div class="dossier-plate-empty">
-                    Curated field photo unavailable offline.
+                    {T('studio.dossier.photoOffline')}
                   </div>
                 )}
 
                 <figcaption class="dossier-plate-cap">
                   <span class="dossier-plate-credit">
-                    Photo: {activePlate.credit ?? 'Curated field plate'}
+                    {T('studio.dossier.photoCredit', { credit: activePlate.credit ?? T('studio.dossier.curatedPlate') })}
                     {activePlate.licence ? ` · ${activePlate.licence}` : ''}
                     {photoHref && (
                       <>
@@ -353,7 +346,7 @@ export function FieldDossier() {
                           rel="noopener noreferrer"
                           class="dossier-plate-src"
                         >
-                          Source ↗
+                          {T('studio.dossier.sourceLink')}
                         </a>
                       </>
                     )}
@@ -365,13 +358,13 @@ export function FieldDossier() {
                       data-dossier-lightbox-open
                       onClick={() => setLightboxOpen(true)}
                     >
-                      ⤢ Full plate
+                      {T('studio.dossier.fullPlate')}
                     </button>
                   )}
                 </figcaption>
 
                 {plates.length > 1 && (
-                  <div class="dossier-id-strip" data-dossier-id-strip role="group" aria-label="Botanical field ID views">
+                  <div class="dossier-id-strip" data-dossier-id-strip role="group" aria-label={T('studio.dossier.idViewsAria')}>
                     {plates.map((p, idx) => {
                       const pRole = plateRoleLabel(p.role);
                       const isCur = idx === safeIdx;
@@ -400,27 +393,27 @@ export function FieldDossier() {
             );
           })()}
 
-          <section class="d-section" aria-label="How it fits your location">
+          <section class="d-section" aria-label={T('studio.dossier.sec1Title')}>
             <div>
-              <div class="d-sec-kicker">Section 1 · Live site match</div>
-              <h3 class="d-sec-title">How It Fits Your Location</h3>
+              <div class="d-sec-kicker">{T('studio.dossier.sec1Kicker')}</div>
+              <h3 class="d-sec-title">{T('studio.dossier.sec1Title')}</h3>
             </div>
 
             <div class={`fit-banner ${fitBannerCls}`}>
               <div class="fit-banner-top">
                 <span class="fit-banner-headline">
                   {verdictTone === 'good'
-                    ? `✓ Thrives in ${placeName} · Holds strong in the 2050s`
+                    ? T('studio.dossier.fitGood', { place: placeName })
                     : verdictTone === 'warn'
-                    ? `⚠ Needs microsite care in ${placeName}`
-                    : `✗ Exceeds hard climate limit in ${placeName}`}
+                    ? T('studio.dossier.fitWarn', { place: placeName })
+                    : T('studio.dossier.fitDanger', { place: placeName })}
                 </span>
               </div>
               <div class="fit-banner-meta">
-                {placeName} (2050s):{' '}
+                {placeName} ({T('studio.horizon.2050s')}):{' '}
                 {sitePh != null ? `pH ${sitePh.toFixed(1)} (${phReactionLabel(sitePh)}) · ` : ''}
-                {siteFreezeC != null ? `1-in-10-yr freeze ~${siteFreezeC.toFixed(1)} °C · ` : ''}
-                {siteHot2050 != null ? `${warmMonth} avg ${Math.round(siteHot2050)} °C` : 'climate loaded'}
+                {siteFreezeC != null ? `${T('studio.tuner.freezeFoot', { freeze: `~${siteFreezeC.toFixed(1)} °C` })} · ` : ''}
+                {siteHot2050 != null ? T('studio.dossier.monthAvg', { month: warmMonth, temp: `${Math.round(siteHot2050)} °C` }) : T('studio.dossier.climateLoaded')}
                 {sc?.koppen ? ` · Köppen ${sc.koppen}` : ''}
                 <button
                   type="button"
@@ -428,7 +421,7 @@ export function FieldDossier() {
                   style="padding:1px 6px; font-size:12px; margin-left:4px;"
                   onClick={() => { closeFieldDossier(); studioTab.value = 'climate'; }}
                 >
-                  Tune sliders ↗
+                  {T('studio.dossier.tuneSliders')}
                 </button>
               </div>
             </div>
@@ -436,16 +429,16 @@ export function FieldDossier() {
             {/* Soil pH Range Gauge (verbatim .gauge-card) */}
             <div class="gauge-card">
               <div class="gauge-head">
-                <strong>Soil pH comfort</strong>
+                <strong>{T('studio.dossier.phTitle')}</strong>
                 <span style={{ color: phFits ? 'var(--plant-green)' : 'var(--warn-ink)', fontWeight: 600 }}>
-                  Plant: pH {spec.phTrack.min.toFixed(1)}–{spec.phTrack.max.toFixed(1)}
-                  {sitePh != null ? (phFits ? ` · ✓ Fits your pH ${sitePh.toFixed(1)}` : ` · ⚠ Outside your pH ${sitePh.toFixed(1)}`) : ''}
+                  {T('studio.dossier.phPlant', { min: spec.phTrack.min.toFixed(1), max: spec.phTrack.max.toFixed(1) })}
+                  {sitePh != null ? (phFits ? ` · ${T('studio.dossier.phFits', { ph: sitePh.toFixed(1) })}` : ` · ${T('studio.dossier.phOutside', { ph: sitePh.toFixed(1) })}`) : ''}
                 </span>
               </div>
               <div class="gauge-track-wrap">
                 {phSitePct != null && (
                   <span class={`gauge-pin-lbl ${phPinCls}`} style={{ left: `${Math.max(12, Math.min(88, phSitePct))}%` }}>
-                    Your soil {sitePh!.toFixed(1)}
+                    {T('studio.dossier.yourSoil', { ph: sitePh!.toFixed(1) })}
                   </span>
                 )}
                 <div class="gauge-track">
@@ -454,29 +447,29 @@ export function FieldDossier() {
                 </div>
               </div>
               <div class="gauge-scale">
-                <span>Acidic (4.0)</span>
-                <span>Neutral (7.0)</span>
-                <span>Alkaline (9.0)</span>
+                <span>{T('studio.dossier.phAcidic')}</span>
+                <span>{T('studio.dossier.phNeutral')}</span>
+                <span>{T('studio.dossier.phAlkaline')}</span>
               </div>
             </div>
 
             {/* Winter Cold & 2050s Heat Gauge (verbatim .gauge-card) */}
             <div class="gauge-card">
               <div class="gauge-head">
-                <strong>Winter cold &amp; 2050s heat</strong>
+                <strong>{T('studio.dossier.tempTitle')}</strong>
                 <span style="color:var(--plant-green); font-weight:600;">
-                  Hard-freeze limit {Math.round(spec.tempTrack.minC)} °C · Heat-dome limit {Math.round(spec.tempTrack.maxC)} °C
+                  {T('studio.dossier.tempLimits', { min: `${Math.round(spec.tempTrack.minC)} °C`, max: `${Math.round(spec.tempTrack.maxC)} °C` })}
                 </span>
               </div>
               <div class="gauge-track-wrap">
                 {tColdPct != null && (
                   <span class="gauge-pin-lbl pin-cold" style={{ left: `${Math.max(16, Math.min(84, tColdPct))}%` }}>
-                    1-in-10-yr freeze {siteFreezeC! >= 0 ? '+' : ''}{siteFreezeC!.toFixed(1)}°
+                    {T('studio.tuner.freezeFoot', { freeze: `${siteFreezeC! >= 0 ? '+' : ''}${siteFreezeC!.toFixed(1)}°` })}
                   </span>
                 )}
                 {tHotPct != null && (
                   <span class="gauge-pin-lbl pin-ok" style={{ left: `${Math.max(16, Math.min(84, tHotPct))}%` }}>
-                    2050s {warmMonth} avg {Math.round(siteHot2050!)}°
+                    {T('studio.horizon.2050s')} {T('studio.dossier.monthAvg', { month: warmMonth, temp: `${Math.round(siteHot2050!)}°` })}
                   </span>
                 )}
                 <div class="gauge-track">
@@ -487,19 +480,19 @@ export function FieldDossier() {
               </div>
               <div class="gauge-scale">
                 <span>-20 °C</span>
-                <span>0 °C frost</span>
+                <span>{T('studio.dossier.frostZero')}</span>
                 <span>+20 °C</span>
                 <span>+44 °C</span>
               </div>
             </div>
 
             {/* 2-Column 6-Row Hairline Spec Ledger (verbatim .d-spec-ledger) */}
-            <div class="d-spec-ledger" role="list" aria-label="Site fit specification ledger">
+            <div class="d-spec-ledger" role="list" aria-label={T('studio.dossier.ledgerAria')}>
               {spec.ledger.map((row) => (
                 <div key={row.label} class="d-spec-row" role="listitem">
                   <span class="d-spec-k" style="display:inline-flex; align-items:center; gap:5px;">
                     {row.label}
-                    <FieldTip label={`Explain ${row.label}`} text={row.tip} />
+                    <FieldTip label={T('studio.dossier.explainTip', { label: row.label })} text={row.tip} />
                   </span>
                   <span class="d-spec-v" style="color:var(--plant-green);">✓ {row.value}</span>
                 </div>
@@ -509,13 +502,13 @@ export function FieldDossier() {
             {/* Breaking Points & Field Insurance */}
             <div class="gauge-card" data-dossier-breaking-points>
               <div class="gauge-head">
-                <strong style="font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-muted);">Breaking points &amp; field insurance</strong>
-                <span style="font-size:12px; color:var(--ink-muted);">{spec.breakingPoints.length} limit{spec.breakingPoints.length === 1 ? '' : 's'} hit</span>
+                <strong style="font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-muted);">{T('studio.dossier.bpTitle')}</strong>
+                <span style="font-size:12px; color:var(--ink-muted);">{T('studio.dossier.bpCount', { n: spec.breakingPoints.length })}</span>
               </div>
               <div class="bp-signal-line">
-                <span class="bp-pill">🔥 Heat-dome limit: {Math.round(spec.tempTrack.maxC)} °C</span>
-                <span class="bp-pill">❄ Hard-freeze limit: {Math.round(spec.tempTrack.minC)} °C</span>
-                <span class="bp-pill">💧 Max dry spell: {spec.maxDryDays}d</span>
+                <span class="bp-pill">{T('studio.dossier.pillHeat', { temp: `${Math.round(spec.tempTrack.maxC)} °C` })}</span>
+                <span class="bp-pill">{T('studio.dossier.pillFreeze', { temp: `${Math.round(spec.tempTrack.minC)} °C` })}</span>
+                <span class="bp-pill">{T('studio.dossier.pillDry', { days: spec.maxDryDays })}</span>
                 {spec.breakingPoints.map((bp, i) => (
                   <span key={i} class={`bp-pill ${bp.severity === 'danger' ? 'breached' : 'warn'}`}>
                     {bp.title}
@@ -527,7 +520,7 @@ export function FieldDossier() {
             {/* 60-Year 6-Stage Succession Lifeline */}
             <div class="gauge-card">
               <div class="gauge-head">
-                <strong>60-year succession lifeline</strong>
+                <strong>{T('studio.dossier.lifelineTitle')}</strong>
                 <span style="font-size:12px; color:var(--ink-muted);">{spec.lifeline.label}</span>
               </div>
               <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:4px;">
@@ -547,8 +540,8 @@ export function FieldDossier() {
                         fontWeight: active ? 600 : 400,
                       }}
                     >
-                      <div>{s.name}</div>
-                      <div>{s.time}</div>
+                      <div>{T(`studio.stage.${s.id}`)}</div>
+                      <div>{T(`studio.stageTime.${s.id}`)}</div>
                     </div>
                   );
                 })}
@@ -556,15 +549,15 @@ export function FieldDossier() {
             </div>
 
             {/* Section 3 · 12-Month Rhythm (verbatim 13-col .d-cal-grid: Activity + J..D) */}
-            <section class="d-section" aria-label="Your year with this plant">
+            <section class="d-section" aria-label={T('studio.dossier.sec3Title')}>
               <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:8px;">
                 <div>
-                  <div class="d-sec-kicker">Section 3 · 12-month rhythm</div>
-                  <h3 class="d-sec-title">Your Year With This Plant</h3>
+                  <div class="d-sec-kicker">{T('studio.dossier.sec3Kicker')}</div>
+                  <h3 class="d-sec-title">{T('studio.dossier.sec3Title')}</h3>
                 </div>
                 {spec.photoperiodInfo && (
                   <span class="prov-badge" data-photoperiod-badge>
-                    Photoperiod {spec.photoperiodInfo.winterH.toFixed(1)}–{spec.photoperiodInfo.summerH.toFixed(1)} h
+                    {T('studio.dossier.photoperiod', { min: spec.photoperiodInfo.winterH.toFixed(1), max: spec.photoperiodInfo.summerH.toFixed(1) })}
                   </span>
                 )}
               </div>
@@ -572,8 +565,8 @@ export function FieldDossier() {
               <table class="d-cal-grid" data-dossier-calendar>
                 <thead>
                   <tr>
-                    <th>Activity</th>
-                    {MONTH_LETTERS.map((m, i) => (
+                    <th>{T('studio.dossier.colActivity')}</th>
+                    {monthLetters.map((m, i) => (
                       <th key={i} class={i <= 2 || i >= 10 ? 'win' : undefined}>{m}</th>
                     ))}
                   </tr>
@@ -581,29 +574,29 @@ export function FieldDossier() {
                 <tbody>
                   {([
                     {
-                      label: 'Winter-grow',
+                      label: T('studio.act.winterGrow'),
                       cls: 'on-win',
                       on: (m: number) => (isEvergreen || (!isAnnual && (spark[m] ?? 'dormant') !== 'dormant')) && (m <= 1 || m >= 10),
                     },
                     {
-                      label: 'Sow / plant',
+                      label: T('studio.act.sowPlant'),
                       cls: 'on-sow',
                       on: (m: number) => (isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10)),
                     },
                     {
-                      label: 'Bloom',
+                      label: T('studio.act.bloom'),
                       cls: 'on-bloom',
                       on: (m: number) => (spark[m] ?? 'dormant') !== 'dormant' && m >= 3 && m <= 7,
                     },
                     {
-                      label: 'Harvest',
+                      label: T('studio.act.harvest'),
                       cls: 'on-harv',
                       on: (m: number) => (spark[m] ?? 'dormant') === 'peak' || ((spark[m] ?? 'dormant') === 'active' && m >= 7 && m <= 9),
                     },
                   ] as const).map((row) => (
                     <tr key={row.label}>
                       <td>{row.label}</td>
-                      {MONTH_LETTERS.map((_, i) => (
+                      {monthLetters.map((_, i) => (
                         <td key={i} class={i <= 2 || i >= 10 ? 'win' : undefined}>
                           <div class="d-cal-cell-wrap">
                             {row.on(i) && <div class={`d-cal-cell ${row.cls}`} />}
@@ -618,15 +611,15 @@ export function FieldDossier() {
 
             {/* Section 4 · Guild Synergy (verbatim mockup .comp-list / .comp-row) */}
             {(inPalComps.length > 0 || poolComps.length > 0) && (
-              <section class="d-section" aria-label="Companion synergy">
+              <section class="d-section" aria-label={T('studio.dossier.sec4Title')}>
                 <div>
-                  <div class="d-sec-kicker">Section 4 · Guild synergy</div>
-                  <h3 class="d-sec-title">Works Well With in Your Palette</h3>
+                  <div class="d-sec-kicker">{T('studio.dossier.sec4Kicker')}</div>
+                  <h3 class="d-sec-title">{T('studio.dossier.sec4Title')}</h3>
                 </div>
 
                 {inPalComps.length > 0 && (
                   <div>
-                    <div class="fp-label">Already in your palette</div>
+                    <div class="fp-label">{T('studio.dossier.inPalGroup')}</div>
                     <div class="comp-list">
                       {inPalComps.map((c) => {
                         const cSun = SUN_CLS[sunTierOf(c.plant)];
@@ -646,7 +639,7 @@ export function FieldDossier() {
                               </span>
                               <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">{c.reason}</div>
                             </div>
-                            <span style="font-size:12.5px; font-weight:600; color:var(--ink-muted); white-space:nowrap;">Open →</span>
+                            <span style="font-size:12.5px; font-weight:600; color:var(--ink-muted); white-space:nowrap;">{T('studio.onboard.openArrow')}</span>
                           </div>
                         );
                       })}
@@ -656,7 +649,7 @@ export function FieldDossier() {
 
                 {poolComps.length > 0 && (
                   <div>
-                    <div class="fp-label">Good companions to add</div>
+                    <div class="fp-label">{T('studio.dossier.poolGroup')}</div>
                     <div class="comp-list">
                       {poolComps.map((c) => {
                         const cSun = SUN_CLS[sunTierOf(c.plant)];
@@ -681,7 +674,7 @@ export function FieldDossier() {
                               class="btn btn-xs"
                               onClick={(e) => { e.stopPropagation(); store.addMembers([c.plant.id]); }}
                             >
-                              + Add
+                              {T('studio.add')}
                             </button>
                           </div>
                         );
@@ -708,7 +701,7 @@ export function FieldDossier() {
             data-dossier-lightbox
             role="dialog"
             aria-modal="true"
-            aria-label={`${nameOf(taxon)} full botanical plate`}
+            aria-label={T('studio.dossier.lbAria', { name: nameOf(taxon) })}
             onClick={(e) => { if (e.target === e.currentTarget) setLightboxOpen(false); }}
           >
             <div class="dossier-lb-card">
@@ -727,7 +720,7 @@ export function FieldDossier() {
                   data-dossier-lightbox-close
                   onClick={() => setLightboxOpen(false)}
                 >
-                  ✕ Close
+                  ✕ {T('studio.close')}
                 </button>
               </div>
 
@@ -736,7 +729,7 @@ export function FieldDossier() {
                   <button
                     type="button"
                     class="btn btn-xs dossier-lb-nav is-prev"
-                    aria-label="Previous photo"
+                    aria-label={T('studio.dossier.prevPhoto')}
                     onClick={() => setActivePlateIdx((cur) => (cur - 1 + plates.length) % plates.length)}
                   >
                     ←
@@ -753,7 +746,7 @@ export function FieldDossier() {
                   <button
                     type="button"
                     class="btn btn-xs dossier-lb-nav is-next"
-                    aria-label="Next photo"
+                    aria-label={T('studio.dossier.nextPhoto')}
                     onClick={() => setActivePlateIdx((cur) => (cur + 1) % plates.length)}
                   >
                     →
@@ -763,7 +756,7 @@ export function FieldDossier() {
 
               <div class="dossier-lb-foot">
                 <span>
-                  Photo: <strong>{activePlate.credit ?? 'Curated field plate'}</strong>
+                  {T('studio.dossier.photoCredit', { credit: activePlate.credit ?? T('studio.dossier.curatedPlate') })}
                   {activePlate.licence ? ` · ${activePlate.licence}` : ''}
                   {activePlate.setting ? ` · ${activePlate.setting}` : ''}
                 </span>
@@ -774,7 +767,7 @@ export function FieldDossier() {
                     rel="noopener noreferrer"
                     class="dossier-plate-src"
                   >
-                    View original source ↗
+                    {T('studio.dossier.viewSource')}
                   </a>
                 )}
               </div>
