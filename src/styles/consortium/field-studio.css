@@ -2556,7 +2556,538 @@
   white-space: nowrap;
 }
 
-/* Mobile 44px touch targets for new VP-1 controls */
+/* ==========================================================================
+   Slice VP-2: Direct 1:1 v14 Mockup Visual-Parity for Living System,
+   2050 Climate, and Planting Plan. Breakpoints strictly 639px & 960px.
+   ========================================================================== */
+
+/* Shared eyebrow & subtitle + sticky-header & bottom-toast scroll clearance */
+.ct button,
+.ct input,
+.ct [id] {
+  scroll-margin-top: 64px;
+  scroll-margin-bottom: 96px;
+}
+.ct .ct-toast {
+  pointer-events: none;
+}
+.ct .ct-toast button {
+  pointer-events: auto;
+}
+.ct .ct-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ct .ct-sys-sub {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  max-width: 68ch;
+}
+
+/* ---- Screen 3: Living System v14 ---- */
+.ct .ct-sys-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.ct .ct-sys-summary-bar .ct-sys-pill {
+  border: none;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  padding: 6px 14px;
+  min-height: 32px;
+  font-size: 13px;
+}
+.ct .ct-sys-summary-bar .ct-sys-pill:first-child {
+  padding-left: 2px;
+}
+.ct .ct-sys-summary-bar .ct-sys-pill:last-child {
+  border-right: none;
+}
+.ct .ct-sys-gap-note {
+  color: var(--warning);
+  font-weight: 600;
+}
+.ct .ct-mx-card {
+  padding: 18px 20px;
+  gap: 14px;
+}
+.ct .ct-mx-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ct .ct-mx-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ct .ct-mx-swatch {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+.ct .ct-mx-swatch.is-empty {
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+}
+.ct .ct-mx-swatch.is-single {
+  border: 1px solid var(--ochre-border);
+  background: var(--warning-bg);
+}
+.ct .ct-mx-swatch.is-resilient[data-stratum="high"] {
+  border: 1px solid var(--plant-green);
+  background: var(--plant-green-bg);
+}
+.ct .ct-mx-table {
+  border-collapse: separate;
+  border-spacing: 6px;
+}
+.ct .ct-mx-table th,
+.ct .ct-mx-table td {
+  border-bottom: none;
+  padding: 0;
+}
+.ct .ct-mx-table thead th {
+  padding: 4px 6px 8px;
+  font-size: 12.5px;
+}
+.ct .ct-mx-sun-th {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 10px;
+  min-width: 120px;
+}
+.ct .ct-mx-sun-th[data-sun-tier="emergent"] {
+  border-left-color: var(--sun-full);
+}
+.ct .ct-mx-sun-th[data-sun-tier="high"] {
+  border-left-color: var(--sun-mostly);
+}
+.ct .ct-mx-sun-th[data-sun-tier="medium"] {
+  border-left-color: var(--sun-part);
+}
+.ct .ct-mx-sun-th[data-sun-tier="low"] {
+  border-left-color: var(--sun-shade);
+}
+.ct .ct-mx-sun-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ct .ct-mx-sun-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  background: var(--surface-alt);
+  color: var(--text);
+}
+.ct .ct-mx-sun-badge[data-sun-tier="emergent"] {
+  background: var(--sun-full-bg);
+  color: var(--sun-full-ink);
+}
+.ct .ct-mx-sun-badge[data-sun-tier="high"] {
+  background: var(--sun-mostly-bg);
+  color: var(--sun-mostly-ink);
+}
+.ct .ct-mx-sun-badge[data-sun-tier="medium"] {
+  background: var(--sun-part-bg);
+  color: var(--sun-part-ink);
+}
+.ct .ct-mx-sun-badge[data-sun-tier="low"] {
+  background: var(--sun-shade-bg);
+  color: var(--sun-shade-ink);
+}
+.ct .ct-mx-sun-lbl {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-mx-sun-hrs {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.ct .ct-mx-td {
+  min-width: 102px;
+  height: 1px;
+}
+.ct .ct-mx-cell {
+  position: relative;
+  min-height: 76px;
+  height: 100%;
+  border-radius: 8px;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.ct .ct-mx-cell.is-empty {
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+}
+.ct .ct-mx-cell.is-single {
+  border: 1px solid var(--ochre-border);
+  background: var(--warning-bg);
+  justify-content: flex-start;
+}
+.ct .ct-mx-cell.is-resilient[data-stratum="high"] {
+  border: 1px solid var(--plant-green);
+  background: var(--plant-green-bg);
+  justify-content: flex-start;
+}
+.ct .ct-mx-fill-btn {
+  width: 100%;
+  min-height: 54px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.ct .ct-mx-fill-btn:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+.ct .ct-mx-mark {
+  position: absolute;
+  top: 4px;
+  right: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warning);
+}
+.ct .ct-mx-mark.is-resilient[data-stratum="high"] {
+  color: var(--plant-green);
+}
+.ct .ct-mx-cov-td,
+.ct .ct-mx-foot-td,
+.ct .ct-mx-foot-total {
+  background: var(--surface-alt);
+  border-radius: 8px;
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+.ct .ct-mx-cov-box {
+  display: grid;
+  gap: 5px;
+}
+.ct .ct-mx-cov-val {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.ct .ct-mx-bar-track {
+  display: block;
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.ct .ct-mx-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.ct .ct-mx-bar-fill[data-sun-tier="emergent"] {
+  background: var(--sun-full);
+}
+.ct .ct-mx-bar-fill[data-sun-tier="high"] {
+  background: var(--sun-mostly);
+}
+.ct .ct-mx-bar-fill[data-sun-tier="medium"] {
+  background: var(--sun-part);
+}
+.ct .ct-mx-bar-fill[data-sun-tier="low"] {
+  background: var(--sun-shade);
+}
+.ct .ct-mx-bar-fill.is-stage[data-stratum="high"] {
+  background: var(--plant-green);
+}
+.ct .ct-mx-foot-row th.ct-mx-foot-lbl {
+  background: var(--surface-alt);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ct .ct-mx-foot-total {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ---- Screen 4: 2050 Climate v14 ---- */
+.ct .ct-clim-loc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.ct .ct-clim-match-pill {
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ct .ct-clim-match-pill.is-novel {
+  border-color: var(--danger);
+  background: var(--risk-bg);
+  color: var(--danger);
+}
+.ct .ct-clim-env-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ct .ct-clim-headline {
+  margin: 2px 0 4px;
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+.ct .ct-clim-twin-hl {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.ct .ct-clim-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 960px) {
+  .ct .ct-clim-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    gap: 24px;
+    align-items: start;
+  }
+}
+.ct .ct-clim-verdict-col {
+  display: grid;
+  gap: 8px;
+}
+.ct .ct-clim-verdict-num {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-verdict-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-alt);
+  gap: 2px;
+}
+.ct .ct-vb-seg {
+  display: block;
+  height: 100%;
+}
+.ct .ct-vb-seg.is-fit[data-stratum="high"] {
+  background: var(--plant-green);
+}
+.ct .ct-vb-seg.is-care {
+  background: var(--warn-dot);
+}
+.ct .ct-vb-seg.is-risk {
+  background: var(--danger);
+}
+.ct .ct-verdict-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.ct .ct-verdict-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ct .ct-clim-winter-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--winter-line);
+  background: var(--winter-bg);
+  color: var(--winter-ink);
+  font-size: 13.5px;
+}
+.ct .ct-clim-winter-copy {
+  margin: 0;
+  line-height: 1.45;
+}
+.ct .ct-clim-winter-btn {
+  color: var(--winter-ink);
+  white-space: nowrap;
+}
+.ct .ct-triage-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ct .ct-triage-search {
+  max-width: 260px;
+}
+.ct .ct-triage-head-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---- Screen 5: Planting Plan v14 ---- */
+.ct .ct-plan-hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--text);
+  border-radius: 12px;
+  padding: 20px;
+  gap: 16px;
+}
+.ct .ct-plan-hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ct .ct-plan-hero-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.ct .ct-plan-meta-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ct .ct-plan-hero-head {
+  display: grid;
+  gap: 4px;
+}
+.ct .ct-plan-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-plan-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.ct .ct-plan-ctrl-group {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.ct .ct-plan-area-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ct .ct-plan-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ct .ct-plan-pill-btn {
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ct .ct-plan-pill-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.ct .ct-plan-pill-btn.is-active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--on-ink);
+}
+.ct .ct-plan-kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ct .ct-bp-spread-ring {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.ct .ct-bp-abbr {
+  font-weight: 600;
+}
+
+/* Mobile 44px touch targets for new VP-1 & VP-2 controls */
 @media (max-width: 639px) {
   .ct .ct-doc-filename,
   .ct .ct-doc-sep,
@@ -2595,6 +3126,18 @@
   .ct .ct-studio-canvas {
     padding: 14px 12px 72px;
   }
+  .ct .ct-sys-summary-bar .ct-sys-pill {
+    border-right: none;
+    padding: 6px 8px;
+  }
+  .ct .ct-clim-headline,
+  .ct .ct-plan-title {
+    font-size: 20px;
+  }
+  .ct .ct-triage-search {
+    max-width: 100%;
+    width: 100%;
+  }
   .ct .ct-studio-name,
   .ct .ct-studio-loc,
   .ct .ct-ink-seg .ct-studio-horizon-btn,
@@ -2609,7 +3152,9 @@
   .ct .ct-card-rm,
   .ct .ct-pal-search,
   .ct .ct-group-select,
-  .ct .ct-auto-strengthen {
+  .ct .ct-auto-strengthen,
+  .ct .ct-mx-fill-btn,
+  .ct .ct-plan-pill-btn {
     min-height: 44px;
   }
   .ct .ct-ink-seg .ct-studio-horizon-btn,

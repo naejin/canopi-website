@@ -93,7 +93,10 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   const flags = store.flags.value, failed = store.failedMembers.value;
   const rows = useMemo(() => yourPlants(members, flags, { failed, unlisted: missing.unlisted }), [members, flags, failed, missing.unlisted]);
   const unchecked = rows.filter((r) => 'missing' in r).length;
-  useEffect(() => { store.wantVerdict(); }, []);
+  useEffect(() => {
+    store.wantVerdict();
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
   // Stable while the holes and verdicts are: the pictures (memoised) redraw only when they change.
   const country = store.country.value?.code ?? null;
   const flagsById = useMemo(() => { const m = new Map<PlantId, Flag[]>(); for (const f of flags) { const l = m.get(f.id); if (l) l.push(f); else m.set(f.id, [f]); } return m; }, [flags]);

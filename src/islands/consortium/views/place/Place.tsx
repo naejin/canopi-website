@@ -202,8 +202,8 @@ function CountryLine() {
       {code && status === 'unchecked' && <p class="ct-muted ct-small-text ct-country-note">{T('country.unchecked', { country: name })}</p>}
       {(from === 'guess' || !code) && (
         <p class="ct-country-acts">
-          {code ? !open && <button type="button" class="button button-primary ct-small" onClick={() => { chooseCountry(code); focusTo.current = 'trigger'; }}>{T('country.use', { country: name })}</button>
-            : <button type="button" class="button button-primary ct-small" {...triggerProps}>{T('country.add')}</button>}
+          {code ? !open && <button type="button" class="button button-secondary ct-small" onClick={() => { chooseCountry(code); focusTo.current = 'trigger'; }}>{T('country.use', { country: name })}</button>
+            : <button type="button" class="button button-secondary ct-small" {...triggerProps}>{T('country.add')}</button>}
           {code ? <button type="button" class="button button-secondary ct-small" {...triggerProps}>{T('country.change')}</button>
             : !open && <button type="button" class="button button-secondary ct-small" aria-expanded={why ? 'true' : 'false'} onClick={() => setWhy(!why)}>{T('country.whyAsk')}</button>}
         </p>

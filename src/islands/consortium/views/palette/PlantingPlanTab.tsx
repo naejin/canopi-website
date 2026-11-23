@@ -1,12 +1,12 @@
 /** @jsxImportSource preact */
-// Full Grower-Grade Planting Plan Tab (Slice 3.4, v14/v15 — lazy-loaded on first open):
-// - Unified 4-Column Hairline Metrics Strip + merged Agronomy Notes footer (shade-timing & pollination alerts)
-// - Interactive Pure-SVG Plot Layout & Spacing Blueprint (Guild Clusters | Syntropic Alley Rows | Orchard Grid
-//   + automatic repeatable 10x10 m module view at large scale)
-// - Nursery Order & Spacing Ledger (+10% buffer toggle, inline quantity overrides persisted in .canopi v9,
-//   Nursery Lead-Time Ribbon, Swiss-editorial table on desktop + Field Order Cards on mobile <= 639px)
-// - Unified 4-Column Hairline Materials Ledger + quiet inline Extreme-Year Field Insurance + 4 Planting Waves
-// - 12-Month Field Action Calendar + Weekend Briefs
+// Planting Plan Tab (Slice VP-2 — direct 1:1 port of v14 mockup-05-plan.png):
+// - 1 · FIELD SIZING & DESIGN READINESS Hero Card (eyebrow + pill + Edit location & soil ->,
+//   display heading + subtitle, warm inset controls box for Area/Unit/Density/Pathways/+10% buffer,
+//   unified 4-column hairline metrics strip + merged Shade-timing & Pollination notes footer)
+// - Plot Layout & Spacing Blueprint (dark-pill Guild Clusters | Syntropic Alley Rows | Orchard Grid,
+//   dashed mature-spread outer rings, non-clipping 2-letter initials, clickable legend)
+// - Swiss-editorial Nursery Order Table (desktop) & Field Order Cards (mobile <= 639px)
+// - Materials Ledger + Extreme-Year Insurance + 4 Frost-Anchored Waves + 12-Month Action Calendar
 import { useMemo, useState } from 'preact/hooks';
 import {
   computeFieldMaterials,
@@ -14,10 +14,13 @@ import {
   computePlantingWaves,
   convertArea,
   siteClimate as climateOf,
+  type AreaUnit,
+  type DensityMode,
   type LayoutPattern,
 } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
+import { backToPlace } from '../../state/draft.ts';
 import {
   openFieldDossier,
   plantingConfig,
@@ -37,6 +40,21 @@ const LAYOUT_OPTIONS: readonly { id: LayoutPattern; label: string }[] = [
   { id: 'grid', label: 'Orchard Grid' },
 ];
 
+const UNIT_OPTIONS: readonly { id: AreaUnit; label: string; toM2: number }[] = [
+  { id: 'm2', label: 'm²', toM2: 1 },
+  { id: 'ha', label: 'ha', toM2: 10000 },
+  { id: 'ft2', label: 'ft²', toM2: 0.092903 },
+  { id: 'ac', label: 'ac', toM2: 4046.86 },
+];
+
+const DENSITY_OPTIONS: readonly { id: DensityMode; label: string; short: string }[] = [
+  { id: 'spacious', label: 'Spacious 0.7×', short: 'Spacious (0.7×)' },
+  { id: 'balanced', label: 'Balanced 1.0×', short: 'Balanced (1.0×)' },
+  { id: 'dense', label: 'Dense syntropic 1.4×', short: 'Dense (1.4×)' },
+];
+
+const PATHWAY_OPTIONS = [0, 10, 20, 30] as const;
+
 export function PlantingPlanTab() {
   const members = store.memberTaxa.value;
   const cfg = plantingConfig.value;
@@ -54,60 +72,187 @@ export function PlantingPlanTab() {
   const blueprint = useMemo(() => computePlotLayout(plan, cfg.layoutPattern), [plan, cfg.layoutPattern]);
   const calendar = useMemo(() => buildPlantingActionCalendar(plan, coldC), [plan, coldC]);
   const memberIds = useMemo(() => members.map((m) => m.id), [members]);
-  const unitLabel = cfg.areaUnit === 'm2' ? 'm²' : cfg.areaUnit === 'ft2' ? 'ft²' : cfg.areaUnit;
 
   if (!members.length) {
     return (
       <section class="ct-studio-section" data-planting-plan-tab>
         <p class="ct-muted">Add species first to generate nursery counts, spacing blueprint, materials, and planting waves.</p>
-        <button type="button" class="button button-secondary ct-small" onClick={() => { studioTab.value = 'palette'; }}>Return to My Palette</button>
+        <div>
+          <button type="button" class="button button-secondary ct-small" onClick={() => { studioTab.value = 'palette'; }}>Return to My Palette</button>
+        </div>
       </section>
     );
   }
 
+  const unitMeta = UNIT_OPTIONS.find((u) => u.id === cfg.areaUnit) ?? UNIT_OPTIONS[0];
+  const densityMeta = DENSITY_OPTIONS.find((d) => d.id === cfg.densityMode) ?? DENSITY_OPTIONS[1];
+  const grossDisplay = convertArea(cfg.plotAreaM2, cfg.areaUnit);
+  const netDisplay = convertArea(plan.netAreaM2, cfg.areaUnit);
   const activeBrief = calendar[activeMonth] ?? calendar[0];
+  const placeName = loc?.label ?? 'Your site';
+
+  const onAreaInput = (raw: string) => {
+    const num = Number(raw);
+    if (!Number.isFinite(num) || num <= 0) return;
+    setPlantingConfig({ plotAreaM2: Math.max(1, Math.round(num * unitMeta.toM2)) });
+  };
 
   return (
     <section class="ct-studio-section" data-planting-plan-tab aria-label="Planting plan">
-      {/* 1. Unified 4-Column Hairline Metrics Strip + merged Agronomy Notes footer */}
-      <div class="ct-plan-ledger-card">
-        <div class="ct-plan-kpis">
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">Net plantable area</span>
-            <span class="ct-plan-kpi-val">{convertArea(plan.netAreaM2, cfg.areaUnit)} {unitLabel}</span>
+      {/* 1 · FIELD SIZING & DESIGN READINESS Hero Card */}
+      <div class="ct-plan-ledger-card ct-plan-hero">
+        <div class="ct-plan-hero-top">
+          <div class="ct-plan-hero-eyebrow">
+            <span class="ct-eyebrow">1 · FIELD SIZING &amp; DESIGN READINESS</span>
+            <span class="ct-plan-meta-pill">
+              {placeName} · {grossDisplay} {unitMeta.label} · {densityMeta.short}
+            </span>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">Total plants &amp; starts</span>
-            <span class="ct-plan-kpi-val">{plan.totalUnits}</span>
+          <button
+            type="button"
+            class="ct-studio-btn"
+            onClick={backToPlace}
+          >
+            Edit location &amp; soil →
+          </button>
+        </div>
+
+        <div class="ct-plan-hero-head">
+          <h2 class="ct-plan-title">Actionable Planting Plan for your {grossDisplay} {unitMeta.label} plot</h2>
+          <p class="ct-sys-sub">
+            Realistic guild quantities, scaled layout blueprint, nursery lead times, field materials, and month-by-month actions — live-synced with your Location and .canopi file.
+          </p>
+        </div>
+
+        {/* Warm Inset Controls Box */}
+        <div class="ct-plan-controls">
+          <div class="ct-plan-ctrl-group">
+            <label class="ct-eyebrow" for="ct-plan-area-input">PLANTING AREA</label>
+            <div class="ct-plan-area-row">
+              <input
+                id="ct-plan-area-input"
+                type="number"
+                class="ct-area-input"
+                min={1}
+                step="any"
+                value={grossDisplay}
+                onChange={(e) => onAreaInput((e.currentTarget as HTMLInputElement).value)}
+              />
+              <div class="ct-ink-seg" role="group" aria-label="Area unit">
+                {UNIT_OPTIONS.map((u) => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    class="ct-seg-btn"
+                    aria-pressed={cfg.areaUnit === u.id ? 'true' : 'false'}
+                    onClick={() => setPlantingConfig({ areaUnit: u.id })}
+                  >
+                    {u.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">Direct-sow seed</span>
-            <span class="ct-plan-kpi-val">{plan.totalSeedGrams} g</span>
+
+          <div class="ct-plan-ctrl-group">
+            <span class="ct-eyebrow">DENSITY</span>
+            <div class="ct-plan-chip-row" role="group" aria-label="Planting density">
+              {DENSITY_OPTIONS.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  class={`ct-plan-pill-btn${cfg.densityMode === d.id ? ' is-active' : ''}`}
+                  aria-pressed={cfg.densityMode === d.id ? 'true' : 'false'}
+                  onClick={() => setPlantingConfig({ densityMode: d.id })}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">Stacked coverage</span>
-            <span class="ct-plan-kpi-val">{plan.coveragePct}%</span>
+
+          <div class="ct-plan-ctrl-group">
+            <span class="ct-eyebrow">PATHWAYS %</span>
+            <div class="ct-plan-chip-row" role="group" aria-label="Pathway allowance">
+              {PATHWAY_OPTIONS.map((pct) => (
+                <button
+                  key={pct}
+                  type="button"
+                  class={`ct-plan-pill-btn${cfg.pathwaysPct === pct ? ' is-active' : ''}`}
+                  aria-pressed={cfg.pathwaysPct === pct ? 'true' : 'false'}
+                  onClick={() => setPlantingConfig({ pathwaysPct: pct })}
+                >
+                  {pct}%
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div class="ct-plan-ctrl-group">
+            <span class="ct-eyebrow">SAFETY MARGIN</span>
+            <button
+              type="button"
+              class={`ct-plan-pill-btn${cfg.bufferPct === 10 ? ' is-active' : ''}`}
+              aria-pressed={cfg.bufferPct === 10 ? 'true' : 'false'}
+              onClick={() => setPlantingConfig({ bufferPct: cfg.bufferPct === 10 ? 0 : 10 })}
+            >
+              +10% establishment buffer
+            </button>
           </div>
         </div>
+
+        {/* Unified 4-Column Hairline Metrics Strip */}
+        <div class="ct-plan-kpis">
+          <div class="ct-plan-kpi">
+            <span class="ct-plan-kpi-label">PLANTS &amp; SEED ORDER</span>
+            <span class="ct-plan-kpi-val">
+              {plan.totalUnits} transplants{plan.totalSeedGrams > 0 ? ` + ${plan.totalSeedGrams} g seed` : ''}
+            </span>
+            <span class="ct-plan-kpi-sub">{members.length} species</span>
+          </div>
+          <div class="ct-plan-kpi">
+            <span class="ct-plan-kpi-label">NET PLANTED AREA</span>
+            <span class="ct-plan-kpi-val">{netDisplay} {unitMeta.label} net · {plan.coveragePct}% stacked</span>
+            <span class="ct-plan-kpi-sub">Of {grossDisplay} {unitMeta.label} gross · {cfg.pathwaysPct}% paths</span>
+          </div>
+          <div class="ct-plan-kpi">
+            <span class="ct-plan-kpi-label">PLANTING WAVES</span>
+            <span class="ct-plan-kpi-val">{waves.length} waves · Frost-anchored</span>
+            <span class="ct-plan-kpi-sub">{waves[0]?.kicker ?? 'Autumn/Winter root-in'}</span>
+          </div>
+          <div class="ct-plan-kpi">
+            <span class="ct-plan-kpi-label">HARVEST HORIZON</span>
+            <span class="ct-plan-kpi-val">3 mo → Yr 5+</span>
+            <span class="ct-plan-kpi-sub">First harvest: Placenta 1 · Mature yield: Yr 4–7</span>
+          </div>
+        </div>
+
         {plan.notes.length > 0 && (
           <div class="ct-plan-notes-foot">
-            {plan.notes.map((n, i) => (
-              <p key={i} class="ct-plan-note">
-                <strong>{n.label}:</strong> {n.text}
-              </p>
-            ))}
+            <p class="ct-plan-note">
+              {plan.notes.map((n, i) => (
+                <span key={i}>
+                  {i > 0 ? ' · ' : ''}
+                  <strong>{n.label}:</strong> {n.text}
+                </span>
+              ))}
+            </p>
           </div>
         )}
       </div>
 
-      {/* 2. Interactive Pure-SVG Plot Layout & Spacing Blueprint */}
+      {/* 2 · Plot Layout & Spacing Blueprint */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
           <div>
-            <h3 class="ct-sys-title">{T('studio.planBlueprint')}</h3>
-            <span class="ct-small-text ct-muted">{blueprint.moduleLabel}</span>
+            <h3 class="ct-sys-title">
+              {T('studio.planBlueprint')} · {blueprint.widthM} m × {blueprint.heightM} m
+            </h3>
+            <p class="ct-sys-sub">
+              {blueprint.moduleLabel} with dashed mature-spread rings and {cfg.pathwaysPct}% access paths. Click any species in the legend for its Field Dossier.
+            </p>
           </div>
-          <div class="ct-seg-switch" role="group" aria-label="Layout pattern">
+          <div class="ct-ink-seg" role="group" aria-label="Layout pattern">
             {LAYOUT_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
@@ -135,8 +280,9 @@ export function PlantingPlanTab() {
             ))}
             {blueprint.nodes.map((n) => (
               <g key={n.id} class="ct-bp-node" data-stratum={n.sunBand}>
+                <circle class="ct-bp-spread-ring" cx={n.x} cy={n.y} r={Math.round(n.r * 1.38)} />
                 <circle cx={n.x} cy={n.y} r={n.r} />
-                <text x={n.x} y={n.y + 3.5} text-anchor="middle">{n.initials}</text>
+                <text class="ct-bp-abbr" x={n.x} y={n.y + 3.5} text-anchor="middle">{n.initials}</text>
               </g>
             ))}
           </svg>
@@ -154,7 +300,7 @@ export function PlantingPlanTab() {
         </figure>
       </div>
 
-      {/* 3. Nursery Order & Spacing Ledger */}
+      {/* 3 · Nursery Order & Spacing Ledger */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
           <div>
@@ -165,7 +311,7 @@ export function PlantingPlanTab() {
           </div>
           <button
             type="button"
-            class={`ct-stress-chip${cfg.bufferPct === 10 ? ' is-active' : ''}`}
+            class={`ct-plan-pill-btn${cfg.bufferPct === 10 ? ' is-active' : ''}`}
             aria-pressed={cfg.bufferPct === 10 ? 'true' : 'false'}
             onClick={() => setPlantingConfig({ bufferPct: cfg.bufferPct === 10 ? 0 : 10 })}
           >
@@ -260,7 +406,7 @@ export function PlantingPlanTab() {
         </div>
       </div>
 
-      {/* 4. Unified 4-Column Hairline Materials Ledger + Extreme-Year Insurance + 4 Waves */}
+      {/* 4 · Unified 4-Column Hairline Materials Ledger + Extreme-Year Insurance + 4 Waves */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
           <h3 class="ct-sys-title">{T('studio.planMaterials')}</h3>
@@ -301,7 +447,7 @@ export function PlantingPlanTab() {
         </div>
       </div>
 
-      {/* 5. 12-Month Field Action Calendar + Weekend Briefs */}
+      {/* 5 · 12-Month Field Action Calendar + Weekend Briefs */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
           <h3 class="ct-sys-title">{T('studio.planCalendar')}</h3>

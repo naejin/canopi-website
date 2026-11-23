@@ -2,11 +2,11 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: antigravity/gemini, at: 2026-11-23T14:27:49Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T14:42:35Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T14:27:41Z }
+  - { by: antigravity/gemini, at: 2026-11-23T14:42:29Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -106,8 +106,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:f4d2331a69a4e933
-    last_modified: 2026-11-23T12:42:30Z
+    digest: sha256:14a42c84ad90d387
+    last_modified: 2026-11-23T14:32:46Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -137,7 +137,7 @@ sources:
     resource: ../../scripts/browser/consortium-studio-palette.browser.test.mjs
     title: scripts/browser/consortium-studio-palette.browser.test.mjs
     digest: sha256:399fe0c6f76ef2e7
-    last_modified: 2026-11-23T14:18:49Z
+    last_modified: 2026-11-23T14:28:17Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
@@ -307,7 +307,7 @@ sources:
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
     digest: sha256:8523dfade9a3e6bb
-    last_modified: 2026-11-23T14:08:55Z
+    last_modified: 2026-11-23T14:28:17Z
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx

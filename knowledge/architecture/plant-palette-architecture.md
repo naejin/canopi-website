@@ -4,10 +4,10 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T14:27:47Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T14:42:31Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
-  - { by: antigravity/gemini, at: 2026-11-23T14:27:38Z }
+  - { by: antigravity/gemini, at: 2026-11-23T14:42:27Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -354,7 +354,7 @@ sources:
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
     digest: sha256:8523dfade9a3e6bb
-    last_modified: 2026-11-23T14:08:55Z
+    last_modified: 2026-11-23T14:28:17Z
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
@@ -368,8 +368,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:cd272d92bc5f5d9c
-    last_modified: 2026-11-23T14:10:40Z
+    digest: sha256:c2bc50c6217b2c3e
+    last_modified: 2026-11-23T14:32:44Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
