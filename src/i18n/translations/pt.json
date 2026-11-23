@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Registre notas de pegamento e ajuste quantidades para a próxima estação.",
   "consortium.studio.defaultName": "Minha paleta de campo",
   "consortium.studio.heightUpTo": "até {h}",
+  "consortium.studio.place.heading": "Onde vai plantar?",
+  "consortium.studio.place.lookup": "Pesquisar",
+  "consortium.studio.place.samplePlots": "Parcelas de exemplo:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

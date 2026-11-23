@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Annota la sopravvivenza e aggiorna le quantità per la prossima stagione.",
   "consortium.studio.defaultName": "La mia tavolozza di campo",
   "consortium.studio.heightUpTo": "fino a {h}",
+  "consortium.studio.place.heading": "Dove stai piantando?",
+  "consortium.studio.place.lookup": "Cerca",
+  "consortium.studio.place.samplePlots": "Parcelle di esempio:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

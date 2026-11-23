@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "活着・生存記録を残し、来季に向けて株数計画を更新します。",
   "consortium.studio.defaultName": "マイフィールドパレット",
   "consortium.studio.heightUpTo": "最大 {h}",
+  "consortium.studio.place.heading": "どこに植えますか？",
+  "consortium.studio.place.lookup": "検索",
+  "consortium.studio.place.samplePlots": "サンプル圃場：",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

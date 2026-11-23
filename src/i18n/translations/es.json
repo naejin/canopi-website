@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Anota tasas de supervivencia y ajusta cantidades para la próxima temporada.",
   "consortium.studio.defaultName": "Mi paleta de campo",
   "consortium.studio.heightUpTo": "hasta {h}",
+  "consortium.studio.place.heading": "¿Dónde vas a plantar?",
+  "consortium.studio.place.lookup": "Buscar",
+  "consortium.studio.place.samplePlots": "Parcelas de ejemplo:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

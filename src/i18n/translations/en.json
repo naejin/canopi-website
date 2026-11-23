@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Record survival notes and update quantities for next season.",
   "consortium.studio.defaultName": "My Field Palette",
   "consortium.studio.heightUpTo": "up to {h}",
+  "consortium.studio.place.heading": "Where are you planting?",
+  "consortium.studio.place.lookup": "Look up",
+  "consortium.studio.place.samplePlots": "Sample plots:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

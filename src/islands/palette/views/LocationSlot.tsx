@@ -86,20 +86,20 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
   };
   return (
     <section aria-labelledby="ct-loc-h">
-      <h2 id="ct-loc-h">Where are you planting?</h2>
+      <h2 id="ct-loc-h">{T('studio.place.heading')}</h2>
       <form style="display:flex; gap:8px; margin-bottom:10px;" role="search" aria-label={T('location.title')} onSubmit={(e) => { e.preventDefault(); if (searching) return; search((e.currentTarget.elements.namedItem('ct-place-q') as HTMLInputElement).value); }}>
         <input ref={field} type="text" name="ct-place-q" class="field-input" style="flex:1;" data-location-search enterKeyHint="search" autoComplete="off" aria-label={T('location.field')} placeholder={T('location.field')}
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.isComposing || e.keyCode === 229)) e.preventDefault(); }} />
         {searching
           ? <button type="button" class="btn" onClick={() => m?.stop()}>{T('location.stop')}</button>
-          : <button type="submit" class="btn">Look up</button>}
+          : <button type="submit" class="btn">{T('studio.place.lookup')}</button>}
         {geo && showWays && !wide && (
           <button type="button" class="btn" data-location-action="geo" aria-label={T('location.geo')} onClick={() => run((x) => x.useMyLocation())}>{geoIcon}</button>
         )}
       </form>
       {showWays && (
         <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:13px; color:var(--ink-muted);">
-          <span>Sample plots:</span>
+          <span>{T('studio.place.samplePlots')}</span>
           {SAMPLE_PLOTS.map((s) => (
             <button
               key={s.id}

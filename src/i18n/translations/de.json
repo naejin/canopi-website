@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Anwachs-Notizen festhalten und Mengen für die nächste Saison anpassen.",
   "consortium.studio.defaultName": "Meine Feldpalette",
   "consortium.studio.heightUpTo": "bis {h}",
+  "consortium.studio.place.heading": "Wo pflanzen Sie?",
+  "consortium.studio.place.lookup": "Suchen",
+  "consortium.studio.place.samplePlots": "Beispielparzellen:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Запишите наблюдения по приживаемости и скорректируйте количества на следующий сезон.",
   "consortium.studio.defaultName": "Моя полевая палитра",
   "consortium.studio.heightUpTo": "до {h}",
+  "consortium.studio.place.heading": "Где вы планируете посадки?",
+  "consortium.studio.place.lookup": "Найти",
+  "consortium.studio.place.samplePlots": "Примеры участков:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Notez vos observations de reprise et ajustez les quantités pour la saison prochaine.",
   "consortium.studio.defaultName": "Ma palette de terrain",
   "consortium.studio.heightUpTo": "jusqu'à {h}",
+  "consortium.studio.place.heading": "Où plantez-vous ?",
+  "consortium.studio.place.lookup": "Rechercher",
+  "consortium.studio.place.samplePlots": "Parcelles d’exemple :",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

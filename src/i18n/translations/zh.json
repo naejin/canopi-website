@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "记录成活情况，并更新下一季的补种数量。",
   "consortium.studio.defaultName": "我的田间植物搭配",
   "consortium.studio.heightUpTo": "最高 {h}",
+  "consortium.studio.place.heading": "您打算在哪里种植？",
+  "consortium.studio.place.lookup": "查询",
+  "consortium.studio.place.samplePlots": "示例地块：",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

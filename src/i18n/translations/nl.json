@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "Noteer uitval en groeiresultaten en werk aantallen bij voor het volgende seizoen.",
   "consortium.studio.defaultName": "Mijn veldpalet",
   "consortium.studio.heightUpTo": "tot {h}",
+  "consortium.studio.place.heading": "Waar ga je planten?",
+  "consortium.studio.place.lookup": "Opzoeken",
+  "consortium.studio.place.samplePlots": "Voorbeeldpercelen:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }

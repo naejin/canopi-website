@@ -2974,5 +2974,8 @@
   "consortium.studio.plan.calBrief.11": "활착률과 생존 기록을 정리하고 다음 계절 수량을 조정하세요.",
   "consortium.studio.defaultName": "내 현장 팔레트",
   "consortium.studio.heightUpTo": "최대 {h}",
+  "consortium.studio.place.heading": "어디에 심으시나요?",
+  "consortium.studio.place.lookup": "조회",
+  "consortium.studio.place.samplePlots": "예시 필지:",
   "consortium.block.end": "End of the consortium stream blocks: every stream adds its keys above this line, after its own block key."
 }
