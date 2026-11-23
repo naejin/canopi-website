@@ -2488,3 +2488,197 @@
 /* Print & utility */
 .ct .ct-sr, .ct .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .ct .ct-muted { font-size: 13.5px; color: var(--ink-muted); }
+
+/* ================= STAGE 1H: EXPANDABLE CONTINUOUS SUCCESSION BARS & INLINE ROLE BRIEF ================= */
+.ct .ssm-grid {
+  --ssm-cols: minmax(206px, 1.6fr) repeat(6, minmax(74px, 1fr)) minmax(92px, 0.8fr);
+  display: flex; flex-direction: column; gap: 5px; min-width: 780px;
+}
+.ct .ssm-grid-row {
+  display: grid; grid-template-columns: var(--ssm-cols); gap: 5px; align-items: stretch;
+}
+.ct .ssm-grid-head {
+  padding-bottom: 6px; border-bottom: 1.5px solid var(--border); align-items: end;
+}
+.ct .ssm-th {
+  font-size: 12px; font-weight: 600; color: var(--ink-muted); padding: 4px 4px;
+}
+.ct .ssm-tier-group {
+  display: flex; flex-direction: column; gap: 0;
+}
+.ct .ssm-row-btn {
+  display: flex; align-items: center; gap: 7px; width: 100%; min-height: 52px;
+  padding: 7px 9px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--ink); text-align: left; cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+.ct .ssm-row-btn:hover { border-color: var(--border-strong); background: var(--surface-alt); }
+.ct .ssm-tier-group.is-open .ssm-row-btn {
+  border-color: var(--border-strong); background: var(--bg);
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+}
+.ct .ssm-chev {
+  font-size: 12px; font-weight: 600; color: var(--ink-muted); width: 11px; flex-shrink: 0; text-align: center;
+}
+.ct .ssm-count-pill {
+  margin-left: auto; font-size: 11px; font-weight: 600; color: var(--ink-soft);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px 7px; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.ct .ssm-num-cell {
+  width: 100%; min-height: 52px; padding: 6px 6px; border-radius: var(--radius-sm);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  cursor: pointer; border: 1px solid var(--border); background: var(--bg);
+  font-variant-numeric: tabular-nums; transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+.ct .ssm-num-val { font-size: 16px; font-weight: 600; line-height: 1.15; }
+.ct .ssm-num-tag, .ct .ssm-num-hint { font-size: 10.5px; font-weight: 600; line-height: 1.1; }
+.ct .ssm-num-cell.state-open {
+  border: 1.5px dashed var(--border-strong); background: transparent; color: var(--ink-muted);
+}
+.ct .ssm-num-cell.state-open .ssm-num-hint { opacity: 0.72; }
+.ct .ssm-num-cell.state-open:hover,
+.ct .ssm-num-cell.state-open:focus-visible {
+  border-color: var(--accent); color: var(--accent-ink); background: var(--bg);
+}
+.ct .ssm-num-cell.state-open:hover .ssm-num-hint,
+.ct .ssm-num-cell.state-open:focus-visible .ssm-num-hint { opacity: 1; }
+.ct .ssm-num-cell.state-thin {
+  background: color-mix(in srgb, var(--warn-bg) 78%, var(--surface));
+  border-color: var(--warn-line); color: var(--warn-ink);
+}
+.ct .ssm-num-cell.state-thin:hover { border-color: var(--warn-ink); }
+.ct .ssm-num-cell.state-resilient {
+  background: color-mix(in srgb, var(--plant-green-bg) 82%, var(--surface));
+  border-color: color-mix(in srgb, var(--plant-green) 36%, var(--border));
+  color: var(--plant-green);
+}
+.ct .ssm-num-cell.state-resilient:hover { border-color: var(--plant-green); }
+
+/* Expanded Continuous Lifespan Bar Sub-Table */
+.ct .ssm-expanded-panel {
+  margin-top: 4px; padding: 8px 0 6px;
+  background: var(--bg); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ct .ssm-bar-list { display: flex; flex-direction: column; gap: 4px; }
+.ct .ssm-bar-row { align-items: center; min-height: 38px; }
+.ct .ssm-plant-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  width: 100%; padding: 5px 9px; border-radius: 5px;
+  border: 1px solid transparent; background: transparent; color: var(--ink);
+  text-align: left; cursor: pointer; transition: background 0.12s, border-color 0.12s;
+}
+.ct .ssm-plant-btn:hover { background: var(--surface); border-color: var(--border-strong); }
+.ct .ssm-plant-name { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+.ct .ssm-plant-meta { font-size: 11px; color: var(--ink-muted); line-height: 1.2; }
+.ct .ssm-bar-track-area {
+  grid-column: 2 / 8; position: relative;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px;
+  align-items: center; min-height: 32px;
+}
+.ct .ssm-bar-guides {
+  position: absolute; inset: 0;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px;
+  pointer-events: none;
+}
+.ct .ssm-bar-guide {
+  border-radius: 4px; background: color-mix(in srgb, var(--surface-alt) 52%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.ct .ssm-bar-guide.is-gap {
+  background: transparent; border: 1px dashed color-mix(in srgb, var(--border-strong) 70%, transparent);
+}
+.ct .ssm-span-bar {
+  position: relative; z-index: 1; height: 26px; padding: 0 10px;
+  border-radius: 999px; border: 1.5px solid var(--border-strong);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ink); font-size: 11.5px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: transform 0.12s, filter 0.12s, box-shadow 0.12s;
+}
+.ct .ssm-span-bar.sun-full { background: color-mix(in srgb, var(--sun-full) 24%, var(--surface)); }
+.ct .ssm-span-bar.sun-mostly { background: color-mix(in srgb, var(--sun-mostly) 24%, var(--surface)); }
+.ct .ssm-span-bar.sun-part { background: color-mix(in srgb, var(--sun-part) 24%, var(--surface)); }
+.ct .ssm-span-bar.sun-shade { background: color-mix(in srgb, var(--sun-shade) 24%, var(--surface)); }
+.ct .ssm-span-bar:hover,
+.ct .ssm-span-bar:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.ct .ssm-span-bar-lbl { overflow: hidden; text-overflow: ellipsis; }
+.ct .ssm-span-tally {
+  font-size: 11.5px; font-weight: 600; color: var(--ink-muted);
+  text-align: center; padding: 0 6px; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.ct .ssm-empty-tier {
+  padding: 8px 12px; font-size: 13px; color: var(--ink-soft);
+}
+.ct .ssm-gap-cue {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 4px 10px 2px; padding: 7px 10px; border-radius: 6px;
+  background: var(--surface); border: 1px dashed var(--border-strong);
+  font-size: 12.5px; color: var(--ink-soft);
+}
+.ct .ssm-grid-foot { margin-top: 2px; }
+.ct .ssm-foot-cell {
+  padding: 6px 7px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+}
+
+/* Inline Role Brief Inspector (Section 2) */
+.ct .m-cell[aria-pressed="true"],
+.ct .m-cell.is-selected {
+  border: 2px solid var(--ink) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.ct .role-brief {
+  margin-top: 12px; padding: 15px 16px; border-radius: var(--radius);
+  background: var(--bg); border: 1px solid var(--border-strong); border-left: 4px solid var(--ink);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.ct .role-brief.is-resilient { border-left-color: var(--plant-green); }
+.ct .role-brief.is-thin { border-left-color: var(--warn-dot); }
+.ct .role-brief.is-gap { border-left-color: var(--accent); }
+.ct .rb-eyebrow {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-muted); margin-bottom: 2px;
+}
+.ct .rb-diag { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); line-height: 1.45; }
+.ct .rb-block { display: flex; flex-direction: column; gap: 7px; }
+.ct .rb-block-label { font-size: 12px; font-weight: 600; color: var(--ink); }
+.ct .rb-species-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ct .rb-sun-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block;
+}
+.ct .rb-chip-sub { font-size: 11px; font-weight: 400; color: var(--ink-muted); }
+.ct .rb-empty { font-size: 12.5px; color: var(--ink-muted); font-style: italic; }
+.ct .rb-fillers-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px;
+}
+.ct .rb-filler-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 11px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border);
+  transition: border-color 0.14s;
+}
+.ct .rb-filler-card:hover { border-color: var(--border-strong); }
+.ct .rb-filler-main { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ct .rb-filler-top { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.ct .rb-filler-name {
+  background: transparent; border: none; padding: 0; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--ink); text-align: left;
+}
+.ct .rb-filler-name:hover { text-decoration: underline; color: var(--accent-ink); }
+.ct .rb-filler-why { font-size: 11.5px; color: var(--ink-muted); line-height: 1.3; }
+.ct .rb-add-btn { flex-shrink: 0; }
+.ct .rb-foot {
+  display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--border);
+}
+
+@media (max-width: 639px) {
+  .ct .rb-fillers-grid { grid-template-columns: 1fr; }
+  .ct .ssm-row-btn, .ct .ssm-num-cell, .ct .rb-add-btn { min-height: 44px; }
+}

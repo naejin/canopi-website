@@ -13,11 +13,13 @@ import { microclimate, openFieldDossier, openPlantPool, studioTab } from '../../
 import { nameOf } from '../kit/names.ts';
 import { SunIcon } from './SunIcon.tsx';
 import {
+  activityTracksOf,
   buildRoleLedger,
   buildSunSuccessionMatrix,
   siteClimateProfile,
+  suggestRoleFillers,
 } from '../../rules/studio-analysis.ts';
-import { activityMonthsOf, stageSpanOf, sunTierLabel, sunTierOf } from '../../rules/studio-filters.ts';
+import { formatHeightRange, stageSpanOf, sunTierLabel, sunTierOf } from '../../rules/studio-filters.ts';
 
 type RoleViewMode = 'season' | 'succession';
 type YearActivityFilter = 'all' | 'winter' | 'sow' | 'bloom' | 'harvest';
@@ -88,39 +90,34 @@ const ROLE_SPECS: readonly {
   },
 ];
 
-interface PlantTracks {
-  winter: boolean[];
-  sow: boolean[];
-  bloom: boolean[];
-  harvest: boolean[];
+interface SelectedRoleCell {
+  roleId: string;
+  colKey: string;
+  colIndex: number;
+  mode: RoleViewMode;
 }
 
-function tracksForTaxon(t: Taxon): PlantTracks {
-  const spark = activityMonthsOf(t);
-  const isAnnual = t.traits.is_annual === true || t.traits.grown_as_annual === true;
-  const isEvergreen = Boolean(t.traits.deciduous_evergreen && /evergreen/i.test(t.traits.deciduous_evergreen));
-  const cold = t.climate?.tminCold?.low ?? -4;
-  const winterGrow = isEvergreen || (!isAnnual && cold <= 0 && spark[0] !== 'dormant');
+const JOB_LABELS: Record<JobId, string> = {
+  feeds_you: 'Feeds you',
+  feeds_soil: 'Feeds the soil',
+  mulch: 'Makes mulch',
+  ground: 'Covers the ground',
+  helpers: 'Brings helpers',
+  shelter: 'Shelters & protects',
+};
 
-  const winter = Array<boolean>(12).fill(false);
-  const sow = Array<boolean>(12).fill(false);
-  const bloom = Array<boolean>(12).fill(false);
-  const harvest = Array<boolean>(12).fill(false);
-
-  for (let m = 0; m < 12; m++) {
-    const lvl = spark[m];
-    if (winterGrow && (m <= 1 || m === 10 || m === 11)) winter[m] = true;
-    if (isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10)) sow[m] = true;
-    if (lvl !== 'dormant' && m >= 3 && m <= 7) bloom[m] = true;
-    if (lvl === 'peak' || (lvl === 'active' && m >= 7 && m <= 9)) harvest[m] = true;
-  }
-  return { winter, sow, bloom, harvest };
+function primaryRoleCue(t: Taxon): string {
+  const first = jobsOf(t)[0];
+  return first ? JOB_LABELS[first] : 'Companion';
 }
 
 export function LivingSystemTab() {
   const members = store.memberTaxa.value;
+  const pool = store.fitPool.value ?? store.pool.value ?? [];
   const profile = siteClimateProfile(store.location.value, store.climate.value, microclimate.value, store.siteEdits.value);
   const [roleMode, setRoleMode] = useState<RoleViewMode>('season');
+  const [expandedSuns, setExpandedSuns] = useState<Record<string, boolean>>({});
+  const [selectedRoleCell, setSelectedRoleCell] = useState<SelectedRoleCell | null>(null);
   const [activityFilter, setActivityFilter] = useState<YearActivityFilter>('all');
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [calQuery, setCalQuery] = useState('');
@@ -129,11 +126,27 @@ export function LivingSystemTab() {
   const matrix = useMemo(() => buildSunSuccessionMatrix(members), [members]);
   const roles = useMemo(() => buildRoleLedger(members), [members]);
   const memberIds = useMemo(() => members.map((m) => m.id), [members]);
+  const memberIdSet = useMemo(() => new Set(memberIds), [memberIds]);
 
   const plantTracks = useMemo(
-    () => members.map((t) => ({ taxon: t, tracks: tracksForTaxon(t), sun: sunTierOf(t), span: stageSpanOf(t) })),
+    () => members.map((t) => ({ taxon: t, tracks: activityTracksOf(t), sun: sunTierOf(t), span: stageSpanOf(t) })),
     [members],
   );
+
+  const toggleSunRow = (sun: Stratum) => {
+    setExpandedSuns((cur) => ({ ...cur, [sun]: !cur[sun] }));
+  };
+
+  const anyExpanded = matrix.rows.some((r) => Boolean(expandedSuns[r.sun]));
+  const toggleAllSunRows = () => {
+    if (anyExpanded) {
+      setExpandedSuns({});
+    } else {
+      const next: Record<string, boolean> = {};
+      for (const r of matrix.rows) next[r.sun] = true;
+      setExpandedSuns(next);
+    }
+  };
 
   if (!members.length) {
     return (
@@ -155,26 +168,45 @@ export function LivingSystemTab() {
     matrix.rows.filter((r) => r.cells[idx].length > 0).length,
   );
 
-  // Section 2: Role x Season / Role x 6-Stage redundancy matrix
+  // Section 2: Role x Season / Role x 6-Stage redundancy matrix (storing active species per cell!)
   const roleMatrix = ROLE_SPECS.map((spec) => {
     const matched = plantTracks.filter((p) => spec.match(p.taxon));
     if (roleMode === 'season') {
-      const cells = SEASONS.map((s) => {
+      const cells = SEASONS.map((s, colIndex) => {
         const active = matched.filter((p) =>
           s.months.some((m) => p.tracks.winter[m] || p.tracks.sow[m] || p.tracks.bloom[m] || p.tracks.harvest[m]),
         );
-        return { key: s.id, label: s.label, count: active.length };
+        return { key: s.id, colIndex, label: s.label, count: active.length, species: active };
       });
       const backed = cells.filter((c) => c.count >= 2).length;
       return { spec, cells, backed, totalCols: 4, unit: 'seasons' };
     }
-    const cells = SUCCESSION_STAGES_6.map((st, idx) => {
-      const active = matched.filter((p) => idx >= p.span.start && idx <= p.span.end);
-      return { key: st.id, label: st.name, count: active.length };
+    const cells = SUCCESSION_STAGES_6.map((st, colIndex) => {
+      const active = matched.filter((p) => colIndex >= p.span.start && colIndex <= p.span.end);
+      return { key: st.id, colIndex, label: st.name, count: active.length, species: active };
     });
     const backed = cells.filter((c) => c.count >= 2).length;
     return { spec, cells, backed, totalCols: 6, unit: 'stages' };
   });
+
+  const activeRoleInspect = useMemo(() => {
+    if (!selectedRoleCell || selectedRoleCell.mode !== roleMode) return null;
+    const row = roleMatrix.find((r) => r.spec.id === selectedRoleCell.roleId);
+    const cell = row?.cells.find((c) => c.key === selectedRoleCell.colKey);
+    if (!row || !cell) return null;
+    const fillers = suggestRoleFillers(
+      row.spec.match,
+      pool,
+      memberIdSet,
+      members,
+      roleMode,
+      cell.colIndex,
+      profile.ph,
+      3,
+    );
+    const sunTierCount = new Set(cell.species.map((p) => p.sun)).size;
+    return { row, cell, fillers, sunTierCount };
+  }, [selectedRoleCell, roleMode, roleMatrix, pool, memberIdSet, members, profile.ph]);
 
   const totalRoleSlots = roleMatrix.reduce((s, r) => s + r.cells.filter((c) => c.count > 0).length, 0);
   const totalRoleMax = roleMatrix.length * (roleMode === 'season' ? 4 : 6);
@@ -253,165 +285,259 @@ export function LivingSystemTab() {
         </button>
       </div>
 
-      {/* 1 · Preferred Sun x Succession Matrix (verbatim .system-section + .ssm-table) */}
+      {/* 1 · Preferred Sun x Succession Matrix — Compact Counts + Expandable Continuous Lifespan Bars */}
       <div id="ct-sys-matrix" class="system-section">
         <div class="sec-head">
           <div>
             <h2>1 · {T('studio.sysMatrix')}</h2>
             <p class="sec-sub">
-              Map every level of sunlight from the first 90 days (Placenta 1) to 60+ years (Climax). Click any plant chip for its Dossier, or click <strong>+ Fill</strong> to find matching species in All Plants.
+              Map every level of sunlight from the first 90 days (Placenta 1) to 60+ years (Climax). Click any sun row to expand continuous lifespan bars for each plant, or click <strong>0</strong> to fill an open niche in place.
             </p>
           </div>
-          <button
-            type="button"
-            class="btn btn-xs"
-            onClick={() => openPlantPool({ tab: 'all', sun: 'emergent', banner: 'Browsing Full sun species' })}
-          >
-            Browse Full sun →
-          </button>
+          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px;">
+            <button
+              type="button"
+              class="btn-quiet"
+              data-ssm-toggle-all
+              onClick={toggleAllSunRows}
+            >
+              {anyExpanded ? 'Collapse all ▴' : 'Expand all ▾'}
+            </button>
+            <button
+              type="button"
+              class="btn btn-xs"
+              onClick={() => openPlantPool({ tab: 'all', sun: 'emergent', banner: 'Browsing Full sun species' })}
+            >
+              Browse Full sun →
+            </button>
+          </div>
         </div>
 
         <div class="legend-row" aria-label="Matrix cell key">
-          <span class="legend-item"><span class="ssm-leg-swatch" style="border:1px dashed var(--border-strong); background:transparent;" aria-hidden="true" /> 0 Open niche</span>
-          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--warn-bg); border:1px solid var(--warn-line);" aria-hidden="true" /> ● 1 Single species</span>
-          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--plant-green-bg); border:1px solid color-mix(in srgb, var(--plant-green) 35%, var(--border));" aria-hidden="true" /> ✓ 2+ Resilient</span>
+          <span class="legend-item"><span class="ssm-leg-swatch" style="border:1px dashed var(--border-strong); background:transparent;" aria-hidden="true" /> 0 Open niche (+ Fill)</span>
+          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--warn-bg); border:1px solid var(--warn-line);" aria-hidden="true" /> 1 Thin (single species)</span>
+          <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--plant-green-bg); border:1px solid color-mix(in srgb, var(--plant-green) 35%, var(--border));" aria-hidden="true" /> 2+ Resilient ✓</span>
+          <span class="legend-item" style="margin-left:auto; color:var(--ink-muted);">Click any sun row to inspect continuous lifespan bars</span>
         </div>
 
         <div class="ssm-wrap">
-          <table class="ssm-table" aria-label="Preferred Sun by Succession Stage matrix">
-            <thead>
-              <tr>
-                <th style="min-width:130px;">Preferred Sun</th>
-                {SUCCESSION_STAGES_6.map((s) => (
-                  <th key={s.id} scope="col">
-                    <div class="ssm-col-head">
-                      <span class="ssm-col-name">{s.name}</span>
-                      <span class="ssm-col-time">{s.time}</span>
-                    </div>
-                  </th>
-                ))}
-                <th style="min-width:78px;">Coverage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matrix.rows.map((row) => {
-                const stagesCovered = row.cells.filter((c) => c.length > 0).length;
-                const pct = Math.round((stagesCovered / 6) * 100);
-                const meta = SUN_META[row.sun];
-                const sunCls = SUN_CLS[row.sun];
-                const sunColor = SUN_COLOR[row.sun];
-                return (
-                  <tr key={row.sun}>
-                    <td class="ssm-row-head" style={{ borderLeft: `4px solid ${sunColor}` }}>
-                      <div class="ssm-row-inner">
-                        <span class={`ft-sun-icon ${sunCls}`} style="width:28px; height:28px;" aria-hidden="true">
-                          <SunIcon tier={row.sun} size={17} />
-                        </span>
-                        <div class="ssm-row-meta">
-                          <span class="ssm-row-title">{row.label}</span>
-                          <span class="ssm-row-hrs">{meta.hours}</span>
-                        </div>
-                      </div>
-                    </td>
+          <div class="ssm-grid" role="region" aria-label="Preferred Sun by Succession Stage matrix">
+            {/* Header row */}
+            <div class="ssm-grid-row ssm-grid-head">
+              <div class="ssm-th">Preferred Sun</div>
+              {SUCCESSION_STAGES_6.map((s) => (
+                <div key={s.id} class="ssm-th">
+                  <div class="ssm-col-head">
+                    <span class="ssm-col-name">{s.name}</span>
+                    <span class="ssm-col-time">{s.time}</span>
+                  </div>
+                </div>
+              ))}
+              <div class="ssm-th">Coverage</div>
+            </div>
+
+            {/* Sun tier rows (compact counts + smooth inline continuous-bar expansion) */}
+            {matrix.rows.map((row) => {
+              const stagesCovered = row.cells.filter((c) => c.length > 0).length;
+              const pct = Math.round((stagesCovered / 6) * 100);
+              const meta = SUN_META[row.sun];
+              const sunCls = SUN_CLS[row.sun];
+              const sunColor = SUN_COLOR[row.sun];
+              const isExpanded = Boolean(expandedSuns[row.sun]);
+              const plantCount = row.plants.length;
+              const openStages = SUCCESSION_STAGES_6
+                .map((st, idx) => ({ idx, name: st.name }))
+                .filter(({ idx }) => row.cells[idx].length === 0);
+
+              return (
+                <div key={row.sun} class={`ssm-tier-group${isExpanded ? ' is-open' : ''}`} data-ssm-row={row.sun}>
+                  <div class="ssm-grid-row ssm-compact-row">
+                    <button
+                      type="button"
+                      class="ssm-row-btn"
+                      data-ssm-row-toggle={row.sun}
+                      aria-expanded={isExpanded ? 'true' : 'false'}
+                      style={{ borderLeft: `4px solid ${sunColor}` }}
+                      onClick={() => toggleSunRow(row.sun)}
+                    >
+                      <span class="ssm-chev" aria-hidden="true">{isExpanded ? '▾' : '▸'}</span>
+                      <span class={`ft-sun-icon ${sunCls}`} style="width:26px; height:26px; flex-shrink:0;" aria-hidden="true">
+                        <SunIcon tier={row.sun} size={15} />
+                      </span>
+                      <span class="ssm-row-meta">
+                        <span class="ssm-row-title">{row.label}</span>
+                        <span class="ssm-row-hrs">{meta.hours}</span>
+                      </span>
+                      <span class="ssm-count-pill">
+                        {plantCount} {plantCount === 1 ? 'plant' : 'plants'}
+                      </span>
+                    </button>
+
                     {row.cells.map((cell, idx) => {
                       const stageName = SUCCESSION_STAGES_6[idx]?.name ?? `Stage ${idx + 1}`;
                       if (cell.length === 0) {
                         return (
-                          <td key={idx} class="ssm-td">
-                            <button
-                              type="button"
-                              class="ssm-empty"
-                              aria-label={`Fill ${row.label} ${stageName}`}
-                              onClick={() => openPlantPool({
-                                tab: 'all',
-                                sun: row.sun,
-                                stage: idx,
-                                banner: `Open niche: ${row.label} · ${stageName}`,
-                              })}
-                            >
-                              + Fill
-                            </button>
-                          </td>
+                          <button
+                            key={idx}
+                            type="button"
+                            class="ssm-num-cell state-open"
+                            data-ssm-cell={`${row.sun}:${idx}`}
+                            aria-label={`0 plants in ${row.label} ${stageName} — open plant pool to fill`}
+                            onClick={() => openPlantPool({
+                              tab: 'all',
+                              sun: row.sun,
+                              stage: idx,
+                              banner: `Open niche: ${row.label} · ${stageName}`,
+                            })}
+                          >
+                            <span class="ssm-num-val">0</span>
+                            <span class="ssm-num-hint">+ Fill</span>
+                          </button>
                         );
                       }
-                      const stateCls = cell.length >= 2 ? 'state-resilient' : 'state-thin';
+                      const isResilient = cell.length >= 2;
                       return (
-                        <td key={idx} class="ssm-td">
-                          <div class={`ssm-cell ${stateCls}`}>
-                            <div class="ssm-cell-top">
-                              <div class="ssm-chips">
-                                {cell.slice(0, 4).map((t) => (
-                                  <button
-                                    key={t.id}
-                                    type="button"
-                                    class="ssm-chip"
-                                    onClick={() => openFieldDossier(t.id, memberIds)}
-                                  >
-                                    {nameOf(t)}
-                                  </button>
-                                ))}
-                                {cell.length > 4 && (
-                                  <span style="font-size:11px; color:var(--ink-muted);">+{cell.length - 4}</span>
-                                )}
-                              </div>
-                              <div class="ssm-corner">
-                                <span class={`ssm-ind ${cell.length >= 2 ? 'ind-res' : 'ind-thin'}`} aria-hidden="true">
-                                  {cell.length >= 2 ? '✓' : '●'}
-                                </span>
-                                <button
-                                  type="button"
-                                  class="ssm-add-mini"
-                                  aria-label={`Add species to ${row.label} ${stageName}`}
-                                  onClick={() => openPlantPool({
-                                    tab: 'all',
-                                    sun: row.sun,
-                                    stage: idx,
-                                    banner: `Add species: ${row.label} · ${stageName}`,
-                                  })}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
+                        <button
+                          key={idx}
+                          type="button"
+                          class={`ssm-num-cell ${isResilient ? 'state-resilient' : 'state-thin'}`}
+                          data-ssm-cell={`${row.sun}:${idx}`}
+                          aria-expanded={isExpanded ? 'true' : 'false'}
+                          aria-label={`${cell.length} ${cell.length === 1 ? 'plant' : 'plants'} in ${row.label} ${stageName} — click to ${isExpanded ? 'collapse' : 'expand'} lifespan bars`}
+                          onClick={() => toggleSunRow(row.sun)}
+                        >
+                          <span class="ssm-num-val">{cell.length}</span>
+                          <span class="ssm-num-tag">{isResilient ? '✓' : 'thin'}</span>
+                        </button>
                       );
                     })}
-                    <td class="ssm-cov-cell">
+
+                    <div class="ssm-cov-cell">
                       <div class="ssm-cov-lbl">{stagesCovered}/6 stages</div>
                       <div class="ssm-cov-track">
                         <div class="ssm-cov-fill" style={{ width: `${pct}%`, background: sunColor }} />
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr class="ssm-foot">
-                <td style="font-size:11.5px; font-weight:600; color:var(--ink-muted);">Sun coverage</td>
-                {stageSunCounts.map((cnt, idx) => (
-                  <td key={idx}>
-                    <div class="ssm-cov-lbl">{cnt}/4 sun</div>
-                    <div class="ssm-cov-track">
-                      <div class="ssm-cov-fill" style={{ width: `${Math.round((cnt / 4) * 100)}%` }} />
                     </div>
-                  </td>
-                ))}
-                <td class="ssm-foot-total">{filledNiches}/24 niches</td>
-              </tr>
-            </tfoot>
-          </table>
+                  </div>
+
+                  {isExpanded && (
+                    <div
+                      class="ssm-expanded-panel"
+                      data-ssm-expanded={row.sun}
+                      style={{ borderLeft: `4px solid ${sunColor}` }}
+                    >
+                      {row.plants.length > 0 ? (
+                        <div class="ssm-bar-list">
+                          {row.plants.map(({ taxon, span }) => {
+                            const h = formatHeightRange(taxon.traits.height_m);
+                            const roleCue = primaryRoleCue(taxon);
+                            const stageCount = span.end - span.start + 1;
+                            const startName = SUCCESSION_STAGES_6[span.start]?.name ?? `S${span.start + 1}`;
+                            const endName = SUCCESSION_STAGES_6[span.end]?.name ?? `S${span.end + 1}`;
+                            const spanText = span.start === span.end ? startName : `${startName} → ${endName}`;
+                            return (
+                              <div key={taxon.id} class="ssm-grid-row ssm-bar-row" data-ssm-bar-plant={taxon.id}>
+                                <button
+                                  type="button"
+                                  class="ssm-plant-btn"
+                                  onClick={() => openFieldDossier(taxon.id, memberIds)}
+                                >
+                                  <span class="ssm-plant-name">{nameOf(taxon)}</span>
+                                  <span class="ssm-plant-meta">
+                                    {h ? `${h} · ` : ''}{roleCue}
+                                  </span>
+                                </button>
+
+                                <div class="ssm-bar-track-area">
+                                  <div class="ssm-bar-guides" aria-hidden="true">
+                                    {SUCCESSION_STAGES_6.map((st, gIdx) => (
+                                      <span key={st.id} class={`ssm-bar-guide${row.cells[gIdx].length === 0 ? ' is-gap' : ''}`} />
+                                    ))}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    class={`ssm-span-bar ${sunCls}`}
+                                    data-ssm-span={`${span.start + 1}/${span.end + 2}`}
+                                    style={{
+                                      gridColumn: `${span.start + 1} / ${span.end + 2}`,
+                                      borderColor: sunColor,
+                                    }}
+                                    aria-label={`${nameOf(taxon)}: ${spanText} — open Field Dossier`}
+                                    onClick={() => openFieldDossier(taxon.id, memberIds)}
+                                  >
+                                    <span class="ssm-span-bar-lbl">{spanText}</span>
+                                  </button>
+                                </div>
+
+                                <div class="ssm-span-tally">
+                                  {stageCount} {stageCount === 1 ? 'stage' : 'stages'}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div class="ssm-empty-tier">
+                          No species in your palette currently prefer <strong>{row.label}</strong> ({meta.hours}).
+                        </div>
+                      )}
+
+                      {openStages.length > 0 && (
+                        <div class="ssm-gap-cue">
+                          <span>
+                            Open niche in{' '}
+                            <strong>
+                              {openStages.length === 6
+                                ? 'all 6 stages'
+                                : openStages.length <= 3
+                                  ? openStages.map((s) => s.name).join(' & ')
+                                  : `${openStages.slice(0, 2).map((s) => s.name).join(', ')} + ${openStages.length - 2} more`}
+                            </strong>
+                          </span>
+                          <button
+                            type="button"
+                            class="link-btn"
+                            onClick={() => openPlantPool({
+                              tab: 'all',
+                              sun: row.sun,
+                              stage: openStages[0].idx,
+                              banner: `Open niche: ${row.label} · ${openStages[0].name}`,
+                            })}
+                          >
+                            + Find {openStages[0].idx >= 4 ? 'late-stage ' : ''}{row.label} species →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Footer row */}
+            <div class="ssm-grid-row ssm-grid-foot">
+              <div class="ssm-foot-cell" style="font-size:11.5px; font-weight:600; color:var(--ink-muted);">Sun coverage</div>
+              {stageSunCounts.map((cnt, idx) => (
+                <div key={idx} class="ssm-foot-cell">
+                  <div class="ssm-cov-lbl">{cnt}/4 sun</div>
+                  <div class="ssm-cov-track">
+                    <div class="ssm-cov-fill" style={{ width: `${Math.round((cnt / 4) * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+              <div class="ssm-foot-cell ssm-foot-total">{filledNiches}/24 niches</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 2 · Six Key Ecological Roles & Redundancy (verbatim .matrix-table) */}
+      {/* 2 · Six Key Ecological Roles & Redundancy — Inline Grower Inspector (Zero Context Switching) */}
       <div id="ct-sys-roles" class="system-section">
         <div class="sec-head">
           <div>
             <h2>2 · Six Key Ecological Roles &amp; Redundancy</h2>
             <p class="sec-sub">
-              Keep every role active with at least 2 backup species across seasons and all six succession stages. Click any gap or thin slot to fill it in All Plants.
+              Keep every role active with at least 2 backup species across seasons and all six succession stages. Click any cell to inspect who fills it and add climate-matched backups in place.
             </p>
           </div>
           <div class="ink-seg" role="group" aria-label="Redundancy view">
@@ -419,7 +545,7 @@ export function LivingSystemTab() {
               type="button"
               class="ink-seg-btn"
               aria-pressed={roleMode === 'season' ? 'true' : 'false'}
-              onClick={() => setRoleMode('season')}
+              onClick={() => { setRoleMode('season'); setSelectedRoleCell(null); }}
             >
               By Season
             </button>
@@ -427,7 +553,7 @@ export function LivingSystemTab() {
               type="button"
               class="ink-seg-btn"
               aria-pressed={roleMode === 'succession' ? 'true' : 'false'}
-              onClick={() => setRoleMode('succession')}
+              onClick={() => { setRoleMode('succession'); setSelectedRoleCell(null); }}
             >
               Across 60+ Years
             </button>
@@ -438,6 +564,7 @@ export function LivingSystemTab() {
           <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip" /><span class="m-pip" /></span> 0 · Fill gap</span>
           <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--warn-dot); border-color:var(--warn-dot);" /><span class="m-pip" /></span> 1 · Thin (add backup)</span>
           <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /></span> 2+ · Resilient</span>
+          <span class="legend-item" style="margin-left:auto; color:var(--ink-muted);">Click any cell for inline inspector &amp; + Add fillers</span>
         </div>
 
         <div class="matrix-wrap">
@@ -469,40 +596,33 @@ export function LivingSystemTab() {
                       <div class="rm-role-sub">{row.spec.sub}</div>
                     </td>
                     {row.cells.map((cell) => {
-                      if (cell.count >= 2) {
-                        return (
-                          <td key={cell.key}>
-                            <button
-                              type="button"
-                              class="m-cell m-robust"
-                              onClick={() => { studioTab.value = 'palette'; }}
-                            >
-                              <span class="m-pips" aria-hidden="true">
-                                <span class="m-pip filled" />
-                                <span class="m-pip filled" />
-                              </span>
-                              <span>{cell.count}</span>
-                            </button>
-                          </td>
-                        );
-                      }
-                      const cls = cell.count === 1 ? 'm-thin' : 'm-gap';
+                      const isSelected = Boolean(
+                        selectedRoleCell
+                        && selectedRoleCell.mode === roleMode
+                        && selectedRoleCell.roleId === row.spec.id
+                        && selectedRoleCell.colKey === cell.key,
+                      );
+                      const onSelect = () => setSelectedRoleCell((cur) => (
+                        cur && cur.mode === roleMode && cur.roleId === row.spec.id && cur.colKey === cell.key
+                          ? null
+                          : { roleId: row.spec.id, colKey: cell.key, colIndex: cell.colIndex, mode: roleMode }
+                      ));
+                      const cls = cell.count >= 2 ? 'm-robust' : cell.count === 1 ? 'm-thin' : 'm-gap';
+                      const labelText = cell.count >= 2 ? String(cell.count) : cell.count === 0 ? '0 · Fill' : '1 · Backup';
                       return (
                         <td key={cell.key}>
                           <button
                             type="button"
-                            class={`m-cell ${cls}`}
-                            onClick={() => openPlantPool({
-                              tab: 'all',
-                              role: row.spec.job,
-                              banner: `Add species for ${row.spec.label} (${cell.label})`,
-                            })}
+                            class={`m-cell ${cls}${isSelected ? ' is-selected' : ''}`}
+                            data-role-cell={`${row.spec.id}:${cell.key}`}
+                            aria-pressed={isSelected ? 'true' : 'false'}
+                            onClick={onSelect}
                           >
                             <span class="m-pips" aria-hidden="true">
-                              <span class={`m-pip${cell.count === 1 ? ' filled' : ''}`} />
-                              <span class="m-pip" />
+                              <span class={`m-pip${cell.count >= 1 ? ' filled' : ''}`} />
+                              <span class={`m-pip${cell.count >= 2 ? ' filled' : ''}`} />
                             </span>
-                            <span>{cell.count === 0 ? '0 · Fill' : '1 · Backup'}</span>
+                            <span>{labelText}</span>
                           </button>
                         </td>
                       );
@@ -522,6 +642,126 @@ export function LivingSystemTab() {
             </tbody>
           </table>
         </div>
+
+        {/* Inline Role Brief Inspector (NEVER navigates away from Living System!) */}
+        {activeRoleInspect && (
+          <div
+            class={`role-brief ${activeRoleInspect.cell.count >= 2 ? 'is-resilient' : activeRoleInspect.cell.count === 1 ? 'is-thin' : 'is-gap'}`}
+            data-role-brief
+            role="region"
+            aria-label={`${activeRoleInspect.row.spec.label} in ${activeRoleInspect.cell.label}`}
+          >
+            <div class="mb-head">
+              <div>
+                <div class="rb-eyebrow">
+                  {activeRoleInspect.cell.count === 0
+                    ? '0 species · Open gap'
+                    : activeRoleInspect.cell.count === 1
+                      ? '1 species · Single point of failure'
+                      : `${activeRoleInspect.cell.count} species · Resilient across ${activeRoleInspect.sunTierCount} sun ${activeRoleInspect.sunTierCount === 1 ? 'tier' : 'tiers'}`}
+                </div>
+                <div class="mb-title">
+                  {activeRoleInspect.row.spec.label} · {activeRoleInspect.cell.label}
+                </div>
+                <p class="rb-diag">
+                  {activeRoleInspect.cell.count === 0
+                    ? `No species in your palette currently cover "${activeRoleInspect.row.spec.label.toLowerCase()}" here. Add a climate-matched species below to close this gap live.`
+                    : activeRoleInspect.cell.count === 1
+                      ? `Only 1 species covers this slot — add a backup so a bad season, frost, or pest doesn't leave this role uncovered.`
+                      : `Backed up across ${activeRoleInspect.sunTierCount} sun ${activeRoleInspect.sunTierCount === 1 ? 'tier' : 'tiers'}. Click any species to inspect its Field Dossier, or add a companion below.`}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="btn btn-xs"
+                onClick={() => setSelectedRoleCell(null)}
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Active species filling this cell */}
+            <div class="rb-block">
+              <div class="rb-block-label">
+                Species filling this role now ({activeRoleInspect.cell.species.length})
+              </div>
+              {activeRoleInspect.cell.species.length > 0 ? (
+                <div class="mb-chips">
+                  {activeRoleInspect.cell.species.map(({ taxon, sun, span }) => (
+                    <button
+                      key={taxon.id}
+                      type="button"
+                      class="mb-chip rb-species-chip"
+                      onClick={() => openFieldDossier(taxon.id, memberIds)}
+                    >
+                      <span class="rb-sun-dot" style={{ background: SUN_COLOR[sun] }} aria-hidden="true" />
+                      <span>{nameOf(taxon)}</span>
+                      <span class="rb-chip-sub">{span.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div class="rb-empty">None yet — pick a climate-matched starter below.</div>
+              )}
+            </div>
+
+            {/* One-click inline fillers */}
+            <div class="rb-block">
+              <div class="rb-block-label">
+                {activeRoleInspect.cell.count < 2
+                  ? 'One-click climate-matched fillers for your site'
+                  : 'Strengthen further with climate-matched companions'}
+              </div>
+              {activeRoleInspect.fillers.length > 0 ? (
+                <div class="rb-fillers-grid">
+                  {activeRoleInspect.fillers.map((f) => (
+                    <div key={f.taxon.id} class="rb-filler-card" data-role-filler={f.taxon.id}>
+                      <div class="rb-filler-main">
+                        <div class="rb-filler-top">
+                          <span class="rb-sun-dot" style={{ background: SUN_COLOR[f.sun] }} aria-hidden="true" />
+                          <button
+                            type="button"
+                            class="rb-filler-name"
+                            onClick={() => openFieldDossier(f.taxon.id, [f.taxon.id, ...memberIds])}
+                          >
+                            {nameOf(f.taxon)}
+                          </button>
+                          <span class={`sun-badge ${SUN_CLS[f.sun]}`}>{sunTierLabel(f.taxon)}</span>
+                        </div>
+                        <div class="rb-filler-why">{f.why}</div>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-xs rb-add-btn"
+                        data-role-add={f.taxon.id}
+                        onClick={() => store.addMembers([f.taxon.id])}
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div class="rb-empty">All matching species in your climate pool are already in your palette.</div>
+              )}
+            </div>
+
+            <div class="rb-foot">
+              <button
+                type="button"
+                class="link-btn"
+                onClick={() => openPlantPool({
+                  tab: 'all',
+                  role: activeRoleInspect.row.spec.job,
+                  stage: roleMode === 'succession' ? activeRoleInspect.cell.colIndex : null,
+                  banner: `${activeRoleInspect.row.spec.label} (${activeRoleInspect.cell.label})`,
+                })}
+              >
+                Browse all matching in Plant Pool →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3 · Your Growing Year — Sow, Winter, Bloom & Harvest (verbatim .hm-grid & .cal-table) */}

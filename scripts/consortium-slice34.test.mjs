@@ -69,6 +69,35 @@ test('Living System builds 4x6 Sun x Succession Matrix, 6-Role Redundancy Ledger
   assert.deepEqual(matrix.rows.map((r) => r.label), ['Full sun', 'Mostly sun', 'Part shade', 'Shade']);
   assert.equal(matrix.sunTiersFilled, 3);
   assert.ok(matrix.stagesFilled >= 4);
+  // Stage 1H: cells reflect continuous stage spans & plants list is sorted by start stage
+  const fullSunRow = matrix.rows.find((r) => r.sun === 'emergent');
+  assert.equal(fullSunRow.plants.length, 1);
+  assert.equal(fullSunRow.cells[3].length, 1, 'fig covers Secondary 2');
+  assert.equal(fullSunRow.cells[5].length, 1, 'fig continues to Climax');
+
+  // Stage 1H: suggestRoleFillers excludes existing palette members and prioritizes exact matches
+  const candidateNfix = taxon({
+    id: 'broom',
+    canonical_name: 'Cytisus scoparius',
+    en: 'Broom',
+    role: 'soil',
+    functions: [{ function: 'nitrogen_fixer', method: 'direct', sources: ['s1'], kind: 'recorded' }],
+    phases: { start: 'placenta_ii', end: 'secondary_ii', sources: ['s1'] },
+    traits: { soil_ph: { min: 5.5, max: 8.0 }, height_m: { min: 1, max: 2 } },
+  });
+  const fillers = analysis.suggestRoleFillers(
+    (t) => (t.functions ?? []).some((f) => /nitrogen/i.test(f.function)),
+    [...members, candidateNfix],
+    new Set(members.map((m) => m.id)),
+    members,
+    'succession',
+    2,
+    7.4,
+    3,
+  );
+  assert.equal(fillers.length, 1);
+  assert.equal(fillers[0].taxon.id, 'broom');
+  assert.equal(fillers[0].exactMatch, true);
 
   const ledger = analysis.buildRoleLedger(members);
   assert.equal(ledger.length, 6);

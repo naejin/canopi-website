@@ -36,6 +36,11 @@ export type YearFocus = 'all' | 'bloom' | 'harvest' | 'prune';
 
 /* ===================== 1. LIVING SYSTEM ===================== */
 
+export interface MatrixPlantRow {
+  taxon: Taxon;
+  span: { start: number; end: number; label: string };
+}
+
 interface MatrixSummary {
   sunTiersFilled: number;
   stagesFilled: number;
@@ -45,6 +50,7 @@ interface MatrixSummary {
     sun: Stratum;
     label: string;
     cells: Taxon[][];
+    plants: MatrixPlantRow[];
   }[];
 }
 
@@ -57,6 +63,7 @@ export function buildSunSuccessionMatrix(members: readonly Taxon[]): MatrixSumma
     sun: opt.id,
     label: opt.label,
     cells: SUCCESSION_STAGES_6.map(() => [] as Taxon[]),
+    plants: [] as MatrixPlantRow[],
   }));
   const stageSet = new Set<number>();
   const roleSet = new Set<JobId>();
@@ -66,8 +73,11 @@ export function buildSunSuccessionMatrix(members: readonly Taxon[]): MatrixSumma
     const sun = preferredSunOf(t);
     const row = rows.find((r) => r.sun === sun) ?? rows[1];
     const span = stageSpanOf(t);
-    row.cells[span.start].push(t);
-    for (let s = span.start; s <= span.end; s++) stageSet.add(s);
+    row.plants.push({ taxon: t, span });
+    for (let s = span.start; s <= span.end; s++) {
+      row.cells[s].push(t);
+      stageSet.add(s);
+    }
     for (const j of jobsOf(t)) roleSet.add(j);
     const spark = activityMonthsOf(t);
     for (let m = 0; m < 12; m++) {
@@ -75,8 +85,16 @@ export function buildSunSuccessionMatrix(members: readonly Taxon[]): MatrixSumma
     }
   }
 
+  for (const row of rows) {
+    row.plants.sort((a, b) =>
+      (a.span.start - b.span.start)
+      || ((b.span.end - b.span.start) - (a.span.end - a.span.start))
+      || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name),
+    );
+  }
+
   return {
-    sunTiersFilled: rows.filter((r) => r.cells.some((c) => c.length > 0)).length,
+    sunTiersFilled: rows.filter((r) => r.plants.length > 0).length,
     stagesFilled: stageSet.size,
     rolesCovered: roleSet.size,
     activeMonths: activeMonthFlags.filter(Boolean).length,
@@ -150,31 +168,129 @@ const SEASON_MONTHS: readonly (readonly number[])[] = [
   [8, 9, 10],
 ];
 
+export interface PlantActivityTracks {
+  winter: boolean[];
+  sow: boolean[];
+  bloom: boolean[];
+  harvest: boolean[];
+}
+
+export function activityTracksOf(t: Taxon): PlantActivityTracks {
+  const spark = activityMonthsOf(t);
+  const isAnnual = t.traits.is_annual === true || t.traits.grown_as_annual === true;
+  const isEvergreen = Boolean(t.traits.deciduous_evergreen && /evergreen/i.test(t.traits.deciduous_evergreen));
+  const cold = t.climate?.tminCold?.low ?? -4;
+  const winterGrow = isEvergreen || (!isAnnual && cold <= 0 && spark[0] !== 'dormant');
+
+  const winter = Array<boolean>(12).fill(false);
+  const sow = Array<boolean>(12).fill(false);
+  const bloom = Array<boolean>(12).fill(false);
+  const harvest = Array<boolean>(12).fill(false);
+
+  for (let m = 0; m < 12; m++) {
+    const lvl = spark[m];
+    if (winterGrow && (m <= 1 || m === 10 || m === 11)) winter[m] = true;
+    if (isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10)) sow[m] = true;
+    if (lvl !== 'dormant' && m >= 3 && m <= 7) bloom[m] = true;
+    if (lvl === 'peak' || (lvl === 'active' && m >= 7 && m <= 9)) harvest[m] = true;
+  }
+  return { winter, sow, bloom, harvest };
+}
+
+export function isTaxonActiveInSeason(t: Taxon, seasonIdx: number): boolean {
+  const months = SEASON_MONTHS[seasonIdx];
+  if (!months) return false;
+  const tr = activityTracksOf(t);
+  return months.some((m) => tr.winter[m] || tr.sow[m] || tr.bloom[m] || tr.harvest[m]);
+}
+
 /** Exact 6x4 Role x Season active slot count shared by StudioHeader Health Ribbon and LivingSystemTab. */
 export function countRoleSeasonSlots(members: readonly Taxon[]): number {
   const ledger = buildRoleLedger(members);
   let total = 0;
   for (const row of ledger) {
-    for (const months of SEASON_MONTHS) {
-      const hasAny = row.species.some((t) => {
-        const spark = activityMonthsOf(t);
-        const isAnnual = t.traits.is_annual === true || t.traits.grown_as_annual === true;
-        const isEvergreen = Boolean(t.traits.deciduous_evergreen && /evergreen/i.test(t.traits.deciduous_evergreen));
-        const cold = t.climate?.tminCold?.low ?? -4;
-        const winterGrow = isEvergreen || (!isAnnual && cold <= 0 && spark[0] !== 'dormant');
-        return months.some((m) => {
-          const lvl = spark[m];
-          const w = winterGrow && (m <= 1 || m === 10 || m === 11);
-          const s = isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10);
-          const b = lvl !== 'dormant' && m >= 3 && m <= 7;
-          const h = lvl === 'peak' || (lvl === 'active' && m >= 7 && m <= 9);
-          return w || s || b || h;
-        });
-      });
-      if (hasAny) total += 1;
+    for (let sIdx = 0; sIdx < SEASON_MONTHS.length; sIdx++) {
+      if (row.species.some((t) => isTaxonActiveInSeason(t, sIdx))) total += 1;
     }
   }
   return total;
+}
+
+export interface RoleFillerSuggestion {
+  taxon: Taxon;
+  sun: Stratum;
+  spanLabel: string;
+  exactMatch: boolean;
+  why: string;
+}
+
+const SEASON_LABELS = ['Winter', 'Spring', 'Summer', 'Autumn'] as const;
+
+/**
+ * Top climate-compatible filler species for a specific Role x Season or Role x Stage cell.
+ * Pure, deterministic, excludes species already in the palette.
+ */
+export function suggestRoleFillers(
+  roleMatch: (t: Taxon) => boolean,
+  pool: readonly Taxon[],
+  memberIds: ReadonlySet<string>,
+  members: readonly Taxon[],
+  mode: 'season' | 'succession',
+  colIndex: number,
+  sitePh: number | null,
+  limit = 3,
+): RoleFillerSuggestion[] {
+  const coveredSuns = new Set(members.map((m) => preferredSunOf(m)));
+  const candidates = pool.filter((t) => !memberIds.has(t.id) && roleMatch(t));
+
+  const scored = candidates.map((t) => {
+    const sun = preferredSunOf(t);
+    const span = stageSpanOf(t);
+    const exactMatch = mode === 'season'
+      ? isTaxonActiveInSeason(t, colIndex)
+      : (colIndex >= span.start && colIndex <= span.end);
+
+    let score = exactMatch ? 100 : 10;
+    if (!coveredSuns.has(sun)) score += 20;
+    score += Math.min(12, (span.end - span.start + 1) * 2);
+
+    const ph = t.traits.soil_ph;
+    const phFits = sitePh != null && ph != null
+      && (ph.min == null || sitePh >= ph.min - 0.2)
+      && (ph.max == null || sitePh <= ph.max + 0.2);
+    if (phFits) score += 12;
+
+    const parts: string[] = [];
+    if (mode === 'season') {
+      parts.push(exactMatch ? `Active in ${SEASON_LABELS[colIndex] ?? 'season'}` : 'Builds role backup');
+    } else {
+      const stageName = SUCCESSION_STAGES_6[colIndex]?.name ?? 'stage';
+      parts.push(exactMatch ? `Covers ${stageName} (${span.label})` : `Covers ${span.label}`);
+    }
+    if (ph?.min != null && ph?.max != null) {
+      parts.push(`pH ${ph.min.toFixed(1)}–${ph.max.toFixed(1)}`);
+    } else if (!coveredSuns.has(sun)) {
+      parts.push('fills open sun tier');
+    }
+
+    return {
+      taxon: t,
+      sun,
+      spanLabel: span.label,
+      exactMatch,
+      why: parts.join(' · '),
+      score,
+    };
+  });
+
+  scored.sort((a, b) => (b.score - a.score) || a.taxon.canonical_name.localeCompare(b.taxon.canonical_name));
+  return scored.slice(0, limit).map(({ taxon, sun, spanLabel, exactMatch, why }) => ({
+    taxon,
+    sun,
+    spanLabel,
+    exactMatch,
+    why,
+  }));
 }
 
 interface GrowingMonthBrief {
