@@ -623,46 +623,6 @@
   }
 }
 
-@media (max-width: 639px) {
-  .ct .ct-studio-t1 {
-    gap: 8px;
-  }
-  .ct .ct-studio-name {
-    font-size: 18px;
-    max-width: 100%;
-  }
-  .ct .ct-studio-tabs {
-    gap: 2px 12px;
-  }
-  .ct .ct-studio-tab {
-    font-size: 14px;
-    min-height: 44px;
-  }
-  .ct .ct-tip-trigger {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0;
-  }
-  .ct .ct-studio-loc,
-  .ct .ct-studio-btn,
-  .ct .ct-studio-menu-item,
-  .ct .ct-studio-horizon-btn,
-  .ct .ct-micro-field select,
-  .ct .ct-area-input,
-  .ct .ct-area-select,
-  .ct .ct-seg-btn,
-  .ct .ct-filter-btn,
-  .ct .ct-rail-tab,
-  .ct .ct-card-act,
-  .ct .ct-dossier-btn {
-    min-height: 44px;
-  }
-  .ct .ct-studio-split-caret {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
 /* ---- Slice 3.3: Split-Pane Workspace, 3-Layer Cards, Filter Studio, Right Rail & Field Dossier ---- */
 .ct .ct-studio-split {
   display: grid;
@@ -1174,4 +1134,656 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ---- Slice 3.4: Living System, 2050 Climate & Grower-Grade Planting Plan ---- */
+.ct .ct-studio-section {
+  display: grid;
+  gap: 20px;
+}
+.ct .ct-sys-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ct .ct-sys-pill {
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.ct .ct-sys-pill strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.ct .ct-sys-block {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.ct .ct-sys-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+}
+.ct .ct-sys-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-sys-matrix-wrap {
+  overflow-x: auto;
+}
+.ct .ct-sys-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.ct .ct-sys-matrix th,
+.ct .ct-sys-matrix td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  text-align: left;
+}
+.ct .ct-sys-matrix thead th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.ct .ct-sys-matrix tbody th {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.ct .ct-sys-stage-time {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.ct .ct-sys-matrix td.is-empty {
+  background: var(--surface-alt);
+}
+.ct .ct-sys-empty-cue {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ct .ct-sys-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ct .ct-sys-chip {
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.ct .ct-sys-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.ct .ct-sys-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.ct .ct-role-ledger {
+  display: grid;
+}
+.ct .ct-role-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) auto minmax(0, 2fr);
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ct .ct-role-row:last-child {
+  border-bottom: 0;
+}
+.ct .ct-role-meta {
+  display: grid;
+  gap: 2px;
+}
+.ct .ct-role-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.ct .ct-role-status.is-strong {
+  color: var(--accent-ink);
+}
+.ct .ct-role-status.is-thin {
+  color: var(--warn-ink, var(--accent-ink));
+}
+.ct .ct-role-status.is-gap {
+  color: var(--danger-ink, var(--accent-ink));
+}
+.ct .ct-role-pips {
+  display: inline-flex;
+  gap: 4px;
+}
+.ct .ct-role-pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+}
+.ct .ct-role-pip.is-filled {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ct .ct-role-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 13.5px;
+}
+.ct .ct-year-bars {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px;
+  align-items: end;
+}
+.ct .ct-year-col {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 6px 2px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+.ct .ct-year-col.is-selected {
+  border-color: var(--accent);
+  background: var(--surface-alt);
+}
+.ct .ct-year-bar-wrap {
+  display: flex;
+  align-items: flex-end;
+  width: 16px;
+  height: 54px;
+}
+.ct .ct-year-bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+}
+.ct .ct-year-lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ct .ct-year-brief {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+  font-size: 14px;
+}
+
+/* ---- 2050 Climate Tab ---- */
+.ct .ct-clim-brief {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.ct .ct-clim-brief-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ct .ct-clim-badge {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-clim-badge.is-stressed {
+  border-color: var(--danger-border, var(--border-strong));
+  color: var(--danger-ink, var(--accent-ink));
+}
+.ct .ct-clim-badge.is-watch {
+  border-color: var(--warn-border, var(--border-strong));
+  color: var(--warn-ink, var(--accent-ink));
+}
+.ct .ct-clim-forces {
+  display: grid;
+  border-top: 1px solid var(--border);
+}
+.ct .ct-clim-force-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(0, 1.4fr) auto;
+  gap: 8px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.ct .ct-clim-delta {
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+.ct .ct-clim-analogue {
+  padding-top: 4px;
+}
+.ct .ct-clim-analogue-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ct .ct-stress-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ct .ct-stress-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ct .ct-stress-chip {
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-stress-chip.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft, var(--surface-alt));
+  color: var(--accent-ink);
+}
+.ct .ct-impact-strip {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+  font-size: 13.5px;
+}
+.ct .ct-stress-lab {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.ct .ct-swap-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.ct .ct-triage-group {
+  display: grid;
+  gap: 8px;
+}
+.ct .ct-triage-heading {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ct .ct-triage-row {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.ct .ct-triage-row.is-danger {
+  border-left-color: var(--danger-ink, var(--accent));
+}
+.ct .ct-triage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ct .ct-triage-name {
+  font-size: 15px;
+}
+.ct .ct-triage-limits {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.ct .ct-triage-ins {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.ct .ct-triage-swap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px;
+}
+.ct .ct-triage-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.ct .ct-holds-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.ct .ct-opp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+.ct .ct-opp-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.ct .ct-clim-chart {
+  margin: 0;
+}
+.ct .ct-clim-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.ct .ct-clim-stress-band {
+  fill: var(--surface-alt);
+}
+.ct .ct-clim-axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+.ct .ct-clim-line-today {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+.ct .ct-clim-line-future {
+  stroke: var(--accent-ink);
+  stroke-width: 2.5;
+}
+.ct .ct-clim-dot-future {
+  fill: var(--accent-ink);
+}
+.ct .ct-clim-xlabel,
+.ct .ct-clim-ylabel {
+  fill: var(--text-secondary);
+  font-size: 11px;
+}
+
+/* ---- Upgraded Planting Plan Tab ---- */
+.ct .ct-plan-ledger-card {
+  display: grid;
+  gap: 10px;
+}
+.ct .ct-plan-notes-foot {
+  display: grid;
+  gap: 4px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+}
+.ct .ct-plan-note {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.ct .ct-blueprint-wrap {
+  margin: 0;
+}
+.ct .ct-blueprint-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: var(--bg);
+}
+.ct .ct-bp-frame {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+}
+.ct .ct-bp-lane {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.ct .ct-bp-node circle {
+  fill: var(--surface-alt);
+  stroke: var(--accent-ink);
+  stroke-width: 1.5;
+}
+.ct .ct-bp-node[data-stratum="emergent"] circle {
+  fill: var(--s-emergent);
+  stroke: var(--s-emergent-ink);
+}
+.ct .ct-bp-node[data-stratum="high"] circle {
+  fill: var(--s-high);
+  stroke: var(--s-high-ink);
+}
+.ct .ct-bp-node[data-stratum="medium"] circle {
+  fill: var(--s-medium);
+  stroke: var(--s-medium-ink);
+}
+.ct .ct-bp-node[data-stratum="low"] circle {
+  fill: var(--s-low);
+  stroke: var(--s-low-ink);
+}
+.ct .ct-bp-node text {
+  fill: var(--text);
+  font-size: 9.5px;
+  font-weight: 600;
+}
+.ct .ct-qty-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ct .ct-qty-input {
+  width: 72px;
+  min-height: 32px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.ct .ct-qty-reset {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ct .ct-plan-mobile {
+  display: none;
+  gap: 8px;
+}
+.ct .ct-order-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.ct .ct-order-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ct .ct-plan-kpi-sm {
+  font-size: 15px;
+}
+.ct .ct-plan-insurance {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface-alt);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.ct .ct-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: 6px;
+}
+.ct .ct-cal-cell {
+  display: grid;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12.5px;
+  text-align: center;
+  cursor: pointer;
+}
+.ct .ct-cal-cell.is-selected {
+  border-color: var(--accent);
+  background: var(--surface-alt);
+  color: var(--accent-ink);
+}
+
+/* ---- Unified Mobile Breakpoint (<= 639px) — MUST stay at bottom so base rules never override 44x44 px targets ---- */
+@media (max-width: 639px) {
+  .ct .ct-studio-t1 {
+    gap: 8px;
+  }
+  .ct .ct-studio-name {
+    font-size: 18px;
+    max-width: 100%;
+  }
+  .ct .ct-studio-tabs {
+    gap: 2px 12px;
+  }
+  .ct .ct-studio-tab {
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .ct .ct-tip-trigger {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+  .ct .ct-studio-loc,
+  .ct .ct-studio-btn,
+  .ct .ct-studio-menu-item,
+  .ct .ct-studio-horizon-btn,
+  .ct .ct-micro-field select,
+  .ct .ct-area-input,
+  .ct .ct-area-select,
+  .ct .ct-seg-btn,
+  .ct .ct-filter-btn,
+  .ct .ct-rail-tab,
+  .ct .ct-card-act,
+  .ct .ct-dossier-btn,
+  .ct .ct-sys-pill,
+  .ct .ct-sys-chip,
+  .ct .ct-stress-chip,
+  .ct .ct-triage-collapse,
+  .ct .ct-qty-input,
+  .ct .ct-qty-reset,
+  .ct .ct-cal-cell {
+    min-height: 44px;
+  }
+  .ct .ct-studio-split-caret {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .ct .ct-role-row {
+    grid-template-columns: 1fr;
+  }
+  .ct .ct-clim-force-row {
+    grid-template-columns: 1fr auto;
+  }
+  .ct .ct-plan-desktop {
+    display: none;
+  }
+  .ct .ct-plan-mobile {
+    display: grid;
+  }
+}
+
 

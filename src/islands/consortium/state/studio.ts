@@ -6,7 +6,7 @@
 // - Request a Plant modal toggle & .canopi v9 open/save helpers
 // Layer rule (L1-L9): lives in state/, imports only store, lib/consortium, lib/climate/v07. Never imports views/.
 import { batch, effect, signal } from '@preact/signals';
-import type { CanopiCustomPlant, PlantId, PlantingPlanConfig, Taxon } from '../../../lib/consortium/index.ts';
+import type { CanopiCustomPlant, DesignEnvelope, PlantId, PlantingPlanConfig, Taxon } from '../../../lib/consortium/index.ts';
 import { canopiFile, canopiFileName, DEFAULT_PLANTING_PLAN_CONFIG, parseCanopiFile } from '../../../lib/consortium/index.ts';
 import type { MicroAspect, MicroLandform } from '../../../lib/climate/v07.ts';
 import * as store from '../store.ts';
@@ -14,6 +14,24 @@ import * as store from '../store.ts';
 export type StudioTab = 'palette' | 'system' | 'climate' | 'plan';
 export type PaletteViewMode = 'cards' | 'compact';
 export type RailTab = 'coach' | 'all';
+
+export interface ClimateStressState {
+  heatDeltaC: number;
+  droughtPct: number;
+  winterDeltaC: number;
+  falseSpringDeltaPct: number;
+  windExposure: number;
+  extremeRainPct: number;
+}
+
+export const DEFAULT_CLIMATE_STRESS: ClimateStressState = {
+  heatDeltaC: 0,
+  droughtPct: 0,
+  winterDeltaC: 0,
+  falseSpringDeltaPct: 0,
+  windExposure: 0,
+  extremeRainPct: 0,
+};
 
 export interface MicroclimateState {
   slopeDeg: number;
@@ -36,10 +54,23 @@ export const autoSaveEnabled = signal<boolean>(false);
 const lastSavedAt = signal<string | null>(null);
 export const plantingConfig = signal<PlantingPlanConfig>({ ...DEFAULT_PLANTING_PLAN_CONFIG });
 export const microclimate = signal<MicroclimateState>({ ...DEFAULT_MICROCLIMATE });
+export const designEnvelope = signal<DesignEnvelope>('typical');
+export const climateStress = signal<ClimateStressState>({ ...DEFAULT_CLIMATE_STRESS });
 export const requestPlantOpen = signal<boolean>(false);
 const customPlants = signal<readonly CanopiCustomPlant[]>([]);
 export const dossierId = signal<PlantId | null>(null);
 export const dossierList = signal<readonly PlantId[]>([]);
+
+export function setQuantityOverride(id: PlantId, qty: number | null): void {
+  const cur = plantingConfig.peek();
+  const nextOverrides: Record<string, number> = { ...cur.quantityOverrides };
+  if (qty === null || !Number.isFinite(qty) || qty < 0) {
+    delete nextOverrides[id];
+  } else {
+    nextOverrides[id] = Math.round(qty);
+  }
+  setPlantingConfig({ quantityOverrides: nextOverrides });
+}
 
 export function openFieldDossier(id: PlantId, list?: readonly PlantId[]): void {
   batch(() => {

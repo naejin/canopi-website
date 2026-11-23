@@ -541,6 +541,7 @@ const ROLE_CAPS = {
   palette: 10.6 * KB, // measured 10,263 B (b2's palette page with b3's Your plants; A14 max 12)
   verdict: 2.9 * KB, // measured 2,367 B (A14 max 12)
   figures: 1 * KB, // v14 0W: the stub (pf-d measures the panel; a reference, never a failure)
+  studio: 12 * KB, // Phase 3 / Slice 3.4: lazy Field Studio tabs & Field Dossier drawer
 };
 const LOCATION_BUDGET = 20 * KB;
 const MAPLIBRE_BUDGET = 330 * KB;

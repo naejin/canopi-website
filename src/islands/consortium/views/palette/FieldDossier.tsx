@@ -39,8 +39,11 @@ export function FieldDossier() {
   useEffect(() => {
     if (!id) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); closeFieldDossier(); }
-      else if (e.key === 'ArrowLeft') stepFieldDossier(-1);
+      if (e.key === 'Escape') { e.preventDefault(); closeFieldDossier(); return; }
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+      if (e.key === 'ArrowLeft') stepFieldDossier(-1);
       else if (e.key === 'ArrowRight') stepFieldDossier(1);
     };
     document.addEventListener('keydown', onKey);

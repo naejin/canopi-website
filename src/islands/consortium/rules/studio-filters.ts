@@ -25,9 +25,9 @@ export const EMPTY_STUDIO_FILTERS: StudioFilterState = {
 
 export const SUN_TIER_OPTIONS: readonly { id: Stratum; label: string }[] = [
   { id: 'emergent', label: 'Full sun' },
-  { id: 'high', label: 'Part sun' },
+  { id: 'high', label: 'Mostly sun' },
   { id: 'medium', label: 'Part shade' },
-  { id: 'low', label: 'Full shade' },
+  { id: 'low', label: 'Shade' },
 ];
 
 export const ROLE_OPTIONS: readonly { id: JobId; label: string }[] = [
@@ -56,7 +56,7 @@ function primarySunTier(t: Taxon): Stratum {
 
 export function sunTierLabel(t: Taxon): string {
   const tier = primarySunTier(t);
-  return SUN_TIER_OPTIONS.find((o) => o.id === tier)?.label ?? 'Part sun';
+  return SUN_TIER_OPTIONS.find((o) => o.id === tier)?.label ?? 'Mostly sun';
 }
 
 export function stageSpanOf(t: Taxon): { start: number; end: number; label: string } {

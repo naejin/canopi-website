@@ -39,13 +39,17 @@ import { YourPlants } from './YourPlants.tsx';
 import { PlantSearch } from '../plants/Many.tsx';
 import { wide } from '../plants/state.ts';
 import { PaletteLimits } from '../figures/slots.tsx';
-import { studioTab } from '../../state/studio.ts';
+import { dossierId, studioTab } from '../../state/studio.ts';
+import { lazyPart } from '../lazy.tsx';
 import { StudioHeader } from './StudioHeader.tsx';
-import { PlantingPlanTab } from './PlantingPlanTab.tsx';
 import { RequestPlantModal } from './RequestPlantModal.tsx';
 import { PaletteCards } from './PaletteCards.tsx';
 import { StudioRail } from './StudioRail.tsx';
-import { FieldDossier } from './FieldDossier.tsx';
+
+const LazyLivingSystem = lazyPart(() => import('./LivingSystemTab.tsx').then((m) => m.LivingSystemTab), { page: true });
+const LazyClimate2050 = lazyPart(() => import('./Climate2050Tab.tsx').then((m) => m.Climate2050Tab), { page: true });
+const LazyPlantingPlan = lazyPart(() => import('./PlantingPlanTab.tsx').then((m) => m.PlantingPlanTab), { page: true });
+const LazyFieldDossier = lazyPart(() => import('./FieldDossier.tsx').then((m) => m.FieldDossier), { page: true, quiet: true });
 
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
 // step on the phone never re-renders the page (review r1 bugs-10).
@@ -129,16 +133,18 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   return (
     <div class="ct-palette-page">
       <StudioHeader />
-      {activeTab === 'plan' ? (
-        <PlantingPlanTab />
+      {activeTab === 'system' ? (
+        <LazyLivingSystem.View />
+      ) : activeTab === 'climate' ? (
+        <LazyClimate2050.View />
+      ) : activeTab === 'plan' ? (
+        <LazyPlantingPlan.View />
       ) : (
       <>
-      {activeTab === 'palette' && (
-        <div class="ct-studio-split">
-          <PaletteCards />
-          <StudioRail />
-        </div>
-      )}
+      <div class="ct-studio-split">
+        <PaletteCards />
+        <StudioRail />
+      </div>
       {/* Past 40 plants on the phone the one search sits directly under the place line (boards Many,
           Main: step bar, title, place line, search; the PP-E period tabs go above it later). */}
       {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
@@ -212,7 +218,7 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
       </>
       )}
       <RequestPlantModal />
-      <FieldDossier />
+      {dossierId.value !== null && <LazyFieldDossier.View />}
     </div>
   );
 }

@@ -173,6 +173,8 @@ export const ROLE_ENTRIES = {
   verdict: { entry: /\/src\/lib\/consortium\/verdict\.ts$/, chunks: 1 }, // b2 writes the body
   // v14 pf commit 0W (chk #39): the figures panel behind views/figures/slots.tsx (pf-d fills it).
   figures: { entry: /\/src\/islands\/consortium\/views\/figures\/Figures\.tsx$/, chunks: 1 },
+  // Phase 3 / Slice 3.4: on-demand Field Studio tabs & Field Dossier drawer (lazy-loaded from Palette.tsx).
+  studio: { entry: /\/src\/islands\/consortium\/views\/palette\/(FieldDossier|LivingSystemTab|Climate2050Tab|PlantingPlanTab)\.tsx$/, chunks: 4 },
 };
 const MAPLIBRE_MODULE = /\/node_modules\/maplibre-gl\//;
 // The browser-test hook (main.ts imports it with import() under __CT_TEST_HOOK__ and awaits it before

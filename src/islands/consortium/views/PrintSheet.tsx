@@ -14,8 +14,21 @@
 // palette chunk alone (shared by two lazy chunks it would split into a chunk of its own).
 import { useEffect, useState } from 'preact/hooks';
 import type { Details, Flag, Locale, PlantId, Taxon } from '../../../lib/consortium/index.ts';
-import { factLines, invasiveLines, jobsOf, placementZone, shippedOf } from '../../../lib/consortium/index.ts';
-import { climate, country, failedMembers, flagScene, flags, guests, memberTaxa, memberVerdicts, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
+import {
+  computeFieldMaterials,
+  computePlantingPlan,
+  computePlantingWaves,
+  convertArea,
+  factLines,
+  invasiveLines,
+  jobsOf,
+  placementZone,
+  shippedOf,
+  siteClimate as climateOf,
+} from '../../../lib/consortium/index.ts';
+import { climate, country, failedMembers, flagScene, flags, guests, location as siteLocation, memberTaxa, memberVerdicts, missingMembers, site, source, taxonOf, yearStep } from '../store.ts';
+import { designName, microclimate, plantingConfig } from '../state/studio.ts';
+import { buildPlantingActionCalendar } from '../rules/studio-analysis.ts';
 import { FitLine, say } from './kit/fit.tsx';
 import { RowNotes } from './StageBar.tsx';
 import { P, T, pageLang } from '../strings.ts';
@@ -85,11 +98,23 @@ export function PrintSheet() {
   for (const [ids, missing] of [[failedMembers.value, 'failed'], [missingMembers.value.unlisted, 'unlisted']] as const) {
     for (const id of ids) if (!seen.has(id)) { seen.add(id); gone.push({ id, missing }); }
   }
+  const cfg = plantingConfig.value;
+  const micro = microclimate.value;
+  const sc = siteLocation.value?.lookup ? climateOf(siteLocation.value.lookup) : null;
+  const coldC = sc?.today?.tminColdC;
+  const plan = computePlantingPlan(members, cfg, { coldC });
+  const materials = computeFieldMaterials(plan);
+  const waves = computePlantingWaves(plan, { coldC });
+  const calendar = buildPlantingActionCalendar(plan, coldC);
+  const unitLabel = cfg.areaUnit === 'm2' ? 'm²' : cfg.areaUnit === 'ft2' ? 'ft²' : cfg.areaUnit;
   return (
     <section class="ct-print" aria-labelledby="ct-print-h" data-print>
-      <h2 id="ct-print-h" class="ct-print-title">{T('print.title')}</h2>
+      <h2 id="ct-print-h" class="ct-print-title">{designName.value || T('print.title')}</h2>
       <p class="ct-print-sub">{zoneName(zone)} · {P('start.count', members.length + gone.length)} · {new Date().toLocaleDateString(lang)}</p>
       <p class="ct-print-basis">{basisLine(site.value)}</p>
+      <p class="ct-print-basis">
+        Field &amp; Microclimate Brief: {convertArea(plan.netAreaM2, cfg.areaUnit)} {unitLabel} net ({cfg.densityMode} density, {cfg.pathwaysPct}% pathways) · Slope {micro.slopeDeg}° ({micro.aspect}, {micro.landform})
+      </p>
       <p class="ct-print-basis">
         {code ? `${T('country.line')} ${countryName(code)}${country.value.source === 'guess' ? ` (${T('country.guessed')})` : ''}` : `${T('country.line')}: ${T('country.none')}. ${T('country.noneNote')}`}
         {status === 'unchecked' && code ? ` (${T('country.unchecked', { country: countryName(code) })})` : ''}
@@ -142,6 +167,54 @@ export function PrintSheet() {
           })}
         </tbody>
       </table>
+      {plan.items.length > 0 && (
+        <>
+          <table class="ct-print-table ct-print-nursery">
+            <caption>Nursery Order &amp; Spacing Sheet ({plan.totalUnits} plants · {plan.totalSeedGrams} g seed)</caption>
+            <thead>
+              <tr>
+                <th scope="col">Species</th>
+                <th scope="col">Stock &amp; lead time</th>
+                <th scope="col">Spacing</th>
+                <th scope="col">Qty</th>
+                <th scope="col">Stage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plan.items.map((it) => (
+                <tr key={it.taxon.id}>
+                  <th scope="row"><span class="ct-print-name">{nameOf(it.taxon)}</span> <i class="ct-sci">{it.taxon.canonical_name}</i></th>
+                  <td>{it.stockLabel}{it.seedGrams > 0 ? ` (${it.seedGrams} g)` : ''} · {it.orderWindow}</td>
+                  <td>{it.spacingLabel}</td>
+                  <td>{it.qty}</td>
+                  <td>{it.stageLabel}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="ct-print-materials">
+            <h3 class="ct-print-h3">Field Materials &amp; 4 Planting Waves</h3>
+            <p class="ct-print-basis">
+              Mulch (10 cm): {materials.mulchM3} m³ · Compost: {materials.compostL} L · Stakes/Tags: {materials.stakes}/{materials.tags} · Watering: {materials.wateringCadence} · Effort: {materials.effortLabel} (~{materials.effortHours} h)
+            </p>
+            <ul class="ct-print-waves">
+              {waves.map((w) => (
+                <li key={w.id}><strong>{w.title}</strong> ({w.kicker}): {w.tasks.join(' · ')}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="ct-print-cal">
+            <h3 class="ct-print-h3">12-Month Field Action Calendar</h3>
+            <ul class="ct-print-cal-list">
+              {calendar.map((m) => (
+                <li key={m.month}><strong>{m.month} ({m.tag}):</strong> {m.brief}</li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
       <p class="ct-print-foot">{T('print.made', { url: page().start.site })} · {T('release', { id: release })}</p>
     </section>
   );

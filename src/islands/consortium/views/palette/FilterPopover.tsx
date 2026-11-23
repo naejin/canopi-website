@@ -34,9 +34,14 @@ export interface FilterPopoverProps {
   label?: string;
 }
 
+let filterUidSeq = 0;
+
 export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopoverProps) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const uidRef = useRef<string>('');
+  if (!uidRef.current) uidRef.current = `ct-flt-${++filterUidSeq}`;
+  const uid = uidRef.current;
   const count = activeFilterCount(value);
 
   useDismissOnOutside(open, wrapRef, () => setOpen(false));
@@ -58,8 +63,9 @@ export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopo
         <div class="ct-filter-pop" data-filter-popover role="dialog" aria-label={label}>
           <div class="ct-filter-grid">
             <div class="ct-filter-field">
-              <label>Sun exposure</label>
+              <label for={`${uid}-sun`}>Sun exposure</label>
               <select
+                id={`${uid}-sun`}
                 value={value.sun}
                 onChange={(e) => onChange({ ...value, sun: (e.currentTarget as HTMLSelectElement).value as Stratum | 'all' })}
               >
@@ -69,8 +75,9 @@ export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopo
             </div>
 
             <div class="ct-filter-field">
-              <label>Succession stage</label>
+              <label for={`${uid}-stage`}>Succession stage</label>
               <select
+                id={`${uid}-stage`}
                 value={String(value.stage)}
                 onChange={(e) => {
                   const raw = (e.currentTarget as HTMLSelectElement).value;
@@ -85,8 +92,9 @@ export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopo
             </div>
 
             <div class="ct-filter-field">
-              <label>Ecological role</label>
+              <label for={`${uid}-role`}>Ecological role</label>
               <select
+                id={`${uid}-role`}
                 value={value.role}
                 onChange={(e) => onChange({ ...value, role: (e.currentTarget as HTMLSelectElement).value as JobId | 'all' })}
               >

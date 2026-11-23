@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const graphOf = (edges) => new Map(Object.entries(edges).map(([p, imports]) => [p, { code: '', imports }]));
-const noFeatures = { location: [], future: [], pool: [], details: [], sheets: [], find: [], later: [], suggest: [], palette: [], verdict: [], figures: [] };
+const noFeatures = { location: [], future: [], pool: [], details: [], sheets: [], find: [], later: [], suggest: [], palette: [], verdict: [], figures: [], studio: [] };
 const none = { features: noFeatures, maplibre: [], maplibreCss: [], testHook: [] };
 const sets = ({ parts, location, maplibre }) => ({ parts, location, maplibre });
 const roles = (features, maplibre = []) => ({ ...none, features: { ...noFeatures, ...features }, maplibre });
