@@ -147,48 +147,69 @@ export function PlantingPlanTab() {
 
   const layoutLabel = LAYOUT_OPTIONS.find((o) => o.id === cfg.layoutPattern)?.label ?? 'Guild Clusters';
 
+  const SUN_COLOR: Record<string, string> = {
+    emergent: 'var(--sun-full)',
+    high: 'var(--sun-mostly)',
+    medium: 'var(--sun-part)',
+    low: 'var(--sun-shade)',
+  };
+  const SUN_BG: Record<string, string> = {
+    emergent: 'var(--sun-full-bg)',
+    high: 'var(--sun-mostly-bg)',
+    medium: 'var(--sun-part-bg)',
+    low: 'var(--sun-shade-bg)',
+  };
+  const SUN_CLS: Record<string, string> = {
+    emergent: 'sun-full',
+    high: 'sun-mostly',
+    medium: 'sun-part',
+    low: 'sun-shade',
+  };
+
   return (
-    <section class="ct-studio-section" data-planting-plan-tab aria-label="Planting plan">
-      {/* 1 · FIELD SIZING & DESIGN READINESS Hero Card */}
-      <div class="ct-plan-ledger-card ct-plan-hero">
-        <div class="ct-plan-hero-top">
-          <div class="ct-plan-hero-eyebrow">
-            <span class="ct-eyebrow">1 · FIELD SIZING &amp; DESIGN READINESS</span>
-            <span class="ct-plan-meta-pill">
-              {placeName} · {grossDisplay} {unitMeta.label} · {densityMeta.short}
+    <section data-planting-plan-tab aria-label="Planting plan">
+      {/* 1 · FIELD SIZING & DESIGN READINESS Hero Card (verbatim .plan-hero) */}
+      <div class="plan-hero">
+        <div class="ch-top">
+          <div class="ch-kicker-row">
+            <span class="ch-kicker">1 · Field Sizing &amp; Design Readiness</span>
+            <span class="ch-twin-pill">
+              {placeName} · {grossDisplay} {unitMeta.label} · {densityMeta.short}{cfg.bufferPct === 10 ? ' · +10% buffer' : ''}
             </span>
           </div>
-          <button type="button" class="ct-studio-btn" onClick={backToPlace}>
+          <button type="button" class="btn btn-xs" onClick={backToPlace}>
             Edit location &amp; soil →
           </button>
         </div>
 
-        <div class="ct-plan-hero-head">
-          <h2 class="ct-plan-title">Actionable Planting Plan for your {grossDisplay} {unitMeta.label} plot</h2>
-          <p class="ct-sys-sub">
-            Realistic guild quantities, scaled layout blueprint, nursery lead times, field materials, and month-by-month actions — live-synced with your Location and .canopi file.
+        <div>
+          <h2 class="ch-headline">Actionable Planting Plan for your {grossDisplay} {unitMeta.label} plot</h2>
+          <p class="ch-sub" style="margin-top:5px;">
+            Realistic guild quantities, scaled layout blueprint, nursery lead times, field materials, and month-by-month actions — live-synced with your Location and <code>.canopi</code> file.
           </p>
         </div>
 
-        <div class="ct-plan-controls">
-          <div class="ct-plan-ctrl-group">
-            <label class="ct-eyebrow" for="ct-plan-area-input">PLANTING AREA</label>
-            <div class="ct-plan-area-row">
+        <div class="plan-controls-strip" role="region" aria-label="Inline plot sizing controls">
+          <div class="plan-ctrl-group">
+            <label class="fp-label" style="margin-bottom:0;" for="ct-plan-area-input">Planting area</label>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px;">
               <input
                 id="ct-plan-area-input"
                 type="number"
-                class="ct-area-input"
+                class="area-num-input"
+                style="width:108px; padding:6px 9px; font-size:15.5px;"
                 min={1}
                 step="any"
                 value={grossDisplay}
                 onChange={(e) => onAreaInput((e.currentTarget as HTMLInputElement).value)}
               />
-              <div class="ct-ink-seg" role="group" aria-label="Area unit">
+              <div class="ink-seg" role="group" aria-label="Area unit">
                 {UNIT_OPTIONS.map((u) => (
                   <button
                     key={u.id}
                     type="button"
-                    class="ct-seg-btn"
+                    class="ink-seg-btn"
+                    style="padding:5px 9px;"
                     aria-pressed={cfg.areaUnit === u.id ? 'true' : 'false'}
                     onClick={() => setPlantingConfig({ areaUnit: u.id })}
                   >
@@ -199,14 +220,14 @@ export function PlantingPlanTab() {
             </div>
           </div>
 
-          <div class="ct-plan-ctrl-group">
-            <span class="ct-eyebrow">DENSITY</span>
-            <div class="ct-plan-chip-row" role="group" aria-label="Planting density">
+          <div class="plan-ctrl-group">
+            <span class="fp-label" style="margin-bottom:0;">Density</span>
+            <div class="chip-row" role="group" aria-label="Planting density">
               {DENSITY_OPTIONS.map((d) => (
                 <button
                   key={d.id}
                   type="button"
-                  class={`ct-plan-pill-btn${cfg.densityMode === d.id ? ' is-active' : ''}`}
+                  class="filter-chip"
                   aria-pressed={cfg.densityMode === d.id ? 'true' : 'false'}
                   onClick={() => setPlantingConfig({ densityMode: d.id })}
                 >
@@ -216,14 +237,14 @@ export function PlantingPlanTab() {
             </div>
           </div>
 
-          <div class="ct-plan-ctrl-group">
-            <span class="ct-eyebrow">PATHWAYS %</span>
-            <div class="ct-plan-chip-row" role="group" aria-label="Pathway allowance">
+          <div class="plan-ctrl-group">
+            <span class="fp-label" style="margin-bottom:0;">Pathways %</span>
+            <div class="chip-row" role="group" aria-label="Pathway allowance">
               {PATHWAY_OPTIONS.map((pct) => (
                 <button
                   key={pct}
                   type="button"
-                  class={`ct-plan-pill-btn${cfg.pathwaysPct === pct ? ' is-active' : ''}`}
+                  class="filter-chip"
                   aria-pressed={cfg.pathwaysPct === pct ? 'true' : 'false'}
                   onClick={() => setPlantingConfig({ pathwaysPct: pct })}
                 >
@@ -233,75 +254,72 @@ export function PlantingPlanTab() {
             </div>
           </div>
 
-          <div class="ct-plan-ctrl-group ct-plan-safety-group">
-            <span class="ct-eyebrow">SAFETY MARGIN</span>
+          <div class="plan-ctrl-group">
+            <span class="fp-label" style="margin-bottom:0;">Safety margin</span>
             <button
               type="button"
-              class={`ct-plan-pill-btn ct-plan-buffer-btn${cfg.bufferPct === 10 ? ' is-active' : ''}`}
+              class="filter-chip"
               aria-pressed={cfg.bufferPct === 10 ? 'true' : 'false'}
               onClick={() => setPlantingConfig({ bufferPct: cfg.bufferPct === 10 ? 0 : 10 })}
             >
-              +10% establishment buffer
+              {cfg.bufferPct === 10 ? '✓ +10% establishment buffer' : '+10% establishment buffer'}
             </button>
           </div>
         </div>
 
-        <div class="ct-plan-kpis">
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">PLANTS &amp; SEED ORDER</span>
-            <span class="ct-plan-kpi-val">
+        <div class="plan-ledger-strip" role="region" aria-label="Plot summary metrics">
+          <div class="plan-ledger-col">
+            <span class="lk">Plants &amp; Seed Order</span>
+            <div class="lv">
               {plan.totalUnits} transplants{plan.totalSeedGrams > 0 ? ` + ${plan.totalSeedGrams} g seed` : ''}
-            </span>
-            <span class="ct-plan-kpi-sub">{members.length} species</span>
+            </div>
+            <div class="ls">{members.length} species</div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">NET PLANTED AREA</span>
-            <span class="ct-plan-kpi-val">{netDisplay} {unitMeta.label} net · {plan.coveragePct}% stacked</span>
-            <span class="ct-plan-kpi-sub">Of {grossDisplay} {unitMeta.label} gross · {cfg.pathwaysPct}% paths</span>
+          <div class="plan-ledger-col">
+            <span class="lk">Net Planted Area</span>
+            <div class="lv">{netDisplay} {unitMeta.label} net · {plan.coveragePct}% stacked</div>
+            <div class="ls">Of {grossDisplay} {unitMeta.label} gross · {cfg.pathwaysPct}% paths</div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">PLANTING WAVES</span>
-            <span class="ct-plan-kpi-val">{waves.length} waves · Frost-anchored</span>
-            <span class="ct-plan-kpi-sub">{waves[1]?.kicker ?? 'Autumn/Winter root-in'}</span>
+          <div class="plan-ledger-col">
+            <span class="lk">Planting Waves</span>
+            <div class="lv">{waves.length} waves · Frost-anchored</div>
+            <div class="ls">{waves[1]?.kicker ?? 'Autumn/Winter root-in'}</div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">HARVEST HORIZON</span>
-            <span class="ct-plan-kpi-val">3 mo → Yr 5+</span>
-            <span class="ct-plan-kpi-sub">First harvest: Placenta 1 · Mature yield: Yr 4–7</span>
+          <div class="plan-ledger-col">
+            <span class="lk">Harvest Horizon</span>
+            <div class="lv">3 mo → Yr 5+</div>
+            <div class="ls">First harvest: Placenta 1 · Mature yield: Yr 4–7</div>
           </div>
         </div>
 
         {plan.notes.length > 0 && (
-          <div class="ct-plan-notes-foot">
-            <p class="ct-plan-note">
-              {plan.notes.map((n, i) => (
-                <span key={i}>
-                  {i > 0 ? ' · ' : ''}
-                  <strong>{n.label}:</strong> {n.text}
-                </span>
-              ))}
-            </p>
+          <div class="plan-notes-footer" role="region" aria-label="Agronomic notes">
+            {plan.notes.map((n, i) => (
+              <span key={i}>
+                {i > 0 ? <span style="color:var(--border-strong); margin:0 6px;" aria-hidden="true">·</span> : ''}
+                <strong>{n.label}:</strong> {n.text}
+              </span>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Plot Layout & Spacing Blueprint (v14 architectural SVG) */}
-      <div class="ct-sys-block">
-        <div class="ct-sys-head">
+      {/* Plot Layout & Spacing Blueprint (verbatim .system-section + .bp-wrap) */}
+      <div class="system-section">
+        <div class="sec-head">
           <div>
-            <h3 class="ct-sys-title">
-              {T('studio.planBlueprint')} · {blueprint.widthM} m × {blueprint.heightM} m
-            </h3>
-            <p class="ct-sys-sub">
-              Scaled {layoutLabel} preview with dashed mature-spread rings and {cfg.pathwaysPct}% access paths. Click any circle for its Field Dossier.
+            <h2>{T('studio.planBlueprint')} · {blueprint.widthM} m × {blueprint.heightM} m</h2>
+            <p class="sec-sub">
+              Scaled <strong>{layoutLabel}</strong> preview with dashed mature-spread rings and {cfg.pathwaysPct}% access paths. Click any circle for its Field Dossier.
             </p>
           </div>
-          <div class="ct-ink-seg" role="group" aria-label="Layout pattern">
+          <div class="ink-seg" role="group" aria-label="Layout pattern">
             {LAYOUT_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
-                class="ct-seg-btn"
+                class="ink-seg-btn"
+                style="padding:5px 10px; font-size:12.5px;"
                 aria-pressed={cfg.layoutPattern === opt.id ? 'true' : 'false'}
                 onClick={() => setPlantingConfig({ layoutPattern: opt.id })}
               >
@@ -311,125 +329,125 @@ export function PlantingPlanTab() {
           </div>
         </div>
 
-        <figure class="ct-blueprint-wrap">
-          <svg
-            viewBox={`0 0 ${blueprint.viewWidth} ${blueprint.viewHeight + 36}`}
-            class="ct-blueprint-svg"
-            role="img"
-            aria-label={`Planting layout blueprint (${layoutLabel})`}
-          >
-            {/* Dimension labels */}
-            <text class="ct-bp-dim" x={blueprint.viewWidth / 2} y="16" text-anchor="middle">
-              {blueprint.widthM} m width · {grossDisplay} {unitMeta.label} gross
-            </text>
-            <text
-              class="ct-bp-dim"
-              x="12"
-              y={blueprint.viewHeight / 2 + 12}
-              text-anchor="middle"
-              transform={`rotate(-90 12 ${blueprint.viewHeight / 2 + 12})`}
+        <div class="bp-wrap">
+          <div class="bp-svg-frame">
+            <svg
+              viewBox={`0 0 ${blueprint.viewWidth} ${blueprint.viewHeight + 36}`}
+              class="bp-svg"
+              role="img"
+              aria-label={`Planting layout blueprint (${layoutLabel})`}
             >
-              {blueprint.heightM} m
-            </text>
+              <text x={blueprint.viewWidth / 2} y="16" text-anchor="middle" fill="var(--ink-muted)" font-size="11">
+                {blueprint.widthM} m width · {grossDisplay} {unitMeta.label} gross
+              </text>
+              <text
+                x="12"
+                y={blueprint.viewHeight / 2 + 12}
+                text-anchor="middle"
+                fill="var(--ink-muted)"
+                font-size="11"
+                transform={`rotate(-90 12 ${blueprint.viewHeight / 2 + 12})`}
+              >
+                {blueprint.heightM} m
+              </text>
 
-            {/* Outer architectural frame */}
-            <rect
-              class="ct-bp-frame"
-              x="26"
-              y="24"
-              width={blueprint.viewWidth - 40}
-              height={blueprint.viewHeight - 24}
-              rx="6"
-            />
+              <rect
+                x="26"
+                y="24"
+                width={blueprint.viewWidth - 40}
+                height={blueprint.viewHeight - 24}
+                rx="6"
+                fill="var(--surface)"
+                stroke="var(--border-strong)"
+                stroke-width="1.2"
+              />
 
-            {/* Compass N↑ */}
-            <g transform={`translate(${blueprint.viewWidth - 36}, 44)`}>
-              <circle class="ct-bp-compass" cx="0" cy="0" r="11" />
-              <text class="ct-bp-compass-txt" x="0" y="3.5" text-anchor="middle">N↑</text>
-            </g>
+              <g transform={`translate(${blueprint.viewWidth - 36}, 44)`}>
+                <circle cx="0" cy="0" r="11" fill="var(--bg)" stroke="var(--border-strong)" stroke-width="1" />
+                <text x="0" y="3.5" text-anchor="middle" fill="var(--ink)" font-size="9.5" font-weight="600">N↑</text>
+              </g>
 
-            {/* Alley lanes if alley mode */}
-            {blueprint.lanes.map((y, idx) => (
-              <line key={idx} class="ct-bp-lane" x1="34" y1={y + 10} x2={blueprint.viewWidth - 22} y2={y + 10} />
-            ))}
+              {blueprint.lanes.map((y, idx) => (
+                <line key={idx} x1="34" y1={y + 10} x2={blueprint.viewWidth - 22} y2={y + 10} stroke="var(--border)" stroke-dasharray="4 4" />
+              ))}
 
-            {/* Translucent sun-tier canopies + dashed mature spread rings + readable plant names */}
-            {blueprint.nodes.map((n) => {
-              const t = store.taxonOf(n.id);
-              const shortName = (t ? nameOf(t) : n.label).split(' ')[0].slice(0, 12);
-              const cy = Math.min(blueprint.viewHeight - 16, Math.max(46, n.y + 10));
-              const cx = Math.min(blueprint.viewWidth - 34, Math.max(46, n.x));
-              const outerR = Math.round(n.r * 1.48);
-              return (
-                <g
-                  key={n.id}
-                  class="ct-bp-canopy"
-                  data-sun-tier={n.sunBand}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => openFieldDossier(n.id, memberIds)}
-                >
-                  <circle class="ct-bp-spread-ring" cx={cx} cy={cy} r={outerR} />
-                  <circle class="ct-bp-fill-circle" cx={cx} cy={cy} r={n.r + 3} />
-                  <text class="ct-bp-plant-lbl" x={cx} y={cy + 3.5} text-anchor="middle">{shortName}</text>
-                </g>
-              );
-            })}
+              {blueprint.nodes.map((n) => {
+                const t = store.taxonOf(n.id);
+                const shortName = (t ? nameOf(t) : n.label).split(' ')[0].slice(0, 12);
+                const cy = Math.min(blueprint.viewHeight - 16, Math.max(46, n.y + 10));
+                const cx = Math.min(blueprint.viewWidth - 34, Math.max(46, n.x));
+                const outerR = Math.round(n.r * 1.48);
+                const strokeCol = SUN_COLOR[n.sunBand] ?? 'var(--sun-full)';
+                const fillCol = SUN_BG[n.sunBand] ?? 'var(--sun-full-bg)';
+                return (
+                  <g
+                    key={n.id}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => openFieldDossier(n.id, memberIds)}
+                  >
+                    <circle cx={cx} cy={cy} r={outerR} fill="none" stroke={strokeCol} stroke-dasharray="3 3" stroke-opacity="0.6" />
+                    <circle cx={cx} cy={cy} r={n.r + 3} fill={fillCol} stroke={strokeCol} stroke-width="1.5" />
+                    <text x={cx} y={cy + 3.5} text-anchor="middle" fill="var(--ink)" font-size="10.5" font-weight="600">{shortName}</text>
+                  </g>
+                );
+              })}
 
-            {/* Scale bar 0 — 2m — 4m */}
-            <g transform={`translate(36, ${blueprint.viewHeight + 16})`}>
-              <line class="ct-bp-scale-line" x1="0" y1="0" x2="110" y2="0" />
-              <line class="ct-bp-scale-line" x1="0" y1="-4" x2="0" y2="4" />
-              <line class="ct-bp-scale-line" x1="55" y1="-4" x2="55" y2="4" />
-              <line class="ct-bp-scale-line" x1="110" y1="-4" x2="110" y2="4" />
-              <text class="ct-bp-dim" x="0" y="-7">0</text>
-              <text class="ct-bp-dim" x="55" y="-7" text-anchor="middle">2 m</text>
-              <text class="ct-bp-dim" x="110" y="-7" text-anchor="end">4 m</text>
-            </g>
-            <text class="ct-bp-dim" x={blueprint.viewWidth - 20} y={blueprint.viewHeight + 18} text-anchor="end">
-              Dashed rings = mature spread · {cfg.pathwaysPct}% access paths
-            </text>
-          </svg>
-
-          <figcaption class="ct-bp-footer-bar">
-            <div class="ct-bp-sun-key">
+              <g transform={`translate(36, ${blueprint.viewHeight + 16})`}>
+                <line x1="0" y1="0" x2="110" y2="0" stroke="var(--ink-muted)" stroke-width="1.2" />
+                <line x1="0" y1="-4" x2="0" y2="4" stroke="var(--ink-muted)" stroke-width="1.2" />
+                <line x1="55" y1="-4" x2="55" y2="4" stroke="var(--ink-muted)" stroke-width="1.2" />
+                <line x1="110" y1="-4" x2="110" y2="4" stroke="var(--ink-muted)" stroke-width="1.2" />
+                <text x="0" y="-7" fill="var(--ink-muted)" font-size="10">0</text>
+                <text x="55" y="-7" text-anchor="middle" fill="var(--ink-muted)" font-size="10">2 m</text>
+                <text x="110" y="-7" text-anchor="end" fill="var(--ink-muted)" font-size="10">4 m</text>
+              </g>
+              <text x={blueprint.viewWidth - 20} y={blueprint.viewHeight + 18} text-anchor="end" fill="var(--ink-muted)" font-size="10.5">
+                Dashed rings = mature spread · {cfg.pathwaysPct}% access paths
+              </text>
+            </svg>
+          </div>
+          <div class="bp-meta-bar">
+            <div class="legend-row" style="margin:0;">
               {(['emergent', 'high', 'medium', 'low'] as const).map((tier) => (
-                <span key={tier} class="ct-bp-sun-item">
-                  <i class="ct-bp-sun-dot" data-sun-tier={tier} /> {SUN_LABELS[tier]}
+                <span key={tier} class="legend-item">
+                  <span class="win-dot" style={{ background: SUN_COLOR[tier], width: '10px', height: '10px' }} />
+                  {SUN_LABELS[tier]}
                 </span>
               ))}
             </div>
-            <span class="ct-small-text ct-muted">{blueprint.widthM} m × {blueprint.heightM} m · {layoutLabel} · {densityMeta.short}</span>
-          </figcaption>
-          <p class="ct-small-text ct-muted ct-bp-export-note">
-            ↳ Exports exact area, layout pattern, spacing &amp; species counts into your <code>.canopi</code> file so you can place and refine every plant on the Canopi Desktop map.
-          </p>
-        </figure>
+            <span>{blueprint.widthM} m × {blueprint.heightM} m · {layoutLabel} · {densityMeta.short}</span>
+          </div>
+          <div class="bp-canopi-note">
+            <span>↳ Exports exact area, layout pattern, spacing &amp; species counts into your <code>.canopi</code> file so you can place and refine every plant on the Canopi Desktop map.</span>
+          </div>
+        </div>
       </div>
 
-      {/* 2 · Species Quantities, Spacing & Nursery Order (1:1 v14) */}
-      <div class="ct-sys-block">
-        <div class="ct-sys-head">
+      {/* 2 · Species Quantities, Spacing & Nursery Order (verbatim .plan-table) */}
+      <div class="system-section">
+        <div class="sec-head">
           <div>
-            <h3 class="ct-sys-title">2 · Species Quantities, Spacing &amp; Nursery Order</h3>
-            <p class="ct-sys-sub">
+            <h2>2 · Species Quantities, Spacing &amp; Nursery Order</h2>
+            <p class="sec-sub">
               Adjust any quantity directly — blueprint, materials, waves, monthly briefs, and your <code>.canopi</code> file update live. Click any species to open its Field Dossier.
             </p>
           </div>
-          <div class="ct-order-tools">
-            <div class="ct-ink-seg" role="group" aria-label="Sort species order">
-              <button type="button" class="ct-seg-btn" aria-pressed={orderSort === 'sun' ? 'true' : 'false'} onClick={() => setOrderSort('sun')}>
+          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
+            <div class="ink-seg" role="group" aria-label="Sort species order">
+              <button type="button" class="ink-seg-btn" style="padding:4px 9px; font-size:12px;" aria-pressed={orderSort === 'sun' ? 'true' : 'false'} onClick={() => setOrderSort('sun')}>
                 By Preferred Sun
               </button>
-              <button type="button" class="ct-seg-btn" aria-pressed={orderSort === 'phase' ? 'true' : 'false'} onClick={() => setOrderSort('phase')}>
+              <button type="button" class="ink-seg-btn" style="padding:4px 9px; font-size:12px;" aria-pressed={orderSort === 'phase' ? 'true' : 'false'} onClick={() => setOrderSort('phase')}>
                 By Planting Phase
               </button>
-              <button type="button" class="ct-seg-btn" aria-pressed={orderSort === 'qty' ? 'true' : 'false'} onClick={() => setOrderSort('qty')}>
+              <button type="button" class="ink-seg-btn" style="padding:4px 9px; font-size:12px;" aria-pressed={orderSort === 'qty' ? 'true' : 'false'} onClick={() => setOrderSort('qty')}>
                 By Quantity
               </button>
             </div>
             <input
               type="search"
-              class="ct-pal-search ct-order-search"
+              class="field-input"
+              style="width:190px; max-width:100%;"
               placeholder="Filter species…"
               aria-label="Filter nursery order species"
               value={orderQuery}
@@ -438,113 +456,131 @@ export function PlantingPlanTab() {
           </div>
         </div>
 
-        {/* 4-Tier Sun Budget Bar */}
-        <div class="ct-sun-budget-grid">
-          {(['emergent', 'high', 'medium', 'low'] as const).map((tier) => {
-            const m2 = plan.sunFootprint[tier] ?? 0;
-            const pct = Math.min(100, Math.round((m2 / Math.max(1, plan.netAreaM2)) * 100));
-            return (
-              <div key={tier} class="ct-sun-budget-col">
-                <div class="ct-sun-budget-top">
-                  <strong>{SUN_LABELS[tier]}</strong>
-                  <span class="ct-muted">{m2} m² ({pct}%)</span>
+        <div class="fp-budget-box">
+          <div class="fp-stack-bars">
+            {(['emergent', 'high', 'medium', 'low'] as const).map((tier) => {
+              const m2 = plan.sunFootprint[tier] ?? 0;
+              const pct = Math.min(100, Math.round((m2 / Math.max(1, plan.netAreaM2)) * 100));
+              return (
+                <div key={tier} class="fp-tier-col">
+                  <div class="fp-tier-head">
+                    <strong style="color:var(--ink);">{SUN_LABELS[tier]}</strong>
+                    <span style="color:var(--ink-soft); font-weight:600;">{m2} m² ({pct}%)</span>
+                  </div>
+                  <div class="fp-tier-track">
+                    <div class="fp-tier-fill" style={{ width: `${Math.max(pct > 0 ? 4 : 0, pct)}%`, background: SUN_COLOR[tier] }} />
+                  </div>
                 </div>
-                <span class="ct-mx-bar-track">
-                  <span class="ct-mx-bar-fill" data-sun-tier={tier} style={{ width: `${Math.max(pct > 0 ? 4 : 0, pct)}%` }} />
-                </span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
-        {/* Stock Summary Strip */}
-        <div class="ct-stock-strip">
-          <span><strong>{plan.stockSummary.bareroot}× Bare-root trees</strong> · order Sep–Oct</span>
-          <span><strong>{plan.stockSummary.pot}× Potted starts</strong> · order Feb</span>
-          <span><strong>{plan.stockSummary.bulb}× Bulbs / divisions</strong> · order Sep</span>
-          <span><strong>{plan.stockSummary.seedPacks}× Seed pack ({plan.stockSummary.seedGrams} g)</strong> · order Jan–Feb</span>
+        <div class="leadtime-ribbon" role="region" aria-label="Nursery order lead-time summary">
+          <span class="lt-item"><strong>{plan.stockSummary.bareroot}× Bare-root trees</strong> · order Sep–Oct</span>
+          <span style="color:var(--border-strong);" aria-hidden="true">·</span>
+          <span class="lt-item"><strong>{plan.stockSummary.pot}× Potted starts</strong> · order Feb</span>
+          <span style="color:var(--border-strong);" aria-hidden="true">·</span>
+          <span class="lt-item"><strong>{plan.stockSummary.bulb}× Bulbs / divisions</strong> · order Sep</span>
+          <span style="color:var(--border-strong);" aria-hidden="true">·</span>
+          <span class="lt-item"><strong>{plan.stockSummary.seedPacks}× Seed pack ({plan.stockSummary.seedGrams} g)</strong> · order Jan–Feb</span>
         </div>
 
-        {/* Desktop Swiss-editorial Nursery Order Table */}
-        <div class="ct-plan-table-wrap ct-plan-desktop">
-          <table class="ct-plan-table">
+        <div class="plan-table-wrap" style="overflow-x:auto;">
+          <table class="plan-table" aria-label="Species quantities, spacing and nursery format">
             <thead>
               <tr>
-                <th>SPECIES &amp; SUCCESSION</th>
-                <th>SPACING &amp; PREP</th>
-                <th>QUANTITY</th>
-                <th>STOCK FORMAT</th>
-                <th>FOOTPRINT</th>
-                <th>KEY FIELD WINDOWS</th>
+                <th style="min-width:175px;">Species &amp; Succession</th>
+                <th style="min-width:142px;">Spacing &amp; Prep</th>
+                <th style="min-width:136px;">Quantity</th>
+                <th style="min-width:152px;">Stock Format</th>
+                <th style="min-width:98px;">Footprint</th>
+                <th style="min-width:165px;">Key Field Windows</th>
               </tr>
             </thead>
             <tbody>
               {sortedItems.map((item) => (
                 <tr key={item.taxon.id}>
                   <td>
-                    <div class="ct-order-sp-cell">
-                      <button type="button" class="ct-sys-link" onClick={() => openFieldDossier(item.taxon.id, memberIds)}>
-                        <strong>{nameOf(item.taxon)}</strong>
-                      </button>
-                      <div class="ct-order-sp-tags">
-                        <span class="ct-gantt-sun-pill" data-sun-tier={item.sunBand}>{SUN_LABELS[item.sunBand]}</span>
-                        <span class="ct-order-stage-pill">{item.stageLabel}</span>
+                    <div style="display:flex; align-items:flex-start; gap:8px;">
+                      <span class="status-dot" style={{ background: SUN_COLOR[item.sunBand], marginTop: '6px' }} />
+                      <div>
+                        <button
+                          type="button"
+                          class="link-btn"
+                          style="padding:0; font-family:var(--font-display); font-size:15px; font-weight:600; color:var(--ink); text-align:left;"
+                          onClick={() => openFieldDossier(item.taxon.id, memberIds)}
+                        >
+                          {nameOf(item.taxon)}
+                        </button>
+                        <div style="display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin-top:2px;">
+                          <span class={`sun-badge ${SUN_CLS[item.sunBand]}`} style="font-size:10.5px; padding:1px 6px;">{SUN_LABELS[item.sunBand]}</span>
+                          <span class="why-tag" style="font-size:10.5px;">{item.stageLabel}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="mob-kv">
+                    <span class="mob-field-lbl">Spacing &amp; prep</span>
+                    <div>
+                      <strong style="color:var(--ink); white-space:nowrap;">{item.spacingLabel}</strong>
+                      <div style="font-size:11.5px; color:var(--ink-muted);">in-row × between-row</div>
+                    </div>
+                  </td>
+                  <td class="mob-kv">
+                    <span class="mob-field-lbl">Quantity</span>
+                    <div>
+                      <div class="qty-stepper">
+                        <button type="button" class="qty-step-btn" aria-label={`Decrease ${nameOf(item.taxon)}`} onClick={() => setQuantityOverride(item.taxon.id, Math.max(0, item.qty - 1))}>−</button>
+                        <input
+                          type="number"
+                          class="qty-input"
+                          min={0}
+                          max={9999}
+                          aria-label={`Quantity for ${nameOf(item.taxon)}`}
+                          value={item.qty}
+                          onChange={(e) => setQuantityOverride(item.taxon.id, Number((e.currentTarget as HTMLInputElement).value))}
+                        />
+                        <button type="button" class="qty-step-btn" aria-label={`Increase ${nameOf(item.taxon)}`} onClick={() => setQuantityOverride(item.taxon.id, item.qty + 1)}>+</button>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:5px; margin-top:4px;">
+                        <span class={`qty-badge${item.isCustom ? ' custom' : ''}`}>{item.isCustom ? 'Custom' : 'Auto'}</span>
+                        {item.isCustom && (
+                          <button type="button" class="link-btn" style="font-size:11px; padding:0;" onClick={() => setQuantityOverride(item.taxon.id, null)}>
+                            Reset ({item.autoQty})
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td class="mob-kv">
+                    <span class="mob-field-lbl">Stock format</span>
+                    <div>
+                      <strong style="font-size:13px; color:var(--ink); white-space:nowrap;">{item.stockLabel}{item.seedGrams > 0 ? ` · ${item.seedGrams} g pack` : ''}</strong>
+                      <div style="font-size:11.5px; color:var(--ink-muted);">{item.orderWindow}</div>
+                    </div>
+                  </td>
+                  <td class="mob-kv">
+                    <span class="mob-field-lbl">Footprint</span>
+                    <div>
+                      <div style="font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;">
+                        {item.footprintM2} m² <span style="font-weight:400; color:var(--ink-muted);">({item.pctOfNet}%)</span>
+                      </div>
+                      <div class="fp-mini-bar">
+                        <div class="fp-mini-fill" style={{ width: `${Math.min(100, item.pctOfNet)}%`, background: SUN_COLOR[item.sunBand] }} />
                       </div>
                     </div>
                   </td>
                   <td>
-                    <strong>{item.spacingLabel}</strong>
-                    <div class="ct-small-text ct-muted">in-row × between-row</div>
-                  </td>
-                  <td>
-                    <div class="ct-stepper">
-                      <button
-                        type="button"
-                        class="ct-step-btn"
-                        aria-label={`Decrease ${nameOf(item.taxon)}`}
-                        onClick={() => setQuantityOverride(item.taxon.id, Math.max(0, item.qty - 1))}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        class="ct-qty-input"
-                        min={0}
-                        max={9999}
-                        aria-label={`Quantity for ${nameOf(item.taxon)}`}
-                        value={item.qty}
-                        onChange={(e) => setQuantityOverride(item.taxon.id, Number((e.currentTarget as HTMLInputElement).value))}
-                      />
-                      <button
-                        type="button"
-                        class="ct-step-btn"
-                        aria-label={`Increase ${nameOf(item.taxon)}`}
-                        onClick={() => setQuantityOverride(item.taxon.id, item.qty + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-                    {item.isCustom ? (
-                      <button type="button" class="ct-qty-reset" onClick={() => setQuantityOverride(item.taxon.id, null)}>
-                        Auto ({item.autoQty})
-                      </button>
-                    ) : (
-                      <span class="ct-auto-tag">Auto</span>
-                    )}
-                  </td>
-                  <td>
-                    <strong>{item.stockLabel}{item.seedGrams > 0 ? ` · ${item.seedGrams} g pack` : ''}</strong>
-                    <div class="ct-small-text ct-muted">{item.orderWindow}</div>
-                  </td>
-                  <td>
-                    <strong>{item.footprintM2} m²</strong> <span class="ct-muted">({item.pctOfNet}%)</span>
-                  </td>
-                  <td>
-                    <div class="ct-window-badges">
-                      <span class="ct-win-pill is-plant">
-                        {item.isSeed ? '• Sow Apr–May' : item.phase === 'winter' ? '• Plant Nov–Feb' : '• Plant Mar–Oct'}
+                    <div class="win-pills">
+                      <span class="win-pill">
+                        <span class="win-dot" style="background:var(--cal-sow);" />
+                        {item.isSeed ? 'Sow Apr–May' : item.phase === 'winter' ? 'Plant Nov–Feb' : 'Plant Mar–Oct'}
                       </span>
-                      <span class="ct-win-pill is-harv" data-stratum="high">✦ Harvest Jul–Oct</span>
+                      <span class="win-pill">
+                        <span class="win-dot" style="background:var(--cal-harvest);" />
+                        Harvest Jul–Oct
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -552,91 +588,56 @@ export function PlantingPlanTab() {
             </tbody>
           </table>
         </div>
-
-        {/* Mobile Field Order Cards (<= 639px) */}
-        <div class="ct-plan-mobile">
-          {sortedItems.map((item) => (
-            <article key={item.taxon.id} class="ct-order-card">
-              <div class="ct-order-card-head">
-                <button type="button" class="ct-sys-link" onClick={() => openFieldDossier(item.taxon.id, memberIds)}>
-                  <strong>{nameOf(item.taxon)}</strong>
-                </button>
-                <span class="ct-small-text ct-muted">{item.spacingLabel}</span>
-              </div>
-              <div class="ct-small-text ct-muted">
-                {item.stockLabel}{item.seedGrams > 0 ? ` (${item.seedGrams} g)` : ''} · {item.orderWindow} · {item.footprintM2} m²
-              </div>
-              <div class="ct-stepper">
-                <button type="button" class="ct-step-btn" onClick={() => setQuantityOverride(item.taxon.id, Math.max(0, item.qty - 1))}>−</button>
-                <input
-                  type="number"
-                  class="ct-qty-input"
-                  min={0}
-                  max={9999}
-                  value={item.qty}
-                  onChange={(e) => setQuantityOverride(item.taxon.id, Number((e.currentTarget as HTMLInputElement).value))}
-                />
-                <button type="button" class="ct-step-btn" onClick={() => setQuantityOverride(item.taxon.id, item.qty + 1)}>+</button>
-              </div>
-            </article>
-          ))}
-        </div>
       </div>
 
-      {/* 3 · Field Materials, Prep & Year-1 Sequence (1:1 v14) */}
-      <div class="ct-sys-block">
-        <div class="ct-sys-head">
+      {/* 3 · Field Materials, Prep & Year-1 Sequence (verbatim .plan-ledger-strip + .wave-grid) */}
+      <div class="system-section">
+        <div class="sec-head">
           <div>
-            <h3 class="ct-sys-title">3 · Field Materials, Prep &amp; Year-1 Sequence</h3>
-            <p class="ct-sys-sub">Live-calculated materials and labor for your {netDisplay} {unitMeta.label} net planted area, followed by 4 chronological field waves.</p>
+            <h2>3 · Field Materials, Prep &amp; Year-1 Sequence</h2>
+            <p class="sec-sub">Live-calculated materials and labor for your {netDisplay} {unitMeta.label} net planted area, followed by 4 chronological field waves.</p>
           </div>
         </div>
 
-        <div class="ct-plan-kpis">
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">MULCH &amp; COMPOST</span>
-            <span class="ct-plan-kpi-val">{effectiveMulchM3} m³ woodchip / straw</span>
-            <span class="ct-plan-kpi-sub">{extremeInsurance ? '14 cm deep (+4 cm cap)' : '10 cm depth'} · ~{materials.compostL} L compost</span>
+        <div class="plan-ledger-strip" role="region" aria-label="Field materials, prep and labor calculator">
+          <div class="plan-ledger-col">
+            <span class="lk">Mulch &amp; Compost</span>
+            <div class="lv">{effectiveMulchM3} m³ woodchip / straw</div>
+            <div class="ls">{extremeInsurance ? '14 cm deep (+4 cm cap)' : '10 cm depth'} · ~{materials.compostL} L compost</div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">STAKES &amp; LABELS</span>
-            <span class="ct-plan-kpi-val">{materials.stakes}× tree stakes &amp; rings</span>
-            <span class="ct-plan-kpi-sub">+ {materials.tags}× weatherproof species tags</span>
+          <div class="plan-ledger-col">
+            <span class="lk">Stakes &amp; Labels</span>
+            <div class="lv">{materials.stakes}× tree stakes &amp; rings</div>
+            <div class="ls">+ {materials.tags}× weatherproof species tags</div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">YEAR-1 WATERING</span>
-            <span class="ct-plan-kpi-val ct-plan-kpi-sm">{materials.wateringCadence}</span>
-            <span class="ct-plan-kpi-sub">{materials.wateringDetail}</span>
+          <div class="plan-ledger-col">
+            <span class="lk">Year-1 Watering</span>
+            <div class="lv">{materials.wateringCadence}</div>
+            <div class="ls">{materials.wateringDetail}</div>
           </div>
-          <div class="ct-plan-kpi">
-            <span class="ct-plan-kpi-label">EST. EFFORT</span>
-            <span class="ct-plan-kpi-val">{materials.effortLabel}</span>
-            <span class="ct-plan-kpi-sub">Layout staking, bare-root planting &amp; mulching</span>
+          <div class="plan-ledger-col">
+            <span class="lk">Est. Effort</span>
+            <div class="lv">{materials.effortLabel}</div>
+            <div class="ls">Layout staking, bare-root planting &amp; mulching</div>
           </div>
         </div>
 
-        {/* Interactive Extreme-Year Field Insurance Box */}
-        <div class="ct-insurance-box">
-          <div class="ct-insurance-top">
-            <strong>⚡ Extreme-Year Field Insurance (Site v0.7.0 Tail Prep)</strong>
-            <button type="button" class="ct-sys-link ct-small-text" onClick={() => { studioTab.value = 'climate'; }}>
+        <div style="margin:14px 0; padding:10px 14px; border-left:3px solid var(--warn-dot); background:var(--bg); border-radius:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+            <strong style="font-size:13px;">⚡ Extreme-Year Field Insurance (Site v0.7.0 Tail Prep)</strong>
+            <button type="button" class="link-btn" style="font-size:12px;" onClick={() => { studioTab.value = 'climate'; }}>
               Tune in Stress Lab →
             </button>
           </div>
-          <label class="ct-insurance-check">
-            <input
-              type="checkbox"
-              checked={extremeInsurance}
-              onChange={(e) => setExtremeInsurance((e.currentTarget as HTMLInputElement).checked)}
-            />
+          <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; color:var(--ink-soft); cursor:pointer;">
+            <input type="checkbox" checked={extremeInsurance} onChange={(e) => setExtremeInsurance((e.currentTarget as HTMLInputElement).checked)} />
             <span>
               <strong>Extra +4 cm woodchip mulch cap &amp; shade cloth</strong> — protects roots during peak summer heat domes &amp; extended dry streaks.
             </span>
           </label>
         </div>
 
-        {/* 2x2 Grid of 4 Interactive Wave Checklist Cards */}
-        <div class="ct-plan-waves-2x2">
+        <div class="wave-grid">
           {waves.map((w) => {
             const extraTask = w.id === 'w1'
               ? `Stage ${effectiveMulchM3} m³ woodchip mulch & ~${materials.compostL} L planting compost.`
@@ -649,21 +650,21 @@ export function PlantingPlanTab() {
             const doneCount = allTasks.filter((_, idx) => waveChecks[`${w.id}-${idx}`]).length;
             const waveSpecies = plan.items.filter((it) => w.speciesIds.includes(it.taxon.id) && it.qty > 0);
             return (
-              <article key={w.id} class="ct-wave-card">
-                <div class="ct-wave-head">
+              <article key={w.id} class="wave-card">
+                <div class="wave-head">
                   <div>
-                    <span class="ct-eyebrow">{w.kicker}</span>
-                    <h4 class="ct-wave-title">{w.title}</h4>
+                    <div class="wave-kicker">{w.kicker}</div>
+                    <h4 class="wave-title">{w.title}</h4>
                   </div>
-                  <span class="ct-wave-progress">{doneCount}/{allTasks.length} done</span>
+                  <span class="wave-prog">{doneCount}/{allTasks.length} done</span>
                 </div>
-                <ul class="ct-wave-tasks">
+                <ul class="wave-list">
                   {allTasks.map((task, idx) => {
                     const key = `${w.id}-${idx}`;
                     const checked = Boolean(waveChecks[key]);
                     return (
                       <li key={key}>
-                        <label class={`ct-wave-task${checked ? ' is-done' : ''}`}>
+                        <label class={`wave-item${checked ? ' done' : ''}`}>
                           <input type="checkbox" checked={checked} onChange={() => toggleWaveTask(key)} />
                           <span>{task}</span>
                         </label>
@@ -672,15 +673,15 @@ export function PlantingPlanTab() {
                   })}
                 </ul>
                 {waveSpecies.length > 0 && (
-                  <div class="ct-wave-pills">
+                  <div class="wave-pills">
                     {waveSpecies.map((it) => (
                       <button
                         key={it.taxon.id}
                         type="button"
-                        class="ct-wave-sp-pill"
+                        class="wave-pill"
                         onClick={() => openFieldDossier(it.taxon.id, memberIds)}
                       >
-                        <i class="ct-bp-sun-dot" data-sun-tier={it.sunBand} />
+                        <span class="win-dot" style={{ background: SUN_COLOR[it.sunBand] }} />
                         {it.qty}× {nameOf(it.taxon)}
                       </button>
                     ))}
@@ -692,38 +693,39 @@ export function PlantingPlanTab() {
         </div>
       </div>
 
-      {/* 4 · 12-Month Field Action Calendar (Single-Row 12-Col Strip + Rich Field Brief + Bottom Bar) */}
-      <div class="ct-sys-block">
-        <div class="ct-sys-head">
+      {/* 4 · 12-Month Field Action Calendar */}
+      <div class="system-section">
+        <div class="sec-head">
           <div>
-            <h3 class="ct-sys-title">4 · 12-Month Field Action Calendar</h3>
-            <p class="ct-sys-sub">Filter by concrete field action and click any month to read your weekend <strong>Field Brief</strong> for your {grossDisplay} {unitMeta.label} plot.</p>
+            <h2>4 · 12-Month Field Action Calendar</h2>
+            <p class="sec-sub">Filter by concrete field action and click any month to read your weekend <strong>Field Brief</strong> for your {grossDisplay} {unitMeta.label} plot.</p>
           </div>
         </div>
 
-        <div class="ct-yr-focus-row" role="group" aria-label="Filter calendar by action">
-          {([
-            ['all', 'All actions'],
-            ['plant', '⚒ Plant out'],
-            ['sow', '• Direct sow'],
-            ['prune', '✂ Prune & mulch'],
-            ['harvest', '✦ Harvest'],
-            ['winter', '❄ Winter-grow'],
-          ] as const).map(([id, lbl]) => (
-            <button
-              key={id}
-              type="button"
-              class={`ct-plan-pill-btn${calFilter === id ? ' is-active' : ''}`}
-              aria-pressed={calFilter === id ? 'true' : 'false'}
-              onClick={() => setCalFilter(id)}
-            >
-              {lbl}
-            </button>
-          ))}
+        <div class="cal-focus-bar" role="group" aria-label="Filter calendar by action">
+          <div class="cal-focus-pills">
+            {([
+              ['all', 'All actions'],
+              ['plant', '⚒ Plant out'],
+              ['sow', '● Direct sow'],
+              ['prune', '✂ Prune & mulch'],
+              ['harvest', '✦ Harvest'],
+              ['winter', '❄ Winter-grow'],
+            ] as const).map(([id, lbl]) => (
+              <button
+                key={id}
+                type="button"
+                class="cal-focus-btn"
+                aria-pressed={calFilter === id ? 'true' : 'false'}
+                onClick={() => setCalFilter(id)}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Single-Row 12-Column Visual Bar Strip */}
-        <div class="ct-cal12-strip" role="group" aria-label="12-month field calendar">
+        <div class="hm-grid" role="group" aria-label="12-month field calendar">
           {calendar.map((m, idx) => {
             const isPlant = idx === 1 || idx === 2 || idx === 3 || idx === 9 || idx === 10;
             const isSow = idx === 2 || idx === 3 || idx === 4 || idx === 8;
@@ -735,45 +737,42 @@ export function PlantingPlanTab() {
               <button
                 key={m.month}
                 type="button"
-                class={`ct-cal12-col${activeMonth === idx ? ' is-selected' : ''}`}
+                class={`hm-col${isWin ? ' win' : ''}`}
                 aria-pressed={activeMonth === idx ? 'true' : 'false'}
                 onClick={() => setActiveMonth(idx)}
               >
-                <strong>{m.month}</strong>
-                <span class="ct-cal12-bars" aria-hidden="true">
-                  {(calFilter === 'all' || calFilter === 'plant') && isPlant && <i class="ct-c12-bar is-plant" />}
-                  {(calFilter === 'all' || calFilter === 'sow') && isSow && <i class="ct-c12-bar is-sow" />}
-                  {(calFilter === 'all' || calFilter === 'prune') && isPrune && <i class="ct-c12-bar is-prune" />}
-                  {(calFilter === 'all' || calFilter === 'harvest') && isHarv && <i class="ct-c12-bar is-harv" data-stratum="high" />}
-                  {(calFilter === 'all' || calFilter === 'winter') && isWin && <i class="ct-c12-bar is-win" />}
+                <span class="hm-m">{m.month}</span>
+                <span class="hm-bars" aria-hidden="true">
+                  {(calFilter === 'all' || calFilter === 'plant') && isPlant && <span class="hm-bar hb-sow" style="height:22px;" />}
+                  {(calFilter === 'all' || calFilter === 'sow') && isSow && <span class="hm-bar hb-bloom" style="height:16px;" />}
+                  {(calFilter === 'all' || calFilter === 'prune') && isPrune && <span class="hm-bar" style="height:14px; background:var(--ink-soft);" />}
+                  {(calFilter === 'all' || calFilter === 'harvest') && isHarv && <span class="hm-bar hb-harv" style="height:26px;" />}
+                  {(calFilter === 'all' || calFilter === 'winter') && isWin && <span class="hm-bar hb-win" style="height:16px;" />}
                 </span>
-                <span class="ct-cal12-cnt">{taskCnt}</span>
+                <span class="hm-nums">{taskCnt}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Rich Field Brief Card */}
-        <div class="ct-field-brief-card">
-          <div class="ct-field-brief-head">
-            <h4>Field Brief for {MONTH_LONG[activeMonth]} (on your {grossDisplay} {unitMeta.label} plot)</h4>
-            <div class="ct-field-brief-meta">
-              <span class="ct-plan-meta-pill">Est. field time: ~4–5 hrs</span>
-              <span class="ct-small-text ct-muted">{placeName} · {layoutLabel}</span>
+        <div class="month-brief" style="margin-top:14px;">
+          <div class="mb-head">
+            <div class="mb-title">Field Brief for {MONTH_LONG[activeMonth]} (on your {grossDisplay} {unitMeta.label} plot)</div>
+            <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-muted);">
+              <span class="why-tag">Est. field time: ~4–5 hrs</span>
+              <span>{placeName} · {layoutLabel}</span>
             </div>
           </div>
-          <div class="ct-field-brief-rows">
-            <div class="ct-fb-row">
-              <strong>⚒ {activeBrief.tag}:</strong> {activeBrief.brief}
-            </div>
-            <div class="ct-fb-row">
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:13.5px; color:var(--ink-soft);">
+            <div><strong>⚒ {activeBrief.tag}:</strong> {activeBrief.brief}</div>
+            <div>
               <strong>❄ Seasonal rhythm:</strong>{' '}
               {plan.items.slice(0, 3).map((it) => `${it.qty}× ${nameOf(it.taxon)} (${it.spacingLabel})`).join(', ')}.
             </div>
-            <div class="ct-fb-row">
+            <div>
               <strong>Bring to the field:</strong> Spade, {materials.stakes}× tree stakes &amp; ties, {Math.max(1, Math.round(effectiveMulchM3 * 0.4 * 10) / 10)} m³ mulch, root-soaking bucket.
             </div>
-            <div class="ct-fb-row is-next">
+            <div style="padding-top:6px; border-top:1px dashed var(--border); font-size:12.5px; color:var(--ink-muted);">
               <strong>Next-month heads-up:</strong> {calendar[(activeMonth + 1) % 12]?.month}: {calendar[(activeMonth + 1) % 12]?.brief}
             </div>
           </div>
@@ -781,19 +780,15 @@ export function PlantingPlanTab() {
       </div>
 
       {/* Bottom Print / Save Bar */}
-      <div class="ct-plan-bottom-bar">
-        <p class="ct-small-text">
+      <div class="system-section" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;">
+        <p style="margin:0; font-size:13.5px; color:var(--ink-soft);">
           <strong>Ready for the nursery or Canopi Desktop?</strong> Save your plot area, {layoutLabel} layout, spacing, and quantities into your <code>.canopi</code> file.
         </p>
-        <div class="ct-plan-bottom-acts">
-          <button type="button" class="ct-studio-btn" onClick={() => window.print()}>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn" onClick={() => window.print()}>
             Print Field &amp; Nursery Sheet (PDF)
           </button>
-          <button
-            type="button"
-            class="button button-primary ct-small"
-            onClick={() => void saveStudioCanopi()}
-          >
+          <button type="button" class="btn btn-primary" onClick={() => void saveStudioCanopi()}>
             Save plan to .canopi
           </button>
         </div>

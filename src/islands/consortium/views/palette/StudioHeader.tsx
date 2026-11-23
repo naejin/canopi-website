@@ -132,7 +132,7 @@ export function StudioHeader() {
   };
 
   return (
-    <header ref={headerRef} class="ct-studio-header" data-studio-header>
+    <header ref={headerRef} data-studio-header>
       <input
         ref={fileInputRef}
         type="file"
@@ -147,72 +147,77 @@ export function StudioHeader() {
       />
 
       {/* Tier 1: Document Identity & 3 Serene File Actions */}
-      <div class="ct-studio-t1-band">
-        <div class="ct-studio-t1">
-          <div class="ct-studio-identity">
+      <div class="studio-doc-bar">
+        <div class="doc-bar-inner">
+          <div class="doc-identity">
             <input
               type="text"
-              class="ct-studio-name"
+              class="doc-title-btn"
               aria-label="Design name"
               value={designName.value}
               onInput={(e) => setDesignName((e.currentTarget as HTMLInputElement).value)}
             />
-            <span class="ct-doc-filename">{fileSlug}</span>
+            <span class="doc-filename">{fileSlug}</span>
             <button
               type="button"
-              class={`ct-file-status${dirty ? ' is-dirty' : ''}`}
+              class={`file-status-pill${dirty ? ' is-dirty' : autoSaveEnabled.value ? ' is-autosaved' : ''}`}
               onClick={() => { autoSaveEnabled.value = !autoSaveEnabled.value; }}
             >
-              <span class="ct-fs-dot" aria-hidden="true" />
+              <span class="fs-dot" aria-hidden="true" />
               <span>{dirty ? 'Unsaved' : autoSaveEnabled.value ? 'Auto-save On' : 'Saved'}</span>
             </button>
-            <span class="ct-doc-sep" aria-hidden="true" />
-            <button type="button" class="ct-studio-loc" data-studio-location onClick={backToPlace}>
+            <span class="doc-sep" aria-hidden="true" />
+            <button type="button" class="place-trigger" data-studio-location onClick={backToPlace}>
               <strong>{locText}</strong>
               {ribbon.ph != null && (
                 <>
-                  <span aria-hidden="true">·</span>
+                  <span class="pt-dot" aria-hidden="true">·</span>
                   <span>pH {ribbon.ph.toFixed(1)}</span>
                 </>
               )}
-              <span class="ct-loc-edit" aria-hidden="true">✎</span>
+              <span class="pt-edit" aria-hidden="true">✎</span>
             </button>
           </div>
 
-          <div class="ct-studio-actions">
+          <div class="doc-actions" role="group" aria-label="Document file actions">
             {/* 1. Open .canopi ▾ */}
-            <div class="ct-studio-menu">
+            <div class="tb-menu" style="position:relative;">
               <button
                 type="button"
-                class="ct-studio-btn"
+                class="doc-action-btn"
                 aria-expanded={openMenu === 'open' ? 'true' : 'false'}
                 onClick={() => setOpenMenu((m) => (m === 'open' ? null : 'open'))}
               >
                 {T('studio.open')} .canopi <span aria-hidden="true">▾</span>
               </button>
               {openMenu === 'open' && (
-                <div class="ct-studio-menu-panel" role="menu">
-                  <button type="button" class="ct-studio-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
-                    Choose .canopi file…
+                <div class="tb-menu-panel" role="menu">
+                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
+                    <strong>Choose .canopi file…</strong>
+                    <span>Open a saved palette from your computer</span>
                   </button>
-                  <button type="button" class="ct-studio-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
-                    Load example palette
+                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
+                    <strong>Load example palette</strong>
+                    <span>Start from a suggested guild for your land</span>
                   </button>
-                  <button type="button" class="ct-studio-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); requestPlantOpen.value = true; }}>
-                    {T('studio.requestPlant')}
+                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); requestPlantOpen.value = true; }}>
+                    <strong>{T('studio.requestPlant')}</strong>
+                    <span>Suggest a species to add to canopi-data</span>
                   </button>
-                  <button type="button" class="ct-studio-menu-item" role="menuitem" data-start-over onClick={() => { setOpenMenu(null); startOver(); }}>
-                    New empty palette (Start over)
+                  <div class="tb-menu-sep" />
+                  <button type="button" class="tb-menu-item" role="menuitem" data-start-over onClick={() => { setOpenMenu(null); startOver(); }}>
+                    <strong>New empty palette (Start over)</strong>
+                    <span>Clear your current palette while keeping your place</span>
                   </button>
                 </div>
               )}
             </div>
 
             {/* 2. Split Save .canopi | ▾ (sacred ochre ONLY when dirty) */}
-            <div class="ct-studio-menu">
+            <div class="save-split" style="position:relative;">
               <button
                 type="button"
-                class={`ct-studio-btn ct-studio-split-main${dirty ? ' is-dirty' : ''}`}
+                class={`save-btn${dirty ? ' is-dirty' : ''}`}
                 data-studio-save
                 onClick={() => void handleSave(false)}
               >
@@ -220,7 +225,8 @@ export function StudioHeader() {
               </button>
               <button
                 type="button"
-                class={`ct-studio-split-caret${dirty ? ' is-dirty' : ''}`}
+                class="doc-action-btn"
+                style="border-top-left-radius:0; border-bottom-left-radius:0; border-left:0; padding:0 8px;"
                 aria-label="More save options"
                 aria-expanded={openMenu === 'save' ? 'true' : 'false'}
                 onClick={() => setOpenMenu((m) => (m === 'save' ? null : 'save'))}
@@ -228,13 +234,13 @@ export function StudioHeader() {
                 <span aria-hidden="true">▾</span>
               </button>
               {openMenu === 'save' && (
-                <div class="ct-studio-menu-panel" role="menu">
-                  <button type="button" class="ct-studio-menu-item" role="menuitem" onClick={() => void handleSave(true)}>
-                    {T('studio.saveAs')}
+                <div class="tb-menu-panel" role="menu">
+                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => void handleSave(true)}>
+                    <strong>{T('studio.saveAs')}</strong>
                   </button>
                   <button
                     type="button"
-                    class="ct-studio-menu-item"
+                    class="tb-menu-item"
                     role="menuitem"
                     onClick={() => {
                       setOpenMenu(null);
@@ -244,11 +250,12 @@ export function StudioHeader() {
                       }
                     }}
                   >
-                    {T('studio.shareLink')}
+                    <strong>{T('studio.shareLink')}</strong>
                   </button>
+                  <div class="tb-menu-sep" />
                   <button
                     type="button"
-                    class="ct-studio-menu-item"
+                    class="tb-menu-item"
                     role="menuitemcheckbox"
                     aria-checked={autoSaveEnabled.value ? 'true' : 'false'}
                     onClick={() => {
@@ -260,55 +267,53 @@ export function StudioHeader() {
                       }
                     }}
                   >
-                    <span>Auto-save to file</span>
-                    <span>{autoSaveEnabled.value ? 'On' : 'Off'}</span>
+                    <strong>Auto-save: {autoSaveEnabled.value ? 'On' : 'Off'}</strong>
+                    <span>{fsSupported ? 'Writes directly to your .canopi file' : 'Downloads .canopi file on save'}</span>
                   </button>
-                  {!fsSupported && (
-                    <p class="ct-studio-menu-note">
-                      Direct file auto-save requires Chromium File System Access; downloads will be used instead.
-                    </p>
-                  )}
                 </div>
               )}
             </div>
 
             {/* 3. Print PDF */}
-            <button type="button" class="ct-studio-btn" onClick={() => { if (typeof window !== 'undefined') window.print(); }}>
-              {T('studio.printPdf')}
+            <button type="button" class="doc-action-btn" onClick={() => { if (typeof window !== 'undefined') window.print(); }}>
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M5 7V3h10v4M5 14H3.5A1.5 1.5 0 0 1 2 12.5v-4A1.5 1.5 0 0 1 3.5 7h13A1.5 1.5 0 0 1 18 8.5v4a1.5 1.5 0 0 1-1.5 1.5H15M5 11h10v6H5v-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              </svg>
+              <span>{T('studio.printPdf')}</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Tier 2: Crisp Underline Tabs + Dark-Pill Horizon Switch + Hide/Show Plant Pool */}
-      <div class="ct-studio-t2-band">
-        <div class="ct-studio-t2">
-          <div class="ct-studio-tabs" role="tablist" aria-label="Studio sections">
+      <div class="studio-nav-bar" role="region" aria-label="Studio views and climate horizon">
+        <div class="nav-bar-inner">
+          <nav class="studio-nav" role="tablist" aria-label="Studio sections">
             {TABS.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 role="tab"
-                class="ct-studio-tab"
+                class="nav-tab"
                 aria-selected={tab === item.id ? 'true' : 'false'}
                 data-studio-tab={item.id}
                 onClick={() => selectTab(item.id)}
               >
                 <span>{T(`studio.tab.${item.id}`)}</span>
-                {item.id === 'palette' && <span class="ct-studio-tab-count">({memberCount})</span>}
-                {item.id === 'system' && holesCount > 0 && <span class="ct-studio-tab-count">({holesCount} gaps)</span>}
-                {item.id === 'plan' && <span class="ct-studio-tab-count">({ribbon.planUnits} plants)</span>}
+                {item.id === 'palette' && <span class="nav-count">({memberCount})</span>}
+                {item.id === 'system' && holesCount > 0 && <span class="nav-count">({holesCount} gaps)</span>}
+                {item.id === 'plan' && <span class="nav-count">({ribbon.planUnits} plants)</span>}
               </button>
             ))}
-          </div>
+          </nav>
 
-          <div class="ct-studio-t2-right">
-            <div class="ct-ink-seg" role="group" aria-label="Climate horizon">
+          <div class="nav-bar-right">
+            <div class="ink-seg" role="group" aria-label="Climate horizon">
               {HORIZONS.map((h) => (
                 <button
                   key={h.id}
                   type="button"
-                  class="ct-studio-horizon-btn"
+                  class="ink-seg-btn"
                   aria-pressed={curPeriod === h.id ? 'true' : 'false'}
                   onClick={() => { store.period.value = h.id; }}
                 >
@@ -318,7 +323,7 @@ export function StudioHeader() {
             </div>
             <button
               type="button"
-              class="ct-rail-toggle-btn"
+              class="btn-quiet"
               onClick={() => { poolOpen.value = !poolOpen.value; }}
             >
               {railVisible ? 'Hide plant pool →' : '← Show plant pool'}
@@ -328,33 +333,33 @@ export function StudioHeader() {
       </div>
 
       {/* Tier 3: 4-Segment Whisper-Quiet Hairline Health Ribbon */}
-      <div class="ct-studio-ribbon-band" data-health-ribbon>
-        <div class="ct-studio-ribbon">
-          <div class="ct-health-items">
-            <span class="ct-health-seg">
-              <button type="button" class="ct-health-item" onClick={() => selectTab('system')}>
-                <span class={`ct-hdot${ribbon.sunTiers >= 4 ? ' is-good' : ' is-warn'}`} data-stratum={ribbon.sunTiers >= 4 ? 'high' : undefined} aria-hidden="true" />
+      <div class="health-ribbon" data-health-ribbon role="region" aria-label="Land health summary">
+        <div class="health-ribbon-inner">
+          <div class="health-items">
+            <span class="ct-tip-wrap">
+              <button type="button" class="health-item" onClick={() => selectTab('system')}>
+                <span class={`status-dot ${ribbon.sunTiers >= 4 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
                 <span>Sunlight: <strong>{ribbon.sunTiers}/4</strong>{ribbon.sunTiers < 4 ? ` · ${4 - ribbon.sunTiers} gap` : ' ✓'}</span>
               </button>
               <FieldTip label="Explain sunlight coverage" text="Preferred sun exposure bands covered across Full sun, Mostly sun, Part shade, and Shade." />
             </span>
-            <span class="ct-health-seg">
-              <button type="button" class="ct-health-item" onClick={() => selectTab('system')}>
-                <span class={`ct-hdot${ribbon.roleSeasonSlots >= 20 ? ' is-good' : ' is-warn'}`} data-stratum={ribbon.roleSeasonSlots >= 20 ? 'high' : undefined} aria-hidden="true" />
+            <span class="ct-tip-wrap">
+              <button type="button" class="health-item" onClick={() => selectTab('system')}>
+                <span class={`status-dot ${ribbon.roleSeasonSlots >= 20 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
                 <span>Roles: <strong>{ribbon.roleSeasonSlots}/24</strong> year-round</span>
               </button>
               <FieldTip label="Explain ecological roles" text="6 core ecological roles tracked across 4 seasons (24 role-season slots)." />
             </span>
-            <span class="ct-health-seg">
-              <button type="button" class="ct-health-item" onClick={cycleWateringMode}>
-                <span class={`ct-hdot${ribbon.risky > 0 ? ' is-risk' : ' is-good'}`} data-stratum={ribbon.risky === 0 ? 'high' : undefined} aria-hidden="true" />
+            <span class="ct-tip-wrap">
+              <button type="button" class="health-item" onClick={cycleWateringMode}>
+                <span class={`status-dot ${ribbon.risky > 0 ? 'dot-risk' : 'dot-good'}`} aria-hidden="true" />
                 <span>{hLabel}: <strong>{ribbon.thriving}/{memberCount}</strong> thrive · {water} ▾</span>
               </button>
               <FieldTip label="Explain climate resilience" text="Species thriving under the selected climate horizon. Click to cycle watering regime." />
             </span>
-            <span class="ct-health-seg">
-              <button type="button" class="ct-health-item" onClick={() => selectTab('climate')}>
-                <span class="ct-hdot is-winter" aria-hidden="true" />
+            <span class="ct-tip-wrap">
+              <button type="button" class="health-item" onClick={() => selectTab('climate')}>
+                <span class="status-dot dot-winter" aria-hidden="true" />
                 <span>
                   {ribbon.ph != null ? <>Soil <strong>pH {ribbon.ph.toFixed(1)}</strong> · </> : null}
                   {ribbon.mildWinter ? '❄ Winter-plantable' : 'Frost-winter site'}
@@ -363,7 +368,7 @@ export function StudioHeader() {
               <FieldTip label="Explain soil and winter profile" text="Local soil pH and winter planting window from your site climate reading." />
             </span>
           </div>
-          {statusMsg && <span class="ct-ribbon-status" role="status">{statusMsg}</span>}
+          {statusMsg && <span class="ct-muted" role="status">{statusMsg}</span>}
         </div>
       </div>
     </header>

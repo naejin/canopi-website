@@ -694,17 +694,17 @@ function Questions() {
   };
 
   return (
-    <div class="ct-onboard-shell">
-      <div class="ct-onboard-hero">
+    <div class="onboard-shell">
+      <div class="onboard-hero">
         <h1>Design a resilient plant palette for your land</h1>
         <p>Match your local soil pH, winter warmth, future summers, and every level of sunlight — so all six ecological roles stay filled across the entire year.</p>
       </div>
 
-      <div class="ct-onboard-grid">
-        <div class="ct-ob-left">
+      <div class="onboard-grid">
+        <div>
           {/* Step 1 · Your Place & Soil */}
-          <div class="ct-ob-card">
-            <span class="ct-eyebrow">STEP 1 · YOUR PLACE &amp; SOIL</span>
+          <div class="ob-card">
+            <div class="ob-step">Step 1 · Your place &amp; soil</div>
             <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
             {!loc?.lookup && <WeRead />}
             <SitePostcard>
@@ -716,69 +716,68 @@ function Questions() {
           </div>
 
           {/* Step 2 · Your Space (always visible on initial load, matching v14) */}
-          <div class="ct-ob-card">
-            <span class="ct-eyebrow">STEP 2 · YOUR SPACE</span>
+          <div class="ob-card">
+            <div class="ob-step">Step 2 · Your space</div>
             <RoomStep />
             <AreaStep />
           </div>
         </div>
 
         {/* Right Sticky Sidebar: Path A + Path B */}
-        <aside class="ct-ob-aside" aria-label="Start or open a palette">
-          <div class="ct-ob-card">
-            <span class="ct-eyebrow">PATH A · START FRESH FOR YOUR LAND</span>
-            <h2 class="ct-ob-h2">Choose a starter palette</h2>
-            <p class="ct-ob-aside-lede">Every starter is tuned to your soil pH, winter warmth, and all four preferred sun exposures.</p>
-            <div class="ct-kit-list">
-              {!block && (
-                <button
-                  type="button"
-                  class="ct-kit-opt"
-                  data-place-suggest
-                  aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined}
-                  onClick={() => (ready ? void requestSuggest() : openClimates())}
-                >
-                  <span class="ct-kit-copy">
-                    <strong>{T('start.suggest')}</strong>
-                    <span class="ct-small-text ct-muted" aria-hidden="true">Balanced across sun levels + ready for Coach tuning.</span>
-                  </span>
-                  <span class="ct-kit-act" aria-hidden="true">Open →</span>
-                </button>
-              )}
+        <aside style="position:sticky; top:72px; display:flex; flex-direction:column; gap:16px;" aria-label="Start or open a palette">
+          <div class="ob-card" style="margin-bottom:0;">
+            <div class="ob-step">Path A · Start fresh for your land</div>
+            <h2>Choose a starter palette</h2>
+            <p style="margin:0 0 12px; font-size:14px; color:var(--ink-soft);">Every starter is tuned to your soil pH, winter warmth, and all four preferred sun exposures.</p>
+            {!block && (
               <button
                 type="button"
-                class="ct-kit-opt"
-                onClick={startWinterGuild}
+                class="kit-opt"
+                data-place-suggest
+                aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined}
+                onClick={() => (ready ? void requestSuggest() : openClimates())}
               >
-                <span class="ct-kit-copy">
-                  <strong>❄ Winter-Planted Mild-Climate Guild</strong>
-                  <span class="ct-small-text ct-muted">Opens studio with cool-season, autumn-sowable plants pre-filtered.</span>
-                </span>
-                <span class="ct-kit-act" aria-hidden="true">Explore</span>
+                <div>
+                  <strong style="font-size:14.5px;">{T('start.suggest')}</strong>
+                  <div style="font-size:12.5px; color:var(--ink-soft);" aria-hidden="true">Balanced across sun levels + ready for Coach tuning.</div>
+                </div>
+                <span style="font-weight:600; font-size:13px;" aria-hidden="true">Open →</span>
               </button>
-              <button
-                type="button"
-                class="ct-kit-opt"
-                data-place-add
-                onClick={() => {
-                  if (ready) {
-                    openPlantPool({ tab: 'all' });
-                    showPalette();
-                  } else {
-                    openClimates();
-                  }
-                }}
-              >
-                <span class="ct-kit-copy">
-                  <strong>Start from your own plants</strong>
-                  <span class="ct-small-text ct-muted">Search any plant by name or paste your existing list.</span>
-                </span>
-                <span class="ct-kit-act" aria-hidden="true">Browse →</span>
-              </button>
-            </div>
+            )}
             <button
               type="button"
-              class="button button-primary ct-ob-cta"
+              class="kit-opt"
+              onClick={startWinterGuild}
+            >
+              <div>
+                <strong style="font-size:14.5px;">❄ Winter-Planted Mild-Climate Guild</strong>
+                <div style="font-size:12.5px; color:var(--ink-soft);">Opens studio with cool-season, autumn-sowable plants pre-filtered.</div>
+              </div>
+              <span style="font-weight:600; font-size:13px;" aria-hidden="true">Explore</span>
+            </button>
+            <button
+              type="button"
+              class="kit-opt"
+              data-place-add
+              onClick={() => {
+                if (ready) {
+                  openPlantPool({ tab: 'all' });
+                  showPalette();
+                } else {
+                  openClimates();
+                }
+              }}
+            >
+              <div>
+                <strong style="font-size:14.5px;">Start from your own plants</strong>
+                <div style="font-size:12.5px; color:var(--ink-soft);">Search any plant by name or paste your existing list.</div>
+              </div>
+              <span style="font-weight:600; font-size:13px; white-space:nowrap;" aria-hidden="true">Browse →</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              style="width:100%; min-height:44px; margin-top:6px;"
               data-place-show
               onClick={() => (ready ? showPalette() : openClimates())}
             >
@@ -786,9 +785,9 @@ function Questions() {
             </button>
           </div>
 
-          <div class="ct-ob-card">
-            <span class="ct-eyebrow">PATH B · EXISTING PROJECT</span>
-            <h2 class="ct-ob-h2">Open an existing .canopi file</h2>
+          <div class="ob-card" style="margin-bottom:0;">
+            <div class="ob-step">Path B · Existing project</div>
+            <h2 style="font-size:17px; margin-bottom:8px;">Open an existing .canopi file</h2>
             <OpenCanopiPathB />
           </div>
         </aside>

@@ -107,253 +107,288 @@ export function FieldDossier() {
   const isAnnual = taxon.traits.is_annual === true || taxon.traits.grown_as_annual === true;
   const isEvergreen = Boolean(taxon.traits.deciduous_evergreen && /evergreen/i.test(taxon.traits.deciduous_evergreen));
 
+  const SUN_CLS: Record<Stratum, string> = {
+    emergent: 'sun-full',
+    high: 'sun-mostly',
+    medium: 'sun-part',
+    low: 'sun-shade',
+  };
+  const sunCls = SUN_CLS[sun];
+  const fitBannerCls = verdictTone === 'danger' ? 'is-risk' : verdictTone === 'warn' ? 'is-care' : 'is-fit';
+  const phPinCls = phFits ? 'pin-ok' : 'pin-warn';
+
   return (
     <div
-      class="ct-dossier-backdrop"
+      class="dossier-backdrop open"
       data-field-dossier
       onClick={(e) => { if (e.target === e.currentTarget) closeFieldDossier(); }}
     >
-      <div class="ct-dossier" role="dialog" aria-modal="true" aria-labelledby="ct-dossier-title">
-        {/* Top Prev/Next + Close Bar */}
-        <div class="ct-dossier-topbar">
-          <div class="ct-dossier-step-group">
-            {canStep && (
-              <>
-                <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(-1)}>{T('studio.prev')}</button>
-                {curIdx >= 0 && <span class="ct-dossier-pos">{curIdx + 1} / {list.length}</span>}
-                <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(1)}>{T('studio.next')}</button>
-              </>
-            )}
-          </div>
-          <button type="button" class="ct-dossier-btn" aria-label={T('studio.close')} onClick={closeFieldDossier}>
-            × {T('studio.close')}
-          </button>
-        </div>
-
-        {/* Sun Emblem + Serif Title + Latin + Sun Pill */}
-        <div class="ct-dossier-hero">
-          <span class="ct-dossier-emblem" data-sun-tier={sun} aria-hidden="true">
-            <SunIcon tier={sun} size={24} />
-          </span>
-          <div>
-            <h2 id="ct-dossier-title" class="ct-dossier-title">{nameOf(taxon)}</h2>
-            <p class="ct-sci ct-dossier-latin">{taxon.canonical_name}</p>
-            <span class="ct-gantt-sun-pill" data-sun-tier={sun}>
-              {sunTierLabel(taxon)} · {emblem.sky}
-            </span>
-          </div>
-        </div>
-
-        {/* Full-Width In Palette / Add Bar */}
-        <button
-          type="button"
-          class={`ct-dossier-toggle-bar${inPalette ? ' is-in' : ''}`}
-          onClick={() => (inPalette ? store.removeMember(taxon.id) : store.addMembers([taxon.id]))}
-        >
-          {inPalette ? '✓ In your palette · Remove' : '+ Add to palette'}
-        </button>
-
-        {/* SECTION 1 · LIVE SITE MATCH */}
-        <div class="ct-dossier-section">
-          <span class="ct-eyebrow">SECTION 1 · LIVE SITE MATCH</span>
-          <h3 class="ct-dossier-h3">How It Fits Your Location</h3>
-
-          {/* Verdict Banner */}
-          <div
-            class={`ct-dossier-verdict is-${verdictTone}`}
-            data-stratum={verdictTone === 'good' ? 'high' : undefined}
-          >
-            <strong>
-              {verdictTone === 'good'
-                ? `✓ Thrives in ${placeName} · Holds strong in the 2050s`
-                : verdictTone === 'warn'
-                ? `⚠ Needs microsite care in ${placeName}`
-                : `✗ Exceeds hard climate limit in ${placeName}`}
-            </strong>
-            <p class="ct-small-text">
-              {placeName} (2050s):{' '}
-              {sitePh != null ? `pH ${sitePh.toFixed(1)} · ` : ''}
-              {siteColdC != null ? `${siteColdC >= 0 ? '+' : ''}${siteColdC.toFixed(1)} °C nights · ` : ''}
-              {siteHot2050 != null ? `${Math.round(siteHot2050)} °C highs` : 'climate loaded'}
-              {sc?.koppen ? ` · Köppen ${sc.koppen}` : ''}
-            </p>
-            <button
-              type="button"
-              class="ct-sys-link ct-small-text"
-              onClick={() => { closeFieldDossier(); studioTab.value = 'climate'; }}
-            >
-              Tune sliders ↗
+      <div class="dossier-drawer" role="dialog" aria-modal="true" aria-labelledby="ct-dossier-title">
+        {/* Sticky Top Header (verbatim .dossier-sticky-head) */}
+        <div class="dossier-sticky-head">
+          <div class="dossier-nav-bar">
+            <div class="dossier-pager">
+              {canStep && (
+                <>
+                  <button type="button" class="btn btn-xs" onClick={() => stepFieldDossier(-1)}>{T('studio.prev')}</button>
+                  {curIdx >= 0 && <span class="dossier-page-pos">{curIdx + 1} / {list.length}</span>}
+                  <button type="button" class="btn btn-xs" onClick={() => stepFieldDossier(1)}>{T('studio.next')}</button>
+                </>
+              )}
+            </div>
+            <button type="button" class="btn btn-xs" aria-label={T('studio.close')} onClick={closeFieldDossier}>
+              ✕ {T('studio.close')}
             </button>
           </div>
 
-          {/* Soil pH Comfort Range Card with Floating Dark Marker Pill */}
-          <div class="ct-range-card">
-            <div class="ct-range-head">
-              <strong>Soil pH comfort</strong>
-              <span class={`ct-range-status${phFits ? ' is-good' : ' is-warn'}`} data-stratum={phFits ? 'high' : undefined}>
-                Plant: pH {spec.phTrack.min.toFixed(1)}–{spec.phTrack.max.toFixed(1)}
-                {sitePh != null ? (phFits ? ` · ✓ Fits your pH ${sitePh.toFixed(1)}` : ` · Outside pH ${sitePh.toFixed(1)}`) : ''}
+          <div class="dossier-id-row">
+            <div class="dossier-id-left">
+              <span class={`dossier-emblem ${sunCls}`} aria-hidden="true">
+                <SunIcon tier={sun} size={24} />
               </span>
-            </div>
-            <div class="ct-range-stage">
-              {phSitePct != null && (
-                <span class="ct-range-pill" style={{ left: `${phSitePct}%` }}>
-                  Your soil {sitePh!.toFixed(1)}
-                </span>
-              )}
-              <div class="ct-range-rail">
-                <span
-                  class="ct-range-fill"
-                  data-stratum="high"
-                  style={{ left: `${phBarLeft}%`, width: `${Math.max(8, phBarRight - phBarLeft)}%` }}
-                />
-                {phSitePct != null && <span class="ct-range-dot" style={{ left: `${phSitePct}%` }} />}
+              <div style="min-width:0;">
+                <h2 id="ct-dossier-title" class="dossier-title">{nameOf(taxon)}</h2>
+                <div class="dossier-latin">{taxon.canonical_name}</div>
+                <div class="dossier-id-badges">
+                  <span class={`sun-badge ${sunCls}`}>
+                    {sunTierLabel(taxon)} · {emblem.sky}
+                  </span>
+                </div>
               </div>
-              <div class="ct-range-ticks">
+            </div>
+          </div>
+
+          <div class="dossier-cta-row">
+            <button
+              type="button"
+              class={inPalette ? 'btn' : 'btn btn-primary'}
+              style="flex:1;"
+              onClick={() => (inPalette ? store.removeMember(taxon.id) : store.addMembers([taxon.id]))}
+            >
+              {inPalette ? '✓ In your palette · Remove' : '+ Add to my palette'}
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable Dossier Body (verbatim .dossier-body) */}
+        <div class="dossier-body">
+          <section class="d-section" aria-label="How it fits your location">
+            <div>
+              <div class="d-sec-kicker">Section 1 · Live site match</div>
+              <h3 class="d-sec-title">How It Fits Your Location</h3>
+            </div>
+
+            <div class={`fit-banner ${fitBannerCls}`}>
+              <div class="fit-banner-top">
+                <span class="fit-banner-headline">
+                  {verdictTone === 'good'
+                    ? `✓ Thrives in ${placeName} · Holds strong in the 2050s`
+                    : verdictTone === 'warn'
+                    ? `⚠ Needs microsite care in ${placeName}`
+                    : `✗ Exceeds hard climate limit in ${placeName}`}
+                </span>
+              </div>
+              <div class="fit-banner-meta">
+                {placeName} (2050s):{' '}
+                {sitePh != null ? `pH ${sitePh.toFixed(1)} · ` : ''}
+                {siteColdC != null ? `${siteColdC >= 0 ? '+' : ''}${siteColdC.toFixed(1)} °C nights · ` : ''}
+                {siteHot2050 != null ? `${Math.round(siteHot2050)} °C highs` : 'climate loaded'}
+                {sc?.koppen ? ` · Köppen ${sc.koppen}` : ''}
+                <button
+                  type="button"
+                  class="link-btn"
+                  style="padding:1px 6px; font-size:12px; margin-left:4px;"
+                  onClick={() => { closeFieldDossier(); studioTab.value = 'climate'; }}
+                >
+                  Tune sliders ↗
+                </button>
+              </div>
+            </div>
+
+            {/* Soil pH Range Gauge (verbatim .gauge-card) */}
+            <div class="gauge-card">
+              <div class="gauge-head">
+                <strong>Soil pH comfort</strong>
+                <span style={{ color: phFits ? 'var(--plant-green)' : 'var(--warn-ink)', fontWeight: 600 }}>
+                  Plant: pH {spec.phTrack.min.toFixed(1)}–{spec.phTrack.max.toFixed(1)}
+                  {sitePh != null ? (phFits ? ` · ✓ Fits your pH ${sitePh.toFixed(1)}` : ` · ⚠ Outside your pH ${sitePh.toFixed(1)}`) : ''}
+                </span>
+              </div>
+              <div class="gauge-track-wrap">
+                {phSitePct != null && (
+                  <span class={`gauge-pin-lbl ${phPinCls}`} style={{ left: `${Math.max(12, Math.min(88, phSitePct))}%` }}>
+                    Your soil {sitePh!.toFixed(1)}
+                  </span>
+                )}
+                <div class="gauge-track">
+                  <div class="gauge-band" style={{ left: `${phBarLeft}%`, width: `${Math.max(8, phBarRight - phBarLeft)}%` }} />
+                  {phSitePct != null && <div class={`gauge-pin ${phPinCls}`} style={{ left: `${phSitePct}%` }} />}
+                </div>
+              </div>
+              <div class="gauge-scale">
                 <span>Acidic (4.0)</span>
                 <span>Neutral (7.0)</span>
                 <span>Alkaline (9.0)</span>
               </div>
             </div>
-          </div>
 
-          {/* Winter Cold & 2050s Heat Range Card with 2 Floating Dark Marker Pills */}
-          <div class="ct-range-card">
-            <div class="ct-range-head">
-              <strong>Winter cold &amp; 2050s heat</strong>
-              <span class="ct-range-status is-good" data-stratum="high">
-                Hardy to {Math.round(spec.tempTrack.minC)} °C · Heat limit {Math.round(spec.tempTrack.maxC)} °C
-              </span>
-            </div>
-            <div class="ct-range-stage">
-              {tColdPct != null && (
-                <span class="ct-range-pill is-cold" style={{ left: `${tColdPct}%` }}>
-                  Night {siteColdC! >= 0 ? '+' : ''}{siteColdC!.toFixed(1)}°
+            {/* Winter Cold & 2050s Heat Gauge (verbatim .gauge-card) */}
+            <div class="gauge-card">
+              <div class="gauge-head">
+                <strong>Winter cold &amp; 2050s heat</strong>
+                <span style="color:var(--plant-green); font-weight:600;">
+                  Hardy to {Math.round(spec.tempTrack.minC)} °C · Heat limit {Math.round(spec.tempTrack.maxC)} °C
                 </span>
-              )}
-              {tHotPct != null && (
-                <span class="ct-range-pill is-hot" style={{ left: `${tHotPct}%` }}>
-                  2050s {Math.round(siteHot2050!)}°
-                </span>
-              )}
-              <div class="ct-range-rail">
-                <span
-                  class="ct-range-fill"
-                  data-stratum="high"
-                  style={{ left: `${tBarLeft}%`, width: `${Math.max(10, tBarRight - tBarLeft)}%` }}
-                />
-                {tColdPct != null && <span class="ct-range-dot is-cold" style={{ left: `${tColdPct}%` }} />}
-                {tHotPct != null && <span class="ct-range-dot is-hot" style={{ left: `${tHotPct}%` }} />}
               </div>
-              <div class="ct-range-ticks">
+              <div class="gauge-track-wrap">
+                {tColdPct != null && (
+                  <span class="gauge-pin-lbl pin-cold" style={{ left: `${Math.max(14, Math.min(86, tColdPct))}%` }}>
+                    Night {siteColdC! >= 0 ? '+' : ''}{siteColdC!.toFixed(1)}°
+                  </span>
+                )}
+                {tHotPct != null && (
+                  <span class="gauge-pin-lbl pin-ok" style={{ left: `${Math.max(14, Math.min(86, tHotPct))}%` }}>
+                    2050s {Math.round(siteHot2050!)}°
+                  </span>
+                )}
+                <div class="gauge-track">
+                  <div class="gauge-band" style={{ left: `${tBarLeft}%`, width: `${Math.max(10, tBarRight - tBarLeft)}%` }} />
+                  {tColdPct != null && <div class="gauge-pin pin-cold" style={{ left: `${tColdPct}%` }} />}
+                  {tHotPct != null && <div class="gauge-pin pin-ok" style={{ left: `${tHotPct}%` }} />}
+                </div>
+              </div>
+              <div class="gauge-scale">
                 <span>-20 °C</span>
                 <span>0 °C frost</span>
                 <span>+20 °C</span>
                 <span>+44 °C</span>
               </div>
             </div>
-          </div>
 
-          {/* 2-Column 6-Row Hairline Spec Ledger with Status Icons */}
-          <ul class="ct-ledger-v14">
-            {spec.ledger.map((row) => (
-              <li key={row.label} class="ct-ledger-v14-cell">
-                <div class="ct-ledger-v14-top">
-                  <span class="ct-eyebrow">{row.label}</span>
-                  <FieldTip label={`Explain ${row.label}`} text={row.tip} />
-                </div>
-                <strong class="ct-ledger-v14-val">✓ {row.value}</strong>
-              </li>
-            ))}
-          </ul>
-
-          {/* Breaking Points & Field Insurance */}
-          <div class="ct-range-card" data-dossier-breaking-points>
-            <div class="ct-range-head">
-              <span class="ct-eyebrow">BREAKING POINTS &amp; FIELD INSURANCE</span>
-              <span class="ct-small-text ct-muted">{spec.breakingPoints.length} limit{spec.breakingPoints.length === 1 ? '' : 's'} hit</span>
-            </div>
-            <div class="ct-bp-pills-row">
-              <span class="ct-bp-chip is-heat">Heat dome: {Math.round(spec.tempTrack.maxC)} °C</span>
-              <span class="ct-bp-chip is-dry">Cold floor: {Math.round(spec.tempTrack.minC)} °C</span>
-              {spec.breakingPoints.map((bp, i) => (
-                <span key={i} class={`ct-bp-chip ${bp.severity === 'danger' ? 'is-heat' : 'is-dry'}`}>
-                  {bp.title}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* 60-Year 6-Stage Succession Lifeline */}
-          <div class="ct-range-card">
-            <div class="ct-range-head">
-              <strong>60-year succession lifeline</strong>
-              <span class="ct-small-text ct-muted">{spec.lifeline.label}</span>
-            </div>
-            <div class="ct-lifeline">
-              {SUCCESSION_STAGES_6.map((s, idx) => (
-                <div
-                  key={s.id}
-                  class={`ct-lifeline-cell${idx >= spec.lifeline.start && idx <= spec.lifeline.end ? ' is-on' : ''}`}
-                  data-stratum={idx >= spec.lifeline.start && idx <= spec.lifeline.end ? 'high' : undefined}
-                >
-                  <div>{s.name}</div>
-                  <div>{s.time}</div>
+            {/* 2-Column 6-Row Hairline Spec Ledger (verbatim .d-spec-ledger) */}
+            <div class="d-spec-ledger" role="list" aria-label="Site fit specification ledger">
+              {spec.ledger.map((row) => (
+                <div key={row.label} class="d-spec-row" role="listitem">
+                  <span class="d-spec-k" style="display:inline-flex; align-items:center; gap:5px;">
+                    {row.label}
+                    <FieldTip label={`Explain ${row.label}`} text={row.tip} />
+                  </span>
+                  <span class="d-spec-v" style="color:var(--plant-green);">✓ {row.value}</span>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Full-Width 12-Month 4-Track Calendar (fixes squished 30px bar!) */}
-          <div class="ct-range-card">
-            <div class="ct-cal12-head">
-              <strong>12-month seasonal activity</strong>
-              {spec.photoperiodInfo && (
-                <span class="ct-cal12-badge" data-photoperiod-badge>
-                  Site-adjusted · photoperiod ({spec.photoperiodInfo.winterH.toFixed(1)}–{spec.photoperiodInfo.summerH.toFixed(1)} h)
-                </span>
-              )}
-            </div>
-            <div class="ct-dossier-cal12" role="img" aria-label="12-month seasonal activity calendar">
-              {MONTH_SHORT.map((mo, m) => {
-                const lvl = spark[m] ?? 'dormant';
-                const showW = (isEvergreen || (!isAnnual && lvl !== 'dormant')) && (m <= 1 || m >= 10);
-                const showS = isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10);
-                const showB = lvl !== 'dormant' && m >= 3 && m <= 7;
-                const showH = lvl === 'peak' || (lvl === 'active' && m >= 7 && m <= 9);
-                return (
-                  <div key={mo} class="ct-dcal-col">
-                    <span class="ct-dcal-mo">{mo}</span>
-                    <div class="ct-gantt-tracks" aria-hidden="true">
-                      <span class={`ct-gt-bar${showW ? ' is-w' : ''}`} />
-                      <span class={`ct-gt-dot${showS ? ' is-s' : ''}`} />
-                      <span class={`ct-gt-bar${showB ? ' is-b' : ''}`} />
-                      <span class={`ct-gt-bar${showH ? ' is-h' : ''}`} data-stratum={showH ? 'high' : undefined} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Companion Synergy Links */}
-          {peers.length > 0 && (
-            <div class="ct-range-card">
-              <strong>Companion synergy in your palette</strong>
-              <div class="ct-synergy">
-                {peers.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    class="ct-studio-btn"
-                    onClick={() => openFieldDossier(p.id, store.members.peek())}
-                  >
-                    {nameOf(p)} →
-                  </button>
+            {/* Breaking Points & Field Insurance */}
+            <div class="gauge-card" data-dossier-breaking-points>
+              <div class="gauge-head">
+                <strong style="font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-muted);">Breaking points &amp; field insurance</strong>
+                <span style="font-size:12px; color:var(--ink-muted);">{spec.breakingPoints.length} limit{spec.breakingPoints.length === 1 ? '' : 's'} hit</span>
+              </div>
+              <div class="bp-signal-line">
+                <span class="bp-pill">🔥 Heat dome: {Math.round(spec.tempTrack.maxC)} °C</span>
+                <span class="bp-pill">❄ Cold floor: {Math.round(spec.tempTrack.minC)} °C</span>
+                {spec.breakingPoints.map((bp, i) => (
+                  <span key={i} class={`bp-pill ${bp.severity === 'danger' ? 'breached' : 'warn'}`}>
+                    {bp.title}
+                  </span>
                 ))}
               </div>
             </div>
-          )}
+
+            {/* 60-Year 6-Stage Succession Lifeline */}
+            <div class="gauge-card">
+              <div class="gauge-head">
+                <strong>60-year succession lifeline</strong>
+                <span style="font-size:12px; color:var(--ink-muted);">{spec.lifeline.label}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:4px;">
+                {SUCCESSION_STAGES_6.map((s, idx) => {
+                  const active = idx >= spec.lifeline.start && idx <= spec.lifeline.end;
+                  return (
+                    <div
+                      key={s.id}
+                      style={{
+                        padding: '6px 4px',
+                        borderRadius: '6px',
+                        border: `1px solid ${active ? 'var(--plant-green)' : 'var(--border)'}`,
+                        background: active ? 'var(--plant-green-bg)' : 'var(--bg)',
+                        color: active ? 'var(--plant-green)' : 'var(--ink-muted)',
+                        textAlign: 'center',
+                        fontSize: '10.5px',
+                        fontWeight: active ? 600 : 400,
+                      }}
+                    >
+                      <div>{s.name}</div>
+                      <div>{s.time}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Full-Width 12-Month 4-Track Calendar (verbatim .cal-table) */}
+            <div class="gauge-card">
+              <div class="gauge-head">
+                <strong>12-month seasonal activity</strong>
+                {spec.photoperiodInfo && (
+                  <span class="winter-pill" data-photoperiod-badge>
+                    Photoperiod {spec.photoperiodInfo.winterH.toFixed(1)}–{spec.photoperiodInfo.summerH.toFixed(1)} h
+                  </span>
+                )}
+              </div>
+              <div class="cal-wrap">
+                <table class="cal-table" style="min-width:100%;">
+                  <thead>
+                    <tr>
+                      {MONTH_SHORT.map((mo, m) => (
+                        <th key={mo} class={m <= 2 || m >= 10 ? 'win' : undefined}>{mo}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {MONTH_SHORT.map((mo, m) => {
+                        const lvl = spark[m] ?? 'dormant';
+                        const showW = (isEvergreen || (!isAnnual && lvl !== 'dormant')) && (m <= 1 || m >= 10);
+                        const showS = isAnnual ? (m === 2 || m === 3 || m === 4) : (m === 2 || m === 10);
+                        const showB = lvl !== 'dormant' && m >= 3 && m <= 7;
+                        const showH = lvl === 'peak' || (lvl === 'active' && m >= 7 && m <= 9);
+                        return (
+                          <td key={mo} class={m <= 2 || m >= 10 ? 'win' : undefined}>
+                            <div class="cal-tracks" aria-hidden="true">
+                              {showW && <span class="ct-slot"><span class="ct-win" /></span>}
+                              {showS && <span class="ct-slot"><span class="ct-sow" /></span>}
+                              {showB && <span class="ct-slot"><span class="ct-bloom" /></span>}
+                              {showH && <span class="ct-slot"><span class="ct-harv" /></span>}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Companion Synergy Links */}
+            {peers.length > 0 && (
+              <div class="gauge-card">
+                <strong>Companion synergy in your palette</strong>
+                <div class="chip-row">
+                  {peers.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      class="btn btn-xs"
+                      onClick={() => openFieldDossier(p.id, store.members.peek())}
+                    >
+                      {nameOf(p)} →
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>

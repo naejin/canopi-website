@@ -30,17 +30,17 @@ export function AreaStep() {
   const unitLabel = cfg.areaUnit === 'm2' ? 'm²' : cfg.areaUnit === 'ft2' ? 'ft²' : cfg.areaUnit;
 
   return (
-    <section class="ct-area-step" data-area-step aria-label="Planting area">
-      <div class="ct-plan-controls ct-ob-area-box">
-        <div class="ct-plan-ctrl-group">
-          <label class="ct-eyebrow" for="ct-area-val">PLANTING AREA</label>
-          <div class="ct-plan-area-row">
+    <section class="area-control-box" style="margin-top:12px;" data-area-step aria-label="Planting area">
+      <div class="area-grid">
+        <div class="area-field">
+          <label for="ct-area-val">PLANTING AREA</label>
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <input
               id="ct-area-val"
               type="number"
               min="1"
               step={cfg.areaUnit === 'ha' || cfg.areaUnit === 'ac' ? '0.05' : '10'}
-              class="ct-area-input"
+              class="area-num-input"
               value={displayArea}
               onInput={(e) => {
                 const raw = Number((e.currentTarget as HTMLInputElement).value);
@@ -49,12 +49,12 @@ export function AreaStep() {
                 }
               }}
             />
-            <div class="ct-ink-seg" role="group" aria-label="Area unit">
+            <div class="ink-seg" role="group" aria-label="Area unit">
               {UNITS.map((u) => (
                 <button
                   key={u.id}
                   type="button"
-                  class="ct-seg-btn"
+                  class="ink-seg-btn"
                   aria-pressed={cfg.areaUnit === u.id ? 'true' : 'false'}
                   onClick={() => setPlantingConfig({ areaUnit: u.id })}
                 >
@@ -65,14 +65,14 @@ export function AreaStep() {
           </div>
         </div>
 
-        <div class="ct-plan-ctrl-group">
-          <span class="ct-eyebrow">DENSITY</span>
-          <div class="ct-plan-chip-row" role="group" aria-label="Planting density">
+        <div class="area-field">
+          <label>DENSITY</label>
+          <div class="ink-seg" role="group" aria-label="Planting density">
             {DENSITIES.map((d) => (
               <button
                 key={d.id}
                 type="button"
-                class={`ct-plan-pill-btn${cfg.densityMode === d.id ? ' is-active' : ''}`}
+                class="ink-seg-btn"
                 aria-pressed={cfg.densityMode === d.id ? 'true' : 'false'}
                 onClick={() => setPlantingConfig({ densityMode: d.id })}
               >
@@ -82,14 +82,14 @@ export function AreaStep() {
           </div>
         </div>
 
-        <div class="ct-plan-ctrl-group">
-          <span class="ct-eyebrow">PATHWAYS %</span>
-          <div class="ct-plan-chip-row" role="group" aria-label="Pathways percentage">
+        <div class="area-field">
+          <label>PATHWAYS %</label>
+          <div class="ink-seg" role="group" aria-label="Pathways percentage">
             {PATHWAYS.map((pct) => (
               <button
                 key={pct}
                 type="button"
-                class={`ct-plan-pill-btn${cfg.pathwaysPct === pct ? ' is-active' : ''}`}
+                class="ink-seg-btn"
                 aria-pressed={cfg.pathwaysPct === pct ? 'true' : 'false'}
                 onClick={() => setPlantingConfig({ pathwaysPct: pct })}
               >
@@ -100,9 +100,9 @@ export function AreaStep() {
         </div>
       </div>
 
-      <div class="ct-area-net" data-net-area>
-        <span>Net planted area</span>
-        <strong>{netDisplay} {unitLabel} ({100 - cfg.pathwaysPct}% of {displayArea} {unitLabel})</strong>
+      <div class="area-net-line" data-net-area>
+        <span>Net planted area: <strong>{netDisplay} {unitLabel}</strong> of {displayArea} {unitLabel} ({cfg.pathwaysPct}% paths &amp; access)</span>
+        <span>Auto-sizes plant counts &amp; spacing in Planting Plan</span>
       </div>
     </section>
   );
@@ -121,10 +121,10 @@ export function OpenCanopiPathB() {
   };
 
   return (
-    <div class="ct-path-b ct-ob-dropzone" data-open-canopi-path-b>
-      <div class="ct-ob-drop-text">
-        <strong class="ct-ob-drop-title">Drop a .canopi file or browse</strong>
-        <span class="ct-ob-drop-copy">Stays local · custom plants preserved intact</span>
+    <div class="ob-dropzone-compact" data-open-canopi-path-b onClick={() => inputRef.current?.click()}>
+      <div style="min-width:0;">
+        <strong style="font-size:13.5px; color:var(--ink); display:block;">Drop a .canopi file or browse</strong>
+        <span style="font-size:12px; color:var(--ink-muted);">Stays local · custom plants preserved intact</span>
       </div>
       <input
         ref={inputRef}
@@ -138,10 +138,10 @@ export function OpenCanopiPathB() {
           void onFile(file);
         }}
       />
-      <button type="button" class="button button-secondary ct-small" onClick={() => inputRef.current?.click()}>
+      <button type="button" class="btn btn-xs" onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}>
         Browse…
       </button>
-      {error && <p class="ct-path-b-err" role="alert">{error}</p>}
+      {error && <p class="ct-muted" role="alert">{error}</p>}
     </div>
   );
 }

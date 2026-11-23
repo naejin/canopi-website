@@ -138,8 +138,8 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   return (
     <div class="ct-palette-page">
       <StudioHeader />
-      <div class={`ct-studio-split${railVisible ? '' : ' is-collapsed'}`}>
-        <div class="ct-studio-canvas">
+      <div class={`studio-shell${railVisible ? '' : ' rail-hidden'}`}>
+        <div class="studio-main">
           {activeTab === 'system' ? (
             <LazyLivingSystem.View />
           ) : activeTab === 'climate' ? (

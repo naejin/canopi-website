@@ -4,11 +4,11 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: antigravity/gemini, at: 2026-11-23T16:44:18Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T17:14:48Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:12Z }
-  - { by: antigravity/gemini, at: 2026-11-23T16:44:12Z }
+  - { by: antigravity/gemini, at: 2026-11-23T17:14:41Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -58,8 +58,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:28ed3cc69af6c5b3
-    last_modified: 2026-11-23T16:40:07Z
+    digest: sha256:f456eb36dd7851bb
+    last_modified: 2026-11-23T16:55:15Z
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro

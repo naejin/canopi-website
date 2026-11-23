@@ -52,7 +52,7 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
     <div ref={wrapRef} class="ct-filter-wrap">
       <button
         type="button"
-        class={`ct-filter-btn${count > 0 ? ' is-active' : ''}`}
+        class={`filter-trigger-btn${count > 0 ? ' has-active' : ''}`}
         data-filter-trigger
         aria-expanded={open ? 'true' : 'false'}
         onClick={() => setOpen((v) => !v)}
@@ -62,12 +62,13 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
       </button>
 
       {open && (
-        <div class="ct-filter-pop" data-filter-popover role="dialog" aria-label={triggerLabel}>
-          <div class="ct-filter-grid">
-            <div class="ct-filter-field">
-              <label for={`${uid}-sun`}>{T('studio.filterSun')}</label>
+        <div class="ct-filter-panel" data-filter-popover role="dialog" aria-label={triggerLabel}>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label class="fp-label" for={`${uid}-sun`}>{T('studio.filterSun')}</label>
               <select
                 id={`${uid}-sun`}
+                class="field-select"
                 value={value.sun}
                 onChange={(e) => onChange({ ...value, sun: (e.currentTarget as HTMLSelectElement).value as Stratum | 'all' })}
               >
@@ -76,10 +77,11 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
               </select>
             </div>
 
-            <div class="ct-filter-field">
-              <label for={`${uid}-stage`}>{T('studio.filterStage')}</label>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label class="fp-label" for={`${uid}-stage`}>{T('studio.filterStage')}</label>
               <select
                 id={`${uid}-stage`}
+                class="field-select"
                 value={String(value.stage)}
                 onChange={(e) => {
                   const raw = (e.currentTarget as HTMLSelectElement).value;
@@ -93,10 +95,11 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
               </select>
             </div>
 
-            <div class="ct-filter-field">
-              <label for={`${uid}-role`}>{T('studio.filterRole')}</label>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <label class="fp-label" for={`${uid}-role`}>{T('studio.filterRole')}</label>
               <select
                 id={`${uid}-role`}
+                class="field-select"
                 value={value.role}
                 onChange={(e) => onChange({ ...value, role: (e.currentTarget as HTMLSelectElement).value as JobId | 'all' })}
               >
@@ -106,8 +109,8 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
             </div>
           </div>
 
-          <div class="ct-filter-checks">
-            <label class="ct-filter-check">
+          <div style="display:flex; flex-direction:column; gap:6px; font-size:13px;">
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
               <input
                 type="checkbox"
                 checked={value.lowChill}
@@ -115,7 +118,7 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
               />
               <span>Low chill (mild-winter friendly)</span>
             </label>
-            <label class="ct-filter-check">
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
               <input
                 type="checkbox"
                 checked={value.clayWet}
@@ -123,7 +126,7 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
               />
               <span>Clay / wet-soil tolerant</span>
             </label>
-            <label class="ct-filter-check">
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
               <input
                 type="checkbox"
                 checked={value.extremeHardy}
@@ -133,15 +136,15 @@ export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
             </label>
           </div>
 
-          <div class="ct-filter-foot">
+          <div class="pfp-foot">
             <button
               type="button"
-              class="link-button ct-link"
+              class="link-btn"
               onClick={() => onChange({ ...EMPTY_STUDIO_FILTERS })}
             >
               Reset
             </button>
-            <button type="button" class="button button-secondary ct-small" onClick={() => setOpen(false)}>
+            <button type="button" class="btn btn-xs btn-primary" onClick={() => setOpen(false)}>
               Done
             </button>
           </div>

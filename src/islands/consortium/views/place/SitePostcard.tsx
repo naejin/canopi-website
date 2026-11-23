@@ -60,68 +60,68 @@ export function SitePostcard({ children }: { children?: ComponentChildren }) {
       : 'Pick a sample plot above or enter your town/coordinates to read local frost lows, summer peaks, and soil pH from on-device tiles.';
 
   return (
-    <section class="ct-postcard" data-site-postcard aria-label="Site climate summary">
-      <div class="ct-postcard-head">
-        <strong class="ct-postcard-title">{title}</strong>
-        <span class="ct-postcard-tag">From canopi-climate v0.7.0 · {cLabel}</span>
+    <section class="postcard" data-site-postcard aria-label="Site climate summary">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+        <strong class="ct-postcard-title" style="font-family:var(--font-display); font-size:18px;">{title}</strong>
+        <span style="font-size:12.5px; color:var(--ink-muted);">From canopi-climate v0.7.0 · {cLabel}</span>
       </div>
-      <p class="ct-postcard-summary">{summary}</p>
+      <p style="margin:0; font-size:14.5px; color:var(--ink-soft);">{summary}</p>
 
-      <ul class="ct-postcard-rows">
-        <li class="ct-postcard-row">
-          <span class="ct-postcard-label">
+      <div class="ob-forces-list">
+        <div class="ob-force-row">
+          <span class="ob-fk">
             WINTER &amp; FROST
             <FieldTip
               label="Explain Winter and Frost"
               text="Coldest-month average low adjusted for your slope and landform. Used to check winter hardiness and frost-window timing."
             />
           </span>
-          <span class="ct-postcard-val">
+          <span class="ob-fv">
             {adj
               ? `${formatTemp(adj.adjustedColdC, lang)} coldest low · ${mildWinter ? 'Mild winter' : 'Hard frosts'}`
               : z
                 ? `${zoneName(z)} baseline · ${mildWinter ? 'Mild winter' : 'Seasonal frosts'}`
                 : 'Awaiting location — pick a sample plot or search'}
           </span>
-        </li>
-        <li class="ct-postcard-row">
-          <span class="ct-postcard-label">
+        </div>
+        <div class="ob-force-row">
+          <span class="ob-fk">
             SUMMER &amp; RAIN
             <FieldTip
               label="Explain Summer and Rain"
               text="Warmest-month average high and aridity balance. Higher aridity means more rain relative to summer evaporation."
             />
           </span>
-          <span class="ct-postcard-val">
+          <span class="ob-fv">
             {adj
               ? `${formatTemp(adj.adjustedHotC, lang)} warmest high${aridity != null ? ` · Aridity ${aridity.toFixed(2)}` : ''}`
               : 'Read automatically from local climate tiles'}
           </span>
-        </li>
-        <li class="ct-postcard-row">
-          <span class="ct-postcard-label">
+        </div>
+        <div class="ob-force-row">
+          <span class="ob-fk">
             SOIL &amp; SUBSOIL
             <FieldTip
               label="Explain Soil and Subsoil"
               text="Regional baseline soil pH and texture from soil grids. Always verify with a local spade and pH test on your plot."
             />
           </span>
-          <span class="ct-postcard-val">
+          <span class="ob-fv">
             {ph != null
               ? `Topsoil pH ${ph.toFixed(1)}${tex ? ` · ${tex}` : ''}`
               : 'Baseline soil grid · editable below'}
           </span>
-        </li>
-      </ul>
+        </div>
+      </div>
 
       {mildWinter && (
-        <p class="ct-postcard-mild" data-mild-winter-note>
+        <div class="ob-mild-line" data-mild-winter-note>
           <strong>❄ Mild-winter advantage:</strong> Nov–Mar stays frost-rare — sow cool-season species in autumn to build deep roots on winter rain.
-        </p>
+        </div>
       )}
 
-      <details class="ct-adv-figures" data-microclimate>
-        <summary class="ct-adv-summary">Tune canopi-climate readings &amp; microclimate (live updates)</summary>
+      <details style="font-size:13.5px; color:var(--ink-soft); border-top:1px dashed var(--border-strong); padding-top:8px; margin-top:10px;" data-microclimate>
+        <summary style="cursor:pointer; font-weight:600; color:var(--ink);">Tune canopi-climate readings &amp; microclimate (live updates)</summary>
         <div class="ct-micro-grid">
           <div class="ct-micro-field">
             <div class="ct-micro-field-head">
@@ -167,9 +167,9 @@ export function SitePostcard({ children }: { children?: ComponentChildren }) {
         {children}
       </details>
 
-      <p class="ct-postcard-attr">
+      <div class="attr-footer">
         Climate &amp; terrain: <strong>canopi-climate v0.7.0</strong> (COPERNICUS/DEM/GLO30 &amp; MERIT/Hydro, ODbL 1.0) · Plant data: <strong>canopi-data Schema 4.9</strong>
-      </p>
+      </div>
     </section>
   );
 }

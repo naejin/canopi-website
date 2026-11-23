@@ -84,26 +84,26 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
     void run((x) => x.settle('saved', JSON.stringify({ lat: s.lat, lon: s.lon, source: 'search', label: s.fullName })));
   };
   return (
-    <section class="ct-q ct-location" aria-labelledby="ct-loc-h">
-      <h2 class="ct-ob-h2" id="ct-loc-h">Where are you planting?</h2>
-      <form class="ct-field-row" role="search" aria-label={T('location.title')} onSubmit={(e) => { e.preventDefault(); if (searching) return; search((e.currentTarget.elements.namedItem('ct-place-q') as HTMLInputElement).value); }}>
-        <input ref={field} type="text" name="ct-place-q" class="ct-place-field" data-location-search enterKeyHint="search" autoComplete="off" aria-label={T('location.field')} placeholder={T('location.field')}
+    <section aria-labelledby="ct-loc-h">
+      <h2 id="ct-loc-h">Where are you planting?</h2>
+      <form style="display:flex; gap:8px; margin-bottom:10px;" role="search" aria-label={T('location.title')} onSubmit={(e) => { e.preventDefault(); if (searching) return; search((e.currentTarget.elements.namedItem('ct-place-q') as HTMLInputElement).value); }}>
+        <input ref={field} type="text" name="ct-place-q" class="field-input" style="flex:1;" data-location-search enterKeyHint="search" autoComplete="off" aria-label={T('location.field')} placeholder={T('location.field')}
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.isComposing || e.keyCode === 229)) e.preventDefault(); }} />
         {searching
-          ? <button type="button" class="button button-secondary" onClick={() => m?.stop()}>{T('location.stop')}</button>
-          : <button type="submit" class="button button-secondary">Look up</button>}
+          ? <button type="button" class="btn" onClick={() => m?.stop()}>{T('location.stop')}</button>
+          : <button type="submit" class="btn">Look up</button>}
         {geo && showWays && !wide && (
-          <button type="button" class="ct-icon-button" data-location-action="geo" aria-label={T('location.geo')} onClick={() => run((x) => x.useMyLocation())}>{geoIcon}</button>
+          <button type="button" class="btn" data-location-action="geo" aria-label={T('location.geo')} onClick={() => run((x) => x.useMyLocation())}>{geoIcon}</button>
         )}
       </form>
       {showWays && (
-        <div class="ct-sample-row">
-          <span class="ct-sample-label">Sample plots:</span>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:13px; color:var(--ink-muted);">
+          <span>Sample plots:</span>
           {SAMPLE_PLOTS.map((s) => (
             <button
               key={s.id}
               type="button"
-              class="ct-filter-chip"
+              class="filter-chip"
               aria-pressed={loc?.label === s.fullName ? 'true' : 'false'}
               onClick={() => pickSample(s)}
             >
@@ -113,15 +113,15 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
         </div>
       )}
       {showWays && (
-        <div class="ct-q-quick-row">
-          {geo && <button type="button" class="link-button ct-link" data-location-action="geo" onClick={() => run((x) => x.useMyLocation())}>{T('location.geo')}</button>}
-          {geo && webgl() && <span class="ct-sep" aria-hidden="true"> · </span>}
-          {webgl() && <button type="button" class="link-button ct-link" data-location-action="map" onClick={() => run((x) => x.openMap())}>{T('location.map')}</button>}
-          {(geo || webgl()) && children && <span class="ct-sep" aria-hidden="true"> · </span>}
+        <div class="ct-loc-quick">
+          {geo && <button type="button" class="ct-loc-link" data-location-action="geo" onClick={() => run((x) => x.useMyLocation())}>{T('location.geo')}</button>}
+          {geo && webgl() && <span aria-hidden="true">·</span>}
+          {webgl() && <button type="button" class="ct-loc-link" data-location-action="map" onClick={() => run((x) => x.openMap())}>{T('location.map')}</button>}
+          {(geo || webgl()) && children && <span aria-hidden="true">·</span>}
           {children}
         </div>
       )}
-      {broken.value && <p class="ct-notice" role="alert">{T('details.loadFailed')}</p>}
+      {broken.value && <p class="ct-muted" role="alert">{T('details.loadFailed')}</p>}
       <p class="ct-sr" role="status">{m ? m.said() : loc && !loc.lookup ? T('location.state.loading') : ''}</p>
       {(!loc?.lookup || !!m?.choices.value) && result}
       {m && m.mapOpen.value && <m.MapDialog />}

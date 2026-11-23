@@ -137,14 +137,22 @@ export function StudioRail() {
     if (ids.length) store.addMembers(ids);
   };
 
+  const SUN_DOT: Record<string, string> = {
+    emergent: 'var(--sun-full)',
+    high: 'var(--sun-mostly)',
+    medium: 'var(--sun-part)',
+    low: 'var(--sun-shade)',
+  };
+
   return (
-    <aside class="ct-rail" data-studio-rail aria-label="Coach and plant catalog">
-      <div class="ct-rail-head">
-        <div class="ct-rail-tabs ct-ink-seg" role="tablist" aria-label="Right rail">
+    <aside class="studio-rail" data-studio-rail aria-label="Coach and plant catalog">
+      <div class="rail-head">
+        <div class="ink-seg" role="tablist" aria-label="Right rail">
           <button
             type="button"
             role="tab"
-            class="ct-rail-tab"
+            class="ink-seg-btn"
+            aria-pressed={tab === 'coach' ? 'true' : 'false'}
             aria-selected={tab === 'coach' ? 'true' : 'false'}
             onClick={() => { railTab.value = 'coach'; }}
           >
@@ -153,7 +161,8 @@ export function StudioRail() {
           <button
             type="button"
             role="tab"
-            class="ct-rail-tab"
+            class="ink-seg-btn"
+            aria-pressed={tab === 'all' ? 'true' : 'false'}
             aria-selected={tab === 'all' ? 'true' : 'false'}
             onClick={() => { railTab.value = 'all'; }}
           >
@@ -162,7 +171,7 @@ export function StudioRail() {
         </div>
         <button
           type="button"
-          class="ct-rail-close"
+          class="btn-quiet"
           aria-label="Close plant pool rail"
           onClick={() => { poolOpen.value = false; }}
         >
@@ -170,19 +179,20 @@ export function StudioRail() {
         </button>
       </div>
 
-      <div class="ct-rail-body">
+      <div class="rail-body">
         {tab === 'coach' ? (
           <>
-            <div class="ct-coach-intro">
-              <h3 class="ct-coach-title">Strengthen your palette</h3>
-              <p class="ct-muted ct-small-text">
+            <div>
+              <h3 style="font-size:17px; margin-bottom:3px;">Strengthen your palette</h3>
+              <p style="margin:0 0 10px; font-size:13.5px; color:var(--ink-soft);">
                 {coachCards.length} gentle {coachCards.length === 1 ? 'suggestion' : 'suggestions'} for {placeName}
                 {coldC != null || sitePh != null ? ` (${[coldC != null ? `${coldC > 0 ? '+' : ''}${coldC.toFixed(0)} °C winter` : '', sitePh != null ? `pH ${sitePh.toFixed(1)}` : ''].filter(Boolean).join(' · ')})` : ''}. Adding updates your studio live.
               </p>
               {coachCards.length > 0 && (
                 <button
                   type="button"
-                  class="button button-primary ct-auto-strengthen"
+                  class="btn btn-primary"
+                  style="width:100%;"
                   onClick={autoStrengthen}
                 >
                   ✦ Auto-Strengthen (fill top {coachCards.length})
@@ -190,45 +200,44 @@ export function StudioRail() {
               )}
             </div>
 
-            <div class="ct-coach-list">
-              {coachCards.map((c) => {
-                const t = c.taxon;
-                const tier = sunTierOf(t);
-                const hText = formatHeightRange(t.traits.height_m);
-                const phText = phSpanText(t);
-                return (
-                  <article
-                    key={t.id}
-                    class="ct-coach-note"
-                    onClick={() => openFieldDossier(t.id, coachIds)}
-                  >
-                    <div class="ct-coach-gap-k">{c.eyebrow}</div>
-                    <div class="ct-coach-top">
-                      <div class="ct-rail-row-info">
-                        <strong class="ct-coach-name">{nameOf(t)}</strong>
-                        <div class="ct-rail-meta">
-                          <span><span class="ct-sun-dot" data-sun-tier={tier} aria-hidden="true" />{sunTierLabel(t)}</span>
-                          {hText && <><span class="ct-msep" aria-hidden="true">·</span><span>{hText}</span></>}
-                          {phText && <><span class="ct-msep" aria-hidden="true">·</span><span>{phText}</span></>}
-                        </div>
+            {coachCards.map((c) => {
+              const t = c.taxon;
+              const tier = sunTierOf(t);
+              const hText = formatHeightRange(t.traits.height_m);
+              const phText = phSpanText(t);
+              return (
+                <article
+                  key={t.id}
+                  class="coach-note clickable"
+                  onClick={() => openFieldDossier(t.id, coachIds)}
+                >
+                  <div class="coach-gap-k">{c.eyebrow}</div>
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                    <div style="min-width:0;">
+                      <strong style="font-family:var(--font-display); font-size:15.5px;">{nameOf(t)}</strong>
+                      <div class="rail-meta-line">
+                        <span><span class="sun-dot-inline" style={{ background: SUN_DOT[tier] }} aria-hidden="true" />{sunTierLabel(t)}</span>
+                        {hText && <><span class="msep" aria-hidden="true">·</span><span>{hText}</span></>}
+                        {phText && <><span class="msep" aria-hidden="true">·</span><span>{phText}</span></>}
                       </div>
-                      <button
-                        type="button"
-                        class="ct-card-act"
-                        onClick={(e) => { e.stopPropagation(); store.addMembers([t.id]); }}
-                      >
-                        {T('studio.add')}
-                      </button>
                     </div>
-                    <div class="ct-coach-why">{c.why}</div>
-                  </article>
-                );
-              })}
-            </div>
+                    <button
+                      type="button"
+                      class="btn btn-xs"
+                      onClick={(e) => { e.stopPropagation(); store.addMembers([t.id]); }}
+                    >
+                      {T('studio.add')}
+                    </button>
+                  </div>
+                  <div class="coach-why-text">{c.why}</div>
+                </article>
+              );
+            })}
 
             <button
               type="button"
-              class="ct-rail-explore"
+              class="btn-quiet"
+              style="width:100%; border:1px solid var(--border);"
               onClick={() => openPlantPool({ tab: 'all' })}
             >
               Explore all {pool.length} plants in Unified Pool →
@@ -238,14 +247,14 @@ export function StudioRail() {
           <>
             <input
               type="search"
-              class="ct-rail-input"
+              class="field-input"
               aria-label="Search all plants"
               placeholder="Search any plant, Latin, or role…"
               value={query}
               onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
             />
 
-            <div class="ct-chip-row">
+            <div class="chip-row">
               {([
                 ['winter', '❄ Compact / winter'],
                 ['gap', '★ Fills a gap'],
@@ -255,7 +264,7 @@ export function StudioRail() {
                 <button
                   key={id}
                   type="button"
-                  class="ct-intent-chip"
+                  class="filter-chip"
                   aria-pressed={intent === id ? 'true' : 'false'}
                   onClick={() => setIntent((cur) => (cur === id ? null : id))}
                 >
@@ -264,14 +273,15 @@ export function StudioRail() {
               ))}
             </div>
 
-            <div class="ct-rail-controls">
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px;">
               <FilterPopover value={filters} onChange={setFilters} />
-              <div class="ct-ink-seg" role="group" aria-label="Sort pool">
+              <div class="ink-seg" role="group" aria-label="Sort pool">
                 {([['fit', 'Best fit'], ['gap', 'Gap'], ['az', 'A–Z']] as const).map(([id, lbl]) => (
                   <button
                     key={id}
                     type="button"
-                    class="ct-studio-horizon-btn"
+                    class="ink-seg-btn"
+                    style="padding:3px 8px; font-size:12px;"
                     aria-pressed={sort === id ? 'true' : 'false'}
                     onClick={() => setSort(id)}
                   >
@@ -281,50 +291,50 @@ export function StudioRail() {
               </div>
             </div>
 
-            <ul class="ct-rail-list">
+            <div style="display:flex; flex-direction:column; gap:8px;">
               {filteredAll.map((t) => {
                 const inPalette = memberIds.has(t.id);
                 const tier = sunTierOf(t);
                 const hText = formatHeightRange(t.traits.height_m);
                 const phText = phSpanText(t);
                 return (
-                  <li
+                  <div
                     key={t.id}
-                    class={`ct-pool-item${inPalette ? ' is-in-pal' : ''}`}
+                    class={`pool-item${inPalette ? ' in-pal' : ''}`}
                     onClick={() => openFieldDossier(t.id, allIds)}
                   >
-                    <div class="ct-rail-row-info">
-                      <div class="ct-pool-name-line">
-                        <strong class="ct-rail-row-name">{nameOf(t)}</strong>
-                        <span class="ct-sci">{t.canonical_name}</span>
+                    <div style="flex:1; min-width:0;">
+                      <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:5px;">
+                        <strong style="font-size:14.5px;">{nameOf(t)}</strong>
+                        <span style="font-size:12px; font-style:italic; color:var(--ink-muted);">{t.canonical_name}</span>
                       </div>
-                      <div class="ct-rail-meta">
-                        <span><span class="ct-sun-dot" data-sun-tier={tier} aria-hidden="true" />{sunTierLabel(t)}</span>
-                        {hText && <><span class="ct-msep" aria-hidden="true">·</span><span>{hText}</span></>}
-                        {phText && <><span class="ct-msep" aria-hidden="true">·</span><span>{phText}</span></>}
+                      <div class="rail-meta-line">
+                        <span><span class="sun-dot-inline" style={{ background: SUN_DOT[tier] }} aria-hidden="true" />{sunTierLabel(t)}</span>
+                        {hText && <><span class="msep" aria-hidden="true">·</span><span>{hText}</span></>}
+                        {phText && <><span class="msep" aria-hidden="true">·</span><span>{phText}</span></>}
                       </div>
                     </div>
                     {inPalette ? (
-                      <span class="ct-small-text ct-muted">{T('studio.inPalette')}</span>
+                      <span class="btn btn-xs">{T('studio.inPalette')}</span>
                     ) : (
                       <button
                         type="button"
-                        class="ct-card-act"
+                        class="btn btn-xs btn-primary"
                         onClick={(e) => { e.stopPropagation(); store.addMembers([t.id]); }}
                       >
                         {T('studio.add')}
                       </button>
                     )}
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
 
-            <p class="ct-small-text ct-muted ct-rail-request">
+            <p style="font-size:12.5px; color:var(--ink-muted); margin:4px 0 0;">
               Can&apos;t find a species?{' '}
               <button
                 type="button"
-                class="link-button ct-link"
+                class="link-btn"
                 onClick={() => { requestPlantOpen.value = true; }}
               >
                 {T('studio.requestPlant')}

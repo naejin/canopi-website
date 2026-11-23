@@ -4,10 +4,10 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T16:44:13Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T17:15:20Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
-  - { by: antigravity/gemini, at: 2026-11-23T16:44:09Z }
+  - { by: antigravity/gemini, at: 2026-11-23T17:14:38Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -188,8 +188,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:7b64c1fa58f990d4
-    last_modified: 2026-11-23T15:46:34Z
+    digest: sha256:e96bcdabea1b6bcc
+    last_modified: 2026-11-23T17:08:11Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
@@ -353,8 +353,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:28ed3cc69af6c5b3
-    last_modified: 2026-11-23T16:40:07Z
+    digest: sha256:f456eb36dd7851bb
+    last_modified: 2026-11-23T16:55:15Z
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
@@ -368,8 +368,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:c2bc50c6217b2c3e
-    last_modified: 2026-11-23T14:42:37Z
+    digest: sha256:9a11ee8504953eb8
+    last_modified: 2026-11-23T16:57:37Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts

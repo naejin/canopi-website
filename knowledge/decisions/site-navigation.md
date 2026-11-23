@@ -3,11 +3,11 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: antigravity/gemini, at: 2026-11-23T16:44:15Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T17:14:47Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:15Z }
-  - { by: antigravity/gemini, at: 2026-11-23T16:44:11Z }
+  - { by: antigravity/gemini, at: 2026-11-23T17:14:40Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
@@ -57,8 +57,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:28ed3cc69af6c5b3
-    last_modified: 2026-11-23T16:40:07Z
+    digest: sha256:f456eb36dd7851bb
+    last_modified: 2026-11-23T16:55:15Z
   - id: fonts-css
     resource: ../../src/styles/fonts.css
     title: src/styles/fonts.css
