@@ -3,10 +3,10 @@ type: Architecture Decision
 title: Metric-matched fallback fonts
 description: Local Arial and Times New Roman (or their metric twins) scaled to Source Sans 3's and Literata's metrics come first in the fallback stacks, so the late web-font swap does not shift the layout on slow phones.
 tags: [fonts, performance, layout]
-generated: { by: antigravity/gemini, at: 2026-11-23T14:27:48Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T16:44:14Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:20Z }
-  - { by: antigravity/gemini, at: 2026-11-23T14:27:40Z }
+  - { by: antigravity/gemini, at: 2026-11-23T16:44:10Z }
 sources:
   - id: fonts-css
     resource: ../../src/styles/fonts.css
@@ -16,8 +16,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:8523dfade9a3e6bb
-    last_modified: 2026-11-23T14:08:55Z
+    digest: sha256:28ed3cc69af6c5b3
+    last_modified: 2026-11-23T16:40:07Z
   - id: font-fallback-metrics-mjs
     resource: ../../scripts/font-fallback-metrics.mjs
     title: scripts/font-fallback-metrics.mjs

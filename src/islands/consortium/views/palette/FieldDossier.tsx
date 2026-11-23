@@ -15,6 +15,7 @@ import { pageLang, T } from '../../strings.ts';
 import { closeFieldDossier, dossierId, dossierList, openFieldDossier, stepFieldDossier, studioTab } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
+import { SunIcon } from './SunIcon.tsx';
 import {
   activityMonthsOf,
   buildDossierSpec,
@@ -131,7 +132,9 @@ export function FieldDossier() {
 
         {/* Sun Emblem + Serif Title + Latin + Sun Pill */}
         <div class="ct-dossier-hero">
-          <span class="ct-dossier-emblem" data-sun-tier={sun} aria-hidden="true">{emblem.glyph}</span>
+          <span class="ct-dossier-emblem" data-sun-tier={sun} aria-hidden="true">
+            <SunIcon tier={sun} size={24} />
+          </span>
           <div>
             <h2 id="ct-dossier-title" class="ct-dossier-title">{nameOf(taxon)}</h2>
             <p class="ct-sci ct-dossier-latin">{taxon.canonical_name}</p>

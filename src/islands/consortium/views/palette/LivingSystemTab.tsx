@@ -11,6 +11,7 @@ import * as store from '../../store.ts';
 import { T } from '../../strings.ts';
 import { openFieldDossier, openPlantPool, studioTab } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
+import { SunIcon } from './SunIcon.tsx';
 import {
   buildRoleLedger,
   buildSunSuccessionMatrix,
@@ -276,7 +277,9 @@ export function LivingSystemTab() {
                   <tr key={row.sun}>
                     <th scope="row" class="ct-mx-sun-th" data-sun-tier={row.sun}>
                       <div class="ct-mx-sun-head">
-                        <span class="ct-mx-sun-badge" data-sun-tier={row.sun} aria-hidden="true">{meta.glyph}</span>
+                        <span class="ct-mx-sun-badge" data-sun-tier={row.sun} aria-hidden="true">
+                          <SunIcon tier={row.sun} size={17} />
+                        </span>
                         <div>
                           <div class="ct-mx-sun-lbl">{row.label}</div>
                           <div class="ct-mx-sun-hrs">{meta.hours}</div>

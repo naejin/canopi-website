@@ -3,10 +3,10 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: antigravity/gemini, at: 2026-11-23T15:46:18Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T16:44:17Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
-  - { by: antigravity/gemini, at: 2026-11-23T15:46:08Z }
+  - { by: antigravity/gemini, at: 2026-11-23T16:44:08Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
@@ -81,8 +81,8 @@ sources:
   - id: place-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:2cfe03db3164e8e9
-    last_modified: 2026-11-23T15:41:25Z
+    digest: sha256:f54778149402b35b
+    last_modified: 2026-11-23T16:40:40Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs

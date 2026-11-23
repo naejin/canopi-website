@@ -424,11 +424,7 @@ function OwnPlants() {
 }
 
 // ---- Start over (Toasts board): "Palette cleared: 8 plants. Your place is kept." with Undo ----
-const welcomeGone = signal(false);
-function startOverNow(): void {
-  welcomeGone.value = true;
-  startOver();
-}
+// Legacy device-only welcome-back banner retired in Stage 1C (replaced by .canopi file controls in StudioHeader).
 
 // ---- the arrival lines (board Arrivals) ----
 // Each notice as Arrivals draws it (BC3, BC4): an icon, a bold lead (the translation marks it **…**),
@@ -506,8 +502,6 @@ function countTokens(q: URLSearchParams): number {
   for (let i = 0; i < v.length; i += v[i] === '.' ? 23 : 6) k++;
   return k;
 }
-// The welcome line is said once (R9): it goes at the first change to the palette.
-const welcomeAt = signal<readonly string[] | null>(null);
 // "near Kiambu" (board Arrivals): the place's short name in a sentence; none for a link's place.
 const near = () => shortPlace(siteLocation.value);
 function PlaceNotices() {
@@ -529,12 +523,6 @@ function PlaceNotices() {
   const noPlace = linkOpen && !saved && !theirs && !laterPlace.value && !siteLocation.value?.lookup && !locationAtStart.value;
   const checkedAgainst = linkOpen && !saved && !theirs && !!mine && ownLookup;
   const list = members.value;
-  const candidate = onPalette && opened.kind === 'saved' && !welcomeGone.value && !saved && list.length > 0 ? savedWords() : null;
-  useEffect(() => {
-    if (candidate && !welcomeAt.peek()) welcomeAt.value = members.peek();
-    else if (welcomeAt.peek() && welcomeAt.peek() !== members.peek()) welcomeGone.value = true;
-  });
-  const welcome = candidate && (!welcomeAt.value || welcomeAt.value === list) ? candidate : null;
   const givePlace = () => { backToPlace(); setTimeout(focusField, 50); };
   const values = siteEditLines(siteEdits.value).map(say).join(', ');
   // One list of the arrivals (C3 of fix round 3): each with the sentence a screen reader hears and
@@ -542,10 +530,6 @@ function PlaceNotices() {
   const items: Arrival[] = [];
   const notice = (id: string, text: string, props: { tone?: Tone; mark: keyof typeof ICONS }, children?: ComponentChildren) =>
     items.push({ id, said: heard(text), view: <Notice id={id} text={text} {...props}>{children}</Notice> });
-  if (welcome) {
-    notice('welcome', T(mine ? 'place.welcome' : 'place.welcomeNoPlace', { date: (opened.kind === 'saved' && dayMonth(opened.at)) || welcome.at, count: P('start.count', list.length), place: mine ?? '' }), { mark: 'check' },
-      act(T('start.over'), startOverNow, 'quiet', { 'data-start-over': '' }));
-  }
   if (shared === 'ask' && z) {
     const title = T('place.shared.title');
     const body = T('place.shared.body', { count: P('start.count', list.length), list: T('place.line.list', { climate: zoneName(z) }), mine: savedCount });
@@ -573,7 +557,7 @@ function PlaceNotices() {
   }
   if (n.unreadable) {
     notice('unreadable', T('place.unreadable'), { tone: 'danger', mark: 'alert' }, <>
-      {act(T('place.newPalette'), startOverNow, 'secondary')}
+      {act(T('place.newPalette'), startOver, 'secondary')}
       {saved && act(T('place.backToMine'), () => openSavedInstead(), 'quiet', { 'data-back-mine': '' })}
     </>);
   }
@@ -838,7 +822,7 @@ function Frame() {
         <MainCountry />
         <PlaceFigures />
         <p class="ct-frame-foot">
-          <button type="button" class="link-button ct-link ct-frame-over" data-start-over onClick={startOverNow}>{T('start.over')}</button>
+          <button type="button" class="link-button ct-link ct-frame-over" data-start-over onClick={startOver}>{T('start.over')}</button>
           <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.back')}</button>
         </p>
       </div>

@@ -25,6 +25,7 @@ import {
   type StudioFilterState,
 } from '../../rules/studio-filters.ts';
 import { FilterPopover } from './FilterPopover.tsx';
+import { SunIcon } from './SunIcon.tsx';
 
 function Sparkline({ taxon }: { taxon: Taxon }) {
   const levels = useMemo(() => activityMonthsOf(taxon), [taxon]);
@@ -252,8 +253,12 @@ export function PaletteCards() {
                     <span class="ct-sci">{t.canonical_name}</span>
                   </td>
                   <td>
-                    <span class="ct-sun-dot" data-sun-tier={sunTierOf(t)} aria-hidden="true" />
-                    {sunTierLabel(t)}
+                    <span class="ct-ft-sun">
+                      <span class="ct-ft-sun-icon" data-sun-tier={sunTierOf(t)} aria-hidden="true">
+                        <SunIcon tier={sunTierOf(t)} size={14} />
+                      </span>
+                      {sunTierLabel(t)}
+                    </span>
                   </td>
                   <td>{stageSpanOf(t).label}</td>
                   <td>{roleSummary(t)}</td>

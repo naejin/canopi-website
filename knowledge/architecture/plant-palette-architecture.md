@@ -4,10 +4,10 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T15:46:13Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T16:44:13Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
-  - { by: antigravity/gemini, at: 2026-11-23T15:46:04Z }
+  - { by: antigravity/gemini, at: 2026-11-23T16:44:09Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -189,7 +189,7 @@ sources:
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:7b64c1fa58f990d4
-    last_modified: 2026-11-23T15:41:42Z
+    last_modified: 2026-11-23T15:46:34Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
@@ -353,8 +353,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:8523dfade9a3e6bb
-    last_modified: 2026-11-23T14:28:17Z
+    digest: sha256:28ed3cc69af6c5b3
+    last_modified: 2026-11-23T16:40:07Z
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx

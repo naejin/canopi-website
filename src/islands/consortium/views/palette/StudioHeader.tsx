@@ -201,8 +201,8 @@ export function StudioHeader() {
                   <button type="button" class="ct-studio-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); requestPlantOpen.value = true; }}>
                     {T('studio.requestPlant')}
                   </button>
-                  <button type="button" class="ct-studio-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); startOver(); }}>
-                    Start fresh
+                  <button type="button" class="ct-studio-menu-item" role="menuitem" data-start-over onClick={() => { setOpenMenu(null); startOver(); }}>
+                    New empty palette (Start over)
                   </button>
                 </div>
               )}
