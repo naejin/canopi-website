@@ -24,8 +24,9 @@ export * from './koppen.ts';
 export * from './soil.ts';
 export * from './regions.ts';
 export * from './lookup.ts';
+export * from './v07.ts';
 export { decodeRaster, readTileHeader, inflateDeflate, TileFormatError, type Raster, type Inflate, type TileHeader } from './tiff.ts';
-export { LAYERS, SLOTS, VARIABLES, NODATA } from './model.js';
+export { LAYERS, SLOTS, VARIABLES, NODATA, CLIMATE_V07_PINS, OPTIONAL_V07_LAYERS, FROST_FREE_SENTINEL_DOY } from './model.js';
 
 /** What the reader needs of src/data/climate-index.json: where the tiles are and which exist. */
 export interface SiteIndex {

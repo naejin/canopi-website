@@ -75,3 +75,26 @@ export const LAYERS = Object.freeze({
 
 /** A tile name: north-west corner, `n50e000` covers 40–50 N, 0–10 E. */
 export const TILE_NAME = /^[ns]\d0[ew]\d\d0$/;
+
+/**
+ * Additive canopi-climate v0.7.0 layer metadata (optional alongside v0.2 core tiles/soil/regions).
+ * Core climate_tiles_sha256 is decoupled from additive layers so plant ranges sampled on the core
+ * climate grid remain valid when additive v0.7.0 layers are installed.
+ */
+export const CLIMATE_V07_PINS = Object.freeze({
+  climate_tiles_sha256: 'f689af2d4a81ed62937ec7c209fab42a15285aeac666ce60f2b2cf99d43e1e5b',
+  packs_v07_sha256: '5d223909c56aa2df669e162a42f85fb6bb0be97f388e764df24eef20ea3de355',
+  monolithic_tar_sha256: '1fd5ffd18197b34a7d0342f38ca8b0afa7a65182cd0a66aef03e3d0b33d2f079',
+});
+
+export const OPTIONAL_V07_LAYERS = Object.freeze({
+  frost_calendar: Object.freeze({ dir: 'frost_calendar', cellDeg: 0.1, tileCells: 100 }),
+  extremes_tail: Object.freeze({ dir: 'extremes_tail', cellDeg: 0.1, tileCells: 100 }),
+  phenology: Object.freeze({ dir: 'phenology', cellDeg: 0.1, tileCells: 100 }),
+  water_balance: Object.freeze({ dir: 'water_balance', cellDeg: 0.1, tileCells: 100 }),
+  soil_plus: Object.freeze({ dir: 'soil_plus', cellDeg: 0.05, tileCells: 200 }),
+  terrain: Object.freeze({ dir: 'terrain', cellDeg: 0.05, tileCells: 200 }),
+});
+
+/** Sentinel DOY in frost_calendar/ indicating a frost-free year (no frost date). */
+export const FROST_FREE_SENTINEL_DOY = 366;

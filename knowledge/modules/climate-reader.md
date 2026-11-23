@@ -2,15 +2,15 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:10Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T11:34:48Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:17Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:888570c5d4211f48
-    last_modified: 2026-11-19T08:16:50Z
+    digest: sha256:0c6931a4a66f6ca4
+    last_modified: 2026-11-23T11:28:23Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -29,13 +29,13 @@ sources:
   - id: model-js
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
-    digest: sha256:23fa6d9b282cd681
-    last_modified: 2026-11-12T20:26:30Z
+    digest: sha256:80dd2a4b89616bf9
+    last_modified: 2026-11-23T11:28:20Z
   - id: install-climate-mjs
     resource: ../../scripts/install-climate.mjs
     title: scripts/install-climate.mjs
-    digest: sha256:596d9ed4bffe0aeb
-    last_modified: 2026-11-12T20:26:30Z
+    digest: sha256:43ea5407d5505331
+    last_modified: 2026-11-23T11:28:55Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
@@ -69,8 +69,8 @@ sources:
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
-    digest: sha256:46f57cbfd5234252
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:9def0d1d684cb01f
+    last_modified: 2026-11-23T11:28:26Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts
@@ -105,7 +105,7 @@ sources:
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs
@@ -157,3 +157,9 @@ Update the pin (tag, file, URL, size, sha256 from the release's `.sha256`, manif
 - `scripts/consortium-p5-ranges.test.mjs` checks that its Yakutsk site (`scripts/fixtures/consortium-ranges/sites.json`) equals the Yakutsk point of `lookup.json`.
 - `scripts/install-climate.test.mjs`: a one-tile archive built in the test; each refusal with nothing written; `verifyClimateInstall`; the pin; with a fetch double (no network): one download cached then reused, up-to-date skip, wrong size, sha256, HTTP status or network error refused with nothing installed or cached, a corrupt cache replaced, a wrong manifest refused, `CANOPI_CLIMATE_ARCHIVE` offline and verified, `CANOPI_CLIMATE_CACHE`, another grid replaced; the TypeScript fallback for `tiff.ts`; an empty consortium sha; the legacy mark replaced; a same-size edit caught and reinstalled; per-run staging, three concurrent installs and a dead lock; dev never downloading; a stall, an overall timeout and a fetch that never answers; stale partial downloads; site-layer band refusals (sand at scale 1, another unit, an offset, a missing band, a regions scale or order) and, with the extracted grid, the pinned v0.2.0 manifest passing `manifestProblem`.
 - `scripts/climate-integration.test.mjs`: build waits for the install and fails with it; dev passes `allowDownload: false` and warns only; sync and preview do nothing; the config uses the integration and `build` is plain `astro build`.
+
+# v0.7.0 Additive Layers & Decoupled Grid Matching (Slice 3.1)
+
+- `src/lib/climate/model.js` adds `CLIMATE_V07_PINS` (`climate_tiles_sha256`, `packs_v07_sha256`, `monolithic_tar_sha256`), `OPTIONAL_V07_LAYERS`, and `FROST_FREE_SENTINEL_DOY = 366`.
+- `scripts/consortium-grid-check.mjs` and `scripts/install-climate.mjs` accept the decoupled `climate_tiles_sha256` alongside `grid_manifest_sha256` so v0.7.0 manifests match `canopi-data` Schema 4.9 exports without re-running tile extraction.
+- `src/lib/climate/v07.ts` provides pure-TS decoders for the optional v0.7.0 layers (`decodeFrostCalendar`, `decodeExtremesTail`, `decodePhenology`, `decodeWaterBalance`, `decodeSoilPlus`, `decodeTerrain` with `handM = null` south of `60°S`) and agronomic helpers (`soilAwcWithRock`, `photoperiod`, `adjustMicroclimate`, `evaluateTrajectory`, `AnalogueLoader`), tested in `scripts/climate-v07.test.mjs`.

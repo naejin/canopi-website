@@ -11,7 +11,7 @@
 // REQUIRED_ADDITIONS; PP-C 0b and 0c, no backward compatibility). Open vocabularies: a row whose value the reader does not know is skipped, never the plant.
 import type {
   ClimateRange, ClimateZone, Details, Dispute, DisputeField, EstimateKind, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
-  PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
+  PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, TaxonClimateExtremes, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
 } from '../../../lib/consortium/index.ts';
 import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, READ_ONLY_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
@@ -183,6 +183,11 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
   // plant_aliases (a declared schema-4 table) is accepted and never read: old links need not survive a
   // data change (owner 2026-11-17, "No backward compatibility work"); an unreadable token is unknown.
   const frostRecorded = db.selectObjects('SELECT 1 FROM plant_frost LIMIT 1').length > 0;
+  // Schema 4.8/4.9 additive feature detection (graceful on 4.7 test fixtures and 4.9 exports alike).
+  const hasExtremesTable = db.selectObjects("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'plant_climate_extremes'").length > 0;
+  const layerCols = new Set(db.selectObjects('PRAGMA table_info(layer_values)').map((r) => String(r.name)));
+  const hasMonthsBasis = layerCols.has('months_basis');
+  const hasMonthsSeen = layerCols.has('months_seen');
   const info: SourceInfo = {
     releaseId: meta.get('release_id') ?? '',
     // load.ts opened it only at a schema the reader knows.
@@ -382,6 +387,8 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           scope: Object.keys(scope).length ? scope : null,
           source: String(r.source),
           kind: r.kind as LayerValue['kind'],
+          ...(hasMonthsBasis ? { monthsBasis: str(r.months_basis) } : {}),
+          ...(hasMonthsSeen ? { monthsSeen: r.months_seen == null ? null : monthsOf(Number(r.months_seen), Number(r.months_from ?? 0)) } : {}),
         };
       });
       const imageRow = db.selectObjects('SELECT * FROM plant_images WHERE plant = ?1', [plant])[0];
@@ -415,7 +422,24 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           sources[String(r.id)] = { label: String(r.label), url: str(r.url), licence: str(r.licence), attribution: str(r.attribution) };
         }
       }
-      return { id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen, disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas, gbifRecords, nameKinds };
+      let extremes: TaxonClimateExtremes | null = null;
+      if (hasExtremesTable) {
+        const er = db.selectObjects('SELECT * FROM plant_climate_extremes WHERE plant = ?1 LIMIT 1', [plant])[0];
+        if (er) {
+          extremes = {
+            coldTailC: num(er.cold_tail_c ?? er.cold_limit_c),
+            heatDomeC: num(er.heat_dome_c ?? er.heat_limit_c),
+            maxDryDays: num(er.max_dry_days ?? er.cdd_max),
+            chillMinCP: num(er.chill_min_cp ?? er.chill_portions_min),
+            source: str(er.source),
+          };
+          if (extremes.source) cited.add(extremes.source);
+        }
+      }
+      return {
+        id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen, disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas, gbifRecords, nameKinds,
+        ...(hasExtremesTable ? { extremes } : {}),
+      };
     },
     async labels(l) {
       const out: Labels = {};

@@ -279,6 +279,18 @@ export interface LayerValue {
   scope: LayerScope | null;
   source: string;
   kind: LayerKind;
+  // Schema 4.8/4.9 additive columns (optional; null/absent on 4.7 exports):
+  monthsBasis?: string | null;
+  monthsSeen?: Month[] | null;
+}
+
+/** Schema 4.9 plant_climate_extremes additive record (optional; null on 4.7 exports). */
+export interface TaxonClimateExtremes {
+  coldTailC: number | null;
+  heatDomeC: number | null;
+  maxDryDays: number | null;
+  chillMinCP: number | null;
+  source: string | null;
 }
 
 // What the details sheet shows for one plant in one climate and locale (PlantSource.details).
@@ -309,6 +321,8 @@ export interface Details {
   // Schema 4.7 plant_names.kind: the locales whose primary name rests only on an AI suggestion ('llm');
   // a locale absent here has a sourced or corrected primary, or none.
   nameKinds: Partial<Record<Locale, EstimateKind>>;
+  // Schema 4.9 additive table plant_climate_extremes (null when table absent or no row for this plant).
+  extremes?: TaxonClimateExtremes | null;
 }
 
 // ---- Schema 4 records (format note tables; open vocabularies as strings: a value the reader does not

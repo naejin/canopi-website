@@ -51,10 +51,30 @@ export const CHALKY_ABOVE = 7.5;
 type Check = (t: Taxon, site: Site) => FitReason | null;
 
 const LIGHT_TRAIT: Record<'sun' | 'part' | 'shade', keyof Traits> = { sun: 'sun', part: 'semi_shade', shade: 'full_shade' };
+const SITE_LIGHT_BANDS: Record<'sun' | 'part' | 'shade', readonly Stratum[]> = {
+  sun: ['emergent', 'high'],
+  part: ['medium'],
+  shade: ['low'],
+};
 
+// W1 fix: prefer Schema 4.5+ t.light (sunniest..shadiest span or preferred) when recorded,
+// falling back to legacy tolerates_* boolean traits when t.light is unknown.
 const light: Check = (t, site) => {
   if (site.light === 'unsure') return null;
   const trait = LIGHT_TRAIT[site.light];
+  const bands = SITE_LIGHT_BANDS[site.light];
+  if (t.light?.sunniest && t.light?.shadiest) {
+    const lo = strata.indexOf(t.light.sunniest);
+    const hi = strata.indexOf(t.light.shadiest);
+    const ok = bands.some((b) => {
+      const i = strata.indexOf(b);
+      return i >= lo && i <= hi;
+    });
+    return { key: 'light', verdict: ok ? 'fit' : 'misfit', trait };
+  }
+  if (t.light?.preferred) {
+    return { key: 'light', verdict: bands.includes(t.light.preferred) ? 'fit' : 'misfit', trait };
+  }
   const v = t.traits[trait];
   return { key: 'light', verdict: v === null || v === undefined ? 'unknown' : v ? 'fit' : 'misfit', trait };
 };

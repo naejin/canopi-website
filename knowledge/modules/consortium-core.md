@@ -4,15 +4,15 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schema 4.7 (no older schema or minor) that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:52Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T11:34:49Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:11Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:260e0d612a9f4809
-    last_modified: 2026-11-19T04:40:24Z
+    digest: sha256:6918fafa28e9b4ad
+    last_modified: 2026-11-23T11:29:26Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -21,13 +21,13 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:e393580af2534bc5
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:daa1389e174a2f90
+    last_modified: 2026-11-23T11:30:44Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
-    digest: sha256:a162262df831f7bf
-    last_modified: 2026-11-11T05:47:54Z
+    digest: sha256:872518766f5b6313
+    last_modified: 2026-11-23T11:30:42Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
@@ -61,8 +61,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:d17e7425d6f4e31b
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:323fb9b1c48bc193
+    last_modified: 2026-11-23T11:29:02Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
@@ -131,8 +131,8 @@ sources:
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
-    digest: sha256:46f57cbfd5234252
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:9def0d1d684cb01f
+    last_modified: 2026-11-23T11:28:26Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -176,13 +176,13 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:c97ea2817fd76eb5
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:c9116ee130917d4c
+    last_modified: 2026-11-23T11:29:34Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
-    digest: sha256:faefdfc3640d75cc
-    last_modified: 2026-11-13T12:43:29Z
+    digest: sha256:4bee0febe945ad89
+    last_modified: 2026-11-23T11:29:04Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts
@@ -471,3 +471,10 @@ Of two candidates that bring the same gain, the suggestion picks the one that is
 - **Words in `verdict-line.ts`** (pf-f, h3 G4): `keepLine(now, lost, year)` (counts a later second look as well as outside); `shortWhy` / `shortLine` (`consortium.line.short.*`, Many's rows); `nearness` and `ranged` exported; `drainageLine`; `swapYearsLine` (Swap's years against the member's); `candoLine` (Details' "What you can do" rows); `gapLines` with the `gapLeaves<Form>` spans (Always, First, AfterMonth, After, FromMonth unboarded, Between on the boards: spec A29); `rainFromLine` ("recorded from N mm", one neutral form per language: A30) and `rowRainLine(t, aridityIndex)` (a Find row's rain words, dryland only; `views/rows.tsx` `rowRain`); `holeChangeLines` says a new thin spot (`consortium.line.thinNew`, M44), so a bulk remove names new thin spots only; a serious conflict carries the danger level on its flag line (M31, `views/kit/flags.ts`).
 - **Formats** (`src/islands/consortium/format.ts`): `formatKm` (unit-formatted kilometres, Details' neighbour soil fill).
 - **Tests**: `scripts/consortium-said.mjs` is the shared `said()` helper for the words tests.
+
+## Field Studio Slice 3.1 (2026-11-23)
+
+- **W1 light filter fix**: `src/islands/consortium/rules/find-query.ts` (`lightOf`, `hasLightRecorded`) and `src/lib/consortium/site.ts` (`light`) now read `t.light` (`sunniest..shadiest` span or `preferred`) first, falling back to `t.stratum` / `t.traits` only when `t.light` is unrecorded.
+- **W2 Q10 default placement**: `src/lib/consortium/placed.ts` adds `defaultPlacementOf(t)` and an optional `fallback` step on `placeFor()`, strictly ordered: own curated climate → nearest curated list → Q10 plant-level default.
+- **Schema 4.8/4.9 additive support**: `src/lib/consortium/types.ts` and `src/islands/consortium/data/sqlite-source.ts` gracefully detect and load `layer_values.months_basis`, `layer_values.months_seen`, and `plant_climate_extremes` while remaining backward-compatible with Schema 4.7 fixtures.
+- **Planting Plan & `.canopi` v9 core**: `src/lib/consortium/planting-plan.ts` implements the pure 6-stage succession mapping (`SUCCESSION_STAGES_6`, `phaseToStageIndex`), density-scaled quantities, seed weights, sun-tier footprint, shade-timing & pollination notes, field materials, and frost-anchored waves. `src/lib/consortium/canopi-file.ts` extends `canopiFile()` with optional lossless `plantingPlan`, `designEnvelope`, `climateStress`, and `customPlants` (schema-valid under `CANOPI_FILE_SCHEMA`) plus `parseCanopiFile()`. Tested in `scripts/consortium-slice31.test.mjs`.

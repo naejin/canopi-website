@@ -83,7 +83,17 @@ export interface FilterContext {
 // The filters that hide (a plant they cannot judge stays): they say how many they hide.
 const HIDES: ReadonlySet<FilterId> = new Set(['toxic', 'invasive']);
 
-const lightOf = (t: Taxon, l: Light): boolean | null => (t.stratum ? t.stratum.value === l : null);
+// W1 fix: match light against Schema 4.5+ t.light (sunniest..shadiest span or preferred) first,
+// falling back to placement stratum only when t.light has no recorded value.
+const lightOf = (t: Taxon, l: Light): boolean | null => {
+  const idx = strata.indexOf(l);
+  if (t.light?.sunniest && t.light?.shadiest) {
+    return idx >= strata.indexOf(t.light.sunniest) && idx <= strata.indexOf(t.light.shadiest);
+  }
+  if (t.light?.preferred) return t.light.preferred === l;
+  return t.stratum ? t.stratum.value === l : null;
+};
+const hasLightRecorded = (t: Taxon): boolean => Boolean(t.light?.preferred || (t.light?.sunniest && t.light?.shadiest) || t.stratum);
 const sizeOf = (t: Taxon): Size | null => {
   const h = t.traits.height_m?.max;
   return h == null ? null : h < 2 ? 'small' : h <= 8 ? 'middle' : 'tall';
@@ -116,7 +126,7 @@ function tests(f: FindFilters, ctx: FilterContext): [FilterId, (t: Taxon) => boo
     return unknown ? null : true;
   }]);
   if (f.hideNoSize) out.push(['no-size', (t) => sizeOf(t) !== null]);
-  if (f.hideNoLight) out.push(['no-light', (t) => !!t.stratum]);
+  if (f.hideNoLight) out.push(['no-light', (t) => hasLightRecorded(t)]);
   if (f.hideToxic) out.push(['toxic', (t) => { const x = ctx.toxic?.(t) ?? null; return x === null ? null : !x; }]);
   if (f.hideInvasive) out.push(['invasive', (t) => { const x = ctx.invasive?.(t) ?? null; return x === null ? null : !x; }]);
   return out;

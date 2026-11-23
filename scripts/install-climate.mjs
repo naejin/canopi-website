@@ -251,7 +251,8 @@ async function checkHeaders(tiles) {
 }
 
 // The consortium export's grid: { status, consortium_release[, reason] }; refuses a different grid.
-function consortiumCheck(path, manifestSha, log) {
+// Supports both v0.2 manifest sha256 and v0.7.0 decoupled climate_tiles_sha256.
+function consortiumCheck(path, manifestSha, log, climateTilesSha = null) {
   let index = null;
   try { index = JSON.parse(readFileSync(path, 'utf8')); } catch { /* none */ }
   if (!index) {
@@ -269,7 +270,8 @@ function consortiumCheck(path, manifestSha, log) {
     return { status: 'unchecked', consortium_release: release, reason: 'the consortium index\'s climate_grid_manifest_sha256 is empty (unknown grid)' };
   }
   if (typeof want !== 'string' || !HEX64.test(want)) refuse(`the consortium index (${release}) climate_grid_manifest_sha256 ${JSON.stringify(want)} is not a sha256 (64 lowercase hex).`);
-  if (want !== manifestSha) refuse(`the consortium export ${release} was sampled from the grid ${String(want).slice(0, 12)}…, this archive is ${manifestSha.slice(0, 12)}…: refused (install the matching grid, or the matching consortium export).`);
+  const matchesTiles = typeof climateTilesSha === 'string' && HEX64.test(climateTilesSha) && want === climateTilesSha;
+  if (want !== manifestSha && !matchesTiles) refuse(`the consortium export ${release} was sampled from the grid ${String(want).slice(0, 12)}…, this archive is ${manifestSha.slice(0, 12)}…: refused (install the matching grid, or the matching consortium export).`);
   return { status: 'matched', consortium_release: release };
 }
 
@@ -285,10 +287,18 @@ export function buildIndex({ manifest, manifestSha, tiles, archive, archiveSha, 
   for (const s of [...manifest.sources, ...manifest.layers.flatMap((l) => (Array.isArray(l.sources) ? l.sources : []))]) {
     if (isObject(s) && !credits.has(s.id)) credits.set(s.id, { id: s.id, title: s.title, citation: s.citation ?? null, landing: s.landing ?? null, licence: s.licence });
   }
+  const release = {
+    builder_version: manifest.builder_version,
+    built_at: manifest.built_at,
+    grid_manifest_sha256: manifestSha,
+    ...(typeof manifest.climate_tiles_sha256 === 'string' && HEX64.test(manifest.climate_tiles_sha256) ? { climate_tiles_sha256: manifest.climate_tiles_sha256 } : {}),
+    archive,
+    archive_sha256: archiveSha,
+  };
   return {
     format: INDEX_FORMAT,
     format_version: INDEX_FORMAT_VERSION,
-    release: { builder_version: manifest.builder_version, built_at: manifest.built_at, grid_manifest_sha256: manifestSha, archive, archive_sha256: archiveSha },
+    release,
     base: `${PUBLIC_BASE}${dir}/`,
     layers: { climate: layer('climate'), soil: layer('soil'), regions: layer('regions') },
     variables: VARIABLES.map((v) => ({ ...v })),
@@ -414,7 +424,7 @@ export async function installClimate({ archive, release = null, outDir = DEFAULT
   await checkHeaders(tiles);
   const manifestSha = sha256(manifestBytes);
   if (release && manifestSha !== release.grid_manifest_sha256) refuse(`the manifest sha256 is ${manifestSha}, the pinned release says ${release.grid_manifest_sha256}.`);
-  const check = consortiumCheck(consortiumIndexPath, manifestSha, log);
+  const check = consortiumCheck(consortiumIndexPath, manifestSha, log, manifest.climate_tiles_sha256 ?? null);
   const index = buildIndex({ manifest, manifestSha, tiles, archive: name, archiveSha, check });
   const indexBytes = Buffer.from(`${JSON.stringify(index, null, 2)}\n`);
   const dir = installDirName(manifest.builder_version, manifestSha);
@@ -612,7 +622,7 @@ async function ensureLocked({ pin, archive, env, fetchImpl, allowDownload, stall
   const installed = archive ? null : installedPinned(out, indexPath, pin);
   if (installed) {
     // The consortium export may have changed since: checked again, and the index follows it.
-    const check = consortiumCheck(consortiumIndexPath, pin.grid_manifest_sha256, log);
+    const check = consortiumCheck(consortiumIndexPath, pin.grid_manifest_sha256, log, installed.release?.climate_tiles_sha256 ?? pin.climate_tiles_sha256 ?? null);
     if (JSON.stringify(check) !== JSON.stringify(installed.consortium_grid_check)) writeFileSync(indexPath, `${JSON.stringify({ ...installed, consortium_grid_check: check }, null, 2)}\n`);
     log(`Climate grid ${pin.tag} (manifest ${pin.grid_manifest_sha256.slice(0, 12)}) is installed in ${out}; consortium grid check: ${check.status}.`);
     return { action: 'up to date' };

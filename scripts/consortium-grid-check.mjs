@@ -12,7 +12,8 @@ export function consortiumGridProblem(consortiumIndex, climateIndex) {
   const want = consortiumIndex?.climate_grid_manifest_sha256;
   if (typeof want !== 'string' || !HEX64.test(want)) return `the consortium index (${release}) has no climate_grid_manifest_sha256 (${JSON.stringify(want)}): reinstall the export (scripts/install-consortium.mjs).`;
   const have = climateIndex?.release?.grid_manifest_sha256;
-  if (have !== want) return `the consortium export ${release} was sampled from the grid ${want.slice(0, 12)}…, the installed climate tiles are ${String(have).slice(0, 12)}…: install the matching grid or the matching consortium export.`;
+  const tilesSha = climateIndex?.release?.climate_tiles_sha256;
+  if (have !== want && tilesSha !== want) return `the consortium export ${release} was sampled from the grid ${want.slice(0, 12)}…, the installed climate tiles are ${String(have).slice(0, 12)}…: install the matching grid or the matching consortium export.`;
   const status = climateIndex?.consortium_grid_check?.status;
   if (status !== 'matched') return `the climate index consortium_grid_check status is ${JSON.stringify(status)}, not "matched": rebuild so install-climate.mjs compares the grid with the installed consortium index.`;
   return null;
