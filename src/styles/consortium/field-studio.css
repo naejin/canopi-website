@@ -1826,7 +1826,13 @@
   .ct .ct-sys-link {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    min-width: 44px;
     min-height: 44px;
+  }
+  .ct .ct-seg-btn {
+    min-width: 44px;
+    justify-content: center;
   }
   .ct .ct-card-act {
     min-height: 44px;

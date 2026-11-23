@@ -153,9 +153,9 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
           ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
           : <button type="button" class="button button-secondary" aria-busy={retry === 'busy' ? 'true' : undefined} aria-disabled={retry === 'busy' ? 'true' : undefined} onClick={() => void store.retryFailedLists()}>{T('load.retry')}</button>}</p>
       )}
-      {footBlock}
       {legacyStack.value && (
       <>
+      {footBlock}
       {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
       {!(big && desk) && <FindEntry where="head" />}
       <PaletteLimits />
