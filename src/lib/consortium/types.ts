@@ -102,6 +102,16 @@ export interface Source { label: string; url: string | null; licence: string | n
 // export's remote url. credit is null only for CC0 or public domain.
 export interface Image { url: string; credit: string | null; licence: string | null; source_page_url: string | null }
 
+/** Schema 4.10 plant_gallery additive record (optional; absent on 4.9 exports). */
+export interface GalleryImage extends Image {
+  role: string;
+  rank: number;
+  width: number | null;
+  height: number | null;
+  quality: string | null;
+  setting: string | null;
+}
+
 // kind (schema 4.6 functions.kind): 'llm' when every row behind the entry is an AI estimate: with method
 // 'extraction', a model's reading of the cited work in `sources` (pfaf or a book's credit id); with method
 // 'curated', an estimate from the model's own knowledge (sources ['llm-knowledge']). null: as before 4.6.
@@ -323,6 +333,8 @@ export interface Details {
   nameKinds: Partial<Record<Locale, EstimateKind>>;
   // Schema 4.9 additive table plant_climate_extremes (null when table absent or no row for this plant).
   extremes?: TaxonClimateExtremes | null;
+  // Schema 4.10 additive table plant_gallery (absent on 4.9 exports; ordered by rank).
+  gallery?: GalleryImage[];
 }
 
 // ---- Schema 4 records (format note tables; open vocabularies as strings: a value the reader does not

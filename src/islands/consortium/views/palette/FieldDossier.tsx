@@ -9,7 +9,7 @@
 //   2-column 6-row spec ledger with status icons, Breaking Points badges,
 //   60-year 6-stage lifeline, and full-width 12-month 4-track calendar!
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { jobsOf, siteClimate as climateOf, SUCCESSION_STAGES_6, type Details, type Locale, type Stratum, type Taxon } from '../../../../lib/consortium/index.ts';
+import { jobsOf, siteClimate as climateOf, SUCCESSION_STAGES_6, type Details, type GalleryImage, type Locale, type Stratum, type Taxon } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { pageLang, T } from '../../strings.ts';
 import { closeFieldDossier, dossierId, dossierList, microclimate, openFieldDossier, stepFieldDossier, studioTab } from '../../state/studio.ts';
@@ -83,12 +83,43 @@ const SUN_EMBLEM: Record<Stratum, { glyph: string; sky: string }> = {
 const clampPct = (v: number, lo: number, hi: number): number =>
   Math.max(4, Math.min(96, Math.round(((v - lo) / (hi - lo)) * 100)));
 
+const ROLE_LABELS: Record<string, string> = {
+  overall: 'Overall',
+  habit: 'Overall',
+  leaf: 'Leaf',
+  foliage: 'Leaf',
+  flower: 'Flower',
+  bloom: 'Flower',
+  fruit: 'Fruit',
+  seed: 'Fruit',
+  cone: 'Cone',
+  sori: 'Sori',
+  bark: 'Bark',
+};
+
+function safeHref(url: string | null | undefined): string | null {
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return null;
+  try { return ['http:', 'https:'].includes(new URL(url).protocol) ? url : null; } catch { return null; }
+}
+
+function plateRoleLabel(role: string | null | undefined): string {
+  if (!role) return 'Overall';
+  const key = role.trim().toLowerCase();
+  return ROLE_LABELS[key] ?? (key.charAt(0).toUpperCase() + key.slice(1));
+}
+
 export function FieldDossier() {
   const id = dossierId.value;
   const list = dossierList.value;
   const [details, setDetails] = useState<Details | null>(null);
+  const [activePlateIdx, setActivePlateIdx] = useState(0);
+  const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
+    setActivePlateIdx(0);
+    setFailedUrls({});
+    setLightboxOpen(false);
     if (!id) { setDetails(null); return; }
     let gone = false;
     setDetails(null);
@@ -100,9 +131,39 @@ export function FieldDossier() {
     return () => { gone = true; };
   }, [id]);
 
+  const taxon = id ? store.taxonOf(id) : null;
+
+  const plates = useMemo<GalleryImage[]>(() => {
+    if (details?.gallery && details.gallery.length > 0) return details.gallery;
+    const primary = details?.image ?? taxon?.image ?? null;
+    if (!primary?.url) return [];
+    return [{
+      ...primary,
+      role: 'overall',
+      rank: 1,
+      width: null,
+      height: null,
+      quality: null,
+      setting: null,
+    }];
+  }, [details, taxon]);
+
+  const plateCount = plates.length;
+
   useEffect(() => {
     if (!id) return;
     const onKey = (e: KeyboardEvent) => {
+      if (lightboxOpen) {
+        if (e.key === 'Escape') { e.preventDefault(); setLightboxOpen(false); return; }
+        if (plateCount > 1 && e.key === 'ArrowLeft') {
+          e.preventDefault();
+          setActivePlateIdx((cur) => (cur - 1 + plateCount) % plateCount);
+        } else if (plateCount > 1 && e.key === 'ArrowRight') {
+          e.preventDefault();
+          setActivePlateIdx((cur) => (cur + 1) % plateCount);
+        }
+        return;
+      }
       if (e.key === 'Escape') { e.preventDefault(); closeFieldDossier(); return; }
       const el = e.target as HTMLElement | null;
       const tag = el?.tagName;
@@ -112,9 +173,7 @@ export function FieldDossier() {
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [id]);
-
-  const taxon = id ? store.taxonOf(id) : null;
+  }, [id, lightboxOpen, plateCount]);
   const loc = store.location.value;
   const mc = microclimate.value;
   const edits = store.siteEdits.value;
@@ -233,6 +292,114 @@ export function FieldDossier() {
 
         {/* Scrollable Dossier Body (verbatim .dossier-body) */}
         <div class="dossier-body">
+          {/* Curated canopi-data Botanical Photo Plate + Schema 4.10 Field ID Strip */}
+          {(() => {
+            const safeIdx = Math.min(activePlateIdx, Math.max(0, plates.length - 1));
+            const activePlate = plates[safeIdx] ?? null;
+            const activeFailed = activePlate ? Boolean(failedUrls[activePlate.url]) : false;
+            const photoHref = activePlate ? safeHref(activePlate.source_page_url) : null;
+            const roleLabel = activePlate ? plateRoleLabel(activePlate.role) : 'Overall';
+
+            if (!activePlate) {
+              return (
+                <div class="dossier-plate-empty" data-dossier-plate-empty>
+                  No curated field photo in this release yet.
+                </div>
+              );
+            }
+
+            return (
+              <figure class="dossier-plate" data-dossier-plate>
+                {!activeFailed ? (
+                  <button
+                    type="button"
+                    class="dossier-plate-frame"
+                    data-dossier-plate-open
+                    aria-label={`Open full botanical plate for ${nameOf(taxon)} (${roleLabel})`}
+                    onClick={() => setLightboxOpen(true)}
+                  >
+                    <img
+                      src={activePlate.url}
+                      alt={`${nameOf(taxon)} (${taxon.canonical_name}) — ${roleLabel}`}
+                      class="dossier-plate-img"
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={() => setFailedUrls((cur) => ({ ...cur, [activePlate.url]: true }))}
+                    />
+                    {plates.length > 1 && (
+                      <span class="dossier-plate-role-pill">
+                        {roleLabel} · {safeIdx + 1}/{plates.length}
+                      </span>
+                    )}
+                    <span class="dossier-plate-hover-cue" aria-hidden="true">⤢ Full plate</span>
+                  </button>
+                ) : (
+                  <div class="dossier-plate-empty">
+                    Curated field photo unavailable offline.
+                  </div>
+                )}
+
+                <figcaption class="dossier-plate-cap">
+                  <span class="dossier-plate-credit">
+                    Photo: {activePlate.credit ?? 'Curated field plate'}
+                    {activePlate.licence ? ` · ${activePlate.licence}` : ''}
+                    {photoHref && (
+                      <>
+                        {' · '}
+                        <a
+                          href={photoHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="dossier-plate-src"
+                        >
+                          Source ↗
+                        </a>
+                      </>
+                    )}
+                  </span>
+                  {!activeFailed && (
+                    <button
+                      type="button"
+                      class="btn btn-xs dossier-plate-expand"
+                      data-dossier-lightbox-open
+                      onClick={() => setLightboxOpen(true)}
+                    >
+                      ⤢ Full plate
+                    </button>
+                  )}
+                </figcaption>
+
+                {plates.length > 1 && (
+                  <div class="dossier-id-strip" data-dossier-id-strip role="group" aria-label="Botanical field ID views">
+                    {plates.map((p, idx) => {
+                      const pRole = plateRoleLabel(p.role);
+                      const isCur = idx === safeIdx;
+                      return (
+                        <button
+                          key={`${p.url}:${idx}`}
+                          type="button"
+                          class={`dossier-id-thumb${isCur ? ' is-active' : ''}`}
+                          aria-pressed={isCur ? 'true' : 'false'}
+                          onClick={() => setActivePlateIdx(idx)}
+                        >
+                          <img
+                            src={p.url}
+                            alt={`${nameOf(taxon)} — ${pRole}`}
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                          />
+                          <span class="dossier-id-thumb-lbl">{pRole}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </figure>
+            );
+          })()}
+
           <section class="d-section" aria-label="How it fits your location">
             <div>
               <div class="d-sec-kicker">Section 1 · Live site match</div>
@@ -527,6 +694,94 @@ export function FieldDossier() {
           </section>
         </div>
       </div>
+
+      {/* Interactive Full-Plate Botanical Lightbox */}
+      {lightboxOpen && (() => {
+        const safeIdx = Math.min(activePlateIdx, Math.max(0, plates.length - 1));
+        const activePlate = plates[safeIdx];
+        if (!activePlate || failedUrls[activePlate.url]) return null;
+        const photoHref = safeHref(activePlate.source_page_url);
+        const roleLabel = plateRoleLabel(activePlate.role);
+        return (
+          <div
+            class="dossier-lightbox"
+            data-dossier-lightbox
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${nameOf(taxon)} full botanical plate`}
+            onClick={(e) => { if (e.target === e.currentTarget) setLightboxOpen(false); }}
+          >
+            <div class="dossier-lb-card">
+              <div class="dossier-lb-head">
+                <div class="dossier-lb-title-wrap">
+                  <strong class="dossier-lb-name">{nameOf(taxon)}</strong>
+                  <span class="dossier-lb-latin">{taxon.canonical_name}</span>
+                  <span class="dossier-lb-role">{roleLabel}</span>
+                  {plates.length > 1 && (
+                    <span class="dossier-lb-pos">{safeIdx + 1} / {plates.length}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-xs"
+                  data-dossier-lightbox-close
+                  onClick={() => setLightboxOpen(false)}
+                >
+                  ✕ Close
+                </button>
+              </div>
+
+              <div class="dossier-lb-stage">
+                {plates.length > 1 && (
+                  <button
+                    type="button"
+                    class="btn btn-xs dossier-lb-nav is-prev"
+                    aria-label="Previous photo"
+                    onClick={() => setActivePlateIdx((cur) => (cur - 1 + plates.length) % plates.length)}
+                  >
+                    ←
+                  </button>
+                )}
+                <img
+                  src={activePlate.url}
+                  alt={`${nameOf(taxon)} (${taxon.canonical_name}) — ${roleLabel}`}
+                  class="dossier-lb-img"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+                {plates.length > 1 && (
+                  <button
+                    type="button"
+                    class="btn btn-xs dossier-lb-nav is-next"
+                    aria-label="Next photo"
+                    onClick={() => setActivePlateIdx((cur) => (cur + 1) % plates.length)}
+                  >
+                    →
+                  </button>
+                )}
+              </div>
+
+              <div class="dossier-lb-foot">
+                <span>
+                  Photo: <strong>{activePlate.credit ?? 'Curated field plate'}</strong>
+                  {activePlate.licence ? ` · ${activePlate.licence}` : ''}
+                  {activePlate.setting ? ` · ${activePlate.setting}` : ''}
+                </span>
+                {photoHref && (
+                  <a
+                    href={photoHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="dossier-plate-src"
+                  >
+                    View original source ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

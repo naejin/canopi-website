@@ -183,8 +183,9 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
   // plant_aliases (a declared schema-4 table) is accepted and never read: old links need not survive a
   // data change (owner 2026-11-17, "No backward compatibility work"); an unreadable token is unknown.
   const frostRecorded = db.selectObjects('SELECT 1 FROM plant_frost LIMIT 1').length > 0;
-  // Schema 4.8/4.9 additive feature detection (graceful on 4.7 test fixtures and 4.9 exports alike).
+  // Schema 4.8/4.9/4.10 additive feature detection (graceful on 4.7/4.9 exports and 4.10+ alike).
   const hasExtremesTable = db.selectObjects("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'plant_climate_extremes'").length > 0;
+  const hasGalleryTable = db.selectObjects("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'plant_gallery'").length > 0;
   const layerCols = new Set(db.selectObjects('PRAGMA table_info(layer_values)').map((r) => String(r.name)));
   const hasMonthsBasis = layerCols.has('months_basis');
   const hasMonthsSeen = layerCols.has('months_seen');
@@ -430,6 +431,30 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
           };
         }
       }
+      let gallery: Details['gallery'];
+      if (hasGalleryTable) {
+        gallery = db
+          .selectObjects(
+            'SELECT role, rank, url, width, height, quality, setting, credit, licence, source_page_url FROM plant_gallery WHERE plant = ?1 ORDER BY rank ASC, role ASC',
+            [plant],
+          )
+          .flatMap((gr) => {
+            const url = str(gr.url);
+            if (!url) return [];
+            return [{
+              url,
+              role: str(gr.role) ?? 'overall',
+              rank: num(gr.rank) ?? 1,
+              width: num(gr.width),
+              height: num(gr.height),
+              quality: str(gr.quality),
+              setting: str(gr.setting),
+              credit: str(gr.credit),
+              licence: str(gr.licence),
+              source_page_url: str(gr.source_page_url),
+            }];
+          });
+      }
       const cited = new Set<string>([
         ...reasons.map((r) => r.source), ...layerValues.map((v) => v.source), ...toxicitySources, ...fnSources,
         ...(invasiveIn ?? []).flatMap((r) => r.sources), ...Object.values(placements).flatMap((p) => (p?.source ? [p.source] : [])), ...rangeSource,
@@ -446,6 +471,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       return {
         id, climate: c, reasons, layerValues, image: imageOf(id, imageRow), invasiveIn, toxicitySources, sources, placements, koppen, disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas, gbifRecords, nameKinds,
         ...(hasExtremesTable ? { extremes } : {}),
+        ...(hasGalleryTable ? { gallery } : {}),
       };
     },
     async labels(l) {

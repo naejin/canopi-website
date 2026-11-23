@@ -2682,3 +2682,134 @@
   .ct .rb-fillers-grid { grid-template-columns: 1fr; }
   .ct .ssm-row-btn, .ct .ssm-num-cell, .ct .rb-add-btn { min-height: 44px; }
 }
+
+/* ================= STAGE 1I: BOTANICAL PHOTO PLATE, FIELD ID STRIP & LIGHTBOX ================= */
+.ct .dossier-plate {
+  margin: 0 0 18px; display: flex; flex-direction: column; gap: 8px;
+}
+.ct .dossier-plate-frame {
+  position: relative; display: block; width: 100%; padding: 0;
+  aspect-ratio: 16 / 10; max-height: 240px;
+  border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface-alt);
+  cursor: zoom-in; text-align: left;
+  transition: border-color 0.15s;
+}
+.ct .dossier-plate-frame:hover,
+.ct .dossier-plate-frame:focus-visible { border-color: var(--ink); }
+.ct .dossier-plate-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.ct .dossier-plate-role-pill {
+  position: absolute; top: 9px; left: 9px;
+  padding: 2px 8px; border-radius: 999px;
+  background: rgba(18, 16, 13, 0.72); color: var(--on-ink);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.ct .dossier-plate-hover-cue {
+  position: absolute; right: 9px; bottom: 9px;
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(18, 16, 13, 0.72); color: var(--on-ink);
+  font-size: 11.5px; font-weight: 600; opacity: 0;
+  transition: opacity 0.15s;
+}
+.ct .dossier-plate-frame:hover .dossier-plate-hover-cue,
+.ct .dossier-plate-frame:focus-visible .dossier-plate-hover-cue { opacity: 1; }
+.ct .dossier-plate-cap {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px;
+  font-size: 12px; color: var(--ink-muted); line-height: 1.35;
+}
+.ct .dossier-plate-credit { min-width: 0; flex: 1 1 200px; }
+.ct .dossier-plate-src {
+  color: var(--accent-ink); font-weight: 600; text-decoration: none;
+}
+.ct .dossier-plate-src:hover { text-decoration: underline; }
+.ct .dossier-plate-expand { flex-shrink: 0; }
+.ct .dossier-plate-empty {
+  margin: 0 0 14px; padding: 9px 12px; border-radius: var(--radius-sm);
+  border: 1px dashed var(--border); background: var(--bg);
+  font-size: 12.5px; color: var(--ink-muted); font-style: italic;
+}
+
+/* Forward-compatible Schema 4.10 Field ID Strip */
+.ct .dossier-id-strip {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+}
+.ct .dossier-id-thumb {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 3px; border-radius: 6px; border: 1.5px solid var(--border);
+  background: var(--surface); cursor: pointer; flex-shrink: 0;
+  transition: border-color 0.14s, background 0.14s;
+}
+.ct .dossier-id-thumb:hover { border-color: var(--border-strong); }
+.ct .dossier-id-thumb.is-active,
+.ct .dossier-id-thumb[aria-pressed="true"] {
+  border-color: var(--ink); background: var(--bg);
+}
+.ct .dossier-id-thumb img {
+  width: 58px; height: 40px; object-fit: cover; border-radius: 4px; display: block;
+  background: var(--surface-alt);
+}
+.ct .dossier-id-thumb-lbl {
+  font-size: 10.5px; font-weight: 600; color: var(--ink-soft); line-height: 1.1;
+}
+
+/* Full-Plate Lightbox */
+.ct .dossier-lightbox {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(14, 13, 11, 0.86);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.ct .dossier-lb-card {
+  width: min(920px, 100%); max-height: 92vh;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ct .dossier-lb-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg);
+}
+.ct .dossier-lb-title-wrap {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; min-width: 0;
+}
+.ct .dossier-lb-name {
+  font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--ink);
+}
+.ct .dossier-lb-latin {
+  font-style: italic; font-size: 13.5px; color: var(--ink-muted);
+}
+.ct .dossier-lb-role {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: var(--surface-alt); border: 1px solid var(--border); color: var(--ink-soft);
+}
+.ct .dossier-lb-pos {
+  font-size: 12px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums;
+}
+.ct .dossier-lb-stage {
+  position: relative; flex: 1 1 auto; min-height: 220px;
+  background: var(--surface-alt);
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px; overflow: hidden;
+}
+.ct .dossier-lb-img {
+  max-width: 100%; max-height: 70vh; object-fit: contain; display: block;
+  border-radius: 4px;
+}
+.ct .dossier-lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+}
+.ct .dossier-lb-nav.is-prev { left: 12px; }
+.ct .dossier-lb-nav.is-next { right: 12px; }
+.ct .dossier-lb-foot {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  padding: 10px 16px; border-top: 1px solid var(--border); background: var(--bg);
+  font-size: 12.5px; color: var(--ink-soft);
+}
+
+@media (max-width: 639px) {
+  .ct .dossier-lightbox { padding: 10px; }
+  .ct .dossier-plate-expand { min-height: 44px; }
+}
