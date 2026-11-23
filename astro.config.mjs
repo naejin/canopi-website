@@ -15,7 +15,7 @@ import { climateTiles } from './scripts/climate-integration.mjs';
 
 // Consortium v2 (design check A1, coordinator row "v2 build setup", 2026-11-11): Preact 11 without
 // @astrojs/preact, whose Astro 6 releases accept only Preact 10. JSX is compiled for Preact in
-// src/islands/consortium/**/*.tsx only. Vite has one `esbuild` setting for every file, and its
+// src/islands/palette/**/*.tsx only. Vite has one `esbuild` setting for every file, and its
 // `include` also decides which .ts files are compiled at all, so the scope is a plugin of its own and
 // vite:esbuild skips those files; every other file compiles exactly as before (probe P7).
 const CONSORTIUM_TSX = /\/src\/islands\/palette\/.*\.tsx$/;
@@ -123,7 +123,7 @@ const consortiumModulePreload = {
   },
 };
 
-// The consortium's browser-test hook (src/islands/consortium/test-hook.ts) is compiled in only for
+// The palette's browser-test hook (src/islands/palette/test-hook.ts) is compiled in only for
 // the browser tests' own build (npm run build:browser-test, CANOPI_BROWSER_TEST=1). Its switch is the
 // compile-time constant __CT_TEST_HOOK__ below, set from that shell flag alone: not a PUBLIC_ or VITE_
 // variable, which Vite would also read from .env files, so no .env can turn it on in a deploy (H14,

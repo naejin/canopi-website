@@ -158,7 +158,6 @@ export function StudioRail() {
             type="button"
             role="tab"
             class="ink-seg-btn"
-            aria-pressed={tab === 'coach' ? 'true' : 'false'}
             aria-selected={tab === 'coach' ? 'true' : 'false'}
             onClick={() => { railTab.value = 'coach'; }}
           >
@@ -168,7 +167,6 @@ export function StudioRail() {
             type="button"
             role="tab"
             class="ink-seg-btn"
-            aria-pressed={tab === 'all' ? 'true' : 'false'}
             aria-selected={tab === 'all' ? 'true' : 'false'}
             onClick={() => { railTab.value = 'all'; }}
           >

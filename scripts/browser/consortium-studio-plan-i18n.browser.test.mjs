@@ -13,24 +13,24 @@ test('Planting Plan: 4-column metrics strip, SVG Plot Layout Blueprint modes wit
 
   const plan = await page.evaluate(() => {
     const root = document.querySelector('[data-planting-plan-tab]');
-    const circles = [...(root?.querySelectorAll('svg .ct-bp-node, svg circle') ?? [])];
-    const initials = [...(root?.querySelectorAll('svg text.ct-bp-abbr, svg text') ?? [])].map((t) => t.textContent?.trim()).filter(Boolean);
-    const legendItems = root?.querySelectorAll('.ct-bp-leg-item').length ?? 0;
-    const metrics = root?.querySelectorAll('.ct-plan-ledger-card .ct-plan-kpi').length ?? 0;
-    const qtyInputs = root?.querySelectorAll('.ct-qty-input').length ?? 0;
+    const circles = [...(root?.querySelectorAll('svg.bp-svg circle') ?? [])];
+    const initials = [...(root?.querySelectorAll('svg.bp-svg text') ?? [])].map((t) => t.textContent?.trim()).filter(Boolean);
+    const legendItems = root?.querySelectorAll('.bp-meta-bar .legend-item').length ?? 0;
+    const metrics = root?.querySelectorAll('.plan-ledger-strip .plan-ledger-col').length ?? 0;
+    const qtyInputs = root?.querySelectorAll('.qty-input').length ?? 0;
     return { circles: circles.length, initials, legendItems, metrics, qtyInputs, text: root?.textContent ?? '' };
   });
   assert.ok(plan.metrics >= 4, '4-column metrics strip renders');
   assert.ok(plan.circles >= 4, 'SVG Plot Layout Blueprint draws species circles');
   assert.ok(plan.initials.length >= 4, 'SVG circles display non-clipping 2-letter initials');
-  assert.ok(plan.legendItems >= 4, 'clickable SVG blueprint legend renders below SVG');
+  assert.equal(plan.legendItems, 4, '4-tier sun legend renders below SVG blueprint');
   assert.ok(plan.qtyInputs >= 4, 'Nursery Order inline qty override inputs render');
   assert.match(plan.text, /\+10%|buffer/i, '+10% planting buffer is displayed');
 
-  // Switch blueprint layout mode and click legend item to open FieldDossier
+  // Switch blueprint layout mode and open FieldDossier from Nursery Order table
   await page.locator(aria('button', 'Orchard Grid')).click();
-  await page.locator('.ct-bp-leg-item').click();
-  assert.ok(await has(page, '.ct-dossier[role="dialog"]', 8_000), 'clicking blueprint legend opens FieldDossier');
+  await page.locator('.plan-table button.link-btn').click();
+  assert.ok(await has(page, '[data-field-dossier] .dossier-drawer[role="dialog"]', 8_000), 'clicking Nursery Order species opens FieldDossier');
   await page.keyboard.press('Escape');
 });
 
@@ -45,7 +45,7 @@ test('Planting Plan: 4-column Materials Ledger, Extreme-year insurance, 4 Frost-
       hasMulch: /mulch|woodchip/i.test(text),
       hasWater: /water|dry streak\./i.test(text),
       hasWaves: /wave|frost|dormant/i.test(text),
-      calCells: document.querySelectorAll('.ct-cal-cell').length,
+      calCells: document.querySelectorAll('[data-planting-plan-tab] .hm-grid .hm-m').length,
       hasCsv: /\bexport\s+csv\b|\bdownload\s+csv\b/i.test(text),
     };
   });

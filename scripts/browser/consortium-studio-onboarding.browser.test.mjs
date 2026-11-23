@@ -25,37 +25,35 @@ test('P1: SQLite-WASM loads real catalog & climate tiles, keeps Header.astro unt
   assert.deepEqual(await pageErrorsOf(page), [], 'zero console/page errors');
 });
 
-test('Onboarding: PlaceFigures collapsed behind Advanced climate & soil overrides, Planting Area controls, and Path A/B @real-data', async () => {
+test('Onboarding: SiteTuner collapsed by default, Planting Area controls, and Path A/B @real-data', async () => {
   const page = await h.open('/palette/', { width: 1280, theme: 'light' });
   assert.equal(await loadState(page), 'ready');
 
-  // PlaceFigures starts collapsed behind <details class="ct-adv-figures">
-  const advBefore = await page.evaluate(() => {
-    const d = document.querySelector('details.ct-adv-figures');
-    return d ? { exists: true, open: d.open, summary: d.querySelector('summary')?.textContent?.trim() ?? '' } : { exists: false };
-  });
-  assert.ok(advBefore.exists, 'advanced climate & soil overrides disclosure exists');
-  assert.equal(advBefore.open, false, 'PlaceFigures is collapsed by default');
-  assert.match(advBefore.summary, /Advanced climate/i);
-
-  // Pick a climate zone and verify Planting Area controls (units, density, pathways, net area)
+  // Pick a climate zone so SiteTuner & Planting Area render
   await openCards(page);
   await page.locator(aria('radio', 'Temperate')).click();
-  assert.ok(await has(page, '.ct-area-card, [data-area-step]', 6_000), 'Planting Area step renders');
+  assert.ok(await has(page, '[data-area-step]', 6_000), 'Planting Area step renders');
+
+  // SiteTuner starts collapsed behind <details class="tuner-details" data-microclimate>
+  const advBefore = await page.evaluate(() => {
+    const d = document.querySelector('details.tuner-details[data-microclimate]');
+    return d ? { exists: true, open: d.open, summary: d.querySelector('summary')?.textContent?.trim() ?? '' } : { exists: false };
+  });
+  assert.ok(advBefore.exists, 'SiteTuner disclosure exists');
+  assert.equal(advBefore.open, false, 'SiteTuner is collapsed by default');
+  assert.match(advBefore.summary, /tune|climate|microclimate/i);
 
   const areaInfo = await page.evaluate(() => {
-    const unitSel = document.querySelector('.ct-area-select');
-    const unitOptions = unitSel ? [...unitSel.querySelectorAll('option')].map((o) => o.value) : [];
-    const hasOpenCanopi = [...document.querySelectorAll('#ct-root button, #ct-root label')].some((el) => /open\s+\.canopi/i.test(el.textContent ?? ''));
+    const unitBtns = [...document.querySelectorAll('[data-area-step] .ink-seg-btn')].map((b) => b.textContent?.trim());
     const hasSuggest = !!document.querySelector('[data-place-suggest]') || [...document.querySelectorAll('#ct-root button')].some((el) => /suggest/i.test(el.textContent ?? ''));
-    return { unitOptions, hasOpenCanopi, hasSuggest, text: document.querySelector('#ct-root')?.textContent ?? '' };
+    return { unitBtns, hasSuggest, text: document.querySelector('#ct-root')?.textContent ?? '' };
   });
-  assert.ok(areaInfo.unitOptions.length >= 2, 'area unit selector provides multiple units');
+  assert.ok(areaInfo.unitBtns.length >= 4, 'area unit selector provides m² | ha | ft² | ac pills');
   assert.ok(areaInfo.hasSuggest, 'Path A suggest control is available');
   assert.match(areaInfo.text, /net/i, 'net planting area readout is visible');
 });
 
-test('Onboarding: Location postcard (3 hairline rows, .field-tip, Microclimate Sliders, ODbL 1.0) and #v=5 shareable link restore @real-data', async () => {
+test('Onboarding: Location postcard (hairline rows, SiteTuner Microclimate, ODbL 1.0) and #v=5 shareable link restore @real-data', async () => {
   const page = await h.open('/palette/', { width: 1280, theme: 'light', nominatim: 'fixture' });
   assert.equal(await loadState(page), 'ready');
 
@@ -64,20 +62,20 @@ test('Onboarding: Location postcard (3 hairline rows, .field-tip, Microclimate S
   await searchInput.type('Lyon');
   await page.keyboard.press('Enter');
 
-  assert.ok(await has(page, '[data-site-postcard], .ct-postcard', 12_000), 'SitePostcard renders after location lookup');
+  assert.ok(await has(page, '[data-site-postcard]', 12_000), 'SitePostcard renders after location lookup');
   const postcard = await page.evaluate(() => {
-    const card = document.querySelector('[data-site-postcard], .ct-postcard');
+    const card = document.querySelector('[data-site-postcard]');
     return {
-      rows: card?.querySelectorAll('.ct-postcard-row, tr, dt').length ?? 0,
-      tips: card?.querySelectorAll('.ct-tip-trigger').length ?? 0,
-      hasMicro: !!document.querySelector('.ct-micro-field, [data-microclimate]'),
+      rows: card?.querySelectorAll('.ob-force-row').length ?? 0,
+      hasTuner: !!document.querySelector('[data-site-tuner]'),
+      hasMicro: !!document.querySelector('details.tuner-details[data-microclimate]'),
       hasOdbl: /ODbL|OpenStreetMap/i.test(document.querySelector('#ct-root')?.textContent ?? ''),
       hasDuplicateWeRead: !!document.querySelector('[data-place-read]'),
     };
   });
   assert.ok(postcard.rows >= 3, 'SitePostcard shows at least 3 data rows');
-  assert.ok(postcard.tips >= 1, 'SitePostcard includes .field-tip triggers');
-  assert.ok(postcard.hasMicro, 'Microclimate slope/aspect/landform controls render');
+  assert.ok(postcard.hasTuner, 'SiteTuner renders alongside SitePostcard');
+  assert.ok(postcard.hasMicro, 'Microclimate slope/aspect/landform controls render inside SiteTuner');
   assert.ok(postcard.hasOdbl, 'ODbL 1.0 / OpenStreetMap attribution is present');
   assert.equal(postcard.hasDuplicateWeRead, false, 'duplicate WeRead is suppressed when lookup postcard is active');
 

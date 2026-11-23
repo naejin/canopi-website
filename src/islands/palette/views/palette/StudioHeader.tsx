@@ -227,7 +227,7 @@ export function StudioHeader() {
               <button
                 type="button"
                 class="doc-action-btn save-more"
-                style="border-top-left-radius:0; border-bottom-left-radius:0; border-left:0; padding:0 8px;"
+                style="border-top-left-radius:0; border-bottom-left-radius:0; border-left:0; padding:0 10px; min-width:28px;"
                 aria-label="More save options"
                 aria-expanded={openMenu === 'save' ? 'true' : 'false'}
                 onClick={() => setOpenMenu((m) => (m === 'save' ? null : 'save'))}

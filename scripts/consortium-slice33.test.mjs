@@ -52,8 +52,8 @@ test('studio-filters.ts filters by W1 sun span, 6-stage succession, and 3 agrono
   assert.equal(filters.activeFilterCount(filters.EMPTY_STUDIO_FILTERS), 0);
   assert.equal(filters.activeFilterCount({ ...filters.EMPTY_STUDIO_FILTERS, lowChill: true, clayWet: true }), 2);
 
-  assert.equal(filters.matchesStudioFilters(fig, { ...filters.EMPTY_STUDIO_FILTERS, sun: 'emergent' }), true);
-  assert.equal(filters.matchesStudioFilters(fig, { ...filters.EMPTY_STUDIO_FILTERS, sun: 'low' }), false);
+  assert.equal(filters.matchesStudioFilters(fig, { ...filters.EMPTY_STUDIO_FILTERS, suns: ['emergent'] }), true);
+  assert.equal(filters.matchesStudioFilters(fig, { ...filters.EMPTY_STUDIO_FILTERS, suns: ['low'] }), false);
 
   assert.equal(filters.matchesStudioFilters(citrus, { ...filters.EMPTY_STUDIO_FILTERS, lowChill: true }), true);
   assert.equal(filters.matchesStudioFilters(willow, { ...filters.EMPTY_STUDIO_FILTERS, clayWet: true }), true);

@@ -15,8 +15,8 @@ import { fileURLToPath } from 'node:url';
 // Folder paths built with join, not new URL('../src/…/', import.meta.url): knip reads that form as an
 // import of the folder's index.ts and would count every export of the core and the climate reader as used.
 const SRC = join(fileURLToPath(import.meta.url), '..', '..', 'src');
-const core = join(SRC, 'lib', 'consortium');
-const islands = join(SRC, 'islands', 'consortium');
+const core = join(SRC, 'lib', 'palette');
+const islands = join(SRC, 'islands', 'palette');
 const climate = join(SRC, 'lib', 'climate');
 const place = join(SRC, 'lib', 'location');
 const files = (dir) => readdirSync(dir, { recursive: true }).filter((f) => /\.(ts|tsx|js|mjs)$/.test(f)).map((f) => ({ name: f, text: readFileSync(join(dir, f), 'utf8') }));

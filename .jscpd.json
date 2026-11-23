@@ -1,7 +1,7 @@
 {
   "minTokens": 50,
   "format": ["typescript", "tsx", "javascript"],
-  "path": ["src/islands/consortium", "src/lib", "scripts"],
+  "path": ["src/islands/palette", "src/lib", "scripts"],
   "ignore": ["**/node_modules/**", "**/fixtures/**", "**/*.d.ts"],
   "gitignore": true,
   "absolute": true

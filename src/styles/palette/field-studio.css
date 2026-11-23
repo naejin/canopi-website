@@ -215,7 +215,8 @@
     transition: background 0.15s, color 0.15s;
   }
   .ink-seg-btn:hover { color: var(--ink); }
-  .ink-seg-btn[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); }
+  .ink-seg-btn[aria-pressed="true"],
+  .ink-seg-btn[aria-selected="true"] { background: var(--ink); color: var(--on-ink); }
 
   /* Discrete Mockup-Only Floating Demo Switcher (bottom-left, outside product header) */
   .demo-float {
@@ -2197,15 +2198,24 @@
   [data-theme="dark"] & .gauge-pin-lbl { color: var(--on-ink); }
 
   /* ================= RESPONSIVE (Canopi <=639px mobile, >=960px desktop) ================= */
-  @media (max-width: 959px) {
-    .studio-shell { grid-template-columns: minmax(0, 1fr); }
-    .studio-rail { display: none; }
-    .studio-rail.mobile-open {
-      display: flex; position: fixed; inset: 0; top: 0; height: 100vh; z-index: 75;
-      border-left: none;
-    }
-    .onboard-grid, .stress-pair, .strong-grid, .req-grid { grid-template-columns: 1fr; }
-    .doc-filename { display: none; }
+  .studio-shell { grid-template-columns: minmax(0, 1fr); }
+  .studio-rail { display: none; }
+  .studio-rail.mobile-open {
+    display: flex; position: fixed; inset: 0; top: 0; height: 100vh; z-index: 75;
+    border-left: none;
+  }
+  .onboard-grid, .stress-pair, .strong-grid, .req-grid { grid-template-columns: 1fr; }
+  .doc-filename { display: none; }
+
+  @media (min-width: 960px) {
+    .studio-shell { grid-template-columns: minmax(0, 1fr) 430px; }
+    .studio-shell.rail-collapsed { grid-template-columns: minmax(0, 1fr); }
+    .studio-rail { display: flex; }
+    .studio-shell.rail-collapsed .studio-rail { display: none; }
+    .onboard-grid { grid-template-columns: 1.25fr 0.85fr; }
+    .strong-grid { grid-template-columns: repeat(2, 1fr); }
+    .req-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .doc-filename { display: inline; }
   }
 
   @media (max-width: 639px) {
@@ -2958,4 +2968,6 @@
   .ct .tune-grid { grid-template-columns: 1fr; }
   .ct .micro-pills-grid { grid-template-columns: 1fr; }
   .ct .tuner-status-pill { white-space: normal; }
+  .ct .doc-action-btn { min-width: 44px; min-height: 44px; }
+  .ct .ct-toast .ct-toast-dismiss { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
 }
