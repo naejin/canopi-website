@@ -1824,8 +1824,8 @@
     border: 1px solid var(--border); border-left: 4px solid var(--plant-green);
     background: var(--plant-green-bg); display: flex; flex-direction: column; gap: 4px;
   }
-  .fit-banner.care { border-left-color: var(--warn-dot); background: var(--warn-bg); }
-  .fit-banner.risk { border-left-color: var(--risk-ink); background: var(--risk-bg); }
+  .fit-banner.care, .fit-banner.is-care { border-left-color: var(--warn-dot); background: var(--warn-bg); }
+  .fit-banner.risk, .fit-banner.is-risk { border-left-color: var(--risk-ink); background: var(--risk-bg); }
   .fit-banner-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .fit-banner-headline { font-weight: 600; font-size: 14.5px; color: var(--ink); }
   .fit-banner-meta { font-size: 12.5px; color: var(--ink-soft); }
@@ -2362,6 +2362,18 @@
   padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-strong);
   background: var(--surface); color: var(--ink); font-size: 12.5px; font-weight: 600; cursor: pointer;
 }
+.ct .ct-toast .ct-toast-dismiss {
+  width: 28px; height: 28px; padding: 0; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--on-ink);
+  border-color: color-mix(in srgb, var(--on-ink) 35%, transparent);
+}
+.ct .ct-toast .ct-toast-dismiss:hover {
+  background: color-mix(in srgb, var(--on-ink) 14%, transparent);
+}
+.ct .ct-toast .ct-toast-dismiss svg {
+  width: 13px; height: 13px; display: block;
+}
 
 /* Live-only PlaceStep location search, quick links & autocomplete */
 .ct .ct-loc-quick {
@@ -2812,4 +2824,138 @@
 @media (max-width: 639px) {
   .ct .dossier-lightbox { padding: 10px; }
   .ct .dossier-plate-expand { min-height: 44px; }
+}
+
+/* ================= STAGE 1J: FIELD-NOTEBOOK SITE TUNING STUDIO ================= */
+.ct .tuner-details {
+  border-top: 1px dashed var(--border-strong);
+  padding-top: 10px; margin-top: 12px;
+  font-size: 13.5px; color: var(--ink-soft);
+}
+.ct .tuner-summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  cursor: pointer; font-weight: 600; color: var(--ink); list-style: none;
+  padding: 3px 0;
+}
+.ct .tuner-summary::-webkit-details-marker { display: none; }
+.ct .tuner-summary::before {
+  content: '▸'; font-size: 12px; color: var(--ink-muted); margin-right: 6px;
+  display: inline-block; transition: transform 0.14s;
+}
+.ct .tuner-details[open] > .tuner-summary::before { transform: rotate(90deg); }
+.ct .tuner-summary > span:first-child { flex: 1; }
+.ct .tuner-summary-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent-ink); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  white-space: nowrap;
+}
+.ct .tuner-body {
+  margin-top: 12px; display: flex; flex-direction: column; gap: 14px;
+}
+.ct .tuner-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.ct .tuner-sub { font-size: 12.5px; color: var(--ink-muted); }
+.ct .tuner-head-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ct .tuner-status-pill {
+  font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  background: var(--bg); color: var(--ink-soft); border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.ct .tuner-status-pill.is-active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+}
+
+/* Section A: 2x2 Climate & Soil Baseline Sliders */
+.ct .tune-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+}
+.ct .tune-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 13px; display: flex; flex-direction: column; gap: 6px;
+  transition: border-color 0.14s, background 0.14s;
+}
+.ct .tune-box.is-edited {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+.ct .tune-box-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.ct .tune-box-label {
+  font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--ink-muted);
+}
+.ct .tune-reset-btn {
+  background: transparent; border: none; padding: 0 2px; cursor: pointer;
+  font-size: 11.5px; font-weight: 600; color: var(--accent-ink);
+}
+.ct .tune-reset-btn:hover { text-decoration: underline; }
+.ct .tune-box-vals {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px;
+  font-size: 14.5px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.ct .tune-arrow { color: var(--ink-muted); font-weight: 400; }
+.ct .tune-fut-cold { color: var(--winter-ink); font-size: 13px; }
+.ct .tune-fut-hot { color: var(--risk-ink); font-size: 13px; }
+.ct .tune-fut-rain { color: var(--ink-soft); font-size: 13px; }
+.ct .tune-ph-react { font-size: 12.5px; font-weight: 400; color: var(--ink-soft); }
+.ct .tune-slider {
+  width: 100%; accent-color: var(--accent); cursor: pointer; margin: 2px 0;
+}
+.ct .tune-box-foot {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px;
+  font-size: 11.5px; color: var(--ink-muted);
+}
+.ct .tune-delta-pill {
+  font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--border); color: var(--ink-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ct .tune-delta-pill.is-edited {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+}
+
+/* Section B: Water, Drainage & Growing Medium Pill Rows */
+.ct .tuner-cond-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 11px;
+}
+.ct .tuner-cond-row { display: flex; flex-direction: column; gap: 5px; }
+.ct .tuner-cond-row .fp-label { margin-bottom: 0; }
+.ct .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.ct .tuner-hint { font-size: 12px; color: var(--ink-muted); line-height: 1.35; }
+
+/* Section C: Local Terrain & Microclimate */
+.ct .micro-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 12px;
+}
+.ct .micro-box-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px;
+}
+.ct .micro-slope-row { display: flex; flex-direction: column; gap: 4px; }
+.ct .micro-slope-val {
+  font-size: 13px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.ct .micro-pills-grid {
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px;
+}
+
+/* Section D: Methodology Micro-Footer */
+.ct .tuner-method {
+  font-size: 12px; color: var(--ink-muted);
+  border-top: 1px solid var(--border); padding-top: 8px;
+}
+.ct .tuner-method summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); }
+.ct .tuner-method p { margin: 6px 0 0; line-height: 1.5; color: var(--ink-muted); }
+
+@media (max-width: 639px) {
+  .ct .tune-grid { grid-template-columns: 1fr; }
+  .ct .micro-pills-grid { grid-template-columns: 1fr; }
+  .ct .tuner-status-pill { white-space: normal; }
 }

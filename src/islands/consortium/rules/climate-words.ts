@@ -165,8 +165,10 @@ export function siteClimateProfile(
     };
   }
 
+  const nightsShift = edits?.nightsShiftC ?? 0;
+  const daysShift = edits?.daysShiftC ?? 0;
   const adj = adjustMicroclimate(
-    { coldC: today.tminColdC, hotC: today.tmaxWarmC, lat },
+    { coldC: today.tminColdC + nightsShift, hotC: today.tmaxWarmC + daysShift, lat },
     { slopeDeg: mc.slopeDeg, aspect: mc.aspect, landform: mc.landform },
   );
 
@@ -175,8 +177,8 @@ export function siteClimateProfile(
   const rawHeatDome = v07?.extremesTail?.heatDome10yrC ?? null;
   const coldFreezeIsEst = rawColdTail == null;
   const heatPeakIsEst = rawHeatDome == null;
-  const coldFreeze10yrC = rawColdTail != null ? r1(rawColdTail + adj.coldDeltaC) : r1(adj.adjustedColdC - 8.5);
-  const heatPeak10yrC = rawHeatDome != null ? r1(rawHeatDome + adj.hotDeltaC) : r1(adj.adjustedHotC + 8);
+  const coldFreeze10yrC = rawColdTail != null ? r1(rawColdTail + nightsShift + adj.coldDeltaC) : r1(adj.adjustedColdC - 8.5);
+  const heatPeak10yrC = rawHeatDome != null ? r1(rawHeatDome + daysShift + adj.hotDeltaC) : r1(adj.adjustedHotC + 8);
 
   const aridityIndex = today.aridityIndex ?? null;
   const moistureRegime = aridityIndex != null ? moistureRegimeLabel(aridityIndex) : null;

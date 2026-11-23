@@ -5,34 +5,19 @@
 // - Mild-winter advantage line when applicable
 // - Collapsible "Tune canopi-climate readings & microclimate (live updates)" hosting sliders + PlaceFigures
 // - ODbL 1.0 + canopi-data Schema 4.9 attribution footer
-import type { ComponentChildren } from 'preact';
 import { siteClimate as climateOf } from '../../../../lib/consortium/index.ts';
-import type { MicroAspect, MicroLandform } from '../../../../lib/climate/v07.ts';
 import { location as siteLocation, climate, country, siteEdits } from '../../store.ts';
 import { countryName, zoneName } from '../kit/names.ts';
-import { microclimate, setMicroclimate } from '../../state/studio.ts';
+import { microclimate } from '../../state/studio.ts';
 import {
   formatFreezeTag,
   formatHeatPeakTag,
   signedTemp1,
   siteClimateProfile,
 } from '../../rules/climate-words.ts';
+import { SiteTuner } from './SiteTuner.tsx';
 
-const ASPECT_LABELS: readonly { id: MicroAspect; label: string }[] = [
-  { id: 'flat', label: 'Level / flat' },
-  { id: 'south', label: 'South-facing' },
-  { id: 'east', label: 'East-facing' },
-  { id: 'west', label: 'West-facing' },
-  { id: 'north', label: 'North-facing' },
-];
-
-const LANDFORM_LABELS: readonly { id: MicroLandform; label: string }[] = [
-  { id: 'mid-slope', label: 'Mid-slope / level' },
-  { id: 'ridge', label: 'Ridge / exposed crest' },
-  { id: 'valley', label: 'Valley / frost hollow' },
-];
-
-export function SitePostcard({ children }: { children?: ComponentChildren }) {
+export function SitePostcard() {
   const loc = siteLocation.value;
   const z = climate.value;
   const mc = microclimate.value;
@@ -126,52 +111,7 @@ export function SitePostcard({ children }: { children?: ComponentChildren }) {
         </div>
       )}
 
-      <details style="font-size:13.5px; color:var(--ink-soft); border-top:1px dashed var(--border-strong); padding-top:8px; margin-top:10px;" data-microclimate>
-        <summary style="cursor:pointer; font-weight:600; color:var(--ink);">Tune canopi-climate readings &amp; microclimate (live updates)</summary>
-        <div class="ct-micro-grid">
-          <div class="ct-micro-field">
-            <div class="ct-micro-field-head">
-              <label for="ct-micro-slope">Slope</label>
-              <span>{mc.slopeDeg}°</span>
-            </div>
-            <input
-              id="ct-micro-slope"
-              type="range"
-              min="0"
-              max="35"
-              step="1"
-              value={mc.slopeDeg}
-              onInput={(e) => setMicroclimate({ slopeDeg: Number((e.currentTarget as HTMLInputElement).value) })}
-            />
-          </div>
-          <div class="ct-micro-field">
-            <label for="ct-micro-aspect">Aspect</label>
-            <select
-              id="ct-micro-aspect"
-              value={mc.aspect}
-              onChange={(e) => setMicroclimate({ aspect: (e.currentTarget as HTMLSelectElement).value as MicroAspect })}
-            >
-              {ASPECT_LABELS.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
-            </select>
-          </div>
-          <div class="ct-micro-field">
-            <label for="ct-micro-landform">Landform</label>
-            <select
-              id="ct-micro-landform"
-              value={mc.landform}
-              onChange={(e) => setMicroclimate({ landform: (e.currentTarget as HTMLSelectElement).value as MicroLandform })}
-            >
-              {LANDFORM_LABELS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
-            </select>
-          </div>
-        </div>
-        {profile.hasMicroShift && (
-          <p class="ct-micro-delta" data-microclimate-delta>
-            Microclimate shift: {profile.coldDeltaC >= 0 ? '+' : ''}{profile.coldDeltaC}°C winter night · {profile.hotDeltaC >= 0 ? '+' : ''}{profile.hotDeltaC}°C summer afternoon · {profile.falseSpringDeltaPct >= 0 ? '+' : ''}{profile.falseSpringDeltaPct}% false-spring risk
-          </p>
-        )}
-        {children}
-      </details>
+      <SiteTuner />
 
       <div class="attr-footer">
         Climate &amp; terrain: <strong>canopi-climate v0.7.0</strong> (COPERNICUS/DEM/GLO30 &amp; MERIT/Hydro, ODbL 1.0) · Plant data: <strong>canopi-data Schema 4.9</strong>

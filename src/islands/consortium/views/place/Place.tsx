@@ -30,7 +30,6 @@ import { P, T, pageLang } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { formatLength, formatTemp } from '../../format.ts';
 import { LocationSlot } from '../LocationSlot.tsx';
-import { PlaceFigures } from '../figures/slots.tsx';
 import { PoolSlot, cardPill, hasList, suggestBlock } from '../PoolSlot.tsx';
 import { climateChosen, linkPlace, memory, restoring, COUNTRY_STORE } from '../../state/persist.ts';
 import { locationAtStart, notices, savedInstead } from '../../state/restore.ts';
@@ -709,9 +708,7 @@ function Questions() {
             <div class="ob-step">Step 1 · Your place &amp; soil</div>
             <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
             {!loc?.lookup && <WeRead />}
-            <SitePostcard>
-              <PlaceFigures />
-            </SitePostcard>
+            <SitePostcard />
             <KeptClimate />
             <MainCountry />
             {z && (block || !hasList(z)) && <PoolSlot zone={z} />}
