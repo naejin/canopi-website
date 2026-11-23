@@ -2,57 +2,58 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:30Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:10Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:40Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:01Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/palette/views/pool/pool.tsx
     title: src/islands/palette/views/pool/pool.tsx
     digest: sha256:b36c528b19920022
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:c35923d10b1d644f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: main-ts
     resource: ../../src/islands/palette/main.ts
     title: src/islands/palette/main.ts
     digest: sha256:f9f45406565dd302
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
     digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: strings-ts
     resource: ../../src/islands/palette/strings.ts
     title: src/islands/palette/strings.ts
     digest: sha256:cc2cefe2eeef65d9
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: app-tsx
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
     digest: sha256:685ec7e12121c7e4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: load-ts
     resource: ../../src/islands/palette/data/load.ts
     title: src/islands/palette/data/load.ts
     digest: sha256:8159e2aae175b171
-    last_modified: 2026-11-23T20:58:01Z
-  - id: base-css
-    resource: ../../src/styles/palette/base.css
-    title: src/styles/palette/base.css
-    digest: sha256:59ecfbc3a59f1adf
-    last_modified: 2026-11-19T11:59:54Z
+    last_modified: 2026-11-23T21:07:43Z
+  - id: field-studio-css
+    resource: ../../src/styles/palette/field-studio.css
+    title: src/styles/palette/field-studio.css
+    digest: sha256:1f58100c121aa18c
+    last_modified: 2026-11-23T21:58:22Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:df1d6414f82153a6
-    last_modified: 2026-11-23T21:04:15Z
+    digest: sha256:337cd10afe3d21a3
+    last_modified: 2026-11-23T21:58:22Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -72,7 +73,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -86,108 +87,103 @@ sources:
   - id: consortium-commit0-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-onboarding.browser.test.mjs
     title: scripts/browser/consortium-studio-onboarding.browser.test.mjs
-    digest: sha256:d68dbc38f90873d3
-    last_modified: 2026-11-23T13:35:12Z
+    digest: sha256:0eab406ff596c398
+    last_modified: 2026-11-23T21:58:22Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:57e51b4beeb6edd5
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: bytes-ts
     resource: ../../src/islands/palette/data/bytes.ts
     title: src/islands/palette/data/bytes.ts
     digest: sha256:49aa70cc074b0e8c
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:eeaab36bba2abe93
-    last_modified: 2026-11-23T21:01:37Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: start-tsx
     resource: ../../src/islands/palette/views/place/Place.tsx
     title: src/islands/palette/views/place/Place.tsx
     digest: sha256:8310681ad9758fb1
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: actions-tsx
     resource: ../../src/islands/palette/views/Actions.tsx
     title: src/islands/palette/views/Actions.tsx
     digest: sha256:554bc62276690579
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: share-tsx
     resource: ../../src/islands/palette/views/Share.tsx
     title: src/islands/palette/views/Share.tsx
     digest: sha256:df3879a82655959b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: printsheet-tsx
     resource: ../../src/islands/palette/views/PrintSheet.tsx
     title: src/islands/palette/views/PrintSheet.tsx
     digest: sha256:3f162cec96dcd63f
-    last_modified: 2026-11-23T20:58:01Z
-  - id: shell-css
-    resource: ../../src/styles/palette/shell.css
-    title: src/styles/palette/shell.css
-    digest: sha256:4682ccb2f6cdb00e
-    last_modified: 2026-11-19T10:56:43Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: print-css
     resource: ../../src/styles/palette/print.css
     title: src/styles/palette/print.css
     digest: sha256:ceca28144d08de34
-    last_modified: 2026-11-23T12:16:37Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-s4-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-palette.browser.test.mjs
     title: scripts/browser/consortium-studio-palette.browser.test.mjs
-    digest: sha256:399fe0c6f76ef2e7
-    last_modified: 2026-11-23T14:28:17Z
+    digest: sha256:c5a293143d9b88c2
+    last_modified: 2026-11-23T21:58:22Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:3a8eff8f51600f86
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-memory-test-mjs
     resource: ../../scripts/consortium-memory.test.mjs
     title: scripts/consortium-memory.test.mjs
     digest: sha256:d2806ee7b07c8c36
-    last_modified: 2026-11-23T21:01:41Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
     digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: later-ts
     resource: ../../src/islands/palette/views/later.ts
     title: src/islands/palette/views/later.ts
     digest: sha256:fb713ad123fb3bbc
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: focus-ts
     resource: ../../src/islands/palette/focus.ts
     title: src/islands/palette/focus.ts
     digest: sha256:2a09db72632e81bd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: test-hook-ts
     resource: ../../src/islands/palette/test-hook.ts
     title: src/islands/palette/test-hook.ts
     digest: sha256:1149ad3040389486
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
     digest: sha256:7c46a38a93360da6
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: search-ts
     resource: ../../src/islands/palette/data/search.ts
     title: src/islands/palette/data/search.ts
     digest: sha256:b880117e9fda4714
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: poolslot-tsx
     resource: ../../src/islands/palette/views/PoolSlot.tsx
     title: src/islands/palette/views/PoolSlot.tsx
     digest: sha256:4db3fccf4d5fef14
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: futureslot-tsx
     resource: ../../src/islands/palette/views/FutureSlot.tsx
     title: src/islands/palette/views/FutureSlot.tsx
     digest: sha256:6f3324fce10a0c9b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: climate-page-data-ts
     resource: ../../src/data/climate-page-data.ts
     title: src/data/climate-page-data.ts
@@ -197,12 +193,12 @@ sources:
     resource: ../../src/islands/palette/views/future/future.tsx
     title: src/islands/palette/views/future/future.tsx
     digest: sha256:73279c6d5b1092c8
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: locationslot-tsx
     resource: ../../src/islands/palette/views/LocationSlot.tsx
     title: src/islands/palette/views/LocationSlot.tsx
     digest: sha256:49df7d766bb12039
-    last_modified: 2026-11-23T19:33:12Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -217,77 +213,77 @@ sources:
     resource: ../../src/islands/palette/views/location/location.tsx
     title: src/islands/palette/views/location/location.tsx
     digest: sha256:4a3aaec54728bcfd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: schema-ts
     resource: ../../src/islands/palette/state/schema.ts
     title: src/islands/palette/state/schema.ts
     digest: sha256:335adf6feff78380
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: format-ts
     resource: ../../src/islands/palette/format.ts
     title: src/islands/palette/format.ts
     digest: sha256:8f5252bea4821008
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: page-ts
     resource: ../../src/islands/palette/views/kit/page.ts
     title: src/islands/palette/views/kit/page.ts
     digest: sha256:0b69294da7ecc207
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
     digest: sha256:79cc5bbaf0b55518
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: names-ts
     resource: ../../src/islands/palette/views/kit/names.ts
     title: src/islands/palette/views/kit/names.ts
     digest: sha256:949e5b236a7bf8fe
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
     digest: sha256:e629db37f6148c1f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: icons-tsx
     resource: ../../src/islands/palette/views/kit/icons.tsx
     title: src/islands/palette/views/kit/icons.tsx
     digest: sha256:97666d190cac605a
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: correction-ts
     resource: ../../src/islands/palette/views/kit/correction.ts
     title: src/islands/palette/views/kit/correction.ts
     digest: sha256:92a8df77fa292402
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
     title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
-    digest: sha256:124f350b6be35d25
-    last_modified: 2026-11-23T13:35:12Z
+    digest: sha256:e3692063b5f468af
+    last_modified: 2026-11-23T21:58:22Z
   - id: suggest-block-ts
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
     digest: sha256:a40b87de812fd50b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-fit-ts
     resource: ../../src/islands/palette/rules/site-fit.ts
     title: src/islands/palette/rules/site-fit.ts
     digest: sha256:cc3b45174c87f0b4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-start-test-mjs
     resource: ../../scripts/consortium-start.test.mjs
     title: scripts/consortium-start.test.mjs
     digest: sha256:80c893a30ef7f7e3
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: details-tsx
     resource: ../../src/islands/palette/views/details/Details.tsx
     title: src/islands/palette/views/details/Details.tsx
     digest: sha256:76af5ace5e01491f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheets-tsx
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
     digest: sha256:b1e6bc8619935c95
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -297,12 +293,12 @@ sources:
     resource: ../../src/islands/palette/views/Swap.tsx
     title: src/islands/palette/views/Swap.tsx
     digest: sha256:ed02a27cceea1426
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: phase-ts
     resource: ../../src/islands/palette/views/kit/phase.ts
     title: src/islands/palette/views/kit/phase.ts
     digest: sha256:57dbc549e9e82d1d
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -312,17 +308,17 @@ sources:
     resource: ../../src/islands/palette/views/find/Find.tsx
     title: src/islands/palette/views/find/Find.tsx
     digest: sha256:320123ca652ab060
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: names-ts-2
     resource: ../../src/islands/palette/views/find/names.ts
     title: src/islands/palette/views/find/names.ts
     digest: sha256:dd99c7e5ca8e8a82
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: toast-tsx
     resource: ../../src/islands/palette/views/Toast.tsx
     title: src/islands/palette/views/Toast.tsx
     digest: sha256:86cdcc6fd7c86414
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/check-built-site.mjs
   - scripts/browser/consortium-studio-onboarding.browser.test.mjs
@@ -358,7 +354,7 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 | [App.tsx](../../src/islands/palette/App.tsx) | Frozen. The §5 screens from `load` (`data-load-error`, `role=alert`). Retry: `fetch`, `damaged`. Reload: `stale`, `schema`, `wasm-fetch` (sqlite3.wasm did not arrive: a 403, offline or a 15 s stall; shown as `load.toolFailed`, review L1, R4-4). "Read the guides" (`consortium.palette.place.readGuides`, linking `AppProps.guide`, the noscript guide's address): `too-old` (no button) and `wasm-blocked` (with Retry, board Loading; pf-c fix round 2, C2). No added guide sentence on any screen (BC22). Slots in page order: `Start` (S4), `Matrix` (S2; routes the side view, Jobs and plant list from `store.view`), `Actions` (S4; Share, Download, Print, link notices; after the matrix once ready), then `<Sheets />` (E6 K3: `views/Sheets.tsx`, rendered always, no longer a slot). Each slot is a module exporting null until its stream fills it, so streams never edit App.tsx |
 | [data/load.ts](../../src/islands/palette/data/load.ts), [data/bytes.ts](../../src/islands/palette/data/bytes.ts) | Minimum loader, owned by S1. Steps: `tooOld()` (no DecompressionStream) and `wasmMissing()` (P5); fetch through `download()` (a 15 s stall timer reset on every chunk, no overall cap, so 10 KB/s loads; a stall → `fetch`; 404 → `stale`); the body read whole (`bytes.ts` `decodeDatabase`: empty → `damaged`; gzip magic from the buffer; sha256 and size of the gzipped file, or of the raw database when the server already decoded it (P3), checked with SubtleCrypto where present → `damaged`; inflate with DecompressionStream); the wasm downloaded with the same `download()` from the URL main.ts passes (did not arrive or a stall → `wasm-fetch`; a refused compile or instantiate → `wasm-blocked`), then sqlite-wasm init with it through `instantiateWasm` (without a URL, as in Node's unit tests, Emscripten fetches the file itself); `sqlite3_deserialize` FREEONCLOSE\|READONLY; then `application_id`, `user_version`, `meta.release_id` and the climates checked against the page (`schema`). `scripts/consortium-load.test.mjs` tests `bytes.ts` in Node |
 | [views/place/Place.tsx](../../src/islands/palette/views/place/Place.tsx) (was views/Start.tsx until PP-B b1a; the row below describes the S4/P5 Start it replaced, see the PP-B b1a section) | S4's Start slot (it calls `startMemory()` once, in a layout effect, before the first paint). Before a consortium: the country line (`data-ct="country"`, above the cards: guessed/linked/chosen, Use/Change/No country, the "not checked" note), the 7 climate cards as a radio group (none chosen on a fresh visit; the stored site climate pre-selects), "Ask for this climate" for uncovered ones, Main crops (4 real examples by the v1 rule, a search through Add's `data/search.ts` `searchIndex` and so the one core fold, E6 K1, max 3), Your site (4 radio rows), then Suggest plants / Start empty and search / Paste a list (sheets `search` and `paste` are S3's). Once a consortium is shown: the result head (count, climate, site basis, Change site, Start over, the country line). P5 commit 0 mounts empty slots, each its stream's file: `<LocationSlot />` ([views/LocationSlot.tsx](../../src/islands/palette/views/LocationSlot.tsx), S5b, which loads its UI as the lazy chunk `views/location/location.tsx`; see [Consortium location step](/modules/consortium-location.md)) between the notices and the climate cards, and `<LocationSlot compact />` (the result line) in the result head; (S5e's `<LikelySlot question={k} />` at the end of each site question was removed before the P5 push and returns with P5.2); `<PoolSlot zone={z} />` and `hasList(z)` ([views/PoolSlot.tsx](../../src/islands/palette/views/PoolSlot.tsx), S5c, a thin shell) below the cards: `hasList` (core `hasPlants`: curated, or a nearest list is, and for a borrowed climate only once the location gave a site climate: decision row "P5 fixes from the UX audit" (1)) decides the card's pill and whether crops, site questions and Suggest / Start empty / Paste follow; `needsSite(z)`, a borrowed climate without one: the shell shows `[data-needs-site]` ("{climate} … needs your site's location to pick plants", a button that focuses the location step's first control, P2's "Ask for this climate" link, and "Back to your consortium" when one is set aside), no palette; a borrowed climate with a location whose range chunk failed is treated alike (`needsRule`: the notice says the climate needs range checks, Reload; `suggestMembers` refuses an unfiltered borrowed pool); a pending Suggest is cleared when the shown climate changes, needs the location or the rule, or nothing fits, so it never runs unasked later; the "Give your location" button focuses the location step's first enabled control, else `#ct-loc-h` made focusable; one owner for "can Suggest now" (seam review 1): PoolSlot's `suggestBlock(z)` (`noList`, `needsSite`, `needsRule`, `nothingFits` or null: the lasting refusals of `suggestMembers`; its passing ones, the pool, the range rule or a kept guest's list still read, are waited for, since both Start's Suggest and the empty matrix's call `requestSuggest`, P5-27l; `state/suggest-wait.ts` owns that wait: `dropSuggest` ends it when the reader changes the plants or opens a sheet, when the plant list fails, when PoolSlot finds Start can no longer suggest for the chosen climate or another climate is chosen, or after `SUGGEST_WAIT_MS` (10 s) with a guest list still unread, with the toast `start.suggestStopped`, P5-27m/n/o, or with the suggestion's chunk not come, with one Reload toast; [Consortium state](/modules/consortium-state.md)) is read by Start's "Suggest plants", the pending-Suggest effect and the empty matrix (Matrix.tsx `EmptyNotice`), which shows "Suggest a start" only when it is null and otherwise the reason in its place (`WhyNoSuggest`: the needs-location line, the range-unavailable notice with Reload, or `matrix.emptyNoFit` "… nothing to suggest …" after "Search all plants"; `data-suggest-block`; P5-26f, P5-27a, P5-27b); `cardPill(z)` gives the card's pill words (Ready / Needs your location / Not covered yet; Start.tsx reads `hasList` until hand-off H-S5c-5, so the borrowed card says "Not covered yet" without a location, P5-26c is todo); a link or saved consortium on a borrowed climate without a location still opens with all its plants, each marked estimate plus `estimate.noSite` ("Give your site's location to check it") off chips; `nothingFits()` (`rangeRule.none`: the chosen climate's list has plants and none holds the site) hides Start's "Suggest plants", so the panel's "Search all plants" is the step and no empty matrix is made, so every climate is Ready with the real export; `PoolSlot` loads the panel, which shows "Not covered yet" only when no list exists,, and otherwise, for a climate with no list, or once the location has a site climate (core `siteToday`; using it in the shell keeps `range.ts` in the main chunk, where a chunk shared only by the lazy parts was modulepreloaded and cost about 0.1 s at `ct:matrix`, the first-view mark's name before E6 R4), the lazy panel `views/pool/pool.tsx` (feature chunk `pool`): `[data-pool-borrowed]` ("no list of its own yet", the nearest lists named, each plant marked estimate, and P2's "Ask for this climate" link), with a site climate `[data-pool-fit]` (n of N plants recorded in climates like the site's, with coldest and warmest month, how many near the edge, the others left out but addable with a warning) and the caveat (observed ranges include cultivation, estimates not reviewed), aridity "not checked" on ice, and the nothing-fits state `[data-pool-empty]` (the site's temperatures, check the location, "Search all plants" calling `startEmpty`). A curated climate without a location shows nothing (P2 unchanged). The cards read `state/persist.ts` `climateShown` (a chosen or link's climate checked, else the location's proposal shown as proposed) and `climateChosen`; since E6 chunk 5 neither Start nor PoolSlot recomputes it inline. The country line labels a location country "from your location" (`consortium.country.fromLocation`) |
-| [src/styles/palette/p5/](../../src/styles/palette/p5) | P5 commit 0: one stylesheet per stream, `s5b.css`, `s5c.css`, `s5d.css`, `s5e.css`, each owned by its stream alone and imported once by ConsortiumPage.astro, so no stream edits the shared consortium CSS (base, matrix, details, shell, print) |
+| [field-studio.css](../../src/styles/palette/field-studio.css), [print.css](../../src/styles/palette/print.css) | Shipped Field Studio stylesheets imported page-level by `ConsortiumPage.astro`. All 12 legacy stylesheets (`base.css`, `details.css`, `figures.css`, `find.css`, `p5/s5b..s5e.css`, `palette-page.css`, `place.css`, `plants.css`, `shell.css`) were retired and deleted in Stage 2A; `consortium-css.test.mjs` enforces that only `field-studio.css` and `print.css` exist in `src/styles/palette/`. |
 | views/PlantMarks.tsx (deleted in PP-C c2) | Was the P5 marks span over the core `plantMarks`; the marks pipeline went with it (see "PP-C c1 Find and c2 One plant" below): rows, Details and print read the verdict lines. |
 | [state/](../../src/islands/palette/state) | S4's `memory.ts`, split by E6 S2 into `state/persist.ts`, `restore.ts`, `arrival.ts`, `draft.ts` and `suggest-wait.ts` (with `lookups.ts` and the lazy `location.ts` beside them; table in [Consortium state](/modules/consortium-state.md)); the re-export barrel `memory.ts` was deleted in E6 chunk 5 and the views import the state modules directly. What these modules hold: pure: guarded storage, the saved record `{fragment, at, src, country?}` under `canopi-consortium` (`src` 'link' \| 'chosen' \| 'location' \| null: where its country came from; a country from the site location (P5 owner answer 5) is kept as `country` beside the fragment, never in it, and restored labelled "from your location"), `arrival()` (the page's own address after a reload, i.e. `history.state.ct` equal to the fragment, opens as the save; then link > guide preset > saved > start; the beta's v1 query links are not read, owner 2026-11-17), `countryAtStart`, `shareState(s, { location })` (`state/schema.ts` `share`: a guessed country is never written; a location country only with `{ location: true }`, S5b's "include my location" tick; a decoded link or save is written back by `schema.apply`, and `palette()`, `chooseClimate`, `startOver` and the watchers read the schema's lists instead of naming fields), `shareUrl` (drops the query), `guessCountry`, `cropExamples`. Wiring: restores a `#v=4` link or the last consortium (calm notices for unknown plants, cut links, a link with no climate (cut, Start stays), links of the old beta versions read as unreadable), opens a link pasted into the open tab (`hashchange`; `hashAction`: Back/Forward to the page's own address reopens it as the save with its country label; with a consortium shown, an older, cut or unloadable pasted link changes nothing, shows `share.pasted.*` in the action area and puts the address back), changes the store only after every list the link needs is read, reading those lists itself rather than through `store.loadPool` (whose failure is app-wide), so a failed read shows `share.failed` or `share.pasted.failed` and keeps the consortium; a restore touches no store signal until it applies in one batch, and applies only if it is still the newest restore and the reader has not acted since it began (an action counter bumped by the watcher on every write to the consortium that is not a restore applying or a guessed country); outdated and cut refusals take no number but cancel the restore in flight (the latest link wins, its notice kept); a reader action during a first-visit restore makes the link's shown climate the chosen one; saving has no restore gate: `watchStore` saves every change and writes the address; Start shows the link's climate at once (`pendingClimate`, derived from the restore in flight), writes `history.state {ct, src}` with each address so a reload keeps the country's label, applies guide presets `?plant=&climate=` (the plant kept, as crop when it is one), writes the site climate (`canopi-climate`) and country (`canopi-country`), then keeps the address and the saved record in step with the store. The save model (review rounds 3 and 4; replaced in b1a fix round 3, 2026-11-15, by the one-flag model, `state/save.ts` `held`, described in [plant-palette-architecture](/architecture/plant-palette-architecture.md) 8.3; the rest of this paragraph is the history): two states, the consortium and Start's draft. Change site (`changeSite`) sets the consortium aside in `store.setAside`, with its site answers, country and stage, and opens a draft seeded from it; the draft (the picked card, its crops and site answers and, on the consortium's own card, its plants) never changes the consortium or the save. Another card starts the draft empty; the consortium's card seeds its plants and crops again (`chooseClimate`). Only Suggest, Start empty and Show my palette (each adopts the draft's answers) end it; a paste on Place adds to the draft and stays there (b1a conformance-2), and "Back to your consortium" went with the "Your place" sheet (b1a conformance-4). The save and the address always encode the consortium (`own()`: the store when a view other than Start shows, else the one set aside). Undo restores the snapshot with the view and `setAside`, so it rewrites the save. Every write of the save goes through `writeSave(next)`: the page's own consortium is written when it changes; a removal (Start over, an older save) or a put-back happens only while storage still holds what the page last wrote or read (`lastSave`). The first write over a save the page did not write remembers it (`beneath`, or the newer save another tab wrote there since), and an Undo back to a Start with no consortium of the page's own puts it back or removes the save (F2, R2-2, R2-3, R4-1, R4-2). Suggest moves focus to the shown view (`focus.ts`). Unit tests: `scripts/consortium-memory.test.mjs` |
 | [rules/](../../src/islands/palette/rules) | E6 R2, pure functions over core types (layer L3, ADR-1): (`list-query.ts`, Add's filter rule, deleted with `views/Add.tsx` in PP-C commit 0; c1 writes `find-query.ts`), `suggest-block.ts` (why a Suggest would refuse: `suggestBlock`, `needsSite`, `needsRule`, `hasList`, `nothingFits`; since PP-B b1b `countKind`, the words Place's count line picks (`poolCounts` is gone); Suggest's refusal reads the curated list, not the pool's estimate marks; read by store.ts and PoolSlot; tests in `consortium-p5-seams-s5c.test.mjs`), `site-fit.ts` (`siteFit`, `misfitsOf`, `unknownsOf`, `FlagScene`: core `siteFitMessages` kept to the misfits that hold beside the members' canopy). Add's height words stay outside `siteFitMessages` (a climber shows its height where the site check says room unknown) |
@@ -369,7 +365,7 @@ The v1 tool (app.js and its tests) was deleted in commit 0. Its full description
 | [focus.ts](../../src/islands/palette/focus.ts) | `focusView()` (the shown view's caption, table or heading, after Suggest) and `focusPlant(id)` (after Undo, falling back to the heading), two frames later, so focus never drops to `<body>`; while a sheet is open the focus stays in it (its `[data-autofocus]` heading when the target is behind it), and with nothing found the tool's first heading (Start's, after an Undo back to Start). `focusAfterAdd(find)` (after an add whose control leaves as the plant joins) focuses what `find` gives and makes it the toast's way back (`opener`); `focusNextStep()` uses it for the Next step's title, and Paste's "Add anyway" for the next row's "Add anyway", else the "Already in" heading, else the sheet's title (review paste-2, W4) |
 | [test-hook.ts](../../src/islands/palette/test-hook.ts) | The one browser-test hook, `window.__ctTest = { store, openSheet, openFind, failSheets, failLater, holdLater, releaseLater }` (`openFind` since PP-C commit 0: the store's `openFind(target?)`; review c0 dropped `failFind` and the `find`/`page` fault kinds of `views/lazy.tsx`, which faults the sheets only, since no spec used them; the last three make the later parts fail or wait; the harness's `names:` option (404, `'offline'`, `'hold'`, `'digest'`) serves the search names file missing, offline, held or with a wrong digest, and `block: { find }` fails the Find chunk role), imported only by main.ts, dynamically, before the first render, under `__CT_TEST_HOOK__` (A13, L8). Its fault object `testFault` is module-private since E6 K3 (no longer exported) and set as `globalThis.__ctFaults` (`test-seam.d.ts`), which `views/lazy.tsx` reads inline under the constant each time a part is used. `__CT_TEST_HOOK__` is defined by `astro.config.mjs` from `CANOPI_BROWSER_TEST === '1'` alone (`npm run build:browser-test`): not a PUBLIC_ variable, which Vite would also take from a `.env` file (review F6). `check-built-site.mjs` fails if `__ctTest`, `__ctViews`, `failSheets`, `__ctTimeouts` or `__ctFaults` is in a built chunk, or if the build's roles list a `testHook` chunk; the L11 test in `built-modules.test.mjs` (CI job 4, or locally with `CANOPI_REQUIRE_BUILDS=1` after both builds) checks that the `dist-test/` chunk graph is the production graph plus the hook's chunk. Since E6 chunk 5 no build modulepreloads the hook: main.ts awaits it before the first render with `#ct-root` still `aria-busy`, and since the PP-B exit (2026-11-16) `open()` also awaits it before `setSource`, so a test's fault on the source (a `window.__ctTest` setter) is in place before the first list read (the hook is a dynamic import racing the database; P5-27i failed every run without it); while it loads `window.__ctTest` is `true`, so a polled predicate must read `window.__ctTest?.store?.…` (a throw after Puppeteer's first poll kills its rAF poller silently, and the wait runs to its timeout); and the browser tests that read Start (W8, Walk-through 2 N2 in `consortium-seams-layout.browser.test.mjs`) wait for the render first; the harness can fault it as role `testHook` (E6-17 holds it, E6-19 fails it) |
 | [data/sqlite-source.ts](../../src/islands/palette/data/sqlite-source.ts), [data/search.ts](../../src/islands/palette/data/search.ts) | S1's PlantSource over the database, in the loader's chunk beside the glue (off the first run); schema 3 (`info().schemaVersion` is `SCHEMA_VERSION`, pre-push review 2; `info().climateGrid` is information only, the one-grid check is the build's `consortium-grid-check.mjs`): `Taxon.climate` from one `selectArrays` join of `plant_climate_status` and `plant_climate` per pool, `areasKnown` from `wcvp_match`, `details().koppen` (the `Db` it takes needs `selectObjects` and `selectArrays`); `details(id, zone)` reads reasons and climate-scoped layer values for the list the plant was placed from: Details passes core `placementZone(t, climate)` (`Taxon.origin.list`: a borrowed placement's curated list or a guest's list, else the climate), heads the place section "Placed for" that list with `details.fromListNote`, sends that list as the correction's climate, leaves it out of "In other climates", and starts Why with the existing `estimate.from{List}` line (`[data-why-borrowed]`) (pre-push review 1; before it a borrowed climate always showed no reasons, live since P2); `interactions(c)` reads the general rows (`climate_zone IS NULL`) and those of the climate's own list, or for a borrowed climate those of `NEAREST_LISTS[c]` ∩ curated, one row per (subject, object, type, agent): the highest severity first, so a conflict warning never gets milder, then the general row, then the first list in that order (P5 S5c); the folded-name search (`searchIndex`, replaced in PP-C c1 by `indexSliced`, `namesFor` and the names file; the fold itself is core `src/lib/palette/fold.ts` since E6 commit 0, re-exported here so Paste is unchanged; Start's crop search uses `searchIndex` too since E6 K1) is its own module because Add and Paste import it, and importing anything from `sqlite-source.ts` in a sheet splits the PlantSource into a counted chunk (3.7 KB; `check-built-site` fails on its SQL in a counted chunk) |
-| [base.css](../../src/styles/palette/base.css) | Under `.ct`: strata colours and inks (the mockups' Okabe-Ito), `--hatch`/`--hatch-fill`, `--bar`, `--cell-*` (desktop 96×56, phone 41×40, head 140 px, 196 px from 960 px; no other tier), dark values, and the shell styles. Breakpoints 639/960 are written out per file; the phone matrix (StageStepper.tsx `phone`, `(max-width: 959px)`; UX audit fix 3) shows below 960 px, so its rules hang on `.ct-phone` rather than the 639 px query, the overview capped at 540 px. `matrix.css` (S2; P5 seam review: a desktop lane is `--cell-min-h` tall and a chip's own name takes up to two lines, so 960 px shows names, not "Europea…" (walk-through F2, seams spec UX5); marks off chips (`[data-mark-surface]` other than `chip`) wrap within their row, so no phone page scrolls sideways (F1, P5-27g at 320/390 px in en/fr/ja)), `details.css` (S3); [shell.css](../../src/styles/palette/shell.css) (S4: country line, cards, chips, site rows, notices, actions, share; chosen states in ink, never green) and [print.css](../../src/styles/palette/print.css) (S4: in print only the print sheet shows, light palette on white, no control) |
+| Field Studio UI surfaces | `StudioHeader.tsx`, `PaletteCards.tsx`, `StudioRail.tsx`, `FieldDossier.tsx` (botanical photo plate, field ID strip, lightbox, fit banners), `LivingSystemTab.tsx` (continuous Sun × Succession bars & 6-Role Redundancy Inspector), `Climate2050Tab.tsx` (unified 2050 Climate hero + Extremes Lab + 12-month Climate Shift), `PlantingPlanTab.tsx`, and `SiteTuner.tsx` (onboarding climate/soil/microclimate tuning studio). Styled exclusively by [field-studio.css](../../src/styles/palette/field-studio.css) and [print.css](../../src/styles/palette/print.css) with strict two-tier breakpoints (`max-width: 639px` mobile, `min-width: 960px` desktop) and zero raw hex. |
 | [consortium-guides.ts](../../src/data/consortium-guides.ts) | Guides per plant, per job and for the explanations (unchanged from v1; S4's) |
 
 The v1 modules under `src/scripts/consortium/` and their `tsconfig.json` exclude were deleted at the P2 hand-offs.
@@ -454,7 +450,7 @@ F1a is superseded by the Plant palette redesign (owner, 2026-11-14): PP-B commit
 
 ## PP-B b1a: Place replaces Start (2026-11-14)
 
-`views/Start.tsx` moved to [views/place/Place.tsx](../../src/islands/palette/views/place/Place.tsx) and was deleted. Place keeps the country line, the location slot, the climate cards and the pool slot, then: "How much room do you have?" (`roomValues` with `pots`, each answer's height limit through `formatLength`, never a count) with the optional plot size (`parsePlotSize`, `formatArea`); the grower's own plants (`[data-place-plants]`, chips with Remove, "Add a plant by name" opening the search sheet, Paste); today's light, soil and water ("Your spot", until PP-F); "Show my palette" (`[data-place-show]`) and "No plants in mind? Start from a small suggested palette" (`[data-place-suggest]`, one Undo, offered by `store.suggestMembers` itself for every Suggest, waited or not, Place's or the Next step's: fix round 4, s-1, s-2). The Main crops picker and "Start empty and search" are gone from Place (`startEmpty` stays for the pool panel's "Search all plants" on the nothing-fits line: it opens the search sheet and never removes a plant, fix round 4, s-4). Arrival notices (`[data-place-notice=…]`) stand outside any live region; since pf-c fix round 2 (R8, C12) one persistent visually hidden `role=status` line says only their sentences, and a second persistent status line carries the loading words (A25). Styles: [place.css](../../src/styles/palette/place.css). Share gained the "Include my place" tick (`input[data-share-location]`), off by default.
+`views/Start.tsx` moved to [views/place/Place.tsx](../../src/islands/palette/views/place/Place.tsx) and was deleted. Place keeps the country line, the location slot, the climate cards and the pool slot, then: "How much room do you have?" (`roomValues` with `pots`, each answer's height limit through `formatLength`, never a count) with the optional plot size (`parsePlotSize`, `formatArea`); the grower's own plants (`[data-place-plants]`, chips with Remove, "Add a plant by name" opening the search sheet, Paste); today's light, soil and water ("Your spot", until PP-F); "Show my palette" (`[data-place-show]`) and "No plants in mind? Start from a small suggested palette" (`[data-place-suggest]`, one Undo, offered by `store.suggestMembers` itself for every Suggest, waited or not, Place's or the Next step's: fix round 4, s-1, s-2). The Main crops picker and "Start empty and search" are gone from Place (`startEmpty` stays for the pool panel's "Search all plants" on the nothing-fits line: it opens the search sheet and never removes a plant, fix round 4, s-4). Arrival notices (`[data-place-notice=…]`) stand outside any live region; since pf-c fix round 2 (R8, C12) one persistent visually hidden `role=status` line says only their sentences, and a second persistent status line carries the loading words (A25). Styles: [field-studio.css](../../src/styles/palette/field-studio.css) (replaced retired `place.css`). Share gained the "Include my place" tick (`input[data-share-location]`), off by default.
 
 b1a-2 (review follow-ups): plants added on Place (search or paste, `store.addMembers`) stay on Place and are saved on the device at once (owner 2026-11-15, replacing "a draft until Show my palette"): Place and the palette page show one palette, and an add is a plant change that owns the save (fix round 3 save model, `state/save.ts`), so a reload keeps it; on a link's or a guide's page the reader's save it replaces comes back, byte for byte, with the add's Undo. Place's answers (card, room, plot, spot, soil) are saved at once too while the page owns the save; "Show my palette" is navigation only, with no Undo (owner 2026-11-15, decision 1). Once the palette shows, Place's head has "Change your place" (`place.sheet.open`), which opens the "Your place" sheet (`SheetKind` `place`, in `SHEET_KINDS`, so Back closes it; `PlaceSheet` in Place.tsx, hosted by `views/Sheets.tsx` and in the first run): the location step, the climate cards with `PoolSlot` under them (a climate with no list here says why, with what Place offers), room and plot, the spot questions, and a foot with "Start over" and "Done" (`place.sheet.done`, closes as Close does). They change the palette in place, every plant kept: `chooseClimate` makes every member of the climate it leaves a guest of that climate (and a guest of the new climate one of its own again), so each kept plant is still drawn, checked and saved (fix round 1, b1a2-1). The store keeps those guests as they are, also once the new list is read; the save leaves out each guest the chosen climate's list holds (`persist.ts` `palette()`), so only the plants that list lacks are saved with `g=` (fix round 3, r3-3; no write after the list arrives, so it never counts as a reader action). The palette suggests and swaps from `store.offerPool`, empty while the chosen climate's list is borrowed and not fitted to a place (`needsSite`/`needsRule`), and the palette head shows `PoolSlot` then (its "location" button opens the sheet). The country line stays in the head (one `#ct-country-select`). "Change site" and "Back to your palette" are gone; the palette's step 1 and phone Back still return to the Place form (`draft.ts` `backToPlace`). A sheet open when the view goes back to Place (an Undo in its foot) closes in the same update (`watchSteps`), and the sheet's focus-back falls to the shown view's heading when its opener has gone; the map dialog unmounted with its sheet clears `mapOpen` (location.tsx). "Open my saved palette instead" is derived, not kept: `persist.ts` `savedInstead` is the readable save in storage while the page is held (`state/save.ts` `held`) and its palette is not that save's, so it shows on every held page whose save differs, goes when a plant change replaces the save, and comes back when that change's Undo writes the save back (owner 2026-11-15, decision 3). It reads storage, not what this page last wrote, again on each write and on the `storage` event, and pressing it adopts what storage holds then, so another tab's save is offered and opened, never this page's stale palette written over it (fix round 4, s-5). A notice toast (an action and no Undo: a part that could not load, with Reload) keeps the toast's timer and sits in the page's flow at the end of the tool, never over content (Toast.tsx `ct-toast-notice`, details.css; UI hand-off). `arrival.ts` `openingArrival()` reads what the page opened with once, for main.ts and `startMemory`. A Back off a link opened in the tab rewrites nothing, so the entry landed on reopens as its own address: each entry carries a start id `st` (new per link, `store.forgetEntries`), and `historyMoved` `away` is the landed entry's `st` differing from the current one; the hashchange onto an entry the page wrote takes its `pp` and `st` (`adoptEntry`; S4 BT-7, fix round 2 r2-6, r2-7).
 

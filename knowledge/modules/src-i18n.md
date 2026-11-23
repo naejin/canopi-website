@@ -5,26 +5,27 @@ description: The 11-locale translation tables and the t() lookup used by every c
 resource: ../../src/i18n
 tags: [module, i18n]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T12:42:18Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:12Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:18Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:42:17Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:04Z }
 sources:
   - id: i18n
     resource: ../../src/i18n
     title: src/i18n/
-    digest: sha256:715e446686c3bf26
-    last_modified: 2026-11-23T12:40:17Z
+    digest: sha256:5e889b112f5f0bdd
+    last_modified: 2026-11-23T21:58:22Z
   - id: homepage-test
     resource: ../../scripts/homepage.test.mjs
     title: scripts/homepage.test.mjs
-    digest: sha256:7f219540adcb693c
-    last_modified: 2026-11-17T10:52:11Z
+    digest: sha256:b5a0b6f5170d13bc
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-keys-test-mjs
     resource: ../../scripts/consortium-keys.test.mjs
     title: scripts/consortium-keys.test.mjs
-    digest: sha256:c9590ddbc0b9a890
-    last_modified: 2026-11-18T17:23:44Z
+    digest: sha256:7c46a38a93360da6
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 # Responsibility

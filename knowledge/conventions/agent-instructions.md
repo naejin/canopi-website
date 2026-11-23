@@ -4,15 +4,16 @@ title: Existing agent instructions
 description: The durable project rules given to coding agents in AGENTS.md, summarised with where each is enforced.
 tags: [convention, agents]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T14:27:48Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:07Z }
 verified:
   - { by: antigravity/gemini, at: 2026-11-23T14:27:40Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:47Z }
 sources:
   - id: agents-md
     resource: ../../AGENTS.md
     title: AGENTS.md
-    digest: sha256:07a31a28bf87b10b
-    last_modified: 2026-11-23T14:08:49Z
+    digest: sha256:fe6d888a975358e9
+    last_modified: 2026-11-23T21:07:43Z
   - id: claude-md
     resource: ../../CLAUDE.md
     title: CLAUDE.md

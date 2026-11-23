@@ -3,41 +3,42 @@ type: Architecture Decision
 title: Consortium island layers (ADR-1)
 description: The consortium island's layers L0-L4, the import rules dependency-cruiser enforces (L1-L9, and L10 as warn since PP-B commit 0a) and their severities by stage, so state never imports views and the core imports no UI framework.
 tags: [consortium, architecture]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:25Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:08Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:57Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:38Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:52Z }
 sources:
   - id: consortium
     resource: ../../src/islands/palette
     title: src/islands/palette/
-    digest: sha256:4af7add2a9cbad32
-    last_modified: 2026-11-23T21:02:12Z
+    digest: sha256:47490a58036ac89c
+    last_modified: 2026-11-23T21:58:22Z
   - id: index-ts
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
     digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:30:44Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:adc4859cf8ddf332
-    last_modified: 2026-11-23T21:01:39Z
+    digest: sha256:a3995b1e88daada2
+    last_modified: 2026-11-23T21:58:22Z
   - id: test-seam-d-ts
     resource: ../../src/islands/palette/test-seam.d.ts
     title: src/islands/palette/test-seam.d.ts
     digest: sha256:6927df0858d92504
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-fit-ts
     resource: ../../src/islands/palette/rules/site-fit.ts
     title: src/islands/palette/rules/site-fit.ts
     digest: sha256:cc3b45174c87f0b4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: suggest-block-ts
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
     digest: sha256:a40b87de812fd50b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sgconfig-yml
     resource: ../../sgconfig.yml
     title: sgconfig.yml
@@ -47,22 +48,22 @@ sources:
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
     digest: sha256:b6d0b198825d16a5
-    last_modified: 2026-11-23T20:58:08Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheets-tsx
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
     digest: sha256:b1e6bc8619935c95
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
     digest: sha256:79cc5bbaf0b55518
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
     digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
@@ -72,12 +73,12 @@ sources:
     resource: ../../src/islands/palette/test-hook.ts
     title: src/islands/palette/test-hook.ts
     digest: sha256:1149ad3040389486
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: arch-rules-test-mjs
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
     digest: sha256:e95bb5569ae7217b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - sgconfig.yml

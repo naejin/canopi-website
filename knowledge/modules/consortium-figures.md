@@ -3,55 +3,56 @@ type: Module
 title: Plant palette figures panel
 description: The PP-C pf-d panel that shows every site input the Plant palette checks read, what limits plants at a place, and the summary of what an edit changed.
 tags: [consortium, module]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:29Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:10Z }
 verified:
   - { by: antigravity/gemini, at: 2026-11-23T15:46:00Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:59Z }
 sources:
   - id: figures-tsx
     resource: ../../src/islands/palette/views/figures/Figures.tsx
     title: src/islands/palette/views/figures/Figures.tsx
     digest: sha256:38c8bb6f863e1613
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: slots-tsx
     resource: ../../src/islands/palette/views/figures/slots.tsx
     title: src/islands/palette/views/figures/slots.tsx
     digest: sha256:ae4b8bbf3eb488d9
-    last_modified: 2026-11-23T21:02:12Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-change-ts
     resource: ../../src/lib/palette/site-change.ts
     title: src/lib/palette/site-change.ts
     digest: sha256:77188e48536af621
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-change-line-ts
     resource: ../../src/lib/palette/site-change-line.ts
     title: src/lib/palette/site-change-line.ts
     digest: sha256:af099a0b86672327
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-inputs-ts
     resource: ../../src/lib/palette/site-inputs.ts
     title: src/lib/palette/site-inputs.ts
     digest: sha256:579c7c0952cb3f5c
-    last_modified: 2026-11-23T11:23:11Z
-  - id: figures-css
-    resource: ../../src/styles/palette/figures.css
-    title: src/styles/palette/figures.css
-    digest: sha256:91a8e9ccd407316c
-    last_modified: 2026-11-19T10:56:24Z
-  - id: base-css
-    resource: ../../src/styles/palette/base.css
-    title: src/styles/palette/base.css
-    digest: sha256:59ecfbc3a59f1adf
-    last_modified: 2026-11-19T11:59:54Z
+    last_modified: 2026-11-23T21:07:43Z
+  - id: sitetuner-tsx
+    resource: ../../src/islands/palette/views/place/SiteTuner.tsx
+    title: src/islands/palette/views/place/SiteTuner.tsx
+    digest: sha256:508af61023220fb6
+    last_modified: 2026-11-23T21:07:43Z
+  - id: field-studio-css
+    resource: ../../src/styles/palette/field-studio.css
+    title: src/styles/palette/field-studio.css
+    digest: sha256:1f58100c121aa18c
+    last_modified: 2026-11-23T21:58:22Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
     digest: sha256:c35923d10b1d644f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-pf-d-test-mjs
     resource: ../../scripts/consortium-pf-d.test.mjs
     title: scripts/consortium-pf-d.test.mjs
     digest: sha256:26e78ce0fec33c37
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 # Plant palette figures panel (PP-C pf-d)
@@ -70,7 +71,8 @@ the h3 fix rounds and chunk 4 (C2). Related: [Site inputs](/modules/consortium-s
 | `siteSnapshot`, `siteChange`, `lineCounts`, `limitStatus`, `limitsOf`, `warmthView`, `drierFrom`, `rangeMoves`, `windRecorded` | `src/lib/palette/site-change.ts` | per-period counts of the list (fit, second look, outside each side, drier, carrying the dryness note), one status per limit line (`LIMIT_IDS`, `LimitState` limits / free / unchecked, `LimitStatus`), warmth over the year as every row says it, each member's first drier period, how the list moves as the climate warms, the before/after change of an edit, and the listed plants with a recorded wind tolerance |
 | `siteChangeLines`, `changeDetailLines`, `nightsSidesLine`, `warmthLine`, `holdsWater`, `textureLine`, `PH_BANDS`, `LIMIT_LINES` | `src/lib/palette/site-change-line.ts` | the change summary's words and the rows' sentences (keys `consortium.figures.*`), the pH word bands (middles 5.0, 6.0, 6.9, 7.6, 8.5) |
 | `soilTextureOf`, `isDryland`, `tempsTogether` | `src/lib/palette/site-inputs.ts` | the soil map's texture as a reading (never a hint, A8); a dryland (aridity index under 0.65, UNCCD); the two temperature shifts set as one |
-| styles | `src/styles/palette/figures.css` | imported page-level by `ConsortiumPage.astro` (no stylesheet loads with a lazy chunk, check-built-site A14; chunk-3 M12) |
+| `SiteTuner` | `src/islands/palette/views/place/SiteTuner.tsx` | Field Studio onboarding site-tuning studio (`<details class="tuner-details">`): live climate/soil/microclimate sliders and condition pills writing `store.setSiteEdits` and `microclimate` |
+| styles | `src/styles/palette/field-studio.css` | consolidated page-level Field Studio stylesheet imported by `ConsortiumPage.astro` (retired legacy `figures.css` and `base.css` deleted in Stage 2A; no stylesheet loads with a lazy chunk, check-built-site A14) |
 
 ## When the panels stand
 - **Your place in figures** (`slots.tsx` `PlaceFigures`, R16): only once there is a place to say figures for, a location or a chosen climate (spec F5: with a climate and no location its soil and water lines can still be set). On Start before either, nothing is drawn, so the panel never lands after the first paint and pushes the page down.

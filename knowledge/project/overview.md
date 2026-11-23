@@ -4,11 +4,12 @@ title: canopi-website
 description: Astro marketing site for projectcanopi.com, the home of the Canopi agroecological design app, deployed by Cloudflare Workers Builds from the deploy branch, which CI moves to master only when it is green.
 tags: [project]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T14:27:52Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:12Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:35Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T14:15:31Z }
   - { by: antigravity/gemini, at: 2026-11-23T14:27:45Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:05Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -23,8 +24,8 @@ sources:
   - id: agents-md
     resource: ../../AGENTS.md
     title: AGENTS.md
-    digest: sha256:07a31a28bf87b10b
-    last_modified: 2026-11-23T14:08:49Z
+    digest: sha256:fe6d888a975358e9
+    last_modified: 2026-11-23T21:07:43Z
   - id: context-md
     resource: ../../CONTEXT.md
     title: CONTEXT.md

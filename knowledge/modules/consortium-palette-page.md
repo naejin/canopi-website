@@ -2,176 +2,172 @@
 type: Module
 title: Consortium palette page
 description: "The Plant palette page after the Place step: header steps, the Next step, Through the years and the jobs pictures with their table form, and the shell's honest states."
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:32Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:11Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T12:46:09Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:42Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:02Z }
 sources:
   - id: palette-tsx
     resource: ../../src/islands/palette/views/palette/Palette.tsx
     title: src/islands/palette/views/palette/Palette.tsx
     digest: sha256:32defe8479504c15
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: nextstep-tsx
     resource: ../../src/islands/palette/views/palette/NextStep.tsx
     title: src/islands/palette/views/palette/NextStep.tsx
     digest: sha256:7c310360252cce4b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: years-tsx
     resource: ../../src/islands/palette/views/palette/Years.tsx
     title: src/islands/palette/views/palette/Years.tsx
     digest: sha256:54492aad9ed09949
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: chart-tsx
     resource: ../../src/islands/palette/views/kit/chart.tsx
     title: src/islands/palette/views/kit/chart.tsx
     digest: sha256:e9c5f58e40e15dcb
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: fit-tsx
     resource: ../../src/islands/palette/views/kit/fit.tsx
     title: src/islands/palette/views/kit/fit.tsx
     digest: sha256:75bd668632d0a297
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: picture-ts
     resource: ../../src/islands/palette/rules/picture.ts
     title: src/islands/palette/rules/picture.ts
     digest: sha256:16756c1793022baf
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: app-tsx
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
     digest: sha256:685ec7e12121c7e4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
     digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
     digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:df1d6414f82153a6
-    last_modified: 2026-11-23T21:04:15Z
+    digest: sha256:337cd10afe3d21a3
+    last_modified: 2026-11-23T21:58:22Z
   - id: weigh-ts
     resource: ../../src/lib/palette/weigh.ts
     title: src/lib/palette/weigh.ts
     digest: sha256:6942a56137019e61
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: weigh-view-tsx
     resource: ../../src/islands/palette/views/palette/Weigh.tsx
     title: src/islands/palette/views/palette/Weigh.tsx
     digest: sha256:10e249b867cab542
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: jobs-picture-tsx
     resource: ../../src/islands/palette/views/palette/JobsPicture.tsx
     title: src/islands/palette/views/palette/JobsPicture.tsx
     digest: sha256:069a3088a44e86e7
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: actions-tsx
     resource: ../../src/islands/palette/views/Actions.tsx
     title: src/islands/palette/views/Actions.tsx
     digest: sha256:554bc62276690579
-    last_modified: 2026-11-23T11:23:11Z
-  - id: palette-page-css
-    resource: ../../src/styles/palette/palette-page.css
-    title: src/styles/palette/palette-page.css
-    digest: sha256:7b3b161a4bbec2cf
-    last_modified: 2026-11-19T06:07:14Z
+    last_modified: 2026-11-23T21:07:43Z
+  - id: field-studio-css
+    resource: ../../src/styles/palette/field-studio.css
+    title: src/styles/palette/field-studio.css
+    digest: sha256:1f58100c121aa18c
+    last_modified: 2026-11-23T21:58:22Z
   - id: pf-b-test
     resource: ../../scripts/consortium-pf-b.test.mjs
     title: scripts/consortium-pf-b.test.mjs
     digest: sha256:9d29199fe3f3ac31
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: find-tsx
     resource: ../../src/islands/palette/views/find/Find.tsx
     title: src/islands/palette/views/find/Find.tsx
     digest: sha256:320123ca652ab060
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: paste-tsx
     resource: ../../src/islands/palette/views/find/Paste.tsx
     title: src/islands/palette/views/find/Paste.tsx
     digest: sha256:5e1c6b0a5b56b5f9
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: paste-ts
     resource: ../../src/islands/palette/views/find/paste.ts
     title: src/islands/palette/views/find/paste.ts
     digest: sha256:594b76dd46601bf5
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: many-tsx
     resource: ../../src/islands/palette/views/plants/Many.tsx
     title: src/islands/palette/views/plants/Many.tsx
     digest: sha256:ad492d40f40049bc
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: small-tsx
     resource: ../../src/islands/palette/views/plants/Small.tsx
     title: src/islands/palette/views/plants/Small.tsx
     digest: sha256:e9e78db43c1cadd6
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: state-ts
     resource: ../../src/islands/palette/views/plants/state.ts
     title: src/islands/palette/views/plants/state.ts
     digest: sha256:e730362ff34c8c8f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: model-ts
     resource: ../../src/islands/palette/views/plants/model.ts
     title: src/islands/palette/views/plants/model.ts
     digest: sha256:68b80d3f4c781556
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: head-link-tsx
     resource: ../../src/islands/palette/views/plants/head-link.tsx
     title: src/islands/palette/views/plants/head-link.tsx
     digest: sha256:9ba5bb9aaff8b88c
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: steps-tsx
     resource: ../../src/islands/palette/views/place/steps.tsx
     title: src/islands/palette/views/place/steps.tsx
     digest: sha256:3448a53f9ebb4e85
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
     digest: sha256:79cc5bbaf0b55518
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheets-tsx
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
     digest: sha256:b1e6bc8619935c95
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: toast-tsx
     resource: ../../src/islands/palette/views/Toast.tsx
     title: src/islands/palette/views/Toast.tsx
     digest: sha256:86cdcc6fd7c86414
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
     digest: sha256:e629db37f6148c1f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: yourplants-tsx
     resource: ../../src/islands/palette/views/palette/YourPlants.tsx
     title: src/islands/palette/views/palette/YourPlants.tsx
     digest: sha256:ddd2c1e5b9e94139
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: figures-tsx
     resource: ../../src/islands/palette/views/figures/Figures.tsx
     title: src/islands/palette/views/figures/Figures.tsx
     digest: sha256:38c8bb6f863e1613
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: slots-tsx
     resource: ../../src/islands/palette/views/figures/slots.tsx
     title: src/islands/palette/views/figures/slots.tsx
     digest: sha256:ae4b8bbf3eb488d9
-    last_modified: 2026-11-23T21:02:12Z
-  - id: figures-css
-    resource: ../../src/styles/palette/figures.css
-    title: src/styles/palette/figures.css
-    digest: sha256:91a8e9ccd407316c
-    last_modified: 2026-11-19T10:56:24Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/browser/consortium-studio-palette.browser.test.mjs
   - scripts/consortium-pf-b.test.mjs

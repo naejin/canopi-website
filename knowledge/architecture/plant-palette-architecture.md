@@ -4,10 +4,11 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:23Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:06Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:34Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:45Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -19,7 +20,7 @@ sources:
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
     digest: sha256:b6d0b198825d16a5
-    last_modified: 2026-11-23T20:58:08Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: redirects
     resource: ../../public/_redirects
     title: public/_redirects
@@ -39,22 +40,22 @@ sources:
     resource: ../../scripts/built-links.test.mjs
     title: scripts/built-links.test.mjs
     digest: sha256:ad66fba7640035f2
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:eeaab36bba2abe93
-    last_modified: 2026-11-23T21:01:37Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:adc4859cf8ddf332
-    last_modified: 2026-11-23T21:01:39Z
+    digest: sha256:a3995b1e88daada2
+    last_modified: 2026-11-23T21:58:22Z
   - id: guides-consortium-test-mjs
     resource: ../../scripts/guides-consortium.test.mjs
     title: scripts/guides-consortium.test.mjs
@@ -64,7 +65,7 @@ sources:
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
     digest: sha256:e95bb5569ae7217b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: arch-json
     resource: ../../scripts/quality/baselines/arch.json
     title: scripts/quality/baselines/arch.json
@@ -84,167 +85,167 @@ sources:
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
     digest: sha256:685ec7e12121c7e4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: load-ts
     resource: ../../src/islands/palette/data/load.ts
     title: src/islands/palette/data/load.ts
     digest: sha256:8159e2aae175b171
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: search-ts
     resource: ../../src/islands/palette/data/search.ts
     title: src/islands/palette/data/search.ts
     digest: sha256:b880117e9fda4714
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sqlite-source-ts
     resource: ../../src/islands/palette/data/sqlite-source.ts
     title: src/islands/palette/data/sqlite-source.ts
     digest: sha256:1d4e48c67077cda7
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: focus-ts
     resource: ../../src/islands/palette/focus.ts
     title: src/islands/palette/focus.ts
     digest: sha256:2a09db72632e81bd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: format-ts
     resource: ../../src/islands/palette/format.ts
     title: src/islands/palette/format.ts
     digest: sha256:8f5252bea4821008
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: main-ts
     resource: ../../src/islands/palette/main.ts
     title: src/islands/palette/main.ts
     digest: sha256:f9f45406565dd302
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-fit-ts
     resource: ../../src/islands/palette/rules/site-fit.ts
     title: src/islands/palette/rules/site-fit.ts
     digest: sha256:cc3b45174c87f0b4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: suggest-block-ts
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
     digest: sha256:a40b87de812fd50b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: arrival-ts
     resource: ../../src/islands/palette/state/arrival.ts
     title: src/islands/palette/state/arrival.ts
     digest: sha256:2b38494690ba1bea
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: draft-ts
     resource: ../../src/islands/palette/state/draft.ts
     title: src/islands/palette/state/draft.ts
     digest: sha256:ea0e524d1cd90f7b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
     digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: persist-ts
     resource: ../../src/islands/palette/state/persist.ts
     title: src/islands/palette/state/persist.ts
     digest: sha256:abaa195b434f5099
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: restore-ts
     resource: ../../src/islands/palette/state/restore.ts
     title: src/islands/palette/state/restore.ts
     digest: sha256:030d6d5d5be6780b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: schema-ts
     resource: ../../src/islands/palette/state/schema.ts
     title: src/islands/palette/state/schema.ts
     digest: sha256:335adf6feff78380
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: suggest-wait-ts
     resource: ../../src/islands/palette/state/suggest-wait.ts
     title: src/islands/palette/state/suggest-wait.ts
     digest: sha256:ad330f5c00ac2504
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
     digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: strings-ts
     resource: ../../src/islands/palette/strings.ts
     title: src/islands/palette/strings.ts
     digest: sha256:cc2cefe2eeef65d9
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: actions-tsx
     resource: ../../src/islands/palette/views/Actions.tsx
     title: src/islands/palette/views/Actions.tsx
     digest: sha256:554bc62276690579
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: correction-tsx
     resource: ../../src/islands/palette/views/Correction.tsx
     title: src/islands/palette/views/Correction.tsx
     digest: sha256:bf8e99431d3f4218
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: futureslot-tsx
     resource: ../../src/islands/palette/views/FutureSlot.tsx
     title: src/islands/palette/views/FutureSlot.tsx
     digest: sha256:6f3324fce10a0c9b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: locationslot-tsx
     resource: ../../src/islands/palette/views/LocationSlot.tsx
     title: src/islands/palette/views/LocationSlot.tsx
     digest: sha256:49df7d766bb12039
-    last_modified: 2026-11-23T19:33:12Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: poolslot-tsx
     resource: ../../src/islands/palette/views/PoolSlot.tsx
     title: src/islands/palette/views/PoolSlot.tsx
     digest: sha256:4db3fccf4d5fef14
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sideview-tsx
     resource: ../../src/islands/palette/views/SideView.tsx
     title: src/islands/palette/views/SideView.tsx
     digest: sha256:3f6ac881e374bec9
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: stagebar-tsx
     resource: ../../src/islands/palette/views/StageBar.tsx
     title: src/islands/palette/views/StageBar.tsx
     digest: sha256:8fb3588aeca54223
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: toast-tsx
     resource: ../../src/islands/palette/views/Toast.tsx
     title: src/islands/palette/views/Toast.tsx
     digest: sha256:86cdcc6fd7c86414
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
     digest: sha256:e629db37f6148c1f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: names-ts
     resource: ../../src/islands/palette/views/kit/names.ts
     title: src/islands/palette/views/kit/names.ts
     digest: sha256:949e5b236a7bf8fe
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: later-ts
     resource: ../../src/islands/palette/views/later.ts
     title: src/islands/palette/views/later.ts
     digest: sha256:fb713ad123fb3bbc
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: layers-ts
     resource: ../../src/islands/palette/views/layers.ts
     title: src/islands/palette/views/layers.ts
     digest: sha256:724abc98a8c401ae
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lazy-tsx
     resource: ../../src/islands/palette/views/lazy.tsx
     title: src/islands/palette/views/lazy.tsx
     digest: sha256:be4f158b7f10cafd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: pool-tsx
     resource: ../../src/islands/palette/views/pool/pool.tsx
     title: src/islands/palette/views/pool/pool.tsx
     digest: sha256:b36c528b19920022
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: side-ts
     resource: ../../src/islands/palette/views/side.ts
     title: src/islands/palette/views/side.ts
     digest: sha256:4c0191d39a946863
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -259,97 +260,97 @@ sources:
     resource: ../../src/lib/palette/canopi-file.ts
     title: src/lib/palette/canopi-file.ts
     digest: sha256:872518766f5b6313
-    last_modified: 2026-11-23T11:30:42Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: conflicts-ts
     resource: ../../src/lib/palette/conflicts.ts
     title: src/lib/palette/conflicts.ts
     digest: sha256:aceaab4e54f45431
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: fold-ts
     resource: ../../src/lib/palette/fold.ts
     title: src/lib/palette/fold.ts
     digest: sha256:dae939a445a54069
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: future-ts
     resource: ../../src/lib/palette/future.ts
     title: src/lib/palette/future.ts
     digest: sha256:788e3562bea607f1
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: index-ts
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
     digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:30:44Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: jobs-ts
     resource: ../../src/lib/palette/jobs.ts
     title: src/lib/palette/jobs.ts
     digest: sha256:97b5290a800f6a3f
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: nearest-ts
     resource: ../../src/lib/palette/nearest.ts
     title: src/lib/palette/nearest.ts
     digest: sha256:b8ccc5ba13429537
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: placed-ts
     resource: ../../src/lib/palette/placed.ts
     title: src/lib/palette/placed.ts
     digest: sha256:4bee0febe945ad89
-    last_modified: 2026-11-23T11:29:04Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: placement-ts
     resource: ../../src/lib/palette/placement.ts
     title: src/lib/palette/placement.ts
     digest: sha256:8f7a898e3dc4d6ad
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: range-ts
     resource: ../../src/lib/palette/range.ts
     title: src/lib/palette/range.ts
     digest: sha256:563dd255757eddd8
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-climate-ts
     resource: ../../src/lib/palette/site-climate.ts
     title: src/lib/palette/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-today-ts
     resource: ../../src/lib/palette/site-today.ts
     title: src/lib/palette/site-today.ts
     digest: sha256:d410a7e506adace3
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-ts
     resource: ../../src/lib/palette/site.ts
     title: src/lib/palette/site.ts
     digest: sha256:323fb9b1c48bc193
-    last_modified: 2026-11-23T11:29:02Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: source-ts
     resource: ../../src/lib/palette/source.ts
     title: src/lib/palette/source.ts
     digest: sha256:9efeeffb336dec8a
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: suggest-ts
     resource: ../../src/lib/palette/suggest.ts
     title: src/lib/palette/suggest.ts
     digest: sha256:15f1a3ec8774ad24
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: types-ts
     resource: ../../src/lib/palette/types.ts
     title: src/lib/palette/types.ts
     digest: sha256:2163e2e956deda1c
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: zones-ts
     resource: ../../src/lib/palette/zones.ts
     title: src/lib/palette/zones.ts
     digest: sha256:33f34d5c6cad519a
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: place-ts
     resource: ../../src/lib/palette/place.ts
     title: src/lib/palette/place.ts
     digest: sha256:e3764f30b6573f2d
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
@@ -359,22 +360,22 @@ sources:
     resource: ../../src/islands/palette/views/Swap.tsx
     title: src/islands/palette/views/Swap.tsx
     digest: sha256:ed02a27cceea1426
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: nextstep-tsx
     resource: ../../src/islands/palette/views/palette/NextStep.tsx
     title: src/islands/palette/views/palette/NextStep.tsx
     digest: sha256:7c310360252cce4b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: palette-tsx
     resource: ../../src/islands/palette/views/palette/Palette.tsx
     title: src/islands/palette/views/palette/Palette.tsx
     digest: sha256:32defe8479504c15
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: save-ts
     resource: ../../src/islands/palette/state/save.ts
     title: src/islands/palette/state/save.ts
     digest: sha256:7a5518810d5d8e3a
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 **State (2026-11-19):** PP-B and PP-C are built and live (master 398558aa); the module concepts ([page](/modules/consortium-page.md), [palette page](/modules/consortium-palette-page.md), [state](/modules/consortium-state.md), [core](/modules/consortium-core.md)) describe the code as it is. The owner's island architecture of 2026-11-19 ([user decisions](/decisions/consortium-user-decisions.md) "Owner decisions, 2026-11-19") changes this target in the coming commit 0 and one-pool stream: two stored records with one owner each (link as an overlay until "Use it"), the store split by domain, thin views over view models, one pool (a climate list is a label, never a scope; the guest path deleted) and no browser country guess. Until those land, the sections on storage, the store and guests describe the current code.

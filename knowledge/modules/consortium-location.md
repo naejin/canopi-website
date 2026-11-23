@@ -2,41 +2,42 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:29Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:10Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:52:39Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:59Z }
 sources:
   - id: location-privacy-tsx
     resource: ../../src/islands/palette/views/location/privacy.tsx
     title: src/islands/palette/views/location/privacy.tsx
     digest: sha256:cd3c9e941a9646eb
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: locationslot-tsx
     resource: ../../src/islands/palette/views/LocationSlot.tsx
     title: src/islands/palette/views/LocationSlot.tsx
     digest: sha256:49df7d766bb12039
-    last_modified: 2026-11-23T19:33:12Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-tsx
     resource: ../../src/islands/palette/views/location/location.tsx
     title: src/islands/palette/views/location/location.tsx
     digest: sha256:4a3aaec54728bcfd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: load-ts
     resource: ../../src/islands/palette/views/location/load.ts
     title: src/islands/palette/views/location/load.ts
     digest: sha256:5229676dcc8299b6
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-climate-ts
     resource: ../../src/lib/palette/site-climate.ts
     title: src/lib/palette/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: registry-ts
     resource: ../../src/lib/location/registry.ts
     title: src/lib/location/registry.ts
@@ -71,17 +72,17 @@ sources:
     resource: ../../src/islands/palette/views/Share.tsx
     title: src/islands/palette/views/Share.tsx
     digest: sha256:df3879a82655959b
-    last_modified: 2026-11-23T20:58:01Z
-  - id: s5b-css
-    resource: ../../src/styles/palette/p5/s5b.css
-    title: src/styles/palette/p5/s5b.css
-    digest: sha256:ed9da057326d8304
-    last_modified: 2026-11-18T17:05:25Z
+    last_modified: 2026-11-23T21:07:43Z
+  - id: field-studio-css
+    resource: ../../src/styles/palette/field-studio.css
+    title: src/styles/palette/field-studio.css
+    digest: sha256:1f58100c121aa18c
+    last_modified: 2026-11-23T21:58:22Z
   - id: start-tsx
     resource: ../../src/islands/palette/views/place/Place.tsx
     title: src/islands/palette/views/place/Place.tsx
     digest: sha256:8310681ad9758fb1
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -91,27 +92,22 @@ sources:
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
     digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lookups-ts
     resource: ../../src/islands/palette/state/lookups.ts
     title: src/islands/palette/state/lookups.ts
     digest: sha256:6ac754c9cfc6c61b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: restore-ts
     resource: ../../src/islands/palette/state/restore.ts
     title: src/islands/palette/state/restore.ts
     digest: sha256:030d6d5d5be6780b
-    last_modified: 2026-11-23T20:58:01Z
-  - id: base-css
-    resource: ../../src/styles/palette/base.css
-    title: src/styles/palette/base.css
-    digest: sha256:59ecfbc3a59f1adf
-    last_modified: 2026-11-19T11:59:54Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
     digest: sha256:09a8785016e8c670
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/consortium-p5-seams-s5b.test.mjs
   - scripts/browser/consortium-studio-onboarding.browser.test.mjs
@@ -151,7 +147,7 @@ a climate card and a country, and the reader confirms (owner answers 1, 4, 5). P
 - **Naming a typed point** (h3 G1 round 2, B1.1; PFD51): `lookUpName` checks that the place is still the same typed, unnamed point (lat, lon, source), not the same object, and names the current object, so a soil reading patched on meanwhile neither drops the name nor is dropped by it. Each ask is numbered (`nameAsk`): only the latest ask writes `naming`, so an earlier ask answered or cut short after the grower moved on never clears a newer ask's busy state (h3 G1#1).
 - **Timeouts** (review round 2, 3): a tile read unanswered in 15 s (`READ_TIMEOUT_MS`, a race in state/location.ts's `read`; the climate reader takes no signal) fails like a failed read; a geocoder request is aborted after 15 s (`GEOCODER_TIMEOUT_MS`, transport.ts) and thrown as an error, not an AbortError, so the search shows "offline"; `currentPosition(options, permission)`: the browser's own timeout does not run while its permission prompt waits, so a permission granted before the press gets the browser's 15 s plus a 5 s backstop, and anything else one 45 s cap (`PROMPT_CAP_MS`) over prompt and fix, since a one-time Allow fires no `change` event in some browsers (review round 4, 3).
 - **Keyboard on the cards** (views/place/Place.tsx, formerly Start.tsx; review round 2, 5): with a card proposed and none checked, only the proposed radio is in the tab order; arrows move the focus without checking; Space, Enter or a click confirms (P5-10b).
-- **Map dialog**: Close, "Use the map centre" and Escape all close the native dialog, so focus returns to the map button; the centre pin (ink cross, ochre point) and the dialog's styles are in `src/styles/palette/p5/s5b.css`.
+- **Map dialog**: Close, "Use the map centre" and Escape all close the native dialog, so focus returns to the map button; the centre pin (ink cross, ochre point) and the dialog's styles live in `src/styles/palette/field-studio.css` (consolidated from retired `p5/s5b.css` and `base.css`).
 
 ## Budgets (production build, 2026-11-11)
 

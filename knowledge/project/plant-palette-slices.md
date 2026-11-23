@@ -4,10 +4,11 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:37Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:13Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:19Z }
   - { by: antigravity/gemini, at: 2026-11-23T18:53:14Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:05Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -38,7 +39,7 @@ sources:
     resource: ../../.dependency-cruiser.cjs
     title: .dependency-cruiser.cjs
     digest: sha256:b6d0b198825d16a5
-    last_modified: 2026-11-23T20:58:08Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: zero-markers
     resource: ../../.githooks/zero-markers
     title: .githooks/zero-markers
@@ -58,7 +59,7 @@ sources:
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
     digest: sha256:57e51b4beeb6edd5
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
@@ -68,32 +69,32 @@ sources:
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:eeaab36bba2abe93
-    last_modified: 2026-11-23T21:01:37Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
     digest: sha256:7a74ee4c3c588107
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
     digest: sha256:bcdcab2cd288bb15
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:8287b1b5df652fb1
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:7a9f193482a5292a
-    last_modified: 2026-11-23T20:58:01Z
+    digest: sha256:8e5a1ed49332e88e
+    last_modified: 2026-11-23T21:58:22Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
@@ -108,7 +109,7 @@ sources:
     resource: ../../scripts/quality/arch-rules.test.mjs
     title: scripts/quality/arch-rules.test.mjs
     digest: sha256:e95bb5569ae7217b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: axe-json
     resource: ../../scripts/quality/baselines/axe.json
     title: scripts/quality/baselines/axe.json
@@ -123,7 +124,7 @@ sources:
     resource: ../../src/components/PrivacyPage.astro
     title: src/components/PrivacyPage.astro
     digest: sha256:1a2cf7d7db89b2b7
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: climate-release-json
     resource: ../../src/data/climate-release.json
     title: src/data/climate-release.json
@@ -133,92 +134,92 @@ sources:
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
     digest: sha256:685ec7e12121c7e4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: load-ts
     resource: ../../src/islands/palette/data/load.ts
     title: src/islands/palette/data/load.ts
     digest: sha256:8159e2aae175b171
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: search-ts
     resource: ../../src/islands/palette/data/search.ts
     title: src/islands/palette/data/search.ts
     digest: sha256:b880117e9fda4714
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sqlite-source-ts
     resource: ../../src/islands/palette/data/sqlite-source.ts
     title: src/islands/palette/data/sqlite-source.ts
     digest: sha256:1d4e48c67077cda7
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: focus-ts
     resource: ../../src/islands/palette/focus.ts
     title: src/islands/palette/focus.ts
     digest: sha256:2a09db72632e81bd
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: main-ts
     resource: ../../src/islands/palette/main.ts
     title: src/islands/palette/main.ts
     digest: sha256:f9f45406565dd302
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-fit-ts
     resource: ../../src/islands/palette/rules/site-fit.ts
     title: src/islands/palette/rules/site-fit.ts
     digest: sha256:cc3b45174c87f0b4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: suggest-block-ts
     resource: ../../src/islands/palette/rules/suggest-block.ts
     title: src/islands/palette/rules/suggest-block.ts
     digest: sha256:a40b87de812fd50b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
     digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: store-ts
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
     digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: correction-tsx
     resource: ../../src/islands/palette/views/Correction.tsx
     title: src/islands/palette/views/Correction.tsx
     digest: sha256:bf8e99431d3f4218
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: futureslot-tsx
     resource: ../../src/islands/palette/views/FutureSlot.tsx
     title: src/islands/palette/views/FutureSlot.tsx
     digest: sha256:6f3324fce10a0c9b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheets-tsx
     resource: ../../src/islands/palette/views/Sheets.tsx
     title: src/islands/palette/views/Sheets.tsx
     digest: sha256:b1e6bc8619935c95
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: flags-ts
     resource: ../../src/islands/palette/views/kit/flags.ts
     title: src/islands/palette/views/kit/flags.ts
     digest: sha256:e629db37f6148c1f
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
     digest: sha256:79cc5bbaf0b55518
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: later-ts
     resource: ../../src/islands/palette/views/later.ts
     title: src/islands/palette/views/later.ts
     digest: sha256:fb713ad123fb3bbc
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: layers-ts
     resource: ../../src/islands/palette/views/layers.ts
     title: src/islands/palette/views/layers.ts
     digest: sha256:724abc98a8c401ae
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
     digest: sha256:09a8785016e8c670
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: model-js
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
@@ -233,47 +234,47 @@ sources:
     resource: ../../src/lib/palette/canopi-file.ts
     title: src/lib/palette/canopi-file.ts
     digest: sha256:872518766f5b6313
-    last_modified: 2026-11-23T11:30:42Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: conflicts-ts
     resource: ../../src/lib/palette/conflicts.ts
     title: src/lib/palette/conflicts.ts
     digest: sha256:aceaab4e54f45431
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: index-ts-2
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
     digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:30:44Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: jobs-ts
     resource: ../../src/lib/palette/jobs.ts
     title: src/lib/palette/jobs.ts
     digest: sha256:97b5290a800f6a3f
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-climate-ts
     resource: ../../src/lib/palette/site-climate.ts
     title: src/lib/palette/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-today-ts
     resource: ../../src/lib/palette/site-today.ts
     title: src/lib/palette/site-today.ts
     digest: sha256:d410a7e506adace3
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-ts
     resource: ../../src/lib/palette/site.ts
     title: src/lib/palette/site.ts
     digest: sha256:323fb9b1c48bc193
-    last_modified: 2026-11-23T11:29:02Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: source-ts
     resource: ../../src/lib/palette/source.ts
     title: src/lib/palette/source.ts
     digest: sha256:9efeeffb336dec8a
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: suggest-ts
     resource: ../../src/lib/palette/suggest.ts
     title: src/lib/palette/suggest.ts
     digest: sha256:15f1a3ec8774ad24
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: parked-markers-json
     resource: ../../scripts/plan/parked-markers.json
     title: scripts/plan/parked-markers.json

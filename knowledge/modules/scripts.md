@@ -5,27 +5,28 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T14:27:51Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:12Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
   - { by: antigravity/gemini, at: 2026-11-23T14:27:44Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:04Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:8165db4fcb8d590c
-    last_modified: 2026-11-13T07:53:00Z
+    digest: sha256:a3995b1e88daada2
+    last_modified: 2026-11-23T21:58:22Z
   - id: browser-test
     resource: ../../scripts/browser/consortium-studio-onboarding.browser.test.mjs
     title: scripts/browser/consortium-studio-onboarding.browser.test.mjs
-    digest: sha256:d68dbc38f90873d3
-    last_modified: 2026-11-23T13:35:12Z
+    digest: sha256:0eab406ff596c398
+    last_modified: 2026-11-23T21:58:22Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:1ddd7d149e534f0b
-    last_modified: 2026-11-23T14:18:49Z
+    digest: sha256:a53dd11a45101462
+    last_modified: 2026-11-23T22:10:51Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -44,8 +45,8 @@ sources:
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:61d3d077c466a46e
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7a74ee4c3c588107
+    last_modified: 2026-11-23T21:07:43Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -74,13 +75,13 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:c2b450b349d5137d
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7eb74c8505c7b909
+    last_modified: 2026-11-23T21:07:43Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs
-    digest: sha256:9a944293ae6767b0
-    last_modified: 2026-11-13T06:47:29Z
+    digest: sha256:3993101a22fc3722
+    last_modified: 2026-11-23T21:07:43Z
   - id: sgconfig-yml
     resource: ../../sgconfig.yml
     title: sgconfig.yml
@@ -99,23 +100,23 @@ sources:
   - id: consortium-pp-b1-test-mjs
     resource: ../../scripts/consortium-pp-b1.test.mjs
     title: scripts/consortium-pp-b1.test.mjs
-    digest: sha256:f508455692c4e406
-    last_modified: 2026-11-19T13:11:53Z
+    digest: sha256:b9245f76c2717453
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-said-mjs
     resource: ../../scripts/consortium-said.mjs
     title: scripts/consortium-said.mjs
-    digest: sha256:43893d3f05cd8270
-    last_modified: 2026-11-19T05:25:31Z
+    digest: sha256:0550dd8fb2e3d710
+    last_modified: 2026-11-23T21:07:43Z
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:0ede506690c0787d
-    last_modified: 2026-11-23T13:43:06Z
+    digest: sha256:57e51b4beeb6edd5
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-pf-env-mjs
     resource: ../../scripts/consortium-pf-env.mjs
     title: scripts/consortium-pf-env.mjs
-    digest: sha256:686961f8967e3525
-    last_modified: 2026-11-18T15:30:23Z
+    digest: sha256:f4facdd457b71cba
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 # Responsibility

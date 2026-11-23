@@ -2,16 +2,17 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:26Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:17Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:29Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:55Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
     digest: sha256:09a8785016e8c670
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -41,7 +42,7 @@ sources:
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -65,8 +66,8 @@ sources:
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:df1d6414f82153a6
-    last_modified: 2026-11-23T21:04:15Z
+    digest: sha256:337cd10afe3d21a3
+    last_modified: 2026-11-23T21:58:22Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -76,7 +77,7 @@ sources:
     resource: ../../src/islands/palette/store.ts
     title: src/islands/palette/store.ts
     digest: sha256:a2d405853d85b528
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: vectors-mjs
     resource: ../../scripts/fixtures/climate/vectors.mjs
     title: scripts/fixtures/climate/vectors.mjs
@@ -101,12 +102,12 @@ sources:
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
     digest: sha256:fb7426fc53e5e9fa
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: location-ts
     resource: ../../src/islands/palette/state/location.ts
     title: src/islands/palette/state/location.ts
     digest: sha256:5acb3da6eca26ed5
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/climate-reader.test.mjs
   - scripts/install-climate.test.mjs

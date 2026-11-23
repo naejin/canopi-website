@@ -4,11 +4,12 @@ title: Field Guides
 description: "The English and French Field Guides: MDX content, the shared guide layout, components and build-time diagrams, and their data."
 resource: ../../src/components/guides
 tags: [module, guides]
-generated: { by: antigravity/gemini, at: 2026-11-23T17:14:48Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:11Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:12Z }
   - { by: antigravity/gemini, at: 2026-11-23T17:14:41Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:03Z }
 sources:
   - id: guides
     resource: ../../src/content/guides
@@ -59,7 +60,7 @@ sources:
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
     digest: sha256:f456eb36dd7851bb
-    last_modified: 2026-11-23T16:55:15Z
+    last_modified: 2026-11-23T17:15:38Z
   - id: tryconsortium-astro
     resource: ../../src/components/guides/TryConsortium.astro
     title: src/components/guides/TryConsortium.astro
@@ -78,8 +79,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:c2b450b349d5137d
-    last_modified: 2026-11-23T12:23:18Z
+    digest: sha256:7eb74c8505c7b909
+    last_modified: 2026-11-23T21:07:43Z
 ---
 
 # Responsibility

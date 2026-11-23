@@ -4,36 +4,37 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schema 4.7 (no older schema or minor) that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/palette
 tags: [module, consortium]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:27Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:09Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:11Z }
   - { by: antigravity/gemini, at: 2026-11-23T15:46:10Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:57Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/palette/types.ts
     title: src/lib/palette/types.ts
     digest: sha256:2163e2e956deda1c
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: source-ts
     resource: ../../src/lib/palette/source.ts
     title: src/lib/palette/source.ts
     digest: sha256:9efeeffb336dec8a
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: index-ts
     resource: ../../src/lib/palette/index.ts
     title: src/lib/palette/index.ts
     digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:30:44Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: canopi-file-ts
     resource: ../../src/lib/palette/canopi-file.ts
     title: src/lib/palette/canopi-file.ts
     digest: sha256:872518766f5b6313
-    last_modified: 2026-11-23T11:30:42Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
     digest: sha256:bcdcab2cd288bb15
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: install-consortium-mjs
     resource: ../../scripts/install-consortium.mjs
     title: scripts/install-consortium.mjs
@@ -43,7 +44,7 @@ sources:
     resource: ../../scripts/consortium-schema.mjs
     title: scripts/consortium-schema.mjs
     digest: sha256:521be440cb6a551b
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
@@ -63,72 +64,72 @@ sources:
     resource: ../../src/lib/palette/site.ts
     title: src/lib/palette/site.ts
     digest: sha256:323fb9b1c48bc193
-    last_modified: 2026-11-23T11:29:02Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: conflicts-ts
     resource: ../../src/lib/palette/conflicts.ts
     title: src/lib/palette/conflicts.ts
     digest: sha256:aceaab4e54f45431
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: jobs-ts
     resource: ../../src/lib/palette/jobs.ts
     title: src/lib/palette/jobs.ts
     digest: sha256:97b5290a800f6a3f
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: suggest-ts
     resource: ../../src/lib/palette/suggest.ts
     title: src/lib/palette/suggest.ts
     digest: sha256:15f1a3ec8774ad24
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: state-ts
     resource: ../../src/lib/palette/state.ts
     title: src/lib/palette/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
-    digest: sha256:adc4859cf8ddf332
-    last_modified: 2026-11-23T21:01:39Z
+    digest: sha256:a3995b1e88daada2
+    last_modified: 2026-11-23T21:58:22Z
   - id: range-ts
     resource: ../../src/lib/palette/range.ts
     title: src/lib/palette/range.ts
     digest: sha256:563dd255757eddd8
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: placement-ts
     resource: ../../src/lib/palette/placement.ts
     title: src/lib/palette/placement.ts
     digest: sha256:8f7a898e3dc4d6ad
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: future-ts
     resource: ../../src/lib/palette/future.ts
     title: src/lib/palette/future.ts
     digest: sha256:788e3562bea607f1
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-p5-seams-test-mjs
     resource: ../../scripts/consortium-p5-seams.test.mjs
     title: scripts/consortium-p5-seams.test.mjs
     digest: sha256:8287b1b5df652fb1
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-p5-seams-s5b-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5b.test.mjs
     title: scripts/consortium-p5-seams-s5b.test.mjs
     digest: sha256:bfb22a64289f8956
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-p5-seams-s5c-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5c.test.mjs
     title: scripts/consortium-p5-seams-s5c.test.mjs
     digest: sha256:772217462fa45761
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-p5-seams-s5d-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5d.test.mjs
     title: scripts/consortium-p5-seams-s5d.test.mjs
     digest: sha256:350970f474f05edb
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-p5-seams-s5e-test-mjs
     resource: ../../scripts/consortium-p5-seams-s5e.test.mjs
     title: scripts/consortium-p5-seams-s5e.test.mjs
     digest: sha256:3a5127107c5dae6e
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
@@ -138,7 +139,7 @@ sources:
     resource: ../../src/lib/palette/site-climate.ts
     title: src/lib/palette/site-climate.ts
     digest: sha256:eb4395e60994e93b
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: readme-md-2
     resource: ../../scripts/fixtures/consortium-future/README.md
     title: scripts/fixtures/consortium-future/README.md
@@ -148,27 +149,27 @@ sources:
     resource: ../../scripts/consortium-p5-ranges.test.mjs
     title: scripts/consortium-p5-ranges.test.mjs
     digest: sha256:fb7426fc53e5e9fa
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: fold-ts
     resource: ../../src/lib/palette/fold.ts
     title: src/lib/palette/fold.ts
     digest: sha256:dae939a445a54069
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: zones-ts
     resource: ../../src/lib/palette/zones.ts
     title: src/lib/palette/zones.ts
     digest: sha256:33f34d5c6cad519a
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: nearest-ts
     resource: ../../src/lib/palette/nearest.ts
     title: src/lib/palette/nearest.ts
     digest: sha256:b8ccc5ba13429537
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-zones-test-mjs
     resource: ../../scripts/consortium-zones.test.mjs
     title: scripts/consortium-zones.test.mjs
     digest: sha256:c5bf7a5fbd582fb7
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: lookup-json
     resource: ../../scripts/fixtures/climate/lookup.json
     title: scripts/fixtures/climate/lookup.json
@@ -178,17 +179,17 @@ sources:
     resource: ../../src/islands/palette/data/sqlite-source.ts
     title: src/islands/palette/data/sqlite-source.ts
     digest: sha256:1d4e48c67077cda7
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: placed-ts
     resource: ../../src/lib/palette/placed.ts
     title: src/lib/palette/placed.ts
     digest: sha256:4bee0febe945ad89
-    last_modified: 2026-11-23T11:29:04Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: place-ts
     resource: ../../src/lib/palette/place.ts
     title: src/lib/palette/place.ts
     digest: sha256:e3764f30b6573f2d
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: link-v5-json
     resource: ../../scripts/vectors/link-v5.json
     title: scripts/vectors/link-v5.json
@@ -198,7 +199,7 @@ sources:
     resource: ../../scripts/consortium-link-v5.test.mjs
     title: scripts/consortium-link-v5.test.mjs
     digest: sha256:9a547d687e28acc4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: range-verdicts-json
     resource: ../../scripts/vectors/range-verdicts.json
     title: scripts/vectors/range-verdicts.json
@@ -208,47 +209,47 @@ sources:
     resource: ../../src/lib/palette/country-zones.ts
     title: src/lib/palette/country-zones.ts
     digest: sha256:4ea9e04499227c52
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: retry-import-ts
     resource: ../../src/lib/palette/retry-import.ts
     title: src/lib/palette/retry-import.ts
     digest: sha256:ae0ed9a2fe3bc1c3
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: verdict-ts
     resource: ../../src/lib/palette/verdict.ts
     title: src/lib/palette/verdict.ts
     digest: sha256:659d609a57947882
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: verdict-line-ts
     resource: ../../src/lib/palette/verdict-line.ts
     title: src/lib/palette/verdict-line.ts
     digest: sha256:a169b614d21093dd
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: verdict-load-ts
     resource: ../../src/lib/palette/verdict-load.ts
     title: src/lib/palette/verdict-load.ts
     digest: sha256:ff57adaa6726ccbb
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-change-ts
     resource: ../../src/lib/palette/site-change.ts
     title: src/lib/palette/site-change.ts
     digest: sha256:77188e48536af621
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: site-change-line-ts
     resource: ../../src/lib/palette/site-change-line.ts
     title: src/lib/palette/site-change-line.ts
     digest: sha256:af099a0b86672327
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-said-mjs
     resource: ../../scripts/consortium-said.mjs
     title: scripts/consortium-said.mjs
     digest: sha256:0550dd8fb2e3d710
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: format-ts
     resource: ../../src/islands/palette/format.ts
     title: src/islands/palette/format.ts
     digest: sha256:8f5252bea4821008
-    last_modified: 2026-11-23T11:23:11Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by:
   - scripts/consortium-boundary.test.mjs
   - scripts/install-consortium.test.mjs

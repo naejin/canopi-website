@@ -3,36 +3,37 @@ type: Architecture Decision
 title: Consortium per-chunk caps and first-view ratchet (ADR-2)
 description: The consortium page caps each built chunk by role and the first run, keeps no total cap, and ratchets time to first view from nightly runner medians.
 tags: [consortium, performance]
-generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T21:06:25Z }
+generated: { by: antigravity/gemini-3-pro, at: 2026-11-23T22:36:08Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:25Z }
+  - { by: antigravity/gemini-3-pro, at: 2026-11-23T22:35:51Z }
 sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
     digest: sha256:eeaab36bba2abe93
-    last_modified: 2026-11-23T21:01:37Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
     digest: sha256:7eb74c8505c7b909
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: consortium-timing-mjs
     resource: ../../scripts/browser/consortium-timing.mjs
     title: scripts/browser/consortium-timing.mjs
     digest: sha256:3a8eff8f51600f86
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: sheet-tsx
     resource: ../../src/islands/palette/views/kit/sheet.tsx
     title: src/islands/palette/views/kit/sheet.tsx
     digest: sha256:79cc5bbaf0b55518
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
   - id: astro-config-mjs
     resource: ../../astro.config.mjs
     title: astro.config.mjs
-    digest: sha256:df1d6414f82153a6
-    last_modified: 2026-11-23T21:04:15Z
+    digest: sha256:337cd10afe3d21a3
+    last_modified: 2026-11-23T21:58:22Z
   - id: timing-json
     resource: ../../scripts/browser/timing.json
     title: scripts/browser/timing.json
@@ -47,7 +48,7 @@ sources:
     resource: ../../src/islands/palette/App.tsx
     title: src/islands/palette/App.tsx
     digest: sha256:685ec7e12121c7e4
-    last_modified: 2026-11-23T20:58:01Z
+    last_modified: 2026-11-23T21:07:43Z
 enforced_by: [scripts/check-built-site.mjs, scripts/built-modules.test.mjs]
 ---
 
