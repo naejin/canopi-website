@@ -37,7 +37,6 @@ import { sunTierOf } from '../../rules/studio-filters.ts';
 import { evaluateClimate2050 } from '../../rules/studio-analysis.ts';
 import { placeWords } from '../location/shared.ts';
 import { zoneName } from '../kit/names.ts';
-import { FieldTip } from '../kit/field-tip.tsx';
 
 const HORIZONS: readonly { id: PeriodId; label: string }[] = [
   { id: periodIds[0], label: 'Today' },
@@ -53,7 +52,7 @@ const TABS: readonly { id: StudioTab; key: string }[] = [
 ];
 
 export function StudioHeader() {
-  const [openMenu, setOpenMenu] = useState<'open' | 'save' | null>(null);
+  const [openMenu, setOpenMenu] = useState<'open' | 'save' | 'mobile' | null>(null);
   const [statusMsg, setStatusMsg] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -150,22 +149,24 @@ export function StudioHeader() {
       <div class="studio-doc-bar">
         <div class="doc-bar-inner">
           <div class="doc-identity">
-            <input
-              type="text"
-              class="doc-title-btn"
-              aria-label="Design name"
-              value={designName.value}
-              onInput={(e) => setDesignName((e.currentTarget as HTMLInputElement).value)}
-            />
-            <span class="doc-filename">{fileSlug}</span>
-            <button
-              type="button"
-              class={`file-status-pill${dirty ? ' is-dirty' : autoSaveEnabled.value ? ' is-autosaved' : ''}`}
-              onClick={() => { autoSaveEnabled.value = !autoSaveEnabled.value; }}
-            >
-              <span class="fs-dot" aria-hidden="true" />
-              <span>{dirty ? 'Unsaved' : autoSaveEnabled.value ? 'Auto-save On' : 'Saved'}</span>
-            </button>
+            <div class="doc-title-wrap">
+              <input
+                type="text"
+                class="doc-title-btn"
+                aria-label="Design name"
+                value={designName.value}
+                onInput={(e) => setDesignName((e.currentTarget as HTMLInputElement).value)}
+              />
+              <span class="doc-filename">{fileSlug}</span>
+              <button
+                type="button"
+                class={`file-status-pill${dirty ? ' is-dirty' : autoSaveEnabled.value ? ' is-autosaved' : ''}`}
+                onClick={() => { autoSaveEnabled.value = !autoSaveEnabled.value; }}
+              >
+                <span class="fs-dot" aria-hidden="true" />
+                <span>{dirty ? 'Unsaved' : autoSaveEnabled.value ? 'Auto-save On' : 'Saved'}</span>
+              </button>
+            </div>
             <span class="doc-sep" aria-hidden="true" />
             <button type="button" class="place-trigger" data-studio-location onClick={backToPlace}>
               <strong>{locText}</strong>
@@ -180,8 +181,8 @@ export function StudioHeader() {
           </div>
 
           <div class="doc-actions" role="group" aria-label="Document file actions">
-            {/* 1. Open .canopi ▾ */}
-            <div class="tb-menu" style="position:relative;">
+            {/* 1. Open .canopi ▾ (desktop) */}
+            <div class="tb-menu desktop-only" style="position:relative;">
               <button
                 type="button"
                 class="doc-action-btn"
@@ -225,7 +226,7 @@ export function StudioHeader() {
               </button>
               <button
                 type="button"
-                class="doc-action-btn"
+                class="doc-action-btn save-more"
                 style="border-top-left-radius:0; border-bottom-left-radius:0; border-left:0; padding:0 8px;"
                 aria-label="More save options"
                 aria-expanded={openMenu === 'save' ? 'true' : 'false'}
@@ -274,13 +275,43 @@ export function StudioHeader() {
               )}
             </div>
 
-            {/* 3. Print PDF */}
-            <button type="button" class="doc-action-btn" onClick={() => { if (typeof window !== 'undefined') window.print(); }}>
+            {/* 3. Print PDF (desktop) */}
+            <button type="button" class="doc-action-btn desktop-only" onClick={() => { if (typeof window !== 'undefined') window.print(); }}>
               <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path d="M5 7V3h10v4M5 14H3.5A1.5 1.5 0 0 1 2 12.5v-4A1.5 1.5 0 0 1 3.5 7h13A1.5 1.5 0 0 1 18 8.5v4a1.5 1.5 0 0 1-1.5 1.5H15M5 11h10v6H5v-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
               </svg>
               <span>{T('studio.printPdf')}</span>
             </button>
+
+            {/* Mobile-only compact File menu */}
+            <div class="tb-menu mobile-only" style="position:relative;">
+              <button
+                type="button"
+                class="doc-action-btn"
+                aria-label="File menu"
+                aria-expanded={openMenu === 'mobile' ? 'true' : 'false'}
+                onClick={() => setOpenMenu((m) => (m === 'mobile' ? null : 'mobile'))}
+              >
+                File <span aria-hidden="true">▾</span>
+              </button>
+              {openMenu === 'mobile' && (
+                <div class="tb-menu-panel" role="menu">
+                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => fileInputRef.current?.click()}>
+                    <strong>Choose .canopi file…</strong>
+                    <span>Open a saved palette from your device</span>
+                  </button>
+                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); void requestSuggest(); }}>
+                    <strong>Load example palette</strong>
+                    <span>Start from a suggested guild for your land</span>
+                  </button>
+                  <div class="tb-menu-sep" />
+                  <button type="button" class="tb-menu-item" role="menuitem" onClick={() => { setOpenMenu(null); if (typeof window !== 'undefined') window.print(); }}>
+                    <strong>{T('studio.printPdf')}</strong>
+                    <span>1-page Nursery &amp; Field Sheet</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -336,37 +367,29 @@ export function StudioHeader() {
       <div class="health-ribbon" data-health-ribbon role="region" aria-label="Land health summary">
         <div class="health-ribbon-inner">
           <div class="health-items">
-            <span class="ct-tip-wrap">
-              <button type="button" class="health-item" onClick={() => selectTab('system')}>
-                <span class={`status-dot ${ribbon.sunTiers >= 4 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
-                <span>Sunlight: <strong>{ribbon.sunTiers}/4</strong>{ribbon.sunTiers < 4 ? ` · ${4 - ribbon.sunTiers} gap` : ' ✓'}</span>
-              </button>
-              <FieldTip label="Explain sunlight coverage" text="Preferred sun exposure bands covered across Full sun, Mostly sun, Part shade, and Shade." />
-            </span>
-            <span class="ct-tip-wrap">
-              <button type="button" class="health-item" onClick={() => selectTab('system')}>
-                <span class={`status-dot ${ribbon.roleSeasonSlots >= 20 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
-                <span>Roles: <strong>{ribbon.roleSeasonSlots}/24</strong> year-round</span>
-              </button>
-              <FieldTip label="Explain ecological roles" text="6 core ecological roles tracked across 4 seasons (24 role-season slots)." />
-            </span>
-            <span class="ct-tip-wrap">
-              <button type="button" class="health-item" onClick={cycleWateringMode}>
-                <span class={`status-dot ${ribbon.risky > 0 ? 'dot-risk' : 'dot-good'}`} aria-hidden="true" />
-                <span>{hLabel}: <strong>{ribbon.thriving}/{memberCount}</strong> thrive · {water} ▾</span>
-              </button>
-              <FieldTip label="Explain climate resilience" text="Species thriving under the selected climate horizon. Click to cycle watering regime." />
-            </span>
-            <span class="ct-tip-wrap">
-              <button type="button" class="health-item" onClick={() => selectTab('climate')}>
-                <span class="status-dot dot-winter" aria-hidden="true" />
-                <span>
-                  {ribbon.ph != null ? <>Soil <strong>pH {ribbon.ph.toFixed(1)}</strong> · </> : null}
-                  {ribbon.mildWinter ? '❄ Winter-plantable' : 'Frost-winter site'}
-                </span>
-              </button>
-              <FieldTip label="Explain soil and winter profile" text="Local soil pH and winter planting window from your site climate reading." />
-            </span>
+            <button type="button" class="health-item" onClick={() => selectTab('system')}>
+              <span class={`status-dot ${ribbon.sunTiers >= 4 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
+              <span>Sunlight: <strong>{ribbon.sunTiers}/4</strong>{ribbon.sunTiers < 4 ? ` · ${4 - ribbon.sunTiers} gap` : ' ✓'}</span>
+              <span class="hi-info" aria-hidden="true">i</span>
+            </button>
+            <button type="button" class="health-item" onClick={() => selectTab('system')}>
+              <span class={`status-dot ${ribbon.roleSeasonSlots >= 20 ? 'dot-good' : 'dot-warn'}`} aria-hidden="true" />
+              <span>Roles: <strong>{ribbon.roleSeasonSlots}/24</strong> year-round</span>
+              <span class="hi-info" aria-hidden="true">i</span>
+            </button>
+            <button type="button" class="health-item" onClick={cycleWateringMode}>
+              <span class={`status-dot ${ribbon.risky > 0 ? 'dot-risk' : 'dot-good'}`} aria-hidden="true" />
+              <span>{hLabel}: <strong>{ribbon.thriving}/{memberCount}</strong> thrive · {water} ▾</span>
+              <span class="hi-info" aria-hidden="true">i</span>
+            </button>
+            <button type="button" class="health-item" onClick={() => selectTab('climate')}>
+              <span class="status-dot dot-winter" aria-hidden="true" />
+              <span>
+                {ribbon.ph != null ? <>Soil <strong>pH {ribbon.ph.toFixed(1)}</strong> · </> : null}
+                {ribbon.mildWinter ? '❄ Winter-plantable' : 'Frost-winter site'}
+              </span>
+              <span class="hi-info" aria-hidden="true">i</span>
+            </button>
           </div>
           {statusMsg && <span class="ct-muted" role="status">{statusMsg}</span>}
         </div>

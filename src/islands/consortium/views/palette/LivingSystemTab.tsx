@@ -268,7 +268,7 @@ export function LivingSystemTab() {
           </button>
         </div>
 
-        <div class="legend-bar" aria-label="Matrix cell key">
+        <div class="legend-row" aria-label="Matrix cell key">
           <span class="legend-item"><span class="ssm-leg-swatch" style="border:1px dashed var(--border-strong); background:transparent;" aria-hidden="true" /> 0 Open niche</span>
           <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--warn-bg); border:1px solid var(--warn-line);" aria-hidden="true" /> ● 1 Single species</span>
           <span class="legend-item"><span class="ssm-leg-swatch" style="background:var(--plant-green-bg); border:1px solid color-mix(in srgb, var(--plant-green) 35%, var(--border));" aria-hidden="true" /> ✓ 2+ Resilient</span>
@@ -431,7 +431,7 @@ export function LivingSystemTab() {
           </div>
         </div>
 
-        <div class="legend-bar" aria-label="Role redundancy key">
+        <div class="legend-row" aria-label="Role redundancy key">
           <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip" /><span class="m-pip" /></span> 0 · Fill gap</span>
           <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--warn-dot); border-color:var(--warn-dot);" /><span class="m-pip" /></span> 1 · Thin (add backup)</span>
           <span class="legend-item"><span class="m-pips" aria-hidden="true"><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /><span class="m-pip filled" style="background:var(--plant-green); border-color:var(--plant-green);" /></span> 2+ · Resilient</span>
@@ -583,7 +583,7 @@ export function LivingSystemTab() {
           )}
         </div>
 
-        <div class="legend-bar" aria-label="Activity color key">
+        <div class="legend-row" aria-label="Activity color key">
           <span class="legend-item"><span class="act-swatch"><span class="sw-win" /></span>Winter-growing (Nov–Mar ❄)</span>
           <span class="legend-item"><span class="act-swatch"><span class="sw-sow" /></span>Sowing / planting</span>
           <span class="legend-item"><span class="act-swatch"><span class="sw-bloom" /></span>Bloom (pollinators)</span>

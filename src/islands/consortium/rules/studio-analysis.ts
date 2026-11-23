@@ -351,7 +351,7 @@ export function evaluateClimate2050(
     { label: 'Summer peak', today: `${baseHotToday.toFixed(1)} °C`, future: `${hotFutureC.toFixed(1)} °C`, delta: `${hotDelta >= 0 ? '+' : ''}${hotDelta.toFixed(1)} °C` },
     { label: 'Winter floor', today: `${baseColdToday.toFixed(1)} °C`, future: `${coldTail10yrC.toFixed(1)} °C`, delta: `${winterDelta >= 0 ? '+' : ''}${winterDelta.toFixed(1)} °C` },
     { label: 'Dry-spell pressure', today: `${dryTodayPct}%`, future: `${dryFuturePct}%`, delta: `${dryDeltaPct >= 0 ? '+' : ''}${dryDeltaPct}%` },
-    { label: 'Winter chill & false spring', today: `${chillTodayCP} CP`, future: `${chillFutureCP} CP`, delta: `${chillFutureCP - chillTodayCP} CP` },
+    { label: 'Winter chill', today: `${chillTodayCP} CP`, future: `${chillFutureCP} CP`, delta: `${chillFutureCP - chillTodayCP} CP` },
   ];
 
   // 12-month Today vs Future curve (pure sinusoidal approximation anchored to site cold/hot).

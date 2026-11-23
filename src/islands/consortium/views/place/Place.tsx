@@ -693,6 +693,8 @@ function Questions() {
     else openClimates();
   };
 
+  const hasPalette = members.value.length > 0;
+
   return (
     <div class="onboard-shell">
       <div class="onboard-hero">
@@ -781,8 +783,23 @@ function Questions() {
               data-place-show
               onClick={() => (ready ? showPalette() : openClimates())}
             >
-              {placeShort ? `Open my ${placeShort} studio →` : `${T('place.show')} →`}
+              {hasPalette
+                ? (placeShort ? `Return to my ${placeShort} studio →` : `${T('place.back')} →`)
+                : (placeShort ? `Open my ${placeShort} studio →` : `${T('place.show')} →`)}
             </button>
+            {hasPalette && (
+              <div style="margin-top:8px; text-align:center;">
+                <button
+                  type="button"
+                  class="link-btn"
+                  style="font-size:12.5px; color:var(--ink-muted);"
+                  data-start-over
+                  onClick={startOver}
+                >
+                  {T('start.over')}
+                </button>
+              </div>
+            )}
           </div>
 
           <div class="ob-card" style="margin-bottom:0;">
@@ -810,35 +827,14 @@ function PlaceForm() {
   );
 }
 
-// The frame (board SiteKiambu): Place again from the palette, with plants.
-function Frame() {
-  return (
-    <div class="ct-start ct-place ct-place-frame">
-      <div class="ct-place-main" hidden={cardsAsked.value}>
-        <LocationSlot frame />
-        <KeptClimate />
-        <RoomStep />
-        <MainCountry />
-        <PlaceFigures />
-        <p class="ct-frame-foot">
-          <button type="button" class="link-button ct-link ct-frame-over" data-start-over onClick={startOver}>{T('start.over')}</button>
-          <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.back')}</button>
-        </p>
-      </div>
-      <ClimateHand open={cardsAsked.value} />
-    </div>
-  );
-}
-
 export function Place() {
   const waiting = pendingSuggest.value || restoring.value;
   const start = view.value === 'start';
-  const frame = start && seenPalette.value && members.value.length > 0;
   return (
     <>
       <Steps />
       <PlaceNotices />
-      {!start ? <PlaceLine /> : frame ? <Frame /> : <PlaceForm />}
+      {!start ? <PlaceLine /> : <PlaceForm />}
       {/* Always on the page, empty when nothing loads (A25); it also says what a notice's answer did. */}
       <p class="status-line ct-place-status" role="status">{start && waiting ? T('load.plants') : placeSaid.value}</p>
     </>

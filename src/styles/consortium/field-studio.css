@@ -2238,9 +2238,15 @@
     .nav-bar-right { display: none; }
 
     /* Mobile Row 3: Scrollable Land Health Ribbon */
-    .health-ribbon { padding: 0 12px; }
+    .health-ribbon { padding: 0 12px; max-width: 100%; overflow-x: hidden; }
+    .health-ribbon-inner { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .health-ribbon-inner::-webkit-scrollbar { display: none; }
+    .health-items { flex-wrap: nowrap; width: max-content; }
     .health-item { min-height: 44px; padding: 8px 10px; font-size: 12.5px; }
-    .studio-main { padding: 14px 12px 92px; }
+    .studio-main { padding: 14px 12px 92px; min-width: 0; max-width: 100%; overflow-x: clip; }
+    .system-section, .cb-hero, .stress-bar-card, .plan-hero, .triage-section, .opp-section { min-width: 0; max-width: 100%; }
+    .ssm-wrap, .matrix-wrap, .cal-wrap, .hm-grid, .cshift-chart { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .doc-bar-inner, .nav-bar-inner { max-width: 100%; min-width: 0; }
     .mobile-only { display: inline-flex; }
     .cb-hero { padding: 14px 13px 12px; }
     .cb-headline { font-size: 18.5px; }

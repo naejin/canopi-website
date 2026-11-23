@@ -2,10 +2,10 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: antigravity/gemini, at: 2026-11-23T17:14:47Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T18:06:06Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
-  - { by: antigravity/gemini, at: 2026-11-23T17:14:35Z }
+  - { by: antigravity/gemini, at: 2026-11-23T18:05:59Z }
 sources:
   - id: location-privacy-tsx
     resource: ../../src/islands/consortium/views/location/privacy.tsx
@@ -16,7 +16,7 @@ sources:
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:e96bcdabea1b6bcc
-    last_modified: 2026-11-23T17:08:11Z
+    last_modified: 2026-11-23T17:15:38Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
@@ -80,8 +80,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:479159d6f40191e5
-    last_modified: 2026-11-23T17:02:08Z
+    digest: sha256:61f195384df6b977
+    last_modified: 2026-11-23T18:00:49Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts

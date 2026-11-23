@@ -2,11 +2,11 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: antigravity/gemini, at: 2026-11-23T17:14:47Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T18:06:07Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T17:14:36Z }
+  - { by: antigravity/gemini, at: 2026-11-23T18:06:00Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -106,8 +106,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:479159d6f40191e5
-    last_modified: 2026-11-23T17:02:08Z
+    digest: sha256:61f195384df6b977
+    last_modified: 2026-11-23T18:00:49Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -202,7 +202,7 @@ sources:
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
     digest: sha256:e96bcdabea1b6bcc
-    last_modified: 2026-11-23T17:08:11Z
+    last_modified: 2026-11-23T17:15:38Z
   - id: location-fixtures-mjs
     resource: ../../scripts/browser/location-fixtures.mjs
     title: scripts/browser/location-fixtures.mjs
@@ -307,7 +307,7 @@ sources:
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
     digest: sha256:f456eb36dd7851bb
-    last_modified: 2026-11-23T16:55:15Z
+    last_modified: 2026-11-23T17:15:38Z
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx

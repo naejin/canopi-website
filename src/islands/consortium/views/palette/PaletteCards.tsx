@@ -67,13 +67,37 @@ function Sparkline({ taxon }: { taxon: Taxon }) {
   );
 }
 
-function roleSummary(t: Taxon): string {
+const SHORT_ROLE: Record<string, string> = {
+  food: 'Food',
+  nitrogen: 'Soil',
+  mulch: 'Mulch',
+  groundcover: 'Covers',
+  pollinator: 'Bees',
+  shelter: 'Shelter',
+  accumulate: 'Soil',
+};
+
+function shortRolesOf(t: Taxon): string[] {
   const jobs = jobsOf(t);
-  const labels = jobs
-    .map((j) => ROLE_OPTIONS.find((r) => r.id === j)?.label)
-    .filter(Boolean)
-    .slice(0, 2);
-  return labels.length ? labels.join(', ') : 'Companion';
+  const out: string[] = [];
+  for (const j of jobs) {
+    const s = SHORT_ROLE[j] ?? ROLE_OPTIONS.find((r) => r.id === j)?.label;
+    if (s && !out.includes(s)) out.push(s);
+    if (out.length >= 2) break;
+  }
+  return out.length ? out : ['Companion'];
+}
+
+function roleSummary(t: Taxon): string {
+  return shortRolesOf(t).join(', ');
+}
+
+function compactHeightOf(t: Taxon): string {
+  const h = t.traits.height_m;
+  if (!h) return '—';
+  const val = h.max ?? h.min;
+  if (val == null) return '—';
+  return `${Number.isInteger(val) ? val : val.toFixed(1)}m`;
 }
 
 function verdictMeta(level: string | undefined): { cls: string; icon: string; label: string; key: string } {
@@ -246,20 +270,33 @@ export function PaletteCards() {
         <p class="ct-muted">No species in your palette match the current filters.</p>
       ) : mode === 'compact' ? (
         <div class="field-table-wrap" data-compact-list>
+          <div class="spark-key-bar" aria-label="Calendar sparkline shape and color key">
+            <span style="font-weight:600; color:var(--ink);">Calendar key (Jan → Dec):</span>
+            <span style="display:inline-flex; flex-wrap:wrap; gap:10px; align-items:center;">
+              <span class="legend-item"><span class="act-swatch"><span class="sw-win" /></span>Winter</span>
+              <span class="legend-item"><span class="act-swatch"><span class="sw-sow" /></span>Sow</span>
+              <span class="legend-item"><span class="act-swatch"><span class="sw-bloom" /></span>Bloom</span>
+              <span class="legend-item"><span class="act-swatch"><span class="sw-harv" /></span>Harvest</span>
+              <span style="color:var(--ink-muted);">· Same language as Living System &amp; Dossier</span>
+            </span>
+          </div>
           <table class="field-table">
             <thead>
               <tr>
                 <th>Sun</th>
                 <th>Species</th>
-                <th>Succession</th>
-                <th>Role</th>
-                <th>12-mo activity</th>
+                <th>{store.period.value === '1991-2020' ? 'Today' : store.period.value === '2071-2099' ? '2080s' : '2050s'} Fit</th>
+                <th>Roles</th>
+                <th>Calendar<span class="spark-axis">J · · A · · J · · O · D</span></th>
+                <th>Ht</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((t) => {
                 const tier = sunTierOf(t);
+                const v = verdictMeta(verdicts?.get(t.id)?.level);
+                const roles = shortRolesOf(t);
                 return (
                   <tr key={t.id} data-plant-id={t.id} onClick={() => openFieldDossier(t.id, ids)}>
                     <td>
@@ -274,27 +311,40 @@ export function PaletteCards() {
                       <span class="ft-name">{nameOf(t)}</span>
                       <span class="ft-latin">{t.canonical_name}</span>
                     </td>
-                    <td>{stageSpanOf(t).label}</td>
-                    <td>{roleSummary(t)}</td>
-                    <td><Sparkline taxon={t} /></td>
                     <td>
-                      <span class="pc-actions">
-                        <button
-                          type="button"
-                          class="link-btn"
-                          onClick={(e) => { e.stopPropagation(); openFieldDossier(t.id, ids); }}
-                        >
-                          {T('studio.dossier')}
-                        </button>
-                        <button
-                          type="button"
-                          class="link-btn danger"
-                          aria-label={`Remove ${nameOf(t)}`}
-                          onClick={(e) => { e.stopPropagation(); store.removeMember(t.id); }}
-                        >
-                          ✕
-                        </button>
+                      <span class={`verdict-tag ${v.cls}`} style="font-size:12px;">
+                        {v.icon} {v.label}
                       </span>
+                    </td>
+                    <td>
+                      {roles.map((r) => (
+                        <span key={r} class="role-chip" style="font-size:11px; margin-right:3px;">
+                          {r}
+                        </span>
+                      ))}
+                    </td>
+                    <td onClick={(e) => { e.stopPropagation(); openFieldDossier(t.id, ids); }}>
+                      <Sparkline taxon={t} />
+                    </td>
+                    <td style="color:var(--ink-soft); font-size:12.5px;">{compactHeightOf(t)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="link-btn"
+                        style="padding:3px 6px; font-size:12.5px;"
+                        onClick={(e) => { e.stopPropagation(); openFieldDossier(t.id, ids); }}
+                      >
+                        Dossier
+                      </button>
+                      <button
+                        type="button"
+                        class="link-btn danger"
+                        style="padding:3px 6px; font-size:12.5px;"
+                        aria-label={`Remove ${nameOf(t)}`}
+                        onClick={(e) => { e.stopPropagation(); store.removeMember(t.id); }}
+                      >
+                        ✕
+                      </button>
                     </td>
                   </tr>
                 );

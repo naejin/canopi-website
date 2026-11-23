@@ -12,7 +12,6 @@ import { location as siteLocation, climate, country } from '../../store.ts';
 import { pageLang } from '../../strings.ts';
 import { formatTemp } from '../../format.ts';
 import { countryName, zoneName } from '../kit/names.ts';
-import { FieldTip } from '../kit/field-tip.tsx';
 import { microclimate, setMicroclimate } from '../../state/studio.ts';
 
 const ASPECT_LABELS: readonly { id: MicroAspect; label: string }[] = [
@@ -69,13 +68,7 @@ export function SitePostcard({ children }: { children?: ComponentChildren }) {
 
       <div class="ob-forces-list">
         <div class="ob-force-row">
-          <span class="ob-fk">
-            WINTER &amp; FROST
-            <FieldTip
-              label="Explain Winter and Frost"
-              text="Coldest-month average low adjusted for your slope and landform. Used to check winter hardiness and frost-window timing."
-            />
-          </span>
+          <span class="ob-fk">WINTER &amp; FROST</span>
           <span class="ob-fv">
             {adj
               ? `${formatTemp(adj.adjustedColdC, lang)} coldest low · ${mildWinter ? 'Mild winter' : 'Hard frosts'}`
@@ -85,13 +78,7 @@ export function SitePostcard({ children }: { children?: ComponentChildren }) {
           </span>
         </div>
         <div class="ob-force-row">
-          <span class="ob-fk">
-            SUMMER &amp; RAIN
-            <FieldTip
-              label="Explain Summer and Rain"
-              text="Warmest-month average high and aridity balance. Higher aridity means more rain relative to summer evaporation."
-            />
-          </span>
+          <span class="ob-fk">SUMMER &amp; RAIN</span>
           <span class="ob-fv">
             {adj
               ? `${formatTemp(adj.adjustedHotC, lang)} warmest high${aridity != null ? ` · Aridity ${aridity.toFixed(2)}` : ''}`
@@ -99,13 +86,7 @@ export function SitePostcard({ children }: { children?: ComponentChildren }) {
           </span>
         </div>
         <div class="ob-force-row">
-          <span class="ob-fk">
-            SOIL &amp; SUBSOIL
-            <FieldTip
-              label="Explain Soil and Subsoil"
-              text="Regional baseline soil pH and texture from soil grids. Always verify with a local spade and pH test on your plot."
-            />
-          </span>
+          <span class="ob-fk">SOIL &amp; SUBSOIL</span>
           <span class="ob-fv">
             {ph != null
               ? `Topsoil pH ${ph.toFixed(1)}${tex ? ` · ${tex}` : ''}`

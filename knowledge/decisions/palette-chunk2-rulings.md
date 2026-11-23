@@ -2,10 +2,10 @@
 type: Architecture Decision
 title: Plant palette chunk-2 hand-off rulings (D1-D10)
 description: The agent rulings of 2026-11-18 on the PP-C chunk-2 hand-offs, as auto-approved under the owner's autonomy rule, and where each lives in the code.
-generated: { by: antigravity/gemini, at: 2026-11-23T17:14:46Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T18:06:05Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:16Z }
-  - { by: antigravity/gemini, at: 2026-11-23T17:14:34Z }
+  - { by: antigravity/gemini, at: 2026-11-23T18:05:58Z }
 sources:
   - id: jobspicture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
@@ -40,8 +40,8 @@ sources:
   - id: place-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:479159d6f40191e5
-    last_modified: 2026-11-23T17:02:08Z
+    digest: sha256:61f195384df6b977
+    last_modified: 2026-11-23T18:00:49Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
