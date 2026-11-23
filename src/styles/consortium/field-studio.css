@@ -1,0 +1,640 @@
+/* Field Studio Editorial Layer (Phase 3 / Slice 3.2, v14/v15 design system).
+   Zero raw hex colours (all from src/styles/tokens.css), zero green in UI chrome,
+   Literata display + Source Sans 3 body weights 400/600 only,
+   breakpoints max-width: 639px and min-width: 960px only. */
+
+/* ---- Accessible .field-tip tooltip (zero native title="...") ---- */
+.ct .ct-tip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ct .ct-tip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+.ct .ct-tip-trigger:hover,
+.ct .ct-tip-trigger[aria-expanded="true"] {
+  border-color: var(--text);
+  color: var(--text);
+  background: var(--surface-alt);
+}
+.ct .ct-tip-bubble {
+  position: fixed;
+  z-index: 60;
+  max-width: min(300px, calc(100vw - 24px));
+  padding: 8px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--tip-border);
+  background: var(--tip-bg);
+  color: var(--tip-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+
+/* ---- Serene 2-Tier Studio Header (mounted only inside studio, hidden on onboarding) ---- */
+.ct .ct-studio-header {
+  display: grid;
+  gap: 0;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--rule-hairline);
+  background: transparent;
+}
+.ct .ct-studio-t1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding-bottom: 10px;
+}
+.ct .ct-studio-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+.ct .ct-studio-name {
+  min-width: 140px;
+  max-width: 300px;
+  padding: 4px 8px;
+  margin: -4px 0 -4px -8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--text);
+}
+.ct .ct-studio-name:hover {
+  border-color: var(--border);
+  background: var(--surface);
+}
+.ct .ct-studio-name:focus {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.ct .ct-studio-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.ct .ct-studio-loc:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.ct .ct-studio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.ct .ct-studio-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+}
+.ct .ct-studio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-studio-btn:hover {
+  background: var(--surface-alt);
+}
+.ct .ct-studio-btn.is-dirty {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.ct .ct-studio-btn.is-dirty:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.ct .ct-studio-split-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: 0;
+}
+.ct .ct-studio-split-caret {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.ct .ct-studio-split-caret.is-dirty {
+  background: var(--accent);
+  border-color: var(--accent);
+  border-left: 1px solid var(--tip-border);
+  color: var(--on-accent);
+}
+.ct .ct-studio-menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 210px;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.ct .ct-studio-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-align: start;
+  cursor: pointer;
+}
+.ct .ct-studio-menu-item:hover {
+  background: var(--surface-alt);
+}
+.ct .ct-studio-menu-note {
+  padding: 4px 10px 6px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--rule-hairline);
+}
+
+/* Tier 2: Underline Tabs + Horizon Toggle */
+.ct .ct-studio-t2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  border-top: 1px solid var(--rule-hairline);
+}
+.ct .ct-studio-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+.ct .ct-studio-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.ct .ct-studio-tab:hover {
+  color: var(--text);
+}
+.ct .ct-studio-tab[aria-selected="true"] {
+  color: var(--text);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+.ct .ct-studio-tab-badge {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ct .ct-studio-horizon {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-alt);
+}
+.ct .ct-studio-horizon-btn {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-studio-horizon-btn[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+/* Whisper-quiet 1-line Health Ribbon */
+.ct .ct-studio-ribbon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 14px;
+  padding: 7px 0;
+  border-top: 1px solid var(--rule-hairline);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.ct .ct-studio-ribbon-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.ct .ct-studio-ribbon-warn {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+/* ---- Onboarding Step 1: Editorial Site & Climate Postcard (3 hairline rows + Microclimate) ---- */
+.ct .ct-postcard {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.ct .ct-postcard-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+.ct .ct-postcard-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+}
+.ct .ct-postcard-koppen {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.ct .ct-postcard-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule-hairline);
+}
+.ct .ct-postcard-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-hairline);
+  font-size: 14.5px;
+}
+.ct .ct-postcard-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-postcard-val {
+  color: var(--text-secondary);
+  text-align: end;
+}
+.ct .ct-postcard-foot {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.ct .ct-micro {
+  border-top: 1px solid var(--rule-hairline);
+  padding-top: 8px;
+}
+.ct .ct-micro summary {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ct .ct-micro-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.ct .ct-micro-field {
+  display: grid;
+  gap: 4px;
+  font-size: 13.5px;
+}
+.ct .ct-micro-field-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+}
+.ct .ct-micro-field input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.ct .ct-micro-field select {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+.ct .ct-micro-delta {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--ochre-tint);
+  border: 1px solid var(--ochre-border);
+  font-size: 13px;
+  color: var(--text);
+}
+.ct .ct-postcard-attr {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- Onboarding Step 2: Planting Area + Path A / Path B ---- */
+.ct .ct-area-step {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.ct .ct-area-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.ct .ct-area-field {
+  display: grid;
+  gap: 4px;
+  font-size: 13.5px;
+}
+.ct .ct-area-field label {
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-area-inline {
+  display: flex;
+  gap: 6px;
+}
+.ct .ct-area-input,
+.ct .ct-area-select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+}
+.ct .ct-area-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ct .ct-area-net {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule-hairline);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.ct .ct-area-net strong {
+  color: var(--text);
+  font-size: 16px;
+}
+.ct .ct-start-paths {
+  display: grid;
+  gap: 10px;
+}
+.ct .ct-path-a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+.ct .ct-path-b {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border-radius: 9px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-alt);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.ct .ct-path-b-err {
+  margin: 4px 0 0;
+  color: var(--danger);
+  font-size: 13.5px;
+}
+
+/* ---- Planting Plan Tab Preview (Slice 3.2, expanded in Slice 3.4) ---- */
+.ct .ct-plan-preview {
+  display: grid;
+  gap: 16px;
+}
+.ct .ct-plan-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.ct .ct-plan-kpi {
+  padding: 12px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: grid;
+  gap: 2px;
+}
+.ct .ct-plan-kpi-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.ct .ct-plan-kpi-val {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text);
+}
+.ct .ct-plan-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.ct .ct-plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+.ct .ct-plan-table th,
+.ct .ct-plan-table td {
+  padding: 9px 12px;
+  text-align: start;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+.ct .ct-plan-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-alt);
+}
+.ct .ct-plan-waves {
+  display: grid;
+  gap: 8px;
+}
+.ct .ct-plan-wave {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: grid;
+  gap: 3px;
+}
+
+/* ---- Request a Plant Modal ---- */
+.ct .ct-req-dialog {
+  width: min(460px, calc(100vw - 24px));
+  padding: 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.ct .ct-req-dialog::backdrop {
+  background: var(--backdrop);
+}
+.ct .ct-req-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.ct .ct-req-field {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.ct .ct-req-field label {
+  font-weight: 600;
+}
+.ct .ct-req-field input,
+.ct .ct-req-field textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+}
+.ct .ct-req-acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (min-width: 960px) {
+  .ct .ct-area-grid {
+    grid-template-columns: 1.2fr 1fr 0.8fr;
+  }
+  .ct .ct-micro-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  .ct .ct-studio-t1 {
+    gap: 8px;
+  }
+  .ct .ct-studio-name {
+    font-size: 18px;
+    max-width: 100%;
+  }
+  .ct .ct-studio-tabs {
+    gap: 2px 12px;
+  }
+  .ct .ct-studio-tab {
+    font-size: 14px;
+  }
+}

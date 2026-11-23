@@ -215,11 +215,14 @@ export function computePlantingPlan(
   climate: PlantingClimateContext = {},
 ): PlantingPlanSummary {
   const cfg: PlantingPlanConfig = { ...DEFAULT_PLANTING_PLAN_CONFIG, ...config };
-  const grossAreaM2 = Math.max(1, Math.round(cfg.plotAreaM2));
-  const pathwaysPct = Math.max(0, Math.min(50, Math.round(cfg.pathwaysPct)));
+  const safePlot = Number.isFinite(cfg.plotAreaM2) ? cfg.plotAreaM2 : DEFAULT_PLANTING_PLAN_CONFIG.plotAreaM2;
+  const safePathways = Number.isFinite(cfg.pathwaysPct) ? cfg.pathwaysPct : DEFAULT_PLANTING_PLAN_CONFIG.pathwaysPct;
+  const safeBuffer = Number.isFinite(cfg.bufferPct) ? cfg.bufferPct : DEFAULT_PLANTING_PLAN_CONFIG.bufferPct;
+  const grossAreaM2 = Math.max(1, Math.round(safePlot));
+  const pathwaysPct = Math.max(0, Math.min(50, Math.round(safePathways)));
   const netAreaM2 = Math.max(1, Math.round(grossAreaM2 * (1 - pathwaysPct / 100)));
   const densMult = DENSITY_MULTIPLIER[cfg.densityMode] ?? 1.0;
-  const bufferMult = cfg.bufferPct === 10 ? 1.1 : 1.0;
+  const bufferMult = safeBuffer === 10 ? 1.1 : 1.0;
   const mildWinter = (climate.coldC ?? 2) >= 0;
 
   const byBand: Record<Stratum, Taxon[]> = { emergent: [], high: [], medium: [], low: [] };

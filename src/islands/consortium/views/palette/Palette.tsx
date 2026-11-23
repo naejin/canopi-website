@@ -39,6 +39,10 @@ import { YourPlants } from './YourPlants.tsx';
 import { PlantSearch } from '../plants/Many.tsx';
 import { wide } from '../plants/state.ts';
 import { PaletteLimits } from '../figures/slots.tsx';
+import { studioTab } from '../../state/studio.ts';
+import { StudioHeader } from './StudioHeader.tsx';
+import { PlantingPlanTab } from './PlantingPlanTab.tsx';
+import { RequestPlantModal } from './RequestPlantModal.tsx';
 
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
 // step on the phone never re-renders the page (review r1 bugs-10).
@@ -118,8 +122,14 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
   );
   const footBlock = foot && <div key="foot" class="ct-palette-foot">{foot}</div>;
   const plantsBlock = <div key="plants" class="ct-many-right"><YourPlants rows={rows} /></div>;
+  const activeTab = studioTab.value;
   return (
     <div class="ct-palette-page">
+      <StudioHeader />
+      {activeTab === 'plan' ? (
+        <PlantingPlanTab />
+      ) : (
+      <>
       {/* Past 40 plants on the phone the one search sits directly under the place line (boards Many,
           Main: step bar, title, place line, search; the PP-E period tabs go above it later). */}
       {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
@@ -190,6 +200,9 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
       <Said />
       {shown && <FirstView />}
       <FindEntry where="bar" />
+      </>
+      )}
+      <RequestPlantModal />
     </div>
   );
 }

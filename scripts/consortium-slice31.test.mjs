@@ -190,3 +190,25 @@ test('planting-plan.ts computes realistic quantities, seed weights, notes, mater
   assert.equal(waves.length, 4);
   assert.match(waves[2].kicker, /~Feb 18/);
 });
+
+test('planting-plan.ts guards NaN, Infinity, and negative numeric inputs without cascading NaN', () => {
+  const members = [
+    taxon({
+      id: 'fig',
+      canonical_name: 'Ficus carica',
+      light: { sunniest: 'emergent', shadiest: 'high', preferred: 'high' },
+      traits: { height_m: { min: 3, max: 5 }, width_max_m: 4, habit: 'Tree', is_annual: false },
+    }),
+  ];
+  const nanPlan = computePlantingPlan(members, { plotAreaM2: Number.NaN, pathwaysPct: Number.POSITIVE_INFINITY, bufferPct: Number.NaN });
+  assert.equal(nanPlan.grossAreaM2, 150);
+  assert.equal(nanPlan.pathwaysPct, 20);
+  assert.equal(nanPlan.netAreaM2, 120);
+  assert.ok(Number.isFinite(nanPlan.totalUnits) && nanPlan.totalUnits >= 1);
+
+  const negPlan = computePlantingPlan(members, { plotAreaM2: -25, pathwaysPct: -10 });
+  assert.equal(negPlan.grossAreaM2, 1);
+  assert.equal(negPlan.pathwaysPct, 0);
+  assert.equal(negPlan.netAreaM2, 1);
+  assert.ok(Number.isFinite(negPlan.items[0].qty) && negPlan.items[0].qty >= 1);
+});

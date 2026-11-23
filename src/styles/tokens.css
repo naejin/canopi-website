@@ -73,6 +73,13 @@
   --level-outside: var(--danger);
   --level-fits: var(--text);
   --level-unknown: var(--text-secondary);
+  /* Field Studio editorial tokens (Slice 3.2: v14/v15 unified calm surfaces & accessible tooltips). */
+  --tip-bg: #27231D;
+  --tip-text: #FBF8F2;
+  --tip-border: rgba(255, 248, 235, 0.16);
+  --rule-hairline: rgba(58, 46, 28, 0.12);
+  --ochre-tint: rgba(156, 90, 22, 0.08);
+  --ochre-border: rgba(156, 90, 22, 0.34);
 
   --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Literata', 'Literata Fallback', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
@@ -129,6 +136,12 @@
   --role-mulch: #B79E84;
   --role-ground: #B8B060;
   --role-shelter: #98ACBC;
+  --tip-bg: #F3EEE3;
+  --tip-text: #161510;
+  --tip-border: rgba(58, 46, 28, 0.22);
+  --rule-hairline: rgba(255, 248, 235, 0.10);
+  --ochre-tint: rgba(227, 160, 76, 0.12);
+  --ochre-border: rgba(227, 160, 76, 0.42);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -180,5 +193,11 @@
     --role-mulch: #B79E84;
     --role-ground: #B8B060;
     --role-shelter: #98ACBC;
+    --tip-bg: #F3EEE3;
+    --tip-text: #161510;
+    --tip-border: rgba(58, 46, 28, 0.22);
+    --rule-hairline: rgba(255, 248, 235, 0.10);
+    --ochre-tint: rgba(227, 160, 76, 0.12);
+    --ochre-border: rgba(227, 160, 76, 0.42);
   }
 }

@@ -41,7 +41,7 @@ export function Marks({ taxon }: { taxon: Taxon }) {
     <>
       {v && <span class="ct-line"><FitLine v={v} /><RowNotes t={taxon} v={v} /></span>}
       {guest && <span class="ct-tag">{T('matrix.from', { list: listName(guest) })}</span>}
-      {w > 0 && <span class="ct-flag" title={P('matrix.warnings', w)}><WarnIcon /><span aria-hidden="true">{w}</span><span class="visually-hidden">{P('matrix.warnings', w)}</span></span>}
+      {w > 0 && <span class="ct-flag"><WarnIcon /><span aria-hidden="true">{w}</span><span class="visually-hidden">{P('matrix.warnings', w)}</span></span>}
     </>
   );
 }

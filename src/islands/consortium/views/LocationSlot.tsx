@@ -85,7 +85,7 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
           ? <button type="button" class="button button-secondary" onClick={() => m?.stop()}>{T('location.stop')}</button>
           : <button type="submit" class="button button-primary">{T('location.searchButton')}</button>}
         {geo && showWays && !wide && (
-          <button type="button" class="ct-icon-button" data-location-action="geo" aria-label={T('location.geo')} title={T('location.geo')} onClick={() => run((x) => x.useMyLocation())}>{geoIcon}</button>
+          <button type="button" class="ct-icon-button" data-location-action="geo" aria-label={T('location.geo')} onClick={() => run((x) => x.useMyLocation())}>{geoIcon}</button>
         )}
       </form>
       {showWays && wide && (geo || webgl()) && (

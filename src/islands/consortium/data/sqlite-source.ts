@@ -13,7 +13,7 @@ import type {
   ClimateRange, ClimateZone, Details, Dispute, DisputeField, EstimateKind, FrostFact, FunctionId, FunctionMethod, Image, Interaction, InvasiveAreaCode, InvasiveRecord, InvasiveScope, InvasiveSource, KoppenShare, Labels, LayerScope, LightNiche, LayerValue, Locale, Month, Placement,
   PlantId, PlantNames, RangeBasis, RangeVariable, Reason, SchemaVersion, Severity, Source, SourceInfo, Stratum, Taxon, TaxonClimate, TaxonClimateExtremes, Text, ToxicCondition, ToxicityAudience, ToxicityLevel, ToxicityPart, ToxicPart, TraitSource, Traits,
 } from '../../../lib/consortium/index.ts';
-import { firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, READ_ONLY_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
+import { defaultPlacementOf, firstPlaced, invasiveAreaCodes, invasiveSources, layerKinds, months, NEAREST_LISTS, phases, RANGE_VARIABLES, READ_ONLY_VARIABLES, severities, strata, toxicityLevels, traitFields } from '../../../lib/consortium/index.ts';
 import type { PlantSource } from '../../../lib/consortium/source.ts';
 
 type Row = Record<string, unknown>;
@@ -232,6 +232,11 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         ? [...fnRows.values()].map((list) => ({ function: list[0].function as FunctionId, method: list[0].method as FunctionMethod, sources: list.flatMap((f) => (f.source === null ? [] : [String(f.source)])), kind: estimateOf(list[0].kind) }))
         : null;
       const src = str(r.psrc);
+      const traits = traitsOf(r);
+      const light = lightOf(r);
+      const fallback = r.stratum === null && r.phase_start === null
+        ? defaultPlacementOf({ role: r.role as Taxon['role'], light, traits })
+        : null;
       return {
         id,
         canonical_name: String(r.canonical_name),
@@ -240,10 +245,12 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         names: own,
         image: imageOf(id, images.get(plant)),
         role: r.role as Taxon['role'],
-        stratum: r.stratum === null ? null : { value: r.stratum as Stratum, sources: src ? [src] : [] },
-        phases: r.phase_start === null || r.phase_end === null ? null : { start: phases[Number(r.phase_start)], end: phases[Number(r.phase_end)], sources: src ? [src] : [] },
+        stratum: r.stratum !== null ? { value: r.stratum as Stratum, sources: src ? [src] : [] }
+          : fallback?.stratum ? { value: fallback.stratum, sources: [fallback.source ?? 'q10_default'] } : null,
+        phases: r.phase_start !== null && r.phase_end !== null ? { start: phases[Number(r.phase_start)], end: phases[Number(r.phase_end)], sources: src ? [src] : [] }
+          : fallback?.start && fallback?.end ? { start: fallback.start, end: fallback.end, sources: [fallback.source ?? 'q10_default'] } : null,
         functions,
-        traits: traitsOf(r),
+        traits,
         warnings: {
           toxicity: r.toxicity === null ? null : { level: r.toxicity as ToxicityLevel, sources: (tox.get(plant) ?? []).map((t) => String(t.source)) },
           invasive_in: invasiveOf(invasive.get(plant)),
@@ -253,7 +260,7 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
         climate: climates.get(plant) ?? null,
         areasKnown: r.wcvp_match !== null && r.wcvp_match !== undefined,
         // Schema 4.5 (light span): each end and the preferred level, null when unknown (never "no light needs").
-        light: lightOf(r),
+        light,
       };
     });
   }
@@ -410,18 +417,6 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
       const nameKinds: Details['nameKinds'] = Object.fromEntries(db.selectObjects("SELECT locale, kind FROM plant_names WHERE plant = ?1 AND kind IS NOT NULL ORDER BY locale", [plant])
         .flatMap((r) => { const kind = estimateOf(r.kind); return kind ? [[String(r.locale), kind]] : []; }));
       const fnSources = db.selectObjects('SELECT s.source FROM functions f JOIN function_sources s USING (function_id) WHERE f.plant = ?1', [plant]).map((r) => String(r.source));
-      const cited = new Set<string>([
-        ...reasons.map((r) => r.source), ...layerValues.map((v) => v.source), ...toxicitySources, ...fnSources,
-        ...(invasiveIn ?? []).flatMap((r) => r.sources), ...Object.values(placements).flatMap((p) => (p?.source ? [p.source] : [])), ...rangeSource,
-        ...[disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas].flatMap((list) => (list ?? []).map((x) => x.source)),
-      ]);
-      const list = [...cited];
-      const sources: Record<string, Source> = {};
-      if (list.length) {
-        for (const r of db.selectObjects(`SELECT * FROM sources WHERE id IN (${list.map(() => '?').join(',')})`, list)) {
-          sources[String(r.id)] = { label: String(r.label), url: str(r.url), licence: str(r.licence), attribution: str(r.attribution) };
-        }
-      }
       let extremes: TaxonClimateExtremes | null = null;
       if (hasExtremesTable) {
         const er = db.selectObjects('SELECT * FROM plant_climate_extremes WHERE plant = ?1 LIMIT 1', [plant])[0];
@@ -433,7 +428,19 @@ export function createSqliteSource(db: Db, options: SourceOptions): PlantSource 
             chillMinCP: num(er.chill_min_cp ?? er.chill_portions_min),
             source: str(er.source),
           };
-          if (extremes.source) cited.add(extremes.source);
+        }
+      }
+      const cited = new Set<string>([
+        ...reasons.map((r) => r.source), ...layerValues.map((v) => v.source), ...toxicitySources, ...fnSources,
+        ...(invasiveIn ?? []).flatMap((r) => r.sources), ...Object.values(placements).flatMap((p) => (p?.source ? [p.source] : [])), ...rangeSource,
+        ...(extremes?.source ? [extremes.source] : []),
+        ...[disputes, audiences, traitSources, frost, toxicityParts, invasiveAreas].flatMap((list) => (list ?? []).map((x) => x.source)),
+      ]);
+      const list = [...cited];
+      const sources: Record<string, Source> = {};
+      if (list.length) {
+        for (const r of db.selectObjects(`SELECT * FROM sources WHERE id IN (${list.map(() => '?').join(',')})`, list)) {
+          sources[String(r.id)] = { label: String(r.label), url: str(r.url), licence: str(r.licence), attribution: str(r.attribution) };
         }
       }
       return {

@@ -47,6 +47,8 @@ import { koppenWordsKey } from '../location/koppen-words.ts';
 import { Steps } from './steps.tsx';
 import { PlantsCount } from '../plants/head-link.tsx';
 import { enterCountry, findCountries } from './country-search.ts';
+import { SitePostcard } from './SitePostcard.tsx';
+import { AreaStep, OpenCanopiPathB } from './AreaStep.tsx';
 
 const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
 
@@ -704,6 +706,7 @@ function Questions() {
       <div class="ct-place-col">
         <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
         <WeRead />
+        <SitePostcard />
         <KeptClimate />
         {!ready && !wide && <MainCountry />}
         {z && (block || !hasList(z)) && <PoolSlot zone={z} />}
@@ -711,16 +714,20 @@ function Questions() {
       {ready && (
         <div class="ct-place-col">
           <RoomStep />
+          <AreaStep />
           {!wide && <MainCountry />}
           <OwnPlants />
-          <div class="ct-cta">
-            <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
-            {!block && (
-              <p class="ct-place-suggest">
-                {T('place.none')}{' '}
-                <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={() => requestSuggest()}>{T('start.suggest')}</button>
-              </p>
-            )}
+          <div class="ct-start-paths">
+            <div class="ct-cta ct-path-a">
+              <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+              {!block && (
+                <p class="ct-place-suggest">
+                  {T('place.none')}{' '}
+                  <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={() => requestSuggest()}>{T('start.suggest')}</button>
+                </p>
+              )}
+            </div>
+            <OpenCanopiPathB />
           </div>
         </div>
       )}
