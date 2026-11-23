@@ -3,7 +3,7 @@ type: Architecture Decision
 title: Metric-matched fallback fonts
 description: Local Arial and Times New Roman (or their metric twins) scaled to Source Sans 3's and Literata's metrics come first in the fallback stacks, so the late web-font swap does not shift the layout on slow phones.
 tags: [fonts, performance, layout]
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:46Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T13:34:34Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:20Z }
   - { by: antigravity/gemini, at: 2026-11-23T12:36:27Z }
@@ -17,17 +17,17 @@ sources:
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
     digest: sha256:10b7eb37d3f4f1f0
-    last_modified: 2026-11-23T12:31:49Z
+    last_modified: 2026-11-23T12:42:30Z
   - id: font-fallback-metrics-mjs
     resource: ../../scripts/font-fallback-metrics.mjs
     title: scripts/font-fallback-metrics.mjs
     digest: sha256:af61386628adc5fe
     last_modified: 2026-11-13T04:47:00Z
   - id: consortium-seams-layout-browser-test-mjs
-    resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
-    title: scripts/browser/consortium-seams-layout.browser.test.mjs
-    digest: sha256:8e5de3eb8b4c7b69
-    last_modified: 2026-11-19T11:59:54Z
+    resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
+    title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
+    digest: sha256:124f350b6be35d25
+    last_modified: 2026-11-23T13:28:14Z
   - id: base-astro
     resource: ../../src/layouts/Base.astro
     title: src/layouts/Base.astro
@@ -38,7 +38,7 @@ sources:
     title: src/styles/consortium/base.css
     digest: sha256:59ecfbc3a59f1adf
     last_modified: 2026-11-19T11:59:54Z
-enforced_by: [scripts/browser/consortium-seams-layout.browser.test.mjs]
+enforced_by: [scripts/browser/consortium-studio-plan-i18n.browser.test.mjs]
 ---
 
 # Context
@@ -56,7 +56,7 @@ Source Sans 3 (body) and Literata (display) are self-hosted woff2 files with `fo
 
 # Consequences
 
-- The late-font swap moves text by at most about 1% of a string's width, not to the pixel: a paragraph whose last word sits at the edge can still gain or lose a line (Start's lede at en 320 px: CLS 0.0102). The spec "Layout stability (N2, late fonts)" in [consortium-seams-layout.browser.test.mjs](../../scripts/browser/consortium-seams-layout.browser.test.mjs) holds every `/fonts/*.woff2` request 800 ms, asserts the first paint came before any font, and allows CLS 0.015 at 320, 390, 960 and 1280 px in all 11 locales (since 2026-11-19, language-robust layout; two loads at a time; it prints the CLS per locale at its worst width; N2's own budget is 0.01). Since E6 S2 it also checks sizes (`sized`): no control on Start resizes when the fonts swap; every height holds to the pixel, a button's width within 2 % and so the place-search input's (it fills its row beside the search button: es, it, ru 1-2 px) (`LABEL_SLACK`; French labels change about 2 px, 158 → 160), and a control whose top did not move keeps its left within 2 %. Vertical moves are left to the CLS budget.
+- The late-font swap moves text by at most about 1% of a string's width, not to the pixel: a paragraph whose last word sits at the edge can still gain or lose a line (Start's lede at en 320 px: CLS 0.0102). The spec "Layout stability (N2, late fonts)" in `consortium-seams-layout.browser.test.mjs` holds every `/fonts/*.woff2` request 800 ms, asserts the first paint came before any font, and allows CLS 0.015 at 320, 390, 960 and 1280 px in all 11 locales (since 2026-11-19, language-robust layout; two loads at a time; it prints the CLS per locale at its worst width; N2's own budget is 0.01). Since E6 S2 it also checks sizes (`sized`): no control on Start resizes when the fonts swap; every height holds to the pixel, a button's width within 2 % and so the place-search input's (it fills its row beside the search button: es, it, ru 1-2 px) (`LABEL_SLACK`; French labels change about 2 px, 158 → 160), and a control whose top did not move keeps its left within 2 %. Vertical moves are left to the CLS budget.
 
 # Known gaps
 

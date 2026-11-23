@@ -5,11 +5,11 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T12:42:06Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T13:34:39Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T12:42:05Z }
+  - { by: antigravity/gemini, at: 2026-11-23T13:34:04Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -17,15 +17,15 @@ sources:
     digest: sha256:8165db4fcb8d590c
     last_modified: 2026-11-13T07:53:00Z
   - id: browser-test
-    resource: ../../scripts/browser/consortium-commit0.browser.test.mjs
-    title: scripts/browser/consortium-commit0.browser.test.mjs
-    digest: sha256:ef938b89c2deeb86
-    last_modified: 2026-11-18T15:51:22Z
+    resource: ../../scripts/browser/consortium-studio-onboarding.browser.test.mjs
+    title: scripts/browser/consortium-studio-onboarding.browser.test.mjs
+    digest: sha256:d68dbc38f90873d3
+    last_modified: 2026-11-23T13:29:33Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:125326a95ff52b49
-    last_modified: 2026-11-23T12:37:34Z
+    digest: sha256:8ef8ddb90c0faa0e
+    last_modified: 2026-11-23T13:30:24Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -109,18 +109,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:fddc89a90d44ad59
-    last_modified: 2026-11-19T05:13:33Z
-  - id: pf-helpers-mjs
-    resource: ../../scripts/browser/pf-helpers.mjs
-    title: scripts/browser/pf-helpers.mjs
-    digest: sha256:bf7b2cd637b7b170
-    last_modified: 2026-11-19T09:07:50Z
-  - id: pf-d-helpers-mjs
-    resource: ../../scripts/browser/pf-d-helpers.mjs
-    title: scripts/browser/pf-d-helpers.mjs
-    digest: sha256:0bfaee57e84a649d
-    last_modified: 2026-11-19T11:24:03Z
+    digest: sha256:33da8c7984a92423
+    last_modified: 2026-11-23T13:19:24Z
   - id: consortium-pf-env-mjs
     resource: ../../scripts/consortium-pf-env.mjs
     title: scripts/consortium-pf-env.mjs

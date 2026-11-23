@@ -2,7 +2,7 @@
 type: Convention
 title: Palette language-robust layout
 description: "The Plant palette's parts (.ct) lay out in any face and all 11 locales: a one-line step bar, CJK breaking and system faces, long-word hyphenation, checked at 320-1280 px."
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:45Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T13:35:10Z }
 verified:
   - { by: antigravity/gemini, at: 2026-11-23T12:36:24Z }
 sources:
@@ -22,18 +22,11 @@ sources:
     digest: sha256:db0dc259328e7353
     last_modified: 2026-11-23T11:50:28Z
   - id: consortium-seams-layout-browser-test-mjs
-    resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
-    title: scripts/browser/consortium-seams-layout.browser.test.mjs
-    digest: sha256:8e5de3eb8b4c7b69
-    last_modified: 2026-11-19T11:59:54Z
-  - id: seams-helpers-mjs
-    resource: ../../scripts/browser/seams-helpers.mjs
-    title: scripts/browser/seams-helpers.mjs
-    digest: sha256:1f3b95287e5fcf5a
-    last_modified: 2026-11-19T10:38:30Z
-enforced_by:
-  - scripts/browser/consortium-seams-layout.browser.test.mjs::Layout stability, language-robust (L1)
-  - scripts/browser/consortium-seams-layout.browser.test.mjs::Layout stability (N2, late fonts)
+    resource: ../../scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
+    title: scripts/browser/consortium-studio-plan-i18n.browser.test.mjs
+    digest: sha256:124f350b6be35d25
+    last_modified: 2026-11-23T13:28:14Z
+enforced_by: [scripts/browser/consortium-studio-plan-i18n.browser.test.mjs]
 ---
 
 Ruled 2026-11-19 (pf-decisions row "language-robust layout", owner question on adaptive elements for Japanese and similar). Palette parts only, under `.ct`; the site header, nav and `fonts.css` keep the site's faces.

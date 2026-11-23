@@ -4,11 +4,11 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:52Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T13:34:47Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
-  - { by: antigravity/gemini, at: 2026-11-23T12:36:44Z }
+  - { by: antigravity/gemini, at: 2026-11-23T13:34:45Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -108,8 +108,8 @@ sources:
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:efe236786eea77dd
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:484efcce06b077ec
+    last_modified: 2026-11-23T13:19:21Z
 enforced_by:
   - scripts/package.test.mjs
   - sgconfig.yml

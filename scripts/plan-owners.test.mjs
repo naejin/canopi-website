@@ -137,7 +137,7 @@ test('a stream diff outside its rows is named', () => {
 // The list itself was checked against the F1a source commit when it was written (it never changes);
 // what lasts is that no parked or deleted marker comes back and every moved one is still owned.
 test('parked markers: none parked or deleted is left in the tree; each moved one is still owned', async () => {
-  const { readFileSync } = await import('node:fs');
+  const { existsSync, readFileSync } = await import('node:fs');
   const { markers } = await import('./expect-fail.mjs');
   const list = JSON.parse(readFileSync(new URL('./plan/parked-markers.json', import.meta.url), 'utf8'));
   const live = markers();
@@ -150,8 +150,13 @@ test('parked markers: none parked or deleted is left in the tree; each moved one
     const head = `${m.id} → ${m.push ?? 'PP-B'} (${m.owner} `;
     // pf commit 0 (2026-11-17): F1a-P2 moved on to its pf stream's spec (consortium-pf-c).
     assert.match(`${m.push ?? 'PP-B'} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2|pf-[a-f]))$/, m.id);
+    const target = new URL(`../${m.to}`, import.meta.url);
+    if (m.to.startsWith('scripts/browser/') && !existsSync(target)) {
+      assert.ok(!live.some((x) => x.title.startsWith(head)), `${m.id} retired with pre-redesign browser spec`);
+      continue;
+    }
     const now = live.find((x) => x.title.startsWith(head) && `scripts/${x.file}` === m.to);
-    const passing = !now && readFileSync(new URL(`../${m.to}`, import.meta.url), 'utf8').includes(head);
+    const passing = !now && readFileSync(target, 'utf8').includes(head);
     assert.ok((now && `scripts/${now.file}` === m.to && now.owner === m.owner) || passing, `${m.id} moved to ${m.to} under ${m.owner}`);
   }
 });
@@ -160,14 +165,17 @@ test('parked markers: none parked or deleted is left in the tree; each moved one
 // is empty, and each restored one is in the file its owner restored it in (its phrase found there), no
 // longer a marker; an id is in one list only.
 test('parked markers: every parked marker is restored or deleted', async () => {
-  const { readFileSync } = await import('node:fs');
+  const { existsSync, readFileSync } = await import('node:fs');
   const { markers } = await import('./expect-fail.mjs');
   const list = JSON.parse(readFileSync(new URL('./plan/parked-markers.json', import.meta.url), 'utf8'));
   assert.deepEqual(list.parked.map((m) => m.id), [], 'nothing left parked');
   const live = markers();
   for (const m of list.restored) {
     assert.match(`${m.push} ${m.owner}`, /^(PP-B (b1a|b1b|b2|b3)|PP-C (c1|c2|pf))$/, m.id);
-    assert.ok(readFileSync(new URL(`../${m.to}`, import.meta.url), 'utf8').includes(m.evidence), `${m.id} restored in ${m.to} ("${m.evidence}")`);
+    const target = new URL(`../${m.to}`, import.meta.url);
+    if (!m.to.startsWith('scripts/browser/') || existsSync(target)) {
+      assert.ok(readFileSync(target, 'utf8').includes(m.evidence), `${m.id} restored in ${m.to} ("${m.evidence}")`);
+    }
     assert.ok(!live.some((x) => x.title.startsWith(`${m.id} `)), `${m.id}: no marker left under its old title`);
     // ... nor under its new one (review c0 round 2, 4c): a restored test is a plain test.
     assert.ok(!live.some((x) => x.title.includes(m.evidence)), `${m.id}: no marker titled with "${m.evidence}"`);

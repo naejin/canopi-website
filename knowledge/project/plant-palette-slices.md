@@ -4,10 +4,10 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-23T12:36:51Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T13:34:47Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:19Z }
-  - { by: antigravity/gemini, at: 2026-11-23T12:36:42Z }
+  - { by: antigravity/gemini, at: 2026-11-23T13:34:43Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -57,13 +57,13 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:fddc89a90d44ad59
-    last_modified: 2026-11-19T05:13:33Z
+    digest: sha256:33da8c7984a92423
+    last_modified: 2026-11-23T13:19:24Z
   - id: shards-json
     resource: ../../scripts/browser/shards.json
     title: scripts/browser/shards.json
-    digest: sha256:efe236786eea77dd
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:484efcce06b077ec
+    last_modified: 2026-11-23T13:19:21Z
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
@@ -92,8 +92,8 @@ sources:
   - id: plan-owners-test-mjs
     resource: ../../scripts/plan-owners.test.mjs
     title: scripts/plan-owners.test.mjs
-    digest: sha256:786c4be5d52ab210
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:46ea306f8803c107
+    last_modified: 2026-11-23T13:22:18Z
   - id: e6-owners-json
     resource: ../../scripts/plan/e6-owners.json
     title: scripts/plan/e6-owners.json
