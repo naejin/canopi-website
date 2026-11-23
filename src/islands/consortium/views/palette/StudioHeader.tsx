@@ -7,6 +7,7 @@
 // Tier 2: underline tabs (My Palette, Living System, 2050 Climate, Planting Plan) + Today|2050s|2080s toggle.
 // Health Ribbon: whisper-quiet 1-line status bar. Zero CSV, zero native title="...".
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { useDismissOnOutside } from './FilterPopover.tsx';
 import { convertArea, periodIds, type PeriodId } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { backToPlace, startOver } from '../../state/draft.ts';
@@ -16,6 +17,7 @@ import {
   designDirty,
   designName,
   ensureStudioGuards,
+  hasActiveFileHandle,
   openStudioCanopiText,
   plantingConfig,
   requestPlantOpen,
@@ -52,19 +54,7 @@ export function StudioHeader() {
     ensureStudioGuards();
   }, []);
 
-  useEffect(() => {
-    if (!openMenu) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenu(null); };
-    const onDown = (e: MouseEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setOpenMenu(null);
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onDown);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [openMenu]);
+  useDismissOnOutside(openMenu !== null, headerRef, () => setOpenMenu(null));
 
   const loc = store.location.value;
   const z = store.climate.value;
@@ -106,7 +96,12 @@ export function StudioHeader() {
         type="file"
         accept=".canopi,application/json"
         hidden
-        onChange={(e) => void handleOpenFile((e.currentTarget as HTMLInputElement).files?.[0])}
+        onChange={(e) => {
+          const input = e.currentTarget as HTMLInputElement;
+          const file = input.files?.[0];
+          input.value = '';
+          void handleOpenFile(file);
+        }}
       />
 
       {/* Tier 1: Identity & Calm File Actions */}
@@ -180,7 +175,14 @@ export function StudioHeader() {
                   class="ct-studio-menu-item"
                   role="menuitemcheckbox"
                   aria-checked={autoSaveEnabled.value ? 'true' : 'false'}
-                  onClick={() => { autoSaveEnabled.value = !autoSaveEnabled.value; }}
+                  onClick={() => {
+                    const next = !autoSaveEnabled.value;
+                    autoSaveEnabled.value = next;
+                    if (next && fsSupported && !hasActiveFileHandle()) {
+                      setOpenMenu(null);
+                      void saveStudioCanopi({ saveAs: true });
+                    }
+                  }}
                 >
                   <span>Auto-save to file</span>
                   <span>{autoSaveEnabled.value ? 'On' : 'Off'}</span>

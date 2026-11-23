@@ -636,5 +636,542 @@
   }
   .ct .ct-studio-tab {
     font-size: 14px;
+    min-height: 44px;
+  }
+  .ct .ct-tip-trigger {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+  .ct .ct-studio-loc,
+  .ct .ct-studio-btn,
+  .ct .ct-studio-menu-item,
+  .ct .ct-studio-horizon-btn,
+  .ct .ct-micro-field select,
+  .ct .ct-area-input,
+  .ct .ct-area-select,
+  .ct .ct-seg-btn,
+  .ct .ct-filter-btn,
+  .ct .ct-rail-tab,
+  .ct .ct-card-act,
+  .ct .ct-dossier-btn {
+    min-height: 44px;
+  }
+  .ct .ct-studio-split-caret {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
+
+/* ---- Slice 3.3: Split-Pane Workspace, 3-Layer Cards, Filter Studio, Right Rail & Field Dossier ---- */
+.ct .ct-studio-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.ct .ct-studio-main {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.ct .ct-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.ct .ct-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ct .ct-seg-switch {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-alt);
+}
+.ct .ct-seg-btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-seg-btn[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.ct .ct-filter-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.ct .ct-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-filter-btn.is-active {
+  border-color: var(--accent);
+  background: var(--ochre-tint);
+  color: var(--accent-ink);
+}
+.ct .ct-filter-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 45;
+  width: min(320px, calc(100vw - 24px));
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.ct .ct-filter-grid {
+  display: grid;
+  gap: 10px;
+}
+.ct .ct-filter-field {
+  display: grid;
+  gap: 4px;
+  font-size: 13.5px;
+}
+.ct .ct-filter-field label {
+  font-weight: 600;
+  color: var(--text);
+}
+.ct .ct-filter-field select {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+.ct .ct-filter-checks {
+  display: grid;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--rule-hairline);
+}
+.ct .ct-filter-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.ct .ct-filter-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid var(--rule-hairline);
+}
+
+/* 3-Layer Zero-Pill-Soup Plant Cards */
+.ct .ct-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+.ct .ct-card {
+  display: grid;
+  gap: 8px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.ct .ct-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ct .ct-card-names {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ct .ct-card-common {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.2;
+}
+.ct .ct-card-meta {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.ct .ct-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule-hairline);
+}
+.ct .ct-card-acts {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.ct .ct-card-act {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-card-act:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: var(--surface-alt);
+}
+.ct .ct-card-act.is-primary-link {
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+.ct .ct-card-act.is-primary-link:hover {
+  background: var(--ochre-tint);
+}
+
+/* Unified 12-Month Activity Sparkline */
+.ct .ct-spark {
+  display: inline-grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+  align-items: center;
+}
+.ct .ct-spark-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 16px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-alt);
+}
+.ct .ct-spark-cell[data-lvl="active"] {
+  background: var(--ochre-tint);
+  color: var(--text);
+  border: 1px solid var(--ochre-border);
+}
+.ct .ct-spark-cell[data-lvl="peak"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* 200-Species Compact List */
+.ct .ct-compact-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.ct .ct-compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.ct .ct-compact-table th,
+.ct .ct-compact-table td {
+  padding: 8px 10px;
+  text-align: start;
+  border-bottom: 1px solid var(--rule-hairline);
+  vertical-align: middle;
+}
+.ct .ct-compact-table th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-alt);
+}
+
+/* Right Rail (Coach | All Plants) */
+.ct .ct-rail {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  min-width: 0;
+}
+.ct .ct-rail-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+}
+.ct .ct-rail-tab {
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-rail-tab[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.ct .ct-rail-search {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ct .ct-rail-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+}
+.ct .ct-rail-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule-hairline);
+}
+.ct .ct-rail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+.ct .ct-rail-row-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ct .ct-rail-row-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--text);
+}
+.ct .ct-rail-row-sub {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+/* 1-Click Plant Field Dossier Slide-Over Drawer */
+.ct .ct-dossier-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: var(--backdrop);
+  display: flex;
+  justify-content: flex-end;
+}
+.ct .ct-dossier {
+  width: min(560px, 100vw);
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  background: var(--surface);
+  color: var(--text);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: var(--shadow);
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+.ct .ct-dossier-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+.ct .ct-dossier-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ct .ct-dossier-btn {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ct .ct-dossier-btn:hover {
+  background: var(--surface-alt);
+}
+.ct .ct-dossier-tracks {
+  display: grid;
+  gap: 12px;
+}
+.ct .ct-track {
+  display: grid;
+  gap: 4px;
+}
+.ct .ct-track-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+.ct .ct-track-rail {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+}
+.ct .ct-track-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--ochre-border);
+}
+.ct .ct-track-pin {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--text);
+  transform: translateX(-50%);
+}
+.ct .ct-ledger {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule-hairline);
+}
+.ct .ct-ledger-row {
+  display: grid;
+  gap: 2px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+.ct .ct-ledger-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.ct .ct-ledger-val {
+  font-size: 14.5px;
+  color: var(--text);
+}
+.ct .ct-break {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-left: 3px solid var(--warning-line);
+  background: var(--warning-bg);
+  font-size: 13.5px;
+  display: grid;
+  gap: 2px;
+}
+.ct .ct-break.is-danger {
+  border-left-color: var(--danger);
+}
+.ct .ct-lifeline {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.ct .ct-lifeline-cell {
+  padding: 6px 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.ct .ct-lifeline-cell.is-on {
+  border-color: var(--accent);
+  background: var(--ochre-tint);
+  color: var(--text);
+  font-weight: 600;
+}
+.ct .ct-cal12-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.ct .ct-cal12-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+}
+.ct .ct-synergy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (min-width: 960px) {
+  .ct .ct-studio-split {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+  .ct .ct-ledger {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+

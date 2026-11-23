@@ -43,6 +43,9 @@ import { studioTab } from '../../state/studio.ts';
 import { StudioHeader } from './StudioHeader.tsx';
 import { PlantingPlanTab } from './PlantingPlanTab.tsx';
 import { RequestPlantModal } from './RequestPlantModal.tsx';
+import { PaletteCards } from './PaletteCards.tsx';
+import { StudioRail } from './StudioRail.tsx';
+import { FieldDossier } from './FieldDossier.tsx';
 
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
 // step on the phone never re-renders the page (review r1 bugs-10).
@@ -130,6 +133,12 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
         <PlantingPlanTab />
       ) : (
       <>
+      {activeTab === 'palette' && (
+        <div class="ct-studio-split">
+          <PaletteCards />
+          <StudioRail />
+        </div>
+      )}
       {/* Past 40 plants on the phone the one search sits directly under the place line (boards Many,
           Main: step bar, title, place line, search; the PP-E period tabs go above it later). */}
       {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
@@ -203,6 +212,7 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
       </>
       )}
       <RequestPlantModal />
+      <FieldDossier />
     </div>
   );
 }

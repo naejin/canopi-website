@@ -1,0 +1,138 @@
+// Deterministic unit tests for Phase 3 / Slice 3.3:
+// - Shared Filter Studio predicates (Sun W1 t.light, 6-stage succession, role, lowChill, clayWet, extremeHardy)
+// - Plant Field Dossier spec builder (pH/temp tracks, 6-row ledger, breaking points, lifeline, photoperiod)
+// - Dossier drawer navigation state (openFieldDossier, stepFieldDossier, closeFieldDossier)
+// - Zero native title attributes, zero CSV export, and clean grower vocabulary across all Slice 3.3 views
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const filters = await import('../src/islands/consortium/rules/studio-filters.ts');
+const studio = await import('../src/islands/consortium/state/studio.ts');
+
+function taxon(over = {}) {
+  return {
+    id: over.id ?? 'p1',
+    canonical_name: over.canonical_name ?? 'Ficus carica',
+    genus: 'Ficus',
+    family: 'Moraceae',
+    names: { en: over.en ?? 'Common fig' },
+    image: null,
+    role: over.role ?? 'food',
+    stratum: over.stratum ?? { value: 'high', sources: ['s1'] },
+    phases: over.phases ?? { start: 'secondary_i', end: 'secondary_iii', sources: ['s1'] },
+    functions: over.functions ?? [{ function: 'edible_fruit', method: 'direct', sources: ['s1'], kind: 'recorded' }],
+    traits: over.traits ?? { height_m: { min: 3, max: 6 }, width_max_m: 4, soil_ph: { min: 6.0, max: 7.8 }, drought_tolerance: 'High' },
+    warnings: { toxicity: null, invasive_in: null, allelopathic: false, weed_potential: false },
+    climate: over.climate ?? { tminCold: { low: -2, median: 4, high: 12 }, tmaxWarm: { low: 22, median: 30, high: 38 } },
+    areasKnown: true,
+    light: over.light ?? { sunniest: 'emergent', shadiest: 'high', preferred: 'emergent' },
+  };
+}
+
+test('studio-filters.ts filters by W1 sun span, 6-stage succession, and 3 agronomy predicates', () => {
+  const fig = taxon({ id: 'fig', light: { sunniest: 'emergent', shadiest: 'high', preferred: 'emergent' } });
+  const willow = taxon({
+    id: 'willow',
+    canonical_name: 'Salix alba',
+    en: 'White willow',
+    role: 'biomass',
+    light: { sunniest: 'emergent', shadiest: 'medium', preferred: 'high' },
+    traits: { well_drained: false, moisture_use: 'High' },
+    climate: { tminCold: { low: -18, median: -4, high: 6 }, tmaxWarm: { low: 18, median: 25, high: 31 } },
+  });
+  const citrus = taxon({
+    id: 'citrus',
+    canonical_name: 'Citrus sinensis',
+    en: 'Sweet orange',
+    traits: { deciduous_evergreen: 'Evergreen', height_m: { min: 3, max: 5 } },
+    climate: { tminCold: { low: 2, median: 8, high: 15 }, tmaxWarm: { low: 24, median: 32, high: 39 } },
+  });
+
+  assert.equal(filters.activeFilterCount(filters.EMPTY_STUDIO_FILTERS), 0);
+  assert.equal(filters.activeFilterCount({ ...filters.EMPTY_STUDIO_FILTERS, lowChill: true, clayWet: true }), 2);
+
+  assert.equal(filters.matchesStudioFilters(fig, { ...filters.EMPTY_STUDIO_FILTERS, sun: 'emergent' }), true);
+  assert.equal(filters.matchesStudioFilters(fig, { ...filters.EMPTY_STUDIO_FILTERS, sun: 'low' }), false);
+
+  assert.equal(filters.matchesStudioFilters(citrus, { ...filters.EMPTY_STUDIO_FILTERS, lowChill: true }), true);
+  assert.equal(filters.matchesStudioFilters(willow, { ...filters.EMPTY_STUDIO_FILTERS, clayWet: true }), true);
+  assert.equal(filters.matchesStudioFilters(fig, { ...filters.EMPTY_STUDIO_FILTERS, clayWet: true }), false);
+  assert.equal(filters.matchesStudioFilters(willow, { ...filters.EMPTY_STUDIO_FILTERS, extremeHardy: true }), true);
+
+  assert.equal(filters.sunTierLabel(fig), 'Full sun');
+  assert.equal(filters.stageSpanOf(fig).label, 'Secondary 1 → Secondary 3');
+  assert.equal(filters.activityMonthsOf(citrus).length, 12);
+});
+
+test('buildDossierSpec computes tracks, 6-row ledger, breaking points, lifeline, and photoperiod', () => {
+  const citrus = taxon({
+    id: 'citrus',
+    canonical_name: 'Citrus sinensis',
+    traits: { height_m: { min: 3, max: 5 }, width_max_m: 3.5, soil_ph: { min: 6.0, max: 7.5 }, moisture_use: 'Medium' },
+    climate: { tminCold: { low: 1, median: 7, high: 14 }, tmaxWarm: { low: 24, median: 32, high: 38 } },
+  });
+  const loc = {
+    lat: 43.6,
+    lon: 3.88,
+    source: 'search',
+    label: 'Montpellier',
+    lookup: {
+      lat: 43.6,
+      lon: 3.88,
+      soil: { phH2o: 8.2, texture: 'Loam', filled: false, fillDistanceCells: 0, distanceCells: 0 },
+      regions: { isoA2: 'FR' },
+      climate: {
+        periods: [{
+          period: '1991-2020',
+          scenario: 'historical',
+          koppen: 'Csa',
+          tminColdC: -4,
+          tmaxWarmC: 37.5,
+          tmeanColdC: 6,
+          tmeanWarmC: 24,
+          aridityIndex: 0.72,
+        }],
+      },
+    },
+  };
+
+  const spec = filters.buildDossierSpec(citrus, null, loc);
+  assert.equal(spec.ledger.length, 6);
+  assert.ok(spec.breakingPoints.some((b) => b.severity === 'danger'), 'cold floor exceeded triggers danger breaking point');
+  assert.ok(spec.breakingPoints.some((b) => /pH/i.test(b.title)), 'alkaline site pH triggers pH breaking point');
+  assert.ok(spec.photoperiodInfo && spec.photoperiodInfo.summerH > 15 && spec.photoperiodInfo.winterH < 9.5);
+});
+
+test('Field Dossier state steps cleanly through plant list and closes', () => {
+  studio.openFieldDossier('a', ['a', 'b', 'c']);
+  assert.equal(studio.dossierId.value, 'a');
+  studio.stepFieldDossier(1);
+  assert.equal(studio.dossierId.value, 'b');
+  studio.stepFieldDossier(-1);
+  assert.equal(studio.dossierId.value, 'a');
+  studio.stepFieldDossier(-1);
+  assert.equal(studio.dossierId.value, 'c');
+  studio.closeFieldDossier();
+  assert.equal(studio.dossierId.value, null);
+});
+
+test('Slice 3.3 views contain zero native title attributes, zero CSV export, and clean grower vocabulary', () => {
+  const files = [
+    '../src/islands/consortium/rules/studio-filters.ts',
+    '../src/islands/consortium/views/palette/FilterPopover.tsx',
+    '../src/islands/consortium/views/palette/PaletteCards.tsx',
+    '../src/islands/consortium/views/palette/StudioRail.tsx',
+    '../src/islands/consortium/views/palette/FieldDossier.tsx',
+  ];
+  for (const rel of files) {
+    const src = readFileSync(new URL(rel, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+    assert.doesNotMatch(src, /\btitle\s*=/, `${rel} must not use native title="..." attributes`);
+    assert.doesNotMatch(src, /\bcsv\b/i, `${rel} must not contain CSV export`);
+    assert.doesNotMatch(
+      src,
+      /\b(canopy|understory|ground cover|shrub layer|herbaceous|climber|strata)\b/i,
+      `${rel} must not contain botanical-layer jargon in UI copy`,
+    );
+  }
+});

@@ -112,7 +112,12 @@ export function OpenCanopiPathB() {
         type="file"
         accept=".canopi,application/json"
         hidden
-        onChange={(e) => void onFile((e.currentTarget as HTMLInputElement).files?.[0])}
+        onChange={(e) => {
+          const input = e.currentTarget as HTMLInputElement;
+          const file = input.files?.[0];
+          input.value = '';
+          void onFile(file);
+        }}
       />
       <button type="button" class="button button-secondary ct-small" onClick={() => inputRef.current?.click()}>
         Open .canopi file

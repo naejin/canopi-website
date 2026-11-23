@@ -6,12 +6,14 @@
 // - Request a Plant modal toggle & .canopi v9 open/save helpers
 // Layer rule (L1-L9): lives in state/, imports only store, lib/consortium, lib/climate/v07. Never imports views/.
 import { batch, effect, signal } from '@preact/signals';
-import type { CanopiCustomPlant, PlantingPlanConfig, Taxon } from '../../../lib/consortium/index.ts';
+import type { CanopiCustomPlant, PlantId, PlantingPlanConfig, Taxon } from '../../../lib/consortium/index.ts';
 import { canopiFile, canopiFileName, DEFAULT_PLANTING_PLAN_CONFIG, parseCanopiFile } from '../../../lib/consortium/index.ts';
 import type { MicroAspect, MicroLandform } from '../../../lib/climate/v07.ts';
 import * as store from '../store.ts';
 
 export type StudioTab = 'palette' | 'system' | 'climate' | 'plan';
+export type PaletteViewMode = 'cards' | 'compact';
+export type RailTab = 'coach' | 'all';
 
 export interface MicroclimateState {
   slopeDeg: number;
@@ -19,21 +21,47 @@ export interface MicroclimateState {
   landform: MicroLandform;
 }
 
-export const DEFAULT_MICROCLIMATE: MicroclimateState = {
+const DEFAULT_MICROCLIMATE: MicroclimateState = {
   slopeDeg: 0,
   aspect: 'flat',
   landform: 'mid-slope',
 };
 
 export const studioTab = signal<StudioTab>('palette');
+export const paletteViewMode = signal<PaletteViewMode>('cards');
+export const railTab = signal<RailTab>('coach');
 export const designName = signal<string>('My Field Palette');
 export const designDirty = signal<boolean>(false);
 export const autoSaveEnabled = signal<boolean>(false);
-export const lastSavedAt = signal<string | null>(null);
+const lastSavedAt = signal<string | null>(null);
 export const plantingConfig = signal<PlantingPlanConfig>({ ...DEFAULT_PLANTING_PLAN_CONFIG });
 export const microclimate = signal<MicroclimateState>({ ...DEFAULT_MICROCLIMATE });
 export const requestPlantOpen = signal<boolean>(false);
-export const customPlants = signal<readonly CanopiCustomPlant[]>([]);
+const customPlants = signal<readonly CanopiCustomPlant[]>([]);
+export const dossierId = signal<PlantId | null>(null);
+export const dossierList = signal<readonly PlantId[]>([]);
+
+export function openFieldDossier(id: PlantId, list?: readonly PlantId[]): void {
+  batch(() => {
+    dossierId.value = id;
+    if (list && list.length) dossierList.value = list;
+    else if (!dossierList.peek().includes(id)) dossierList.value = store.members.peek().includes(id) ? store.members.peek() : [id];
+  });
+}
+
+export function closeFieldDossier(): void {
+  dossierId.value = null;
+}
+
+export function stepFieldDossier(delta: -1 | 1): void {
+  const cur = dossierId.peek();
+  const list = dossierList.peek();
+  if (!cur || list.length < 2) return;
+  const idx = list.indexOf(cur);
+  if (idx < 0) return;
+  const next = (idx + delta + list.length) % list.length;
+  dossierId.value = list[next];
+}
 
 interface FileSystemWritableLike {
   write(data: string): Promise<void>;
@@ -44,6 +72,10 @@ interface FileSystemFileHandleLike {
   createWritable(): Promise<FileSystemWritableLike>;
 }
 let activeFileHandle: FileSystemFileHandleLike | null = null;
+
+export function hasActiveFileHandle(): boolean {
+  return activeFileHandle !== null;
+}
 
 export function supportsFileSystemAccess(): boolean {
   return typeof window !== 'undefined' && typeof (window as unknown as { showSaveFilePicker?: unknown }).showSaveFilePicker === 'function';
