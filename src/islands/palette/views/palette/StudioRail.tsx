@@ -19,10 +19,22 @@ import {
   sunTierOf,
   type StudioFilterState,
 } from '../../rules/studio-filters.ts';
-import { FilterPopover } from './FilterPopover.tsx';
+import { ActiveFilterChips, FilterPanel, FilterPopover } from './FilterPopover.tsx';
 
 type RailIntent = 'winter' | 'gap' | 'soil' | 'early' | null;
 type RailSort = 'fit' | 'gap' | 'az';
+
+const FIT_RANK: Record<string, number> = { fits: 0, look: 1, unknown: 2, outside: 3 };
+
+function matchesQuery(t: Taxon, q: string): boolean {
+  if (nameOf(t).toLowerCase().includes(q)) return true;
+  if (t.canonical_name.toLowerCase().includes(q)) return true;
+  for (const val of Object.values(t.names)) {
+    if (typeof val === 'string' && val.toLowerCase().includes(q)) return true;
+    if (Array.isArray(val) && val.some((s) => typeof s === 'string' && s.toLowerCase().includes(q))) return true;
+  }
+  return false;
+}
 
 function phSpanText(t: Taxon): string | null {
   const r = t.traits.soil_ph;
@@ -41,8 +53,14 @@ export function StudioRail() {
   const tab = railTab.value;
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<StudioFilterState>({ ...EMPTY_STUDIO_FILTERS });
+  const [filterOpen, setFilterOpen] = useState(false);
   const [intent, setIntent] = useState<RailIntent>(null);
   const [sort, setSort] = useState<RailSort>('fit');
+
+  // Warm every curated climate pool so full-DB search & climate-fit recommendations see all ~761+ species.
+  useEffect(() => {
+    if (store.source.value) void store.loadAllPools();
+  }, [store.source.value]);
 
   const preset = railPreset.value;
   useEffect(() => {
@@ -59,7 +77,9 @@ export function StudioRail() {
 
   const memberIds = useMemo(() => new Set(store.members.value), [store.members.value]);
   const members = store.memberTaxa.value;
-  const pool = store.fitPool.value ?? store.pool.value ?? [];
+  const searchCatalog = store.allCatalog.value.length ? store.allCatalog.value : (store.pool.value ?? []);
+  const coachPool = store.allFitPool.value.length ? store.allFitPool.value : (store.fitPool.value ?? store.pool.value ?? []);
+  const verdictMap = store.allVerdicts.value ?? store.poolVerdicts.value;
   const loc = store.location.value;
   const z = store.climate.value;
   const placeName = loc ? placeWords(loc) : z ? zoneName(z) : T('studio.common.yourSite');
@@ -77,7 +97,7 @@ export function StudioRail() {
     const missingSun = (['emergent', 'high', 'medium', 'low'] as const).filter((s) => !presentSun.has(s));
     const missingRoles = ROLE_OPTIONS.filter((r) => !presentRoles.has(r.id));
 
-    const candidates = pool.filter((t) => !memberIds.has(t.id));
+    const candidates = coachPool.filter((t) => !memberIds.has(t.id));
     const picked = new Set<string>();
     const out: CoachCard[] = [];
 
@@ -119,26 +139,37 @@ export function StudioRail() {
       });
     }
     return out;
-  }, [members, pool, memberIds, placeName]);
+  }, [members, coachPool, memberIds, placeName]);
 
   const filteredAll = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = pool.filter((t) => {
-      if (!matchesStudioFilters(t, filters)) return false;
+    const list = searchCatalog.filter((t) => {
+      const vl = verdictMap?.get(t.id)?.level;
+      if (!matchesStudioFilters(t, filters, vl)) return false;
       if (intent === 'soil' && !jobsOf(t).includes('feeds_soil')) return false;
       if (intent === 'early' && !jobsOf(t).includes('helpers')) return false;
       if (intent === 'gap' && memberIds.has(t.id)) return false;
       if (intent === 'winter' && (t.traits.height_m?.max ?? 99) > 3) return false;
       if (!q) return true;
-      return nameOf(t).toLowerCase().includes(q) || t.canonical_name.toLowerCase().includes(q);
+      return matchesQuery(t, q);
     });
-    if (sort === 'az') list.sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
-    else if (sort === 'gap') list.sort((a, b) => Number(memberIds.has(a.id)) - Number(memberIds.has(b.id)));
-    return list.slice(0, 60);
-  }, [pool, query, filters, intent, sort, memberIds]);
+    if (sort === 'az') {
+      list.sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
+    } else if (sort === 'gap') {
+      list.sort((a, b) => Number(memberIds.has(a.id)) - Number(memberIds.has(b.id)));
+    } else if (verdictMap) {
+      list.sort((a, b) => {
+        const ra = FIT_RANK[verdictMap.get(a.id)?.level ?? 'unknown'] ?? 2;
+        const rb = FIT_RANK[verdictMap.get(b.id)?.level ?? 'unknown'] ?? 2;
+        return ra !== rb ? ra - rb : nameOf(a).localeCompare(nameOf(b));
+      });
+    }
+    return list;
+  }, [searchCatalog, verdictMap, query, filters, intent, sort, memberIds]);
 
+  const visibleAll = useMemo(() => filteredAll.slice(0, 60), [filteredAll]);
   const coachIds = useMemo(() => coachCards.map((c) => c.taxon.id), [coachCards]);
-  const allIds = useMemo(() => filteredAll.map((t) => t.id), [filteredAll]);
+  const allIds = useMemo(() => visibleAll.map((t) => t.id), [visibleAll]);
 
   const autoStrengthen = () => {
     const ids = coachCards.map((c) => c.taxon.id).filter((id) => !memberIds.has(id));
@@ -172,7 +203,7 @@ export function StudioRail() {
             aria-selected={tab === 'all' ? 'true' : 'false'}
             onClick={() => { railTab.value = 'all'; }}
           >
-            {T('studio.railAll')} ({pool.length})
+            {T('studio.railAll')} ({searchCatalog.length})
           </button>
         </div>
         <button
@@ -245,7 +276,7 @@ export function StudioRail() {
               style="width:100%; border:1px solid var(--border);"
               onClick={() => openPlantPool({ tab: 'all' })}
             >
-              {T('studio.rail.exploreAll', { n: pool.length })}
+              {T('studio.rail.exploreAll', { n: searchCatalog.length })}
             </button>
           </>
         ) : (
@@ -274,7 +305,12 @@ export function StudioRail() {
             </div>
 
             <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px;">
-              <FilterPopover value={filters} onChange={setFilters} />
+              <FilterPopover
+                value={filters}
+                onChange={setFilters}
+                open={filterOpen}
+                onToggle={() => setFilterOpen((o) => !o)}
+              />
               <div class="ink-seg" role="group" aria-label={T('studio.rail.sortAria')}>
                 {(['fit', 'gap', 'az'] as const).map((id) => (
                   <button
@@ -291,12 +327,33 @@ export function StudioRail() {
               </div>
             </div>
 
+            <ActiveFilterChips value={filters} onChange={setFilters} />
+
+            {filterOpen && (
+              <FilterPanel
+                value={filters}
+                onChange={setFilters}
+                onDone={() => setFilterOpen(false)}
+                shownCount={filteredAll.length}
+                totalCount={searchCatalog.length}
+                showFit={Boolean(verdictMap)}
+              />
+            )}
+
             <div style="display:flex; flex-direction:column; gap:8px;">
-              {filteredAll.map((t) => {
+              {visibleAll.map((t) => {
                 const inPalette = memberIds.has(t.id);
                 const tier = sunTierOf(t);
                 const hText = formatHeightRange(t.traits.height_m);
                 const phText = phSpanText(t);
+                const vl = verdictMap?.get(t.id)?.level;
+                const fitBadge = vl === 'fits'
+                  ? { cls: 'v-fit', text: T('studio.fit.fit') }
+                  : vl === 'look'
+                    ? { cls: 'v-care', text: T('studio.fit.care') }
+                    : vl === 'outside'
+                      ? { cls: 'v-risk', text: T('studio.fit.risk') }
+                      : null;
                 return (
                   <div
                     key={t.id}
@@ -307,6 +364,7 @@ export function StudioRail() {
                       <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:5px;">
                         <strong style="font-size:14.5px;">{nameOf(t)}</strong>
                         <span style="font-size:12px; font-style:italic; color:var(--ink-muted);">{t.canonical_name}</span>
+                        {fitBadge && <span class={`v-badge rail-fit-badge ${fitBadge.cls}`}>{fitBadge.text}</span>}
                       </div>
                       <div class="rail-meta-line">
                         <span><span class="sun-dot-inline" style={{ background: SUN_DOT[tier] }} aria-hidden="true" />{sunTierLabel(t)}</span>

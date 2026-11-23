@@ -59,7 +59,7 @@ function primaryRoleCue(t: Taxon): string {
 
 export function LivingSystemTab() {
   const members = store.memberTaxa.value;
-  const pool = store.fitPool.value ?? store.pool.value ?? [];
+  const pool = store.allFitPool.value.length ? store.allFitPool.value : (store.fitPool.value ?? store.pool.value ?? []);
   const profile = siteClimateProfile(store.location.value, store.climate.value, microclimate.value, store.siteEdits.value);
   const [roleMode, setRoleMode] = useState<RoleViewMode>('season');
   const [expandedSuns, setExpandedSuns] = useState<Record<string, boolean>>({});

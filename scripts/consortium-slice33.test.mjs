@@ -136,3 +136,31 @@ test('Slice 3.3 views contain zero native title attributes, zero CSV export, and
     );
   }
 });
+
+test('Full-DB allCatalog deduplicates across climates, addMembers auto-registers cross-climate guests and never blocks invasives', async () => {
+  const store = await import('../src/islands/palette/store.ts');
+  const tempPlant = taxon({ id: 'apple', canonical_name: 'Malus domestica', en: 'Apple' });
+  const sharedPlant = taxon({ id: 'fig', canonical_name: 'Ficus carica', en: 'Fig' });
+  const tropPlant = {
+    ...taxon({ id: 'mango', canonical_name: 'Mangifera indica', en: 'Mango' }),
+    warnings: { toxicity: null, invasive_in: [{ country: 'FR', status: 'invasive', source: 'griis' }], allelopathic: false, weed_potential: false },
+  };
+  store.climate.value = 'Temperate';
+  store.pools.value = {
+    Temperate: [tempPlant, sharedPlant],
+    Tropical: [sharedPlant, tropPlant],
+  };
+  store.members.value = ['apple'];
+  store.guests.value = {};
+
+  const ids = store.allCatalog.value.map((t) => t.id);
+  assert.deepEqual(ids, ['apple', 'fig', 'mango'], 'allCatalog deduplicates across climates preferring current climate');
+  const mangoInCat = store.allCatalog.value.find((t) => t.id === 'mango');
+  assert.equal(mangoInCat?.origin?.guest ?? mangoInCat?.origin?.list, 'Tropical', 'cross-climate plant tagged with home climate');
+
+  // Adding a cross-climate invasive plant is never blocked and auto-registers its home guest climate
+  store.addMembers(['mango']);
+  assert.ok(store.members.value.includes('mango'), 'cross-climate invasive plant can always be added');
+  assert.equal(store.guests.value['mango'], 'Tropical', 'addMembers auto-registers cross-climate guest origin');
+  assert.ok(store.memberTaxa.value.some((t) => t.id === 'mango'), 'memberTaxa resolves cross-climate plant immediately');
+});

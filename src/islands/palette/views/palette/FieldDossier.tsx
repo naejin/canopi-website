@@ -116,7 +116,8 @@ export function FieldDossier() {
     let gone = false;
     setDetails(null);
     const src = store.source.peek();
-    const z = store.climate.peek();
+    const o = store.taxonOf(id)?.origin;
+    const z = o?.guest ?? o?.list ?? store.climate.peek();
     if (src && z) {
       void src.details(id, z, pageLang() as Locale).then((d) => { if (!gone) setDetails(d); }).catch(() => {});
     }
@@ -187,7 +188,7 @@ export function FieldDossier() {
     .map((m) => scoreCompanion(taxon, m))
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
-  const poolComps = (store.fitPool.value ?? store.pool.value ?? [])
+  const poolComps = (store.allFitPool.value.length ? store.allFitPool.value : (store.fitPool.value ?? store.pool.value ?? []))
     .filter((c) => !memberSet.has(c.id) && c.id !== taxon.id)
     .map((c) => scoreCompanion(taxon, c))
     .sort((a, b) => b.score - a.score)

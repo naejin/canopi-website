@@ -80,11 +80,53 @@ test('My Palette: 3-layer cards, 12-month sparkline, Cards/Compact List toggle, 
   assert.match(filterText, /Low chill/i);
   await page.keyboard.press('Escape');
 
-  // Switch StudioRail from Coach to All Plants and search
+  // Switch StudioRail from Coach to All Plants, verify in-flow Filters (0 left clipping) & full-DB cross-climate search
   await page.locator('[data-studio-rail] .ink-seg .ink-seg-btn:nth-child(2)').click();
   assert.ok(await has(page, '[data-studio-rail] input', 4_000), 'All Plants rail search renders');
   const railBadges = await page.evaluate(() => document.querySelector('[data-studio-rail]')?.textContent ?? '');
   assert.match(railBadges, /In palette|\+ Add/i, 'All Plants rail shows membership status and + Add');
+
+  // Verify StudioRail FilterPanel opens in-flow with zero left-edge clipping
+  await page.locator('[data-studio-rail] [data-filter-trigger]').click();
+  assert.ok(await has(page, '[data-studio-rail] [data-filter-popover]', 4_000), 'StudioRail in-flow FilterPanel opens');
+  const railFilterBox = await page.evaluate(() => {
+    const r = document.querySelector('[data-studio-rail] [data-filter-popover]')?.getBoundingClientRect();
+    return r ? { left: r.left, right: r.right, width: r.width, vw: window.innerWidth } : null;
+  });
+  assert.ok(railFilterBox && railFilterBox.left >= 0 && railFilterBox.right <= railFilterBox.vw + 1,
+    `StudioRail FilterPanel stays inside viewport without left clipping: ${JSON.stringify(railFilterBox)}`);
+  await page.locator('[data-studio-rail] [data-filter-trigger]').click();
+
+  // Verify full-DB search finds tropical species ('mango') from a Temperate site (never restricted to climate label)
+  await page.waitForFunction(() => {
+    const tab = document.querySelector('[data-studio-rail] .ink-seg .ink-seg-btn:nth-child(2)')?.textContent ?? '';
+    const m = tab.match(/\((\d+)\)/);
+    return m && Number(m[1]) > 300;
+  }, { timeout: 10_000 });
+  const searchInput = await page.waitForSelector('[data-studio-rail] input[type="search"]');
+  await searchInput.type('mango');
+  await page.waitForFunction(() => /Mangifera indica/i.test(document.querySelector('[data-studio-rail]')?.textContent ?? ''), { timeout: 5_000 });
+
+  // Verify .site-header language dropdown floats ABOVE [data-studio-header] via elementFromPoint
+  await page.evaluate(() => {
+    const sum = document.querySelector('.site-header details summary');
+    if (sum) sum.click();
+  });
+  const langZ = await page.evaluate(() => {
+    const shRect = document.querySelector('[data-studio-header]')?.getBoundingClientRect();
+    const links = [...document.querySelectorAll('.site-header a[href*="/palette/"]')].filter((a) => a.offsetParent !== null && !a.classList.contains('nav-active'));
+    const overlapping = links.filter((a) => {
+      const r = a.getBoundingClientRect();
+      return shRect && r.bottom > shRect.top && r.top < shRect.bottom;
+    });
+    const allHitHeader = overlapping.length > 0 && overlapping.every((a) => {
+      const r = a.getBoundingClientRect();
+      const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return Boolean(el?.closest('.site-header')) && !el?.closest('[data-studio-header]');
+    });
+    return { overlappingCount: overlapping.length, allHitHeader };
+  });
+  assert.ok(langZ.allHitHeader, `Language dropdown links must hit .site-header above [data-studio-header]: ${JSON.stringify(langZ)}`);
 });
 
 test('FieldDossier: 1-click drawer, photo plate, Prev/Next navigation, Escape close, pH & temp tracks, hairline ledger, photoperiod calendar @real-data', async () => {

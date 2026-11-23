@@ -207,6 +207,67 @@ export const fitPool = computed<Taxon[] | null>(() => {
   return p && notOutside(p, poolVerdicts.value, members.value);
 });
 
+// Full deduplicated plant catalog across ALL loaded curated climates (never restricted to one climate label).
+// Prefers the user's current climate placement when a species appears in multiple lists, and tags
+// cross-climate species with their home climate via asGuest so addMembers/details/verdicts stay seamless.
+export const allCatalog = computed<Taxon[]>(() => {
+  const byId = new Map<PlantId, Taxon>();
+  const c = climate.value;
+  const map = pools.value;
+  if (c && map[c]) {
+    for (const t of map[c]!) byId.set(t.id, t);
+  }
+  const order: ClimateZone[] = [...curatedClimates.value];
+  for (const k of Object.keys(map) as ClimateZone[]) {
+    if (!order.includes(k)) order.push(k);
+  }
+  for (const z of order) {
+    if (z === c) continue;
+    const list = map[z];
+    if (!list) continue;
+    for (const t of list) {
+      if (!byId.has(t.id)) byId.set(t.id, asGuest(t, z));
+    }
+  }
+  return [...byId.values()];
+});
+
+// Site-fit verdicts evaluated across the ENTIRE catalog (all climates) against the user's actual site inputs.
+export const allVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
+  const rule = verdictRule.value;
+  const all = allCatalog.value;
+  if (!rule || !all.length) return null;
+  return rule.verdicts(all, verdictContext.value);
+});
+
+const FIT_ORDER: Record<string, number> = { fits: 0, look: 1, unknown: 2, outside: 3 };
+
+// Full climate-fit recommendation pool across ALL climates:
+// - When the user has site inputs (siteClimate + allVerdicts), keeps every plant from ANY climate that
+//   fits the user's actual climate, rain/drought, soil pH, drainage, watering, and microclimate inputs
+//   (never restricted to the selected climate label; never blocks invasive species).
+// - Sorted so 'fits' comes first, then 'look', then 'unknown'.
+export const allFitPool = computed<Taxon[]>(() => {
+  const all = allCatalog.value;
+  if (!all.length) return [];
+  const v = allVerdicts.value;
+  if (!v || !siteClimate.value) return all;
+  const kept = notOutside(all, v, members.value);
+  return [...kept].sort((a, b) => {
+    const la = FIT_ORDER[v.get(a.id)?.level ?? 'unknown'] ?? 2;
+    const lb = FIT_ORDER[v.get(b.id)?.level ?? 'unknown'] ?? 2;
+    return la - lb;
+  });
+});
+
+// Loads every curated climate pool into `pools` so full-DB search and cross-climate recommendations
+// see the entire SQLite catalog (~761+ species).
+export async function loadAllPools(): Promise<void> {
+  const src = source.peek();
+  if (!src) return;
+  await Promise.all(src.info().climates.map((z) => loadPool(z)));
+}
+
 // What the palette suggests and swaps from (Next step, Swap): the pool, or nothing while it is a
 // borrowed list not fitted to a place (no location, or no range rule: rules/suggest-block.ts, as
 // suggestMembers refuses; fix round 1, b1a2-2). Place, the "Your place" sheet and the palette's head
@@ -329,7 +390,7 @@ export const poolVerdicts = computed<Map<PlantId, PlantVerdict> | null>(() => {
 export function verdictOf(t: Taxon): PlantVerdict | null {
   const rule = verdictRule.value;
   if (!rule) return null;
-  return memberVerdicts.value?.get(t.id) ?? poolVerdicts.value?.get(t.id) ?? rule.verdicts([t], verdictContext.value).get(t.id) ?? null;
+  return memberVerdicts.value?.get(t.id) ?? allVerdicts.value?.get(t.id) ?? poolVerdicts.value?.get(t.id) ?? rule.verdicts([t], verdictContext.value).get(t.id) ?? null;
 }
 // The chosen climate's list (its own, or the nearest lists it borrows), guests left out: the plants
 // that fit or need a second look for the page's period (levels kept apart so the line can split them
@@ -624,19 +685,34 @@ export function suggestMembers(note: { text: string; action: ToastAction | null 
   // (state/suggest-wait.ts).
   const algo = suggestRule.value;
   if (!algo) return false;
-  // With a site climate, the verdicts too (F1a-P7, PP-B b1b): the gain counts the open holes a plant
-  // fills, and a member outside its range for the period fills none. Suggest waits for the verdict
-  // chunk, and a refused one ends the wait with a toast (state/suggest-wait.ts). Without a site climate
-  // every verdict is "not checked": nothing to wait for.
-  const verdicts = poolVerdicts.value;
+  // With a site climate, evaluate across ALL loaded climates (allCatalog + allVerdicts) so the
+  // starter palette draws from every species that fits the user's actual site inputs (never restricted
+  // to one climate label). Without a site climate, falls back to the chosen climate's pool.
+  const useAll = siteClimate.value && allCatalog.value.length > p.length && !!allVerdicts.value;
+  const candidatePool = useAll ? allCatalog.value : p;
+  const verdicts = useAll ? allVerdicts.value : poolVerdicts.value;
   if (waitsForVerdicts() && !verdicts) return false;
-  const s = algo.suggest(notOutside(p, verdicts, seed), { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value, verdicts });
+  const s = algo.suggest(notOutside(candidatePool, verdicts, seed), { ...flagContext.value, seed, removed: removed.value, guests: guestTaxa.value, verdicts });
   // A suggestion placed is a plant change: the page owns the save from here (state/save.ts), and it
   // offers its own Undo, as Add, Remove and Swap do, taken just before it is placed (fix round 4, s-1,
   // s-2: every caller gets it, and no effect can drop it). A wait ends on any plant change, so this is
   // the palette the press saw, with only the place answers given during the wait kept.
   const before = snapshot();
-  batch(() => { members.value = s.members; suggestedIds.value = [...s.members]; held.value = false; });
+  const ownIds = new Set(p.map((x) => x.id));
+  const extraGuests: Partial<Record<PlantId, ClimateZone>> = {};
+  for (const id of s.members) {
+    if (!ownIds.has(id) && !before.guests[id]) {
+      const hit = candidatePool.find((x) => x.id === id);
+      const home = hit?.origin?.guest ?? hit?.origin?.list;
+      if (home) extraGuests[id] = home;
+    }
+  }
+  batch(() => {
+    members.value = s.members;
+    suggestedIds.value = [...s.members];
+    held.value = false;
+    if (Object.keys(extraGuests).length) guests.value = { ...before.guests, ...extraGuests };
+  });
   offerUndo(note ? `${P('place.suggested', s.members.length)} ${note.text}` : P('place.suggested', s.members.length), before, note?.action ?? null);
   return true;
 }
@@ -984,9 +1060,24 @@ export function addMembers(ids: PlantId[], from: Partial<Record<PlantId, Climate
     // The guests change only when a guest joins (a new object would rebuild every guest's record).
     // (On Place the grower stays there, each plant listed under "What grows there already": b1a review
     // r1 conformance-2; "Show my palette" opens the palette.)
-    if (fresh.some((id) => from[id])) {
+    // Auto-resolve home climate for cross-climate plants added from full-DB search/recommendations
+    // so memberTaxa, details, verdicts, and persistence work seamlessly without callers passing `from`.
+    const c = climate.peek();
+    const ownIds = new Set((c ? pools.peek()[c] : undefined)?.map((x) => x.id) ?? []);
+    const resolvedFrom: Partial<Record<PlantId, ClimateZone>> = { ...from };
+    for (const id of fresh) {
+      if (!resolvedFrom[id] && !ownIds.has(id) && !before.guests[id]) {
+        for (const [z, list] of Object.entries(pools.peek())) {
+          if (z !== c && list?.some((x) => x.id === id)) {
+            resolvedFrom[id] = z as ClimateZone;
+            break;
+          }
+        }
+      }
+    }
+    if (fresh.some((id) => resolvedFrom[id])) {
       const g = { ...before.guests };
-      for (const id of fresh) if (from[id]) g[id] = from[id];
+      for (const id of fresh) if (resolvedFrom[id]) g[id] = resolvedFrom[id];
       guests.value = g;
     }
   });

@@ -100,4 +100,17 @@ test('Multi-locale & responsive invariants: /fr/palette/ French i18n, Light & Da
   assert.equal(mobCheck.nativeTitles, 0, 'zero native [title] attributes on mobile dark');
   assert.deepEqual(mobCheck.smallButtons, [], `all visible mobile buttons >= 44x44px (found small: ${mobCheck.smallButtons.join(', ')})`);
   assert.deepEqual(await pageErrorsOf(mobPage), [], 'zero console/page errors on mobile dark');
+
+  // 3. Additional native locales (de, ja, ru) at 1440px light — zero overflow, zero errors, localized tabs
+  for (const loc of [
+    { path: '/de/palette/', tabRe: /meine palette|lebendes system|klima 2050|pflanzplan/i },
+    { path: '/ja/palette/', tabRe: /パレット|生態|気候|植栽/i },
+    { path: '/ru/palette/', tabRe: /палитра|живая система|климат 2050|план посадки/i },
+  ]) {
+    const p = await openSuggestedPalette({ path: loc.path, width: 1440, theme: 'light', climateValue: 'temperate' });
+    const tabs = await p.evaluate(() => [...document.querySelectorAll('.studio-nav [role="tab"]')].map((e) => e.textContent?.trim()));
+    assert.ok(tabs.some((t) => loc.tabRe.test(t ?? '')), `${loc.path} renders localized Studio tabs (${tabs.join(', ')})`);
+    assert.ok((await horizontalOverflow(p)) <= 1, `${loc.path} has zero horizontal overflow`);
+    assert.deepEqual(await pageErrorsOf(p), [], `${loc.path} has zero console/page errors`);
+  }
 });

@@ -25,7 +25,7 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { ClimateZone, Room } from '../../../../lib/palette/index.ts';
 import { countryStatus, NEAREST_LISTS, periodIds, roomValues, ROOM_LIMIT_M, siteClimate as climateOf, siteEditLines, zoneOf } from '../../../../lib/palette/index.ts';
-import { type Country, addMembers, climate, country, countFits, curatedClimates, laterFits, editsCleared, guests, knownCountries, location as siteLocation, memberTaxa, members, openFigure, openSheet, removeMember, room, siteEdits, view } from '../../store.ts';
+import { type Country, addMembers, climate, country, countFits, curatedClimates, laterFits, editsCleared, guests, knownCountries, loadAllPools, location as siteLocation, memberTaxa, members, openFigure, openSheet, removeMember, room, siteEdits, view } from '../../store.ts';
 import { P, T, pageLang } from '../../strings.ts';
 import { say } from '../../words.ts';
 import { formatLength, formatTemp } from '../../format.ts';
@@ -681,6 +681,9 @@ function PlaceLine() {
 function Questions() {
   const z = climateChosen.value;
   const loc = siteLocation.value;
+  useEffect(() => {
+    if (z) void loadAllPools();
+  }, [z]);
   const ready = !!z && hasList(z);
   const block = z ? suggestBlock(z) : null;
   const placeShort = loc?.label ? loc.label.split(',')[0] : z ? zoneName(z) : '';

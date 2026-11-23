@@ -520,6 +520,11 @@
     padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--shadow);
     display: flex; flex-direction: column; gap: 14px;
   }
+  .studio-rail .palette-filter-popover {
+    padding: 12px; margin-bottom: 4px; box-shadow: none; gap: 10px;
+  }
+  .studio-rail .pfp-grid { grid-template-columns: 1fr; gap: 10px; }
+  .rail-fit-badge { font-size: 11px; padding: 1px 6px; line-height: 1.4; }
   .pfp-grid {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px;
   }
