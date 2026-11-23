@@ -49,6 +49,7 @@ import { PlantsCount } from '../plants/head-link.tsx';
 import { enterCountry, findCountries } from './country-search.ts';
 import { SitePostcard } from './SitePostcard.tsx';
 import { AreaStep, OpenCanopiPathB } from './AreaStep.tsx';
+import { openPlantPool } from '../../state/studio.ts';
 
 const sep = <span class="ct-sep" aria-hidden="true"> · </span>;
 
@@ -698,40 +699,87 @@ function Questions() {
   const z = climateChosen.value;
   const ready = !!z && hasList(z);
   const block = z ? suggestBlock(z) : null;
-  const wide = desk.value;
-  // The country line (BC13): after question 2 on the phone (Place), full width at the end on the laptop
-  // (PlaceDesk, rendered by PlaceForm); guessed, it stands in ClimateHand above the climates.
+
+  const startWinterGuild = () => {
+    openPlantPool({ tab: 'all', intent: 'winter', banner: 'Winter-planted starter guild' });
+    if (ready && !block) void requestSuggest();
+    else if (ready) showPalette();
+    else openClimates();
+  };
+
   return (
-    <>
-      <div class="ct-place-col">
-        <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
-        {!siteLocation.value?.lookup && <WeRead />}
-        <SitePostcard />
-        <KeptClimate />
-        {!ready && !wide && <MainCountry />}
-        {z && (block || !hasList(z)) && <PoolSlot zone={z} />}
-      </div>
-      {ready && (
-        <div class="ct-place-col">
+    <div class="ct-onboard-grid">
+      <div class="ct-ob-left">
+        {/* Step 1 · Your Place & Soil */}
+        <div class="ct-ob-card">
+          <span class="ct-eyebrow">STEP 1 · YOUR PLACE &amp; SOIL</span>
+          <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
+          {!siteLocation.value?.lookup && <WeRead />}
+          <SitePostcard />
+          <KeptClimate />
+          <details class="ct-adv-figures">
+            <summary class="ct-adv-summary">{T('studio.advOverrides')}</summary>
+            <PlaceFigures />
+          </details>
+          <MainCountry />
+          {z && (block || !hasList(z)) && <PoolSlot zone={z} />}
+          <p class="ct-ob-attr">canopi-climate v0.7.0 · canopi-data Schema 4.9</p>
+        </div>
+
+        {/* Step 2 · Your Space (always visible on initial load, matching v14) */}
+        <div class="ct-ob-card">
+          <span class="ct-eyebrow">STEP 2 · YOUR SPACE</span>
           <RoomStep />
           <AreaStep />
-          {!wide && <MainCountry />}
-          <OwnPlants />
-          <div class="ct-start-paths">
-            <div class="ct-cta ct-path-a">
-              <button type="button" class="button button-primary" data-place-show onClick={showPalette}>{T('place.show')}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
-              {!block && (
-                <p class="ct-place-suggest">
-                  {T('place.none')}{' '}
-                  <button type="button" class="link-button ct-link" data-place-suggest aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined} onClick={() => requestSuggest()}>{T('start.suggest')}</button>
-                </p>
-              )}
-            </div>
-            <OpenCanopiPathB />
-          </div>
         </div>
-      )}
-    </>
+      </div>
+
+      {/* Right Sticky Sidebar: Path A + Path B */}
+      <aside class="ct-ob-aside" aria-label="Start or open a palette">
+        <div class="ct-ob-card">
+          <span class="ct-eyebrow">PATH A · START FRESH FOR YOUR LAND</span>
+          <h2 class="ct-ob-h2">Choose a starter palette</h2>
+          <div class="ct-kit-list">
+            {!block && (
+              <button
+                type="button"
+                class="ct-kit-opt"
+                data-place-suggest
+                aria-busy={pendingSuggest.value || restoring.value ? 'true' : undefined}
+                onClick={() => (ready ? void requestSuggest() : openClimates())}
+              >
+                <strong>{T('start.suggest')}</strong>
+                <span class="ct-small-text ct-muted" aria-hidden="true">Balanced 6-species starter guild tuned to your climate and soil.</span>
+              </button>
+            )}
+            <button
+              type="button"
+              class="ct-kit-opt"
+              onClick={startWinterGuild}
+            >
+              <strong>❄ Winter-planted guild</strong>
+              <span class="ct-small-text ct-muted">Opens studio with cool-season, autumn-sowable plants pre-filtered.</span>
+            </button>
+          </div>
+          {ready ? <OwnPlants /> : <p class="ct-muted ct-small-text">{T('place.none')}</p>}
+          <button
+            type="button"
+            class="button button-primary ct-ob-cta"
+            data-place-show
+            onClick={() => (ready ? showPalette() : openClimates())}
+          >
+            {T('place.show')}
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+        </div>
+
+        <div class="ct-ob-card">
+          <span class="ct-eyebrow">PATH B · EXISTING PROJECT</span>
+          <h2 class="ct-ob-h2">Open an existing .canopi file</h2>
+          <OpenCanopiPathB />
+        </div>
+      </aside>
+    </div>
   );
 }
 
@@ -741,12 +789,7 @@ function PlaceForm() {
   return (
     <div class="ct-start ct-place">
       <div class="ct-place-main" hidden={cardsAsked.value}>
-        <div class="ct-place-grid"><Questions /></div>
-        <details class="ct-adv-figures">
-          <summary class="ct-adv-summary">{T('studio.advOverrides')}</summary>
-          <PlaceFigures />
-        </details>
-        {desk.value && <MainCountry />}
+        <Questions />
       </div>
       {/* After the questions, so the view's first heading (focus.ts) is question 1 while it is hidden. */}
       <ClimateHand open={cardsAsked.value} />

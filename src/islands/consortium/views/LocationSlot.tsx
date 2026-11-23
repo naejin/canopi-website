@@ -83,7 +83,7 @@ export function LocationSlot({ frame = false, children }: { frame?: boolean; chi
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.isComposing || e.keyCode === 229)) e.preventDefault(); }} />
         {searching
           ? <button type="button" class="button button-secondary" onClick={() => m?.stop()}>{T('location.stop')}</button>
-          : <button type="submit" class="button button-primary">{T('location.searchButton')}</button>}
+          : <button type="submit" class="button button-secondary">{T('location.searchButton')}</button>}
         {geo && showWays && !wide && (
           <button type="button" class="ct-icon-button" data-location-action="geo" aria-label={T('location.geo')} onClick={() => run((x) => x.useMyLocation())}>{geoIcon}</button>
         )}

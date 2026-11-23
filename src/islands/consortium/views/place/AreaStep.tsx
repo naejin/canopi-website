@@ -105,8 +105,8 @@ export function OpenCanopiPathB() {
   };
 
   return (
-    <div class="ct-path-b" data-open-canopi-path-b>
-      <span>Already have a Canopi file?</span>
+    <div class="ct-path-b ct-ob-dropzone" data-open-canopi-path-b>
+      <span class="ct-ob-drop-copy">Drop a .canopi file or browse</span>
       <input
         ref={inputRef}
         type="file"

@@ -86,7 +86,7 @@ export function StudioHeader() {
       thriving = 0;
       for (const m of members) {
         const v = verdicts.get(m.id);
-        if (!v || v.level === 'fits') thriving += 1;
+        if (!v || (v.level !== 'outside' && v.level !== 'look')) thriving += 1;
         else if (v.level === 'outside') risky += 1;
       }
     }
@@ -153,7 +153,7 @@ export function StudioHeader() {
               onClick={() => { autoSaveEnabled.value = !autoSaveEnabled.value; }}
             >
               <span class="ct-fs-dot" aria-hidden="true" />
-              <span>{dirty ? 'Unsaved' : autoSaveEnabled.value ? 'Auto-save On' : '✓ Saved'}</span>
+              <span>{dirty ? 'Unsaved' : autoSaveEnabled.value ? 'Auto-save On' : 'Saved'}</span>
             </button>
             <span class="ct-doc-sep" aria-hidden="true" />
             <button type="button" class="ct-studio-loc" data-studio-location onClick={backToPlace}>
