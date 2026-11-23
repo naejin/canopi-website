@@ -2,10 +2,11 @@
 type: Module
 title: Consortium page
 description: "The consortium v2 page in 11 locales: the static Astro shell, the Preact island's store, strings, load screens and view slots, the build setup for JSX and sqlite-wasm, and its built-site and browser checks."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:53:00Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:48Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:33Z }
 sources:
   - id: pool-tsx
     resource: ../../src/islands/consortium/views/pool/pool.tsx
@@ -15,8 +16,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:0b89a2579cb86fe6
-    last_modified: 2026-11-19T10:56:43Z
+    digest: sha256:db0dc259328e7353
+    last_modified: 2026-11-23T11:50:28Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -70,8 +71,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8c88beb694518fa1
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:c2b450b349d5137d
+    last_modified: 2026-11-23T12:23:18Z
   - id: serve-mjs
     resource: ../../scripts/browser/serve.mjs
     title: scripts/browser/serve.mjs
@@ -100,13 +101,13 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:e0271e7f9ac0e9b9
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:fe406149f10e3477
+    last_modified: 2026-11-23T12:23:18Z
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:1bc0c7720b8a2a60
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:f4d2331a69a4e933
+    last_modified: 2026-11-23T12:34:10Z
   - id: actions-tsx
     resource: ../../src/islands/consortium/views/Actions.tsx
     title: src/islands/consortium/views/Actions.tsx
@@ -120,8 +121,8 @@ sources:
   - id: printsheet-tsx
     resource: ../../src/islands/consortium/views/PrintSheet.tsx
     title: src/islands/consortium/views/PrintSheet.tsx
-    digest: sha256:2c9307c5f65567da
-    last_modified: 2026-11-17T14:08:59Z
+    digest: sha256:faaea2371f0fc036
+    last_modified: 2026-11-23T12:23:18Z
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
     title: src/styles/consortium/shell.css
@@ -130,8 +131,8 @@ sources:
   - id: print-css
     resource: ../../src/styles/consortium/print.css
     title: src/styles/consortium/print.css
-    digest: sha256:840ef9d244b4ea17
-    last_modified: 2026-11-14T12:12:11Z
+    digest: sha256:ceca28144d08de34
+    last_modified: 2026-11-23T12:23:18Z
   - id: consortium-s4-browser-test-mjs
     resource: ../../scripts/browser/consortium-s4.browser.test.mjs
     title: scripts/browser/consortium-s4.browser.test.mjs
@@ -205,8 +206,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:65e8eb00f8a4ee77
-    last_modified: 2026-11-19T12:55:44Z
+    digest: sha256:1240a627ed5f4e7e
+    last_modified: 2026-11-23T11:50:28Z
   - id: p5-helpers-mjs
     resource: ../../scripts/browser/p5-helpers.mjs
     title: scripts/browser/p5-helpers.mjs
@@ -220,8 +221,8 @@ sources:
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
-    digest: sha256:46f57cbfd5234252
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:9def0d1d684cb01f
+    last_modified: 2026-11-23T11:35:01Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
@@ -320,8 +321,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:76772cb8c5c7cfaa
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:10b7eb37d3f4f1f0
+    last_modified: 2026-11-23T12:31:49Z
   - id: find-tsx
     resource: ../../src/islands/consortium/views/find/Find.tsx
     title: src/islands/consortium/views/find/Find.tsx

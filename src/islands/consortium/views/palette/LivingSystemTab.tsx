@@ -7,6 +7,7 @@
 import { useMemo, useState } from 'preact/hooks';
 import { SUCCESSION_STAGES_6 } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
+import { T } from '../../strings.ts';
 import { openFieldDossier, studioTab } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
 import {
@@ -69,7 +70,7 @@ export function LivingSystemTab() {
 
       <div id="ct-sys-matrix" class="ct-sys-block">
         <div class="ct-sys-head">
-          <h3 class="ct-sys-title">Preferred Sun × Succession</h3>
+          <h3 class="ct-sys-title">{T('studio.sysMatrix')}</h3>
           <span class="ct-small-text ct-muted">Click any species to open its Field Dossier</span>
         </div>
 
@@ -122,7 +123,7 @@ export function LivingSystemTab() {
 
       <div id="ct-sys-roles" class="ct-sys-block">
         <div class="ct-sys-head">
-          <h3 class="ct-sys-title">6-Role Redundancy Ledger</h3>
+          <h3 class="ct-sys-title">{T('studio.sysRoles')}</h3>
           <span class="ct-small-text ct-muted">Multiple species per role keep the system resilient if one fails</span>
         </div>
 
@@ -161,7 +162,7 @@ export function LivingSystemTab() {
 
       <div id="ct-sys-year" class="ct-sys-block">
         <div class="ct-sys-head">
-          <h3 class="ct-sys-title">Your Growing Year</h3>
+          <h3 class="ct-sys-title">{T('studio.sysYear')}</h3>
           <div class="ct-seg-switch" role="group" aria-label="Activity focus">
             {FOCUS_OPTIONS.map((opt) => (
               <button

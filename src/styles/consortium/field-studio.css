@@ -1133,6 +1133,34 @@
   .ct .ct-ledger {
     grid-template-columns: 1fr 1fr;
   }
+  .ct .ct-dossier-nav {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* Hide redundant legacy step breadcrumb, hero title, and place bar once inside the Field Studio. */
+.ct #ct-head[data-step="palette"],
+.ct .ct-result-head {
+  display: none;
+}
+
+/* Calm collapsible Advanced climate & soil overrides on onboarding */
+.ct .ct-adv-figures {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 10px 14px;
+}
+.ct .ct-adv-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  min-height: 36px;
+  display: flex;
+  align-items: center;
 }
 
 /* ---- Slice 3.4: Living System, 2050 Climate & Grower-Grade Planting Plan ---- */
@@ -1628,25 +1656,72 @@
   stroke-width: 1.5;
 }
 .ct .ct-bp-node[data-stratum="emergent"] circle {
-  fill: var(--s-emergent);
-  stroke: var(--s-emergent-ink);
+  fill: var(--sun-full);
+  stroke: var(--sun-full-ink);
 }
 .ct .ct-bp-node[data-stratum="high"] circle {
-  fill: var(--s-high);
-  stroke: var(--s-high-ink);
+  fill: var(--sun-mostly);
+  stroke: var(--sun-mostly-ink);
 }
 .ct .ct-bp-node[data-stratum="medium"] circle {
-  fill: var(--s-medium);
-  stroke: var(--s-medium-ink);
+  fill: var(--sun-part);
+  stroke: var(--sun-part-ink);
 }
 .ct .ct-bp-node[data-stratum="low"] circle {
-  fill: var(--s-low);
-  stroke: var(--s-low-ink);
+  fill: var(--sun-shade);
+  stroke: var(--sun-shade-ink);
 }
 .ct .ct-bp-node text {
   fill: var(--text);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 600;
+}
+.ct .ct-bp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 10px;
+}
+.ct .ct-bp-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 8px 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.ct .ct-bp-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-alt);
+}
+.ct .ct-bp-dot[data-stratum="emergent"] {
+  background: var(--sun-full);
+  border-color: var(--sun-full-ink);
+}
+.ct .ct-bp-dot[data-stratum="high"] {
+  background: var(--sun-mostly);
+  border-color: var(--sun-mostly-ink);
+}
+.ct .ct-bp-dot[data-stratum="medium"] {
+  background: var(--sun-part);
+  border-color: var(--sun-part-ink);
+}
+.ct .ct-bp-dot[data-stratum="low"] {
+  background: var(--sun-shade);
+  border-color: var(--sun-shade-ink);
 }
 .ct .ct-qty-edit {
   display: inline-flex;
@@ -1734,6 +1809,7 @@
   .ct .ct-studio-name {
     font-size: 18px;
     max-width: 100%;
+    min-height: 44px;
   }
   .ct .ct-studio-tabs {
     gap: 2px 12px;
@@ -1747,6 +1823,16 @@
     min-height: 44px;
     padding: 0;
   }
+  .ct .ct-sys-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .ct .ct-card-act {
+    min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
+  }
   .ct .ct-studio-loc,
   .ct .ct-studio-btn,
   .ct .ct-studio-menu-item,
@@ -1757,7 +1843,6 @@
   .ct .ct-seg-btn,
   .ct .ct-filter-btn,
   .ct .ct-rail-tab,
-  .ct .ct-card-act,
   .ct .ct-dossier-btn,
   .ct .ct-sys-pill,
   .ct .ct-sys-chip,
@@ -1765,7 +1850,9 @@
   .ct .ct-triage-collapse,
   .ct .ct-qty-input,
   .ct .ct-qty-reset,
-  .ct .ct-cal-cell {
+  .ct .ct-cal-cell,
+  .ct .ct-bp-leg-item,
+  .ct .ct-adv-summary {
     min-height: 44px;
   }
   .ct .ct-studio-split-caret {

@@ -5,16 +5,17 @@ description: Framework-free logic shared by the Worker endpoints, the page scrip
 resource: ../../src/lib
 tags: [module]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T10:15:13Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:51Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:18Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:42Z }
 sources:
   - id: lib
     resource: ../../src/lib
     title: src/lib/
-    digest: sha256:38728dc059ef6329
-    last_modified: 2026-11-19T12:06:03Z
+    digest: sha256:c6d4886012efabb8
+    last_modified: 2026-11-23T11:50:28Z
   - id: contact-api
     resource: ../../src/pages/api/contact.ts
     title: src/pages/api/contact.ts
@@ -38,8 +39,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:e393580af2534bc5
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:daa1389e174a2f90
+    last_modified: 2026-11-23T11:35:01Z
   - id: site-change-ts
     resource: ../../src/lib/consortium/site-change.ts
     title: src/lib/consortium/site-change.ts

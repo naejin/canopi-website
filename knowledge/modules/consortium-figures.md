@@ -3,7 +3,9 @@ type: Module
 title: Plant palette figures panel
 description: The PP-C pf-d panel that shows every site input the Plant palette checks read, what limits plants at a place, and the summary of what an edit changed.
 tags: [consortium, module]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:21Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:47Z }
+verified:
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:32Z }
 sources:
   - id: figures-tsx
     resource: ../../src/islands/consortium/views/figures/Figures.tsx
@@ -39,12 +41,12 @@ sources:
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
     digest: sha256:59ecfbc3a59f1adf
-    last_modified: 2026-11-19T11:54:48Z
+    last_modified: 2026-11-19T11:59:54Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:0b89a2579cb86fe6
-    last_modified: 2026-11-19T10:56:43Z
+    digest: sha256:db0dc259328e7353
+    last_modified: 2026-11-23T11:50:28Z
   - id: consortium-pf-d-test-mjs
     resource: ../../scripts/consortium-pf-d.test.mjs
     title: scripts/consortium-pf-d.test.mjs

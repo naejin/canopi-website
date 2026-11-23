@@ -2,9 +2,10 @@
 type: Module
 title: Consortium location step
 description: The consortium's optional site location (geolocation, Nominatim search, MapLibre map) that suggests a climate card and a country from the climate tiles, kept on the device and put in a link only on request.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:08Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:47Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:18Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:32Z }
 sources:
   - id: location-privacy-tsx
     resource: ../../src/islands/consortium/views/location/privacy.tsx
@@ -14,8 +15,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:65e8eb00f8a4ee77
-    last_modified: 2026-11-19T12:55:44Z
+    digest: sha256:1240a627ed5f4e7e
+    last_modified: 2026-11-23T11:50:28Z
   - id: location-tsx
     resource: ../../src/islands/consortium/views/location/location.tsx
     title: src/islands/consortium/views/location/location.tsx
@@ -79,8 +80,8 @@ sources:
   - id: start-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:1bc0c7720b8a2a60
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:f4d2331a69a4e933
+    last_modified: 2026-11-23T12:34:10Z
   - id: transport-ts
     resource: ../../src/lib/location/transport.ts
     title: src/lib/location/transport.ts
@@ -90,7 +91,7 @@ sources:
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: lookups-ts
     resource: ../../src/islands/consortium/state/lookups.ts
     title: src/islands/consortium/state/lookups.ts
@@ -109,8 +110,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:888570c5d4211f48
-    last_modified: 2026-11-19T08:16:50Z
+    digest: sha256:0c6931a4a66f6ca4
+    last_modified: 2026-11-23T11:35:01Z
 enforced_by:
   - scripts/consortium-p5-seams-s5b.test.mjs
   - scripts/browser/consortium-p5-s5b.browser.test.mjs

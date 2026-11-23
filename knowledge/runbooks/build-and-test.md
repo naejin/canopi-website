@@ -4,11 +4,11 @@ title: Build and test
 description: How to install, build, test, and verify the marketing site before pushing to master.
 tags: [runbook, build, test]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-22T22:36:54Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:52Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:33:36Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-18T04:53:14Z }
-  - { by: antigravity/gemini, at: 2026-11-22T22:36:51Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:44Z }
 sources:
   - id: package-json
     resource: ../../package.json
@@ -19,12 +19,12 @@ sources:
     resource: ../../README.md
     title: README.md
     digest: sha256:cacf097e29c875e7
-    last_modified: 2026-11-22T22:35:04Z
+    last_modified: 2026-11-22T22:39:24Z
   - id: check-built-site
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8c88beb694518fa1
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:c2b450b349d5137d
+    last_modified: 2026-11-23T12:23:18Z
   - id: tsconfig-json
     resource: ../../tsconfig.json
     title: tsconfig.json
@@ -39,7 +39,7 @@ sources:
     resource: ../../.githooks/pre-push
     title: .githooks/pre-push
     digest: sha256:3b29819f5fff8205
-    last_modified: 2026-11-22T22:35:16Z
+    last_modified: 2026-11-22T22:39:24Z
   - id: pre-commit
     resource: ../../.githooks/pre-commit
     title: .githooks/pre-commit
@@ -59,7 +59,7 @@ sources:
     resource: ../../scripts/quality/ratchet.mjs
     title: scripts/quality/ratchet.mjs
     digest: sha256:8dc8323b87a1ea9b
-    last_modified: 2026-11-22T22:35:17Z
+    last_modified: 2026-11-22T22:39:24Z
   - id: axe-smoke-mjs
     resource: ../../scripts/browser/smoke/axe.smoke.mjs
     title: scripts/browser/smoke/axe.smoke.mjs

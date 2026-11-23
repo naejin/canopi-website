@@ -172,6 +172,22 @@ export interface DossierSpec {
 
 const clampPct = (v: number, lo: number, hi: number): number => Math.max(0, Math.min(100, Math.round(((v - lo) / (hi - lo)) * 100)));
 
+const fmt1 = (n: number): string => {
+  const r = Math.round(n * 10) / 10;
+  return Number.isInteger(r) ? String(r) : r.toFixed(1);
+};
+
+export function formatHeightRange(h?: { min?: number | null; max?: number | null } | null): string {
+  if (!h) return '';
+  const lo = h.min != null && Number.isFinite(h.min) ? h.min : null;
+  const hi = h.max != null && Number.isFinite(h.max) ? h.max : null;
+  if (lo == null && hi == null) return '';
+  if (lo == null && hi != null) return `up to ${fmt1(hi)} m`;
+  if (lo != null && hi == null) return `${fmt1(lo)}+ m`;
+  if (fmt1(lo!) === fmt1(hi!)) return `${fmt1(hi!)} m`;
+  return `${fmt1(lo!)}–${fmt1(hi!)} m`;
+}
+
 export function buildDossierSpec(t: Taxon, details: Details | null, loc: SiteLocation | null): DossierSpec {
   const sc = loc?.lookup ? siteClimate(loc.lookup) : null;
   const sitePh = loc?.lookup?.soil?.phH2o ?? null;
@@ -202,10 +218,8 @@ export function buildDossierSpec(t: Taxon, details: Details | null, loc: SiteLoc
     hotPin: siteHotC != null ? clampPct(siteHotC, -30, 50) : null,
   };
 
-  const heightStr = t.traits.height_m
-    ? `${t.traits.height_m.min ?? '?'}–${t.traits.height_m.max ?? '?'} m`
-    : 'Unrecorded';
-  const spreadStr = t.traits.width_max_m != null ? `${t.traits.width_max_m} m spread` : 'spread unrecorded';
+  const heightStr = formatHeightRange(t.traits.height_m) || 'Unrecorded';
+  const spreadStr = t.traits.width_max_m != null ? `${fmt1(t.traits.width_max_m)} m spread` : 'spread unrecorded';
   const chillStr = details?.extremes?.chillMinCP != null
     ? `${details.extremes.chillMinCP} chill portions`
     : isLowChillTaxon(t) ? 'Low chill (< 200 h)' : 'Moderate chill';

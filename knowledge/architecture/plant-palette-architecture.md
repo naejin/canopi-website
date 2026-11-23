@@ -4,9 +4,10 @@ title: Plant palette architecture
 description: "Target architecture of the Plant palette redesign: layers and modules, one owner per concept (place, verdict, holes, pictures, colour tokens), data flow, what is computed where, reuse and deletions, link v5 and storage, failure states, and the formats that outlive the code."
 tags: [consortium, architecture]
 status: draft
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:58Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:44Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:20Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:23Z }
 sources:
   - id: decisions-consortium-v2-architecture
     resource: /decisions/consortium-v2-architecture.md
@@ -42,13 +43,13 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:e0271e7f9ac0e9b9
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:fe406149f10e3477
+    last_modified: 2026-11-23T12:23:18Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8c88beb694518fa1
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:c2b450b349d5137d
+    last_modified: 2026-11-23T12:23:18Z
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
     title: scripts/consortium-boundary.test.mjs
@@ -97,8 +98,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:c97ea2817fd76eb5
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:96c53431ba5d3d97
+    last_modified: 2026-11-23T11:50:28Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -187,8 +188,8 @@ sources:
   - id: locationslot-tsx
     resource: ../../src/islands/consortium/views/LocationSlot.tsx
     title: src/islands/consortium/views/LocationSlot.tsx
-    digest: sha256:65e8eb00f8a4ee77
-    last_modified: 2026-11-19T12:55:44Z
+    digest: sha256:1240a627ed5f4e7e
+    last_modified: 2026-11-23T11:50:28Z
   - id: poolslot-tsx
     resource: ../../src/islands/consortium/views/PoolSlot.tsx
     title: src/islands/consortium/views/PoolSlot.tsx
@@ -202,8 +203,8 @@ sources:
   - id: stagebar-tsx
     resource: ../../src/islands/consortium/views/StageBar.tsx
     title: src/islands/consortium/views/StageBar.tsx
-    digest: sha256:6ea4d098d503a2fe
-    last_modified: 2026-11-19T05:25:31Z
+    digest: sha256:7d6b3e7587aa6aba
+    last_modified: 2026-11-23T11:50:28Z
   - id: toast-tsx
     resource: ../../src/islands/consortium/views/Toast.tsx
     title: src/islands/consortium/views/Toast.tsx
@@ -257,8 +258,8 @@ sources:
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
-    digest: sha256:a162262df831f7bf
-    last_modified: 2026-11-11T05:47:54Z
+    digest: sha256:872518766f5b6313
+    last_modified: 2026-11-23T11:35:01Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
@@ -277,8 +278,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:e393580af2534bc5
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:daa1389e174a2f90
+    last_modified: 2026-11-23T11:35:01Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -292,8 +293,8 @@ sources:
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
-    digest: sha256:faefdfc3640d75cc
-    last_modified: 2026-11-13T12:43:29Z
+    digest: sha256:4bee0febe945ad89
+    last_modified: 2026-11-23T11:35:01Z
   - id: placement-ts
     resource: ../../src/lib/consortium/placement.ts
     title: src/lib/consortium/placement.ts
@@ -317,8 +318,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:d17e7425d6f4e31b
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:323fb9b1c48bc193
+    last_modified: 2026-11-23T11:35:01Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -337,8 +338,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:260e0d612a9f4809
-    last_modified: 2026-11-19T04:40:24Z
+    digest: sha256:6918fafa28e9b4ad
+    last_modified: 2026-11-23T11:35:01Z
   - id: zones-ts
     resource: ../../src/lib/consortium/zones.ts
     title: src/lib/consortium/zones.ts
@@ -352,8 +353,8 @@ sources:
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:76772cb8c5c7cfaa
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:10b7eb37d3f4f1f0
+    last_modified: 2026-11-23T12:31:49Z
   - id: swap-tsx
     resource: ../../src/islands/consortium/views/Swap.tsx
     title: src/islands/consortium/views/Swap.tsx
@@ -367,8 +368,8 @@ sources:
   - id: palette-tsx
     resource: ../../src/islands/consortium/views/palette/Palette.tsx
     title: src/islands/consortium/views/palette/Palette.tsx
-    digest: sha256:49df728398240c7b
-    last_modified: 2026-11-19T08:17:40Z
+    digest: sha256:14620f8218b2089f
+    last_modified: 2026-11-23T12:31:53Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts

@@ -242,16 +242,21 @@ export function evaluateClimate2050(
   const baseHotToday = sc?.today?.tmaxWarmC ?? 29;
   const baseAridity = sc?.today?.aridityIndex ?? 0.8;
   const futureDeltaWarm = period === '2071-2099' ? 3.4 : 2.1;
+  const winterWarmBump = Math.round(futureDeltaWarm * 0.6 * 10) / 10;
   const extremeHotBump = envelope === 'extreme10' ? 2.5 : 0;
-  const extremeColdDrop = envelope === 'extreme10' ? -3.0 : 0;
 
   const coldTodayC = Math.round((baseColdToday + stress.winterDeltaC) * 10) / 10;
-  const coldTail10yrC = Math.round((baseColdToday + extremeColdDrop + stress.winterDeltaC - 1.5) * 10) / 10;
+  const typicalWinterFutureC = Math.round((baseColdToday + winterWarmBump + stress.winterDeltaC) * 10) / 10;
+  const extremeColdTailC = Math.round((baseColdToday - 3.5 + stress.winterDeltaC) * 10) / 10;
+  const coldTail10yrC = envelope === 'extreme10' ? extremeColdTailC : typicalWinterFutureC;
   const hotTodayC = Math.round((baseHotToday + stress.heatDeltaC * 0.5) * 10) / 10;
   const hotFutureC = Math.round((baseHotToday + futureDeltaWarm + extremeHotBump + stress.heatDeltaC) * 10) / 10;
   const chillTodayCP = Math.max(5, Math.round(60 - Math.max(0, baseColdToday) * 3));
   const chillFutureCP = Math.max(0, Math.round(chillTodayCP - futureDeltaWarm * 6 - stress.heatDeltaC * 3));
-  const dryPressure = Math.round(stress.droughtPct + (envelope === 'extreme10' ? 15 : 0) + (baseAridity < 0.65 ? 20 : 0));
+  const dryTodayPct = Math.round((1 - Math.min(1, baseAridity)) * 40);
+  const dryFuturePct = Math.min(95, Math.max(0, dryTodayPct + Math.round(futureDeltaWarm * 4) + stress.droughtPct + (envelope === 'extreme10' ? 15 : 0)));
+  const dryDeltaPct = dryFuturePct - dryTodayPct;
+  const dryPressure = dryDeltaPct;
   const novelClimate = hotFutureC >= 41 || (chillFutureCP < 15 && stress.heatDeltaC >= 2.5);
   const matchQuality = novelClimate ? 0.45 : 0.82;
 
@@ -340,10 +345,12 @@ export function evaluateClimate2050(
       ? `Evaluated under the 1-in-10-year extreme envelope (${coldTail10yrC} °C cold tail to ${hotFutureC} °C heat dome).`
       : `Evaluated under typical ${period === '2071-2099' ? '2080s' : '2050s'} conditions (${coldTodayC} °C winter to ${hotFutureC} °C summer).`;
 
+  const winterDelta = Math.round((coldTail10yrC - baseColdToday) * 10) / 10;
+  const hotDelta = Math.round((hotFutureC - baseHotToday) * 10) / 10;
   const forces = [
-    { label: 'Summer peak', today: `${baseHotToday.toFixed(1)} °C`, future: `${hotFutureC.toFixed(1)} °C`, delta: `+${(hotFutureC - baseHotToday).toFixed(1)} °C` },
-    { label: 'Winter floor', today: `${baseColdToday.toFixed(1)} °C`, future: `${coldTail10yrC.toFixed(1)} °C`, delta: `${(coldTail10yrC - baseColdToday) >= 0 ? '+' : ''}${(coldTail10yrC - baseColdToday).toFixed(1)} °C` },
-    { label: 'Dry-spell pressure', today: `${Math.round((1 - Math.min(1, baseAridity)) * 40)}%`, future: `${Math.min(95, dryPressure + 20)}%`, delta: `+${dryPressure}%` },
+    { label: 'Summer peak', today: `${baseHotToday.toFixed(1)} °C`, future: `${hotFutureC.toFixed(1)} °C`, delta: `${hotDelta >= 0 ? '+' : ''}${hotDelta.toFixed(1)} °C` },
+    { label: 'Winter floor', today: `${baseColdToday.toFixed(1)} °C`, future: `${coldTail10yrC.toFixed(1)} °C`, delta: `${winterDelta >= 0 ? '+' : ''}${winterDelta.toFixed(1)} °C` },
+    { label: 'Dry-spell pressure', today: `${dryTodayPct}%`, future: `${dryFuturePct}%`, delta: `${dryDeltaPct >= 0 ? '+' : ''}${dryDeltaPct}%` },
     { label: 'Winter chill & false spring', today: `${chillTodayCP} CP`, future: `${chillFutureCP} CP`, delta: `${chillFutureCP - chillTodayCP} CP` },
   ];
 
@@ -385,6 +392,7 @@ export function evaluateClimate2050(
 interface PlotLayoutNode {
   id: string;
   label: string;
+  initials: string;
   sunBand: Stratum;
   x: number;
   y: number;
@@ -418,6 +426,17 @@ export function computePlotLayout(plan: PlantingPlanSummary, pattern: LayoutPatt
   const visibleItems = plan.items.filter((it) => it.qty > 0).slice(0, 18);
   const nodes: PlotLayoutNode[] = [];
   const lanes: number[] = [];
+  const usedInitials = new Set<string>();
+  const initialsFor = (canon: string, idx: number): string => {
+    const parts = canon.trim().split(/\s+/);
+    const base = ((parts[0]?.[0] ?? 'S') + (parts[1]?.[0] ?? parts[0]?.[1] ?? String(idx + 1))).replace(/[^A-Za-z0-9]/g, '');
+    const code = (base.slice(0, 2) || `S${idx + 1}`);
+    const cap = code[0].toUpperCase() + (code[1]?.toLowerCase() ?? '');
+    if (!usedInitials.has(cap)) { usedInitials.add(cap); return cap; }
+    const alt = `${cap[0]}${(idx % 9) + 1}`;
+    usedInitials.add(alt);
+    return alt;
+  };
 
   if (pattern === 'alley') {
     const laneCount = 3;
@@ -430,8 +449,8 @@ export function computePlotLayout(plan: PlantingPlanSummary, pattern: LayoutPatt
       const colsInLane = Math.max(1, Math.ceil(visibleItems.length / laneCount));
       const x = pad + 26 + ((colIdx + 0.5) * (viewWidth - pad * 2 - 52)) / colsInLane;
       const y = lanes[laneIdx];
-      const r = it.sunBand === 'emergent' ? 20 : it.sunBand === 'high' ? 16 : it.sunBand === 'medium' ? 13 : 10;
-      nodes.push({ id: it.taxon.id, label: it.taxon.canonical_name.split(' ')[0], sunBand: it.sunBand, x, y, r, qty: it.qty });
+      const r = it.sunBand === 'emergent' ? 20 : it.sunBand === 'high' ? 16 : it.sunBand === 'medium' ? 13 : 11;
+      nodes.push({ id: it.taxon.id, label: it.taxon.canonical_name, initials: initialsFor(it.taxon.canonical_name, idx), sunBand: it.sunBand, x, y, r, qty: it.qty });
     });
   } else if (pattern === 'grid') {
     const cols = Math.max(2, Math.ceil(Math.sqrt(visibleItems.length * 1.5)));
@@ -441,8 +460,8 @@ export function computePlotLayout(plan: PlantingPlanSummary, pattern: LayoutPatt
       const row = Math.floor(idx / cols);
       const x = pad + 24 + ((c + 0.5) * (viewWidth - pad * 2 - 48)) / cols;
       const y = pad + 22 + ((row + 0.5) * (viewHeight - pad * 2 - 44)) / rows;
-      const r = it.sunBand === 'emergent' ? 19 : it.sunBand === 'high' ? 15 : it.sunBand === 'medium' ? 12 : 9;
-      nodes.push({ id: it.taxon.id, label: it.taxon.canonical_name.split(' ')[0], sunBand: it.sunBand, x, y, r, qty: it.qty });
+      const r = it.sunBand === 'emergent' ? 19 : it.sunBand === 'high' ? 15 : it.sunBand === 'medium' ? 13 : 11;
+      nodes.push({ id: it.taxon.id, label: it.taxon.canonical_name, initials: initialsFor(it.taxon.canonical_name, idx), sunBand: it.sunBand, x, y, r, qty: it.qty });
     });
   } else {
     // Guild Clusters: place emergent/high anchors in two guild centers, ring smaller species around them.
@@ -453,12 +472,12 @@ export function computePlotLayout(plan: PlantingPlanSummary, pattern: LayoutPatt
     visibleItems.forEach((it, idx) => {
       const c = centers[idx % centers.length];
       const rank = Math.floor(idx / centers.length);
-      const r = it.sunBand === 'emergent' ? 21 : it.sunBand === 'high' ? 16 : it.sunBand === 'medium' ? 12 : 9;
+      const r = it.sunBand === 'emergent' ? 21 : it.sunBand === 'high' ? 16 : it.sunBand === 'medium' ? 13 : 11;
       const ring = rank === 0 ? 0 : rank <= 4 ? 58 : 102;
       const angle = rank === 0 ? 0 : ((rank - 1) * (Math.PI * 2)) / Math.max(4, Math.min(8, Math.ceil(visibleItems.length / 2)));
       const x = c.x + Math.cos(angle) * ring;
       const y = c.y + Math.sin(angle) * ring * 0.85;
-      nodes.push({ id: it.taxon.id, label: it.taxon.canonical_name.split(' ')[0], sunBand: it.sunBand, x, y, r, qty: it.qty });
+      nodes.push({ id: it.taxon.id, label: it.taxon.canonical_name, initials: initialsFor(it.taxon.canonical_name, idx), sunBand: it.sunBand, x, y, r, qty: it.qty });
     });
   }
 

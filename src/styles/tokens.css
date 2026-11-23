@@ -80,6 +80,15 @@
   --rule-hairline: rgba(58, 46, 28, 0.12);
   --ochre-tint: rgba(156, 90, 22, 0.08);
   --ochre-border: rgba(156, 90, 22, 0.34);
+  /* Harmonized field-notebook sun-tier tokens (Slice 3.5 SVG blueprint & diagrams; zero bright primaries). */
+  --sun-full: #E8C57B;
+  --sun-full-ink: #7A5410;
+  --sun-mostly: #D9B382;
+  --sun-mostly-ink: #6A461C;
+  --sun-part: #C5B99E;
+  --sun-part-ink: #4A4234;
+  --sun-shade: #B8B2A6;
+  --sun-shade-ink: #3E3A33;
 
   --font-sans: 'Source Sans 3', 'Source Sans 3 Fallback', 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Literata', 'Literata Fallback', 'Noto Serif', 'Noto Serif SC', Georgia, serif;
@@ -142,6 +151,14 @@
   --rule-hairline: rgba(255, 248, 235, 0.10);
   --ochre-tint: rgba(227, 160, 76, 0.12);
   --ochre-border: rgba(227, 160, 76, 0.42);
+  --sun-full: #6C5222;
+  --sun-full-ink: #F0CB7D;
+  --sun-mostly: #5A462B;
+  --sun-mostly-ink: #E2B987;
+  --sun-part: #474137;
+  --sun-part-ink: #D4C8AE;
+  --sun-shade: #38352F;
+  --sun-shade-ink: #C2BCB0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -199,5 +216,13 @@
     --rule-hairline: rgba(255, 248, 235, 0.10);
     --ochre-tint: rgba(227, 160, 76, 0.12);
     --ochre-border: rgba(227, 160, 76, 0.42);
+    --sun-full: #6C5222;
+    --sun-full-ink: #F0CB7D;
+    --sun-mostly: #5A462B;
+    --sun-mostly-ink: #E2B987;
+    --sun-part: #474137;
+    --sun-part-ink: #D4C8AE;
+    --sun-shade: #38352F;
+    --sun-shade-ink: #C2BCB0;
   }
 }

@@ -3,10 +3,11 @@ type: Architecture Decision
 title: Site navigation
 description: The header carries Guides, Books, Consortium, Donate, language and theme, a phone Menu below 640px holds every link, the guides and bibliography form one Learn section with the consortium tool, and the home page's Learn and try section holds the consortium tool and the entry guides.
 tags: [decision, navigation]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:32:43Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:42:18Z }
 verified:
   - { by: okf-cli/0.1.0, at: 2026-11-10T18:09:34Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:29:15Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:42:17Z }
 sources:
   - id: consortium-index-json
     resource: ../../src/data/consortium-index.json
@@ -51,13 +52,13 @@ sources:
   - id: en-json
     resource: ../../src/i18n/translations/en.json
     title: src/i18n/translations/en.json
-    digest: sha256:a16b1d96c2afeb6f
-    last_modified: 2026-11-19T12:23:44Z
+    digest: sha256:eb7bbb695d311f80
+    last_modified: 2026-11-23T12:40:17Z
   - id: tokens-css
     resource: ../../src/styles/tokens.css
     title: src/styles/tokens.css
-    digest: sha256:76772cb8c5c7cfaa
-    last_modified: 2026-11-14T10:56:09Z
+    digest: sha256:10b7eb37d3f4f1f0
+    last_modified: 2026-11-23T12:31:49Z
   - id: fonts-css
     resource: ../../src/styles/fonts.css
     title: src/styles/fonts.css

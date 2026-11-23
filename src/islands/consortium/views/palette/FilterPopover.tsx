@@ -4,6 +4,7 @@
 // plus 3 agronomy filters (Low chill, Clay / wet-soil, Extreme-hardy). Zero native title="...".
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { SUCCESSION_STAGES_6, type JobId, type Stratum } from '../../../../lib/consortium/index.ts';
+import { T } from '../../strings.ts';
 import {
   activeFilterCount,
   EMPTY_STUDIO_FILTERS,
@@ -36,7 +37,8 @@ export interface FilterPopoverProps {
 
 let filterUidSeq = 0;
 
-export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopoverProps) {
+export function FilterPopover({ value, onChange, label }: FilterPopoverProps) {
+  const triggerLabel = label ?? T('studio.filters');
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const uidRef = useRef<string>('');
@@ -56,14 +58,14 @@ export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopo
         onClick={() => setOpen((v) => !v)}
       >
         <span aria-hidden="true">⚙</span>
-        <span>{count > 0 ? `${label} (${count})` : label}</span>
+        <span>{count > 0 ? `${triggerLabel} (${count})` : triggerLabel}</span>
       </button>
 
       {open && (
-        <div class="ct-filter-pop" data-filter-popover role="dialog" aria-label={label}>
+        <div class="ct-filter-pop" data-filter-popover role="dialog" aria-label={triggerLabel}>
           <div class="ct-filter-grid">
             <div class="ct-filter-field">
-              <label for={`${uid}-sun`}>Sun exposure</label>
+              <label for={`${uid}-sun`}>{T('studio.filterSun')}</label>
               <select
                 id={`${uid}-sun`}
                 value={value.sun}
@@ -75,7 +77,7 @@ export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopo
             </div>
 
             <div class="ct-filter-field">
-              <label for={`${uid}-stage`}>Succession stage</label>
+              <label for={`${uid}-stage`}>{T('studio.filterStage')}</label>
               <select
                 id={`${uid}-stage`}
                 value={String(value.stage)}
@@ -92,7 +94,7 @@ export function FilterPopover({ value, onChange, label = 'Filters' }: FilterPopo
             </div>
 
             <div class="ct-filter-field">
-              <label for={`${uid}-role`}>Ecological role</label>
+              <label for={`${uid}-role`}>{T('studio.filterRole')}</label>
               <select
                 id={`${uid}-role`}
                 value={value.role}

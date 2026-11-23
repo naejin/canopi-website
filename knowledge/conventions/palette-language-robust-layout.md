@@ -2,7 +2,9 @@
 type: Convention
 title: Palette language-robust layout
 description: "The Plant palette's parts (.ct) lay out in any face and all 11 locales: a one-line step bar, CJK breaking and system faces, long-word hyphenation, checked at 320-1280 px."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:58:20Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:45Z }
+verified:
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:24Z }
 sources:
   - id: shell-css
     resource: ../../src/styles/consortium/shell.css
@@ -13,17 +15,17 @@ sources:
     resource: ../../src/styles/consortium/base.css
     title: src/styles/consortium/base.css
     digest: sha256:59ecfbc3a59f1adf
-    last_modified: 2026-11-19T11:54:48Z
+    last_modified: 2026-11-19T11:59:54Z
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:0b89a2579cb86fe6
-    last_modified: 2026-11-19T10:56:43Z
+    digest: sha256:db0dc259328e7353
+    last_modified: 2026-11-23T11:50:28Z
   - id: consortium-seams-layout-browser-test-mjs
     resource: ../../scripts/browser/consortium-seams-layout.browser.test.mjs
     title: scripts/browser/consortium-seams-layout.browser.test.mjs
     digest: sha256:8e5de3eb8b4c7b69
-    last_modified: 2026-11-19T11:54:48Z
+    last_modified: 2026-11-19T11:59:54Z
   - id: seams-helpers-mjs
     resource: ../../scripts/browser/seams-helpers.mjs
     title: scripts/browser/seams-helpers.mjs

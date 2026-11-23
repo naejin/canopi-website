@@ -4,10 +4,10 @@ title: Plant palette slices
 description: "Pushes PP-B to PP-G of the Plant palette redesign: common rules, the 39 F1a markers re-owned and the parking rule, the tests each push breaks, and per push the outcome, boards, commit 0, streams with owned files and tests first, probes, budgets, risks and deletions."
 tags: [consortium]
 status: draft
-generated: { by: antigravity/gemini, at: 2026-11-22T22:36:53Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:51Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:19Z }
-  - { by: antigravity/gemini, at: 2026-11-22T22:36:49Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:42Z }
 sources:
   - id: pp-b-owners-json
     resource: ../../scripts/plan/pp-b-owners.json
@@ -28,7 +28,7 @@ sources:
     resource: ../../.githooks/lib.sh
     title: .githooks/lib.sh
     digest: sha256:f65bdfdd2055c69d
-    last_modified: 2026-11-22T22:35:08Z
+    last_modified: 2026-11-22T22:39:24Z
   - id: ci-yml
     resource: ../../.github/workflows/ci.yml
     title: .github/workflows/ci.yml
@@ -48,7 +48,7 @@ sources:
     resource: ../../CLAUDE.md
     title: CLAUDE.md
     digest: sha256:9e9b671a4be59041
-    last_modified: 2026-11-22T22:34:58Z
+    last_modified: 2026-11-22T22:39:24Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -67,18 +67,18 @@ sources:
   - id: built-modules-mjs
     resource: ../../scripts/built-modules.mjs
     title: scripts/built-modules.mjs
-    digest: sha256:e0271e7f9ac0e9b9
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:fe406149f10e3477
+    last_modified: 2026-11-23T12:23:18Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:38a582b6fc68700c
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:61d3d077c466a46e
+    last_modified: 2026-11-23T12:23:18Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8c88beb694518fa1
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:c2b450b349d5137d
+    last_modified: 2026-11-23T12:23:18Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
@@ -147,8 +147,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:c97ea2817fd76eb5
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:96c53431ba5d3d97
+    last_modified: 2026-11-23T11:50:28Z
   - id: focus-ts
     resource: ../../src/islands/consortium/focus.ts
     title: src/islands/consortium/focus.ts
@@ -217,13 +217,13 @@ sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
-    digest: sha256:888570c5d4211f48
-    last_modified: 2026-11-19T08:16:50Z
+    digest: sha256:0c6931a4a66f6ca4
+    last_modified: 2026-11-23T11:35:01Z
   - id: model-js
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
-    digest: sha256:23fa6d9b282cd681
-    last_modified: 2026-11-12T20:26:30Z
+    digest: sha256:80dd2a4b89616bf9
+    last_modified: 2026-11-23T11:35:01Z
   - id: soil-ts
     resource: ../../src/lib/climate/soil.ts
     title: src/lib/climate/soil.ts
@@ -232,8 +232,8 @@ sources:
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
-    digest: sha256:a162262df831f7bf
-    last_modified: 2026-11-11T05:47:54Z
+    digest: sha256:872518766f5b6313
+    last_modified: 2026-11-23T11:35:01Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
@@ -242,8 +242,8 @@ sources:
   - id: index-ts-2
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:e393580af2534bc5
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:daa1389e174a2f90
+    last_modified: 2026-11-23T11:35:01Z
   - id: jobs-ts
     resource: ../../src/lib/consortium/jobs.ts
     title: src/lib/consortium/jobs.ts
@@ -262,8 +262,8 @@ sources:
   - id: site-ts
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
-    digest: sha256:d17e7425d6f4e31b
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:323fb9b1c48bc193
+    last_modified: 2026-11-23T11:35:01Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts

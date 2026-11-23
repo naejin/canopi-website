@@ -17,6 +17,7 @@ import {
   type LayoutPattern,
 } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
+import { T } from '../../strings.ts';
 import {
   openFieldDossier,
   plantingConfig,
@@ -103,7 +104,7 @@ export function PlantingPlanTab() {
       <div class="ct-sys-block">
         <div class="ct-sys-head">
           <div>
-            <h3 class="ct-sys-title">Plot Layout &amp; Spacing Blueprint</h3>
+            <h3 class="ct-sys-title">{T('studio.planBlueprint')}</h3>
             <span class="ct-small-text ct-muted">{blueprint.moduleLabel}</span>
           </div>
           <div class="ct-seg-switch" role="group" aria-label="Layout pattern">
@@ -135,10 +136,21 @@ export function PlantingPlanTab() {
             {blueprint.nodes.map((n) => (
               <g key={n.id} class="ct-bp-node" data-stratum={n.sunBand}>
                 <circle cx={n.x} cy={n.y} r={n.r} />
-                <text x={n.x} y={n.y + 3} text-anchor="middle">{n.label.slice(0, 6)}</text>
+                <text x={n.x} y={n.y + 3.5} text-anchor="middle">{n.initials}</text>
               </g>
             ))}
           </svg>
+          <figcaption class="ct-bp-legend">
+            {blueprint.nodes.map((n) => {
+              const t = store.taxonOf(n.id);
+              return (
+                <button key={n.id} type="button" class="ct-bp-leg-item" onClick={() => openFieldDossier(n.id, memberIds)}>
+                  <span class="ct-bp-dot" data-stratum={n.sunBand}>{n.initials}</span>
+                  <span>{t ? nameOf(t) : n.label}</span>
+                </button>
+              );
+            })}
+          </figcaption>
         </figure>
       </div>
 
@@ -146,7 +158,7 @@ export function PlantingPlanTab() {
       <div class="ct-sys-block">
         <div class="ct-sys-head">
           <div>
-            <h3 class="ct-sys-title">Nursery Order &amp; Spacing Ledger</h3>
+            <h3 class="ct-sys-title">{T('studio.planOrder')}</h3>
             <span class="ct-small-text ct-muted">
               Lead times: Bare-root Sep–Oct ({plan.stockSummary.bareroot}) · Bulbs Sep ({plan.stockSummary.bulb}) · Pots Feb ({plan.stockSummary.pot}) · Seeds Jan–Feb ({plan.stockSummary.seedPacks})
             </span>
@@ -251,7 +263,7 @@ export function PlantingPlanTab() {
       {/* 4. Unified 4-Column Hairline Materials Ledger + Extreme-Year Insurance + 4 Waves */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
-          <h3 class="ct-sys-title">Field Materials &amp; 4 Frost-Anchored Waves</h3>
+          <h3 class="ct-sys-title">{T('studio.planMaterials')}</h3>
           <span class="ct-small-text ct-muted">Estimated effort: {materials.effortLabel} (~{materials.effortHours} h)</span>
         </div>
 
@@ -275,7 +287,7 @@ export function PlantingPlanTab() {
         </div>
 
         <p class="ct-plan-insurance">
-          <strong>Extreme-year field insurance:</strong> {materials.wateringDetail} Keep a 10 cm living or wood-chip mulch collar clear of woody stems during Year 1–2 heat domes and late frosts.
+          <strong>Extreme-year field insurance:</strong> {materials.wateringDetail}. Keep a 10 cm living or wood-chip mulch collar clear of woody stems during Year 1–2 heat domes and late frosts.
         </p>
 
         <div class="ct-plan-waves">
@@ -292,7 +304,7 @@ export function PlantingPlanTab() {
       {/* 5. 12-Month Field Action Calendar + Weekend Briefs */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
-          <h3 class="ct-sys-title">12-Month Field Action Calendar</h3>
+          <h3 class="ct-sys-title">{T('studio.planCalendar')}</h3>
           <span class="ct-small-text ct-muted">Select any month for its weekend brief</span>
         </div>
 

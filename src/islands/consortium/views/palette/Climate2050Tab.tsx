@@ -10,6 +10,7 @@ import { useMemo, useState } from 'preact/hooks';
 import type { ClimateAnalogue, AnalogueLoader } from '../../../../lib/climate/v07.ts';
 import type { PlantId } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
+import { T } from '../../strings.ts';
 import {
   climateStress,
   DEFAULT_CLIMATE_STRESS,
@@ -148,7 +149,7 @@ export function Climate2050Tab() {
               aria-pressed={envelope === 'typical' ? 'true' : 'false'}
               onClick={() => { designEnvelope.value = 'typical'; }}
             >
-              Typical year
+              {T('studio.climTypical')}
             </button>
             <button
               type="button"
@@ -156,7 +157,7 @@ export function Climate2050Tab() {
               aria-pressed={envelope === 'extreme10' ? 'true' : 'false'}
               onClick={() => { designEnvelope.value = 'extreme10'; }}
             >
-              ⚡ 1-in-10-yr Extreme
+              {T('studio.climExtreme')}
             </button>
           </div>
         </div>
@@ -221,7 +222,7 @@ export function Climate2050Tab() {
             aria-expanded={labOpen ? 'true' : 'false'}
             onClick={() => setLabOpen((v) => !v)}
           >
-            {labOpen ? 'Hide Extremes Lab' : 'Extremes Lab (6 levers)'}
+            {labOpen ? 'Hide Extremes Lab' : T('studio.climLab')}
           </button>
         </div>
 
@@ -265,7 +266,7 @@ export function Climate2050Tab() {
       {/* Section 3: Action-First 4-Layer Plant Triage */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
-          <h3 class="ct-sys-title">Plant Triage</h3>
+          <h3 class="ct-sys-title">{T('studio.climTriage')}</h3>
           {lastSwap && (
             <div class="ct-swap-undo">
               <span>Swapped {lastSwap.fromName} → {lastSwap.toName}</span>
@@ -335,7 +336,7 @@ export function Climate2050Tab() {
       {/* Section 4: Pure-SVG 12-Month Climate Shift & Stress Windows Graph */}
       <div class="ct-sys-block">
         <div class="ct-sys-head">
-          <h3 class="ct-sys-title">12-Month Climate Shift &amp; Stress Windows</h3>
+          <h3 class="ct-sys-title">{T('studio.climChart')}</h3>
           <span class="ct-small-text ct-muted">Dashed: Today · Solid: Future / stressed</span>
         </div>
 

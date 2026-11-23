@@ -4,15 +4,16 @@ title: Consortium core
 description: Consortium v2 core seams (types, PlantSource, load failures, the P5 range rule and nearest-list placements, the future check, the verdict engine and its words; native and soil moved to P5.2), the rules S1 ported, and the format 4 installer for schema 4.7 (no older schema or minor) that writes the gzipped SQLite export, its photos and src/data/consortium-index.json.
 resource: ../../src/lib/consortium
 tags: [module, consortium]
-generated: { by: antigravity/gemini, at: 2026-11-23T11:34:49Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:47Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:11Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:30Z }
 sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
     digest: sha256:6918fafa28e9b4ad
-    last_modified: 2026-11-23T11:29:26Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -22,12 +23,12 @@ sources:
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
     digest: sha256:daa1389e174a2f90
-    last_modified: 2026-11-23T11:30:44Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: canopi-file-ts
     resource: ../../src/lib/consortium/canopi-file.ts
     title: src/lib/consortium/canopi-file.ts
     digest: sha256:872518766f5b6313
-    last_modified: 2026-11-23T11:30:42Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: consortium-canopi-file-test-mjs
     resource: ../../scripts/consortium-canopi-file.test.mjs
     title: scripts/consortium-canopi-file.test.mjs
@@ -62,7 +63,7 @@ sources:
     resource: ../../src/lib/consortium/site.ts
     title: src/lib/consortium/site.ts
     digest: sha256:323fb9b1c48bc193
-    last_modified: 2026-11-23T11:29:02Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: conflicts-ts
     resource: ../../src/lib/consortium/conflicts.ts
     title: src/lib/consortium/conflicts.ts
@@ -132,7 +133,7 @@ sources:
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:9def0d1d684cb01f
-    last_modified: 2026-11-23T11:28:26Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: site-climate-ts
     resource: ../../src/lib/consortium/site-climate.ts
     title: src/lib/consortium/site-climate.ts
@@ -176,13 +177,13 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:c9116ee130917d4c
-    last_modified: 2026-11-23T11:29:34Z
+    digest: sha256:96c53431ba5d3d97
+    last_modified: 2026-11-23T11:50:28Z
   - id: placed-ts
     resource: ../../src/lib/consortium/placed.ts
     title: src/lib/consortium/placed.ts
     digest: sha256:4bee0febe945ad89
-    last_modified: 2026-11-23T11:29:04Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: place-ts
     resource: ../../src/lib/consortium/place.ts
     title: src/lib/consortium/place.ts

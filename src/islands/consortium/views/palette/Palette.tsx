@@ -54,6 +54,7 @@ const LazyFieldDossier = lazyPart(() => import('./FieldDossier.tsx').then((m) =>
 // The pictures' announcements (a time step chosen, a change summary): read by its own line only, so a
 // step on the phone never re-renders the page (review r1 bugs-10).
 const said = signal('');
+const legacyStack = signal(false);
 const announce = (text: string): void => { said.value = text; };
 function Said() {
   return <p class="visually-hidden" role="status" aria-live="polite">{said.value}</p>;
@@ -145,32 +146,20 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
         <PaletteCards />
         <StudioRail />
       </div>
-      {/* Past 40 plants on the phone the one search sits directly under the place line (boards Many,
-          Main: step bar, title, place line, search; the PP-E period tabs go above it later). */}
-      {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
-      {/* No board draws a "Your palette" title (v14 pf-e E4): kept for the reader's focus and outline only,
-          and drawn while it has the focus (focus.ts lands there when nothing nearer is left; R3, WCAG 2.4.7). */}
       <h2 class="visually-hidden ct-palette-title" data-view-heading="" tabIndex={-1}>{T('palette.title')}</h2>
-      {/* Past 40 plants on a desk "Add plants" is Your plants' own, opening the search in place (board ManyDesk). */}
-      {!(big && desk) && <FindEntry where="head" />}
       {store.verdictFailed.value && <VerdictNotice />}
       {failedLists.length > 0 && (
         <p class="ct-notice" role="alert">{P('palette.listFailed', store.failedMembers.value.length, { lists: listOf(failedLists.map(zoneName)) })} {retry === 'failed'
           ? <button type="button" class="button button-secondary" onClick={() => globalThis.location.reload()}>{T('load.reload')}</button>
           : <button type="button" class="button button-secondary" aria-busy={retry === 'busy' ? 'true' : undefined} aria-disabled={retry === 'busy' ? 'true' : undefined} onClick={() => void store.retryFailedLists()}>{T('load.retry')}</button>}</p>
       )}
-      {/* Board SiteMendoza: "What limits plants here" first, before the Next step and the pictures. */}
+      {footBlock}
+      {legacyStack.value && (
+      <>
+      {big && !desk && <PlantSearch n={members.length + unchecked} class="ct-many-headsearch" />}
+      {!(big && desk) && <FindEntry where="head" />}
       <PaletteLimits />
       {big ? (
-        // Past 40 plants (v14 pf-e E3; boards Many, ManyDesk). The DOM order is the order the eye reads
-        // (WCAG 1.3.2, 2.4.3; h3 M10): on the phone one column, Your plants last; at 960 px and wider the
-        // chart's column (Next step, Through the years, Jobs), then Your plants' column (Your plants,
-        // Warnings and fit with Balance, the foot), placed by the grid (plants.css). The blocks are keyed,
-        // so crossing 960 px moves Your plants and Warnings and fit rather than remounting them: Weigh's
-        // open reason (D1 (a)), and with it their folds, ticks and search, stay by the move, not a signal
-        // (G5 records it); the focus in a moved block is lost. Find's panel (960 px and wider; a hole's
-        // plants) comes after the left column and before Your plants: find.css draws it at the top of
-        // the right-hand column (h3 C7, C7-big-order.1).
         <div class="ct-palette-body" data-pictures="" data-many="">
           <div key="left" class="ct-many-left">
             <NextStep holes={holes} members={members} />
@@ -181,16 +170,8 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
           </div>
           <FindPanelSlot key="panel" />
           {desk ? [plantsBlock, weigh] : [weigh, plantsBlock]}
-          {footBlock}
         </div>
       ) : (
-        // 40 or fewer (boards Main, MainMore, PaletteMore), in the order the eye reads: the Next step,
-        // the pictures, the side column (Warnings, Balance; at 960 px and wider the foot under Balance,
-        // board MainMore), then Your plants (across, under the pictures, at 960 px and wider), then on the
-        // phone the foot (it changes parent there, so it remounts: Actions keeps Share's state in signals,
-        // h3 R2). Find's panel (960 px and wider) first, as find.css draws it above the Next step (h3 C7);
-        // on the empty palette it is drawn to the right of the Next step card, so it comes after it (h3
-        // C7a.1). Keyed, so the first plant added from it moves the panel, never remounts it.
         <div class="ct-palette-body" data-pictures={members.length ? '' : undefined}>
           {members.length > 0 && <FindPanelSlot key="panel" />}
           <NextStep key="next" holes={holes} members={members} />
@@ -205,16 +186,16 @@ export function Palette({ foot = null }: { foot?: ComponentChildren } = {}) {
             <div class="ct-palette-side">
               <Warnings groups={groups} />
               <Balance members={members} unchecked={unchecked} />
-              {desk && footBlock}
             </div>
           )}
           <YourPlants rows={rows} />
-          {!(desk && members.length > 0) && footBlock}
         </div>
+      )}
+      <FindEntry where="bar" />
+      </>
       )}
       <Said />
       {shown && <FirstView />}
-      <FindEntry where="bar" />
       </>
       )}
       <RequestPlantModal />

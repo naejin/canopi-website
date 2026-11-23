@@ -4,6 +4,7 @@
 // - All Plants: fast search + shared Filters (N) + zero-pill-soup species rows + Request a plant link
 import { useMemo, useState } from 'preact/hooks';
 import * as store from '../../store.ts';
+import { T } from '../../strings.ts';
 import { openFieldDossier, railTab, requestPlantOpen } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
 import {
@@ -51,7 +52,7 @@ export function StudioRail() {
           aria-selected={tab === 'coach' ? 'true' : 'false'}
           onClick={() => { railTab.value = 'coach'; }}
         >
-          Coach
+          {T('studio.railCoach')}
         </button>
         <button
           type="button"
@@ -60,7 +61,7 @@ export function StudioRail() {
           aria-selected={tab === 'all' ? 'true' : 'false'}
           onClick={() => { railTab.value = 'all'; }}
         >
-          All Plants ({pool.length})
+          {T('studio.railAll')} ({pool.length})
         </button>
       </div>
 
@@ -131,17 +132,17 @@ export function StudioRail() {
                       class="ct-card-act is-primary-link"
                       onClick={() => openFieldDossier(t.id, allIds)}
                     >
-                      Dossier →
+                      {T('studio.dossier')}
                     </button>
                     {inPalette ? (
-                      <span class="ct-small-text ct-muted">✓ In palette</span>
+                      <span class="ct-small-text ct-muted">{T('studio.inPalette')}</span>
                     ) : (
                       <button
                         type="button"
                         class="ct-card-act"
                         onClick={() => store.addMembers([t.id])}
                       >
-                        + Add
+                        {T('studio.add')}
                       </button>
                     )}
                   </span>

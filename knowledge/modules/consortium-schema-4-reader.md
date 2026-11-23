@@ -2,9 +2,10 @@
 type: Module
 title: Consortium schema 4 reader and installer
 description: "How the installer and the island read canopi-data schema 4.7 exports and nothing older: additive-tier checks, the required 4.2 to 4.7 additions (plant_aliases accepted, never read), the light span columns, the AI-estimate kinds on jobs and primary names, and the search names file."
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-18T06:33:33Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:49Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T12:21:16Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:36Z }
 sources:
   - id: consortium-schema-mjs
     resource: ../../scripts/consortium-schema.mjs
@@ -19,8 +20,8 @@ sources:
   - id: sqlite-source-ts
     resource: ../../src/islands/consortium/data/sqlite-source.ts
     title: src/islands/consortium/data/sqlite-source.ts
-    digest: sha256:c97ea2817fd76eb5
-    last_modified: 2026-11-18T18:43:00Z
+    digest: sha256:96c53431ba5d3d97
+    last_modified: 2026-11-23T11:50:28Z
   - id: source-ts
     resource: ../../src/lib/consortium/source.ts
     title: src/lib/consortium/source.ts
@@ -29,8 +30,8 @@ sources:
   - id: types-ts
     resource: ../../src/lib/consortium/types.ts
     title: src/lib/consortium/types.ts
-    digest: sha256:260e0d612a9f4809
-    last_modified: 2026-11-19T04:40:24Z
+    digest: sha256:6918fafa28e9b4ad
+    last_modified: 2026-11-23T11:35:01Z
   - id: make-fixture-mjs
     resource: ../../scripts/fixtures/consortium-v2/make-fixture.mjs
     title: scripts/fixtures/consortium-v2/make-fixture.mjs
@@ -40,7 +41,7 @@ sources:
     resource: ../../src/lib/consortium/state.ts
     title: src/lib/consortium/state.ts
     digest: sha256:023783ecbccd0096
-    last_modified: 2026-11-19T12:06:03Z
+    last_modified: 2026-11-19T12:21:26Z
   - id: consortium-source-test-mjs
     resource: ../../scripts/consortium-source.test.mjs
     title: scripts/consortium-source.test.mjs

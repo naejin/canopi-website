@@ -3,9 +3,10 @@ type: Module
 title: Consortium state (schema and state/ modules)
 description: "The consortium island's state layer under src/islands/consortium/state/: the schema that declares each field once (Undo, save, #v=4 link, watchers), and the modules E6 S2 split out of the old memory.ts (deleted in E6 chunk 5) for storage, restore, arrival, Start's draft, the waiting Suggest, the location lookups and the location step."
 tags: [consortium, state]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:16Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:49Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-17T07:28:39Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:38Z }
 sources:
   - id: schema-ts
     resource: ../../src/islands/consortium/state/schema.ts
@@ -26,7 +27,7 @@ sources:
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:370bb4a9489321e5
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: restore-ts
     resource: ../../src/islands/consortium/state/restore.ts
     title: src/islands/consortium/state/restore.ts
@@ -36,7 +37,7 @@ sources:
     resource: ../../src/islands/consortium/state/arrival.ts
     title: src/islands/consortium/state/arrival.ts
     digest: sha256:ed4c92e4c62489ea
-    last_modified: 2026-11-19T12:59:26Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: draft-ts
     resource: ../../src/islands/consortium/state/draft.ts
     title: src/islands/consortium/state/draft.ts
@@ -56,7 +57,7 @@ sources:
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: main-ts
     resource: ../../src/islands/consortium/main.ts
     title: src/islands/consortium/main.ts
@@ -70,8 +71,8 @@ sources:
   - id: index-ts
     resource: ../../src/lib/consortium/index.ts
     title: src/lib/consortium/index.ts
-    digest: sha256:e393580af2534bc5
-    last_modified: 2026-11-18T17:13:28Z
+    digest: sha256:daa1389e174a2f90
+    last_modified: 2026-11-23T11:35:01Z
   - id: save-ts
     resource: ../../src/islands/consortium/state/save.ts
     title: src/islands/consortium/state/save.ts
@@ -80,8 +81,8 @@ sources:
   - id: place-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:1bc0c7720b8a2a60
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:f4d2331a69a4e933
+    last_modified: 2026-11-23T12:34:10Z
 enforced_by:
   - scripts/consortium-memory.test.mjs
   - scripts/consortium-start.test.mjs

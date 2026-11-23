@@ -8,9 +8,11 @@ import { jobsOf, type Taxon } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
 import { openFieldDossier, paletteViewMode } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
+import { T } from '../../strings.ts';
 import {
   activityMonthsOf,
   EMPTY_STUDIO_FILTERS,
+  formatHeightRange,
   matchesStudioFilters,
   MONTH_INITIALS,
   ROLE_OPTIONS,
@@ -41,9 +43,7 @@ function roleSummary(t: Taxon): string {
 }
 
 function heightText(t: Taxon): string {
-  if (!t.traits.height_m) return '';
-  const max = t.traits.height_m.max ?? t.traits.height_m.min;
-  return max != null ? `${max} m` : '';
+  return formatHeightRange(t.traits.height_m);
 }
 
 export function PaletteCards() {
@@ -76,7 +76,7 @@ export function PaletteCards() {
             aria-pressed={mode === 'cards' ? 'true' : 'false'}
             onClick={() => { paletteViewMode.value = 'cards'; }}
           >
-            Cards
+            {T('studio.viewCards')}
           </button>
           <button
             type="button"
@@ -84,7 +84,7 @@ export function PaletteCards() {
             aria-pressed={mode === 'compact' ? 'true' : 'false'}
             onClick={() => { paletteViewMode.value = 'compact'; }}
           >
-            Compact List
+            {T('studio.viewCompact')}
           </button>
         </div>
       </div>
@@ -106,7 +106,7 @@ export function PaletteCards() {
             </thead>
             <tbody>
               {filtered.map((t) => (
-                <tr key={t.id}>
+                <tr key={t.id} data-plant-id={t.id}>
                   <td>
                     <strong>{nameOf(t)}</strong>{' '}
                     <span class="ct-sci">{t.canonical_name}</span>
@@ -122,7 +122,7 @@ export function PaletteCards() {
                         class="ct-card-act is-primary-link"
                         onClick={() => openFieldDossier(t.id, ids)}
                       >
-                        Dossier →
+                        {T('studio.dossier')}
                       </button>
                       <button
                         type="button"
@@ -145,7 +145,7 @@ export function PaletteCards() {
             const h = heightText(t);
             const metaParts = [sunTierLabel(t), stageSpanOf(t).label, roleSummary(t), h].filter(Boolean);
             return (
-              <article key={t.id} class="ct-card" data-plant-card={t.id}>
+              <article key={t.id} class="ct-card" data-plant-card={t.id} data-plant-id={t.id}>
                 {/* Layer 1: Identity & clean actions */}
                 <div class="ct-card-top">
                   <div class="ct-card-names">

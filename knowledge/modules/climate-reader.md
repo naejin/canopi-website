@@ -2,15 +2,16 @@
 type: Module
 title: Climate reader
 description: The canopi-climate v0.2 tile reader in src/lib/climate/ and its installer, which serves the tiles under /data/climate/ for the consortium page's location lookup.
-generated: { by: antigravity/gemini, at: 2026-11-23T11:34:48Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:47Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:17Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:29Z }
 sources:
   - id: index-ts
     resource: ../../src/lib/climate/index.ts
     title: src/lib/climate/index.ts
     digest: sha256:0c6931a4a66f6ca4
-    last_modified: 2026-11-23T11:28:23Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: lookup-ts
     resource: ../../src/lib/climate/lookup.ts
     title: src/lib/climate/lookup.ts
@@ -30,17 +31,17 @@ sources:
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
     digest: sha256:80dd2a4b89616bf9
-    last_modified: 2026-11-23T11:28:20Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: install-climate-mjs
     resource: ../../scripts/install-climate.mjs
     title: scripts/install-climate.mjs
     digest: sha256:43ea5407d5505331
-    last_modified: 2026-11-23T11:28:55Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8c88beb694518fa1
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:c2b450b349d5137d
+    last_modified: 2026-11-23T12:23:18Z
   - id: headers
     resource: ../../public/_headers
     title: public/_headers
@@ -70,7 +71,7 @@ sources:
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
     digest: sha256:9def0d1d684cb01f
-    last_modified: 2026-11-23T11:28:26Z
+    last_modified: 2026-11-23T11:35:01Z
   - id: store-ts
     resource: ../../src/islands/consortium/store.ts
     title: src/islands/consortium/store.ts

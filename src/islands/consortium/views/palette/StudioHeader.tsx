@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { useDismissOnOutside } from './FilterPopover.tsx';
 import { convertArea, periodIds, type PeriodId } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
+import { T } from '../../strings.ts';
 import { backToPlace, startOver } from '../../state/draft.ts';
 import { requestSuggest } from '../../state/suggest-wait.ts';
 import {
@@ -37,11 +38,11 @@ const HORIZONS: readonly { id: PeriodId; label: string }[] = [
   { id: periodIds[2], label: '2080s' },
 ];
 
-const TABS: readonly { id: StudioTab; label: string }[] = [
-  { id: 'palette', label: 'My Palette' },
-  { id: 'system', label: 'Living System' },
-  { id: 'climate', label: '2050 Climate' },
-  { id: 'plan', label: 'Planting Plan' },
+const TABS: readonly { id: StudioTab; key: string }[] = [
+  { id: 'palette', key: 'studio.tab.palette' },
+  { id: 'system', key: 'studio.tab.system' },
+  { id: 'climate', key: 'studio.tab.climate' },
+  { id: 'plan', key: 'studio.tab.plan' },
 ];
 
 export function StudioHeader() {
@@ -129,7 +130,7 @@ export function StudioHeader() {
               aria-expanded={openMenu === 'open' ? 'true' : 'false'}
               onClick={() => setOpenMenu((m) => (m === 'open' ? null : 'open'))}
             >
-              Open .canopi <span aria-hidden="true">▾</span>
+              {T('studio.open')} .canopi <span aria-hidden="true">▾</span>
             </button>
             {openMenu === 'open' && (
               <div class="ct-studio-menu-panel" role="menu">
@@ -154,7 +155,7 @@ export function StudioHeader() {
               data-studio-save
               onClick={() => void handleSave(false)}
             >
-              {dirty ? 'Save .canopi' : 'Saved'}
+              {dirty ? T('studio.save') : 'Saved'}
             </button>
             <button
               type="button"
@@ -168,7 +169,21 @@ export function StudioHeader() {
             {openMenu === 'save' && (
               <div class="ct-studio-menu-panel" role="menu">
                 <button type="button" class="ct-studio-menu-item" role="menuitem" onClick={() => void handleSave(true)}>
-                  Save As .canopi…
+                  {T('studio.saveAs')}
+                </button>
+                <button
+                  type="button"
+                  class="ct-studio-menu-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpenMenu(null);
+                    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof location !== 'undefined') {
+                      void navigator.clipboard.writeText(location.href);
+                      setStatusMsg(T('studio.shareLink'));
+                    }
+                  }}
+                >
+                  {T('studio.shareLink')}
                 </button>
                 <button
                   type="button"
@@ -197,11 +212,11 @@ export function StudioHeader() {
           </div>
 
           <button type="button" class="ct-studio-btn" onClick={() => { requestPlantOpen.value = true; }}>
-            Request a plant
+            {T('studio.requestPlant')}
           </button>
 
           <button type="button" class="ct-studio-btn" onClick={() => { if (typeof window !== 'undefined') window.print(); }}>
-            Print PDF
+            {T('studio.printPdf')}
           </button>
         </div>
       </div>
@@ -219,7 +234,7 @@ export function StudioHeader() {
               data-studio-tab={item.id}
               onClick={() => selectTab(item.id)}
             >
-              <span>{item.label}</span>
+              <span>{T(`studio.tab.${item.id}`)}</span>
               {item.id === 'palette' && <span class="ct-studio-tab-badge">{memberCount}</span>}
             </button>
           ))}

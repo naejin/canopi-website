@@ -2,9 +2,10 @@
 type: Architecture Decision
 title: Plant palette chunk-2 hand-off rulings (D1-D10)
 description: The agent rulings of 2026-11-18 on the PP-C chunk-2 hand-offs, as auto-approved under the owner's autonomy rule, and where each lives in the code.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-19T11:31:04Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:46Z }
 verified:
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T13:01:16Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:28Z }
 sources:
   - id: jobspicture-tsx
     resource: ../../src/islands/consortium/views/palette/JobsPicture.tsx
@@ -29,8 +30,8 @@ sources:
   - id: consortiumpage-astro
     resource: ../../src/components/consortium/ConsortiumPage.astro
     title: src/components/consortium/ConsortiumPage.astro
-    digest: sha256:0b89a2579cb86fe6
-    last_modified: 2026-11-19T10:56:43Z
+    digest: sha256:db0dc259328e7353
+    last_modified: 2026-11-23T11:50:28Z
   - id: holes-ts
     resource: ../../src/lib/consortium/holes.ts
     title: src/lib/consortium/holes.ts
@@ -39,18 +40,18 @@ sources:
   - id: place-tsx
     resource: ../../src/islands/consortium/views/place/Place.tsx
     title: src/islands/consortium/views/place/Place.tsx
-    digest: sha256:1bc0c7720b8a2a60
-    last_modified: 2026-11-19T08:22:07Z
+    digest: sha256:f4d2331a69a4e933
+    last_modified: 2026-11-23T12:34:10Z
   - id: persist-ts
     resource: ../../src/islands/consortium/state/persist.ts
     title: src/islands/consortium/state/persist.ts
     digest: sha256:370bb4a9489321e5
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: location-ts
     resource: ../../src/islands/consortium/state/location.ts
     title: src/islands/consortium/state/location.ts
     digest: sha256:5cfe9d29fed62a99
-    last_modified: 2026-11-19T12:59:38Z
+    last_modified: 2026-11-19T13:11:53Z
   - id: suggest-wait-ts
     resource: ../../src/islands/consortium/state/suggest-wait.ts
     title: src/islands/consortium/state/suggest-wait.ts

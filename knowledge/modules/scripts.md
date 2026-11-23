@@ -5,11 +5,11 @@ description: Node build helpers, tests, post-build checks, the legacy Web Editio
 resource: ../../scripts
 tags: [module, tooling]
 status: stable
-generated: { by: antigravity/gemini, at: 2026-11-22T22:36:52Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:42:06Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-22T22:36:48Z }
+  - { by: antigravity/gemini, at: 2026-11-23T12:42:05Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -24,8 +24,8 @@ sources:
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:a09e1f314f7b7cb7
-    last_modified: 2026-11-22T22:35:17Z
+    digest: sha256:125326a95ff52b49
+    last_modified: 2026-11-23T12:37:34Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -39,13 +39,13 @@ sources:
   - id: consortium-grid-check-mjs
     resource: ../../scripts/consortium-grid-check.mjs
     title: scripts/consortium-grid-check.mjs
-    digest: sha256:46f57cbfd5234252
-    last_modified: 2026-11-18T02:34:14Z
+    digest: sha256:9def0d1d684cb01f
+    last_modified: 2026-11-23T11:35:01Z
   - id: built-modules-test-mjs
     resource: ../../scripts/built-modules.test.mjs
     title: scripts/built-modules.test.mjs
-    digest: sha256:38a582b6fc68700c
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:61d3d077c466a46e
+    last_modified: 2026-11-23T12:23:18Z
   - id: expect-fail-mjs
     resource: ../../scripts/expect-fail.mjs
     title: scripts/expect-fail.mjs
@@ -60,7 +60,7 @@ sources:
     resource: ../../scripts/quality/ratchet.mjs
     title: scripts/quality/ratchet.mjs
     digest: sha256:8dc8323b87a1ea9b
-    last_modified: 2026-11-22T22:35:17Z
+    last_modified: 2026-11-22T22:39:24Z
   - id: ci-deploy-test-mjs
     resource: ../../scripts/ci-deploy.test.mjs
     title: scripts/ci-deploy.test.mjs
@@ -74,8 +74,8 @@ sources:
   - id: check-built-site-mjs
     resource: ../../scripts/check-built-site.mjs
     title: scripts/check-built-site.mjs
-    digest: sha256:8c88beb694518fa1
-    last_modified: 2026-11-18T04:25:38Z
+    digest: sha256:c2b450b349d5137d
+    last_modified: 2026-11-23T12:23:18Z
   - id: rules-test-mjs
     resource: ../../scripts/quality/ast-grep/rules.test.mjs
     title: scripts/quality/ast-grep/rules.test.mjs

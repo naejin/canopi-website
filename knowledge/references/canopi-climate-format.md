@@ -2,20 +2,22 @@
 type: Reference
 title: canopi-climate tile format
 description: Pointer to the crate-owned normative tile format (docs/format.md, v0.2.1) and the release vectors the website consumes.
-generated: { by: claude-code/claude-opus-5-5, at: 2026-11-12T22:13:45Z }
+generated: { by: antigravity/gemini, at: 2026-11-23T12:36:52Z }
+verified:
+  - { by: antigravity/gemini, at: 2026-11-23T12:36:43Z }
 sources:
   - id: github-com-opencanopi-canopi-climate-blo
     resource: https://github.com/opencanopi/canopi-climate/blob/v0.2.1/docs/format.md
   - id: model-js
     resource: ../../src/lib/climate/model.js
     title: src/lib/climate/model.js
-    digest: sha256:23fa6d9b282cd681
-    last_modified: 2026-11-12T20:26:30Z
+    digest: sha256:80dd2a4b89616bf9
+    last_modified: 2026-11-23T11:35:01Z
   - id: install-climate-mjs
     resource: ../../scripts/install-climate.mjs
     title: scripts/install-climate.mjs
-    digest: sha256:596d9ed4bffe0aeb
-    last_modified: 2026-11-12T20:26:30Z
+    digest: sha256:43ea5407d5505331
+    last_modified: 2026-11-23T11:35:01Z
 ---
 
 # canopi-climate tile format

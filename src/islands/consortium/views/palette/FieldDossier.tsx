@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { SUCCESSION_STAGES_6, type Details, type Locale } from '../../../../lib/consortium/index.ts';
 import * as store from '../../store.ts';
-import { pageLang } from '../../strings.ts';
+import { pageLang, T } from '../../strings.ts';
 import { closeFieldDossier, dossierId, dossierList, openFieldDossier, stepFieldDossier } from '../../state/studio.ts';
 import { nameOf } from '../kit/names.ts';
 import { FieldTip } from '../kit/field-tip.tsx';
@@ -84,8 +84,8 @@ export function FieldDossier() {
           <div class="ct-dossier-nav">
             {canStep && (
               <>
-                <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(-1)}>← Prev</button>
-                <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(1)}>Next →</button>
+                <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(-1)}>{T('studio.prev')}</button>
+                <button type="button" class="ct-dossier-btn" onClick={() => stepFieldDossier(1)}>{T('studio.next')}</button>
               </>
             )}
             <button
@@ -93,10 +93,10 @@ export function FieldDossier() {
               class="ct-dossier-btn"
               onClick={() => (inPalette ? store.removeMember(taxon.id) : store.addMembers([taxon.id]))}
             >
-              {inPalette ? 'Remove' : '+ Add'}
+              {inPalette ? T('studio.remove') : T('studio.add')}
             </button>
-            <button type="button" class="ct-dossier-btn" aria-label="Close dossier" onClick={closeFieldDossier}>
-              Close
+            <button type="button" class="ct-dossier-btn" aria-label={T('studio.close')} onClick={closeFieldDossier}>
+              {T('studio.close')}
             </button>
           </div>
         </div>

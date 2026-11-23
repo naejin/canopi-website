@@ -705,7 +705,7 @@ function Questions() {
     <>
       <div class="ct-place-col">
         <LocationSlot>{askLink() ? <ClimatesLink /> : null}</LocationSlot>
-        <WeRead />
+        {!siteLocation.value?.lookup && <WeRead />}
         <SitePostcard />
         <KeptClimate />
         {!ready && !wide && <MainCountry />}
@@ -742,9 +742,10 @@ function PlaceForm() {
     <div class="ct-start ct-place">
       <div class="ct-place-main" hidden={cardsAsked.value}>
         <div class="ct-place-grid"><Questions /></div>
-        {/* Board PlaceDesk: the figures, then the invasive card (h3 M15). The frame keeps board SiteKiambu's
-            order: the invasive card, then the figures. */}
-        <PlaceFigures />
+        <details class="ct-adv-figures">
+          <summary class="ct-adv-summary">{T('studio.advOverrides')}</summary>
+          <PlaceFigures />
+        </details>
         {desk.value && <MainCountry />}
       </div>
       {/* After the questions, so the view's first heading (focus.ts) is question 1 while it is hidden. */}

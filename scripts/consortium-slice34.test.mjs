@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const analysis = await import('../src/islands/consortium/rules/studio-analysis.ts');
+const filtersMod = await import('../src/islands/consortium/rules/studio-filters.ts');
 const planting = await import('../src/lib/consortium/planting-plan.ts');
 const studio = await import('../src/islands/consortium/state/studio.ts');
 
@@ -107,6 +108,25 @@ test('2050 Climate evaluates stress presets, 4-layer triage, twin swap candidate
   const triaged = report.critical[0] ?? report.watch[0];
   assert.ok(triaged.breachedLimits.length >= 1 && triaged.breachedLimits.length <= 2, 'signal-only 1-2 breached limits');
   assert.equal(triaged.twinSwap?.id, 'olive', 'finds resilient climate twin in catalog');
+
+  // Slice 3.5 P1 #2 invariants: Typical 2050s winter warms up, Extreme drops to cold tail, Dry-spell delta matches endpoints.
+  const baseStress = analysis.STRESS_PRESETS[0].stress;
+  const typicalRep = analysis.evaluateClimate2050([resilient], [resilient], LOC, '2041-2070', 'typical', baseStress);
+  const typWinter = typicalRep.forces.find((f) => f.label === 'Winter floor');
+  assert.ok(typWinter && typWinter.delta.startsWith('+'), `Typical 2050s winter warms up (${typWinter?.delta})`);
+  const extRep = analysis.evaluateClimate2050([resilient], [resilient], LOC, '2041-2070', 'extreme10', baseStress);
+  const extWinter = extRep.forces.find((f) => f.label === 'Winter floor');
+  assert.ok(extWinter && extWinter.delta.startsWith('-'), `1-in-10-yr Extreme winter drops to cold tail (${extWinter?.delta})`);
+  const dryForce = typicalRep.forces.find((f) => f.label === 'Dry-spell pressure');
+  assert.ok(dryForce);
+  const dryToday = Number.parseInt(dryForce.today, 10);
+  const dryFuture = Number.parseInt(dryForce.future, 10);
+  const dryDelta = Number.parseInt(dryForce.delta, 10);
+  assert.equal(dryFuture - dryToday, dryDelta, 'Dry-spell pressure delta strictly matches displayed endpoints');
+
+  // Slice 3.5 P2 #2 height formatting invariant.
+  assert.equal(filtersMod.formatHeightRange({ min: null, max: 0.8 }), 'up to 0.8 m');
+  assert.equal(filtersMod.formatHeightRange({ min: 10, max: 18.288 }), '10–18.3 m');
 });
 
 test('Planting Plan Plot Layout stays strictly bounded and non-overlapping across Guild, Alley, Grid, and 10x10m module', () => {
