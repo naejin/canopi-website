@@ -52,24 +52,13 @@ test('the browser tests build their own hook build; only the browser-test flag t
   for (const word of ['__ctTest', '__ctViews', 'failSheets', '__ctTimeouts']) assert.ok(checker.includes(`'${word}'`), `check-built-site looks for ${word}`);
 });
 
-test('S5e\'s specs wait outside the glob, every one todo for S5e (A6; F1a re-enables them)', () => {
-  const pending = new URL('./browser/pending/consortium-p5-s5e.spec.mjs', import.meta.url);
-  assert.ok(existsSync(pending));
-  const tests = testsOf(readFileSync(pending, 'utf8'));
-  assert.equal(tests.length, 3);
-  for (const { title, opts } of tests) {
-    assert.match(title, /^P5-\d+[a-z]? \(S5e\b/);
-    assert.match(opts, /\btodo:\s*'S5e: /, title);
-  }
-  assert.ok(!files.some((f) => f.includes('s5e')), 'no S5e file in the run');
-});
-
 // The sleep rule (E1 design check A12): no sleep over 1 s in a spec or a spec helper.
 const SPEC_DIR = new URL('./browser/', import.meta.url);
+const PENDING_DIR = new URL('./browser/pending/', import.meta.url);
 const specSources = () => [
   ...files,
   ...readdirSync(SPEC_DIR).filter((f) => /helpers\.mjs$/.test(f)),
-  ...readdirSync(new URL('./browser/pending/', import.meta.url)).map((f) => `pending/${f}`),
+  ...(existsSync(PENDING_DIR) ? readdirSync(PENDING_DIR).map((f) => `pending/${f}`) : []),
 ];
 const numberOf = (s) => (/^[\d_]+$/.test(s.trim()) ? Number(s.trim().replace(/_/g, '')) : null);
 function callArgs(text, open) {

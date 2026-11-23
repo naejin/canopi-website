@@ -9,7 +9,7 @@ generated: { by: antigravity/gemini, at: 2026-11-23T13:34:39Z }
 verified:
   - { by: claude/opus-5.5, at: 2026-11-06T00:26:58Z }
   - { by: claude-code/claude-opus-5-5, at: 2026-11-19T18:52:54Z }
-  - { by: antigravity/gemini, at: 2026-11-23T13:34:04Z }
+  - { by: antigravity/gemini, at: 2026-11-23T13:43:05Z }
 sources:
   - id: consortium-boundary-test-mjs
     resource: ../../scripts/consortium-boundary.test.mjs
@@ -20,12 +20,12 @@ sources:
     resource: ../../scripts/browser/consortium-studio-onboarding.browser.test.mjs
     title: scripts/browser/consortium-studio-onboarding.browser.test.mjs
     digest: sha256:d68dbc38f90873d3
-    last_modified: 2026-11-23T13:29:33Z
+    last_modified: 2026-11-23T13:35:12Z
   - id: scripts
     resource: ../../scripts
     title: scripts/
-    digest: sha256:8ef8ddb90c0faa0e
-    last_modified: 2026-11-23T13:30:24Z
+    digest: sha256:e82498da626c5859
+    last_modified: 2026-11-23T13:42:46Z
   - id: package-json
     resource: ../../package.json
     title: package.json
@@ -109,8 +109,8 @@ sources:
   - id: browser-tests-test-mjs
     resource: ../../scripts/browser-tests.test.mjs
     title: scripts/browser-tests.test.mjs
-    digest: sha256:33da8c7984a92423
-    last_modified: 2026-11-23T13:19:24Z
+    digest: sha256:0ede506690c0787d
+    last_modified: 2026-11-23T13:42:46Z
   - id: consortium-pf-env-mjs
     resource: ../../scripts/consortium-pf-env.mjs
     title: scripts/consortium-pf-env.mjs
